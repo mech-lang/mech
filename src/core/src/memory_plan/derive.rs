@@ -933,6 +933,12 @@ fn arena_for_space(space: MemorySpace) -> MemoryArenaId {
 }
 
 #[cfg(feature = "functions")]
+fn payload_arena_for_space(space: MemorySpace) -> MemoryArenaId {
+    let base = arena_for_space(space).get();
+    MemoryArenaId::new(base | (1_u32 << 31))
+}
+
+#[cfg(feature = "functions")]
 fn allocate_offset(
     offsets: &mut BTreeMap<MemoryArenaId, u64>,
     arena: MemoryArenaId,
@@ -967,9 +973,11 @@ fn push_value_allocations(
         id: object,
         owner: owner.clone(),
         role: AllocationRole::FixedStorage,
+        slot: Some(value.storage.planned_slot()),
         space: storage.space,
         current_bytes: value.current_address_span_bytes,
         capacity_bytes: value.capacity_bytes,
+        payload_block_capacity: 0,
         alignment: value.slot.alignment,
         lifetime: storage.lifetime,
         placement: allocate_offset(offsets, arena, value.capacity_bytes, value.slot.alignment)?,
@@ -978,16 +986,19 @@ fn push_value_allocations(
     if value.payload.required_bytes != 0 || value.payload.maximum_bytes.is_none() {
         let payload = MemoryObjectId::new(*next_object);
         *next_object = checked_next_object(*next_object)?;
+        let payload_arena = payload_arena_for_space(storage.space);
         allocations.push(AllocationPlan {
             id: payload,
             owner,
             role: AllocationRole::VariablePayload,
+            slot: None,
             space: storage.space,
             current_bytes: value.payload.current_bytes,
             capacity_bytes: value.payload.required_bytes,
+            payload_block_capacity: value.payload.required_nodes.max(1),
             alignment: 1,
             lifetime: storage.lifetime,
-            placement: allocate_offset(offsets, arena, value.payload.required_bytes, 1)?,
+            placement: allocate_offset(offsets, payload_arena, value.payload.required_bytes, 1)?,
             reuse_group: None,
         });
     }
@@ -1098,9 +1109,11 @@ fn derive_transactions(
                 port: checked_u16(ordinal, "transaction output ordinal")?,
             },
             role: AllocationRole::TransactionStage,
+            slot: Some(output.value.storage.planned_slot()),
             space: storage.space,
             current_bytes: staged_bytes,
             capacity_bytes: staged_bytes,
+            payload_block_capacity: 0,
             alignment: output.value.slot.alignment,
             lifetime: MemoryLifetime::Transaction {
                 first: super::MemoryPlanPoint::new(0),
@@ -1164,9 +1177,11 @@ fn derive_scratch_allocations(
                 ordinal: checked_u16(ordinal, "call scratch ordinal")?,
             },
             role,
+            slot: None,
             space,
             current_bytes: size,
             capacity_bytes: size,
+            payload_block_capacity: 0,
             alignment,
             lifetime: MemoryLifetime::Turn {
                 first: super::MemoryPlanPoint::new(0),

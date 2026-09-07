@@ -1,7 +1,8 @@
 use mech_core::{
-    AccessMode, FunctionInvocation, ManagedCallAccessRequest, MemoryAccessMode, MemoryAccessRegion,
-    MemoryDomain, MemoryRuntimeError, MemoryRuntimeResult, PortMemoryPlan, PreparedCallAccess,
-    RealizedMemoryPlan, RegionAccessPlan,
+    AccessMode, AliasDecision, FunctionInvocation, ManagedCallAccessRequest, MemoryAccessMode,
+    MemoryAccessRegion, MemoryDomain, MemoryObjectId, MemoryRuntimeError, MemoryRuntimeResult,
+    PortMemoryPlan, PreparedCallAccess, RealizedMemoryPlan, RegionAccessPlan,
+    TransactionRequirement,
 };
 
 use crate::memory_planner::ProgramMemoryPlan;
@@ -71,8 +72,8 @@ pub fn prepare_managed_function_call(
             cell.reactive_cell_id(),
             index,
             domain.plan_object_key(realized.revision(), port.object)?,
-            access_mode(policy.access),
-            access_region(port, false),
+            input_access_mode(call, index, policy.access),
+            access_region(port, false)?,
         ));
     }
     let output_cell = invocation.output_cell();
@@ -86,27 +87,80 @@ pub fn prepare_managed_function_call(
                 alignment: 1,
                 reason: "output memory policy is absent",
             })?;
+        let transaction =
+            call.transactions
+                .get(index)
+                .copied()
+                .ok_or(MemoryRuntimeError::InvalidLayout {
+                    object: Some(port.object),
+                    size: index as u64,
+                    alignment: 1,
+                    reason: "output transaction requirement is absent",
+                })?;
+        let write_object = transaction_write_object(transaction, port.object)?;
         accesses.push(ManagedCallAccessRequest::for_output_cell(
             output_cell.reactive_cell_id(),
             index,
-            domain.plan_object_key(realized.revision(), port.object)?,
-            access_mode(policy.access),
-            access_region(port, true),
+            domain.plan_object_key(realized.revision(), write_object)?,
+            output_access_mode(transaction, policy.access),
+            access_region(port, true)?,
         ));
     }
     domain.prepare_managed_call(realized, &accesses)
 }
 
-const fn access_mode(mode: AccessMode) -> MemoryAccessMode {
+fn input_access_mode(
+    call: &mech_core::CallMemoryPlan,
+    input: usize,
+    mode: AccessMode,
+) -> MemoryAccessMode {
     match mode {
         AccessMode::Read => MemoryAccessMode::Read,
         AccessMode::Write => MemoryAccessMode::Write,
-        AccessMode::ReadWrite | AccessMode::Consume => MemoryAccessMode::ExclusiveInPlace,
+        AccessMode::Consume => MemoryAccessMode::Read,
+        AccessMode::ReadWrite
+            if call.aliases.iter().any(|alias| {
+                matches!(alias, AliasDecision::InPlaceRequired { input: candidate }
+                    if usize::from(*candidate) == input)
+            }) =>
+        {
+            MemoryAccessMode::ExclusiveInPlace
+        }
+        AccessMode::ReadWrite => MemoryAccessMode::Read,
     }
 }
 
-fn access_region(port: &PortMemoryPlan, output: bool) -> MemoryAccessRegion {
-    match &port.region {
+const fn output_access_mode(
+    transaction: TransactionRequirement,
+    mode: AccessMode,
+) -> MemoryAccessMode {
+    match transaction {
+        TransactionRequirement::UndoSnapshot { .. } => MemoryAccessMode::ExclusiveInPlace,
+        TransactionRequirement::StageAndSwap { .. }
+        | TransactionRequirement::DoubleBuffer { .. } => MemoryAccessMode::Write,
+        TransactionRequirement::None => match mode {
+            AccessMode::Read => MemoryAccessMode::Read,
+            AccessMode::Write => MemoryAccessMode::Write,
+            AccessMode::ReadWrite => MemoryAccessMode::ExclusiveInPlace,
+            AccessMode::Consume => MemoryAccessMode::Read,
+        },
+    }
+}
+
+const fn transaction_write_object(
+    transaction: TransactionRequirement,
+    declared_output: MemoryObjectId,
+) -> MemoryRuntimeResult<MemoryObjectId> {
+    match transaction {
+        TransactionRequirement::None => Ok(declared_output),
+        TransactionRequirement::StageAndSwap { staged, .. }
+        | TransactionRequirement::DoubleBuffer { next: staged, .. } => Ok(staged),
+        TransactionRequirement::UndoSnapshot { target, .. } => Ok(target),
+    }
+}
+
+fn access_region(port: &PortMemoryPlan, output: bool) -> MemoryRuntimeResult<MemoryAccessRegion> {
+    Ok(match &port.region {
         RegionAccessPlan::Contiguous {
             offset_bytes,
             length_bytes,
@@ -143,9 +197,30 @@ fn access_region(port: &PortMemoryPlan, output: bool) -> MemoryAccessRegion {
             offset_bytes: 0,
             length_bytes: port.value.current_address_span_bytes,
         },
-        RegionAccessPlan::WholeValue
-        | RegionAccessPlan::Gather { .. }
-        | RegionAccessPlan::CollectionEntry { .. }
-        | RegionAccessPlan::Deferred(_) => MemoryAccessRegion::WholeInitialized,
-    }
+        RegionAccessPlan::WholeValue => MemoryAccessRegion::WholeInitialized,
+        RegionAccessPlan::Gather { .. } => {
+            return Err(MemoryRuntimeError::InvalidLayout {
+                object: Some(port.object),
+                size: port.value.current_address_span_bytes,
+                alignment: port.value.slot.alignment,
+                reason: "gather access requires a concrete bounded selector plan",
+            });
+        }
+        RegionAccessPlan::CollectionEntry { .. } => {
+            return Err(MemoryRuntimeError::InvalidLayout {
+                object: Some(port.object),
+                size: port.value.current_address_span_bytes,
+                alignment: port.value.slot.alignment,
+                reason: "collection-entry access requires a concrete key plan",
+            });
+        }
+        RegionAccessPlan::Deferred(_) => {
+            return Err(MemoryRuntimeError::InvalidLayout {
+                object: Some(port.object),
+                size: port.value.current_address_span_bytes,
+                alignment: port.value.slot.alignment,
+                reason: "deferred access region reached managed call acquisition",
+            });
+        }
+    })
 }

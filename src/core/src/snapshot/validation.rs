@@ -100,9 +100,18 @@ pub struct Value {
     schema: SchemaId,
     schema_key: SchemaKey,
     shape: ShapeInstance,
-    data: ValueData,
+    root: Arc<FrozenSnapshotStorage>,
     resident_token: u64,
     schemas: Option<Arc<SchemaTable>>,
+}
+
+/// Detached immutable canonical ownership. Cloning a [`Value`] retains this
+/// root instead of recursively cloning its payload tree. The root contains no
+/// mutable memory domain, cell, or executor authority.
+#[derive(Debug)]
+pub struct FrozenSnapshotStorage {
+    data: ValueData,
+    _ownership: Option<crate::RetainedPayloadTicket>,
 }
 
 impl core::fmt::Debug for Value {
@@ -112,12 +121,17 @@ impl core::fmt::Debug for Value {
             .field("schema", &self.schema)
             .field("schema_key", &self.schema_key)
             .field("shape", &self.shape)
-            .field("data", &self.data)
+            .field("data", &self.root.data)
             .finish()
     }
 }
 
 impl Value {
+    #[doc(hidden)]
+    pub fn shares_frozen_storage(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.root, &other.root)
+    }
+
     pub const fn schema(&self) -> SchemaId {
         self.schema
     }
@@ -130,8 +144,8 @@ impl Value {
         &self.shape
     }
 
-    pub const fn data(&self) -> &ValueData {
-        &self.data
+    pub fn data(&self) -> &ValueData {
+        &self.root.data
     }
 
     /// Returns the immutable schema table that validates this detached value.
@@ -180,7 +194,7 @@ impl Value {
         }
         let data = canonical_data_to_rebound_draft(
             source_schema.body(),
-            &self.data,
+            &self.root.data,
             &SnapshotPath::root(),
             schemas,
         )?;
@@ -213,7 +227,7 @@ impl Value {
             .ok_or(SnapshotValueError::UnknownSnapshotSchema {
                 schema: self.schema,
             })?;
-        canonical_data_to_draft(schema.body(), &self.data, &SnapshotPath::root())
+        canonical_data_to_draft(schema.body(), &self.root.data, &SnapshotPath::root())
     }
 
     /// Compact deterministic token computed when the finalized value is
@@ -1453,7 +1467,10 @@ fn finalized_value(
         schema,
         schema_key,
         shape,
-        data,
+        root: Arc::new(FrozenSnapshotStorage {
+            data,
+            _ownership: None,
+        }),
         resident_token,
         schemas,
     }

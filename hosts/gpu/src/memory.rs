@@ -69,7 +69,10 @@ impl ManagedGpuMemory {
             &plan.allocations,
             &plan.arenas,
             plan.demand,
+            0,
             plan.budget_limits,
+            &[],
+            1,
             &plan.budget_violations,
         ))?;
         let realized = domain.materialize(reservation)?;
@@ -286,7 +289,7 @@ impl ManagedGpuMemory {
         let mut frame = self
             .domain
             .acquire_call(&self.realized, &self.host_transfer_writes[index].1)?;
-        frame.with_object_init_writer::<u8, _>(key, |writer| writer.copy_from_slice(source))??;
+        frame.with_object_init_writer::<u8>(key, |writer| writer.copy_from_slice(source))?;
         Ok(frame.with_bytes_mut_prefix(key, source.len() as u64, |target| consume(target))?)
     }
 
@@ -951,9 +954,11 @@ fn push_gpu_allocation(
         id,
         owner,
         role,
+        slot: None,
         space,
         current_bytes: bytes,
         capacity_bytes: bytes,
+        payload_block_capacity: 0,
         alignment,
         lifetime,
         placement: ArenaPlacement { arena, offset: 0 },

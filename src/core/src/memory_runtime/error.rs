@@ -94,6 +94,7 @@ pub enum MemoryRuntimeError {
         object: Option<MemoryObjectId>,
         reason: String,
     },
+    PublicationInProgress,
     PublicationAlreadyCompleted,
     TurnInFlight,
     DeviceLost {

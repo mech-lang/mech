@@ -1,9 +1,43 @@
 use mech_core::{
     AllocationPlan, AllocationRole, ArenaBackingKind, ArenaPlacement, ArenaPlan, CallAccessRequest,
-    ManagedString, MemoryAccessMode, MemoryAccessRegion, MemoryArenaId, MemoryBudgetLimits,
-    MemoryDomain, MemoryLifetime, MemoryObjectId, MemoryObjectOwner, MemoryPlanPoint,
-    MemoryRuntimeError, MemorySpace, ResourceDemand, ReuseGroupId, RuntimePlanView,
+    FunctionInvocation, ManagedCallAccessRequest, ManagedString, MemoryAccessMode,
+    MemoryAccessRegion, MemoryArenaId, MemoryBudgetLimits, MemoryBudgetViolation, MemoryDomain,
+    MemoryLifetime, MemoryObjectId, MemoryObjectOwner, MemoryPlanPoint, MemoryPlanRevision,
+    MemoryRuntimeError, MemorySpace, ResourceDemand, ReuseGroupId, RuntimePlanView, ValueCell,
 };
+
+#[test]
+fn owned_cell_session_close_revokes_cell_access_but_not_detached_snapshot() {
+    let domain = MemoryDomain::new().unwrap();
+    let cell = mech_core::ValueCell::from_exact_in(&domain, 41_u64).unwrap();
+    let snapshot = cell.snapshot().unwrap();
+
+    domain.close().unwrap();
+
+    assert!(cell.snapshot().is_err());
+    assert!(matches!(snapshot.data(), mech_core::ValueData::U64(41)));
+}
+
+fn runtime_plan_view<'a>(
+    revision: MemoryPlanRevision,
+    allocations: &'a [AllocationPlan],
+    arenas: &'a [ArenaPlan],
+    demand: ResourceDemand,
+    limits: MemoryBudgetLimits,
+    violations: &'a [MemoryBudgetViolation],
+) -> RuntimePlanView<'a> {
+    RuntimePlanView::new(
+        revision,
+        allocations,
+        arenas,
+        demand,
+        0,
+        limits,
+        &[],
+        64,
+        violations,
+    )
+}
 
 fn allocation(id: u32, offset: u64, lifetime: MemoryLifetime) -> AllocationPlan {
     AllocationPlan {
@@ -13,9 +47,13 @@ fn allocation(id: u32, offset: u64, lifetime: MemoryLifetime) -> AllocationPlan 
             ordinal: 0,
         },
         role: AllocationRole::Scratch,
+        slot: Some(mech_core::PlannedSlotKind::FixedScalar(
+            mech_core::ScalarMemoryKind::Unsigned(mech_core::IntegerWidth::W64),
+        )),
         space: MemorySpace::Host,
         current_bytes: 8,
         capacity_bytes: 8,
+        payload_block_capacity: 0,
         alignment: 8,
         lifetime,
         placement: ArenaPlacement {
@@ -32,8 +70,10 @@ fn payload_owner_outlives_domain_and_close_revokes_growth() {
     let revision = domain.issue_plan_revision().unwrap();
     let mut payload = allocation(0, 0, MemoryLifetime::Activation);
     payload.role = AllocationRole::VariablePayload;
+    payload.slot = None;
     payload.current_bytes = 0;
     payload.capacity_bytes = 8;
+    payload.payload_block_capacity = 1;
     payload.alignment = 1;
     let payload_arena = ArenaPlan {
         id: MemoryArenaId::new(0),
@@ -46,7 +86,7 @@ fn payload_owner_outlives_domain_and_close_revokes_growth() {
     let realized = domain
         .materialize(
             domain
-                .prepare_realization(RuntimePlanView::new(
+                .prepare_realization(runtime_plan_view(
                     revision,
                     &[payload],
                     &[payload_arena],
@@ -73,14 +113,62 @@ fn payload_owner_outlives_domain_and_close_revokes_growth() {
 }
 
 #[test]
-fn initializer_marks_only_successfully_constructed_prefix() {
+fn equal_size_scalar_types_cannot_open_each_others_planned_slots() {
+    let domain = MemoryDomain::new().unwrap();
+    let cell = ValueCell::from_exact_in(&domain, 0.0_f64).unwrap();
+    let port = FunctionInvocation::nullary(cell)
+        .output()
+        .try_managed::<f64>()
+        .unwrap();
+    let revision = domain.issue_plan_revision().unwrap();
+    let allocations = [allocation(0, 0, MemoryLifetime::Activation)];
+    let realized = domain
+        .materialize(
+            domain
+                .prepare_realization(runtime_plan_view(
+                    revision,
+                    &allocations,
+                    &[arena(&[0], 8)],
+                    ResourceDemand::default(),
+                    MemoryBudgetLimits::default(),
+                    &[],
+                ))
+                .unwrap(),
+        )
+        .unwrap();
+    let object = domain
+        .plan_object_key(revision, MemoryObjectId::new(0))
+        .unwrap();
+    let prepared = domain
+        .prepare_managed_call(
+            &realized,
+            &[ManagedCallAccessRequest::new(
+                port,
+                object,
+                MemoryAccessMode::Write,
+                MemoryAccessRegion::Contiguous {
+                    offset_bytes: 0,
+                    length_bytes: 8,
+                },
+            )],
+        )
+        .unwrap();
+    let mut frame = domain.acquire_call(&realized, &prepared).unwrap();
+    assert!(matches!(
+        frame.with_port_init_writer(port, |writer| writer.write_next(1.0)),
+        Err(MemoryRuntimeError::InvalidLayout { .. })
+    ));
+}
+
+#[test]
+fn initializer_marks_nothing_when_its_callback_returns_an_error() {
     let domain = MemoryDomain::new().unwrap();
     let revision = domain.issue_plan_revision().unwrap();
     let allocations = [allocation(0, 0, MemoryLifetime::Activation)];
     let realized = domain
         .materialize(
             domain
-                .prepare_realization(RuntimePlanView::new(
+                .prepare_realization(runtime_plan_view(
                     revision,
                     &allocations,
                     &[arena(&[0], 8)],
@@ -106,21 +194,19 @@ fn initializer_marks_only_successfully_constructed_prefix() {
         .unwrap();
     let mut frame = domain.acquire_call(&realized, &write).unwrap();
     frame
-        .with_object_init_writer::<u8, _>(object, |_writer| ())
+        .with_object_init_writer::<u8>(object, |_writer| Ok(()))
         .unwrap();
     drop(frame);
     assert_eq!(realized.binding(object).unwrap().initialized_bytes(), 0);
 
     let mut frame = domain.acquire_call(&realized, &write).unwrap();
-    let injected = frame
-        .with_object_init_writer::<u8, _>(object, |writer| {
-            writer.write_next(7)?;
-            Err::<(), _>(MemoryRuntimeError::DomainClosed)
-        })
-        .unwrap();
+    let injected = frame.with_object_init_writer::<u8>(object, |writer| {
+        writer.write_next(7)?;
+        Err::<(), _>(MemoryRuntimeError::DomainClosed)
+    });
     assert!(matches!(injected, Err(MemoryRuntimeError::DomainClosed)));
     drop(frame);
-    assert_eq!(realized.binding(object).unwrap().initialized_bytes(), 1);
+    assert_eq!(realized.binding(object).unwrap().initialized_bytes(), 0);
     assert!(matches!(
         domain.prepare_call(
             &realized,
@@ -130,6 +216,92 @@ fn initializer_marks_only_successfully_constructed_prefix() {
                 region: MemoryAccessRegion::WholeInitialized,
             }],
         ),
+        Err(MemoryRuntimeError::UninitializedAccess { .. })
+    ));
+}
+
+#[test]
+fn initialization_tracking_does_not_authorize_stride_gaps() {
+    let domain = MemoryDomain::new().unwrap();
+    let revision = domain.issue_plan_revision().unwrap();
+    let allocations = [allocation(0, 0, MemoryLifetime::Activation)];
+    let realized = domain
+        .materialize(
+            domain
+                .prepare_realization(runtime_plan_view(
+                    revision,
+                    &allocations,
+                    &[arena(&[0], 8)],
+                    ResourceDemand::default(),
+                    MemoryBudgetLimits::default(),
+                    &[],
+                ))
+                .unwrap(),
+        )
+        .unwrap();
+    let object = domain
+        .plan_object_key(revision, MemoryObjectId::new(0))
+        .unwrap();
+
+    for offset in [0, 2] {
+        let write = domain
+            .prepare_call(
+                &realized,
+                &[CallAccessRequest {
+                    object,
+                    mode: MemoryAccessMode::Write,
+                    region: MemoryAccessRegion::Contiguous {
+                        offset_bytes: offset,
+                        length_bytes: 1,
+                    },
+                }],
+            )
+            .unwrap();
+        domain
+            .acquire_call(&realized, &write)
+            .unwrap()
+            .with_object_init_writer::<u8>(object, |writer| writer.write_next(offset as u8 + 1))
+            .unwrap();
+    }
+
+    let strided = MemoryAccessRegion::Strided {
+        offset_bytes: 0,
+        count: 2,
+        stride_bytes: 2,
+        element_bytes: 1,
+    };
+    let strided_read = domain
+        .prepare_call(
+            &realized,
+            &[CallAccessRequest {
+                object,
+                mode: MemoryAccessMode::Read,
+                region: strided,
+            }],
+        )
+        .unwrap();
+    let frame = domain.acquire_call(&realized, &strided_read).unwrap();
+    assert!(matches!(
+        frame.with_bytes(object, |_| ()),
+        Err(MemoryRuntimeError::InvalidLayout { .. })
+    ));
+    drop(frame);
+
+    let gap_read = domain
+        .prepare_call(
+            &realized,
+            &[CallAccessRequest {
+                object,
+                mode: MemoryAccessMode::Read,
+                region: MemoryAccessRegion::Contiguous {
+                    offset_bytes: 0,
+                    length_bytes: 3,
+                },
+            }],
+        )
+        .unwrap();
+    assert!(matches!(
+        domain.acquire_call(&realized, &gap_read),
         Err(MemoryRuntimeError::UninitializedAccess { .. })
     ));
 }
@@ -159,7 +331,7 @@ fn invalid_alias_construction_is_rejected_before_materialization() {
         allocation(1, 0, MemoryLifetime::Activation),
     ];
     assert!(matches!(
-        domain.prepare_realization(RuntimePlanView::new(
+        domain.prepare_realization(runtime_plan_view(
             revision,
             &allocations,
             &[arena(&[0, 1], 8)],
@@ -183,7 +355,7 @@ fn a_lease_cannot_observe_a_reused_region_outside_its_lifetime() {
     let realized = domain
         .materialize(
             domain
-                .prepare_realization(RuntimePlanView::new(
+                .prepare_realization(runtime_plan_view(
                     revision,
                     &allocations,
                     &[arena(&[0], 8)],
@@ -214,10 +386,9 @@ fn a_lease_cannot_observe_a_reused_region_outside_its_lifetime() {
     let _scope = domain.enter_plan_point(MemoryPlanPoint::new(1)).unwrap();
     let mut frame = domain.acquire_call(&realized, &prepared).unwrap();
     frame
-        .with_object_init_writer::<u8, _>(object, |writer| {
+        .with_object_init_writer::<u8>(object, |writer| {
             writer.copy_from_slice(&7_u64.to_ne_bytes())
         })
-        .unwrap()
         .unwrap();
     frame
         .with_bytes(object, |bytes| assert_eq!(bytes, 7_u64.to_ne_bytes()))
@@ -232,7 +403,7 @@ fn unwind_releases_every_scoped_lease() {
     let realized = domain
         .materialize(
             domain
-                .prepare_realization(RuntimePlanView::new(
+                .prepare_realization(runtime_plan_view(
                     revision,
                     &allocations,
                     &[arena(&[0], 8)],
@@ -289,7 +460,7 @@ fn region_reuse_revokes_the_previous_incarnation_and_waits_for_leases() {
     let realized = domain
         .materialize(
             domain
-                .prepare_realization(RuntimePlanView::new(
+                .prepare_realization(runtime_plan_view(
                     revision,
                     &[first_allocation, second_allocation],
                     &[arena(&[0, 1], 8)],

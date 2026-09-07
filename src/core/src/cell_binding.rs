@@ -7,8 +7,8 @@
 use crate::{
     CardinalitySpec, DimensionExpr, FloatWidth, FunctionMatrixElement,
     FunctionMatrixRepresentation, FunctionMatrixStoragePattern, FunctionRuntimeType,
-    FunctionValueRepresentation, IntegerWidth, MResult, MechError, MechErrorKind, Ref,
-    ResolvedType, Schema, SchemaBody, SchemaId, SchemaKey, SchemaTable, SchemaTableBuilder,
+    FunctionValueRepresentation, IntegerWidth, MResult, MechError, MechErrorKind, MemoryDomain,
+    Ref, ResolvedType, Schema, SchemaBody, SchemaId, SchemaKey, SchemaTable, SchemaTableBuilder,
     ShapeInstance, SnapshotValueError, TypeConstraintFailure, TypeResolutionError, Value,
     ValueData, ValueDataDraft, ValueDraft,
 };
@@ -82,6 +82,7 @@ pub(crate) struct CellRecord {
     pub(crate) schema: SchemaId,
     pub(crate) schema_key: SchemaKey,
     pub(crate) schemas: Rc<SchemaTable>,
+    publication_locked: cell::Cell<bool>,
     published: cell::RefCell<PublishedCellState>,
 }
 
@@ -94,14 +95,43 @@ struct PublishedCellState {
 /// Physical backing authority for one published logical cell value during the
 /// first stable-record cutover. Managed variants are added with the planned
 /// payload realization checkpoint, once their adapters can be constructed.
+#[derive(Clone)]
 enum CellStorageBinding {
+    ManagedHost {
+        owner: MemoryDomain,
+        storage: Rc<dyn ErasedCellStorage>,
+    },
+    ManagedCanonical {
+        owner: MemoryDomain,
+        storage: Rc<dyn ErasedCellStorage>,
+    },
+    #[expect(
+        dead_code,
+        reason = "backend binding construction is completed by the R6 backend cutover checkpoint"
+    )]
+    ManagedDevice {
+        owner: MemoryDomain,
+        storage: Rc<dyn ErasedCellStorage>,
+    },
     PinnedExternal(Rc<dyn ErasedCellStorage>),
 }
 
 impl CellStorageBinding {
     fn adapter(&self) -> &Rc<dyn ErasedCellStorage> {
         match self {
-            Self::PinnedExternal(adapter) => adapter,
+            Self::ManagedHost { storage, .. }
+            | Self::ManagedCanonical { storage, .. }
+            | Self::ManagedDevice { storage, .. } => storage,
+            Self::PinnedExternal(storage) => storage,
+        }
+    }
+
+    fn owner(&self) -> Option<&MemoryDomain> {
+        match self {
+            Self::ManagedHost { owner, .. }
+            | Self::ManagedCanonical { owner, .. }
+            | Self::ManagedDevice { owner, .. } => Some(owner),
+            Self::PinnedExternal(_) => None,
         }
     }
 }
@@ -123,6 +153,33 @@ impl core::ops::Deref for CellBinding {
 }
 
 impl CellBinding {
+    fn managed(
+        identity: CanonicalCellId,
+        schema: SchemaId,
+        schema_key: SchemaKey,
+        shape: ShapeInstance,
+        schemas: Rc<SchemaTable>,
+        owner: MemoryDomain,
+        storage: CellStorageBinding,
+    ) -> Self {
+        debug_assert_eq!(storage.owner().map(MemoryDomain::id), Some(owner.id()));
+        Self {
+            record: Rc::new(CellRecord {
+                identity,
+                schema,
+                schema_key,
+                schemas,
+                publication_locked: cell::Cell::new(false),
+                published: cell::RefCell::new(PublishedCellState {
+                    shape,
+                    version: crate::PublishedValueVersion::initial(),
+                    storage,
+                }),
+            }),
+            compiler_children: None,
+        }
+    }
+
     fn pinned_external(
         identity: CanonicalCellId,
         schema: SchemaId,
@@ -137,6 +194,7 @@ impl CellBinding {
                 schema,
                 schema_key,
                 schemas,
+                publication_locked: cell::Cell::new(false),
                 published: cell::RefCell::new(PublishedCellState {
                     shape,
                     version: crate::PublishedValueVersion::initial(),
@@ -159,14 +217,27 @@ impl CellBinding {
     }
 
     fn storage(&self) -> MResult<Rc<dyn ErasedCellStorage>> {
-        self.published
+        if self.publication_locked.get() {
+            return Err(MechError::from(
+                crate::MemoryRuntimeError::PublicationInProgress,
+            ));
+        }
+        let published = self
+            .published
             .try_borrow()
-            .map(|published| published.storage.adapter().clone())
-            .map_err(|_| borrow_conflict(CellAccess::Snapshot))
+            .map_err(|_| borrow_conflict(CellAccess::Snapshot))?;
+        if let Some(owner) = published.storage.owner() {
+            owner.ensure_open().map_err(MechError::from)?;
+        }
+        Ok(published.storage.adapter().clone())
     }
 
     fn publication_version(&self) -> crate::PublishedValueVersion {
         self.published.borrow().version
+    }
+
+    fn memory_domain(&self) -> Option<MemoryDomain> {
+        self.published.borrow().storage.owner().cloned()
     }
 }
 
@@ -192,11 +263,12 @@ pub(crate) struct DetachedCellStorage {
     pub storage: Rc<dyn ErasedCellStorage>,
 }
 
-pub(crate) struct PreparedCellReplacement {
+pub(crate) struct PreparedManagedCellBinding {
     pub(crate) cell: ValueCell,
-    pub(crate) before: Value,
-    pub(crate) before_version: crate::PublishedValueVersion,
-    pub(crate) next: Value,
+    pub(crate) expected_version: crate::PublishedValueVersion,
+    pub(crate) next_shape: Option<ShapeInstance>,
+    next_storage: Option<CellStorageBinding>,
+    pub(crate) changed: bool,
 }
 
 struct ExactCellStorage<T> {
@@ -408,8 +480,16 @@ impl ValueCell {
     where
         T: CanonicalCellBacking,
     {
+        Self::from_exact_in(&MemoryDomain::new().map_err(MechError::from)?, value)
+    }
+
+    /// Constructs an owned exact cell in an existing execution session.
+    pub fn from_exact_in<T>(owner: &MemoryDomain, value: T) -> MResult<Self>
+    where
+        T: CanonicalCellBacking,
+    {
         let matrix_extents = canonical_cell_sealed::Sealed::matrix_extents(&value);
-        Self::from_inferred_ref(Ref::new(value), matrix_extents)
+        Self::from_inferred_ref_in(owner, Ref::new(value), matrix_extents)
     }
 
     /// Constructs a standalone canonical matrix cell from an exact backing.
@@ -421,7 +501,11 @@ impl ValueCell {
     where
         T: CanonicalCellBacking,
     {
-        Self::from_inferred_ref(reference, Some((rows, columns)))
+        Self::from_inferred_ref_in(
+            &MemoryDomain::new().map_err(MechError::from)?,
+            reference,
+            Some((rows, columns)),
+        )
     }
 
     /// Constructs a fresh exact backing for a declared runtime output.
@@ -668,10 +752,26 @@ impl ValueCell {
 
     pub fn from_value(value: Value, schemas: Rc<SchemaTable>) -> MResult<Self> {
         let value = rebind_value(value, schemas.as_ref())?;
-        Self::from_bound_value(value, schemas)
+        Self::from_bound_value_in(
+            &MemoryDomain::new().map_err(MechError::from)?,
+            value,
+            schemas,
+        )
     }
 
     fn from_bound_value(value: Value, schemas: Rc<SchemaTable>) -> MResult<Self> {
+        Self::from_bound_value_in(
+            &MemoryDomain::new().map_err(MechError::from)?,
+            value,
+            schemas,
+        )
+    }
+
+    fn from_bound_value_in(
+        owner: &MemoryDomain,
+        value: Value,
+        schemas: Rc<SchemaTable>,
+    ) -> MResult<Self> {
         let schema = value.schema();
         let schema_key = value.schema_key();
         let shape = value.shape().clone();
@@ -683,13 +783,17 @@ impl ValueCell {
         let reference = Ref::new(value);
         let identity = reference.reactive_cell_id();
         let cell = Self {
-            binding: CellBinding::pinned_external(
+            binding: CellBinding::managed(
                 identity,
                 schema,
                 schema_key,
                 shape,
                 schemas,
-                Rc::new(ExactCellStorage { reference }),
+                owner.clone(),
+                CellStorageBinding::ManagedCanonical {
+                    owner: owner.clone(),
+                    storage: Rc::new(ExactCellStorage { reference }),
+                },
             ),
         };
         cell.validate_storage_contract()?;
@@ -700,11 +804,15 @@ impl ValueCell {
     /// Creates a mutable cell from a detached canonical value and the schema
     /// context retained by that value.
     pub fn from_snapshot(value: Value) -> MResult<Self> {
+        Self::from_snapshot_in(&MemoryDomain::new().map_err(MechError::from)?, value)
+    }
+
+    pub fn from_snapshot_in(owner: &MemoryDomain, value: Value) -> MResult<Self> {
         let schemas = value.schemas().ok_or_else(|| {
             MechError::new(ValueSchemaContextUnavailable, None).with_compiler_loc()
         })?;
         value.validate_against(&schemas).map_err(snapshot_failure)?;
-        Self::from_runtime_value(value, Rc::new((*schemas).clone()))
+        Self::from_bound_value_in(owner, value, Rc::new((*schemas).clone()))
     }
 
     /// Constructs an empty standalone set whose element schema is closed and
@@ -1290,7 +1398,23 @@ impl ValueCell {
         Self::from_bound_value(value, schemas)
     }
 
+    #[cfg(test)]
     pub(crate) fn from_inferred_ref<T>(
+        reference: Ref<T>,
+        matrix_extents: Option<(usize, usize)>,
+    ) -> MResult<Self>
+    where
+        T: CanonicalCellBacking,
+    {
+        Self::from_inferred_ref_in(
+            &MemoryDomain::new().map_err(MechError::from)?,
+            reference,
+            matrix_extents,
+        )
+    }
+
+    pub(crate) fn from_inferred_ref_in<T>(
+        owner: &MemoryDomain,
         reference: Ref<T>,
         matrix_extents: Option<(usize, usize)>,
     ) -> MResult<Self>
@@ -1322,12 +1446,48 @@ impl ValueCell {
                 )?,
                 _ => unreachable!("dynamic matrix representations were matched above"),
             };
-            return Self::from_ref(reference, schema, shape, schemas);
+            return Self::from_owned_ref_in(owner, reference, schema, shape, schemas);
         }
         let body = schema_body_for_representation(T::REPRESENTATION, matrix_extents)
             .ok_or_else(|| backing_mismatch::<T>(T::REPRESENTATION))?;
         let (schema, shape, schemas) = standalone_schema(body)?;
-        Self::from_ref(reference, schema, shape, schemas)
+        Self::from_owned_ref_in(owner, reference, schema, shape, schemas)
+    }
+
+    fn from_owned_ref_in<T>(
+        owner: &MemoryDomain,
+        reference: Ref<T>,
+        schema: SchemaId,
+        shape: ShapeInstance,
+        schemas: Rc<SchemaTable>,
+    ) -> MResult<Self>
+    where
+        T: CanonicalCellBacking,
+    {
+        let schema_key = schemas
+            .entry(schema)
+            .map(|entry| entry.key())
+            .ok_or_else(|| {
+                snapshot_failure(SnapshotValueError::UnknownSnapshotSchema { schema })
+            })?;
+        let identity = reference.reactive_cell_id();
+        let cell = Self {
+            binding: CellBinding::managed(
+                identity,
+                schema,
+                schema_key,
+                shape,
+                schemas,
+                owner.clone(),
+                CellStorageBinding::ManagedHost {
+                    owner: owner.clone(),
+                    storage: Rc::new(ExactCellStorage { reference }),
+                },
+            ),
+        };
+        cell.validate_storage_contract()?;
+        cell.snapshot()?;
+        Ok(cell)
     }
 
     pub(crate) fn from_inferred_value_data(
@@ -1474,6 +1634,9 @@ impl ValueCell {
             .published
             .try_borrow_mut()
             .map_err(|_| borrow_conflict(CellAccess::Replace))?;
+        if let Some(owner) = published.storage.owner() {
+            owner.ensure_open().map_err(MechError::from)?;
+        }
         let current_shape = published.shape.clone();
         let schema = self
             .binding
@@ -1503,8 +1666,28 @@ impl ValueCell {
         Ok(())
     }
 
-    pub(crate) fn prepare_replacement(&self, value: &Value) -> MResult<PreparedCellReplacement> {
-        self.preflight_replace()?;
+    pub(crate) fn prepare_managed_binding(
+        &self,
+        owner: &MemoryDomain,
+        value: &Value,
+        changed: bool,
+    ) -> MResult<PreparedManagedCellBinding> {
+        let cell_owner = self.binding.memory_domain().ok_or_else(|| {
+            MechError::from(crate::MemoryRuntimeError::CandidateValidationFailed {
+                object: None,
+                reason: "pinned external cells require an explicit fixed-copy publication adapter"
+                    .into(),
+            })
+        })?;
+        if cell_owner.id() != owner.id() {
+            return Err(MechError::from(
+                crate::MemoryRuntimeError::WrongMemoryDomain {
+                    expected: cell_owner.id(),
+                    actual: owner.id(),
+                },
+            ));
+        }
+        owner.ensure_open().map_err(MechError::from)?;
         if value.schema_key() != self.binding.schema_key {
             return Err(MechError::new(
                 ValueCellSchemaMismatch {
@@ -1516,16 +1699,24 @@ impl ValueCell {
             .with_compiler_loc());
         }
         let next = rebind_value(value.clone(), self.binding.schemas.as_ref())?;
-        let current_shape = self.binding.try_shape(CellAccess::Snapshot)?.clone();
+        let published = self
+            .binding
+            .published
+            .try_borrow()
+            .map_err(|_| borrow_conflict(CellAccess::Replace))?;
         let schema = self
             .binding
             .schemas
             .get(self.binding.schema)
             .expect("value-cell schema remains present");
-        if !shape_change_allowed(schema, &current_shape, next.shape()) {
+        if !shape_change_allowed(schema, &published.shape, next.shape()) {
             return Err(MechError::new(
                 ValueCellShapeMismatch {
-                    expected: current_shape.parameter_values().to_vec().into_boxed_slice(),
+                    expected: published
+                        .shape
+                        .parameter_values()
+                        .to_vec()
+                        .into_boxed_slice(),
                     actual: next.shape().parameter_values().to_vec().into_boxed_slice(),
                 },
                 None,
@@ -1534,30 +1725,69 @@ impl ValueCell {
         }
         next.validate_against(&self.binding.schemas)
             .map_err(snapshot_failure)?;
-        let validation = self.detached_clone()?;
-        validation.replace(&next)?;
-        Ok(PreparedCellReplacement {
+        let next_shape = next.shape().clone();
+        let storage = Rc::new(ExactCellStorage {
+            reference: Ref::new(next),
+        });
+        Ok(PreparedManagedCellBinding {
             cell: self.clone(),
-            before: self.snapshot()?,
-            before_version: self.published_version(),
-            next,
+            expected_version: published.version,
+            next_shape: Some(next_shape),
+            next_storage: Some(CellStorageBinding::ManagedCanonical {
+                owner: owner.clone(),
+                storage,
+            }),
+            changed,
         })
     }
 
-    pub(crate) fn apply_prepared_replacement(
+    pub(crate) fn lock_publication(
         &self,
-        value: &Value,
-        version: crate::PublishedValueVersion,
+        expected_version: crate::PublishedValueVersion,
     ) -> MResult<()> {
-        let mut published = self
+        if self.binding.publication_locked.replace(true) {
+            return Err(MechError::from(
+                crate::MemoryRuntimeError::PublicationInProgress,
+            ));
+        }
+        let valid = self
             .binding
             .published
             .try_borrow_mut()
-            .map_err(|_| borrow_conflict(CellAccess::Replace))?;
-        published.storage.adapter().replace(value)?;
-        published.shape = value.shape().clone();
-        published.version = version;
+            .is_ok_and(|published| published.version == expected_version);
+        if !valid {
+            self.binding.publication_locked.set(false);
+            return Err(MechError::from(
+                crate::MemoryRuntimeError::CandidateValidationFailed {
+                    object: None,
+                    reason: "cell publication version changed after preparation".into(),
+                },
+            ));
+        }
         Ok(())
+    }
+
+    pub(crate) fn unlock_publication(&self) {
+        self.binding.publication_locked.set(false);
+    }
+
+    pub(crate) fn install_managed_binding(
+        &self,
+        prepared: &mut PreparedManagedCellBinding,
+        version: crate::PublishedValueVersion,
+    ) {
+        debug_assert!(self.same_logical_cell(&prepared.cell));
+        let mut published = self.binding.published.borrow_mut();
+        published.storage = prepared
+            .next_storage
+            .take()
+            .expect("ready publication owns one candidate storage");
+        published.shape = prepared
+            .next_shape
+            .take()
+            .expect("ready publication owns one candidate shape");
+        published.version = version;
+        self.binding.publication_locked.set(false);
     }
 
     /// Verifies that the cell can be mutably borrowed for a later atomic
@@ -1568,7 +1798,14 @@ impl ValueCell {
             .published
             .try_borrow_mut()
             .map_err(|_| borrow_conflict(CellAccess::Replace))?;
+        if let Some(owner) = published.storage.owner() {
+            owner.ensure_open().map_err(MechError::from)?;
+        }
         published.storage.adapter().preflight_replace()
+    }
+
+    pub fn memory_domain(&self) -> Option<MemoryDomain> {
+        self.binding.memory_domain()
     }
 
     pub fn same_logical_cell(&self, other: &Self) -> bool {

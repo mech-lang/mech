@@ -85,9 +85,11 @@ pub fn plan_compute_memory(
                 id: MemoryObjectId::new(ordinal),
                 owner: MemoryObjectOwner::Transfer { ordinal },
                 role: AllocationRole::TransferStage,
+                slot: None,
                 space: transfer.destination,
                 current_bytes: transfer.current_bytes,
                 capacity_bytes: transfer.capacity_bytes,
+                payload_block_capacity: 0,
                 alignment: 4,
                 lifetime: transfer.lifetime,
                 placement: ArenaPlacement {

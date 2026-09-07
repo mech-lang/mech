@@ -77,9 +77,11 @@ pub(crate) fn remap_call_allocations(
                     id,
                     owner,
                     role: allocation.role,
+                    slot: allocation.slot,
                     space: allocation.space,
                     current_bytes: allocation.current_bytes,
                     capacity_bytes: allocation.capacity_bytes,
+                    payload_block_capacity: allocation.payload_block_capacity,
                     alignment: allocation.alignment,
                     lifetime: match allocation.lifetime {
                         MemoryLifetime::Transaction { .. } => {

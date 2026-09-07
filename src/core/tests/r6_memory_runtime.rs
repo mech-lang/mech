@@ -6,10 +6,32 @@ use mech_core::{
     CellPublicationCandidate, FunctionInvocation, KernelMemoryFrame, ManagedCallAccessRequest,
     ManagedFunctionInstance, ManagedMechFunctionImpl, ManagedPort, ManagedSequence, ManagedString,
     MechExecutionServices, MemoryAccessMode, MemoryAccessRegion, MemoryArenaId, MemoryBudgetLimits,
-    MemoryDomain, MemoryLifetime, MemoryObjectId, MemoryObjectOwner, MemoryPlanPoint,
-    MemoryRuntimeError, MemorySpace, NoMechExecutionServices, PublicationCandidate,
-    ReactiveSolveStatus, ResourceDemand, ReuseGroupId, RuntimeBinding, RuntimePlanView, ValueCell,
+    MemoryBudgetViolation, MemoryDomain, MemoryLifetime, MemoryObjectId, MemoryObjectOwner,
+    MemoryPlanPoint, MemoryPlanRevision, MemoryRuntimeError, MemorySpace, NoMechExecutionServices,
+    PublicationCandidate, ReactiveSolveStatus, ResourceDemand, ReuseGroupId, RuntimeBinding,
+    RuntimePlanView, ValueCell,
 };
+
+fn runtime_plan_view<'a>(
+    revision: MemoryPlanRevision,
+    allocations: &'a [AllocationPlan],
+    arenas: &'a [ArenaPlan],
+    demand: ResourceDemand,
+    limits: MemoryBudgetLimits,
+    violations: &'a [MemoryBudgetViolation],
+) -> RuntimePlanView<'a> {
+    RuntimePlanView::new(
+        revision,
+        allocations,
+        arenas,
+        demand,
+        0,
+        limits,
+        &[],
+        64,
+        violations,
+    )
+}
 
 fn allocation(
     id: u32,
@@ -28,9 +50,13 @@ fn allocation(
             port: id as u16,
         },
         role: AllocationRole::FixedStorage,
+        slot: Some(mech_core::PlannedSlotKind::FixedScalar(
+            mech_core::ScalarMemoryKind::Unsigned(mech_core::IntegerWidth::W64),
+        )),
         space: MemorySpace::Host,
         current_bytes: current,
         capacity_bytes: capacity,
+        payload_block_capacity: 0,
         alignment: 8,
         lifetime,
         placement: ArenaPlacement {
@@ -39,6 +65,21 @@ fn allocation(
         },
         reuse_group: reuse_group.map(ReuseGroupId::new),
     }
+}
+
+fn f64_allocation(
+    id: u32,
+    arena: u32,
+    offset: u64,
+    current: u64,
+    capacity: u64,
+    lifetime: MemoryLifetime,
+) -> AllocationPlan {
+    let mut allocation = allocation(id, arena, offset, current, capacity, lifetime, None);
+    allocation.slot = Some(mech_core::PlannedSlotKind::FixedScalar(
+        mech_core::ScalarMemoryKind::Floating(mech_core::FloatWidth::W64),
+    ));
+    allocation
 }
 
 fn arena(id: u32, backing: ArenaBackingKind, capacity: u64, members: &[u32]) -> ArenaPlan {
@@ -65,7 +106,7 @@ fn reservations_are_finite_and_release_unused_authority() {
     let arenas = [arena(0, ArenaBackingKind::ContiguousBytes, 64, &[0])];
     {
         let reservation = domain
-            .prepare_realization(RuntimePlanView::new(
+            .prepare_realization(runtime_plan_view(
                 revision,
                 &allocations,
                 &arenas,
@@ -74,10 +115,44 @@ fn reservations_are_finite_and_release_unused_authority() {
                 &[],
             ))
             .unwrap();
-        assert_eq!(reservation.reserved_bytes(), 64);
-        assert_eq!(domain.ledger().reserved_bytes, 64);
+        assert_eq!(reservation.reserved_bytes(), 72);
+        assert_eq!(domain.ledger().reserved_bytes, 72);
         assert_eq!(domain.ledger().active_reservations, 1);
     }
+    assert_eq!(domain.ledger().reserved_bytes, 0);
+    assert_eq!(domain.ledger().active_reservations, 0);
+}
+
+#[test]
+fn realization_recomputes_budget_instead_of_trusting_cached_violations() {
+    let domain = MemoryDomain::new().unwrap();
+    let revision = domain.issue_plan_revision().unwrap();
+    let allocations = [allocation(0, 0, 0, 0, 8, MemoryLifetime::Activation, None)];
+    let arenas = [arena(0, ArenaBackingKind::ContiguousBytes, 8, &[0])];
+    let demand = ResourceDemand {
+        turn_peak_bytes: 17,
+        ..ResourceDemand::default()
+    };
+    let limits = MemoryBudgetLimits {
+        max_temporary_bytes: Some(16),
+        ..MemoryBudgetLimits::default()
+    };
+
+    assert!(matches!(
+        domain.prepare_realization(runtime_plan_view(
+            revision,
+            &allocations,
+            &arenas,
+            demand,
+            limits,
+            &[],
+        )),
+        Err(MemoryRuntimeError::BudgetExceeded {
+            requested: 17,
+            limit: 16,
+            ..
+        })
+    ));
     assert_eq!(domain.ledger().reserved_bytes, 0);
     assert_eq!(domain.ledger().active_reservations, 0);
 }
@@ -89,7 +164,7 @@ fn realization_tracks_initialization_and_scoped_access() {
     let allocations = [allocation(0, 0, 0, 8, 64, MemoryLifetime::Activation, None)];
     let arenas = [arena(0, ArenaBackingKind::ContiguousBytes, 64, &[0])];
     let reservation = domain
-        .prepare_realization(RuntimePlanView::new(
+        .prepare_realization(runtime_plan_view(
             revision,
             &allocations,
             &arenas,
@@ -137,10 +212,7 @@ fn realization_tracks_initialization_and_scoped_access() {
     domain
         .acquire_call(&realized, &write)
         .unwrap()
-        .with_object_init_writer::<u8, _>(key, |writer| {
-            writer.copy_from_slice(&42_u64.to_ne_bytes())
-        })
-        .unwrap()
+        .with_object_init_writer::<u8>(key, |writer| writer.copy_from_slice(&42_u64.to_ne_bytes()))
         .unwrap();
     assert_eq!(realized.binding(key).unwrap().initialized_bytes(), 8);
 
@@ -182,7 +254,7 @@ fn logical_managed_ports_resolve_only_inside_the_prepared_lease_scope() {
     let realized = domain
         .materialize(
             domain
-                .prepare_realization(RuntimePlanView::new(
+                .prepare_realization(runtime_plan_view(
                     revision,
                     &allocations,
                     &arenas,
@@ -213,7 +285,6 @@ fn logical_managed_ports_resolve_only_inside_the_prepared_lease_scope() {
     let mut frame = domain.acquire_call(&realized, &prepared).unwrap();
     frame
         .with_port_init_writer(port, |writer| writer.write_next(17))
-        .unwrap()
         .unwrap();
     drop(frame);
 
@@ -286,7 +357,7 @@ fn managed_function_entry_executes_only_through_its_complete_frame() {
             _: &mut dyn MechExecutionServices,
         ) -> mech_core::MResult<ReactiveSolveStatus> {
             let value = frame.with_port_slice(self.input, |values| values[0])?;
-            frame.with_port_init_writer(self.output, |writer| writer.write_next(value * 2))??;
+            frame.with_port_init_writer(self.output, |writer| writer.write_next(value * 2))?;
             Ok(ReactiveSolveStatus::Changed)
         }
     }
@@ -308,7 +379,7 @@ fn managed_function_entry_executes_only_through_its_complete_frame() {
     let realized = domain
         .materialize(
             domain
-                .prepare_realization(RuntimePlanView::new(
+                .prepare_realization(runtime_plan_view(
                     revision,
                     &allocations,
                     &arenas,
@@ -343,7 +414,6 @@ fn managed_function_entry_executes_only_through_its_complete_frame() {
         .acquire_call(&realized, &initialize)
         .unwrap()
         .with_port_init_writer(input, |writer| writer.write_next(21))
-        .unwrap()
         .unwrap();
     let prepared = domain
         .prepare_managed_call(
@@ -409,7 +479,7 @@ fn bound_dynamic_matrix_consumer_follows_admitted_physical_growth() {
             _: &mut dyn MechExecutionServices,
         ) -> mech_core::MResult<ReactiveSolveStatus> {
             let sum = frame.with_port_slice(self.input, |values| values.iter().sum::<f64>())?;
-            frame.with_port_init_writer(self.output, |writer| writer.write_next(sum))??;
+            frame.with_port_init_writer(self.output, |writer| writer.write_next(sum))?;
             Ok(ReactiveSolveStatus::Changed)
         }
     }
@@ -438,14 +508,14 @@ fn bound_dynamic_matrix_consumer_follows_admitted_physical_growth() {
     let domain = MemoryDomain::new().unwrap();
     let initial_revision = domain.issue_plan_revision().unwrap();
     let initial_allocations = [
-        allocation(0, 0, 0, 16, 16, MemoryLifetime::Activation, None),
-        allocation(1, 0, 16, 0, 8, MemoryLifetime::Activation, None),
+        f64_allocation(0, 0, 0, 16, 16, MemoryLifetime::Activation),
+        f64_allocation(1, 0, 16, 0, 8, MemoryLifetime::Activation),
     ];
     let initial_arenas = [arena(0, ArenaBackingKind::ContiguousBytes, 24, &[0, 1])];
     let initial = domain
         .materialize(
             domain
-                .prepare_realization(RuntimePlanView::new(
+                .prepare_realization(runtime_plan_view(
                     initial_revision,
                     &initial_allocations,
                     &initial_arenas,
@@ -479,14 +549,14 @@ fn bound_dynamic_matrix_consumer_follows_admitted_physical_growth() {
 
     let grown_revision = domain.issue_plan_revision().unwrap();
     let grown_allocations = [
-        allocation(0, 1, 0, 32, 32, MemoryLifetime::Activation, None),
-        allocation(1, 1, 32, 0, 8, MemoryLifetime::Activation, None),
+        f64_allocation(0, 1, 0, 32, 32, MemoryLifetime::Activation),
+        f64_allocation(1, 1, 32, 0, 8, MemoryLifetime::Activation),
     ];
     let grown_arenas = [arena(1, ArenaBackingKind::ContiguousBytes, 40, &[0, 1])];
     let grown = domain
         .materialize(
             domain
-                .prepare_realization(RuntimePlanView::new(
+                .prepare_realization(runtime_plan_view(
                     grown_revision,
                     &grown_allocations,
                     &grown_arenas,
@@ -558,7 +628,7 @@ fn bound_dynamic_matrix_consumer_follows_admitted_physical_growth() {
         ..MemoryBudgetLimits::default()
     };
     assert!(matches!(
-        domain.prepare_realization(RuntimePlanView::new(
+        domain.prepare_realization(runtime_plan_view(
             rejected_revision,
             &rejected_allocations,
             &rejected_arenas,
@@ -604,7 +674,6 @@ fn initialize_managed_f64(
         .acquire_call(realized, &prepared)
         .unwrap()
         .with_port_init_writer(port, |writer| writer.copy_from_slice(values))
-        .unwrap()
         .unwrap();
 }
 
@@ -674,7 +743,7 @@ fn lease_acquisition_is_atomic_and_region_aware() {
     let realized = domain
         .materialize(
             domain
-                .prepare_realization(RuntimePlanView::new(
+                .prepare_realization(runtime_plan_view(
                     revision,
                     &allocations,
                     &arenas,
@@ -708,13 +777,12 @@ fn lease_acquisition_is_atomic_and_region_aware() {
         domain
             .acquire_call(&realized, &write)
             .unwrap()
-            .with_object_init_writer::<u8, _>(key, |writer| {
+            .with_object_init_writer::<u8>(key, |writer| {
                 for _ in 0..8 {
                     writer.write_next(key.object().get() as u8)?;
                 }
                 Ok::<(), MemoryRuntimeError>(())
             })
-            .unwrap()
             .unwrap();
     }
 
@@ -729,7 +797,17 @@ fn lease_acquisition_is_atomic_and_region_aware() {
         )
         .unwrap();
     let reader_one = domain.acquire_call(&realized, &left_read).unwrap();
-    let reader_two = domain.acquire_call(&realized, &left_read).unwrap();
+    let left_read_two = domain
+        .prepare_call(
+            &realized,
+            &[CallAccessRequest {
+                object: left,
+                mode: MemoryAccessMode::Read,
+                region: MemoryAccessRegion::WholeInitialized,
+            }],
+        )
+        .unwrap();
+    let reader_two = domain.acquire_call(&realized, &left_read_two).unwrap();
     let left_write = domain
         .prepare_call(
             &realized,
@@ -768,7 +846,7 @@ fn lease_acquisition_is_atomic_and_region_aware() {
     let empty_realized = empty_domain
         .materialize(
             empty_domain
-                .prepare_realization(RuntimePlanView::new(
+                .prepare_realization(runtime_plan_view(
                     empty_revision,
                     &[allocation(0, 0, 0, 0, 8, MemoryLifetime::Activation, None)],
                     &[arena(0, ArenaBackingKind::ContiguousBytes, 8, &[0])],
@@ -782,15 +860,21 @@ fn lease_acquisition_is_atomic_and_region_aware() {
     let empty_key = empty_domain
         .plan_object_key(empty_revision, MemoryObjectId::new(0))
         .unwrap();
-    assert!(matches!(
-        empty_domain.prepare_call(
+    let gap_write = empty_domain
+        .prepare_call(
             &empty_realized,
             &[CallAccessRequest {
                 object: empty_key,
                 mode: MemoryAccessMode::Write,
                 region: gap,
             }],
-        ),
+        )
+        .unwrap();
+    let mut frame = empty_domain
+        .acquire_call(&empty_realized, &gap_write)
+        .unwrap();
+    assert!(matches!(
+        frame.with_bytes_mut(empty_key, |_| ()),
         Err(MemoryRuntimeError::UninitializedAccess { .. })
     ));
 }
@@ -828,7 +912,7 @@ fn overlapping_regions_require_a_disjoint_lifetime_reuse_group() {
     let arenas = [arena(0, ArenaBackingKind::ContiguousBytes, 32, &[0, 1])];
     assert!(
         domain
-            .prepare_realization(RuntimePlanView::new(
+            .prepare_realization(runtime_plan_view(
                 revision,
                 &allocations,
                 &arenas,
@@ -847,7 +931,7 @@ fn overlapping_regions_require_a_disjoint_lifetime_reuse_group() {
         last: MemoryPlanPoint::new(2),
     };
     assert!(matches!(
-        invalid_domain.prepare_realization(RuntimePlanView::new(
+        invalid_domain.prepare_realization(runtime_plan_view(
             invalid_revision,
             &invalid,
             &arenas,
@@ -893,7 +977,7 @@ fn reused_regions_are_leaseable_only_during_their_declared_plan_interval() {
     let realized = domain
         .materialize(
             domain
-                .prepare_realization(RuntimePlanView::new(
+                .prepare_realization(runtime_plan_view(
                     revision,
                     &allocations,
                     &arenas,
@@ -943,13 +1027,12 @@ fn reused_regions_are_leaseable_only_during_their_declared_plan_interval() {
         domain
             .acquire_call(&realized, &first_write)
             .unwrap()
-            .with_object_init_writer::<u8, _>(first, |writer| {
+            .with_object_init_writer::<u8>(first, |writer| {
                 for _ in 0..16 {
                     writer.write_next(11)?;
                 }
                 Ok::<(), MemoryRuntimeError>(())
             })
-            .unwrap()
             .unwrap();
         assert!(matches!(
             domain.acquire_call(&realized, &second_write),
@@ -969,13 +1052,12 @@ fn reused_regions_are_leaseable_only_during_their_declared_plan_interval() {
         domain
             .acquire_call(&realized, &second_write)
             .unwrap()
-            .with_object_init_writer::<u8, _>(second, |writer| {
+            .with_object_init_writer::<u8>(second, |writer| {
                 for _ in 0..16 {
                     writer.write_next(22)?;
                 }
                 Ok::<(), MemoryRuntimeError>(())
             })
-            .unwrap()
             .unwrap();
     }
 }
@@ -987,7 +1069,7 @@ fn retired_allocations_wait_for_held_leases_before_reclamation() {
     let realized = domain
         .materialize(
             domain
-                .prepare_realization(RuntimePlanView::new(
+                .prepare_realization(runtime_plan_view(
                     revision,
                     &[allocation(0, 0, 0, 0, 8, MemoryLifetime::Activation, None)],
                     &[arena(0, ArenaBackingKind::ContiguousBytes, 8, &[0])],
@@ -1017,10 +1099,9 @@ fn retired_allocations_wait_for_held_leases_before_reclamation() {
     domain
         .acquire_call(&realized, &write)
         .unwrap()
-        .with_object_init_writer::<u8, _>(object, |writer| {
+        .with_object_init_writer::<u8>(object, |writer| {
             writer.copy_from_slice(&23_u64.to_ne_bytes())
         })
-        .unwrap()
         .unwrap();
     let read = domain
         .prepare_call(
@@ -1036,8 +1117,18 @@ fn retired_allocations_wait_for_held_leases_before_reclamation() {
     let handle = realized.binding(object).unwrap().handle().unwrap();
     domain.retire(handle).unwrap();
     assert_eq!(domain.collect_retired().unwrap(), 0);
+    let read_after_retire = domain
+        .prepare_call(
+            &realized,
+            &[CallAccessRequest {
+                object,
+                mode: MemoryAccessMode::Read,
+                region: MemoryAccessRegion::WholeInitialized,
+            }],
+        )
+        .unwrap();
     assert!(matches!(
-        domain.acquire_call(&realized, &read),
+        domain.acquire_call(&realized, &read_after_retire),
         Err(MemoryRuntimeError::InvalidLifetimeTransition { .. })
     ));
     assert_eq!(
@@ -1073,7 +1164,7 @@ fn device_registration_and_submission_holds_follow_planned_ownership() {
     let realized = domain
         .materialize(
             domain
-                .prepare_realization(RuntimePlanView::new(
+                .prepare_realization(runtime_plan_view(
                     revision,
                     &[device, transfer],
                     &[device_arena, transfer_arena],
@@ -1139,7 +1230,7 @@ fn device_loss_prevents_new_submissions() {
     let realized = domain
         .materialize(
             domain
-                .prepare_realization(RuntimePlanView::new(
+                .prepare_realization(runtime_plan_view(
                     revision,
                     &[allocation],
                     &[arena],
@@ -1173,7 +1264,7 @@ fn handles_are_domain_scoped_and_stale_generations_are_rejected() {
     let first = domain
         .materialize(
             domain
-                .prepare_realization(RuntimePlanView::new(
+                .prepare_realization(runtime_plan_view(
                     revision,
                     &allocations,
                     &arenas,
@@ -1200,7 +1291,7 @@ fn handles_are_domain_scoped_and_stale_generations_are_rejected() {
     let second = domain
         .materialize(
             domain
-                .prepare_realization(RuntimePlanView::new(
+                .prepare_realization(runtime_plan_view(
                     next_revision,
                     &allocations,
                     &arenas,
@@ -1229,9 +1320,13 @@ fn indirect_payload_envelopes_are_owned_separately_and_charged_once() {
     let revision = domain.issue_plan_revision().unwrap();
     let mut left = allocation(0, 0, 0, 0, 11, MemoryLifetime::Activation, None);
     left.role = AllocationRole::VariablePayload;
+    left.slot = None;
+    left.payload_block_capacity = 1;
     left.alignment = 1;
     let mut right = allocation(1, 0, 0, 0, 13, MemoryLifetime::Activation, None);
     right.role = AllocationRole::VariablePayload;
+    right.slot = None;
+    right.payload_block_capacity = 1;
     right.alignment = 1;
     let allocations = [left, right];
     let mut payload_arena = arena(0, ArenaBackingKind::IndirectOwnedPayloads, 24, &[0, 1]);
@@ -1239,7 +1334,7 @@ fn indirect_payload_envelopes_are_owned_separately_and_charged_once() {
     let realized = domain
         .materialize(
             domain
-                .prepare_realization(RuntimePlanView::new(
+                .prepare_realization(runtime_plan_view(
                     revision,
                     &allocations,
                     &[payload_arena],
@@ -1251,7 +1346,7 @@ fn indirect_payload_envelopes_are_owned_separately_and_charged_once() {
         )
         .unwrap();
     assert_eq!(realized.bindings().len(), 2);
-    assert_eq!(domain.ledger().committed_bytes, 24);
+    assert_eq!(domain.ledger().committed_bytes, 72);
     assert_eq!(domain.allocation_observations().len(), 2);
 
     let left_key = domain
@@ -1269,7 +1364,7 @@ fn indirect_payload_envelopes_are_owned_separately_and_charged_once() {
     assert_eq!(sequence.as_slice(), b"hello, world!");
     assert_eq!(left_allocator.allocated_bytes().unwrap(), 11);
     assert_eq!(right_allocator.allocated_bytes().unwrap(), 13);
-    assert_eq!(domain.ledger().committed_bytes, 24);
+    assert_eq!(domain.ledger().committed_bytes, 72);
     assert!(matches!(
         ManagedString::try_new(left_allocator.clone(), "x"),
         Err(MemoryRuntimeError::CapacityExceeded { .. })
@@ -1288,16 +1383,11 @@ fn indirect_payload_envelopes_are_owned_separately_and_charged_once() {
 }
 
 #[test]
-fn detached_payload_ticket_is_send_and_charges_shared_bytes_once() {
-    let domain = MemoryDomain::new().unwrap();
-    let ticket = domain.retain_payload_charge(37).unwrap();
-    let clone = ticket.clone();
-    assert_eq!(ticket.bytes(), 37);
-    assert_eq!(domain.ledger().exported_snapshot_bytes, 37);
-    drop(ticket);
-    assert_eq!(domain.ledger().exported_snapshot_bytes, 37);
+fn detached_values_share_one_sendable_immutable_payload_root() {
+    let value = ValueCell::from_exact(37_u64).unwrap().snapshot().unwrap();
+    let clone = value.clone();
+    assert!(value.shares_frozen_storage(&clone));
     std::thread::spawn(move || drop(clone)).join().unwrap();
-    assert_eq!(domain.ledger().exported_snapshot_bytes, 0);
 }
 
 #[test]
@@ -1309,7 +1399,7 @@ fn publication_versions_change_only_for_changed_candidates() {
     let realized = domain
         .materialize(
             domain
-                .prepare_realization(RuntimePlanView::new(
+                .prepare_realization(runtime_plan_view(
                     revision,
                     &allocations,
                     &arenas,
@@ -1377,8 +1467,9 @@ fn publication_versions_change_only_for_changed_candidates() {
 
 #[test]
 fn multi_cell_publication_rolls_back_every_applied_value_on_late_conflict() {
-    let left = ValueCell::from_exact(1_u64).unwrap();
-    let right = ValueCell::from_exact(2_u64).unwrap();
+    let domain = MemoryDomain::new().unwrap();
+    let left = ValueCell::from_exact_in(&domain, 1_u64).unwrap();
+    let right = ValueCell::from_exact_in(&domain, 2_u64).unwrap();
     let left_alias = left.clone();
     let right_alias = right.clone();
     let left_before_version = left.published_version();
@@ -1390,7 +1481,6 @@ fn multi_cell_publication_rolls_back_every_applied_value_on_late_conflict() {
         .rebuild_data_draft(mech_core::ValueDataDraft::U64(20))
         .unwrap();
 
-    let domain = MemoryDomain::new().unwrap();
     let revision = domain.issue_plan_revision().unwrap();
     let allocations = [
         allocation(0, 0, 0, 0, 8, MemoryLifetime::Activation, None),
@@ -1400,7 +1490,7 @@ fn multi_cell_publication_rolls_back_every_applied_value_on_late_conflict() {
     let realized = domain
         .materialize(
             domain
-                .prepare_realization(RuntimePlanView::new(
+                .prepare_realization(runtime_plan_view(
                     revision,
                     &allocations,
                     &arenas,
@@ -1417,7 +1507,7 @@ fn multi_cell_publication_rolls_back_every_applied_value_on_late_conflict() {
     let right_object = domain
         .plan_object_key(revision, MemoryObjectId::new(1))
         .unwrap();
-    let mut prepared = domain
+    let prepared = domain
         .prepare_cell_publication(
             &realized,
             vec![
@@ -1439,13 +1529,38 @@ fn multi_cell_publication_rolls_back_every_applied_value_on_late_conflict() {
         )
         .unwrap();
     let held_shape = right.shape();
-    assert!(domain.commit_cell_publication(&mut prepared).is_err());
+    assert!(domain.ready_cell_publication(prepared).is_err());
     drop(held_shape);
     assert_eq!(u64_cell(&left_alias), 1);
     assert_eq!(u64_cell(&right_alias), 2);
     assert_eq!(left.published_version(), left_before_version);
     assert_eq!(right.published_version(), right_before_version);
-    let committed = domain.commit_cell_publication(&mut prepared).unwrap();
+    let prepared = domain
+        .prepare_cell_publication(
+            &realized,
+            vec![
+                CellPublicationCandidate {
+                    cell: left.clone(),
+                    object: left_object,
+                    binding: realized.binding(left_object).unwrap(),
+                    value: left
+                        .rebuild_data_draft(mech_core::ValueDataDraft::U64(10))
+                        .unwrap(),
+                    changed: true,
+                },
+                CellPublicationCandidate {
+                    cell: right.clone(),
+                    object: right_object,
+                    binding: realized.binding(right_object).unwrap(),
+                    value: right
+                        .rebuild_data_draft(mech_core::ValueDataDraft::U64(20))
+                        .unwrap(),
+                    changed: true,
+                },
+            ],
+        )
+        .unwrap();
+    let committed = domain.ready_cell_publication(prepared).unwrap().commit();
     assert_eq!(committed.len(), 2);
     assert_eq!(u64_cell(&left_alias), 10);
     assert_eq!(u64_cell(&right_alias), 20);

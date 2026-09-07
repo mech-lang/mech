@@ -92,9 +92,11 @@ pub fn plan_resident_arenas(
             id,
             owner: input.owner.clone(),
             role: AllocationRole::FixedStorage,
+            slot: Some(resident_planned_slot(input.kind)),
             space: MemorySpace::ResidentCpu,
             current_bytes: bytes,
             capacity_bytes: bytes,
+            payload_block_capacity: 0,
             alignment: slot.alignment,
             lifetime,
             placement: ArenaPlacement {
@@ -132,9 +134,11 @@ pub fn plan_resident_arenas(
                 id: payload_id,
                 owner: input.owner.clone(),
                 role: AllocationRole::VariablePayload,
+                slot: None,
                 space: MemorySpace::ResidentCpu,
                 current_bytes: input.footprint.payload_bytes,
                 capacity_bytes: input.footprint.payload_bytes,
+                payload_block_capacity: input.footprint.retained_nodes.max(1),
                 alignment: 1,
                 lifetime,
                 placement: ArenaPlacement {
@@ -170,9 +174,11 @@ pub fn plan_resident_arenas(
                 id: next,
                 owner: input.owner.clone(),
                 role: AllocationRole::TransactionStage,
+                slot: Some(resident_planned_slot(input.kind)),
                 space: MemorySpace::ResidentCpu,
                 current_bytes: bytes,
                 capacity_bytes: bytes,
+                payload_block_capacity: 0,
                 alignment: slot.alignment,
                 lifetime: MemoryLifetime::Activation,
                 placement: ArenaPlacement {
@@ -204,9 +210,11 @@ pub fn plan_resident_arenas(
                     id: payload_id,
                     owner: input.owner.clone(),
                     role: AllocationRole::TransactionStage,
+                    slot: None,
                     space: MemorySpace::ResidentCpu,
                     current_bytes: 0,
                     capacity_bytes: input.footprint.payload_bytes,
+                    payload_block_capacity: input.footprint.retained_nodes.max(1),
                     alignment: 1,
                     lifetime: MemoryLifetime::Activation,
                     placement: ArenaPlacement {
@@ -691,9 +699,11 @@ pub fn plan_resident_effect_payload(
         id,
         owner: MemoryObjectOwner::NodeInput { node, port: 0 },
         role: AllocationRole::Scratch,
+        slot: None,
         space: MemorySpace::ResidentCpu,
         current_bytes: bytes,
         capacity_bytes: bytes,
+        payload_block_capacity: 0,
         alignment: slot.alignment,
         lifetime: MemoryLifetime::Turn { first, last },
         placement: ArenaPlacement {
@@ -742,6 +752,18 @@ fn resident_slot_layout(target: &TargetMemoryProfile, kind: ResidentValueKind) -
         ResidentValueKind::F64 => target.primitives.f64_slot,
         ResidentValueKind::String => target.primitives.string_header,
         ResidentValueKind::Snapshot => target.primitives.canonical_value_handle,
+    }
+}
+
+fn resident_planned_slot(kind: ResidentValueKind) -> PlannedSlotKind {
+    match kind {
+        ResidentValueKind::Bool => PlannedSlotKind::FixedScalar(ScalarMemoryKind::Bool),
+        ResidentValueKind::Index => PlannedSlotKind::FixedScalar(ScalarMemoryKind::Index),
+        ResidentValueKind::F64 => {
+            PlannedSlotKind::FixedScalar(ScalarMemoryKind::Floating(mech_core::FloatWidth::W64))
+        }
+        ResidentValueKind::String => PlannedSlotKind::StringHeader,
+        ResidentValueKind::Snapshot => PlannedSlotKind::CanonicalValueHandle,
     }
 }
 

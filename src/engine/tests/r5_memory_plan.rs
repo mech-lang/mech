@@ -31,6 +31,7 @@ fn allocation(id: u32, current: u64, capacity: u64) -> AllocationPlan {
         space: MemorySpace::ResidentCpu,
         current_bytes: current,
         capacity_bytes: capacity,
+        payload_block_capacity: 0,
         alignment: 8,
         lifetime: MemoryLifetime::Turn {
             first: MemoryPlanPoint::new(0),
@@ -153,6 +154,7 @@ fn deterministic_program_plan(reverse_facts: bool, allocation_noise: usize) -> P
         space: MemorySpace::ResidentCpu,
         current_bytes: bytes,
         capacity_bytes: bytes,
+        payload_block_capacity: 0,
         alignment: 8,
         lifetime: MemoryLifetime::Transaction {
             first: MemoryPlanPoint::new(first),

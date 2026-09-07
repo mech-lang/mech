@@ -64,6 +64,15 @@ pub enum StorageLayoutClass {
     CanonicalSnapshot { topology: MemoryTopology },
 }
 
+impl StorageLayoutClass {
+    pub const fn planned_slot(&self) -> PlannedSlotKind {
+        match self {
+            Self::Scalar { slot } | Self::DenseColumnMajor { slot } => *slot,
+            Self::CanonicalSnapshot { .. } => PlannedSlotKind::CanonicalValueHandle,
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct SlotLayout {
     pub bytes: u64,
@@ -235,9 +244,16 @@ pub struct AllocationPlan {
     pub id: MemoryObjectId,
     pub owner: MemoryObjectOwner,
     pub role: AllocationRole,
+    /// Sealed element/header identity for typed access. `None` denotes an
+    /// explicitly raw byte/scratch allocation and cannot be opened as a typed
+    /// value view.
+    pub slot: Option<PlannedSlotKind>,
     pub space: MemorySpace,
     pub current_bytes: u64,
     pub capacity_bytes: u64,
+    /// Maximum simultaneously registered independent payload blocks for an
+    /// indirect envelope. Zero for contiguous/device allocations.
+    pub payload_block_capacity: u64,
     pub alignment: u32,
     pub lifetime: MemoryLifetime,
     pub placement: ArenaPlacement,

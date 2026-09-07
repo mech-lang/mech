@@ -42,6 +42,8 @@ pub(crate) struct PayloadEnvelopeOwner {
     alignment: u32,
     accepting_allocations: Cell<bool>,
     blocks: RefCell<Vec<PayloadBlockRecord>>,
+    accounting: Arc<RetainedPayloadAccounting>,
+    accounted_bytes: u64,
 }
 
 impl PayloadEnvelopeOwner {
@@ -50,6 +52,7 @@ impl PayloadEnvelopeOwner {
         capacity_bytes: u64,
         alignment: u32,
         block_capacity: usize,
+        accounting: Arc<RetainedPayloadAccounting>,
     ) -> MemoryRuntimeResult<Rc<Self>> {
         let mut blocks = Vec::new();
         blocks.try_reserve_exact(block_capacity).map_err(|_| {
@@ -60,12 +63,15 @@ impl PayloadEnvelopeOwner {
                 space: crate::MemorySpace::Host,
             }
         })?;
+        accounting.add(capacity_bytes)?;
         Ok(Rc::new(Self {
             object,
             capacity_bytes,
             alignment,
             accepting_allocations: Cell::new(true),
             blocks: RefCell::new(blocks),
+            accounting,
+            accounted_bytes: capacity_bytes,
         }))
     }
 
@@ -131,7 +137,13 @@ impl PayloadEnvelopeOwner {
     }
 }
 
-#[derive(Default)]
+impl Drop for PayloadEnvelopeOwner {
+    fn drop(&mut self) {
+        self.accounting.subtract(self.accounted_bytes);
+    }
+}
+
+#[derive(Debug, Default)]
 pub(crate) struct RetainedPayloadAccounting {
     bytes: AtomicU64,
 }
@@ -161,6 +173,7 @@ impl RetainedPayloadAccounting {
     }
 }
 
+#[derive(Debug)]
 struct RetainedPayloadCharge {
     accounting: Arc<RetainedPayloadAccounting>,
     bytes: u64,
@@ -174,7 +187,7 @@ impl Drop for RetainedPayloadCharge {
 
 /// Shared immutable accounting ownership that can outlive its originating
 /// owner-thread domain without retaining that domain or any runtime object.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct RetainedPayloadTicket {
     charge: Arc<RetainedPayloadCharge>,
 }
@@ -281,14 +294,6 @@ unsafe impl Allocator for PlannedAllocator {
 }
 
 impl MemoryDomain {
-    pub fn retain_payload_charge(&self, bytes: u64) -> MemoryRuntimeResult<RetainedPayloadTicket> {
-        let accounting = self.state.borrow().payload_accounting.clone();
-        accounting.add(bytes)?;
-        Ok(RetainedPayloadTicket {
-            charge: Arc::new(RetainedPayloadCharge { accounting, bytes }),
-        })
-    }
-
     pub fn planned_allocator(
         &self,
         realized: &RealizedMemoryPlan,

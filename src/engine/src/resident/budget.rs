@@ -350,9 +350,11 @@ fn detached_test_turn_plan(demand: ResourceDemand) -> Result<TurnMemoryPlan, Res
             id: mech_core::MemoryObjectId::new(0),
             owner: mech_core::MemoryObjectOwner::TransactionStage { node, output: 0 },
             role: mech_core::AllocationRole::TransactionStage,
+            slot: None,
             space: mech_core::MemorySpace::ResidentCpu,
             current_bytes: 0,
             capacity_bytes: 0,
+            payload_block_capacity: 0,
             alignment: 1,
             lifetime: mech_core::MemoryLifetime::Transaction {
                 first: mech_core::MemoryPlanPoint::new(0),
@@ -858,9 +860,11 @@ mod tests {
                 id: mech_core::MemoryObjectId::new(3),
                 owner: mech_core::MemoryObjectOwner::NodeScratch { node, ordinal: 0 },
                 role: mech_core::AllocationRole::TransactionStage,
+                slot: None,
                 space: mech_core::MemorySpace::ResidentCpu,
                 current_bytes: 8,
                 capacity_bytes: 8,
+                payload_block_capacity: 0,
                 alignment: 8,
                 lifetime: mech_core::MemoryLifetime::Transaction {
                     first: mech_core::MemoryPlanPoint::new(14),

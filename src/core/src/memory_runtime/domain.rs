@@ -1,7 +1,7 @@
 use crate::{
     AllocationPlan, ArenaBackingKind, ArenaPlan, MemoryArenaId, MemoryBudgetLimits,
     MemoryBudgetViolation, MemoryLifetime, MemoryObjectId, MemoryPlanPoint, MemorySpace,
-    ResourceDemand, ReuseGroupId,
+    ResourceDemand, ReuseGroupId, TransactionRequirement,
 };
 
 #[cfg(feature = "no_std")]
@@ -35,7 +35,10 @@ pub struct RuntimePlanView<'a> {
     allocations: &'a [AllocationPlan],
     arenas: &'a [ArenaPlan],
     admitted_demand: ResourceDemand,
+    output_bytes: u64,
     limits: MemoryBudgetLimits,
+    transactions: &'a [TransactionRequirement],
+    max_concurrent_leases: u32,
     violations: &'a [MemoryBudgetViolation],
 }
 
@@ -45,7 +48,10 @@ impl<'a> RuntimePlanView<'a> {
         allocations: &'a [AllocationPlan],
         arenas: &'a [ArenaPlan],
         admitted_demand: ResourceDemand,
+        output_bytes: u64,
         limits: MemoryBudgetLimits,
+        transactions: &'a [TransactionRequirement],
+        max_concurrent_leases: u32,
         violations: &'a [MemoryBudgetViolation],
     ) -> Self {
         Self {
@@ -53,7 +59,10 @@ impl<'a> RuntimePlanView<'a> {
             allocations,
             arenas,
             admitted_demand,
+            output_bytes,
             limits,
+            transactions,
+            max_concurrent_leases,
             violations,
         }
     }
@@ -238,21 +247,222 @@ struct ObjectAuthorization {
     key: PlanObjectKey,
     arena: MemoryArenaId,
     space: MemorySpace,
+    slot: Option<crate::PlannedSlotKind>,
     current_bytes: u64,
     capacity_bytes: u64,
+    payload_block_capacity: u64,
     alignment: u32,
     offset: u64,
     lifetime: MemoryLifetime,
     reuse_group: Option<ReuseGroupId>,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Debug)]
 pub(crate) struct RuntimeRegionRecord {
     pub(crate) handle: Option<AllocationHandle>,
     lifetime: MemoryLifetime,
     reuse_group: Option<ReuseGroupId>,
     pub(crate) incarnation: RegionIncarnation,
     pub(crate) initialized_bytes: u64,
+    pub(crate) initialization: InitializationMap,
+    pub(crate) slot: Option<crate::PlannedSlotKind>,
+}
+
+/// Preallocated logical-byte initialization authority for one realized host
+/// region. Device and indirect payload records retain their backend/builder
+/// authority and use the prefix-only form (an empty bitset).
+#[derive(Debug)]
+pub(crate) struct InitializationMap {
+    capacity_bytes: u64,
+    words: Vec<u64>,
+}
+
+impl InitializationMap {
+    fn new(
+        object: MemoryObjectId,
+        capacity_bytes: u64,
+        exact: bool,
+        space: MemorySpace,
+    ) -> MemoryRuntimeResult<Self> {
+        let word_count = if exact {
+            capacity_bytes
+                .checked_add(63)
+                .ok_or(MemoryRuntimeError::CapacityExceeded {
+                    object,
+                    requested: capacity_bytes,
+                    capacity: u64::MAX - 63,
+                })?
+                / 64
+        } else {
+            0
+        };
+        let word_count =
+            usize::try_from(word_count).map_err(|_| MemoryRuntimeError::CapacityExceeded {
+                object,
+                requested: capacity_bytes,
+                capacity: usize::MAX as u64,
+            })?;
+        let metadata_bytes = initialization_metadata_bytes(capacity_bytes, exact)?;
+        let mut words = Vec::new();
+        words
+            .try_reserve_exact(word_count)
+            .map_err(|_| MemoryRuntimeError::AllocationFailed {
+                object: Some(object),
+                requested: metadata_bytes,
+                alignment: core::mem::align_of::<u64>() as u32,
+                space,
+            })?;
+        words.resize(word_count, 0);
+        Ok(Self {
+            capacity_bytes,
+            words,
+        })
+    }
+
+    fn clear(&mut self) {
+        self.words.fill(0);
+    }
+
+    fn mark_range(&mut self, start: u64, length: u64) -> MemoryRuntimeResult<()> {
+        let end = start
+            .checked_add(length)
+            .ok_or(MemoryRuntimeError::CapacityExceeded {
+                object: MemoryObjectId::new(0),
+                requested: u64::MAX,
+                capacity: self.capacity_bytes,
+            })?;
+        if end > self.capacity_bytes {
+            return Err(MemoryRuntimeError::CapacityExceeded {
+                object: MemoryObjectId::new(0),
+                requested: end,
+                capacity: self.capacity_bytes,
+            });
+        }
+        if length == 0 || self.words.is_empty() {
+            return Ok(());
+        }
+        let first = usize::try_from(start / 64).expect("bitset index fits allocated capacity");
+        let last = usize::try_from((end - 1) / 64).expect("bitset index fits allocated capacity");
+        let first_bit = (start % 64) as u32;
+        let last_bit = (end % 64) as u32;
+        if first == last {
+            let high = if last_bit == 0 {
+                u64::MAX
+            } else {
+                (1_u64 << last_bit) - 1
+            };
+            self.words[first] |= high & (u64::MAX << first_bit);
+            return Ok(());
+        }
+        self.words[first] |= u64::MAX << first_bit;
+        for word in &mut self.words[first + 1..last] {
+            *word = u64::MAX;
+        }
+        self.words[last] |= if last_bit == 0 {
+            u64::MAX
+        } else {
+            (1_u64 << last_bit) - 1
+        };
+        Ok(())
+    }
+
+    fn contains_range(&self, start: u64, length: u64, prefix: u64) -> bool {
+        let Some(end) = start.checked_add(length) else {
+            return false;
+        };
+        if end > self.capacity_bytes {
+            return false;
+        }
+        if length == 0 {
+            return true;
+        }
+        if self.words.is_empty() {
+            return end <= prefix;
+        }
+        let first = (start / 64) as usize;
+        let last = ((end - 1) / 64) as usize;
+        let first_bit = (start % 64) as u32;
+        let last_bit = (end % 64) as u32;
+        if first == last {
+            let high = if last_bit == 0 {
+                u64::MAX
+            } else {
+                (1_u64 << last_bit) - 1
+            };
+            let mask = high & (u64::MAX << first_bit);
+            return self.words[first] & mask == mask;
+        }
+        let first_mask = u64::MAX << first_bit;
+        if self.words[first] & first_mask != first_mask {
+            return false;
+        }
+        if self.words[first + 1..last]
+            .iter()
+            .any(|word| *word != u64::MAX)
+        {
+            return false;
+        }
+        let last_mask = if last_bit == 0 {
+            u64::MAX
+        } else {
+            (1_u64 << last_bit) - 1
+        };
+        self.words[last] & last_mask == last_mask
+    }
+
+    pub(crate) fn contains_region(&self, region: super::MemoryAccessRegion, prefix: u64) -> bool {
+        match region {
+            super::MemoryAccessRegion::WholeInitialized => self.contains_range(0, prefix, prefix),
+            super::MemoryAccessRegion::Contiguous {
+                offset_bytes,
+                length_bytes,
+            } => self.contains_range(offset_bytes, length_bytes, prefix),
+            super::MemoryAccessRegion::Strided {
+                offset_bytes,
+                count,
+                stride_bytes,
+                element_bytes,
+            } => (0..count).all(|index| {
+                index
+                    .checked_mul(stride_bytes)
+                    .and_then(|delta| offset_bytes.checked_add(delta))
+                    .is_some_and(|start| self.contains_range(start, element_bytes, prefix))
+            }),
+            super::MemoryAccessRegion::Rectangle {
+                offset_bytes,
+                rows,
+                columns,
+                row_stride_bytes,
+                column_stride_bytes,
+                element_bytes,
+            } => (0..columns).all(|column| {
+                (0..rows).all(|row| {
+                    column
+                        .checked_mul(column_stride_bytes)
+                        .and_then(|column_offset| {
+                            row.checked_mul(row_stride_bytes)
+                                .and_then(|row_offset| column_offset.checked_add(row_offset))
+                        })
+                        .and_then(|delta| offset_bytes.checked_add(delta))
+                        .is_some_and(|start| self.contains_range(start, element_bytes, prefix))
+                })
+            }),
+        }
+    }
+}
+
+fn initialization_metadata_bytes(capacity_bytes: u64, exact: bool) -> MemoryRuntimeResult<u64> {
+    if !exact {
+        return Ok(0);
+    }
+    capacity_bytes
+        .checked_add(63)
+        .map(|bytes| (bytes / 64) * core::mem::size_of::<u64>() as u64)
+        .ok_or(MemoryRuntimeError::AccountingInvariantViolation {
+            dimension: "initialization metadata bytes",
+            current: capacity_bytes,
+            change: 63,
+        })
 }
 
 #[derive(Clone, Debug)]
@@ -280,6 +490,8 @@ pub struct MemoryReservation {
     revision: MemoryPlanRevision,
     admission: u64,
     bytes: u64,
+    max_concurrent_leases: u32,
+    transactions: Box<[TransactionRequirement]>,
     active: bool,
     arenas: Box<[ArenaAuthorization]>,
     objects: Box<[ObjectAuthorization]>,
@@ -412,6 +624,7 @@ pub struct DeviceSubmissionHold {
     handles: Arc<[AllocationHandle]>,
     device_bytes: u64,
     transfer_bytes: u64,
+    scope: Option<MemoryPlanScope>,
     active: bool,
 }
 
@@ -423,6 +636,7 @@ pub struct PreparedDeviceSubmission {
     device_handles: Arc<[AllocationHandle]>,
     device_bytes: u64,
     transfer_bytes: u64,
+    transfer_point: Option<MemoryPlanPoint>,
 }
 
 impl DeviceSubmissionHold {
@@ -469,6 +683,8 @@ impl DeviceSubmissionHold {
         state.ledger.in_flight_device_bytes = next_device_bytes;
         state.ledger.in_flight_transfer_bytes = next_transfer_bytes;
         self.active = false;
+        drop(state);
+        self.scope.take();
         Ok(())
     }
 }
@@ -488,6 +704,7 @@ pub struct RealizedMemoryPlan {
     domain_state: Weak<RefCell<DomainState>>,
     bindings: Rc<RefCell<Box<[(PlanObjectKey, RuntimeBinding)]>>>,
     lifetimes: Rc<Box<[(PlanObjectKey, MemoryLifetime)]>>,
+    transactions: Rc<Box<[TransactionRequirement]>>,
 }
 
 impl RealizedMemoryPlan {
@@ -542,6 +759,10 @@ impl RealizedMemoryPlan {
         self.bindings.borrow().to_vec().into_boxed_slice()
     }
 
+    pub fn transactions(&self) -> &[TransactionRequirement] {
+        &self.transactions
+    }
+
     pub(crate) fn lifetime(&self, key: PlanObjectKey) -> MemoryRuntimeResult<MemoryLifetime> {
         self.lifetimes
             .binary_search_by_key(&key, |(candidate, _)| *candidate)
@@ -555,15 +776,32 @@ impl RealizedMemoryPlan {
         key: PlanObjectKey,
         initialized_bytes: u64,
     ) -> MemoryRuntimeResult<()> {
+        self.record_initialized_range(key, 0, initialized_bytes)
+    }
+
+    pub(crate) fn record_initialized_range(
+        &self,
+        key: PlanObjectKey,
+        start: u64,
+        length: u64,
+    ) -> MemoryRuntimeResult<()> {
+        let initialized_end =
+            start
+                .checked_add(length)
+                .ok_or(MemoryRuntimeError::CapacityExceeded {
+                    object: key.object(),
+                    requested: u64::MAX,
+                    capacity: u64::MAX,
+                })?;
         let mut bindings = self.bindings.borrow_mut();
         let index = bindings
             .binary_search_by_key(&key, |(candidate, _)| *candidate)
             .map_err(|_| MemoryRuntimeError::UnknownPlanObject { key })?;
         let binding = &mut bindings[index].1;
-        if initialized_bytes > binding.capacity_bytes() {
+        if initialized_end > binding.capacity_bytes() {
             return Err(MemoryRuntimeError::CapacityExceeded {
                 object: key.object(),
-                requested: initialized_bytes,
+                requested: initialized_end,
                 capacity: binding.capacity_bytes(),
             });
         }
@@ -579,12 +817,12 @@ impl RealizedMemoryPlan {
             | RuntimeBinding::Device {
                 initialized_bytes: current,
                 ..
-            } => *current = (*current).max(initialized_bytes),
-            RuntimeBinding::Empty { .. } if initialized_bytes == 0 => {}
+            } => *current = (*current).max(initialized_end),
+            RuntimeBinding::Empty { .. } if initialized_end == 0 => {}
             RuntimeBinding::Empty { .. } | RuntimeBinding::PinnedExternal { .. } => {
                 return Err(MemoryRuntimeError::UnplannedAllocation {
                     object: Some(key.object()),
-                    requested: initialized_bytes,
+                    requested: initialized_end,
                 });
             }
         }
@@ -597,7 +835,8 @@ impl RealizedMemoryPlan {
             .regions
             .get_mut(&key)
             .ok_or(MemoryRuntimeError::UnknownPlanObject { key })?;
-        region.initialized_bytes = region.initialized_bytes.max(initialized_bytes);
+        region.initialization.mark_range(start, length)?;
+        region.initialized_bytes = region.initialized_bytes.max(initialized_end);
         Ok(())
     }
 }
@@ -613,6 +852,7 @@ pub(crate) struct AllocationRecord {
     pub state: OwnedAllocationState,
     pub block: Option<HostBlock>,
     pub capacity_bytes: u64,
+    pub accounted_bytes: u64,
     pub alignment: u32,
     pub space: MemorySpace,
     pub leases: Vec<ActiveLeaseRecord>,
@@ -639,6 +879,7 @@ pub(crate) struct DomainState {
     next_admission: u64,
     admissions: BTreeMap<u64, MemoryPlanRevision>,
     pub next_publication: PublishedValueVersion,
+    pub(crate) publication_in_progress: bool,
     pub next_lease_token: u64,
     pub ledger: MemoryLedgerSnapshot,
     pub payload_accounting: Arc<super::RetainedPayloadAccounting>,
@@ -764,6 +1005,100 @@ pub struct MemoryDomain {
 }
 
 impl MemoryDomain {
+    #[cfg(feature = "functions")]
+    pub fn realize_call_memory_plan(
+        &self,
+        plan: &crate::CallMemoryPlan,
+    ) -> MemoryRuntimeResult<RealizedMemoryPlan> {
+        let mut arenas: BTreeMap<MemoryArenaId, ArenaPlan> = BTreeMap::new();
+        for allocation in plan.allocations.iter() {
+            let backing = if allocation.role == crate::AllocationRole::VariablePayload {
+                ArenaBackingKind::IndirectOwnedPayloads
+            } else {
+                ArenaBackingKind::ContiguousBytes
+            };
+            let end = allocation
+                .placement
+                .offset
+                .checked_add(allocation.capacity_bytes)
+                .ok_or(MemoryRuntimeError::InvalidLayout {
+                    object: Some(allocation.id),
+                    size: allocation.capacity_bytes,
+                    alignment: allocation.alignment,
+                    reason: "call-plan arena extent overflows",
+                })?;
+            match arenas.get_mut(&allocation.placement.arena) {
+                Some(arena) => {
+                    if arena.space != allocation.space || arena.backing != backing {
+                        return Err(MemoryRuntimeError::InvalidLayout {
+                            object: Some(allocation.id),
+                            size: allocation.capacity_bytes,
+                            alignment: allocation.alignment,
+                            reason: "call-plan arena mixes incompatible storage authorities",
+                        });
+                    }
+                    arena.alignment = arena.alignment.max(allocation.alignment);
+                    arena.capacity_bytes = arena.capacity_bytes.max(end);
+                    let mut members = arena.members.to_vec();
+                    members.push(allocation.id);
+                    arena.members = members.into_boxed_slice();
+                }
+                None => {
+                    arenas.insert(
+                        allocation.placement.arena,
+                        ArenaPlan {
+                            id: allocation.placement.arena,
+                            space: allocation.space,
+                            backing,
+                            alignment: allocation.alignment,
+                            capacity_bytes: end,
+                            members: vec![allocation.id].into_boxed_slice(),
+                        },
+                    );
+                }
+            }
+        }
+        let arenas = arenas.into_values().collect::<Vec<_>>();
+        let output_bytes = plan.outputs.iter().try_fold(0_u64, |total, output| {
+            let bytes = output
+                .value
+                .current_address_span_bytes
+                .checked_add(output.value.payload.current_bytes)
+                .ok_or(MemoryRuntimeError::AccountingInvariantViolation {
+                    dimension: "call output bytes",
+                    current: output.value.current_address_span_bytes,
+                    change: output.value.payload.current_bytes,
+                })?;
+            total
+                .checked_add(bytes)
+                .ok_or(MemoryRuntimeError::AccountingInvariantViolation {
+                    dimension: "call output bytes",
+                    current: total,
+                    change: bytes,
+                })
+        })?;
+        let max_concurrent_leases = u32::try_from(plan.allocations.len()).map_err(|_| {
+            MemoryRuntimeError::IdentityExhausted {
+                identity: "call lease capacity",
+            }
+        })?;
+        let revision = self.issue_plan_revision()?;
+        let reservation = self.prepare_realization(RuntimePlanView::new(
+            revision,
+            &plan.allocations,
+            &arenas,
+            plan.demand,
+            output_bytes,
+            plan.target.limits,
+            &plan.transactions,
+            max_concurrent_leases,
+            &[],
+        ))?;
+        let realized = self.materialize(reservation)?;
+        self.activate_realization(&realized)?;
+        Ok(realized)
+    }
+
     pub fn new() -> MemoryRuntimeResult<Self> {
         let id = MemoryDomainId::issue()?;
         Ok(Self {
@@ -776,6 +1111,7 @@ impl MemoryDomain {
                 next_admission: 1,
                 admissions: BTreeMap::new(),
                 next_publication: PublishedValueVersion::initial(),
+                publication_in_progress: false,
                 next_lease_token: 1,
                 ledger: MemoryLedgerSnapshot::default(),
                 payload_accounting: Arc::new(super::RetainedPayloadAccounting::default()),
@@ -790,6 +1126,18 @@ impl MemoryDomain {
 
     pub fn id(&self) -> MemoryDomainId {
         self.state.borrow().id
+    }
+
+    pub fn is_closed(&self) -> bool {
+        self.state.borrow().closed
+    }
+
+    pub(crate) fn ensure_open(&self) -> MemoryRuntimeResult<()> {
+        if self.state.borrow().closed {
+            Err(MemoryRuntimeError::DomainClosed)
+        } else {
+            Ok(())
+        }
     }
 
     pub fn issue_plan_revision(&self) -> MemoryRuntimeResult<MemoryPlanRevision> {
@@ -890,6 +1238,45 @@ impl MemoryDomain {
                 limit: violation.limit,
             });
         }
+        let storage_buffer_bytes = view
+            .arenas
+            .iter()
+            .map(|arena| arena.capacity_bytes)
+            .max()
+            .unwrap_or(0);
+        let budget_owner = view
+            .allocations
+            .first()
+            .map(|allocation| allocation.owner.clone())
+            .unwrap_or(crate::MemoryObjectOwner::NodeScratch {
+                node: crate::NodeId::new(0),
+                ordinal: 0,
+            });
+        if let Some(violation) = crate::evaluate_memory_budget(
+            budget_owner,
+            view.admitted_demand,
+            view.output_bytes,
+            storage_buffer_bytes,
+            view.limits,
+        )
+        .first()
+        {
+            return Err(MemoryRuntimeError::BudgetExceeded {
+                operation: None,
+                requested: violation.required,
+                limit: violation.limit,
+            });
+        }
+        let mut transactions = Vec::new();
+        transactions
+            .try_reserve_exact(view.transactions.len())
+            .map_err(|_| MemoryRuntimeError::AllocationFailed {
+                object: None,
+                requested: view.transactions.len() as u64,
+                alignment: 1,
+                space: MemorySpace::Host,
+            })?;
+        transactions.extend_from_slice(view.transactions);
         let (arenas, objects, bytes) = validate_plan_view(state.id, view)?;
         let record_count = arenas
             .iter()
@@ -941,6 +1328,8 @@ impl MemoryDomain {
             revision: view.revision,
             admission,
             bytes,
+            max_concurrent_leases: view.max_concurrent_leases,
+            transactions: transactions.into_boxed_slice(),
             active: true,
             arenas,
             objects,
@@ -967,14 +1356,19 @@ impl MemoryDomain {
         struct PendingArena {
             authorization: ArenaAuthorization,
             block: Option<HostBlock>,
+            leases: Vec<ActiveLeaseRecord>,
+            accounted_bytes: u64,
         }
         struct PendingObject {
             authorization: ObjectAuthorization,
             payload_owner: Rc<super::PayloadEnvelopeOwner>,
+            leases: Vec<ActiveLeaseRecord>,
+            accounted_bytes: u64,
         }
 
         let mut contiguous = Vec::new();
         let mut indirect = Vec::new();
+        let payload_accounting = self.state.borrow().payload_accounting.clone();
         contiguous
             .try_reserve_exact(reservation.arenas.len())
             .map_err(|_| MemoryRuntimeError::AllocationFailed {
@@ -994,6 +1388,33 @@ impl MemoryDomain {
         for arena in reservation.arenas.iter().cloned() {
             match arena.backing {
                 ArenaBackingKind::ContiguousBytes => {
+                    let initialization_bytes = reservation
+                        .objects
+                        .iter()
+                        .filter(|object| object.arena == arena.id)
+                        .try_fold(0_u64, |total, object| {
+                            let exact = matches!(
+                                object.space,
+                                MemorySpace::Host | MemorySpace::ResidentCpu
+                            );
+                            let metadata =
+                                initialization_metadata_bytes(object.capacity_bytes, exact)?;
+                            total.checked_add(metadata).ok_or(
+                                MemoryRuntimeError::AccountingInvariantViolation {
+                                    dimension: "arena initialization metadata bytes",
+                                    current: total,
+                                    change: metadata,
+                                },
+                            )
+                        })?;
+                    let accounted_bytes = arena
+                        .capacity_bytes
+                        .checked_add(initialization_bytes)
+                        .ok_or(MemoryRuntimeError::AccountingInvariantViolation {
+                            dimension: "arena accounted bytes",
+                            current: arena.capacity_bytes,
+                            change: initialization_bytes,
+                        })?;
                     let block = match arena.space {
                         MemorySpace::Device { .. } => None,
                         MemorySpace::Host | MemorySpace::ResidentCpu => Some(HostBlock::allocate(
@@ -1003,9 +1424,20 @@ impl MemoryDomain {
                             arena.space,
                         )?),
                     };
+                    let mut leases = Vec::new();
+                    leases
+                        .try_reserve_exact(reservation.max_concurrent_leases as usize)
+                        .map_err(|_| MemoryRuntimeError::AllocationFailed {
+                            object: None,
+                            requested: u64::from(reservation.max_concurrent_leases),
+                            alignment: 1,
+                            space: arena.space,
+                        })?;
                     contiguous.push(PendingArena {
                         authorization: arena,
                         block,
+                        leases,
+                        accounted_bytes,
                     });
                 }
                 ArenaBackingKind::IndirectOwnedPayloads => {}
@@ -1019,15 +1451,48 @@ impl MemoryDomain {
                 .map(|arena| arena.backing)
                 .ok_or(MemoryRuntimeError::UnknownPlanObject { key: object.key })?;
             if backing == ArenaBackingKind::IndirectOwnedPayloads {
+                let metadata_bytes = object
+                    .payload_block_capacity
+                    .checked_mul(core::mem::size_of::<super::PayloadBlockRecord>() as u64)
+                    .ok_or(MemoryRuntimeError::AccountingInvariantViolation {
+                        dimension: "payload registration metadata bytes",
+                        current: object.payload_block_capacity,
+                        change: core::mem::size_of::<super::PayloadBlockRecord>() as u64,
+                    })?;
+                let accounted_bytes = object.capacity_bytes.checked_add(metadata_bytes).ok_or(
+                    MemoryRuntimeError::AccountingInvariantViolation {
+                        dimension: "payload accounted bytes",
+                        current: object.capacity_bytes,
+                        change: metadata_bytes,
+                    },
+                )?;
                 let payload_owner = super::PayloadEnvelopeOwner::new(
                     object.key,
                     object.capacity_bytes,
                     object.alignment,
-                    2,
+                    usize::try_from(object.payload_block_capacity).map_err(|_| {
+                        MemoryRuntimeError::CapacityExceeded {
+                            object: object.key.object(),
+                            requested: object.payload_block_capacity,
+                            capacity: usize::MAX as u64,
+                        }
+                    })?,
+                    payload_accounting.clone(),
                 )?;
+                let mut leases = Vec::new();
+                leases
+                    .try_reserve_exact(reservation.max_concurrent_leases as usize)
+                    .map_err(|_| MemoryRuntimeError::AllocationFailed {
+                        object: Some(object.key.object()),
+                        requested: u64::from(reservation.max_concurrent_leases),
+                        alignment: 1,
+                        space: object.space,
+                    })?;
                 indirect.push(PendingObject {
                     authorization: object,
                     payload_owner,
+                    leases,
+                    accounted_bytes,
                 });
             }
         }
@@ -1041,6 +1506,30 @@ impl MemoryDomain {
                 alignment: 1,
                 space: MemorySpace::Host,
             })?;
+        let mut pending_initialization = Vec::new();
+        pending_initialization
+            .try_reserve_exact(reservation.objects.len())
+            .map_err(|_| MemoryRuntimeError::AllocationFailed {
+                object: None,
+                requested: reservation.objects.len() as u64,
+                alignment: core::mem::align_of::<u64>() as u32,
+                space: MemorySpace::Host,
+            })?;
+        for object in &reservation.objects {
+            let arena = reservation
+                .arenas
+                .iter()
+                .find(|arena| arena.id == object.arena)
+                .ok_or(MemoryRuntimeError::UnknownPlanObject { key: object.key })?;
+            let exact = arena.backing == ArenaBackingKind::ContiguousBytes
+                && matches!(object.space, MemorySpace::Host | MemorySpace::ResidentCpu);
+            pending_initialization.push(InitializationMap::new(
+                object.key.object(),
+                object.capacity_bytes,
+                exact,
+                object.space,
+            )?);
+        }
         let mut state = self.state.borrow_mut();
         if state.closed {
             return Err(MemoryRuntimeError::DomainClosed);
@@ -1060,9 +1549,10 @@ impl MemoryDomain {
                 state: OwnedAllocationState::Live,
                 block: pending.block,
                 capacity_bytes: capacity,
+                accounted_bytes: pending.accounted_bytes,
                 alignment: pending.authorization.alignment,
                 space: pending.authorization.space,
-                leases: Vec::new(),
+                leases: pending.leases,
                 snapshot_pins: 0,
                 submission_pins: 0,
                 payload_owner: None,
@@ -1079,9 +1569,10 @@ impl MemoryDomain {
                 state: OwnedAllocationState::Live,
                 block: None,
                 capacity_bytes: capacity,
+                accounted_bytes: pending.accounted_bytes,
                 alignment: pending.authorization.alignment,
                 space: pending.authorization.space,
-                leases: Vec::new(),
+                leases: pending.leases,
                 snapshot_pins: 0,
                 submission_pins: 0,
                 payload_owner: Some(pending.payload_owner),
@@ -1091,7 +1582,11 @@ impl MemoryDomain {
             })?;
             indirect_handles.insert(pending.authorization.key, handle);
         }
-        for object in &reservation.objects {
+        for (object, initialization) in reservation
+            .objects
+            .iter()
+            .zip(pending_initialization.into_iter())
+        {
             let arena = reservation
                 .arenas
                 .iter()
@@ -1154,6 +1649,8 @@ impl MemoryDomain {
                         reuse_group: object.reuse_group,
                         incarnation,
                         initialized_bytes: 0,
+                        initialization,
+                        slot: object.slot,
                     },
                 )
                 .is_some()
@@ -1200,12 +1697,14 @@ impl MemoryDomain {
         state.revisions.insert(reservation.revision, lifecycle);
         reservation.active = false;
         reservation.bytes = 0;
+        let transactions = core::mem::take(&mut reservation.transactions);
         Ok(RealizedMemoryPlan {
             domain: state.id,
             revision: reservation.revision,
             domain_state: Rc::downgrade(&self.state),
             bindings: Rc::new(RefCell::new(bindings.into_boxed_slice())),
             lifetimes: Rc::new(lifetimes.into_boxed_slice()),
+            transactions: Rc::new(transactions),
         })
     }
 
@@ -1220,7 +1719,7 @@ impl MemoryDomain {
             if let Some(owner) = &record.payload_owner {
                 owner.revoke();
             }
-            record.capacity_bytes
+            record.accounted_bytes
         };
         state.ledger.live_allocations = state.ledger.live_allocations.checked_sub(1).ok_or(
             MemoryRuntimeError::AccountingInvariantViolation {
@@ -1266,11 +1765,11 @@ impl MemoryDomain {
                 continue;
             }
             let record = slot.record.take().expect("reclaimable record exists");
-            reclaimed_bytes = reclaimed_bytes.checked_add(record.capacity_bytes).ok_or(
+            reclaimed_bytes = reclaimed_bytes.checked_add(record.accounted_bytes).ok_or(
                 MemoryRuntimeError::AccountingInvariantViolation {
                     dimension: "reclaimed bytes",
                     current: reclaimed_bytes,
-                    change: record.capacity_bytes,
+                    change: record.accounted_bytes,
                 },
             )?;
             if let Some(next) = slot.generation.checked_add(1) {
@@ -1425,6 +1924,7 @@ impl MemoryDomain {
                         .checked_successor()
                         .expect("region successor was prevalidated");
                     region.initialized_bytes = 0;
+                    region.initialization.clear();
                     *active = Some(key);
                 }
             }
@@ -1566,6 +2066,8 @@ impl MemoryDomain {
             });
         }
         let mut requested = BTreeMap::<AllocationHandle, (bool, bool)>::new();
+        let mut transfer_first = None::<MemoryPlanPoint>;
+        let mut transfer_last = None::<MemoryPlanPoint>;
         for object in device_objects {
             let binding = realized.binding(*object)?;
             let RuntimeBinding::Device {
@@ -1592,13 +2094,16 @@ impl MemoryDomain {
             requested.entry(handle).or_default().0 = true;
         }
         for object in transfer_objects {
-            if !matches!(realized.lifetime(*object)?, MemoryLifetime::Transfer { .. }) {
+            let lifetime = realized.lifetime(*object)?;
+            let MemoryLifetime::Transfer { first, last } = lifetime else {
                 return Err(MemoryRuntimeError::InvalidLifetimeTransition {
                     object: Some(object.object()),
                     from: "non-transfer lifetime",
                     to: "device transfer",
                 });
-            }
+            };
+            transfer_first = Some(transfer_first.map_or(first, |current| current.max(first)));
+            transfer_last = Some(transfer_last.map_or(last, |current| current.min(last)));
             let binding = realized.binding(*object)?;
             let handle = binding
                 .handle()
@@ -1608,6 +2113,17 @@ impl MemoryDomain {
                 })?;
             requested.entry(handle).or_default().1 = true;
         }
+        let transfer_point = match (transfer_first, transfer_last) {
+            (Some(first), Some(last)) if first <= last => Some(first),
+            (Some(_), Some(_)) => {
+                return Err(MemoryRuntimeError::InvalidLifetimeTransition {
+                    object: None,
+                    from: "disjoint transfer intervals",
+                    to: "one submitted batch",
+                });
+            }
+            _ => None,
+        };
         let state = self.state.borrow();
         let mut device_bytes = 0_u64;
         let mut transfer_bytes = 0_u64;
@@ -1658,6 +2174,7 @@ impl MemoryDomain {
             device_handles: Arc::from(device_handles.into_boxed_slice()),
             device_bytes,
             transfer_bytes,
+            transfer_point,
         })
     }
 
@@ -1680,9 +2197,28 @@ impl MemoryDomain {
                 actual: prepared.revision,
             });
         }
+        let owned_scope = if let Some(point) = prepared.transfer_point {
+            let active = self.state.borrow().active_point.get();
+            if active.is_none() {
+                Some(self.enter_plan_point(point)?)
+            } else {
+                None
+            }
+        } else {
+            None
+        };
         let mut state = self.state.borrow_mut();
         if state.closed {
             return Err(MemoryRuntimeError::DomainClosed);
+        }
+        if let Some(point) = prepared.transfer_point
+            && state.active_point.get() != Some(point)
+        {
+            return Err(MemoryRuntimeError::InvalidLifetimeTransition {
+                object: None,
+                from: "inactive transfer interval",
+                to: "device submission",
+            });
         }
         for handle in prepared.handles.iter().copied() {
             let record = state.record(handle)?;
@@ -1739,6 +2275,7 @@ impl MemoryDomain {
             handles: Arc::clone(&prepared.handles),
             device_bytes: prepared.device_bytes,
             transfer_bytes: prepared.transfer_bytes,
+            scope: owned_scope,
             active: true,
         })
     }
@@ -1944,6 +2481,14 @@ fn validate_plan_view(
             });
         }
         if arena.backing == ArenaBackingKind::ContiguousBytes {
+            if allocation.payload_block_capacity != 0 {
+                return Err(MemoryRuntimeError::InvalidLayout {
+                    object: Some(allocation.id),
+                    size: allocation.payload_block_capacity,
+                    alignment: allocation.alignment,
+                    reason: "contiguous allocation declares indirect payload registrations",
+                });
+            }
             if arena.alignment < allocation.alignment {
                 return Err(MemoryRuntimeError::InvalidLayout {
                     object: Some(allocation.id),
@@ -1977,13 +2522,32 @@ fn validate_plan_view(
                     capacity: arena.capacity_bytes,
                 });
             }
+        } else {
+            if allocation.slot.is_some() {
+                return Err(MemoryRuntimeError::InvalidLayout {
+                    object: Some(allocation.id),
+                    size: allocation.capacity_bytes,
+                    alignment: allocation.alignment,
+                    reason: "indirect payload envelope cannot expose a typed contiguous slot",
+                });
+            }
+            if allocation.capacity_bytes != 0 && allocation.payload_block_capacity == 0 {
+                return Err(MemoryRuntimeError::InvalidLayout {
+                    object: Some(allocation.id),
+                    size: allocation.capacity_bytes,
+                    alignment: allocation.alignment,
+                    reason: "indirect payload envelope lacks planned block registrations",
+                });
+            }
         }
         objects.push(ObjectAuthorization {
             key: PlanObjectKey::new(domain, view.revision, allocation.id),
             arena: arena.id,
             space: allocation.space,
+            slot: allocation.slot,
             current_bytes: allocation.current_bytes,
             capacity_bytes: allocation.capacity_bytes,
+            payload_block_capacity: allocation.payload_block_capacity,
             alignment: allocation.alignment,
             offset: allocation.placement.offset,
             lifetime: allocation.lifetime,
@@ -2019,14 +2583,40 @@ fn validate_plan_view(
         }
     }
     for object in &objects {
-        if arenas.iter().any(|arena| {
-            arena.id == object.arena && arena.backing == ArenaBackingKind::IndirectOwnedPayloads
-        }) {
+        let arena = arenas
+            .iter()
+            .find(|arena| arena.id == object.arena)
+            .expect("validated object arena exists");
+        if arena.backing == ArenaBackingKind::IndirectOwnedPayloads {
             bytes = bytes.checked_add(object.capacity_bytes).ok_or(
                 MemoryRuntimeError::AccountingInvariantViolation {
                     dimension: "reservation bytes",
                     current: bytes,
                     change: object.capacity_bytes,
+                },
+            )?;
+            let metadata_bytes = object
+                .payload_block_capacity
+                .checked_mul(core::mem::size_of::<super::PayloadBlockRecord>() as u64)
+                .ok_or(MemoryRuntimeError::AccountingInvariantViolation {
+                    dimension: "payload registration metadata bytes",
+                    current: object.payload_block_capacity,
+                    change: core::mem::size_of::<super::PayloadBlockRecord>() as u64,
+                })?;
+            bytes = bytes.checked_add(metadata_bytes).ok_or(
+                MemoryRuntimeError::AccountingInvariantViolation {
+                    dimension: "reservation bytes",
+                    current: bytes,
+                    change: metadata_bytes,
+                },
+            )?;
+        } else if matches!(object.space, MemorySpace::Host | MemorySpace::ResidentCpu) {
+            let metadata_bytes = initialization_metadata_bytes(object.capacity_bytes, true)?;
+            bytes = bytes.checked_add(metadata_bytes).ok_or(
+                MemoryRuntimeError::AccountingInvariantViolation {
+                    dimension: "reservation bytes",
+                    current: bytes,
+                    change: metadata_bytes,
                 },
             )?;
         }

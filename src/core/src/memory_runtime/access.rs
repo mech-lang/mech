@@ -5,7 +5,14 @@ use alloc::{boxed::Box, vec::Vec};
 #[cfg(not(feature = "no_std"))]
 use std::{boxed::Box, vec::Vec};
 
-use core::{marker::PhantomData, mem, mem::MaybeUninit, slice};
+use core::{
+    cell::{RefCell, RefMut},
+    marker::PhantomData,
+    mem,
+    mem::MaybeUninit,
+    ops::{Deref, DerefMut},
+    slice,
+};
 
 use super::{
     ActiveLeaseRecord, AllocationHandle, MemoryDomain, MemoryRuntimeError, MemoryRuntimeResult,
@@ -172,18 +179,33 @@ mod managed_element_sealed {
 
 /// A fixed-width initialized element that may be viewed inside a managed
 /// lease. The sealed set excludes owning or recursively allocated values.
-pub trait ManagedElement: managed_element_sealed::Sealed + Copy + 'static {}
-
-impl<T> ManagedElement for T where T: managed_element_sealed::Sealed + Copy + 'static {}
+pub trait ManagedElement: managed_element_sealed::Sealed + Copy + 'static {
+    const SLOT: crate::PlannedSlotKind;
+}
 
 macro_rules! managed_elements {
-    ($($type:ty),+ $(,)?) => {$(
+    ($($type:ty => $slot:expr),+ $(,)?) => {$(
         impl managed_element_sealed::Sealed for $type {}
+        impl ManagedElement for $type {
+            const SLOT: crate::PlannedSlotKind = $slot;
+        }
     )+};
 }
 
 managed_elements!(
-    u8, u16, u32, u64, u128, i8, i16, i32, i64, i128, f32, f64, usize
+    u8 => crate::PlannedSlotKind::FixedScalar(crate::ScalarMemoryKind::Unsigned(crate::IntegerWidth::W8)),
+    u16 => crate::PlannedSlotKind::FixedScalar(crate::ScalarMemoryKind::Unsigned(crate::IntegerWidth::W16)),
+    u32 => crate::PlannedSlotKind::FixedScalar(crate::ScalarMemoryKind::Unsigned(crate::IntegerWidth::W32)),
+    u64 => crate::PlannedSlotKind::FixedScalar(crate::ScalarMemoryKind::Unsigned(crate::IntegerWidth::W64)),
+    u128 => crate::PlannedSlotKind::FixedScalar(crate::ScalarMemoryKind::Unsigned(crate::IntegerWidth::W128)),
+    i8 => crate::PlannedSlotKind::FixedScalar(crate::ScalarMemoryKind::Signed(crate::IntegerWidth::W8)),
+    i16 => crate::PlannedSlotKind::FixedScalar(crate::ScalarMemoryKind::Signed(crate::IntegerWidth::W16)),
+    i32 => crate::PlannedSlotKind::FixedScalar(crate::ScalarMemoryKind::Signed(crate::IntegerWidth::W32)),
+    i64 => crate::PlannedSlotKind::FixedScalar(crate::ScalarMemoryKind::Signed(crate::IntegerWidth::W64)),
+    i128 => crate::PlannedSlotKind::FixedScalar(crate::ScalarMemoryKind::Signed(crate::IntegerWidth::W128)),
+    f32 => crate::PlannedSlotKind::FixedScalar(crate::ScalarMemoryKind::Floating(crate::FloatWidth::W32)),
+    f64 => crate::PlannedSlotKind::FixedScalar(crate::ScalarMemoryKind::Floating(crate::FloatWidth::W64)),
+    usize => crate::PlannedSlotKind::FixedScalar(crate::ScalarMemoryKind::Index)
 );
 
 /// Sealed sequential constructor for fresh planned storage. It exposes only
@@ -234,22 +256,148 @@ struct ResolvedAccessRequest {
     cell: Option<CanonicalCellId>,
     role: Option<ManagedPortRole>,
     object: PlanObjectKey,
-    handle: Option<AllocationHandle>,
     mode: MemoryAccessMode,
-    start: u64,
-    end: u64,
-    relative_end: u64,
     lifetime: MemoryLifetime,
     region: MemoryAccessRegion,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Debug)]
 pub struct PreparedCallAccess {
     revision: super::MemoryPlanRevision,
     requests: Box<[ResolvedAccessRequest]>,
+    workspace: RefCell<CallAccessWorkspace>,
+}
+
+#[derive(Debug)]
+struct CallAccessWorkspace {
+    leases: Vec<HeldLease>,
+}
+
+impl Deref for CallAccessWorkspace {
+    type Target = [HeldLease];
+
+    fn deref(&self) -> &Self::Target {
+        &self.leases
+    }
+}
+
+impl DerefMut for CallAccessWorkspace {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.leases
+    }
 }
 
 impl MemoryDomain {
+    #[cfg(feature = "functions")]
+    pub fn prepare_function_call(
+        &self,
+        realized: &RealizedMemoryPlan,
+        plan: &crate::CallMemoryPlan,
+        invocation: &crate::FunctionInvocation,
+    ) -> MemoryRuntimeResult<PreparedCallAccess> {
+        if plan.inputs.len() != invocation.input_cells().len() || plan.outputs.len() != 1 {
+            return Err(MemoryRuntimeError::CandidateValidationFailed {
+                object: None,
+                reason: "function invocation and call-memory plan arity differ".into(),
+            });
+        }
+        let mut resolved = Vec::new();
+        resolved
+            .try_reserve_exact(plan.allocations.len())
+            .map_err(|_| MemoryRuntimeError::AllocationFailed {
+                object: None,
+                requested: plan.allocations.len() as u64,
+                alignment: 1,
+                space: crate::MemorySpace::Host,
+            })?;
+        for (index, input) in plan.inputs.iter().enumerate() {
+            let object = self.plan_object_key(realized.revision(), input.object)?;
+            let binding = realized.binding(object)?;
+            let region = MemoryAccessRegion::WholeInitialized;
+            let _ = enclosing_span(object.object(), &binding, MemoryAccessMode::Read, region)?;
+            resolved.push(ResolvedAccessRequest {
+                cell: Some(invocation.input_cells()[index].reactive_cell_id()),
+                role: Some(ManagedPortRole::Input(index)),
+                object,
+                mode: MemoryAccessMode::Read,
+                lifetime: realized.lifetime(object)?,
+                region,
+            });
+        }
+        for (index, output) in plan.outputs.iter().enumerate() {
+            let target = match plan.transactions.get(index) {
+                Some(crate::TransactionRequirement::StageAndSwap { staged, .. }) => *staged,
+                Some(crate::TransactionRequirement::DoubleBuffer { next, .. }) => *next,
+                Some(crate::TransactionRequirement::UndoSnapshot { target, .. }) => *target,
+                Some(crate::TransactionRequirement::None) | None => output.object,
+            };
+            let object = self.plan_object_key(realized.revision(), target)?;
+            let binding = realized.binding(object)?;
+            let region = region_access_for_port(
+                &output.region,
+                output.value.current_address_span_bytes,
+                output.value.slot.bytes,
+            )?;
+            let _ = enclosing_span(object.object(), &binding, MemoryAccessMode::Write, region)?;
+            resolved.push(ResolvedAccessRequest {
+                cell: Some(invocation.output_cell().reactive_cell_id()),
+                role: Some(ManagedPortRole::Output(index)),
+                object,
+                mode: MemoryAccessMode::Write,
+                lifetime: realized.lifetime(object)?,
+                region,
+            });
+        }
+        for allocation in plan.allocations.iter().filter(|allocation| {
+            matches!(
+                allocation.role,
+                crate::AllocationRole::Scratch
+                    | crate::AllocationRole::SelectorPlan
+                    | crate::AllocationRole::OrderedIndex
+            )
+        }) {
+            let object = self.plan_object_key(realized.revision(), allocation.id)?;
+            let binding = realized.binding(object)?;
+            let region = MemoryAccessRegion::Contiguous {
+                offset_bytes: 0,
+                length_bytes: allocation.current_bytes,
+            };
+            let _ = enclosing_span(object.object(), &binding, MemoryAccessMode::Write, region)?;
+            resolved.push(ResolvedAccessRequest {
+                cell: None,
+                role: None,
+                object,
+                mode: MemoryAccessMode::Write,
+                lifetime: realized.lifetime(object)?,
+                region,
+            });
+        }
+        resolved.sort_by_key(|request| {
+            (
+                request.object,
+                request.cell,
+                request.role,
+                request.mode,
+                request.region,
+            )
+        });
+        resolved.dedup();
+        let mut leases = Vec::new();
+        leases.try_reserve_exact(resolved.len()).map_err(|_| {
+            MemoryRuntimeError::AllocationFailed {
+                object: None,
+                requested: resolved.len() as u64,
+                alignment: 1,
+                space: crate::MemorySpace::Host,
+            }
+        })?;
+        Ok(PreparedCallAccess {
+            revision: realized.revision(),
+            requests: resolved.into_boxed_slice(),
+            workspace: RefCell::new(CallAccessWorkspace { leases }),
+        })
+    }
+
     pub fn prepare_call(
         &self,
         realized: &RealizedMemoryPlan,
@@ -272,7 +420,7 @@ impl MemoryDomain {
         })?;
         for request in requests {
             let binding = realized.binding(request.object)?;
-            let (start, end, relative_end) = enclosing_span(
+            let _ = enclosing_span(
                 request.object.object(),
                 &binding,
                 request.mode,
@@ -282,29 +430,26 @@ impl MemoryDomain {
                 cell: None,
                 role: None,
                 object: request.object,
-                handle: binding.handle(),
                 mode: request.mode,
-                start,
-                end,
-                relative_end,
                 lifetime: realized.lifetime(request.object)?,
                 region: request.region,
             });
         }
-        resolved.sort_by_key(|request| {
-            (
-                request.handle.map(AllocationHandle::domain),
-                request.handle.map(AllocationHandle::slot),
-                request.start,
-                request.end,
-                request.mode,
-                request.object,
-            )
-        });
+        resolved.sort_by_key(|request| (request.object, request.mode, request.region));
         resolved.dedup();
+        let mut leases = Vec::new();
+        leases.try_reserve_exact(resolved.len()).map_err(|_| {
+            MemoryRuntimeError::AllocationFailed {
+                object: None,
+                requested: resolved.len() as u64,
+                alignment: 1,
+                space: crate::MemorySpace::Host,
+            }
+        })?;
         Ok(PreparedCallAccess {
             revision: realized.revision(),
             requests: resolved.into_boxed_slice(),
+            workspace: RefCell::new(CallAccessWorkspace { leases }),
         })
     }
 
@@ -330,7 +475,7 @@ impl MemoryDomain {
         })?;
         for request in requests {
             let binding = realized.binding(request.object)?;
-            let (start, end, relative_end) = enclosing_span(
+            let _ = enclosing_span(
                 request.object.object(),
                 &binding,
                 request.mode,
@@ -340,38 +485,41 @@ impl MemoryDomain {
                 cell: Some(request.cell),
                 role: Some(request.role),
                 object: request.object,
-                handle: binding.handle(),
                 mode: request.mode,
-                start,
-                end,
-                relative_end,
                 lifetime: realized.lifetime(request.object)?,
                 region: request.region,
             });
         }
         resolved.sort_by_key(|request| {
             (
-                request.handle.map(AllocationHandle::domain),
-                request.handle.map(AllocationHandle::slot),
-                request.start,
-                request.end,
-                request.mode,
                 request.object,
                 request.cell,
                 request.role,
+                request.mode,
+                request.region,
             )
         });
         resolved.dedup();
+        let mut leases = Vec::new();
+        leases.try_reserve_exact(resolved.len()).map_err(|_| {
+            MemoryRuntimeError::AllocationFailed {
+                object: None,
+                requested: resolved.len() as u64,
+                alignment: 1,
+                space: crate::MemorySpace::Host,
+            }
+        })?;
         Ok(PreparedCallAccess {
             revision: realized.revision(),
             requests: resolved.into_boxed_slice(),
+            workspace: RefCell::new(CallAccessWorkspace { leases }),
         })
     }
 
     pub fn acquire_call<'a>(
         &'a self,
         realized: &'a RealizedMemoryPlan,
-        prepared: &PreparedCallAccess,
+        prepared: &'a PreparedCallAccess,
     ) -> MemoryRuntimeResult<KernelMemoryFrame<'a>> {
         if prepared.revision != realized.revision() {
             return Err(MemoryRuntimeError::InvalidPlanRevision {
@@ -386,6 +534,40 @@ impl MemoryDomain {
             });
         }
 
+        let mut workspace = prepared.workspace.try_borrow_mut().map_err(|_| {
+            MemoryRuntimeError::BorrowConflict {
+                object: prepared
+                    .requests
+                    .first()
+                    .map(|request| request.object.object())
+                    .unwrap_or(MemoryObjectId::new(0)),
+            }
+        })?;
+        workspace.leases.clear();
+        for request in &prepared.requests {
+            let binding = realized.binding(request.object)?;
+            let (start, end, relative_end) = enclosing_span(
+                request.object.object(),
+                &binding,
+                request.mode,
+                request.region,
+            )?;
+            workspace.leases.push(HeldLease {
+                token: None,
+                handle: binding.handle(),
+                object: request.object,
+                cell: request.cell,
+                role: request.role,
+                mode: request.mode,
+                start,
+                end,
+                relative_end,
+                region: request.region,
+                lifetime: request.lifetime,
+                incarnation: binding.incarnation(),
+            });
+        }
+
         let mut state = self.state.borrow_mut();
         if state.closed {
             return Err(MemoryRuntimeError::DomainClosed);
@@ -396,13 +578,13 @@ impl MemoryDomain {
                 actual: realized.revision(),
             });
         }
-        for (position, request) in prepared.requests.iter().enumerate() {
+        for (position, request) in workspace.leases.iter().enumerate() {
             let region = state.regions.get(&request.object).ok_or(
                 MemoryRuntimeError::UnknownPlanObject {
                     key: request.object,
                 },
             )?;
-            if region.handle != request.handle {
+            if region.handle != request.handle || region.incarnation != request.incarnation {
                 let handle = request.handle.ok_or(MemoryRuntimeError::InvalidLayout {
                     object: Some(request.object.object()),
                     size: request.relative_end,
@@ -412,6 +594,17 @@ impl MemoryDomain {
                 return Err(MemoryRuntimeError::StaleAllocationGeneration {
                     handle,
                     current: region.handle.map(AllocationHandle::generation).unwrap_or(0),
+                });
+            }
+            if !request.mode.writes()
+                && !region
+                    .initialization
+                    .contains_region(request.region, region.initialized_bytes)
+            {
+                return Err(MemoryRuntimeError::UninitializedAccess {
+                    object: request.object.object(),
+                    requested: request.relative_end,
+                    initialized: region.initialized_bytes,
                 });
             }
             let Some(handle) = request.handle else {
@@ -470,72 +663,74 @@ impl MemoryDomain {
                     object: request.object.object(),
                 });
             }
-            if prepared.requests[..position].iter().any(|other| {
+            if workspace.leases[..position].iter().any(|other| {
                 other.handle == Some(handle)
                     && overlaps(request.start, request.end, other.start, other.end)
                     && (request.mode.writes() || other.mode.writes())
-                    && !(request.object == other.object
-                        && request.mode == MemoryAccessMode::ExclusiveInPlace
-                        && other.mode == MemoryAccessMode::ExclusiveInPlace)
             }) {
                 return Err(MemoryRuntimeError::BorrowConflict {
                     object: request.object.object(),
                 });
             }
         }
-
-        let mut held = Vec::new();
-        held.try_reserve_exact(prepared.requests.len())
-            .map_err(|_| MemoryRuntimeError::AllocationFailed {
-                object: None,
-                requested: prepared.requests.len() as u64,
-                alignment: 1,
-                space: crate::MemorySpace::Host,
+        let physical_count = workspace
+            .leases
+            .iter()
+            .filter(|request| request.handle.is_some())
+            .count();
+        let token_increment =
+            u64::try_from(physical_count).map_err(|_| MemoryRuntimeError::IdentityExhausted {
+                identity: "lease token",
             })?;
-        for request in &prepared.requests {
-            let token = if let Some(handle) = request.handle {
-                let token = state.next_lease_token;
-                state.next_lease_token =
-                    token
-                        .checked_add(1)
-                        .ok_or(MemoryRuntimeError::IdentityExhausted {
-                            identity: "lease token",
-                        })?;
-                state.record_mut(handle)?.leases.push(ActiveLeaseRecord {
-                    token,
-                    start: request.start,
-                    end: request.end,
-                    write: request.mode.writes(),
+        let next_token = state.next_lease_token.checked_add(token_increment).ok_or(
+            MemoryRuntimeError::IdentityExhausted {
+                identity: "lease token",
+            },
+        )?;
+        for request in &workspace.leases {
+            let Some(handle) = request.handle else {
+                continue;
+            };
+            let requested = workspace
+                .leases
+                .iter()
+                .filter(|candidate| candidate.handle == Some(handle))
+                .count();
+            let record = state.record(handle)?;
+            if record.leases.len().saturating_add(requested) > record.leases.capacity() {
+                return Err(MemoryRuntimeError::UnplannedAllocation {
+                    object: Some(request.object.object()),
+                    requested: requested as u64,
                 });
-                Some(token)
+            }
+        }
+        let mut token = state.next_lease_token;
+        for request in &mut workspace.leases {
+            let token = if let Some(handle) = request.handle {
+                let installed = token;
+                token += 1;
+                state
+                    .record_mut(handle)
+                    .expect("lease installation was completely prevalidated")
+                    .leases
+                    .push(ActiveLeaseRecord {
+                        token: installed,
+                        start: request.start,
+                        end: request.end,
+                        write: request.mode.writes(),
+                    });
+                Some(installed)
             } else {
                 None
             };
-            held.push(HeldLease {
-                token,
-                handle: request.handle,
-                object: request.object,
-                cell: request.cell,
-                role: request.role,
-                mode: request.mode,
-                start: request.start,
-                end: request.end,
-                relative_end: request.relative_end,
-                region: request.region,
-                incarnation: state
-                    .regions
-                    .get(&request.object)
-                    .ok_or(MemoryRuntimeError::UnknownPlanObject {
-                        key: request.object,
-                    })?
-                    .incarnation,
-            });
+            request.token = token;
         }
+        state.next_lease_token = next_token;
         drop(state);
         Ok(KernelMemoryFrame {
             domain: self,
             realized,
-            leases: held,
+            leases: workspace,
         })
     }
 }
@@ -552,6 +747,7 @@ struct HeldLease {
     end: u64,
     relative_end: u64,
     region: MemoryAccessRegion,
+    lifetime: MemoryLifetime,
     incarnation: super::RegionIncarnation,
 }
 
@@ -580,7 +776,7 @@ struct HeldLease {
 pub struct KernelMemoryFrame<'a> {
     domain: &'a MemoryDomain,
     realized: &'a RealizedMemoryPlan,
-    leases: Vec<HeldLease>,
+    leases: RefMut<'a, CallAccessWorkspace>,
 }
 
 impl KernelMemoryFrame<'_> {
@@ -591,6 +787,7 @@ impl KernelMemoryFrame<'_> {
     ) -> MemoryRuntimeResult<R> {
         let lease = self.port_lease(port.logical_cell_id(), port.role(), false)?;
         validate_contiguous_typed_region(lease.object.object(), lease.region)?;
+        self.validate_managed_element::<T>(lease, false)?;
         self.with_bytes(lease.object, |bytes| {
             if bytes.is_empty() {
                 return Ok(access(&[]));
@@ -617,6 +814,7 @@ impl KernelMemoryFrame<'_> {
     ) -> MemoryRuntimeResult<R> {
         let lease = self.port_lease(port.logical_cell_id(), port.role(), true)?;
         validate_contiguous_typed_region(lease.object.object(), lease.region)?;
+        self.validate_managed_element::<T>(lease, false)?;
         self.with_bytes_mut(lease.object, |bytes| {
             if bytes.is_empty() {
                 return Ok(access(&mut []));
@@ -637,21 +835,22 @@ impl KernelMemoryFrame<'_> {
         })?
     }
 
-    pub fn with_port_init_writer<T: ManagedElement, R>(
+    pub fn with_port_init_writer<T: ManagedElement>(
         &mut self,
         port: ManagedPort<T>,
-        access: impl FnOnce(&mut InitWriter<'_, T>) -> R,
-    ) -> MemoryRuntimeResult<R> {
+        access: impl FnOnce(&mut InitWriter<'_, T>) -> MemoryRuntimeResult<()>,
+    ) -> MemoryRuntimeResult<()> {
         let lease = self.port_lease(port.logical_cell_id(), port.role(), true)?;
         validate_contiguous_typed_region(lease.object.object(), lease.region)?;
+        self.validate_managed_element::<T>(lease, false)?;
         self.with_init_writer(lease, access)
     }
 
-    pub fn with_object_init_writer<T: ManagedElement, R>(
+    pub fn with_object_init_writer<T: ManagedElement>(
         &mut self,
         object: PlanObjectKey,
-        access: impl FnOnce(&mut InitWriter<'_, T>) -> R,
-    ) -> MemoryRuntimeResult<R> {
+        access: impl FnOnce(&mut InitWriter<'_, T>) -> MemoryRuntimeResult<()>,
+    ) -> MemoryRuntimeResult<()> {
         let lease = self
             .leases
             .iter()
@@ -661,14 +860,53 @@ impl KernelMemoryFrame<'_> {
                 object: object.object(),
             })?;
         validate_contiguous_typed_region(lease.object.object(), lease.region)?;
+        self.validate_managed_element::<T>(lease, true)?;
         self.with_init_writer(lease, access)
     }
 
-    fn with_init_writer<T: ManagedElement, R>(
+    fn validate_managed_element<T: ManagedElement>(
+        &self,
+        lease: HeldLease,
+        allow_raw_bytes: bool,
+    ) -> MemoryRuntimeResult<()> {
+        let state = self.domain.state.borrow();
+        let region = state
+            .regions
+            .get(&lease.object)
+            .ok_or(MemoryRuntimeError::UnknownPlanObject { key: lease.object })?;
+        let byte_codec = allow_raw_bytes
+            && mem::size_of::<T>() == 1
+            && matches!(
+                region.slot,
+                None | Some(crate::PlannedSlotKind::FixedScalar(_))
+            );
+        if region.slot != Some(T::SLOT) && !byte_codec {
+            return Err(MemoryRuntimeError::InvalidLayout {
+                object: Some(lease.object.object()),
+                size: mem::size_of::<T>() as u64,
+                alignment: mem::align_of::<T>() as u32,
+                reason: "typed view does not match the planned slot identity",
+            });
+        }
+        if let Some(handle) = lease.handle {
+            let record = state.record(handle)?;
+            if record.alignment < mem::align_of::<T>() as u32 {
+                return Err(MemoryRuntimeError::InvalidLayout {
+                    object: Some(lease.object.object()),
+                    size: mem::size_of::<T>() as u64,
+                    alignment: mem::align_of::<T>() as u32,
+                    reason: "allocation base alignment is weaker than the typed view",
+                });
+            }
+        }
+        Ok(())
+    }
+
+    fn with_init_writer<T: ManagedElement>(
         &mut self,
         lease: HeldLease,
-        access: impl FnOnce(&mut InitWriter<'_, T>) -> R,
-    ) -> MemoryRuntimeResult<R> {
+        access: impl FnOnce(&mut InitWriter<'_, T>) -> MemoryRuntimeResult<()>,
+    ) -> MemoryRuntimeResult<()> {
         let length = lease.end.checked_sub(lease.start).ok_or(
             MemoryRuntimeError::AccountingInvariantViolation {
                 dimension: "initialization lease span",
@@ -681,7 +919,7 @@ impl KernelMemoryFrame<'_> {
                 slots: &mut [],
                 initialized: 0,
             };
-            return Ok(access(&mut writer));
+            return access(&mut writer);
         }
         let (pointer, capacity) = {
             let state = self.domain.state.borrow();
@@ -736,7 +974,7 @@ impl KernelMemoryFrame<'_> {
             slots,
             initialized: 0,
         };
-        let result = access(&mut writer);
+        access(&mut writer)?;
         let initialized_bytes = u64::try_from(writer.initialized)
             .ok()
             .and_then(|count| count.checked_mul(mem::size_of::<T>() as u64))
@@ -751,9 +989,18 @@ impl KernelMemoryFrame<'_> {
                 current: writer.initialized as u64,
                 change: mem::size_of::<T>() as u64,
             })?;
-        self.realized
-            .record_initialized(lease.object, initialized_bytes)?;
-        Ok(result)
+        let initialized_start = lease.relative_end.checked_sub(length).ok_or(
+            MemoryRuntimeError::AccountingInvariantViolation {
+                dimension: "initialized range start",
+                current: lease.relative_end,
+                change: length,
+            },
+        )?;
+        self.realized.record_initialized_range(
+            lease.object,
+            initialized_start,
+            initialized_bytes.saturating_sub(initialized_start),
+        )
     }
 
     fn port_lease(
@@ -801,6 +1048,7 @@ impl KernelMemoryFrame<'_> {
             .ok_or(MemoryRuntimeError::BorrowConflict {
                 object: object.object(),
             })?;
+        validate_contiguous_region(object.object(), lease.region)?;
         self.realized.binding(object)?;
         let (base, capacity) = {
             let state = self.domain.state.borrow();
@@ -813,6 +1061,16 @@ impl KernelMemoryFrame<'_> {
                     key: lease.object,
                     expected: lease.incarnation,
                     actual: region.incarnation,
+                });
+            }
+            if !region
+                .initialization
+                .contains_region(lease.region, region.initialized_bytes)
+            {
+                return Err(MemoryRuntimeError::UninitializedAccess {
+                    object: object.object(),
+                    requested: lease.relative_end,
+                    initialized: region.initialized_bytes,
                 });
             }
             let Some(handle) = lease.handle else {
@@ -873,6 +1131,7 @@ impl KernelMemoryFrame<'_> {
             .ok_or(MemoryRuntimeError::BorrowConflict {
                 object: object.object(),
             })?;
+        validate_contiguous_region(object.object(), lease.region)?;
         let (base, capacity, initialized_bytes) = {
             let state = self.domain.state.borrow();
             let region = state
@@ -884,6 +1143,16 @@ impl KernelMemoryFrame<'_> {
                     key: lease.object,
                     expected: lease.incarnation,
                     actual: region.incarnation,
+                });
+            }
+            if !region
+                .initialization
+                .contains_region(lease.region, region.initialized_bytes)
+            {
+                return Err(MemoryRuntimeError::UninitializedAccess {
+                    object: object.object(),
+                    requested: lease.relative_end,
+                    initialized: region.initialized_bytes,
                 });
             }
             let Some(handle) = lease.handle else {
@@ -955,6 +1224,7 @@ impl KernelMemoryFrame<'_> {
             .ok_or(MemoryRuntimeError::BorrowConflict {
                 object: object.object(),
             })?;
+        validate_contiguous_region(object.object(), lease.region)?;
         let leased_length = lease.end.checked_sub(lease.start).ok_or(
             MemoryRuntimeError::AccountingInvariantViolation {
                 dimension: "lease span",
@@ -989,6 +1259,26 @@ impl KernelMemoryFrame<'_> {
                     key: lease.object,
                     expected: lease.incarnation,
                     actual: region.incarnation,
+                });
+            }
+            let prefix_region = MemoryAccessRegion::Contiguous {
+                offset_bytes: lease.relative_end.checked_sub(leased_length).ok_or(
+                    MemoryRuntimeError::AccountingInvariantViolation {
+                        dimension: "lease relative start",
+                        current: lease.relative_end,
+                        change: leased_length,
+                    },
+                )?,
+                length_bytes,
+            };
+            if !region
+                .initialization
+                .contains_region(prefix_region, region.initialized_bytes)
+            {
+                return Err(MemoryRuntimeError::UninitializedAccess {
+                    object: object.object(),
+                    requested: relative_end,
+                    initialized: region.initialized_bytes,
                 });
             }
             let Some(handle) = lease.handle else {
@@ -1092,10 +1382,82 @@ fn validate_contiguous_typed_region(
     })
 }
 
+fn validate_contiguous_region(
+    object: MemoryObjectId,
+    region: MemoryAccessRegion,
+) -> MemoryRuntimeResult<()> {
+    if matches!(
+        region,
+        MemoryAccessRegion::WholeInitialized | MemoryAccessRegion::Contiguous { .. }
+    ) {
+        return Ok(());
+    }
+    Err(MemoryRuntimeError::InvalidLayout {
+        object: Some(object),
+        size: 0,
+        alignment: 1,
+        reason: "raw byte access cannot expose gaps inside a noncontiguous planned region",
+    })
+}
+
+#[cfg(feature = "functions")]
+fn region_access_for_port(
+    region: &crate::RegionAccessPlan,
+    whole_bytes: u64,
+    element_bytes: u64,
+) -> MemoryRuntimeResult<MemoryAccessRegion> {
+    match region {
+        crate::RegionAccessPlan::WholeValue => Ok(MemoryAccessRegion::Contiguous {
+            offset_bytes: 0,
+            length_bytes: whole_bytes,
+        }),
+        crate::RegionAccessPlan::Contiguous {
+            offset_bytes,
+            length_bytes,
+        } => Ok(MemoryAccessRegion::Contiguous {
+            offset_bytes: *offset_bytes,
+            length_bytes: *length_bytes,
+        }),
+        crate::RegionAccessPlan::Strided {
+            offset_bytes,
+            count,
+            stride_bytes,
+            element_bytes,
+        } => Ok(MemoryAccessRegion::Strided {
+            offset_bytes: *offset_bytes,
+            count: *count,
+            stride_bytes: *stride_bytes,
+            element_bytes: *element_bytes,
+        }),
+        crate::RegionAccessPlan::Rectangle {
+            base_offset_bytes,
+            rows,
+            columns,
+            row_stride_bytes,
+            column_stride_bytes,
+        } => Ok(MemoryAccessRegion::Rectangle {
+            offset_bytes: *base_offset_bytes,
+            rows: *rows,
+            columns: *columns,
+            row_stride_bytes: *row_stride_bytes,
+            column_stride_bytes: *column_stride_bytes,
+            element_bytes,
+        }),
+        crate::RegionAccessPlan::Gather { .. }
+        | crate::RegionAccessPlan::CollectionEntry { .. }
+        | crate::RegionAccessPlan::Deferred(_) => Err(MemoryRuntimeError::InvalidLayout {
+            object: None,
+            size: whole_bytes,
+            alignment: 1,
+            reason: "selector/key/deferred access requires its concrete bounded plan",
+        }),
+    }
+}
+
 impl Drop for KernelMemoryFrame<'_> {
     fn drop(&mut self) {
         let mut state = self.domain.state.borrow_mut();
-        for held in self.leases.drain(..) {
+        for held in self.leases.leases.drain(..) {
             let (Some(handle), Some(token)) = (held.handle, held.token) else {
                 continue;
             };
@@ -1213,13 +1575,6 @@ fn enclosing_span(
             (offset_bytes, end)
         }
     };
-    if mode.writes() && relative.0 > binding.initialized_bytes() {
-        return Err(MemoryRuntimeError::UninitializedAccess {
-            object,
-            requested: relative.0,
-            initialized: binding.initialized_bytes(),
-        });
-    }
     if relative.1 > accessible {
         return Err(MemoryRuntimeError::UninitializedAccess {
             object,
