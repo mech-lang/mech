@@ -260,6 +260,8 @@ pub struct ResidentActivationOptions {
 #[derive(Clone, Debug)]
 pub struct ActivatedPlan {
     pub program_revision: ProgramRevision,
+    /// Identity of caller-supplied activation facts. Deterministic facts
+    /// completed from the artifact belong to this plan, not its request key.
     pub activation_facts_fingerprint: [u8; 32],
     pub plan_generation: PlanGeneration,
     pub layout_generation: LayoutGeneration,
@@ -1246,9 +1248,9 @@ pub fn preflight_activation(
     preflight_state_initializers(artifact)?;
     let classification = classify_nodes(artifact, options.external)?;
     let schedule = build_activation_schedule(artifact, &classification)?;
+    let facts_fingerprint = activation_facts_fingerprint(facts);
     let facts = complete_activation_shape_facts(artifact, facts, &classification, &schedule)?;
     let layout = build_layout(artifact, &facts, &classification, &schedule.positions)?;
-    let facts_fingerprint = activation_facts_fingerprint(&facts);
     let mut static_selectors = ArtifactStaticSelectorResolver::new(artifact);
     let plan = build_plan(
         artifact,
@@ -1411,9 +1413,12 @@ fn activate_internal(
     preflight_state_initializers(artifact)?;
     let classification = classify_nodes(artifact, options.external)?;
     let schedule = build_activation_schedule(artifact, &classification)?;
+    // Reactivation identity belongs to the caller-supplied activation facts.
+    // Shapes completed deterministically from the artifact are derived plan
+    // state and must not make an unchanged request look like a new one.
+    let facts_fingerprint = activation_facts_fingerprint(facts);
     let facts = complete_activation_shape_facts(artifact, facts, &classification, &schedule)?;
     let layout = build_layout(artifact, &facts, &classification, &schedule.positions)?;
-    let facts_fingerprint = activation_facts_fingerprint(&facts);
     let mut static_selectors = ArtifactStaticSelectorResolver::new(artifact);
     let mut plan = build_plan(
         artifact,
