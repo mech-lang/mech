@@ -3,12 +3,12 @@
 use mech_core::snapshot::F64Bits;
 use mech_core::{
     AllocationPlan, AllocationRole, ArenaBackingKind, ArenaPlacement, ArenaPlan, CallAccessRequest,
-    FunctionInvocation, KernelMemoryFrame, ManagedCallAccessRequest, ManagedFunctionInstance,
-    ManagedMechFunctionImpl, ManagedPort, ManagedSequence, ManagedString, MechExecutionServices,
-    MemoryAccessMode, MemoryAccessRegion, MemoryArenaId, MemoryBudgetLimits, MemoryDomain,
-    MemoryLifetime, MemoryObjectId, MemoryObjectOwner, MemoryPlanPoint, MemoryRuntimeError,
-    MemorySpace, NoMechExecutionServices, PublicationCandidate, ReactiveSolveStatus,
-    ResourceDemand, ReuseGroupId, RuntimeBinding, RuntimePlanView, ValueCell,
+    CellPublicationCandidate, FunctionInvocation, KernelMemoryFrame, ManagedCallAccessRequest,
+    ManagedFunctionInstance, ManagedMechFunctionImpl, ManagedPort, ManagedSequence, ManagedString,
+    MechExecutionServices, MemoryAccessMode, MemoryAccessRegion, MemoryArenaId, MemoryBudgetLimits,
+    MemoryDomain, MemoryLifetime, MemoryObjectId, MemoryObjectOwner, MemoryPlanPoint,
+    MemoryRuntimeError, MemorySpace, NoMechExecutionServices, PublicationCandidate,
+    ReactiveSolveStatus, ResourceDemand, ReuseGroupId, RuntimeBinding, RuntimePlanView, ValueCell,
 };
 
 fn allocation(
@@ -1037,7 +1037,7 @@ fn publication_versions_change_only_for_changed_candidates() {
         )
         .unwrap();
     let second = domain.commit_publication(&mut changed).unwrap();
-    assert_eq!(second[0].version.get(), 1);
+    assert_eq!(second[0].version.get(), 2);
     let mut third = domain
         .prepare_publication(
             &realized,
@@ -1053,6 +1053,92 @@ fn publication_versions_change_only_for_changed_candidates() {
         domain.commit_publication(&mut third).unwrap()[0]
             .version
             .get(),
-        2
+        3
     );
+}
+
+#[test]
+fn multi_cell_publication_rolls_back_every_applied_value_on_late_conflict() {
+    let left = ValueCell::from_exact(1_u64).unwrap();
+    let right = ValueCell::from_exact(2_u64).unwrap();
+    let left_alias = left.clone();
+    let right_alias = right.clone();
+    let left_before_version = left.published_version();
+    let right_before_version = right.published_version();
+    let left_next = left
+        .rebuild_data_draft(mech_core::ValueDataDraft::U64(10))
+        .unwrap();
+    let right_next = right
+        .rebuild_data_draft(mech_core::ValueDataDraft::U64(20))
+        .unwrap();
+
+    let domain = MemoryDomain::new().unwrap();
+    let revision = domain.issue_plan_revision().unwrap();
+    let allocations = [
+        allocation(0, 0, 0, 0, 8, MemoryLifetime::Activation, None),
+        allocation(1, 0, 8, 0, 8, MemoryLifetime::Activation, None),
+    ];
+    let arenas = [arena(0, ArenaBackingKind::ContiguousBytes, 16, &[0, 1])];
+    let realized = domain
+        .materialize(
+            domain
+                .prepare_realization(RuntimePlanView::new(
+                    revision,
+                    &allocations,
+                    &arenas,
+                    ResourceDemand::default(),
+                    MemoryBudgetLimits::default(),
+                    &[],
+                ))
+                .unwrap(),
+        )
+        .unwrap();
+    let left_object = domain
+        .plan_object_key(revision, MemoryObjectId::new(0))
+        .unwrap();
+    let right_object = domain
+        .plan_object_key(revision, MemoryObjectId::new(1))
+        .unwrap();
+    let mut prepared = domain
+        .prepare_cell_publication(
+            &realized,
+            vec![
+                CellPublicationCandidate {
+                    cell: left.clone(),
+                    object: left_object,
+                    binding: realized.binding(left_object).unwrap(),
+                    value: left_next,
+                    changed: true,
+                },
+                CellPublicationCandidate {
+                    cell: right.clone(),
+                    object: right_object,
+                    binding: realized.binding(right_object).unwrap(),
+                    value: right_next,
+                    changed: true,
+                },
+            ],
+        )
+        .unwrap();
+    let held_shape = right.shape();
+    assert!(domain.commit_cell_publication(&mut prepared).is_err());
+    drop(held_shape);
+    assert_eq!(u64_cell(&left_alias), 1);
+    assert_eq!(u64_cell(&right_alias), 2);
+    assert_eq!(left.published_version(), left_before_version);
+    assert_eq!(right.published_version(), right_before_version);
+    let committed = domain.commit_cell_publication(&mut prepared).unwrap();
+    assert_eq!(committed.len(), 2);
+    assert_eq!(u64_cell(&left_alias), 10);
+    assert_eq!(u64_cell(&right_alias), 20);
+    assert!(left.published_version() > left_before_version);
+    assert!(right.published_version() > right_before_version);
+}
+
+fn u64_cell(cell: &ValueCell) -> u64 {
+    let snapshot = cell.snapshot().unwrap();
+    let mech_core::ValueData::U64(value) = snapshot.data() else {
+        panic!("expected U64 cell")
+    };
+    *value
 }

@@ -192,6 +192,13 @@ pub(crate) struct DetachedCellStorage {
     pub storage: Rc<dyn ErasedCellStorage>,
 }
 
+pub(crate) struct PreparedCellReplacement {
+    pub(crate) cell: ValueCell,
+    pub(crate) before: Value,
+    pub(crate) before_version: crate::PublishedValueVersion,
+    pub(crate) next: Value,
+}
+
 struct ExactCellStorage<T> {
     reference: Ref<T>,
 }
@@ -1493,6 +1500,63 @@ impl ValueCell {
         published.storage.adapter().replace(&value)?;
         published.shape = value.shape().clone();
         published.version = next_version;
+        Ok(())
+    }
+
+    pub(crate) fn prepare_replacement(&self, value: &Value) -> MResult<PreparedCellReplacement> {
+        self.preflight_replace()?;
+        if value.schema_key() != self.binding.schema_key {
+            return Err(MechError::new(
+                ValueCellSchemaMismatch {
+                    expected: self.binding.schema_key,
+                    actual: value.schema_key(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        let next = rebind_value(value.clone(), self.binding.schemas.as_ref())?;
+        let current_shape = self.binding.try_shape(CellAccess::Snapshot)?.clone();
+        let schema = self
+            .binding
+            .schemas
+            .get(self.binding.schema)
+            .expect("value-cell schema remains present");
+        if !shape_change_allowed(schema, &current_shape, next.shape()) {
+            return Err(MechError::new(
+                ValueCellShapeMismatch {
+                    expected: current_shape.parameter_values().to_vec().into_boxed_slice(),
+                    actual: next.shape().parameter_values().to_vec().into_boxed_slice(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        next.validate_against(&self.binding.schemas)
+            .map_err(snapshot_failure)?;
+        let validation = self.detached_clone()?;
+        validation.replace(&next)?;
+        Ok(PreparedCellReplacement {
+            cell: self.clone(),
+            before: self.snapshot()?,
+            before_version: self.published_version(),
+            next,
+        })
+    }
+
+    pub(crate) fn apply_prepared_replacement(
+        &self,
+        value: &Value,
+        version: crate::PublishedValueVersion,
+    ) -> MResult<()> {
+        let mut published = self
+            .binding
+            .published
+            .try_borrow_mut()
+            .map_err(|_| borrow_conflict(CellAccess::Replace))?;
+        published.storage.adapter().replace(value)?;
+        published.shape = value.shape().clone();
+        published.version = version;
         Ok(())
     }
 

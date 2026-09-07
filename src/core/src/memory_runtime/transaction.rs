@@ -7,6 +7,7 @@ use super::{
     MemoryDomain, MemoryRuntimeError, MemoryRuntimeResult, PlanObjectKey, PublishedValueVersion,
     RealizedMemoryPlan, RuntimeBinding,
 };
+use crate::{MResult, MechError, Value, ValueCell};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PublicationCandidate {
@@ -27,7 +28,23 @@ pub struct CommittedPublication {
 
 pub struct PreparedPublication {
     candidates: Box<[PublicationCandidate]>,
+    committed: Box<[CommittedPublication]>,
+    initial_version: PublishedValueVersion,
+    final_version: PublishedValueVersion,
     completed: bool,
+}
+
+pub struct CellPublicationCandidate {
+    pub cell: ValueCell,
+    pub object: PlanObjectKey,
+    pub binding: RuntimeBinding,
+    pub value: Value,
+    pub changed: bool,
+}
+
+pub struct PreparedCellPublication {
+    memory: PreparedPublication,
+    replacements: Box<[crate::cell_binding::PreparedCellReplacement]>,
 }
 
 impl PreparedPublication {
@@ -37,6 +54,19 @@ impl PreparedPublication {
 
     pub const fn is_completed(&self) -> bool {
         self.completed
+    }
+
+    pub fn planned_commits(&self) -> &[CommittedPublication] {
+        &self.committed
+    }
+}
+
+impl Drop for PreparedPublication {
+    fn drop(&mut self) {
+        // Candidates own no published state until commit. Marking an
+        // abandoned preparation completed makes drop the fail-closed abort
+        // path without invoking user code or fallible cleanup.
+        self.completed = true;
     }
 }
 
@@ -66,7 +96,7 @@ impl MemoryDomain {
             }
         })?;
         for candidate in &candidates {
-            realized.binding(candidate.object)?;
+            let expected = realized.binding(candidate.object)?;
             if seen.contains(&candidate.object.object()) {
                 return Err(MemoryRuntimeError::CandidateValidationFailed {
                     object: Some(candidate.object.object()),
@@ -83,48 +113,32 @@ impl MemoryDomain {
             if let Some(handle) = candidate.binding.handle() {
                 state.record(handle)?;
             }
+            if candidate.binding != expected {
+                return Err(MemoryRuntimeError::CandidateValidationFailed {
+                    object: Some(candidate.object.object()),
+                    reason: "publication binding differs from the realized plan object".into(),
+                });
+            }
             seen.push(candidate.object.object());
         }
-        Ok(PreparedPublication {
-            candidates: candidates.into_boxed_slice(),
-            completed: false,
-        })
-    }
-
-    pub fn commit_publication(
-        &self,
-        prepared: &mut PreparedPublication,
-    ) -> MemoryRuntimeResult<Box<[CommittedPublication]>> {
-        if prepared.completed {
-            return Err(MemoryRuntimeError::PublicationAlreadyCompleted);
-        }
-        let mut state = self.state.borrow_mut();
-        if state.closed {
-            return Err(MemoryRuntimeError::DomainClosed);
-        }
-        let changed = prepared
-            .candidates
-            .iter()
-            .filter(|candidate| candidate.changed)
-            .count();
-        let final_version = (0..changed).try_fold(state.next_publication, |version, _| {
-            version.checked_successor("published value version")
-        })?;
-        let mut next = state.next_publication;
+        let initial_version = state.next_publication;
+        let mut next = initial_version;
         let mut committed = Vec::new();
-        committed
-            .try_reserve_exact(prepared.candidates.len())
-            .map_err(|_| MemoryRuntimeError::AllocationFailed {
+        committed.try_reserve_exact(candidates.len()).map_err(|_| {
+            MemoryRuntimeError::AllocationFailed {
                 object: None,
-                requested: prepared.candidates.len() as u64,
+                requested: candidates.len() as u64,
                 alignment: 1,
                 space: crate::MemorySpace::Host,
-            })?;
-        for candidate in &prepared.candidates {
-            let version = next;
-            if candidate.changed {
-                next = next.checked_successor("published value version")?;
             }
+        })?;
+        for candidate in &candidates {
+            let version = if candidate.changed {
+                next = next.checked_successor("published value version")?;
+                next
+            } else {
+                next
+            };
             committed.push(CommittedPublication {
                 object: candidate.object,
                 binding: candidate.binding.clone(),
@@ -133,9 +147,35 @@ impl MemoryDomain {
                 changed: candidate.changed,
             });
         }
-        state.next_publication = final_version;
+        Ok(PreparedPublication {
+            candidates: candidates.into_boxed_slice(),
+            committed: committed.into_boxed_slice(),
+            initial_version,
+            final_version: next,
+            completed: false,
+        })
+    }
+
+    pub fn commit_publication<'a>(
+        &self,
+        prepared: &'a mut PreparedPublication,
+    ) -> MemoryRuntimeResult<&'a [CommittedPublication]> {
+        if prepared.completed {
+            return Err(MemoryRuntimeError::PublicationAlreadyCompleted);
+        }
+        let mut state = self.state.borrow_mut();
+        if state.closed {
+            return Err(MemoryRuntimeError::DomainClosed);
+        }
+        if state.next_publication != prepared.initial_version {
+            return Err(MemoryRuntimeError::CandidateValidationFailed {
+                object: None,
+                reason: "publication authority was superseded by another commit".into(),
+            });
+        }
+        state.next_publication = prepared.final_version;
         prepared.completed = true;
-        Ok(committed.into_boxed_slice())
+        Ok(&prepared.committed)
     }
 
     pub fn abort_publication(&self, prepared: &mut PreparedPublication) -> MemoryRuntimeResult<()> {
@@ -144,5 +184,123 @@ impl MemoryDomain {
         }
         prepared.completed = true;
         Ok(())
+    }
+
+    pub fn prepare_cell_publication(
+        &self,
+        realized: &RealizedMemoryPlan,
+        candidates: Vec<CellPublicationCandidate>,
+    ) -> MResult<PreparedCellPublication> {
+        let mut memory_candidates = Vec::new();
+        memory_candidates
+            .try_reserve_exact(candidates.len())
+            .map_err(|_| {
+                MechError::from(MemoryRuntimeError::AllocationFailed {
+                    object: None,
+                    requested: candidates.len() as u64,
+                    alignment: 1,
+                    space: crate::MemorySpace::Host,
+                })
+            })?;
+        for candidate in &candidates {
+            memory_candidates.push(PublicationCandidate {
+                object: candidate.object,
+                binding: candidate.binding.clone(),
+                shape: candidate
+                    .value
+                    .shape()
+                    .parameter_values()
+                    .to_vec()
+                    .into_boxed_slice(),
+                changed: candidate.changed,
+            });
+        }
+        let mut memory = self
+            .prepare_publication(realized, memory_candidates)
+            .map_err(MechError::from)?;
+        let mut replacements = Vec::new();
+        if replacements.try_reserve_exact(candidates.len()).is_err() {
+            let _ = self.abort_publication(&mut memory);
+            return Err(MechError::from(MemoryRuntimeError::AllocationFailed {
+                object: None,
+                requested: candidates.len() as u64,
+                alignment: 1,
+                space: crate::MemorySpace::Host,
+            }));
+        }
+        for candidate in candidates {
+            match candidate.cell.prepare_replacement(&candidate.value) {
+                Ok(replacement) => replacements.push(replacement),
+                Err(error) => {
+                    let _ = self.abort_publication(&mut memory);
+                    return Err(error);
+                }
+            }
+        }
+        Ok(PreparedCellPublication {
+            memory,
+            replacements: replacements.into_boxed_slice(),
+        })
+    }
+
+    pub fn commit_cell_publication<'a>(
+        &self,
+        prepared: &'a mut PreparedCellPublication,
+    ) -> MResult<&'a [CommittedPublication]> {
+        if prepared.memory.completed {
+            return Err(MechError::from(
+                MemoryRuntimeError::PublicationAlreadyCompleted,
+            ));
+        }
+        let mut state = self.state.borrow_mut();
+        if state.closed {
+            return Err(MechError::from(MemoryRuntimeError::DomainClosed));
+        }
+        if state.next_publication != prepared.memory.initial_version {
+            return Err(MechError::from(
+                MemoryRuntimeError::CandidateValidationFailed {
+                    object: None,
+                    reason: "publication authority was superseded by another commit".into(),
+                },
+            ));
+        }
+        for (index, (replacement, committed)) in prepared
+            .replacements
+            .iter()
+            .zip(prepared.memory.committed.iter())
+            .enumerate()
+        {
+            if let Err(error) = replacement
+                .cell
+                .apply_prepared_replacement(&replacement.next, committed.version)
+            {
+                for applied in prepared.replacements[..index].iter().rev() {
+                    if let Err(rollback) = applied
+                        .cell
+                        .apply_prepared_replacement(&applied.before, applied.before_version)
+                    {
+                        return Err(MechError::from(
+                            MemoryRuntimeError::CandidateValidationFailed {
+                                object: Some(committed.object.object()),
+                                reason: format!(
+                                    "publication failed with {error:?}; rollback failed with {rollback:?}"
+                                ),
+                            },
+                        ));
+                    }
+                }
+                return Err(error);
+            }
+        }
+        state.next_publication = prepared.memory.final_version;
+        prepared.memory.completed = true;
+        Ok(&prepared.memory.committed)
+    }
+
+    pub fn abort_cell_publication(
+        &self,
+        prepared: &mut PreparedCellPublication,
+    ) -> MemoryRuntimeResult<()> {
+        self.abort_publication(&mut prepared.memory)
     }
 }
