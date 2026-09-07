@@ -1410,9 +1410,9 @@ mod operation_memory_tests {
         let first = ValueCell::from_exact(1_f64).unwrap();
         let detached = first.detached_clone().unwrap();
         let same_logical_different_storage =
-            ValueCell::test_with_identity_and_storage(&first, &detached).unwrap();
+            ValueCell::test_with_identity_and_payload(&first, &detached).unwrap();
         let different_logical_same_storage =
-            ValueCell::test_with_identity_and_storage(&detached, &first).unwrap();
+            ValueCell::test_with_identity_and_payload(&detached, &first).unwrap();
 
         assert!(first.same_logical_cell(&same_logical_different_storage));
         assert!(!first.same_storage(&same_logical_different_storage));
