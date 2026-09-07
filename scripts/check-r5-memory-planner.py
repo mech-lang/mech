@@ -542,8 +542,12 @@ def failures(root: Path) -> list[str]:
             "resident_state_buffer(allocation)"
         )
 
-    # 20. R6 backing and allocator concepts do not appear in production R5 code.
+    # 20. R6 backing and allocator concepts remain outside the R5 planner and
+    # ordinary production owners. The closed R6 runtime owner is allowed to
+    # realize the plan without weakening this boundary everywhere else.
     for relative, source in rust_files(root, PRODUCTION_ROOTS):
+        if relative.startswith("src/core/src/memory_runtime/"):
+            continue
         code = rust_code(source)
         for identifier in R6_FORBIDDEN:
             if re.search(rf"\b{re.escape(identifier)}\b", code):

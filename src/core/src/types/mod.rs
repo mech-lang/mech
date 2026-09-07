@@ -37,8 +37,15 @@ pub struct Ref<T>(Rc<RefCell<T>>, CanonicalCellId);
 
 static NEXT_CANONICAL_CELL_ID: AtomicU64 = AtomicU64::new(1);
 
-pub(crate) fn next_canonical_cell_id() -> CanonicalCellId {
-    CanonicalCellId::new(NEXT_CANONICAL_CELL_ID.fetch_add(1, Ordering::Relaxed))
+pub(crate) fn next_canonical_cell_id() -> Result<CanonicalCellId, MemoryRuntimeError> {
+    NEXT_CANONICAL_CELL_ID
+        .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |current| {
+            current.checked_add(1)
+        })
+        .map(CanonicalCellId::new)
+        .map_err(|_| MemoryRuntimeError::IdentityExhausted {
+            identity: "canonical cell",
+        })
 }
 
 impl<T: Debug> Debug for Ref<T> {
@@ -61,7 +68,13 @@ use std::cell;
 
 impl<T> Ref<T> {
     pub fn new(item: T) -> Self {
-        Ref(Rc::new(RefCell::new(item)), next_canonical_cell_id())
+        Self::try_new(item).expect("canonical cell identity space is exhausted")
+    }
+
+    pub fn try_new(item: T) -> MResult<Self> {
+        let identity = next_canonical_cell_id()
+            .map_err(|error| MechError::new(error, None).with_compiler_loc())?;
+        Ok(Ref(Rc::new(RefCell::new(item)), identity))
     }
     pub fn as_ptr(&self) -> *const T {
         self.0.as_ptr()

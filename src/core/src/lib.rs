@@ -1,4 +1,5 @@
 #![cfg_attr(all(feature = "no_std", not(feature = "std")), no_std)]
+#![feature(allocator_api)]
 #![feature(where_clause_attrs)]
 
 //extern crate core as rust_core;
@@ -117,6 +118,7 @@ pub mod function;
 mod function_signature;
 pub mod memory_contract;
 pub mod memory_plan;
+pub mod memory_runtime;
 #[cfg(feature = "mika")]
 pub mod mika;
 pub mod nodes;
@@ -147,6 +149,7 @@ pub use self::function::*;
 pub use self::function_signature::*;
 pub use self::memory_contract::*;
 pub use self::memory_plan::*;
+pub use self::memory_runtime::*;
 #[cfg(feature = "mika")]
 pub use self::mika::*;
 pub use self::nodes::*;

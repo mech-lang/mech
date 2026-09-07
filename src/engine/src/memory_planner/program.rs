@@ -1,8 +1,8 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use mech_core::{
-    AliasDecision, AliasGroupId, AllocationPlan, AllocationRole, ArenaPlacement, ArenaPlan,
-    BoundCall, CallMemoryPlan, CellSlotId, CurrentMemoryFootprint, MemoryArenaId,
+    AliasDecision, AliasGroupId, AllocationPlan, AllocationRole, ArenaBackingKind, ArenaPlacement,
+    ArenaPlan, BoundCall, CallMemoryPlan, CellSlotId, CurrentMemoryFootprint, MemoryArenaId,
     MemoryBudgetViolation, MemoryFootprintWitness, MemoryLifetime, MemoryObjectId,
     MemoryObjectOwner, MemoryPlanError, MemoryPlanPoint, MemorySpace, PhysicalStorageDescriptor,
     ResourceDemand, ReuseGroupId, TargetMemoryProfile, TransactionRequirement, TransferPlan,
@@ -1347,13 +1347,13 @@ pub(crate) fn place_allocations(
 ) -> Result<Box<[ArenaPlan]>, MemoryPlanError> {
     let mut spaces = allocations
         .iter()
-        .map(|allocation| allocation.space)
+        .map(|allocation| (allocation.space, allocation_backing(allocation)))
         .collect::<BTreeSet<_>>()
         .into_iter()
         .collect::<Vec<_>>();
     spaces.sort();
     let mut arenas = Vec::new();
-    for (raw_arena, space) in spaces.into_iter().enumerate() {
+    for (raw_arena, (space, backing)) in spaces.into_iter().enumerate() {
         let arena = MemoryArenaId::new(
             u32::try_from(raw_arena)
                 .map_err(|_| MemoryPlanError::ArithmeticOverflow { field: "arena id" })?,
@@ -1362,12 +1362,13 @@ pub(crate) fn place_allocations(
         let mut alignment = 1_u32;
         let mut members = Vec::new();
         let mut reused = BTreeMap::<ReuseGroupId, (u64, u64)>::new();
-        for allocation in allocations
-            .iter_mut()
-            .filter(|allocation| allocation.space == space)
-        {
+        for allocation in allocations.iter_mut().filter(|allocation| {
+            allocation.space == space && allocation_backing(allocation) == backing
+        }) {
             alignment = alignment.max(allocation.alignment);
-            let offset = if let Some(group) = allocation.reuse_group {
+            let offset = if backing == ArenaBackingKind::ContiguousBytes
+                && let Some(group) = allocation.reuse_group
+            {
                 if let Some((offset, capacity)) = reused.get_mut(&group) {
                     *capacity = (*capacity).max(allocation.capacity_bytes);
                     *offset
@@ -1398,12 +1399,21 @@ pub(crate) fn place_allocations(
         arenas.push(ArenaPlan {
             id: arena,
             space,
+            backing,
             alignment,
             capacity_bytes: cursor,
             members: members.into_boxed_slice(),
         });
     }
     Ok(arenas.into_boxed_slice())
+}
+
+fn allocation_backing(allocation: &AllocationPlan) -> ArenaBackingKind {
+    if allocation.role == AllocationRole::VariablePayload {
+        ArenaBackingKind::IndirectOwnedPayloads
+    } else {
+        ArenaBackingKind::ContiguousBytes
+    }
 }
 
 fn program_peak(

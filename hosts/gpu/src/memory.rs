@@ -5,10 +5,10 @@ use crate::{
     GpuPlanScalar,
 };
 use mech_core::{
-    AllocationPlan, AllocationRole, ArenaPlacement, ArenaPlan, GpuMemoryLimits, MemoryArenaId,
-    MemoryBudgetViolation, MemoryLifetime, MemoryObjectId, MemoryObjectOwner, MemoryPlanError,
-    MemoryPlanPoint, MemorySpace, ResourceDemand, TargetMemoryProfile, TransferDirection,
-    TransferPlan, evaluate_memory_budget,
+    AllocationPlan, AllocationRole, ArenaBackingKind, ArenaPlacement, ArenaPlan, GpuMemoryLimits,
+    MemoryArenaId, MemoryBudgetViolation, MemoryLifetime, MemoryObjectId, MemoryObjectOwner,
+    MemoryPlanError, MemoryPlanPoint, MemorySpace, ResourceDemand, TargetMemoryProfile,
+    TransferDirection, TransferPlan, evaluate_memory_budget,
 };
 
 /// Existing GPU execution plan paired with the process-local, non-wire R5
@@ -417,6 +417,7 @@ fn push_gpu_allocation(
     arenas.push(ArenaPlan {
         id: arena,
         space,
+        backing: ArenaBackingKind::ContiguousBytes,
         alignment,
         capacity_bytes: bytes,
         members: vec![id].into_boxed_slice(),

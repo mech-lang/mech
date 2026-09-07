@@ -75,6 +75,8 @@ machines/matrix/src/transpose.rs|typed-machine-kernel|mech-matrix|macro-selected
 machines/string/src/concat.rs|typed-machine-kernel|mech-string|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 src/abi/src/lib.rs|ffi|mech-abi|foreign pointers and symbols remain valid only for the documented call or library lifetime|existing native ABI boundary
 src/core/src/structures/matrix.rs|value-representation|mech-core|Value variants and matrix element types match every erased reference operation|existing zero-copy value representation
+src/core/src/memory_runtime/access.rs|managed-lease|mech-core|validated live generational bindings and all-or-nothing leases bound every temporary byte slice to the closure lifetime|sealed R6 scoped-access boundary
+src/core/src/memory_runtime/allocation.rs|managed-allocation|mech-core|every pointer is owned with its exact validated Layout and is exposed only through the sealed lease boundary|sealed R6 host arena owner
 src/core/src/types/mod.rs|value-representation|mech-core|raw pointers remain process-local observations of an opaque Ref backing cell and never cross transaction boundaries|existing low-level Ref representation
 src/engine/src/function/module.rs|typed-interpreter-kernel|mech-engine|validated Value variants match every erased reference and output container|existing typed interpreter dispatch
 src/engine/src/intrinsics/access/matrix.rs|typed-interpreter-kernel|mech-engine|validated Value variants match every erased reference and output container|existing typed interpreter dispatch

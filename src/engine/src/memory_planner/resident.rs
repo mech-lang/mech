@@ -1,9 +1,9 @@
 use std::collections::BTreeMap;
 
 use mech_core::{
-    AllocationPlan, AllocationRole, ArenaPlacement, ArenaPlan, AxisCapacityPlan, CapacityAuthority,
-    CapacityRequirement, GrowthPolicy, MemoryArenaId, MemoryLifetime, MemoryObjectId,
-    MemoryObjectOwner, MemoryPlanError, MemorySpace, PayloadCapacityPlan,
+    AllocationPlan, AllocationRole, ArenaBackingKind, ArenaPlacement, ArenaPlan, AxisCapacityPlan,
+    CapacityAuthority, CapacityRequirement, GrowthPolicy, MemoryArenaId, MemoryLifetime,
+    MemoryObjectId, MemoryObjectOwner, MemoryPlanError, MemorySpace, PayloadCapacityPlan,
     PhysicalStorageDescriptor, PlannedSlotKind, ResidentValueKind, ResourceDemand,
     ScalarMemoryKind, SlotLayout, StorageAccessCapabilities, StorageAccountingCapability,
     StorageAddressingCapabilities, StorageCanonicalizationCapabilities,
@@ -259,6 +259,7 @@ pub fn plan_resident_arenas(
             Ok(ArenaPlan {
                 id,
                 space: MemorySpace::ResidentCpu,
+                backing: ArenaBackingKind::ContiguousBytes,
                 alignment,
                 capacity_bytes,
                 members: members.remove(&key).unwrap_or_default().into_boxed_slice(),
@@ -270,6 +271,7 @@ pub fn plan_resident_arenas(
         arenas.push(ArenaPlan {
             id: resident_payload_arena_id(key)?,
             space: MemorySpace::ResidentCpu,
+            backing: ArenaBackingKind::IndirectOwnedPayloads,
             alignment: 1,
             capacity_bytes,
             members: payload_members
@@ -665,6 +667,7 @@ pub fn plan_resident_effect_payload(
             arenas.push(ArenaPlan {
                 id: arena_id,
                 space: MemorySpace::ResidentCpu,
+                backing: ArenaBackingKind::ContiguousBytes,
                 alignment: slot.alignment,
                 capacity_bytes: 0,
                 members: Box::new([]),

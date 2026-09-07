@@ -248,9 +248,20 @@ pub struct AllocationPlan {
 pub struct ArenaPlan {
     pub id: MemoryArenaId,
     pub space: MemorySpace,
+    pub backing: ArenaBackingKind,
     pub alignment: u32,
     pub capacity_bytes: u64,
     pub members: Box<[MemoryObjectId]>,
+}
+
+/// Physical ownership model required to realize an arena.
+///
+/// Indirect payload offsets are accounting coordinates. They are never
+/// interpreted as addresses within one contiguous allocation.
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub enum ArenaBackingKind {
+    ContiguousBytes,
+    IndirectOwnedPayloads,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
