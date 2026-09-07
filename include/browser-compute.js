@@ -99,6 +99,111 @@ class ResetTracker {
   }
 }
 
+class ManagedMemory {
+  constructor(manifest) {
+    this.closed = false;
+    this.lost = false;
+    this.records = new Map();
+    for (const allocation of manifest.memoryAllocations || []) {
+      const id = Number(allocation.object);
+      const capacity = Number(allocation.capacityBytes);
+      if (!Number.isSafeInteger(id) || id < 0 || !Number.isSafeInteger(capacity) || capacity < 0) {
+        throw new Error("browser GPU memory plan contains an invalid object or capacity");
+      }
+      if (this.records.has(id)) throw new Error(`browser GPU memory plan repeats object ${id}`);
+      this.records.set(id, {
+        id,
+        capacity,
+        space: allocation.space,
+        lifetime: allocation.lifetime,
+        backing: allocation.space === "host" ? new ArrayBuffer(capacity) : null,
+        attached: allocation.space !== "device",
+        inFlight: 0,
+        contentVersion: 0,
+      });
+    }
+  }
+
+  record(id) {
+    const record = this.records.get(Number(id));
+    if (!record) throw new Error(`browser GPU memory plan has no object ${id}`);
+    return record;
+  }
+
+  attachDevice(id, buffer) {
+    const record = this.record(id);
+    if (record.space !== "device") throw new Error(`memory object ${id} is not device storage`);
+    if (record.attached) throw new Error(`device memory object ${id} was attached twice`);
+    if (Number(buffer?.size) !== record.capacity) {
+      throw new Error(
+        `device memory object ${id} has ${Number(buffer?.size)} bytes; planned ${record.capacity}`,
+      );
+    }
+    record.attached = true;
+    record.buffer = buffer;
+  }
+
+  begin(objectIds) {
+    if (this.closed) throw new Error("browser GPU memory domain is closed");
+    if (this.lost) throw new Error("browser GPU device ownership is lost");
+    const records = [...new Set(objectIds.map(Number))]
+      .sort((left, right) => left - right)
+      .map((id) => this.record(id));
+    for (const record of records) {
+      if (!record.attached) throw new Error(`memory object ${record.id} is not realized`);
+      if (record.inFlight === Number.MAX_SAFE_INTEGER) {
+        throw new Error("browser GPU submission pin count exhausted");
+      }
+    }
+    for (const record of records) record.inFlight += 1;
+    return { records, active: true };
+  }
+
+  complete(hold) {
+    if (!hold?.active) throw new Error("browser GPU submission hold was already completed");
+    for (const record of hold.records) {
+      if (record.inFlight <= 0) throw new Error("browser GPU submission accounting underflow");
+    }
+    for (const record of hold.records) record.inFlight -= 1;
+    hold.active = false;
+  }
+
+  recordWrite(id) {
+    const record = this.record(id);
+    if (record.contentVersion === Number.MAX_SAFE_INTEGER) {
+      throw new Error(`device content version exhausted for object ${id}`);
+    }
+    record.contentVersion += 1;
+  }
+
+  stageHost(id, source) {
+    const record = this.record(id);
+    if (record.space !== "host" || !(record.backing instanceof ArrayBuffer)) {
+      throw new Error(`memory object ${id} is not a managed host transfer`);
+    }
+    if (source.byteLength > record.capacity) {
+      throw new Error(
+        `host transfer ${id} needs ${source.byteLength} bytes; planned ${record.capacity}`,
+      );
+    }
+    const target = new Uint8Array(record.backing, 0, source.byteLength);
+    target.set(source);
+    return target;
+  }
+
+  markLost() {
+    this.lost = true;
+  }
+
+  close() {
+    if ([...this.records.values()].some((record) => record.inFlight !== 0)) {
+      throw new Error("browser GPU memory domain closed with a submission in flight");
+    }
+    this.closed = true;
+    this.records.clear();
+  }
+}
+
 class Device {
   static logicalOutputValues(output, physicalValues) {
     const dimensions = (output.sampleDimensions || []).map(Number);
@@ -217,6 +322,7 @@ class Device {
     this.stateIdentity = `state-${this.resourceIdentity}`;
     this.pipelineBuildCount = pipelineBuildCount;
     this.disposed = false;
+    this.memory = new ManagedMemory(manifest);
     this.metrics = {
       cpuToGpuInputBytes: 0,
       gpuToCpuReadbackBytes: 0,
@@ -246,6 +352,11 @@ class Device {
         size: Math.max(4, state.elements * Float32Array.BYTES_PER_ELEMENT),
         usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC,
       }));
+      if (!Array.isArray(state.memoryObjects) || state.memoryObjects.length !== 2) {
+        throw new Error(`GPU state ${state.slot} has no managed double-buffer identity`);
+      }
+      this.memory.attachDevice(state.memoryObjects[0], buffers[0]);
+      this.memory.attachDevice(state.memoryObjects[1], buffers[1]);
       this.device.queue.writeBuffer(buffers[0], 0, state.initialValues);
       this.stateBuffers.set(state.slot, buffers);
     }
@@ -257,6 +368,7 @@ class Device {
         size: Math.max(4, binding.elements * Float32Array.BYTES_PER_ELEMENT),
         usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC,
       });
+      this.memory.attachDevice(binding.memoryObject, buffer);
       if (binding.initialValues) this.device.queue.writeBuffer(buffer, 0, binding.initialValues);
       this.fixedBuffers.set(binding.binding, buffer);
       if (binding.role === "input") this.inputBindings.set(binding.name, { binding, buffer });
@@ -271,6 +383,34 @@ class Device {
     this.integrity = this.manifest.bindings.find(
       (binding) => binding.role === "integrity-fault",
     );
+    this.readbackBuffers = new Map();
+    const readbackBuffersByObject = new Map();
+    for (const physical of this.manifest.physicalOutputs || []) {
+      let buffer = readbackBuffersByObject.get(physical.readbackDeviceObject);
+      if (!buffer) {
+        const capacity = this.memory.record(physical.readbackDeviceObject).capacity;
+        buffer = this.device.createBuffer({
+          size: capacity,
+          usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+        });
+        this.memory.attachDevice(physical.readbackDeviceObject, buffer);
+        readbackBuffersByObject.set(physical.readbackDeviceObject, buffer);
+      }
+      this.readbackBuffers.set(physical.id, buffer);
+    }
+    this.integrityReadback = null;
+    if (this.integrity) {
+      const objects = this.manifest.integrityReadbackObjects;
+      if (!Array.isArray(objects) || objects.length !== 2) {
+        throw new Error("GPU integrity binding has no managed transfer identity");
+      }
+      const bytes = this.integrity.elements * Uint32Array.BYTES_PER_ELEMENT;
+      this.integrityReadback = this.device.createBuffer({
+        size: bytes,
+        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+      });
+      this.memory.attachDevice(objects[0], this.integrityReadback);
+    }
     this.configureReadback(requestedOutputNames);
   }
 
@@ -294,7 +434,11 @@ class Device {
       }
       const bytes = physical.sampleElements * Float32Array.BYTES_PER_ELEMENT;
       readbackPlan.push({
-        output: aliases[0], physical, offset: byteLength, bytes, aliases,
+        output: aliases[0],
+        physical,
+        buffer: this.readbackBuffers.get(physical.id),
+        bytes,
+        aliases,
       });
       aliases.forEach((output) => planned.add(output.name));
       byteLength += bytes;
@@ -304,21 +448,12 @@ class Device {
         throw new Error(`GPU logical output ${name} has no physical readback allocation`);
       }
     }
-    const integrityOffset = this.integrity ? byteLength : null;
     if (this.integrity) byteLength += this.integrity.elements * Uint32Array.BYTES_PER_ELEMENT;
-    const replacement = byteLength > 0 ? this.device.createBuffer({
-      size: Math.max(4, byteLength),
-      usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
-    }) : null;
-    const previous = this.readback;
-    this.readback = replacement;
     this.readbackPlan = readbackPlan;
-    this.integrityOffset = integrityOffset;
     this.readbackBytes = byteLength;
     this.readbackSignature = [...requestedOutputNames].sort().join("\u0000");
     this.metrics.logicalOutputs = requestedOutputNames.length;
     this.metrics.uniquePhysicalOutputBuffers = readbackPlan.length;
-    previous?.destroy();
   }
 
   setRequestedOutputs(requestedOutputNames) {
@@ -365,6 +500,20 @@ class Device {
       );
     }
     const outputIndex = 1 - activeBuffer;
+    const writtenObjects = command.inputs.map((input) =>
+      this.inputBindings.get(input.name).binding.memoryObject);
+    for (const binding of this.manifest.bindings) {
+      if (
+        binding.access === "read-write" &&
+        binding.role !== "state-read" &&
+        binding.role !== "state-write"
+      ) {
+        writtenObjects.push(binding.memoryObject);
+      }
+    }
+    for (const state of this.manifest.states || []) {
+      writtenObjects.push(state.memoryObjects[outputIndex]);
+    }
     const encoder = this.device.createCommandEncoder();
     const pass = encoder.beginComputePass();
     pass.setPipeline(this.pipeline);
@@ -376,24 +525,54 @@ class Device {
     for (const item of this.readbackPlan) {
       encoder.copyBufferToBuffer(
         this.outputBuffer(outputIndex, item.physical), 0,
-        this.readback, item.offset, item.bytes,
+        item.buffer, 0, item.bytes,
       );
     }
     if (this.integrity) {
       encoder.copyBufferToBuffer(
         this.fixedBuffers.get(this.integrity.binding), 0,
-        this.readback, this.integrityOffset,
+        this.integrityReadback, 0,
         this.integrity.elements * Uint32Array.BYTES_PER_ELEMENT,
       );
     }
-    this.device.queue.submit([encoder.finish()]);
+    const submissionObjects = this.manifest.bindings.map((binding) => binding.memoryObject);
+    for (const state of this.manifest.states || []) {
+      submissionObjects.push(...state.memoryObjects);
+    }
+    for (const item of this.readbackPlan) {
+      submissionObjects.push(
+        item.physical.readbackDeviceObject,
+        item.physical.readbackHostObject,
+      );
+      writtenObjects.push(item.physical.readbackDeviceObject);
+    }
+    if (this.integrity) {
+      submissionObjects.push(...this.manifest.integrityReadbackObjects);
+      writtenObjects.push(this.manifest.integrityReadbackObjects[0]);
+    }
+    const memoryHold = this.memory.begin(submissionObjects);
+    try {
+      this.device.queue.submit([encoder.finish()]);
+    } catch (error) {
+      this.memory.complete(memoryHold);
+      throw error;
+    }
     // Capture completion at the compute submission boundary. Callers may
     // submit unrelated presentation work to the same queue immediately after
     // this method returns; resident acknowledgement must not wait for it.
     let completion;
     try {
-      completion = this.readback
-        ? this.readback.mapAsync(GPUMapMode.READ, 0, this.readbackBytes)
+      const mappings = this.readbackPlan.map((item) =>
+        item.buffer.mapAsync(GPUMapMode.READ, 0, item.bytes));
+      if (this.integrity) {
+        mappings.push(this.integrityReadback.mapAsync(
+          GPUMapMode.READ,
+          0,
+          this.integrity.elements * Uint32Array.BYTES_PER_ELEMENT,
+        ));
+      }
+      completion = mappings.length
+        ? Promise.all(mappings)
         : this.device.queue.onSubmittedWorkDone();
     } catch (error) {
       // Submission has already succeeded. Surface setup failure through the
@@ -401,26 +580,40 @@ class Device {
       // before applying its terminal-failure policy.
       completion = Promise.reject(error);
     }
-    return { outputIndex, completion };
+    return { outputIndex, completion, memoryHold, writtenObjects };
   }
 
-  async finish(completion) {
+  async finish(submission) {
+    const { completion, memoryHold, writtenObjects } = submission;
     if (!completion || typeof completion.then !== "function") {
       throw new Error("compute completion requires its exact submission promise");
     }
-    await completion;
-    if (!this.readback) {
-      this.publishMetrics();
-      return { outputs: [], integrity: null };
-    }
+    let completed = false;
     try {
-      const mapped = this.readback.getMappedRange(0, this.readbackBytes);
+      await completion;
+      completed = true;
+      if (!this.readbackPlan.length && !this.integrity) {
+        this.publishMetrics();
+        return { outputs: [], integrity: null };
+      }
       // This is the physical mapped transfer. Count it exactly once per
       // accepted mapping, including integrity metadata and mappings whose
       // integrity check rejects the candidate state.
       this.metrics.gpuToCpuReadbackBytes += this.readbackBytes;
       if (this.integrity) {
-        const words = new Uint32Array(mapped, this.integrityOffset, this.integrity.elements);
+        const mapped = this.integrityReadback.getMappedRange(
+          0,
+          this.integrity.elements * Uint32Array.BYTES_PER_ELEMENT,
+        );
+        const staged = this.memory.stageHost(
+          this.manifest.integrityReadbackObjects[1],
+          new Uint8Array(mapped),
+        );
+        const words = new Uint32Array(
+          staged.buffer,
+          staged.byteOffset,
+          this.integrity.elements,
+        );
         if (words[0] !== 0) {
           const packed = words[1];
           const code = packed & 0xff;
@@ -437,9 +630,18 @@ class Device {
       }
       const outputs = [];
       for (const item of this.readbackPlan) {
+        const mapped = item.buffer.getMappedRange(0, item.bytes);
+        const staged = this.memory.stageHost(
+          item.physical.readbackHostObject,
+          new Uint8Array(mapped),
+        );
         const values = Device.logicalOutputValues(
           item.output,
-          new Float32Array(mapped, item.offset, item.bytes / Float32Array.BYTES_PER_ELEMENT),
+          new Float32Array(
+            staged.buffer,
+            staged.byteOffset,
+            item.bytes / Float32Array.BYTES_PER_ELEMENT,
+          ),
         );
         this.metrics.gpuToCpuOutputBytes += item.bytes * item.aliases.length;
         for (const output of item.aliases) outputs.push({ name: output.name, values });
@@ -447,7 +649,18 @@ class Device {
       this.publishMetrics();
       return { outputs, integrity: null };
     } finally {
-      this.readback.unmap();
+      for (const item of this.readbackPlan) {
+        item.buffer.unmap();
+      }
+      if (this.integrity) {
+        this.integrityReadback.unmap();
+      }
+      if (completed) {
+        writtenObjects.forEach((object, index) => {
+          if (writtenObjects.indexOf(object) === index) this.memory.recordWrite(object);
+        });
+      }
+      this.memory.complete(memoryHold);
     }
   }
 
@@ -467,7 +680,13 @@ class Device {
     this.disposed = true;
     for (const buffers of this.stateBuffers.values()) buffers.forEach((buffer) => buffer.destroy());
     for (const buffer of this.fixedBuffers.values()) buffer.destroy();
-    this.readback?.destroy();
+    const destroyedReadbacks = new Set();
+    for (const buffer of this.readbackBuffers.values()) {
+      if (!destroyedReadbacks.has(buffer)) buffer.destroy();
+      destroyedReadbacks.add(buffer);
+    }
+    this.integrityReadback?.destroy();
+    this.memory.close();
     this.device.destroy();
   }
 }
@@ -499,6 +718,7 @@ class Session {
     this.lifecycle = new SubmissionLifecycle(this.generation);
     this.resource?.device?.lost.then((info) => {
       if (!this.isCurrent()) return;
+      this.resource?.memory?.markLost();
       const reason = info?.message || info?.reason || "unknown reason";
       const failure = new Error(`GPU device lost: ${reason}`);
       failure.mechDeviceLost = true;
@@ -601,7 +821,7 @@ class Session {
   async finish(dispatchToken, submission, hooks) {
     let completionSent = false;
     try {
-      const { outputs, integrity } = await this.resource.finish(submission.completion);
+      const { outputs, integrity } = await this.resource.finish(submission);
       if (!this.isCurrent()) return;
       if (integrity) {
         this.complete({
@@ -642,7 +862,14 @@ class Session {
 
   retire() {
     this.retired = true;
-    if (this.ownsResource) this.resource?.dispose();
+    if (this.ownsResource && this.resource) {
+      const resource = this.resource;
+      if (this.pending && this.completion) {
+        Promise.resolve(this.completion).finally(() => resource.dispose());
+      } else {
+        resource.dispose();
+      }
+    }
     this.ownsResource = false;
   }
 }

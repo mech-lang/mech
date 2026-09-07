@@ -1101,7 +1101,10 @@ impl CanonicalFunctionSpecializer for DynamicUnaryF64ViewToF64ViewSpecializer {
             ),
             mech_core::RuntimeFunctionId::from_name(&self.name),
             mech_core::ExecutionTarget::DirectRuntime,
-            mech_core::ImplementationMemoryClass::NoAdditionalScratch,
+            mech_core::ImplementationMemoryClass::AbiContiguousBridge {
+                input: 0,
+                output: 0,
+            },
         )
     }
 }

@@ -306,6 +306,14 @@ impl MemoryDomain {
                     to: "leased allocation",
                 });
             }
+            if matches!(record.space, crate::MemorySpace::Device { .. }) {
+                return Err(MemoryRuntimeError::InvalidLayout {
+                    object: Some(request.object.object()),
+                    size: request.relative_end,
+                    alignment: record.alignment,
+                    reason: "device allocation requires a backend submission hold",
+                });
+            }
             if !lifetime_is_active(request.lifetime, state.active_point) {
                 return Err(MemoryRuntimeError::InvalidLifetimeTransition {
                     object: Some(request.object.object()),
@@ -583,6 +591,85 @@ impl KernelMemoryFrame<'_> {
             .record_initialized(object, lease.relative_end)?;
         Ok(result)
     }
+
+    /// Writes an initialized prefix of an already leased planned region.
+    /// This is used by bounded transfers whose per-turn payload may be
+    /// smaller than their activation-time capacity.
+    pub fn with_bytes_mut_prefix<R>(
+        &mut self,
+        object: PlanObjectKey,
+        length_bytes: u64,
+        access: impl FnOnce(&mut [u8]) -> R,
+    ) -> MemoryRuntimeResult<R> {
+        let lease = self
+            .leases
+            .iter()
+            .find(|lease| lease.object == object && lease.mode.writes())
+            .copied()
+            .ok_or(MemoryRuntimeError::BorrowConflict {
+                object: object.object(),
+            })?;
+        let leased_length = lease.end.checked_sub(lease.start).ok_or(
+            MemoryRuntimeError::AccountingInvariantViolation {
+                dimension: "lease span",
+                current: lease.start,
+                change: lease.end,
+            },
+        )?;
+        if length_bytes > leased_length {
+            return Err(MemoryRuntimeError::CapacityExceeded {
+                object: object.object(),
+                requested: length_bytes,
+                capacity: leased_length,
+            });
+        }
+        let relative_end = lease
+            .relative_end
+            .checked_sub(leased_length)
+            .and_then(|start| start.checked_add(length_bytes))
+            .ok_or(MemoryRuntimeError::AccountingInvariantViolation {
+                dimension: "initialized transfer prefix",
+                current: lease.relative_end,
+                change: length_bytes,
+            })?;
+        let mut state = self.domain.state.borrow_mut();
+        let record = state.record_mut(lease.handle)?;
+        if length_bytes == 0 {
+            return Ok(access(&mut []));
+        }
+        let block = record
+            .block
+            .as_mut()
+            .ok_or(MemoryRuntimeError::InvalidAllocationHandle {
+                handle: lease.handle,
+            })?;
+        let base = block
+            .pointer()
+            .ok_or(MemoryRuntimeError::UninitializedAccess {
+                object: object.object(),
+                requested: length_bytes,
+                initialized: 0,
+            })?;
+        let start =
+            usize::try_from(lease.start).map_err(|_| MemoryRuntimeError::CapacityExceeded {
+                object: object.object(),
+                requested: lease.start,
+                capacity: record.capacity_bytes,
+            })?;
+        let length =
+            usize::try_from(length_bytes).map_err(|_| MemoryRuntimeError::CapacityExceeded {
+                object: object.object(),
+                requested: length_bytes,
+                capacity: record.capacity_bytes,
+            })?;
+        // SAFETY: the exclusive planned lease owns the complete enclosing
+        // region, and the checked prefix remains within that region.
+        let bytes = unsafe { slice::from_raw_parts_mut(base.as_ptr().add(start), length) };
+        let result = access(bytes);
+        drop(state);
+        self.realized.record_initialized(object, relative_end)?;
+        Ok(result)
+    }
 }
 
 fn validate_typed_bytes<T: ManagedElement>(
@@ -636,8 +723,8 @@ fn enclosing_span(
 ) -> MemoryRuntimeResult<(u64, u64, u64)> {
     let base = match binding {
         RuntimeBinding::ManagedHostRegion { offset_bytes, .. } => *offset_bytes,
+        RuntimeBinding::Device { offset_bytes, .. } => *offset_bytes,
         RuntimeBinding::ManagedCanonicalPayload { .. }
-        | RuntimeBinding::Device { .. }
         | RuntimeBinding::PinnedExternal { .. }
         | RuntimeBinding::Empty { .. } => 0,
     };

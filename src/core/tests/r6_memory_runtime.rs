@@ -1028,6 +1028,115 @@ fn retired_allocations_wait_for_held_leases_before_reclamation() {
 }
 
 #[test]
+fn device_registration_and_submission_holds_follow_planned_ownership() {
+    let domain = MemoryDomain::new().unwrap();
+    let revision = domain.issue_plan_revision().unwrap();
+    let mut device = allocation(0, 0, 0, 16, 16, MemoryLifetime::Activation, None);
+    device.space = MemorySpace::Device { region: 0 };
+    let transfer_lifetime = MemoryLifetime::Transfer {
+        first: MemoryPlanPoint::new(0),
+        last: MemoryPlanPoint::new(0),
+    };
+    let mut transfer = allocation(1, 1, 0, 0, 8, transfer_lifetime, None);
+    transfer.role = AllocationRole::TransferStage;
+    let mut device_arena = arena(0, ArenaBackingKind::ContiguousBytes, 16, &[0]);
+    device_arena.space = MemorySpace::Device { region: 0 };
+    let transfer_arena = arena(1, ArenaBackingKind::ContiguousBytes, 8, &[1]);
+    let realized = domain
+        .materialize(
+            domain
+                .prepare_realization(RuntimePlanView::new(
+                    revision,
+                    &[device, transfer],
+                    &[device_arena, transfer_arena],
+                    ResourceDemand::default(),
+                    MemoryBudgetLimits::default(),
+                    &[],
+                ))
+                .unwrap(),
+        )
+        .unwrap();
+    let device_object = domain
+        .plan_object_key(revision, MemoryObjectId::new(0))
+        .unwrap();
+    let transfer_object = domain
+        .plan_object_key(revision, MemoryObjectId::new(1))
+        .unwrap();
+    assert!(matches!(
+        realized.binding(device_object).unwrap(),
+        RuntimeBinding::Device { .. }
+    ));
+    assert_eq!(domain.allocation_observations()[0].actual_block_bytes, 0);
+
+    let owner = domain
+        .register_device_allocation(&realized, device_object, 16, 16)
+        .unwrap();
+    let observation = domain.allocation_observations()[0];
+    assert_eq!(observation.actual_block_bytes, 16);
+    assert_eq!(observation.device_owner_pins, 1);
+    let prepared = domain
+        .prepare_device_submission(&realized, &[device_object], &[transfer_object])
+        .unwrap();
+    let hold = domain
+        .begin_prepared_device_submission(&realized, &prepared)
+        .unwrap();
+    assert_eq!(domain.ledger().in_flight_device_bytes, 16);
+    assert_eq!(domain.ledger().in_flight_transfer_bytes, 8);
+    assert_eq!(domain.allocation_observations()[0].submission_pins, 1);
+
+    hold.complete().unwrap();
+    assert_eq!(domain.ledger().in_flight_device_bytes, 0);
+    assert_eq!(domain.ledger().in_flight_transfer_bytes, 0);
+    domain
+        .begin_prepared_device_submission(&realized, &prepared)
+        .unwrap()
+        .complete()
+        .unwrap();
+    domain.retire(owner.handle()).unwrap();
+    assert_eq!(domain.collect_retired().unwrap(), 0);
+    drop(owner);
+    assert_eq!(domain.collect_retired().unwrap(), 1);
+}
+
+#[test]
+fn device_loss_prevents_new_submissions() {
+    let domain = MemoryDomain::new().unwrap();
+    let revision = domain.issue_plan_revision().unwrap();
+    let mut allocation = allocation(0, 0, 0, 4, 4, MemoryLifetime::Activation, None);
+    allocation.space = MemorySpace::Device { region: 2 };
+    allocation.alignment = 4;
+    let mut arena = arena(0, ArenaBackingKind::ContiguousBytes, 4, &[0]);
+    arena.space = MemorySpace::Device { region: 2 };
+    arena.alignment = 4;
+    let realized = domain
+        .materialize(
+            domain
+                .prepare_realization(RuntimePlanView::new(
+                    revision,
+                    &[allocation],
+                    &[arena],
+                    ResourceDemand::default(),
+                    MemoryBudgetLimits::default(),
+                    &[],
+                ))
+                .unwrap(),
+        )
+        .unwrap();
+    let object = domain
+        .plan_object_key(revision, MemoryObjectId::new(0))
+        .unwrap();
+    let owner = domain
+        .register_device_allocation(&realized, object, 4, 4)
+        .unwrap();
+    owner.mark_lost().unwrap();
+    assert!(matches!(
+        domain.begin_device_submission(&realized, &[object], &[]),
+        Err(MemoryRuntimeError::DeviceLost { .. })
+    ));
+    assert!(domain.allocation_observations()[0].device_lost);
+}
+
+#[test]
 fn handles_are_domain_scoped_and_stale_generations_are_rejected() {
     let domain = MemoryDomain::new().unwrap();
     let revision = domain.issue_plan_revision().unwrap();

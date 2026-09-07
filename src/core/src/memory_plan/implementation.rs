@@ -2,6 +2,7 @@
 pub enum ImplementationMemoryClass {
     NoAdditionalScratch,
     CloneInput { input: u16 },
+    AbiContiguousBridge { input: u16, output: u16 },
     MatrixSolve,
     CanonicalFinalize,
     CanonicalSortUnique,

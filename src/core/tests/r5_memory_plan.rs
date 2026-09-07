@@ -689,6 +689,49 @@ fn change_detection_and_closed_implementation_classes_contribute_exact_work() {
 }
 
 #[test]
+fn abi_contiguous_views_have_explicit_host_bridge_allocations() {
+    let plan = scalar_call_plan(
+        OutputConstruction::FullWrite {
+            shape: ShapeRule::Declared,
+        },
+        AliasPolicy::NoAlias,
+        ChangeDetectionPolicy::KernelReported,
+        ImplementationMemoryClass::AbiContiguousBridge {
+            input: 0,
+            output: 0,
+        },
+        MemoryLifetime::Activation,
+    )
+    .unwrap();
+    let scratch = plan
+        .allocations
+        .iter()
+        .filter(|allocation| allocation.role == mech_core::AllocationRole::Scratch)
+        .collect::<Vec<_>>();
+    assert_eq!(scratch.len(), 2);
+    assert!(
+        scratch
+            .iter()
+            .all(|allocation| allocation.space == mech_core::MemorySpace::Host)
+    );
+    assert_eq!(
+        scratch
+            .iter()
+            .map(|allocation| allocation.capacity_bytes)
+            .sum::<u64>(),
+        16
+    );
+    assert_eq!(
+        plan.implementation_memory,
+        ImplementationMemoryClass::AbiContiguousBridge {
+            input: 0,
+            output: 0,
+        }
+    );
+    assert_eq!(plan.demand.cloned_bytes, 8);
+}
+
+#[test]
 fn deferred_footprints_rederive_clone_hash_and_canonical_demand() {
     let input = ValueCell::from_exact("input".to_owned()).unwrap();
     let output = ValueCell::from_exact("output".to_owned()).unwrap();

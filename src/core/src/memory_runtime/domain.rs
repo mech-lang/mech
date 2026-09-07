@@ -100,6 +100,7 @@ pub enum RuntimeBinding {
     },
     Device {
         handle: AllocationHandle,
+        offset_bytes: u64,
         capacity_bytes: u64,
         required_initialization_bytes: u64,
         initialized_bytes: u64,
@@ -203,6 +204,8 @@ pub struct ManagedAllocationObservation {
     pub snapshot_pins: u32,
     pub submission_pins: u32,
     pub payload_owner_pins: u32,
+    pub device_owner_pins: u32,
+    pub device_lost: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -295,6 +298,135 @@ impl Drop for MemoryPlanScope {
             state.active_point = None;
         }
         self.active = false;
+    }
+}
+
+/// Owner-thread registration tying one backend device allocation to its
+/// admitted domain record. The backend owns the actual buffer; this token
+/// prevents the domain record from being reclaimed before that buffer drops.
+pub struct DeviceAllocationOwner {
+    domain: Weak<RefCell<DomainState>>,
+    handle: AllocationHandle,
+    active: bool,
+}
+
+impl DeviceAllocationOwner {
+    pub const fn handle(&self) -> AllocationHandle {
+        self.handle
+    }
+
+    pub fn mark_lost(&self) -> MemoryRuntimeResult<()> {
+        let domain = self
+            .domain
+            .upgrade()
+            .ok_or(MemoryRuntimeError::DomainClosed)?;
+        let mut state = domain.borrow_mut();
+        let record = state.record_mut(self.handle)?;
+        record.device_lost = true;
+        Ok(())
+    }
+
+    fn release(&mut self) -> MemoryRuntimeResult<()> {
+        if !self.active {
+            return Ok(());
+        }
+        let Some(domain) = self.domain.upgrade() else {
+            self.active = false;
+            return Ok(());
+        };
+        let mut state = domain.borrow_mut();
+        let record = state.record_mut(self.handle)?;
+        record.device_owner_pins = record.device_owner_pins.checked_sub(1).ok_or(
+            MemoryRuntimeError::AccountingInvariantViolation {
+                dimension: "device owner pins",
+                current: u64::from(record.device_owner_pins),
+                change: 1,
+            },
+        )?;
+        if record.device_owner_pins == 0 {
+            record.device_actual_bytes = 0;
+        }
+        self.active = false;
+        Ok(())
+    }
+}
+
+impl Drop for DeviceAllocationOwner {
+    fn drop(&mut self) {
+        debug_assert!(self.release().is_ok());
+    }
+}
+
+/// Pins every allocation participating in one submitted device operation.
+/// Completion is observed by the backend and released on the owner thread.
+pub struct DeviceSubmissionHold {
+    domain: Weak<RefCell<DomainState>>,
+    handles: Arc<[AllocationHandle]>,
+    device_bytes: u64,
+    transfer_bytes: u64,
+    active: bool,
+}
+
+/// Prevalidated, allocation-free submission metadata for one fixed backend
+/// operation. The plan revision and physical handles remain process-local.
+pub struct PreparedDeviceSubmission {
+    revision: MemoryPlanRevision,
+    handles: Arc<[AllocationHandle]>,
+    device_handles: Arc<[AllocationHandle]>,
+    device_bytes: u64,
+    transfer_bytes: u64,
+}
+
+impl DeviceSubmissionHold {
+    pub fn complete(mut self) -> MemoryRuntimeResult<()> {
+        self.release()
+    }
+
+    fn release(&mut self) -> MemoryRuntimeResult<()> {
+        if !self.active {
+            return Ok(());
+        }
+        let Some(domain) = self.domain.upgrade() else {
+            self.active = false;
+            return Ok(());
+        };
+        let mut state = domain.borrow_mut();
+        for handle in self.handles.iter().copied() {
+            let record = state.record_mut(handle)?;
+            record.submission_pins = record.submission_pins.checked_sub(1).ok_or(
+                MemoryRuntimeError::AccountingInvariantViolation {
+                    dimension: "device submission pins",
+                    current: u64::from(record.submission_pins),
+                    change: 1,
+                },
+            )?;
+        }
+        state.ledger.in_flight_device_bytes = state
+            .ledger
+            .in_flight_device_bytes
+            .checked_sub(self.device_bytes)
+            .ok_or(MemoryRuntimeError::AccountingInvariantViolation {
+                dimension: "in-flight device bytes",
+                current: state.ledger.in_flight_device_bytes,
+                change: self.device_bytes,
+            })?;
+        state.ledger.in_flight_transfer_bytes = state
+            .ledger
+            .in_flight_transfer_bytes
+            .checked_sub(self.transfer_bytes)
+            .ok_or(MemoryRuntimeError::AccountingInvariantViolation {
+                dimension: "in-flight transfer bytes",
+                current: state.ledger.in_flight_transfer_bytes,
+                change: self.transfer_bytes,
+            })?;
+        self.active = false;
+        Ok(())
+    }
+}
+
+impl Drop for DeviceSubmissionHold {
+    fn drop(&mut self) {
+        debug_assert!(self.release().is_ok());
     }
 }
 
@@ -402,6 +534,9 @@ pub(crate) struct AllocationRecord {
     pub snapshot_pins: u32,
     pub submission_pins: u32,
     pub payload_owner_pins: u32,
+    pub device_owner_pins: u32,
+    pub device_actual_bytes: u64,
+    pub device_lost: bool,
     pub payload_blocks: Vec<super::PayloadBlockRecord>,
 }
 
@@ -662,7 +797,7 @@ impl MemoryDomain {
 
         struct PendingArena {
             authorization: ArenaAuthorization,
-            block: HostBlock,
+            block: Option<HostBlock>,
         }
         struct PendingObject {
             authorization: ObjectAuthorization,
@@ -690,12 +825,15 @@ impl MemoryDomain {
         for arena in reservation.arenas.iter().cloned() {
             match arena.backing {
                 ArenaBackingKind::ContiguousBytes => {
-                    let block = HostBlock::allocate(
-                        None,
-                        arena.capacity_bytes,
-                        arena.alignment,
-                        arena.space,
-                    )?;
+                    let block = match arena.space {
+                        MemorySpace::Device { .. } => None,
+                        MemorySpace::Host | MemorySpace::ResidentCpu => Some(HostBlock::allocate(
+                            None,
+                            arena.capacity_bytes,
+                            arena.alignment,
+                            arena.space,
+                        )?),
+                    };
                     contiguous.push(PendingArena {
                         authorization: arena,
                         block,
@@ -746,7 +884,7 @@ impl MemoryDomain {
             let capacity = pending.authorization.capacity_bytes;
             let handle = state.insert_record(AllocationRecord {
                 state: OwnedAllocationState::Live,
-                block: Some(pending.block),
+                block: pending.block,
                 capacity_bytes: capacity,
                 alignment: pending.authorization.alignment,
                 space: pending.authorization.space,
@@ -754,6 +892,9 @@ impl MemoryDomain {
                 snapshot_pins: 0,
                 submission_pins: 0,
                 payload_owner_pins: 0,
+                device_owner_pins: 0,
+                device_actual_bytes: 0,
+                device_lost: false,
                 payload_blocks: Vec::new(),
             })?;
             arena_handles.insert(pending.authorization.id, handle);
@@ -771,6 +912,9 @@ impl MemoryDomain {
                 snapshot_pins: 0,
                 submission_pins: 0,
                 payload_owner_pins: 0,
+                device_owner_pins: 0,
+                device_actual_bytes: 0,
+                device_lost: false,
                 payload_blocks: pending.payload_blocks,
             })?;
             indirect_handles.insert(pending.authorization.key, handle);
@@ -790,16 +934,31 @@ impl MemoryDomain {
                 }
             } else {
                 match arena.backing {
-                    ArenaBackingKind::ContiguousBytes => RuntimeBinding::ManagedHostRegion {
-                        handle: *arena_handles
+                    ArenaBackingKind::ContiguousBytes => {
+                        let handle = *arena_handles
                             .get(&object.arena)
-                            .ok_or(MemoryRuntimeError::UnknownPlanObject { key: object.key })?,
-                        offset_bytes: object.offset,
-                        capacity_bytes: object.capacity_bytes,
-                        required_initialization_bytes: object.current_bytes,
-                        initialized_bytes: 0,
-                        incarnation,
-                    },
+                            .ok_or(MemoryRuntimeError::UnknownPlanObject { key: object.key })?;
+                        match object.space {
+                            MemorySpace::Device { .. } => RuntimeBinding::Device {
+                                handle,
+                                offset_bytes: object.offset,
+                                capacity_bytes: object.capacity_bytes,
+                                required_initialization_bytes: object.current_bytes,
+                                initialized_bytes: 0,
+                                incarnation,
+                            },
+                            MemorySpace::Host | MemorySpace::ResidentCpu => {
+                                RuntimeBinding::ManagedHostRegion {
+                                    handle,
+                                    offset_bytes: object.offset,
+                                    capacity_bytes: object.capacity_bytes,
+                                    required_initialization_bytes: object.current_bytes,
+                                    initialized_bytes: 0,
+                                    incarnation,
+                                }
+                            }
+                        }
+                    }
                     ArenaBackingKind::IndirectOwnedPayloads => {
                         RuntimeBinding::ManagedCanonicalPayload {
                             handle: *indirect_handles
@@ -887,6 +1046,7 @@ impl MemoryDomain {
                     && record.snapshot_pins == 0
                     && record.submission_pins == 0
                     && record.payload_owner_pins == 0
+                    && record.device_owner_pins == 0
             });
             if !reclaimable {
                 continue;
@@ -993,6 +1153,324 @@ impl MemoryDomain {
         })
     }
 
+    /// Registers the actual device allocation created for one planned device
+    /// arena. The capacity is exact; a backend cannot attach an oversized or
+    /// undersized buffer and call it planned.
+    pub fn register_device_allocation(
+        &self,
+        realized: &RealizedMemoryPlan,
+        object: PlanObjectKey,
+        actual_capacity_bytes: u64,
+        initialized_bytes: u64,
+    ) -> MemoryRuntimeResult<DeviceAllocationOwner> {
+        if realized.domain() != self.id() {
+            return Err(MemoryRuntimeError::WrongMemoryDomain {
+                expected: self.id(),
+                actual: realized.domain(),
+            });
+        }
+        let binding = realized.binding(object)?;
+        let RuntimeBinding::Device {
+            handle,
+            capacity_bytes,
+            ..
+        } = binding
+        else {
+            return Err(MemoryRuntimeError::InvalidLayout {
+                object: Some(object.object()),
+                size: actual_capacity_bytes,
+                alignment: 1,
+                reason: "device registration requires a device plan object",
+            });
+        };
+        if actual_capacity_bytes != capacity_bytes || initialized_bytes > capacity_bytes {
+            return Err(MemoryRuntimeError::CapacityExceeded {
+                object: object.object(),
+                requested: actual_capacity_bytes.max(initialized_bytes),
+                capacity: capacity_bytes,
+            });
+        }
+        {
+            let mut state = self.state.borrow_mut();
+            if state.closed {
+                return Err(MemoryRuntimeError::DomainClosed);
+            }
+            let record = state.record_mut(handle)?;
+            if record.state != OwnedAllocationState::Live || record.device_owner_pins != 0 {
+                return Err(MemoryRuntimeError::InvalidLifetimeTransition {
+                    object: Some(object.object()),
+                    from: "unavailable device record",
+                    to: "attached device allocation",
+                });
+            }
+            if record.capacity_bytes != actual_capacity_bytes
+                || !matches!(record.space, MemorySpace::Device { .. })
+            {
+                return Err(MemoryRuntimeError::InvalidLayout {
+                    object: Some(object.object()),
+                    size: actual_capacity_bytes,
+                    alignment: record.alignment,
+                    reason: "device allocation differs from its planned arena",
+                });
+            }
+            record.device_owner_pins = 1;
+            record.device_actual_bytes = actual_capacity_bytes;
+            record.device_lost = false;
+        }
+        realized.record_initialized(object, initialized_bytes)?;
+        Ok(DeviceAllocationOwner {
+            domain: Rc::downgrade(&self.state),
+            handle,
+            active: true,
+        })
+    }
+
+    pub fn record_device_initialized(
+        &self,
+        realized: &RealizedMemoryPlan,
+        object: PlanObjectKey,
+        initialized_bytes: u64,
+    ) -> MemoryRuntimeResult<()> {
+        if realized.domain() != self.id() {
+            return Err(MemoryRuntimeError::WrongMemoryDomain {
+                expected: self.id(),
+                actual: realized.domain(),
+            });
+        }
+        let binding = realized.binding(object)?;
+        let RuntimeBinding::Device { handle, .. } = binding else {
+            return Err(MemoryRuntimeError::InvalidLayout {
+                object: Some(object.object()),
+                size: initialized_bytes,
+                alignment: 1,
+                reason: "device initialization requires a device plan object",
+            });
+        };
+        let state = self.state.borrow();
+        let record = state.record(handle)?;
+        if record.state != OwnedAllocationState::Live || record.device_owner_pins == 0 {
+            return Err(MemoryRuntimeError::InvalidLifetimeTransition {
+                object: Some(object.object()),
+                from: "unavailable device record",
+                to: "initialized device allocation",
+            });
+        }
+        if record.device_lost {
+            return Err(MemoryRuntimeError::DeviceLost {
+                object: Some(object.object()),
+            });
+        }
+        drop(state);
+        realized.record_initialized(object, initialized_bytes)
+    }
+
+    /// Resolves the fixed object set for one backend operation once during
+    /// activation. Reusing the returned authority performs no metadata
+    /// allocation on the submission path.
+    pub fn prepare_device_submission(
+        &self,
+        realized: &RealizedMemoryPlan,
+        device_objects: &[PlanObjectKey],
+        transfer_objects: &[PlanObjectKey],
+    ) -> MemoryRuntimeResult<PreparedDeviceSubmission> {
+        if realized.domain() != self.id() {
+            return Err(MemoryRuntimeError::WrongMemoryDomain {
+                expected: self.id(),
+                actual: realized.domain(),
+            });
+        }
+        let mut requested = BTreeMap::<AllocationHandle, (bool, bool)>::new();
+        for object in device_objects {
+            let binding = realized.binding(*object)?;
+            let RuntimeBinding::Device {
+                handle,
+                capacity_bytes,
+                ..
+            } = binding
+            else {
+                return Err(MemoryRuntimeError::InvalidLayout {
+                    object: Some(object.object()),
+                    size: binding.capacity_bytes(),
+                    alignment: 1,
+                    reason: "device submission references a non-device object",
+                });
+            };
+            if capacity_bytes == 0 {
+                return Err(MemoryRuntimeError::InvalidLayout {
+                    object: Some(object.object()),
+                    size: 0,
+                    alignment: 1,
+                    reason: "device submission references an empty binding",
+                });
+            }
+            requested.entry(handle).or_default().0 = true;
+        }
+        for object in transfer_objects {
+            if !matches!(realized.lifetime(*object)?, MemoryLifetime::Transfer { .. }) {
+                return Err(MemoryRuntimeError::InvalidLifetimeTransition {
+                    object: Some(object.object()),
+                    from: "non-transfer lifetime",
+                    to: "device transfer",
+                });
+            }
+            let binding = realized.binding(*object)?;
+            let handle = binding
+                .handle()
+                .ok_or(MemoryRuntimeError::UnplannedAllocation {
+                    object: Some(object.object()),
+                    requested: binding.capacity_bytes(),
+                })?;
+            requested.entry(handle).or_default().1 = true;
+        }
+        let state = self.state.borrow();
+        let mut device_bytes = 0_u64;
+        let mut transfer_bytes = 0_u64;
+        let mut handles = Vec::new();
+        let mut device_handles = Vec::new();
+        handles.try_reserve_exact(requested.len()).map_err(|_| {
+            MemoryRuntimeError::AllocationFailed {
+                object: None,
+                requested: requested.len() as u64,
+                alignment: 1,
+                space: MemorySpace::Host,
+            }
+        })?;
+        device_handles
+            .try_reserve_exact(requested.len())
+            .map_err(|_| MemoryRuntimeError::AllocationFailed {
+                object: None,
+                requested: requested.len() as u64,
+                alignment: 1,
+                space: MemorySpace::Host,
+            })?;
+        for (handle, (device, transfer)) in &requested {
+            let record = state.record(*handle)?;
+            handles.push(*handle);
+            if *device {
+                device_handles.push(*handle);
+                device_bytes = device_bytes.checked_add(record.capacity_bytes).ok_or(
+                    MemoryRuntimeError::AccountingInvariantViolation {
+                        dimension: "in-flight device bytes",
+                        current: device_bytes,
+                        change: record.capacity_bytes,
+                    },
+                )?;
+            }
+            if *transfer {
+                transfer_bytes = transfer_bytes.checked_add(record.capacity_bytes).ok_or(
+                    MemoryRuntimeError::AccountingInvariantViolation {
+                        dimension: "in-flight transfer bytes",
+                        current: transfer_bytes,
+                        change: record.capacity_bytes,
+                    },
+                )?;
+            }
+        }
+        Ok(PreparedDeviceSubmission {
+            revision: realized.revision(),
+            handles: Arc::from(handles.into_boxed_slice()),
+            device_handles: Arc::from(device_handles.into_boxed_slice()),
+            device_bytes,
+            transfer_bytes,
+        })
+    }
+
+    /// Pins a prevalidated backend operation until completion without
+    /// allocating or rebuilding its object set.
+    pub fn begin_prepared_device_submission(
+        &self,
+        realized: &RealizedMemoryPlan,
+        prepared: &PreparedDeviceSubmission,
+    ) -> MemoryRuntimeResult<DeviceSubmissionHold> {
+        if realized.domain() != self.id() {
+            return Err(MemoryRuntimeError::WrongMemoryDomain {
+                expected: self.id(),
+                actual: realized.domain(),
+            });
+        }
+        if prepared.revision != realized.revision() {
+            return Err(MemoryRuntimeError::InvalidPlanRevision {
+                expected: realized.revision(),
+                actual: prepared.revision,
+            });
+        }
+        let mut state = self.state.borrow_mut();
+        if state.closed {
+            return Err(MemoryRuntimeError::DomainClosed);
+        }
+        for handle in prepared.handles.iter().copied() {
+            let record = state.record(handle)?;
+            if record.state != OwnedAllocationState::Live {
+                return Err(MemoryRuntimeError::InvalidLifetimeTransition {
+                    object: None,
+                    from: "retired allocation",
+                    to: "device submission",
+                });
+            }
+            if prepared.device_handles.binary_search(&handle).is_ok() {
+                if record.device_lost {
+                    return Err(MemoryRuntimeError::DeviceLost { object: None });
+                }
+                if record.device_owner_pins == 0 {
+                    return Err(MemoryRuntimeError::UnplannedAllocation {
+                        object: None,
+                        requested: record.capacity_bytes,
+                    });
+                }
+            }
+            record
+                .submission_pins
+                .checked_add(1)
+                .ok_or(MemoryRuntimeError::IdentityExhausted {
+                    identity: "device submission pin count",
+                })?;
+        }
+        let next_device_bytes = state
+            .ledger
+            .in_flight_device_bytes
+            .checked_add(prepared.device_bytes)
+            .ok_or(MemoryRuntimeError::AccountingInvariantViolation {
+                dimension: "in-flight device bytes",
+                current: state.ledger.in_flight_device_bytes,
+                change: prepared.device_bytes,
+            })?;
+        let next_transfer_bytes = state
+            .ledger
+            .in_flight_transfer_bytes
+            .checked_add(prepared.transfer_bytes)
+            .ok_or(MemoryRuntimeError::AccountingInvariantViolation {
+                dimension: "in-flight transfer bytes",
+                current: state.ledger.in_flight_transfer_bytes,
+                change: prepared.transfer_bytes,
+            })?;
+        for handle in prepared.handles.iter().copied() {
+            state.record_mut(handle)?.submission_pins += 1;
+        }
+        state.ledger.in_flight_device_bytes = next_device_bytes;
+        state.ledger.in_flight_transfer_bytes = next_transfer_bytes;
+        Ok(DeviceSubmissionHold {
+            domain: Rc::downgrade(&self.state),
+            handles: Arc::clone(&prepared.handles),
+            device_bytes: prepared.device_bytes,
+            transfer_bytes: prepared.transfer_bytes,
+            active: true,
+        })
+    }
+
+    /// Compatibility facade for one-off backend operations. Resident paths
+    /// prepare the authority at activation and use
+    /// [`Self::begin_prepared_device_submission`].
+    pub fn begin_device_submission(
+        &self,
+        realized: &RealizedMemoryPlan,
+        device_objects: &[PlanObjectKey],
+        transfer_objects: &[PlanObjectKey],
+    ) -> MemoryRuntimeResult<DeviceSubmissionHold> {
+        let prepared =
+            self.prepare_device_submission(realized, device_objects, transfer_objects)?;
+        self.begin_prepared_device_submission(realized, &prepared)
+    }
+
     pub fn allocation_observations(&self) -> Box<[ManagedAllocationObservation]> {
         let state = self.state.borrow();
         state
@@ -1020,18 +1498,27 @@ impl MemoryDomain {
                         .map(|block| u32::try_from(block.layout.align()).unwrap_or(u32::MAX))
                         .max()
                         .unwrap_or(1);
+                    let device_alignment = (record.device_actual_bytes != 0)
+                        .then_some(record.alignment)
+                        .unwrap_or(1);
                     ManagedAllocationObservation {
                         handle: AllocationHandle::new(state.id, slot as u32, entry.generation),
                         state: record.state,
                         capacity_bytes: record.capacity_bytes,
-                        actual_block_bytes: fixed_bytes.saturating_add(payload_bytes),
+                        actual_block_bytes: fixed_bytes
+                            .saturating_add(payload_bytes)
+                            .saturating_add(record.device_actual_bytes),
                         alignment: record.alignment,
-                        actual_block_alignment: fixed_alignment.max(payload_alignment),
+                        actual_block_alignment: fixed_alignment
+                            .max(payload_alignment)
+                            .max(device_alignment),
                         space: record.space,
                         active_leases: u32::try_from(record.leases.len()).unwrap_or(u32::MAX),
                         snapshot_pins: record.snapshot_pins,
                         submission_pins: record.submission_pins,
                         payload_owner_pins: record.payload_owner_pins,
+                        device_owner_pins: record.device_owner_pins,
+                        device_lost: record.device_lost,
                     }
                 })
             })

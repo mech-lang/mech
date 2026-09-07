@@ -3773,7 +3773,10 @@ mod native {
         time::{Duration, Instant},
     };
 
-    use mech_core::{CellSlotId, IntegrityConstraintId};
+    use mech_core::{
+        CellSlotId, DeviceSubmissionHold, IntegrityConstraintId, MemoryObjectId,
+        PreparedDeviceSubmission,
+    };
     use wgpu::util::DeviceExt;
 
     use super::{
@@ -3785,7 +3788,6 @@ mod native {
 
     const GPU_FAULT_WORDS: usize = 2;
 
-    #[derive(Debug)]
     pub struct BatchedResidentGpuSession {
         adapter: String,
         device: wgpu::Device,
@@ -3796,6 +3798,7 @@ mod native {
         output_buffers: [BTreeMap<CellSlotId, Arc<wgpu::Buffer>>; 2],
         output_elements: BTreeMap<CellSlotId, usize>,
         output_elements_per_instance: BTreeMap<CellSlotId, usize>,
+        output_readbacks: BTreeMap<CellSlotId, wgpu::Buffer>,
         constraints: Box<[GpuPlanConstraint]>,
         integrity_fault: Option<Arc<wgpu::Buffer>>,
         integrity_readback: Option<wgpu::Buffer>,
@@ -3804,6 +3807,14 @@ mod native {
         last_output_group: Option<usize>,
         faults: BatchedFaultRecorder,
         memory_plan: crate::PlannedGpuExecution,
+        input_objects: BTreeMap<CellSlotId, MemoryObjectId>,
+        input_submissions: BTreeMap<CellSlotId, PreparedDeviceSubmission>,
+        dispatch_submission: PreparedDeviceSubmission,
+        checked_dispatch_submission: PreparedDeviceSubmission,
+        readback_submission: PreparedDeviceSubmission,
+        submission_tracker: crate::DeviceSubmissionTracker,
+        queued_uploads: Vec<(MemoryObjectId, DeviceSubmissionHold)>,
+        managed_memory: crate::ManagedGpuMemory,
     }
 
     #[derive(Clone, Debug)]
@@ -3884,8 +3895,12 @@ mod native {
                 )
                 .await
                 .map_err(|error| BatchedExecutionError::Native(error.to_string()))?;
+            let mut managed_memory = planned_execution
+                .managed_memory()
+                .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
 
             let mut input_buffers = BTreeMap::new();
+            let mut input_objects = BTreeMap::new();
             for binding in execution_plan
                 .bindings
                 .iter()
@@ -3903,16 +3918,27 @@ mod native {
                         binding.name
                     )));
                 };
-                input_buffers.insert(
-                    CellSlotId::new(binding.slot),
-                    Arc::new(
-                        device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                            label: Some(&binding.name),
-                            contents: bytemuck::cast_slice(values),
-                            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
-                        }),
-                    ),
-                );
+                let slot = CellSlotId::new(binding.slot);
+                let buffer = Arc::new(device.create_buffer_init(
+                    &wgpu::util::BufferInitDescriptor {
+                        label: Some(&binding.name),
+                        contents: bytemuck::cast_slice(values),
+                        usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
+                    },
+                ));
+                let object = planned_execution
+                    .binding_object(binding.binding)
+                    .ok_or_else(|| {
+                        BatchedExecutionError::Native(format!(
+                            "GPU input binding {} has no planned object",
+                            binding.binding
+                        ))
+                    })?;
+                managed_memory
+                    .attach_device_allocation(object, planned_bytes, planned_bytes)
+                    .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
+                input_objects.insert(slot, object);
+                input_buffers.insert(slot, buffer);
             }
 
             let mut state_buffers = BTreeMap::new();
@@ -3939,6 +3965,16 @@ mod native {
                     usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
                     mapped_at_creation: false,
                 }));
+                let [current, next] = planned_execution.state_objects(slot).ok_or_else(|| {
+                    BatchedExecutionError::Native(format!(
+                        "GPU state slot {} has no planned double buffer",
+                        slot.get()
+                    ))
+                })?;
+                managed_memory
+                    .attach_device_allocation(current, state_bytes, state_bytes)
+                    .and_then(|()| managed_memory.attach_device_allocation(next, state_bytes, 0))
+                    .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
                 state_buffers.insert(slot, [initial, alternate]);
             }
 
@@ -3964,6 +4000,22 @@ mod native {
                     mapped_at_creation: false,
                 }))
             });
+            if let (Some(binding), Some(_)) = (integrity_binding, integrity_fault.as_ref()) {
+                let bytes = binding.elements.checked_mul(4).ok_or_else(|| {
+                    BatchedExecutionError::Native("GPU integrity byte count overflow".to_owned())
+                })?;
+                let object = planned_execution
+                    .binding_object(binding.binding)
+                    .ok_or_else(|| {
+                        BatchedExecutionError::Native(format!(
+                            "GPU integrity binding {} has no planned object",
+                            binding.binding
+                        ))
+                    })?;
+                managed_memory
+                    .attach_device_allocation(object, bytes, 0)
+                    .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
+            }
             let integrity_readback = integrity_binding.map(|binding| {
                 device.create_buffer(&wgpu::BufferDescriptor {
                     label: Some("Mech integrity-constraint readback"),
@@ -3972,6 +4024,15 @@ mod native {
                     mapped_at_creation: false,
                 })
             });
+            if let Some([device_stage, _]) = planned_execution.integrity_readback_objects() {
+                let binding = integrity_binding.expect("integrity readback requires its binding");
+                let bytes = binding.elements.checked_mul(4).ok_or_else(|| {
+                    BatchedExecutionError::Native("GPU integrity byte count overflow".to_owned())
+                })?;
+                managed_memory
+                    .attach_device_allocation(device_stage, bytes, 0)
+                    .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
+            }
 
             let layout_entries = execution_plan
                 .bindings
@@ -4071,6 +4132,68 @@ mod native {
                     )
                 })
                 .collect();
+            let mut output_readbacks = BTreeMap::new();
+            for output in &execution_plan.physical_outputs {
+                let slot = CellSlotId::new(output.slot);
+                if output_readbacks.contains_key(&slot) {
+                    continue;
+                }
+                let capacity = planned_execution.readback_bytes(slot).ok_or_else(|| {
+                    BatchedExecutionError::Native(format!(
+                        "GPU output slot {} has no planned readback capacity",
+                        slot.get()
+                    ))
+                })?;
+                let buffer = device.create_buffer(&wgpu::BufferDescriptor {
+                    label: Some("Mech fixed-shape batch readback"),
+                    size: capacity,
+                    usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+                    mapped_at_creation: false,
+                });
+                let object = planned_execution
+                    .readback_device_object(slot)
+                    .ok_or_else(|| {
+                        BatchedExecutionError::Native(format!(
+                            "GPU output slot {} has no planned readback object",
+                            slot.get()
+                        ))
+                    })?;
+                managed_memory
+                    .attach_device_allocation(object, capacity, 0)
+                    .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
+                output_readbacks.insert(slot, buffer);
+            }
+            let queued_uploads = Vec::with_capacity(input_objects.len());
+            let submission_capacity = input_objects.len().checked_add(2).ok_or_else(|| {
+                BatchedExecutionError::Native("GPU submission capacity overflowed".to_owned())
+            })?;
+            let input_submissions =
+                input_objects
+                    .iter()
+                    .map(|(slot, object)| {
+                        Ok((
+                            *slot,
+                            managed_memory.prepare_submission(&[*object], &[]).map_err(
+                                |failure| BatchedExecutionError::Native(failure.to_string()),
+                            )?,
+                        ))
+                    })
+                    .collect::<Result<BTreeMap<_, _>, BatchedExecutionError>>()?;
+            let dispatch_submission = managed_memory
+                .prepare_submission(planned_execution.device_objects(), &[])
+                .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
+            let checked_dispatch_submission = managed_memory
+                .prepare_submission(
+                    planned_execution.device_objects(),
+                    planned_execution.transfer_objects(),
+                )
+                .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
+            let readback_submission = managed_memory
+                .prepare_submission(
+                    planned_execution.device_objects(),
+                    planned_execution.transfer_objects(),
+                )
+                .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
             Ok(BatchedResidentGpuSession {
                 adapter: adapter_name,
                 device,
@@ -4081,6 +4204,7 @@ mod native {
                 output_buffers,
                 output_elements,
                 output_elements_per_instance,
+                output_readbacks,
                 constraints: execution_plan.constraints.clone().into_boxed_slice(),
                 integrity_fault,
                 integrity_readback,
@@ -4089,6 +4213,15 @@ mod native {
                 last_output_group: None,
                 faults: BatchedFaultRecorder::default(),
                 memory_plan: planned_execution,
+                input_objects,
+                input_submissions,
+                dispatch_submission,
+                checked_dispatch_submission,
+                readback_submission,
+                submission_tracker: crate::DeviceSubmissionTracker::new(submission_capacity)
+                    .map_err(BatchedExecutionError::Native)?,
+                queued_uploads,
+                managed_memory,
             })
         }
     }
@@ -4110,11 +4243,38 @@ mod native {
                     .find(|input| input.name == *name)
                     .ok_or_else(|| BatchedExecutionError::MissingInput(name.clone()))?;
                 let values = program.expand_input(input, values)?;
+                let object = *self.input_objects.get(&input.slot).ok_or_else(|| {
+                    BatchedExecutionError::Native(format!(
+                        "GPU input slot {} has no managed allocation object",
+                        input.slot.get()
+                    ))
+                })?;
+                if self
+                    .queued_uploads
+                    .iter()
+                    .any(|(pending, _)| *pending == object)
+                {
+                    return Err(BatchedExecutionError::Native(format!(
+                        "GPU input `{name}` already has an unpublished upload"
+                    )));
+                }
+                let hold = self
+                    .managed_memory
+                    .begin_prepared_submission(self.input_submissions.get(&input.slot).ok_or_else(
+                        || {
+                            BatchedExecutionError::Native(format!(
+                                "GPU input slot {} has no prepared submission authority",
+                                input.slot.get()
+                            ))
+                        },
+                    )?)
+                    .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
                 self.queue.write_buffer(
                     &self.input_buffers[&input.slot],
                     0,
                     bytemuck::cast_slice(&values),
                 );
+                self.queued_uploads.push((object, hold));
             }
             Ok(())
         }
@@ -4127,11 +4287,17 @@ mod native {
                 return self.dispatch_checked_turns(turns);
             }
             let started = Instant::now();
+            let dispatch_hold = self
+                .managed_memory
+                .begin_prepared_submission(&self.dispatch_submission)
+                .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
             let mut encoder = self
                 .device
                 .create_command_encoder(&wgpu::CommandEncoderDescriptor {
                     label: Some("Mech fixed-shape batch command encoder"),
                 });
+            let mut next_group = self.next_group;
+            let mut last_output_group = self.last_output_group;
             {
                 let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
                     label: Some("Mech fixed-shape batch compute pass"),
@@ -4139,16 +4305,62 @@ mod native {
                 });
                 pass.set_pipeline(&self.pipeline);
                 for _ in 0..turns {
-                    let group = self.next_group;
+                    let group = next_group;
                     pass.set_bind_group(0, &self.bind_groups[group], &[]);
                     pass.dispatch_workgroups(self.workgroups, 1, 1);
-                    self.last_output_group = Some(group);
-                    self.next_group = 1 - group;
+                    last_output_group = Some(group);
+                    next_group = 1 - group;
                 }
             }
             self.queue.submit(Some(encoder.finish()));
+            let serial = self
+                .submission_tracker
+                .track(&self.queue, dispatch_hold)
+                .map_err(BatchedExecutionError::Native)?;
+            let mut uploaded_objects = Vec::with_capacity(self.queued_uploads.len());
+            for (object, upload) in self.queued_uploads.drain(..) {
+                self.submission_tracker
+                    .track_at(serial, upload)
+                    .map_err(BatchedExecutionError::Native)?;
+                uploaded_objects.push(object);
+            }
             self.device.poll(wgpu::Maintain::Wait);
+            self.submission_tracker
+                .reap()
+                .map_err(BatchedExecutionError::Native)?;
+            self.record_completed_writes(&uploaded_objects)?;
+            self.last_output_group = last_output_group;
+            self.next_group = next_group;
             Ok(started.elapsed())
+        }
+
+        fn record_completed_writes(
+            &mut self,
+            uploaded_objects: &[MemoryObjectId],
+        ) -> Result<(), BatchedExecutionError> {
+            for object in uploaded_objects {
+                let bytes = self
+                    .memory_plan
+                    .memory
+                    .allocations
+                    .iter()
+                    .find(|allocation| allocation.id == *object)
+                    .map(|allocation| allocation.capacity_bytes)
+                    .ok_or_else(|| {
+                        BatchedExecutionError::Native(
+                            "completed GPU upload has no planned allocation".to_owned(),
+                        )
+                    })?;
+                self.managed_memory
+                    .record_device_write(*object, bytes)
+                    .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
+            }
+            for (object, bytes) in self.memory_plan.writable_device_objects().iter().copied() {
+                self.managed_memory
+                    .record_device_write(object, bytes)
+                    .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
+            }
+            Ok(())
         }
 
         fn dispatch_checked_turns(
@@ -4158,6 +4370,10 @@ mod native {
             let started = Instant::now();
             for _ in 0..turns {
                 let attempted_turn = self.faults.next_turn();
+                let dispatch_hold = self
+                    .managed_memory
+                    .begin_prepared_submission(&self.checked_dispatch_submission)
+                    .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
                 let fault_buffer = self
                     .integrity_fault
                     .as_ref()
@@ -4190,7 +4406,22 @@ mod native {
                     (GPU_FAULT_WORDS * std::mem::size_of::<u32>()) as u64,
                 );
                 self.queue.submit(Some(encoder.finish()));
+                let serial = self
+                    .submission_tracker
+                    .track(&self.queue, dispatch_hold)
+                    .map_err(BatchedExecutionError::Native)?;
+                let mut uploaded_objects = Vec::with_capacity(self.queued_uploads.len());
+                for (object, upload) in self.queued_uploads.drain(..) {
+                    self.submission_tracker
+                        .track_at(serial, upload)
+                        .map_err(BatchedExecutionError::Native)?;
+                    uploaded_objects.push(object);
+                }
                 self.device.poll(wgpu::Maintain::Wait);
+                self.submission_tracker
+                    .reap()
+                    .map_err(BatchedExecutionError::Native)?;
+                self.record_completed_writes(&uploaded_objects)?;
                 let words = self.read_integrity_fault()?;
                 if words[0] != 0 {
                     let packed = words[1];
@@ -4220,7 +4451,9 @@ mod native {
             Ok(started.elapsed())
         }
 
-        fn read_integrity_fault(&self) -> Result<[u32; GPU_FAULT_WORDS], BatchedExecutionError> {
+        fn read_integrity_fault(
+            &mut self,
+        ) -> Result<[u32; GPU_FAULT_WORDS], BatchedExecutionError> {
             let readback = self
                 .integrity_readback
                 .as_ref()
@@ -4236,10 +4469,30 @@ mod native {
                 .map_err(|_| BatchedExecutionError::Native("map channel closed".to_owned()))?
                 .map_err(|error| BatchedExecutionError::Native(error.to_string()))?;
             let mapped = slice.get_mapped_range();
-            let mut words = [0_u32; GPU_FAULT_WORDS];
-            words.copy_from_slice(bytemuck::cast_slice::<u8, u32>(&mapped));
+            let [device_object, host_object] = self
+                .memory_plan
+                .integrity_readback_objects()
+                .ok_or_else(|| {
+                    BatchedExecutionError::Native(
+                        "checked GPU session has no planned integrity transfer".to_owned(),
+                    )
+                })?;
+            let words = self
+                .managed_memory
+                .with_staged_host_transfer(host_object, &mapped, |bytes| {
+                    let mut words = [0_u32; GPU_FAULT_WORDS];
+                    words.copy_from_slice(bytemuck::cast_slice::<u8, u32>(bytes));
+                    words
+                })
+                .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
             drop(mapped);
             readback.unmap();
+            self.managed_memory
+                .record_device_write(
+                    device_object,
+                    (GPU_FAULT_WORDS * std::mem::size_of::<u32>()) as u64,
+                )
+                .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
             Ok(words)
         }
 
@@ -4256,7 +4509,7 @@ mod native {
         }
 
         pub fn read_state(
-            &self,
+            &mut self,
         ) -> Result<(Duration, BTreeMap<CellSlotId, Vec<f32>>), BatchedExecutionError> {
             let group = self.last_output_group.ok_or_else(|| {
                 BatchedExecutionError::Native("no batch turns have run".to_owned())
@@ -4267,7 +4520,7 @@ mod native {
         /// Reads the currently published state, including the initial state or
         /// the estimate retained after a rejected candidate.
         pub fn read_published_state(
-            &self,
+            &mut self,
         ) -> Result<(Duration, BTreeMap<CellSlotId, Vec<f32>>), BatchedExecutionError> {
             self.read_state_group(1 - self.next_group, None, None)
         }
@@ -4276,7 +4529,7 @@ mod native {
         /// This is the physical sampling boundary used by resident hosts: the
         /// full outer batch never crosses from device memory to the CPU.
         pub fn read_published_sample(
-            &self,
+            &mut self,
             slots: &BTreeSet<CellSlotId>,
             instance: u32,
         ) -> Result<BTreeMap<CellSlotId, Vec<f32>>, BatchedExecutionError> {
@@ -4285,12 +4538,16 @@ mod native {
         }
 
         fn read_state_group(
-            &self,
+            &mut self,
             group: usize,
             selected: Option<&BTreeSet<CellSlotId>>,
             sample_instance: Option<u32>,
         ) -> Result<(Duration, BTreeMap<CellSlotId, Vec<f32>>), BatchedExecutionError> {
             let started = Instant::now();
+            let readback_hold = self
+                .managed_memory
+                .begin_prepared_submission(&self.readback_submission)
+                .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
             let mut encoder = self
                 .device
                 .create_command_encoder(&wgpu::CommandEncoderDescriptor {
@@ -4318,20 +4575,24 @@ mod native {
                         sample_instance.expect("sample instance is present"),
                     )));
                 }
-                let readback = self.device.create_buffer(&wgpu::BufferDescriptor {
-                    label: Some("Mech fixed-shape batch readback"),
-                    size,
-                    usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-                    mapped_at_creation: false,
-                });
-                encoder.copy_buffer_to_buffer(buffer, source_offset, &readback, 0, size);
-                readbacks.push((*slot, readback));
+                let readback = self.output_readbacks.get(slot).ok_or_else(|| {
+                    BatchedExecutionError::Native(format!(
+                        "GPU output slot {} has no realized readback buffer",
+                        slot.get()
+                    ))
+                })?;
+                encoder.copy_buffer_to_buffer(buffer, source_offset, readback, 0, size);
+                readbacks.push((*slot, size));
             }
             self.queue.submit(Some(encoder.finish()));
+            self.submission_tracker
+                .track(&self.queue, readback_hold)
+                .map_err(BatchedExecutionError::Native)?;
 
             let mut state = BTreeMap::new();
-            for (slot, readback) in readbacks {
-                let slice = readback.slice(..);
+            for (slot, size) in readbacks {
+                let readback = &self.output_readbacks[&slot];
+                let slice = readback.slice(..size);
                 let (sender, receiver) = mpsc::channel();
                 slice.map_async(wgpu::MapMode::Read, move |result| {
                     drop(sender.send(result));
@@ -4342,9 +4603,45 @@ mod native {
                     .map_err(|_| BatchedExecutionError::Native("map channel closed".to_owned()))?
                     .map_err(|error| BatchedExecutionError::Native(error.to_string()))?;
                 let mapped = slice.get_mapped_range();
-                state.insert(slot, bytemuck::cast_slice::<u8, f32>(&mapped).to_vec());
+                let host_object = self.memory_plan.readback_object(slot).ok_or_else(|| {
+                    BatchedExecutionError::Native(format!(
+                        "GPU output slot {} has no planned host readback storage",
+                        slot.get()
+                    ))
+                })?;
+                let values = self
+                    .managed_memory
+                    .with_staged_host_transfer(host_object, &mapped, |bytes| {
+                        bytemuck::cast_slice::<u8, f32>(bytes).to_vec()
+                    })
+                    .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
+                state.insert(slot, values);
                 drop(mapped);
                 readback.unmap();
+            }
+            self.device.poll(wgpu::Maintain::Wait);
+            self.submission_tracker
+                .reap()
+                .map_err(BatchedExecutionError::Native)?;
+            for slot in state.keys().copied() {
+                let object = self
+                    .memory_plan
+                    .readback_device_object(slot)
+                    .ok_or_else(|| {
+                        BatchedExecutionError::Native(format!(
+                            "GPU output slot {} has no planned device readback storage",
+                            slot.get()
+                        ))
+                    })?;
+                let bytes = self.memory_plan.readback_bytes(slot).ok_or_else(|| {
+                    BatchedExecutionError::Native(format!(
+                        "GPU output slot {} has no planned readback capacity",
+                        slot.get()
+                    ))
+                })?;
+                self.managed_memory
+                    .record_device_write(object, bytes)
+                    .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
             }
             Ok((started.elapsed(), state))
         }
@@ -4362,6 +4659,18 @@ mod native {
                 readback,
                 state,
             })
+        }
+    }
+
+    impl Drop for BatchedResidentGpuSession {
+        fn drop(&mut self) {
+            if !self.queued_uploads.is_empty() {
+                self.queue.submit(core::iter::empty());
+            }
+            self.device.poll(wgpu::Maintain::Wait);
+            let _ = self.submission_tracker.reap();
+            self.queued_uploads.clear();
+            let _ = self.managed_memory.close();
         }
     }
 }

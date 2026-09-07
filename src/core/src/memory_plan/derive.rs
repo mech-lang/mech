@@ -1205,6 +1205,26 @@ fn derive_scratch_allocations(
                 request.input_storage[input as usize].space,
             )?;
         }
+        ImplementationMemoryClass::AbiContiguousBridge { input, output } => {
+            let input = inputs
+                .get(input as usize)
+                .ok_or(MemoryPlanError::DescriptorArityMismatch)?;
+            let output = outputs
+                .get(output as usize)
+                .ok_or(MemoryPlanError::DescriptorArityMismatch)?;
+            scratch(
+                AllocationRole::Scratch,
+                value_current_bytes(&input.value)?,
+                input.value.slot.alignment,
+                MemorySpace::Host,
+            )?;
+            scratch(
+                AllocationRole::Scratch,
+                value_required_bytes(&output.value)?,
+                output.value.slot.alignment,
+                MemorySpace::Host,
+            )?;
+        }
         ImplementationMemoryClass::MatrixSolve => {
             let [coefficients, _rhs] = inputs else {
                 return Err(MemoryPlanError::MatrixSolveLayoutInvalid);
@@ -1388,6 +1408,30 @@ fn apply_implementation_demand(
                 .ok_or(MemoryPlanError::DescriptorArityMismatch)?;
             let bytes = value_current_bytes(&input.value)?;
             demand.cloned_bytes = checked_add(demand.cloned_bytes, bytes, "input clone bytes")?;
+        }
+        ImplementationMemoryClass::AbiContiguousBridge { input, output } => {
+            let input = inputs
+                .get(input as usize)
+                .ok_or(MemoryPlanError::DescriptorArityMismatch)?;
+            let output = outputs
+                .get(output as usize)
+                .ok_or(MemoryPlanError::DescriptorArityMismatch)?;
+            demand.cloned_bytes = checked_add(
+                demand.cloned_bytes,
+                value_current_bytes(&input.value)?,
+                "ABI input bridge copy",
+            )?;
+            demand.work.compute = checked_add(
+                demand.work.compute,
+                input
+                    .value
+                    .current_elements
+                    .checked_add(output.value.current_elements)
+                    .ok_or(MemoryPlanError::ArithmeticOverflow {
+                        field: "ABI bridge element work",
+                    })?,
+                "ABI bridge element work",
+            )?;
         }
         ImplementationMemoryClass::MatrixSolve => {
             let [coefficients, rhs] = inputs else {
