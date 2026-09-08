@@ -2939,6 +2939,20 @@ mod tests {
     }
 
     #[test]
+    fn empty_in_place_assignment_keeps_logical_undo_authority() {
+        let source = ValueCell::from_exact(DVector::<u8>::zeros(0)).unwrap();
+        let mask = ValueCell::from_exact(DVector::<bool>::from_vec(Vec::new())).unwrap();
+        let sink = ValueCell::from_exact(DVector::<u8>::zeros(0)).unwrap();
+        let function = managed::<Assign1DRVB<u8, DVector<u8>, DVector<u8>, DVector<bool>>>(
+            FunctionInvocation::binary(sink.clone(), source, mask),
+        );
+
+        function.instance().solve_result().unwrap();
+
+        assert!(u8_elements(&sink).is_empty());
+    }
+
+    #[test]
     fn reactive_sparse_mask_is_revalidated_before_any_write() {
         let source = ValueCell::from_exact(DVector::from_vec(vec![9_u8])).unwrap();
         let mask = ValueCell::from_exact(DVector::from_vec(vec![true, false, false])).unwrap();

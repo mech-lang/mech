@@ -18,6 +18,10 @@ impl ArbitraryInput {
         frame.snapshot_function_value_input(&self.0)
     }
 
+    pub(crate) fn planning_snapshot(&self) -> MResult<Value> {
+        self.0.snapshot()
+    }
+
     #[cfg(feature = "semantic-compiler")]
     pub(crate) fn compile_register(
         &self,
@@ -51,6 +55,59 @@ impl SetInput {
         }
         value.set_elements()?;
         Ok(Self(value))
+    }
+
+    pub(crate) fn planning_snapshot(&self) -> MResult<Value> {
+        self.0.snapshot()
+    }
+
+    pub(crate) fn planning_cardinality(&self) -> MResult<usize> {
+        self.planning_snapshot()?
+            .set_view()
+            .map(|set| set.elements().len())
+            .ok_or_else(|| {
+                function_shape_contract_violation("set/operation", "input is not a set")
+            })
+    }
+
+    pub(crate) fn prospective_binary_footprint(
+        &self,
+        other: &Self,
+        output: &SetOutput,
+    ) -> MResult<CurrentMemoryFootprint> {
+        let left = self.planning_snapshot()?;
+        let right = other.planning_snapshot()?;
+        let left = left.set_view().ok_or_else(|| {
+            function_shape_contract_violation("set/operation", "left input is not a set")
+        })?;
+        let right = right.set_view().ok_or_else(|| {
+            function_shape_contract_violation("set/operation", "right input is not a set")
+        })?;
+        output.0.cell().prospective_set_data_memory_footprint(
+            left.elements()
+                .iter()
+                .chain(right.elements())
+                .map(|entry| entry.data()),
+        )
+    }
+
+    #[cfg(feature = "modify")]
+    pub(crate) fn prospective_update_footprint(
+        &self,
+        candidate: &ArbitraryInput,
+        output: &SetOutput,
+    ) -> MResult<CurrentMemoryFootprint> {
+        let set = self.planning_snapshot()?;
+        let candidate = candidate.planning_snapshot()?;
+        let set = set.set_view().ok_or_else(|| {
+            function_shape_contract_violation("set/update", "input is not a set")
+        })?;
+        output.0.cell().prospective_set_data_memory_footprint(
+            set.elements()
+                .iter()
+                .map(|entry| entry.data())
+                .chain(core::iter::once(candidate.data())),
+        )
     }
 
     #[cfg(feature = "relations")]
@@ -266,23 +323,83 @@ impl SetOutput {
         Ok(Self(value))
     }
 
-    pub(crate) fn stage_set(
+    pub(crate) fn with_admitted_set(
         &self,
         frame: &mut KernelMemoryFrame<'_>,
-        elements: Box<[ValueData]>,
+        footprint: CurrentMemoryFootprint,
+        build: impl FnOnce(&mut KernelMemoryFrame<'_>) -> MResult<Box<[ValueData]>>,
     ) -> MResult<()> {
-        let next = self.0.build_set(elements)?;
-        frame.stage_output_value(self.0.cell(), next)
+        frame.with_admitted_canonical_output(self.0.cell(), footprint, |frame| {
+            let elements = build(frame)?;
+            Ok(((), self.0.build_set(elements)?))
+        })
+    }
+
+    pub(crate) fn prospective_expansion_footprint(
+        &self,
+        inputs: &[&SetInput],
+        output_elements: usize,
+    ) -> MResult<CurrentMemoryFootprint> {
+        let output_elements = u64::try_from(output_elements).map_err(|_| {
+            MechError::new(
+                MemoryPlanError::ArithmeticOverflow {
+                    field: "set expansion output elements",
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+        let mut bound = self.0.cell().current_memory_footprint()?;
+        let copies = output_elements.checked_add(1).ok_or_else(|| {
+            MechError::new(
+                MemoryPlanError::ArithmeticOverflow {
+                    field: "set expansion copies",
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+        for footprint in inputs
+            .iter()
+            .map(|input| input.0.cell().current_memory_footprint())
+        {
+            let footprint = footprint?;
+            macro_rules! add_scaled {
+                ($field:ident, $name:literal) => {
+                    bound.$field = footprint
+                        .$field
+                        .checked_mul(copies)
+                        .and_then(|amount| bound.$field.checked_add(amount))
+                        .ok_or_else(|| {
+                            MechError::new(
+                                MemoryPlanError::ArithmeticOverflow { field: $name },
+                                None,
+                            )
+                            .with_compiler_loc()
+                        })?;
+                };
+            }
+            add_scaled!(fixed_bytes, "set expansion fixed bytes");
+            add_scaled!(payload_bytes, "set expansion payload bytes");
+            add_scaled!(encoded_bytes, "set expansion encoded bytes");
+            add_scaled!(retained_nodes, "set expansion retained nodes");
+            add_scaled!(schema_bytes, "set expansion schema bytes");
+        }
+        bound.logical_elements = output_elements;
+        Ok(bound)
     }
 
     #[cfg(any(feature = "cartesian_product", feature = "powerset"))]
-    pub(crate) fn stage_set_drafts(
+    pub(crate) fn with_admitted_set_drafts(
         &self,
         frame: &mut KernelMemoryFrame<'_>,
-        elements: Box<[ValueDataDraft]>,
+        footprint: CurrentMemoryFootprint,
+        build: impl FnOnce(&mut KernelMemoryFrame<'_>) -> MResult<Box<[ValueDataDraft]>>,
     ) -> MResult<()> {
-        let next = self.0.build_set_drafts(elements)?;
-        frame.stage_output_value(self.0.cell(), next)
+        frame.with_admitted_canonical_output(self.0.cell(), footprint, |frame| {
+            let elements = build(frame)?;
+            Ok(((), self.0.build_set_drafts(elements)?))
+        })
     }
 
     pub(crate) fn primary_state_port(&self) -> Option<FunctionStatePort<'_>> {

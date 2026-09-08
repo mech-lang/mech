@@ -275,6 +275,12 @@ mod fixed_matrix_port_tests {
         .unwrap();
         let rhs = ValueCell::from_exact(Matrix2::from_element("!".to_string())).unwrap();
         let out = ValueCell::from_exact(Matrix2::from_element(String::new())).unwrap();
+        let prospective = crate::canonical_concat_footprint(
+            &lhs.snapshot().unwrap(),
+            &rhs.snapshot().unwrap(),
+            &out,
+        )
+        .unwrap();
         let alias = out.clone();
         let function = crate::test_managed_factory::<ConcatM2M2<String>>(
             FunctionInvocation::binary(out.clone(), lhs, rhs),
@@ -292,6 +298,11 @@ mod fixed_matrix_port_tests {
         .snapshot()
         .unwrap();
         let actual = out.snapshot().unwrap();
+        let actual_footprint = out.current_memory_footprint().unwrap();
+        assert_eq!(prospective.payload_bytes, actual_footprint.payload_bytes);
+        assert_eq!(prospective.encoded_bytes, actual_footprint.encoded_bytes);
+        assert_eq!(prospective.retained_nodes, actual_footprint.retained_nodes);
+        assert_eq!(prospective.shape_parameter_count, 0);
         assert!(
             actual
                 .language_eq(
@@ -394,5 +405,78 @@ mod dynamic_matrix_port_tests {
                 )
                 .unwrap()
         );
+    }
+
+    #[test]
+    fn one_axis_and_two_axis_dynamic_footprints_match_published_values() {
+        let column_lhs = ValueCell::from_exact("v".to_owned()).unwrap();
+        let column_rhs = ValueCell::from_exact(DVector::from_vec(vec![
+            "!".to_owned(),
+            "?".to_owned(),
+        ]))
+        .unwrap();
+        let column_out =
+            ValueCell::from_exact(DVector::from_element(2, String::new())).unwrap();
+        let column_expected = crate::canonical_concat_footprint(
+            &column_lhs.snapshot().unwrap(),
+            &column_rhs.snapshot().unwrap(),
+            &column_out,
+        )
+        .unwrap();
+        crate::test_managed_factory::<ConcatSVD<String>>(
+            FunctionInvocation::binary(column_out.clone(), column_lhs, column_rhs),
+            "string/concat",
+        )
+        .instance()
+        .solve_result()
+        .unwrap();
+        let column_actual = column_out.current_memory_footprint().unwrap();
+        assert_eq!(column_expected.payload_bytes, column_actual.payload_bytes);
+        assert_eq!(column_expected.shape_parameter_count, 1);
+
+        let row_lhs = ValueCell::from_exact("r".to_owned()).unwrap();
+        let row_rhs = ValueCell::from_exact(RowDVector::from_vec(vec![
+            "1".to_owned(),
+            "2".to_owned(),
+        ]))
+        .unwrap();
+        let row_out = ValueCell::from_exact(RowDVector::from_element(2, String::new())).unwrap();
+        let row_expected = crate::canonical_concat_footprint(
+            &row_lhs.snapshot().unwrap(),
+            &row_rhs.snapshot().unwrap(),
+            &row_out,
+        )
+        .unwrap();
+        crate::test_managed_factory::<ConcatSRD<String>>(
+            FunctionInvocation::binary(row_out.clone(), row_lhs, row_rhs),
+            "string/concat",
+        )
+        .instance()
+        .solve_result()
+        .unwrap();
+        let row_actual = row_out.current_memory_footprint().unwrap();
+        assert_eq!(row_expected.payload_bytes, row_actual.payload_bytes);
+        assert_eq!(row_expected.shape_parameter_count, 1);
+
+        let matrix_lhs = ValueCell::from_exact(matrix(&["p", "q", "r", "s"])).unwrap();
+        let matrix_rhs = ValueCell::from_exact(matrix(&["+", "+", "+", "+"])).unwrap();
+        let matrix_out =
+            ValueCell::from_exact(DMatrix::from_element(2, 2, String::new())).unwrap();
+        let matrix_expected = crate::canonical_concat_footprint(
+            &matrix_lhs.snapshot().unwrap(),
+            &matrix_rhs.snapshot().unwrap(),
+            &matrix_out,
+        )
+        .unwrap();
+        crate::test_managed_factory::<ConcatMDMD<String>>(
+            FunctionInvocation::binary(matrix_out.clone(), matrix_lhs, matrix_rhs),
+            "string/concat",
+        )
+        .instance()
+        .solve_result()
+        .unwrap();
+        let matrix_actual = matrix_out.current_memory_footprint().unwrap();
+        assert_eq!(matrix_expected.payload_bytes, matrix_actual.payload_bytes);
+        assert_eq!(matrix_expected.shape_parameter_count, 2);
     }
 }

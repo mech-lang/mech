@@ -82,6 +82,19 @@ impl MechFunctionFactory for SetCartesianProductFxn {
 }
 
 impl MechFunctionImpl for SetCartesianProductFxn {
+    fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+        let output_len = cartesian_product_output_len(
+            self.lhs.planning_cardinality()?,
+            self.rhs.planning_cardinality()?,
+        )?;
+        Ok(Some(
+            vec![self
+                .out
+                .prospective_expansion_footprint(&[&self.lhs, &self.rhs], output_len)?]
+            .into_boxed_slice(),
+        ))
+    }
+
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
         self.out.primary_state_port()
     }
@@ -93,18 +106,27 @@ impl MechFunctionImpl for SetCartesianProductFxn {
         frame: &mut mech_core::KernelMemoryFrame<'_>,
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
-        let lhs = self.lhs.element_drafts(frame)?.into_vec();
-        let rhs = self.rhs.element_drafts(frame)?.into_vec();
-        let output_len = cartesian_product_output_len(lhs.len(), rhs.len())?;
-        let mut next = Vec::with_capacity(output_len);
-        for lhs in &lhs {
-            for rhs in &rhs {
-                next.push(ValueDataDraft::Tuple(
-                    vec![lhs.clone(), rhs.clone()].into_boxed_slice(),
-                ));
-            }
-        }
-        self.out.stage_set_drafts(frame, next.into_boxed_slice())?;
+        let output_len = cartesian_product_output_len(
+            self.lhs.planning_cardinality()?,
+            self.rhs.planning_cardinality()?,
+        )?;
+        let footprint = self
+            .out
+            .prospective_expansion_footprint(&[&self.lhs, &self.rhs], output_len)?;
+        self.out
+            .with_admitted_set_drafts(frame, footprint, |frame| {
+                let lhs = self.lhs.element_drafts(frame)?.into_vec();
+                let rhs = self.rhs.element_drafts(frame)?.into_vec();
+                let mut next = Vec::with_capacity(output_len);
+                for lhs in &lhs {
+                    for rhs in &rhs {
+                        next.push(ValueDataDraft::Tuple(
+                            vec![lhs.clone(), rhs.clone()].into_boxed_slice(),
+                        ));
+                    }
+                }
+                Ok(next.into_boxed_slice())
+            })?;
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {

@@ -477,7 +477,10 @@ fn initializer_marks_nothing_when_its_callback_returns_an_error() {
             &[CallAccessRequest {
                 object,
                 mode: MemoryAccessMode::Write,
-                region: MemoryAccessRegion::WholeInitialized,
+                region: MemoryAccessRegion::Contiguous {
+                    offset_bytes: 0,
+                    length_bytes: 8,
+                },
             }],
         )
         .unwrap();
@@ -485,6 +488,10 @@ fn initializer_marks_nothing_when_its_callback_returns_an_error() {
     frame
         .with_object_init_writer::<u8>(object, |_writer| Ok(()))
         .unwrap();
+    assert!(matches!(
+        frame.with_object_value_view::<u64, _>(object, |_| ()),
+        Err(MemoryRuntimeError::UninitializedAccess { .. })
+    ));
     drop(frame);
     assert_eq!(realized.binding(object).unwrap().initialized_bytes(), 0);
 

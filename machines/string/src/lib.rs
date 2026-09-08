@@ -15,63 +15,8 @@ use mech_core::*;
 use std::sync::LazyLock;
 
 #[cfg(test)]
-mod allocation_probe {
-    use std::alloc::{GlobalAlloc, Layout, System};
-    use std::cell::Cell;
-
-    thread_local! {
-        static MAX_ALLOCATION: Cell<Option<usize>> = const { Cell::new(None) };
-    }
-
-    pub struct ProbeAllocator;
-
-    fn observe(size: usize) {
-        let _ = MAX_ALLOCATION.try_with(|maximum| {
-            if let Some(current) = maximum.get() {
-                maximum.set(Some(current.max(size)));
-            }
-        });
-    }
-
-    // SAFETY: requests are forwarded unchanged to the system allocator. The
-    // thread-local probe records only requested sizes and never touches bytes.
-    unsafe impl GlobalAlloc for ProbeAllocator {
-        unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
-            observe(layout.size());
-            unsafe { System.alloc(layout) }
-        }
-
-        unsafe fn alloc_zeroed(&self, layout: Layout) -> *mut u8 {
-            observe(layout.size());
-            unsafe { System.alloc_zeroed(layout) }
-        }
-
-        unsafe fn realloc(&self, pointer: *mut u8, layout: Layout, size: usize) -> *mut u8 {
-            observe(size);
-            unsafe { System.realloc(pointer, layout, size) }
-        }
-
-        unsafe fn dealloc(&self, pointer: *mut u8, layout: Layout) {
-            unsafe { System.dealloc(pointer, layout) }
-        }
-    }
-
-    pub fn maximum_requested<T>(run: impl FnOnce() -> T) -> (T, usize) {
-        struct Reset;
-        impl Drop for Reset {
-            fn drop(&mut self) {
-                MAX_ALLOCATION.with(|maximum| maximum.set(None));
-            }
-        }
-
-        MAX_ALLOCATION.with(|maximum| assert!(maximum.replace(Some(0)).is_none()));
-        let reset = Reset;
-        let result = run();
-        let maximum = MAX_ALLOCATION.with(|value| value.get().unwrap());
-        drop(reset);
-        (result, maximum)
-    }
-}
+#[path = "../tests/support/r6_allocation_probe.rs"]
+mod allocation_probe;
 
 #[cfg(test)]
 #[global_allocator]
@@ -331,12 +276,9 @@ fn canonical_concat_footprint(
             "output cardinality exceeded the portable footprint domain",
         )
     })?;
+    let shape_parameter_count = output.shape().parameter_values().len();
     let footprint = mech_core::snapshot::prospective_string_value_footprint(
-        if matrix {
-            2
-        } else {
-            output.shape().parameter_values().len()
-        },
+        shape_parameter_count,
         matrix,
         logical_elements,
         payload_bytes,
@@ -352,11 +294,7 @@ fn canonical_concat_footprint(
         payload_bytes: footprint.retained_bytes,
         encoded_bytes: footprint.encoded_bytes,
         retained_nodes: footprint.node_count,
-        shape_parameter_count: if matrix {
-            2
-        } else {
-            output.shape().parameter_values().len() as u64
-        },
+        shape_parameter_count: shape_parameter_count as u64,
         ..CurrentMemoryFootprint::default()
     })
 }

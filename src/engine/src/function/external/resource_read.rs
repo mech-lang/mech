@@ -100,6 +100,10 @@ impl ExternalResourceReadFunction {
 }
 
 impl MechFunctionImpl for ExternalResourceReadFunction {
+    fn payload_output_plan_policy(&self) -> mech_core::PayloadOutputPlanPolicy {
+        mech_core::PayloadOutputPlanPolicy::ExternalAdoption
+    }
+
     fn solve_managed(
         &self,
         frame: &mut mech_core::KernelMemoryFrame<'_>,

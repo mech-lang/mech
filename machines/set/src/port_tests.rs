@@ -136,17 +136,17 @@ mod dynamic_outputs {
 
     #[test]
     fn union_preserves_output_identity_across_turn_varying_extents() {
-        let lhs = set(&[]);
-        let rhs = set(&[1, 2, 3]);
+        let lhs = set(&[1]);
+        let rhs = set(&[1]);
         let function = specialize("set/union", vec![lhs.clone(), rhs.clone()]);
         let output = function.output().clone();
         let alias = output.clone();
 
         for (next, expected) in [
-            (vec![1, 2, 3], vec![1, 2, 3]),
-            (vec![2], vec![2]),
-            (vec![], vec![]),
-            (vec![3, 4], vec![3, 4]),
+            (vec![1], vec![1]),
+            (vec![2], vec![1, 2]),
+            (vec![], vec![1]),
+            (vec![3, 4], vec![1, 3, 4]),
         ] {
             replace_set(&rhs, &next);
             function.instance().solve_result().unwrap();

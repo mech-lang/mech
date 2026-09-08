@@ -232,6 +232,13 @@ pub enum InitialSolvePolicy {
     PreserveSpecializedOutput,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum PayloadOutputPlanPolicy {
+    Missing,
+    PublishedInvariant,
+    ExternalAdoption,
+}
+
 pub trait MechFunctionImpl {
     /// Executes this implementation through the one maintained managed
     /// runtime entry. Implementations retain logical ports only; every
@@ -255,6 +262,12 @@ pub trait MechFunctionImpl {
     /// call planner can admit the complete prospective footprint first.
     fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
         Ok(None)
+    }
+
+    /// Declares the only cases where a payload output may intentionally use
+    /// its published footprint without a prospective construction witness.
+    fn payload_output_plan_policy(&self) -> PayloadOutputPlanPolicy {
+        PayloadOutputPlanPolicy::Missing
     }
 
     fn initial_solve_policy(&self) -> InitialSolvePolicy {
@@ -471,6 +484,7 @@ impl ManagedCallRealization {
         invocation: &FunctionInvocation,
         output_shapes: Option<&[ShapeInstance]>,
         output_footprints: Option<&[CurrentMemoryFootprint]>,
+        output_policy: PayloadOutputPlanPolicy,
     ) -> MResult<Option<Rc<CallMemoryPlan>>> {
         let planned_inputs = (0..self.plan.inputs.len())
             .map(|index| invocation.planned_input_cell(self.plan.as_ref(), index))
@@ -594,6 +608,23 @@ impl ManagedCallRealization {
                 resolved.insert((PortDirection::Output, port), footprint);
             }
         } else {
+            let output_payload_dependent = self.plan.output_storage.iter().any(|storage| {
+                matches!(
+                    storage.slot,
+                    PlannedSlotKind::StringHeader | PlannedSlotKind::CanonicalValueHandle
+                )
+            });
+            if output_payload_dependent && output_policy == PayloadOutputPlanPolicy::Missing {
+                return Err(MechError::from(
+                    MemoryRuntimeError::CandidateValidationFailed {
+                        object: self.plan.outputs.first().map(|output| output.object),
+                        reason: format!(
+                            "payload-producing operation `{}` has no prospective output-footprint authority",
+                            self.plan.bound_call.operation_descriptor().canonical_name,
+                        ),
+                    },
+                ));
+            }
             for index in 0..self.plan.outputs.len() {
                 let port = u16::try_from(index).map_err(|_| {
                     MechError::new(MemoryPlanError::DescriptorArityMismatch, None)
@@ -655,7 +686,7 @@ impl ManagedCallRealization {
 fn validate_transaction_authority(plan: &CallMemoryPlan) -> MResult<()> {
     if plan.outputs.len() != plan.transactions.len()
         || plan.outputs.len() != plan.aliases.len()
-        || plan.outputs.len() != plan.output_storage.len()
+        || plan.output_storage.len() != plan.bound_call.outputs().len()
     {
         return Err(MemoryRuntimeError::CandidateValidationFailed {
             object: None,
@@ -842,11 +873,13 @@ impl FunctionInstance {
             .map_err(managed_scope_error)?;
         let output_shapes = self.implementation.planned_output_shapes()?;
         let output_footprints = self.implementation.planned_output_footprints()?;
+        let output_policy = self.implementation.payload_output_plan_policy();
         let candidate = current
             .refreshed_plan(
                 &self.invocation,
                 output_shapes.as_deref(),
                 output_footprints.as_deref(),
+                output_policy,
             )?
             .map(|plan| {
                 ManagedCallRealization::prepare(current.domain.clone(), plan, &self.invocation)

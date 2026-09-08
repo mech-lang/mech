@@ -218,17 +218,24 @@ impl Value {
                 key: self.schema_key,
             });
         }
-        // The ordinary managed snapshot path asks for the exact schema
-        // identity, definition, and shape already carried by this immutable value. Keep
-        // the frozen tree and its retained-allocation ticket intact. A rebind
-        // to another table or shape remains an explicit canonical transform
-        // below and therefore cannot accidentally take this no-copy path.
-        if schema == self.schema
-            && target_entry.key() == self.schema_key
-            && shape == &self.shape
-            && exact_definition
-        {
-            return Ok(self.clone());
+        // Exact metadata in the same table is a true clone. Equivalent closed
+        // metadata in another table may share the immutable tree, but the
+        // returned value must retain that target table. Dynamic children carry
+        // nested schema identities, so they must take the rebuilding path.
+        if target_entry.key() == self.schema_key && shape == &self.shape && exact_definition {
+            if core::ptr::eq(source_schemas, schemas) && schema == self.schema {
+                return Ok(self.clone());
+            }
+            if !schema_body_contains_dynamic(target_schema.body()) {
+                return Ok(Self {
+                    schema,
+                    schema_key: target_entry.key(),
+                    shape: shape.clone(),
+                    root: self.root.clone(),
+                    resident_token: self.resident_token,
+                    schemas: Some(Arc::new(schemas.clone())),
+                });
+            }
         }
         let data = canonical_data_to_rebound_draft(
             source_schema.body(),
@@ -637,6 +644,42 @@ impl Value {
             })
             .collect::<Result<Vec<_>, SnapshotValueError>>()?;
         self.rebuild(ValueDataDraft::Map(entries.into_boxed_slice()), context)
+    }
+}
+
+fn schema_body_contains_dynamic(schema: &SchemaBody) -> bool {
+    match schema {
+        SchemaBody::Dynamic => true,
+        SchemaBody::Enum { variants, .. } => variants.iter().any(|variant| {
+            variant
+                .payload
+                .as_ref()
+                .is_some_and(schema_body_contains_dynamic)
+        }),
+        SchemaBody::Option(value)
+        | SchemaBody::Matrix { element: value, .. }
+        | SchemaBody::Set { element: value, .. } => schema_body_contains_dynamic(value),
+        SchemaBody::Tuple(values) => values.iter().any(schema_body_contains_dynamic),
+        SchemaBody::Record(fields)
+        | SchemaBody::Table {
+            columns: fields, ..
+        } => fields
+            .iter()
+            .any(|field| schema_body_contains_dynamic(&field.schema)),
+        SchemaBody::Map { key, value, .. } => {
+            schema_body_contains_dynamic(key) || schema_body_contains_dynamic(value)
+        }
+        SchemaBody::Bool
+        | SchemaBody::UnsignedInteger(_)
+        | SchemaBody::SignedInteger(_)
+        | SchemaBody::FloatingPoint(_)
+        | SchemaBody::Complex(_)
+        | SchemaBody::Rational64
+        | SchemaBody::String
+        | SchemaBody::Id
+        | SchemaBody::Index
+        | SchemaBody::Atom(_)
+        | SchemaBody::ReifiedType => false,
     }
 }
 
@@ -2359,6 +2402,19 @@ mod tests {
         let same = value.rebind(fixed, value.shape(), &schemas).unwrap();
         assert!(value.shares_frozen_storage(&same));
 
+        let mut equivalent_builder = SchemaTableBuilder::new();
+        let equivalent_handle = equivalent_builder
+            .insert(schemas.get(fixed).unwrap().clone())
+            .unwrap();
+        let equivalent_build = equivalent_builder.finish().unwrap();
+        let equivalent = equivalent_build.resolve(equivalent_handle).unwrap();
+        let (equivalent_schemas, _) = equivalent_build.into_parts();
+        let rebound = value
+            .rebind(equivalent, value.shape(), &equivalent_schemas)
+            .unwrap();
+        assert!(value.shares_frozen_storage(&rebound));
+        assert!(rebound.validate_against(&equivalent_schemas).is_ok());
+
         let dynamic_shape = schemas
             .get(dynamic)
             .unwrap()
@@ -2366,6 +2422,57 @@ mod tests {
             .unwrap();
         let transformed = value.rebind(dynamic, &dynamic_shape, &schemas).unwrap();
         assert!(!value.shares_frozen_storage(&transformed));
+
+        let dynamic_value = ValueDraft {
+            schema: dynamic,
+            shape_values: vec![1].into_boxed_slice(),
+            data: ValueDataDraft::Matrix(
+                vec![ValueDataDraft::String("dynamic".to_owned())].into_boxed_slice(),
+            ),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        let mut dynamic_table_builder = SchemaTableBuilder::new();
+        let dynamic_table_handle = dynamic_table_builder
+            .insert(schemas.get(dynamic).unwrap().clone())
+            .unwrap();
+        let dynamic_table_build = dynamic_table_builder.finish().unwrap();
+        let dynamic_table_schema = dynamic_table_build.resolve(dynamic_table_handle).unwrap();
+        let (dynamic_table, _) = dynamic_table_build.into_parts();
+        let dynamic_rebound = dynamic_value
+            .rebind(dynamic_table_schema, &dynamic_shape, &dynamic_table)
+            .unwrap();
+        assert!(dynamic_value.shares_frozen_storage(&dynamic_rebound));
+
+        let dynamic_schema = SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body: SchemaBody::Dynamic,
+        }
+        .finalize()
+        .unwrap();
+        let mut source_dynamic_builder = SchemaTableBuilder::new();
+        let source_dynamic_handle = source_dynamic_builder
+            .insert(dynamic_schema.clone())
+            .unwrap();
+        let source_dynamic_build = source_dynamic_builder.finish().unwrap();
+        let source_dynamic = source_dynamic_build.resolve(source_dynamic_handle).unwrap();
+        let (source_dynamic_table, _) = source_dynamic_build.into_parts();
+        let dynamic_value = ValueDraft {
+            schema: source_dynamic,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Dynamic(None),
+        }
+        .finalize(&SnapshotValidationContext::new(&source_dynamic_table))
+        .unwrap();
+        let mut target_dynamic_builder = SchemaTableBuilder::new();
+        let target_dynamic_handle = target_dynamic_builder.insert(dynamic_schema).unwrap();
+        let target_dynamic_build = target_dynamic_builder.finish().unwrap();
+        let target_dynamic = target_dynamic_build.resolve(target_dynamic_handle).unwrap();
+        let (target_dynamic_table, _) = target_dynamic_build.into_parts();
+        let dynamic_rebound = dynamic_value
+            .rebind(target_dynamic, dynamic_value.shape(), &target_dynamic_table)
+            .unwrap();
+        assert!(!dynamic_value.shares_frozen_storage(&dynamic_rebound));
     }
 
     #[test]

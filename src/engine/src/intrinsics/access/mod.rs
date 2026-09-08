@@ -42,8 +42,9 @@ use crate::intrinsics::canonical_access::{
 #[cfg(feature = "semantic-compiler")]
 use crate::{
     AccessMode, AliasPolicy, BytecodeCompilerContext, CanonicalFunctionSpecializer,
-    ChangeDetectionPolicy, DeliveryMode, DimensionExpr, ExternalInteraction, FunctionInvocation,
-    FunctionStatePort, FunctionValueRepresentation, GenericError, InputPortLayout, InputPortPolicy,
+    ChangeDetectionPolicy, CurrentMemoryFootprint, DeliveryMode, DimensionExpr,
+    ExternalInteraction, FunctionInvocation, FunctionMatrixElement, FunctionStatePort,
+    FunctionValueRepresentation, GenericError, InputPortLayout, InputPortPolicy,
     MechFunctionCompiler, MechFunctionImpl, OperationContractDeclaration, OutputConstruction,
     OutputPortPolicy, ReactiveNodeKind, Register, SchemaBody, ShapeRule, SpecializationContext,
     SpecializationInput, SpecializationInvocation, SpecializedFunction, ValueCell, ValueData,
@@ -285,13 +286,76 @@ struct CanonicalAccess {
 
 #[cfg(feature = "semantic-compiler")]
 impl MechFunctionImpl for CanonicalAccess {
+    fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+        let SchemaBody::Matrix { element, .. } = self.source.closed_schema_body()? else {
+            return Ok(None);
+        };
+        let (rows, columns) = canonical_matrix_dimensions(&self.source)?;
+        let indices = if self.selectors.len() == 1 {
+            let upper = rows.checked_mul(columns).ok_or_else(|| {
+                MechError::new(
+                    GenericError {
+                        msg: "matrix element count exceeds the target index width".to_owned(),
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+            canonical_indices(&self.selectors[0], upper)?
+                .into_iter()
+                .map(|selected| {
+                    let row = selected % rows;
+                    let column = selected / rows;
+                    row * columns + column
+                })
+                .collect::<Vec<_>>()
+        } else if self.selectors.len() == 2 {
+            let selected_rows = canonical_indices(&self.selectors[0], rows)?;
+            let selected_columns = canonical_indices(&self.selectors[1], columns)?;
+            selected_rows
+                .iter()
+                .flat_map(|row| {
+                    selected_columns
+                        .iter()
+                        .map(|column| *row * columns + *column)
+                })
+                .collect::<Vec<_>>()
+        } else {
+            return Ok(None);
+        };
+        let source = self.source.snapshot()?;
+        let values = source
+            .matrix_view()
+            .ok_or_else(|| {
+                MechError::new(
+                    GenericError {
+                        msg: "matrix access source has no canonical matrix data".to_owned(),
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?
+            .elements();
+        let footprint = self
+            .output
+            .prospective_sequence_selection_memory_footprint(element.as_ref(), values, indices)?;
+        Ok(Some(vec![footprint].into_boxed_slice()))
+    }
+
     fn solve_managed(
         &self,
         frame: &mut mech_core::KernelMemoryFrame<'_>,
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
-        let next = self.next_value()?;
-        frame.stage_output_value(&self.output, next.snapshot()?)?;
+        if self.output_requires_canonical_builder() {
+            let footprint = self.prospective_output_footprint()?;
+            frame.with_admitted_canonical_output(&self.output, footprint, |_| {
+                Ok(((), self.next_value()?.snapshot()?))
+            })?;
+        } else {
+            let next = self.next_value()?;
+            frame.stage_output_value(&self.output, next.snapshot()?)?;
+        }
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
@@ -327,6 +391,50 @@ impl MechFunctionImpl for CanonicalAccess {
 
 #[cfg(feature = "semantic-compiler")]
 impl CanonicalAccess {
+    fn output_requires_canonical_builder(&self) -> bool {
+        matches!(
+            self.output.representation(),
+            FunctionValueRepresentation::String
+                | FunctionValueRepresentation::Atom
+                | FunctionValueRepresentation::Enum
+                | FunctionValueRepresentation::Record
+                | FunctionValueRepresentation::Map
+                | FunctionValueRepresentation::Set
+                | FunctionValueRepresentation::Table
+                | FunctionValueRepresentation::Tuple
+                | FunctionValueRepresentation::Kind
+                | FunctionValueRepresentation::AnyValue
+                | FunctionValueRepresentation::Matrix {
+                    element: FunctionMatrixElement::String | FunctionMatrixElement::Value,
+                    ..
+                }
+        )
+    }
+
+    fn prospective_output_footprint(&self) -> MResult<CurrentMemoryFootprint> {
+        let footprints = self.planned_output_footprints()?.ok_or_else(|| {
+            MechError::new(
+                GenericError {
+                    msg: format!(
+                        "{} has no prospective canonical output footprint",
+                        self.semantic_name()
+                    ),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+        footprints.first().copied().ok_or_else(|| {
+            MechError::new(
+                GenericError {
+                    msg: format!("{} has no output footprint", self.semantic_name()),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })
+    }
+
     fn next_value(&self) -> MResult<ValueCell> {
         let next = canonical_access_result(&self.source, &self.selectors)?;
         let expected = self.output.closed_schema_body()?;

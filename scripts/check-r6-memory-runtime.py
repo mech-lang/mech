@@ -22,6 +22,9 @@ REQUIRED = (
     "src/core/src/snapshot/encoding.rs",
     "src/core/src/snapshot/validation.rs",
     "machines/string/src/lib.rs",
+    "machines/matrix/src/transpose.rs",
+    "machines/set/src/canonical.rs",
+    "machines/set/src/operations/union.rs",
     "src/engine/src/memory_runtime/mod.rs",
     "src/engine/src/memory_runtime/realize.rs",
     "src/engine/src/memory_runtime/resident.rs",
@@ -29,6 +32,7 @@ REQUIRED = (
     "src/engine/src/interpreter/mod.rs",
     "src/engine/src/literals.rs",
     "src/engine/src/intrinsics/define.rs",
+    "src/engine/src/intrinsics/constructors.rs",
     "src/engine/src/intrinsics/horzcat.rs",
     "src/engine/src/intrinsics/vertcat.rs",
     "src/core/src/cell_binding.rs",
@@ -322,6 +326,11 @@ def failures(root: Path) -> list[str]:
         for body in admitted_builders
     ):
         found.append("maintained canonical construction does not admit before building")
+    object_value_views = list(function_bodies(access, "with_object_value_view"))
+    if not object_value_views or not re.search(
+        r"initialization\s*\.\s*contains_region", object_value_views[0]
+    ):
+        found.append("read-capable object views can expose uninitialized managed storage")
     payload = rust_code(sources.get("src/core/src/memory_runtime/payload.rs", ""))
     if "PreparedFrozenSnapshotAdmission" not in payload or not any(
         "record_initialized" in body
@@ -342,6 +351,8 @@ def failures(root: Path) -> list[str]:
         or not rebinds
         or "return Ok(self.clone())" not in rebinds[0]
         or "data: self.root.data.clone()" not in snapshot
+        or "schema_body_contains_dynamic" not in rebinds[0]
+        or "schemas: Some(Arc::new(schemas.clone()))" not in rebinds[0]
     ):
         found.append("canonical snapshots do not preserve shared frozen ownership")
     if "publication_shape" not in cell or not any(
@@ -372,6 +383,38 @@ def failures(root: Path) -> list[str]:
         or "with_admitted_canonical_binary_port_values" not in string_runtime
     ):
         found.append("String construction bypasses prospective payload admission")
+    if re.search(r"if\s+matrix\s*\{\s*2\s*\}", string_runtime):
+        found.append("String matrix footprint confuses rank with shape parameters")
+    set_runtime = rust_code(sources.get("machines/set/src/canonical.rs", ""))
+    set_union = rust_code(sources.get("machines/set/src/operations/union.rs", ""))
+    if (
+        "with_admitted_set" not in set_runtime
+        or "with_admitted_canonical_output" not in set_runtime
+        or "stage_output_value" in set_runtime
+        or "with_admitted_set" not in set_union
+        or "planned_output_footprints" not in set_union
+    ):
+        found.append("maintained set construction bypasses prospective payload admission")
+    if (
+        "PayloadOutputPlanPolicy" not in function
+        or "output_policy == PayloadOutputPlanPolicy::Missing" not in function
+    ):
+        found.append("missing payload witness silently reuses published output authority")
+    matrix_transpose = rust_code(sources.get("machines/matrix/src/transpose.rs", ""))
+    if (
+        "planned_output_footprint" not in matrix_transpose
+        or "with_admitted_canonical_output" not in matrix_transpose
+    ):
+        found.append("String matrix transpose bypasses prospective payload admission")
+    matrix_constructors = rust_code(
+        sources.get("src/engine/src/intrinsics/constructors.rs", "")
+    )
+    if (
+        "prospective_matrix_output_footprint" not in matrix_constructors
+        or "canonical_matrix_output_requires_builder" not in matrix_constructors
+        or len(re.findall(r"with_admitted_canonical_output", matrix_constructors)) < 3
+    ):
+        found.append("canonical matrix constructors bypass prospective payload admission")
     instance = balanced_body(function, "FunctionInstance")
     binding = balanced_body(function, "ManagedFunctionBinding")
     realization = balanced_body(function, "ManagedCallRealization")
@@ -406,6 +449,9 @@ def failures(root: Path) -> list[str]:
         or "workspace.leases[other].owns_lease = false" not in access
     ):
         found.append("repeated in-place input roles are not coalesced")
+    undo_take = list(function_bodies(access, "take_undo_snapshot"))
+    if not undo_take or "(None, None) if held.start == held.end" not in undo_take[0]:
+        found.append("empty undo transactions require a fictitious physical lease")
 
     domain_code = rust_code(sources.get("src/core/src/memory_runtime/domain.rs", ""))
     if not any(
@@ -433,6 +479,12 @@ def failures(root: Path) -> list[str]:
     specialization_source = rust_code(
         sources.get("src/core/src/function/specialization.rs", "")
     )
+    if re.search(
+        r"has_managed_canonical_storage\s*\(\s*\).*?\|\|\s*matches!\s*\(\s*representation",
+        specialization_source,
+        re.DOTALL,
+    ):
+        found.append("numeric canonical matrices are forced out of typed managed storage")
     for legacy_extractor in ("try_ref", "try_matrix", "typed_cell"):
         if re.search(rf"\bpub\s+fn\s+{legacy_extractor}\b", specialization_source):
             found.append(

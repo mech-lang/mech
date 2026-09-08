@@ -323,8 +323,7 @@ fn cell_physical_storage_descriptor(
     let planned_representation = representation;
     let mut storage = physical_storage_descriptor(planned_representation, target, lifetime);
     if cell.has_managed_canonical_storage()?
-        && (!matches!(storage.slot, PlannedSlotKind::FixedScalar(_))
-            || matches!(representation, FunctionValueRepresentation::Matrix { .. }))
+        && !matches!(storage.slot, PlannedSlotKind::FixedScalar(_))
     {
         storage.capabilities = cell.storage_capabilities();
         storage.slot = PlannedSlotKind::CanonicalValueHandle;

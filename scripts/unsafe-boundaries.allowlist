@@ -12,6 +12,7 @@ machines/math/src/dynamic_module.rs|ffi|mech-math|foreign pointers and symbols r
 machines/math/src/ops/add.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/math/src/ops/mul.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/math/src/ops/sub.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
+machines/string/tests/support/r6_allocation_probe.rs|benchmark-probe|mech-string|the test-only allocator forwards the exact pointer and layout to System and retains no allocation pointer|R6 rejected-result allocation regression instrumentation
 src/abi/src/lib.rs|ffi|mech-abi|foreign pointers and symbols remain valid only for the documented call or library lifetime|existing native ABI boundary
 src/core/src/structures/matrix.rs|value-representation|mech-core|Value variants and matrix element types match every erased reference operation|existing zero-copy value representation
 src/core/src/memory_runtime/access.rs|managed-lease|mech-core|validated live generational bindings and all-or-nothing leases bound every temporary byte slice to the closure lifetime|sealed R6 scoped-access boundary

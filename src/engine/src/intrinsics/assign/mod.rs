@@ -745,6 +745,69 @@ impl CanonicalAssignmentSelectionKind {
 
 #[cfg(feature = "semantic-compiler")]
 impl AssignCanonicalSelection {
+    fn prospective_output_footprint(&self) -> MResult<CurrentMemoryFootprint> {
+        let sink = self.sink.current_memory_footprint()?;
+        let source = self.source.current_memory_footprint()?;
+        let selected = self
+            .fixed_matrix_positions()?
+            .map(|positions| {
+                u64::try_from(positions.len()).map_err(|_| {
+                    MechError::new(
+                        MemoryPlanError::ArithmeticOverflow {
+                            field: "canonical assignment selected positions",
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                })
+            })
+            .transpose()?
+            .unwrap_or(1);
+        let multiplicity = if source.logical_elements == 1 {
+            selected
+        } else {
+            1
+        };
+        let combine = |current: u64, replacement: u64, field: &'static str| {
+            replacement
+                .checked_mul(multiplicity)
+                .and_then(|replacement| current.checked_add(replacement))
+                .ok_or_else(|| {
+                    MechError::new(MemoryPlanError::ArithmeticOverflow { field }, None)
+                        .with_compiler_loc()
+                })
+        };
+        Ok(CurrentMemoryFootprint {
+            logical_elements: sink.logical_elements,
+            fixed_bytes: combine(
+                sink.fixed_bytes,
+                source.fixed_bytes,
+                "canonical assignment fixed bytes",
+            )?,
+            payload_bytes: combine(
+                sink.payload_bytes,
+                source.payload_bytes,
+                "canonical assignment payload bytes",
+            )?,
+            encoded_bytes: combine(
+                sink.encoded_bytes,
+                source.encoded_bytes,
+                "canonical assignment encoded bytes",
+            )?,
+            retained_nodes: combine(
+                sink.retained_nodes,
+                source.retained_nodes,
+                "canonical assignment retained nodes",
+            )?,
+            schema_bytes: combine(
+                sink.schema_bytes,
+                source.schema_bytes,
+                "canonical assignment schema bytes",
+            )?,
+            shape_parameter_count: sink.shape_parameter_count,
+        })
+    }
+
     fn fixed_matrix_positions(&self) -> MResult<Option<Vec<usize>>> {
         let SchemaBody::Matrix { dimensions, .. } = self.sink.closed_schema_body()? else {
             return Ok(None);
@@ -1219,6 +1282,12 @@ impl AssignCanonicalSelection {
 
 #[cfg(feature = "semantic-compiler")]
 impl MechFunctionImpl for AssignCanonicalSelection {
+    fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+        Ok(Some(
+            vec![self.prospective_output_footprint()?].into_boxed_slice(),
+        ))
+    }
+
     fn solve_managed(
         &self,
         frame: &mut mech_core::KernelMemoryFrame<'_>,
@@ -1234,12 +1303,25 @@ impl MechFunctionImpl for AssignCanonicalSelection {
             )
             .with_compiler_loc());
         };
-        frame.assign_fixed_port_selection(
-            &self.sink,
-            &self.source,
+        if matches!(
             self.sink.representation(),
-            &positions,
-        )?;
+            FunctionValueRepresentation::Matrix {
+                element: FunctionMatrixElement::String | FunctionMatrixElement::Value,
+                ..
+            }
+        ) {
+            let footprint = self.prospective_output_footprint()?;
+            frame.with_admitted_canonical_output(&self.sink, footprint, |_| {
+                Ok(((), self.next_value()?))
+            })?;
+        } else {
+            frame.assign_fixed_port_selection(
+                &self.sink,
+                &self.source,
+                self.sink.representation(),
+                &positions,
+            )?;
+        }
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
@@ -1386,7 +1468,7 @@ fn canonical_indexed_assignment(
         selectors,
         selection_kind,
     };
-    implementation.next_value()?;
+    implementation.prospective_output_footprint()?;
     context.resolve_syntax_operation(selection_kind.operation(), selection_kind.contract())?;
     context.certify_instance(
         (

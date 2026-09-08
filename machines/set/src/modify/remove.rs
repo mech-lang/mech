@@ -36,6 +36,13 @@ impl MechFunctionFactory for SetRemoveFxn {
 }
 
 impl MechFunctionImpl for SetRemoveFxn {
+    fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+        Ok(Some(
+            vec![self.arg1.prospective_update_footprint(&self.arg2, &self.out)?]
+                .into_boxed_slice(),
+        ))
+    }
+
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
         self.out.primary_state_port()
     }
@@ -47,8 +54,10 @@ impl MechFunctionImpl for SetRemoveFxn {
         frame: &mut mech_core::KernelMemoryFrame<'_>,
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
-        let next = self.arg1.elements_after_remove(frame, &self.arg2)?;
-        self.out.stage_set(frame, next)?;
+        let footprint = self.arg1.prospective_update_footprint(&self.arg2, &self.out)?;
+        self.out.with_admitted_set(frame, footprint, |frame| {
+            self.arg1.elements_after_remove(frame, &self.arg2)
+        })?;
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {

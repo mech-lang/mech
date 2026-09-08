@@ -151,6 +151,26 @@ class R6MemoryRuntimeCheckerTests(unittest.TestCase):
         )
         self.assert_failure(root, "does not require solve_managed")
 
+    def test_09b_missing_payload_witness_cannot_fall_back_to_published_output(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/function/mod.rs",
+            "output_policy == PayloadOutputPlanPolicy::Missing",
+            "false",
+        )
+        self.assert_failure(root, "missing payload witness silently reuses")
+
+    def test_09c_set_builder_cannot_allocate_then_adopt(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "machines/set/src/canonical.rs",
+            "with_admitted_canonical_output",
+            "stage_output_value",
+        )
+        self.assert_failure(root, "set construction bypasses prospective payload admission")
+
     def test_10_raw_function_solve_fails(self):
         root = self.fixture()
         self.replace(
@@ -574,6 +594,26 @@ fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunctio
             "workspace.leases[other].owns_lease = true;",
         )
         self.assert_failure(root, "are not coalesced")
+
+    def test_54_string_transpose_requires_prospective_admission(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "machines/matrix/src/transpose.rs",
+            "with_admitted_canonical_output",
+            "stage_unplanned_canonical_output",
+        )
+        self.assert_failure(root, "String matrix transpose bypasses prospective")
+
+    def test_55_canonical_matrix_constructors_require_prospective_admission(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/engine/src/intrinsics/constructors.rs",
+            "with_admitted_canonical_output",
+            "stage_unplanned_canonical_output",
+        )
+        self.assert_failure(root, "canonical matrix constructors bypass prospective")
 
 
 if __name__ == "__main__":

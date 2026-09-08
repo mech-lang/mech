@@ -35,6 +35,13 @@ impl MechFunctionFactory for SetSymDifferenceFxn {
 }
 
 impl MechFunctionImpl for SetSymDifferenceFxn {
+    fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+        Ok(Some(
+            vec![self.lhs.prospective_binary_footprint(&self.rhs, &self.out)?]
+                .into_boxed_slice(),
+        ))
+    }
+
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
         self.out.primary_state_port()
     }
@@ -46,8 +53,10 @@ impl MechFunctionImpl for SetSymDifferenceFxn {
         frame: &mut mech_core::KernelMemoryFrame<'_>,
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
-        let next = self.lhs.symmetric_difference_elements(frame, &self.rhs)?;
-        self.out.stage_set(frame, next)?;
+        let footprint = self.lhs.prospective_binary_footprint(&self.rhs, &self.out)?;
+        self.out.with_admitted_set(frame, footprint, |frame| {
+            self.lhs.symmetric_difference_elements(frame, &self.rhs)
+        })?;
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {

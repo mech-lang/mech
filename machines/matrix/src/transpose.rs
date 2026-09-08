@@ -26,6 +26,16 @@ static PURE_TRANSPOSE_CONTRACT: LazyLock<OperationContractDeclaration> =
 // Transpose ------------------------------------------------------------------
 
 trait ManagedTransposeElement: FunctionPortBacking {
+    fn planned_output_footprint(
+        _input: &ManagedPort<Self>,
+        _output: &ManagedPort<Self>,
+    ) -> MResult<Option<CurrentMemoryFootprint>>
+    where
+        Self: Sized,
+    {
+        Ok(None)
+    }
+
     fn transpose(
         frame: &mut KernelMemoryFrame<'_>,
         input: &ManagedPort<Self>,
@@ -97,17 +107,88 @@ managed_transpose_elements!(R64);
 
 #[cfg(feature = "string")]
 impl ManagedTransposeElement for String {
+    fn planned_output_footprint(
+        input: &ManagedPort<Self>,
+        _output: &ManagedPort<Self>,
+    ) -> MResult<Option<CurrentMemoryFootprint>> {
+        Ok(Some(input.cell().current_memory_footprint()?))
+    }
+
     fn transpose(
-        _: &mut KernelMemoryFrame<'_>,
-        _: &ManagedPort<Self>,
-        _: &ManagedPort<Self>,
+        frame: &mut KernelMemoryFrame<'_>,
+        input: &ManagedPort<Self>,
+        output: &ManagedPort<Self>,
     ) -> MResult<()> {
-        Err(MechError::from(MemoryRuntimeError::InvalidLayout {
-            object: None,
-            size: 0,
-            alignment: 1,
-            reason: "String transpose requires the managed canonical payload frame",
-        }))
+        let footprint = input.cell().current_memory_footprint()?;
+        frame.with_admitted_canonical_output(output.cell(), footprint, |frame| {
+            let value = frame.snapshot_canonical_port_value(input)?;
+            let extents = input.cell().resolved_descriptor()?.current_extents()?;
+            let [rows, columns] = extents.as_ref() else {
+                return Err(MechError::from(MemoryRuntimeError::InvalidLayout {
+                    object: None,
+                    size: extents.len() as u64,
+                    alignment: 1,
+                    reason: "String transpose requires rank-two canonical input",
+                }));
+            };
+            let rows = usize::try_from(*rows).map_err(|_| {
+                function_shape_contract_violation(
+                    "matrix/transpose",
+                    "row extent exceeds the host index range",
+                )
+            })?;
+            let columns = usize::try_from(*columns).map_err(|_| {
+                function_shape_contract_violation(
+                    "matrix/transpose",
+                    "column extent exceeds the host index range",
+                )
+            })?;
+            let values = match value
+                .matrix_view()
+                .ok_or_else(|| {
+                    MechError::from(MemoryRuntimeError::InvalidLayout {
+                        object: None,
+                        size: 0,
+                        alignment: 1,
+                        reason: "String transpose input has no canonical matrix data",
+                    })
+                })?
+                .elements()
+            {
+                mech_core::snapshot::SequenceView::String(values) => values,
+                _ => {
+                    return Err(MechError::from(MemoryRuntimeError::InvalidLayout {
+                        object: None,
+                        size: 0,
+                        alignment: 1,
+                        reason: "String transpose input has a non-String canonical sequence",
+                    }));
+                }
+            };
+            let mut next = Vec::new();
+            next.try_reserve_exact(values.len()).map_err(|_| {
+                MechError::from(MemoryRuntimeError::AllocationFailed {
+                    object: None,
+                    requested: values.len() as u64,
+                    alignment: core::mem::align_of::<ValueDataDraft>() as u32,
+                    space: MemorySpace::Host,
+                })
+            })?;
+            for output_row in 0..columns {
+                for output_column in 0..rows {
+                    next.push(ValueDataDraft::String(
+                        values[output_column * columns + output_row].to_string(),
+                    ));
+                }
+            }
+            Ok((
+                (),
+                output.cell().rebuild_matrix_drafts(
+                    vec![columns as u64, rows as u64].into_boxed_slice(),
+                    next.into_boxed_slice(),
+                )?,
+            ))
+        })
     }
 }
 
@@ -171,6 +252,13 @@ macro_rules! impl_transpose {
             T: CanonicalMatrixElementBacking,
             $out_type: FunctionStateBacking,
         {
+            fn planned_output_footprints(
+                &self,
+            ) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+                Ok(T::planned_output_footprint(&self.arg, &self.out)?
+                    .map(|footprint| vec![footprint].into_boxed_slice()))
+            }
+
             fn solve_managed(
                 &self,
                 frame: &mut mech_core::KernelMemoryFrame<'_>,
@@ -267,22 +355,28 @@ mod canonical_port_tests {
     fn fixed_dynamic_and_non_numeric_transposes_use_exact_ports() {
         let matrix = Ref::new(Matrix2::new(1.0_f64, 2.0, 3.0, 4.0));
         let fixed_out = Ref::new(Matrix2::zeros());
-        TransposeM2::<f64>::new_invocation(FunctionInvocation::unary(
-            ValueCell::from_exact_matrix_ref(fixed_out.clone(), 2, 2).unwrap(),
-            ValueCell::from_exact_matrix_ref(matrix, 2, 2).unwrap(),
-        ))
-        .unwrap()
+        crate::test_managed_factory::<TransposeM2<f64>>(
+            FunctionInvocation::unary(
+                ValueCell::from_exact_matrix_ref(fixed_out.clone(), 2, 2).unwrap(),
+                ValueCell::from_exact_matrix_ref(matrix, 2, 2).unwrap(),
+            ),
+            "test/matrix-transpose-fixed",
+        )
+        .instance()
         .solve_result()
         .unwrap();
         assert_eq!(*fixed_out.borrow(), Matrix2::new(1.0, 3.0, 2.0, 4.0));
 
         let rectangular = Ref::new(Matrix2x3::new(1.0_f64, 2.0, 3.0, 4.0, 5.0, 6.0));
         let rectangular_out = Ref::new(Matrix3x2::zeros());
-        TransposeM2x3::<f64>::new_invocation(FunctionInvocation::unary(
-            ValueCell::from_exact_matrix_ref(rectangular_out.clone(), 3, 2).unwrap(),
-            ValueCell::from_exact_matrix_ref(rectangular, 2, 3).unwrap(),
-        ))
-        .unwrap()
+        crate::test_managed_factory::<TransposeM2x3<f64>>(
+            FunctionInvocation::unary(
+                ValueCell::from_exact_matrix_ref(rectangular_out.clone(), 3, 2).unwrap(),
+                ValueCell::from_exact_matrix_ref(rectangular, 2, 3).unwrap(),
+            ),
+            "test/matrix-transpose-rectangular",
+        )
+        .instance()
         .solve_result()
         .unwrap();
         assert_eq!(
@@ -297,14 +391,16 @@ mod canonical_port_tests {
         ));
         let dynamic_out = Ref::new(DMatrix::zeros(3, 2));
         let alias = dynamic_out.clone();
-        let function = TransposeMD::<f64>::new_invocation(FunctionInvocation::unary(
-            ValueCell::from_exact_matrix_ref(dynamic_out.clone(), 3, 2).unwrap(),
-            ValueCell::from_exact_matrix_ref(dynamic, 2, 3).unwrap(),
-        ))
-        .unwrap();
-        function.solve_result().unwrap();
+        let function = crate::test_managed_factory::<TransposeMD<f64>>(
+            FunctionInvocation::unary(
+                ValueCell::from_exact_matrix_ref(dynamic_out.clone(), 3, 2).unwrap(),
+                ValueCell::from_exact_matrix_ref(dynamic, 2, 3).unwrap(),
+            ),
+            "test/matrix-transpose-dynamic",
+        );
+        function.instance().solve_result().unwrap();
         with_reactive_journal_participant(|mut participant| -> MResult<()> {
-            participant.capture_function_state(function.as_ref())?;
+            participant.capture_function_instance(function.instance())?;
             *dynamic_out.borrow_mut() = DMatrix::from_element(1, 4, -1.0);
             participant.preflight_restore_before()?;
             participant.apply_restore_before();
@@ -316,11 +412,14 @@ mod canonical_port_tests {
 
         let bool_arg = Ref::new(Matrix2::new(true, false, false, true));
         let bool_out = Ref::new(Matrix2::from_element(false));
-        TransposeM2::<bool>::new_invocation(FunctionInvocation::unary(
-            ValueCell::from_exact_matrix_ref(bool_out.clone(), 2, 2).unwrap(),
-            ValueCell::from_exact_matrix_ref(bool_arg.clone(), 2, 2).unwrap(),
-        ))
-        .unwrap()
+        crate::test_managed_factory::<TransposeM2<bool>>(
+            FunctionInvocation::unary(
+                ValueCell::from_exact_matrix_ref(bool_out.clone(), 2, 2).unwrap(),
+                ValueCell::from_exact_matrix_ref(bool_arg.clone(), 2, 2).unwrap(),
+            ),
+            "test/matrix-transpose-bool",
+        )
+        .instance()
         .solve_result()
         .unwrap();
         assert_eq!(*bool_out.borrow(), *bool_arg.borrow());
@@ -345,6 +444,58 @@ mod canonical_port_tests {
                 arg,
             ))
             .is_err()
+        );
+    }
+
+    #[test]
+    fn fixed_string_transpose_uses_prospective_canonical_admission() {
+        let input = ValueCell::from_exact(Matrix2::new(
+            "a".to_owned(),
+            "b".to_owned(),
+            "c".to_owned(),
+            "d".to_owned(),
+        ))
+        .unwrap();
+        let output = ValueCell::from_exact(Matrix2::from_element(String::new())).unwrap();
+        let expected_footprint = input.current_memory_footprint().unwrap();
+        let function = crate::test_managed_factory::<TransposeM2<String>>(
+            FunctionInvocation::unary(output.clone(), input),
+            "matrix/transpose",
+        );
+
+        function.instance().solve_result().unwrap();
+
+        crate::assert_test_value(
+            &output,
+            ValueCell::from_exact(Matrix2::new(
+                "a".to_owned(),
+                "c".to_owned(),
+                "b".to_owned(),
+                "d".to_owned(),
+            ))
+            .unwrap(),
+        );
+        assert_eq!(
+            output.current_memory_footprint().unwrap().payload_bytes,
+            expected_footprint.payload_bytes,
+        );
+    }
+
+    #[test]
+    fn canonical_numeric_matrix_import_uses_dense_managed_backing() {
+        let input = ValueCell::from_exact(Matrix2::new(1.0_f64, 2.0, 3.0, 4.0)).unwrap();
+        let output = ValueCell::from_exact(Matrix2::<f64>::zeros()).unwrap();
+        crate::test_managed_factory::<TransposeM2<f64>>(
+            FunctionInvocation::unary(output.clone(), input),
+            "matrix/transpose",
+        )
+        .instance()
+        .solve_result()
+        .unwrap();
+
+        crate::assert_test_value(
+            &output,
+            ValueCell::from_exact(Matrix2::new(1.0, 3.0, 2.0, 4.0)).unwrap(),
         );
     }
 }

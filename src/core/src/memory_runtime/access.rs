@@ -1945,7 +1945,15 @@ impl KernelMemoryFrame<'_> {
         {
             return Err(MemoryRuntimeError::CandidateValidationFailed {
                 object: Some(payload.object()),
-                reason: "canonical builder exceeded its admitted prospective footprint".into(),
+                reason: format!(
+                    "canonical builder exceeded its admitted prospective footprint: actual bytes/nodes/encoded {}/{}/{}, admitted {}/{}/{}",
+                    actual.retained_bytes,
+                    actual.node_count,
+                    actual.encoded_bytes,
+                    footprint.payload_bytes,
+                    footprint.retained_nodes,
+                    footprint.encoded_bytes,
+                ),
             }
             .into());
         }
@@ -2129,6 +2137,30 @@ impl KernelMemoryFrame<'_> {
                 object: object.object(),
             })?;
         self.validate_managed_element::<T>(lease, false)?;
+        {
+            let state = self.domain.state.borrow();
+            let region = state
+                .regions
+                .get(&lease.object)
+                .ok_or(MemoryRuntimeError::UnknownPlanObject { key: lease.object })?;
+            if region.incarnation != lease.incarnation {
+                return Err(MemoryRuntimeError::StaleRegionIncarnation {
+                    key: lease.object,
+                    expected: lease.incarnation,
+                    actual: region.incarnation,
+                });
+            }
+            if !region
+                .initialization
+                .contains_region(lease.region, region.initialized_bytes)
+            {
+                return Err(MemoryRuntimeError::UninitializedAccess {
+                    object: object.object(),
+                    requested: lease.relative_end,
+                    initialized: region.initialized_bytes,
+                });
+            }
+        }
         Ok(access(self.read_view::<T>(lease)?))
     }
 
@@ -2879,18 +2911,26 @@ impl KernelMemoryFrame<'_> {
                 reason: "undo publication lost its exclusive execution lease".into(),
             })?;
         let held = self.leases.leases.remove(position);
-        let (Some(handle), Some(token)) = (held.handle, held.token) else {
-            return Err(MemoryRuntimeError::CandidateValidationFailed {
-                object: Some(undo.target.object()),
-                reason: "undo publication has no physical exclusive lease".into(),
-            });
-        };
-        undo.retained_lease = Some(RetainedPublicationLease {
-            domain: self.domain.clone(),
-            _realized: self.realized.clone(),
-            handle,
-            token,
-        });
+        match (held.handle, held.token) {
+            (Some(handle), Some(token)) => {
+                undo.retained_lease = Some(RetainedPublicationLease {
+                    domain: self.domain.clone(),
+                    _realized: self.realized.clone(),
+                    handle,
+                    token,
+                });
+            }
+            // Empty objects have real logical transaction authority but no
+            // physical allocation to pin. Keep the armed undo record so the
+            // same publication protocol applies without inventing a handle.
+            (None, None) if held.start == held.end => {}
+            _ => {
+                return Err(MemoryRuntimeError::CandidateValidationFailed {
+                    object: Some(undo.target.object()),
+                    reason: "undo publication has incomplete physical lease authority".into(),
+                });
+            }
+        }
         Ok(Some(undo))
     }
 

@@ -628,6 +628,67 @@ fn matrix_concatenation_cells(
     feature = "matrix_horzcat",
     feature = "matrix_vertcat"
 ))]
+fn canonical_matrix_output_requires_builder(output: &ValueCell) -> bool {
+    matches!(
+        output.representation(),
+        FunctionValueRepresentation::Matrix {
+            element: FunctionMatrixElement::String | FunctionMatrixElement::Value,
+            ..
+        }
+    )
+}
+
+#[cfg(any(
+    feature = "matrix_comprehensions",
+    feature = "matrix_horzcat",
+    feature = "matrix_vertcat"
+))]
+fn prospective_matrix_output_footprint(
+    output: &ValueCell,
+    arguments: &[FunctionValueInput],
+) -> MResult<CurrentMemoryFootprint> {
+    let mut footprint = output.current_memory_footprint()?;
+    if arguments.is_empty() {
+        return Ok(footprint);
+    }
+    footprint.logical_elements = 0;
+    for argument in arguments {
+        let input = argument.cell().current_memory_footprint()?;
+        footprint.logical_elements = footprint
+            .logical_elements
+            .checked_add(input.logical_elements)
+            .ok_or_else(|| {
+                MechError::new(
+                    MemoryPlanError::ArithmeticOverflow {
+                        field: "matrix construction logical elements",
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+        macro_rules! add_input_bound {
+            ($field:ident, $name:literal) => {
+                footprint.$field = footprint.$field.checked_add(input.$field).ok_or_else(|| {
+                    MechError::new(MemoryPlanError::ArithmeticOverflow { field: $name }, None)
+                        .with_compiler_loc()
+                })?;
+            };
+        }
+        add_input_bound!(fixed_bytes, "matrix construction fixed bytes");
+        add_input_bound!(payload_bytes, "matrix construction payload bytes");
+        add_input_bound!(encoded_bytes, "matrix construction encoded bytes");
+        add_input_bound!(retained_nodes, "matrix construction retained nodes");
+        add_input_bound!(schema_bytes, "matrix construction schema bytes");
+    }
+    footprint.shape_parameter_count = output.shape().parameter_values().len() as u64;
+    Ok(footprint)
+}
+
+#[cfg(any(
+    feature = "matrix_comprehensions",
+    feature = "matrix_horzcat",
+    feature = "matrix_vertcat"
+))]
 fn managed_matrix_input_drafts(
     frame: &mech_core::KernelMemoryFrame<'_>,
     argument: &FunctionValueInput,
@@ -755,6 +816,19 @@ pub struct ValueMatrixConcatenation<const VERTICAL: bool> {
 
 #[cfg(any(feature = "matrix_horzcat", feature = "matrix_vertcat"))]
 impl<const VERTICAL: bool> MechFunctionImpl for ValueMatrixConcatenation<VERTICAL> {
+    fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+        if !canonical_matrix_output_requires_builder(self.output.cell()) {
+            return Ok(None);
+        }
+        Ok(Some(
+            vec![prospective_matrix_output_footprint(
+                self.output.cell(),
+                &self.arguments,
+            )?]
+            .into_boxed_slice(),
+        ))
+    }
+
     fn solve_managed(
         &self,
         frame: &mut mech_core::KernelMemoryFrame<'_>,
@@ -766,13 +840,29 @@ impl<const VERTICAL: bool> MechFunctionImpl for ValueMatrixConcatenation<VERTICA
         if self.arguments.is_empty() {
             return Ok(mech_core::ReactiveSolveStatus::Unchanged);
         }
-        let (rows, columns, values) =
-            managed_matrix_concatenation_drafts(frame, &self.arguments, VERTICAL)?;
-        let next = self
-            .output
-            .cell()
-            .rebuild_matrix_drafts(vec![rows as u64, columns as u64].into_boxed_slice(), values)?;
-        frame.stage_output_value(self.output.cell(), next)?;
+        if canonical_matrix_output_requires_builder(self.output.cell()) {
+            let footprint =
+                prospective_matrix_output_footprint(self.output.cell(), &self.arguments)?;
+            frame.with_admitted_canonical_output(self.output.cell(), footprint, |frame| {
+                let (rows, columns, values) =
+                    managed_matrix_concatenation_drafts(frame, &self.arguments, VERTICAL)?;
+                Ok((
+                    (),
+                    self.output.cell().rebuild_matrix_drafts(
+                        vec![rows as u64, columns as u64].into_boxed_slice(),
+                        values,
+                    )?,
+                ))
+            })?;
+        } else {
+            let (rows, columns, values) =
+                managed_matrix_concatenation_drafts(frame, &self.arguments, VERTICAL)?;
+            let next = self.output.cell().rebuild_matrix_drafts(
+                vec![rows as u64, columns as u64].into_boxed_slice(),
+                values,
+            )?;
+            frame.stage_output_value(self.output.cell(), next)?;
+        }
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
@@ -950,18 +1040,47 @@ pub struct ValueMatrixComprehension {
 
 #[cfg(all(feature = "matrix_comprehensions", feature = "functions"))]
 impl MechFunctionImpl for ValueMatrixComprehension {
+    fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+        if !canonical_matrix_output_requires_builder(self.output.cell()) {
+            return Ok(None);
+        }
+        Ok(Some(
+            vec![prospective_matrix_output_footprint(
+                self.output.cell(),
+                &self.arguments,
+            )?]
+            .into_boxed_slice(),
+        ))
+    }
+
     fn solve_managed(
         &self,
         frame: &mut mech_core::KernelMemoryFrame<'_>,
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
-        let (rows, columns, drafts) =
-            managed_matrix_concatenation_drafts(frame, &self.arguments, false)?;
-        let next = self
-            .output
-            .cell()
-            .rebuild_matrix_drafts(vec![rows as u64, columns as u64].into_boxed_slice(), drafts)?;
-        frame.stage_output_value(self.output.cell(), next)?;
+        if canonical_matrix_output_requires_builder(self.output.cell()) {
+            let footprint =
+                prospective_matrix_output_footprint(self.output.cell(), &self.arguments)?;
+            frame.with_admitted_canonical_output(self.output.cell(), footprint, |frame| {
+                let (rows, columns, drafts) =
+                    managed_matrix_concatenation_drafts(frame, &self.arguments, false)?;
+                Ok((
+                    (),
+                    self.output.cell().rebuild_matrix_drafts(
+                        vec![rows as u64, columns as u64].into_boxed_slice(),
+                        drafts,
+                    )?,
+                ))
+            })?;
+        } else {
+            let (rows, columns, drafts) =
+                managed_matrix_concatenation_drafts(frame, &self.arguments, false)?;
+            let next = self.output.cell().rebuild_matrix_drafts(
+                vec![rows as u64, columns as u64].into_boxed_slice(),
+                drafts,
+            )?;
+            frame.stage_output_value(self.output.cell(), next)?;
+        }
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 

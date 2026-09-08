@@ -922,6 +922,17 @@ impl RealizedMemoryPlan {
             .map_err(|_| MemoryRuntimeError::UnknownPlanObject { key: destination })?;
         let source_binding = bindings[source_index].1.clone();
         let destination_binding = bindings[destination_index].1.clone();
+        if matches!(source_binding, RuntimeBinding::Empty { .. })
+            && matches!(destination_binding, RuntimeBinding::Empty { .. })
+        {
+            let mut state = self.domain_state.borrow_mut();
+            super::access::copy_prevalidated_initialization(
+                &mut state.regions,
+                source,
+                destination,
+            );
+            return Ok(());
+        }
         let (
             RuntimeBinding::ManagedHostRegion {
                 handle: source_handle,

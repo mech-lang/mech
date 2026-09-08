@@ -335,6 +335,31 @@ struct ManagedHostCellStorage {
     representation: FunctionValueRepresentation,
 }
 
+#[cfg(feature = "matrix")]
+fn managed_host_representation(
+    representation: FunctionValueRepresentation,
+) -> FunctionValueRepresentation {
+    match representation {
+        FunctionValueRepresentation::Matrix {
+            element,
+            storage: crate::FunctionMatrixStoragePattern::AnyStorage,
+        } => FunctionValueRepresentation::Matrix {
+            element,
+            storage: crate::FunctionMatrixStoragePattern::Exact(
+                crate::FunctionMatrixRepresentation::MatrixD,
+            ),
+        },
+        _ => representation,
+    }
+}
+
+#[cfg(not(feature = "matrix"))]
+fn managed_host_representation(
+    representation: FunctionValueRepresentation,
+) -> FunctionValueRepresentation {
+    representation
+}
+
 /// Immutable canonical payload published behind a stable logical cell. A
 /// replacement installs a new storage owner atomically; no mutable payload
 /// `Ref` survives publication and detached snapshots share the frozen root.
@@ -1180,7 +1205,7 @@ pub(crate) fn value_from_managed_object(
         realized: realized.clone(),
         object,
         region,
-        representation,
+        representation: managed_host_representation(representation),
     }
     .snapshot(schema, shape, schemas)
 }
@@ -1296,7 +1321,7 @@ impl ValueCell {
                         realized: realized.clone(),
                         object,
                         region,
-                        representation,
+                        representation: managed_host_representation(representation),
                     }),
                 },
             ),
@@ -1366,6 +1391,178 @@ impl ValueCell {
         })
     }
 
+    /// Computes the exact output witness for one borrowed element of a
+    /// canonical packed sequence without expanding that element into an owned
+    /// `ValueData` first.
+    #[cfg(feature = "functions")]
+    pub fn prospective_sequence_element_memory_footprint(
+        &self,
+        element_schema: &SchemaBody,
+        values: crate::snapshot::SequenceView<'_>,
+        index: usize,
+    ) -> MResult<crate::CurrentMemoryFootprint> {
+        let data = crate::snapshot::canonical_sequence_element_retained_footprint(
+            element_schema,
+            values,
+            index,
+        )
+        .map_err(|error| {
+            MechError::new(
+                crate::GenericError {
+                    msg: format!("unable to measure selected canonical element: {error:?}"),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+        let shape_parameter_count = self.shape().parameter_values().len() as u64;
+        let shape_bytes = shape_parameter_count
+            .checked_mul(core::mem::size_of::<u64>() as u64)
+            .ok_or_else(|| {
+                MechError::new(
+                    crate::MemoryPlanError::ArithmeticOverflow {
+                        field: "selected value shape bytes",
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+        let payload_bytes = (core::mem::size_of::<Value>() as u64)
+            .checked_add(shape_bytes)
+            .and_then(|bytes| bytes.checked_add(data.retained_bytes))
+            .ok_or_else(|| {
+                MechError::new(
+                    crate::MemoryPlanError::ArithmeticOverflow {
+                        field: "selected value retained bytes",
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+        Ok(crate::CurrentMemoryFootprint {
+            logical_elements: 1,
+            payload_bytes,
+            encoded_bytes: data.encoded_bytes,
+            retained_nodes: data.node_count.checked_add(1).ok_or_else(|| {
+                MechError::new(
+                    crate::MemoryPlanError::ArithmeticOverflow {
+                        field: "selected value retained nodes",
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?,
+            shape_parameter_count,
+            ..crate::CurrentMemoryFootprint::default()
+        })
+    }
+
+    /// Computes a conservative complete-value witness for a scalar or matrix
+    /// selection from a borrowed packed canonical sequence. Selector order
+    /// and duplicates are retained in the accounting multiplicity.
+    #[cfg(feature = "functions")]
+    pub fn prospective_sequence_selection_memory_footprint(
+        &self,
+        element_schema: &SchemaBody,
+        values: crate::snapshot::SequenceView<'_>,
+        indices: impl IntoIterator<Item = usize>,
+    ) -> MResult<crate::CurrentMemoryFootprint> {
+        let shape_parameter_count = self.shape().parameter_values().len() as u64;
+        let shape_bytes = shape_parameter_count
+            .checked_mul(core::mem::size_of::<u64>() as u64)
+            .ok_or_else(|| {
+                MechError::new(
+                    crate::MemoryPlanError::ArithmeticOverflow {
+                        field: "selected value shape bytes",
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+        let mut footprint = crate::CurrentMemoryFootprint {
+            payload_bytes: (core::mem::size_of::<Value>() as u64)
+                .checked_add(shape_bytes)
+                .and_then(|bytes| bytes.checked_add(core::mem::size_of::<ValueData>() as u64))
+                .ok_or_else(|| {
+                    MechError::new(
+                        crate::MemoryPlanError::ArithmeticOverflow {
+                            field: "selected value retained bytes",
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                })?,
+            // Root + aggregate/sequence container. Scalar selections are
+            // conservatively one node over; matrix selections need both.
+            retained_nodes: 3,
+            shape_parameter_count,
+            ..crate::CurrentMemoryFootprint::default()
+        };
+        for index in indices {
+            let element = crate::snapshot::canonical_sequence_element_retained_footprint(
+                element_schema,
+                values,
+                index,
+            )
+            .map_err(|error| {
+                MechError::new(
+                    crate::GenericError {
+                        msg: format!("unable to measure selected canonical element: {error:?}"),
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+            footprint.logical_elements =
+                footprint.logical_elements.checked_add(1).ok_or_else(|| {
+                    MechError::new(
+                        crate::MemoryPlanError::ArithmeticOverflow {
+                            field: "selected value elements",
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                })?;
+            footprint.payload_bytes = footprint
+                .payload_bytes
+                .checked_add(element.retained_bytes)
+                .ok_or_else(|| {
+                    MechError::new(
+                        crate::MemoryPlanError::ArithmeticOverflow {
+                            field: "selected value retained bytes",
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                })?;
+            footprint.encoded_bytes = footprint
+                .encoded_bytes
+                .checked_add(element.encoded_bytes)
+                .ok_or_else(|| {
+                    MechError::new(
+                        crate::MemoryPlanError::ArithmeticOverflow {
+                            field: "selected value encoded bytes",
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                })?;
+            footprint.retained_nodes = footprint
+                .retained_nodes
+                .checked_add(element.node_count)
+                .ok_or_else(|| {
+                    MechError::new(
+                        crate::MemoryPlanError::ArithmeticOverflow {
+                            field: "selected value retained nodes",
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                })?;
+        }
+        Ok(footprint)
+    }
+
     /// Computes a conservative prospective footprint for a set assembled
     /// from borrowed immutable values. Duplicate canonical keys may make the
     /// finalized set smaller; no candidate payload is cloned or allocated by
@@ -1376,6 +1573,54 @@ impl ValueCell {
         values: impl IntoIterator<Item = MResult<Value>>,
     ) -> MResult<crate::CurrentMemoryFootprint> {
         let schemas = self.schema_table();
+        let SchemaBody::Set { element, .. } = schemas
+            .get(self.schema())
+            .ok_or_else(|| {
+                snapshot_failure(SnapshotValueError::UnknownSnapshotSchema {
+                    schema: self.schema(),
+                })
+            })?
+            .body()
+        else {
+            return Err(backing_mismatch::<Value>(self.representation()));
+        };
+        let element = element.as_ref().clone();
+        self.prospective_set_footprints(values.into_iter().map(move |value| {
+            let value = value?;
+            let value_schemas = value.schemas().ok_or_else(|| {
+                MechError::new(crate::ValueSchemaContextUnavailable, None).with_compiler_loc()
+            })?;
+            let value_schema = value_schemas.get(value.schema()).ok_or_else(|| {
+                snapshot_failure(SnapshotValueError::UnknownSnapshotSchema {
+                    schema: value.schema(),
+                })
+            })?;
+            if value_schema.body() != &element {
+                return Err(backing_mismatch::<Value>(self.representation()));
+            }
+            crate::snapshot::canonical_data_retained_footprint(&element, value.data()).map_err(
+                |error| {
+                    MechError::new(
+                        crate::GenericError {
+                            msg: format!("unable to measure prospective set element: {error:?}"),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                },
+            )
+        }))
+    }
+
+    /// Computes a conservative set-output witness from borrowed canonical
+    /// elements. This is the allocation-free planning form used by maintained
+    /// set kernels before they clone or normalize any candidate data.
+    #[cfg(feature = "functions")]
+    pub fn prospective_set_data_memory_footprint<'a>(
+        &self,
+        values: impl IntoIterator<Item = &'a ValueData>,
+    ) -> MResult<crate::CurrentMemoryFootprint> {
+        let schemas = self.schema_table();
         let schema = schemas.get(self.schema()).ok_or_else(|| {
             snapshot_failure(SnapshotValueError::UnknownSnapshotSchema {
                 schema: self.schema(),
@@ -1384,6 +1629,24 @@ impl ValueCell {
         let SchemaBody::Set { element, .. } = schema.body() else {
             return Err(backing_mismatch::<Value>(self.representation()));
         };
+        self.prospective_set_footprints(values.into_iter().map(|value| {
+            crate::snapshot::canonical_data_retained_footprint(element, value).map_err(|error| {
+                MechError::new(
+                    crate::GenericError {
+                        msg: format!("unable to measure prospective set element: {error:?}"),
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })
+        }))
+    }
+
+    #[cfg(feature = "functions")]
+    fn prospective_set_footprints(
+        &self,
+        footprints: impl IntoIterator<Item = MResult<crate::snapshot::ValueFootprint>>,
+    ) -> MResult<crate::CurrentMemoryFootprint> {
         let mut elements = 0_u64;
         let mut encoded = 8_u64;
         let mut retained = u64::try_from(core::mem::size_of::<Value>())
@@ -1404,32 +1667,8 @@ impl ValueCell {
                 .with_compiler_loc()
             })?;
         let mut nodes = 2_u64;
-        for value in values {
-            let value = value?;
-            let value_schemas = value.schemas().ok_or_else(|| {
-                MechError::new(crate::ValueSchemaContextUnavailable, None).with_compiler_loc()
-            })?;
-            let value_schema = value_schemas.get(value.schema()).ok_or_else(|| {
-                snapshot_failure(SnapshotValueError::UnknownSnapshotSchema {
-                    schema: value.schema(),
-                })
-            })?;
-            if value_schema.body() != element.as_ref() {
-                return Err(backing_mismatch::<Value>(self.representation()));
-            }
-            let footprint = crate::snapshot::canonical_data_retained_footprint(
-                element,
-                value.data(),
-            )
-            .map_err(|error| {
-                MechError::new(
-                    crate::GenericError {
-                        msg: format!("unable to measure prospective set element: {error:?}"),
-                    },
-                    None,
-                )
-                .with_compiler_loc()
-            })?;
+        for footprint in footprints {
+            let footprint = footprint?;
             elements = elements.checked_add(1).ok_or_else(|| {
                 MechError::new(
                     crate::MemoryPlanError::ArithmeticOverflow {
@@ -3487,7 +3726,7 @@ impl ValueCell {
                     realized: realized.clone(),
                     object,
                     region,
-                    representation,
+                    representation: managed_host_representation(representation),
                 }),
             },
         };

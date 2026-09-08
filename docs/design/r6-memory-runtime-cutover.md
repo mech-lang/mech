@@ -212,12 +212,20 @@ fixed-width calls whose requirements are invariant keep the cached fast path.
 Maintained canonical builders receive their charged payload admission before
 allocating result Strings, containers, or finalization storage, and complete
 that admission only after the frozen value validates. Adoption of an already
-existing external value is a distinct boundary.
+existing external value is a distinct boundary. A payload-producing operation
+without either a prospective witness or an explicitly declared external
+adoption policy fails before execution; the previously published footprint is
+never silently treated as authority for the next result.
+Set operations, canonical matrix access/assignment, String matrix transpose,
+and canonical matrix construction all use this prospective boundary; only
+explicit external host/resource adoption may present an already-built value.
 
 An ordinary same-schema, same-shape snapshot shares the published frozen data
-and its accounting owner. Rebinding that changes schema identity or shape is
-an explicit canonical reconstruction; it cannot silently take the no-copy
-snapshot path or shed the retained-allocation ticket.
+and its accounting owner. Equivalent closed metadata in another schema table
+may share that data only while the returned value retains the target table.
+Schemas containing `Dynamic` children and shape/schema transformations use an
+explicit canonical reconstruction so nested schema identities are remapped or
+rejected; they cannot silently take the no-copy path or shed the retained ticket.
 
 Payload envelopes retain their declared node-registration bound independently
 of any spare capacity returned by the host allocator. Function binding also

@@ -92,6 +92,16 @@ impl MechFunctionFactory for SetPowersetFxn {
 }
 
 impl MechFunctionImpl for SetPowersetFxn {
+    fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+        let output_len = powerset_output_len(self.input.planning_cardinality()?)?;
+        Ok(Some(
+            vec![self
+                .out
+                .prospective_expansion_footprint(&[&self.input], output_len)?]
+            .into_boxed_slice(),
+        ))
+    }
+
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
         self.out.primary_state_port()
     }
@@ -103,18 +113,21 @@ impl MechFunctionImpl for SetPowersetFxn {
         frame: &mut mech_core::KernelMemoryFrame<'_>,
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
-        let elements = self.input.element_drafts(frame)?.into_vec();
-        let output_len = powerset_output_len(elements.len())?;
-        let subsets = powerset(&elements);
-        debug_assert_eq!(subsets.len(), output_len);
-        self.out.stage_set_drafts(
-            frame,
-            subsets
-                .into_iter()
-                .map(|subset| ValueDataDraft::Set(subset.into_boxed_slice()))
-                .collect::<Vec<_>>()
-                .into_boxed_slice(),
-        )?;
+        let output_len = powerset_output_len(self.input.planning_cardinality()?)?;
+        let footprint = self
+            .out
+            .prospective_expansion_footprint(&[&self.input], output_len)?;
+        self.out
+            .with_admitted_set_drafts(frame, footprint, |frame| {
+                let elements = self.input.element_drafts(frame)?.into_vec();
+                let subsets = powerset(&elements);
+                debug_assert_eq!(subsets.len(), output_len);
+                Ok(subsets
+                    .into_iter()
+                    .map(|subset| ValueDataDraft::Set(subset.into_boxed_slice()))
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice())
+            })?;
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
