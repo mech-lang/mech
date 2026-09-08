@@ -527,6 +527,18 @@ impl TypedResidentArena {
     ) -> Result<Self, ResidentActivationError> {
         ensure_resident_plan_admitted(plan)?;
         let sizes = ResidentArenaSizes::from_memory_plan_buffer(plan, class, buffer)?;
+        let mut indexes = resident_lane(
+            plan,
+            class,
+            ResidentValueKind::Index,
+            buffer,
+            sizes.indexes,
+            memory,
+        )?;
+        // Index is one-based, so zero is not a valid initialized value. Keep
+        // every freshly realized Index lane semantically initialized to the
+        // same minimum value used by the pre-cutover resident arena.
+        indexes.fill(1);
         Ok(Self {
             bools: resident_lane(
                 plan,
@@ -536,14 +548,7 @@ impl TypedResidentArena {
                 sizes.bools,
                 memory,
             )?,
-            indexes: resident_lane(
-                plan,
-                class,
-                ResidentValueKind::Index,
-                buffer,
-                sizes.indexes,
-                memory,
-            )?,
+            indexes,
             f64s: resident_lane(
                 plan,
                 class,
