@@ -108,6 +108,7 @@ jobs:
           python3 scripts/check-r3-type-system.py
           python3 scripts/check-r4-type-cutover.py
           python3 scripts/check-r5-memory-planner.py
+          python3 scripts/check-r6-memory-runtime.py
           python3 scripts/check-resident-activation-contract.py
           python3 scripts/check-compiler-planning-quarantine.py
           python3 scripts/generate-d1-contract.py --check
@@ -126,6 +127,7 @@ jobs:
             scripts/tests/test_check_r3_type_system.py \
             scripts/tests/test_check_r4_type_cutover.py \
             scripts/tests/test_check_r5_memory_planner.py \
+            scripts/tests/test_check_r6_memory_runtime.py \
             scripts/tests/test_check_program_artifact_contract.py \
             scripts/tests/test_check_operation_contract.py \
             scripts/tests/test_generate_resident_activation_contract.py \
@@ -194,6 +196,76 @@ jobs:
           cargo +nightly-2026-03-03 test --locked -p mech-compute
           cargo +nightly-2026-03-03 test --locked -p mech-gpu \
             --test r5_memory_plan
+
+  r6-memory-runtime:
+    name: R6 memory runtime
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
+      CARGO_BUILD_JOBS: "1"
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
+          fetch-depth: 0
+      - name: Install Rust nightly-2026-03-03
+        run: rustup toolchain install nightly-2026-03-03 --profile minimal
+      - name: Fetch locked R6 dependencies
+        run: cargo +nightly-2026-03-03 fetch --locked
+      - name: Execute the complete R6 conformance boundary
+        run: |
+          cargo +nightly-2026-03-03 test --locked -p mech-core \
+            --all-features --test r6_memory_runtime
+          cargo +nightly-2026-03-03 test --locked -p mech-core \
+            --no-default-features \
+            --features functions,u8,u64,f64,string,matrixd \
+            --test r6_memory_safety
+          RUSTFLAGS="${RUSTFLAGS:-} -C debug-assertions=no" \
+            cargo +nightly-2026-03-03 test --locked --release -p mech-core \
+            --no-default-features \
+            --features functions,u8,u64,f64,string,matrixd \
+            --test r6_memory_safety
+          cargo +nightly-2026-03-03 test --locked -p mech-engine \
+            --no-default-features --features full_compiler \
+            --test r6_memory_runtime
+          cargo +nightly-2026-03-03 test --locked -p mech-stdlib \
+            --no-default-features --features full_compiler \
+            --test r6_managed_functions
+          cargo +nightly-2026-03-03 test --locked -p mech-compute \
+            --test r6_memory_runtime
+          cargo +nightly-2026-03-03 test --locked -p mech-gpu \
+            --test r6_memory_runtime
+          cargo +nightly-2026-03-03 test --locked -p mech-gpu \
+            --features jit --test r6_memory_runtime
+          cargo +nightly-2026-03-03 check --locked -p mech-gpu --features native
+
+  r6-memory-miri:
+    name: R6 memory safety (Miri)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
+      CARGO_BUILD_JOBS: "1"
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
+      - name: Install pinned Miri toolchain components
+        run: |
+          rustup toolchain install nightly-2026-03-03 --profile minimal \
+            --component miri,rust-src
+          cargo +nightly-2026-03-03 miri setup
+      - name: Execute R6 sealed-memory safety cases
+        run: |
+          cargo +nightly-2026-03-03 miri test --locked \
+            -p mech-core --no-default-features \
+            --features functions,u8,u64,f64,string,matrixd \
+            --test r6_memory_safety
 
   cargo-features:
     name: Cargo feature and example checks
@@ -858,6 +930,8 @@ jobs:
     needs:
       - cargo-features
       - r5-memory-planner
+      - r6-memory-runtime
+      - r6-memory-miri
       - distribution-contracts
       - engine-catalog
       - function-system-contracts
@@ -882,6 +956,8 @@ jobs:
         env:
           ENGINE_CATALOG_RESULT: ${{ needs.engine-catalog.result }}
           FEATURE_RESULT: ${{ needs.cargo-features.result }}
+          R6_MEMORY_RESULT: ${{ needs.r6-memory-runtime.result }}
+          R6_MIRI_RESULT: ${{ needs.r6-memory-miri.result }}
           DISTRIBUTION_RESULT: ${{ needs.distribution-contracts.result }}
           FUNCTION_SYSTEM_RESULT: ${{ needs.function-system-contracts.result }}
           WASM_SOURCE_RESULT: ${{ needs.wasm-source-profile.result }}
@@ -903,6 +979,8 @@ jobs:
           test "$DISTRIBUTION_RESULT" = success
           test "$ENGINE_CATALOG_RESULT" = success
           test "$FEATURE_RESULT" = success
+          test "$R6_MEMORY_RESULT" = success
+          test "$R6_MIRI_RESULT" = success
           test "$FUNCTION_SYSTEM_RESULT" = success
           test "$WASM_SOURCE_RESULT" = success
           test "$BYTECODE_FORMAT_RESULT" = success

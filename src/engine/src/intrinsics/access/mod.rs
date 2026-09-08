@@ -291,7 +291,7 @@ impl MechFunctionImpl for CanonicalAccess {
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
         let next = self.next_value()?;
-        frame.stage_output_value(&self.output, &next.snapshot()?)?;
+        frame.stage_output_value(&self.output, next.snapshot()?)?;
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
@@ -738,7 +738,7 @@ impl MechFunctionImpl for CanonicalSwizzle {
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
         let result = self.result()?;
-        frame.stage_output_value(&self.output, &result.snapshot()?)?;
+        frame.stage_output_value(&self.output, result.snapshot()?)?;
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 

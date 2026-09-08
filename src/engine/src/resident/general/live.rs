@@ -368,10 +368,22 @@ mod turn_tests {
     use super::*;
     use crate::memory_planner::{ProgramMemoryPlan, plan_turn_memory};
     use mech_core::{
-        AliasPolicy, ChangeDetectionPolicy, DeliveryMode, ExternalInteraction, InputPortLayout,
-        InputPortPolicy, OperationContractDeclaration, OutputPortPolicy,
-        ResolvedOperationDescriptor, RuntimeFunctionId, ShapeRule, ValueCell,
+        AliasPolicy, ChangeDetectionPolicy, DeliveryMode, ExternalInteraction, FloatWidth,
+        FunctionValueRepresentation, InputPortLayout, InputPortPolicy,
+        OperationContractDeclaration, OutputPortPolicy, ResolvedOperationDescriptor,
+        RuntimeFunctionId, SchemaDraft, ShapeRule,
     };
+
+    fn scalar_descriptor(body: SchemaBody) -> mech_core::ResolvedValueDescriptor {
+        let schema = SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body,
+        }
+        .finalize()
+        .unwrap();
+        let shape = schema.instantiate_shape(Box::new([])).unwrap();
+        mech_core::ResolvedValueDescriptor::from_schema(schema, shape).unwrap()
+    }
 
     fn fixed_numeric_call() -> CallMemoryPlan {
         fixed_numeric_call_with_class(ImplementationMemoryClass::NoAdditionalScratch)
@@ -380,8 +392,7 @@ mod turn_tests {
     fn fixed_numeric_call_with_class(
         implementation_memory: ImplementationMemoryClass,
     ) -> CallMemoryPlan {
-        let cell = ValueCell::from_exact(0.0_f64).unwrap();
-        let descriptor = cell.resolved_descriptor().unwrap();
+        let descriptor = scalar_descriptor(SchemaBody::FloatingPoint(FloatWidth::W64));
         let operation = ResolvedOperationDescriptor::from_name(
             "test/fixed-copy",
             OperationContractDeclaration {
@@ -416,7 +427,7 @@ mod turn_tests {
         .unwrap();
         let target = TargetMemoryProfile::current_resident_cpu().unwrap();
         let storage = mech_core::physical_storage_descriptor(
-            cell.representation(),
+            FunctionValueRepresentation::F64,
             &target,
             MemoryLifetime::Turn {
                 first: MemoryPlanPoint::new(0),
@@ -750,8 +761,7 @@ mod turn_tests {
 
     #[test]
     fn one_program_replans_distinct_live_and_candidate_payloads_across_turns() {
-        let cell = ValueCell::from_exact(String::new()).unwrap();
-        let descriptor = cell.resolved_descriptor().unwrap();
+        let descriptor = scalar_descriptor(SchemaBody::String);
         let operation = ResolvedOperationDescriptor::from_name(
             "test/live-copy",
             OperationContractDeclaration {
@@ -786,7 +796,7 @@ mod turn_tests {
         .unwrap();
         let target = TargetMemoryProfile::current_resident_cpu().unwrap();
         let storage = mech_core::physical_storage_descriptor(
-            cell.representation(),
+            FunctionValueRepresentation::String,
             &target,
             MemoryLifetime::Turn {
                 first: MemoryPlanPoint::new(0),

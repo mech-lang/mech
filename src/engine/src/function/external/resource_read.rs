@@ -80,7 +80,7 @@ impl ExternalResourceReadFunction {
         frame: &mut mech_core::KernelMemoryFrame<'_>,
         result: Value,
     ) -> MResult<()> {
-        frame.stage_output_value(&self.output, &result)?;
+        frame.stage_output_value(&self.output, result)?;
         *self.initialized.borrow_mut() = 1;
         Ok(())
     }

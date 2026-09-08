@@ -342,7 +342,10 @@ where
 
 #[derive(Clone, Copy)]
 // The shared factory traversal enables only the modes present in a profile.
-#[allow(dead_code)]
+#[allow(
+    dead_code,
+    reason = "feature profiles enable only a subset of comparison broadcast modes"
+)]
 enum ComparisonBroadcast {
     Exact,
     LeftScalar,
@@ -617,7 +620,7 @@ fn apply_canonical_string_comparison<O: CanonicalStringComparisonResult>(
             )?
         }
     };
-    frame.stage_output_value(out.cell(), &next)
+    frame.stage_output_value(out.cell(), next)
 }
 
 #[macro_export]

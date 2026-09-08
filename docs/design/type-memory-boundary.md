@@ -43,7 +43,7 @@ to traverse `SchemaBody`.
 | What concrete runtime factory/backing is selected today? | exact R4 operation binding after semantic validation |
 | When does R2 compatibility become binding authority? | before every R4 physical binding |
 | What physical byte layout is chosen? | the complete R5 memory plan |
-| How is memory allocated, reused, and reclaimed? | R6, which is next |
+| How is memory allocated, reused, and reclaimed? | R6, which is in progress |
 
 ## 3. One-way boundary
 
@@ -234,7 +234,7 @@ descriptors are validated before physical selection and allocation;
 
 R5 Memory planner — complete. R5 owns deterministic physical layouts; sizes,
 alignment, strides, offsets, and placement; lifetimes and alias plans; and
-allocation and resource plans. R6 Memory runtime cutover — next. R6 consumes
+allocation and resource plans. R6 Memory runtime cutover — in progress. R6 consumes
 the R5 layouts, capacities, arena placements, lifetimes, alias groups, reuse
 groups, transaction requirements, budgets, and transfer requirements. R6 may
 implement allocation handles, pools, managed backing, actual reuse, movement,

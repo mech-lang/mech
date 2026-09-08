@@ -399,6 +399,16 @@ impl ElementwiseKernel {
                         .record_device_write(object, bytes)
                         .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
                 }
+                for (object, bytes) in planned_execution
+                    .writable_state_objects(0)
+                    .expect("the single-dispatch bind group is validated")
+                    .iter()
+                    .copied()
+                {
+                    managed_memory
+                        .record_device_write(object, bytes)
+                        .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
+                }
                 for (_, slot, _, _, bytes) in &readbacks {
                     let object =
                         planned_execution
@@ -969,6 +979,7 @@ impl ResidentGpuSession {
             });
         let mut next_group = self.next_group;
         let mut last_output_group = self.last_output_group;
+        let mut written_state_groups = [false; 2];
         {
             let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
                 label: Some("Mech resident GPU compute pass"),
@@ -977,6 +988,7 @@ impl ResidentGpuSession {
             pass.set_pipeline(&self.pipeline);
             for _ in 0..turns {
                 let group = next_group;
+                written_state_groups[group] = true;
                 pass.set_bind_group(0, &self.bind_groups[group], &[]);
                 pass.dispatch_workgroups(self.workgroups, 1, 1);
                 last_output_group = Some(group);
@@ -1027,6 +1039,22 @@ impl ResidentGpuSession {
             self.managed_memory
                 .record_device_write(object, bytes)
                 .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
+        }
+        for (group, written) in written_state_groups.into_iter().enumerate() {
+            if !written {
+                continue;
+            }
+            for (object, bytes) in self
+                .memory_plan
+                .writable_state_objects(group)
+                .expect("resident bind-group index is validated")
+                .iter()
+                .copied()
+            {
+                self.managed_memory
+                    .record_device_write(object, bytes)
+                    .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
+            }
         }
         self.last_output_group = last_output_group;
         self.next_group = next_group;

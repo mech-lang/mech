@@ -119,6 +119,7 @@ impl SetInput {
             .map_err(snapshot_error)
     }
 
+    #[cfg(all(feature = "size", feature = "u64"))]
     pub(crate) fn elements(&self, frame: &KernelMemoryFrame<'_>) -> MResult<Box<[ValueData]>> {
         let set = frame.snapshot_function_value_input(&self.0)?;
         let Some(view) = set.set_view() else {
@@ -135,6 +136,7 @@ impl SetInput {
             .into_boxed_slice())
     }
 
+    #[cfg(any(feature = "cartesian_product", feature = "powerset"))]
     pub(crate) fn element_drafts(
         &self,
         frame: &KernelMemoryFrame<'_>,
@@ -270,16 +272,17 @@ impl SetOutput {
         elements: Box<[ValueData]>,
     ) -> MResult<()> {
         let next = self.0.build_set(elements)?;
-        frame.stage_output_value(self.0.cell(), &next)
+        frame.stage_output_value(self.0.cell(), next)
     }
 
+    #[cfg(any(feature = "cartesian_product", feature = "powerset"))]
     pub(crate) fn stage_set_drafts(
         &self,
         frame: &mut KernelMemoryFrame<'_>,
         elements: Box<[ValueDataDraft]>,
     ) -> MResult<()> {
         let next = self.0.build_set_drafts(elements)?;
-        frame.stage_output_value(self.0.cell(), &next)
+        frame.stage_output_value(self.0.cell(), next)
     }
 
     pub(crate) fn primary_state_port(&self) -> Option<FunctionStatePort<'_>> {

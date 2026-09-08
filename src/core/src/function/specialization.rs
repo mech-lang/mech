@@ -12,20 +12,17 @@ use std::{boxed::Box, rc::Rc, string::String, vec::Vec};
 use crate::{
     CallMemoryPlan, CallMemoryPlanningRequest, ConversionPlan, CurrentMemoryFootprint,
     DimensionExpr, ExecutionTarget, FunctionCatalog, FunctionInstance, FunctionInvocation,
-    FunctionPortBacking, FunctionValueRepresentation, ImplementationMemoryClass, MResult,
-    MechError, MechErrorKind, MechFunctionFactory, MemoryFootprintWitness, MemoryLifetime,
-    MemoryPlanPoint, MemoryTargetKind, OperationContractDeclaration, OperationId,
-    OutputConstruction, PhysicalStorageDescriptor, PlannedSlotKind, Ref, RegionAccessPlan,
-    ResolvedOperationContract, ResolvedOutputSchemaRule, ResolvedType, ResolvedValueDescriptor,
-    RuntimeBindingSelector, RuntimeFunctionEntry, RuntimeFunctionId, RuntimeFunctionInputs,
-    RuntimeOperationBindingMismatch, Schema, SchemaBody, SchemaKey, SchemaTable,
-    SchemaTableBuilder, ShapeInstance, TargetMemoryProfile, TypeConstraintFailure,
-    TypeResolutionError, Value, ValueCell, physical_storage_descriptor, plan_call_memory,
+    FunctionValueRepresentation, ImplementationMemoryClass, MResult, MechError, MechErrorKind,
+    MechFunctionFactory, MemoryFootprintWitness, MemoryLifetime, MemoryPlanPoint, MemoryTargetKind,
+    OperationContractDeclaration, OperationId, OutputConstruction, PhysicalStorageDescriptor,
+    PlannedSlotKind, RegionAccessPlan, ResolvedOperationContract, ResolvedOutputSchemaRule,
+    ResolvedType, ResolvedValueDescriptor, RuntimeBindingSelector, RuntimeFunctionEntry,
+    RuntimeFunctionId, RuntimeFunctionInputs, RuntimeOperationBindingMismatch, Schema, SchemaBody,
+    SchemaKey, SchemaTable, SchemaTableBuilder, ShapeInstance, TargetMemoryProfile,
+    TypeConstraintFailure, TypeResolutionError, Value, ValueCell, physical_storage_descriptor,
+    plan_call_memory,
 };
 use core::cell::RefCell;
-
-#[cfg(feature = "matrix")]
-use crate::{FunctionArgumentRole, matrix::Matrix};
 
 /// One source-level function input after expression lowering.
 ///
@@ -438,21 +435,6 @@ impl SpecializationInput {
             Self::Absent => Err(control_input_error("source absence", "cell")),
             Self::MatrixAllSelection => Err(control_input_error("matrix all-selection", "cell")),
         }
-    }
-
-    pub fn try_ref<T: FunctionPortBacking>(&self) -> MResult<Ref<T>> {
-        self.cell()?.try_ref::<T>()
-    }
-
-    #[cfg(feature = "matrix")]
-    pub fn try_matrix<T>(&self, input_index: usize) -> MResult<Matrix<T>>
-    where
-        T: FunctionPortBacking + Clone,
-    {
-        crate::function::argument::matrix_from_cell(
-            self.cell()?,
-            FunctionArgumentRole::Input(input_index),
-        )
     }
 
     pub fn snapshot(&self) -> MResult<Value> {
@@ -1118,25 +1100,6 @@ impl<'a> SpecializationContext<'a> {
         Ok(shape.resolve_dimension(dimension)?)
     }
 
-    pub fn typed_cell<T>(
-        &self,
-        reference: Ref<T>,
-        schema: SchemaKey,
-        shape: ShapeInstance,
-    ) -> MResult<ValueCell>
-    where
-        T: crate::CanonicalCellBacking,
-    {
-        let schema = self.schemas.find_by_key(schema).ok_or_else(|| {
-            MechError::new(SpecializationUnknownSchema { key: schema }, None).with_compiler_loc()
-        })?;
-        ValueCell::from_ref(reference, schema, shape, self.schemas.clone())
-    }
-
-    pub fn value_cell(&self, value: Value) -> MResult<ValueCell> {
-        ValueCell::from_runtime_value(value, self.schemas.clone())
-    }
-
     /// Certifies an implementation selected by syntax-directed lowering or by
     /// an operation-specific specializer that does not use the runtime
     /// catalog. The canonical cells must already carry their final semantic
@@ -1336,22 +1299,29 @@ impl<'a> SpecializationContext<'a> {
             None,
             entry.implementation_memory_class(),
         )?;
+        // One runtime invocation belongs to the same owner session as its
+        // caller-visible inputs. Standalone calls without an owned input get
+        // one session here; output topology must not select another domain.
+        let session = input_cells
+            .iter()
+            .find_map(ValueCell::memory_domain)
+            .map(Ok)
+            .unwrap_or_else(crate::MemoryDomain::new)?;
         let output = if matches!(
             memory_plan.outputs[0].value.storage.planned_slot(),
             PlannedSlotKind::FixedScalar(_)
         ) {
-            let session = input_cells
-                .iter()
-                .find_map(ValueCell::memory_domain)
-                .map(Ok)
-                .unwrap_or_else(crate::MemoryDomain::new)?;
             ValueCell::allocate_call_output_in(
                 &session,
                 Rc::new(memory_plan.clone()),
                 entry.signature().output,
             )?
         } else {
-            ValueCell::allocate_for_descriptor(&output_descriptor, entry.signature().output)?
+            ValueCell::allocate_for_descriptor_in(
+                &session,
+                &output_descriptor,
+                entry.signature().output,
+            )?
         };
         let invocation =
             invocation_for_runtime_inputs(entry.signature().inputs, output, input_cells)?;

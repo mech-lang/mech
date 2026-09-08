@@ -69,7 +69,7 @@ mod checkpoint_tests {
         FunctionInvocation::unary(ValueCell::unit(), cell.clone())
             .input(0)
             .unwrap()
-            .try_ref::<f64>()
+            .try_external_ref::<f64>()
             .unwrap()
     }
 
@@ -78,7 +78,7 @@ mod checkpoint_tests {
         FunctionInvocation::unary(ValueCell::unit(), cell.clone())
             .input(0)
             .unwrap()
-            .try_ref::<bool>()
+            .try_external_ref::<bool>()
             .unwrap()
     }
 

@@ -190,7 +190,7 @@ mod value_cell_tests {
     use super::*;
 
     fn index_cell(value: usize) -> ValueCell {
-        ValueCell::from_exact(value).unwrap()
+        ValueCell::from_external_ref(Ref::new(value), None).unwrap()
     }
 
     #[test]

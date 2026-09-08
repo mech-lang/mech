@@ -267,6 +267,44 @@ impl PlannedAllocator {
         self.authority.owner.allocated_bytes()
     }
 
+    /// Admits the immutable canonical tree that will own its concrete Rust
+    /// allocations after publication. The payload envelope remains reusable;
+    /// the returned pointer-free ticket independently retains the exact
+    /// exported charge for as long as the frozen root is alive.
+    pub(crate) fn admit_frozen_snapshot(
+        &self,
+        retained_bytes: u64,
+        retained_nodes: u64,
+    ) -> MemoryRuntimeResult<RetainedPayloadTicket> {
+        if !self.authority.owner.accepting_allocations.get() {
+            return Err(MemoryRuntimeError::DomainClosed);
+        }
+        if retained_bytes > self.authority.owner.capacity_bytes {
+            return Err(MemoryRuntimeError::CapacityExceeded {
+                object: self.authority.object.object(),
+                requested: retained_bytes,
+                capacity: self.authority.owner.capacity_bytes,
+            });
+        }
+        let node_capacity =
+            u64::try_from(self.authority.owner.blocks.borrow().capacity()).unwrap_or(u64::MAX);
+        if retained_nodes > node_capacity {
+            return Err(MemoryRuntimeError::UnplannedAllocation {
+                object: Some(self.authority.object.object()),
+                requested: retained_nodes,
+            });
+        }
+        self.authority.owner.accounting.add(retained_bytes)?;
+        let ticket = RetainedPayloadTicket {
+            charge: Arc::new(RetainedPayloadCharge {
+                accounting: self.authority.owner.accounting.clone(),
+                bytes: retained_bytes,
+            }),
+        };
+        self.record_initialized(retained_bytes)?;
+        Ok(ticket)
+    }
+
     fn record_initialized(&self, bytes: u64) -> MemoryRuntimeResult<()> {
         let domain = self
             .authority

@@ -21,6 +21,7 @@ REQUIRED = (
     "src/core/src/program/bytecode/writer.rs",
     "src/core/src/program/compiler/context.rs",
     "src/core/src/function/catalog.rs",
+    "src/core/src/function/mod.rs",
     "src/core/src/function/specialization.rs",
     "src/engine/src/artifact/model.rs",
     "src/engine/src/artifact/compiler.rs",
@@ -47,6 +48,7 @@ REQUIRED = (
     "src/compute/tests/r5_memory_plan.rs",
     "hosts/gpu/tests/r5_memory_plan.rs",
     "scripts/check-r5-memory-planner.py",
+    "scripts/check-r6-memory-runtime.py",
     "scripts/tests/test_check_r5_memory_planner.py",
     "docs/design/r5-memory-planner.md",
     "docs/design/type-memory-boundary.md",
@@ -262,6 +264,7 @@ def function_bodies(source: str, prefix: str):
 def failures(root: Path) -> list[str]:
     root = root.resolve()
     found: list[str] = []
+    r6_active = (root / "scripts/check-r6-memory-runtime.py").is_file()
     sources: dict[str, str] = {}
     for relative in REQUIRED:
         path = root / relative
@@ -337,10 +340,31 @@ def failures(root: Path) -> list[str]:
     # 13. Specialized functions cannot drop their call plan.
     specialization = rust_code(sources.get("src/core/src/function/specialization.rs", ""))
     specialized = balanced_body(specialization, "SpecializedFunction") or ""
-    if not re.search(r"\bmemory_plan\s*:\s*CallMemoryPlan\b", specialized):
-        found.append("SpecializedFunction omits CallMemoryPlan")
-    if not re.search(r"fn\s+new\s*\([^)]*memory_plan\s*:\s*CallMemoryPlan", specialization, re.DOTALL):
-        found.append("production SpecializedFunction constructor omits CallMemoryPlan")
+    if r6_active:
+        function_runtime_path = root / "src/core/src/function/mod.rs"
+        function_runtime = rust_code(
+            function_runtime_path.read_text(encoding="utf-8")
+            if function_runtime_path.is_file()
+            else ""
+        )
+        r6_constructor_retains_plan = (
+            "memory_plan: CallMemoryPlan" in specialization
+            and "let memory_plan = Rc::new(memory_plan);" in specialization
+            and "FunctionInstance::new(implementation, invocation, memory_plan)" in specialization
+        )
+        if not (
+            re.search(r"\binstance\s*:\s*FunctionInstance\b", specialized)
+            and re.search(r"struct\s+ManagedFunctionBinding\s*\{[^}]*\bplan\s*:\s*Rc<CallMemoryPlan>", function_runtime, re.DOTALL)
+            and r6_constructor_retains_plan
+        ):
+            found.append("SpecializedFunction omits CallMemoryPlan")
+        if not r6_constructor_retains_plan:
+            found.append("production SpecializedFunction constructor omits CallMemoryPlan")
+    else:
+        if not re.search(r"\bmemory_plan\s*:\s*CallMemoryPlan\b", specialized):
+            found.append("SpecializedFunction omits CallMemoryPlan")
+        if not re.search(r"fn\s+new\s*\([^)]*memory_plan\s*:\s*CallMemoryPlan", specialization, re.DOTALL):
+            found.append("production SpecializedFunction constructor omits CallMemoryPlan")
 
     # 14. Executable compiler bindings retain the matching non-wire sidecar.
     context = sources.get("src/core/src/program/compiler/context.rs", "")
@@ -550,7 +574,11 @@ def failures(root: Path) -> list[str]:
             continue
         code = rust_code(source)
         for identifier in R6_FORBIDDEN:
-            if re.search(rf"\b{re.escape(identifier)}\b", code):
+            allowed_r6_owner = r6_active and (
+                relative,
+                identifier,
+            ) == ("hosts/gpu/src/memory.rs", "AllocationHandle")
+            if re.search(rf"\b{re.escape(identifier)}\b", code) and not allowed_r6_owner:
                 found.append(f"{relative}: R6 concept introduced during R5: {identifier}")
 
     # 21. Package versions remain on the existing release line.

@@ -8,84 +8,18 @@ machines/compare/src/lte.rs|typed-machine-kernel|mech-compare|macro-selected Val
 machines/compare/src/max.rs|typed-machine-kernel|mech-compare|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/compare/src/min.rs|typed-machine-kernel|mech-compare|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/compare/src/neq.rs|typed-machine-kernel|mech-compare|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/logic/src/and.rs|typed-machine-kernel|mech-logic|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/logic/src/not.rs|typed-machine-kernel|mech-logic|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/logic/src/or.rs|typed-machine-kernel|mech-logic|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/logic/src/xor.rs|typed-machine-kernel|mech-logic|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/arithmetic/abs.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/arithmetic/copysign.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/arithmetic/fdim.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/arithmetic/fmod.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/arithmetic/nextafter.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/arithmetic/remainder.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/bessel/j0.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/bessel/j1.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/bessel/jn.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/bessel/y0.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/bessel/y1.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/bessel/yn.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/math/src/dynamic_module.rs|ffi|mech-math|foreign pointers and symbols remain valid only for the documented call or library lifetime|existing native ABI boundary
-machines/math/src/gamma/lgamma.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/gamma/tgamma.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/logarithm/log.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/logarithm/log10.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/logarithm/log1p.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/logarithm/log2.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/op_assign/mod.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/math/src/ops/add.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/ops/div.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/ops/modulus.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/math/src/ops/mul.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/ops/negate.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/ops/pow.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/math/src/ops/sub.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/root/cbrt.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/root/sqrt.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/rounding/ceil.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/rounding/floor.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/rounding/rint.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/rounding/round.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/rounding/roundeven.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/rounding/trunc.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/stat_error/erf.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/stat_error/erfc.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/trig/acos.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/trig/acosh.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/trig/acot.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/trig/acsc.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/trig/asec.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/trig/asin.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/trig/asinh.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/trig/atan.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/trig/atan2.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/trig/atanh.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/trig/cos.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/trig/cosh.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/trig/cot.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/trig/csc.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/trig/sec.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/trig/sin.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/trig/sinh.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/trig/tan.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/trig/tanh.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/matrix/src/dot.rs|typed-machine-kernel|mech-matrix|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/matrix/src/matmul.rs|typed-machine-kernel|mech-matrix|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/matrix/src/solve.rs|typed-machine-kernel|mech-matrix|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/matrix/src/transpose.rs|typed-machine-kernel|mech-matrix|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/string/src/concat.rs|typed-machine-kernel|mech-string|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 src/abi/src/lib.rs|ffi|mech-abi|foreign pointers and symbols remain valid only for the documented call or library lifetime|existing native ABI boundary
 src/core/src/structures/matrix.rs|value-representation|mech-core|Value variants and matrix element types match every erased reference operation|existing zero-copy value representation
 src/core/src/memory_runtime/access.rs|managed-lease|mech-core|validated live generational bindings and all-or-nothing leases bound every temporary byte slice to the closure lifetime|sealed R6 scoped-access boundary
 src/core/src/memory_runtime/allocation.rs|managed-allocation|mech-core|every pointer is owned with its exact validated Layout and is exposed only through the sealed lease boundary|sealed R6 host arena owner
 src/core/src/memory_runtime/payload.rs|managed-allocator|mech-core|all global-heap pointers are bounded by a live realized payload envelope and retained with the exact allocator Layout until deallocation|sealed R6 reservation-backed payload allocator
 src/core/src/types/mod.rs|value-representation|mech-core|raw pointers remain process-local observations of an opaque Ref backing cell and never cross transaction boundaries|existing low-level Ref representation
+src/core/tests/support/r6_allocation_probe.rs|benchmark-probe|mech-core|the test-only allocator forwards the exact pointer and layout to System and retains no allocation pointer|R6 steady-state allocation regression instrumentation
 src/engine/src/function/module.rs|typed-interpreter-kernel|mech-engine|validated Value variants match every erased reference and output container|existing typed interpreter dispatch
-src/engine/src/intrinsics/access/matrix.rs|typed-interpreter-kernel|mech-engine|validated Value variants match every erased reference and output container|existing typed interpreter dispatch
-src/engine/src/intrinsics/assign/matrix.rs|typed-interpreter-kernel|mech-engine|validated Value variants match every erased reference and output container|existing typed interpreter dispatch
-src/engine/src/intrinsics/assign/mod.rs|typed-interpreter-kernel|mech-engine|validated Value variants match every erased reference and output container|existing typed interpreter dispatch
-src/engine/src/intrinsics/horzcat.rs|typed-interpreter-kernel|mech-engine|validated Value variants match every erased reference and output container|existing typed interpreter dispatch
-src/engine/src/intrinsics/mod.rs|typed-interpreter-kernel|mech-engine|validated Value variants match every erased reference and output container|existing typed interpreter dispatch
-src/engine/src/intrinsics/vertcat.rs|typed-interpreter-kernel|mech-engine|validated Value variants match every erased reference and output container|existing typed interpreter dispatch
 src/engine/src/resident/general/mod.rs|resident-publication-authority|mech-engine|only the private runtime coordinator implements the authority trait and it publishes only after all external obligations succeed|cross-crate safe-code boundary for D3 external publication
 src/runtime/benches/recording_primitives.rs|benchmark-probe|mech-runtime|the counting allocator forwards the exact pointer and layout to System and retains no allocation pointer|benchmark-only allocation accounting for Gate A evidence
 src/runtime/benches/resident_ekf.rs|benchmark-probe|mech-runtime|the counting allocator forwards the exact pointer and layout to System and retains no allocation pointer|benchmark-only allocation accounting for Gate B evidence

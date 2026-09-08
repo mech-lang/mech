@@ -584,6 +584,13 @@ impl FunctionInstance {
         invocation: FunctionInvocation,
         plan: Rc<CallMemoryPlan>,
     ) -> MResult<Self> {
+        if plan.outputs.len() != plan.transactions.len() {
+            return Err(MemoryRuntimeError::CandidateValidationFailed {
+                object: None,
+                reason: "every managed output requires one explicit transaction authority".into(),
+            }
+            .into());
+        }
         invocation
             .check_operation_memory_contract(&plan.bound_call.operation_descriptor().contract)?;
         let domain = invocation.output_cell().memory_domain().ok_or_else(|| {
@@ -662,6 +669,21 @@ impl FunctionInstance {
         Ok(status)
     }
 
+    /// Runs this implementation inside an executor-owned managed frame.
+    ///
+    /// The outer executor owns plan-point lifetime, transaction staging, and
+    /// publication. This method deliberately performs none of those actions:
+    /// it is the only entry used by program-wide executors that already hold
+    /// the complete call scope, and it cannot create a nested independent
+    /// publication.
+    pub fn solve_in_scope(
+        &self,
+        frame: &mut KernelMemoryFrame<'_>,
+        services: &mut dyn MechExecutionServices,
+    ) -> MResult<ReactiveSolveStatus> {
+        self.implementation.solve_managed(frame, services)
+    }
+
     fn prepare_reactive_publication(
         &self,
         services: &mut dyn MechExecutionServices,
@@ -695,7 +717,7 @@ impl FunctionInstance {
                 .domain
                 .acquire_call(&managed.realized, &managed.execution)
                 .map_err(MechError::from)?;
-            let status = self.implementation.solve_managed(&mut frame, services)?;
+            let status = self.solve_in_scope(&mut frame, services)?;
             if managed.plan.outputs.is_empty() {
                 (status, None)
             } else {
@@ -713,10 +735,11 @@ impl FunctionInstance {
                 }
                 let (object, region) = frame.output_target(self.output(), 0)?;
                 let staged_value = frame.take_staged_output_value(object);
-                (status, Some((object, region, staged_value)))
+                let undo = frame.take_undo_snapshot();
+                (status, Some((object, region, staged_value, undo)))
             }
         };
-        let Some((output_object, output_region, staged_value)) = staged_output else {
+        let Some((output_object, output_region, staged_value, undo)) = staged_output else {
             return Ok(PreparedFunctionPublication {
                 status,
                 publication: None,
@@ -743,7 +766,7 @@ impl FunctionInstance {
             .realized
             .binding(output_object)
             .map_err(MechError::from)?;
-        let publication = managed.domain.prepare_cell_publication(
+        let publication = managed.domain.prepare_cell_publication_with_undo(
             &managed.realized,
             vec![CellPublicationCandidate {
                 cell: output.clone(),
@@ -753,12 +776,14 @@ impl FunctionInstance {
                 value,
                 changed: status == ReactiveSolveStatus::Changed,
             }],
+            undo,
         )?;
+        let execution_scope = publication.requires_active_plan().then_some(_scope);
         Ok(PreparedFunctionPublication {
             status,
             publication: Some(publication),
             next_realization: candidate,
-            _execution_scope: Some(_scope),
+            _execution_scope: execution_scope,
         })
     }
 
@@ -898,7 +923,7 @@ mod canonical_function_instance_tests {
     use super::*;
 
     struct CanonicalStateFunction {
-        output: Ref<f64>,
+        output: ManagedPort<f64>,
         hidden: Ref<f64>,
     }
 
@@ -941,7 +966,7 @@ mod canonical_function_instance_tests {
     }
 
     struct RepeatedOutputFunction {
-        output: Ref<f64>,
+        output: ValueCell,
     }
 
     impl MechFunctionImpl for RepeatedOutputFunction {
@@ -956,8 +981,8 @@ mod canonical_function_instance_tests {
 
         fn retained_state_ports(&self) -> MResult<Vec<FunctionStatePort<'_>>> {
             Ok(vec![
-                FunctionStatePort::from_ref(&self.output),
-                FunctionStatePort::from_ref(&self.output),
+                FunctionStatePort::from_cell(&self.output),
+                FunctionStatePort::from_cell(&self.output),
             ])
         }
 
@@ -969,11 +994,11 @@ mod canonical_function_instance_tests {
     impl MechFunctionImpl for CanonicalStateFunction {
         fn solve_managed(
             &self,
-            _frame: &mut KernelMemoryFrame<'_>,
+            frame: &mut KernelMemoryFrame<'_>,
             _services: &mut dyn MechExecutionServices,
         ) -> MResult<ReactiveSolveStatus> {
             (|| -> MResult<()> {
-                *self.output.borrow_mut() += 1.0;
+                frame.with_port_init_writer(&self.output, |writer| writer.write_next(2.0))?;
                 *self.hidden.borrow_mut() += 1.0;
                 Ok(())
             })()?;
@@ -1019,8 +1044,7 @@ mod canonical_function_instance_tests {
 
     #[test]
     fn bound_instances_capture_visible_output_once_even_when_retained_ports_repeat_it() {
-        let output = Ref::new(1.0_f64);
-        let output_cell = ValueCell::from_inferred_ref(output.clone(), None).unwrap();
+        let output_cell = ValueCell::from_exact(1.0_f64).unwrap();
 
         let output_only = crate::function::test_planned_instance(
             Box::new(OutputOnlyFunction),
@@ -1033,7 +1057,9 @@ mod canonical_function_instance_tests {
         let repeated = crate::function::test_planned_instance(
             with_semantic_operation(
                 "test/repeated-output",
-                Box::new(RepeatedOutputFunction { output }),
+                Box::new(RepeatedOutputFunction {
+                    output: output_cell.clone(),
+                }),
             ),
             FunctionInvocation::nullary(output_cell),
         );
@@ -1057,13 +1083,12 @@ mod canonical_function_instance_tests {
 
     #[test]
     fn bound_instances_checkpoint_visible_output_and_hidden_state_without_legacy_methods() {
-        let output = Ref::new(1.0_f64);
         let hidden = Ref::new(10.0_f64);
-        let output_cell = ValueCell::from_inferred_ref(output.clone(), None).unwrap();
+        let output_cell = ValueCell::from_exact(1.0_f64).unwrap();
         let invocation = FunctionInvocation::nullary(output_cell.clone());
         let instance = crate::function::test_planned_instance(
             Box::new(CanonicalStateFunction {
-                output: output.clone(),
+                output: ManagedPort::output(output_cell.clone()),
                 hidden: hidden.clone(),
             }),
             invocation,
@@ -1074,21 +1099,30 @@ mod canonical_function_instance_tests {
         instance.capture_state(&mut journal).unwrap();
         assert_eq!(journal.cell_count(), 2);
         instance.solve_result().unwrap();
-        assert_eq!((*output.borrow(), *hidden.borrow()), (2.0, 11.0));
+        assert!(matches!(
+            output_cell.snapshot().unwrap().data(),
+            ValueData::F64(value) if value.to_f64() == 2.0
+        ));
+        assert_eq!(*hidden.borrow(), 11.0);
         journal.restore_before().unwrap();
-        assert_eq!((*output.borrow(), *hidden.borrow()), (1.0, 10.0));
+        assert!(matches!(
+            output_cell.snapshot().unwrap().data(),
+            ValueData::F64(value) if value.to_f64() == 1.0
+        ));
+        assert_eq!(*hidden.borrow(), 10.0);
     }
 
     #[test]
     fn reactive_plans_retain_bound_instances_and_index_their_canonical_cells() {
-        let output = Ref::new(1.0_f64);
         let hidden = Ref::new(10.0_f64);
-        let input = Ref::new(4.0_f64);
-        let output_cell = ValueCell::from_inferred_ref(output.clone(), None).unwrap();
-        let input_cell = ValueCell::from_inferred_ref(input, None).unwrap();
+        let output_cell = ValueCell::from_exact(1.0_f64).unwrap();
+        let input_cell = ValueCell::from_exact(4.0_f64).unwrap();
         let invocation = FunctionInvocation::unary(output_cell.clone(), input_cell.clone());
         let instance = crate::function::test_planned_instance(
-            Box::new(CanonicalStateFunction { output, hidden }),
+            Box::new(CanonicalStateFunction {
+                output: ManagedPort::output(output_cell.clone()),
+                hidden,
+            }),
             invocation,
         );
         let plan = Plan::new();
@@ -1345,7 +1379,8 @@ impl FunctionDefinition {
         }
     }
 
-    pub fn solve_result(&self) -> MResult<ValueCell> {
+    #[cfg(test)]
+    pub(crate) fn solve_result(&self) -> MResult<ValueCell> {
         let plan_brrw = self.plan.borrow();
         for step in plan_brrw.iter() {
             step.solve_result()?;
@@ -1362,59 +1397,6 @@ impl FunctionDefinition {
 
 pub struct UserFunction {
     pub fxn: FunctionDefinition,
-}
-
-impl MechFunctionImpl for UserFunction {
-    fn solve_managed(
-        &self,
-        _frame: &mut KernelMemoryFrame<'_>,
-        _services: &mut dyn MechExecutionServices,
-    ) -> MResult<ReactiveSolveStatus> {
-        (|| -> MResult<()> {
-            self.fxn.solve_result()?;
-            Ok(())
-        })()?;
-        Ok(ReactiveSolveStatus::Changed)
-    }
-    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-        Some(FunctionStatePort::from_cell(&self.fxn.out))
-    }
-    fn capture_retained_state(&self, journal: &mut FunctionCheckpoint) -> MResult<()> {
-        let mut seen_cells: Vec<ValueCell> = Vec::new();
-        let symbols = self.fxn.symbols.try_borrow().map_err(|_| {
-            MechError::new(
-                TransactionStateBorrowConflictError {
-                    function: self.to_string(),
-                    component: "user symbol table",
-                },
-                None,
-            )
-            .with_compiler_loc()
-        })?;
-        for value in symbols
-            .symbols
-            .values()
-            .chain(symbols.mutable_variables.values())
-        {
-            if !value.same_cell(&self.fxn.out)
-                && !seen_cells.iter().any(|seen| seen.same_cell(value))
-            {
-                seen_cells.push(value.clone());
-                journal.capture_value_cell(value)?;
-            }
-        }
-        drop(symbols);
-        self.fxn.plan.capture_transaction_state(journal)
-    }
-    fn to_string(&self) -> String {
-        format!("UserFxn::{:?}", self.fxn.name)
-    }
-}
-#[cfg(feature = "semantic-compiler")]
-impl MechFunctionCompiler for UserFunction {
-    fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        todo!();
-    }
 }
 
 // Reactive Plan

@@ -218,7 +218,10 @@ pub use self::xor::*;
 #[cfg(any(feature = "and", feature = "or", feature = "xor"))]
 #[derive(Clone, Copy)]
 // The shared factory traversal enables only the modes present in a profile.
-#[allow(dead_code)]
+#[allow(
+    dead_code,
+    reason = "feature profiles enable only a subset of logic broadcast modes"
+)]
 enum LogicBroadcast {
     Exact,
     LeftScalar,

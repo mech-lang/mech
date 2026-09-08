@@ -11,8 +11,6 @@ use std::string::{String, ToString};
 use core::{any::type_name, fmt};
 
 use crate::FunctionMatrixStoragePattern;
-#[cfg(feature = "matrix")]
-use crate::structures::{CopyMat, Matrix};
 #[cfg(feature = "semantic-compiler")]
 use crate::{BytecodeCompilerContext, Register};
 use crate::{
@@ -778,119 +776,6 @@ fn function_argument_type_mismatch<T>(cell: &ValueCell, role: FunctionArgumentRo
     .with_compiler_loc()
 }
 
-#[cfg(feature = "matrix")]
-pub(crate) fn matrix_from_cell<T>(
-    cell: &ValueCell,
-    role: FunctionArgumentRole,
-) -> MResult<Matrix<T>>
-where
-    T: FunctionPortBacking + Clone,
-{
-    let FunctionValueRepresentation::Matrix {
-        storage: FunctionMatrixStoragePattern::Exact(storage),
-        ..
-    } = cell.representation()
-    else {
-        return Err(function_matrix_type_mismatch::<T>(cell, role));
-    };
-    #[allow(
-        unreachable_patterns,
-        reason = "the fallback is reachable only in narrow matrix feature profiles"
-    )]
-    let matrix = match storage {
-        #[cfg(feature = "matrix1")]
-        FunctionMatrixRepresentation::Matrix1 => Matrix::Matrix1(
-            cell.try_ref::<crate::Matrix1<T>>()
-                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
-        ),
-        #[cfg(feature = "matrix2")]
-        FunctionMatrixRepresentation::Matrix2 => Matrix::Matrix2(
-            cell.try_ref::<crate::Matrix2<T>>()
-                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
-        ),
-        #[cfg(feature = "matrix3")]
-        FunctionMatrixRepresentation::Matrix3 => Matrix::Matrix3(
-            cell.try_ref::<crate::Matrix3<T>>()
-                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
-        ),
-        #[cfg(feature = "matrix4")]
-        FunctionMatrixRepresentation::Matrix4 => Matrix::Matrix4(
-            cell.try_ref::<crate::Matrix4<T>>()
-                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
-        ),
-        #[cfg(feature = "matrix2x3")]
-        FunctionMatrixRepresentation::Matrix2x3 => Matrix::Matrix2x3(
-            cell.try_ref::<crate::Matrix2x3<T>>()
-                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
-        ),
-        #[cfg(feature = "matrix3x2")]
-        FunctionMatrixRepresentation::Matrix3x2 => Matrix::Matrix3x2(
-            cell.try_ref::<crate::Matrix3x2<T>>()
-                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
-        ),
-        #[cfg(feature = "row_vector2")]
-        FunctionMatrixRepresentation::RowVector2 => Matrix::RowVector2(
-            cell.try_ref::<crate::RowVector2<T>>()
-                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
-        ),
-        #[cfg(feature = "row_vector3")]
-        FunctionMatrixRepresentation::RowVector3 => Matrix::RowVector3(
-            cell.try_ref::<crate::RowVector3<T>>()
-                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
-        ),
-        #[cfg(feature = "row_vector4")]
-        FunctionMatrixRepresentation::RowVector4 => Matrix::RowVector4(
-            cell.try_ref::<crate::RowVector4<T>>()
-                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
-        ),
-        #[cfg(feature = "vector2")]
-        FunctionMatrixRepresentation::Vector2 => Matrix::Vector2(
-            cell.try_ref::<crate::Vector2<T>>()
-                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
-        ),
-        #[cfg(feature = "vector3")]
-        FunctionMatrixRepresentation::Vector3 => Matrix::Vector3(
-            cell.try_ref::<crate::Vector3<T>>()
-                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
-        ),
-        #[cfg(feature = "vector4")]
-        FunctionMatrixRepresentation::Vector4 => Matrix::Vector4(
-            cell.try_ref::<crate::Vector4<T>>()
-                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
-        ),
-        #[cfg(feature = "row_vectord")]
-        FunctionMatrixRepresentation::RowVectorD => Matrix::RowDVector(
-            cell.try_ref::<crate::RowDVector<T>>()
-                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
-        ),
-        #[cfg(feature = "vectord")]
-        FunctionMatrixRepresentation::VectorD => Matrix::DVector(
-            cell.try_ref::<crate::DVector<T>>()
-                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
-        ),
-        #[cfg(feature = "matrixd")]
-        FunctionMatrixRepresentation::MatrixD => Matrix::DMatrix(
-            cell.try_ref::<crate::DMatrix<T>>()
-                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
-        ),
-        _ => return Err(function_matrix_type_mismatch::<T>(cell, role)),
-    };
-    Ok(matrix)
-}
-
-#[cfg(feature = "matrix")]
-fn function_matrix_type_mismatch<T>(cell: &ValueCell, role: FunctionArgumentRole) -> MechError {
-    MechError::new(
-        FunctionArgumentTypeMismatch {
-            role,
-            expected: type_name::<Matrix<T>>().to_string(),
-            found: format!("{:?}", cell.representation()),
-        },
-        None,
-    )
-    .with_compiler_loc()
-}
-
 impl fmt::Debug for FunctionInvocation {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter
@@ -906,7 +791,7 @@ impl FunctionInputPort<'_> {
         self.index
     }
 
-    /// Extracts the exact typed input backing without exposing erased values.
+    /// Borrows an explicitly pinned external input.
     ///
     /// ```compile_fail
     /// use mech_core::FunctionPortBacking;
@@ -914,7 +799,7 @@ impl FunctionInputPort<'_> {
     /// fn require<T: FunctionPortBacking>() {}
     /// require::<Unsupported>();
     /// ```
-    pub fn try_ref<T: FunctionPortBacking>(self) -> MResult<Ref<T>> {
+    pub fn try_external_ref<T: FunctionPortBacking>(self) -> MResult<Ref<T>> {
         self.invocation.inputs[self.index]
             .try_ref::<T>()
             .map_err(|_| {
@@ -1013,44 +898,6 @@ impl FunctionInputPort<'_> {
         }
     }
 
-    /// Extracts the exact typed matrix input wrapper without exposing erased values.
-    ///
-    /// ```compile_fail
-    /// use mech_core::FunctionPortBacking;
-    /// struct Unsupported;
-    /// fn require<T: FunctionPortBacking>() {}
-    /// require::<Unsupported>();
-    /// ```
-    #[cfg(feature = "matrix")]
-    pub fn try_matrix<T>(self) -> MResult<Matrix<T>>
-    where
-        T: FunctionPortBacking + Clone,
-    {
-        matrix_from_cell(
-            &self.invocation.inputs[self.index],
-            FunctionArgumentRole::Input(self.index),
-        )
-    }
-
-    /// Extracts an exact typed matrix as the private copy-kernel interface.
-    ///
-    /// This retains the original typed matrix handles and never exposes a
-    /// universal value or performs an erased-value conversion.
-    #[cfg(feature = "matrix")]
-    pub fn try_copyable_matrix<T>(self) -> MResult<Box<dyn CopyMat<T>>>
-    where
-        T: FunctionPortBacking + Clone,
-        #[cfg(feature = "semantic-compiler")]
-        T: crate::CompileConst
-            + crate::ConstElem
-            + crate::FunctionRuntimeType
-            + crate::CanonicalMatrixElementBacking
-            + core::fmt::Debug
-            + PartialEq,
-    {
-        Ok(self.try_matrix::<T>()?.get_copyable_matrix())
-    }
-
     pub fn value(self) -> FunctionValueInput {
         FunctionValueInput {
             cell: self.invocation.inputs[self.index].clone(),
@@ -1069,7 +916,7 @@ impl fmt::Debug for FunctionInputPort<'_> {
 }
 
 impl FunctionOutputPort<'_> {
-    /// Extracts the exact typed output backing without exposing erased values.
+    /// Borrows an explicitly pinned external output.
     ///
     /// ```compile_fail
     /// use mech_core::FunctionPortBacking;
@@ -1077,7 +924,7 @@ impl FunctionOutputPort<'_> {
     /// fn require<T: FunctionPortBacking>() {}
     /// require::<Unsupported>();
     /// ```
-    pub fn try_ref<T: FunctionPortBacking>(self) -> MResult<Ref<T>> {
+    pub fn try_external_ref<T: FunctionPortBacking>(self) -> MResult<Ref<T>> {
         self.invocation.output.try_ref::<T>().map_err(|_| {
             function_argument_type_mismatch::<T>(
                 &self.invocation.output,

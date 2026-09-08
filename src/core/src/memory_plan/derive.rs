@@ -371,15 +371,15 @@ pub struct ValueLayoutPlanningRequest<'a> {
 pub struct OwnedValueMemoryPlan {
     pub value: ValueLayoutPlan,
     pub storage: PhysicalStorageDescriptor,
-    pub allocations: [super::AllocationPlan; 2],
-    pub arenas: [super::ArenaPlan; 1],
+    pub allocations: Box<[super::AllocationPlan]>,
+    pub arenas: Box<[super::ArenaPlan]>,
     pub transactions: [super::TransactionRequirement; 1],
     pub target: TargetMemoryProfile,
     pub demand: super::ResourceDemand,
     pub output_bytes: u64,
 }
 
-pub fn plan_owned_fixed_value_memory(
+pub fn plan_owned_value_memory(
     request: ValueLayoutPlanningRequest<'_>,
 ) -> Result<OwnedValueMemoryPlan, MemoryPlanError> {
     let value = plan_value_layout(ValueLayoutPlanningRequest {
@@ -388,12 +388,6 @@ pub fn plan_owned_fixed_value_memory(
         witness: request.witness,
         target: request.target,
     })?;
-    if !matches!(
-        value.storage.planned_slot(),
-        PlannedSlotKind::FixedScalar(_)
-    ) {
-        return Err(MemoryPlanError::DescriptorMismatch);
-    }
     let current = super::MemoryObjectId::new(0);
     let staged = super::MemoryObjectId::new(1);
     let arena = super::MemoryArenaId::new(0);
@@ -438,30 +432,8 @@ pub fn plan_owned_fixed_value_memory(
         },
         ..allocation.clone()
     };
-    let demand = super::ResourceDemand {
-        persistent_bytes: capacity,
-        activation_bytes: capacity,
-        turn_peak_bytes: value.capacity_bytes,
-        transaction_peak_bytes: value.capacity_bytes,
-        cloned_bytes: value.current_address_span_bytes,
-        output_elements: value.current_elements,
-        retained_nodes: value.current_elements,
-        storage_bindings: 1,
-        work: super::WorkDemand {
-            compute: value.current_elements,
-            ..super::WorkDemand::default()
-        },
-        ..super::ResourceDemand::default()
-    };
-    let output_bytes = value.current_address_span_bytes;
-    if let Some(violation) =
-        super::evaluate_memory_budget(owner, demand, output_bytes, capacity, request.target.limits)
-            .first()
-            .cloned()
-    {
-        return Err(MemoryPlanError::TargetLimitExceeded { violation });
-    }
-    let arenas = [super::ArenaPlan {
+    let mut allocations = vec![allocation, stage];
+    let mut arenas = vec![super::ArenaPlan {
         id: arena,
         space: request.storage.space,
         backing: super::ArenaBackingKind::ContiguousBytes,
@@ -469,11 +441,116 @@ pub fn plan_owned_fixed_value_memory(
         capacity_bytes: capacity,
         members: vec![current, staged].into_boxed_slice(),
     }];
+    let mut total_capacity = capacity;
+    let mut transaction_peak = value.capacity_bytes;
+    let mut cloned_bytes = value.current_address_span_bytes;
+    if value.payload.required_bytes != 0 || value.payload.maximum_bytes.is_none() {
+        let current_payload = super::MemoryObjectId::new(2);
+        let staged_payload = super::MemoryObjectId::new(3);
+        let payload_arena = super::MemoryArenaId::new(1);
+        let staged_payload_offset = value.payload.required_bytes;
+        let payload_capacity = staged_payload_offset
+            .checked_add(value.payload.required_bytes)
+            .ok_or(MemoryPlanError::ArithmeticOverflow {
+                field: "owned value payload arena",
+            })?;
+        if payload_capacity > request.target.maximum_addressable_bytes {
+            return Err(MemoryPlanError::TargetAddressOverflow);
+        }
+        allocations.push(super::AllocationPlan {
+            id: current_payload,
+            owner: owner.clone(),
+            role: super::AllocationRole::VariablePayload,
+            slot: None,
+            space: request.storage.space,
+            current_bytes: value.payload.current_bytes,
+            capacity_bytes: value.payload.required_bytes,
+            payload_block_capacity: value.payload.required_nodes.max(1),
+            alignment: 1,
+            lifetime: super::MemoryLifetime::Activation,
+            placement: super::ArenaPlacement {
+                arena: payload_arena,
+                offset: 0,
+            },
+            reuse_group: None,
+        });
+        allocations.push(super::AllocationPlan {
+            id: staged_payload,
+            owner: owner.clone(),
+            role: super::AllocationRole::VariablePayload,
+            slot: None,
+            space: request.storage.space,
+            current_bytes: value.payload.current_bytes,
+            capacity_bytes: value.payload.required_bytes,
+            payload_block_capacity: value.payload.required_nodes.max(1),
+            alignment: 1,
+            lifetime: super::MemoryLifetime::Transaction {
+                first: super::MemoryPlanPoint::new(0),
+                last: super::MemoryPlanPoint::new(0),
+            },
+            placement: super::ArenaPlacement {
+                arena: payload_arena,
+                offset: staged_payload_offset,
+            },
+            reuse_group: None,
+        });
+        arenas.push(super::ArenaPlan {
+            id: payload_arena,
+            space: request.storage.space,
+            backing: super::ArenaBackingKind::IndirectOwnedPayloads,
+            alignment: 1,
+            capacity_bytes: payload_capacity,
+            members: vec![current_payload, staged_payload].into_boxed_slice(),
+        });
+        total_capacity = total_capacity.checked_add(payload_capacity).ok_or(
+            MemoryPlanError::ArithmeticOverflow {
+                field: "owned value total capacity",
+            },
+        )?;
+        transaction_peak = transaction_peak
+            .checked_add(value.payload.required_bytes)
+            .ok_or(MemoryPlanError::ArithmeticOverflow {
+                field: "owned value transaction peak",
+            })?;
+        cloned_bytes = cloned_bytes
+            .checked_add(value.payload.current_bytes)
+            .ok_or(MemoryPlanError::ArithmeticOverflow {
+                field: "owned value cloned bytes",
+            })?;
+    }
+    let demand = super::ResourceDemand {
+        persistent_bytes: total_capacity,
+        activation_bytes: total_capacity,
+        turn_peak_bytes: transaction_peak,
+        transaction_peak_bytes: transaction_peak,
+        cloned_bytes,
+        output_elements: value.current_elements,
+        retained_nodes: value.payload.required_nodes.max(value.current_elements),
+        storage_bindings: 1,
+        work: super::WorkDemand {
+            compute: value.current_elements,
+            ..super::WorkDemand::default()
+        },
+        ..super::ResourceDemand::default()
+    };
+    let output_bytes = value_required_bytes(&value)?;
+    if let Some(violation) = super::evaluate_memory_budget(
+        owner,
+        demand,
+        output_bytes,
+        total_capacity,
+        request.target.limits,
+    )
+    .first()
+    .cloned()
+    {
+        return Err(MemoryPlanError::TargetLimitExceeded { violation });
+    }
     Ok(OwnedValueMemoryPlan {
         value,
         storage: request.storage.clone(),
-        allocations: [allocation, stage],
-        arenas,
+        allocations: allocations.into_boxed_slice(),
+        arenas: arenas.into_boxed_slice(),
         transactions: [super::TransactionRequirement::StageAndSwap { current, staged }],
         target: request.target.clone(),
         demand,
@@ -1270,27 +1347,61 @@ fn derive_transactions(
                 field: "transaction bytes",
             })?;
         let arena = arena_for_space(storage.space);
+        let transaction_owner = MemoryObjectOwner::DirectCallPort {
+            call: 0,
+            direction: PortDirection::Output,
+            port: checked_u16(ordinal, "transaction output ordinal")?,
+        };
         allocations.push(AllocationPlan {
             id: staged,
-            owner: MemoryObjectOwner::DirectCallPort {
-                call: 0,
-                direction: PortDirection::Output,
-                port: checked_u16(ordinal, "transaction output ordinal")?,
-            },
+            owner: transaction_owner.clone(),
             role: AllocationRole::TransactionStage,
             slot: Some(output.value.storage.planned_slot()),
             space: storage.space,
-            current_bytes: staged_bytes,
-            capacity_bytes: staged_bytes,
+            current_bytes: output.value.current_address_span_bytes,
+            capacity_bytes: output.value.capacity_bytes,
             payload_block_capacity: 0,
             alignment: output.value.slot.alignment,
             lifetime: MemoryLifetime::Transaction {
                 first: super::MemoryPlanPoint::new(0),
                 last: super::MemoryPlanPoint::new(0),
             },
-            placement: allocate_offset(offsets, arena, staged_bytes, output.value.slot.alignment)?,
+            placement: allocate_offset(
+                offsets,
+                arena,
+                output.value.capacity_bytes,
+                output.value.slot.alignment,
+            )?,
             reuse_group: None,
         });
+        if output.value.payload.required_bytes != 0 || output.value.payload.maximum_bytes.is_none()
+        {
+            let payload = MemoryObjectId::new(*next_object);
+            *next_object = checked_next_object(*next_object)?;
+            let payload_arena = payload_arena_for_space(storage.space);
+            allocations.push(AllocationPlan {
+                id: payload,
+                owner: transaction_owner,
+                role: AllocationRole::VariablePayload,
+                slot: None,
+                space: storage.space,
+                current_bytes: output.value.payload.current_bytes,
+                capacity_bytes: output.value.payload.required_bytes,
+                payload_block_capacity: output.value.payload.required_nodes.max(1),
+                alignment: 1,
+                lifetime: MemoryLifetime::Transaction {
+                    first: super::MemoryPlanPoint::new(0),
+                    last: super::MemoryPlanPoint::new(0),
+                },
+                placement: allocate_offset(
+                    offsets,
+                    payload_arena,
+                    output.value.payload.required_bytes,
+                    1,
+                )?,
+                reuse_group: None,
+            });
+        }
         let transaction = match requirement.alias {
             Some(AliasPolicy::InPlaceRequired { input }) => {
                 let target = inputs

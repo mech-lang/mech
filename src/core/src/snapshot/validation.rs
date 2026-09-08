@@ -132,6 +132,24 @@ impl Value {
         Arc::ptr_eq(&self.root, &other.root)
     }
 
+    /// Sealed handoff from an admitted mutable payload envelope into a
+    /// detached immutable root. The root owns the concrete canonical tree;
+    /// the pointer-free ticket owns its retained allocation charge.
+    pub(crate) fn into_retained_payload_ticket(
+        mut self,
+        ownership: crate::RetainedPayloadTicket,
+    ) -> Self {
+        if let Some(root) = Arc::get_mut(&mut self.root) {
+            root._ownership = Some(ownership);
+            return self;
+        }
+        self.root = Arc::new(FrozenSnapshotStorage {
+            data: self.root.data.clone(),
+            _ownership: Some(ownership),
+        });
+        self
+    }
+
     pub const fn schema(&self) -> SchemaId {
         self.schema
     }

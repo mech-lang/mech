@@ -1,9 +1,9 @@
 use crate::{CanonicalCellId, MemoryObjectId};
 
 #[cfg(feature = "no_std")]
-use alloc::{boxed::Box, vec::Vec};
+use alloc::{boxed::Box, collections::BTreeMap, vec::Vec};
 #[cfg(not(feature = "no_std"))]
-use std::{boxed::Box, vec::Vec};
+use std::{boxed::Box, collections::BTreeMap, vec::Vec};
 
 use core::{
     cell::{RefCell, RefMut},
@@ -20,6 +20,47 @@ use super::{
     OwnedAllocationState, PlanObjectKey, RealizedMemoryPlan, RuntimeBinding,
 };
 use crate::{MemoryLifetime, MemoryPlanPoint};
+
+/// Sealed copy primitive for a pair of already validated owned host regions.
+/// Policy and ownership checks remain in the safe domain module; raw access is
+/// confined to this module with the other typed-view primitives.
+pub(crate) fn copy_prevalidated_host_bytes(
+    source: NonNull<u8>,
+    source_offset: usize,
+    destination: NonNull<u8>,
+    destination_offset: usize,
+    bytes: usize,
+) {
+    // SAFETY: the caller has retained both allocation owners and validated
+    // each offset plus the common byte count against the corresponding layout.
+    // `ptr::copy` deliberately permits two regions in one arena to overlap.
+    unsafe {
+        core::ptr::copy(
+            source.as_ptr().add(source_offset),
+            destination.as_ptr().add(destination_offset),
+            bytes,
+        );
+    }
+}
+
+pub(crate) fn copy_prevalidated_initialization(
+    regions: &mut BTreeMap<PlanObjectKey, super::RuntimeRegionRecord>,
+    source: PlanObjectKey,
+    destination: PlanObjectKey,
+) {
+    let source = regions.get(&source).expect("undo source was prevalidated")
+        as *const super::RuntimeRegionRecord;
+    let destination = regions
+        .get_mut(&destination)
+        .expect("undo destination was prevalidated");
+    // SAFETY: source and destination are distinct validated plan keys and the
+    // map is not structurally modified while the two records are accessed.
+    let source = unsafe { &*source };
+    destination
+        .initialization
+        .copy_from_prevalidated(&source.initialization);
+    destination.initialized_bytes = source.initialized_bytes;
+}
 
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum MemoryAccessMode {
@@ -300,6 +341,8 @@ impl<T: ManagedElement> InitWriter<'_, T> {
 struct ResolvedAccessRequest {
     cell: Option<CanonicalCellId>,
     role: Option<ManagedPortRole>,
+    alias_cell: Option<CanonicalCellId>,
+    alias_role: Option<ManagedPortRole>,
     object: PlanObjectKey,
     mode: MemoryAccessMode,
     lifetime: MemoryLifetime,
@@ -312,7 +355,51 @@ pub struct PreparedCallAccess {
     requests: Box<[ResolvedAccessRequest]>,
     logical_ports: Box<[PreparedLogicalPort]>,
     authority: CallAccessAuthority,
+    undo: Option<PreparedUndoAccess>,
     workspace: RefCell<CallAccessWorkspace>,
+}
+
+#[derive(Clone, Copy, Debug)]
+struct PreparedUndoAccess {
+    input: usize,
+    undo: PlanObjectKey,
+}
+
+/// Armed rollback authority for one admitted in-place transaction. Dropping
+/// it before publication restores the exact bytes and initialization map.
+pub(crate) struct PreparedUndoSnapshot {
+    realized: RealizedMemoryPlan,
+    target: PlanObjectKey,
+    undo: PlanObjectKey,
+    armed: bool,
+}
+
+impl PreparedUndoSnapshot {
+    pub(crate) fn commit(&mut self) {
+        self.armed = false;
+    }
+
+    pub(crate) fn matches(&self, realized: &RealizedMemoryPlan, target: PlanObjectKey) -> bool {
+        self.realized.domain() == realized.domain()
+            && self.realized.revision() == realized.revision()
+            && self.target == target
+    }
+
+    fn restore(&mut self) {
+        if !self.armed {
+            return;
+        }
+        self.realized
+            .copy_undo_image(self.undo, self.target)
+            .expect("an armed undo snapshot retains its prevalidated storage");
+        self.armed = false;
+    }
+}
+
+impl Drop for PreparedUndoSnapshot {
+    fn drop(&mut self) {
+        self.restore();
+    }
 }
 
 #[derive(Debug)]
@@ -364,14 +451,17 @@ impl MemoryDomain {
         if !(plan.inputs.len() == invocation.input_cells().len()
             || plan.inputs.len() == invocation.input_cells().len().saturating_add(1))
             || plan.outputs.len() > 1
+            || plan.transactions.len() != plan.outputs.len()
         {
             return Err(MemoryRuntimeError::CandidateValidationFailed {
                 object: None,
-                reason: "function invocation and call-memory plan arity differ".into(),
+                reason: "function invocation, outputs, and transaction authorities differ in arity"
+                    .into(),
             });
         }
         let mut resolved = Vec::new();
         let mut logical_ports = Vec::new();
+        let mut prepared_undo = None;
         logical_ports
             .try_reserve_exact(plan.inputs.len() + plan.outputs.len())
             .map_err(|_| MemoryRuntimeError::AllocationFailed {
@@ -424,6 +514,8 @@ impl MemoryDomain {
             resolved.push(ResolvedAccessRequest {
                 cell: Some(cell.reactive_cell_id()),
                 role: Some(ManagedPortRole::Input(index)),
+                alias_cell: None,
+                alias_role: None,
                 object,
                 mode: MemoryAccessMode::Read,
                 lifetime,
@@ -441,23 +533,23 @@ impl MemoryDomain {
             });
         }
         for (index, output) in plan.outputs.iter().enumerate() {
-            let target = match plan.transactions.get(index) {
-                Some(crate::TransactionRequirement::StageAndSwap { staged, .. }) => *staged,
-                Some(crate::TransactionRequirement::DoubleBuffer { next, .. }) => *next,
-                Some(crate::TransactionRequirement::UndoSnapshot { target, .. }) => *target,
-                Some(crate::TransactionRequirement::None) | None => output.object,
+            let transaction = plan.transactions[index];
+            let target = match transaction {
+                crate::TransactionRequirement::StageAndSwap { staged, .. } => staged,
+                crate::TransactionRequirement::DoubleBuffer { next, .. } => next,
+                crate::TransactionRequirement::UndoSnapshot { target, .. } => target,
+                crate::TransactionRequirement::None => output.object,
             };
             let object = self.plan_object_key(realized.revision(), target)?;
             let binding = realized.binding(object)?;
-            let transaction = plan.transactions.get(index).copied();
             let region = match transaction {
                 // A staged read-modify-write candidate must first become a
                 // complete initialized value before publication. The kernel
                 // still applies only its resolved ordered indices; this
                 // exclusive lease is authority over the unpublished stage,
                 // not authority to broaden mutation of the published value.
-                Some(crate::TransactionRequirement::StageAndSwap { .. })
-                | Some(crate::TransactionRequirement::DoubleBuffer { .. }) => {
+                crate::TransactionRequirement::StageAndSwap { .. }
+                | crate::TransactionRequirement::DoubleBuffer { .. } => {
                     planned_value_access_region(&output.value)?
                 }
                 _ if matches!(output.region, crate::RegionAccessPlan::WholeValue) => {
@@ -470,20 +562,64 @@ impl MemoryDomain {
                 )?,
             };
             let _ = enclosing_span(object.object(), &binding, MemoryAccessMode::Write, region)?;
-            resolved.push(ResolvedAccessRequest {
-                cell: Some(invocation.output_cell().reactive_cell_id()),
-                role: Some(ManagedPortRole::Output(index)),
-                object,
-                mode: MemoryAccessMode::Write,
-                lifetime: realized.lifetime(object)?,
-                region,
-            });
-            let transaction_pair = match plan.transactions.get(index) {
-                Some(crate::TransactionRequirement::StageAndSwap { current, staged }) => {
-                    Some((*current, *staged))
+            if let crate::TransactionRequirement::UndoSnapshot { undo, .. } = transaction {
+                let input = match plan.aliases.get(index) {
+                    Some(crate::AliasDecision::InPlaceRequired { input }) => *input as usize,
+                    _ => {
+                        return Err(MemoryRuntimeError::CandidateValidationFailed {
+                            object: Some(object.object()),
+                            reason: "undo transaction has no required in-place alias".into(),
+                        });
+                    }
+                };
+                let input_request = resolved
+                    .iter_mut()
+                    .find(|request| request.role == Some(ManagedPortRole::Input(input)))
+                    .ok_or_else(|| MemoryRuntimeError::CandidateValidationFailed {
+                        object: Some(object.object()),
+                        reason: "undo transaction target is not a planned logical input".into(),
+                    })?;
+                input_request.mode = MemoryAccessMode::ExclusiveInPlace;
+                input_request.alias_cell = Some(invocation.output_cell().reactive_cell_id());
+                input_request.alias_role = Some(ManagedPortRole::Output(index));
+                let undo = self.plan_object_key(realized.revision(), undo)?;
+                let undo_binding = realized.binding(undo)?;
+                let undo_region = planned_value_access_region(&output.value)?;
+                let _ = enclosing_span(
+                    undo.object(),
+                    &undo_binding,
+                    MemoryAccessMode::Write,
+                    undo_region,
+                )?;
+                resolved.push(ResolvedAccessRequest {
+                    cell: None,
+                    role: None,
+                    alias_cell: None,
+                    alias_role: None,
+                    object: undo,
+                    mode: MemoryAccessMode::Write,
+                    lifetime: realized.lifetime(undo)?,
+                    region: undo_region,
+                });
+                prepared_undo = Some(PreparedUndoAccess { input, undo });
+            } else {
+                resolved.push(ResolvedAccessRequest {
+                    cell: Some(invocation.output_cell().reactive_cell_id()),
+                    role: Some(ManagedPortRole::Output(index)),
+                    alias_cell: None,
+                    alias_role: None,
+                    object,
+                    mode: MemoryAccessMode::Write,
+                    lifetime: realized.lifetime(object)?,
+                    region,
+                });
+            }
+            let transaction_pair = match transaction {
+                crate::TransactionRequirement::StageAndSwap { current, staged } => {
+                    Some((current, staged))
                 }
-                Some(crate::TransactionRequirement::DoubleBuffer { current, next }) => {
-                    Some((*current, *next))
+                crate::TransactionRequirement::DoubleBuffer { current, next } => {
+                    Some((current, next))
                 }
                 _ => None,
             };
@@ -511,6 +647,8 @@ impl MemoryDomain {
             resolved.push(ResolvedAccessRequest {
                 cell: None,
                 role: None,
+                alias_cell: None,
+                alias_role: None,
                 object,
                 mode: MemoryAccessMode::Write,
                 lifetime: realized.lifetime(object)?,
@@ -541,6 +679,7 @@ impl MemoryDomain {
             requests: resolved.into_boxed_slice(),
             logical_ports: logical_ports.into_boxed_slice(),
             authority: CallAccessAuthority::ActivePlan,
+            undo: prepared_undo,
             workspace: RefCell::new(CallAccessWorkspace { leases }),
         })
     }
@@ -624,6 +763,8 @@ impl MemoryDomain {
             resolved.push(ResolvedAccessRequest {
                 cell: None,
                 role: None,
+                alias_cell: None,
+                alias_role: None,
                 object: request.object,
                 mode: request.mode,
                 lifetime: realized.lifetime(request.object)?,
@@ -646,6 +787,7 @@ impl MemoryDomain {
             requests: resolved.into_boxed_slice(),
             logical_ports: Box::default(),
             authority: CallAccessAuthority::ActivePlan,
+            undo: None,
             workspace: RefCell::new(CallAccessWorkspace { leases }),
         })
     }
@@ -681,6 +823,8 @@ impl MemoryDomain {
             resolved.push(ResolvedAccessRequest {
                 cell: Some(request.cell),
                 role: Some(request.role),
+                alias_cell: None,
+                alias_role: None,
                 object: request.object,
                 mode: request.mode,
                 lifetime: realized.lifetime(request.object)?,
@@ -711,6 +855,7 @@ impl MemoryDomain {
             requests: resolved.into_boxed_slice(),
             logical_ports: Box::default(),
             authority: CallAccessAuthority::ActivePlan,
+            undo: None,
             workspace: RefCell::new(CallAccessWorkspace { leases }),
         })
     }
@@ -811,6 +956,8 @@ impl MemoryDomain {
                 object: request.object,
                 cell: request.cell,
                 role: request.role,
+                alias_cell: request.alias_cell,
+                alias_role: request.alias_role,
                 mode: request.mode,
                 start,
                 end,
@@ -888,7 +1035,21 @@ impl MemoryDomain {
                 true
             }
         };
-        let mut state = self.state.borrow_mut();
+        let undo_coordinates = if let Some(undo) = prepared.undo {
+            let target = workspace
+                .leases
+                .iter()
+                .find(|lease| lease.role == Some(ManagedPortRole::Input(undo.input)))
+                .map(|lease| lease.object)
+                .ok_or_else(|| MemoryRuntimeError::CandidateValidationFailed {
+                    object: Some(undo.undo.object()),
+                    reason: "undo transaction lost its resolved in-place target".into(),
+                })?;
+            Some((target, undo.undo))
+        } else {
+            None
+        };
+        let state = self.state.borrow_mut();
         if state.closed {
             return Err(MemoryRuntimeError::DomainClosed);
         }
@@ -918,7 +1079,7 @@ impl MemoryDomain {
                     current: region.handle.map(AllocationHandle::generation).unwrap_or(0),
                 });
             }
-            if !request.mode.writes()
+            if request.mode != MemoryAccessMode::Write
                 && !region
                     .initialization
                     .contains_region(request.region, region.initialized_bytes)
@@ -953,6 +1114,11 @@ impl MemoryDomain {
                     object: Some(request.object.object()),
                     from: "retired allocation",
                     to: "leased allocation",
+                });
+            }
+            if record.arena_projection_owner.upgrade().is_some() {
+                return Err(MemoryRuntimeError::BorrowConflict {
+                    object: request.object.object(),
                 });
             }
             if matches!(record.space, crate::MemorySpace::Device { .. }) {
@@ -1026,6 +1192,14 @@ impl MemoryDomain {
                 });
             }
         }
+        drop(state);
+        if let Some((target, undo)) = undo_coordinates {
+            // Every conflict, lifetime, capacity, metadata-slot and token check
+            // has completed. Snapshot construction changes only the admitted
+            // undo object and cannot expose a partially acquired call.
+            realized.copy_undo_image(target, undo)?;
+        }
+        let mut state = self.state.borrow_mut();
         let mut token = state.next_lease_token;
         for request in &mut workspace.leases {
             let token = if let Some(handle) = request.handle {
@@ -1049,12 +1223,23 @@ impl MemoryDomain {
         }
         state.next_lease_token = next_token;
         drop(state);
+        let undo_snapshot = if let Some((target, undo)) = undo_coordinates {
+            Some(PreparedUndoSnapshot {
+                realized: realized.clone(),
+                target,
+                undo,
+                armed: true,
+            })
+        } else {
+            None
+        };
         Ok(KernelMemoryFrame {
             domain: self,
             realized,
             leases: workspace,
             #[cfg(feature = "functions")]
             staged_canonical_output: None,
+            undo_snapshot,
         })
     }
 
@@ -1097,6 +1282,8 @@ struct HeldLease {
     object: PlanObjectKey,
     cell: Option<CanonicalCellId>,
     role: Option<ManagedPortRole>,
+    alias_cell: Option<CanonicalCellId>,
+    alias_role: Option<ManagedPortRole>,
     mode: MemoryAccessMode,
     start: u64,
     end: u64,
@@ -1134,6 +1321,7 @@ pub struct KernelMemoryFrame<'a> {
     leases: RefMut<'a, CallAccessWorkspace>,
     #[cfg(feature = "functions")]
     staged_canonical_output: Option<(PlanObjectKey, crate::Value)>,
+    undo_snapshot: Option<PreparedUndoSnapshot>,
 }
 
 /// Borrowed fixed-width scalar/matrix view whose geometry comes from the
@@ -1668,7 +1856,7 @@ impl KernelMemoryFrame<'_> {
         let first_value = first.cell().snapshot()?;
         let second_value = second.cell().snapshot()?;
         let (result, next) = build(&first_value, &second_value, output.cell())?;
-        self.stage_output_value(output.cell(), &next)?;
+        self.stage_output_value(output.cell(), next)?;
         Ok(result)
     }
 
@@ -2333,7 +2521,7 @@ impl KernelMemoryFrame<'_> {
     pub fn stage_output_value(
         &mut self,
         output: &crate::ValueCell,
-        value: &crate::Value,
+        value: crate::Value,
     ) -> crate::MResult<()> {
         let (object, _) = self.output_target(output, 0)?;
         let expected_shape = self
@@ -2359,16 +2547,55 @@ impl KernelMemoryFrame<'_> {
                 }
                 .into());
             }
-            let capacity = self.realized.binding(object)?.capacity_bytes();
-            self.realized.record_initialized(object, capacity)?;
-            self.staged_canonical_output = Some((object, value.clone()));
+            let plan = self.realized.call_plan().ok_or_else(|| {
+                MemoryRuntimeError::CandidateValidationFailed {
+                    object: Some(object.object()),
+                    reason: "canonical output staging requires its authoritative call plan".into(),
+                }
+            })?;
+            let header = plan
+                .allocations
+                .iter()
+                .find(|allocation| allocation.id == object.object())
+                .ok_or(MemoryRuntimeError::UnknownPlanObject { key: object })?;
+            let payload = plan
+                .allocations
+                .iter()
+                .find(|allocation| {
+                    allocation.role == crate::AllocationRole::VariablePayload
+                        && allocation.owner == header.owner
+                        && allocation.lifetime == header.lifetime
+                })
+                .ok_or_else(|| MemoryRuntimeError::CandidateValidationFailed {
+                    object: Some(object.object()),
+                    reason: "canonical output has no planned payload envelope".into(),
+                })?;
+            let payload = self
+                .domain
+                .plan_object_key(self.realized.revision(), payload.id)?;
+            let footprint = value
+                .retained_footprint(output.schema_table().as_ref())
+                .map_err(|_| MemoryRuntimeError::CandidateValidationFailed {
+                    object: Some(payload.object()),
+                    reason: "canonical output footprint is invalid for its declared schema".into(),
+                })?;
+            let allocator = self.domain.planned_allocator(self.realized, payload)?;
+            let ownership =
+                allocator.admit_frozen_snapshot(footprint.retained_bytes, footprint.node_count)?;
+            let staged = value.into_retained_payload_ticket(ownership);
+            let initialized = self
+                .realized
+                .binding(object)?
+                .required_initialization_bytes();
+            self.realized.record_initialized(object, initialized)?;
+            self.staged_canonical_output = Some((object, staged));
             return Ok(());
         }
         crate::cell_binding::initialize_managed_object_from_value(
             self,
             object,
             output.representation(),
-            value,
+            &value,
         )
     }
 
@@ -2385,6 +2612,11 @@ impl KernelMemoryFrame<'_> {
             }
             None => None,
         }
+    }
+
+    #[cfg(feature = "functions")]
+    pub(crate) fn take_undo_snapshot(&mut self) -> Option<PreparedUndoSnapshot> {
+        self.undo_snapshot.take()
     }
 
     #[cfg(feature = "functions")]
@@ -2982,8 +3214,8 @@ impl KernelMemoryFrame<'_> {
         self.leases
             .iter()
             .find(|lease| {
-                lease.cell == Some(cell)
-                    && lease.role == Some(role)
+                ((lease.cell == Some(cell) && lease.role == Some(role))
+                    || (lease.alias_cell == Some(cell) && lease.alias_role == Some(role)))
                     && if write {
                         lease.mode.writes()
                     } else {

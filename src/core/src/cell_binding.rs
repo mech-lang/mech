@@ -94,6 +94,7 @@ pub(crate) struct CellRecord {
     pub(crate) schema_key: SchemaKey,
     pub(crate) schemas: Rc<SchemaTable>,
     publication_locked: cell::Cell<bool>,
+    publication_shape: cell::RefCell<Option<ShapeInstance>>,
     published: cell::RefCell<PublishedCellState>,
 }
 
@@ -181,6 +182,7 @@ impl CellBinding {
                 schema_key,
                 schemas,
                 publication_locked: cell::Cell::new(false),
+                publication_shape: cell::RefCell::new(None),
                 published: cell::RefCell::new(PublishedCellState {
                     shape,
                     version: crate::PublishedValueVersion::initial(),
@@ -206,6 +208,7 @@ impl CellBinding {
                 schema_key,
                 schemas,
                 publication_locked: cell::Cell::new(false),
+                publication_shape: cell::RefCell::new(None),
                 published: cell::RefCell::new(PublishedCellState {
                     shape,
                     version: crate::PublishedValueVersion::initial(),
@@ -217,10 +220,30 @@ impl CellBinding {
     }
 
     fn shape(&self) -> cell::Ref<'_, ShapeInstance> {
+        if self.publication_locked.get() {
+            return cell::Ref::map(self.publication_shape.borrow(), |shape| {
+                shape
+                    .as_ref()
+                    .expect("ready publication retains its pre-commit shape")
+            });
+        }
         cell::Ref::map(self.published.borrow(), |published| &published.shape)
     }
 
     fn try_shape(&self, access: CellAccess) -> MResult<cell::Ref<'_, ShapeInstance>> {
+        if self.publication_locked.get() {
+            return self
+                .publication_shape
+                .try_borrow()
+                .map(|shape| {
+                    cell::Ref::map(shape, |shape| {
+                        shape
+                            .as_ref()
+                            .expect("ready publication retains its pre-commit shape")
+                    })
+                })
+                .map_err(|_| borrow_conflict(access));
+        }
         self.published
             .try_borrow()
             .map(|published| cell::Ref::map(published, |published| &published.shape))
@@ -288,6 +311,7 @@ pub(crate) struct PreparedManagedCellBinding {
     pub(crate) cell: ValueCell,
     pub(crate) expected_version: crate::PublishedValueVersion,
     expected_storage: Rc<dyn ErasedCellStorage>,
+    previous_shape: Option<ShapeInstance>,
     pub(crate) next_shape: Option<ShapeInstance>,
     next_storage: Option<CellStorageBinding>,
     pub(crate) changed: bool,
@@ -315,8 +339,137 @@ struct ManagedHostCellStorage {
 /// replacement installs a new storage owner atomically; no mutable payload
 /// `Ref` survives publication and detached snapshots share the frozen root.
 struct ManagedCanonicalCellStorage {
+    owner: MemoryDomain,
+    realized: crate::RealizedMemoryPlan,
+    object: crate::PlanObjectKey,
+    payload: crate::PlanObjectKey,
     value: Value,
     representation: FunctionValueRepresentation,
+}
+
+fn planned_payload_object(
+    owner: &MemoryDomain,
+    realized: &crate::RealizedMemoryPlan,
+    header: crate::PlanObjectKey,
+) -> MResult<crate::PlanObjectKey> {
+    let allocations: &[crate::AllocationPlan] = if let Some(plan) = realized.owned_value_plan() {
+        &plan.allocations
+    } else {
+        #[cfg(feature = "functions")]
+        {
+            &realized
+                .call_plan()
+                .ok_or_else(|| {
+                    managed_host_shape_error(
+                        header,
+                        "canonical storage has no retained R5 allocation plan",
+                    )
+                })?
+                .allocations
+        }
+        #[cfg(not(feature = "functions"))]
+        {
+            return Err(managed_host_shape_error(
+                header,
+                "canonical storage has no retained R5 allocation plan",
+            ));
+        }
+    };
+    let header_plan = allocations
+        .iter()
+        .find(|allocation| allocation.id == header.object())
+        .ok_or_else(|| {
+            managed_host_shape_error(header, "canonical header is absent from its plan")
+        })?;
+    let payload = allocations
+        .iter()
+        .find(|allocation| {
+            allocation.role == crate::AllocationRole::VariablePayload
+                && allocation.owner == header_plan.owner
+                && allocation.lifetime == header_plan.lifetime
+        })
+        .ok_or_else(|| {
+            managed_host_shape_error(header, "canonical header has no payload envelope")
+        })?;
+    owner
+        .plan_object_key(realized.revision(), payload.id)
+        .map_err(MechError::from)
+}
+
+fn realize_managed_canonical_value(
+    owner: &MemoryDomain,
+    value: Value,
+    schemas: &SchemaTable,
+) -> MResult<(
+    crate::RealizedMemoryPlan,
+    crate::PlanObjectKey,
+    crate::PlanObjectKey,
+    crate::MemoryAccessRegion,
+    Value,
+)> {
+    owner.ensure_open().map_err(MechError::from)?;
+    value.validate_against(schemas).map_err(snapshot_failure)?;
+    let schema = schemas.get(value.schema()).cloned().ok_or_else(|| {
+        snapshot_failure(SnapshotValueError::UnknownSnapshotSchema {
+            schema: value.schema(),
+        })
+    })?;
+    let descriptor = crate::ResolvedValueDescriptor::from_schema(schema, value.shape().clone())
+        .map_err(MechError::from)?;
+    let elements = descriptor
+        .current_extents()
+        .map_err(MechError::from)?
+        .iter()
+        .try_fold(1_u64, |total, extent| total.checked_mul(*extent))
+        .ok_or_else(|| {
+            MechError::new(
+                crate::MemoryPlanError::ArithmeticOverflow {
+                    field: "owned canonical element count",
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+    let footprint = value.retained_footprint(schemas).map_err(|_| {
+        MechError::from(crate::MemoryRuntimeError::CandidateValidationFailed {
+            object: None,
+            reason: "canonical value footprint is invalid for its declared schema".into(),
+        })
+    })?;
+    let target = crate::TargetMemoryProfile::current_direct_host()
+        .map_err(|error| MechError::new(error, None).with_compiler_loc())?;
+    let storage = crate::physical_storage_descriptor(
+        FunctionValueRepresentation::AnyValue,
+        &target,
+        crate::MemoryLifetime::Activation,
+    );
+    let plan = crate::plan_owned_value_memory(crate::ValueLayoutPlanningRequest {
+        descriptor: &descriptor,
+        storage: &storage,
+        witness: crate::MemoryFootprintWitness::Known(crate::CurrentMemoryFootprint {
+            logical_elements: elements,
+            payload_bytes: footprint.retained_bytes,
+            encoded_bytes: footprint.encoded_bytes,
+            retained_nodes: footprint.node_count,
+            shape_parameter_count: descriptor.shape().parameter_values().len() as u64,
+            ..crate::CurrentMemoryFootprint::default()
+        }),
+        target: &target,
+    })
+    .map_err(|error| MechError::new(error, None).with_compiler_loc())?;
+    let object_id = plan.allocations[0].id;
+    let region = crate::memory_runtime::planned_value_access_region(&plan.value)?;
+    let realized = owner.realize_owned_value_plan(plan)?;
+    let object = owner.plan_object_key(realized.revision(), object_id)?;
+    let payload = planned_payload_object(owner, &realized, object)?;
+    let allocator = owner.planned_allocator(&realized, payload)?;
+    let ownership = allocator
+        .admit_frozen_snapshot(footprint.retained_bytes, footprint.node_count)
+        .map_err(MechError::from)?;
+    let value = value.into_retained_payload_ticket(ownership);
+    let initialized = realized.binding(object)?.required_initialization_bytes();
+    realized.record_initialized(object, initialized)?;
+    Ok((realized, object, payload, region, value))
 }
 
 impl ManagedHostCellStorage {
@@ -538,20 +691,21 @@ impl ErasedCellStorage for ManagedCanonicalCellStorage {
     }
 
     fn detached_clone(&self) -> MResult<DetachedCellStorage> {
-        Ok(DetachedCellStorage {
-            identity: crate::types::next_canonical_cell_id()?,
-            storage: Rc::new(Self {
-                value: self.value.clone(),
-                representation: self.representation,
-            }),
-        })
+        Err(MechError::from(
+            crate::MemoryRuntimeError::CandidateValidationFailed {
+                object: Some(self.object.object()),
+                reason: "managed canonical storage is detached through its owning session".into(),
+            },
+        ))
     }
 
     fn same_storage(&self, other: &dyn ErasedCellStorage) -> bool {
-        other
-            .as_any()
-            .downcast_ref::<Self>()
-            .is_some_and(|other| core::ptr::eq(self, other))
+        other.as_any().downcast_ref::<Self>().is_some_and(|other| {
+            self.owner.id() == other.owner.id()
+                && self.realized.revision() == other.realized.revision()
+                && self.object == other.object
+                && self.payload == other.payload
+        })
     }
 
     fn borrow_state(&self) -> CellBorrowState {
@@ -1302,13 +1456,14 @@ impl ValueCell {
     /// authority for storage representation while the operation supplies the
     /// resolved logical matrix dimensions. No erased universal value or
     /// mutable universal handle is involved in output construction.
-    pub(crate) fn allocate_backing_for_representation(
+    fn allocate_backing_for_representation_in(
+        owner: &MemoryDomain,
         representation: FunctionValueRepresentation,
         _matrix_dimensions: Option<(usize, usize)>,
     ) -> MResult<Self> {
         macro_rules! scalar {
             ($value:expr) => {
-                return Self::from_exact($value)
+                return Self::from_exact_in(owner, $value)
             };
         }
         match representation {
@@ -1359,7 +1514,7 @@ impl ValueCell {
                 })?;
                 macro_rules! matrix_element {
                     ($type:ty, $default:expr) => {
-                        return default_matrix_cell::<$type>(storage, dimensions, $default)
+                        return default_matrix_cell_in::<$type>(owner, storage, dimensions, $default)
                     };
                 }
                 match element {
@@ -1420,10 +1575,20 @@ impl ValueCell {
         representation: FunctionValueRepresentation,
         matrix_dimensions: Option<(usize, usize)>,
     ) -> MResult<Self> {
-        Self::allocate_backing_for_representation(representation, matrix_dimensions)
+        let owner = MemoryDomain::new().map_err(MechError::from)?;
+        Self::allocate_backing_for_representation_in(&owner, representation, matrix_dimensions)
     }
 
     pub fn allocate_for_descriptor(
+        descriptor: &crate::ResolvedValueDescriptor,
+        representation: FunctionValueRepresentation,
+    ) -> MResult<Self> {
+        let owner = MemoryDomain::new().map_err(MechError::from)?;
+        Self::allocate_for_descriptor_in(&owner, descriptor, representation)
+    }
+
+    pub(crate) fn allocate_for_descriptor_in(
+        owner: &MemoryDomain,
         descriptor: &crate::ResolvedValueDescriptor,
         representation: FunctionValueRepresentation,
     ) -> MResult<Self> {
@@ -1431,7 +1596,7 @@ impl ValueCell {
         validate_storage_compatibility(descriptor.schema(), descriptor.shape(), &capabilities)?;
         if capabilities.topology == crate::StorageTopology::CanonicalValue {
             let data = initial_data_for_descriptor(descriptor)?;
-            return Self::from_resolved_descriptor_data(descriptor, data);
+            return Self::from_resolved_descriptor_data_in(owner, descriptor, data);
         }
         let extents = descriptor.current_extents().map_err(MechError::from)?;
         let dimensions = if matches!(representation, FunctionValueRepresentation::Matrix { .. }) {
@@ -1473,7 +1638,8 @@ impl ValueCell {
         } else {
             None
         };
-        let allocated = Self::allocate_backing_for_representation(representation, dimensions)?;
+        let allocated =
+            Self::allocate_backing_for_representation_in(owner, representation, dimensions)?;
         let mut builder = SchemaTableBuilder::new();
         let handle = builder
             .insert(descriptor.schema().clone())
@@ -1633,6 +1799,8 @@ impl ValueCell {
             Some(schema_key),
             "canonical value must retain its originating schema table"
         );
+        let (realized, object, payload, _, value) =
+            realize_managed_canonical_value(owner, value, &schemas)?;
         let identity = crate::types::next_canonical_cell_id()?;
         let cell = Self {
             binding: CellBinding::managed(
@@ -1645,6 +1813,10 @@ impl ValueCell {
                 CellStorageBinding::ManagedCanonical {
                     owner: owner.clone(),
                     storage: Rc::new(ManagedCanonicalCellStorage {
+                        owner: owner.clone(),
+                        realized,
+                        object,
+                        payload,
                         representation,
                         value,
                     }),
@@ -1668,6 +1840,22 @@ impl ValueCell {
         })?;
         value.validate_against(&schemas).map_err(snapshot_failure)?;
         Self::from_bound_value_in(owner, value, Rc::new((*schemas).clone()))
+    }
+
+    /// Imports an owned value into an explicit execution session.
+    ///
+    /// This is a copy boundary, not mutable cross-domain sharing. Values that
+    /// already belong to the requested session retain their logical identity;
+    /// other values are snapshotted and reconstructed under the destination
+    /// owner before they enter an executable program.
+    pub fn import_owned_in(&self, owner: &MemoryDomain) -> MResult<Self> {
+        if self
+            .memory_domain()
+            .is_some_and(|current| current.id() == owner.id())
+        {
+            return Ok(self.clone());
+        }
+        Self::from_runtime_value_in(owner, self.snapshot()?, self.schema_table())
     }
 
     /// Constructs an empty standalone set whose element schema is closed and
@@ -1723,6 +1911,17 @@ impl ValueCell {
         dimensions: Box<[u64]>,
         elements: Box<[ValueDataDraft]>,
     ) -> MResult<Self> {
+        let owner = MemoryDomain::new().map_err(MechError::from)?;
+        Self::dynamic_matrix_in(&owner, element, dimensions, elements)
+    }
+
+    /// Constructs a dynamic matrix inside an existing execution session.
+    pub fn dynamic_matrix_in(
+        owner: &MemoryDomain,
+        element: SchemaBody,
+        dimensions: Box<[u64]>,
+        elements: Box<[ValueDataDraft]>,
+    ) -> MResult<Self> {
         let (schema, shape, schemas) = dynamic_matrix_schema(element, dimensions)?;
         let value = finalize_draft(
             schema,
@@ -1730,7 +1929,7 @@ impl ValueCell {
             schemas.as_ref(),
             ValueDataDraft::Matrix(elements),
         )?;
-        Self::from_runtime_value(value, schemas)
+        Self::from_runtime_value_in(owner, value, schemas)
     }
 
     /// Constructs a turn-varying rank-two matrix with a resizable matrix
@@ -1779,6 +1978,18 @@ impl ValueCell {
         descriptor: &crate::ResolvedValueDescriptor,
         data: ValueDataDraft,
     ) -> MResult<Self> {
+        let owner = MemoryDomain::new().map_err(MechError::from)?;
+        Self::from_resolved_descriptor_data_in(&owner, descriptor, data)
+    }
+
+    /// Constructs canonical storage for a resolved descriptor inside an
+    /// existing execution session. Runtime specialization uses this path so
+    /// indirect outputs do not quietly create a second per-cell domain.
+    pub(crate) fn from_resolved_descriptor_data_in(
+        owner: &MemoryDomain,
+        descriptor: &crate::ResolvedValueDescriptor,
+        data: ValueDataDraft,
+    ) -> MResult<Self> {
         let mut builder = SchemaTableBuilder::new();
         let handle = builder
             .insert(descriptor.schema().clone())
@@ -1786,7 +1997,7 @@ impl ValueCell {
         let build = builder.finish().map_err(MechError::from)?;
         let schema = build.resolve(handle).map_err(MechError::from)?;
         let value = finalize_draft(schema, descriptor.shape(), &build.table, data)?;
-        let cell = Self::from_runtime_value(value, Rc::new(build.table))?;
+        let cell = Self::from_runtime_value_in(owner, value, Rc::new(build.table))?;
         cell.validate_descriptor(descriptor)?;
         Ok(cell)
     }
@@ -2004,7 +2215,14 @@ impl ValueCell {
             }
             values.push(canonical_cell_draft(cell)?);
         }
-        Self::dynamic_matrix(
+        let owner = first.memory_domain().ok_or_else(|| {
+            MechError::from(crate::MemoryRuntimeError::CandidateValidationFailed {
+                object: None,
+                reason: "owned matrix element has no memory session".into(),
+            })
+        })?;
+        Self::dynamic_matrix_in(
+            &owner,
             element,
             vec![rows as u64, columns as u64].into_boxed_slice(),
             values.into_boxed_slice(),
@@ -2097,7 +2315,17 @@ impl ValueCell {
             schemas.as_ref(),
             ValueDataDraft::Matrix(values.into_boxed_slice()),
         )?;
-        Self::from_runtime_value(value, schemas)
+        let owner = cells
+            .first()
+            .or_else(|| schema_sources.first())
+            .and_then(ValueCell::memory_domain)
+            .ok_or_else(|| {
+                MechError::from(crate::MemoryRuntimeError::CandidateValidationFailed {
+                    object: None,
+                    reason: "resolved matrix output has no owning memory session".into(),
+                })
+            })?;
+        Self::from_runtime_value_in(&owner, value, schemas)
     }
 
     /// Returns this cell's schema with every shape parameter resolved to its
@@ -2194,13 +2422,24 @@ impl ValueCell {
     /// while retaining canonical schema and shape metadata. Aggregate values
     /// remain backed by immutable [`Value`] data.
     pub(crate) fn from_runtime_value(value: Value, schemas: Rc<SchemaTable>) -> MResult<Self> {
+        let owner = MemoryDomain::new().map_err(MechError::from)?;
+        Self::from_runtime_value_in(&owner, value, schemas)
+    }
+
+    /// Reconstructs runtime storage inside an existing execution session.
+    /// Standalone convenience constructors delegate here with a fresh owner;
+    /// program specialization supplies its shared owner explicitly.
+    pub(crate) fn from_runtime_value_in(
+        owner: &MemoryDomain,
+        value: Value,
+        schemas: Rc<SchemaTable>,
+    ) -> MResult<Self> {
         let value = rebind_value(value, schemas.as_ref())?;
         let schema = value.schema();
         let shape = value.shape().clone();
-        let owner = MemoryDomain::new().map_err(MechError::from)?;
         macro_rules! scalar {
             ($value:expr) => {
-                return Self::from_owned_ref_in(&owner, Ref::new($value), schema, shape, schemas)
+                return Self::from_owned_ref_in(owner, Ref::new($value), schema, shape, schemas)
             };
         }
         match value.data() {
@@ -2251,7 +2490,7 @@ impl ValueCell {
             #[cfg(all(feature = "matrix", feature = "matrixd"))]
             ValueData::Matrix(matrix) => {
                 if let Some(cell) = dynamic_matrix_cell(
-                    &owner,
+                    owner,
                     matrix.elements(),
                     schema,
                     &shape,
@@ -2263,7 +2502,7 @@ impl ValueCell {
             }
             _ => {}
         }
-        Self::from_bound_value_in(&owner, value, schemas)
+        Self::from_bound_value_in(owner, value, schemas)
     }
 
     /// Registers an explicitly caller-owned compatibility value without
@@ -2362,6 +2601,24 @@ impl ValueCell {
         Self::from_owned_ref_in(owner, reference, schema, shape, schemas)
     }
 
+    /// Imports an exact decoded backing into an existing managed session while
+    /// retaining the schema and shape declared by the artifact. The temporary
+    /// `Ref<T>` is consumed during construction; it is never installed as a
+    /// pinned-external cell binding.
+    #[cfg(all(feature = "matrix", feature = "program"))]
+    pub(crate) fn from_decoded_exact_backing_in<T>(
+        owner: &MemoryDomain,
+        reference: Ref<T>,
+        schema: SchemaId,
+        shape: ShapeInstance,
+        schemas: Rc<SchemaTable>,
+    ) -> MResult<Self>
+    where
+        T: CanonicalCellBacking,
+    {
+        Self::from_owned_ref_in(owner, reference, schema, shape, schemas)
+    }
+
     fn from_owned_ref_in<T>(
         owner: &MemoryDomain,
         reference: Ref<T>,
@@ -2402,7 +2659,7 @@ impl ValueCell {
                 shape_parameter_count: descriptor.shape().parameter_values().len() as u64,
                 ..crate::CurrentMemoryFootprint::default()
             });
-            let plan = crate::plan_owned_fixed_value_memory(crate::ValueLayoutPlanningRequest {
+            let plan = crate::plan_owned_value_memory(crate::ValueLayoutPlanningRequest {
                 descriptor: &descriptor,
                 storage: &physical,
                 witness,
@@ -2573,10 +2830,32 @@ impl ValueCell {
     /// cell identity is deliberately fresh. Source specialization uses this
     /// for full-write outputs whose representation mirrors an input.
     pub fn detached_clone(&self) -> MResult<Self> {
-        if self.binding.storage()?.managed_host_binding().is_some() {
-            return Self::from_snapshot(self.snapshot()?);
+        let storage = self.binding.storage()?;
+        if let Some(managed) = storage
+            .as_any()
+            .downcast_ref::<ManagedCanonicalCellStorage>()
+        {
+            let cell = Self {
+                binding: CellBinding::managed(
+                    crate::types::next_canonical_cell_id()?,
+                    self.binding.schema,
+                    self.binding.schema_key,
+                    self.binding.try_shape(CellAccess::Snapshot)?.clone(),
+                    self.binding.schemas.clone(),
+                    managed.owner.clone(),
+                    CellStorageBinding::ManagedCanonical {
+                        owner: managed.owner.clone(),
+                        storage: storage.clone(),
+                    },
+                ),
+            };
+            cell.validate_storage_contract()?;
+            return Ok(cell);
         }
-        let detached = self.binding.storage()?.detached_clone()?;
+        if let Some(owner) = self.memory_domain() {
+            return Self::from_snapshot_in(&owner, self.snapshot()?);
+        }
+        let detached = storage.detached_clone()?;
         let shape = self.binding.try_shape(CellAccess::Snapshot)?.clone();
         let cell = Self {
             binding: CellBinding::pinned_external(
@@ -2644,25 +2923,7 @@ impl ValueCell {
             .version
             .checked_successor("published value version")
             .map_err(|error| MechError::new(error, None).with_compiler_loc())?;
-        if matches!(
-            published.storage,
-            CellStorageBinding::ManagedCanonical { .. }
-        ) {
-            let owner = published
-                .storage
-                .owner()
-                .expect("managed canonical binding retains its owner")
-                .clone();
-            published.storage = CellStorageBinding::ManagedCanonical {
-                owner,
-                storage: Rc::new(ManagedCanonicalCellStorage {
-                    value: value.clone(),
-                    representation: representation_for_schema(schema.body()),
-                }),
-            };
-        } else {
-            published.storage.adapter().replace(&value)?;
-        }
+        published.storage.adapter().replace(&value)?;
         published.shape = value.shape().clone();
         published.version = next_version;
         Ok(())
@@ -2676,9 +2937,6 @@ impl ValueCell {
         value: &Value,
     ) -> MResult<Option<StagedManagedCellUpdate>> {
         let storage = self.binding.storage()?;
-        let Some(managed) = storage.as_any().downcast_ref::<ManagedHostCellStorage>() else {
-            return Ok(None);
-        };
         if value.schema_key() != self.schema_key() {
             return Err(MechError::new(
                 ValueCellSchemaMismatch {
@@ -2689,7 +2947,14 @@ impl ValueCell {
             )
             .with_compiler_loc());
         }
-        let value = rebind_value(value.clone(), self.binding.schemas.as_ref())?;
+        let value = if value.schema() == self.schema() {
+            value
+                .validate_against(self.binding.schemas.as_ref())
+                .map_err(snapshot_failure)?;
+            value.clone()
+        } else {
+            rebind_value(value.clone(), self.binding.schemas.as_ref())?
+        };
         let current = self.binding.try_shape(CellAccess::Replace)?;
         let schema = self
             .binding
@@ -2710,6 +2975,29 @@ impl ValueCell {
         value
             .validate_against(&self.binding.schemas)
             .map_err(snapshot_failure)?;
+        if let Some(managed) = storage
+            .as_any()
+            .downcast_ref::<ManagedCanonicalCellStorage>()
+        {
+            let (realized, object, _, region, value) =
+                realize_managed_canonical_value(&managed.owner, value, &self.binding.schemas)?;
+            let binding = realized.binding(object)?;
+            return Ok(Some(StagedManagedCellUpdate {
+                domain: managed.owner.clone(),
+                realized,
+                candidate: crate::CellPublicationCandidate {
+                    cell: self.clone(),
+                    object,
+                    binding,
+                    region,
+                    value,
+                    changed: true,
+                },
+            }));
+        }
+        let Some(managed) = storage.as_any().downcast_ref::<ManagedHostCellStorage>() else {
+            return Ok(None);
+        };
         let target = managed
             .realized
             .transactions()
@@ -2908,7 +3196,7 @@ impl ValueCell {
             shape_parameter_count: descriptor.shape().parameter_values().len() as u64,
             ..crate::CurrentMemoryFootprint::default()
         });
-        let plan = crate::plan_owned_fixed_value_memory(crate::ValueLayoutPlanningRequest {
+        let plan = crate::plan_owned_value_memory(crate::ValueLayoutPlanningRequest {
             descriptor: &descriptor,
             storage: &storage,
             witness,
@@ -2988,7 +3276,14 @@ impl ValueCell {
             )
             .with_compiler_loc());
         }
-        let next = rebind_value(value.clone(), self.binding.schemas.as_ref())?;
+        let next = if value.schema() == self.binding.schema {
+            value
+                .validate_against(self.binding.schemas.as_ref())
+                .map_err(snapshot_failure)?;
+            value.clone()
+        } else {
+            rebind_value(value.clone(), self.binding.schemas.as_ref())?
+        };
         let published = self
             .binding
             .published
@@ -3019,13 +3314,20 @@ impl ValueCell {
         let representation = self.representation();
         realized.binding(object).map_err(MechError::from)?;
         let next_storage = match &published.storage {
-            CellStorageBinding::ManagedCanonical { .. } => CellStorageBinding::ManagedCanonical {
-                owner: owner.clone(),
-                storage: Rc::new(ManagedCanonicalCellStorage {
-                    value: next.clone(),
-                    representation,
-                }),
-            },
+            CellStorageBinding::ManagedCanonical { .. } => {
+                let payload = planned_payload_object(owner, realized, object)?;
+                CellStorageBinding::ManagedCanonical {
+                    owner: owner.clone(),
+                    storage: Rc::new(ManagedCanonicalCellStorage {
+                        owner: owner.clone(),
+                        realized: realized.clone(),
+                        object,
+                        payload,
+                        value: next.clone(),
+                        representation,
+                    }),
+                }
+            }
             _ => CellStorageBinding::ManagedHost {
                 owner: owner.clone(),
                 storage: Rc::new(ManagedHostCellStorage {
@@ -3041,28 +3343,39 @@ impl ValueCell {
             cell: self.clone(),
             expected_version: published.version,
             expected_storage: published.storage.adapter().clone(),
+            previous_shape: Some(published.shape.clone()),
             next_shape: Some(next_shape),
             next_storage: Some(next_storage),
             changed,
         })
     }
 
-    pub(crate) fn lock_publication(&self, prepared: &PreparedManagedCellBinding) -> MResult<()> {
-        if self.binding.publication_locked.replace(true) {
+    pub(crate) fn lock_publication(
+        &self,
+        prepared: &mut PreparedManagedCellBinding,
+    ) -> MResult<()> {
+        if self.binding.publication_locked.get() {
             return Err(MechError::from(
                 crate::MemoryRuntimeError::PublicationInProgress,
             ));
         }
-        let valid = self
+        let mut publication_shape = self
             .binding
-            .published
+            .publication_shape
             .try_borrow_mut()
-            .is_ok_and(|published| {
-                published.version == prepared.expected_version
-                    && Rc::ptr_eq(published.storage.adapter(), &prepared.expected_storage)
-            });
+            .map_err(|_| borrow_conflict(CellAccess::Replace))?;
+        let valid = match self.binding.published.try_borrow_mut() {
+            Ok(published) => {
+                let valid = published.version == prepared.expected_version
+                    && Rc::ptr_eq(published.storage.adapter(), &prepared.expected_storage);
+                if valid {
+                    *publication_shape = prepared.previous_shape.take();
+                }
+                valid
+            }
+            Err(_) => return Err(borrow_conflict(CellAccess::Replace)),
+        };
         if !valid {
-            self.binding.publication_locked.set(false);
             return Err(MechError::from(
                 crate::MemoryRuntimeError::CandidateValidationFailed {
                     object: None,
@@ -3070,11 +3383,15 @@ impl ValueCell {
                 },
             ));
         }
+        self.binding.publication_locked.set(true);
         Ok(())
     }
 
     pub(crate) fn unlock_publication(&self) {
         self.binding.publication_locked.set(false);
+        if let Ok(mut shape) = self.binding.publication_shape.try_borrow_mut() {
+            *shape = None;
+        }
     }
 
     pub(crate) fn install_managed_binding(
@@ -4198,7 +4515,8 @@ fn child_cells(schemas: Vec<SchemaBody>, values: Vec<ValueDataDraft>) -> MResult
 }
 
 #[cfg(feature = "matrix")]
-fn default_matrix_cell<T>(
+fn default_matrix_cell_in<T>(
+    owner: &MemoryDomain,
     storage: FunctionMatrixStoragePattern,
     dimensions: (usize, usize),
     default: T,
@@ -4229,7 +4547,11 @@ where
                 )
                 .with_compiler_loc());
             }
-            return ValueCell::from_exact_matrix_ref(Ref::new($matrix), rows, columns);
+            return ValueCell::from_inferred_ref_in(
+                owner,
+                Ref::new($matrix),
+                Some((rows, columns)),
+            );
         }};
     }
     match storage {
@@ -4296,10 +4618,10 @@ where
                 )
                 .with_compiler_loc());
             }
-            ValueCell::from_exact_matrix_ref(
+            ValueCell::from_inferred_ref_in(
+                owner,
                 Ref::new(crate::RowDVector::from_element(columns, default)),
-                rows,
-                columns,
+                Some((rows, columns)),
             )
         }
         #[cfg(feature = "vectord")]
@@ -4319,18 +4641,18 @@ where
                 )
                 .with_compiler_loc());
             }
-            ValueCell::from_exact_matrix_ref(
+            ValueCell::from_inferred_ref_in(
+                owner,
                 Ref::new(crate::DVector::from_element(rows, default)),
-                rows,
-                columns,
+                Some((rows, columns)),
             )
         }
         #[cfg(feature = "matrixd")]
         FunctionMatrixStoragePattern::Exact(FunctionMatrixRepresentation::MatrixD) => {
-            ValueCell::from_exact_matrix_ref(
+            ValueCell::from_inferred_ref_in(
+                owner,
                 Ref::new(crate::DMatrix::from_element(rows, columns, default)),
-                rows,
-                columns,
+                Some((rows, columns)),
             )
         }
         _ => Err(MechError::new(
@@ -6203,7 +6525,7 @@ mod tests {
 
     #[cfg(all(feature = "complex", feature = "rational", feature = "matrixd"))]
     #[test]
-    fn canonical_complex_and_rational_matrices_recover_exact_dynamic_backings() {
+    fn canonical_complex_and_rational_matrices_retain_typed_managed_storage() {
         let complex = ValueCell::dynamic_matrix(
             SchemaBody::Complex(crate::FloatWidth::W64),
             vec![2, 2].into_boxed_slice(),
@@ -6218,10 +6540,15 @@ mod tests {
                 .into_boxed_slice(),
         )
         .unwrap();
-        assert!(
-            complex.try_ref::<crate::DMatrix<crate::C64>>().is_ok(),
-            "canonical c64 matrices must retain an exact planning/runtime backing",
+        assert_eq!(
+            complex.representation(),
+            <crate::DMatrix<crate::C64> as FunctionRuntimeType>::REPRESENTATION,
         );
+        assert!(matches!(
+            complex.snapshot().unwrap().data(),
+            ValueData::Matrix(matrix)
+                if matches!(matrix.elements(), SequenceView::Complex64(values) if values.len() == 4)
+        ));
 
         let rational = ValueCell::dynamic_matrix(
             SchemaBody::Rational64,
@@ -6235,19 +6562,28 @@ mod tests {
                 .into_boxed_slice(),
         )
         .unwrap();
-        assert!(
-            rational.try_ref::<crate::DMatrix<crate::R64>>().is_ok(),
-            "canonical r64 matrices must retain an exact planning/runtime backing",
+        assert_eq!(
+            rational.representation(),
+            <crate::DMatrix<crate::R64> as FunctionRuntimeType>::REPRESENTATION,
         );
+        assert!(matches!(
+            rational.snapshot().unwrap().data(),
+            ValueData::Matrix(matrix)
+                if matches!(matrix.elements(), SequenceView::Rational64(values) if values.len() == 4)
+        ));
     }
 
     #[cfg(all(feature = "f64", feature = "matrix2", feature = "matrixd"))]
     #[test]
-    fn declared_output_representations_construct_exact_canonical_backings() {
+    fn declared_output_representations_construct_exact_managed_backings() {
         let scalar =
             ValueCell::test_backing_for_representation(FunctionValueRepresentation::F64, None)
                 .unwrap();
-        assert_eq!(*scalar.try_ref::<f64>().unwrap().borrow(), 0.0);
+        assert_eq!(scalar.representation(), FunctionValueRepresentation::F64);
+        assert!(matches!(
+            scalar.snapshot().unwrap().data(),
+            ValueData::F64(value) if value.to_f64() == 0.0
+        ));
 
         let fixed = ValueCell::test_backing_for_representation(
             <crate::Matrix2<f64> as FunctionRuntimeType>::REPRESENTATION,
@@ -6255,9 +6591,16 @@ mod tests {
         )
         .unwrap();
         assert_eq!(
-            *fixed.try_ref::<crate::Matrix2<f64>>().unwrap().borrow(),
-            crate::Matrix2::zeros(),
+            fixed.representation(),
+            <crate::Matrix2<f64> as FunctionRuntimeType>::REPRESENTATION,
         );
+        assert_eq!(fixed.current_top_level_extents().unwrap().as_ref(), &[2, 2]);
+        assert!(matches!(
+            fixed.snapshot().unwrap().data(),
+            ValueData::Matrix(matrix)
+                if matches!(matrix.elements(), SequenceView::F64(values)
+                    if values.len() == 4 && values.iter().all(|value| value.to_f64() == 0.0))
+        ));
 
         let dynamic = ValueCell::test_backing_for_representation(
             <crate::DMatrix<f64> as FunctionRuntimeType>::REPRESENTATION,
@@ -6265,13 +6608,19 @@ mod tests {
         )
         .unwrap();
         assert_eq!(
-            dynamic
-                .try_ref::<crate::DMatrix<f64>>()
-                .unwrap()
-                .borrow()
-                .shape(),
-            (2, 3),
+            dynamic.representation(),
+            <crate::DMatrix<f64> as FunctionRuntimeType>::REPRESENTATION,
         );
+        assert_eq!(
+            dynamic.current_top_level_extents().unwrap().as_ref(),
+            &[2, 3]
+        );
+        assert!(matches!(
+            dynamic.snapshot().unwrap().data(),
+            ValueData::Matrix(matrix)
+                if matches!(matrix.elements(), SequenceView::F64(values)
+                    if values.len() == 6 && values.iter().all(|value| value.to_f64() == 0.0))
+        ));
 
         let error = ValueCell::test_backing_for_representation(
             <crate::Matrix2<f64> as FunctionRuntimeType>::REPRESENTATION,
@@ -6279,6 +6628,66 @@ mod tests {
         )
         .unwrap_err();
         assert_eq!(error.kind_name(), "ValueCellOutputConstructionUnsupported");
+    }
+
+    #[cfg(all(
+        feature = "f64",
+        feature = "functions",
+        feature = "matrix",
+        feature = "matrixd",
+        feature = "string"
+    ))]
+    #[test]
+    fn descriptor_outputs_keep_the_requested_session_across_storage_topologies() {
+        let owner = MemoryDomain::new().unwrap();
+        let scalar_schema = f64_schema();
+        let scalar_descriptor = crate::ResolvedValueDescriptor::from_schema(
+            scalar_schema.schemas.get(scalar_schema.id).unwrap().clone(),
+            scalar_schema.shape,
+        )
+        .unwrap();
+        let scalar = ValueCell::allocate_for_descriptor_in(
+            &owner,
+            &scalar_descriptor,
+            FunctionValueRepresentation::F64,
+        )
+        .unwrap();
+
+        let string_schema = test_schema(SchemaBody::String, Box::new([]), &[]);
+        let string_descriptor = crate::ResolvedValueDescriptor::from_schema(
+            string_schema.schemas.get(string_schema.id).unwrap().clone(),
+            string_schema.shape,
+        )
+        .unwrap();
+        let string = ValueCell::allocate_for_descriptor_in(
+            &owner,
+            &string_descriptor,
+            FunctionValueRepresentation::String,
+        )
+        .unwrap();
+
+        let matrix_schema = matrix_schema(2, 3);
+        let matrix_descriptor = crate::ResolvedValueDescriptor::from_schema(
+            matrix_schema.schemas.get(matrix_schema.id).unwrap().clone(),
+            matrix_schema.shape,
+        )
+        .unwrap();
+        let matrix = ValueCell::allocate_for_descriptor_in(
+            &owner,
+            &matrix_descriptor,
+            <crate::DMatrix<f64> as FunctionRuntimeType>::REPRESENTATION,
+        )
+        .unwrap();
+
+        for output in [&scalar, &string, &matrix] {
+            assert_eq!(output.memory_domain().unwrap().id(), owner.id());
+        }
+        let string_value = string.snapshot().unwrap();
+        assert!(matches!(string_value.data(), ValueData::String(value) if value.is_empty()));
+        assert_eq!(
+            matrix.current_top_level_extents().unwrap().as_ref(),
+            &[2, 3]
+        );
     }
 
     #[cfg(all(feature = "f64", feature = "functions", feature = "vectord"))]
@@ -6291,13 +6700,12 @@ mod tests {
             cell.representation(),
             <crate::DVector<f64> as FunctionRuntimeType>::REPRESENTATION,
         );
-        assert_eq!(
-            cell.try_ref::<crate::DVector<f64>>()
-                .unwrap()
-                .borrow()
-                .as_slice(),
-            &[1.0, 2.0, 3.0],
-        );
+        assert!(matches!(
+            cell.snapshot().unwrap().data(),
+            ValueData::Matrix(matrix)
+                if matches!(matrix.elements(), SequenceView::F64(values)
+                    if values.iter().map(|value| value.to_f64()).collect::<Vec<_>>() == [1.0, 2.0, 3.0])
+        ));
         assert_eq!(cell.current_top_level_extents().unwrap().as_ref(), &[3, 1]);
     }
 
@@ -6450,7 +6858,13 @@ mod tests {
                 if matches!(value.value().unwrap().data(), ValueData::F64(number) if number.to_f64() == 4.0)
         ));
 
-        *text.try_ref::<String>().unwrap().borrow_mut() = "changed".into();
+        text.replace(
+            &ValueCell::from_exact("changed".to_owned())
+                .unwrap()
+                .snapshot()
+                .unwrap(),
+        )
+        .unwrap();
         let replacement = table
             .rebuild_table_cell_columns(&[("value".into(), vec![text, number].into_boxed_slice())])
             .unwrap();
@@ -6647,6 +7061,44 @@ mod tests {
         assert!(!source.same_cell(&detached));
     }
 
+    #[cfg(feature = "string")]
+    #[test]
+    fn detached_canonical_cells_keep_managed_ownership_and_mutate_independently() {
+        let source = ValueCell::from_exact("source".to_owned()).unwrap();
+        let detached = source.detached_clone().unwrap();
+        assert!(source.has_managed_canonical_storage().unwrap());
+        assert!(detached.has_managed_canonical_storage().unwrap());
+        assert!(source.memory_domain().is_some());
+        assert!(detached.memory_domain().is_some());
+        assert!(!source.same_logical_cell(&detached));
+        assert!(source.same_storage(&detached));
+
+        let replacement = detached
+            .rebuild_data_draft(ValueDataDraft::String("a much larger replacement".into()))
+            .unwrap();
+        detached.replace(&replacement).unwrap();
+        assert!(!source.same_storage(&detached));
+        assert!(matches!(
+            detached.snapshot().unwrap().data(),
+            ValueData::String(value) if value.as_ref() == "a much larger replacement"
+        ));
+        assert!(matches!(
+            source.snapshot().unwrap().data(),
+            ValueData::String(value) if value.as_ref() == "source"
+        ));
+
+        let tuple = ValueCell::tuple_from_cells(&[source.clone(), detached.clone()]).unwrap();
+        let tuple_clone = tuple.detached_clone().unwrap();
+        assert!(tuple_clone.has_managed_canonical_storage().unwrap());
+        assert!(tuple_clone.memory_domain().is_some());
+        let tuple_replacement = tuple_clone
+            .rebuild_tuple_cells(&[detached.clone(), source.clone()])
+            .unwrap();
+        tuple_clone.replace(&tuple_replacement).unwrap();
+        assert!(!tuple.same_logical_cell(&tuple_clone));
+        assert!(!tuple.snapshot_eq(&tuple_clone).unwrap());
+    }
+
     #[cfg(feature = "f64")]
     #[test]
     fn staged_dynamic_replacement_changes_shape_only_when_committed() {
@@ -6725,17 +7177,29 @@ mod tests {
 
         let shape = cell.shape();
         let direct = cell.replace(&replacement).unwrap_err();
-        assert_eq!(direct.kind_name(), "ValueCellBorrowConflict");
+        assert_eq!(
+            direct.kind_name(),
+            "ValueCellBorrowConflict",
+            "unexpected direct replacement error: {direct:?}"
+        );
         assert_eq!(shape.parameter_values(), &[1, 1]);
         assert!(cell.snapshot_eq(&before).unwrap());
         drop(shape);
 
         let shape = cell.shape();
-        let staged = match cell.stage_managed_replacement(&replacement) {
-            Ok(_) => panic!("staging must reject a held shape borrow"),
+        let staged = cell
+            .stage_managed_replacement(&replacement)
+            .unwrap()
+            .expect("managed replacement stages outside published storage");
+        let prepared = staged
+            .domain
+            .prepare_cell_publication(&staged.realized, vec![staged.candidate])
+            .unwrap();
+        let ready = match staged.domain.ready_cell_publication(prepared) {
+            Ok(_) => panic!("the final publication gate must reject a held shape borrow"),
             Err(error) => error,
         };
-        assert_eq!(staged.kind_name(), "ValueCellBorrowConflict");
+        assert_eq!(ready.kind_name(), "ValueCellBorrowConflict");
         assert_eq!(shape.parameter_values(), &[1, 1]);
         assert!(cell.snapshot_eq(&before).unwrap());
     }

@@ -1,8 +1,14 @@
 #![cfg(all(feature = "functions", feature = "f64"))]
+#![feature(where_clause_attrs)]
 
 use mech_core::*;
 use nalgebra::*;
-use std::marker::PhantomData;
+use num_traits::{One, Zero};
+use std::{
+    fmt::{Debug, Display},
+    marker::PhantomData,
+    ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign},
+};
 
 macro_rules! define_probe_family {
     ($name:ident, $lhs:ty, $rhs:ty, $out:ty, $operation:ident) => {
@@ -15,11 +21,24 @@ macro_rules! define_probe_family {
 // macros must resolve their proc-macro dependency at the definition crate.
 mech_core::impl_fxns!(HygieneProbe, T, T, define_probe_family);
 
+macro_rules! managed_add_probe {
+    (@managed $lhs:expr, $rhs:expr) => {
+        Ok($lhs + $rhs)
+    };
+}
+
+mech_core::impl_binop!(ManagedBinopProbeSS, f64, f64, f64, managed_add_probe);
+
 struct NativeProbe;
 
 impl MechFunctionImpl for NativeProbe {
-    fn solve_result(&self) -> MResult<()> {
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut KernelMemoryFrame<'_>,
+        _services: &mut dyn MechExecutionServices,
+    ) -> MResult<ReactiveSolveStatus> {
+        (|| -> MResult<()> { Ok(()) })()?;
+        Ok(ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -73,8 +92,9 @@ impl MechFunctionFactory for UnopProbeF64S {
 fn exported_stdlib_macros_are_hygienic_without_consumer_paste_imports() -> MResult<()> {
     let mut builder = FunctionCatalogBuilder::new();
     mech_core::__mech_install_binop_runtime_factory!(builder, BinopProbe, SS, f64, "f64");
+    mech_core::__mech_install_binop_runtime_factory!(builder, ManagedBinopProbe, SS, f64, "f64");
     mech_core::__mech_install_unop_runtime_factory!(builder, UnopProbe, F64, S);
     let catalog = builder.build()?;
-    assert_eq!(catalog.runtime_factory_count(), 2);
+    assert_eq!(catalog.runtime_factory_count(), 3);
     Ok(())
 }

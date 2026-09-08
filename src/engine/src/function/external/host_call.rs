@@ -28,7 +28,7 @@ impl ExternalHostCallFunction {
             .map(ValueCell::snapshot)
             .collect::<MResult<Vec<_>>>()?;
         let result = services.invoke_host_function(&self.request, &arguments)?;
-        frame.stage_output_value(&self.output, &result)
+        frame.stage_output_value(&self.output, result)
     }
 }
 

@@ -3,9 +3,9 @@ use std::sync::Arc;
 #[cfg(feature = "semantic-compiler")]
 use mech_core::{BytecodeCompilerContext, MechError, MechFunctionCompiler, Register};
 use mech_core::{
-    CanonicalFunctionSpecializer, FunctionInstance, FunctionInvocation, GuardFunctionSafety,
-    MResult, MechErrorKind, MechFunctionImpl, SpecializationContext, SpecializationInput,
-    SpecializationInvocation, SpecializedFunction, Value, ValueCell,
+    CanonicalFunctionSpecializer, FunctionInvocation, GuardFunctionSafety, MResult, MechErrorKind,
+    MechFunctionImpl, SpecializationContext, SpecializationInput, SpecializationInvocation,
+    SpecializedFunction, Value, ValueCell,
 };
 
 pub type NativeClosure = dyn Fn(Vec<Value>) -> MResult<Value> + Send + Sync + 'static;

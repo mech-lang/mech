@@ -6,6 +6,178 @@ use mech_core::{
     MemoryRuntimeError, MemorySpace, ResourceDemand, ReuseGroupId, RuntimePlanView, ValueCell,
 };
 
+#[path = "support/r6_allocation_probe.rs"]
+mod allocation_probe;
+
+#[global_allocator]
+static ALLOCATOR: allocation_probe::ProbeAllocator = allocation_probe::ProbeAllocator;
+
+#[test]
+fn explicit_external_wrappers_share_one_publication_record() {
+    let initial = ValueCell::from_exact(7.0_f64).unwrap().snapshot().unwrap();
+    let schemas = std::rc::Rc::new(initial.schemas().as_ref().unwrap().as_ref().clone());
+    let external = mech_core::Ref::new(7.0_f64);
+    let first = ValueCell::from_ref(
+        external.clone(),
+        initial.schema(),
+        initial.shape().clone(),
+        schemas.clone(),
+    )
+    .unwrap();
+    let second = ValueCell::from_ref(
+        external.clone(),
+        initial.schema(),
+        initial.shape().clone(),
+        schemas.clone(),
+    )
+    .unwrap();
+    let before = second.published_version();
+    first
+        .replace(&ValueCell::from_exact(11.0_f64).unwrap().snapshot().unwrap())
+        .unwrap();
+    assert_eq!(*external.borrow(), 11.0);
+    assert_ne!(second.published_version(), before);
+    assert_eq!(first.published_version(), second.published_version());
+    assert!(first.same_logical_cell(&second));
+    let last = ValueCell::from_ref(
+        external.clone(),
+        initial.schema(),
+        initial.shape().clone(),
+        schemas,
+    )
+    .unwrap();
+    assert_eq!(last.published_version(), second.published_version());
+    assert!(
+        matches!(last.snapshot().unwrap().data(), mech_core::ValueData::F64(value) if value.to_f64() == 11.0)
+    );
+}
+
+#[test]
+fn external_registration_rejects_incompatible_schema_without_replacing_the_record() {
+    let initial = ValueCell::from_exact(7.0_f64).unwrap().snapshot().unwrap();
+    let schemas = std::rc::Rc::new(initial.schemas().as_ref().unwrap().as_ref().clone());
+    let external = mech_core::Ref::new(7.0_f64);
+    let first = ValueCell::from_ref(
+        external.clone(),
+        initial.schema(),
+        initial.shape().clone(),
+        schemas.clone(),
+    )
+    .unwrap();
+    let incompatible = ValueCell::from_exact(7_u64).unwrap().snapshot().unwrap();
+    let error = ValueCell::from_ref(
+        external.clone(),
+        incompatible.schema(),
+        incompatible.shape().clone(),
+        std::rc::Rc::new(incompatible.schemas().as_ref().unwrap().as_ref().clone()),
+    )
+    .unwrap_err();
+    assert_eq!(error.kind_name(), "ValueCellSchemaMismatch");
+    let alias =
+        ValueCell::from_ref(external, initial.schema(), initial.shape().clone(), schemas).unwrap();
+    first
+        .replace(&ValueCell::from_exact(8.0_f64).unwrap().snapshot().unwrap())
+        .unwrap();
+    assert_eq!(alias.published_version(), first.published_version());
+}
+
+#[test]
+fn repeated_complete_call_acquisition_and_release_allocate_no_metadata() {
+    let domain = MemoryDomain::new().unwrap();
+    let revision = domain.issue_plan_revision().unwrap();
+    let allocations = [
+        allocation(0, 0, MemoryLifetime::Activation),
+        allocation(1, 8, MemoryLifetime::Activation),
+    ];
+    let realized = domain
+        .materialize(
+            domain
+                .prepare_realization(runtime_plan_view(
+                    revision,
+                    &allocations,
+                    &[arena(&[0, 1], 16)],
+                    ResourceDemand::default(),
+                    MemoryBudgetLimits::default(),
+                    &[],
+                ))
+                .unwrap(),
+        )
+        .unwrap();
+    let first = domain
+        .plan_object_key(revision, MemoryObjectId::new(0))
+        .unwrap();
+    let second = domain
+        .plan_object_key(revision, MemoryObjectId::new(1))
+        .unwrap();
+    let region = MemoryAccessRegion::Contiguous {
+        offset_bytes: 0,
+        length_bytes: 8,
+    };
+    let initialize = domain
+        .prepare_call(
+            &realized,
+            &[
+                CallAccessRequest {
+                    object: first,
+                    mode: MemoryAccessMode::Write,
+                    region,
+                },
+                CallAccessRequest {
+                    object: second,
+                    mode: MemoryAccessMode::Write,
+                    region,
+                },
+            ],
+        )
+        .unwrap();
+    {
+        let mut frame = domain.acquire_call(&realized, &initialize).unwrap();
+        frame
+            .with_object_init_writer::<u64>(first, |writer| writer.write_next(17))
+            .unwrap();
+        frame
+            .with_object_init_writer::<u64>(second, |writer| writer.write_next(0))
+            .unwrap();
+    }
+    let prepared = domain
+        .prepare_call(
+            &realized,
+            &[
+                CallAccessRequest {
+                    object: first,
+                    mode: MemoryAccessMode::Read,
+                    region,
+                },
+                CallAccessRequest {
+                    object: second,
+                    mode: MemoryAccessMode::Write,
+                    region,
+                },
+            ],
+        )
+        .unwrap();
+    let before = domain.ledger();
+    let (_, count) = allocation_probe::measured(|| {
+        for _ in 0..128 {
+            let mut frame = domain.acquire_call(&realized, &prepared).unwrap();
+            let value = frame
+                .with_bytes(first, |bytes| u64::from_ne_bytes(bytes.try_into().unwrap()))
+                .unwrap();
+            frame
+                .with_bytes_mut(second, |bytes| bytes.copy_from_slice(&value.to_ne_bytes()))
+                .unwrap();
+        }
+    });
+    assert_eq!(count, 0, "fixed-width lease acquisition allocated metadata");
+    assert_eq!(domain.ledger(), before);
+    assert!(
+        domain
+            .allocation_observations()
+            .iter()
+            .all(|allocation| allocation.active_leases == 0)
+    );
+}
+
 #[test]
 fn owned_cell_session_close_revokes_cell_access_but_not_detached_snapshot() {
     let domain = MemoryDomain::new().unwrap();
@@ -16,6 +188,92 @@ fn owned_cell_session_close_revokes_cell_access_but_not_detached_snapshot() {
 
     assert!(cell.snapshot().is_err());
     assert!(matches!(snapshot.data(), mech_core::ValueData::U64(41)));
+}
+
+#[test]
+fn owned_dynamic_cell_growth_moves_its_actual_backing_and_preserves_snapshots() {
+    let domain = MemoryDomain::new().unwrap();
+    let cell = ValueCell::from_exact_in(
+        &domain,
+        nalgebra::DMatrix::from_row_slice(2, 3, &[1.0_f64, 2.0, 3.0, 4.0, 5.0, 6.0]),
+    )
+    .unwrap();
+    let alias = cell.clone();
+    let before = cell.snapshot().unwrap();
+    let original_version = cell.published_version();
+    let replacement = ValueCell::from_exact(nalgebra::DMatrix::from_row_slice(
+        3,
+        2,
+        &[7.0_f64, 8.0, 9.0, 10.0, 11.0, 12.0],
+    ))
+    .unwrap()
+    .snapshot()
+    .unwrap();
+    cell.replace(&replacement).unwrap();
+    let after = alias.snapshot().unwrap();
+    assert!(cell.same_logical_cell(&alias));
+    assert_ne!(cell.published_version(), original_version);
+    assert_eq!(after.shape().parameter_values(), &[3, 2]);
+    let mech_core::ValueData::Matrix(matrix) = after.data() else {
+        panic!("expected matrix")
+    };
+    let mech_core::snapshot::SequenceView::F64(values) = matrix.elements() else {
+        panic!("expected F64")
+    };
+    assert_eq!(
+        values
+            .iter()
+            .map(|value| value.to_f64())
+            .collect::<Vec<_>>(),
+        vec![7.0, 8.0, 9.0, 10.0, 11.0, 12.0]
+    );
+    assert_eq!(before.shape().parameter_values(), &[2, 3]);
+    domain.close().unwrap();
+    assert_eq!(before.shape().parameter_values(), &[2, 3]);
+    assert_eq!(after.shape().parameter_values(), &[3, 2]);
+    assert!(alias.snapshot().is_err());
+}
+
+#[test]
+fn owned_dynamic_shrink_publishes_only_initialized_logical_slots() {
+    let domain = MemoryDomain::new().unwrap();
+    let cell =
+        ValueCell::from_exact_in(&domain, nalgebra::DMatrix::from_element(3, 2, 7.0_f64)).unwrap();
+    let alias = cell.clone();
+    let retained = cell.snapshot().unwrap();
+    let allocations = domain.ledger().live_allocations;
+    for (rows, columns, values) in [
+        (1, 2, vec![11.0_f64, 12.0]),
+        (0, 2, vec![]),
+        (3, 0, vec![]),
+        (3, 2, vec![21.0, 22.0, 23.0, 24.0, 25.0, 26.0]),
+    ] {
+        let replacement =
+            ValueCell::from_exact(nalgebra::DMatrix::from_row_slice(rows, columns, &values))
+                .unwrap()
+                .snapshot()
+                .unwrap();
+        cell.replace(&replacement).unwrap();
+        let published = alias.snapshot().unwrap();
+        assert!(
+            published
+                .snapshot_eq(
+                    &published.schemas().unwrap(),
+                    &replacement,
+                    &replacement.schemas().unwrap()
+                )
+                .unwrap()
+        );
+        // The 1x2 output has a capacity-dependent column stride of three.
+        // Its gaps are not initialized, exposed, or filled to the old extent.
+        assert_eq!(domain.ledger().live_allocations, allocations);
+    }
+    domain.close().unwrap();
+    drop(cell);
+    drop(alias);
+    domain.collect_retired().unwrap();
+    assert_eq!(domain.ledger().committed_bytes, 0);
+    assert_eq!(retained.shape().parameter_values(), &[3, 2]);
 }
 
 fn runtime_plan_view<'a>(
@@ -143,7 +401,7 @@ fn equal_size_scalar_types_cannot_open_each_others_planned_slots() {
         .prepare_managed_call(
             &realized,
             &[ManagedCallAccessRequest::new(
-                port,
+                &port,
                 object,
                 MemoryAccessMode::Write,
                 MemoryAccessRegion::Contiguous {
@@ -153,9 +411,10 @@ fn equal_size_scalar_types_cannot_open_each_others_planned_slots() {
             )],
         )
         .unwrap();
+    domain.activate_realization(&realized).unwrap();
     let mut frame = domain.acquire_call(&realized, &prepared).unwrap();
     assert!(matches!(
-        frame.with_port_init_writer(port, |writer| writer.write_next(1.0)),
+        frame.with_port_init_writer(&port, |writer| writer.write_next(1.0)),
         Err(MemoryRuntimeError::InvalidLayout { .. })
     ));
 }

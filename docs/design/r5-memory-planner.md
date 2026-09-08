@@ -2,7 +2,7 @@
 
 ## 1. Status
 
-R5 Memory planner — complete. R6 Memory runtime cutover — next.
+R5 Memory planner — complete. R6 Memory runtime cutover — in progress.
 
 R5 defines the deterministic memory plan consumed by the existing runtime. R5
 predicts and validates
@@ -255,7 +255,7 @@ conversion, overload, placement policy, backend, or user memory annotation.
 
 ## 15. R6 handoff
 
-R6 consumes the R5 layouts, capacities, arena placements, lifetimes, alias
+R6 is in progress and consumes the R5 layouts, capacities, arena placements, lifetimes, alias
 groups, reuse groups, transaction requirements, budgets, and transfer
 requirements. R6 may implement allocation handles, pools, managed backing,
 actual reuse, movement, publication, and reclamation. R6 may not silently

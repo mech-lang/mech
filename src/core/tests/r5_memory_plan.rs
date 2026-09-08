@@ -1,22 +1,26 @@
 #![cfg(feature = "full")]
 
 use std::collections::BTreeMap;
+use std::{cell::Cell, rc::Rc};
 
 use mech_core::snapshot::{Complex64Bits, F64Bits};
 use mech_core::{
-    AccessMode, AliasDecision, AliasPolicy, BoundCall, CallMemoryPlan, CallMemoryPlanningRequest,
-    CapacityAuthority, CardinalitySpec, ChangeDetectionPolicy, CurrentMemoryFootprint,
-    DeliveryMode, DimensionExpr, DimensionLifetime, DimensionParameterDeclaration,
-    DimensionParameterId, DimensionParameterOrigin, EffectContract, EffectDeliveryPolicy,
-    ExecutionTarget, ExtentEvolution, ExternalInteraction, FunctionValueRepresentation,
-    GrowthPolicy, IdempotencyRequirement, ImplementationMemoryClass, InputPortLayout,
-    InputPortPolicy, MemoryFootprintWitness, MemoryLifetime, MemoryPlanError, MemoryTargetKind,
-    OperationContractDeclaration, OutputConstruction, OutputPortPolicy, PlannedSlotKind, Ref,
-    RegionAccessPlan, RegionPolicy, ResolvedOperationDescriptor, ResolvedValueDescriptor,
-    RuntimeFunctionId, SchemaBody, SchemaDraft, ShapeContractReference, ShapeRule, SlotLayout,
-    TargetMemoryProfile, TransactionRequirement, ValueCell, ValueDataDraft, ValueLayoutPlan,
-    ValueLayoutPlanningRequest, derive_dimension_capacity, physical_storage_descriptor,
-    plan_call_memory, plan_value_layout, replan_call_memory, resolve_deferred_call_demand,
+    AccessMode, AliasDecision, AliasPolicy, BoundCall, BytecodeCompilerContext, CallMemoryPlan,
+    CallMemoryPlanningRequest, CapacityAuthority, CardinalitySpec, ChangeDetectionPolicy,
+    CurrentMemoryFootprint, DeliveryMode, DimensionExpr, DimensionLifetime,
+    DimensionParameterDeclaration, DimensionParameterId, DimensionParameterOrigin, EffectContract,
+    EffectDeliveryPolicy, ExecutionTarget, ExtentEvolution, ExternalInteraction, FunctionInstance,
+    FunctionInvocation, FunctionValueRepresentation, GrowthPolicy, IdempotencyRequirement,
+    ImplementationMemoryClass, InputPortLayout, InputPortPolicy, KernelMemoryFrame, ManagedPort,
+    MechExecutionServices, MechFunctionCompiler, MechFunctionImpl, MemoryFootprintWitness,
+    MemoryLifetime, MemoryPlanError, MemoryRuntimeError, MemoryTargetKind,
+    OperationContractDeclaration, OutputConstruction, OutputPortPolicy, PlannedSlotKind,
+    ReactiveSolveStatus, Ref, RegionAccessPlan, RegionPolicy, Register,
+    ResolvedOperationDescriptor, ResolvedValueDescriptor, RuntimeFunctionId, SchemaBody,
+    SchemaDraft, ShapeContractReference, ShapeRule, SlotLayout, TargetMemoryProfile,
+    TransactionRequirement, ValueCell, ValueDataDraft, ValueLayoutPlan, ValueLayoutPlanningRequest,
+    derive_dimension_capacity, physical_storage_descriptor, plan_call_memory, plan_value_layout,
+    replan_call_memory, resolve_deferred_call_demand,
 };
 use nalgebra::{DMatrix, DVector, RowDVector};
 
@@ -629,6 +633,120 @@ fn alias_plans_choose_safe_reuse_staging_and_required_undo() {
         in_place.transactions[0],
         TransactionRequirement::UndoSnapshot { .. }
     ));
+}
+
+#[test]
+fn required_in_place_calls_use_one_exclusive_view_and_restore_before_publication() {
+    struct Increment {
+        input: ManagedPort<f64>,
+        output: ManagedPort<f64>,
+        fail: Rc<Cell<bool>>,
+        observed: Rc<Cell<f64>>,
+    }
+
+    impl MechFunctionImpl for Increment {
+        fn solve_managed(
+            &self,
+            frame: &mut KernelMemoryFrame<'_>,
+            _: &mut dyn MechExecutionServices,
+        ) -> mech_core::MResult<ReactiveSolveStatus> {
+            let current = frame.with_port_slice(&self.input, |values| values[0])?;
+            self.observed.set(current);
+            frame.with_port_slice_mut(&self.output, |values| values[0] = current + 1.0)?;
+            if self.fail.replace(false) {
+                return Err(MemoryRuntimeError::CandidateValidationFailed {
+                    object: None,
+                    reason: "injected failure after in-place mutation".into(),
+                }
+                .into());
+            }
+            Ok(ReactiveSolveStatus::Changed)
+        }
+
+        fn to_string(&self) -> String {
+            "R6 managed undo increment".into()
+        }
+    }
+
+    impl MechFunctionCompiler for Increment {
+        fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> mech_core::MResult<Register> {
+            Err(MemoryRuntimeError::CandidateValidationFailed {
+                object: None,
+                reason: "test-only managed function is not an artifact compiler".into(),
+            }
+            .into())
+        }
+    }
+
+    let construction = OutputConstruction::ReadModifyWrite {
+        base_input: 0,
+        regions: RegionPolicy::WholeValue,
+    };
+    let plan = scalar_call_plan(
+        construction,
+        AliasPolicy::InPlaceRequired { input: 0 },
+        ChangeDetectionPolicy::AlwaysChanged,
+        ImplementationMemoryClass::NoAdditionalScratch,
+        MemoryLifetime::Activation,
+    )
+    .unwrap();
+    let cell = ValueCell::from_exact(1.0_f64).unwrap();
+    let invocation = FunctionInvocation::unary(cell.clone(), cell.clone());
+    let input = invocation.input(0).unwrap().try_managed::<f64>().unwrap();
+    let output = invocation.output().try_managed::<f64>().unwrap();
+    let fail = Rc::new(Cell::new(true));
+    let observed = Rc::new(Cell::new(0.0));
+    let instance = FunctionInstance::new(
+        Box::new(Increment {
+            input,
+            output,
+            fail: fail.clone(),
+            observed: observed.clone(),
+        }),
+        invocation,
+        Rc::new(plan.clone()),
+    )
+    .unwrap();
+
+    assert!(instance.solve_reactive().is_err());
+    assert!(
+        matches!(cell.snapshot().unwrap().data(), mech_core::ValueData::F64(value) if value.to_f64() == 1.0)
+    );
+    assert_eq!(
+        instance.solve_reactive().unwrap(),
+        ReactiveSolveStatus::Changed
+    );
+    assert_eq!(
+        observed.get(),
+        1.0,
+        "the failed turn restored the undo image"
+    );
+    assert!(
+        matches!(cell.snapshot().unwrap().data(), mech_core::ValueData::F64(value) if value.to_f64() == 2.0)
+    );
+
+    let mut malformed = plan;
+    malformed.transactions = Box::default();
+    let malformed_invocation = FunctionInvocation::unary(cell.clone(), cell);
+    let malformed_input = malformed_invocation
+        .input(0)
+        .unwrap()
+        .try_managed::<f64>()
+        .unwrap();
+    let malformed_output = malformed_invocation.output().try_managed::<f64>().unwrap();
+    assert!(
+        FunctionInstance::new(
+            Box::new(Increment {
+                input: malformed_input,
+                output: malformed_output,
+                fail,
+                observed,
+            }),
+            malformed_invocation,
+            Rc::new(malformed),
+        )
+        .is_err()
+    );
 }
 
 #[test]

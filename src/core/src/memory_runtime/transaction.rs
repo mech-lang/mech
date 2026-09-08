@@ -51,6 +51,18 @@ pub struct CellPublicationCandidate {
 pub struct PreparedCellPublication {
     memory: PreparedPublication,
     replacements: Box<[crate::cell_binding::PreparedManagedCellBinding]>,
+    undo: Option<super::PreparedUndoSnapshot>,
+}
+
+impl PreparedCellPublication {
+    /// Whether this candidate still depends on the execution scope that
+    /// produced it. Owned cells and admitted transaction partners retain
+    /// their storage authority directly, so a reactive batch may finish
+    /// staging sibling calls before acquiring the one atomic publication
+    /// gate for the complete batch.
+    pub(crate) const fn requires_active_plan(&self) -> bool {
+        self.memory.requires_active_plan
+    }
 }
 
 /// Final publication authority. Construction acquires the domain gate and
@@ -242,9 +254,10 @@ impl PreparedCellPublicationBatch {
         }
 
         let mut locked = 0_usize;
-        for publication in self.publications.iter() {
-            for replacement in publication.replacements.iter() {
-                if let Err(error) = replacement.cell.lock_publication(replacement) {
+        for publication in self.publications.iter_mut() {
+            for replacement in publication.replacements.iter_mut() {
+                let cell = replacement.cell.clone();
+                if let Err(error) = cell.lock_publication(replacement) {
                     unlock_batch_cells(&self.publications, locked);
                     return Err(error);
                 }
@@ -319,6 +332,9 @@ impl ReadyPublicationBatch {
             {
                 let cell = replacement.cell.clone();
                 cell.install_managed_binding(replacement, committed.version);
+            }
+            if let Some(undo) = publication.undo.as_mut() {
+                undo.commit();
             }
         }
         unlock_batch_cells(&self.prepared.publications, usize::MAX);
@@ -557,6 +573,26 @@ impl MemoryDomain {
         realized: &RealizedMemoryPlan,
         candidates: Vec<CellPublicationCandidate>,
     ) -> MResult<PreparedCellPublication> {
+        self.prepare_cell_publication_with_undo(realized, candidates, None)
+    }
+
+    pub(crate) fn prepare_cell_publication_with_undo(
+        &self,
+        realized: &RealizedMemoryPlan,
+        candidates: Vec<CellPublicationCandidate>,
+        undo: Option<super::PreparedUndoSnapshot>,
+    ) -> MResult<PreparedCellPublication> {
+        if let Some(undo) = &undo
+            && (candidates.len() != 1 || !undo.matches(realized, candidates[0].object))
+        {
+            return Err(MemoryRuntimeError::CandidateValidationFailed {
+                object: candidates
+                    .first()
+                    .map(|candidate| candidate.object.object()),
+                reason: "undo authority differs from its single publication target".into(),
+            }
+            .into());
+        }
         let mut memory_candidates = Vec::new();
         memory_candidates
             .try_reserve_exact(candidates.len())
@@ -581,50 +617,19 @@ impl MemoryDomain {
                 changed: candidate.changed,
             });
         }
-        // Owned standalone values can outlive the currently selected call
-        // plan. Their live cell record is the authority for updating the
-        // other member of their admitted transaction, never an arbitrary
-        // key into an inactive revision. The read set is locked again at
-        // the ready boundary before any cell binding can change.
-        let mut retained_cell_authority = !candidates.is_empty();
-        for candidate in &candidates {
-            let live = candidate.cell.managed_host_binding()?;
-            retained_cell_authority &= live.is_some_and(|live| {
-                if live.realized.domain() != self.id() {
-                    return false;
-                }
-                if live.realized.revision() != realized.revision() {
-                    // Only the sealed owned-value realizer can produce this
-                    // certificate. It replaces the whole admitted value; no
-                    // old member of a shared program arena is rebound here.
-                    return (live.realized.owned_value_plan().is_some()
-                        || live.realized.has_call_plan())
-                        && realized.owned_value_plan().is_some_and(|plan| {
-                            candidate.object.object() == plan.allocations[0].id
-                                && super::planned_value_access_region(&plan.value)
-                                    .is_ok_and(|region| region == candidate.region)
-                        });
-                }
-                realized.transactions().iter().any(|transaction| {
-                    let (current, next) = match transaction {
-                        crate::TransactionRequirement::StageAndSwap { current, staged } => {
-                            (*current, *staged)
-                        }
-                        crate::TransactionRequirement::DoubleBuffer { current, next } => {
-                            (*current, *next)
-                        }
-                        _ => return false,
-                    };
-                    (live.object.object() == current && candidate.object.object() == next)
-                        || (live.object.object() == next && candidate.object.object() == current)
-                })
-            });
-        }
+        // The prepared cell replacements and the retained realization own
+        // both sides of the publication until the ready gate is acquired.
+        // They are therefore candidate authority in their own right; keeping
+        // the producing execution scope alive would serialize sibling calls
+        // in one session and make an atomic register batch impossible.
+        // `ready_cell_publication` revalidates the revision, storage
+        // incarnation, per-cell version, and domain before installing any
+        // binding.
         let mut memory = self
             .prepare_publication_with_authority(
                 realized,
                 memory_candidates,
-                !retained_cell_authority,
+                false,
                 Some(&candidates),
             )
             .map_err(MechError::from)?;
@@ -680,6 +685,7 @@ impl MemoryDomain {
         Ok(PreparedCellPublication {
             memory,
             replacements: replacements.into_boxed_slice(),
+            undo,
         })
     }
 
@@ -748,8 +754,9 @@ impl MemoryDomain {
             };
         }
         let mut locked = 0_usize;
-        for replacement in prepared.replacements.iter() {
-            if let Err(error) = replacement.cell.lock_publication(replacement) {
+        for replacement in prepared.replacements.iter_mut() {
+            let cell = replacement.cell.clone();
+            if let Err(error) = cell.lock_publication(replacement) {
                 for previous in &prepared.replacements[..locked] {
                     previous.cell.unlock_publication();
                 }
@@ -791,6 +798,9 @@ impl ReadyPublication {
         {
             let cell = replacement.cell.clone();
             cell.install_managed_binding(replacement, committed.version);
+        }
+        if let Some(undo) = self.prepared.undo.as_mut() {
+            undo.commit();
         }
         for replacement in self.prepared.replacements.iter() {
             replacement.cell.unlock_publication();

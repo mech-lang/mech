@@ -196,9 +196,9 @@ macro_rules! impl_binop {
     ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident) => {
         #[derive(Debug)]
         pub struct $struct_name<T> {
-            pub lhs: Ref<$arg1_type>,
-            pub rhs: Ref<$arg2_type>,
-            pub out: Ref<$out_type>,
+            pub lhs: $crate::ManagedPort<T>,
+            pub rhs: $crate::ManagedPort<T>,
+            pub out: $crate::ManagedPort<T>,
         }
         impl<T> MechFunctionFactory for $struct_name<T>
         where
@@ -215,6 +215,8 @@ macro_rules! impl_binop {
                 + ConstElem
                 + CompileConst
                 + FunctionRuntimeType
+                + FunctionPortBacking
+                + $crate::ManagedElement
                 + Add<Output = T>
                 + AddAssign
                 + Sub<Output = T>
@@ -236,6 +238,8 @@ macro_rules! impl_binop {
                 + PartialEq
                 + PartialOrd
                 + FunctionRuntimeType
+                + FunctionPortBacking
+                + $crate::ManagedElement
                 + Add<Output = T>
                 + AddAssign
                 + Sub<Output = T>
@@ -262,9 +266,9 @@ macro_rules! impl_binop {
 
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (out, lhs, rhs) = invocation.expect_binary()?;
-                let lhs: Ref<$arg1_type> = lhs.try_ref()?;
-                let rhs: Ref<$arg2_type> = rhs.try_ref()?;
-                let out: Ref<$out_type> = out.try_ref()?;
+                let lhs = lhs.try_managed_element::<T>()?;
+                let rhs = rhs.try_managed_element::<T>()?;
+                let out = out.try_managed_element::<T>()?;
                 Ok(Box::new(Self { lhs, rhs, out }))
             }
         }
@@ -279,6 +283,8 @@ macro_rules! impl_binop {
                 + 'static
                 + PartialEq
                 + PartialOrd
+                + FunctionPortBacking
+                + $crate::ManagedElement
                 + Add<Output = T>
                 + AddAssign
                 + Sub<Output = T>
@@ -293,27 +299,53 @@ macro_rules! impl_binop {
         {
             fn solve_managed(
                 &self,
-                _frame: &mut KernelMemoryFrame<'_>,
+                frame: &mut KernelMemoryFrame<'_>,
                 _services: &mut dyn MechExecutionServices,
             ) -> MResult<ReactiveSolveStatus> {
-                (|| -> MResult<()> {
-                    let lhs_ptr = self.lhs.as_ptr();
-                    let rhs_ptr = self.rhs.as_ptr();
-                    let out_ptr = self.out.as_mut_ptr();
-                    $op!(lhs_ptr, rhs_ptr, out_ptr);
-                    Ok(())
-                })()?;
+                frame.with_binary_port_views(&self.lhs, &self.rhs, &self.out, |lhs, rhs, out| {
+                    let rows = out.rows();
+                    let columns = out.columns();
+                    let output_len = out.len();
+                    let geometry_error = || $crate::MemoryRuntimeError::InvalidLayout {
+                        object: None,
+                        size: output_len as u64,
+                        alignment: ::core::mem::align_of::<T>() as u32,
+                        reason: "binary input and output geometry disagree",
+                    };
+                    out.try_fill_column_major(|index| {
+                        let row = index % rows;
+                        let column = index / rows;
+                        let element = |value: &$crate::ManagedValueView<'_, T>| {
+                            match (value.rows(), value.columns()) {
+                                (input_rows, input_columns)
+                                    if (input_rows, input_columns) == (rows, columns) =>
+                                {
+                                    value.get(row, column)
+                                }
+                                (1, 1) => value.get(0, 0),
+                                (1, input_columns) if input_columns == columns => {
+                                    value.get(0, column)
+                                }
+                                (input_rows, 1) if input_rows == rows => value.get(row, 0),
+                                _ => None,
+                            }
+                        };
+                        let lhs = element(&lhs).ok_or_else(geometry_error)?;
+                        let rhs = element(&rhs).ok_or_else(geometry_error)?;
+                        $op!(@managed lhs, rhs)
+                    })
+                })?;
                 Ok(ReactiveSolveStatus::Changed)
             }
             fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-                Some(FunctionStatePort::from_ref(&self.out))
+                Some(FunctionStatePort::from_cell(self.out.cell()))
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
 
             fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
-                Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
+                Ok(Some(vec![FunctionStatePort::from_cell(self.out.cell())]))
             }
         }
         #[cfg(feature = "semantic-compiler")]
@@ -327,7 +359,12 @@ macro_rules! impl_binop {
                     stringify!($struct_name),
                     <T as FunctionRuntimeType>::REPRESENTATION
                 );
-                compile_binop!(name, self.out, self.lhs, self.rhs, ctx);
+                let out = $crate::compile_value_cell_register(self.out.cell(), ctx)?;
+                let lhs = $crate::compile_value_cell_register(self.lhs.cell(), ctx)?;
+                let rhs = $crate::compile_value_cell_register(self.rhs.cell(), ctx)?;
+                let function = ctx.function_id(&name)?;
+                ctx.emit_binop(function, out, lhs, rhs);
+                Ok(out)
             }
         }
     };

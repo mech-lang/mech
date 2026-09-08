@@ -85,9 +85,7 @@ impl MechFunctionFactory for IndexUnaryFactory {
 
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
         FACTORY_CALLS.fetch_add(1, Ordering::SeqCst);
-        let (output, input) = invocation.expect_unary()?;
-        let _: crate::Ref<usize> = output.try_ref()?;
-        let _: crate::Ref<usize> = input.try_ref()?;
+        invocation.expect_unary()?;
         Ok(Box::new(CatalogTestFunction))
     }
 }

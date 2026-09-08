@@ -312,7 +312,7 @@ impl MechFunctionImpl for ValueSetComprehension {
             .collect::<Vec<_>>()
             .into_boxed_slice();
         let next = self.output.build_set(values)?;
-        frame.stage_output_value(self.output.cell(), &next)?;
+        frame.stage_output_value(self.output.cell(), next)?;
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
@@ -383,6 +383,16 @@ fn matrix_input_cells(input: &ValueCell) -> MResult<(usize, usize, Vec<ValueCell
                 "matrix input must have exactly two dimensions",
             ));
         };
+        let owner = input.memory_domain().ok_or_else(|| {
+            MechError::from(MemoryRuntimeError::CandidateValidationFailed {
+                object: None,
+                reason: "owned matrix input has no memory session".into(),
+            })
+        })?;
+        let elements = elements
+            .into_iter()
+            .map(|element| element.import_owned_in(&owner))
+            .collect::<MResult<Vec<_>>>()?;
         return Ok((
             usize::try_from(*rows)
                 .map_err(|_| matrix_comprehension_error("matrix row extent exceeds usize"))?,
@@ -733,13 +743,19 @@ impl<const VERTICAL: bool> MechFunctionImpl for ValueMatrixConcatenation<VERTICA
         frame: &mut mech_core::KernelMemoryFrame<'_>,
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
+        // Frozen nullary constructor IDs represent an output that was fully
+        // materialized while the semantic graph was specialized.  They must
+        // not manufacture an empty replacement during runtime activation.
+        if self.arguments.is_empty() {
+            return Ok(mech_core::ReactiveSolveStatus::Unchanged);
+        }
         let (rows, columns, values) =
             managed_matrix_concatenation_drafts(frame, &self.arguments, VERTICAL)?;
         let next = self
             .output
             .cell()
             .rebuild_matrix_drafts(vec![rows as u64, columns as u64].into_boxed_slice(), values)?;
-        frame.stage_output_value(self.output.cell(), &next)?;
+        frame.stage_output_value(self.output.cell(), next)?;
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
@@ -884,6 +900,29 @@ pub type ValueHorizontalConcatenation = ValueMatrixConcatenation<false>;
 #[cfg(feature = "matrix_vertcat")]
 pub type ValueVerticalConcatenation = ValueMatrixConcatenation<true>;
 
+/// Rebinds a frozen concrete concatenation runtime ID to the maintained
+/// logical-port implementation. The catalog entry keeps its historical ID
+/// and signature, while the executable retains no matrix `Ref` or physical
+/// address from specialization.
+#[cfg(any(feature = "matrix_horzcat", feature = "matrix_vertcat"))]
+pub(crate) fn managed_legacy_matrix_concatenation<const VERTICAL: bool>(
+    invocation: FunctionInvocation,
+) -> MResult<Box<dyn MechFunction>> {
+    let output = invocation.output().value();
+    let arguments = invocation.inputs().map(FunctionInputPort::value).collect();
+    let SchemaBody::Matrix { .. } = output.cell().closed_schema_body()? else {
+        return Err(matrix_comprehension_error(format!(
+            "matrix concatenation output must be a matrix, found {:?}",
+            output.representation(),
+        )));
+    };
+    Ok(Box::new(ValueMatrixConcatenation::<VERTICAL> {
+        arguments,
+        output,
+        preserve_specialized_output: false,
+    }))
+}
+
 /// Runtime implementation for `matrix/comprehension`.
 #[cfg(feature = "matrix_comprehensions")]
 #[derive(Debug)]
@@ -905,7 +944,7 @@ impl MechFunctionImpl for ValueMatrixComprehension {
             .output
             .cell()
             .rebuild_matrix_drafts(vec![rows as u64, columns as u64].into_boxed_slice(), drafts)?;
-        frame.stage_output_value(self.output.cell(), &next)?;
+        frame.stage_output_value(self.output.cell(), next)?;
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 

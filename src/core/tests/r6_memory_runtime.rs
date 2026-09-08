@@ -4,12 +4,12 @@ use mech_core::snapshot::F64Bits;
 use mech_core::{
     AllocationPlan, AllocationRole, ArenaBackingKind, ArenaPlacement, ArenaPlan, CallAccessRequest,
     CellPublicationCandidate, FunctionInvocation, KernelMemoryFrame, ManagedCallAccessRequest,
-    ManagedFunctionInstance, ManagedMechFunctionImpl, ManagedPort, ManagedSequence, ManagedString,
-    MechExecutionServices, MemoryAccessMode, MemoryAccessRegion, MemoryArenaId, MemoryBudgetLimits,
-    MemoryBudgetViolation, MemoryDomain, MemoryLifetime, MemoryObjectId, MemoryObjectOwner,
-    MemoryPlanPoint, MemoryPlanRevision, MemoryRuntimeError, MemorySpace, NoMechExecutionServices,
-    PublicationCandidate, ReactiveSolveStatus, ResourceDemand, ReuseGroupId, RuntimeBinding,
-    RuntimePlanView, ValueCell,
+    ManagedPort, ManagedSequence, ManagedString, MechExecutionServices, MechFunctionImpl,
+    MemoryAccessMode, MemoryAccessRegion, MemoryArenaId, MemoryBudgetLimits, MemoryBudgetViolation,
+    MemoryDomain, MemoryLifetime, MemoryObjectId, MemoryObjectOwner, MemoryPlanPoint,
+    MemoryPlanRevision, MemoryRuntimeError, MemorySpace, NoMechExecutionServices,
+    PreparedCellPublication, PreparedCellPublicationBatch, PublicationCandidate,
+    ReactiveSolveStatus, ResourceDemand, ReuseGroupId, RuntimeBinding, RuntimePlanView, ValueCell,
 };
 
 fn runtime_plan_view<'a>(
@@ -272,7 +272,7 @@ fn logical_managed_ports_resolve_only_inside_the_prepared_lease_scope() {
         .prepare_managed_call(
             &realized,
             &[ManagedCallAccessRequest::new(
-                port,
+                &port,
                 object,
                 MemoryAccessMode::Write,
                 MemoryAccessRegion::Contiguous {
@@ -284,7 +284,7 @@ fn logical_managed_ports_resolve_only_inside_the_prepared_lease_scope() {
         .unwrap();
     let mut frame = domain.acquire_call(&realized, &prepared).unwrap();
     frame
-        .with_port_init_writer(port, |writer| writer.write_next(17))
+        .with_port_init_writer(&port, |writer| writer.write_next(17))
         .unwrap();
     drop(frame);
 
@@ -292,7 +292,7 @@ fn logical_managed_ports_resolve_only_inside_the_prepared_lease_scope() {
         .prepare_managed_call(
             &realized,
             &[ManagedCallAccessRequest::new(
-                port,
+                &port,
                 object,
                 MemoryAccessMode::Read,
                 MemoryAccessRegion::WholeInitialized,
@@ -300,7 +300,10 @@ fn logical_managed_ports_resolve_only_inside_the_prepared_lease_scope() {
         )
         .unwrap();
     let frame = domain.acquire_call(&realized, &prepared).unwrap();
-    assert_eq!(frame.with_port_slice(port, |values| values[0]).unwrap(), 17);
+    assert_eq!(
+        frame.with_port_slice(&port, |values| values[0]).unwrap(),
+        17
+    );
     assert!(cell.same_logical_cell(&clone));
 }
 
@@ -350,15 +353,19 @@ fn managed_function_entry_executes_only_through_its_complete_frame() {
         output: ManagedPort<u64>,
     }
 
-    impl ManagedMechFunctionImpl for Double {
+    impl MechFunctionImpl for Double {
         fn solve_managed(
             &self,
             frame: &mut KernelMemoryFrame<'_>,
             _: &mut dyn MechExecutionServices,
         ) -> mech_core::MResult<ReactiveSolveStatus> {
-            let value = frame.with_port_slice(self.input, |values| values[0])?;
-            frame.with_port_init_writer(self.output, |writer| writer.write_next(value * 2))?;
+            let value = frame.with_port_slice(&self.input, |values| values[0])?;
+            frame.with_port_init_writer(&self.output, |writer| writer.write_next(value * 2))?;
             Ok(ReactiveSolveStatus::Changed)
+        }
+
+        fn to_string(&self) -> String {
+            "r6 low-level double kernel".into()
         }
     }
 
@@ -367,7 +374,10 @@ fn managed_function_entry_executes_only_through_its_complete_frame() {
     let invocation = FunctionInvocation::unary(output_cell, input_cell);
     let input = invocation.input(0).unwrap().try_managed::<u64>().unwrap();
     let output = invocation.output().try_managed::<u64>().unwrap();
-    let function = ManagedFunctionInstance::new(Box::new(Double { input, output }), invocation);
+    let function = Double {
+        input: input.clone(),
+        output: output.clone(),
+    };
 
     let domain = MemoryDomain::new().unwrap();
     let revision = domain.issue_plan_revision().unwrap();
@@ -400,7 +410,7 @@ fn managed_function_entry_executes_only_through_its_complete_frame() {
         .prepare_managed_call(
             &realized,
             &[ManagedCallAccessRequest::new(
-                input,
+                &input,
                 input_object,
                 MemoryAccessMode::Write,
                 MemoryAccessRegion::Contiguous {
@@ -413,20 +423,20 @@ fn managed_function_entry_executes_only_through_its_complete_frame() {
     domain
         .acquire_call(&realized, &initialize)
         .unwrap()
-        .with_port_init_writer(input, |writer| writer.write_next(21))
+        .with_port_init_writer(&input, |writer| writer.write_next(21))
         .unwrap();
     let prepared = domain
         .prepare_managed_call(
             &realized,
             &[
                 ManagedCallAccessRequest::new(
-                    input,
+                    &input,
                     input_object,
                     MemoryAccessMode::Read,
                     MemoryAccessRegion::WholeInitialized,
                 ),
                 ManagedCallAccessRequest::new(
-                    output,
+                    &output,
                     output_object,
                     MemoryAccessMode::Write,
                     MemoryAccessRegion::Contiguous {
@@ -448,7 +458,7 @@ fn managed_function_entry_executes_only_through_its_complete_frame() {
         .prepare_managed_call(
             &realized,
             &[ManagedCallAccessRequest::new(
-                output,
+                &output,
                 output_object,
                 MemoryAccessMode::Read,
                 MemoryAccessRegion::WholeInitialized,
@@ -459,28 +469,32 @@ fn managed_function_entry_executes_only_through_its_complete_frame() {
         domain
             .acquire_call(&realized, &read)
             .unwrap()
-            .with_port_slice(output, |values| values[0])
+            .with_port_slice(&output, |values| values[0])
             .unwrap(),
         42,
     );
 }
 
 #[test]
-fn bound_dynamic_matrix_consumer_follows_admitted_physical_growth() {
+fn low_level_matrix_object_remapping_preserves_admission_and_reclamation() {
     struct Sum {
         input: ManagedPort<f64>,
         output: ManagedPort<f64>,
     }
 
-    impl ManagedMechFunctionImpl for Sum {
+    impl MechFunctionImpl for Sum {
         fn solve_managed(
             &self,
             frame: &mut KernelMemoryFrame<'_>,
             _: &mut dyn MechExecutionServices,
         ) -> mech_core::MResult<ReactiveSolveStatus> {
-            let sum = frame.with_port_slice(self.input, |values| values.iter().sum::<f64>())?;
-            frame.with_port_init_writer(self.output, |writer| writer.write_next(sum))?;
+            let sum = frame.with_port_slice(&self.input, |values| values.iter().sum::<f64>())?;
+            frame.with_port_init_writer(&self.output, |writer| writer.write_next(sum))?;
             Ok(ReactiveSolveStatus::Changed)
+        }
+
+        fn to_string(&self) -> String {
+            "r6 low-level sum kernel".into()
         }
     }
 
@@ -503,7 +517,10 @@ fn bound_dynamic_matrix_consumer_follows_admitted_physical_growth() {
         .try_managed_matrix::<f64>()
         .unwrap();
     let output = invocation.output().try_managed::<f64>().unwrap();
-    let function = ManagedFunctionInstance::new(Box::new(Sum { input, output }), invocation);
+    let function = Sum {
+        input: input.clone(),
+        output: output.clone(),
+    };
 
     let domain = MemoryDomain::new().unwrap();
     let initial_revision = domain.issue_plan_revision().unwrap();
@@ -532,15 +549,15 @@ fn bound_dynamic_matrix_consumer_follows_admitted_physical_growth() {
     let initial_output = domain
         .plan_object_key(initial_revision, MemoryObjectId::new(1))
         .unwrap();
-    initialize_managed_f64(&domain, &initial, input, initial_input, &[1.0, 2.0]);
+    initialize_managed_f64(&domain, &initial, &input, initial_input, &[1.0, 2.0]);
     assert_eq!(
         execute_sum(
             &domain,
             &initial,
             &function,
-            input,
+            &input,
             initial_input,
-            output,
+            &output,
             initial_output,
         ),
         3.0,
@@ -576,7 +593,7 @@ fn bound_dynamic_matrix_consumer_follows_admitted_physical_growth() {
         .unwrap();
     let grown_handle = grown.binding(grown_input).unwrap().handle().unwrap();
     assert_ne!(initial_handle, grown_handle);
-    initialize_managed_f64(&domain, &grown, input, grown_input, &[1.0, 2.0, 3.0, 4.0]);
+    initialize_managed_f64(&domain, &grown, &input, grown_input, &[1.0, 2.0, 3.0, 4.0]);
     let replacement = ValueCell::dynamic_matrix(
         mech_core::SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
         vec![2, 2].into_boxed_slice(),
@@ -596,9 +613,9 @@ fn bound_dynamic_matrix_consumer_follows_admitted_physical_growth() {
             &domain,
             &grown,
             &function,
-            input,
+            &input,
             grown_input,
-            output,
+            &output,
             grown_output,
         ),
         10.0,
@@ -609,6 +626,8 @@ fn bound_dynamic_matrix_consumer_follows_admitted_physical_growth() {
     if initial_output_handle != initial_handle {
         domain.retire(initial_output_handle).unwrap();
     }
+    assert_eq!(domain.collect_retired().unwrap(), 0);
+    drop(initial);
     assert_eq!(domain.collect_retired().unwrap(), 1);
 
     let before_failed_growth = matrix_clone.snapshot().unwrap();
@@ -651,7 +670,7 @@ fn bound_dynamic_matrix_consumer_follows_admitted_physical_growth() {
 fn initialize_managed_f64(
     domain: &MemoryDomain,
     realized: &mech_core::RealizedMemoryPlan,
-    port: ManagedPort<f64>,
+    port: &ManagedPort<f64>,
     object: mech_core::PlanObjectKey,
     values: &[f64],
 ) {
@@ -680,10 +699,10 @@ fn initialize_managed_f64(
 fn execute_sum(
     domain: &MemoryDomain,
     realized: &mech_core::RealizedMemoryPlan,
-    function: &ManagedFunctionInstance,
-    input: ManagedPort<f64>,
+    function: &impl MechFunctionImpl,
+    input: &ManagedPort<f64>,
     input_object: mech_core::PlanObjectKey,
-    output: ManagedPort<f64>,
+    output: &ManagedPort<f64>,
     output_object: mech_core::PlanObjectKey,
 ) -> f64 {
     let prepared = domain
@@ -1044,6 +1063,26 @@ fn reused_regions_are_leaseable_only_during_their_declared_plan_interval() {
         ));
     }
     {
+        let first_read = domain
+            .prepare_call(
+                &realized,
+                &[CallAccessRequest {
+                    object: first,
+                    mode: MemoryAccessMode::Read,
+                    region: MemoryAccessRegion::Contiguous {
+                        offset_bytes: 0,
+                        length_bytes: 16,
+                    },
+                }],
+            )
+            .unwrap();
+        let _scope = domain.enter_plan_point(MemoryPlanPoint::new(1)).unwrap();
+        let frame = domain.acquire_call(&realized, &first_read).unwrap();
+        frame
+            .with_bytes(first, |bytes| assert!(bytes.iter().all(|byte| *byte == 11)))
+            .unwrap();
+    }
+    {
         let _scope = domain.enter_plan_point(MemoryPlanPoint::new(2)).unwrap();
         assert!(matches!(
             domain.acquire_call(&realized, &first_write),
@@ -1059,6 +1098,23 @@ fn reused_regions_are_leaseable_only_during_their_declared_plan_interval() {
                 Ok::<(), MemoryRuntimeError>(())
             })
             .unwrap();
+    }
+    {
+        let _scope = domain.enter_plan_point(MemoryPlanPoint::new(0)).unwrap();
+        assert!(matches!(
+            domain.prepare_call(
+                &realized,
+                &[CallAccessRequest {
+                    object: first,
+                    mode: MemoryAccessMode::Read,
+                    region: MemoryAccessRegion::Contiguous {
+                        offset_bytes: 0,
+                        length_bytes: 16,
+                    },
+                }],
+            ),
+            Err(MemoryRuntimeError::UninitializedAccess { .. })
+        ));
     }
 }
 
@@ -1139,9 +1195,17 @@ fn retired_allocations_wait_for_held_leases_before_reclamation() {
         23
     );
     drop(held);
-    assert_eq!(domain.collect_retired().unwrap(), 1);
+    // A live realization is retained storage ownership, independently of
+    // whether any access lease is currently installed.
+    assert_eq!(domain.collect_retired().unwrap(), 0);
     assert!(matches!(
         domain.acquire_call(&realized, &read),
+        Err(MemoryRuntimeError::InvalidLifetimeTransition { .. })
+    ));
+    drop(realized);
+    assert_eq!(domain.collect_retired().unwrap(), 1);
+    assert!(matches!(
+        domain.retire(handle),
         Err(MemoryRuntimeError::StaleAllocationGeneration { .. })
     ));
 }
@@ -1214,7 +1278,9 @@ fn device_registration_and_submission_holds_follow_planned_ownership() {
     domain.retire(owner.handle()).unwrap();
     assert_eq!(domain.collect_retired().unwrap(), 0);
     drop(owner);
-    assert_eq!(domain.collect_retired().unwrap(), 1);
+    assert_eq!(domain.collect_retired().unwrap(), 0);
+    drop(realized);
+    assert_eq!(domain.collect_retired().unwrap(), 2);
 }
 
 #[test]
@@ -1285,6 +1351,8 @@ fn handles_are_domain_scoped_and_stale_generations_are_rejected() {
         Err(MemoryRuntimeError::WrongMemoryDomain { .. })
     ));
     domain.retire(old).unwrap();
+    assert_eq!(domain.collect_retired().unwrap(), 0);
+    drop(first);
     assert_eq!(domain.collect_retired().unwrap(), 1);
 
     let next_revision = domain.issue_plan_revision().unwrap();
@@ -1379,6 +1447,8 @@ fn indirect_payload_envelopes_are_owned_separately_and_charged_once() {
     assert_eq!(domain.collect_retired().unwrap(), 0);
     drop(string);
     drop(left_allocator);
+    assert_eq!(domain.collect_retired().unwrap(), 0);
+    drop(realized);
     assert_eq!(domain.collect_retired().unwrap(), 1);
 }
 
@@ -1466,7 +1536,7 @@ fn publication_versions_change_only_for_changed_candidates() {
 }
 
 #[test]
-fn multi_cell_publication_rolls_back_every_applied_value_on_late_conflict() {
+fn multi_cell_publication_rejects_late_conflict_before_any_value_changes() {
     let domain = MemoryDomain::new().unwrap();
     let left = ValueCell::from_exact_in(&domain, 1_u64).unwrap();
     let right = ValueCell::from_exact_in(&domain, 2_u64).unwrap();
@@ -1507,6 +1577,39 @@ fn multi_cell_publication_rolls_back_every_applied_value_on_late_conflict() {
     let right_object = domain
         .plan_object_key(revision, MemoryObjectId::new(1))
         .unwrap();
+    domain.activate_realization(&realized).unwrap();
+    let initialization = domain
+        .prepare_call(
+            &realized,
+            &[
+                CallAccessRequest {
+                    object: left_object,
+                    mode: MemoryAccessMode::Write,
+                    region: MemoryAccessRegion::Contiguous {
+                        offset_bytes: 0,
+                        length_bytes: 8,
+                    },
+                },
+                CallAccessRequest {
+                    object: right_object,
+                    mode: MemoryAccessMode::Write,
+                    region: MemoryAccessRegion::Contiguous {
+                        offset_bytes: 0,
+                        length_bytes: 8,
+                    },
+                },
+            ],
+        )
+        .unwrap();
+    {
+        let mut frame = domain.acquire_call(&realized, &initialization).unwrap();
+        frame
+            .with_object_init_writer::<u64>(left_object, |writer| writer.write_next(10))
+            .unwrap();
+        frame
+            .with_object_init_writer::<u64>(right_object, |writer| writer.write_next(20))
+            .unwrap();
+    }
     let prepared = domain
         .prepare_cell_publication(
             &realized,
@@ -1515,6 +1618,10 @@ fn multi_cell_publication_rolls_back_every_applied_value_on_late_conflict() {
                     cell: left.clone(),
                     object: left_object,
                     binding: realized.binding(left_object).unwrap(),
+                    region: MemoryAccessRegion::Contiguous {
+                        offset_bytes: 0,
+                        length_bytes: 8,
+                    },
                     value: left_next,
                     changed: true,
                 },
@@ -1522,6 +1629,10 @@ fn multi_cell_publication_rolls_back_every_applied_value_on_late_conflict() {
                     cell: right.clone(),
                     object: right_object,
                     binding: realized.binding(right_object).unwrap(),
+                    region: MemoryAccessRegion::Contiguous {
+                        offset_bytes: 0,
+                        length_bytes: 8,
+                    },
                     value: right_next,
                     changed: true,
                 },
@@ -1543,6 +1654,10 @@ fn multi_cell_publication_rolls_back_every_applied_value_on_late_conflict() {
                     cell: left.clone(),
                     object: left_object,
                     binding: realized.binding(left_object).unwrap(),
+                    region: MemoryAccessRegion::Contiguous {
+                        offset_bytes: 0,
+                        length_bytes: 8,
+                    },
                     value: left
                         .rebuild_data_draft(mech_core::ValueDataDraft::U64(10))
                         .unwrap(),
@@ -1552,6 +1667,10 @@ fn multi_cell_publication_rolls_back_every_applied_value_on_late_conflict() {
                     cell: right.clone(),
                     object: right_object,
                     binding: realized.binding(right_object).unwrap(),
+                    region: MemoryAccessRegion::Contiguous {
+                        offset_bytes: 0,
+                        length_bytes: 8,
+                    },
                     value: right
                         .rebuild_data_draft(mech_core::ValueDataDraft::U64(20))
                         .unwrap(),
@@ -1560,12 +1679,106 @@ fn multi_cell_publication_rolls_back_every_applied_value_on_late_conflict() {
             ],
         )
         .unwrap();
-    let committed = domain.ready_cell_publication(prepared).unwrap().commit();
+    let ready = domain.ready_cell_publication(prepared).unwrap();
+    let shape_held_after_ready = right.shape();
+    let committed = ready.commit();
+    assert!(shape_held_after_ready.parameter_values().is_empty());
+    drop(shape_held_after_ready);
     assert_eq!(committed.len(), 2);
     assert_eq!(u64_cell(&left_alias), 10);
     assert_eq!(u64_cell(&right_alias), 20);
     assert!(left.published_version() > left_before_version);
     assert!(right.published_version() > right_before_version);
+}
+
+#[test]
+fn sibling_call_candidates_in_one_session_publish_as_one_atomic_batch() {
+    fn stage(domain: &MemoryDomain, cell: &ValueCell, value: u64) -> PreparedCellPublication {
+        let revision = domain.issue_plan_revision().unwrap();
+        let allocations = [allocation(0, 0, 0, 0, 8, MemoryLifetime::Activation, None)];
+        let arenas = [arena(0, ArenaBackingKind::ContiguousBytes, 8, &[0])];
+        let realized = domain
+            .materialize(
+                domain
+                    .prepare_realization(runtime_plan_view(
+                        revision,
+                        &allocations,
+                        &arenas,
+                        ResourceDemand::default(),
+                        MemoryBudgetLimits::default(),
+                        &[],
+                    ))
+                    .unwrap(),
+            )
+            .unwrap();
+        let object = domain
+            .plan_object_key(revision, MemoryObjectId::new(0))
+            .unwrap();
+        domain.activate_realization(&realized).unwrap();
+        let scope = domain.enter_plan_point(MemoryPlanPoint::new(0)).unwrap();
+        let initialization = domain
+            .prepare_call(
+                &realized,
+                &[CallAccessRequest {
+                    object,
+                    mode: MemoryAccessMode::Write,
+                    region: MemoryAccessRegion::Contiguous {
+                        offset_bytes: 0,
+                        length_bytes: 8,
+                    },
+                }],
+            )
+            .unwrap();
+        domain
+            .acquire_call(&realized, &initialization)
+            .unwrap()
+            .with_object_init_writer::<u64>(object, |writer| writer.write_next(value))
+            .unwrap();
+        let publication = domain
+            .prepare_cell_publication(
+                &realized,
+                vec![CellPublicationCandidate {
+                    cell: cell.clone(),
+                    object,
+                    binding: realized.binding(object).unwrap(),
+                    region: MemoryAccessRegion::Contiguous {
+                        offset_bytes: 0,
+                        length_bytes: 8,
+                    },
+                    value: cell
+                        .rebuild_data_draft(mech_core::ValueDataDraft::U64(value))
+                        .unwrap(),
+                    changed: true,
+                }],
+            )
+            .unwrap();
+        drop(scope);
+        publication
+    }
+
+    let domain = MemoryDomain::new().unwrap();
+    let left = ValueCell::from_exact_in(&domain, 1_u64).unwrap();
+    let right = ValueCell::from_exact_in(&domain, 2_u64).unwrap();
+    let left_version = left.published_version();
+    let right_version = right.published_version();
+    let left_candidate = stage(&domain, &left, 10);
+    let right_candidate = stage(&domain, &right, 20);
+
+    // Staging owns both candidates but exposes neither of them.
+    assert_eq!(u64_cell(&left), 1);
+    assert_eq!(u64_cell(&right), 2);
+    assert_eq!(left.published_version(), left_version);
+    assert_eq!(right.published_version(), right_version);
+
+    PreparedCellPublicationBatch::new(vec![left_candidate, right_candidate])
+        .unwrap()
+        .ready()
+        .unwrap()
+        .commit();
+    assert_eq!(u64_cell(&left), 10);
+    assert_eq!(u64_cell(&right), 20);
+    assert!(left.published_version() > left_version);
+    assert!(right.published_version() > right_version);
 }
 
 fn u64_cell(cell: &ValueCell) -> u64 {
@@ -1574,4 +1787,81 @@ fn u64_cell(cell: &ValueCell) -> u64 {
         panic!("expected U64 cell")
     };
     *value
+}
+
+#[test]
+fn resident_projection_uses_the_realized_arena_without_a_second_allocation() {
+    let domain = MemoryDomain::new().unwrap();
+    let revision = domain.issue_plan_revision().unwrap();
+    let allocations = [allocation(
+        0,
+        0,
+        0,
+        16,
+        16,
+        MemoryLifetime::Activation,
+        None,
+    )];
+    let arenas = [arena(0, ArenaBackingKind::ContiguousBytes, 16, &[0])];
+    let reservation = domain
+        .prepare_realization(runtime_plan_view(
+            revision,
+            &allocations,
+            &arenas,
+            ResourceDemand {
+                activation_bytes: 16,
+                ..ResourceDemand::default()
+            },
+            MemoryBudgetLimits::default(),
+            &[],
+        ))
+        .unwrap();
+    let realized = domain.materialize(reservation).unwrap();
+    let object = domain
+        .plan_object_key(revision, MemoryObjectId::new(0))
+        .unwrap();
+    let mut storage = domain
+        .project_host_arena::<u64>(&realized, object, 2)
+        .unwrap();
+    let managed_write = domain
+        .prepare_call(
+            &realized,
+            &[CallAccessRequest {
+                object,
+                mode: MemoryAccessMode::Write,
+                region: MemoryAccessRegion::Contiguous {
+                    offset_bytes: 0,
+                    length_bytes: 16,
+                },
+            }],
+        )
+        .unwrap();
+    assert!(matches!(
+        domain.acquire_call(&realized, &managed_write),
+        Err(MemoryRuntimeError::BorrowConflict { .. })
+    ));
+    assert!(
+        domain
+            .project_host_arena::<u64>(&realized, object, 2)
+            .is_err(),
+        "one physical arena cannot acquire two simultaneous typed owners",
+    );
+    let committed = domain.ledger().committed_bytes;
+    storage[0] = 11;
+    storage[1] = 22;
+    assert_eq!(&*storage, &[11, 22]);
+    assert_eq!(domain.ledger().committed_bytes, committed);
+    drop(storage);
+    let held = domain.acquire_call(&realized, &managed_write).unwrap();
+    assert!(matches!(
+        domain.project_host_arena::<u64>(&realized, object, 2),
+        Err(MemoryRuntimeError::BorrowConflict { .. })
+    ));
+    drop(held);
+    assert!(
+        domain
+            .project_host_arena::<u64>(&realized, object, 2)
+            .is_ok(),
+        "dropping the typed projection releases only its claim, not the arena",
+    );
 }

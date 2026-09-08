@@ -333,6 +333,15 @@ impl InitializationMap {
         self.words.fill(0);
     }
 
+    pub(crate) fn can_copy_from(&self, source: &Self) -> bool {
+        self.capacity_bytes == source.capacity_bytes && self.words.len() == source.words.len()
+    }
+
+    pub(crate) fn copy_from_prevalidated(&mut self, source: &Self) {
+        debug_assert!(self.can_copy_from(source));
+        self.words.copy_from_slice(&source.words);
+    }
+
     pub(super) fn mark_range(&mut self, start: u64, length: u64) -> MemoryRuntimeResult<()> {
         let end = start
             .checked_add(length)
@@ -875,6 +884,154 @@ impl RealizedMemoryPlan {
         region.initialized_bytes = region.initialized_bytes.max(initialized_end);
         Ok(())
     }
+
+    /// Copies a fully prevalidated fixed-storage image and its exact
+    /// initialization authority. This is the infallible data movement used by
+    /// UndoSnapshot after both objects and their metadata were admitted.
+    pub(crate) fn copy_undo_image(
+        &self,
+        source: PlanObjectKey,
+        destination: PlanObjectKey,
+    ) -> MemoryRuntimeResult<()> {
+        if source.domain() != self.domain || destination.domain() != self.domain {
+            return Err(MemoryRuntimeError::WrongMemoryDomain {
+                expected: self.domain,
+                actual: if source.domain() != self.domain {
+                    source.domain()
+                } else {
+                    destination.domain()
+                },
+            });
+        }
+        if source.revision() != self.revision || destination.revision() != self.revision {
+            return Err(MemoryRuntimeError::InvalidPlanRevision {
+                expected: self.revision,
+                actual: if source.revision() != self.revision {
+                    source.revision()
+                } else {
+                    destination.revision()
+                },
+            });
+        }
+        let mut bindings = self.bindings.borrow_mut();
+        let source_index = bindings
+            .binary_search_by_key(&source, |(candidate, _)| *candidate)
+            .map_err(|_| MemoryRuntimeError::UnknownPlanObject { key: source })?;
+        let destination_index = bindings
+            .binary_search_by_key(&destination, |(candidate, _)| *candidate)
+            .map_err(|_| MemoryRuntimeError::UnknownPlanObject { key: destination })?;
+        let source_binding = bindings[source_index].1.clone();
+        let destination_binding = bindings[destination_index].1.clone();
+        let (
+            RuntimeBinding::ManagedHostRegion {
+                handle: source_handle,
+                offset_bytes: source_offset,
+                capacity_bytes: source_capacity,
+                initialized_bytes: source_initialized,
+                ..
+            },
+            RuntimeBinding::ManagedHostRegion {
+                handle: destination_handle,
+                offset_bytes: destination_offset,
+                capacity_bytes: destination_capacity,
+                ..
+            },
+        ) = (&source_binding, &destination_binding)
+        else {
+            return Err(MemoryRuntimeError::InvalidLayout {
+                object: Some(destination.object()),
+                size: destination_binding.capacity_bytes(),
+                alignment: 1,
+                reason: "undo snapshots require two managed host regions",
+            });
+        };
+        if source_capacity != destination_capacity {
+            return Err(MemoryRuntimeError::InvalidLayout {
+                object: Some(destination.object()),
+                size: *destination_capacity,
+                alignment: 1,
+                reason: "undo snapshot capacity differs from its in-place target",
+            });
+        }
+
+        let mut state = self.domain_state.borrow_mut();
+        let source_region = state
+            .regions
+            .get(&source)
+            .ok_or(MemoryRuntimeError::UnknownPlanObject { key: source })?;
+        let destination_region = state
+            .regions
+            .get(&destination)
+            .ok_or(MemoryRuntimeError::UnknownPlanObject { key: destination })?;
+        if !destination_region
+            .initialization
+            .can_copy_from(&source_region.initialization)
+        {
+            return Err(MemoryRuntimeError::InvalidLayout {
+                object: Some(destination.object()),
+                size: *destination_capacity,
+                alignment: 1,
+                reason: "undo snapshot initialization geometry differs from its target",
+            });
+        }
+        let source_record = state.record(*source_handle)?;
+        let source_pointer = source_record
+            .block
+            .as_ref()
+            .and_then(HostBlock::pointer)
+            .ok_or(MemoryRuntimeError::InvalidLayout {
+                object: Some(source.object()),
+                size: *source_capacity,
+                alignment: source_record.alignment,
+                reason: "undo snapshot source has no host allocation",
+            })?;
+        let destination_record = state.record(*destination_handle)?;
+        let destination_pointer = destination_record
+            .block
+            .as_ref()
+            .and_then(HostBlock::pointer)
+            .ok_or(MemoryRuntimeError::InvalidLayout {
+                object: Some(destination.object()),
+                size: *destination_capacity,
+                alignment: destination_record.alignment,
+                reason: "undo snapshot destination has no host allocation",
+            })?;
+        let source_offset =
+            usize::try_from(*source_offset).map_err(|_| MemoryRuntimeError::InvalidLayout {
+                object: Some(source.object()),
+                size: *source_capacity,
+                alignment: source_record.alignment,
+                reason: "undo snapshot source offset exceeds the host address range",
+            })?;
+        let destination_offset = usize::try_from(*destination_offset).map_err(|_| {
+            MemoryRuntimeError::InvalidLayout {
+                object: Some(destination.object()),
+                size: *destination_capacity,
+                alignment: destination_record.alignment,
+                reason: "undo snapshot destination offset exceeds the host address range",
+            }
+        })?;
+        let bytes =
+            usize::try_from(*source_capacity).map_err(|_| MemoryRuntimeError::InvalidLayout {
+                object: Some(source.object()),
+                size: *source_capacity,
+                alignment: source_record.alignment,
+                reason: "undo snapshot size exceeds the host address range",
+            })?;
+
+        super::access::copy_prevalidated_host_bytes(
+            source_pointer,
+            source_offset,
+            destination_pointer,
+            destination_offset,
+            bytes,
+        );
+        super::access::copy_prevalidated_initialization(&mut state.regions, source, destination);
+        bindings[destination_index]
+            .1
+            .set_initialized_bytes(*source_initialized);
+        Ok(())
+    }
 }
 
 pub(crate) struct ActiveLeaseRecord {
@@ -886,7 +1043,7 @@ pub(crate) struct ActiveLeaseRecord {
 
 pub(crate) struct AllocationRecord {
     realization_owner: Weak<()>,
-    arena_projection_owner: Weak<()>,
+    pub(crate) arena_projection_owner: Weak<()>,
     pub state: OwnedAllocationState,
     pub block: Option<HostBlock>,
     pub capacity_bytes: u64,
@@ -1000,9 +1157,6 @@ impl DomainState {
     fn finish_plan_scope_cleanup(&mut self) {
         if !self.scope_cleanup_pending.get() {
             return;
-        }
-        for active in self.active_reuse_regions.values_mut() {
-            *active = None;
         }
         self.execution_revision = None;
         self.scope_cleanup_pending.set(false);
@@ -1153,6 +1307,11 @@ impl MemoryDomain {
                 return Err(MemoryRuntimeError::CandidateValidationFailed {
                     object: Some(object.object()),
                     reason: "the realized arena already has a live typed projection".into(),
+                });
+            }
+            if !record.leases.is_empty() {
+                return Err(MemoryRuntimeError::BorrowConflict {
+                    object: object.object(),
                 });
             }
             let block = record
@@ -1430,9 +1589,9 @@ impl MemoryDomain {
         }
         if state.active_point.get().is_some()
             || state.allocations.iter().any(|slot| {
-                slot.record
-                    .as_ref()
-                    .is_some_and(|record| !record.leases.is_empty())
+                slot.record.as_ref().is_some_and(|record| {
+                    !record.leases.is_empty() || record.arena_projection_owner.upgrade().is_some()
+                })
             })
         {
             return Err(MemoryRuntimeError::TurnInFlight);
@@ -2039,6 +2198,7 @@ impl MemoryDomain {
                 record.state == OwnedAllocationState::Retired
                     && record.realization_owner.strong_count() == 0
                     && record.leases.is_empty()
+                    && record.arena_projection_owner.upgrade().is_none()
                     && record.snapshot_pins == 0
                     && record.submission_pins == 0
                     && record
@@ -2216,9 +2376,6 @@ impl MemoryDomain {
                 if *group_revision != revision {
                     continue;
                 }
-                if active.is_some() {
-                    return Err(MemoryRuntimeError::TurnInFlight);
-                }
                 let mut candidates = regions.iter().filter(|(key, region)| {
                     key.revision() == revision
                         && region.reuse_group == Some(*group)
@@ -2233,7 +2390,9 @@ impl MemoryDomain {
                         reason: "multiple reuse-group members are live at one plan point",
                     });
                 }
-                let _ = region.incarnation.checked_successor()?;
+                if *active != Some(*key) {
+                    let _ = region.incarnation.checked_successor()?;
+                }
             }
             for ((group_revision, group), active) in active_reuse_regions.iter_mut() {
                 if *group_revision != revision {
@@ -2248,16 +2407,18 @@ impl MemoryDomain {
                     })
                     .map(|(key, _)| *key);
                 if let Some(key) = candidate {
-                    let region = regions
-                        .get_mut(&key)
-                        .expect("validated reuse-group region exists");
-                    region.incarnation = region
-                        .incarnation
-                        .checked_successor()
-                        .expect("region successor was prevalidated");
-                    region.initialized_bytes = 0;
-                    region.initialization.clear();
-                    *active = Some(key);
+                    if *active != Some(key) {
+                        let region = regions
+                            .get_mut(&key)
+                            .expect("validated reuse-group region exists");
+                        region.incarnation = region
+                            .incarnation
+                            .checked_successor()
+                            .expect("region successor was prevalidated");
+                        region.initialized_bytes = 0;
+                        region.initialization.clear();
+                        *active = Some(key);
+                    }
                 }
             }
         }

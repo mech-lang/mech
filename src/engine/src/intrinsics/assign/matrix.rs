@@ -995,7 +995,7 @@ impl ManagedAssignmentElement for String {
                 },
             };
             let next = assignment.next_value()?;
-            return frame.stage_output_value(sink, &next);
+            return frame.stage_output_value(sink, next);
         }
         #[cfg(not(feature = "semantic-compiler"))]
         {
@@ -1027,7 +1027,7 @@ impl ManagedAssignmentElement for String {
                 ],
                 selection_kind: super::CanonicalAssignmentSelectionKind::SingleElement,
             };
-            return frame.stage_output_value(sink, &assignment.next_value()?);
+            return frame.stage_output_value(sink, assignment.next_value()?);
         }
         #[cfg(not(feature = "semantic-compiler"))]
         {
@@ -1062,7 +1062,7 @@ impl ManagedAssignmentElement for String {
                 ],
                 selection_kind: super::CanonicalAssignmentSelectionKind::Rectangular,
             };
-            return frame.stage_output_value(sink, &assignment.next_value()?);
+            return frame.stage_output_value(sink, assignment.next_value()?);
         }
         #[cfg(not(feature = "semantic-compiler"))]
         {
@@ -1088,7 +1088,7 @@ impl ManagedAssignmentElement for String {
                 selectors: vec![crate::intrinsics::canonical_access::CanonicalAccessSelector::All],
                 selection_kind: super::CanonicalAssignmentSelectionKind::WholeValue,
             };
-            return frame.stage_output_value(sink, &assignment.next_value()?);
+            return frame.stage_output_value(sink, assignment.next_value()?);
         }
         #[cfg(not(feature = "semantic-compiler"))]
         {

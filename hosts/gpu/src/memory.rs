@@ -14,14 +14,16 @@ use crate::{
 };
 #[cfg(feature = "native")]
 use mech_core::AllocationHandle;
+#[cfg(any(test, feature = "native"))]
+use mech_core::DeviceAllocationOwner;
 use mech_core::{
     AllocationPlan, AllocationRole, ArenaBackingKind, ArenaPlacement, ArenaPlan, CallAccessRequest,
-    DeviceAllocationOwner, DeviceSubmissionHold, GpuMemoryLimits, ManagedAllocationObservation,
-    MemoryAccessMode, MemoryAccessRegion, MemoryArenaId, MemoryBudgetViolation, MemoryDomain,
-    MemoryLedgerSnapshot, MemoryLifetime, MemoryObjectId, MemoryObjectOwner, MemoryPlanError,
-    MemoryPlanPoint, MemoryRuntimeError, MemorySpace, PlanObjectKey, PreparedCallAccess,
-    PreparedDeviceSubmission, RealizedMemoryPlan, ResourceDemand, RuntimePlanView,
-    TargetMemoryProfile, TransferDirection, TransferPlan, evaluate_memory_budget,
+    DeviceSubmissionHold, GpuMemoryLimits, ManagedAllocationObservation, MemoryAccessMode,
+    MemoryAccessRegion, MemoryArenaId, MemoryBudgetViolation, MemoryDomain, MemoryLedgerSnapshot,
+    MemoryLifetime, MemoryObjectId, MemoryObjectOwner, MemoryPlanError, MemoryPlanPoint,
+    MemoryRuntimeError, MemorySpace, PlanObjectKey, PreparedCallAccess, PreparedDeviceSubmission,
+    RealizedMemoryPlan, ResourceDemand, RuntimePlanView, TargetMemoryProfile, TransferDirection,
+    TransferPlan, evaluate_memory_budget,
 };
 
 /// Existing GPU execution plan paired with the process-local, non-wire R5
@@ -39,7 +41,12 @@ pub struct PlannedGpuExecution {
     readback_device_objects: BTreeMap<mech_core::CellSlotId, MemoryObjectId>,
     integrity_readback_objects: Option<[MemoryObjectId; 2]>,
     device_objects: Box<[MemoryObjectId]>,
+    /// Writable objects whose physical identity does not depend on the active
+    /// double-buffer bind group.
     writable_device_objects: Box<[(MemoryObjectId, u64)]>,
+    /// Physical state objects written by bind groups 0 and 1 respectively.
+    /// Group 0 reads `current` and writes `next`; group 1 reverses them.
+    writable_state_objects: [Box<[(MemoryObjectId, u64)]>; 2],
     transfer_objects: Box<[MemoryObjectId]>,
 }
 
@@ -75,6 +82,7 @@ enum DeviceAllocationRegistration {
     Buffer(Weak<DeviceAllocationOwner>),
 }
 
+#[cfg(any(test, feature = "native"))]
 impl DeviceAllocationRegistration {
     fn is_registered(&self) -> bool {
         !matches!(self, Self::Vacant)
@@ -910,24 +918,38 @@ impl PlannedGpuExecution {
             .map(|allocation| allocation.id)
             .collect::<Vec<_>>()
             .into_boxed_slice();
-        let mut writable_device_objects = execution
+        let mut writable_device_objects = Vec::new();
+        let mut writable_state_objects = [Vec::new(), Vec::new()];
+        for binding in execution
             .bindings
             .iter()
             .filter(|binding| binding.access == crate::GpuBindingAccess::ReadWrite)
-            .map(|binding| {
+        {
+            let bytes = checked_binding_bytes(binding.elements, binding.scalar)?;
+            if binding.role == GpuExecutionBindingRole::StateWrite {
+                let slot = mech_core::CellSlotId::new(binding.slot);
+                let [current, next] = state_objects.get(&slot).copied().ok_or(
+                    GpuMemoryPlanError::MissingBinding {
+                        binding: binding.binding,
+                    },
+                )?;
+                writable_state_objects[0].push((next, bytes));
+                writable_state_objects[1].push((current, bytes));
+            } else {
                 let object = binding_objects.get(&binding.binding).copied().ok_or(
                     GpuMemoryPlanError::MissingBinding {
                         binding: binding.binding,
                     },
                 )?;
-                Ok((
-                    object,
-                    checked_binding_bytes(binding.elements, binding.scalar)?,
-                ))
-            })
-            .collect::<Result<Vec<_>, GpuMemoryPlanError>>()?;
+                writable_device_objects.push((object, bytes));
+            }
+        }
         writable_device_objects.sort_by_key(|(object, _)| *object);
         writable_device_objects.dedup_by_key(|(object, _)| *object);
+        for objects in &mut writable_state_objects {
+            objects.sort_by_key(|(object, _)| *object);
+            objects.dedup_by_key(|(object, _)| *object);
+        }
         let transfer_objects = allocations
             .iter()
             .filter(|allocation| matches!(allocation.lifetime, MemoryLifetime::Transfer { .. }))
@@ -951,6 +973,7 @@ impl PlannedGpuExecution {
             integrity_readback_objects,
             device_objects,
             writable_device_objects: writable_device_objects.into_boxed_slice(),
+            writable_state_objects: writable_state_objects.map(Vec::into_boxed_slice),
             transfer_objects,
         })
     }
@@ -994,6 +1017,10 @@ impl PlannedGpuExecution {
 
     pub fn writable_device_objects(&self) -> &[(MemoryObjectId, u64)] {
         &self.writable_device_objects
+    }
+
+    pub fn writable_state_objects(&self, bind_group: usize) -> Option<&[(MemoryObjectId, u64)]> {
+        self.writable_state_objects.get(bind_group).map(Box::as_ref)
     }
 
     pub fn transfer_objects(&self) -> &[MemoryObjectId] {
@@ -1255,6 +1282,86 @@ mod tests {
                 MemoryPlanError::TargetLimitExceeded { .. }
             ))
         ));
+    }
+
+    #[test]
+    fn state_write_accounting_follows_the_selected_double_buffer_group() {
+        let mut execution = test_execution_plan(2);
+        execution.states.push(crate::GpuPlanState {
+            slot: 2,
+            elements: 2,
+            elements_per_instance: 2,
+            initial_values: vec![1.0, 2.0],
+        });
+        execution.bindings.extend([
+            crate::GpuPlanBinding {
+                binding: 1,
+                name: "state.read".to_owned(),
+                access: crate::GpuBindingAccess::Read,
+                role: crate::GpuExecutionBindingRole::StateRead,
+                slot: 2,
+                elements: 2,
+                scalar: crate::GpuPlanScalar::F32,
+                initial_values: None,
+            },
+            crate::GpuPlanBinding {
+                binding: 2,
+                name: "state.write".to_owned(),
+                access: crate::GpuBindingAccess::ReadWrite,
+                role: crate::GpuExecutionBindingRole::StateWrite,
+                slot: 2,
+                elements: 2,
+                scalar: crate::GpuPlanScalar::F32,
+                initial_values: None,
+            },
+        ]);
+        let planned = PlannedGpuExecution::from_execution(execution, limits(1024)).unwrap();
+        let [current, next] = planned
+            .state_objects(mech_core::CellSlotId::new(2))
+            .unwrap();
+
+        assert_eq!(planned.writable_state_objects(0), Some(&[(next, 8)][..]));
+        assert_eq!(planned.writable_state_objects(1), Some(&[(current, 8)][..]));
+        assert!(
+            !planned
+                .writable_device_objects()
+                .iter()
+                .any(|(object, _)| *object == current || *object == next)
+        );
+    }
+
+    #[test]
+    fn accounting_only_test_registration_exercises_exact_device_lifecycle() {
+        let planned =
+            PlannedGpuExecution::from_execution(test_execution_plan(4), limits(1024)).unwrap();
+        let object = planned.binding_object(0).unwrap();
+        let mut memory = planned.managed_memory().unwrap();
+        assert!(matches!(
+            memory.attach_device_allocation(object, 15, 0),
+            Err(GpuMemoryPlanError::Runtime(
+                MemoryRuntimeError::CapacityExceeded { .. }
+            ))
+        ));
+
+        memory.attach_device_allocation(object, 16, 16).unwrap();
+        assert_eq!(memory.content_version(object), Some(1));
+        let observation = memory.allocations()[0];
+        assert_eq!(observation.actual_block_bytes, 16);
+        assert_eq!(observation.device_owner_pins, 1);
+        assert_eq!(observation.state, mech_core::OwnedAllocationState::Live);
+        assert!(matches!(
+            memory.attach_device_allocation(object, 16, 16),
+            Err(GpuMemoryPlanError::DuplicateDeviceAllocation { .. })
+        ));
+
+        let hold = memory.begin_submission(&[object], &[]).unwrap();
+        assert_eq!(memory.ledger().in_flight_device_bytes, 16);
+        assert_eq!(memory.allocations()[0].submission_pins, 1);
+        hold.complete().unwrap();
+        assert_eq!(memory.ledger().in_flight_device_bytes, 0);
+        assert_eq!(memory.allocations()[0].submission_pins, 0);
+        assert_eq!(memory.record_device_write(object, 16).unwrap(), 2);
+        assert_eq!(memory.content_version(object), Some(2));
     }
 
     #[cfg(feature = "native")]

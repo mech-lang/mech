@@ -1,0 +1,510 @@
+from __future__ import annotations
+
+import importlib.util
+import shutil
+import tempfile
+import unittest
+from pathlib import Path
+
+
+SCRIPT = Path(__file__).resolve().parents[1] / "check-r6-memory-runtime.py"
+SPEC = importlib.util.spec_from_file_location("check_r6_memory_runtime", SCRIPT)
+assert SPEC is not None and SPEC.loader is not None
+CHECKER = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(CHECKER)
+REPOSITORY = SCRIPT.parents[1]
+
+
+class R6MemoryRuntimeCheckerTests(unittest.TestCase):
+    def fixture(self) -> Path:
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        root = Path(temporary.name)
+        for relative in CHECKER.REQUIRED:
+            source = REPOSITORY / relative
+            target = root / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, target)
+        return root
+
+    @staticmethod
+    def write(root: Path, relative: str, source: str) -> None:
+        path = root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(source, encoding="utf-8")
+
+    def append(self, root: Path, relative: str, source: str) -> None:
+        path = root / relative
+        self.write(root, relative, path.read_text(encoding="utf-8") + source)
+
+    def replace(self, root: Path, relative: str, old: str, new: str) -> None:
+        path = root / relative
+        source = path.read_text(encoding="utf-8")
+        self.assertIn(old, source)
+        self.write(root, relative, source.replace(old, new, 1))
+
+    def assert_failure(self, root: Path, expected: str) -> None:
+        found = CHECKER.failures(root)
+        self.assertTrue(any(expected in item for item in found), found)
+
+    def test_00_repository_fixture_passes(self):
+        self.assertEqual(CHECKER.failures(self.fixture()), [])
+
+    def test_01_runtime_receipt_serialization_fails(self):
+        root = self.fixture()
+        self.append(
+            root,
+            "src/core/src/memory_runtime/domain.rs",
+            "\n#[derive(Serialize)] struct SerializedMemoryDomain;\n",
+        )
+        self.assert_failure(root, "runtime ownership derives serialization")
+
+    def test_02_wire_runtime_handle_fails(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/program/bytecode/writer.rs",
+            "pub register_count: u32,",
+            "pub register_count: u32,\n    pub allocation: AllocationHandle,",
+        )
+        self.assert_failure(root, "BytecodeProgram serializes runtime receipt")
+
+    def test_03_bound_call_runtime_handle_fails(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/function/specialization.rs",
+            "pub struct BoundCall {",
+            "pub struct BoundCall {\n    runtime: AllocationHandle,",
+        )
+        self.assert_failure(root, "BoundCall carries forbidden R6 runtime field")
+
+    def test_04_realization_reservation_cannot_be_removed(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/memory_runtime/domain.rs",
+            "pub fn prepare_realization(",
+            "pub fn unchecked_realization(",
+        )
+        self.assert_failure(root, "missing required operation prepare_realization")
+
+    def test_05_plan_revision_validation_cannot_be_removed(self):
+        root = self.fixture()
+        for relative in (
+            "src/core/src/memory_runtime/domain.rs",
+            "src/core/src/memory_runtime/access.rs",
+        ):
+            path = root / relative
+            self.write(
+                root,
+                relative,
+                path.read_text(encoding="utf-8").replace(
+                    "InvalidPlanRevision", "IgnoredPlanRevision"
+                ),
+            )
+        self.assert_failure(root, "omits InvalidPlanRevision validation")
+
+    def test_06_publication_binding_cannot_be_removed(self):
+        root = self.fixture()
+        path = "src/core/src/memory_runtime/transaction.rs"
+        source = (root / path).read_text(encoding="utf-8")
+        self.write(root, path, source.replace("binding", "placement"))
+        self.assert_failure(root, "publication lifecycle omits binding")
+
+    def test_07_managed_cell_storage_cannot_be_removed(self):
+        root = self.fixture()
+        path = "src/core/src/cell_binding.rs"
+        source = (root / path).read_text(encoding="utf-8")
+        source = source.replace("ManagedHost {", "PinnedHost {")
+        source = source.replace("ManagedCanonical {", "PinnedCanonical {")
+        self.write(root, path, source)
+        self.assert_failure(root, "ValueCell storage is not closed")
+
+    def test_07b_function_instance_managed_authority_cannot_be_removed(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/function/mod.rs",
+            "managed: ManagedFunctionBinding,",
+            "managed: RemovedManagedFunctionBinding,",
+        )
+        self.assert_failure(root, "FunctionInstance has no managed-domain execution authority")
+
+    def test_08_planned_cell_allocation_cannot_be_removed(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/cell_binding.rs",
+            "fn allocate_planned(",
+            "fn allocate_unplanned(",
+        )
+        self.assert_failure(root, "lacks reservation-backed allocate_planned")
+
+    def test_09_managed_function_entry_cannot_be_removed(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/function/mod.rs",
+            "fn solve_managed(",
+            "fn solve_unmanaged(",
+        )
+        self.assert_failure(root, "does not require solve_managed")
+
+    def test_10_raw_function_solve_fails(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/function/mod.rs",
+            "pub trait MechFunctionImpl {",
+            "pub trait MechFunctionImpl {\n    fn solve_result(&self) -> MResult<()>;",
+        )
+        self.assert_failure(root, "retains an unmanaged solve entry")
+
+    def test_11_unsafe_policy_code_fails(self):
+        root = self.fixture()
+        self.append(
+            root,
+            "src/core/src/memory_runtime/transaction.rs",
+            "\nfn bypass() { unsafe { core::hint::unreachable_unchecked() } }\n",
+        )
+        self.assert_failure(root, "unsafe escapes the sealed allocation/access boundary")
+
+    def test_12_production_legacy_fallback_fails(self):
+        root = self.fixture()
+        self.append(
+            root,
+            "src/engine/src/memory_runtime/realize.rs",
+            "\nfn legacy_unmanaged() {}\n",
+        )
+        self.assert_failure(root, "unmanaged-memory bypass")
+
+    def test_13_deferred_capacity_acceptance_fails(self):
+        root = self.fixture()
+        self.append(
+            root,
+            "src/engine/src/memory_runtime/realize.rs",
+            "\nfn accept() { let _ = CapacityDeferredToR6; }\n",
+        )
+        self.assert_failure(root, "accepts CapacityDeferredToR6")
+
+    def test_14_production_bypass_flag_fails(self):
+        root = self.fixture()
+        self.append(
+            root,
+            "hosts/gpu/src/memory.rs",
+            "\n#[cfg(feature = \"disable_managed_memory\")] fn bypass() {}\n",
+        )
+        self.assert_failure(root, "unmanaged-memory bypass")
+
+    def test_15_resident_parallel_arena_fails(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/engine/src/resident/general/mod.rs",
+            "Managed(PlannedArenaProjection<T>),",
+            "Managed(Box<[T]>),",
+        )
+        self.assert_failure(root, "do not project their realized R5 host arenas")
+
+    def test_16_resident_realization_owner_cannot_be_removed(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/engine/src/resident/general/mod.rs",
+            "_managed_memory: ManagedProgramMemory,",
+            "_managed_memory: RemovedManagedProgramMemory,",
+        )
+        self.assert_failure(root, "does not retain its managed program realization")
+
+    def test_17_resident_state_clone_fails(self):
+        root = self.fixture()
+        self.append(
+            root,
+            "src/engine/src/resident/general/mod.rs",
+            "\nfn bypass(instance: &ReactiveInstance) { let _ = instance.state.clone(); }\n",
+        )
+        self.assert_failure(root, "state migration clones an unplanned arena")
+
+    def test_18_arena_allocator_cannot_be_public(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/memory_runtime/allocation.rs",
+            "struct PlannedHostArenaAllocator {",
+            "pub struct PlannedHostArenaAllocator {",
+        )
+        self.assert_failure(root, "allocator escapes its sealed projection boundary")
+
+    def test_19_gpu_accounting_only_attachment_cannot_be_production(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "hosts/gpu/src/memory.rs",
+            "#[cfg(test)]\n    pub(crate) fn attach_device_allocation(",
+            "pub(crate) fn attach_device_allocation(",
+        )
+        self.assert_failure(root, "attachment is available in production")
+
+    def test_20_gpu_post_submit_registration_fails(self):
+        root = self.fixture()
+        self.append(
+            root,
+            "hosts/gpu/src/native.rs",
+            "\nfn after_submit(tracker: &mut Tracker, hold: Hold) { tracker.track(hold); }\n",
+        )
+        self.assert_failure(root, "register ownership after backend submission")
+
+    def test_21_cleanup_inside_debug_assert_fails(self):
+        root = self.fixture()
+        self.append(
+            root,
+            "hosts/gpu/src/native.rs",
+            "\nfn drop_only_in_debug(owner: &mut Owner) { debug_assert!(owner.release().is_ok()); }\n",
+        )
+        self.assert_failure(root, "cleanup is hidden inside debug_assert")
+
+    def test_22_browser_queue_completion_cannot_be_removed(self):
+        root = self.fixture()
+        path = "include/browser-compute.js"
+        source = (root / path).read_text(encoding="utf-8")
+        self.write(root, path, source.replace("queue.onSubmittedWorkDone()", "queue.workWasQueued()"))
+        self.assert_failure(root, "not retained through queue completion")
+
+    def test_23_browser_mapping_cleanup_must_settle_every_sibling(self):
+        root = self.fixture()
+        path = "include/browser-compute.js"
+        source = (root / path).read_text(encoding="utf-8")
+        self.write(root, path, source.replace("Promise.allSettled", "Promise.all"))
+        self.assert_failure(root, "cleanup can skip siblings")
+
+    def test_24_runtime_factory_cannot_capture_physical_backing(self):
+        root = self.fixture()
+        self.write(
+            root,
+            "src/engine/src/intrinsics/constructors.rs",
+            """
+fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+    let _output = invocation.output().try_ref()?;
+    unreachable!()
+}
+""",
+        )
+        self.assert_failure(root, "runtime factory retains physical input/output backing")
+
+    def test_25_executor_owned_scope_entry_cannot_be_removed(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/function/mod.rs",
+            "pub fn solve_in_scope(",
+            "pub fn solve_outside_scope(",
+        )
+        self.assert_failure(root, "lacks its executor-owned managed-scope entry")
+
+    def test_26_user_function_cannot_restore_nested_standalone_execution(self):
+        root = self.fixture()
+        self.append(
+            root,
+            "src/core/src/function/mod.rs",
+            "\nimpl MechFunctionImpl for UserFunction { fn solve_managed(&self, _: &mut KernelMemoryFrame<'_>, _: &mut dyn MechExecutionServices) -> MResult<ReactiveSolveStatus> { unreachable!() } }\n",
+        )
+        self.assert_failure(root, "retains a nested standalone execution wrapper")
+
+    def test_27_indirect_output_cannot_leave_the_invocation_session(self):
+        root = self.fixture()
+        path = "src/core/src/function/specialization.rs"
+        source = (root / path).read_text(encoding="utf-8")
+        self.assertIn("ValueCell::allocate_for_descriptor_in", source)
+        self.write(
+            root,
+            path,
+            source.replace(
+                "ValueCell::allocate_for_descriptor_in",
+                "ValueCell::allocate_for_descriptor",
+            ),
+        )
+        self.assert_failure(root, "outputs can escape the invocation memory session")
+
+    def test_28_interpreter_program_session_cannot_be_removed(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/engine/src/interpreter/mod.rs",
+            "memory_domain: MemoryDomain,",
+            "removed_memory_domain: MemoryDomain,",
+        )
+        self.assert_failure(root, "does not own one ordinary program memory session")
+
+    def test_29_source_literals_cannot_create_per_value_sessions(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/engine/src/literals.rs",
+            ".import_owned_in(p.memory_domain())",
+            ".import_owned_in(&MemoryDomain::new().unwrap())",
+        )
+        self.assert_failure(root, "literals do not enter the interpreter memory session")
+
+    def test_30_concatenation_marker_cannot_own_physical_backing(self):
+        root = self.fixture()
+        self.append(
+            root,
+            "src/engine/src/intrinsics/horzcat.rs",
+            "\nstruct RestoredLegacy<T> { input: Ref<T> }\n",
+        )
+        self.assert_failure(root, "factory marker owns legacy physical backing")
+
+    def test_31_concatenation_marker_cannot_restore_parallel_execution(self):
+        root = self.fixture()
+        self.append(
+            root,
+            "src/engine/src/intrinsics/vertcat.rs",
+            "\nimpl<T> MechFunctionImpl for RestoredLegacy<T> {}\n",
+        )
+        self.assert_failure(root, "factory marker restores a parallel executor")
+
+    def test_32_variable_definition_marker_cannot_own_physical_backing(self):
+        root = self.fixture()
+        self.append(
+            root,
+            "src/engine/src/intrinsics/define.rs",
+            "\nstruct VariableDefineLegacy<T> { value: Ref<T> }\n",
+        )
+        self.assert_failure(root, "variable-definition factory marker owns legacy physical backing")
+
+    def test_33_variable_definition_marker_cannot_restore_parallel_execution(self):
+        root = self.fixture()
+        self.append(
+            root,
+            "src/engine/src/intrinsics/define.rs",
+            "\nimpl<T> MechFunctionImpl for VariableDefineLegacy<T> {}\n",
+        )
+        self.assert_failure(root, "variable-definition factory marker restores a parallel executor")
+
+    def test_34_function_port_cannot_restore_physical_extraction(self):
+        root = self.fixture()
+        self.append(
+            root,
+            "src/core/src/function/argument.rs",
+            "\npub fn try_ref<T>() {}\n",
+        )
+        self.assert_failure(root, "function ports expose legacy physical extractor try_ref")
+
+    def test_35_specialization_cannot_restore_physical_cell_construction(self):
+        root = self.fixture()
+        self.append(
+            root,
+            "src/core/src/function/specialization.rs",
+            "\npub fn typed_cell<T>() {}\n",
+        )
+        self.assert_failure(root, "source specialization exposes legacy physical extractor typed_cell")
+
+    def test_36_bytecode_constants_cannot_restore_pinned_external_backing(self):
+        root = self.fixture()
+        self.append(
+            root,
+            "src/core/src/program/bytecode/constants/canonical.rs",
+            "\nfn restore_pinned_constant() { ValueCell::from_ref(); }\n",
+        )
+        self.assert_failure(root, "bytecode reconstruction installs pinned-external")
+
+    def test_37_bytecode_constants_must_share_a_managed_session(self):
+        root = self.fixture()
+        path = "src/core/src/program/bytecode/constants/canonical.rs"
+        source = (root / path).read_text(encoding="utf-8")
+        self.assertIn("MemoryDomain::new()", source)
+        self.write(root, path, source.replace("MemoryDomain::new()", "removed_domain()"))
+        self.assert_failure(root, "decoded constants do not share a managed bytecode session")
+
+    def test_38_concatenation_marker_cannot_restore_element_copy_body(self):
+        root = self.fixture()
+        self.append(
+            root,
+            "src/engine/src/intrinsics/vertcat.rs",
+            "\nmacro_rules! vertcat_v2v2 { () => {}; }\n",
+        )
+        self.assert_failure(root, "concatenation marker retains a legacy element-copy body")
+
+    def test_39_gpu_write_accounting_cannot_collapse_double_buffers(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "hosts/gpu/src/memory.rs",
+            "writable_state_objects: [Box<[(MemoryObjectId, u64)]>; 2],",
+            "removed_state_objects: [Box<[(MemoryObjectId, u64)]>; 2],",
+        )
+        self.assert_failure(root, "does not distinguish double-buffer bind groups")
+
+    def test_40_gpu_backend_must_report_the_submitted_state_group(self):
+        root = self.fixture()
+        path = "hosts/gpu/src/native.rs"
+        source = (root / path).read_text(encoding="utf-8")
+        self.assertIn(".writable_state_objects(group)", source)
+        self.write(
+            root,
+            path,
+            source.replace(".writable_state_objects(group)", ".writable_device_objects()"),
+        )
+        self.assert_failure(root, "completed writes ignore the submitted state bind group")
+
+    def test_41_canonical_cell_must_retain_its_payload_plan(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/cell_binding.rs",
+            "    payload: crate::PlanObjectKey,",
+            "    removed_payload: u64,",
+        )
+        self.assert_failure(root, "do not retain header and payload plan ownership")
+
+    def test_42_canonical_stage_must_admit_the_frozen_payload(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/memory_runtime/access.rs",
+            "admit_frozen_snapshot",
+            "accept_unplanned_snapshot",
+        )
+        self.assert_failure(root, "staging bypasses its admitted payload owner")
+
+    def test_43_missing_transaction_cannot_authorize_an_output_write(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/memory_runtime/access.rs",
+            "plan.transactions.len() != plan.outputs.len()",
+            "false",
+        )
+        self.assert_failure(root, "missing transaction as write authority")
+
+    def test_44_projection_must_conflict_with_frame_leases(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/memory_runtime/access.rs",
+            "record.arena_projection_owner.upgrade().is_some()",
+            "false",
+        )
+        self.assert_failure(root, "projections and frame leases have separate authorities")
+
+    def test_45_continuous_reuse_owner_must_keep_initialization(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/memory_runtime/domain.rs",
+            "if *active != Some(key) {",
+            "if true {",
+        )
+        self.assert_failure(root, "does not preserve initialization")
+
+    def test_46_ready_publication_must_not_reborrow_published_shape(self):
+        root = self.fixture()
+        path = "src/core/src/cell_binding.rs"
+        source = (root / path).read_text(encoding="utf-8")
+        self.write(root, path, source.replace("publication_shape", "removed_shape"))
+        self.assert_failure(root, "conflict-free shape authority")
+
+
+if __name__ == "__main__":
+    unittest.main()

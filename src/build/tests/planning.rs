@@ -515,12 +515,17 @@ fn unknown_runtime_ids_fail_before_generation() {
 
 #[derive(Debug)]
 struct PlanningFunction {
-    _output: Ref<f64>,
+    _output: FunctionValueOutput,
 }
 
 impl MechFunctionImpl for PlanningFunction {
-    fn solve_result(&self) -> MResult<()> {
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> { Ok(()) })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -545,7 +550,7 @@ impl MechFunctionFactory for PlanningFunction {
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
         let output = invocation.expect_nullary()?;
         Ok(Box::new(PlanningFunction {
-            _output: output.try_ref()?,
+            _output: output.value(),
         }))
     }
 }

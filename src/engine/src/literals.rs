@@ -10,7 +10,7 @@ use std::collections::BTreeMap;
 // ----------------------------------------------------------------------------
 
 pub fn literal(ltrl: &Literal, p: &InterpreterExecution<'_>) -> MResult<SpecializationInput> {
-    match &ltrl {
+    let input = match &ltrl {
         Literal::Empty(_) => Ok(SpecializationInput::Absent),
         #[cfg(feature = "bool")]
         Literal::Boolean(bln) => boolean(bln).map(SpecializationInput::Cell),
@@ -33,6 +33,13 @@ pub fn literal(ltrl: &Literal, p: &InterpreterExecution<'_>) -> MResult<Speciali
             feature = "convert"
         )))]
         _ => Err(MechError::new(FeatureNotEnabledError, None).with_compiler_loc()),
+    }?;
+    match input {
+        SpecializationInput::Cell(cell) => cell
+            .import_owned_in(p.memory_domain())
+            .map(SpecializationInput::Cell),
+        SpecializationInput::Absent => Ok(SpecializationInput::Absent),
+        SpecializationInput::MatrixAllSelection => Ok(SpecializationInput::MatrixAllSelection),
     }
 }
 

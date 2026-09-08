@@ -149,6 +149,38 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("Execute the complete R4 conformance boundary", full)
         self.assertGreaterEqual(full.count("--test r4_type_cutover"), 3)
 
+    def test_r6_memory_runtime_and_miri_are_required_exact_head_gates(self):
+        r5 = "python3 scripts/check-r5-memory-planner.py"
+        r6 = "python3 scripts/check-r6-memory-runtime.py"
+        unit = "scripts/tests/test_check_r6_memory_runtime.py"
+        for block in (
+            job_block(CI, "static-contracts"),
+            job_block(FULL, "architecture-contracts"),
+        ):
+            self.assertIn(r5, block)
+            self.assertIn(r6, block)
+            self.assertLess(block.index(r5), block.index(r6))
+            self.assertIn(unit, block)
+            self.assertNotIn("continue-on-error", block)
+
+        runtime = job_block(FULL, "r6-memory-runtime")
+        miri = job_block(FULL, "r6-memory-miri")
+        cargo = job_block(FULL, "cargo")
+        self.assertIn(FULL_CHECKOUT_REF, runtime)
+        self.assertIn(FULL_CHECKOUT_REF, miri)
+        self.assertIn("--test r6_memory_runtime", runtime)
+        self.assertIn("--test r6_memory_safety", runtime)
+        safety_features = "--features functions,u8,u64,f64,string,matrixd"
+        self.assertGreaterEqual(runtime.count(safety_features), 2)
+        self.assertIn("--release -p mech-core", runtime)
+        self.assertIn("-C debug-assertions=no", runtime)
+        self.assertIn("miri test --locked", miri)
+        self.assertIn(safety_features, miri)
+        self.assertIn("- r6-memory-runtime", cargo)
+        self.assertIn("- r6-memory-miri", cargo)
+        self.assertIn('test "$R6_MEMORY_RESULT" = success', cargo)
+        self.assertIn('test "$R6_MIRI_RESULT" = success', cargo)
+
     def test_architecture_contracts_prefetch_before_offline_historical_evidence(self):
         block = job_block(FULL, "architecture-contracts")
         fetch = "cargo +nightly-2026-03-03 fetch --locked"

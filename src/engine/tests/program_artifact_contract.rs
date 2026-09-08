@@ -52,8 +52,13 @@ impl MechFunctionFactory for ArtifactFixtureUnary {
 }
 
 impl MechFunctionImpl for ArtifactFixtureFunction {
-    fn solve_result(&self) -> MResult<()> {
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> { Ok(()) })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {

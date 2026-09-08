@@ -1,7 +1,7 @@
 use crate::intrinsics::*;
 use nalgebra::{
     Dim,
-    base::{Matrix as naMatrix, Storage, StorageMut},
+    base::{Matrix as naMatrix, RawStorage, Storage, StorageMut},
 };
 use std::fmt::Debug;
 
@@ -117,6 +117,29 @@ declare_matrix_selection_contract!(
     PURE_TERNARY_LOGICAL_ROWS_SCALAR_COLUMN_CONTRACT,
     3,
     "logical-rows-scalar-column-output"
+);
+#[cfg(feature = "logical_indexing")]
+declare_matrix_selection_contract!(
+    PURE_TERNARY_LOGICAL_ROWS_LOGICAL_COLUMNS_CONTRACT,
+    3,
+    "logical-rows-logical-columns-output"
+);
+#[cfg(feature = "logical_indexing")]
+declare_matrix_selection_contract!(
+    PURE_TERNARY_LOGICAL_ROWS_EXPLICIT_COLUMNS_CONTRACT,
+    3,
+    "logical-rows-explicit-columns-output"
+);
+#[cfg(feature = "logical_indexing")]
+declare_matrix_selection_contract!(
+    PURE_TERNARY_EXPLICIT_ROWS_LOGICAL_COLUMNS_CONTRACT,
+    3,
+    "explicit-rows-logical-columns-output"
+);
+declare_matrix_selection_contract!(
+    PURE_TERNARY_EXPLICIT_ROWS_EXPLICIT_COLUMNS_CONTRACT,
+    3,
+    "explicit-rows-explicit-columns-output"
 );
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -413,6 +436,43 @@ fn planned_matrix_access_output_shape(
         .map_err(|error| MechError::new(error, None).with_compiler_loc())
 }
 
+fn planned_matrix_access_all_range_output_shape(
+    output: &ValueCell,
+    inputs: &[ValueCell],
+) -> MResult<Option<ShapeInstance>> {
+    let Some(selector) = inputs.get(1) else {
+        return Err(function_shape_contract_violation(
+            "matrix_access_all_range",
+            "missing column selector",
+        ));
+    };
+    if !matches!(
+        selector.closed_schema_body(),
+        Ok(SchemaBody::Matrix { element, .. }) if matches!(element.as_ref(), SchemaBody::Bool)
+    ) {
+        return Ok(None);
+    }
+    let source = matrix_descriptor(inputs.first().ok_or_else(|| {
+        function_shape_contract_violation("matrix_access_all_range", "missing matrix input")
+    })?)?
+    .ok_or_else(|| {
+        function_shape_contract_violation(
+            "matrix_access_all_range",
+            "input 0 must be matrix-backed",
+        )
+    })?;
+    let columns = matrix_access_selection(selector, source.cols, 1)?.count(source.cols);
+    let schemas = output.snapshot()?.schemas().ok_or_else(|| {
+        function_shape_contract_violation("matrix_access_all_range", "missing output schema table")
+    })?;
+    let schema = schemas.entry(output.schema()).ok_or_else(|| {
+        function_shape_contract_violation("matrix_access_all_range", "missing output schema")
+    })?;
+    shape_for_resolved_extents(schema.schema(), &[source.rows as u64, columns as u64])
+        .map(Some)
+        .map_err(|error| MechError::new(error, None).with_compiler_loc())
+}
+
 fn validate_matrix_access_contract(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
     let has_logical_selector = inputs.iter().skip(1).any(|input| {
         input
@@ -601,6 +661,51 @@ mod matrix_access_contract_tests {
         assert_eq!(u8_elements(&out), vec![10, 30]);
     }
 
+    #[test]
+    fn legacy_rectangle_factory_executes_through_live_managed_ports() {
+        type Factory = Access2DRRVUU<u8, DMatrix<u8>, DMatrix<u8>, DVector<usize>, DVector<usize>>;
+        let source =
+            ValueCell::from_exact(DMatrix::from_row_slice(3, 2, &[10_u8, 11, 20, 21, 30, 31]))
+                .unwrap();
+        let rows = indices(vec![3, 1]);
+        let columns = indices(vec![2, 1]);
+        let out = ValueCell::from_exact(DMatrix::from_element(2, 2, 0_u8)).unwrap();
+        let invocation =
+            FunctionInvocation::ternary(out.clone(), source, rows.clone(), columns.clone());
+        let function = crate::test_support::managed_factory_instance::<Factory>(
+            invocation,
+            "test/access-rectangle",
+        )
+        .unwrap();
+
+        function.instance().solve_result().unwrap();
+        assert_eq!(u8_elements(&out), vec![31, 30, 11, 10]);
+
+        replace_exact(&rows, DVector::from_vec(vec![2_usize]));
+        replace_exact(&columns, DVector::from_vec(vec![1_usize, 2]));
+        assert!(function.instance().solve_result().is_err());
+        assert_eq!(u8_elements(&out), vec![31, 30, 11, 10]);
+    }
+
+    #[test]
+    fn legacy_all_rows_factory_executes_through_live_managed_ports() {
+        type Factory = Access2DARV<u8, DMatrix<u8>, DMatrix<u8>, DVector<usize>>;
+        let source =
+            ValueCell::from_exact(DMatrix::from_row_slice(3, 2, &[10_u8, 11, 20, 21, 30, 31]))
+                .unwrap();
+        let columns = indices(vec![2, 1]);
+        let out = ValueCell::from_exact(DMatrix::from_element(3, 2, 0_u8)).unwrap();
+        let invocation = FunctionInvocation::binary(out.clone(), source, columns);
+        let function = crate::test_support::managed_factory_instance::<Factory>(
+            invocation,
+            "test/access-columns",
+        )
+        .unwrap();
+
+        function.instance().solve_result().unwrap();
+        assert_eq!(u8_elements(&out), vec![11, 10, 21, 20, 31, 30]);
+    }
+
     #[cfg(feature = "bool")]
     #[test]
     fn exact_contract_rejects_logical_mask_with_wrong_axis_length() {
@@ -676,6 +781,8 @@ enum ManagedMatrixAccessKernel {
     Column,
     Row,
     Rows,
+    Columns,
+    Rectangle,
     ScalarRowColumns,
     RowsScalarColumn,
     ScalarCell,
@@ -703,6 +810,24 @@ macro_rules! managed_access_kernel {
     (access_2d_slice_all_bool) => {
         ManagedMatrixAccessKernel::Rows
     };
+    (assign_2d_all_range_v) => {
+        ManagedMatrixAccessKernel::Columns
+    };
+    (assign_2d_all_range_vb) => {
+        ManagedMatrixAccessKernel::Columns
+    };
+    (access_2d_range_range_vbb) => {
+        ManagedMatrixAccessKernel::Rectangle
+    };
+    (access_2d_range_range_vbu) => {
+        ManagedMatrixAccessKernel::Rectangle
+    };
+    (access_2d_range_range_vuu) => {
+        ManagedMatrixAccessKernel::Rectangle
+    };
+    (access_2d_range_range_vub) => {
+        ManagedMatrixAccessKernel::Rectangle
+    };
     (access_2d) => {
         ManagedMatrixAccessKernel::ScalarCell
     };
@@ -717,6 +842,21 @@ macro_rules! managed_access_kernel {
     };
     (access_2d_col_slice_bool) => {
         ManagedMatrixAccessKernel::RowsScalarColumn
+    };
+}
+
+macro_rules! managed_access_contract {
+    (access_2d_range_range_vbb) => {
+        PURE_TERNARY_LOGICAL_ROWS_LOGICAL_COLUMNS_CONTRACT
+    };
+    (access_2d_range_range_vbu) => {
+        PURE_TERNARY_LOGICAL_ROWS_EXPLICIT_COLUMNS_CONTRACT
+    };
+    (access_2d_range_range_vuu) => {
+        PURE_TERNARY_EXPLICIT_ROWS_EXPLICIT_COLUMNS_CONTRACT
+    };
+    (access_2d_range_range_vub) => {
+        PURE_TERNARY_EXPLICIT_ROWS_LOGICAL_COLUMNS_CONTRACT
     };
 }
 
@@ -774,13 +914,14 @@ impl ManagedAccessSelectorBacking for usize {
     type Element = usize;
 }
 
-impl ManagedAccessSelectorBacking for DVector<usize> {
-    type Element = usize;
-}
-
-#[cfg(feature = "bool")]
-impl ManagedAccessSelectorBacking for DVector<bool> {
-    type Element = bool;
+impl<T, R, C, S> ManagedAccessSelectorBacking for naMatrix<T, R, C, S>
+where
+    T: ManagedAccessSelectorElement,
+    R: Dim,
+    C: Dim,
+    S: RawStorage<T, R, C>,
+{
+    type Element = T;
 }
 
 fn validate_selector_view<S: ManagedAccessSelectorElement>(
@@ -876,6 +1017,7 @@ where
         ManagedMatrixAccessKernel::Column => (source.columns(), true),
         ManagedMatrixAccessKernel::Row => (source.rows(), true),
         ManagedMatrixAccessKernel::Rows => (source.rows(), false),
+        ManagedMatrixAccessKernel::Columns => (source.columns(), false),
         _ => {
             return Err(function_shape_contract_violation(
                 "matrix_access",
@@ -972,6 +1114,26 @@ where
                     function_shape_contract_violation(
                         "matrix_access",
                         "row selection is outside the source",
+                    )
+                })
+            })
+        }
+        ManagedMatrixAccessKernel::Columns => {
+            if output.rows() != source.rows() || output.columns() != selected {
+                return Err(function_shape_contract_violation(
+                    "matrix_access",
+                    "column selection output geometry is inconsistent",
+                ));
+            }
+            let output_rows = output.rows();
+            output.try_fill_column_major(|index| {
+                let row = index % output_rows.max(1);
+                let output_column = index / output_rows.max(1);
+                let source_column = selected_position(&selector, output_column, source.columns())?;
+                source.get(row, source_column).ok_or_else(|| {
+                    function_shape_contract_violation(
+                        "matrix_access",
+                        "column selection is outside the source",
                     )
                 })
             })
@@ -1218,7 +1380,7 @@ impl ManagedAccessElement for String {
             ],
         };
         let next = super::canonical_access_result(source.cell(), &selectors)?;
-        frame.stage_output_value(output.cell(), &next.snapshot()?)
+        frame.stage_output_value(output.cell(), next.snapshot()?)
     }
 
     fn solve_ternary<R: ManagedAccessSelectorElement, C: ManagedAccessSelectorElement>(
@@ -1236,7 +1398,7 @@ impl ManagedAccessElement for String {
             ),
         ];
         let next = super::canonical_access_result(source.cell(), &selectors)?;
-        frame.stage_output_value(output.cell(), &next.snapshot()?)
+        frame.stage_output_value(output.cell(), next.snapshot()?)
     }
 
     fn solve_all(
@@ -1248,7 +1410,7 @@ impl ManagedAccessElement for String {
             source.cell(),
             &[crate::intrinsics::canonical_access::CanonicalAccessSelector::All],
         )?;
-        frame.stage_output_value(output.cell(), &next.snapshot()?)
+        frame.stage_output_value(output.cell(), next.snapshot()?)
     }
 }
 
@@ -1963,113 +2125,10 @@ impl_access_fxn_shape2!(
     PURE_TERNARY_LOGICAL_ROWS_SCALAR_COLUMN_CONTRACT
 );
 
-macro_rules! access_2d_range_range_vbb {
-    ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
-        let mut sink_rix = 0;
-        let mut sink_cix = 0;
-        for r in 0..($ix1).len() {
-            if ($ix1)[r] {
-                for c in 0..($ix2).len() {
-                    if ($ix2)[c] {
-                        ($sink)[(sink_rix, sink_cix)] = ($source)[(r, c)].clone();
-                        sink_cix += 1;
-                    }
-                }
-                sink_cix = 0;
-                sink_rix += 1;
-            }
-        }
-    };
-}
-
-macro_rules! access_2d_range_range_vuu {
-    ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
-        let mut sink_rix = 0;
-        let mut sink_cix = 0;
-        for r in 0..($ix1).len() {
-            let row = ($ix1)[r] - 1;
-            for c in 0..($ix2).len() {
-                let col = ($ix2)[c] - 1;
-                ($sink)[(sink_rix, sink_cix)] = ($source)[(row, col)].clone();
-                sink_cix += 1;
-            }
-            sink_cix = 0;
-            sink_rix += 1;
-        }
-    };
-}
-
-macro_rules! access_2d_range_range_vub {
-    ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
-        let mut sink_rix = 0;
-        let mut sink_cix = 0;
-        for r in 0..($ix1).len() {
-            let row = ($ix1)[r] - 1;
-            for c in 0..($ix2).len() {
-                if ($ix2)[c] {
-                    ($sink)[(sink_rix, sink_cix)] = ($source)[(row, c)].clone();
-                    sink_cix += 1;
-                }
-            }
-            sink_cix = 0;
-            sink_rix += 1;
-        }
-    };
-}
-
-macro_rules! access_2d_range_range_vbu {
-    ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
-        let mut sink_rix = 0;
-        let mut sink_cix = 0;
-        for r in 0..($ix1).len() {
-            if ($ix1)[r] {
-                for c in 0..($ix2).len() {
-                    let col = ($ix2)[c] - 1;
-                    ($sink)[(sink_rix, sink_cix)] = ($source)[(r, col)].clone();
-                    sink_cix += 1;
-                }
-                sink_cix = 0;
-                sink_rix += 1;
-            }
-        }
-    };
-}
-
 impl_range_range_fxn_v!(Access2DRRVBB, access_2d_range_range_vbb, bool, bool);
 impl_range_range_fxn_v!(Access2DRRVBU, access_2d_range_range_vbu, bool, usize);
 impl_range_range_fxn_v!(Access2DRRVUU, access_2d_range_range_vuu, usize, usize);
 impl_range_range_fxn_v!(Access2DRRVUB, access_2d_range_range_vub, usize, bool);
-
-macro_rules! assign_2d_all_range_v {
-    ($source:expr, $ix:expr, $sink:expr) => {{
-        let mut sink_col_ix = 0;
-        for i in 0..(*$ix).len() {
-            let col_ix = $ix[i] - 1;
-            let mut sink_col = ($sink).column_mut(sink_col_ix);
-            let src_col = ($source).column(col_ix);
-            for (dst, src) in sink_col.iter_mut().zip(src_col.iter()) {
-                *dst = src.clone();
-            }
-            sink_col_ix += 1;
-        }
-    }};
-}
-
-macro_rules! assign_2d_all_range_vb {
-    ($source:expr, $ix:expr, $sink:expr) => {{
-        let mut sink_col_ix = 0;
-        for i in 0..(*$source).ncols() {
-            if $ix[i] {
-                let mut sink_col = ($sink).column_mut(sink_col_ix);
-                let src_col = ($source).column(i);
-                for (dst, src) in sink_col.iter_mut().zip(src_col.iter()) {
-                    *dst = src.clone();
-                }
-                sink_col_ix += 1;
-            }
-        }
-    }};
-}
 
 impl_all_fxn_v!(
     Access2DARV,
@@ -3114,28 +3173,50 @@ struct CanonicalIndexConversion {
 
 #[cfg(any(feature = "subscript_formula", feature = "subscript_range"))]
 macro_rules! managed_index_inputs {
-    ($($(#[$cfg:meta])* $variant:ident: $type:ty, $schema:pat => $value:expr);+ $(;)?) => {
+    (
+        $base_variant:ident: $base_type:ty, $base_schema:pat => $base_value:expr;
+        $($feature:literal => $variant:ident: $type:ty, $schema:pat => $value:expr);+ $(;)?
+    ) => {
         #[derive(Debug)]
         enum ManagedIndexInput {
-            $($(#[$cfg])* $variant(mech_core::ManagedPort<$type>)),+
+            $base_variant(mech_core::ManagedPort<$base_type>),
+            $(#[cfg(feature = $feature)] $variant(mech_core::ManagedPort<$type>)),+
         }
 
         impl ManagedIndexInput {
             fn bind(source: mech_core::FunctionInputPort<'_>, schema: &SchemaBody) -> MResult<Self> {
                 match schema {
-                    $($(#[$cfg])* $schema => Ok(Self::$variant(source.try_managed_element::<$type>()?)),)+
+                    $base_schema => Ok(Self::$base_variant(source.try_managed_element::<$base_type>()?)),
+                    $(#[cfg(feature = $feature)] $schema => Ok(Self::$variant(source.try_managed_element::<$type>()?)),)+
                     _ => Err(index_conversion_error()),
                 }
             }
 
             #[cfg(feature = "semantic-compiler")]
             fn cell(&self) -> &ValueCell {
-                match self { $($(#[$cfg])* Self::$variant(port) => port.cell()),+ }
+                match self {
+                    Self::$base_variant(port) => port.cell(),
+                    $(#[cfg(feature = $feature)] Self::$variant(port) => port.cell()),+
+                }
             }
 
             fn convert(&self, frame: &mut mech_core::KernelMemoryFrame<'_>, output: &mech_core::ManagedPort<usize>) -> MResult<()> {
                 match self {
-                    $($(#[$cfg])* Self::$variant(source) => {
+                    Self::$base_variant(source) => {
+                        frame.with_unary_typed_port_views(source, output, |source, output| {
+                            if source.len() != output.len() {
+                                return Err(index_conversion_error());
+                            }
+                            output.try_fill_column_major(|index| {
+                                let value = source.get(index / source.columns(), index % source.columns())
+                                    .ok_or_else(index_conversion_error)?;
+                                let ordinal = mech_core::canonical_positional_ordinal(&($base_value)(value))
+                                    .map_err(|_| index_conversion_error())?;
+                                usize::try_from(ordinal).map_err(|_| index_conversion_error())
+                            })
+                        })
+                    },
+                    $(#[cfg(feature = $feature)] Self::$variant(source) => {
                         frame.with_unary_typed_port_views(source, output, |source, output| {
                             if source.len() != output.len() {
                                 return Err(index_conversion_error());
@@ -3162,30 +3243,18 @@ macro_rules! managed_index_inputs {
 #[cfg(any(feature = "subscript_formula", feature = "subscript_range"))]
 managed_index_inputs!(
     Index: usize, SchemaBody::Index => |value| ValueData::Index(value as u64);
-    #[cfg(feature = "u8")]
-    U8: u8, SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W8) => ValueData::U8;
-    #[cfg(feature = "u16")]
-    U16: u16, SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W16) => ValueData::U16;
-    #[cfg(feature = "u32")]
-    U32: u32, SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W32) => ValueData::U32;
-    #[cfg(feature = "u64")]
-    U64: u64, SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64) => ValueData::U64;
-    #[cfg(feature = "u128")]
-    U128: u128, SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W128) => ValueData::U128;
-    #[cfg(feature = "i8")]
-    I8: i8, SchemaBody::SignedInteger(mech_core::IntegerWidth::W8) => ValueData::I8;
-    #[cfg(feature = "i16")]
-    I16: i16, SchemaBody::SignedInteger(mech_core::IntegerWidth::W16) => ValueData::I16;
-    #[cfg(feature = "i32")]
-    I32: i32, SchemaBody::SignedInteger(mech_core::IntegerWidth::W32) => ValueData::I32;
-    #[cfg(feature = "i64")]
-    I64: i64, SchemaBody::SignedInteger(mech_core::IntegerWidth::W64) => ValueData::I64;
-    #[cfg(feature = "i128")]
-    I128: i128, SchemaBody::SignedInteger(mech_core::IntegerWidth::W128) => ValueData::I128;
-    #[cfg(feature = "f32")]
-    F32: f32, SchemaBody::FloatingPoint(mech_core::FloatWidth::W32) => |value| ValueData::F32(mech_core::snapshot::F32Bits::from_f32(value));
-    #[cfg(feature = "f64")]
-    F64: f64, SchemaBody::FloatingPoint(mech_core::FloatWidth::W64) => |value| ValueData::F64(mech_core::snapshot::F64Bits::from_f64(value));
+    "u8" => U8: u8, SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W8) => ValueData::U8;
+    "u16" => U16: u16, SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W16) => ValueData::U16;
+    "u32" => U32: u32, SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W32) => ValueData::U32;
+    "u64" => U64: u64, SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64) => ValueData::U64;
+    "u128" => U128: u128, SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W128) => ValueData::U128;
+    "i8" => I8: i8, SchemaBody::SignedInteger(mech_core::IntegerWidth::W8) => ValueData::I8;
+    "i16" => I16: i16, SchemaBody::SignedInteger(mech_core::IntegerWidth::W16) => ValueData::I16;
+    "i32" => I32: i32, SchemaBody::SignedInteger(mech_core::IntegerWidth::W32) => ValueData::I32;
+    "i64" => I64: i64, SchemaBody::SignedInteger(mech_core::IntegerWidth::W64) => ValueData::I64;
+    "i128" => I128: i128, SchemaBody::SignedInteger(mech_core::IntegerWidth::W128) => ValueData::I128;
+    "f32" => F32: f32, SchemaBody::FloatingPoint(mech_core::FloatWidth::W32) => |value| ValueData::F32(mech_core::snapshot::F32Bits::from_f32(value));
+    "f64" => F64: f64, SchemaBody::FloatingPoint(mech_core::FloatWidth::W64) => |value| ValueData::F64(mech_core::snapshot::F64Bits::from_f64(value));
 );
 
 #[cfg(any(feature = "subscript_formula", feature = "subscript_range"))]

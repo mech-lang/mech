@@ -30,6 +30,7 @@ fn canonical_context_name_from_base_uri(base_uri: &str) -> String {
 pub struct Interpreter {
     pub id: u64,
     checkpoint_owner: Rc<()>,
+    memory_domain: MemoryDomain,
     #[cfg(feature = "functions")]
     function_catalog: Arc<FunctionCatalog>,
     pub max_steps: usize,
@@ -995,6 +996,7 @@ impl Clone for Interpreter {
         Self {
             id: self.id,
             checkpoint_owner: Rc::new(()),
+            memory_domain: self.memory_domain.clone(),
             #[cfg(feature = "functions")]
             function_catalog: Arc::clone(&self.function_catalog),
             max_steps: self.max_steps,
@@ -1255,6 +1257,8 @@ impl Interpreter {
         Self {
             id,
             checkpoint_owner: Rc::new(()),
+            memory_domain: MemoryDomain::new()
+                .expect("an interpreter must be able to create its owner memory session"),
             #[cfg(feature = "functions")]
             function_catalog,
             max_steps, // Default maximum steps
@@ -1698,6 +1702,13 @@ impl<'a> InterpreterExecution<'a> {
 
     pub(crate) fn presentation_namespace(&self) -> u64 {
         self.presentation_namespace
+    }
+
+    /// Owner session shared by ordinary cells created while planning and
+    /// executing this interpreter. Child interpreters deliberately receive a
+    /// distinct session and cross-session inputs pass through explicit import.
+    pub(crate) fn memory_domain(&self) -> &MemoryDomain {
+        &self.interpreter.memory_domain
     }
 
     #[cfg(feature = "functions")]

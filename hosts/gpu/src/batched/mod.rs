@@ -4345,6 +4345,7 @@ mod native {
                 });
             let mut next_group = self.next_group;
             let mut last_output_group = self.last_output_group;
+            let mut written_state_groups = [false; 2];
             {
                 let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
                     label: Some("Mech fixed-shape batch compute pass"),
@@ -4353,6 +4354,7 @@ mod native {
                 pass.set_pipeline(&self.pipeline);
                 for _ in 0..turns {
                     let group = next_group;
+                    written_state_groups[group] = true;
                     pass.set_bind_group(0, &self.bind_groups[group], &[]);
                     pass.dispatch_workgroups(self.workgroups, 1, 1);
                     last_output_group = Some(group);
@@ -4383,7 +4385,7 @@ mod native {
                 &self.managed_memory,
             )
             .map_err(|error| BatchedExecutionError::Native(error.to_string()))?;
-            self.record_completed_writes(&uploaded_objects)?;
+            self.record_completed_writes(&uploaded_objects, written_state_groups)?;
             self.last_output_group = last_output_group;
             self.next_group = next_group;
             Ok(started.elapsed())
@@ -4392,6 +4394,7 @@ mod native {
         fn record_completed_writes(
             &mut self,
             uploaded_objects: &[MemoryObjectId],
+            written_state_groups: [bool; 2],
         ) -> Result<(), BatchedExecutionError> {
             for object in uploaded_objects {
                 let bytes = self
@@ -4414,6 +4417,22 @@ mod native {
                 self.managed_memory
                     .record_device_write(object, bytes)
                     .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
+            }
+            for (group, written) in written_state_groups.into_iter().enumerate() {
+                if !written {
+                    continue;
+                }
+                for (object, bytes) in self
+                    .memory_plan
+                    .writable_state_objects(group)
+                    .expect("fixed-shape bind-group index is validated")
+                    .iter()
+                    .copied()
+                {
+                    self.managed_memory
+                        .record_device_write(object, bytes)
+                        .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
+                }
             }
             Ok(())
         }
@@ -4488,7 +4507,7 @@ mod native {
                     &self.managed_memory,
                 )
                 .map_err(|error| BatchedExecutionError::Native(error.to_string()))?;
-                self.record_completed_writes(&uploaded_objects)?;
+                self.record_completed_writes(&uploaded_objects, [group == 0, group == 1])?;
                 let words = self.read_integrity_fault()?;
                 if words[0] != 0 {
                     let packed = words[1];

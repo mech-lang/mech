@@ -96,6 +96,7 @@ def production_rust_files(root: Path):
 def failures(root: Path) -> list[str]:
     root = root.resolve()
     found: list[str] = []
+    r6_active = (root / "scripts/check-r6-memory-runtime.py").is_file()
     sources: dict[str, str] = {}
     for relative in REQUIRED:
         path = root / relative
@@ -152,11 +153,30 @@ def failures(root: Path) -> list[str]:
                     )
 
     engine_source = root / "src/engine/src"
+    function_instance_path = root / "src/core/src/function/mod.rs"
+    function_instance_source = (
+        function_instance_path.read_text(encoding="utf-8")
+        if function_instance_path.is_file()
+        else ""
+    )
+    r6_instance_retains_call = (
+        "struct ManagedFunctionBinding" in function_instance_source
+        and "plan: Rc<CallMemoryPlan>" in function_instance_source
+    )
     if engine_source.exists():
         for rust in engine_source.rglob("*.rs"):
-            if ".register_instance(" in rust.read_text(encoding="utf-8"):
+            relative = rust.relative_to(root).as_posix()
+            registrations = rust.read_text(encoding="utf-8").count(".register_instance(")
+            allowed = (
+                1
+                if r6_active
+                and r6_instance_retains_call
+                and relative == "src/engine/src/program/state.rs"
+                else 0
+            )
+            if registrations > allowed:
                 found.append(
-                    f"{rust.relative_to(root).as_posix()}: executable plan node drops BoundCall"
+                    f"{relative}: executable plan node drops BoundCall"
                 )
 
     for relative, source in production_rust_files(root):

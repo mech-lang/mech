@@ -240,6 +240,7 @@ def failures(root: Path) -> list[str]:
     root = root.resolve()
     r4_active = (root / "scripts/check-r4-type-cutover.py").is_file()
     r5_active = (root / "scripts/check-r5-memory-planner.py").is_file()
+    r6_active = (root / "scripts/check-r6-memory-runtime.py").is_file()
     found: list[str] = []
     sources = {relative: _read(root, relative, found) for relative in REQUIRED}
     lib = rust_code(sources["src/core/src/lib.rs"])
@@ -374,8 +375,9 @@ def failures(root: Path) -> list[str]:
         _require(port, rf"\b{policy}\b", f"derived port requirement lost {policy}", found)
 
     r4_call_allowance = {
-        ("validate_storage_contract", "src/core/src/cell_binding.rs"): 5,
+        ("validate_storage_contract", "src/core/src/cell_binding.rs"): 7 if r6_active else 5,
         ("check_operation_memory_contract", "src/core/src/function/catalog.rs"): 1,
+        ("check_operation_memory_contract", "src/core/src/function/mod.rs"): 1 if r6_active else 0,
         ("check_operation_memory_contract", "src/core/src/function/specialization.rs"): 2,
     }
     for method, expected_definitions in (("validate_storage_contract", 1), ("check_operation_memory_contract", 1)):
@@ -441,11 +443,13 @@ def failures(root: Path) -> list[str]:
         found.append("README does not mark R2 complete")
     roadmap = sources["docs/design/ROADMAP.mec"]
     roadmap_markers = (
-        ("Type–memory boundary: complete", "R5 Memory planner — complete", "R6 Memory runtime cutover — next")
+        ("Type–memory boundary: complete", "R5 Memory planner — complete", "R6 Memory runtime cutover — in progress")
+        if r6_active else
+        (("Type–memory boundary: complete", "R5 Memory planner — complete", "R6 Memory runtime cutover — next")
         if r5_active else
         (("Type–memory boundary: complete", "R4 authority cutover are complete", "R5 is")
          if r4_active else
-         ("Type–memory boundary: complete", "Next endgame phase: R3"))
+         ("Type–memory boundary: complete", "Next endgame phase: R3")))
     )
     for marker in roadmap_markers:
         if marker not in roadmap:

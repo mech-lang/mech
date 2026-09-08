@@ -4,7 +4,7 @@ use mech_compute::{
     ComputeElementType, ComputeKernel, ComputePhysicalPlan, ComputePort, ComputePortId,
     ComputeProgram, ComputeRegionInterface, ElementwiseIr, ElementwiseStoragePlan,
 };
-use mech_core::{CellSlotId, GpuMemoryLimits, MemoryRuntimeError, OwnedAllocationState, SchemaId};
+use mech_core::{CellSlotId, GpuMemoryLimits, MemoryRuntimeError, SchemaId};
 use mech_gpu::{ElementwiseKernel, GpuKernelPlanSource, GpuMemoryPlanError, PlannedGpuExecution};
 
 fn limits() -> GpuMemoryLimits {
@@ -53,10 +53,10 @@ fn planned_execution(elements: u64) -> PlannedGpuExecution {
 }
 
 #[test]
-fn device_buffers_require_exact_registration_before_submission() {
+fn unregistered_device_buffers_cannot_enter_submission() {
     let plan = planned_execution(4);
     let object = plan.binding_object(0).unwrap();
-    let mut memory = plan.managed_memory().unwrap();
+    let memory = plan.managed_memory().unwrap();
     assert_eq!(memory.allocations().len(), 1);
     assert_eq!(memory.allocations()[0].actual_block_bytes, 0);
     assert!(matches!(
@@ -65,40 +65,61 @@ fn device_buffers_require_exact_registration_before_submission() {
             MemoryRuntimeError::UnplannedAllocation { .. }
         ))
     ));
+}
+
+#[cfg(feature = "native")]
+#[test]
+fn registered_device_buffer_couples_storage_loss_and_accounting_lifetimes() {
+    let instance = wgpu::Instance::default();
+    let Some(adapter) =
+        pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
+            power_preference: wgpu::PowerPreference::LowPower,
+            compatible_surface: None,
+            force_fallback_adapter: false,
+        }))
+    else {
+        return;
+    };
+    let Ok((device, _queue)) = pollster::block_on(adapter.request_device(
+        &wgpu::DeviceDescriptor {
+            label: Some("Mech registered buffer ownership test"),
+            required_features: wgpu::Features::empty(),
+            required_limits: wgpu::Limits::downlevel_defaults(),
+        },
+        None,
+    )) else {
+        return;
+    };
+    let plan = planned_execution(4);
+    let object = plan.binding_object(0).unwrap();
+    let mut memory = plan.managed_memory().unwrap();
+    let undersized = device.create_buffer(&wgpu::BufferDescriptor {
+        label: Some("Mech undersized registered buffer ownership test"),
+        size: 12,
+        usage: wgpu::BufferUsages::STORAGE,
+        mapped_at_creation: false,
+    });
     assert!(matches!(
-        memory.attach_device_allocation(object, 15, 0),
+        memory.register_device_buffer(object, undersized, 0),
         Err(GpuMemoryPlanError::Runtime(
             MemoryRuntimeError::CapacityExceeded { .. }
         ))
     ));
+    let buffer = device.create_buffer(&wgpu::BufferDescriptor {
+        label: Some("Mech registered buffer ownership test"),
+        size: 16,
+        usage: wgpu::BufferUsages::STORAGE,
+        mapped_at_creation: false,
+    });
 
-    memory.attach_device_allocation(object, 16, 16).unwrap();
-    assert_eq!(memory.content_version(object), Some(1));
+    let registered = memory.register_device_buffer(object, buffer, 0).unwrap();
     let observation = memory.allocations()[0];
+    assert_eq!(registered.object(), object);
+    assert_eq!(registered.allocation_handle(), observation.handle);
+    assert_eq!(registered.buffer().size(), 16);
     assert_eq!(observation.actual_block_bytes, 16);
     assert_eq!(observation.device_owner_pins, 1);
-    assert_eq!(observation.state, OwnedAllocationState::Live);
-    assert!(matches!(
-        memory.attach_device_allocation(object, 16, 16),
-        Err(GpuMemoryPlanError::DuplicateDeviceAllocation { .. })
-    ));
 
-    let hold = memory.begin_submission(&[object], &[]).unwrap();
-    assert_eq!(memory.ledger().in_flight_device_bytes, 16);
-    assert_eq!(memory.allocations()[0].submission_pins, 1);
-    hold.complete().unwrap();
-    assert_eq!(memory.ledger().in_flight_device_bytes, 0);
-    assert_eq!(memory.allocations()[0].submission_pins, 0);
-    assert_eq!(memory.record_device_write(object, 16).unwrap(), 2);
-    assert_eq!(memory.content_version(object), Some(2));
-}
-
-#[test]
-fn device_loss_is_a_fail_closed_submission_boundary() {
-    let plan = planned_execution(1);
-    let object = plan.binding_object(0).unwrap();
-    let mut memory = plan.managed_memory().unwrap();
-    memory.attach_device_allocation(object, 4, 4).unwrap();
     memory.mark_device_lost().unwrap();
     assert!(matches!(
         memory.begin_submission(&[object], &[]),
@@ -107,7 +128,18 @@ fn device_loss_is_a_fail_closed_submission_boundary() {
         ))
     ));
     assert!(matches!(
-        memory.record_device_write(object, 4),
+        memory.record_device_write(object, 16),
+        Err(GpuMemoryPlanError::Runtime(
+            MemoryRuntimeError::DeviceLost { .. }
+        ))
+    ));
+
+    drop(registered);
+    let observation = memory.allocations()[0];
+    assert_eq!(observation.actual_block_bytes, 0);
+    assert_eq!(observation.device_owner_pins, 0);
+    assert!(matches!(
+        memory.begin_submission(&[object], &[]),
         Err(GpuMemoryPlanError::Runtime(
             MemoryRuntimeError::DeviceLost { .. }
         ))

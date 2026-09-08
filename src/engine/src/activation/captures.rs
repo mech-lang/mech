@@ -94,7 +94,7 @@ pub(super) fn stage_increment(
     cell: &ValueCell,
 ) -> MResult<()> {
     let next = ValueCell::from_exact(read_index(cell)?.saturating_add(1))?;
-    frame.stage_output_value(cell, &next.snapshot()?)
+    frame.stage_output_value(cell, next.snapshot()?)
 }
 
 pub(super) fn register_node(

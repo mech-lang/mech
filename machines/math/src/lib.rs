@@ -10,7 +10,10 @@ extern crate nalgebra as na;
 use mech_core::*;
 
 #[cfg(all(not(feature = "dynamic-module"), feature = "math"))]
-#[allow(unused_imports)]
+#[allow(
+    unused_imports,
+    reason = "minimal math feature profiles can compile without generated paste factories"
+)]
 use paste::paste;
 
 #[cfg(feature = "matrixd")]
@@ -51,7 +54,10 @@ use std::fmt::{Debug, Display};
     feature = "neg",
     feature = "op_assign"
 ))]
-#[allow(unused_imports)]
+#[allow(
+    unused_imports,
+    reason = "minimal operation profiles can omit the generic marker and operator traits"
+)]
 use std::marker::PhantomData;
 #[cfg(any(feature = "ops", feature = "op_assign"))]
 use std::ops::*;

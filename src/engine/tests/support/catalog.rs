@@ -92,12 +92,6 @@ mod test_operations {
             .cloned()
     }
 
-    fn exact_ref<T: FunctionPortBacking>(cell: &ValueCell) -> MResult<Ref<T>> {
-        FunctionInvocation::nullary(cell.clone())
-            .expect_nullary()?
-            .try_ref()
-    }
-
     fn specialized_function(
         context: &SpecializationContext<'_>,
         implementation: Box<dyn MechFunction>,
@@ -112,7 +106,7 @@ mod test_operations {
         };
         context
             .certify_instance(
-                FunctionInstance::new(implementation, invocation),
+                (implementation, invocation),
                 RuntimeFunctionId::from_name("TestSpecialized"),
                 ExecutionTarget::DirectRuntime,
                 mech_core::ImplementationMemoryClass::NoAdditionalScratch,
@@ -162,26 +156,39 @@ mod test_operations {
     #[derive(Debug)]
     struct BinaryArithmeticFunction {
         operation: BinaryArithmetic,
-        lhs: Ref<f64>,
-        rhs: Ref<f64>,
-        out: Ref<f64>,
+        lhs: ManagedPort<f64>,
+        rhs: ManagedPort<f64>,
+        out: ManagedPort<f64>,
     }
 
     impl MechFunctionImpl for BinaryArithmeticFunction {
-        fn solve_result(&self) -> MResult<()> {
-            let lhs = *self.lhs.borrow();
-            let rhs = *self.rhs.borrow();
-            *self.out.borrow_mut() = match self.operation {
-                BinaryArithmetic::Add => lhs + rhs,
-                BinaryArithmetic::Subtract => lhs - rhs,
-                BinaryArithmetic::Multiply => lhs * rhs,
-                BinaryArithmetic::Divide => lhs / rhs,
-            };
-            Ok(())
+        fn solve_managed(
+            &self,
+            frame: &mut mech_core::KernelMemoryFrame<'_>,
+            _services: &mut dyn mech_core::MechExecutionServices,
+        ) -> MResult<mech_core::ReactiveSolveStatus> {
+            frame.with_binary_port_views(&self.lhs, &self.rhs, &self.out, |lhs, rhs, out| {
+                out.try_fill_column_major(|index| {
+                    let lhs = lhs.get_column_major(index).ok_or_else(|| {
+                        test_operation_error("binary arithmetic lhs geometry mismatch")
+                    })?;
+                    let rhs = rhs.get_column_major(index).ok_or_else(|| {
+                        test_operation_error("binary arithmetic rhs geometry mismatch")
+                    })?;
+                    let result = match self.operation {
+                        BinaryArithmetic::Add => lhs + rhs,
+                        BinaryArithmetic::Subtract => lhs - rhs,
+                        BinaryArithmetic::Multiply => lhs * rhs,
+                        BinaryArithmetic::Divide => lhs / rhs,
+                    };
+                    Ok(result)
+                })
+            })?;
+            Ok(mech_core::ReactiveSolveStatus::Changed)
         }
 
         fn primary_output_state_port(&self) -> Option<mech_core::FunctionStatePort<'_>> {
-            Some(mech_core::FunctionStatePort::from_ref(&self.out))
+            Some(mech_core::FunctionStatePort::from_cell(self.out.cell()))
         }
 
         fn to_string(&self) -> String {
@@ -212,11 +219,12 @@ mod test_operations {
             let lhs = canonical_input(invocation, 0, "binary arithmetic expects a lhs")?;
             let rhs = canonical_input(invocation, 1, "binary arithmetic expects a rhs")?;
             let output = ValueCell::from_exact(0.0_f64)?;
+            let ports = FunctionInvocation::binary(output.clone(), lhs.clone(), rhs.clone());
             let function = BinaryArithmeticFunction {
                 operation: self.0,
-                lhs: exact_ref(&lhs)?,
-                rhs: exact_ref(&rhs)?,
-                out: exact_ref(&output)?,
+                lhs: ports.input(0).expect("lhs port").try_managed::<f64>()?,
+                rhs: ports.input(1).expect("rhs port").try_managed::<f64>()?,
+                out: ports.output().try_managed::<f64>()?,
             };
             Ok(specialized_function(
                 context,
@@ -229,18 +237,29 @@ mod test_operations {
 
     #[derive(Debug)]
     struct NegateFunction {
-        input: Ref<f64>,
-        out: Ref<f64>,
+        input: ManagedPort<f64>,
+        out: ManagedPort<f64>,
     }
 
     impl MechFunctionImpl for NegateFunction {
-        fn solve_result(&self) -> MResult<()> {
-            *self.out.borrow_mut() = -*self.input.borrow();
-            Ok(())
+        fn solve_managed(
+            &self,
+            frame: &mut mech_core::KernelMemoryFrame<'_>,
+            _services: &mut dyn mech_core::MechExecutionServices,
+        ) -> MResult<mech_core::ReactiveSolveStatus> {
+            frame.with_unary_port_views(&self.input, &self.out, |input, output| {
+                output.try_fill_column_major(|index| {
+                    input
+                        .get_column_major(index)
+                        .map(|value| -value)
+                        .ok_or_else(|| test_operation_error("negation input geometry mismatch"))
+                })
+            })?;
+            Ok(mech_core::ReactiveSolveStatus::Changed)
         }
 
         fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-            Some(FunctionStatePort::from_ref(&self.out))
+            Some(FunctionStatePort::from_cell(self.out.cell()))
         }
 
         fn to_string(&self) -> String {
@@ -268,9 +287,10 @@ mod test_operations {
             }
             let input = canonical_input(invocation, 0, "negation expects an input")?;
             let output = ValueCell::from_exact(0.0_f64)?;
+            let ports = FunctionInvocation::unary(output.clone(), input.clone());
             let function = NegateFunction {
-                input: exact_ref(&input)?,
-                out: exact_ref(&output)?,
+                input: ports.input(0).unwrap().try_managed::<f64>()?,
+                out: ports.output().try_managed::<f64>()?,
             };
             Ok(specialized_function(
                 context,
@@ -296,12 +316,16 @@ mod test_operations {
         operation: Comparison,
         lhs: ValueCell,
         rhs: ValueCell,
-        out: Ref<bool>,
+        out: ManagedPort<bool>,
     }
 
     impl MechFunctionImpl for ComparisonFunction {
-        fn solve_result(&self) -> MResult<()> {
-            *self.out.borrow_mut() = match self.operation {
+        fn solve_managed(
+            &self,
+            frame: &mut mech_core::KernelMemoryFrame<'_>,
+            _services: &mut dyn mech_core::MechExecutionServices,
+        ) -> MResult<mech_core::ReactiveSolveStatus> {
+            let result = match self.operation {
                 Comparison::Equal => canonical_values_equal(&self.lhs, &self.rhs)?,
                 Comparison::NotEqual => !canonical_values_equal(&self.lhs, &self.rhs)?,
                 Comparison::Less => numeric_pair(&self.lhs, &self.rhs, |a, b| a < b)?,
@@ -309,11 +333,14 @@ mod test_operations {
                 Comparison::LessEqual => numeric_pair(&self.lhs, &self.rhs, |a, b| a <= b)?,
                 Comparison::GreaterEqual => numeric_pair(&self.lhs, &self.rhs, |a, b| a >= b)?,
             };
-            Ok(())
+            frame.with_output_port_view(&self.out, |output| {
+                output.try_fill_column_major(|_| Ok(result))
+            })?;
+            Ok(mech_core::ReactiveSolveStatus::Changed)
         }
 
         fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-            Some(FunctionStatePort::from_ref(&self.out))
+            Some(FunctionStatePort::from_cell(self.out.cell()))
         }
 
         fn to_string(&self) -> String {
@@ -342,11 +369,12 @@ mod test_operations {
             let lhs = canonical_input(invocation, 0, "comparison expects a lhs")?;
             let rhs = canonical_input(invocation, 1, "comparison expects a rhs")?;
             let output = ValueCell::from_exact(false)?;
+            let ports = FunctionInvocation::binary(output.clone(), lhs.clone(), rhs.clone());
             let function = ComparisonFunction {
                 operation: self.0,
                 lhs: lhs.clone(),
                 rhs: rhs.clone(),
-                out: exact_ref(&output)?,
+                out: ports.output().try_managed::<bool>()?,
             };
             Ok(specialized_function(
                 context,
@@ -371,25 +399,37 @@ mod test_operations {
     #[derive(Debug)]
     struct BooleanFunction {
         operation: BooleanOperation,
-        lhs: Ref<bool>,
-        rhs: Ref<bool>,
-        out: Ref<bool>,
+        lhs: ManagedPort<bool>,
+        rhs: ManagedPort<bool>,
+        out: ManagedPort<bool>,
     }
 
     impl MechFunctionImpl for BooleanFunction {
-        fn solve_result(&self) -> MResult<()> {
-            let lhs = *self.lhs.borrow();
-            let rhs = *self.rhs.borrow();
-            *self.out.borrow_mut() = match self.operation {
-                BooleanOperation::And => lhs && rhs,
-                BooleanOperation::Or => lhs || rhs,
-                BooleanOperation::Xor => lhs ^ rhs,
-            };
-            Ok(())
+        fn solve_managed(
+            &self,
+            frame: &mut mech_core::KernelMemoryFrame<'_>,
+            _services: &mut dyn mech_core::MechExecutionServices,
+        ) -> MResult<mech_core::ReactiveSolveStatus> {
+            frame.with_binary_port_views(&self.lhs, &self.rhs, &self.out, |lhs, rhs, out| {
+                out.try_fill_column_major(|index| {
+                    let lhs = lhs
+                        .get_column_major(index)
+                        .ok_or_else(|| test_operation_error("boolean lhs geometry mismatch"))?;
+                    let rhs = rhs
+                        .get_column_major(index)
+                        .ok_or_else(|| test_operation_error("boolean rhs geometry mismatch"))?;
+                    Ok(match self.operation {
+                        BooleanOperation::And => lhs && rhs,
+                        BooleanOperation::Or => lhs || rhs,
+                        BooleanOperation::Xor => lhs ^ rhs,
+                    })
+                })
+            })?;
+            Ok(mech_core::ReactiveSolveStatus::Changed)
         }
 
         fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-            Some(FunctionStatePort::from_ref(&self.out))
+            Some(FunctionStatePort::from_cell(self.out.cell()))
         }
 
         fn to_string(&self) -> String {
@@ -420,11 +460,12 @@ mod test_operations {
             let lhs = canonical_input(invocation, 0, "boolean operation expects a lhs")?;
             let rhs = canonical_input(invocation, 1, "boolean operation expects a rhs")?;
             let output = ValueCell::from_exact(false)?;
+            let ports = FunctionInvocation::binary(output.clone(), lhs.clone(), rhs.clone());
             let function = BooleanFunction {
                 operation: self.0,
-                lhs: exact_ref(&lhs)?,
-                rhs: exact_ref(&rhs)?,
-                out: exact_ref(&output)?,
+                lhs: ports.input(0).unwrap().try_managed::<bool>()?,
+                rhs: ports.input(1).unwrap().try_managed::<bool>()?,
+                out: ports.output().try_managed::<bool>()?,
             };
             Ok(specialized_function(
                 context,
@@ -441,18 +482,29 @@ mod test_operations {
 
     #[derive(Debug)]
     struct NotFunction {
-        input: Ref<bool>,
-        out: Ref<bool>,
+        input: ManagedPort<bool>,
+        out: ManagedPort<bool>,
     }
 
     impl MechFunctionImpl for NotFunction {
-        fn solve_result(&self) -> MResult<()> {
-            *self.out.borrow_mut() = !*self.input.borrow();
-            Ok(())
+        fn solve_managed(
+            &self,
+            frame: &mut mech_core::KernelMemoryFrame<'_>,
+            _services: &mut dyn mech_core::MechExecutionServices,
+        ) -> MResult<mech_core::ReactiveSolveStatus> {
+            frame.with_unary_port_views(&self.input, &self.out, |input, output| {
+                output.try_fill_column_major(|index| {
+                    input
+                        .get_column_major(index)
+                        .map(|value| !value)
+                        .ok_or_else(|| test_operation_error("boolean not geometry mismatch"))
+                })
+            })?;
+            Ok(mech_core::ReactiveSolveStatus::Changed)
         }
 
         fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-            Some(FunctionStatePort::from_ref(&self.out))
+            Some(FunctionStatePort::from_cell(self.out.cell()))
         }
 
         fn to_string(&self) -> String {
@@ -480,9 +532,10 @@ mod test_operations {
             }
             let input = canonical_input(invocation, 0, "boolean not expects an input")?;
             let output = ValueCell::from_exact(false)?;
+            let ports = FunctionInvocation::unary(output.clone(), input.clone());
             let function = NotFunction {
-                input: exact_ref(&input)?,
-                out: exact_ref(&output)?,
+                input: ports.input(0).unwrap().try_managed::<bool>()?,
+                out: ports.output().try_managed::<bool>()?,
             };
             Ok(specialized_function(
                 context,
@@ -499,28 +552,33 @@ mod test_operations {
 
     #[derive(Debug)]
     struct AddAssignFunction {
-        sink: Ref<f64>,
-        source: Ref<f64>,
+        base: ManagedPort<f64>,
+        sink: ManagedPort<f64>,
+        source: ManagedPort<f64>,
     }
 
     impl MechFunctionImpl for AddAssignFunction {
-        fn solve_result(&self) -> MResult<()> {
-            let source = *self.source.borrow();
-            *self.sink.borrow_mut() += source;
-            Ok(())
+        fn solve_managed(
+            &self,
+            frame: &mut mech_core::KernelMemoryFrame<'_>,
+            _services: &mut dyn mech_core::MechExecutionServices,
+        ) -> MResult<mech_core::ReactiveSolveStatus> {
+            frame.with_binary_port_views(
+                &self.base,
+                &self.source,
+                &self.sink,
+                |base, source, sink| {
+                    sink.try_fill_column_major(|index| {
+                        Ok(base.get_column_major(index).unwrap()
+                            + source.get_column_major(index).unwrap())
+                    })
+                },
+            )?;
+            Ok(mech_core::ReactiveSolveStatus::Changed)
         }
 
         fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-            Some(FunctionStatePort::from_ref(&self.sink))
-        }
-
-        fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
-            let next = *self.sink.borrow() + *self.source.borrow();
-            Ok(Box::new(ReactiveRegisterWrite::new(
-                self.sink.clone(),
-                next,
-                self.reactive_output_cell_ids(),
-            )))
+            Some(FunctionStatePort::from_cell(self.sink.cell()))
         }
 
         fn reactive_node_kind(&self) -> ReactiveNodeKind {
@@ -552,9 +610,11 @@ mod test_operations {
             }
             let sink = canonical_input(invocation, 0, "add assignment expects a sink")?;
             let source = canonical_input(invocation, 1, "add assignment expects a source")?;
+            let ports = FunctionInvocation::binary(sink.clone(), sink.clone(), source.clone());
             let function = AddAssignFunction {
-                sink: exact_ref(&sink)?,
-                source: exact_ref(&source)?,
+                base: ports.input(0).unwrap().try_managed::<f64>()?,
+                sink: ports.output().try_managed::<f64>()?,
+                source: ports.input(1).unwrap().try_managed::<f64>()?,
             };
             Ok(specialized_function(
                 context,
@@ -568,28 +628,47 @@ mod test_operations {
     #[cfg(all(feature = "f64", feature = "matrix", feature = "range_inclusive"))]
     #[derive(Debug)]
     struct InclusiveRangeFunction {
-        start: Ref<f64>,
-        terminal: Ref<f64>,
-        output: ValueCell,
+        start: ManagedPort<f64>,
+        terminal: ManagedPort<f64>,
+        output: ManagedPort<f64>,
     }
 
     #[cfg(all(feature = "f64", feature = "matrix", feature = "range_inclusive"))]
     impl MechFunctionImpl for InclusiveRangeFunction {
-        fn solve_result(&self) -> MResult<()> {
-            let start = *self.start.borrow() as usize;
-            let terminal = *self.terminal.borrow() as usize;
-            let elements = (start..=terminal)
-                .map(|value| ValueDataDraft::F64(F64Bits::from_f64(value as f64)))
-                .collect::<Vec<_>>();
-            let next = self.output.rebuild_matrix_drafts(
-                vec![elements.len() as u64, 1].into_boxed_slice(),
-                elements.into_boxed_slice(),
+        fn solve_managed(
+            &self,
+            frame: &mut mech_core::KernelMemoryFrame<'_>,
+            _services: &mut dyn mech_core::MechExecutionServices,
+        ) -> MResult<mech_core::ReactiveSolveStatus> {
+            frame.with_binary_port_views(
+                &self.start,
+                &self.terminal,
+                &self.output,
+                |start, terminal, output| {
+                    let start = start.get_column_major(0).ok_or_else(|| {
+                        test_operation_error("inclusive range start is unavailable")
+                    })? as usize;
+                    let terminal = terminal.get_column_major(0).ok_or_else(|| {
+                        test_operation_error("inclusive range terminal is unavailable")
+                    })? as usize;
+                    let expected = terminal.saturating_sub(start).saturating_add(1);
+                    if expected != output.len() {
+                        return Err(test_operation_error(
+                            "inclusive range output shape differs from its managed plan",
+                        ));
+                    }
+                    output.try_fill_column_major(|index| Ok((start + index) as f64))
+                },
             )?;
-            self.output.replace(&next)
+            Ok(mech_core::ReactiveSolveStatus::Changed)
+        }
+
+        fn initial_solve_policy(&self) -> InitialSolvePolicy {
+            InitialSolvePolicy::PreserveSpecializedOutput
         }
 
         fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-            Some(FunctionStatePort::from_cell(&self.output))
+            Some(FunctionStatePort::from_cell(self.output.cell()))
         }
 
         fn to_string(&self) -> String {
@@ -626,14 +705,24 @@ mod test_operations {
             }
             let start = canonical_input(invocation, 0, "inclusive range expects a start")?;
             let terminal = canonical_input(invocation, 1, "inclusive range expects a terminal")?;
+            let start_value = match start.snapshot()?.data() {
+                ValueData::F64(value) => value.to_f64() as usize,
+                _ => return Err(test_operation_error("inclusive range start must be F64")),
+            };
+            let terminal_value = match terminal.snapshot()?.data() {
+                ValueData::F64(value) => value.to_f64() as usize,
+                _ => return Err(test_operation_error("inclusive range terminal must be F64")),
+            };
+            let elements = (start_value..=terminal_value)
+                .map(|value| ValueDataDraft::F64(F64Bits::from_f64(value as f64)))
+                .collect::<Vec<_>>();
             let output = ValueCell::dynamic_matrix(
                 SchemaBody::FloatingPoint(FloatWidth::W64),
-                vec![0, 1].into_boxed_slice(),
-                Box::new([]),
+                vec![elements.len() as u64, 1].into_boxed_slice(),
+                elements.into_boxed_slice(),
             )?;
-            let function =
-                Self::function(exact_ref(&start)?, exact_ref(&terminal)?, output.clone());
-            function.solve_result()?;
+            let ports = FunctionInvocation::binary(output.clone(), start.clone(), terminal.clone());
+            let function = Self::function(&ports)?;
             Ok(specialized_function(
                 context,
                 Box::new(function),
@@ -645,16 +734,12 @@ mod test_operations {
 
     #[cfg(all(feature = "f64", feature = "matrix", feature = "range_inclusive"))]
     impl InclusiveRangeSpecializer {
-        fn function(
-            start: Ref<f64>,
-            terminal: Ref<f64>,
-            output: ValueCell,
-        ) -> InclusiveRangeFunction {
-            InclusiveRangeFunction {
-                start,
-                terminal,
-                output,
-            }
+        fn function(invocation: &FunctionInvocation) -> MResult<InclusiveRangeFunction> {
+            Ok(InclusiveRangeFunction {
+                start: invocation.input(0).unwrap().try_managed::<f64>()?,
+                terminal: invocation.input(1).unwrap().try_managed::<f64>()?,
+                output: invocation.output().try_managed_element::<f64>()?,
+            })
         }
     }
 
@@ -663,9 +748,14 @@ mod test_operations {
         rhs: &ValueCell,
         compare: impl FnOnce(f64, f64) -> bool,
     ) -> MResult<bool> {
-        let lhs = exact_ref::<f64>(&lhs)?;
-        let rhs = exact_ref::<f64>(&rhs)?;
-        Ok(compare(*lhs.borrow(), *rhs.borrow()))
+        let lhs = lhs.snapshot()?;
+        let rhs = rhs.snapshot()?;
+        let (ValueData::F64(lhs), ValueData::F64(rhs)) = (lhs.data(), rhs.data()) else {
+            return Err(test_operation_error(
+                "ordered comparison expects two F64 values",
+            ));
+        };
+        Ok(compare(lhs.to_f64(), rhs.to_f64()))
     }
 
     fn canonical_values_equal(lhs: &ValueCell, rhs: &ValueCell) -> MResult<bool> {
@@ -788,9 +878,8 @@ mod tests {
     ))]
     use mech_core::{
         CanonicalFunctionSpecializer, ExecutionTarget, FunctionExport, FunctionExposure,
-        FunctionInstance, FunctionInvocation, FunctionPortBacking, MechFunctionImpl, Ref,
-        RuntimeFunctionId, SpecializationContext, SpecializationInvocation, SpecializedFunction,
-        ValueCell,
+        FunctionInvocation, ManagedPort, MechFunctionImpl, RuntimeFunctionId,
+        SpecializationContext, SpecializationInvocation, SpecializedFunction, ValueCell, ValueData,
     };
 
     #[cfg(all(
@@ -800,23 +889,10 @@ mod tests {
         feature = "math_add",
         feature = "f64"
     ))]
-    fn exact_ref<T: FunctionPortBacking>(cell: &ValueCell) -> MResult<Ref<T>> {
-        FunctionInvocation::nullary(cell.clone())
-            .expect_nullary()?
-            .try_ref()
-    }
-
-    #[cfg(all(
-        feature = "program",
-        feature = "source",
-        feature = "formulas",
-        feature = "math_add",
-        feature = "f64"
-    ))]
     struct TestAddFunction {
-        lhs: Ref<f64>,
-        rhs: Ref<f64>,
-        out: Ref<f64>,
+        lhs: ManagedPort<f64>,
+        rhs: ManagedPort<f64>,
+        out: ManagedPort<f64>,
     }
 
     #[cfg(all(
@@ -827,13 +903,21 @@ mod tests {
         feature = "f64"
     ))]
     impl MechFunctionImpl for TestAddFunction {
-        fn solve_result(&self) -> MResult<()> {
-            *self.out.borrow_mut() = *self.lhs.borrow() + *self.rhs.borrow();
-            Ok(())
+        fn solve_managed(
+            &self,
+            frame: &mut mech_core::KernelMemoryFrame<'_>,
+            _services: &mut dyn mech_core::MechExecutionServices,
+        ) -> MResult<mech_core::ReactiveSolveStatus> {
+            frame.with_binary_port_views(&self.lhs, &self.rhs, &self.out, |lhs, rhs, out| {
+                out.try_fill_column_major(|index| {
+                    Ok(lhs.get_column_major(index).unwrap() + rhs.get_column_major(index).unwrap())
+                })
+            })?;
+            Ok(mech_core::ReactiveSolveStatus::Changed)
         }
 
         fn primary_output_state_port(&self) -> Option<mech_core::FunctionStatePort<'_>> {
-            Some(mech_core::FunctionStatePort::from_ref(&self.out))
+            Some(mech_core::FunctionStatePort::from_cell(self.out.cell()))
         }
 
         fn to_string(&self) -> String {
@@ -883,13 +967,14 @@ mod tests {
             let lhs = lhs.cell()?.clone();
             let rhs = rhs.cell()?.clone();
             let output = ValueCell::from_exact(0.0_f64)?;
+            let ports = FunctionInvocation::binary(output.clone(), lhs.clone(), rhs.clone());
             let function = TestAddFunction {
-                lhs: exact_ref(&lhs)?,
-                rhs: exact_ref(&rhs)?,
-                out: exact_ref(&output)?,
+                lhs: ports.input(0).unwrap().try_managed::<f64>()?,
+                rhs: ports.input(1).unwrap().try_managed::<f64>()?,
+                out: ports.output().try_managed::<f64>()?,
             };
             context.certify_instance(
-                FunctionInstance::new(
+                (
                     Box::new(function),
                     FunctionInvocation::binary(output, lhs, rhs),
                 ),
@@ -1043,11 +1128,10 @@ mod tests {
         );
 
         let output = program.plan_source_for_test("1.0 + 2.0").unwrap().unwrap();
-        let output = FunctionInvocation::nullary(output)
-            .expect_nullary()
-            .unwrap()
-            .try_ref::<f64>()
-            .unwrap();
-        assert_eq!(*output.borrow(), 3.0);
+        let output = output.snapshot().unwrap();
+        let ValueData::F64(output) = output.data() else {
+            panic!("test math/add output must remain F64");
+        };
+        assert_eq!(output.to_f64(), 3.0);
     }
 }
