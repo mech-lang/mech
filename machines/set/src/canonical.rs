@@ -61,6 +61,7 @@ impl SetInput {
         self.0.snapshot()
     }
 
+    #[cfg(any(feature = "cartesian_product", feature = "powerset"))]
     pub(crate) fn planning_cardinality(&self) -> MResult<usize> {
         self.planning_snapshot()?
             .set_view()
@@ -335,6 +336,7 @@ impl SetOutput {
         })
     }
 
+    #[cfg(any(feature = "cartesian_product", feature = "powerset"))]
     pub(crate) fn prospective_expansion_footprint(
         &self,
         inputs: &[&SetInput],
