@@ -1,14 +1,19 @@
 use std::collections::BTreeMap;
 #[cfg(feature = "native")]
-use std::sync::{
-    Arc,
-    atomic::{AtomicU64, Ordering},
+use std::{
+    rc::{Rc, Weak},
+    sync::{
+        Arc,
+        atomic::{AtomicBool, AtomicU64, Ordering},
+    },
 };
 
 use crate::{
     GpuExecutionBindingRole, GpuExecutionPlan, GpuExecutionPlanError, GpuKernelPlanSource,
     GpuPlanScalar,
 };
+#[cfg(feature = "native")]
+use mech_core::AllocationHandle;
 use mech_core::{
     AllocationPlan, AllocationRole, ArenaBackingKind, ArenaPlacement, ArenaPlan, CallAccessRequest,
     DeviceAllocationOwner, DeviceSubmissionHold, GpuMemoryLimits, ManagedAllocationObservation,
@@ -55,9 +60,50 @@ pub struct ManagedGpuMemory {
     domain: MemoryDomain,
     realized: RealizedMemoryPlan,
     objects: Box<[(MemoryObjectId, PlanObjectKey)]>,
-    device_owners: Box<[(MemoryObjectId, Option<DeviceAllocationOwner>)]>,
+    device_owners: Box<[(MemoryObjectId, DeviceAllocationRegistration)]>,
     content_versions: Box<[(MemoryObjectId, u64)]>,
     host_transfer_writes: Box<[(MemoryObjectId, PreparedCallAccess)]>,
+}
+
+enum DeviceAllocationRegistration {
+    Vacant,
+    /// Low-level unit-test authority used without constructing a platform
+    /// device. Production registrations always couple the real buffer owner.
+    #[cfg(test)]
+    AccountingOnly(DeviceAllocationOwner),
+    #[cfg(feature = "native")]
+    Buffer(Weak<DeviceAllocationOwner>),
+}
+
+impl DeviceAllocationRegistration {
+    fn is_registered(&self) -> bool {
+        !matches!(self, Self::Vacant)
+    }
+}
+
+/// One native backend buffer coupled to the allocation identity and
+/// accounting owner that admitted it. The field order is intentional: the
+/// wgpu handle is released before the accounting owner can be released.
+#[cfg(feature = "native")]
+pub struct RegisteredDeviceBuffer {
+    buffer: wgpu::Buffer,
+    owner: Rc<DeviceAllocationOwner>,
+    object: MemoryObjectId,
+}
+
+#[cfg(feature = "native")]
+impl RegisteredDeviceBuffer {
+    pub fn buffer(&self) -> &wgpu::Buffer {
+        &self.buffer
+    }
+
+    pub const fn object(&self) -> MemoryObjectId {
+        self.object
+    }
+
+    pub fn allocation_handle(&self) -> AllocationHandle {
+        self.owner.handle()
+    }
 }
 
 impl ManagedGpuMemory {
@@ -103,7 +149,7 @@ impl ManagedGpuMemory {
             let key = domain.plan_object_key(revision, allocation.id)?;
             objects.push((allocation.id, key));
             if matches!(allocation.space, MemorySpace::Device { .. }) {
-                device_owners.push((allocation.id, None));
+                device_owners.push((allocation.id, DeviceAllocationRegistration::Vacant));
             }
         }
         objects.sort_by_key(|(object, _)| *object);
@@ -159,7 +205,8 @@ impl ManagedGpuMemory {
             .ok_or(GpuMemoryPlanError::MissingPlanObject { object })
     }
 
-    pub fn attach_device_allocation(
+    #[cfg(test)]
+    pub(crate) fn attach_device_allocation(
         &mut self,
         object: MemoryObjectId,
         actual_capacity_bytes: u64,
@@ -170,7 +217,7 @@ impl ManagedGpuMemory {
             .device_owners
             .binary_search_by_key(&object, |(candidate, _)| *candidate)
             .map_err(|_| GpuMemoryPlanError::MissingPlanObject { object })?;
-        if self.device_owners[index].1.is_some() {
+        if self.device_owners[index].1.is_registered() {
             return Err(GpuMemoryPlanError::DuplicateDeviceAllocation { object });
         }
         let owner = self.domain.register_device_allocation(
@@ -179,11 +226,46 @@ impl ManagedGpuMemory {
             actual_capacity_bytes,
             initialized_bytes,
         )?;
-        self.device_owners[index].1 = Some(owner);
+        self.device_owners[index].1 = DeviceAllocationRegistration::AccountingOnly(owner);
         if initialized_bytes != 0 {
             self.content_versions[index].1 = 1;
         }
         Ok(())
+    }
+
+    /// Registers the exact native buffer which realizes one planned object.
+    /// The returned wrapper, rather than this logical registry, owns the
+    /// allocation pin so accounting cannot outlive or precede the real buffer.
+    #[cfg(feature = "native")]
+    pub fn register_device_buffer(
+        &mut self,
+        object: MemoryObjectId,
+        buffer: wgpu::Buffer,
+        initialized_bytes: u64,
+    ) -> Result<RegisteredDeviceBuffer, GpuMemoryPlanError> {
+        let key = self.object_key(object)?;
+        let index = self
+            .device_owners
+            .binary_search_by_key(&object, |(candidate, _)| *candidate)
+            .map_err(|_| GpuMemoryPlanError::MissingPlanObject { object })?;
+        if self.device_owners[index].1.is_registered() {
+            return Err(GpuMemoryPlanError::DuplicateDeviceAllocation { object });
+        }
+        let owner = Rc::new(self.domain.register_device_allocation(
+            &self.realized,
+            key,
+            buffer.size(),
+            initialized_bytes,
+        )?);
+        self.device_owners[index].1 = DeviceAllocationRegistration::Buffer(Rc::downgrade(&owner));
+        if initialized_bytes != 0 {
+            self.content_versions[index].1 = 1;
+        }
+        Ok(RegisteredDeviceBuffer {
+            buffer,
+            owner,
+            object,
+        })
     }
 
     pub fn record_device_write(
@@ -302,17 +384,25 @@ impl ManagedGpuMemory {
     }
 
     pub fn mark_device_lost(&self) -> Result<(), GpuMemoryPlanError> {
-        for (_, owner) in self.device_owners.iter() {
-            if let Some(owner) = owner {
-                owner.mark_lost()?;
+        for (_, registration) in self.device_owners.iter() {
+            match registration {
+                DeviceAllocationRegistration::Vacant => {}
+                #[cfg(test)]
+                DeviceAllocationRegistration::AccountingOnly(owner) => owner.mark_lost()?,
+                #[cfg(feature = "native")]
+                DeviceAllocationRegistration::Buffer(owner) => {
+                    if let Some(owner) = owner.upgrade() {
+                        owner.mark_lost()?;
+                    }
+                }
             }
         }
         Ok(())
     }
 
     pub fn close(&mut self) -> Result<(), GpuMemoryPlanError> {
-        for (_, owner) in self.device_owners.iter_mut() {
-            *owner = None;
+        for (_, registration) in self.device_owners.iter_mut() {
+            *registration = DeviceAllocationRegistration::Vacant;
         }
         self.domain.close()?;
         Ok(())
@@ -323,8 +413,22 @@ impl ManagedGpuMemory {
 pub(crate) struct DeviceSubmissionTracker {
     next_serial: u64,
     completed: Arc<AtomicU64>,
+    device_lost: Arc<AtomicBool>,
     pending: Vec<(u64, DeviceSubmissionHold)>,
+    submitted: Vec<(u64, Option<wgpu::SubmissionIndex>)>,
     planned_capacity: usize,
+}
+
+/// A batch whose serial, metadata slots, and ownership holds all exist before
+/// the backend submission boundary. Dropping it before `record_submitted`
+/// cancels the unsubmitted holds. Once recorded, the tracker owns those holds
+/// until the exact submission completes or the device is lost.
+#[cfg(feature = "native")]
+pub(crate) struct UnsubmittedDeviceBatch<'a> {
+    tracker: &'a mut DeviceSubmissionTracker,
+    serial: u64,
+    pending_start: usize,
+    submitted_start: usize,
 }
 
 #[cfg(feature = "native")]
@@ -334,47 +438,95 @@ impl DeviceSubmissionTracker {
         pending
             .try_reserve_exact(capacity)
             .map_err(|_| "GPU submission tracker allocation was not available".to_owned())?;
+        let mut submitted = Vec::new();
+        submitted
+            .try_reserve_exact(capacity)
+            .map_err(|_| "GPU submission completion metadata was not available".to_owned())?;
         Ok(Self {
             next_serial: 1,
             completed: Arc::new(AtomicU64::new(0)),
+            device_lost: Arc::new(AtomicBool::new(false)),
             pending,
+            submitted,
             planned_capacity: capacity,
         })
     }
 
-    pub(crate) fn track(
-        &mut self,
-        queue: &wgpu::Queue,
-        hold: DeviceSubmissionHold,
-    ) -> Result<u64, String> {
-        if self.pending.len() == self.planned_capacity {
+    pub(crate) fn observe_device_loss(&self, device: &wgpu::Device) {
+        let device_lost = Arc::clone(&self.device_lost);
+        device.set_device_lost_callback(move |_, _| {
+            device_lost.store(true, Ordering::Release);
+        });
+    }
+
+    /// Verifies that the next backend operation can be represented without
+    /// growing tracker metadata or discovering serial exhaustion after a
+    /// queue write has already been issued.
+    pub(crate) fn preflight_batch(&self, hold_count: usize) -> Result<(), String> {
+        if hold_count == 0 {
+            return Err("GPU submission batch has no ownership holds".to_owned());
+        }
+        let pending_end = self
+            .pending
+            .len()
+            .checked_add(hold_count)
+            .ok_or_else(|| "GPU submission tracker capacity overflowed".to_owned())?;
+        if pending_end > self.planned_capacity {
             return Err("GPU submission tracker exceeded its planned capacity".to_owned());
         }
+        if self.submitted.len() == self.planned_capacity {
+            return Err("GPU submission metadata exceeded its planned capacity".to_owned());
+        }
+        self.next_serial
+            .checked_add(1)
+            .ok_or_else(|| "GPU submission serial exhausted".to_owned())?;
+        Ok(())
+    }
+
+    pub(crate) fn reserve_batch<I>(
+        &mut self,
+        holds: I,
+    ) -> Result<UnsubmittedDeviceBatch<'_>, String>
+    where
+        I: Iterator<Item = DeviceSubmissionHold>,
+    {
+        let (hold_count, upper_bound) = holds.size_hint();
+        if upper_bound != Some(hold_count) {
+            return Err("GPU submission batch has no exact ownership-hold count".to_owned());
+        }
+        self.preflight_batch(hold_count)?;
+        let pending_end = self.pending.len() + hold_count;
         let serial = self.next_serial;
         self.next_serial = serial
             .checked_add(1)
             .ok_or_else(|| "GPU submission serial exhausted".to_owned())?;
-        let completed = self.completed.clone();
-        queue.on_submitted_work_done(move || {
-            completed.fetch_max(serial, Ordering::Release);
-        });
-        self.pending.push((serial, hold));
-        Ok(serial)
-    }
-
-    pub(crate) fn track_at(
-        &mut self,
-        serial: u64,
-        hold: DeviceSubmissionHold,
-    ) -> Result<(), String> {
-        if serial == 0 || serial >= self.next_serial {
-            return Err("GPU submission hold references an unknown serial".to_owned());
+        let pending_start = self.pending.len();
+        let submitted_start = self.submitted.len();
+        // This slot is filled by moving the `SubmissionIndex` returned from
+        // `Queue::submit`; no tracker allocation or validation remains after
+        // the backend has accepted the command buffers.
+        self.submitted.push((serial, None));
+        for hold in holds {
+            if self.pending.len() == pending_end {
+                self.pending.truncate(pending_start);
+                self.submitted.truncate(submitted_start);
+                return Err("GPU submission batch exceeded its reserved hold count".to_owned());
+            }
+            // `new` reserves `planned_capacity` once, and the complete batch
+            // was bounded above before this loop. These pushes cannot grow.
+            self.pending.push((serial, hold));
         }
-        if self.pending.len() == self.planned_capacity {
-            return Err("GPU submission tracker exceeded its planned capacity".to_owned());
+        if self.pending.len() != pending_end {
+            self.pending.truncate(pending_start);
+            self.submitted.truncate(submitted_start);
+            return Err("GPU submission batch did not fill its reserved hold count".to_owned());
         }
-        self.pending.push((serial, hold));
-        Ok(())
+        Ok(UnsubmittedDeviceBatch {
+            tracker: self,
+            serial,
+            pending_start,
+            submitted_start,
+        })
     }
 
     pub(crate) fn reap(&mut self) -> Result<(), String> {
@@ -389,7 +541,74 @@ impl DeviceSubmissionTracker {
                 index += 1;
             }
         }
+        self.submitted.retain(|(serial, _)| *serial > completed);
         Ok(())
+    }
+
+    pub(crate) fn wait_for_submitted(&mut self, device: &wgpu::Device) -> Result<(), String> {
+        let Some((serial, submission)) = self.submitted.last() else {
+            return Ok(());
+        };
+        let submission = submission.clone().ok_or_else(|| {
+            "GPU submission completion was requested before queue acceptance".to_owned()
+        })?;
+        let serial = *serial;
+        device.poll(wgpu::Maintain::WaitForSubmissionIndex(submission));
+        if !self.device_was_lost() {
+            // Queues complete in submission order, so waiting for the newest
+            // reserved batch completes every earlier serial as well.
+            self.completed.fetch_max(serial, Ordering::Release);
+            self.submitted.clear();
+        }
+        Ok(())
+    }
+
+    pub(crate) fn has_pending(&self) -> bool {
+        !self.pending.is_empty()
+    }
+
+    pub(crate) fn device_was_lost(&self) -> bool {
+        self.device_lost.load(Ordering::Acquire)
+    }
+
+    /// Releases accepted work only after the caller has established device
+    /// loss as the terminal backend boundary.
+    pub(crate) fn release_after_device_loss(&mut self) -> Result<(), String> {
+        self.submitted.clear();
+        while let Some((_, hold)) = self.pending.pop() {
+            hold.complete()
+                .map_err(|error| format!("GPU device-loss accounting failed: {error}"))?;
+        }
+        Ok(())
+    }
+}
+
+#[cfg(feature = "native")]
+impl UnsubmittedDeviceBatch<'_> {
+    /// Records the already accepted queue operation. All fallible tracker work
+    /// and all tracker-owned storage were completed by `reserve_batch`.
+    pub(crate) fn record_submitted(mut self, submission: wgpu::SubmissionIndex) -> u64 {
+        let serial = self.serial;
+        self.tracker.submitted[self.submitted_start].1 = Some(submission);
+        // From these assignments onward Drop must never interpret the batch as
+        // a cancellation. Recording is now complete and cannot fail or grow.
+        self.pending_start = usize::MAX;
+        self.submitted_start = usize::MAX;
+        serial
+    }
+}
+
+#[cfg(feature = "native")]
+impl Drop for UnsubmittedDeviceBatch<'_> {
+    fn drop(&mut self) {
+        if self.pending_start == usize::MAX {
+            return;
+        }
+        debug_assert!(self.pending_start <= self.tracker.pending.len());
+        // Nothing can append while this token exclusively borrows the tracker,
+        // so the suffix is exactly this not-yet-submitted batch.
+        self.tracker.pending.truncate(self.pending_start);
+        self.tracker.submitted.truncate(self.submitted_start);
     }
 }
 
@@ -1036,5 +1255,74 @@ mod tests {
                 MemoryPlanError::TargetLimitExceeded { .. }
             ))
         ));
+    }
+
+    #[cfg(feature = "native")]
+    #[test]
+    fn unsubmitted_tracker_batch_cancels_its_reserved_holds() {
+        let planned =
+            PlannedGpuExecution::from_execution(test_execution_plan(2), limits(1024)).unwrap();
+        let object = planned.binding_object(0).unwrap();
+        let mut memory = planned.managed_memory().unwrap();
+        memory.attach_device_allocation(object, 8, 8).unwrap();
+        let hold = memory.begin_submission(&[object], &[]).unwrap();
+        let mut tracker = DeviceSubmissionTracker::new(1).unwrap();
+
+        {
+            let _unsubmitted = tracker.reserve_batch(core::iter::once(hold)).unwrap();
+            assert_eq!(memory.ledger().in_flight_device_bytes, 8);
+            assert_eq!(memory.allocations()[0].submission_pins, 1);
+        }
+
+        assert!(!tracker.has_pending());
+        assert_eq!(memory.ledger().in_flight_device_bytes, 0);
+        assert_eq!(memory.allocations()[0].submission_pins, 0);
+    }
+
+    #[cfg(feature = "native")]
+    #[test]
+    fn submitted_batch_stays_pinned_through_mapping_failure_until_completion() {
+        let instance = wgpu::Instance::default();
+        let Some(adapter) =
+            pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
+                power_preference: wgpu::PowerPreference::LowPower,
+                compatible_surface: None,
+                force_fallback_adapter: false,
+            }))
+        else {
+            return;
+        };
+        let Ok((device, queue)) = pollster::block_on(adapter.request_device(
+            &wgpu::DeviceDescriptor {
+                label: Some("Mech submission ownership test"),
+                required_features: wgpu::Features::empty(),
+                required_limits: wgpu::Limits::downlevel_defaults(),
+            },
+            None,
+        )) else {
+            return;
+        };
+        let planned =
+            PlannedGpuExecution::from_execution(test_execution_plan(2), limits(1024)).unwrap();
+        let object = planned.binding_object(0).unwrap();
+        let mut memory = planned.managed_memory().unwrap();
+        memory.attach_device_allocation(object, 8, 8).unwrap();
+        let hold = memory.begin_submission(&[object], &[]).unwrap();
+        let mut tracker = DeviceSubmissionTracker::new(1).unwrap();
+        tracker.observe_device_loss(&device);
+        let unsubmitted = tracker.reserve_batch(core::iter::once(hold)).unwrap();
+
+        let submission = queue.submit(core::iter::empty());
+        unsubmitted.record_submitted(submission);
+        let mapping_result: Result<(), &'static str> = Err("injected mapping failure");
+        assert!(mapping_result.is_err());
+        assert_eq!(memory.ledger().in_flight_device_bytes, 8);
+        assert_eq!(memory.allocations()[0].submission_pins, 1);
+
+        tracker.wait_for_submitted(&device).unwrap();
+        tracker.reap().unwrap();
+        assert!(!tracker.has_pending());
+        assert_eq!(memory.ledger().in_flight_device_bytes, 0);
+        assert_eq!(memory.allocations()[0].submission_pins, 0);
     }
 }

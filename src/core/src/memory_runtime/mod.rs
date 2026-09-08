@@ -13,10 +13,11 @@ mod payload;
 mod transaction;
 
 pub use self::access::*;
+pub use self::allocation::{PlannedArenaElement, PlannedArenaProjection};
 pub use self::domain::*;
 pub use self::error::*;
 pub use self::identity::*;
 pub use self::payload::*;
 pub use self::transaction::*;
 
-pub(crate) use self::allocation::*;
+pub(crate) use self::allocation::HostBlock;

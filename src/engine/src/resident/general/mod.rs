@@ -16,11 +16,12 @@ use mech_core::{
     ExecutionTargetSet, ExternalInteraction, FunctionCatalog, ImplementationMemoryClass, InputId,
     InstanceEpoch, IntegrityConstraintId, LayoutGeneration, MemoryFootprintWitness, MemoryLifetime,
     MemoryPlanError, MemoryPlanPoint, NodeId, ObservationReplayPolicy, OutputConstruction,
-    PlanGeneration, ProgramRevision, ReactiveInstanceId, RegionAccessPlan, ResidentBuildContext,
-    ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelInputs, ResidentOperationKey,
-    ResidentPortLayout, ResidentShape, ResidentValueKind, ResidentValueMut, ResidentValueRef,
-    ResolvedRangeMode, ResolvedSelectionMode, SchemaBody, SchemaId, SchemaKey, ShapeInstance,
-    ShapeRule, SlotIndex, TargetMemoryProfile, Value, plan_call_memory,
+    PlanGeneration, PlannedArenaElement, PlannedArenaProjection, ProgramRevision,
+    ReactiveInstanceId, RegionAccessPlan, ResidentBuildContext, ResidentKernelBindError,
+    ResidentKernelBindRequest, ResidentKernelInputs, ResidentOperationKey, ResidentPortLayout,
+    ResidentShape, ResidentValueKind, ResidentValueMut, ResidentValueRef, ResolvedRangeMode,
+    ResolvedSelectionMode, SchemaBody, SchemaId, SchemaKey, ShapeInstance, ShapeRule, SlotIndex,
+    TargetMemoryProfile, Value, plan_call_memory,
 };
 use sha2::{Digest, Sha256};
 
@@ -30,6 +31,7 @@ use crate::memory_planner::{
     plan_program_memory_template, plan_resident_arenas, plan_resident_effect_payload,
     resident_arena_id, resident_payload_arena_id, resident_storage_descriptor, schedule_points,
 };
+use crate::memory_runtime::ManagedProgramMemory;
 use crate::{
     ArtifactSource, BindingDeclaration, InitializerReference, OperationReference,
     ProducerReference, ProgramArtifact, SlotRole,
@@ -378,13 +380,6 @@ pub struct ResidentArenaSizes {
 }
 
 impl ResidentArenaSizes {
-    fn from_memory_plan(
-        plan: &ProgramMemoryPlan,
-        class: ResidentStorageClass,
-    ) -> Result<Self, ResidentActivationError> {
-        Self::from_memory_plan_buffer(plan, class, 0)
-    }
-
     fn from_memory_plan_buffer(
         plan: &ProgramMemoryPlan,
         class: ResidentStorageClass,
@@ -426,42 +421,172 @@ impl ResidentArenaSizes {
     }
 }
 
-#[derive(Clone, Debug, Default)]
+enum ResidentLane<T: PlannedArenaElement> {
+    Managed(PlannedArenaProjection<T>),
+    #[cfg(test)]
+    Testing(Box<[T]>),
+}
+
+impl<T: PlannedArenaElement + core::fmt::Debug> core::fmt::Debug for ResidentLane<T> {
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Self::Managed(values) => values.fmt(formatter),
+            #[cfg(test)]
+            Self::Testing(values) => values.fmt(formatter),
+        }
+    }
+}
+
+impl<T: PlannedArenaElement> core::ops::Deref for ResidentLane<T> {
+    type Target = [T];
+
+    fn deref(&self) -> &Self::Target {
+        match self {
+            Self::Managed(values) => values,
+            #[cfg(test)]
+            Self::Testing(values) => values,
+        }
+    }
+}
+
+impl<T: PlannedArenaElement> core::ops::DerefMut for ResidentLane<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        match self {
+            Self::Managed(values) => values,
+            #[cfg(test)]
+            Self::Testing(values) => values,
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct TypedResidentArena {
-    bools: Box<[u8]>,
-    indexes: Box<[u64]>,
-    f64s: Box<[f64]>,
-    strings: Box<[String]>,
-    snapshots: Box<[Option<Value>]>,
+    bools: ResidentLane<u8>,
+    indexes: ResidentLane<u64>,
+    f64s: ResidentLane<f64>,
+    strings: ResidentLane<String>,
+    snapshots: ResidentLane<Option<Value>>,
+}
+
+fn resident_lane<T: PlannedArenaElement>(
+    plan: &ProgramMemoryPlan,
+    class: ResidentStorageClass,
+    kind: ResidentValueKind,
+    buffer: u8,
+    len: usize,
+    memory: &ManagedProgramMemory,
+) -> Result<ResidentLane<T>, ResidentActivationError> {
+    let class = match class {
+        ResidentStorageClass::Constant => PlannedValueClass::Constant,
+        ResidentStorageClass::Input => PlannedValueClass::Input,
+        ResidentStorageClass::State => PlannedValueClass::State,
+        ResidentStorageClass::Scratch => PlannedValueClass::Scratch,
+    };
+    let arena_id = resident_arena_id((class, kind, buffer))
+        .map_err(|error| ResidentActivationError::ResidentMemoryPlanRejected { error })?;
+    let Some(arena) = plan.arenas.iter().find(|arena| arena.id == arena_id) else {
+        return PlannedArenaProjection::empty()
+            .map(ResidentLane::Managed)
+            .map_err(|error| ResidentActivationError::MemoryRuntime { error });
+    };
+    if arena.capacity_bytes == 0 {
+        return PlannedArenaProjection::empty()
+            .map(ResidentLane::Managed)
+            .map_err(|error| ResidentActivationError::MemoryRuntime { error });
+    }
+    let object = arena
+        .members
+        .first()
+        .copied()
+        .ok_or(ResidentActivationError::RegionSizeOverflow)?;
+    let key = memory
+        .domain()
+        .plan_object_key(memory.realized().revision(), object)
+        .map_err(|error| ResidentActivationError::MemoryRuntime { error })?;
+    memory
+        .domain()
+        .project_host_arena(memory.realized(), key, len)
+        .map(ResidentLane::Managed)
+        .map_err(|error| ResidentActivationError::MemoryRuntime { error })
 }
 
 impl TypedResidentArena {
     fn allocate_from_plan(
         plan: &ProgramMemoryPlan,
         class: ResidentStorageClass,
+        memory: &ManagedProgramMemory,
     ) -> Result<Self, ResidentActivationError> {
-        ensure_resident_plan_admitted(plan)?;
-        let sizes = ResidentArenaSizes::from_memory_plan(plan, class)?;
-        Ok(Self::allocate_projected_sizes(sizes))
+        Self::allocate_from_plan_buffer(plan, class, 0, memory)
     }
 
     fn allocate_from_plan_buffer(
         plan: &ProgramMemoryPlan,
         class: ResidentStorageClass,
         buffer: u8,
+        memory: &ManagedProgramMemory,
     ) -> Result<Self, ResidentActivationError> {
         ensure_resident_plan_admitted(plan)?;
         let sizes = ResidentArenaSizes::from_memory_plan_buffer(plan, class, buffer)?;
-        Ok(Self::allocate_projected_sizes(sizes))
+        Ok(Self {
+            bools: resident_lane(
+                plan,
+                class,
+                ResidentValueKind::Bool,
+                buffer,
+                sizes.bools,
+                memory,
+            )?,
+            indexes: resident_lane(
+                plan,
+                class,
+                ResidentValueKind::Index,
+                buffer,
+                sizes.indexes,
+                memory,
+            )?,
+            f64s: resident_lane(
+                plan,
+                class,
+                ResidentValueKind::F64,
+                buffer,
+                sizes.f64s,
+                memory,
+            )?,
+            strings: resident_lane(
+                plan,
+                class,
+                ResidentValueKind::String,
+                buffer,
+                sizes.strings,
+                memory,
+            )?,
+            snapshots: resident_lane(
+                plan,
+                class,
+                ResidentValueKind::Snapshot,
+                buffer,
+                sizes.snapshots,
+                memory,
+            )?,
+        })
     }
 
+    #[cfg(test)]
     fn allocate_projected_sizes(sizes: ResidentArenaSizes) -> Self {
+        fn lane<T: PlannedArenaElement>(len: usize) -> ResidentLane<T> {
+            ResidentLane::Testing(
+                core::iter::repeat_with(T::default)
+                    .take(len)
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            )
+        }
         Self {
-            bools: vec![0; sizes.bools].into_boxed_slice(),
-            indexes: vec![1; sizes.indexes].into_boxed_slice(),
-            f64s: vec![0.0; sizes.f64s].into_boxed_slice(),
-            strings: vec![String::new(); sizes.strings].into_boxed_slice(),
-            snapshots: vec![None; sizes.snapshots].into_boxed_slice(),
+            bools: lane(sizes.bools),
+            indexes: lane(sizes.indexes),
+            f64s: lane(sizes.f64s),
+            strings: lane(sizes.strings),
+            snapshots: lane(sizes.snapshots),
         }
     }
 
@@ -586,7 +711,7 @@ struct StateVersion {
     epochs: [Option<InstanceEpoch>; 2],
 }
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct StateArena {
     buffers: [TypedResidentArena; 2],
     versions: Box<[StateVersion]>,
@@ -597,6 +722,7 @@ impl StateArena {
     fn new(
         plan: &ProgramMemoryPlan,
         slots: &[ResolvedSlot],
+        memory: &ManagedProgramMemory,
     ) -> Result<Self, ResidentActivationError> {
         let versions = slots
             .iter()
@@ -618,11 +744,13 @@ impl StateArena {
                     plan,
                     ResidentStorageClass::State,
                     0,
+                    memory,
                 )?,
                 TypedResidentArena::allocate_from_plan_buffer(
                     plan,
                     ResidentStorageClass::State,
                     1,
+                    memory,
                 )?,
             ],
             versions,
@@ -712,7 +840,7 @@ impl StateArena {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct TurnWorkspace {
     pub(crate) input: TypedResidentArena,
     pub(crate) scratch: TypedResidentArena,
@@ -731,16 +859,21 @@ pub struct TurnWorkspace {
 }
 
 impl TurnWorkspace {
-    fn new(plan: &ActivatedPlan) -> Result<Self, ResidentActivationError> {
+    fn new(
+        plan: &ActivatedPlan,
+        memory: &ManagedProgramMemory,
+    ) -> Result<Self, ResidentActivationError> {
         let words = plan.topology.word_len();
         Ok(Self {
             input: TypedResidentArena::allocate_from_plan(
                 &plan.memory_plan,
                 ResidentStorageClass::Input,
+                memory,
             )?,
             scratch: TypedResidentArena::allocate_from_plan(
                 &plan.memory_plan,
                 ResidentStorageClass::Scratch,
+                memory,
             )?,
             dirty_bits: vec![0; words].into_boxed_slice(),
             executed_bits: vec![0; words].into_boxed_slice(),
@@ -758,6 +891,7 @@ impl TurnWorkspace {
                 &plan.memory_plan,
                 ResidentStorageClass::Scratch,
                 1,
+                memory,
             )?,
             state_f64_arena_by_slot: vec![0; plan.slots.len()].into_boxed_slice(),
             fixed_turn_plans: vec![None; plan.steps.len()].into_boxed_slice(),
@@ -833,6 +967,9 @@ pub struct ReactiveInstance {
     next_epoch: Option<InstanceEpoch>,
     candidate_active: bool,
     candidate_epoch: Option<InstanceEpoch>,
+    // Declared last so every typed lane projection is destroyed before the
+    // realization releases its arena owners.
+    _managed_memory: ManagedProgramMemory,
 }
 
 /// Trusted cross-crate authority for publishing an externally coordinated
@@ -928,8 +1065,9 @@ impl ReactiveInstance {
     /// Interactive hosts activate replacement programs in isolation before
     /// calling this method. Mutable state and materialized output projections
     /// share the state arena and migrate together, keeping the replacement's
-    /// published snapshot coherent. Migration is staged in a cloned arena, so
-    /// an invalid or incompatible mapping cannot partially mutate the candidate.
+    /// published snapshot coherent. Every mapping is validated before any
+    /// retained lane is changed, so a recoverable validation failure cannot
+    /// partially mutate the candidate or allocate an unplanned arena clone.
     pub fn migrate_compatible_state_from(
         &mut self,
         source: &ReactiveInstance,
@@ -941,7 +1079,6 @@ impl ReactiveInstance {
 
         let mut targets = BTreeSet::<CellSlotId>::new();
         let mut sources = BTreeSet::<CellSlotId>::new();
-        let mut migrated = self.state.clone();
         let target_epoch = self.published_epoch();
         let source_epoch = source.published_epoch();
 
@@ -964,7 +1101,10 @@ impl ReactiveInstance {
                     slot: mapping.target,
                 });
             }
-            migrated.install_migrated(
+        }
+
+        for mapping in state_map {
+            self.state.install_migrated(
                 mapping.target,
                 target_epoch,
                 &source.state,
@@ -972,8 +1112,6 @@ impl ReactiveInstance {
                 source_epoch,
             );
         }
-
-        self.state = migrated;
         Ok(())
     }
 
@@ -1122,6 +1260,9 @@ pub enum ResidentActivationError {
     RegionSizeOverflow,
     ResidentMemoryPlanRejected {
         error: MemoryPlanError,
+    },
+    MemoryRuntime {
+        error: mech_core::MemoryRuntimeError,
     },
     InvalidSnapshotRepresentation,
     MissingStateInitializer {
@@ -1430,8 +1571,13 @@ fn activate_internal(
         options,
         &mut static_selectors,
     )?;
-    let mut activation =
-        TypedResidentArena::allocate_from_plan(&plan.memory_plan, ResidentStorageClass::Constant)?;
+    let managed_memory = ManagedProgramMemory::realize(&plan.memory_plan)
+        .map_err(|error| ResidentActivationError::MemoryRuntime { error })?;
+    let mut activation = TypedResidentArena::allocate_from_plan(
+        &plan.memory_plan,
+        ResidentStorageClass::Constant,
+        &managed_memory,
+    )?;
     for raw in 0..artifact.constants().len() {
         let constant = ConstantId::new(raw as u32);
         let value = artifact
@@ -1445,7 +1591,7 @@ fn activate_internal(
         )?;
     }
     execute_activation_graph(&plan, &mut activation)?;
-    let mut state = StateArena::new(&plan.memory_plan, &plan.slots)?;
+    let mut state = StateArena::new(&plan.memory_plan, &plan.slots, &managed_memory)?;
     for slot in plan
         .slots
         .iter()
@@ -1476,7 +1622,7 @@ fn activate_internal(
             state.initialize_from_arena(materialization.target, &activation, source);
         }
     }
-    let workspace = TurnWorkspace::new(&plan)?;
+    let workspace = TurnWorkspace::new(&plan, &managed_memory)?;
     finalize_resident_backing_footprints(artifact, &mut plan, &activation, &state, &workspace)?;
     ensure_resident_plan_admitted(&plan.memory_plan)?;
     audit_resident_backings(artifact, &plan, &activation, &state, &workspace)?;
@@ -1490,6 +1636,7 @@ fn activate_internal(
         next_epoch: Some(InstanceEpoch::new(1)),
         candidate_active: false,
         candidate_epoch: None,
+        _managed_memory: managed_memory,
     };
     instance.prepare_fixed_turn_plans()?;
     Ok(instance)

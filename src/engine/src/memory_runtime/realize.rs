@@ -11,6 +11,16 @@ pub struct ManagedProgramMemory {
     realized: RealizedMemoryPlan,
 }
 
+impl core::fmt::Debug for ManagedProgramMemory {
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        formatter
+            .debug_struct("ManagedProgramMemory")
+            .field("domain", &self.domain.id())
+            .field("revision", &self.realized.revision())
+            .finish_non_exhaustive()
+    }
+}
+
 impl ManagedProgramMemory {
     pub fn realize(plan: &ProgramMemoryPlan) -> MemoryRuntimeResult<Self> {
         let domain = MemoryDomain::new()?;

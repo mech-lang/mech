@@ -25,7 +25,8 @@ use core::cell::{Cell, RefCell};
 
 use super::{
     AllocationHandle, HostBlock, MemoryDomainId, MemoryPlanRevision, MemoryRuntimeError,
-    MemoryRuntimeResult, PlanObjectKey, PublishedValueVersion, RegionIncarnation,
+    MemoryRuntimeResult, PlanObjectKey, PlannedArenaElement, PlannedArenaProjection,
+    PublishedValueVersion, RegionIncarnation,
 };
 
 /// Borrowed adapter over one existing R5 plan.
@@ -885,6 +886,7 @@ pub(crate) struct ActiveLeaseRecord {
 
 pub(crate) struct AllocationRecord {
     realization_owner: Weak<()>,
+    arena_projection_owner: Weak<()>,
     pub state: OwnedAllocationState,
     pub block: Option<HostBlock>,
     pub capacity_bytes: u64,
@@ -1110,6 +1112,78 @@ pub struct MemoryDomain {
 }
 
 impl MemoryDomain {
+    /// Claims a complete contiguous arena and initializes its closed,
+    /// type-safe resident lane projection.
+    pub fn project_host_arena<T: PlannedArenaElement>(
+        &self,
+        realized: &RealizedMemoryPlan,
+        object: PlanObjectKey,
+        len: usize,
+    ) -> MemoryRuntimeResult<PlannedArenaProjection<T>> {
+        if realized.domain() != self.id() {
+            return Err(MemoryRuntimeError::WrongMemoryDomain {
+                expected: self.id(),
+                actual: realized.domain(),
+            });
+        }
+        let binding = realized.binding(object)?;
+        let RuntimeBinding::ManagedHostRegion { handle, .. } = binding else {
+            return Err(MemoryRuntimeError::InvalidLayout {
+                object: Some(object.object()),
+                size: binding.capacity_bytes(),
+                alignment: 1,
+                reason: "resident arena projection requires contiguous managed host storage",
+            });
+        };
+        let projection_owner = Rc::new(());
+        let (pointer, bytes, alignment) = {
+            let mut state = self.state.borrow_mut();
+            if state.closed {
+                return Err(MemoryRuntimeError::DomainClosed);
+            }
+            let record = state.record_mut(handle)?;
+            if record.state != OwnedAllocationState::Live {
+                return Err(MemoryRuntimeError::InvalidLifetimeTransition {
+                    object: Some(object.object()),
+                    from: "retired allocation",
+                    to: "resident arena projection",
+                });
+            }
+            if record.arena_projection_owner.upgrade().is_some() {
+                return Err(MemoryRuntimeError::CandidateValidationFailed {
+                    object: Some(object.object()),
+                    reason: "the realized arena already has a live typed projection".into(),
+                });
+            }
+            let block = record
+                .block
+                .as_ref()
+                .ok_or(MemoryRuntimeError::InvalidLayout {
+                    object: Some(object.object()),
+                    size: record.capacity_bytes,
+                    alignment: record.alignment,
+                    reason: "resident arena projection has no host block",
+                })?;
+            let pointer = block.pointer().ok_or(MemoryRuntimeError::InvalidLayout {
+                object: Some(object.object()),
+                size: record.capacity_bytes,
+                alignment: record.alignment,
+                reason: "nonempty resident arena has no host pointer",
+            })?;
+            record.arena_projection_owner = Rc::downgrade(&projection_owner);
+            (pointer, block.bytes(), block.alignment())
+        };
+        PlannedArenaProjection::from_realized_parts(
+            realized.clone(),
+            projection_owner,
+            object.object(),
+            pointer,
+            bytes,
+            alignment,
+            len,
+        )
+    }
+
     pub(crate) fn realize_owned_value_plan(
         &self,
         plan: crate::OwnedValueMemoryPlan,
@@ -1731,6 +1805,7 @@ impl MemoryDomain {
             let capacity = pending.authorization.capacity_bytes;
             let handle = state.insert_record(AllocationRecord {
                 realization_owner: Rc::downgrade(&storage_ownership),
+                arena_projection_owner: Weak::new(),
                 state: OwnedAllocationState::Live,
                 block: pending.block,
                 capacity_bytes: capacity,
@@ -1752,6 +1827,7 @@ impl MemoryDomain {
             let capacity = pending.authorization.capacity_bytes;
             let handle = state.insert_record(AllocationRecord {
                 realization_owner: Rc::downgrade(&storage_ownership),
+                arena_projection_owner: Weak::new(),
                 state: OwnedAllocationState::Live,
                 block: None,
                 capacity_bytes: capacity,
