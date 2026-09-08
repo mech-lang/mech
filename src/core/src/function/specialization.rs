@@ -128,27 +128,9 @@ fn fixed_descriptor_witness(
 }
 
 fn cell_memory_witness(cell: &ValueCell) -> MResult<MemoryFootprintWitness> {
-    let descriptor = cell.resolved_descriptor()?;
-    let mut footprint = match fixed_descriptor_witness(&descriptor)? {
-        MemoryFootprintWitness::Known(footprint) => footprint,
-        MemoryFootprintWitness::Deferred(_) => unreachable!("fixed witness is known"),
-    };
-    let snapshot = cell.snapshot()?;
-    let retained = snapshot
-        .retained_footprint(cell.schema_table().as_ref())
-        .map_err(|error| {
-            MechError::new(
-                crate::GenericError {
-                    msg: format!("unable to measure specialized call value: {error:?}"),
-                },
-                None,
-            )
-            .with_compiler_loc()
-        })?;
-    footprint.payload_bytes = retained.retained_bytes;
-    footprint.encoded_bytes = retained.encoded_bytes;
-    footprint.retained_nodes = retained.node_count;
-    Ok(MemoryFootprintWitness::Known(footprint))
+    Ok(MemoryFootprintWitness::Known(
+        cell.current_memory_footprint()?,
+    ))
 }
 
 fn witness_for_unallocated_output(
@@ -304,6 +286,7 @@ fn plan_specialized_call(
         output_storage: &output_storage,
         input_witnesses: &input_witnesses,
         output_witnesses: &output_witnesses,
+        published_output_witnesses: &output_witnesses,
         implementation_memory,
         target: &target,
         regions: &regions,
@@ -340,7 +323,8 @@ fn cell_physical_storage_descriptor(
     let planned_representation = representation;
     let mut storage = physical_storage_descriptor(planned_representation, target, lifetime);
     if cell.has_managed_canonical_storage()?
-        && !matches!(storage.slot, PlannedSlotKind::FixedScalar(_))
+        && (!matches!(storage.slot, PlannedSlotKind::FixedScalar(_))
+            || matches!(representation, FunctionValueRepresentation::Matrix { .. }))
     {
         storage.capabilities = cell.storage_capabilities();
         storage.slot = PlannedSlotKind::CanonicalValueHandle;

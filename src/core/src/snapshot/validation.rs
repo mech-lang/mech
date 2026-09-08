@@ -110,8 +110,16 @@ pub struct Value {
 /// mutable memory domain, cell, or executor authority.
 #[derive(Debug)]
 pub struct FrozenSnapshotStorage {
-    data: ValueData,
+    data: Arc<FrozenSnapshotData>,
     _ownership: Option<crate::RetainedPayloadTicket>,
+}
+
+/// The immutable canonical tree is separated from its accounting wrapper so
+/// an admitted ownership ticket can be attached without recursively cloning
+/// an already shared tree.
+#[derive(Debug)]
+struct FrozenSnapshotData {
+    data: ValueData,
 }
 
 impl core::fmt::Debug for Value {
@@ -121,7 +129,7 @@ impl core::fmt::Debug for Value {
             .field("schema", &self.schema)
             .field("schema_key", &self.schema_key)
             .field("shape", &self.shape)
-            .field("data", &self.root.data)
+            .field("data", &self.root.data.data)
             .finish()
     }
 }
@@ -129,7 +137,7 @@ impl core::fmt::Debug for Value {
 impl Value {
     #[doc(hidden)]
     pub fn shares_frozen_storage(&self, other: &Self) -> bool {
-        Arc::ptr_eq(&self.root, &other.root)
+        Arc::ptr_eq(&self.root.data, &other.root.data)
     }
 
     /// Sealed handoff from an admitted mutable payload envelope into a
@@ -163,7 +171,7 @@ impl Value {
     }
 
     pub fn data(&self) -> &ValueData {
-        &self.root.data
+        &self.root.data.data
     }
 
     /// Returns the immutable schema table that validates this detached value.
@@ -210,9 +218,21 @@ impl Value {
                 key: self.schema_key,
             });
         }
+        // The ordinary managed snapshot path asks for the exact schema
+        // identity, definition, and shape already carried by this immutable value. Keep
+        // the frozen tree and its retained-allocation ticket intact. A rebind
+        // to another table or shape remains an explicit canonical transform
+        // below and therefore cannot accidentally take this no-copy path.
+        if schema == self.schema
+            && target_entry.key() == self.schema_key
+            && shape == &self.shape
+            && exact_definition
+        {
+            return Ok(self.clone());
+        }
         let data = canonical_data_to_rebound_draft(
             source_schema.body(),
-            &self.root.data,
+            &self.root.data.data,
             &SnapshotPath::root(),
             schemas,
         )?;
@@ -245,7 +265,7 @@ impl Value {
             .ok_or(SnapshotValueError::UnknownSnapshotSchema {
                 schema: self.schema,
             })?;
-        canonical_data_to_draft(schema.body(), &self.root.data, &SnapshotPath::root())
+        canonical_data_to_draft(schema.body(), &self.root.data.data, &SnapshotPath::root())
     }
 
     /// Compact deterministic token computed when the finalized value is
@@ -1486,7 +1506,7 @@ fn finalized_value(
         schema_key,
         shape,
         root: Arc::new(FrozenSnapshotStorage {
-            data,
+            data: Arc::new(FrozenSnapshotData { data }),
             _ownership: None,
         }),
         resident_token,
@@ -2286,7 +2306,67 @@ pub(super) const fn schema_kind(schema: &SchemaBody) -> SchemaDataKind {
 mod tests {
     use super::*;
     use crate::snapshot::{F64Bits, TableColumnDraft};
-    use crate::{SchemaDraft, SchemaField, SchemaTableBuilder};
+    use crate::{
+        DimensionExpr, DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+        DimensionParameterOrigin, SchemaDraft, SchemaField, SchemaTableBuilder,
+    };
+
+    #[test]
+    fn metadata_only_rebind_shares_storage_but_schema_transform_rebuilds() {
+        let fixed = SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body: SchemaBody::Matrix {
+                element: Box::new(SchemaBody::String),
+                dimensions: vec![DimensionExpr::Constant(1)].into_boxed_slice(),
+            },
+        }
+        .finalize()
+        .unwrap();
+        let dynamic = SchemaDraft {
+            dimension_parameters: vec![DimensionParameterDeclaration {
+                id: DimensionParameterId::new(0),
+                origin: DimensionParameterOrigin::Explicit,
+                lifetime: DimensionLifetime::Turn,
+                lower_bound: DimensionExpr::Constant(0),
+                upper_bound: None,
+            }]
+            .into_boxed_slice(),
+            body: SchemaBody::Matrix {
+                element: Box::new(SchemaBody::String),
+                dimensions: vec![DimensionExpr::Parameter(DimensionParameterId::new(0))]
+                    .into_boxed_slice(),
+            },
+        }
+        .finalize()
+        .unwrap();
+        let mut builder = SchemaTableBuilder::new();
+        let fixed_handle = builder.insert(fixed).unwrap();
+        let dynamic_handle = builder.insert(dynamic).unwrap();
+        let build = builder.finish().unwrap();
+        let fixed = build.resolve(fixed_handle).unwrap();
+        let dynamic = build.resolve(dynamic_handle).unwrap();
+        let (schemas, _) = build.into_parts();
+        let value = ValueDraft {
+            schema: fixed,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Matrix(
+                vec![ValueDataDraft::String("owned".to_owned())].into_boxed_slice(),
+            ),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+
+        let same = value.rebind(fixed, value.shape(), &schemas).unwrap();
+        assert!(value.shares_frozen_storage(&same));
+
+        let dynamic_shape = schemas
+            .get(dynamic)
+            .unwrap()
+            .instantiate_shape(vec![1].into_boxed_slice())
+            .unwrap();
+        let transformed = value.rebind(dynamic, &dynamic_shape, &schemas).unwrap();
+        assert!(!value.shares_frozen_storage(&transformed));
+    }
 
     #[test]
     fn index_snapshots_are_one_based() {

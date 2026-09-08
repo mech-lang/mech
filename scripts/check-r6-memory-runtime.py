@@ -19,6 +19,9 @@ REQUIRED = (
     "src/core/src/memory_runtime/payload.rs",
     "src/core/src/memory_runtime/transaction.rs",
     "src/core/src/memory_runtime/error.rs",
+    "src/core/src/snapshot/encoding.rs",
+    "src/core/src/snapshot/validation.rs",
+    "machines/string/src/lib.rs",
     "src/engine/src/memory_runtime/mod.rs",
     "src/engine/src/memory_runtime/realize.rs",
     "src/engine/src/memory_runtime/resident.rs",
@@ -308,6 +311,39 @@ def failures(root: Path) -> list[str]:
         for body in function_bodies(access, "stage_output_value")
     ):
         found.append("canonical output staging bypasses its admitted payload owner")
+    admitted_builders = list(function_bodies(access, "with_admitted_canonical_output"))
+    admitted_builders.extend(
+        function_bodies(access, "with_admitted_canonical_binary_port_values")
+    )
+    if not admitted_builders or not all(
+        "prepare_frozen_snapshot" in body
+        and "build(" in body
+        and body.index("prepare_frozen_snapshot") < body.index("build(")
+        for body in admitted_builders
+    ):
+        found.append("maintained canonical construction does not admit before building")
+    payload = rust_code(sources.get("src/core/src/memory_runtime/payload.rs", ""))
+    if "PreparedFrozenSnapshotAdmission" not in payload or not any(
+        "record_initialized" in body
+        for body in function_bodies(payload, "complete")
+    ):
+        found.append("canonical payload admission is not completed after valid construction")
+    envelope = balanced_body(payload, "PayloadEnvelopeOwner")
+    if (
+        envelope is None
+        or "block_capacity" not in envelope
+        or "owner.block_capacity" not in payload
+    ):
+        found.append("payload node admission depends on allocator spare capacity")
+    snapshot = rust_code(sources.get("src/core/src/snapshot/validation.rs", ""))
+    rebinds = list(function_bodies(snapshot, "rebind"))
+    if (
+        "FrozenSnapshotData" not in snapshot
+        or not rebinds
+        or "return Ok(self.clone())" not in rebinds[0]
+        or "data: self.root.data.clone()" not in snapshot
+    ):
+        found.append("canonical snapshots do not preserve shared frozen ownership")
     if "publication_shape" not in cell or not any(
         "publication_shape" in body and "publication_locked" in body
         for body in function_bodies(cell, "lock_publication")
@@ -323,6 +359,19 @@ def failures(root: Path) -> list[str]:
         found.append("MechFunctionImpl does not require solve_managed")
     if implementation is not None and re.search(r"\bfn\s+solve_result(?:_with)?\b", implementation):
         found.append("MechFunctionImpl retains an unmanaged solve entry")
+    if "planned_output_footprints" not in function or "resolve_current_call_memory" not in function:
+        found.append("payload-dependent calls do not refresh live and prospective footprints")
+    if "validate_transaction_authority" not in function or not any(
+        "validate_transaction_authority" in body
+        for body in function_bodies(function, "new")
+    ):
+        found.append("function binding does not validate transaction semantics")
+    string_runtime = rust_code(sources.get("machines/string/src/lib.rs", ""))
+    if (
+        "canonical_concat_footprint" not in string_runtime
+        or "with_admitted_canonical_binary_port_values" not in string_runtime
+    ):
+        found.append("String construction bypasses prospective payload admission")
     instance = balanced_body(function, "FunctionInstance")
     binding = balanced_body(function, "ManagedFunctionBinding")
     realization = balanced_body(function, "ManagedCallRealization")
@@ -345,6 +394,18 @@ def failures(root: Path) -> list[str]:
         for body in function_bodies(access, "prepare_function_call")
     ):
         found.append("function access treats a missing transaction as write authority")
+    undo_snapshot = balanced_body(access, "PreparedUndoSnapshot")
+    if (
+        "RetainedPublicationLease" not in access
+        or undo_snapshot is None
+        or "retained_lease" not in undo_snapshot
+    ):
+        found.append("undo publication does not retain its exclusive lease")
+    if (
+        "owns_lease" not in access
+        or "workspace.leases[other].owns_lease = false" not in access
+    ):
+        found.append("repeated in-place input roles are not coalesced")
 
     domain_code = rust_code(sources.get("src/core/src/memory_runtime/domain.rs", ""))
     if not any(

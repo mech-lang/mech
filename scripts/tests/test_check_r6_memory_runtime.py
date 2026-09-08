@@ -505,6 +505,76 @@ fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunctio
         self.write(root, path, source.replace("publication_shape", "removed_shape"))
         self.assert_failure(root, "conflict-free shape authority")
 
+    def test_47_canonical_builder_must_admit_before_construction(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/memory_runtime/access.rs",
+            "allocator.prepare_frozen_snapshot",
+            "allocator.accept_after_build",
+        )
+        self.assert_failure(root, "does not admit before building")
+
+    def test_48_payload_calls_must_refresh_same_shape_footprints(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/function/mod.rs",
+            "resolve_current_call_memory",
+            "reuse_shape_only_plan",
+        )
+        self.assert_failure(root, "do not refresh live and prospective footprints")
+
+    def test_49_snapshot_rebind_must_keep_frozen_ownership(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/snapshot/validation.rs",
+            "return Ok(self.clone());",
+            "return Ok(rebuild_without_owner());",
+        )
+        self.assert_failure(root, "do not preserve shared frozen ownership")
+
+    def test_50_payload_nodes_use_declared_not_allocator_capacity(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/memory_runtime/payload.rs",
+            "block_capacity: usize,",
+            "incidental_capacity: usize,",
+        )
+        self.assert_failure(root, "allocator spare capacity")
+
+    def test_51_function_binding_validates_transaction_semantics(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/function/mod.rs",
+            "validate_transaction_authority(&plan)?;",
+            "validate_transaction_arity(&plan)?;",
+        )
+        self.assert_failure(root, "does not validate transaction semantics")
+
+    def test_52_undo_publication_retains_the_exclusive_lease(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/memory_runtime/access.rs",
+            "retained_lease: Option<RetainedPublicationLease>,",
+            "dropped_lease: Option<RetainedPublicationLease>,",
+        )
+        self.assert_failure(root, "does not retain its exclusive lease")
+
+    def test_53_repeated_in_place_roles_are_coalesced(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/memory_runtime/access.rs",
+            "workspace.leases[other].owns_lease = false;",
+            "workspace.leases[other].owns_lease = true;",
+        )
+        self.assert_failure(root, "are not coalesced")
+
 
 if __name__ == "__main__":
     unittest.main()

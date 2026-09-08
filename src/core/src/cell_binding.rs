@@ -352,27 +352,28 @@ fn planned_payload_object(
     realized: &crate::RealizedMemoryPlan,
     header: crate::PlanObjectKey,
 ) -> MResult<crate::PlanObjectKey> {
+    planned_payload_object_optional(owner, realized, header)?
+        .ok_or_else(|| managed_host_shape_error(header, "canonical header has no payload envelope"))
+}
+
+fn planned_payload_object_optional(
+    owner: &MemoryDomain,
+    realized: &crate::RealizedMemoryPlan,
+    header: crate::PlanObjectKey,
+) -> MResult<Option<crate::PlanObjectKey>> {
     let allocations: &[crate::AllocationPlan] = if let Some(plan) = realized.owned_value_plan() {
         &plan.allocations
     } else {
         #[cfg(feature = "functions")]
         {
-            &realized
-                .call_plan()
-                .ok_or_else(|| {
-                    managed_host_shape_error(
-                        header,
-                        "canonical storage has no retained R5 allocation plan",
-                    )
-                })?
-                .allocations
+            let Some(plan) = realized.call_plan() else {
+                return Ok(None);
+            };
+            &plan.allocations
         }
         #[cfg(not(feature = "functions"))]
         {
-            return Err(managed_host_shape_error(
-                header,
-                "canonical storage has no retained R5 allocation plan",
-            ));
+            return Ok(None);
         }
     };
     let header_plan = allocations
@@ -381,18 +382,14 @@ fn planned_payload_object(
         .ok_or_else(|| {
             managed_host_shape_error(header, "canonical header is absent from its plan")
         })?;
-    let payload = allocations
-        .iter()
-        .find(|allocation| {
-            allocation.role == crate::AllocationRole::VariablePayload
-                && allocation.owner == header_plan.owner
-                && allocation.lifetime == header_plan.lifetime
-        })
-        .ok_or_else(|| {
-            managed_host_shape_error(header, "canonical header has no payload envelope")
-        })?;
-    owner
-        .plan_object_key(realized.revision(), payload.id)
+    let payload = allocations.iter().find(|allocation| {
+        allocation.role == crate::AllocationRole::VariablePayload
+            && allocation.owner == header_plan.owner
+            && allocation.lifetime == header_plan.lifetime
+    });
+    payload
+        .map(|payload| owner.plan_object_key(realized.revision(), payload.id))
+        .transpose()
         .map_err(MechError::from)
 }
 
@@ -713,7 +710,7 @@ impl ErasedCellStorage for ManagedCanonicalCellStorage {
     }
 }
 
-fn snapshot_managed_host_data(
+pub(crate) fn snapshot_managed_host_data(
     frame: &crate::KernelMemoryFrame<'_>,
     object: crate::PlanObjectKey,
     representation: FunctionValueRepresentation,
@@ -1325,6 +1322,164 @@ impl ValueCell {
             })?;
         let shape = self.binding.try_shape(CellAccess::Snapshot)?.clone();
         crate::ResolvedValueDescriptor::from_schema(schema, shape).map_err(MechError::from)
+    }
+
+    /// Measures the currently published semantic value for R5/R6 live
+    /// footprint resolution. This walks an immutable snapshot without
+    /// rebuilding its canonical tree.
+    #[cfg(feature = "functions")]
+    pub fn current_memory_footprint(&self) -> MResult<crate::CurrentMemoryFootprint> {
+        let descriptor = self.resolved_descriptor()?;
+        let logical_elements = descriptor
+            .current_extents()
+            .map_err(MechError::from)?
+            .iter()
+            .try_fold(1_u64, |product, extent| product.checked_mul(*extent))
+            .ok_or_else(|| {
+                MechError::new(
+                    crate::MemoryPlanError::ArithmeticOverflow {
+                        field: "live value logical elements",
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+        let snapshot = self.snapshot()?;
+        let retained = snapshot
+            .retained_footprint(self.schema_table().as_ref())
+            .map_err(|error| {
+                MechError::new(
+                    crate::GenericError {
+                        msg: format!("unable to measure live value: {error:?}"),
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+        Ok(crate::CurrentMemoryFootprint {
+            logical_elements,
+            payload_bytes: retained.retained_bytes,
+            encoded_bytes: retained.encoded_bytes,
+            retained_nodes: retained.node_count,
+            shape_parameter_count: descriptor.shape().parameter_values().len() as u64,
+            ..crate::CurrentMemoryFootprint::default()
+        })
+    }
+
+    /// Computes a conservative prospective footprint for a set assembled
+    /// from borrowed immutable values. Duplicate canonical keys may make the
+    /// finalized set smaller; no candidate payload is cloned or allocated by
+    /// this planning traversal.
+    #[cfg(feature = "functions")]
+    pub fn prospective_set_memory_footprint(
+        &self,
+        values: impl IntoIterator<Item = MResult<Value>>,
+    ) -> MResult<crate::CurrentMemoryFootprint> {
+        let schemas = self.schema_table();
+        let schema = schemas.get(self.schema()).ok_or_else(|| {
+            snapshot_failure(SnapshotValueError::UnknownSnapshotSchema {
+                schema: self.schema(),
+            })
+        })?;
+        let SchemaBody::Set { element, .. } = schema.body() else {
+            return Err(backing_mismatch::<Value>(self.representation()));
+        };
+        let mut elements = 0_u64;
+        let mut encoded = 8_u64;
+        let mut retained = u64::try_from(core::mem::size_of::<Value>())
+            .ok()
+            .and_then(|bytes| {
+                (self.shape().parameter_values().len() as u64)
+                    .checked_mul(core::mem::size_of::<u64>() as u64)
+                    .and_then(|shape| bytes.checked_add(shape))
+            })
+            .and_then(|bytes| bytes.checked_add(core::mem::size_of::<ValueData>() as u64))
+            .ok_or_else(|| {
+                MechError::new(
+                    crate::MemoryPlanError::ArithmeticOverflow {
+                        field: "prospective set root bytes",
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+        let mut nodes = 2_u64;
+        for value in values {
+            let value = value?;
+            let value_schemas = value.schemas().ok_or_else(|| {
+                MechError::new(crate::ValueSchemaContextUnavailable, None).with_compiler_loc()
+            })?;
+            let value_schema = value_schemas.get(value.schema()).ok_or_else(|| {
+                snapshot_failure(SnapshotValueError::UnknownSnapshotSchema {
+                    schema: value.schema(),
+                })
+            })?;
+            if value_schema.body() != element.as_ref() {
+                return Err(backing_mismatch::<Value>(self.representation()));
+            }
+            let footprint = crate::snapshot::canonical_data_retained_footprint(
+                element,
+                value.data(),
+            )
+            .map_err(|error| {
+                MechError::new(
+                    crate::GenericError {
+                        msg: format!("unable to measure prospective set element: {error:?}"),
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+            elements = elements.checked_add(1).ok_or_else(|| {
+                MechError::new(
+                    crate::MemoryPlanError::ArithmeticOverflow {
+                        field: "prospective set elements",
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+            encoded = encoded
+                .checked_add(footprint.encoded_bytes)
+                .ok_or_else(|| {
+                    MechError::new(
+                        crate::MemoryPlanError::ArithmeticOverflow {
+                            field: "prospective set encoded bytes",
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                })?;
+            retained = retained
+                .checked_add(core::mem::size_of::<crate::snapshot::CanonicalKeyValue>() as u64)
+                .and_then(|bytes| bytes.checked_add(footprint.retained_bytes))
+                .ok_or_else(|| {
+                    MechError::new(
+                        crate::MemoryPlanError::ArithmeticOverflow {
+                            field: "prospective set retained bytes",
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                })?;
+            nodes = nodes.checked_add(footprint.node_count).ok_or_else(|| {
+                MechError::new(
+                    crate::MemoryPlanError::ArithmeticOverflow {
+                        field: "prospective set retained nodes",
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+        }
+        Ok(crate::CurrentMemoryFootprint {
+            logical_elements: elements,
+            payload_bytes: retained,
+            encoded_bytes: encoded,
+            retained_nodes: nodes,
+            shape_parameter_count: self.shape().parameter_values().len() as u64,
+            ..crate::CurrentMemoryFootprint::default()
+        })
     }
 
     pub fn validate_descriptor(&self, expected: &crate::ResolvedValueDescriptor) -> MResult<()> {
@@ -3313,22 +3468,19 @@ impl ValueCell {
         let next_shape = next.shape().clone();
         let representation = self.representation();
         realized.binding(object).map_err(MechError::from)?;
-        let next_storage = match &published.storage {
-            CellStorageBinding::ManagedCanonical { .. } => {
-                let payload = planned_payload_object(owner, realized, object)?;
-                CellStorageBinding::ManagedCanonical {
+        let next_storage = match planned_payload_object_optional(owner, realized, object)? {
+            Some(payload) => CellStorageBinding::ManagedCanonical {
+                owner: owner.clone(),
+                storage: Rc::new(ManagedCanonicalCellStorage {
                     owner: owner.clone(),
-                    storage: Rc::new(ManagedCanonicalCellStorage {
-                        owner: owner.clone(),
-                        realized: realized.clone(),
-                        object,
-                        payload,
-                        value: next.clone(),
-                        representation,
-                    }),
-                }
-            }
-            _ => CellStorageBinding::ManagedHost {
+                    realized: realized.clone(),
+                    object,
+                    payload,
+                    value: next.clone(),
+                    representation,
+                }),
+            },
+            None => CellStorageBinding::ManagedHost {
                 owner: owner.clone(),
                 storage: Rc::new(ManagedHostCellStorage {
                     owner: owner.clone(),

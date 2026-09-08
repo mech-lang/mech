@@ -297,22 +297,39 @@ pub struct ValueSetComprehension {
 
 #[cfg(all(feature = "set_comprehensions", feature = "functions"))]
 impl MechFunctionImpl for ValueSetComprehension {
+    fn planned_output_footprints(
+        &self,
+    ) -> MResult<Option<Box<[mech_core::CurrentMemoryFootprint]>>> {
+        Ok(Some(
+            vec![self.output.cell().prospective_set_memory_footprint(
+                self.arguments.iter().map(FunctionValueInput::snapshot),
+            )?]
+            .into_boxed_slice(),
+        ))
+    }
+
     fn solve_managed(
         &self,
         frame: &mut mech_core::KernelMemoryFrame<'_>,
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
-        let values = self
-            .arguments
-            .iter()
-            .map(|argument| frame.snapshot_function_value_input(argument))
-            .collect::<MResult<Vec<_>>>()?
-            .into_iter()
-            .map(|value| value.data().clone())
-            .collect::<Vec<_>>()
-            .into_boxed_slice();
-        let next = self.output.build_set(values)?;
-        frame.stage_output_value(self.output.cell(), next)?;
+        let footprint = self.output.cell().prospective_set_memory_footprint(
+            self.arguments
+                .iter()
+                .map(|argument| frame.snapshot_function_value_input(argument)),
+        )?;
+        frame.with_admitted_canonical_output(self.output.cell(), footprint, |frame| {
+            let values = self
+                .arguments
+                .iter()
+                .map(|argument| frame.snapshot_function_value_input(argument))
+                .collect::<MResult<Vec<_>>>()?
+                .into_iter()
+                .map(|value| value.data().clone())
+                .collect::<Vec<_>>()
+                .into_boxed_slice();
+            Ok(((), self.output.build_set(values)?))
+        })?;
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 

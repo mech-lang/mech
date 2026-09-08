@@ -20,7 +20,10 @@ use crate::types::*;
 use crate::*;
 
 #[cfg(all(feature = "no_std", not(feature = "std")))]
-use alloc::{collections::BTreeSet, rc::Rc};
+use alloc::{
+    collections::{BTreeMap, BTreeSet},
+    rc::Rc,
+};
 #[cfg(all(feature = "no_std", not(feature = "std")))]
 use hashbrown::HashSet as HashBrownSet;
 #[cfg(feature = "functions")]
@@ -29,7 +32,7 @@ use indexmap::map::IndexMap;
 type HashSet<T> = HashBrownSet<T, core::hash::BuildHasherDefault<fxhash::FxHasher>>;
 use core::fmt;
 #[cfg(any(not(feature = "no_std"), feature = "std"))]
-use std::collections::{BTreeSet, HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 #[cfg(any(not(feature = "no_std"), feature = "std"))]
 use std::rc::Rc;
 #[cfg(feature = "pretty_print")]
@@ -247,6 +250,13 @@ pub trait MechFunctionImpl {
         Ok(None)
     }
 
+    /// Resolves value-dependent output payload requirements before any
+    /// result construction. Canonical builders override this hook so the R5
+    /// call planner can admit the complete prospective footprint first.
+    fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+        Ok(None)
+    }
+
     fn initial_solve_policy(&self) -> InitialSolvePolicy {
         InitialSolvePolicy::Solve
     }
@@ -460,6 +470,7 @@ impl ManagedCallRealization {
         &self,
         invocation: &FunctionInvocation,
         output_shapes: Option<&[ShapeInstance]>,
+        output_footprints: Option<&[CurrentMemoryFootprint]>,
     ) -> MResult<Option<Rc<CallMemoryPlan>>> {
         let planned_inputs = (0..self.plan.inputs.len())
             .map(|index| invocation.planned_input_cell(self.plan.as_ref(), index))
@@ -475,7 +486,18 @@ impl ManagedCallRealization {
                     .zip(self.plan.outputs.iter())
                     .all(|(shape, port)| shape == port.descriptor.shape())
         });
-        if inputs_unchanged && outputs_unchanged {
+        let payload_dependent = self
+            .plan
+            .input_storage
+            .iter()
+            .chain(self.plan.output_storage.iter())
+            .any(|storage| {
+                matches!(
+                    storage.slot,
+                    PlannedSlotKind::StringHeader | PlannedSlotKind::CanonicalValueHandle
+                )
+            });
+        if inputs_unchanged && outputs_unchanged && !payload_dependent {
             return Ok(None);
         }
         let inputs = planned_inputs
@@ -501,8 +523,12 @@ impl ManagedCallRealization {
                     ShapeRule::SameAsInput { input: base_input }
                 }
                 OutputConstruction::Build { .. } => {
-                    return Err(MechError::new(MemoryPlanError::DescriptorMismatch, None)
-                        .with_compiler_loc());
+                    // Aggregate builders may change a dynamic cardinality
+                    // without changing their closed descriptor shape. Their
+                    // prospective payload witness, supplied separately,
+                    // drives allocation and admission for this turn.
+                    outputs.push(previous.clone());
+                    continue;
                 }
             };
             let extents = match shape_rule {
@@ -537,9 +563,57 @@ impl ManagedCallRealization {
             .plan
             .bound_call
             .with_current_descriptors(inputs, outputs.into_boxed_slice())?;
-        let plan = replan_fixed_call_geometry(&self.plan, &current)
-            .map_err(|error| MechError::new(error, None).with_compiler_loc())?;
-        Ok(Some(Rc::new(plan)))
+        if !payload_dependent {
+            let geometry_plan = replan_fixed_call_geometry(&self.plan, &current)
+                .map_err(|error| MechError::new(error, None).with_compiler_loc())?;
+            return Ok(Some(Rc::new(geometry_plan)));
+        }
+
+        let mut resolved = BTreeMap::new();
+        for (index, cell) in planned_inputs.iter().enumerate() {
+            let port = u16::try_from(index).map_err(|_| {
+                MechError::new(MemoryPlanError::DescriptorArityMismatch, None).with_compiler_loc()
+            })?;
+            resolved.insert(
+                (PortDirection::Input, port),
+                cell.current_memory_footprint()?,
+            );
+        }
+        if let Some(footprints) = output_footprints {
+            if footprints.len() != self.plan.outputs.len() {
+                return Err(
+                    MechError::new(MemoryPlanError::DescriptorArityMismatch, None)
+                        .with_compiler_loc(),
+                );
+            }
+            for (index, footprint) in footprints.iter().copied().enumerate() {
+                let port = u16::try_from(index).map_err(|_| {
+                    MechError::new(MemoryPlanError::DescriptorArityMismatch, None)
+                        .with_compiler_loc()
+                })?;
+                resolved.insert((PortDirection::Output, port), footprint);
+            }
+        } else {
+            for index in 0..self.plan.outputs.len() {
+                let port = u16::try_from(index).map_err(|_| {
+                    MechError::new(MemoryPlanError::DescriptorArityMismatch, None)
+                        .with_compiler_loc()
+                })?;
+                resolved.insert(
+                    (PortDirection::Output, port),
+                    invocation.output_cell().current_memory_footprint()?,
+                );
+            }
+        }
+        let published_outputs = [invocation.output_cell().current_memory_footprint()?];
+        let plan =
+            resolve_current_call_memory(&self.plan, &current, &resolved, Some(&published_outputs))
+                .map_err(|error| MechError::new(error, None).with_compiler_loc())?;
+        if plan == *self.plan {
+            Ok(None)
+        } else {
+            Ok(Some(Rc::new(plan)))
+        }
     }
 
     fn initialize_inputs(&self, invocation: &FunctionInvocation) -> MResult<()> {
@@ -578,19 +652,88 @@ impl ManagedCallRealization {
     }
 }
 
+fn validate_transaction_authority(plan: &CallMemoryPlan) -> MResult<()> {
+    if plan.outputs.len() != plan.transactions.len()
+        || plan.outputs.len() != plan.aliases.len()
+        || plan.outputs.len() != plan.output_storage.len()
+    {
+        return Err(MemoryRuntimeError::CandidateValidationFailed {
+            object: None,
+            reason: "every managed output requires one explicit transaction authority".into(),
+        }
+        .into());
+    }
+    let requirements = plan
+        .bound_call
+        .operation_descriptor()
+        .contract
+        .memory_requirements(plan.bound_call.inputs().len())
+        .map_err(|_| MemoryRuntimeError::CandidateValidationFailed {
+            object: None,
+            reason: "managed transaction authority has an invalid operation contract".into(),
+        })?;
+    if requirements.outputs.len() != plan.outputs.len() {
+        return Err(MemoryRuntimeError::CandidateValidationFailed {
+            object: None,
+            reason: "managed transaction authority differs from the output contract".into(),
+        }
+        .into());
+    }
+    let valid_stage = |id: MemoryObjectId, output: &PortMemoryPlan, ordinal: usize| {
+        plan.allocations.iter().any(|allocation| {
+            allocation.id == id
+                && allocation.role == AllocationRole::TransactionStage
+                && allocation.slot == Some(output.value.storage.planned_slot())
+                && allocation.space == plan.output_storage[ordinal].space
+        })
+    };
+    for (ordinal, ((output, transaction), requirement)) in plan
+        .outputs
+        .iter()
+        .zip(plan.transactions.iter())
+        .zip(requirements.outputs.iter())
+        .enumerate()
+    {
+        let valid = match requirement.construction.as_ref() {
+            None => matches!(transaction, TransactionRequirement::None),
+            Some(_) => match requirement.alias {
+                Some(AliasPolicy::InPlaceRequired { input }) => {
+                    let target = plan.inputs.get(input as usize).map(|input| input.object);
+                    matches!(plan.aliases.get(ordinal), Some(AliasDecision::InPlaceRequired { input: planned }) if *planned == input)
+                        && matches!(transaction, TransactionRequirement::UndoSnapshot { target: actual, undo } if Some(*actual) == target && valid_stage(*undo, output, ordinal))
+                }
+                _ if matches!(
+                    plan.target.kind,
+                    MemoryTargetKind::ResidentCpu | MemoryTargetKind::Gpu
+                ) && plan.output_storage[ordinal].lifetime == MemoryLifetime::Activation =>
+                {
+                    matches!(transaction, TransactionRequirement::DoubleBuffer { current, next } if *current == output.object && valid_stage(*next, output, ordinal))
+                }
+                _ => {
+                    matches!(transaction, TransactionRequirement::StageAndSwap { current, staged } if *current == output.object && valid_stage(*staged, output, ordinal))
+                }
+            },
+        };
+        if !valid {
+            return Err(MemoryRuntimeError::CandidateValidationFailed {
+                object: Some(output.object),
+                reason:
+                    "managed transaction variant or object pair differs from the output contract"
+                        .into(),
+            }
+            .into());
+        }
+    }
+    Ok(())
+}
+
 impl FunctionInstance {
     pub fn new(
         implementation: Box<dyn MechFunction>,
         invocation: FunctionInvocation,
         plan: Rc<CallMemoryPlan>,
     ) -> MResult<Self> {
-        if plan.outputs.len() != plan.transactions.len() {
-            return Err(MemoryRuntimeError::CandidateValidationFailed {
-                object: None,
-                reason: "every managed output requires one explicit transaction authority".into(),
-            }
-            .into());
-        }
+        validate_transaction_authority(&plan)?;
         invocation
             .check_operation_memory_contract(&plan.bound_call.operation_descriptor().contract)?;
         let domain = invocation.output_cell().memory_domain().ok_or_else(|| {
@@ -697,10 +840,13 @@ impl FunctionInstance {
             .domain
             .require_standalone_execution()
             .map_err(managed_scope_error)?;
+        let output_shapes = self.implementation.planned_output_shapes()?;
+        let output_footprints = self.implementation.planned_output_footprints()?;
         let candidate = current
             .refreshed_plan(
                 &self.invocation,
-                self.implementation.planned_output_shapes()?.as_deref(),
+                output_shapes.as_deref(),
+                output_footprints.as_deref(),
             )?
             .map(|plan| {
                 ManagedCallRealization::prepare(current.domain.clone(), plan, &self.invocation)
@@ -712,6 +858,11 @@ impl FunctionInstance {
             .enter_realized_plan_point(&managed.realized, MemoryPlanPoint::new(0))
             .map_err(managed_scope_error)?;
         managed.initialize_inputs(&self.invocation)?;
+        let publication_shape = managed
+            .plan
+            .outputs
+            .first()
+            .map(|output| output.descriptor.shape().clone());
         let (status, staged_output) = {
             let mut frame = managed
                 .domain
@@ -734,12 +885,31 @@ impl FunctionInstance {
                     });
                 }
                 let (object, region) = frame.output_target(self.output(), 0)?;
-                let staged_value = frame.take_staged_output_value(object);
-                let undo = frame.take_undo_snapshot();
-                (status, Some((object, region, staged_value, undo)))
+                let value = match frame.take_staged_output_value(object) {
+                    Some(value) => value,
+                    None => {
+                        let shape = publication_shape.as_ref().ok_or_else(|| {
+                            MechError::new(MemoryPlanError::DescriptorArityMismatch, None)
+                                .with_compiler_loc()
+                        })?;
+                        let data = crate::cell_binding::snapshot_managed_host_data(
+                            &frame,
+                            object,
+                            self.output().representation(),
+                        )?;
+                        crate::cell_binding::finalize_draft(
+                            self.output().schema(),
+                            shape,
+                            self.output().schema_table().as_ref(),
+                            data,
+                        )?
+                    }
+                };
+                let undo = frame.take_undo_snapshot().map_err(MechError::from)?;
+                (status, Some((object, region, value, undo)))
             }
         };
-        let Some((output_object, output_region, staged_value, undo)) = staged_output else {
+        let Some((output_object, output_region, value, undo)) = staged_output else {
             return Ok(PreparedFunctionPublication {
                 status,
                 publication: None,
@@ -748,20 +918,6 @@ impl FunctionInstance {
             });
         };
         let output = self.output();
-        let shape = managed.plan.outputs[0].descriptor.shape().clone();
-        let value = match staged_value {
-            Some(value) => value,
-            None => crate::cell_binding::value_from_managed_object(
-                &managed.domain,
-                &managed.realized,
-                output_object,
-                output_region,
-                output.representation(),
-                output.schema(),
-                &shape,
-                output.schema_table().as_ref(),
-            )?,
-        };
         let binding = managed
             .realized
             .binding(output_object)

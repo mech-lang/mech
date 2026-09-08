@@ -205,6 +205,27 @@ Exporting mutable dense storage produces a planned canonical snapshot copy;
 retaining an already immutable value is allocation-free except for explicitly
 planned export bookkeeping.
 
+Payload-dependent calls measure current inputs, the separately retained
+published output, and the prospective candidate even when schemas and shapes
+are unchanged. The complete R5 call plan is re-derived from those witnesses;
+fixed-width calls whose requirements are invariant keep the cached fast path.
+Maintained canonical builders receive their charged payload admission before
+allocating result Strings, containers, or finalization storage, and complete
+that admission only after the frozen value validates. Adoption of an already
+existing external value is a distinct boundary.
+
+An ordinary same-schema, same-shape snapshot shares the published frozen data
+and its accounting owner. Rebinding that changes schema identity or shape is
+an explicit canonical reconstruction; it cannot silently take the no-copy
+snapshot path or shed the retained-allocation ticket.
+
+Payload envelopes retain their declared node-registration bound independently
+of any spare capacity returned by the host allocator. Function binding also
+revalidates every transaction variant and object pair against the declared
+output construction. Required in-place calls coalesce repeated logical input
+roles under one exclusive physical lease, and that lease remains installed
+from mutation through commit or rollback.
+
 ## 10. Backends and compatibility
 
 GPU realization extends the subordinate R5 backing projection. Every managed

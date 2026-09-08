@@ -39,6 +39,7 @@ pub(crate) struct PayloadBlockRecord {
 pub(crate) struct PayloadEnvelopeOwner {
     object: PlanObjectKey,
     capacity_bytes: u64,
+    block_capacity: usize,
     alignment: u32,
     accepting_allocations: Cell<bool>,
     blocks: RefCell<Vec<PayloadBlockRecord>>,
@@ -67,6 +68,7 @@ impl PayloadEnvelopeOwner {
         Ok(Rc::new(Self {
             object,
             capacity_bytes,
+            block_capacity,
             alignment,
             accepting_allocations: Cell::new(true),
             blocks: RefCell::new(blocks),
@@ -127,7 +129,7 @@ impl PayloadEnvelopeOwner {
                 reason: "payload alignment exceeds its planned envelope",
             });
         }
-        if self.blocks.borrow().len() == self.blocks.borrow().capacity() {
+        if self.blocks.borrow().len() >= self.block_capacity {
             return Err(MemoryRuntimeError::UnplannedAllocation {
                 object: Some(self.object.object()),
                 requested: layout.size() as u64,
@@ -226,6 +228,25 @@ pub struct PlannedAllocator {
     authority: Rc<PlannedAllocationAuthority>,
 }
 
+/// A checked, charged payload reservation held across canonical construction.
+/// Dropping it before completion releases the retained charge automatically;
+/// initialization is recorded only after a valid frozen value exists.
+pub(crate) struct PreparedFrozenSnapshotAdmission {
+    allocator: PlannedAllocator,
+    ticket: Option<RetainedPayloadTicket>,
+    retained_bytes: u64,
+}
+
+impl PreparedFrozenSnapshotAdmission {
+    pub(crate) fn complete(mut self) -> MemoryRuntimeResult<RetainedPayloadTicket> {
+        self.allocator.record_initialized(self.retained_bytes)?;
+        Ok(self
+            .ticket
+            .take()
+            .expect("prepared frozen snapshot retains its charge until completion"))
+    }
+}
+
 impl PlannedAllocator {
     fn check_layout(&self, layout: Layout) -> MemoryRuntimeResult<()> {
         self.authority.owner.check_layout(layout)
@@ -246,7 +267,7 @@ impl PlannedAllocator {
         })?;
         let pointer = allocation.cast::<u8>();
         let mut blocks = self.authority.owner.blocks.borrow_mut();
-        if blocks.len() == blocks.capacity() {
+        if blocks.len() >= self.authority.owner.block_capacity {
             // SAFETY: Global returned this pointer for this exact layout and
             // ownership has not escaped this function.
             unsafe { Global.deallocate(pointer, layout) };
@@ -271,11 +292,11 @@ impl PlannedAllocator {
     /// allocations after publication. The payload envelope remains reusable;
     /// the returned pointer-free ticket independently retains the exact
     /// exported charge for as long as the frozen root is alive.
-    pub(crate) fn admit_frozen_snapshot(
+    pub(crate) fn prepare_frozen_snapshot(
         &self,
         retained_bytes: u64,
         retained_nodes: u64,
-    ) -> MemoryRuntimeResult<RetainedPayloadTicket> {
+    ) -> MemoryRuntimeResult<PreparedFrozenSnapshotAdmission> {
         if !self.authority.owner.accepting_allocations.get() {
             return Err(MemoryRuntimeError::DomainClosed);
         }
@@ -286,8 +307,7 @@ impl PlannedAllocator {
                 capacity: self.authority.owner.capacity_bytes,
             });
         }
-        let node_capacity =
-            u64::try_from(self.authority.owner.blocks.borrow().capacity()).unwrap_or(u64::MAX);
+        let node_capacity = u64::try_from(self.authority.owner.block_capacity).unwrap_or(u64::MAX);
         if retained_nodes > node_capacity {
             return Err(MemoryRuntimeError::UnplannedAllocation {
                 object: Some(self.authority.object.object()),
@@ -301,8 +321,23 @@ impl PlannedAllocator {
                 bytes: retained_bytes,
             }),
         };
-        self.record_initialized(retained_bytes)?;
-        Ok(ticket)
+        Ok(PreparedFrozenSnapshotAdmission {
+            allocator: self.clone(),
+            ticket: Some(ticket),
+            retained_bytes,
+        })
+    }
+
+    /// Adoption boundary for an immutable value that already exists outside
+    /// maintained Mech construction. Internal kernels use
+    /// `prepare_frozen_snapshot` before they allocate their candidate.
+    pub(crate) fn admit_frozen_snapshot(
+        &self,
+        retained_bytes: u64,
+        retained_nodes: u64,
+    ) -> MemoryRuntimeResult<RetainedPayloadTicket> {
+        self.prepare_frozen_snapshot(retained_bytes, retained_nodes)?
+            .complete()
     }
 
     fn record_initialized(&self, bytes: u64) -> MemoryRuntimeResult<()> {

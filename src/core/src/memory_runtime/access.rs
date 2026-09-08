@@ -372,6 +372,7 @@ pub(crate) struct PreparedUndoSnapshot {
     target: PlanObjectKey,
     undo: PlanObjectKey,
     armed: bool,
+    retained_lease: Option<RetainedPublicationLease>,
 }
 
 impl PreparedUndoSnapshot {
@@ -393,6 +394,28 @@ impl PreparedUndoSnapshot {
             .copy_undo_image(self.undo, self.target)
             .expect("an armed undo snapshot retains its prevalidated storage");
         self.armed = false;
+    }
+}
+
+struct RetainedPublicationLease {
+    domain: MemoryDomain,
+    _realized: RealizedMemoryPlan,
+    handle: AllocationHandle,
+    token: u64,
+}
+
+impl Drop for RetainedPublicationLease {
+    fn drop(&mut self) {
+        let mut state = self.domain.state.borrow_mut();
+        let record = state
+            .record_mut(self.handle)
+            .expect("retained publication lease keeps its allocation live");
+        let position = record
+            .leases
+            .iter()
+            .position(|lease| lease.token == self.token)
+            .expect("retained publication lease keeps its token installed");
+        record.leases.remove(position);
     }
 }
 
@@ -965,7 +988,37 @@ impl MemoryDomain {
                 region: request.region,
                 lifetime: request.lifetime,
                 incarnation: binding.incarnation(),
+                owns_lease: true,
             });
+        }
+
+        // An in-place output and every repeated input role for the same
+        // logical cell share one physical exclusive lease. Keep lightweight
+        // role entries for typed port lookup, but install exactly one token.
+        for exclusive in 0..workspace.leases.len() {
+            if workspace.leases[exclusive].mode != MemoryAccessMode::ExclusiveInPlace {
+                continue;
+            }
+            let owner = workspace.leases[exclusive];
+            for other in 0..workspace.leases.len() {
+                if other == exclusive
+                    || workspace.leases[other].cell != owner.cell
+                    || workspace.leases[other].mode != MemoryAccessMode::Read
+                    || workspace.leases[other].object != owner.object
+                {
+                    continue;
+                }
+                if workspace.leases[other].start < owner.start
+                    || workspace.leases[other].end > owner.end
+                {
+                    return Err(MemoryRuntimeError::CandidateValidationFailed {
+                        object: Some(owner.object.object()),
+                        reason: "repeated in-place input exceeds the exclusive output region"
+                            .into(),
+                    });
+                }
+                workspace.leases[other].owns_lease = false;
+            }
         }
 
         let retained_owner = match &prepared.authority {
@@ -1143,19 +1196,24 @@ impl MemoryDomain {
                     capacity: record.capacity_bytes,
                 });
             }
-            if record.leases.iter().any(|lease| {
-                overlaps(request.start, request.end, lease.start, lease.end)
-                    && (request.mode.writes() || lease.write)
-            }) {
+            if request.owns_lease
+                && record.leases.iter().any(|lease| {
+                    overlaps(request.start, request.end, lease.start, lease.end)
+                        && (request.mode.writes() || lease.write)
+                })
+            {
                 return Err(MemoryRuntimeError::BorrowConflict {
                     object: request.object.object(),
                 });
             }
-            if workspace.leases[..position].iter().any(|other| {
-                other.handle == Some(handle)
-                    && overlaps(request.start, request.end, other.start, other.end)
-                    && (request.mode.writes() || other.mode.writes())
-            }) {
+            if request.owns_lease
+                && workspace.leases[..position].iter().any(|other| {
+                    other.owns_lease
+                        && other.handle == Some(handle)
+                        && overlaps(request.start, request.end, other.start, other.end)
+                        && (request.mode.writes() || other.mode.writes())
+                })
+            {
                 return Err(MemoryRuntimeError::BorrowConflict {
                     object: request.object.object(),
                 });
@@ -1164,7 +1222,7 @@ impl MemoryDomain {
         let physical_count = workspace
             .leases
             .iter()
-            .filter(|request| request.handle.is_some())
+            .filter(|request| request.owns_lease && request.handle.is_some())
             .count();
         let token_increment =
             u64::try_from(physical_count).map_err(|_| MemoryRuntimeError::IdentityExhausted {
@@ -1176,13 +1234,16 @@ impl MemoryDomain {
             },
         )?;
         for request in &workspace.leases {
+            if !request.owns_lease {
+                continue;
+            }
             let Some(handle) = request.handle else {
                 continue;
             };
             let requested = workspace
                 .leases
                 .iter()
-                .filter(|candidate| candidate.handle == Some(handle))
+                .filter(|candidate| candidate.owns_lease && candidate.handle == Some(handle))
                 .count();
             let record = state.record(handle)?;
             if record.leases.len().saturating_add(requested) > record.leases.capacity() {
@@ -1202,20 +1263,22 @@ impl MemoryDomain {
         let mut state = self.state.borrow_mut();
         let mut token = state.next_lease_token;
         for request in &mut workspace.leases {
-            let token = if let Some(handle) = request.handle {
-                let installed = token;
-                token += 1;
-                state
-                    .record_mut(handle)
-                    .expect("lease installation was completely prevalidated")
-                    .leases
-                    .push(ActiveLeaseRecord {
-                        token: installed,
-                        start: request.start,
-                        end: request.end,
-                        write: request.mode.writes(),
-                    });
-                Some(installed)
+            let token = if request.owns_lease {
+                request.handle.map(|handle| {
+                    let installed = token;
+                    token += 1;
+                    state
+                        .record_mut(handle)
+                        .expect("lease installation was completely prevalidated")
+                        .leases
+                        .push(ActiveLeaseRecord {
+                            token: installed,
+                            start: request.start,
+                            end: request.end,
+                            write: request.mode.writes(),
+                        });
+                    installed
+                })
             } else {
                 None
             };
@@ -1229,6 +1292,7 @@ impl MemoryDomain {
                 target,
                 undo,
                 armed: true,
+                retained_lease: None,
             })
         } else {
             None
@@ -1291,6 +1355,7 @@ struct HeldLease {
     region: MemoryAccessRegion,
     lifetime: MemoryLifetime,
     incarnation: super::RegionIncarnation,
+    owns_lease: bool,
 }
 
 /// Complete call-scoped authority for one managed kernel invocation.
@@ -1819,16 +1884,106 @@ impl KernelMemoryFrame<'_> {
         lhs.cell().snapshot_eq(rhs.cell())
     }
 
+    /// Constructs one maintained canonical output only after its prospective
+    /// footprint has been admitted by the active candidate plan. The build
+    /// closure executes while the charge is held and cannot publish directly.
+    #[cfg(feature = "functions")]
+    pub fn with_admitted_canonical_output<R>(
+        &mut self,
+        output: &crate::ValueCell,
+        footprint: crate::CurrentMemoryFootprint,
+        build: impl FnOnce(&mut Self) -> crate::MResult<(R, crate::Value)>,
+    ) -> crate::MResult<R> {
+        let (object, _) = self.output_target(output, 0)?;
+        if self.staged_canonical_output.is_some() {
+            return Err(MemoryRuntimeError::CandidateValidationFailed {
+                object: Some(object.object()),
+                reason: "canonical output was staged more than once in one invocation".into(),
+            }
+            .into());
+        }
+        let plan = self.realized.call_plan().ok_or_else(|| {
+            MemoryRuntimeError::CandidateValidationFailed {
+                object: Some(object.object()),
+                reason: "canonical output construction requires its authoritative call plan".into(),
+            }
+        })?;
+        let expected_shape = plan.outputs[0].descriptor.shape().clone();
+        let header = plan
+            .allocations
+            .iter()
+            .find(|allocation| allocation.id == object.object())
+            .ok_or(MemoryRuntimeError::UnknownPlanObject { key: object })?;
+        let payload = plan
+            .allocations
+            .iter()
+            .find(|allocation| {
+                allocation.role == crate::AllocationRole::VariablePayload
+                    && allocation.owner == header.owner
+                    && allocation.lifetime == header.lifetime
+            })
+            .ok_or_else(|| MemoryRuntimeError::CandidateValidationFailed {
+                object: Some(object.object()),
+                reason: "canonical output has no planned payload envelope".into(),
+            })?;
+        let payload = self
+            .domain
+            .plan_object_key(self.realized.revision(), payload.id)?;
+        let allocator = self.domain.planned_allocator(self.realized, payload)?;
+        let admission =
+            allocator.prepare_frozen_snapshot(footprint.payload_bytes, footprint.retained_nodes)?;
+        let (result, next) = build(self)?;
+        let actual = next
+            .retained_footprint(output.schema_table().as_ref())
+            .map_err(|_| MemoryRuntimeError::CandidateValidationFailed {
+                object: Some(payload.object()),
+                reason: "canonical builder produced an invalid footprint".into(),
+            })?;
+        if actual.retained_bytes > footprint.payload_bytes
+            || actual.node_count > footprint.retained_nodes
+            || actual.encoded_bytes > footprint.encoded_bytes
+        {
+            return Err(MemoryRuntimeError::CandidateValidationFailed {
+                object: Some(payload.object()),
+                reason: "canonical builder exceeded its admitted prospective footprint".into(),
+            }
+            .into());
+        }
+        if next.schema_key() != output.schema_key()
+            || (next.shape() != &expected_shape && !output.accepts_published_shape(next.shape()))
+        {
+            return Err(MemoryRuntimeError::CandidateValidationFailed {
+                object: Some(object.object()),
+                reason: "canonical builder output differs from its closed schema or shape".into(),
+            }
+            .into());
+        }
+        let ownership = admission.complete()?;
+        let staged = next.into_retained_payload_ticket(ownership);
+        let initialized = self
+            .realized
+            .binding(object)?
+            .required_initialization_bytes();
+        self.realized.record_initialized(object, initialized)?;
+        self.staged_canonical_output = Some((object, staged));
+        Ok(result)
+    }
+
     /// Opens two immutable canonical inputs and one canonical staged output
     /// under the already acquired complete-call leases. Canonical payloads
     /// are immutable frozen roots; the builder returns the next root, which
     /// is retained by this frame until the atomic publication boundary.
     #[cfg(feature = "functions")]
-    pub fn with_canonical_binary_port_values<T, R>(
+    pub fn with_admitted_canonical_binary_port_values<T, R>(
         &mut self,
         first: &ManagedPort<T>,
         second: &ManagedPort<T>,
         output: &ManagedPort<T>,
+        requirements: impl FnOnce(
+            &crate::Value,
+            &crate::Value,
+            &crate::ValueCell,
+        ) -> crate::MResult<crate::CurrentMemoryFootprint>,
         build: impl FnOnce(
             &crate::Value,
             &crate::Value,
@@ -1855,8 +2010,86 @@ impl KernelMemoryFrame<'_> {
         }
         let first_value = first.cell().snapshot()?;
         let second_value = second.cell().snapshot()?;
+        let footprint = requirements(&first_value, &second_value, output.cell())?;
+        if self.staged_canonical_output.is_some() {
+            return Err(MemoryRuntimeError::CandidateValidationFailed {
+                object: Some(output_lease.object.object()),
+                reason: "canonical output was staged more than once in one invocation".into(),
+            }
+            .into());
+        }
+        let plan = self.realized.call_plan().ok_or_else(|| {
+            MemoryRuntimeError::CandidateValidationFailed {
+                object: Some(output_lease.object.object()),
+                reason: "canonical output construction requires its authoritative call plan".into(),
+            }
+        })?;
+        let header = plan
+            .allocations
+            .iter()
+            .find(|allocation| allocation.id == output_lease.object.object())
+            .ok_or(MemoryRuntimeError::UnknownPlanObject {
+                key: output_lease.object,
+            })?;
+        let payload = plan
+            .allocations
+            .iter()
+            .find(|allocation| {
+                allocation.role == crate::AllocationRole::VariablePayload
+                    && allocation.owner == header.owner
+                    && allocation.lifetime == header.lifetime
+            })
+            .ok_or_else(|| MemoryRuntimeError::CandidateValidationFailed {
+                object: Some(output_lease.object.object()),
+                reason: "canonical output has no planned payload envelope".into(),
+            })?;
+        let payload = self
+            .domain
+            .plan_object_key(self.realized.revision(), payload.id)?;
+        let allocator = self.domain.planned_allocator(self.realized, payload)?;
+        // This is the fail-closed boundary: the result-building closure is
+        // unreachable until its exact retained bytes and recursive nodes have
+        // been reserved by the candidate call plan.
+        let admission =
+            allocator.prepare_frozen_snapshot(footprint.payload_bytes, footprint.retained_nodes)?;
         let (result, next) = build(&first_value, &second_value, output.cell())?;
-        self.stage_output_value(output.cell(), next)?;
+        let actual = next
+            .retained_footprint(output.cell().schema_table().as_ref())
+            .map_err(|_| MemoryRuntimeError::CandidateValidationFailed {
+                object: Some(payload.object()),
+                reason: "canonical builder produced an invalid footprint".into(),
+            })?;
+        if actual.retained_bytes != footprint.payload_bytes
+            || actual.node_count != footprint.retained_nodes
+            || actual.encoded_bytes != footprint.encoded_bytes
+        {
+            return Err(MemoryRuntimeError::CandidateValidationFailed {
+                object: Some(payload.object()),
+                reason: "canonical builder output differs from its admitted prospective footprint"
+                    .into(),
+            }
+            .into());
+        }
+        let expected_shape = plan.outputs[0].descriptor.shape();
+        if next.schema_key() != output.cell().schema_key()
+            || (next.shape() != expected_shape
+                && !output.cell().accepts_published_shape(next.shape()))
+        {
+            return Err(MemoryRuntimeError::CandidateValidationFailed {
+                object: Some(output_lease.object.object()),
+                reason: "canonical builder output differs from its closed schema or shape".into(),
+            }
+            .into());
+        }
+        let ownership = admission.complete()?;
+        let staged = next.into_retained_payload_ticket(ownership);
+        let initialized = self
+            .realized
+            .binding(output_lease.object)?
+            .required_initialization_bytes();
+        self.realized
+            .record_initialized(output_lease.object, initialized)?;
+        self.staged_canonical_output = Some((output_lease.object, staged));
         Ok(result)
     }
 
@@ -1886,7 +2119,9 @@ impl KernelMemoryFrame<'_> {
                 lease.object == object
                     && matches!(
                         lease.mode,
-                        MemoryAccessMode::Read | MemoryAccessMode::ExclusiveInPlace
+                        MemoryAccessMode::Read
+                            | MemoryAccessMode::Write
+                            | MemoryAccessMode::ExclusiveInPlace
                     )
             })
             .copied()
@@ -2539,7 +2774,23 @@ impl KernelMemoryFrame<'_> {
             }
             .into());
         }
-        if output.has_managed_canonical_storage()? {
+        let plan = self.realized.call_plan().ok_or_else(|| {
+            MemoryRuntimeError::CandidateValidationFailed {
+                object: Some(object.object()),
+                reason: "output adoption requires its authoritative call plan".into(),
+            }
+        })?;
+        let output_plan =
+            plan.outputs
+                .first()
+                .ok_or_else(|| MemoryRuntimeError::CandidateValidationFailed {
+                    object: Some(object.object()),
+                    reason: "output adoption has no planned output".into(),
+                })?;
+        if matches!(
+            output_plan.value.storage.planned_slot(),
+            crate::PlannedSlotKind::StringHeader | crate::PlannedSlotKind::CanonicalValueHandle
+        ) {
             if self.staged_canonical_output.is_some() {
                 return Err(MemoryRuntimeError::CandidateValidationFailed {
                     object: Some(object.object()),
@@ -2547,12 +2798,6 @@ impl KernelMemoryFrame<'_> {
                 }
                 .into());
             }
-            let plan = self.realized.call_plan().ok_or_else(|| {
-                MemoryRuntimeError::CandidateValidationFailed {
-                    object: Some(object.object()),
-                    reason: "canonical output staging requires its authoritative call plan".into(),
-                }
-            })?;
             let header = plan
                 .allocations
                 .iter()
@@ -2615,8 +2860,38 @@ impl KernelMemoryFrame<'_> {
     }
 
     #[cfg(feature = "functions")]
-    pub(crate) fn take_undo_snapshot(&mut self) -> Option<PreparedUndoSnapshot> {
-        self.undo_snapshot.take()
+    pub(crate) fn take_undo_snapshot(
+        &mut self,
+    ) -> MemoryRuntimeResult<Option<PreparedUndoSnapshot>> {
+        let Some(mut undo) = self.undo_snapshot.take() else {
+            return Ok(None);
+        };
+        let position = self
+            .leases
+            .iter()
+            .position(|lease| {
+                lease.object == undo.target
+                    && lease.mode == MemoryAccessMode::ExclusiveInPlace
+                    && lease.owns_lease
+            })
+            .ok_or_else(|| MemoryRuntimeError::CandidateValidationFailed {
+                object: Some(undo.target.object()),
+                reason: "undo publication lost its exclusive execution lease".into(),
+            })?;
+        let held = self.leases.leases.remove(position);
+        let (Some(handle), Some(token)) = (held.handle, held.token) else {
+            return Err(MemoryRuntimeError::CandidateValidationFailed {
+                object: Some(undo.target.object()),
+                reason: "undo publication has no physical exclusive lease".into(),
+            });
+        };
+        undo.retained_lease = Some(RetainedPublicationLease {
+            domain: self.domain.clone(),
+            _realized: self.realized.clone(),
+            handle,
+            token,
+        });
+        Ok(Some(undo))
     }
 
     #[cfg(feature = "functions")]
@@ -2787,7 +3062,15 @@ impl KernelMemoryFrame<'_> {
         lease: HeldLease,
         write: bool,
     ) -> MemoryRuntimeResult<(NonNull<u8>, usize, usize, usize, usize)> {
-        if write != lease.mode.writes() {
+        if (write && !lease.mode.writes())
+            || (!write
+                && !matches!(
+                    lease.mode,
+                    MemoryAccessMode::Read
+                        | MemoryAccessMode::Write
+                        | MemoryAccessMode::ExclusiveInPlace
+                ))
+        {
             return Err(MemoryRuntimeError::BorrowConflict {
                 object: lease.object.object(),
             });

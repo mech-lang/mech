@@ -485,6 +485,7 @@ fn scalar_call_plan(
         output_storage: &[output_storage],
         input_witnesses: &[witness],
         output_witnesses: &[witness],
+        published_output_witnesses: &[witness],
         implementation_memory,
         target: &target,
         regions: &[RegionAccessPlan::WholeValue],
@@ -725,8 +726,31 @@ fn required_in_place_calls_use_one_exclusive_view_and_restore_before_publication
         matches!(cell.snapshot().unwrap().data(), mech_core::ValueData::F64(value) if value.to_f64() == 2.0)
     );
 
+    let mut wrong_variant = plan.clone();
+    wrong_variant.transactions = vec![TransactionRequirement::None].into_boxed_slice();
+    let wrong_invocation = FunctionInvocation::unary(cell.clone(), cell.clone());
+    let wrong_input = wrong_invocation
+        .input(0)
+        .unwrap()
+        .try_managed::<f64>()
+        .unwrap();
+    let wrong_output = wrong_invocation.output().try_managed::<f64>().unwrap();
+    assert!(
+        FunctionInstance::new(
+            Box::new(Increment {
+                input: wrong_input,
+                output: wrong_output,
+                fail: fail.clone(),
+                observed: observed.clone(),
+            }),
+            wrong_invocation,
+            Rc::new(wrong_variant),
+        )
+        .is_err()
+    );
+
     let mut malformed = plan;
-    malformed.transactions = Box::default();
+    malformed.transactions = vec![TransactionRequirement::None].into_boxed_slice();
     let malformed_invocation = FunctionInvocation::unary(cell.clone(), cell);
     let malformed_input = malformed_invocation
         .input(0)
@@ -746,6 +770,129 @@ fn required_in_place_calls_use_one_exclusive_view_and_restore_before_publication
             Rc::new(malformed),
         )
         .is_err()
+    );
+}
+
+#[test]
+fn repeated_same_cell_inputs_share_the_required_in_place_lease() {
+    struct AddAliasedInputs {
+        first: ManagedPort<f64>,
+        second: ManagedPort<f64>,
+        output: ManagedPort<f64>,
+    }
+
+    impl MechFunctionImpl for AddAliasedInputs {
+        fn solve_managed(
+            &self,
+            frame: &mut KernelMemoryFrame<'_>,
+            _: &mut dyn MechExecutionServices,
+        ) -> mech_core::MResult<ReactiveSolveStatus> {
+            let first = frame.with_port_slice(&self.first, |values| values[0])?;
+            let second = frame.with_port_slice(&self.second, |values| values[0])?;
+            frame.with_port_slice_mut(&self.output, |values| values[0] = first + second)?;
+            Ok(ReactiveSolveStatus::Changed)
+        }
+
+        fn to_string(&self) -> String {
+            "R6 repeated in-place input".into()
+        }
+    }
+
+    impl MechFunctionCompiler for AddAliasedInputs {
+        fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> mech_core::MResult<Register> {
+            Err(MemoryRuntimeError::CandidateValidationFailed {
+                object: None,
+                reason: "test-only managed function is not an artifact compiler".into(),
+            }
+            .into())
+        }
+    }
+
+    let cell = ValueCell::from_exact(1.0_f64).unwrap();
+    let descriptor = cell.resolved_descriptor().unwrap();
+    let operation = ResolvedOperationDescriptor::from_name(
+        "test/r6-repeated-in-place-input",
+        OperationContractDeclaration {
+            inputs: InputPortLayout::Fixed(
+                vec![
+                    InputPortPolicy {
+                        access: AccessMode::Read,
+                        delivery: DeliveryMode::Signal,
+                    },
+                    InputPortPolicy {
+                        access: AccessMode::Read,
+                        delivery: DeliveryMode::Signal,
+                    },
+                ]
+                .into_boxed_slice(),
+            ),
+            outputs: vec![OutputPortPolicy {
+                access: AccessMode::Write,
+                delivery: DeliveryMode::Signal,
+                construction: OutputConstruction::ReadModifyWrite {
+                    base_input: 0,
+                    regions: RegionPolicy::WholeValue,
+                },
+                alias: AliasPolicy::InPlaceRequired { input: 0 },
+                change_detection: ChangeDetectionPolicy::AlwaysChanged,
+            }]
+            .into_boxed_slice(),
+            interaction: ExternalInteraction::Pure,
+        },
+    )
+    .unwrap();
+    let call = BoundCall::syntax_directed(
+        operation,
+        vec![descriptor.clone(), descriptor.clone()].into_boxed_slice(),
+        vec![descriptor].into_boxed_slice(),
+        RuntimeFunctionId::from_name("R6RepeatedInPlaceInput"),
+        ExecutionTarget::DirectRuntime,
+    )
+    .unwrap();
+    let target = TargetMemoryProfile::current_direct_host().unwrap();
+    let lifetime = MemoryLifetime::Activation;
+    let storage = physical_storage_descriptor(cell.representation(), &target, lifetime);
+    let witness = MemoryFootprintWitness::Known(CurrentMemoryFootprint {
+        logical_elements: 1,
+        fixed_bytes: 8,
+        encoded_bytes: 8,
+        retained_nodes: 1,
+        ..CurrentMemoryFootprint::default()
+    });
+    let plan = plan_call_memory(CallMemoryPlanningRequest {
+        bound_call: &call,
+        input_storage: &[storage.clone(), storage.clone()],
+        output_storage: &[storage],
+        input_witnesses: &[witness, witness],
+        output_witnesses: &[witness],
+        published_output_witnesses: &[witness],
+        implementation_memory: ImplementationMemoryClass::NoAdditionalScratch,
+        target: &target,
+        regions: &[RegionAccessPlan::WholeValue],
+    })
+    .unwrap();
+    let invocation = FunctionInvocation::binary(cell.clone(), cell.clone(), cell.clone());
+    let first = invocation.input(0).unwrap().try_managed::<f64>().unwrap();
+    let second = invocation.input(1).unwrap().try_managed::<f64>().unwrap();
+    let output = invocation.output().try_managed::<f64>().unwrap();
+    let instance = FunctionInstance::new(
+        Box::new(AddAliasedInputs {
+            first,
+            second,
+            output,
+        }),
+        invocation,
+        Rc::new(plan),
+    )
+    .unwrap();
+
+    instance.solve_reactive().unwrap();
+    assert!(
+        matches!(cell.snapshot().unwrap().data(), mech_core::ValueData::F64(value) if value.to_f64() == 2.0)
+    );
+    instance.solve_reactive().unwrap();
+    assert!(
+        matches!(cell.snapshot().unwrap().data(), mech_core::ValueData::F64(value) if value.to_f64() == 4.0)
     );
 }
 
@@ -904,6 +1051,7 @@ fn deferred_footprints_rederive_clone_hash_and_canonical_demand() {
         output_storage: &[output_storage],
         input_witnesses: &[deferred],
         output_witnesses: &[deferred],
+        published_output_witnesses: &[deferred],
         implementation_memory: ImplementationMemoryClass::CanonicalSortUnique,
         target: &target,
         regions: &[RegionAccessPlan::WholeValue],
@@ -942,6 +1090,22 @@ fn deferred_footprints_rederive_clone_hash_and_canonical_demand() {
     assert!(demand.work.comparison > plan.demand.work.comparison);
     assert!(demand.work.canonicalization > plan.demand.work.canonicalization);
 
+    let published = [CurrentMemoryFootprint {
+        logical_elements: 1,
+        payload_bytes: 101,
+        encoded_bytes: 109,
+        retained_nodes: 11,
+        schema_bytes: 5,
+        shape_parameter_count: 2,
+        ..CurrentMemoryFootprint::default()
+    }];
+    let current =
+        mech_core::resolve_current_call_memory(&plan, &call, &resolved, Some(&published)).unwrap();
+    assert!(
+        current.demand.work.comparison > demand.work.comparison,
+        "published and prospective canonical values must be costed independently"
+    );
+
     let clone_plan = plan_call_memory(CallMemoryPlanningRequest {
         bound_call: &call,
         input_storage: &[physical_storage_descriptor(
@@ -956,6 +1120,7 @@ fn deferred_footprints_rederive_clone_hash_and_canonical_demand() {
         )],
         input_witnesses: &[deferred],
         output_witnesses: &[deferred],
+        published_output_witnesses: &[deferred],
         implementation_memory: ImplementationMemoryClass::CloneInput { input: 0 },
         target: &target,
         regions: &[RegionAccessPlan::WholeValue],
@@ -997,6 +1162,7 @@ fn unit_external_effect_has_no_storage_transaction() {
         output_storage: &[],
         input_witnesses: &[],
         output_witnesses: &[],
+        published_output_witnesses: &[],
         implementation_memory: ImplementationMemoryClass::NoAdditionalScratch,
         target: &target,
         regions: &[],
@@ -1088,6 +1254,7 @@ fn matrix_solve_and_indexed_mutation_have_explicit_scratch_and_regions() {
         output_storage: &output_storage,
         input_witnesses: &footprints,
         output_witnesses: &[known(2, 0, 0)],
+        published_output_witnesses: &[known(2, 0, 0)],
         implementation_memory: ImplementationMemoryClass::MatrixSolve,
         target: &target,
         regions: &[RegionAccessPlan::WholeValue],
@@ -1157,6 +1324,7 @@ fn matrix_solve_and_indexed_mutation_have_explicit_scratch_and_regions() {
         output_storage: &output_storage,
         input_witnesses: &[known(2, 0, 0)],
         output_witnesses: &[known(2, 0, 0)],
+        published_output_witnesses: &[known(2, 0, 0)],
         implementation_memory: ImplementationMemoryClass::NoAdditionalScratch,
         target: &target,
         regions: &[RegionAccessPlan::Gather {

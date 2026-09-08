@@ -141,6 +141,53 @@ impl ValueFootprint {
     }
 }
 
+/// Computes the exact retained/encoded footprint of a canonical String
+/// scalar or String matrix from a checked borrowed-input element/payload
+/// total. This is the
+/// prospective counterpart of [`Value::retained_footprint`]: maintained
+/// kernels can obtain payload authority before allocating their result.
+pub fn prospective_string_value_footprint(
+    shape_parameter_count: usize,
+    matrix: bool,
+    element_count: u64,
+    payload_bytes: u64,
+) -> Result<ValueFootprint, ValueFootprintError> {
+    if !matrix && element_count != 1 {
+        return Err(ValueFootprintError::ArithmeticOverflow);
+    }
+    let encoded = element_count
+        .checked_mul(8)
+        .and_then(|prefixes| prefixes.checked_add(payload_bytes))
+        .ok_or(ValueFootprintError::ArithmeticOverflow)?;
+    let shape_bytes = checked_bytes(shape_parameter_count, core::mem::size_of::<u64>())?;
+    let containers = if matrix {
+        element_count
+            .checked_mul(checked_size_of::<Box<str>>()?)
+            .ok_or(ValueFootprintError::ArithmeticOverflow)?
+    } else {
+        0
+    };
+    let data_bytes = checked_size_of::<ValueData>()?;
+    let retained_bytes = checked_size_of::<Value>()?
+        .checked_add(shape_bytes)
+        .and_then(|bytes| bytes.checked_add(data_bytes))
+        .and_then(|bytes| bytes.checked_add(containers))
+        .and_then(|bytes| bytes.checked_add(payload_bytes))
+        .ok_or(ValueFootprintError::ArithmeticOverflow)?;
+    let node_count = if matrix {
+        element_count
+            .checked_add(3)
+            .ok_or(ValueFootprintError::ArithmeticOverflow)?
+    } else {
+        2
+    };
+    Ok(ValueFootprint {
+        encoded_bytes: encoded,
+        retained_bytes,
+        node_count,
+    })
+}
+
 impl Sha256SnapshotSink {
     fn new() -> Self {
         Self {
@@ -1353,6 +1400,10 @@ mod tests {
         assert_eq!(single.encoded_bytes, 1_032);
         assert!(single.retained_bytes > single.encoded_bytes);
         assert!(single.node_count >= 2);
+        assert_eq!(
+            prospective_string_value_footprint(0, false, 1, 1_024).unwrap(),
+            single
+        );
 
         let repeated = value.clone_footprint(4, &schemas).unwrap();
         assert_eq!(repeated.encoded_bytes, single.encoded_bytes * 4);

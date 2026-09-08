@@ -191,6 +191,32 @@ fn owned_cell_session_close_revokes_cell_access_but_not_detached_snapshot() {
 }
 
 #[test]
+fn canonical_snapshots_share_frozen_payload_and_retain_one_charge_until_last_drop() {
+    let domain = MemoryDomain::new().unwrap();
+    let cell = ValueCell::from_exact_in(&domain, "retained payload".to_owned()).unwrap();
+    let charged = domain.ledger().exported_snapshot_bytes;
+    assert!(charged > 0);
+
+    let first = cell.snapshot().unwrap();
+    let second = cell.snapshot().unwrap();
+    assert!(first.shares_frozen_storage(&second));
+    assert_eq!(domain.ledger().exported_snapshot_bytes, charged);
+
+    domain.close().unwrap();
+    drop(cell);
+    assert_eq!(domain.ledger().exported_snapshot_bytes, charged);
+    assert!(
+        matches!(first.data(), mech_core::ValueData::String(value) if value.as_ref() == "retained payload")
+    );
+    drop(first);
+    assert_eq!(domain.ledger().exported_snapshot_bytes, charged);
+    drop(second);
+    assert!(domain.ledger().exported_snapshot_bytes < charged);
+    domain.collect_retired().unwrap();
+    assert_eq!(domain.ledger().exported_snapshot_bytes, 0);
+}
+
+#[test]
 fn owned_dynamic_cell_growth_moves_its_actual_backing_and_preserves_snapshots() {
     let domain = MemoryDomain::new().unwrap();
     let cell = ValueCell::from_exact_in(
@@ -330,14 +356,14 @@ fn payload_owner_outlives_domain_and_close_revokes_growth() {
     payload.role = AllocationRole::VariablePayload;
     payload.slot = None;
     payload.current_bytes = 0;
-    payload.capacity_bytes = 8;
+    payload.capacity_bytes = 16;
     payload.payload_block_capacity = 1;
     payload.alignment = 1;
     let payload_arena = ArenaPlan {
         id: MemoryArenaId::new(0),
         space: MemorySpace::Host,
         backing: ArenaBackingKind::IndirectOwnedPayloads,
-        capacity_bytes: 8,
+        capacity_bytes: 16,
         alignment: 1,
         members: vec![MemoryObjectId::new(0)].into_boxed_slice(),
     };
@@ -360,6 +386,10 @@ fn payload_owner_outlives_domain_and_close_revokes_growth() {
         .unwrap();
     let allocator = domain.planned_allocator(&realized, object).unwrap();
     let text = ManagedString::try_new(allocator.clone(), "retained").unwrap();
+    assert!(matches!(
+        ManagedString::try_new(allocator.clone(), "x"),
+        Err(MemoryRuntimeError::UnplannedAllocation { .. })
+    ));
     domain.close().unwrap();
     assert!(matches!(
         ManagedString::try_new(allocator, "x"),

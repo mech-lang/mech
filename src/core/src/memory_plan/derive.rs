@@ -43,6 +43,9 @@ pub struct CallMemoryPlanningRequest<'a> {
     pub output_storage: &'a [PhysicalStorageDescriptor],
     pub input_witnesses: &'a [MemoryFootprintWitness],
     pub output_witnesses: &'a [MemoryFootprintWitness],
+    /// Currently published outputs remain live through candidate staging and
+    /// participate independently in comparison/work accounting.
+    pub published_output_witnesses: &'a [MemoryFootprintWitness],
     pub implementation_memory: ImplementationMemoryClass,
     pub target: &'a TargetMemoryProfile,
     pub regions: &'a [RegionAccessPlan],
@@ -299,6 +302,7 @@ pub fn replan_call_memory(
         output_storage: &previous.output_storage,
         input_witnesses: &previous.input_witnesses,
         output_witnesses: &previous.output_witnesses,
+        published_output_witnesses: &previous.output_witnesses,
         implementation_memory: previous.implementation_memory,
         target: &previous.target,
         regions: &previous.output_regions,
@@ -351,6 +355,7 @@ pub fn replan_fixed_call_geometry(
         output_storage: &previous.output_storage,
         input_witnesses: &input_witnesses,
         output_witnesses: &output_witnesses,
+        published_output_witnesses: &output_witnesses,
         implementation_memory: previous.implementation_memory,
         target: &previous.target,
         regions: &previous.output_regions,
@@ -1129,6 +1134,7 @@ fn validate_call_arities(request: &CallMemoryPlanningRequest<'_>) -> Result<(), 
         || request.bound_call.inputs().len() != request.input_witnesses.len()
         || request.bound_call.outputs().len() != request.output_storage.len()
         || request.bound_call.outputs().len() != request.output_witnesses.len()
+        || request.bound_call.outputs().len() != request.published_output_witnesses.len()
         || request.bound_call.outputs().len() != request.regions.len()
     {
         return Err(MemoryPlanError::DescriptorArityMismatch);
@@ -1674,11 +1680,13 @@ fn derive_call_demand(
                     checked_add(demand.work.comparison, 1, "exact scalar comparison")?;
             }
             Some(ChangeDetectionPolicy::SemanticHash) => {
-                let footprint =
+                let candidate =
                     known_footprint(request.output_witnesses[ordinal])?.unwrap_or_default();
+                let current = known_footprint(request.published_output_witnesses[ordinal])?
+                    .unwrap_or_default();
                 demand.work.comparison = checked_add(
                     demand.work.comparison,
-                    semantic_hash_comparison_work(footprint)?,
+                    publication_comparison_work(current, candidate)?,
                     "semantic hash comparison work",
                 )?;
             }
@@ -1798,13 +1806,6 @@ struct FootprintDemandContribution {
     canonicalization: u64,
 }
 
-#[cfg(feature = "functions")]
-fn semantic_hash_comparison_work(
-    footprint: CurrentMemoryFootprint,
-) -> Result<u64, MemoryPlanError> {
-    publication_comparison_work(footprint, footprint)
-}
-
 /// Work for distinct retained and candidate values; neither side is inferred
 /// from the other when a payload grows or shrinks between turns.
 #[cfg(feature = "functions")]
@@ -1903,6 +1904,19 @@ pub fn resolve_deferred_call_memory(
     call: &CallMemoryPlan,
     resolved: &BTreeMap<(PortDirection, u16), CurrentMemoryFootprint>,
 ) -> Result<CallMemoryPlan, MemoryPlanError> {
+    resolve_current_call_memory(call, &call.bound_call, resolved, None)
+}
+
+/// Re-runs one call's complete planner for current semantic descriptors and
+/// current/prospective value footprints. This is the payload-aware sibling of
+/// `replan_fixed_call_geometry`; no placement or demand field is patched.
+#[cfg(feature = "functions")]
+pub fn resolve_current_call_memory(
+    call: &CallMemoryPlan,
+    current: &crate::BoundCall,
+    resolved: &BTreeMap<(PortDirection, u16), CurrentMemoryFootprint>,
+    published_outputs: Option<&[CurrentMemoryFootprint]>,
+) -> Result<CallMemoryPlan, MemoryPlanError> {
     if call.inputs.len() != call.input_witnesses.len()
         || call.inputs.len() != call.input_lifetimes.len()
         || call.outputs.len() != call.output_witnesses.len()
@@ -1912,6 +1926,18 @@ pub fn resolve_deferred_call_memory(
     }
     let mut input_witnesses = call.input_witnesses.to_vec();
     let mut output_witnesses = call.output_witnesses.to_vec();
+    let mut published_output_witnesses = call.output_witnesses.to_vec();
+    if let Some(published_outputs) = published_outputs {
+        if published_outputs.len() != published_output_witnesses.len() {
+            return Err(MemoryPlanError::DescriptorArityMismatch);
+        }
+        for (witness, footprint) in published_output_witnesses
+            .iter_mut()
+            .zip(published_outputs.iter().copied())
+        {
+            *witness = MemoryFootprintWitness::Known(footprint);
+        }
+    }
     for deferred in &call.deferred_witnesses {
         if deferred.stage != super::MemoryWitnessStage::Turn {
             continue;
@@ -1944,11 +1970,12 @@ pub fn resolve_deferred_call_memory(
     }
 
     plan_call_memory(CallMemoryPlanningRequest {
-        bound_call: &call.bound_call,
+        bound_call: current,
         input_storage: &call.input_storage,
         output_storage: &call.output_storage,
         input_witnesses: &input_witnesses,
         output_witnesses: &output_witnesses,
+        published_output_witnesses: &published_output_witnesses,
         implementation_memory: call.implementation_memory,
         target: &call.target,
         regions: &call.output_regions,

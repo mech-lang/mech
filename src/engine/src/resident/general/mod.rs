@@ -3506,6 +3506,7 @@ fn resident_call_memory_plan(
         output_storage: &output_storage,
         input_witnesses: &input_witnesses,
         output_witnesses: &output_witnesses,
+        published_output_witnesses: &output_witnesses,
         implementation_memory,
         target: &target,
         regions: &regions,

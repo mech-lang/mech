@@ -146,6 +146,97 @@ mod scalar_port_tests {
         );
     }
 
+    #[test]
+    fn bound_scalar_concat_replans_same_shape_payload_growth_and_shrink() {
+        let output = ValueCell::from_exact(String::new()).unwrap();
+        let lhs = ValueCell::from_exact("a".to_owned()).unwrap();
+        let rhs = ValueCell::from_exact("!".to_owned()).unwrap();
+        let function = crate::test_managed_factory::<ConcatSS<String>>(
+            FunctionInvocation::binary(output.clone(), lhs.clone(), rhs),
+            "string/concat",
+        );
+
+        function.instance().solve_result().unwrap();
+        assert_eq!(string_value(&output), "a!");
+
+        let larger = ValueCell::from_exact("payload-growth-without-shape-change".to_owned())
+            .unwrap()
+            .snapshot()
+            .unwrap();
+        lhs.replace(&larger).unwrap();
+        function.instance().solve_result().unwrap();
+        assert_eq!(
+            string_value(&output),
+            "payload-growth-without-shape-change!"
+        );
+
+        let smaller = ValueCell::from_exact("z".to_owned())
+            .unwrap()
+            .snapshot()
+            .unwrap();
+        lhs.replace(&smaller).unwrap();
+        function.instance().solve_result().unwrap();
+        assert_eq!(string_value(&output), "z!");
+    }
+
+    #[test]
+    fn resident_concat_rejects_oversized_candidate_before_result_allocation_and_recovers() {
+        let output = ValueCell::from_exact(String::new()).unwrap();
+        let lhs = ValueCell::from_exact("a".to_owned()).unwrap();
+        let rhs = ValueCell::from_exact("b".to_owned()).unwrap();
+        let function = crate::test_managed_factory_for_target::<ConcatSS<String>>(
+            FunctionInvocation::binary(output.clone(), lhs.clone(), rhs.clone()),
+            "string/concat",
+            ExecutionTarget::ResidentCpu,
+        );
+        function.instance().solve_result().unwrap();
+        assert_eq!(string_value(&output), "ab");
+
+        let operand_bytes = RESIDENT_MAX_BYTES as usize / 2 + 1_024;
+        lhs.replace(
+            &ValueCell::from_exact("x".repeat(operand_bytes))
+                .unwrap()
+                .snapshot()
+                .unwrap(),
+        )
+        .unwrap();
+        rhs.replace(
+            &ValueCell::from_exact("y".repeat(operand_bytes))
+                .unwrap()
+                .snapshot()
+                .unwrap(),
+        )
+        .unwrap();
+        let version = output.published_version();
+        let before = string_value(&output);
+        let (result, maximum_allocation) =
+            crate::allocation_probe::maximum_requested(|| function.instance().solve_result());
+        assert!(result.is_err());
+        assert_eq!(output.published_version(), version);
+        assert_eq!(string_value(&output), before);
+        assert!(
+            maximum_allocation < operand_bytes,
+            "rejected turn allocated a result-sized String ({maximum_allocation} bytes)"
+        );
+
+        lhs.replace(
+            &ValueCell::from_exact("valid".to_owned())
+                .unwrap()
+                .snapshot()
+                .unwrap(),
+        )
+        .unwrap();
+        rhs.replace(
+            &ValueCell::from_exact("-again".to_owned())
+                .unwrap()
+                .snapshot()
+                .unwrap(),
+        )
+        .unwrap();
+        function.instance().solve_result().unwrap();
+        assert_eq!(string_value(&output), "valid-again");
+    }
+
     #[cfg(feature = "source")]
     #[test]
     fn source_specialization_keeps_concat_behavior() {

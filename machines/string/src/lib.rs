@@ -14,6 +14,69 @@ extern crate paste;
 use mech_core::*;
 use std::sync::LazyLock;
 
+#[cfg(test)]
+mod allocation_probe {
+    use std::alloc::{GlobalAlloc, Layout, System};
+    use std::cell::Cell;
+
+    thread_local! {
+        static MAX_ALLOCATION: Cell<Option<usize>> = const { Cell::new(None) };
+    }
+
+    pub struct ProbeAllocator;
+
+    fn observe(size: usize) {
+        let _ = MAX_ALLOCATION.try_with(|maximum| {
+            if let Some(current) = maximum.get() {
+                maximum.set(Some(current.max(size)));
+            }
+        });
+    }
+
+    // SAFETY: requests are forwarded unchanged to the system allocator. The
+    // thread-local probe records only requested sizes and never touches bytes.
+    unsafe impl GlobalAlloc for ProbeAllocator {
+        unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+            observe(layout.size());
+            unsafe { System.alloc(layout) }
+        }
+
+        unsafe fn alloc_zeroed(&self, layout: Layout) -> *mut u8 {
+            observe(layout.size());
+            unsafe { System.alloc_zeroed(layout) }
+        }
+
+        unsafe fn realloc(&self, pointer: *mut u8, layout: Layout, size: usize) -> *mut u8 {
+            observe(size);
+            unsafe { System.realloc(pointer, layout, size) }
+        }
+
+        unsafe fn dealloc(&self, pointer: *mut u8, layout: Layout) {
+            unsafe { System.dealloc(pointer, layout) }
+        }
+    }
+
+    pub fn maximum_requested<T>(run: impl FnOnce() -> T) -> (T, usize) {
+        struct Reset;
+        impl Drop for Reset {
+            fn drop(&mut self) {
+                MAX_ALLOCATION.with(|maximum| maximum.set(None));
+            }
+        }
+
+        MAX_ALLOCATION.with(|maximum| assert!(maximum.replace(Some(0)).is_none()));
+        let reset = Reset;
+        let result = run();
+        let maximum = MAX_ALLOCATION.with(|value| value.get().unwrap());
+        drop(reset);
+        (result, maximum)
+    }
+}
+
+#[cfg(test)]
+#[global_allocator]
+static TEST_ALLOCATOR: allocation_probe::ProbeAllocator = allocation_probe::ProbeAllocator;
+
 static PURE_STRING_BINARY_EXACT_SCALAR: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| string_binary_contract(ChangeDetectionPolicy::ExactScalar));
 static PURE_STRING_BINARY_KERNEL_REPORTED: LazyLock<OperationContractDeclaration> =
@@ -187,23 +250,19 @@ fn canonical_string_at<'a>(
     }
 }
 
-fn canonical_concat_value(lhs: &Value, rhs: &Value, output: &ValueCell) -> MResult<Value> {
+#[derive(Clone, Copy)]
+struct CanonicalConcatGeometry {
+    lhs: Option<(usize, usize)>,
+    rhs: Option<(usize, usize)>,
+    output: Option<(usize, usize)>,
+}
+
+fn canonical_concat_geometry(lhs: &Value, rhs: &Value) -> MResult<CanonicalConcatGeometry> {
     let lhs_extents = canonical_string_extents(lhs)?;
     let rhs_extents = canonical_string_extents(rhs)?;
-    let concatenate = |left: &str, right: &str| {
-        let mut value = String::with_capacity(left.len().saturating_add(right.len()));
-        value.push_str(left);
-        value.push_str(right);
-        value
-    };
-    let extents = match (lhs_extents, rhs_extents) {
-        (None, None) => {
-            return output.rebuild_data_draft(ValueDataDraft::String(concatenate(
-                canonical_string_at(lhs, None, 0, 0)?,
-                canonical_string_at(rhs, None, 0, 0)?,
-            )));
-        }
-        (Some(extents), None) | (None, Some(extents)) => extents,
+    let output = match (lhs_extents, rhs_extents) {
+        (None, None) => None,
+        (Some(extents), None) | (None, Some(extents)) => Some(extents),
         (Some((left_rows, left_columns)), Some((right_rows, right_columns))) => {
             let rows = left_rows.max(right_rows);
             let columns = left_columns.max(right_columns);
@@ -217,10 +276,108 @@ fn canonical_concat_value(lhs: &Value, rhs: &Value, output: &ValueCell) -> MResu
                     "String matrix broadcast dimensions are incompatible",
                 ));
             }
-            (rows, columns)
+            Some((rows, columns))
         }
     };
-    let (rows, columns) = extents;
+    Ok(CanonicalConcatGeometry {
+        lhs: lhs_extents,
+        rhs: rhs_extents,
+        output,
+    })
+}
+
+fn canonical_concat_footprint(
+    lhs: &Value,
+    rhs: &Value,
+    output: &ValueCell,
+) -> MResult<CurrentMemoryFootprint> {
+    let geometry = canonical_concat_geometry(lhs, rhs)?;
+    let (rows, columns, matrix) = match geometry.output {
+        Some((rows, columns)) => (rows, columns, true),
+        None => (1, 1, false),
+    };
+    let count = rows.checked_mul(columns).ok_or_else(|| {
+        function_shape_contract_violation("string/concat", "output cardinality overflowed usize")
+    })?;
+    let mut payload_bytes = 0_u64;
+    for row in 0..rows {
+        for column in 0..columns {
+            let left = canonical_string_at(lhs, geometry.lhs, row, column)?;
+            let right = canonical_string_at(rhs, geometry.rhs, row, column)?;
+            let length = left.len().checked_add(right.len()).ok_or_else(|| {
+                function_shape_contract_violation(
+                    "string/concat",
+                    "output String length overflowed usize",
+                )
+            })?;
+            payload_bytes = payload_bytes
+                .checked_add(u64::try_from(length).map_err(|_| {
+                    function_shape_contract_violation(
+                        "string/concat",
+                        "output String length exceeded the portable footprint domain",
+                    )
+                })?)
+                .ok_or_else(|| {
+                    function_shape_contract_violation(
+                        "string/concat",
+                        "output String payload footprint overflowed u64",
+                    )
+                })?;
+        }
+    }
+    let logical_elements = u64::try_from(count).map_err(|_| {
+        function_shape_contract_violation(
+            "string/concat",
+            "output cardinality exceeded the portable footprint domain",
+        )
+    })?;
+    let footprint = mech_core::snapshot::prospective_string_value_footprint(
+        if matrix {
+            2
+        } else {
+            output.shape().parameter_values().len()
+        },
+        matrix,
+        logical_elements,
+        payload_bytes,
+    )
+    .map_err(|_| {
+        function_shape_contract_violation(
+            "string/concat",
+            "output canonical footprint overflowed the admitted domain",
+        )
+    })?;
+    Ok(CurrentMemoryFootprint {
+        logical_elements,
+        payload_bytes: footprint.retained_bytes,
+        encoded_bytes: footprint.encoded_bytes,
+        retained_nodes: footprint.node_count,
+        shape_parameter_count: if matrix {
+            2
+        } else {
+            output.shape().parameter_values().len() as u64
+        },
+        ..CurrentMemoryFootprint::default()
+    })
+}
+
+fn canonical_concat_value(lhs: &Value, rhs: &Value, output: &ValueCell) -> MResult<Value> {
+    let geometry = canonical_concat_geometry(lhs, rhs)?;
+    let concatenate = |left: &str, right: &str| -> MResult<String> {
+        let capacity = left.len().checked_add(right.len()).ok_or_else(|| {
+            function_shape_contract_violation("string/concat", "output String length overflowed")
+        })?;
+        let mut value = String::with_capacity(capacity);
+        value.push_str(left);
+        value.push_str(right);
+        Ok(value)
+    };
+    let Some((rows, columns)) = geometry.output else {
+        return output.rebuild_data_draft(ValueDataDraft::String(concatenate(
+            canonical_string_at(lhs, None, 0, 0)?,
+            canonical_string_at(rhs, None, 0, 0)?,
+        )?));
+    };
     let count = rows.checked_mul(columns).ok_or_else(|| {
         function_shape_contract_violation("string/concat", "output cardinality overflowed usize")
     })?;
@@ -231,9 +388,9 @@ fn canonical_concat_value(lhs: &Value, rhs: &Value, output: &ValueCell) -> MResu
     for row in 0..rows {
         for column in 0..columns {
             values.push(ValueDataDraft::String(concatenate(
-                canonical_string_at(lhs, lhs_extents, row, column)?,
-                canonical_string_at(rhs, rhs_extents, row, column)?,
-            )));
+                canonical_string_at(lhs, geometry.lhs, row, column)?,
+                canonical_string_at(rhs, geometry.rhs, row, column)?,
+            )?));
         }
     }
     output.rebuild_matrix_drafts(
@@ -247,13 +404,22 @@ pub(crate) fn test_managed_factory<F: MechFunctionFactory>(
     invocation: FunctionInvocation,
     operation: &'static str,
 ) -> SpecializedFunction {
+    test_managed_factory_for_target::<F>(invocation, operation, ExecutionTarget::DirectRuntime)
+}
+
+#[cfg(test)]
+pub(crate) fn test_managed_factory_for_target<F: MechFunctionFactory>(
+    invocation: FunctionInvocation,
+    operation: &'static str,
+    target: ExecutionTarget,
+) -> SpecializedFunction {
     let implementation = F::new_invocation(invocation.clone()).unwrap();
     let contract = F::declared_operation_contract().unwrap().clone();
     SpecializedFunction::syntax_directed(
         (implementation, invocation),
         ResolvedOperationDescriptor::from_name(operation, contract).unwrap(),
         RuntimeFunctionId::from_name(operation),
-        ExecutionTarget::DirectRuntime,
+        target,
         F::implementation_memory_class(),
     )
     .unwrap()
@@ -402,16 +568,33 @@ macro_rules! impl_string_binop {
             fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
                 Ok(Some(vec![FunctionStatePort::from_cell(self.out.cell())]))
             }
+            fn planned_output_footprints(
+                &self,
+            ) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+                let lhs = self.lhs.cell().snapshot()?;
+                let rhs = self.rhs.cell().snapshot()?;
+                Ok(Some(
+                    vec![$crate::canonical_concat_footprint(
+                        &lhs,
+                        &rhs,
+                        self.out.cell(),
+                    )?]
+                    .into_boxed_slice(),
+                ))
+            }
             fn solve_managed(
                 &self,
                 frame: &mut mech_core::KernelMemoryFrame<'_>,
                 _services: &mut dyn mech_core::MechExecutionServices,
             ) -> MResult<mech_core::ReactiveSolveStatus> {
                 $op!();
-                frame.with_canonical_binary_port_values(
+                frame.with_admitted_canonical_binary_port_values(
                     &self.lhs,
                     &self.rhs,
                     &self.out,
+                    |lhs, rhs, output| {
+                        $crate::canonical_concat_footprint(lhs, rhs, output)
+                    },
                     |lhs, rhs, output| Ok(((), $crate::canonical_concat_value(lhs, rhs, output)?)),
                 )?;
                 Ok(mech_core::ReactiveSolveStatus::Changed)
