@@ -484,10 +484,11 @@ def failures(root: Path) -> list[str]:
     for required in (
         "input_witnesses",
         "output_witnesses",
+        "published_output_witnesses",
         "output_regions",
         "resolve_deferred_call_demand",
         "canonical_footprint_demand",
-        "semantic_hash_comparison_work",
+        "publication_comparison_work",
     ):
         if required not in derive:
             found.append(f"core call-demand resolution is incomplete: {required}")
