@@ -8,41 +8,15 @@ use libm::cos;
 use libm::cosf;
 #[cfg(feature = "f64")]
 macro_rules! cos_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = cos((*$arg));
-        }
-    };
-}
-
-#[cfg(feature = "f64")]
-macro_rules! cos_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = cos(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(cos(($arg)))
     };
 }
 
 #[cfg(feature = "f32")]
 macro_rules! cosf_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = cosf((*$arg));
-        }
-    };
-}
-
-#[cfg(feature = "f32")]
-macro_rules! cosf_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = cosf(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(cosf(($arg)))
     };
 }
 

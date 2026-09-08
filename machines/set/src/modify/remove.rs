@@ -11,9 +11,9 @@ pub(crate) struct SetRemoveFxn {
 }
 
 impl MechFunctionFactory for SetRemoveFxn {
-            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
-                mech_core::ImplementationMemoryClass::CanonicalSortUnique
-            }
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalSortUnique
+    }
 
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
         FunctionValueRepresentation::Set,
@@ -42,12 +42,14 @@ impl MechFunctionImpl for SetRemoveFxn {
     fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
         self.out.transaction_state_ports()
     }
-    fn solve_result(&self) -> MResult<()> {
-        self.out.canonical_value().replace_set(
-            self.arg1
-                .canonical_value()
-                .set_elements_after_remove(self.arg2.canonical_value())?,
-        )
+    fn solve_managed(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        let next = self.arg1.elements_after_remove(frame, &self.arg2)?;
+        self.out.stage_set(frame, next)?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_SET_UPDATE_CONTRACT)

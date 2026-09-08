@@ -70,9 +70,9 @@ pub(crate) struct SetPowersetFxn {
 }
 
 impl MechFunctionFactory for SetPowersetFxn {
-            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
-                mech_core::ImplementationMemoryClass::CanonicalSortUnique
-            }
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalSortUnique
+    }
 
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
         FunctionValueRepresentation::Set,
@@ -98,22 +98,24 @@ impl MechFunctionImpl for SetPowersetFxn {
     fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
         self.out.transaction_state_ports()
     }
-    fn solve_result(&self) -> MResult<()> {
-        let elements = self
-            .input
-            .canonical_value()
-            .set_element_drafts()?
-            .into_vec();
+    fn solve_managed(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        let elements = self.input.element_drafts(frame)?.into_vec();
         let output_len = powerset_output_len(elements.len())?;
         let subsets = powerset(&elements);
         debug_assert_eq!(subsets.len(), output_len);
-        self.out.canonical_value().replace_set_drafts(
+        self.out.stage_set_drafts(
+            frame,
             subsets
                 .into_iter()
                 .map(|subset| ValueDataDraft::Set(subset.into_boxed_slice()))
                 .collect::<Vec<_>>()
                 .into_boxed_slice(),
-        )
+        )?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_SET_UNARY_CONTRACT)

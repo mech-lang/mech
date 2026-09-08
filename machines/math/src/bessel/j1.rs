@@ -4,38 +4,14 @@ use crate::*;
 
 use libm::{j1, j1f};
 macro_rules! j1_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = j1((*$arg));
-        }
-    };
-}
-
-macro_rules! j1_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = j1(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(j1(($arg)))
     };
 }
 
 macro_rules! j1f_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = j1f((*$arg));
-        }
-    };
-}
-
-macro_rules! j1f_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = j1f(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(j1f(($arg)))
     };
 }
 

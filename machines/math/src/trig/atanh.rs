@@ -7,41 +7,15 @@ use libm::atanhf;
 // Atanh Macros
 #[cfg(feature = "f64")]
 macro_rules! atanh_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = atanh((*$arg));
-        }
-    };
-}
-
-#[cfg(feature = "f64")]
-macro_rules! atanh_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = atanh(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(atanh(($arg)))
     };
 }
 
 #[cfg(feature = "f32")]
 macro_rules! atanhf_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = atanhf((*$arg));
-        }
-    };
-}
-
-#[cfg(feature = "f32")]
-macro_rules! atanhf_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = atanhf(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(atanhf(($arg)))
     };
 }
 

@@ -4,38 +4,14 @@ use crate::*;
 
 use libm::{erf, erff};
 macro_rules! erf_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = erf((*$arg));
-        }
-    };
-}
-
-macro_rules! erf_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = erf(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(erf(($arg)))
     };
 }
 
 macro_rules! erff_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = erff((*$arg));
-        }
-    };
-}
-
-macro_rules! erff_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = erff(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(erff(($arg)))
     };
 }
 

@@ -516,17 +516,22 @@ mod tests {
     use mech_core::{BytecodeCompilerContext, MechFunctionCompiler, Register};
     use mech_core::{
         CanonicalFunctionSpecializer, ExecutionTarget, FunctionCatalogBuilder, FunctionDefine,
-        FunctionExport, FunctionExposure, FunctionInstance, FunctionInvocation, MechFunctionImpl,
-        RuntimeFunctionId, SpecializationContext, SpecializationInvocation, SpecializedFunction,
-        ValueCell, internal_pattern_value_identifier,
+        FunctionExport, FunctionExposure, FunctionInvocation, MechFunctionImpl, RuntimeFunctionId,
+        SpecializationContext, SpecializationInvocation, SpecializedFunction, ValueCell,
+        internal_pattern_value_identifier,
     };
     use std::sync::Arc;
 
     struct TestFunction(&'static str);
 
     impl MechFunctionImpl for TestFunction {
-        fn solve_result(&self) -> MResult<()> {
-            Ok(())
+        fn solve_managed(
+            &self,
+            _frame: &mut mech_core::KernelMemoryFrame<'_>,
+            _services: &mut dyn mech_core::MechExecutionServices,
+        ) -> MResult<mech_core::ReactiveSolveStatus> {
+            (|| -> MResult<()> { Ok(()) })()?;
+            Ok(mech_core::ReactiveSolveStatus::Changed)
         }
 
         fn reactive_output_value_cells(&self) -> Vec<mech_core::ValueCell> {
@@ -569,7 +574,7 @@ mod tests {
                 .unwrap_or_else(ValueCell::unit);
             let invocation = FunctionInvocation::variadic(output, inputs);
             context.certify_instance(
-                FunctionInstance::new(Box::new(TestFunction(self.0)), invocation),
+                (Box::new(TestFunction(self.0)), invocation),
                 RuntimeFunctionId::from_name(self.0),
                 ExecutionTarget::DirectRuntime,
                 mech_core::ImplementationMemoryClass::NoAdditionalScratch,

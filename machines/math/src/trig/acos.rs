@@ -8,41 +8,15 @@ use libm::acos;
 use libm::acosf;
 #[cfg(feature = "f64")]
 macro_rules! acos_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = acos((*$arg));
-        }
-    };
-}
-
-#[cfg(feature = "f64")]
-macro_rules! acos_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = acos(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(acos(($arg)))
     };
 }
 
 #[cfg(feature = "f32")]
 macro_rules! acosf_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = acosf((*$arg));
-        }
-    };
-}
-
-#[cfg(feature = "f32")]
-macro_rules! acosf_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = acosf(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(acosf(($arg)))
     };
 }
 

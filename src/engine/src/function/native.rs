@@ -49,7 +49,7 @@ impl CanonicalFunctionSpecializer for ClosureFunctionSpecializer {
             .into_boxed_slice();
         let bound = FunctionInvocation::variadic(output, inputs);
         context.certify_instance(
-            FunctionInstance::new(
+            (
                 Box::new(ClosureNativeFunction {
                     name: self.name.clone(),
                 }),
@@ -72,9 +72,16 @@ pub struct ClosureNativeFunction {
 }
 
 impl MechFunctionImpl for ClosureNativeFunction {
-    fn solve_result(&self) -> MResult<()> {
-        // Pure closure functions are executed once during native function specialization.
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            // Pure closure functions are executed once during native function specialization.
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {

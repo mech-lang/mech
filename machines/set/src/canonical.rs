@@ -1,5 +1,9 @@
 use crate::*;
 
+fn snapshot_error(error: SnapshotValueError) -> MechError {
+    MechError::new(ValueCellSnapshotFailure { error }, None).with_compiler_loc()
+}
+
 #[derive(Debug)]
 #[cfg(any(feature = "membership", feature = "modify"))]
 pub(crate) struct ArbitraryInput(FunctionValueInput);
@@ -10,8 +14,8 @@ impl ArbitraryInput {
         Self(port.value())
     }
 
-    pub(crate) fn canonical_value(&self) -> &FunctionValueInput {
-        &self.0
+    pub(crate) fn snapshot(&self, frame: &KernelMemoryFrame<'_>) -> MResult<Value> {
+        frame.snapshot_function_value_input(&self.0)
     }
 
     #[cfg(feature = "semantic-compiler")]
@@ -49,12 +53,13 @@ impl SetInput {
         Ok(Self(value))
     }
 
-    pub(crate) fn canonical_value(&self) -> &FunctionValueInput {
-        &self.0
-    }
-
     #[cfg(feature = "relations")]
-    pub(crate) fn relation(&self, other: &Self, relation: SetRelation) -> MResult<bool> {
+    pub(crate) fn relation(
+        &self,
+        frame: &KernelMemoryFrame<'_>,
+        other: &Self,
+        relation: SetRelation,
+    ) -> MResult<bool> {
         let relation = match relation {
             SetRelation::Disjoint => SetValueRelation::Disjoint,
             SetRelation::Equal => SetValueRelation::Equal,
@@ -64,7 +69,173 @@ impl SetInput {
             SetRelation::Subset => SetValueRelation::Subset,
             SetRelation::Superset => SetValueRelation::Superset,
         };
-        self.0.set_relation(&other.0, relation)
+        let left = frame.snapshot_function_value_input(&self.0)?;
+        let right = frame.snapshot_function_value_input(&other.0)?;
+        let left_schemas = left.schemas().ok_or_else(|| {
+            function_shape_contract_violation("set/relation", "left set has no schema table")
+        })?;
+        let right_schemas = right.schemas().ok_or_else(|| {
+            function_shape_contract_violation("set/relation", "right set has no schema table")
+        })?;
+        left.set_relation(&left_schemas, &right, &right_schemas, relation)
+            .map_err(snapshot_error)
+    }
+
+    pub(crate) fn contains(
+        &self,
+        frame: &KernelMemoryFrame<'_>,
+        candidate: &ArbitraryInput,
+    ) -> MResult<bool> {
+        let set = frame.snapshot_function_value_input(&self.0)?;
+        let candidate = candidate.snapshot(frame)?;
+        let set_schemas = set.schemas().ok_or_else(|| {
+            function_shape_contract_violation("set/contains", "set has no schema table")
+        })?;
+        let candidate_schemas = candidate.schemas().ok_or_else(|| {
+            function_shape_contract_violation("set/contains", "candidate has no schema table")
+        })?;
+        let SchemaBody::Set { element, .. } = set_schemas
+            .get(set.schema())
+            .ok_or_else(|| {
+                function_shape_contract_violation("set/contains", "set schema is missing")
+            })?
+            .body()
+        else {
+            return Err(function_shape_contract_violation(
+                "set/contains",
+                "input is not a set",
+            ));
+        };
+        let candidate_schema = candidate_schemas
+            .get(candidate.schema())
+            .ok_or_else(|| {
+                function_shape_contract_violation("set/contains", "candidate schema is missing")
+            })?
+            .body();
+        if candidate_schema != element.as_ref() {
+            return Ok(false);
+        }
+        set.set_contains(&set_schemas, &candidate, &candidate_schemas)
+            .map_err(snapshot_error)
+    }
+
+    pub(crate) fn elements(&self, frame: &KernelMemoryFrame<'_>) -> MResult<Box<[ValueData]>> {
+        let set = frame.snapshot_function_value_input(&self.0)?;
+        let Some(view) = set.set_view() else {
+            return Err(function_shape_contract_violation(
+                "set/elements",
+                "input is not a set",
+            ));
+        };
+        Ok(view
+            .elements()
+            .iter()
+            .map(|value| value.data().clone())
+            .collect::<Vec<_>>()
+            .into_boxed_slice())
+    }
+
+    pub(crate) fn element_drafts(
+        &self,
+        frame: &KernelMemoryFrame<'_>,
+    ) -> MResult<Box<[ValueDataDraft]>> {
+        let set = frame.snapshot_function_value_input(&self.0)?;
+        let schemas = set.schemas().ok_or_else(|| {
+            function_shape_contract_violation("set/elements", "set has no schema table")
+        })?;
+        set.set_element_drafts(&schemas).map_err(snapshot_error)
+    }
+
+    pub(crate) fn elements_after_insert(
+        &self,
+        frame: &KernelMemoryFrame<'_>,
+        candidate: &ArbitraryInput,
+    ) -> MResult<Box<[ValueData]>> {
+        self.with_candidate(frame, candidate, Value::set_elements_after_insert)
+    }
+
+    pub(crate) fn elements_after_remove(
+        &self,
+        frame: &KernelMemoryFrame<'_>,
+        candidate: &ArbitraryInput,
+    ) -> MResult<Box<[ValueData]>> {
+        self.with_candidate(frame, candidate, Value::set_elements_after_remove)
+    }
+
+    pub(crate) fn union_elements(
+        &self,
+        frame: &KernelMemoryFrame<'_>,
+        other: &Self,
+    ) -> MResult<Box<[ValueData]>> {
+        self.with_set(frame, other, Value::set_union_elements)
+    }
+
+    pub(crate) fn intersection_elements(
+        &self,
+        frame: &KernelMemoryFrame<'_>,
+        other: &Self,
+    ) -> MResult<Box<[ValueData]>> {
+        self.with_set(frame, other, Value::set_intersection_elements)
+    }
+
+    pub(crate) fn difference_elements(
+        &self,
+        frame: &KernelMemoryFrame<'_>,
+        other: &Self,
+    ) -> MResult<Box<[ValueData]>> {
+        self.with_set(frame, other, Value::set_difference_elements)
+    }
+
+    pub(crate) fn symmetric_difference_elements(
+        &self,
+        frame: &KernelMemoryFrame<'_>,
+        other: &Self,
+    ) -> MResult<Box<[ValueData]>> {
+        self.with_set(frame, other, Value::set_symmetric_difference_elements)
+    }
+
+    fn with_candidate(
+        &self,
+        frame: &KernelMemoryFrame<'_>,
+        candidate: &ArbitraryInput,
+        operation: fn(
+            &Value,
+            &SchemaTable,
+            &Value,
+            &SchemaTable,
+        ) -> Result<Box<[ValueData]>, SnapshotValueError>,
+    ) -> MResult<Box<[ValueData]>> {
+        let set = frame.snapshot_function_value_input(&self.0)?;
+        let candidate = candidate.snapshot(frame)?;
+        let set_schemas = set.schemas().ok_or_else(|| {
+            function_shape_contract_violation("set/update", "set has no schema table")
+        })?;
+        let candidate_schemas = candidate.schemas().ok_or_else(|| {
+            function_shape_contract_violation("set/update", "candidate has no schema table")
+        })?;
+        operation(&set, &set_schemas, &candidate, &candidate_schemas).map_err(snapshot_error)
+    }
+
+    fn with_set(
+        &self,
+        frame: &KernelMemoryFrame<'_>,
+        other: &Self,
+        operation: fn(
+            &Value,
+            &SchemaTable,
+            &Value,
+            &SchemaTable,
+        ) -> Result<Box<[ValueData]>, SnapshotValueError>,
+    ) -> MResult<Box<[ValueData]>> {
+        let left = frame.snapshot_function_value_input(&self.0)?;
+        let right = frame.snapshot_function_value_input(&other.0)?;
+        let left_schemas = left.schemas().ok_or_else(|| {
+            function_shape_contract_violation("set/operation", "left set has no schema table")
+        })?;
+        let right_schemas = right.schemas().ok_or_else(|| {
+            function_shape_contract_violation("set/operation", "right set has no schema table")
+        })?;
+        operation(&left, &left_schemas, &right, &right_schemas).map_err(snapshot_error)
     }
 
     #[cfg(feature = "semantic-compiler")]
@@ -93,8 +264,22 @@ impl SetOutput {
         Ok(Self(value))
     }
 
-    pub(crate) fn canonical_value(&self) -> &FunctionValueOutput {
-        &self.0
+    pub(crate) fn stage_set(
+        &self,
+        frame: &mut KernelMemoryFrame<'_>,
+        elements: Box<[ValueData]>,
+    ) -> MResult<()> {
+        let next = self.0.build_set(elements)?;
+        frame.stage_output_value(self.0.cell(), &next)
+    }
+
+    pub(crate) fn stage_set_drafts(
+        &self,
+        frame: &mut KernelMemoryFrame<'_>,
+        elements: Box<[ValueDataDraft]>,
+    ) -> MResult<()> {
+        let next = self.0.build_set_drafts(elements)?;
+        frame.stage_output_value(self.0.cell(), &next)
     }
 
     pub(crate) fn primary_state_port(&self) -> Option<FunctionStatePort<'_>> {
@@ -190,7 +375,7 @@ macro_rules! define_set_relation {
         pub(crate) struct $function {
             lhs: SetInput,
             rhs: SetInput,
-            out: Ref<bool>,
+            out: ManagedPort<bool>,
         }
 
         impl MechFunctionFactory for $function {
@@ -208,7 +393,7 @@ macro_rules! define_set_relation {
                 Ok(Box::new(Self {
                     lhs: SetInput::canonical(lhs)?,
                     rhs: SetInput::canonical(rhs)?,
-                    out: out.try_ref()?,
+                    out: out.try_managed()?,
                 }))
             }
 
@@ -219,14 +404,21 @@ macro_rules! define_set_relation {
 
         impl MechFunctionImpl for $function {
             fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-                Some(FunctionStatePort::from_ref(&self.out))
+                Some(FunctionStatePort::from_cell(self.out.cell()))
             }
             fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
-                Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
+                Ok(Some(vec![FunctionStatePort::from_cell(self.out.cell())]))
             }
-            fn solve_result(&self) -> MResult<()> {
-                *self.out.borrow_mut() = self.lhs.relation(&self.rhs, SetRelation::$relation)?;
-                Ok(())
+            fn solve_managed(
+                &self,
+                frame: &mut mech_core::KernelMemoryFrame<'_>,
+                _services: &mut dyn mech_core::MechExecutionServices,
+            ) -> MResult<mech_core::ReactiveSolveStatus> {
+                let next = self
+                    .lhs
+                    .relation(frame, &self.rhs, SetRelation::$relation)?;
+                frame.with_port_init_writer(&self.out, |output| output.write_next(next))?;
+                Ok(mech_core::ReactiveSolveStatus::Changed)
             }
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
                 Some(&PURE_SET_PREDICATE_CONTRACT)
@@ -239,7 +431,7 @@ macro_rules! define_set_relation {
         #[cfg(feature = "semantic-compiler")]
         impl MechFunctionCompiler for $function {
             fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-                let destination = compile_register_brrw!(self.out, context);
+                let destination = compile_value_cell_register(self.out.cell(), context)?;
                 let lhs = self.lhs.compile_register(context)?;
                 let rhs = self.rhs.compile_register(context)?;
                 context.emit_binop(hash_str($name), destination, lhs, rhs);
@@ -276,7 +468,7 @@ macro_rules! define_set_membership {
         pub(crate) struct $function {
             elem: ArbitraryInput,
             set: SetInput,
-            out: Ref<bool>,
+            out: ManagedPort<bool>,
         }
 
         impl MechFunctionFactory for $function {
@@ -294,7 +486,7 @@ macro_rules! define_set_membership {
                 Ok(Box::new(Self {
                     elem: ArbitraryInput::canonical(element),
                     set: SetInput::canonical(set)?,
-                    out: out.try_ref()?,
+                    out: out.try_managed()?,
                 }))
             }
 
@@ -305,18 +497,20 @@ macro_rules! define_set_membership {
 
         impl MechFunctionImpl for $function {
             fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-                Some(FunctionStatePort::from_ref(&self.out))
+                Some(FunctionStatePort::from_cell(self.out.cell()))
             }
             fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
-                Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
+                Ok(Some(vec![FunctionStatePort::from_cell(self.out.cell())]))
             }
-            fn solve_result(&self) -> MResult<()> {
-                let contains = self
-                    .set
-                    .canonical_value()
-                    .set_contains(self.elem.canonical_value())?;
-                *self.out.borrow_mut() = if $negated { !contains } else { contains };
-                Ok(())
+            fn solve_managed(
+                &self,
+                frame: &mut mech_core::KernelMemoryFrame<'_>,
+                _services: &mut dyn mech_core::MechExecutionServices,
+            ) -> MResult<mech_core::ReactiveSolveStatus> {
+                let contains = self.set.contains(frame, &self.elem)?;
+                let next = if $negated { !contains } else { contains };
+                frame.with_port_init_writer(&self.out, |output| output.write_next(next))?;
+                Ok(mech_core::ReactiveSolveStatus::Changed)
             }
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
                 Some(&PURE_SET_PREDICATE_CONTRACT)
@@ -329,7 +523,7 @@ macro_rules! define_set_membership {
         #[cfg(feature = "semantic-compiler")]
         impl MechFunctionCompiler for $function {
             fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-                let destination = compile_register_brrw!(self.out, context);
+                let destination = compile_value_cell_register(self.out.cell(), context)?;
                 let element = self.elem.compile_register(context)?;
                 let set = self.set.compile_register(context)?;
                 context.emit_binop(hash_str($name), destination, element, set);

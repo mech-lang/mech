@@ -317,14 +317,15 @@ macro_rules! impl_checked_matrix_binop {
     ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident $(, $semantic_contract:path)?) => {
         #[derive(Debug)]
         pub struct $struct_name<T> {
-            pub lhs: Ref<$arg1_type>,
-            pub rhs: Ref<$arg2_type>,
-            pub out: Ref<$out_type>,
+            pub lhs: ManagedPort<T>,
+            pub rhs: ManagedPort<T>,
+            pub out: ManagedPort<T>,
+            marker: core::marker::PhantomData<($arg1_type, $arg2_type, $out_type)>,
         }
 
         impl<T> MechFunctionFactory for $struct_name<T>
         where
-            T: RuntimeMatrixArithmetic,
+            T: RuntimeMatrixArithmetic + ManagedElement + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             T: CanonicalMatrixElementBacking + ConstElem + CompileConst,
             $arg1_type: FunctionPortBacking,
@@ -349,35 +350,43 @@ macro_rules! impl_checked_matrix_binop {
                 invocation: FunctionInvocation,
             ) -> MResult<Box<dyn MechFunction>> {
                 let (out, lhs, rhs) = invocation.expect_binary()?;
-                let lhs: Ref<$arg1_type> = lhs.try_ref()?;
-                let rhs: Ref<$arg2_type> = rhs.try_ref()?;
-                let out: Ref<$out_type> = out.try_ref()?;
-                Ok(Box::new(Self { lhs, rhs, out }))
+                let _ = lhs.try_managed::<$arg1_type>()?;
+                let _ = rhs.try_managed::<$arg2_type>()?;
+                let _ = out.try_managed::<$out_type>()?;
+                Ok(Box::new(Self {
+                    lhs: lhs.try_managed_element::<T>()?,
+                    rhs: rhs.try_managed_element::<T>()?,
+                    out: out.try_managed_element::<T>()?,
+                    marker: core::marker::PhantomData,
+                }))
             }
 
         }
 
         impl<T> MechFunctionImpl for $struct_name<T>
         where
-            T: RuntimeMatrixArithmetic,
+            T: RuntimeMatrixArithmetic + ManagedElement,
             #[cfg(feature = "semantic-compiler")]
             T: CanonicalMatrixElementBacking,
             $out_type: FunctionStateBacking,
         {
-            fn solve_result(&self) -> MResult<()> {
-                let lhs_ptr = self.lhs.as_ptr();
-                let rhs_ptr = self.rhs.as_ptr();
-                let out_ptr = self.out.as_mut_ptr();
-                $op!(lhs_ptr, rhs_ptr, out_ptr);
-                Ok(())
+            fn solve_managed(
+                &self,
+                frame: &mut mech_core::KernelMemoryFrame<'_>,
+                _services: &mut dyn mech_core::MechExecutionServices,
+            ) -> MResult<mech_core::ReactiveSolveStatus> {
+                frame.with_binary_port_views(&self.lhs, &self.rhs, &self.out, |lhs, rhs, out| {
+                    $op!(lhs, rhs, out)
+                })?;
+                Ok(mech_core::ReactiveSolveStatus::Changed)
             }
 
             fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-                Some(FunctionStatePort::from_ref(&self.out))
+                Some(FunctionStatePort::from_cell(self.out.cell()))
             }
 
             fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
-                Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
+                Ok(Some(vec![FunctionStatePort::from_cell(self.out.cell())]))
             }
 
 
@@ -393,11 +402,15 @@ macro_rules! impl_checked_matrix_binop {
         #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $struct_name<T>
         where
-            T: CanonicalMatrixElementBacking + RuntimeMatrixArithmetic + ConstElem + CompileConst,
+            T: CanonicalMatrixElementBacking + RuntimeMatrixArithmetic + ManagedElement + ConstElem + CompileConst,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 let name = format!("{}<{}>", stringify!($struct_name), <T as FunctionRuntimeType>::REPRESENTATION);
-                compile_binop!(name, self.out, self.lhs, self.rhs, ctx);
+                let output = compile_value_cell_register(self.out.cell(), ctx)?;
+                let lhs = compile_value_cell_register(self.lhs.cell(), ctx)?;
+                let rhs = compile_value_cell_register(self.rhs.cell(), ctx)?;
+                ctx.emit_binop(hash_str(&name), output, lhs, rhs);
+                Ok(output)
             }
         }
     };
@@ -407,6 +420,36 @@ macro_rules! impl_checked_matrix_binop {
 pub mod catalog;
 #[cfg(feature = "runtime")]
 pub use self::catalog::*;
+
+#[cfg(all(test, feature = "runtime"))]
+pub(crate) fn test_managed_factory<F: MechFunctionFactory>(
+    invocation: FunctionInvocation,
+    operation: &'static str,
+) -> SpecializedFunction {
+    let implementation = F::new_invocation(invocation.clone()).unwrap();
+    let contract = F::declared_operation_contract().unwrap().clone();
+    SpecializedFunction::syntax_directed(
+        (implementation, invocation),
+        ResolvedOperationDescriptor::from_name(operation, contract).unwrap(),
+        RuntimeFunctionId::from_name(operation),
+        ExecutionTarget::DirectRuntime,
+        F::implementation_memory_class(),
+    )
+    .unwrap()
+}
+
+#[cfg(all(test, feature = "runtime"))]
+pub(crate) fn assert_test_value(actual: &ValueCell, expected: ValueCell) {
+    let actual = actual.snapshot().unwrap();
+    let expected = expected.snapshot().unwrap();
+    let actual_schemas = actual.schemas().unwrap();
+    let expected_schemas = expected.schemas().unwrap();
+    assert!(
+        actual
+            .language_eq(&actual_schemas, &expected, &expected_schemas)
+            .unwrap()
+    );
+}
 
 #[cfg(feature = "dot")]
 pub mod dot;

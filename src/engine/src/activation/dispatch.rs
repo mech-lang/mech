@@ -1,4 +1,4 @@
-use super::captures::{increment, read_bool, write_bool, write_selected_arm};
+use super::captures::{read_bool, stage_increment, write_bool, write_selected_arm};
 use super::{ActivationPatternCapture, GuardFinalize, ReactiveBindingSink};
 #[cfg(feature = "semantic-compiler")]
 use crate::{BytecodeCompilerContext, GenericError, MechError, MechFunctionCompiler, Register};
@@ -25,12 +25,13 @@ pub(super) struct ScopePulse {
     pub(super) out: ValueCell,
 }
 impl MechFunctionImpl for ScopePulse {
-    fn solve_result(&self) -> MResult<()> {
-        Ok(())
-    }
-    fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
-        increment(&self.out)?;
-        Ok(ReactiveSolveStatus::Changed)
+    fn solve_managed(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        stage_increment(frame, &self.out)?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
         primary(&self.out)
@@ -55,10 +56,11 @@ pub(super) struct Matcher {
     pub(super) out: ValueCell,
 }
 impl MechFunctionImpl for Matcher {
-    fn solve_result(&self) -> MResult<()> {
-        Ok(())
-    }
-    fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
+    fn solve_managed(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
         let pattern_match = match_compiled_pattern_with_values(
             &self.pattern,
             &self.trigger,
@@ -69,8 +71,8 @@ impl MechFunctionImpl for Matcher {
         }
         .commit(&pattern_match)?;
         write_bool(&self.matched, pattern_match.matched)?;
-        increment(&self.out)?;
-        Ok(ReactiveSolveStatus::Changed)
+        stage_increment(frame, &self.out)?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
         primary(&self.out)
@@ -125,13 +127,14 @@ pub(super) struct Finalize {
     pub(super) out: ValueCell,
 }
 impl MechFunctionImpl for Finalize {
-    fn solve_result(&self) -> MResult<()> {
-        Ok(())
-    }
-    fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
+    fn solve_managed(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
         write_bool(&self.eligible, read_bool(&self.matched)?)?;
-        increment(&self.out)?;
-        Ok(ReactiveSolveStatus::Changed)
+        stage_increment(frame, &self.out)?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
         primary(&self.out)
@@ -149,13 +152,14 @@ pub(super) struct MatchGate {
     pub(super) out: ValueCell,
 }
 impl MechFunctionImpl for MatchGate {
-    fn solve_result(&self) -> MResult<()> {
-        Ok(())
-    }
-    fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
+    fn solve_managed(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
         if read_bool(&self.matched)? {
-            increment(&self.out)?;
-            Ok(ReactiveSolveStatus::Changed)
+            stage_increment(frame, &self.out)?;
+            Ok(mech_core::ReactiveSolveStatus::Changed)
         } else {
             Ok(ReactiveSolveStatus::Unchanged)
         }
@@ -177,16 +181,17 @@ pub(super) struct UnmatchedFinalize {
     pub(super) out: ValueCell,
 }
 impl MechFunctionImpl for UnmatchedFinalize {
-    fn solve_result(&self) -> MResult<()> {
-        Ok(())
-    }
-    fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
+    fn solve_managed(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
         if read_bool(&self.matched)? {
             Ok(ReactiveSolveStatus::Unchanged)
         } else {
             write_bool(&self.eligible, false)?;
-            increment(&self.out)?;
-            Ok(ReactiveSolveStatus::Changed)
+            stage_increment(frame, &self.out)?;
+            Ok(mech_core::ReactiveSolveStatus::Changed)
         }
     }
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
@@ -206,18 +211,19 @@ pub(super) struct Select {
     pub(super) out: ValueCell,
 }
 impl MechFunctionImpl for Select {
-    fn solve_result(&self) -> MResult<()> {
-        Ok(())
-    }
-    fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
+    fn solve_managed(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
         let selected = self
             .eligible
             .iter()
             .position(|cell| read_bool(cell).unwrap_or(false))
             .unwrap_or(usize::MAX);
         write_selected_arm(&self.selected, selected)?;
-        increment(&self.out)?;
-        Ok(ReactiveSolveStatus::Changed)
+        stage_increment(frame, &self.out)?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
         primary(&self.out)

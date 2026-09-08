@@ -1,9 +1,9 @@
 use mech_core::{
     AccessMode, AliasPolicy, ChangeDetectionPolicy, DeliveryMode, ExecutionResourceRequest,
     ExternalInteraction, FunctionStatePort, InitialSolvePolicy, InputPortLayout, MResult,
-    MechError, MechErrorKind, MechExecutionServices, MechFunctionImpl, NoMechExecutionServices,
-    ObservationContract, ObservationReplayPolicy, OperationContractDeclaration, OutputConstruction,
-    OutputPortPolicy, ReactiveSolveStatus, Ref, ResourceDelivery, ShapeRule, Value, ValueCell,
+    MechError, MechErrorKind, MechExecutionServices, MechFunctionImpl, ObservationContract,
+    ObservationReplayPolicy, OperationContractDeclaration, OutputConstruction, OutputPortPolicy,
+    Ref, ResourceDelivery, ShapeRule, Value, ValueCell,
 };
 use std::sync::LazyLock;
 
@@ -75,15 +75,23 @@ impl ExternalResourceReadFunction {
         }
     }
 
-    fn apply_read_result(&self, result: Value) -> MResult<()> {
-        super::install_external_value(&self.output, result)?;
+    fn stage_read_result(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        result: Value,
+    ) -> MResult<()> {
+        frame.stage_output_value(&self.output, &result)?;
         *self.initialized.borrow_mut() = 1;
         Ok(())
     }
 
-    fn solve_with_services(&self, services: &mut dyn MechExecutionServices) -> MResult<()> {
+    fn solve_with_services(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        services: &mut dyn MechExecutionServices,
+    ) -> MResult<()> {
         let result = services.read_resource(&self.request)?;
-        self.apply_read_result(result)?;
+        self.stage_read_result(frame, result)?;
         if self.request.delivery == ResourceDelivery::Live {
             services.bind_live_resource(self.interpreter_id, &self.request, self.output.clone())?;
         }
@@ -92,25 +100,13 @@ impl ExternalResourceReadFunction {
 }
 
 impl MechFunctionImpl for ExternalResourceReadFunction {
-    fn solve_result(&self) -> MResult<()> {
-        self.solve_with_services(&mut NoMechExecutionServices)
-    }
-
-    fn solve_result_with(&self, services: &mut dyn MechExecutionServices) -> MResult<()> {
-        self.solve_with_services(services)
-    }
-
-    fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
-        self.solve_result()?;
-        Ok(ReactiveSolveStatus::Changed)
-    }
-
-    fn solve_reactive_with(
+    fn solve_managed(
         &self,
-        services: &mut dyn MechExecutionServices,
-    ) -> MResult<ReactiveSolveStatus> {
-        self.solve_with_services(services)?;
-        Ok(ReactiveSolveStatus::Changed)
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        self.solve_with_services(frame, services)?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn initial_solve_policy(&self) -> InitialSolvePolicy {
@@ -119,6 +115,7 @@ impl MechFunctionImpl for ExternalResourceReadFunction {
 
     fn initialize_preserved_output_with(
         &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
         services: &mut dyn MechExecutionServices,
     ) -> MResult<()> {
         if *self.initialized.borrow() == 0 {

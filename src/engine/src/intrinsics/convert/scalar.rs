@@ -23,8 +23,13 @@ impl MechFunctionFactory for ConvertSEnum {
 }
 #[cfg(feature = "enum")]
 impl MechFunctionImpl for ConvertSEnum {
-    fn solve_result(&self) -> MResult<()> {
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> { Ok(()) })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
         Some(self.out.state_port())
@@ -88,8 +93,13 @@ mech_core::declare_native_runtime_factory! {
 }
 
 impl MechFunctionImpl for ConvertSEmpty {
-    fn solve_result(&self) -> MResult<()> {
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> { Ok(()) })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
         Some(self.out.state_port())

@@ -1,11 +1,11 @@
-use super::captures::{increment, read_bool, register_node, write_bool};
+use super::captures::{read_bool, register_node, stage_increment, write_bool};
 use super::{
     ActivationPatternCapture, ActivationPatternGuardDependencyInvariant,
     ActivationPatternGuardMustBePure, activation_scope_entry_cells,
 };
 use crate::{
     Expression, FunctionStatePort, InterpreterExecution, MResult, MechError, MechFunctionImpl,
-    ReactiveNodeId, ReactiveNodeKind, ReactiveSolveStatus, ValueCell,
+    ReactiveNodeId, ReactiveNodeKind, ValueCell,
 };
 
 pub(super) struct GuardFinalize {
@@ -14,13 +14,14 @@ pub(super) struct GuardFinalize {
     pub(super) out: ValueCell,
 }
 impl MechFunctionImpl for GuardFinalize {
-    fn solve_result(&self) -> MResult<()> {
-        Ok(())
-    }
-    fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
+    fn solve_managed(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
         write_bool(&self.eligible, read_bool(&self.guard)?)?;
-        increment(&self.out)?;
-        Ok(ReactiveSolveStatus::Changed)
+        stage_increment(frame, &self.out)?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
         Some(FunctionStatePort::from_cell(&self.out))

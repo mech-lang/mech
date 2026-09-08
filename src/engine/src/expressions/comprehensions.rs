@@ -15,10 +15,9 @@ pub use crate::intrinsics::constructors::ValueSetComprehension;
 use crate::patterns::PatternBindingSink;
 use crate::{
     CanonicalFunctionSpecializer, ComprehensionQualifier, Expression, ExternalInteraction,
-    FunctionInstance, FunctionInvocation, Interpreter, InterpreterExecution, MResult, MechError,
-    MechFunctionFactory, ReactiveNodeKind, SchemaBody, SpecializationContext,
-    SpecializationInvocation, SpecializedFunction, ValueCell, ValueData, execute_catalog_operation,
-    hash_str,
+    FunctionInvocation, Interpreter, InterpreterExecution, MResult, MechError, MechFunctionFactory,
+    ReactiveNodeKind, SchemaBody, SpecializationContext, SpecializationInvocation,
+    SpecializedFunction, ValueCell, ValueData, execute_catalog_operation, hash_str,
 };
 use std::collections::{HashMap, HashSet};
 
@@ -211,7 +210,7 @@ impl CanonicalFunctionSpecializer for SetComprehensionDefine {
         let invocation = FunctionInvocation::variadic(output, arguments.into_boxed_slice());
         let implementation = ValueSetComprehension::new_invocation(invocation.clone())?;
         context.certify_instance(
-            FunctionInstance::new(implementation, invocation),
+            (implementation, invocation),
             mech_core::RuntimeFunctionId::from_name("set/comprehension"),
             mech_core::ExecutionTarget::DirectRuntime,
             mech_core::ImplementationMemoryClass::CanonicalSortUnique,
@@ -236,7 +235,7 @@ impl CanonicalFunctionSpecializer for MatrixComprehensionDefine {
         let invocation = FunctionInvocation::variadic(output, arguments.into_boxed_slice());
         let implementation = ValueMatrixComprehension::new_invocation(invocation.clone())?;
         context.certify_instance(
-            FunctionInstance::new(implementation, invocation),
+            (implementation, invocation),
             mech_core::RuntimeFunctionId::from_name("matrix/comprehension"),
             mech_core::ExecutionTarget::DirectRuntime,
             mech_core::ImplementationMemoryClass::CanonicalFinalize,
@@ -290,7 +289,7 @@ pub fn matrix_comprehension(
         let invocation = FunctionInvocation::variadic(output.clone(), Box::new([]));
         let implementation = ValueMatrixComprehension::new_invocation(invocation.clone())?;
         let specialized = SpecializedFunction::syntax_directed(
-            FunctionInstance::new(implementation, invocation),
+            (implementation, invocation),
             mech_core::ResolvedOperationDescriptor::from_name(
                 "matrix/comprehension",
                 crate::intrinsics::constructors::PURE_MATRIX_COMPREHENSION_CONTRACT.clone(),

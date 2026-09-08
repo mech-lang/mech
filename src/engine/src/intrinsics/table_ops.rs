@@ -346,9 +346,16 @@ impl TableJoinFxn {
 }
 
 impl MechFunctionImpl for TableJoinFxn {
-    fn solve_result(&self) -> MResult<()> {
-        let joined = joined_table(self.lhs.cell(), self.rhs.cell(), self.mode)?;
-        self.out.replace(&joined.snapshot()?)
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            let joined = joined_table(self.lhs.cell(), self.rhs.cell(), self.mode)?;
+            self.out.replace(&joined.snapshot()?)
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
@@ -585,7 +592,7 @@ macro_rules! table_join_specializer {
                 let output = joined_table(&lhs, &rhs, JoinMode::$mode)?;
                 let bound = FunctionInvocation::binary(output, lhs, rhs);
                 context.certify_instance(
-                    FunctionInstance::new(
+                    (
                         TableJoinFxn::from_invocation(bound.clone(), JoinMode::$mode)?,
                         bound,
                     ),

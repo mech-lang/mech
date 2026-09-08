@@ -10,6 +10,7 @@ extern crate nalgebra as na;
 use mech_core::*;
 
 #[cfg(all(not(feature = "dynamic-module"), feature = "math"))]
+#[allow(unused_imports)]
 use paste::paste;
 
 #[cfg(feature = "matrixd")]
@@ -45,7 +46,12 @@ use na::Vector4;
 
 #[cfg(any(feature = "ops", feature = "op_assign"))]
 use std::fmt::{Debug, Display};
-#[cfg(any(feature = "neg", feature = "op_assign"))]
+#[cfg(any(
+    all(feature = "runtime", not(feature = "dynamic-module")),
+    feature = "neg",
+    feature = "op_assign"
+))]
+#[allow(unused_imports)]
 use std::marker::PhantomData;
 #[cfg(any(feature = "ops", feature = "op_assign"))]
 use std::ops::*;
@@ -81,6 +87,128 @@ pub(crate) fn arithmetic_overflow<T>(operation: &'static str) -> MechError {
         None,
     )
     .with_compiler_loc()
+}
+
+#[cfg(all(
+    feature = "runtime",
+    not(feature = "dynamic-module"),
+    any(
+        feature = "copysign",
+        feature = "fdim",
+        feature = "fmod",
+        feature = "nextafter",
+        feature = "remainder",
+        feature = "jn",
+        feature = "yn"
+    )
+))]
+macro_rules! impl_managed_math_binary_full_write {
+    ($struct_name:ident, $element:ty, $kind1:ty, $kind2:ty, $out_kind:ty, $op:ident, $semantic:literal) => {
+        #[derive(Debug)]
+        pub(crate) struct $struct_name {
+            arg1: ManagedPort<$element>,
+            arg2: ManagedPort<$element>,
+            out: ManagedPort<$element>,
+            marker: PhantomData<($kind1, $kind2, $out_kind)>,
+        }
+
+        impl MechFunctionFactory for $struct_name
+        where
+            $kind1: FunctionPortBacking,
+            $kind2: FunctionPortBacking,
+            $out_kind: FunctionStateBacking,
+        {
+            fn implementation_memory_class() -> ImplementationMemoryClass {
+                ImplementationMemoryClass::NoAdditionalScratch
+            }
+
+            const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+                <$out_kind as FunctionRuntimeType>::REPRESENTATION,
+                <$kind1 as FunctionRuntimeType>::REPRESENTATION,
+                <$kind2 as FunctionRuntimeType>::REPRESENTATION,
+            );
+
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+                let (out, arg1, arg2) = invocation.expect_binary()?;
+                let _ = arg1.try_managed::<$kind1>()?;
+                let _ = arg2.try_managed::<$kind2>()?;
+                let _ = out.try_managed::<$out_kind>()?;
+                Ok(Box::new(Self {
+                    arg1: arg1.try_managed_element::<$element>()?,
+                    arg2: arg2.try_managed_element::<$element>()?,
+                    out: out.try_managed_element::<$element>()?,
+                    marker: PhantomData,
+                }))
+            }
+
+            fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+                Some(crate::ops::arithmetic_full_write_contract(
+                    <$out_kind as FunctionRuntimeType>::REPRESENTATION,
+                ))
+            }
+        }
+
+        impl MechFunctionImpl for $struct_name {
+            fn solve_managed(
+                &self,
+                frame: &mut KernelMemoryFrame<'_>,
+                _services: &mut dyn MechExecutionServices,
+            ) -> MResult<ReactiveSolveStatus> {
+                frame.with_binary_port_views(
+                    &self.arg1,
+                    &self.arg2,
+                    &self.out,
+                    |arg1, arg2, out| {
+                        if arg1.len() != arg2.len() || arg1.len() != out.len() {
+                            return Err(function_shape_contract_violation(
+                                $semantic,
+                                "managed input and output geometry disagree",
+                            ));
+                        }
+                        out.try_fill_column_major(|index| {
+                            let arg1 = arg1
+                                .get_column_major(index)
+                                .expect("validated binary input lane");
+                            let arg2 = arg2
+                                .get_column_major(index)
+                                .expect("validated binary input lane");
+                            Ok($op!(arg1, arg2))
+                        })
+                    },
+                )?;
+                Ok(ReactiveSolveStatus::Changed)
+            }
+
+            fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+                Some(FunctionStatePort::from_cell(self.out.cell()))
+            }
+
+            fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+                Some(crate::ops::arithmetic_full_write_contract(
+                    <$out_kind as FunctionRuntimeType>::REPRESENTATION,
+                ))
+            }
+
+            fn to_string(&self) -> String {
+                format!("{:#?}", self)
+            }
+
+            fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+                Ok(Some(vec![FunctionStatePort::from_cell(self.out.cell())]))
+            }
+        }
+
+        #[cfg(feature = "semantic-compiler")]
+        impl MechFunctionCompiler for $struct_name {
+            fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+                let output = compile_value_cell_register(self.out.cell(), ctx)?;
+                let first = compile_value_cell_register(self.arg1.cell(), ctx)?;
+                let second = compile_value_cell_register(self.arg2.cell(), ctx)?;
+                ctx.emit_binop(hash_str(stringify!($struct_name)), output, first, second);
+                Ok(output)
+            }
+        }
+    };
 }
 
 #[cfg(any(feature = "round", feature = "dynamic-module"))]
@@ -143,20 +271,56 @@ pub use self::catalog::*;
 #[cfg(feature = "native-link")]
 pub mod __mech_native {
     #[cfg(any(
-        feature = "add_assign", feature = "div_assign", feature = "mul_assign",
-        feature = "sub_assign", feature = "abs", feature = "neg", feature = "atan2",
-        feature = "div", feature = "mod", feature = "mul", feature = "pow", feature = "sub",
-        feature = "j0", feature = "j1", feature = "y0", feature = "y1",
-        feature = "lgamma", feature = "tgamma",
-        feature = "log", feature = "log10", feature = "log1p", feature = "log2",
-        feature = "cbrt", feature = "sqrt",
-        feature = "ceil", feature = "floor", feature = "rint", feature = "round",
-        feature = "roundeven", feature = "trunc", feature = "erf", feature = "erfc",
-        feature = "acos", feature = "acosh", feature = "acot", feature = "acsc",
-        feature = "asec", feature = "asin", feature = "asinh", feature = "atan",
-        feature = "atanh", feature = "cos", feature = "cosh", feature = "cot",
-        feature = "csc", feature = "sec", feature = "sin", feature = "sinh",
-        feature = "tan", feature = "tanh"
+        feature = "add_assign",
+        feature = "div_assign",
+        feature = "mul_assign",
+        feature = "sub_assign",
+        feature = "abs",
+        feature = "neg",
+        feature = "atan2",
+        feature = "div",
+        feature = "mod",
+        feature = "mul",
+        feature = "pow",
+        feature = "sub",
+        feature = "j0",
+        feature = "j1",
+        feature = "y0",
+        feature = "y1",
+        feature = "lgamma",
+        feature = "tgamma",
+        feature = "log",
+        feature = "log10",
+        feature = "log1p",
+        feature = "log2",
+        feature = "cbrt",
+        feature = "sqrt",
+        feature = "ceil",
+        feature = "floor",
+        feature = "rint",
+        feature = "round",
+        feature = "roundeven",
+        feature = "trunc",
+        feature = "erf",
+        feature = "erfc",
+        feature = "acos",
+        feature = "acosh",
+        feature = "acot",
+        feature = "acsc",
+        feature = "asec",
+        feature = "asin",
+        feature = "asinh",
+        feature = "atan",
+        feature = "atanh",
+        feature = "cos",
+        feature = "cosh",
+        feature = "cot",
+        feature = "csc",
+        feature = "sec",
+        feature = "sin",
+        feature = "sinh",
+        feature = "tan",
+        feature = "tanh"
     ))]
     pub use crate::catalog::__mech_native::*;
     #[cfg(feature = "add")]
@@ -198,10 +362,15 @@ macro_rules! impl_canonical_registered_math_unop_specializer {
                     .with_compiler_loc());
                 }
                 let input = invocation.input(0).expect("validated unary math input");
-                let output_extents = input.cell()?.resolved_descriptor()?.current_extents()
+                let output_extents = input
+                    .cell()?
+                    .resolved_descriptor()?
+                    .current_extents()
                     .map_err(MechError::from)?;
                 context.bind_resolved_runtime(
-                    mech_core::RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
+                    mech_core::RuntimeBindingSelector::Operation(
+                        context.resolved_call()?.operation.id,
+                    ),
                     mech_core::ExecutionTarget::DirectRuntime,
                     vec![output_extents].into_boxed_slice(),
                     &[input],
@@ -238,7 +407,9 @@ macro_rules! impl_canonical_registered_math_binop_specializer {
                 let second = invocation.input(1).expect("validated binary math rhs");
                 let output_extents = $crate::semantic_broadcast_extents(&[first, second])?;
                 context.bind_resolved_runtime(
-                    mech_core::RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
+                    mech_core::RuntimeBindingSelector::Operation(
+                        context.resolved_call()?.operation.id,
+                    ),
                     mech_core::ExecutionTarget::DirectRuntime,
                     vec![output_extents].into_boxed_slice(),
                     &[first, second],
@@ -249,9 +420,7 @@ macro_rules! impl_canonical_registered_math_binop_specializer {
 }
 
 #[cfg(feature = "source")]
-pub fn semantic_broadcast_extents(
-    inputs: &[&SpecializationInput],
-) -> MResult<Box<[u64]>> {
+pub fn semantic_broadcast_extents(inputs: &[&SpecializationInput]) -> MResult<Box<[u64]>> {
     let mut result: Option<[u64; 2]> = None;
     for input in inputs {
         let extents = input
@@ -262,7 +431,9 @@ pub fn semantic_broadcast_extents(
         if !extents.is_empty() {
             let [rows, columns] = extents.as_ref() else {
                 return Err(MechError::new(
-                    GenericError { msg: "numeric broadcasting requires scalar or rank-two inputs".into() },
+                    GenericError {
+                        msg: "numeric broadcasting requires scalar or rank-two inputs".into(),
+                    },
                     None,
                 )
                 .with_compiler_loc());
@@ -271,11 +442,45 @@ pub fn semantic_broadcast_extents(
                 None => [*rows, *columns],
                 Some([left_rows, left_columns]) => {
                     let axis = |left: u64, right: u64| {
-                        if left == right { Some(left) } else if left == 1 { Some(right) } else if right == 1 { Some(left) } else { None }
+                        if left == right {
+                            Some(left)
+                        } else if left == 1 {
+                            Some(right)
+                        } else if right == 1 {
+                            Some(left)
+                        } else {
+                            None
+                        }
                     };
                     [
-                        axis(left_rows, *rows).ok_or_else(|| MechError::new(DimensionMismatch { dims: vec![left_rows as usize, left_columns as usize, *rows as usize, *columns as usize] }, None).with_compiler_loc())?,
-                        axis(left_columns, *columns).ok_or_else(|| MechError::new(DimensionMismatch { dims: vec![left_rows as usize, left_columns as usize, *rows as usize, *columns as usize] }, None).with_compiler_loc())?,
+                        axis(left_rows, *rows).ok_or_else(|| {
+                            MechError::new(
+                                DimensionMismatch {
+                                    dims: vec![
+                                        left_rows as usize,
+                                        left_columns as usize,
+                                        *rows as usize,
+                                        *columns as usize,
+                                    ],
+                                },
+                                None,
+                            )
+                            .with_compiler_loc()
+                        })?,
+                        axis(left_columns, *columns).ok_or_else(|| {
+                            MechError::new(
+                                DimensionMismatch {
+                                    dims: vec![
+                                        left_rows as usize,
+                                        left_columns as usize,
+                                        *rows as usize,
+                                        *columns as usize,
+                                    ],
+                                },
+                                None,
+                            )
+                            .with_compiler_loc()
+                        })?,
                     ]
                 }
             });
@@ -291,37 +496,37 @@ pub fn semantic_broadcast_extents(
 macro_rules! impl_math_unop {
   ($fxn_name:ident, $type:ident, $op_fxn:ident) => {
     paste!{
-      impl_unop!([<$fxn_name $type:camel S>], $type, $type, [<$op_fxn _op>], crate::ops::unary_full_write_contract);
+      impl_unop!([<$fxn_name $type:camel S>], $type, $type, $type, [<$op_fxn _op>], crate::ops::unary_full_write_contract);
       #[cfg(feature = "matrix1")]
-      impl_unop!([<$fxn_name $type:camel M1>], Matrix1<$type>, Matrix1<$type>, [<$op_fxn _vec_op>], crate::ops::unary_full_write_contract);
+      impl_unop!([<$fxn_name $type:camel M1>], $type, Matrix1<$type>, Matrix1<$type>, [<$op_fxn _op>], crate::ops::unary_full_write_contract);
       #[cfg(feature = "matrix2")]
-      impl_unop!([<$fxn_name $type:camel M2>], Matrix2<$type>, Matrix2<$type>, [<$op_fxn _vec_op>], crate::ops::unary_full_write_contract);
+      impl_unop!([<$fxn_name $type:camel M2>], $type, Matrix2<$type>, Matrix2<$type>, [<$op_fxn _op>], crate::ops::unary_full_write_contract);
       #[cfg(feature = "matrix3")]
-      impl_unop!([<$fxn_name $type:camel M3>], Matrix3<$type>, Matrix3<$type>, [<$op_fxn _vec_op>], crate::ops::unary_full_write_contract);
+      impl_unop!([<$fxn_name $type:camel M3>], $type, Matrix3<$type>, Matrix3<$type>, [<$op_fxn _op>], crate::ops::unary_full_write_contract);
       #[cfg(feature = "matrix4")]
-      impl_unop!([<$fxn_name $type:camel M4>], Matrix4<$type>, Matrix4<$type>, [<$op_fxn _vec_op>], crate::ops::unary_full_write_contract);
+      impl_unop!([<$fxn_name $type:camel M4>], $type, Matrix4<$type>, Matrix4<$type>, [<$op_fxn _op>], crate::ops::unary_full_write_contract);
       #[cfg(feature = "matrix2x3")]
-      impl_unop!([<$fxn_name $type:camel M2x3>], Matrix2x3<$type>, Matrix2x3<$type>, [<$op_fxn _vec_op>], crate::ops::unary_full_write_contract);
+      impl_unop!([<$fxn_name $type:camel M2x3>], $type, Matrix2x3<$type>, Matrix2x3<$type>, [<$op_fxn _op>], crate::ops::unary_full_write_contract);
       #[cfg(feature = "matrix3x2")]
-      impl_unop!([<$fxn_name $type:camel M3x2>], Matrix3x2<$type>, Matrix3x2<$type>, [<$op_fxn _vec_op>], crate::ops::unary_full_write_contract);
+      impl_unop!([<$fxn_name $type:camel M3x2>], $type, Matrix3x2<$type>, Matrix3x2<$type>, [<$op_fxn _op>], crate::ops::unary_full_write_contract);
       #[cfg(feature = "matrixd")]
-      impl_unop!([<$fxn_name $type:camel MD>], DMatrix<$type>, DMatrix<$type>, [<$op_fxn _vec_op>], crate::ops::unary_full_write_contract);
+      impl_unop!([<$fxn_name $type:camel MD>], $type, DMatrix<$type>, DMatrix<$type>, [<$op_fxn _op>], crate::ops::unary_full_write_contract);
       #[cfg(feature = "row_vector2")]
-      impl_unop!([<$fxn_name $type:camel R2>], RowVector2<$type>, RowVector2<$type>, [<$op_fxn _vec_op>], crate::ops::unary_full_write_contract);
+      impl_unop!([<$fxn_name $type:camel R2>], $type, RowVector2<$type>, RowVector2<$type>, [<$op_fxn _op>], crate::ops::unary_full_write_contract);
       #[cfg(feature = "row_vector3")]
-      impl_unop!([<$fxn_name $type:camel R3>], RowVector3<$type>, RowVector3<$type>, [<$op_fxn _vec_op>], crate::ops::unary_full_write_contract);
+      impl_unop!([<$fxn_name $type:camel R3>], $type, RowVector3<$type>, RowVector3<$type>, [<$op_fxn _op>], crate::ops::unary_full_write_contract);
       #[cfg(feature = "row_vector4")]
-      impl_unop!([<$fxn_name $type:camel R4>], RowVector4<$type>, RowVector4<$type>, [<$op_fxn _vec_op>], crate::ops::unary_full_write_contract);
+      impl_unop!([<$fxn_name $type:camel R4>], $type, RowVector4<$type>, RowVector4<$type>, [<$op_fxn _op>], crate::ops::unary_full_write_contract);
       #[cfg(feature = "row_vectord")]
-      impl_unop!([<$fxn_name $type:camel RD>], RowDVector<$type>, RowDVector<$type>, [<$op_fxn _vec_op>], crate::ops::unary_full_write_contract);
+      impl_unop!([<$fxn_name $type:camel RD>], $type, RowDVector<$type>, RowDVector<$type>, [<$op_fxn _op>], crate::ops::unary_full_write_contract);
       #[cfg(feature = "vector2")]
-      impl_unop!([<$fxn_name $type:camel V2>], Vector2<$type>, Vector2<$type>, [<$op_fxn _vec_op>], crate::ops::unary_full_write_contract);
+      impl_unop!([<$fxn_name $type:camel V2>], $type, Vector2<$type>, Vector2<$type>, [<$op_fxn _op>], crate::ops::unary_full_write_contract);
       #[cfg(feature = "vector3")]
-      impl_unop!([<$fxn_name $type:camel V3>], Vector3<$type>, Vector3<$type>, [<$op_fxn _vec_op>], crate::ops::unary_full_write_contract);
+      impl_unop!([<$fxn_name $type:camel V3>], $type, Vector3<$type>, Vector3<$type>, [<$op_fxn _op>], crate::ops::unary_full_write_contract);
       #[cfg(feature = "vector4")]
-      impl_unop!([<$fxn_name $type:camel V4>], Vector4<$type>, Vector4<$type>, [<$op_fxn _vec_op>], crate::ops::unary_full_write_contract);
+      impl_unop!([<$fxn_name $type:camel V4>], $type, Vector4<$type>, Vector4<$type>, [<$op_fxn _op>], crate::ops::unary_full_write_contract);
       #[cfg(feature = "vectord")]
-      impl_unop!([<$fxn_name $type:camel VD>], DVector<$type>, DVector<$type>, [<$op_fxn _vec_op>], crate::ops::unary_full_write_contract);
+      impl_unop!([<$fxn_name $type:camel VD>], $type, DVector<$type>, DVector<$type>, [<$op_fxn _op>], crate::ops::unary_full_write_contract);
     }}}
 
 #[macro_export]

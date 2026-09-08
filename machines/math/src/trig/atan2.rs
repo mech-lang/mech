@@ -6,59 +6,14 @@ use libm::atan2f;
 
 // Atan2 ------------------------------------------------------------------------
 
-#[cfg(feature = "f64")]
-macro_rules! atan2_op {
-    ($arg1:expr, $arg2:expr, $out:expr) => {
-        unsafe {
-            (*$out) = atan2((*$arg1), (*$arg2));
-        }
-    };
-}
-
-#[cfg(feature = "f64")]
-macro_rules! atan2_vec_op {
-    ($arg1:expr, $arg2:expr, $out:expr) => {
-        unsafe {
-            let arg1_deref = &(*$arg1);
-            let arg2_deref = &(*$arg2);
-            let out_deref = &mut *$out;
-            for i in 0..arg1_deref.len() {
-                (out_deref[i]) = atan2(arg1_deref[i], arg2_deref[i]);
-            }
-        }
-    };
-}
-
-#[cfg(feature = "f32")]
-macro_rules! atan2f_op {
-    ($arg1:expr, $arg2:expr, $out:expr) => {
-        unsafe {
-            (*$out) = atan2f((*$arg1), (*$arg2));
-        }
-    };
-}
-
-#[cfg(feature = "f32")]
-macro_rules! atan2f_vec_op {
-    ($arg1:expr, $arg2:expr, $out:expr) => {
-        unsafe {
-            let arg1_deref = &(*$arg1);
-            let arg2_deref = &(*$arg2);
-            let out_deref = &mut *$out;
-            for i in 0..arg1_deref.len() {
-                (out_deref[i]) = atan2f(arg1_deref[i], arg2_deref[i]);
-            }
-        }
-    };
-}
-
 macro_rules! impl_two_arg_fxn {
-    ($struct_name:ident, $kind1:ty, $kind2:ty, $out_kind:ty, $op:ident) => {
+    ($struct_name:ident, $element:ty, $kind1:ty, $kind2:ty, $out_kind:ty, $op:path) => {
         #[derive(Debug)]
         pub(crate) struct $struct_name {
-            arg1: Ref<$kind1>,
-            arg2: Ref<$kind2>,
-            out: Ref<$out_kind>,
+            arg1: ManagedPort<$element>,
+            arg2: ManagedPort<$element>,
+            out: ManagedPort<$element>,
+            marker: PhantomData<($kind1, $kind2, $out_kind)>,
         }
         impl MechFunctionFactory for $struct_name
         where
@@ -84,22 +39,52 @@ macro_rules! impl_two_arg_fxn {
 
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (out, arg1, arg2) = invocation.expect_binary()?;
-                let arg1: Ref<$kind1> = arg1.try_ref()?;
-                let arg2: Ref<$kind2> = arg2.try_ref()?;
-                let out: Ref<$out_kind> = out.try_ref()?;
-                Ok(Box::new($struct_name { arg1, arg2, out }))
+                let _ = arg1.try_managed::<$kind1>()?;
+                let _ = arg2.try_managed::<$kind2>()?;
+                let _ = out.try_managed::<$out_kind>()?;
+                let arg1 = arg1.try_managed_element::<$element>()?;
+                let arg2 = arg2.try_managed_element::<$element>()?;
+                let out = out.try_managed_element::<$element>()?;
+                Ok(Box::new($struct_name {
+                    arg1,
+                    arg2,
+                    out,
+                    marker: PhantomData,
+                }))
             }
         }
         impl MechFunctionImpl for $struct_name {
-            fn solve_result(&self) -> MResult<()> {
-                let arg1_ptr = self.arg1.as_ptr();
-                let arg2_ptr = self.arg2.as_ptr();
-                let out_ptr = self.out.as_mut_ptr();
-                $op!(arg1_ptr, arg2_ptr, out_ptr);
-                Ok(())
+            fn solve_managed(
+                &self,
+                frame: &mut mech_core::KernelMemoryFrame<'_>,
+                _services: &mut dyn mech_core::MechExecutionServices,
+            ) -> MResult<mech_core::ReactiveSolveStatus> {
+                frame.with_binary_port_views(
+                    &self.arg1,
+                    &self.arg2,
+                    &self.out,
+                    |arg1, arg2, out| {
+                        if arg1.len() != arg2.len() || arg1.len() != out.len() {
+                            return Err(function_shape_contract_violation(
+                                "math/atan2",
+                                "managed input and output geometry disagree",
+                            ));
+                        }
+                        out.try_fill_column_major(|index| {
+                            let arg1 = arg1
+                                .get_column_major(index)
+                                .expect("validated atan2 input lane");
+                            let arg2 = arg2
+                                .get_column_major(index)
+                                .expect("validated atan2 input lane");
+                            Ok($op(arg1, arg2))
+                        })
+                    },
+                )?;
+                Ok(mech_core::ReactiveSolveStatus::Changed)
             }
             fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-                Some(FunctionStatePort::from_ref(&self.out))
+                Some(FunctionStatePort::from_cell(self.out.cell()))
             }
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
                 Some(crate::ops::arithmetic_full_write_contract(
@@ -110,7 +95,7 @@ macro_rules! impl_two_arg_fxn {
                 format!("{:#?}", self)
             }
             fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
-                Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
+                Ok(Some(vec![FunctionStatePort::from_cell(self.out.cell())]))
             }
         }
         #[cfg(feature = "semantic-compiler")]
@@ -118,9 +103,9 @@ macro_rules! impl_two_arg_fxn {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 let mut registers = [0, 0, 0];
 
-                registers[0] = compile_register_brrw!(self.out, ctx);
-                registers[1] = compile_register_brrw!(self.arg1, ctx);
-                registers[2] = compile_register_brrw!(self.arg2, ctx);
+                registers[0] = compile_value_cell_register(self.out.cell(), ctx)?;
+                registers[1] = compile_value_cell_register(self.arg1.cell(), ctx)?;
+                registers[2] = compile_value_cell_register(self.arg2.cell(), ctx)?;
 
                 ctx.emit_binop(
                     hash_str(stringify!($struct_name)),
@@ -140,14 +125,14 @@ macro_rules! impl_atan2 {
     paste!{
       $(
         #[cfg(all(feature = $type_string, feature = $feature))]
-        impl_two_arg_fxn!([<$struct_name $type:camel>], $kind<$type>, $kind<$type>, $kind<$type>, $op);
+        impl_two_arg_fxn!([<$struct_name $type:camel>], $type, $kind<$type>, $kind<$type>, $kind<$type>, $op);
       )*
     }
   };
 }
 
 impl_atan2!(
-  f64, "f64", atan2_vec_op,
+  f64, "f64", atan2,
   Atan2M1, Matrix1, "matrix1";
   Atan2M2, Matrix2, "matrix2";
   Atan2M3, Matrix3, "matrix3";
@@ -166,7 +151,7 @@ impl_atan2!(
 );
 
 impl_atan2!(
-  f32, "f32", atan2f_vec_op,
+  f32, "f32", atan2f,
   Atan2M1, Matrix1, "matrix1";
   Atan2M2, Matrix2, "matrix2";
   Atan2M3, Matrix3, "matrix3";
@@ -185,10 +170,10 @@ impl_atan2!(
 );
 
 #[cfg(feature = "f32")]
-impl_two_arg_fxn!(Atan2F32, f32, f32, f32, atan2f_op);
+impl_two_arg_fxn!(Atan2F32, f32, f32, f32, f32, atan2f);
 
 #[cfg(feature = "f64")]
-impl_two_arg_fxn!(Atan2F64, f64, f64, f64, atan2_op);
+impl_two_arg_fxn!(Atan2F64, f64, f64, f64, f64, atan2);
 
 impl_canonical_math_same_type_binop_specializer!(MathAtan2, Atan2, "math/atan2");
 
@@ -200,13 +185,26 @@ mod canonical_port_tests {
     fn scalar_atan2_uses_exact_ports_and_typed_state() {
         let output = ValueCell::from_exact(0.0_f64).unwrap();
         let alias = output.clone();
-        let function = Atan2F64::new_invocation(FunctionInvocation::binary(
+        let invocation = FunctionInvocation::binary(
             output.clone(),
             ValueCell::from_exact(1.0_f64).unwrap(),
             ValueCell::from_exact(1.0_f64).unwrap(),
-        ))
+        );
+        let implementation = Atan2F64::new_invocation(invocation.clone()).unwrap();
+        let operation = ResolvedOperationDescriptor::from_name(
+            "math/atan2",
+            Atan2F64::declared_operation_contract().unwrap().clone(),
+        )
         .unwrap();
-        function.solve_result().unwrap();
+        let function = SpecializedFunction::syntax_directed(
+            (implementation, invocation),
+            operation,
+            RuntimeFunctionId::from_name("Atan2F64"),
+            ExecutionTarget::DirectRuntime,
+            Atan2F64::implementation_memory_class(),
+        )
+        .unwrap();
+        function.instance().solve_result().unwrap();
         let value = output.snapshot().unwrap();
         let ValueData::F64(value) = value.data() else {
             panic!("expected f64 atan2 output")
@@ -215,7 +213,7 @@ mod canonical_port_tests {
         assert!(output.same_cell(&alias));
 
         with_reactive_journal_participant(|mut participant| -> MResult<()> {
-            participant.capture_function_state(function.as_ref())?;
+            participant.capture_function_instance(function.instance())?;
             output.replace(&ValueCell::from_exact(99.0_f64)?.snapshot()?)?;
             participant.preflight_restore_before()?;
             participant.apply_restore_before();

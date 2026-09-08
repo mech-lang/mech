@@ -11,9 +11,9 @@ pub(crate) struct SetUnionFxn {
 }
 
 impl MechFunctionFactory for SetUnionFxn {
-            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
-                mech_core::ImplementationMemoryClass::CanonicalSortUnique
-            }
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalSortUnique
+    }
 
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
         FunctionValueRepresentation::Set,
@@ -44,12 +44,14 @@ impl MechFunctionImpl for SetUnionFxn {
         self.out.transaction_state_ports()
     }
 
-    fn solve_result(&self) -> MResult<()> {
-        self.out.canonical_value().replace_set(
-            self.lhs
-                .canonical_value()
-                .set_union_elements(self.rhs.canonical_value())?,
-        )
+    fn solve_managed(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        let next = self.lhs.union_elements(frame, &self.rhs)?;
+        self.out.stage_set(frame, next)?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {

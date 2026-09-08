@@ -64,7 +64,6 @@ mod source_only {
     ) -> MResult<ValueCell> {
         let plan = p.plan();
         let instance = specialized.instance();
-        let implementation = instance.implementation();
         trace_println!(
             p,
             "{}",
@@ -72,7 +71,8 @@ mod source_only {
                 "arm",
                 format!(
                     "selected {} args=[{}]",
-                    implementation
+                    instance
+                        .implementation()
                         .to_string()
                         .lines()
                         .next()
@@ -85,7 +85,7 @@ mod source_only {
                 ),
             )
         );
-        solve_specialized_initial_output(implementation, &plan, p)?;
+        solve_specialized_initial_output(instance, &plan, p)?;
         let result = instance.output().clone();
         trace_println!(p, "{}", format_trace("arm", format!("result {result:?}")));
         plan.register_specialized(specialized)?;
@@ -112,7 +112,7 @@ mod source_only {
         specialized: SpecializedFunction,
     ) -> MResult<ValueCell> {
         let instance = specialized.instance();
-        solve_specialized_initial_output(instance.implementation(), plan, p)?;
+        solve_specialized_initial_output(instance, plan, p)?;
         let output = instance.output().clone();
         plan.register_specialized(specialized)?;
         Ok(output)
@@ -136,12 +136,12 @@ mod source_only {
     }
 
     fn solve_specialized_initial_output(
-        function: &dyn MechFunction,
+        function: &FunctionInstance,
         plan: &Plan,
         p: &InterpreterExecution<'_>,
     ) -> MResult<()> {
         if !plan.activation_registration_active() {
-            match function.initial_solve_policy() {
+            match function.implementation().initial_solve_policy() {
                 InitialSolvePolicy::Solve => {
                     p.with_services(|services| function.solve_result_with(services))?;
                 }

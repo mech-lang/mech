@@ -225,6 +225,15 @@ pub struct MemoryLedgerSnapshot {
     pub retired_allocations: u32,
 }
 
+/// Deterministic cold-path fault points used by the ownership qualification
+/// suites. They do not change any size, limit, or allocation policy.
+#[doc(hidden)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum MemoryFailurePoint {
+    Admission,
+    HostAllocation,
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct ManagedAllocationObservation {
     pub handle: AllocationHandle,
@@ -323,7 +332,7 @@ impl InitializationMap {
         self.words.fill(0);
     }
 
-    fn mark_range(&mut self, start: u64, length: u64) -> MemoryRuntimeResult<()> {
+    pub(super) fn mark_range(&mut self, start: u64, length: u64) -> MemoryRuntimeResult<()> {
         let end = start
             .checked_add(length)
             .ok_or(MemoryRuntimeError::CapacityExceeded {
@@ -511,8 +520,9 @@ impl MemoryReservation {
             return;
         }
         let mut state = self.domain.borrow_mut();
-        let result = state.release_reservation(self.bytes);
-        debug_assert!(result.is_ok());
+        state
+            .release_reservation(self.bytes)
+            .expect("a live reservation owns its exact ledger charge");
         state.admissions.remove(&self.admission);
         if state.revisions.get(&self.revision) == Some(&PlanRevisionLifecycle::Admitted) {
             state
@@ -536,7 +546,11 @@ impl Drop for MemoryReservation {
 /// Turn-, transaction-, and transfer-lifetime objects can only be leased while
 /// a scope covering their declared interval is active.
 pub struct MemoryPlanScope {
-    domain: Weak<RefCell<DomainState>>,
+    // A live execution scope keeps the owner-thread domain alive until its
+    // final lease/reuse cleanup is complete.  A weak reference allowed the
+    // registry to disappear before this destructor could retire the active
+    // reuse incarnation.
+    domain: Rc<RefCell<DomainState>>,
     active_point: Rc<Cell<Option<MemoryPlanPoint>>>,
     cleanup_pending: Rc<Cell<bool>>,
     point: MemoryPlanPoint,
@@ -557,11 +571,10 @@ impl Drop for MemoryPlanScope {
         if self.active_point.get() == Some(self.point) {
             self.active_point.set(None);
             self.cleanup_pending.set(true);
-            if let Some(domain) = self.domain.upgrade()
-                && let Ok(mut state) = domain.try_borrow_mut()
-            {
-                state.finish_plan_scope_cleanup();
-            }
+            // Kernel/user callbacks never run while DomainState is borrowed.
+            // Consequently scope destruction can finish synchronously and
+            // must not silently abandon cleanup on a transient borrow.
+            self.domain.borrow_mut().finish_plan_scope_cleanup();
         }
         self.active = false;
     }
@@ -612,8 +625,8 @@ impl DeviceAllocationOwner {
 
 impl Drop for DeviceAllocationOwner {
     fn drop(&mut self) {
-        let result = self.release();
-        debug_assert!(result.is_ok());
+        self.release()
+            .expect("a registered device owner retains its allocation record");
     }
 }
 
@@ -701,13 +714,43 @@ impl Drop for DeviceSubmissionHold {
 pub struct RealizedMemoryPlan {
     domain: MemoryDomainId,
     revision: MemoryPlanRevision,
-    domain_state: Weak<RefCell<DomainState>>,
+    domain_state: Rc<RefCell<DomainState>>,
+    _storage_ownership: Rc<()>,
     bindings: Rc<RefCell<Box<[(PlanObjectKey, RuntimeBinding)]>>>,
     lifetimes: Rc<Box<[(PlanObjectKey, MemoryLifetime)]>>,
     transactions: Rc<Box<[TransactionRequirement]>>,
+    owned_value_plan: Option<Rc<crate::OwnedValueMemoryPlan>>,
+    #[cfg(feature = "functions")]
+    call_plan: Option<Rc<crate::CallMemoryPlan>>,
 }
 
 impl RealizedMemoryPlan {
+    pub(crate) fn owner_domain(&self) -> MemoryDomain {
+        MemoryDomain {
+            state: self.domain_state.clone(),
+        }
+    }
+
+    pub(crate) fn owned_value_plan(&self) -> Option<&crate::OwnedValueMemoryPlan> {
+        self.owned_value_plan.as_deref()
+    }
+
+    #[cfg(feature = "functions")]
+    pub(crate) fn call_plan(&self) -> Option<&Rc<crate::CallMemoryPlan>> {
+        self.call_plan.as_ref()
+    }
+
+    pub(crate) fn has_call_plan(&self) -> bool {
+        #[cfg(feature = "functions")]
+        {
+            self.call_plan.is_some()
+        }
+        #[cfg(not(feature = "functions"))]
+        {
+            false
+        }
+    }
+
     pub const fn domain(&self) -> MemoryDomainId {
         self.domain
     }
@@ -735,11 +778,7 @@ impl RealizedMemoryPlan {
             .ok()
             .map(|index| bindings[index].1.clone())
             .ok_or(MemoryRuntimeError::UnknownPlanObject { key })?;
-        let state = self
-            .domain_state
-            .upgrade()
-            .ok_or(MemoryRuntimeError::DomainClosed)?;
-        let state = state.borrow();
+        let state = self.domain_state.borrow();
         if state.id != self.domain {
             return Err(MemoryRuntimeError::WrongMemoryDomain {
                 expected: self.domain,
@@ -826,11 +865,7 @@ impl RealizedMemoryPlan {
                 });
             }
         }
-        let state = self
-            .domain_state
-            .upgrade()
-            .ok_or(MemoryRuntimeError::DomainClosed)?;
-        let mut state = state.borrow_mut();
+        let mut state = self.domain_state.borrow_mut();
         let region = state
             .regions
             .get_mut(&key)
@@ -849,6 +884,7 @@ pub(crate) struct ActiveLeaseRecord {
 }
 
 pub(crate) struct AllocationRecord {
+    realization_owner: Weak<()>,
     pub state: OwnedAllocationState,
     pub block: Option<HostBlock>,
     pub capacity_bytes: u64,
@@ -870,12 +906,24 @@ pub(crate) struct AllocationSlot {
     pub record: Option<AllocationRecord>,
 }
 
+impl Drop for AllocationRecord {
+    fn drop(&mut self) {
+        // Revoking a registry does not free bytes retained by live payload
+        // containers. Their independent envelope owner performs that final
+        // deallocation, without upgrading or borrowing the memory domain.
+        if let Some(owner) = &self.payload_owner {
+            owner.revoke();
+        }
+    }
+}
+
 pub(crate) struct DomainState {
     pub id: MemoryDomainId,
     pub closed: bool,
     pub next_revision: MemoryPlanRevision,
     revisions: BTreeMap<MemoryPlanRevision, PlanRevisionLifecycle>,
     pub(crate) active_revision: Option<MemoryPlanRevision>,
+    pub(crate) execution_revision: Option<MemoryPlanRevision>,
     next_admission: u64,
     admissions: BTreeMap<u64, MemoryPlanRevision>,
     pub next_publication: PublishedValueVersion,
@@ -888,9 +936,65 @@ pub(crate) struct DomainState {
     active_reuse_regions: BTreeMap<(MemoryPlanRevision, ReuseGroupId), Option<PlanObjectKey>>,
     pub active_point: Rc<Cell<Option<MemoryPlanPoint>>>,
     scope_cleanup_pending: Rc<Cell<bool>>,
+    failure_injection: Option<(MemoryFailurePoint, u32)>,
 }
 
 impl DomainState {
+    fn check_failure_injection(
+        &mut self,
+        point: MemoryFailurePoint,
+        requested: u64,
+        alignment: u32,
+        space: MemorySpace,
+    ) -> MemoryRuntimeResult<()> {
+        if let Some((selected, remaining)) = &mut self.failure_injection {
+            if *selected == point {
+                if *remaining != 0 {
+                    *remaining -= 1;
+                } else {
+                    self.failure_injection = None;
+                    return Err(MemoryRuntimeError::AllocationFailed {
+                        object: None,
+                        requested,
+                        alignment,
+                        space,
+                    });
+                }
+            }
+        }
+        Ok(())
+    }
+
+    pub(crate) fn validate_publishable_revision(
+        &self,
+        revision: MemoryPlanRevision,
+    ) -> MemoryRuntimeResult<()> {
+        if !matches!(
+            self.revisions.get(&revision),
+            Some(PlanRevisionLifecycle::Realized | PlanRevisionLifecycle::Active)
+        ) {
+            return Err(MemoryRuntimeError::InvalidPlanRevision {
+                expected: self.active_revision.unwrap_or(self.next_revision),
+                actual: revision,
+            });
+        }
+        Ok(())
+    }
+
+    pub(crate) fn publish_ready_revision(&mut self, revision: MemoryPlanRevision) {
+        if let Some(previous) = self.active_revision {
+            *self
+                .revisions
+                .get_mut(&previous)
+                .expect("active revision has a lifecycle record") = PlanRevisionLifecycle::Realized;
+        }
+        *self
+            .revisions
+            .get_mut(&revision)
+            .expect("ready revision lifecycle was validated") = PlanRevisionLifecycle::Active;
+        self.active_revision = Some(revision);
+    }
+
     fn finish_plan_scope_cleanup(&mut self) {
         if !self.scope_cleanup_pending.get() {
             return;
@@ -898,6 +1002,7 @@ impl DomainState {
         for active in self.active_reuse_regions.values_mut() {
             *active = None;
         }
+        self.execution_revision = None;
         self.scope_cleanup_pending.set(false);
     }
 
@@ -1005,10 +1110,41 @@ pub struct MemoryDomain {
 }
 
 impl MemoryDomain {
+    pub(crate) fn realize_owned_value_plan(
+        &self,
+        plan: crate::OwnedValueMemoryPlan,
+    ) -> MemoryRuntimeResult<RealizedMemoryPlan> {
+        let revision = self.issue_plan_revision()?;
+        let reservation = self.prepare_realization(RuntimePlanView::new(
+            revision,
+            &plan.allocations,
+            &plan.arenas,
+            plan.demand,
+            plan.output_bytes,
+            plan.target.limits,
+            &plan.transactions,
+            2,
+            &[],
+        ))?;
+        let mut realized = self.materialize(reservation)?;
+        realized.owned_value_plan = Some(Rc::new(plan));
+        Ok(realized)
+    }
+
     #[cfg(feature = "functions")]
     pub fn realize_call_memory_plan(
         &self,
         plan: &crate::CallMemoryPlan,
+    ) -> MemoryRuntimeResult<RealizedMemoryPlan> {
+        let realized = self.prepare_call_memory_realization(Rc::new(plan.clone()))?;
+        self.activate_realization(&realized)?;
+        Ok(realized)
+    }
+
+    #[cfg(feature = "functions")]
+    pub(crate) fn prepare_call_memory_realization(
+        &self,
+        plan: Rc<crate::CallMemoryPlan>,
     ) -> MemoryRuntimeResult<RealizedMemoryPlan> {
         let mut arenas: BTreeMap<MemoryArenaId, ArenaPlan> = BTreeMap::new();
         for allocation in plan.allocations.iter() {
@@ -1094,8 +1230,8 @@ impl MemoryDomain {
             max_concurrent_leases,
             &[],
         ))?;
-        let realized = self.materialize(reservation)?;
-        self.activate_realization(&realized)?;
+        let mut realized = self.materialize(reservation)?;
+        realized.call_plan = Some(plan);
         Ok(realized)
     }
 
@@ -1108,6 +1244,7 @@ impl MemoryDomain {
                 next_revision: MemoryPlanRevision::initial(),
                 revisions: BTreeMap::new(),
                 active_revision: None,
+                execution_revision: None,
                 next_admission: 1,
                 admissions: BTreeMap::new(),
                 next_publication: PublishedValueVersion::initial(),
@@ -1120,12 +1257,27 @@ impl MemoryDomain {
                 active_reuse_regions: BTreeMap::new(),
                 active_point: Rc::new(Cell::new(None)),
                 scope_cleanup_pending: Rc::new(Cell::new(false)),
+                failure_injection: None,
             })),
         })
     }
 
     pub fn id(&self) -> MemoryDomainId {
         self.state.borrow().id
+    }
+
+    #[doc(hidden)]
+    pub fn inject_failure_after(
+        &self,
+        point: MemoryFailurePoint,
+        successful_steps: u32,
+    ) -> MemoryRuntimeResult<()> {
+        let mut state = self.state.borrow_mut();
+        if state.closed {
+            return Err(MemoryRuntimeError::DomainClosed);
+        }
+        state.failure_injection = Some((point, successful_steps));
+        Ok(())
     }
 
     pub fn is_closed(&self) -> bool {
@@ -1138,6 +1290,21 @@ impl MemoryDomain {
         } else {
             Ok(())
         }
+    }
+
+    /// A convenience call may not prepare a new independent realization
+    /// inside an existing execution/publication scope. Executors must pass
+    /// their scope explicitly instead.
+    #[cfg(feature = "functions")]
+    pub(crate) fn require_standalone_execution(&self) -> MemoryRuntimeResult<()> {
+        let state = self.state.borrow();
+        if state.closed {
+            return Err(MemoryRuntimeError::DomainClosed);
+        }
+        if state.active_point.get().is_some() || state.publication_in_progress {
+            return Err(MemoryRuntimeError::TurnInFlight);
+        }
+        Ok(())
     }
 
     pub fn issue_plan_revision(&self) -> MemoryRuntimeResult<MemoryPlanRevision> {
@@ -1184,6 +1351,9 @@ impl MemoryDomain {
         if state.closed {
             return Err(MemoryRuntimeError::DomainClosed);
         }
+        if state.publication_in_progress {
+            return Err(MemoryRuntimeError::PublicationInProgress);
+        }
         if state.active_point.get().is_some()
             || state.allocations.iter().any(|slot| {
                 slot.record
@@ -1225,6 +1395,7 @@ impl MemoryDomain {
         if state.closed {
             return Err(MemoryRuntimeError::DomainClosed);
         }
+        state.check_failure_injection(MemoryFailurePoint::Admission, 0, 1, MemorySpace::Host)?;
         if state.revisions.get(&view.revision) != Some(&PlanRevisionLifecycle::Candidate) {
             return Err(MemoryRuntimeError::InvalidPlanRevision {
                 expected: state.active_revision.unwrap_or(state.next_revision),
@@ -1417,12 +1588,20 @@ impl MemoryDomain {
                         })?;
                     let block = match arena.space {
                         MemorySpace::Device { .. } => None,
-                        MemorySpace::Host | MemorySpace::ResidentCpu => Some(HostBlock::allocate(
-                            None,
-                            arena.capacity_bytes,
-                            arena.alignment,
-                            arena.space,
-                        )?),
+                        MemorySpace::Host | MemorySpace::ResidentCpu => {
+                            self.state.borrow_mut().check_failure_injection(
+                                MemoryFailurePoint::HostAllocation,
+                                arena.capacity_bytes,
+                                arena.alignment,
+                                arena.space,
+                            )?;
+                            Some(HostBlock::allocate(
+                                None,
+                                arena.capacity_bytes,
+                                arena.alignment,
+                                arena.space,
+                            )?)
+                        }
                     };
                     let mut leases = Vec::new();
                     leases
@@ -1542,10 +1721,16 @@ impl MemoryDomain {
                 actual: reservation.revision,
             });
         }
+        // Published cells, candidates, and frames retain the realization.
+        // Registry ownership is weak so it cannot form a session cycle or
+        // keep an abandoned candidate alive. Cleanup never needs a Drop-time
+        // RefCell borrow: collect observes the exhausted owner token.
+        let storage_ownership = Rc::new(());
         let mut arena_handles = BTreeMap::new();
         for pending in contiguous {
             let capacity = pending.authorization.capacity_bytes;
             let handle = state.insert_record(AllocationRecord {
+                realization_owner: Rc::downgrade(&storage_ownership),
                 state: OwnedAllocationState::Live,
                 block: pending.block,
                 capacity_bytes: capacity,
@@ -1566,6 +1751,7 @@ impl MemoryDomain {
         for pending in indirect {
             let capacity = pending.authorization.capacity_bytes;
             let handle = state.insert_record(AllocationRecord {
+                realization_owner: Rc::downgrade(&storage_ownership),
                 state: OwnedAllocationState::Live,
                 block: None,
                 capacity_bytes: capacity,
@@ -1701,10 +1887,14 @@ impl MemoryDomain {
         Ok(RealizedMemoryPlan {
             domain: state.id,
             revision: reservation.revision,
-            domain_state: Rc::downgrade(&self.state),
+            domain_state: self.state.clone(),
+            _storage_ownership: storage_ownership,
             bindings: Rc::new(RefCell::new(bindings.into_boxed_slice())),
             lifetimes: Rc::new(lifetimes.into_boxed_slice()),
             transactions: Rc::new(transactions),
+            owned_value_plan: None,
+            #[cfg(feature = "functions")]
+            call_plan: None,
         })
     }
 
@@ -1746,12 +1936,32 @@ impl MemoryDomain {
     }
 
     pub fn collect_retired(&self) -> MemoryRuntimeResult<u32> {
+        // Revisions whose last cell/candidate/call owner disappeared can be
+        // retired without allocating a cleanup queue or borrowing in Drop.
+        let slots = self.state.borrow().allocations.len();
+        for index in 0..slots {
+            let abandoned = {
+                let state = self.state.borrow();
+                let slot = &state.allocations[index];
+                slot.record
+                    .as_ref()
+                    .filter(|record| {
+                        record.state == OwnedAllocationState::Live
+                            && record.realization_owner.strong_count() == 0
+                    })
+                    .map(|_| AllocationHandle::new(state.id, index as u32, slot.generation))
+            };
+            if let Some(handle) = abandoned {
+                self.retire(handle)?;
+            }
+        }
         let mut state = self.state.borrow_mut();
         let mut reclaimed = 0_u32;
         let mut reclaimed_bytes = 0_u64;
         for slot in &mut state.allocations {
             let reclaimable = slot.record.as_ref().is_some_and(|record| {
                 record.state == OwnedAllocationState::Retired
+                    && record.realization_owner.strong_count() == 0
                     && record.leases.is_empty()
                     && record.snapshot_pins == 0
                     && record.submission_pins == 0
@@ -1820,6 +2030,9 @@ impl MemoryDomain {
             if state.closed {
                 return Ok(());
             }
+            if state.publication_in_progress {
+                return Err(MemoryRuntimeError::PublicationInProgress);
+            }
             if state.ledger.active_reservations != 0 || state.active_point.get().is_some() {
                 return Err(MemoryRuntimeError::TurnInFlight);
             }
@@ -1851,11 +2064,43 @@ impl MemoryDomain {
         }
     }
 
+    #[track_caller]
     pub fn enter_plan_point(&self, point: MemoryPlanPoint) -> MemoryRuntimeResult<MemoryPlanScope> {
+        self.enter_revision_point(point, None)
+    }
+
+    /// Executes an admitted call candidate without replacing the active
+    /// publication plan. A failed kernel or candidate leaves the old plan
+    /// intact; authority lasts only for this owner-thread execution scope.
+    #[cfg(feature = "functions")]
+    #[track_caller]
+    pub(crate) fn enter_realized_plan_point(
+        &self,
+        realized: &RealizedMemoryPlan,
+        point: MemoryPlanPoint,
+    ) -> MemoryRuntimeResult<MemoryPlanScope> {
+        if realized.domain() != self.id() {
+            return Err(MemoryRuntimeError::WrongMemoryDomain {
+                expected: self.id(),
+                actual: realized.domain(),
+            });
+        }
+        self.enter_revision_point(point, Some(realized.revision()))
+    }
+
+    #[track_caller]
+    fn enter_revision_point(
+        &self,
+        point: MemoryPlanPoint,
+        requested_revision: Option<MemoryPlanRevision>,
+    ) -> MemoryRuntimeResult<MemoryPlanScope> {
         let mut state = self.state.borrow_mut();
         state.finish_plan_scope_cleanup();
         if state.closed {
             return Err(MemoryRuntimeError::DomainClosed);
+        }
+        if state.publication_in_progress {
+            return Err(MemoryRuntimeError::PublicationInProgress);
         }
         if state.active_point.get().is_some() {
             return Err(MemoryRuntimeError::TurnInFlight);
@@ -1870,12 +2115,21 @@ impl MemoryDomain {
                 handle: AllocationHandle::new(state.id, slot as u32, entry.generation),
             });
         }
-        let revision = state
-            .active_revision
-            .ok_or(MemoryRuntimeError::InvalidPlanRevision {
+        let revision = requested_revision.or(state.active_revision).ok_or(
+            MemoryRuntimeError::InvalidPlanRevision {
                 expected: state.next_revision,
                 actual: state.next_revision,
-            })?;
+            },
+        )?;
+        if !matches!(
+            state.revisions.get(&revision),
+            Some(PlanRevisionLifecycle::Realized | PlanRevisionLifecycle::Active)
+        ) {
+            return Err(MemoryRuntimeError::InvalidPlanRevision {
+                expected: state.active_revision.unwrap_or(state.next_revision),
+                actual: revision,
+            });
+        }
         {
             let DomainState {
                 regions,
@@ -1889,8 +2143,9 @@ impl MemoryDomain {
                 if active.is_some() {
                     return Err(MemoryRuntimeError::TurnInFlight);
                 }
-                let mut candidates = regions.iter().filter(|(_, region)| {
-                    region.reuse_group == Some(*group)
+                let mut candidates = regions.iter().filter(|(key, region)| {
+                    key.revision() == revision
+                        && region.reuse_group == Some(*group)
                         && runtime_lifetime_is_active(region.lifetime, Some(point))
                 });
                 let Some((key, region)) = candidates.next() else {
@@ -1910,8 +2165,9 @@ impl MemoryDomain {
                 }
                 let candidate = regions
                     .iter()
-                    .find(|(_, region)| {
-                        region.reuse_group == Some(*group)
+                    .find(|(key, region)| {
+                        key.revision() == revision
+                            && region.reuse_group == Some(*group)
                             && runtime_lifetime_is_active(region.lifetime, Some(point))
                     })
                     .map(|(key, _)| *key);
@@ -1930,13 +2186,25 @@ impl MemoryDomain {
             }
         }
         state.active_point.set(Some(point));
+        state.execution_revision = Some(revision);
         Ok(MemoryPlanScope {
-            domain: Rc::downgrade(&self.state),
+            domain: Rc::clone(&self.state),
             active_point: Rc::clone(&state.active_point),
             cleanup_pending: Rc::clone(&state.scope_cleanup_pending),
             point,
             active: true,
         })
+    }
+
+    /// Cell reads may join an existing scope. They never create an inner
+    /// execution/publication scope while a kernel is running.
+    pub(crate) fn enter_cell_read_scope(&self) -> MemoryRuntimeResult<Option<MemoryPlanScope>> {
+        self.ensure_open()?;
+        if self.state.borrow().active_point.get().is_some() {
+            Ok(None)
+        } else {
+            self.enter_plan_point(MemoryPlanPoint::new(0)).map(Some)
+        }
     }
 
     /// Registers the actual device allocation created for one planned device

@@ -3,6 +3,22 @@ use crate::*;
 // Max ------------------------------------------------------------------------
 
 macro_rules! max_scalar_lhs_op {
+    (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => { apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::RightScalar, |lhs, rhs| if lhs >= rhs { lhs.to_owned() } else { rhs.to_owned() }) };
+    (managed, $lhs:expr, $rhs:expr, $out:expr) => {
+        apply_managed_comparison(
+            $lhs,
+            $rhs,
+            $out,
+            ComparisonBroadcast::RightScalar,
+            |lhs, rhs| {
+                if lhs.partial_cmp(&rhs) != Some(std::cmp::Ordering::Less) {
+                    lhs
+                } else {
+                    rhs
+                }
+            },
+        )
+    };
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
             for i in 0..(&*$lhs).len() {
@@ -19,6 +35,22 @@ macro_rules! max_scalar_lhs_op {
 }
 
 macro_rules! max_scalar_rhs_op {
+    (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => { apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::LeftScalar, |lhs, rhs| if lhs >= rhs { lhs.to_owned() } else { rhs.to_owned() }) };
+    (managed, $lhs:expr, $rhs:expr, $out:expr) => {
+        apply_managed_comparison(
+            $lhs,
+            $rhs,
+            $out,
+            ComparisonBroadcast::LeftScalar,
+            |lhs, rhs| {
+                if lhs.partial_cmp(&rhs) != Some(std::cmp::Ordering::Less) {
+                    lhs
+                } else {
+                    rhs
+                }
+            },
+        )
+    };
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
             for i in 0..(&*$rhs).len() {
@@ -35,6 +67,16 @@ macro_rules! max_scalar_rhs_op {
 }
 
 macro_rules! max_vec_op {
+    (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => { apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::Exact, |lhs, rhs| if lhs >= rhs { lhs.to_owned() } else { rhs.to_owned() }) };
+    (managed, $lhs:expr, $rhs:expr, $out:expr) => {
+        apply_managed_comparison($lhs, $rhs, $out, ComparisonBroadcast::Exact, |lhs, rhs| {
+            if lhs.partial_cmp(&rhs) != Some(std::cmp::Ordering::Less) {
+                lhs
+            } else {
+                rhs
+            }
+        })
+    };
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
             for i in 0..(&*$lhs).len() {
@@ -51,6 +93,16 @@ macro_rules! max_vec_op {
 }
 
 macro_rules! max_op {
+    (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => { apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::Exact, |lhs, rhs| if lhs >= rhs { lhs.to_owned() } else { rhs.to_owned() }) };
+    (managed, $lhs:expr, $rhs:expr, $out:expr) => {
+        apply_managed_comparison($lhs, $rhs, $out, ComparisonBroadcast::Exact, |lhs, rhs| {
+            if lhs.partial_cmp(&rhs) != Some(std::cmp::Ordering::Less) {
+                lhs
+            } else {
+                rhs
+            }
+        })
+    };
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
             let a = (*$lhs).clone();
@@ -65,6 +117,22 @@ macro_rules! max_op {
 }
 
 macro_rules! max_mat_vec_op {
+    (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => { apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::RightColumn, |lhs, rhs| if lhs >= rhs { lhs.to_owned() } else { rhs.to_owned() }) };
+    (managed, $lhs:expr, $rhs:expr, $out:expr) => {
+        apply_managed_comparison(
+            $lhs,
+            $rhs,
+            $out,
+            ComparisonBroadcast::RightColumn,
+            |lhs, rhs| {
+                if lhs.partial_cmp(&rhs) != Some(std::cmp::Ordering::Less) {
+                    lhs
+                } else {
+                    rhs
+                }
+            },
+        )
+    };
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
             let out_deref = &mut (*$out);
@@ -86,6 +154,22 @@ macro_rules! max_mat_vec_op {
 }
 
 macro_rules! max_vec_mat_op {
+    (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => { apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::LeftColumn, |lhs, rhs| if lhs >= rhs { lhs.to_owned() } else { rhs.to_owned() }) };
+    (managed, $lhs:expr, $rhs:expr, $out:expr) => {
+        apply_managed_comparison(
+            $lhs,
+            $rhs,
+            $out,
+            ComparisonBroadcast::LeftColumn,
+            |lhs, rhs| {
+                if lhs.partial_cmp(&rhs) != Some(std::cmp::Ordering::Less) {
+                    lhs
+                } else {
+                    rhs
+                }
+            },
+        )
+    };
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
             let out_deref = &mut (*$out);
@@ -107,6 +191,22 @@ macro_rules! max_vec_mat_op {
 }
 
 macro_rules! max_mat_row_op {
+    (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => { apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::RightRow, |lhs, rhs| if lhs >= rhs { lhs.to_owned() } else { rhs.to_owned() }) };
+    (managed, $lhs:expr, $rhs:expr, $out:expr) => {
+        apply_managed_comparison(
+            $lhs,
+            $rhs,
+            $out,
+            ComparisonBroadcast::RightRow,
+            |lhs, rhs| {
+                if lhs.partial_cmp(&rhs) != Some(std::cmp::Ordering::Less) {
+                    lhs
+                } else {
+                    rhs
+                }
+            },
+        )
+    };
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
             let out_deref = &mut (*$out);
@@ -128,6 +228,22 @@ macro_rules! max_mat_row_op {
 }
 
 macro_rules! max_row_mat_op {
+    (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => { apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::LeftRow, |lhs, rhs| if lhs >= rhs { lhs.to_owned() } else { rhs.to_owned() }) };
+    (managed, $lhs:expr, $rhs:expr, $out:expr) => {
+        apply_managed_comparison(
+            $lhs,
+            $rhs,
+            $out,
+            ComparisonBroadcast::LeftRow,
+            |lhs, rhs| {
+                if lhs.partial_cmp(&rhs) != Some(std::cmp::Ordering::Less) {
+                    lhs
+                } else {
+                    rhs
+                }
+            },
+        )
+    };
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
             let out_deref = &mut (*$out);

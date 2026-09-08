@@ -17,13 +17,12 @@ use std::{
 };
 
 use crate::{
-    FunctionInstance, FunctionInvocation, GuardFunctionSafety, ImplementationMemoryClass,
-    InputKindScheme, KindScheme, MResult, MechError, MechErrorKind, MechFunction,
-    MechFunctionFactory, OperationContractDeclaration, ResidentKernelFactory,
-    ResidentKernelFactoryEntry, ResidentOperationKey, ResolvedOutputSchemaRule,
-    RuntimeFunctionContract, RuntimeFunctionSignature, RuntimeOutputAliasPolicy,
-    SourceSchemeTemplate, SpecializationContext, SpecializationInvocation, SpecializedFunction,
-    hash_str,
+    FunctionInvocation, GuardFunctionSafety, ImplementationMemoryClass, InputKindScheme,
+    KindScheme, MResult, MechError, MechErrorKind, MechFunction, MechFunctionFactory,
+    OperationContractDeclaration, ResidentKernelFactory, ResidentKernelFactoryEntry,
+    ResidentOperationKey, ResolvedOutputSchemaRule, RuntimeFunctionContract,
+    RuntimeFunctionSignature, RuntimeOutputAliasPolicy, SourceSchemeTemplate,
+    SpecializationContext, SpecializationInvocation, SpecializedFunction, hash_str,
 };
 
 #[cfg(feature = "native-plan")]
@@ -396,7 +395,7 @@ impl RuntimeFunctionEntry {
         operation: OperationId,
         target: ExecutionTarget,
         invocation: FunctionInvocation,
-    ) -> MResult<FunctionInstance> {
+    ) -> MResult<(Box<dyn MechFunction>, FunctionInvocation)> {
         if !self.operation_binding.permits(operation) {
             return Err(MechError::new(
                 RuntimeOperationBindingMismatch {
@@ -456,7 +455,7 @@ impl RuntimeFunctionEntry {
     fn construct_validated_physical_invocation(
         &self,
         invocation: FunctionInvocation,
-    ) -> MResult<FunctionInstance> {
+    ) -> MResult<(Box<dyn MechFunction>, FunctionInvocation)> {
         let invocation = invocation.normalize_for_signature(self.signature);
         invocation
             .validate_signature(self.signature)
@@ -466,7 +465,7 @@ impl RuntimeFunctionEntry {
             .map_err(|error| self.wrap_contract_error(error))?;
         let implementation = (self.invocation_factory)(invocation.clone())
             .map_err(|error| self.wrap_contract_error(error))?;
-        Ok(FunctionInstance::new(implementation, invocation))
+        Ok((implementation, invocation))
     }
 }
 

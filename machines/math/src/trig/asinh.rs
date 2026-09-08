@@ -7,41 +7,15 @@ use libm::asinhf;
 // Asinh Macros
 #[cfg(feature = "f64")]
 macro_rules! asinh_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = asinh((*$arg));
-        }
-    };
-}
-
-#[cfg(feature = "f64")]
-macro_rules! asinh_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = asinh(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(asinh(($arg)))
     };
 }
 
 #[cfg(feature = "f32")]
 macro_rules! asinhf_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = asinhf((*$arg));
-        }
-    };
-}
-
-#[cfg(feature = "f32")]
-macro_rules! asinhf_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = asinhf(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(asinhf(($arg)))
     };
 }
 

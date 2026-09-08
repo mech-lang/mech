@@ -3,8 +3,8 @@ use super::super::registration::{
 };
 use crate::{
     AccessMode, AliasPolicy, CanonicalCellId, ChangeDetectionPolicy, DeliveryMode, ExecutionTarget,
-    ExternalInteraction, FunctionInstance, FunctionInvocation, InitialSolvePolicy, InputPortLayout,
-    InputPortPolicy, MResult, MechError, MechErrorKind, MechFunction, MechFunctionImpl,
+    ExternalInteraction, FunctionInvocation, InitialSolvePolicy, InputPortLayout, InputPortPolicy,
+    MResult, MechError, MechErrorKind, MechFunction, MechFunctionImpl,
     OperationContractDeclaration, OutputConstruction, OutputPortPolicy, Plan,
     ReactiveDependencyKind, ResolvedOperationDescriptor, RuntimeFunctionId, ShapeRule,
     SpecializedFunction, ValueCell,
@@ -39,9 +39,16 @@ struct FailingInitialExpressionFunction {
 }
 
 impl MechFunctionImpl for FailingInitialExpressionFunction {
-    fn solve_result(&self) -> MResult<()> {
-        self.solve_result_calls.fetch_add(1, Ordering::SeqCst);
-        Err(MechError::new(InitialExpressionSolveFailure, None))
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            self.solve_result_calls.fetch_add(1, Ordering::SeqCst);
+            Err(MechError::new(InitialExpressionSolveFailure, None))
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -57,9 +64,19 @@ impl MechFunctionCompiler for FailingInitialExpressionFunction {
 }
 
 impl MechFunctionImpl for IndexedExpressionTestFunction {
-    fn solve_result(&self) -> MResult<()> {
-        self.solve_calls.fetch_add(1, Ordering::SeqCst);
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            self.solve_calls.fetch_add(1, Ordering::SeqCst);
+            Ok(())
+        })()?;
+        // This fixture measures registration and dependency behavior; it
+        // deliberately reports no semantic output change and therefore does
+        // not publish an uninitialized transaction stage.
+        Ok(mech_core::ReactiveSolveStatus::Unchanged)
     }
 
     fn initial_solve_policy(&self) -> InitialSolvePolicy {
@@ -105,7 +122,7 @@ fn specialized(
 ) -> SpecializedFunction {
     let input_count = inputs.len();
     SpecializedFunction::syntax_directed(
-        FunctionInstance::new(
+        (
             implementation,
             FunctionInvocation::variadic(output, inputs.into_boxed_slice()),
         ),
@@ -246,19 +263,12 @@ fn binary_term_batch_registration_preserves_order_and_edges() {
     let (final_out, fc) = scalar(5.0);
     let first = Arc::new(AtomicUsize::new(0));
     let second = Arc::new(AtomicUsize::new(0));
-    let f1 = function(first.clone());
-    let f2 = function(second.clone());
-    f1.solve_result().unwrap();
-    f2.solve_result().unwrap();
+    let f1 = specialized(function(first.clone()), mid.clone(), vec![a, b]);
+    let f2 = specialized(function(second.clone()), final_out, vec![mid.clone(), c]);
+    f1.instance().solve_result().unwrap();
+    f2.instance().solve_result().unwrap();
 
-    register_expression_function_batch(
-        &plan,
-        vec![
-            specialized(f1, mid.clone(), vec![a, b]),
-            specialized(f2, final_out, vec![mid, c]),
-        ],
-    )
-    .unwrap();
+    register_expression_function_batch(&plan, vec![f1, f2]).unwrap();
     let plan = plan.borrow();
     assert_eq!(plan.len(), 2);
     assert_eq!(

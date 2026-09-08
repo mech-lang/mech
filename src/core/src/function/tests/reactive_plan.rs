@@ -4,7 +4,7 @@ use crate::{CanonicalCellId, ValueCell};
 use std::{cell::RefCell, rc::Rc};
 
 fn instance(function: TestFunction, output: ValueCell, inputs: Vec<ValueCell>) -> FunctionInstance {
-    FunctionInstance::new(
+    crate::function::test_planned_instance(
         Box::new(function),
         FunctionInvocation::variadic(output, inputs.into_boxed_slice()),
     )
@@ -13,8 +13,10 @@ fn instance(function: TestFunction, output: ValueCell, inputs: Vec<ValueCell>) -
 #[test]
 fn reactive_plan_push_preserves_order_and_single_ownership() {
     let mut plan = ReactivePlan::new();
-    plan.push(Box::new(TestFunction::new("first")));
-    plan.push(Box::new(TestFunction::new("second")));
+    plan.push(TestFunction::new("first").into_instance())
+        .unwrap();
+    plan.push(TestFunction::new("second").into_instance())
+        .unwrap();
 
     assert_eq!(plan.nodes.len(), 2);
     assert_eq!(plan.nodes[0].id, 0);
@@ -62,7 +64,8 @@ fn successful_registration_does_not_render_function_description() {
 fn cloned_plan_shares_storage_and_clear_removes_all_indexes() {
     let plan = Plan::new();
     let clone = plan.clone();
-    plan.add_function(Box::new(TestFunction::new("shared")));
+    plan.add_function(TestFunction::new("shared").into_instance())
+        .unwrap();
     assert_eq!((plan.len(), clone.len()), (1, 1));
 
     {

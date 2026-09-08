@@ -7,8 +7,13 @@ pub struct TupleAccessElement {
 }
 
 impl MechFunctionImpl for TupleAccessElement {
-    fn solve_result(&self) -> MResult<()> {
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> { Ok(()) })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {

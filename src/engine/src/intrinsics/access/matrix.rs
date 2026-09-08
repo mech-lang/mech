@@ -318,6 +318,28 @@ fn validate_matrix_access_contract_impl(
     inputs: &[ValueCell],
     require_exact_output_shape: bool,
 ) -> MResult<()> {
+    let (expected_rows, expected_cols) = matrix_access_expected_output_shape(output_value, inputs)?;
+    let output_shape = matrix_descriptor(output_value)?
+        .map(|descriptor| (descriptor.rows, descriptor.cols))
+        .unwrap_or((1, 1));
+    if require_exact_output_shape
+        && (output_shape.0 != expected_rows || output_shape.1 != expected_cols)
+    {
+        return Err(function_shape_contract_violation(
+            "matrix_access",
+            format!(
+                "output is {}x{}, selected indices require {expected_rows}x{expected_cols}",
+                output_shape.0, output_shape.1,
+            ),
+        ));
+    }
+    Ok(())
+}
+
+fn matrix_access_expected_output_shape(
+    output_value: &ValueCell,
+    inputs: &[ValueCell],
+) -> MResult<(usize, usize)> {
     let contract = "matrix_access";
     let source_value = inputs
         .first()
@@ -326,17 +348,14 @@ fn validate_matrix_access_contract_impl(
         function_shape_contract_violation(contract, "input 0 must be matrix-backed")
     })?;
     let output = matrix_descriptor(output_value)?;
-    let output_shape = output
-        .map(|descriptor| (descriptor.rows, descriptor.cols))
-        .unwrap_or((1, 1));
-    let (expected_rows, expected_cols) = match inputs.len() {
+    match inputs.len() {
         2 => {
             let selector = inputs
                 .get(1)
                 .ok_or_else(|| function_shape_contract_violation(contract, "missing input 1"))?;
             let upper = matrix_access_binary_upper_bound(source, selector, output)?;
             let selection = matrix_access_selection(selector, upper, 1)?;
-            matrix_access_binary_output_shape(source, selection, output)?
+            matrix_access_binary_output_shape(source, selection, output)
         }
         3 => {
             let rows = matrix_access_selection(
@@ -355,7 +374,7 @@ fn validate_matrix_access_contract_impl(
                 2,
             )?
             .count(source.cols);
-            (rows, cols)
+            Ok((rows, cols))
         }
         found => {
             return Err(function_shape_contract_violation(
@@ -363,19 +382,35 @@ fn validate_matrix_access_contract_impl(
                 format!("expected 2 or 3 inputs including the source, found {found}"),
             ));
         }
-    };
-    if require_exact_output_shape
-        && (output_shape.0 != expected_rows || output_shape.1 != expected_cols)
-    {
-        return Err(function_shape_contract_violation(
-            contract,
-            format!(
-                "output is {}x{}, selected indices require {expected_rows}x{expected_cols}",
-                output_shape.0, output_shape.1,
-            ),
-        ));
     }
-    Ok(())
+}
+
+fn planned_matrix_access_output_shape(
+    output: &ValueCell,
+    inputs: &[ValueCell],
+) -> MResult<Option<ShapeInstance>> {
+    let has_logical_selector = inputs.iter().skip(1).any(|input| {
+        matches!(
+            input.closed_schema_body(),
+            Ok(SchemaBody::Matrix { element, .. }) if matches!(element.as_ref(), SchemaBody::Bool)
+        )
+    });
+    if !has_logical_selector {
+        return Ok(None);
+    }
+    if matrix_descriptor(output)?.is_none() {
+        return Ok(Some(output.shape().clone()));
+    }
+    let (rows, columns) = matrix_access_expected_output_shape(output, inputs)?;
+    let schemas = output.snapshot()?.schemas().ok_or_else(|| {
+        function_shape_contract_violation("matrix_access", "missing output schema table")
+    })?;
+    let schema = schemas.entry(output.schema()).ok_or_else(|| {
+        function_shape_contract_violation("matrix_access", "missing output schema")
+    })?;
+    shape_for_resolved_extents(schema.schema(), &[rows as u64, columns as u64])
+        .map(Some)
+        .map_err(|error| MechError::new(error, None).with_compiler_loc())
 }
 
 fn validate_matrix_access_contract(output: &ValueCell, inputs: &[ValueCell]) -> MResult<()> {
@@ -489,6 +524,27 @@ mod matrix_access_contract_tests {
         ValueCell::from_exact(value).unwrap()
     }
 
+    fn u8_elements(value: &ValueCell) -> Vec<u8> {
+        value
+            .matrix_elements()
+            .unwrap()
+            .expect("u8 matrix elements")
+            .iter()
+            .map(|element| match element.snapshot().unwrap().data() {
+                ValueData::U8(value) => *value,
+                other => panic!("expected u8 matrix element, found {other:?}"),
+            })
+            .collect()
+    }
+
+    fn replace_exact<T>(cell: &ValueCell, value: T)
+    where
+        T: CanonicalCellBacking,
+    {
+        cell.replace(&ValueCell::from_exact(value).unwrap().snapshot().unwrap())
+            .unwrap();
+    }
+
     #[test]
     fn exact_contract_rejects_linear_output_with_wrong_selected_length() {
         let result =
@@ -526,22 +582,23 @@ mod matrix_access_contract_tests {
 
     #[test]
     fn reactive_numeric_selector_cannot_outgrow_fixed_output() {
-        let source = Ref::new(DMatrix::from_row_slice(2, 2, &[10_u8, 20, 30, 40]));
-        let ixes = Ref::new(DVector::from_vec(vec![1_usize, 2]));
-        let out = Ref::new(DVector::from_element(2, 0_u8));
-        let function = Access1DVDMD::<u8>::new_invocation(FunctionInvocation::binary(
-            ValueCell::from_exact_matrix_ref(out.clone(), 2, 1).unwrap(),
-            ValueCell::from_exact_matrix_ref(source, 2, 2).unwrap(),
-            ValueCell::from_exact_matrix_ref(ixes.clone(), 2, 1).unwrap(),
-        ))
+        let source =
+            ValueCell::from_exact(DMatrix::from_row_slice(2, 2, &[10_u8, 20, 30, 40])).unwrap();
+        let ixes = ValueCell::from_exact(DVector::from_vec(vec![1_usize, 2])).unwrap();
+        let out = ValueCell::from_exact(DVector::from_element(2, 0_u8)).unwrap();
+        let invocation = FunctionInvocation::binary(out.clone(), source, ixes.clone());
+        let function = crate::test_support::managed_factory_instance::<Access1DVDMD<u8>>(
+            invocation,
+            "test/access-index-vector",
+        )
         .unwrap();
 
-        function.solve_result().unwrap();
-        assert_eq!(out.borrow().as_slice(), &[10, 30]);
+        function.instance().solve_result().unwrap();
+        assert_eq!(u8_elements(&out), vec![10, 30]);
 
-        *ixes.borrow_mut() = DVector::from_vec(vec![1_usize, 2, 3]);
-        assert!(function.solve_result().is_err());
-        assert_eq!(out.borrow().as_slice(), &[10, 30]);
+        replace_exact(&ixes, DVector::from_vec(vec![1_usize, 2, 3]));
+        assert!(function.instance().solve_result().is_err());
+        assert_eq!(u8_elements(&out), vec![10, 30]);
     }
 
     #[cfg(feature = "bool")]
@@ -560,263 +617,662 @@ mod matrix_access_contract_tests {
     #[cfg(feature = "bool")]
     #[test]
     fn reactive_logical_linear_selection_regrows_from_empty() {
-        let source = Ref::new(DVector::from_vec(vec![10_u8, 20, 30]));
-        let ixes = Ref::new(DVector::from_vec(vec![true, false, true]));
-        let out = Ref::new(DVector::from_element(2, 0_u8));
-        let function = Access1DVDbVD::<u8>::new_invocation(FunctionInvocation::binary(
-            ValueCell::from_exact_matrix_ref(out.clone(), 2, 1).unwrap(),
-            ValueCell::from_exact_matrix_ref(source, 3, 1).unwrap(),
-            ValueCell::from_exact_matrix_ref(ixes.clone(), 3, 1).unwrap(),
-        ))
+        let source = ValueCell::from_exact(DVector::from_vec(vec![10_u8, 20, 30])).unwrap();
+        let ixes = ValueCell::from_exact(DVector::from_vec(vec![true, false, true])).unwrap();
+        let out = ValueCell::from_exact(DVector::from_element(2, 0_u8)).unwrap();
+        let invocation = FunctionInvocation::binary(out.clone(), source, ixes.clone());
+        let function = crate::test_support::managed_factory_instance::<Access1DVDbVD<u8>>(
+            invocation,
+            "test/access-logical-vector",
+        )
         .unwrap();
 
-        function.solve_result().unwrap();
-        assert_eq!(out.borrow().as_slice(), &[10, 30]);
+        function.instance().solve_result().unwrap();
+        assert_eq!(u8_elements(&out), vec![10, 30]);
 
-        *ixes.borrow_mut() = DVector::from_vec(vec![false, false, false]);
-        function.solve_result().unwrap();
-        assert!(out.borrow().is_empty());
+        replace_exact(&ixes, DVector::from_vec(vec![false, false, false]));
+        function.instance().solve_result().unwrap();
+        assert!(u8_elements(&out).is_empty());
 
-        *ixes.borrow_mut() = DVector::from_vec(vec![false, true, false]);
-        function.solve_result().unwrap();
-        assert_eq!(out.borrow().as_slice(), &[20]);
+        replace_exact(&ixes, DVector::from_vec(vec![false, true, false]));
+        function.instance().solve_result().unwrap();
+        assert_eq!(u8_elements(&out), vec![20]);
     }
 
     #[cfg(feature = "bool")]
     #[test]
     fn reactive_logical_matrix_selection_regrows_from_empty() {
-        let source = Ref::new(DMatrix::from_row_slice(3, 2, &[10_u8, 11, 20, 21, 30, 31]));
-        let ixes = Ref::new(DVector::from_vec(vec![true, false, true]));
-        let out = Ref::new(DMatrix::from_element(2, 2, 0_u8));
-        let function = Access2DVDbAMD::<u8>::new_invocation(FunctionInvocation::binary(
-            ValueCell::from_exact_matrix_ref(out.clone(), 2, 2).unwrap(),
-            ValueCell::from_exact_matrix_ref(source, 3, 2).unwrap(),
-            ValueCell::from_exact_matrix_ref(ixes.clone(), 3, 1).unwrap(),
-        ))
+        let source =
+            ValueCell::from_exact(DMatrix::from_row_slice(3, 2, &[10_u8, 11, 20, 21, 30, 31]))
+                .unwrap();
+        let ixes = ValueCell::from_exact(DVector::from_vec(vec![true, false, true])).unwrap();
+        let out = ValueCell::from_exact(DMatrix::from_element(2, 2, 0_u8)).unwrap();
+        let invocation = FunctionInvocation::binary(out.clone(), source, ixes.clone());
+        let function = crate::test_support::managed_factory_instance::<Access2DVDbAMD<u8>>(
+            invocation,
+            "test/access-logical-rows",
+        )
         .unwrap();
 
-        function.solve_result().unwrap();
-        assert_eq!(
-            *out.borrow(),
-            DMatrix::from_row_slice(2, 2, &[10, 11, 30, 31])
-        );
+        function.instance().solve_result().unwrap();
+        assert_eq!(u8_elements(&out), vec![10, 11, 30, 31]);
+        assert_eq!(matrix_descriptor(&out).unwrap().unwrap().rows, 2);
 
-        *ixes.borrow_mut() = DVector::from_vec(vec![false, false, false]);
-        function.solve_result().unwrap();
-        assert_eq!(out.borrow().shape(), (0, 2));
+        replace_exact(&ixes, DVector::from_vec(vec![false, false, false]));
+        function.instance().solve_result().unwrap();
+        assert_eq!(matrix_descriptor(&out).unwrap().unwrap().rows, 0);
 
-        *ixes.borrow_mut() = DVector::from_vec(vec![false, true, false]);
-        function.solve_result().unwrap();
-        assert_eq!(*out.borrow(), DMatrix::from_row_slice(1, 2, &[20, 21]));
+        replace_exact(&ixes, DVector::from_vec(vec![false, true, false]));
+        function.instance().solve_result().unwrap();
+        assert_eq!(u8_elements(&out), vec![20, 21]);
+        assert_eq!(matrix_descriptor(&out).unwrap().unwrap().rows, 1);
     }
 }
 
-macro_rules! access_1d {
-    ($source:expr, $ix:expr, $out:expr) => {
-        unsafe { *$out = (*$source).index(*$ix - 1).clone() }
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum ManagedMatrixAccessKernel {
+    LinearScalar,
+    LinearGather,
+    Column,
+    Row,
+    Rows,
+    ScalarRowColumns,
+    RowsScalarColumn,
+    ScalarCell,
+}
+
+macro_rules! managed_access_kernel {
+    (access_1d) => {
+        ManagedMatrixAccessKernel::LinearScalar
+    };
+    (access_1d_slice) => {
+        ManagedMatrixAccessKernel::LinearGather
+    };
+    (access_1d_slice_bool_v) => {
+        ManagedMatrixAccessKernel::LinearGather
+    };
+    (access_col) => {
+        ManagedMatrixAccessKernel::Column
+    };
+    (access_row) => {
+        ManagedMatrixAccessKernel::Row
+    };
+    (access_2d_slice_all) => {
+        ManagedMatrixAccessKernel::Rows
+    };
+    (access_2d_slice_all_bool) => {
+        ManagedMatrixAccessKernel::Rows
+    };
+    (access_2d) => {
+        ManagedMatrixAccessKernel::ScalarCell
+    };
+    (access_2d_row_slice) => {
+        ManagedMatrixAccessKernel::ScalarRowColumns
+    };
+    (access_2d_row_slice_bool) => {
+        ManagedMatrixAccessKernel::ScalarRowColumns
+    };
+    (access_2d_col_slice) => {
+        ManagedMatrixAccessKernel::RowsScalarColumn
+    };
+    (access_2d_col_slice_bool) => {
+        ManagedMatrixAccessKernel::RowsScalarColumn
     };
 }
 
-macro_rules! access_2d {
-    ($source:expr, $ix1:expr, $ix2:expr, $out:expr) => {
-        unsafe { *$out = (*$source).index((*$ix1 - 1, *$ix2 - 1)).clone() }
-    };
+trait ManagedAccessSelectorElement: mech_core::ManagedElement + FunctionPortBacking {
+    const LOGICAL: bool;
+
+    fn ordinal(self, upper: usize) -> MResult<usize>;
+    fn selected(self) -> bool;
 }
-macro_rules! access_1d_slice {
-    ($source:expr, $ix:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$ix).len() {
-                (&mut *$out)[i] = (*$source).index((&(*$ix))[i] - 1).clone();
+
+impl ManagedAccessSelectorElement for usize {
+    const LOGICAL: bool = false;
+
+    fn ordinal(self, upper: usize) -> MResult<usize> {
+        if self == 0 || self > upper {
+            return Err(function_shape_contract_violation(
+                "matrix_access",
+                format!("index {self} is outside 1..={upper}"),
+            ));
+        }
+        Ok(self - 1)
+    }
+
+    fn selected(self) -> bool {
+        true
+    }
+}
+
+#[cfg(feature = "bool")]
+impl ManagedAccessSelectorElement for bool {
+    const LOGICAL: bool = true;
+
+    fn ordinal(self, _upper: usize) -> MResult<usize> {
+        Err(function_shape_contract_violation(
+            "matrix_access",
+            "logical selector cannot be converted to a positional index",
+        ))
+    }
+
+    fn selected(self) -> bool {
+        self
+    }
+}
+
+trait ManagedAccessSelectorBacking {
+    type Element: ManagedAccessSelectorElement;
+
+    fn validate(port: FunctionInputPort<'_>) -> MResult<()> {
+        let _ = port.try_managed_element::<Self::Element>()?;
+        Ok(())
+    }
+}
+
+impl ManagedAccessSelectorBacking for usize {
+    type Element = usize;
+}
+
+impl ManagedAccessSelectorBacking for DVector<usize> {
+    type Element = usize;
+}
+
+#[cfg(feature = "bool")]
+impl ManagedAccessSelectorBacking for DVector<bool> {
+    type Element = bool;
+}
+
+fn validate_selector_view<S: ManagedAccessSelectorElement>(
+    selector: &mech_core::ManagedValueView<'_, S>,
+    upper: usize,
+    require_scalar: bool,
+) -> MResult<usize> {
+    if require_scalar && selector.len() != 1 {
+        return Err(function_shape_contract_violation(
+            "matrix_access",
+            format!("scalar selector contains {} elements", selector.len()),
+        ));
+    }
+    if S::LOGICAL {
+        if selector.len() != upper {
+            return Err(function_shape_contract_violation(
+                "matrix_access",
+                format!(
+                    "logical selector has {} elements, expected {upper}",
+                    selector.len()
+                ),
+            ));
+        }
+        let mut selected = 0usize;
+        for index in 0..selector.len() {
+            if selector
+                .get_column_major(index)
+                .expect("validated selector geometry")
+                .selected()
+            {
+                selected += 1;
             }
         }
-    };
+        return Ok(selected);
+    }
+    for index in 0..selector.len() {
+        selector
+            .get_column_major(index)
+            .expect("validated selector geometry")
+            .ordinal(upper)?;
+    }
+    Ok(selector.len())
 }
 
-#[cfg(feature = "logical_indexing")]
-macro_rules! access_1d_slice_bool_v {
-    ($source:expr, $ix:expr, $out:expr) => {
-        unsafe {
-            let mut selected = Vec::new();
-            for i in 0..(*$ix).len() {
-                if (&(*$ix))[i] {
-                    selected.push((*$source).index(i).clone());
-                }
+fn selected_position<S: ManagedAccessSelectorElement>(
+    selector: &mech_core::ManagedValueView<'_, S>,
+    ordinal: usize,
+    upper: usize,
+) -> MResult<usize> {
+    if !S::LOGICAL {
+        return selector
+            .get_column_major(ordinal)
+            .ok_or_else(|| {
+                function_shape_contract_violation(
+                    "matrix_access",
+                    format!("selector ordinal {ordinal} is outside its live extent"),
+                )
+            })?
+            .ordinal(upper);
+    }
+    let mut found = 0usize;
+    for index in 0..selector.len() {
+        if selector
+            .get_column_major(index)
+            .expect("validated selector geometry")
+            .selected()
+        {
+            if found == ordinal {
+                return Ok(index);
             }
-            *$out = DVector::from_vec(selected);
+            found += 1;
+        }
+    }
+    Err(function_shape_contract_violation(
+        "matrix_access",
+        format!("logical selector has no selected ordinal {ordinal}"),
+    ))
+}
+
+fn execute_fixed_binary_access<T, S>(
+    source: mech_core::ManagedValueView<'_, T>,
+    selector: mech_core::ManagedValueView<'_, S>,
+    output: &mut mech_core::ManagedValueViewMut<'_, T>,
+    kernel: ManagedMatrixAccessKernel,
+) -> MResult<()>
+where
+    T: mech_core::ManagedElement,
+    S: ManagedAccessSelectorElement,
+{
+    let (upper, scalar) = match kernel {
+        ManagedMatrixAccessKernel::LinearScalar => (source.len(), true),
+        ManagedMatrixAccessKernel::LinearGather => (source.len(), false),
+        ManagedMatrixAccessKernel::Column => (source.columns(), true),
+        ManagedMatrixAccessKernel::Row => (source.rows(), true),
+        ManagedMatrixAccessKernel::Rows => (source.rows(), false),
+        _ => {
+            return Err(function_shape_contract_violation(
+                "matrix_access",
+                "binary factory selected an incompatible managed kernel",
+            ));
         }
     };
-}
-
-#[cfg(feature = "logical_indexing")]
-macro_rules! access_2d_row_slice_bool {
-    ($source:expr, $ix1:expr, $ix2:expr, $out:expr) => {
-        unsafe {
-            let scalar_ix = &(*$ix1);
-            let vec_ix = &(*$ix2);
-            let mut selected = Vec::new();
-            for i in 0..vec_ix.len() {
-                if vec_ix[i] {
-                    selected.push((*$source).index((scalar_ix - 1, i)).clone());
-                }
+    let selected = validate_selector_view(&selector, upper, scalar)?;
+    match kernel {
+        ManagedMatrixAccessKernel::LinearScalar => {
+            if output.len() != 1 {
+                return Err(function_shape_contract_violation(
+                    "matrix_access",
+                    "scalar selection requires one output element",
+                ));
             }
-            *$out = RowDVector::from_row_slice(&selected);
+            let source_index = selected_position(&selector, 0, source.len())?;
+            output.try_fill_column_major(|_| {
+                source.get_column_major(source_index).ok_or_else(|| {
+                    function_shape_contract_violation(
+                        "matrix_access",
+                        "linear selector is outside the source",
+                    )
+                })
+            })
         }
-    };
-}
-
-#[cfg(feature = "logical_indexing")]
-macro_rules! access_2d_col_slice_bool {
-    ($source:expr, $ix1:expr, $ix2:expr, $out:expr) => {
-        unsafe {
-            let vec_ix = &(*$ix1);
-            let scalar_ix = &(*$ix2);
-            let mut selected = Vec::new();
-            for i in 0..vec_ix.len() {
-                if vec_ix[i] {
-                    selected.push((*$source).index((i, scalar_ix - 1)).clone());
-                }
+        ManagedMatrixAccessKernel::LinearGather => {
+            if output.len() != selected {
+                return Err(function_shape_contract_violation(
+                    "matrix_access",
+                    format!(
+                        "output has {} elements, selector requires {selected}",
+                        output.len()
+                    ),
+                ));
             }
-            *$out = DVector::from_vec(selected);
+            output.try_fill_column_major(|index| {
+                let source_index = selected_position(&selector, index, source.len())?;
+                source.get_column_major(source_index).ok_or_else(|| {
+                    function_shape_contract_violation(
+                        "matrix_access",
+                        "linear selector is outside the source",
+                    )
+                })
+            })
         }
-    };
+        ManagedMatrixAccessKernel::Column => {
+            if output.len() != source.rows() {
+                return Err(function_shape_contract_violation(
+                    "matrix_access",
+                    "column selection output has the wrong extent",
+                ));
+            }
+            let column = selected_position(&selector, 0, source.columns())?;
+            output.try_fill_column_major(|row| {
+                source.get(row, column).ok_or_else(|| {
+                    function_shape_contract_violation(
+                        "matrix_access",
+                        "column selection is outside the source",
+                    )
+                })
+            })
+        }
+        ManagedMatrixAccessKernel::Row => {
+            if output.len() != source.columns() {
+                return Err(function_shape_contract_violation(
+                    "matrix_access",
+                    "row selection output has the wrong extent",
+                ));
+            }
+            let row = selected_position(&selector, 0, source.rows())?;
+            output.try_fill_column_major(|column| {
+                source.get(row, column).ok_or_else(|| {
+                    function_shape_contract_violation(
+                        "matrix_access",
+                        "row selection is outside the source",
+                    )
+                })
+            })
+        }
+        ManagedMatrixAccessKernel::Rows => {
+            if output.rows() != selected || output.columns() != source.columns() {
+                return Err(function_shape_contract_violation(
+                    "matrix_access",
+                    "row selection output geometry is inconsistent",
+                ));
+            }
+            let output_rows = output.rows();
+            output.try_fill_column_major(|index| {
+                let output_row = index % output_rows;
+                let column = index / output_rows;
+                let source_row = selected_position(&selector, output_row, source.rows())?;
+                source.get(source_row, column).ok_or_else(|| {
+                    function_shape_contract_violation(
+                        "matrix_access",
+                        "row selection is outside the source",
+                    )
+                })
+            })
+        }
+        _ => unreachable!(),
+    }
 }
 
-macro_rules! access_2d_slice_all {
-    ($source:expr, $ix:expr, $out:expr) => {
-        unsafe {
-            let n_cols = (*$source).ncols();
-            let n_rows = (*$ix).nrows();
-            let mut out_ix = 0;
-            for c in 0..n_cols {
-                for r in 0..n_rows {
-                    (&mut (*$out))[out_ix] = (*$source).index(((&(*$ix))[r] - 1, c)).clone();
-                    out_ix += 1;
-                }
+fn execute_fixed_ternary_access<T, R, C>(
+    source: mech_core::ManagedValueView<'_, T>,
+    rows: mech_core::ManagedValueView<'_, R>,
+    columns: mech_core::ManagedValueView<'_, C>,
+    output: &mut mech_core::ManagedValueViewMut<'_, T>,
+    kernel: ManagedMatrixAccessKernel,
+) -> MResult<()>
+where
+    T: mech_core::ManagedElement,
+    R: ManagedAccessSelectorElement,
+    C: ManagedAccessSelectorElement,
+{
+    let scalar_rows = matches!(
+        kernel,
+        ManagedMatrixAccessKernel::ScalarCell | ManagedMatrixAccessKernel::ScalarRowColumns
+    );
+    let scalar_columns = matches!(
+        kernel,
+        ManagedMatrixAccessKernel::ScalarCell | ManagedMatrixAccessKernel::RowsScalarColumn
+    );
+    let selected_rows = validate_selector_view(&rows, source.rows(), scalar_rows)?;
+    let selected_columns = validate_selector_view(&columns, source.columns(), scalar_columns)?;
+    if output.rows().saturating_mul(output.columns())
+        != selected_rows.saturating_mul(selected_columns)
+        || output.len() != selected_rows.saturating_mul(selected_columns)
+    {
+        return Err(function_shape_contract_violation(
+            "matrix_access",
+            "rectangular selection output geometry is inconsistent",
+        ));
+    }
+    output.try_fill_column_major(|index| {
+        let output_row = index % selected_rows.max(1);
+        let output_column = index / selected_rows.max(1);
+        let source_row = selected_position(&rows, output_row, source.rows())?;
+        let source_column = selected_position(&columns, output_column, source.columns())?;
+        source.get(source_row, source_column).ok_or_else(|| {
+            function_shape_contract_violation(
+                "matrix_access",
+                "rectangular selector is outside the source",
+            )
+        })
+    })
+}
+
+trait ManagedAccessElement:
+    Debug
+    + Clone
+    + Sync
+    + Send
+    + PartialEq
+    + 'static
+    + ConstElem
+    + FunctionRuntimeType
+    + CanonicalMatrixElementBacking
+{
+    const MEMORY_CLASS: mech_core::ImplementationMemoryClass;
+
+    fn validate_input(port: FunctionInputPort<'_>) -> MResult<()>;
+    fn validate_output(port: FunctionOutputPort<'_>) -> MResult<()>;
+    fn solve_binary<S: ManagedAccessSelectorElement>(
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        source: &FunctionValueInput,
+        selector: &FunctionValueInput,
+        output: &FunctionValueOutput,
+        kernel: ManagedMatrixAccessKernel,
+    ) -> MResult<()>;
+    fn solve_ternary<R: ManagedAccessSelectorElement, C: ManagedAccessSelectorElement>(
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        source: &FunctionValueInput,
+        rows: &FunctionValueInput,
+        columns: &FunctionValueInput,
+        output: &FunctionValueOutput,
+        kernel: ManagedMatrixAccessKernel,
+    ) -> MResult<()>;
+    fn solve_all(
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        source: &FunctionValueInput,
+        output: &FunctionValueOutput,
+    ) -> MResult<()>;
+}
+
+macro_rules! impl_managed_fixed_access_element {
+    ($($type:ty),+ $(,)?) => {$(
+        impl ManagedAccessElement for $type {
+            const MEMORY_CLASS: mech_core::ImplementationMemoryClass =
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch;
+
+            fn validate_input(port: FunctionInputPort<'_>) -> MResult<()> {
+                let _ = port.try_managed_element::<Self>()?;
+                Ok(())
+            }
+
+            fn validate_output(port: FunctionOutputPort<'_>) -> MResult<()> {
+                let _ = port.try_managed_element::<Self>()?;
+                Ok(())
+            }
+
+            fn solve_binary<S: ManagedAccessSelectorElement>(
+                frame: &mut mech_core::KernelMemoryFrame<'_>,
+                source: &FunctionValueInput,
+                selector: &FunctionValueInput,
+                output: &FunctionValueOutput,
+                kernel: ManagedMatrixAccessKernel,
+            ) -> MResult<()> {
+                frame.with_binary_function_value_views::<Self, S, Self, _>(
+                    source,
+                    selector,
+                    output,
+                    |source, selector, output| {
+                        execute_fixed_binary_access(source, selector, output, kernel)
+                    },
+                )
+            }
+
+            fn solve_ternary<R: ManagedAccessSelectorElement, C: ManagedAccessSelectorElement>(
+                frame: &mut mech_core::KernelMemoryFrame<'_>,
+                source: &FunctionValueInput,
+                rows: &FunctionValueInput,
+                columns: &FunctionValueInput,
+                output: &FunctionValueOutput,
+                kernel: ManagedMatrixAccessKernel,
+            ) -> MResult<()> {
+                frame.with_ternary_function_value_views::<Self, R, C, Self, _>(
+                    source,
+                    rows,
+                    columns,
+                    output,
+                    |source, rows, columns, output| {
+                        execute_fixed_ternary_access(source, rows, columns, output, kernel)
+                    },
+                )
+            }
+
+            fn solve_all(
+                frame: &mut mech_core::KernelMemoryFrame<'_>,
+                source: &FunctionValueInput,
+                output: &FunctionValueOutput,
+            ) -> MResult<()> {
+                frame.with_unary_function_value_views::<Self, Self, _>(
+                    source,
+                    output,
+                    |source, output| {
+                        if source.len() != output.len() {
+                            return Err(function_shape_contract_violation(
+                                "matrix_access",
+                                "all-elements output has the wrong extent",
+                            ));
+                        }
+                        output.try_fill_column_major(|index| {
+                            source.get_column_major(index).ok_or_else(|| {
+                                function_shape_contract_violation(
+                                    "matrix_access",
+                                    "all-elements source geometry is inconsistent",
+                                )
+                            })
+                        })
+                    },
+                )
             }
         }
-    };
+    )+};
 }
 
-#[cfg(feature = "logical_indexing")]
-macro_rules! access_2d_slice_all_bool {
-    ($source:expr, $ix:expr, $out:expr) => {
-        unsafe {
-            let vec_ix = &(*$ix);
-            let rows = vec_ix.iter().filter(|selected| **selected).count();
-            let cols = (*$source).ncols();
-            let mut selected = Vec::with_capacity(rows.saturating_mul(cols));
-            for k in 0..cols {
-                for i in 0..vec_ix.len() {
-                    if vec_ix[i] {
-                        selected.push((*$source).index((i, k)).clone());
-                    }
-                }
-            }
-            *$out = DMatrix::from_column_slice(rows, cols, &selected);
-        }
-    };
-}
+#[cfg(feature = "u8")]
+impl_managed_fixed_access_element!(u8);
+#[cfg(feature = "u16")]
+impl_managed_fixed_access_element!(u16);
+#[cfg(feature = "u32")]
+impl_managed_fixed_access_element!(u32);
+#[cfg(feature = "u64")]
+impl_managed_fixed_access_element!(u64);
+#[cfg(feature = "u128")]
+impl_managed_fixed_access_element!(u128);
+#[cfg(feature = "i8")]
+impl_managed_fixed_access_element!(i8);
+#[cfg(feature = "i16")]
+impl_managed_fixed_access_element!(i16);
+#[cfg(feature = "i32")]
+impl_managed_fixed_access_element!(i32);
+#[cfg(feature = "i64")]
+impl_managed_fixed_access_element!(i64);
+#[cfg(feature = "i128")]
+impl_managed_fixed_access_element!(i128);
+#[cfg(feature = "f32")]
+impl_managed_fixed_access_element!(f32);
+#[cfg(feature = "f64")]
+impl_managed_fixed_access_element!(f64);
+impl_managed_fixed_access_element!(usize);
+#[cfg(feature = "bool")]
+impl_managed_fixed_access_element!(bool);
+#[cfg(feature = "complex")]
+impl_managed_fixed_access_element!(C64);
+#[cfg(feature = "rational")]
+impl_managed_fixed_access_element!(R64);
 
-macro_rules! access_2d_row_slice {
-    ($source:expr, $ix1:expr, $ix2:expr, $out:expr) => {
-        unsafe {
-            let ix1 = &(*$ix1);
-            let ix2 = &(*$ix2);
-            let out_cols = ix2.nrows();
-            let mut out_ix = 0;
-            for c in 0..out_cols {
-                (&mut (*$out))[out_ix] = (*$source).index((ix1 - 1, ix2[c] - 1)).clone();
-                out_ix += 1;
-            }
-        }
-    };
-}
+#[cfg(feature = "string")]
+impl ManagedAccessElement for String {
+    const MEMORY_CLASS: mech_core::ImplementationMemoryClass =
+        mech_core::ImplementationMemoryClass::CloneInput { input: 0 };
 
-macro_rules! access_2d_col_slice {
-    ($source:expr, $ix1:expr, $ix2:expr, $out:expr) => {
-        unsafe {
-            let ix1 = &(*$ix1);
-            let ix2 = &(*$ix2);
-            let out_rows = ix1.nrows();
-            let mut out_ix = 0;
-            for c in 0..out_rows {
-                (&mut (*$out))[out_ix] = (*$source).index((ix1[c] - 1, ix2 - 1)).clone();
-                out_ix += 1;
-            }
-        }
-    };
-}
+    fn validate_input(port: FunctionInputPort<'_>) -> MResult<()> {
+        let _ = port.try_managed_element::<Self>()?;
+        Ok(())
+    }
 
-macro_rules! access_col {
-    ($source:expr, $ix:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$source).nrows() {
-                (&mut (*$out))[i] = (*$source).index((i, *$ix - 1)).clone();
-            }
-        }
-    };
-}
+    fn validate_output(port: FunctionOutputPort<'_>) -> MResult<()> {
+        let _ = port.try_managed_element::<Self>()?;
+        Ok(())
+    }
 
-macro_rules! access_row {
-    ($source:expr, $ix:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$source).ncols() {
-                (&mut (*$out))[i] = (*$source).index((*$ix - 1, i)).clone();
-            }
-        }
-    };
-}
+    fn solve_binary<S: ManagedAccessSelectorElement>(
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        source: &FunctionValueInput,
+        selector: &FunctionValueInput,
+        output: &FunctionValueOutput,
+        kernel: ManagedMatrixAccessKernel,
+    ) -> MResult<()> {
+        let selectors = match kernel {
+            ManagedMatrixAccessKernel::Column => vec![
+                crate::intrinsics::canonical_access::CanonicalAccessSelector::All,
+                crate::intrinsics::canonical_access::CanonicalAccessSelector::Cell(
+                    selector.cell().clone(),
+                ),
+            ],
+            ManagedMatrixAccessKernel::Row | ManagedMatrixAccessKernel::Rows => vec![
+                crate::intrinsics::canonical_access::CanonicalAccessSelector::Cell(
+                    selector.cell().clone(),
+                ),
+                crate::intrinsics::canonical_access::CanonicalAccessSelector::All,
+            ],
+            _ => vec![
+                crate::intrinsics::canonical_access::CanonicalAccessSelector::Cell(
+                    selector.cell().clone(),
+                ),
+            ],
+        };
+        let next = super::canonical_access_result(source.cell(), &selectors)?;
+        frame.stage_output_value(output.cell(), &next.snapshot()?)
+    }
 
-macro_rules! access_1d_all {
-    ($source:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$source).len() {
-                (&mut (*$out))[i] = (*$source).index(i).clone();
-            }
-        }
-    };
-}
+    fn solve_ternary<R: ManagedAccessSelectorElement, C: ManagedAccessSelectorElement>(
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        source: &FunctionValueInput,
+        rows: &FunctionValueInput,
+        columns: &FunctionValueInput,
+        output: &FunctionValueOutput,
+        _kernel: ManagedMatrixAccessKernel,
+    ) -> MResult<()> {
+        let selectors = vec![
+            crate::intrinsics::canonical_access::CanonicalAccessSelector::Cell(rows.cell().clone()),
+            crate::intrinsics::canonical_access::CanonicalAccessSelector::Cell(
+                columns.cell().clone(),
+            ),
+        ];
+        let next = super::canonical_access_result(source.cell(), &selectors)?;
+        frame.stage_output_value(output.cell(), &next.snapshot()?)
+    }
 
-macro_rules! solve_access_1d {
-    (access_1d_all, $source:expr, $indexes:expr, $out:expr) => {{
-        // `IndexAll` participates in validation and bytecode identity but carries
-        // no data for the copy kernel itself.
-        access_1d_all!($source, $out)
-    }};
-    ($operation:ident, $source:expr, $indexes:expr, $out:expr) => {{
-        let indexes = $indexes.as_ptr();
-        $operation!($source, indexes, $out)
-    }};
+    fn solve_all(
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        source: &FunctionValueInput,
+        output: &FunctionValueOutput,
+    ) -> MResult<()> {
+        let next = super::canonical_access_result(
+            source.cell(),
+            &[crate::intrinsics::canonical_access::CanonicalAccessSelector::All],
+        )?;
+        frame.stage_output_value(output.cell(), &next.snapshot()?)
+    }
 }
 
 macro_rules! impl_access_fxn {
     ($struct_name:ident, $arg_type:ty, $ix_type:ty, $out_type:ty, $op:ident, $contract:ident) => {
         #[derive(Debug)]
         struct $struct_name<T> {
-            source: Ref<$arg_type>,
-            ixes: Ref<$ix_type>,
-            out: Ref<$out_type>,
+            source: FunctionValueInput,
+            ixes: FunctionValueInput,
+            out: FunctionValueOutput,
             invocation: FunctionInvocation,
+            marker: core::marker::PhantomData<fn() -> T>,
         }
         impl<T> MechFunctionFactory for $struct_name<T>
         where
-            T: Debug
-                + Clone
-                + Sync
-                + Send
-                + PartialEq
-                + 'static
-                + ConstElem
-                + FunctionRuntimeType
-                + CanonicalMatrixElementBacking,
+            T: ManagedAccessElement,
             #[cfg(feature = "semantic-compiler")]
-            T: CompileConst + CanonicalMatrixElementBacking,
+            T: CompileConst,
             $arg_type: FunctionPortBacking,
-            $ix_type: FunctionPortBacking,
+            $ix_type: FunctionPortBacking + ManagedAccessSelectorBacking,
             $out_type: FunctionStateBacking,
         {
             fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
-                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+                T::MEMORY_CLASS
             }
 
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
@@ -827,37 +1283,55 @@ macro_rules! impl_access_fxn {
 
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (out, source, ixes) = invocation.expect_binary()?;
-                let source: Ref<$arg_type> = source.try_ref()?;
-                let ixes: Ref<$ix_type> = ixes.try_ref()?;
-                let out: Ref<$out_type> = out.try_ref()?;
+                T::validate_input(source)?;
+                <$ix_type as ManagedAccessSelectorBacking>::validate(ixes)?;
+                T::validate_output(out)?;
                 Ok(Box::new($struct_name {
-                    source,
-                    ixes,
-                    out,
+                    source: source.value(),
+                    ixes: ixes.value(),
+                    out: out.value(),
                     invocation,
+                    marker: core::marker::PhantomData::<fn() -> T>,
                 }))
             }
         }
         impl<T> MechFunctionImpl for $struct_name<T>
         where
-            T: Debug + Clone + Sync + Send + PartialEq + 'static,
+            T: ManagedAccessElement,
+            $ix_type: ManagedAccessSelectorBacking,
             $out_type: FunctionStateBacking,
         {
-            fn solve_result(&self) -> MResult<()> {
+            fn planned_output_shapes(&self) -> MResult<Option<Box<[ShapeInstance]>>> {
+                Ok(planned_matrix_access_output_shape(
+                    self.invocation.output_cell(),
+                    self.invocation.input_cells(),
+                )?
+                .map(|shape| vec![shape].into_boxed_slice()))
+            }
+
+            fn solve_managed(
+                &self,
+                frame: &mut mech_core::KernelMemoryFrame<'_>,
+                _services: &mut dyn mech_core::MechExecutionServices,
+            ) -> MResult<mech_core::ReactiveSolveStatus> {
                 validate_matrix_access_contract(
                     self.invocation.output_cell(),
                     self.invocation.input_cells(),
                 )?;
-                let source_ptr = self.source.as_ptr();
-                let out_ptr = self.out.as_mut_ptr();
-                solve_access_1d!($op, source_ptr, self.ixes, out_ptr);
-                Ok(())
+                T::solve_binary::<<$ix_type as ManagedAccessSelectorBacking>::Element>(
+                    frame,
+                    &self.source,
+                    &self.ixes,
+                    &self.out,
+                    managed_access_kernel!($op),
+                )?;
+                Ok(mech_core::ReactiveSolveStatus::Changed)
             }
             fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-                Some(FunctionStatePort::from_ref(&self.out))
+                Some(FunctionStatePort::from_cell(self.out.cell()))
             }
             fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
-                Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
+                Ok(Some(vec![FunctionStatePort::from_cell(self.out.cell())]))
             }
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
                 Some(&$contract)
@@ -869,7 +1343,7 @@ macro_rules! impl_access_fxn {
         #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $struct_name<T>
         where
-            T: CompileConst + ConstElem + FunctionRuntimeType + CanonicalMatrixElementBacking,
+            T: ManagedAccessElement + CompileConst,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 let name = format!(
@@ -877,7 +1351,12 @@ macro_rules! impl_access_fxn {
                     stringify!($struct_name),
                     <T as FunctionRuntimeType>::REPRESENTATION
                 );
-                compile_binop!(name, self.out, self.source, self.ixes, ctx);
+                let out = compile_value_cell_register(self.out.cell(), ctx)?;
+                let source = compile_value_cell_register(self.source.cell(), ctx)?;
+                let ixes = compile_value_cell_register(self.ixes.cell(), ctx)?;
+                let function = ctx.function_id(&name)?;
+                ctx.emit_binop(function, out, source, ixes);
+                Ok(out)
             }
         }
     };
@@ -887,29 +1366,22 @@ macro_rules! impl_access_all_fxn {
     ($struct_name:ident, $arg_type:ty, $out_type:ty, $contract:ident) => {
         #[derive(Debug)]
         struct $struct_name<T> {
-            source: Ref<$arg_type>,
-            out: Ref<$out_type>,
+            source: FunctionValueInput,
+            out: FunctionValueOutput,
             invocation: FunctionInvocation,
+            marker: core::marker::PhantomData<fn() -> T>,
         }
 
         impl<T> MechFunctionFactory for $struct_name<T>
         where
-            T: Debug
-                + Clone
-                + Sync
-                + Send
-                + PartialEq
-                + 'static
-                + ConstElem
-                + FunctionRuntimeType
-                + CanonicalMatrixElementBacking,
+            T: ManagedAccessElement,
             #[cfg(feature = "semantic-compiler")]
-            T: CompileConst + CanonicalMatrixElementBacking,
+            T: CompileConst,
             $arg_type: FunctionPortBacking,
             $out_type: FunctionStateBacking,
         {
             fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
-                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+                T::MEMORY_CLASS
             }
 
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
@@ -920,36 +1392,49 @@ macro_rules! impl_access_all_fxn {
 
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (out, source, _all) = invocation.expect_binary()?;
-                let source: Ref<$arg_type> = source.try_ref()?;
-                let out: Ref<$out_type> = out.try_ref()?;
+                T::validate_input(source)?;
+                T::validate_output(out)?;
                 Ok(Box::new($struct_name {
-                    source,
-                    out,
+                    source: source.value(),
+                    out: out.value(),
                     invocation,
+                    marker: core::marker::PhantomData::<fn() -> T>,
                 }))
             }
         }
 
         impl<T> MechFunctionImpl for $struct_name<T>
         where
-            T: Debug + Clone + Sync + Send + PartialEq + 'static,
+            T: ManagedAccessElement,
             $out_type: FunctionStateBacking,
         {
-            fn solve_result(&self) -> MResult<()> {
+            fn planned_output_shapes(&self) -> MResult<Option<Box<[ShapeInstance]>>> {
+                Ok(planned_matrix_access_output_shape(
+                    self.invocation.output_cell(),
+                    self.invocation.input_cells(),
+                )?
+                .map(|shape| vec![shape].into_boxed_slice()))
+            }
+
+            fn solve_managed(
+                &self,
+                frame: &mut mech_core::KernelMemoryFrame<'_>,
+                _services: &mut dyn mech_core::MechExecutionServices,
+            ) -> MResult<mech_core::ReactiveSolveStatus> {
                 validate_matrix_access_all_elements_contract(
                     self.invocation.output_cell(),
                     self.invocation.input_cells(),
                 )?;
-                access_1d_all!(self.source.as_ptr(), self.out.as_mut_ptr());
-                Ok(())
+                T::solve_all(frame, &self.source, &self.out)?;
+                Ok(mech_core::ReactiveSolveStatus::Changed)
             }
 
             fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-                Some(FunctionStatePort::from_ref(&self.out))
+                Some(FunctionStatePort::from_cell(self.out.cell()))
             }
 
             fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
-                Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
+                Ok(Some(vec![FunctionStatePort::from_cell(self.out.cell())]))
             }
 
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
@@ -964,11 +1449,11 @@ macro_rules! impl_access_all_fxn {
         #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $struct_name<T>
         where
-            T: CompileConst + ConstElem + FunctionRuntimeType + CanonicalMatrixElementBacking,
+            T: ManagedAccessElement + CompileConst,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-                let out = compile_register_brrw!(self.out, ctx);
-                let source = compile_register_brrw!(self.source, ctx);
+                let out = compile_value_cell_register(self.out.cell(), ctx)?;
+                let source = compile_value_cell_register(self.source.cell(), ctx)?;
                 let all = self
                     .invocation
                     .input(1)
@@ -991,32 +1476,25 @@ macro_rules! impl_access_fxn2 {
     ($struct_name:ident, $arg_type:ty, $ix1_type:ty, $ix2_type:ty, $out_type:ty, $op:ident, $contract:ident) => {
         #[derive(Debug)]
         struct $struct_name<T> {
-            source: Ref<$arg_type>,
-            ix1: Ref<$ix1_type>,
-            ix2: Ref<$ix2_type>,
-            out: Ref<$out_type>,
+            source: FunctionValueInput,
+            ix1: FunctionValueInput,
+            ix2: FunctionValueInput,
+            out: FunctionValueOutput,
             invocation: FunctionInvocation,
+            marker: core::marker::PhantomData<fn() -> T>,
         }
         impl<T> MechFunctionFactory for $struct_name<T>
         where
-            T: Debug
-                + Clone
-                + Sync
-                + Send
-                + PartialEq
-                + 'static
-                + ConstElem
-                + FunctionRuntimeType
-                + CanonicalMatrixElementBacking,
+            T: ManagedAccessElement,
             #[cfg(feature = "semantic-compiler")]
-            T: CompileConst + CanonicalMatrixElementBacking,
+            T: CompileConst,
             $arg_type: FunctionPortBacking,
-            $ix1_type: FunctionPortBacking,
-            $ix2_type: FunctionPortBacking,
+            $ix1_type: FunctionPortBacking + ManagedAccessSelectorBacking,
+            $ix2_type: FunctionPortBacking + ManagedAccessSelectorBacking,
             $out_type: FunctionStateBacking,
         {
             fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
-                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+                T::MEMORY_CLASS
             }
 
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::ternary(
@@ -1028,41 +1506,62 @@ macro_rules! impl_access_fxn2 {
 
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (out, source, ix1, ix2) = invocation.expect_ternary()?;
-                let source: Ref<$arg_type> = source.try_ref()?;
-                let ix1: Ref<$ix1_type> = ix1.try_ref()?;
-                let ix2: Ref<$ix2_type> = ix2.try_ref()?;
-                let out: Ref<$out_type> = out.try_ref()?;
+                T::validate_input(source)?;
+                <$ix1_type as ManagedAccessSelectorBacking>::validate(ix1)?;
+                <$ix2_type as ManagedAccessSelectorBacking>::validate(ix2)?;
+                T::validate_output(out)?;
                 Ok(Box::new($struct_name {
-                    source,
-                    ix1,
-                    ix2,
-                    out,
+                    source: source.value(),
+                    ix1: ix1.value(),
+                    ix2: ix2.value(),
+                    out: out.value(),
                     invocation,
+                    marker: core::marker::PhantomData::<fn() -> T>,
                 }))
             }
         }
         impl<T> MechFunctionImpl for $struct_name<T>
         where
-            T: Debug + Clone + Sync + Send + PartialEq + 'static,
+            T: ManagedAccessElement,
+            $ix1_type: ManagedAccessSelectorBacking,
+            $ix2_type: ManagedAccessSelectorBacking,
             $out_type: FunctionStateBacking,
         {
-            fn solve_result(&self) -> MResult<()> {
+            fn planned_output_shapes(&self) -> MResult<Option<Box<[ShapeInstance]>>> {
+                Ok(planned_matrix_access_output_shape(
+                    self.invocation.output_cell(),
+                    self.invocation.input_cells(),
+                )?
+                .map(|shape| vec![shape].into_boxed_slice()))
+            }
+
+            fn solve_managed(
+                &self,
+                frame: &mut mech_core::KernelMemoryFrame<'_>,
+                _services: &mut dyn mech_core::MechExecutionServices,
+            ) -> MResult<mech_core::ReactiveSolveStatus> {
                 validate_matrix_access_contract(
                     self.invocation.output_cell(),
                     self.invocation.input_cells(),
                 )?;
-                let source_ptr = self.source.as_ptr();
-                let ix1_ptr = self.ix1.as_ptr();
-                let ix2_ptr = self.ix2.as_ptr();
-                let out_ptr = self.out.as_mut_ptr();
-                $op!(source_ptr, ix1_ptr, ix2_ptr, out_ptr);
-                Ok(())
+                T::solve_ternary::<
+                    <$ix1_type as ManagedAccessSelectorBacking>::Element,
+                    <$ix2_type as ManagedAccessSelectorBacking>::Element,
+                >(
+                    frame,
+                    &self.source,
+                    &self.ix1,
+                    &self.ix2,
+                    &self.out,
+                    managed_access_kernel!($op),
+                )?;
+                Ok(mech_core::ReactiveSolveStatus::Changed)
             }
             fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-                Some(FunctionStatePort::from_ref(&self.out))
+                Some(FunctionStatePort::from_cell(self.out.cell()))
             }
             fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
-                Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
+                Ok(Some(vec![FunctionStatePort::from_cell(self.out.cell())]))
             }
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
                 Some(&$contract)
@@ -1074,7 +1573,7 @@ macro_rules! impl_access_fxn2 {
         #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $struct_name<T>
         where
-            T: CompileConst + ConstElem + FunctionRuntimeType + CanonicalMatrixElementBacking,
+            T: ManagedAccessElement + CompileConst,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 let name = format!(
@@ -1082,7 +1581,13 @@ macro_rules! impl_access_fxn2 {
                     stringify!($struct_name),
                     <T as FunctionRuntimeType>::REPRESENTATION
                 );
-                compile_ternop!(name, self.out, self.source, self.ix1, self.ix2, ctx);
+                let out = compile_value_cell_register(self.out.cell(), ctx)?;
+                let source = compile_value_cell_register(self.source.cell(), ctx)?;
+                let ix1 = compile_value_cell_register(self.ix1.cell(), ctx)?;
+                let ix2 = compile_value_cell_register(self.ix2.cell(), ctx)?;
+                let function = ctx.function_id(&name)?;
+                ctx.emit_ternop(function, out, source, ix1, ix2);
+                Ok(out)
             }
         }
     };
@@ -2603,8 +3108,95 @@ declare_matrix_selection_contract!(PURE_UNARY_INDEX_CONVERSION_CONTRACT, 1, "sca
 #[derive(Debug)]
 #[cfg(any(feature = "subscript_formula", feature = "subscript_range"))]
 struct CanonicalIndexConversion {
-    source: FunctionValueInput,
-    output: FunctionValueOutput,
+    source: ManagedIndexInput,
+    output: mech_core::ManagedPort<usize>,
+}
+
+#[cfg(any(feature = "subscript_formula", feature = "subscript_range"))]
+macro_rules! managed_index_inputs {
+    ($($(#[$cfg:meta])* $variant:ident: $type:ty, $schema:pat => $value:expr);+ $(;)?) => {
+        #[derive(Debug)]
+        enum ManagedIndexInput {
+            $($(#[$cfg])* $variant(mech_core::ManagedPort<$type>)),+
+        }
+
+        impl ManagedIndexInput {
+            fn bind(source: mech_core::FunctionInputPort<'_>, schema: &SchemaBody) -> MResult<Self> {
+                match schema {
+                    $($(#[$cfg])* $schema => Ok(Self::$variant(source.try_managed_element::<$type>()?)),)+
+                    _ => Err(index_conversion_error()),
+                }
+            }
+
+            #[cfg(feature = "semantic-compiler")]
+            fn cell(&self) -> &ValueCell {
+                match self { $($(#[$cfg])* Self::$variant(port) => port.cell()),+ }
+            }
+
+            fn convert(&self, frame: &mut mech_core::KernelMemoryFrame<'_>, output: &mech_core::ManagedPort<usize>) -> MResult<()> {
+                match self {
+                    $($(#[$cfg])* Self::$variant(source) => {
+                        frame.with_unary_typed_port_views(source, output, |source, output| {
+                            if source.len() != output.len() {
+                                return Err(index_conversion_error());
+                            }
+                            // Canonical selector matrices flatten in row-major
+                            // order even when their live arena is column-major.
+                            // Conversion uses the core semantic authority and
+                            // writes only the transaction's unpublished stage.
+                            output.try_fill_column_major(|index| {
+                                let value = source.get(index / source.columns(), index % source.columns())
+                                    .ok_or_else(index_conversion_error)?;
+                                let ordinal = mech_core::canonical_positional_ordinal(&($value)(value))
+                                    .map_err(|_| index_conversion_error())?;
+                                usize::try_from(ordinal).map_err(|_| index_conversion_error())
+                            })
+                        })
+                    }),+
+                }
+            }
+        }
+    };
+}
+
+#[cfg(any(feature = "subscript_formula", feature = "subscript_range"))]
+managed_index_inputs!(
+    Index: usize, SchemaBody::Index => |value| ValueData::Index(value as u64);
+    #[cfg(feature = "u8")]
+    U8: u8, SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W8) => ValueData::U8;
+    #[cfg(feature = "u16")]
+    U16: u16, SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W16) => ValueData::U16;
+    #[cfg(feature = "u32")]
+    U32: u32, SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W32) => ValueData::U32;
+    #[cfg(feature = "u64")]
+    U64: u64, SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64) => ValueData::U64;
+    #[cfg(feature = "u128")]
+    U128: u128, SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W128) => ValueData::U128;
+    #[cfg(feature = "i8")]
+    I8: i8, SchemaBody::SignedInteger(mech_core::IntegerWidth::W8) => ValueData::I8;
+    #[cfg(feature = "i16")]
+    I16: i16, SchemaBody::SignedInteger(mech_core::IntegerWidth::W16) => ValueData::I16;
+    #[cfg(feature = "i32")]
+    I32: i32, SchemaBody::SignedInteger(mech_core::IntegerWidth::W32) => ValueData::I32;
+    #[cfg(feature = "i64")]
+    I64: i64, SchemaBody::SignedInteger(mech_core::IntegerWidth::W64) => ValueData::I64;
+    #[cfg(feature = "i128")]
+    I128: i128, SchemaBody::SignedInteger(mech_core::IntegerWidth::W128) => ValueData::I128;
+    #[cfg(feature = "f32")]
+    F32: f32, SchemaBody::FloatingPoint(mech_core::FloatWidth::W32) => |value| ValueData::F32(mech_core::snapshot::F32Bits::from_f32(value));
+    #[cfg(feature = "f64")]
+    F64: f64, SchemaBody::FloatingPoint(mech_core::FloatWidth::W64) => |value| ValueData::F64(mech_core::snapshot::F64Bits::from_f64(value));
+);
+
+#[cfg(any(feature = "subscript_formula", feature = "subscript_range"))]
+fn index_conversion_error() -> MechError {
+    MechError::new(
+        CannotConvertToTypeError {
+            target_type: "portable index",
+        },
+        None,
+    )
+    .with_compiler_loc()
 }
 
 #[cfg(any(feature = "subscript_formula", feature = "subscript_range"))]
@@ -2619,10 +3211,16 @@ impl MechFunctionFactory for CanonicalIndexConversion {
     );
 
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        validate_canonical_index_conversion(invocation.output_cell(), invocation.input_cells())?;
+        let schema = invocation.input_cells()[0].closed_schema_body()?;
+        let element = match &schema {
+            SchemaBody::Matrix { element, .. } => element.as_ref(),
+            scalar => scalar,
+        };
         let (output, source) = invocation.expect_unary()?;
         Ok(Box::new(Self {
-            source: source.value(),
-            output: output.value(),
+            source: ManagedIndexInput::bind(source, element)?,
+            output: output.try_managed_element::<usize>()?,
         }))
     }
 
@@ -2633,22 +3231,13 @@ impl MechFunctionFactory for CanonicalIndexConversion {
 
 #[cfg(any(feature = "subscript_formula", feature = "subscript_range"))]
 impl MechFunctionImpl for CanonicalIndexConversion {
-    fn solve_result(&self) -> MResult<()> {
-        if let Some(elements) = self.source.cell().matrix_elements()? {
-            let elements = elements
-                .iter()
-                .map(canonical_portable_index)
-                .map(|value| value.map(|value| ValueDataDraft::Index(value as u64)))
-                .collect::<MResult<Vec<_>>>()?;
-            let next = self.output.cell().rebuild_matrix_drafts(
-                vec![elements.len() as u64, 1].into_boxed_slice(),
-                elements.into_boxed_slice(),
-            )?;
-            return self.output.replace(&next);
-        }
-        let index = canonical_portable_index(self.source.cell())?;
-        self.output
-            .replace(&ValueCell::from_exact(index)?.snapshot()?)
+    fn solve_managed(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        self.source.convert(frame, &self.output)?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
@@ -2682,8 +3271,8 @@ impl MechFunctionCompiler for CanonicalIndexConversion {
     }
 
     fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let output = self.output.compile_register(context)?;
-        let source = self.source.compile_register(context)?;
+        let output = mech_core::compile_value_cell_register(self.output.cell(), context)?;
+        let source = mech_core::compile_value_cell_register(self.source.cell(), context)?;
         context.emit_unop(hash_str("access/index"), output, source);
         Ok(output)
     }
@@ -2769,25 +3358,24 @@ pub(crate) fn canonical_reactive_scalar_index(
     }
     let output = ValueCell::from_exact(canonical_portable_index(&value)?)?;
     let invocation = FunctionInvocation::unary(output.clone(), value);
-    let instance = FunctionInstance::new(
+    let instance = (
         CanonicalIndexConversion::new_invocation(invocation.clone())?,
         invocation,
     );
+    let specialized = SpecializedFunction::syntax_directed(
+        instance,
+        ResolvedOperationDescriptor::from_name(
+            "access/index",
+            PURE_UNARY_INDEX_CONVERSION_CONTRACT.clone(),
+        )?,
+        RuntimeFunctionId::from_name("access/index"),
+        ExecutionTarget::DirectRuntime,
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch,
+    )?;
     if !execution.plan().activation_registration_active() {
-        instance.solve_result()?;
+        specialized.instance().solve_result()?;
     }
-    execution
-        .plan()
-        .register_specialized(SpecializedFunction::syntax_directed(
-            instance,
-            ResolvedOperationDescriptor::from_name(
-                "access/index",
-                PURE_UNARY_INDEX_CONVERSION_CONTRACT.clone(),
-            )?,
-            RuntimeFunctionId::from_name("access/index"),
-            ExecutionTarget::DirectRuntime,
-            mech_core::ImplementationMemoryClass::NoAdditionalScratch,
-        )?)?;
+    execution.plan().register_specialized(specialized)?;
     Ok(output)
 }
 
@@ -2845,24 +3433,23 @@ pub(crate) fn canonical_reactive_index_matrix(
         elements.into_boxed_slice(),
     )?;
     let invocation = FunctionInvocation::unary(output.clone(), value);
-    let instance = FunctionInstance::new(
+    let instance = (
         CanonicalIndexConversion::new_invocation(invocation.clone())?,
         invocation,
     );
+    let specialized = SpecializedFunction::syntax_directed(
+        instance,
+        ResolvedOperationDescriptor::from_name(
+            "access/index",
+            PURE_UNARY_INDEX_CONVERSION_CONTRACT.clone(),
+        )?,
+        RuntimeFunctionId::from_name("access/index"),
+        ExecutionTarget::DirectRuntime,
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch,
+    )?;
     if !execution.plan().activation_registration_active() {
-        instance.solve_result()?;
+        specialized.instance().solve_result()?;
     }
-    execution
-        .plan()
-        .register_specialized(SpecializedFunction::syntax_directed(
-            instance,
-            ResolvedOperationDescriptor::from_name(
-                "access/index",
-                PURE_UNARY_INDEX_CONVERSION_CONTRACT.clone(),
-            )?,
-            RuntimeFunctionId::from_name("access/index"),
-            ExecutionTarget::DirectRuntime,
-            mech_core::ImplementationMemoryClass::NoAdditionalScratch,
-        )?)?;
+    execution.plan().register_specialized(specialized)?;
     Ok(output)
 }

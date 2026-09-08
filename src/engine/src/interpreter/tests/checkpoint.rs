@@ -52,8 +52,8 @@ mod checkpoint_tests {
     }
 
     fn install_scalar(interpreter: &Interpreter, name: &str, value: f64) -> (ValueCell, Ref<f64>) {
-        let cell = ValueCell::from_exact(value).unwrap();
-        let backing = exact_f64(&cell);
+        let backing = Ref::new(value);
+        let cell = ValueCell::from_external_ref(backing.clone(), None).unwrap();
         let id = hash_str(name);
         let symbols = interpreter.symbols();
         let cell = symbols.borrow_mut().insert_cell(id, cell, true);
@@ -528,9 +528,9 @@ mod checkpoint_tests {
             );
         }
         #[cfg(feature = "invariant_define")]
-        let invariant_result = ValueCell::from_exact(true).unwrap();
+        let invariant_result = ValueCell::from_external_ref(Ref::new(true), None).unwrap();
         #[cfg(feature = "invariant_define")]
-        let invariant_rhs = ValueCell::from_exact(2.0).unwrap();
+        let invariant_rhs = ValueCell::from_external_ref(Ref::new(2.0), None).unwrap();
         #[cfg(feature = "invariant_define")]
         {
             let invariant_id = hash_str("checkpoint-invariant");

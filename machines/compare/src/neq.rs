@@ -3,6 +3,18 @@ use crate::*;
 // Not Equal ---------------------------------------------------------------
 
 macro_rules! neq_scalar_lhs_op {
+    (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => {
+        apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::RightScalar, |lhs, rhs| lhs != rhs)
+    };
+    (managed, $lhs:expr, $rhs:expr, $out:expr) => {
+        apply_managed_comparison(
+            $lhs,
+            $rhs,
+            $out,
+            ComparisonBroadcast::RightScalar,
+            |lhs, rhs| lhs != rhs,
+        )
+    };
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
             for i in 0..(*$lhs).len() {
@@ -13,6 +25,18 @@ macro_rules! neq_scalar_lhs_op {
 }
 
 macro_rules! neq_scalar_rhs_op {
+    (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => {
+        apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::LeftScalar, |lhs, rhs| lhs != rhs)
+    };
+    (managed, $lhs:expr, $rhs:expr, $out:expr) => {
+        apply_managed_comparison(
+            $lhs,
+            $rhs,
+            $out,
+            ComparisonBroadcast::LeftScalar,
+            |lhs, rhs| lhs != rhs,
+        )
+    };
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
             for i in 0..(*$rhs).len() {
@@ -23,6 +47,14 @@ macro_rules! neq_scalar_rhs_op {
 }
 
 macro_rules! neq_vec_op {
+    (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => {
+        apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::Exact, |lhs, rhs| lhs != rhs)
+    };
+    (managed, $lhs:expr, $rhs:expr, $out:expr) => {
+        apply_managed_comparison($lhs, $rhs, $out, ComparisonBroadcast::Exact, |lhs, rhs| {
+            lhs != rhs
+        })
+    };
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
             for i in 0..(*$lhs).len() {
@@ -33,6 +65,14 @@ macro_rules! neq_vec_op {
 }
 
 macro_rules! neq_op {
+    (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => {
+        apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::Exact, |lhs, rhs| lhs != rhs)
+    };
+    (managed, $lhs:expr, $rhs:expr, $out:expr) => {
+        apply_managed_comparison($lhs, $rhs, $out, ComparisonBroadcast::Exact, |lhs, rhs| {
+            lhs != rhs
+        })
+    };
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
             (*$out) = (*$lhs) != (*$rhs);
@@ -41,6 +81,18 @@ macro_rules! neq_op {
 }
 
 macro_rules! neq_mat_vec_op {
+    (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => {
+        apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::RightColumn, |lhs, rhs| lhs != rhs)
+    };
+    (managed, $lhs:expr, $rhs:expr, $out:expr) => {
+        apply_managed_comparison(
+            $lhs,
+            $rhs,
+            $out,
+            ComparisonBroadcast::RightColumn,
+            |lhs, rhs| lhs != rhs,
+        )
+    };
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
             let out_deref = &mut (*$out);
@@ -56,6 +108,18 @@ macro_rules! neq_mat_vec_op {
 }
 
 macro_rules! neq_vec_mat_op {
+    (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => {
+        apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::LeftColumn, |lhs, rhs| lhs != rhs)
+    };
+    (managed, $lhs:expr, $rhs:expr, $out:expr) => {
+        apply_managed_comparison(
+            $lhs,
+            $rhs,
+            $out,
+            ComparisonBroadcast::LeftColumn,
+            |lhs, rhs| lhs != rhs,
+        )
+    };
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
             let out_deref = &mut (*$out);
@@ -71,6 +135,18 @@ macro_rules! neq_vec_mat_op {
 }
 
 macro_rules! neq_mat_row_op {
+    (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => {
+        apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::RightRow, |lhs, rhs| lhs != rhs)
+    };
+    (managed, $lhs:expr, $rhs:expr, $out:expr) => {
+        apply_managed_comparison(
+            $lhs,
+            $rhs,
+            $out,
+            ComparisonBroadcast::RightRow,
+            |lhs, rhs| lhs != rhs,
+        )
+    };
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
             let out_deref = &mut (*$out);
@@ -86,6 +162,18 @@ macro_rules! neq_mat_row_op {
 }
 
 macro_rules! neq_row_mat_op {
+    (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => {
+        apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::LeftRow, |lhs, rhs| lhs != rhs)
+    };
+    (managed, $lhs:expr, $rhs:expr, $out:expr) => {
+        apply_managed_comparison(
+            $lhs,
+            $rhs,
+            $out,
+            ComparisonBroadcast::LeftRow,
+            |lhs, rhs| lhs != rhs,
+        )
+    };
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
             let out_deref = &mut (*$out);
@@ -107,13 +195,13 @@ impl_compare_fxns!(NEQ);
 pub struct AtomNeq {
     lhs: FunctionValueInput,
     rhs: FunctionValueInput,
-    pub out: Ref<bool>,
+    pub out: ManagedPort<bool>,
 }
 #[cfg(feature = "atom")]
 impl MechFunctionFactory for AtomNeq {
-            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
-                mech_core::ImplementationMemoryClass::NoAdditionalScratch
-            }
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch
+    }
 
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
         FunctionValueRepresentation::Bool,
@@ -125,7 +213,7 @@ impl MechFunctionFactory for AtomNeq {
         let (out, lhs, rhs) = invocation.expect_binary()?;
         let lhs = lhs.value();
         let rhs = rhs.value();
-        let out: Ref<bool> = out.try_ref()?;
+        let out = out.try_managed_element::<bool>()?;
         Ok(Box::new(AtomNeq { lhs, rhs, out }))
     }
 
@@ -135,13 +223,19 @@ impl MechFunctionFactory for AtomNeq {
 }
 #[cfg(feature = "atom")]
 impl MechFunctionImpl for AtomNeq {
-    fn solve_result(&self) -> MResult<()> {
-        let next = !self.lhs.snapshot_eq(&self.rhs)?;
-        *self.out.borrow_mut() = next;
-        Ok(())
+    fn solve_managed(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        let next = !frame.function_value_inputs_equal(&self.lhs, &self.rhs)?;
+        frame.with_output_port_view(&self.out, |out| {
+            out.try_fill_column_major(|_| Ok(next))
+        })?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-        Some(FunctionStatePort::from_ref(&self.out))
+        Some(FunctionStatePort::from_cell(self.out.cell()))
     }
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_COMPARE_SCALAR_CONTRACT)
@@ -150,7 +244,7 @@ impl MechFunctionImpl for AtomNeq {
         format!("{:#?}", self)
     }
     fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
-        Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
+        Ok(Some(vec![FunctionStatePort::from_cell(self.out.cell())]))
     }
 }
 #[cfg(feature = "atom")]
@@ -158,7 +252,7 @@ impl MechFunctionImpl for AtomNeq {
 impl MechFunctionCompiler for AtomNeq {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("AtomNeq");
-        let destination = compile_register_brrw!(self.out, ctx);
+        let destination = compile_value_cell_register(self.out.cell(), ctx)?;
         let lhs = self.lhs.compile_register(ctx)?;
         let rhs = self.rhs.compile_register(ctx)?;
         ctx.emit_binop(hash_str(&name), destination, lhs, rhs);
@@ -171,13 +265,13 @@ impl MechFunctionCompiler for AtomNeq {
 pub struct TableNeq {
     lhs: FunctionValueInput,
     rhs: FunctionValueInput,
-    pub out: Ref<bool>,
+    pub out: ManagedPort<bool>,
 }
 #[cfg(feature = "table")]
 impl MechFunctionFactory for TableNeq {
-            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
-                mech_core::ImplementationMemoryClass::NoAdditionalScratch
-            }
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch
+    }
 
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
         FunctionValueRepresentation::Bool,
@@ -189,7 +283,7 @@ impl MechFunctionFactory for TableNeq {
         let (out, lhs, rhs) = invocation.expect_binary()?;
         let lhs = lhs.value();
         let rhs = rhs.value();
-        let out: Ref<bool> = out.try_ref()?;
+        let out = out.try_managed_element::<bool>()?;
         Ok(Box::new(TableNeq { lhs, rhs, out }))
     }
 
@@ -199,13 +293,19 @@ impl MechFunctionFactory for TableNeq {
 }
 #[cfg(feature = "table")]
 impl MechFunctionImpl for TableNeq {
-    fn solve_result(&self) -> MResult<()> {
-        let next = !self.lhs.snapshot_eq(&self.rhs)?;
-        *self.out.borrow_mut() = next;
-        Ok(())
+    fn solve_managed(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        let next = !frame.function_value_inputs_equal(&self.lhs, &self.rhs)?;
+        frame.with_output_port_view(&self.out, |out| {
+            out.try_fill_column_major(|_| Ok(next))
+        })?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-        Some(FunctionStatePort::from_ref(&self.out))
+        Some(FunctionStatePort::from_cell(self.out.cell()))
     }
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_COMPARE_SCALAR_CONTRACT)
@@ -214,7 +314,7 @@ impl MechFunctionImpl for TableNeq {
         format!("{:#?}", self)
     }
     fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
-        Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
+        Ok(Some(vec![FunctionStatePort::from_cell(self.out.cell())]))
     }
 }
 #[cfg(feature = "table")]
@@ -222,7 +322,7 @@ impl MechFunctionImpl for TableNeq {
 impl MechFunctionCompiler for TableNeq {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("TableNeq");
-        let destination = compile_register_brrw!(self.out, ctx);
+        let destination = compile_value_cell_register(self.out.cell(), ctx)?;
         let lhs = self.lhs.compile_register(ctx)?;
         let rhs = self.rhs.compile_register(ctx)?;
         ctx.emit_binop(hash_str(&name), destination, lhs, rhs);

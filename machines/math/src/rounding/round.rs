@@ -4,38 +4,14 @@ use crate::*;
 
 use libm::{round, roundf};
 macro_rules! round_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = round((*$arg));
-        }
-    };
-}
-
-macro_rules! round_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = round(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(round(($arg)))
     };
 }
 
 macro_rules! roundf_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = roundf((*$arg));
-        }
-    };
-}
-
-macro_rules! roundf_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = roundf(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(roundf(($arg)))
     };
 }
 

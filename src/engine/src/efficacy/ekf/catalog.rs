@@ -2,20 +2,19 @@
 
 use std::sync::{Arc, LazyLock};
 
-use mech_core::snapshot::F64Bits;
 use mech_core::{
     AccessMode, AliasPolicy, BuiltinScalarKind, BytecodeCompilerContext,
     CanonicalFunctionSpecializer, ChangeDetectionPolicy, DeliveryMode, DimensionExpr,
     ExternalInteraction, FunctionCatalog, FunctionCatalogBuilder, FunctionExport, FunctionExposure,
-    FunctionInstance, FunctionInvocation, FunctionRuntimeType, FunctionStatePort,
-    FunctionTypeDeclaration, GuardFunctionSafety, InputKindScheme, InputPortLayout,
-    InputPortPolicy, KindExpr, KindScheme, MResult, MechError, MechErrorKind, MechFunction,
-    MechFunctionCompiler, MechFunctionFactory, MechFunctionImpl, OperationContractDeclaration,
-    OutputConstruction, OutputPortPolicy, ReactiveNodeKind, Ref, Register, RuntimeFunctionContract,
-    RuntimeFunctionSignature, RuntimeOutputAliasPolicy, SchemaBody, ShapeRule,
-    SpecializationContext, SpecializationInvocation, SpecializedFunction, ValueCell, ValueData,
-    ValueDataDraft, compile_runtime_produced_value_cell_register_with_seed,
-    compile_value_cell_register, function_shape_contract_violation,
+    FunctionInvocation, FunctionRuntimeType, FunctionStatePort, FunctionTypeDeclaration,
+    GuardFunctionSafety, InputKindScheme, InputPortLayout, InputPortPolicy, KindExpr, KindScheme,
+    MResult, MechError, MechErrorKind, MechFunction, MechFunctionCompiler, MechFunctionFactory,
+    MechFunctionImpl, OperationContractDeclaration, OutputConstruction, OutputPortPolicy,
+    ReactiveNodeKind, Register, RuntimeFunctionContract, RuntimeFunctionSignature,
+    RuntimeOutputAliasPolicy, SchemaBody, ShapeRule, SpecializationContext,
+    SpecializationInvocation, SpecializedFunction, ValueCell, ValueData,
+    compile_runtime_produced_value_cell_register_with_seed, compile_value_cell_register,
+    function_shape_contract_violation,
 };
 use nalgebra::{DMatrix, DVector};
 
@@ -157,17 +156,10 @@ impl CanonicalFunctionSpecializer for FrozenEkfSpecializer {
             &semantic_inputs,
         )?;
         let output = allocate_output_for_descriptor(output_shape, &descriptor)?;
-        let function = FrozenEkfFunction {
-            operation: self.operation,
-            inputs: inputs.clone().into_boxed_slice(),
-            output: output.clone(),
-        };
-        function.solve_result()?;
+        let invocation = invocation_from_cells(output, inputs.into_boxed_slice());
+        let function = instantiate(self.operation, invocation.clone())?;
         context.certify_instance(
-            FunctionInstance::new(
-                Box::new(function),
-                invocation_from_cells(output, inputs.into_boxed_slice()),
-            ),
+            (function, invocation),
             mech_core::RuntimeFunctionId::from_name(operation_spec(self.operation).canonical_name),
             mech_core::ExecutionTarget::DirectRuntime,
             mech_core::ImplementationMemoryClass::NoAdditionalScratch,
@@ -182,18 +174,95 @@ impl CanonicalFunctionSpecializer for FrozenEkfSpecializer {
 #[derive(Debug)]
 pub(crate) struct FrozenEkfFunction {
     operation: FrozenEkfOperation,
-    inputs: Box<[ValueCell]>,
-    output: ValueCell,
+    inputs: Box<[mech_core::ManagedPort<f64>]>,
+    output: FrozenEkfOutputPort,
+    invocation: FunctionInvocation,
+}
+
+#[derive(Debug)]
+enum FrozenEkfOutputPort {
+    F64(mech_core::ManagedPort<f64>),
+    Bool(mech_core::ManagedPort<bool>),
+}
+
+impl FrozenEkfOutputPort {
+    fn cell(&self) -> &ValueCell {
+        match self {
+            Self::F64(port) => port.cell(),
+            Self::Bool(port) => port.cell(),
+        }
+    }
 }
 
 impl MechFunctionImpl for FrozenEkfFunction {
-    fn solve_result(&self) -> MResult<()> {
-        validate_operation_cells(self.operation, &self.output, &self.inputs)?;
-        evaluate_into(self.operation, &self.inputs, &self.output)
+    fn solve_managed(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        match (&self.output, self.inputs.as_ref()) {
+            (FrozenEkfOutputPort::F64(output), [first]) => {
+                frame.with_unary_port_views(first, output, |first, output| {
+                    evaluate_managed_unary(self.operation, first, output)
+                })?
+            }
+            (FrozenEkfOutputPort::Bool(output), [first]) => {
+                frame.with_unary_typed_port_views(first, output, |first, output| {
+                    evaluate_managed_unary_bool(self.operation, first, output)
+                })?
+            }
+            (FrozenEkfOutputPort::F64(output), [first, second]) => {
+                frame.with_binary_port_views(first, second, output, |first, second, output| {
+                    evaluate_managed_binary(self.operation, first, second, output)
+                })?
+            }
+            (FrozenEkfOutputPort::Bool(output), [first, second]) => frame
+                .with_binary_typed_port_views(first, second, output, |first, second, output| {
+                    evaluate_managed_binary_bool(self.operation, first, second, output)
+                })?,
+            (FrozenEkfOutputPort::F64(output), [first, second, third]) => frame
+                .with_ternary_typed_port_views(
+                    first,
+                    second,
+                    third,
+                    output,
+                    |first, second, third, output| {
+                        evaluate_managed_ternary(self.operation, first, second, third, output)
+                    },
+                )?,
+            (FrozenEkfOutputPort::F64(output), [first, second, third, fourth]) => frame
+                .with_quaternary_typed_port_views(
+                    first,
+                    second,
+                    third,
+                    fourth,
+                    output,
+                    |first, second, third, fourth, output| {
+                        evaluate_managed_quaternary(
+                            self.operation,
+                            first,
+                            second,
+                            third,
+                            fourth,
+                            output,
+                        )
+                    },
+                )?,
+            _ => {
+                return Err(operation_error(
+                    self.operation,
+                    FrozenEkfOperationFailure::Arity {
+                        expected: operation_spec(self.operation).inputs.len(),
+                        found: self.inputs.len(),
+                    },
+                ));
+            }
+        }
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-        Some(FunctionStatePort::from_cell(&self.output))
+        Some(FunctionStatePort::from_cell(self.output.cell()))
     }
 
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
@@ -211,22 +280,24 @@ impl MechFunctionImpl for FrozenEkfFunction {
 
 impl MechFunctionCompiler for FrozenEkfFunction {
     fn compiler_owned_value_cells(&self) -> Vec<ValueCell> {
-        std::iter::once(self.output.clone())
-            .chain(self.inputs.iter().cloned())
+        std::iter::once(self.invocation.output_cell().clone())
+            .chain(self.invocation.input_cells().iter().cloned())
             .collect()
     }
 
     fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let output_descriptor = self.output.resolved_descriptor()?;
+        let output = self.invocation.output_cell();
+        let output_descriptor = output.resolved_descriptor()?;
         let zero_cell = allocate_output_for_descriptor(
             operation_spec(self.operation).output,
             &output_descriptor,
         )?;
         let zero = zero_cell.snapshot()?;
         let destination =
-            compile_runtime_produced_value_cell_register_with_seed(&self.output, &zero, context)?;
+            compile_runtime_produced_value_cell_register_with_seed(output, &zero, context)?;
         let inputs = self
-            .inputs
+            .invocation
+            .input_cells()
             .iter()
             .map(|argument| compile_value_cell_register(argument, context))
             .collect::<MResult<Vec<_>>>()?;
@@ -274,10 +345,26 @@ fn instantiate(
         invocation.output_cell(),
         invocation.input_cells(),
     )?;
+    let inputs = invocation
+        .inputs()
+        .map(|input| input.try_managed_element::<f64>())
+        .collect::<MResult<Vec<_>>>()?
+        .into_boxed_slice();
+    let output = match operation_spec(operation).output {
+        FrozenEkfValueShape::Bool => {
+            FrozenEkfOutputPort::Bool(invocation.output().try_managed_element::<bool>()?)
+        }
+        FrozenEkfValueShape::F64
+        | FrozenEkfValueShape::Vector(_)
+        | FrozenEkfValueShape::Matrix { .. } => {
+            FrozenEkfOutputPort::F64(invocation.output().try_managed_element::<f64>()?)
+        }
+    };
     Ok(Box::new(FrozenEkfFunction {
         operation,
-        inputs: invocation.input_cells().to_vec().into_boxed_slice(),
-        output: invocation.output_cell().clone(),
+        inputs,
+        output,
+        invocation,
     }))
 }
 
@@ -607,7 +694,7 @@ impl CanonicalFunctionSpecializer for FrozenF64NegateSpecializer {
         };
         let output = ValueCell::from_exact(-value.to_f64())?;
         context.certify_instance(
-            FunctionInstance::new(
+            (
                 Box::new(FrozenF64NegateFunction {
                     output: output.clone(),
                 }),
@@ -630,8 +717,15 @@ struct FrozenF64NegateFunction {
 }
 
 impl MechFunctionImpl for FrozenF64NegateFunction {
-    fn solve_result(&self) -> MResult<()> {
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        // The specializer has already produced the immutable folded value.
+        // Reporting a change would require a newly initialized transaction
+        // stage and would incorrectly replace that value during registration.
+        Ok(mech_core::ReactiveSolveStatus::Unchanged)
     }
 
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
@@ -741,68 +835,36 @@ fn allocate_output(shape: FrozenEkfValueShape) -> MResult<ValueCell> {
         FrozenEkfValueShape::Vector(length) => {
             #[cfg(feature = "vector2")]
             if length == 2 {
-                return ValueCell::from_exact_matrix_ref(
-                    Ref::new(nalgebra::Vector2::<f64>::zeros()),
-                    2,
-                    1,
-                );
+                return ValueCell::from_exact(nalgebra::Vector2::<f64>::zeros());
             }
             #[cfg(feature = "vector3")]
             if length == 3 {
-                return ValueCell::from_exact_matrix_ref(
-                    Ref::new(nalgebra::Vector3::<f64>::zeros()),
-                    3,
-                    1,
-                );
+                return ValueCell::from_exact(nalgebra::Vector3::<f64>::zeros());
             }
             #[cfg(feature = "vector4")]
             if length == 4 {
-                return ValueCell::from_exact_matrix_ref(
-                    Ref::new(nalgebra::Vector4::<f64>::zeros()),
-                    4,
-                    1,
-                );
+                return ValueCell::from_exact(nalgebra::Vector4::<f64>::zeros());
             }
-            ValueCell::from_exact_matrix_ref(Ref::new(DVector::<f64>::zeros(length)), length, 1)
+            ValueCell::from_exact(DVector::<f64>::zeros(length))
         }
         FrozenEkfValueShape::Matrix { rows, columns } => {
             #[cfg(feature = "matrix2")]
             if (rows, columns) == (2, 2) {
-                return ValueCell::from_exact_matrix_ref(
-                    Ref::new(nalgebra::Matrix2::<f64>::zeros()),
-                    rows,
-                    columns,
-                );
+                return ValueCell::from_exact(nalgebra::Matrix2::<f64>::zeros());
             }
             #[cfg(feature = "matrix3")]
             if (rows, columns) == (3, 3) {
-                return ValueCell::from_exact_matrix_ref(
-                    Ref::new(nalgebra::Matrix3::<f64>::zeros()),
-                    rows,
-                    columns,
-                );
+                return ValueCell::from_exact(nalgebra::Matrix3::<f64>::zeros());
             }
             #[cfg(feature = "matrix2x3")]
             if (rows, columns) == (2, 3) {
-                return ValueCell::from_exact_matrix_ref(
-                    Ref::new(nalgebra::Matrix2x3::<f64>::zeros()),
-                    rows,
-                    columns,
-                );
+                return ValueCell::from_exact(nalgebra::Matrix2x3::<f64>::zeros());
             }
             #[cfg(feature = "matrix3x2")]
             if (rows, columns) == (3, 2) {
-                return ValueCell::from_exact_matrix_ref(
-                    Ref::new(nalgebra::Matrix3x2::<f64>::zeros()),
-                    rows,
-                    columns,
-                );
+                return ValueCell::from_exact(nalgebra::Matrix3x2::<f64>::zeros());
             }
-            ValueCell::from_exact_matrix_ref(
-                Ref::new(DMatrix::<f64>::zeros(rows, columns)),
-                rows,
-                columns,
-            )
+            ValueCell::from_exact(DMatrix::<f64>::zeros(rows, columns))
         }
         FrozenEkfValueShape::F64 => ValueCell::from_exact(0.0_f64),
     }
@@ -824,69 +886,64 @@ fn shape_dimensions(shape: FrozenEkfValueShape) -> Option<(usize, usize)> {
     }
 }
 
-fn read_array<const N: usize>(
+fn managed_array<const N: usize>(
     operation: FrozenEkfOperation,
     argument: usize,
-    value: &ValueCell,
+    value: &mech_core::ManagedValueView<'_, f64>,
 ) -> MResult<[f64; N]> {
     let expected = operation_spec(operation).inputs[argument];
-    if value_shape(value)? != Some(expected) {
-        return Err(operation_error(
-            operation,
-            FrozenEkfOperationFailure::Shape { argument, expected },
-        ));
-    }
     let Some((rows, columns)) = shape_dimensions(expected) else {
-        unreachable!("array EKF input has matrix dimensions")
-    };
-    let elements = value.matrix_elements()?.ok_or_else(|| {
-        operation_error(
-            operation,
-            FrozenEkfOperationFailure::Shape { argument, expected },
-        )
-    })?;
-    if elements.len() != N {
         return Err(operation_error(
             operation,
             FrozenEkfOperationFailure::Shape { argument, expected },
         ));
-    }
-    let mut row_major = Vec::with_capacity(N);
-    for element in elements {
-        let snapshot = element.snapshot()?;
-        let ValueData::F64(value) = snapshot.data() else {
-            return Err(operation_error(
-                operation,
-                FrozenEkfOperationFailure::Shape { argument, expected },
-            ));
-        };
-        row_major.push(value.to_f64());
+    };
+    if value.rows() != rows || value.columns() != columns || value.len() != N {
+        return Err(operation_error(
+            operation,
+            FrozenEkfOperationFailure::Shape { argument, expected },
+        ));
     }
     let mut result = [0.0; N];
-    for column in 0..columns {
-        for row in 0..rows {
-            result[column * rows + row] = row_major[row * columns + column];
-        }
+    for (index, slot) in result.iter_mut().enumerate() {
+        *slot = value.get_column_major(index).ok_or_else(|| {
+            operation_error(
+                operation,
+                FrozenEkfOperationFailure::Shape { argument, expected },
+            )
+        })?;
     }
     Ok(result)
 }
 
-fn read_scalar(operation: FrozenEkfOperation, argument: usize, value: &ValueCell) -> MResult<f64> {
-    match value.snapshot()?.data() {
-        ValueData::F64(value) => Ok(value.to_f64()),
-        _ => Err(operation_error(
+fn managed_scalar(
+    operation: FrozenEkfOperation,
+    argument: usize,
+    value: &mech_core::ManagedValueView<'_, f64>,
+) -> MResult<f64> {
+    if operation_spec(operation).inputs[argument] != FrozenEkfValueShape::F64 || value.len() != 1 {
+        return Err(operation_error(
             operation,
             FrozenEkfOperationFailure::Shape {
                 argument,
                 expected: FrozenEkfValueShape::F64,
             },
-        )),
+        ));
     }
+    value.get(0, 0).ok_or_else(|| {
+        operation_error(
+            operation,
+            FrozenEkfOperationFailure::Shape {
+                argument,
+                expected: FrozenEkfValueShape::F64,
+            },
+        )
+    })
 }
 
-fn write_array<const N: usize>(
+fn publish_managed_array<const N: usize>(
     operation: FrozenEkfOperation,
-    output: &ValueCell,
+    output: &mut mech_core::ManagedValueViewMut<'_, f64>,
     value: [f64; N],
 ) -> MResult<()> {
     let expected = operation_spec(operation).output;
@@ -896,182 +953,264 @@ fn write_array<const N: usize>(
             FrozenEkfOperationFailure::OutputShape,
         ));
     };
-    if rows.saturating_mul(columns) != N || value_shape(output)? != Some(expected) {
+    if output.rows() != rows || output.columns() != columns || output.len() != N {
         return Err(operation_error(
             operation,
             FrozenEkfOperationFailure::OutputShape,
         ));
     }
-    let mut row_major = Vec::with_capacity(N);
-    for row in 0..rows {
-        for column in 0..columns {
-            row_major.push(ValueDataDraft::F64(F64Bits::from_f64(
-                value[column * rows + row],
-            )));
-        }
-    }
-    let next = output.rebuild_matrix_drafts(
-        vec![rows as u64, columns as u64].into_boxed_slice(),
-        row_major.into_boxed_slice(),
-    )?;
-    output.replace(&next)
+    output.try_fill_column_major(|index| Ok(value[index]))
 }
 
-fn write_bool(operation: FrozenEkfOperation, output: &ValueCell, value: bool) -> MResult<()> {
-    if value_shape(output)? != Some(FrozenEkfValueShape::Bool) {
-        return Err(operation_error(
-            operation,
-            FrozenEkfOperationFailure::OutputShape,
-        ));
-    }
-    let next = output.rebuild_data_draft(ValueDataDraft::Bool(value))?;
-    output.replace(&next)
-}
-
-fn evaluate_into(
+fn publish_managed_bool(
     operation: FrozenEkfOperation,
-    inputs: &[ValueCell],
-    output: &ValueCell,
+    output: &mut mech_core::ManagedValueViewMut<'_, bool>,
+    value: bool,
+) -> MResult<()> {
+    if operation_spec(operation).output != FrozenEkfValueShape::Bool || output.len() != 1 {
+        return Err(operation_error(
+            operation,
+            FrozenEkfOperationFailure::OutputShape,
+        ));
+    }
+    output.try_fill_column_major(|_| Ok(value))
+}
+
+fn evaluate_managed_unary(
+    operation: FrozenEkfOperation,
+    input: mech_core::ManagedValueView<'_, f64>,
+    output: &mut mech_core::ManagedValueViewMut<'_, f64>,
+) -> MResult<()> {
+    let next = match operation {
+        Kernel(TrigonometricState) => {
+            return publish_managed_array(
+                operation,
+                output,
+                math::trigonometric_state(&managed_array(operation, 0, &input)?),
+            );
+        }
+        Kernel(MeasurementJacobian) => {
+            return publish_managed_array(
+                operation,
+                output,
+                math::measurement_jacobian(&managed_array(operation, 0, &input)?),
+            );
+        }
+        Kernel(Solve2x2) => math::solve_2x2(&managed_array(operation, 0, &input)?)
+            .map_err(|error| operation_error(operation, FrozenEkfOperationFailure::Math(error)))?,
+        Kernel(CovarianceSymmetrization) => {
+            return publish_managed_array(
+                operation,
+                output,
+                math::covariance_symmetrization(&managed_array(operation, 0, &input)?),
+            );
+        }
+        _ => {
+            return Err(operation_error(
+                operation,
+                FrozenEkfOperationFailure::Arity {
+                    expected: operation_spec(operation).inputs.len(),
+                    found: 1,
+                },
+            ));
+        }
+    };
+    publish_managed_array(operation, output, next)
+}
+
+fn evaluate_managed_unary_bool(
+    operation: FrozenEkfOperation,
+    input: mech_core::ManagedValueView<'_, f64>,
+    output: &mut mech_core::ManagedValueViewMut<'_, bool>,
+) -> MResult<()> {
+    let next = match operation {
+        Predicate(CovariancePositiveDiagonal) => {
+            math::covariance_positive_diagonal(&managed_array(operation, 0, &input)?)
+        }
+        Predicate(CovarianceSymmetric) => {
+            math::covariance_symmetric(&managed_array(operation, 0, &input)?)
+        }
+        _ => {
+            return Err(operation_error(
+                operation,
+                FrozenEkfOperationFailure::OutputShape,
+            ));
+        }
+    };
+    publish_managed_bool(operation, output, next)
+}
+
+fn evaluate_managed_binary(
+    operation: FrozenEkfOperation,
+    first: mech_core::ManagedValueView<'_, f64>,
+    second: mech_core::ManagedValueView<'_, f64>,
+    output: &mut mech_core::ManagedValueViewMut<'_, f64>,
 ) -> MResult<()> {
     match operation {
-        Kernel(TrigonometricState) => write_array(
-            operation,
-            output,
-            math::trigonometric_state(&read_array(operation, 0, &inputs[0])?),
-        ),
-        Kernel(MotionJacobian) => write_array(
-            operation,
-            output,
-            math::motion_jacobian(
-                &read_array(operation, 1, &inputs[1])?,
-                &read_array(operation, 2, &inputs[2])?,
-                read_scalar(operation, 3, &inputs[3])?,
-            ),
-        ),
-        Kernel(ControlJacobian) => write_array(
+        Kernel(ControlJacobian) => publish_managed_array(
             operation,
             output,
             math::control_jacobian(
-                &read_array(operation, 0, &inputs[0])?,
-                read_scalar(operation, 1, &inputs[1])?,
+                &managed_array(operation, 0, &first)?,
+                managed_scalar(operation, 1, &second)?,
             ),
         ),
-        Kernel(PredictedState) => write_array(
-            operation,
-            output,
-            math::predicted_state(
-                &read_array(operation, 0, &inputs[0])?,
-                &read_array(operation, 1, &inputs[1])?,
-                &read_array(operation, 2, &inputs[2])?,
-                read_scalar(operation, 3, &inputs[3])?,
-            ),
-        ),
-        Kernel(PredictedCovariance) => write_array(
-            operation,
-            output,
-            math::predicted_covariance(
-                &read_array(operation, 0, &inputs[0])?,
-                &read_array(operation, 1, &inputs[1])?,
-                &read_array(operation, 2, &inputs[2])?,
-                &read_array(operation, 3, &inputs[3])?,
-            ),
-        ),
-        Kernel(LandmarkDeltaAndRange) => write_array(
+        Kernel(LandmarkDeltaAndRange) => publish_managed_array(
             operation,
             output,
             math::landmark_delta_and_range(
-                &read_array(operation, 0, &inputs[0])?,
-                &read_array(operation, 1, &inputs[1])?,
+                &managed_array(operation, 0, &first)?,
+                &managed_array(operation, 1, &second)?,
             )
             .map_err(|error| operation_error(operation, FrozenEkfOperationFailure::Math(error)))?,
         ),
-        Kernel(PredictedMeasurement) => write_array(
+        Kernel(PredictedMeasurement) => publish_managed_array(
             operation,
             output,
             math::predicted_measurement(
-                &read_array(operation, 0, &inputs[0])?,
-                &read_array(operation, 1, &inputs[1])?,
+                &managed_array(operation, 0, &first)?,
+                &managed_array(operation, 1, &second)?,
             ),
         ),
-        Kernel(MeasurementJacobian) => write_array(
-            operation,
-            output,
-            math::measurement_jacobian(&read_array(operation, 0, &inputs[0])?),
-        ),
-        Kernel(InnovationCovariance) => write_array(
-            operation,
-            output,
-            math::innovation_covariance(
-                &read_array(operation, 0, &inputs[0])?,
-                &read_array(operation, 1, &inputs[1])?,
-                &read_array(operation, 2, &inputs[2])?,
-            ),
-        ),
-        Kernel(Solve2x2) => write_array(
-            operation,
-            output,
-            math::solve_2x2(&read_array(operation, 0, &inputs[0])?).map_err(|error| {
-                operation_error(operation, FrozenEkfOperationFailure::Math(error))
-            })?,
-        ),
-        Kernel(KalmanGain) => write_array(
-            operation,
-            output,
-            math::kalman_gain(
-                &read_array(operation, 0, &inputs[0])?,
-                &read_array(operation, 1, &inputs[1])?,
-                &read_array(operation, 2, &inputs[2])?,
-            ),
-        ),
-        Kernel(Innovation) => write_array(
+        Kernel(Innovation) => publish_managed_array(
             operation,
             output,
             math::innovation(
-                &read_array(operation, 0, &inputs[0])?,
-                &read_array(operation, 1, &inputs[1])?,
+                &managed_array(operation, 0, &first)?,
+                &managed_array(operation, 1, &second)?,
             ),
         ),
-        Kernel(CorrectedState) => write_array(
+        _ => Err(operation_error(
+            operation,
+            FrozenEkfOperationFailure::Arity {
+                expected: operation_spec(operation).inputs.len(),
+                found: 2,
+            },
+        )),
+    }
+}
+
+fn evaluate_managed_binary_bool(
+    operation: FrozenEkfOperation,
+    first: mech_core::ManagedValueView<'_, f64>,
+    second: mech_core::ManagedValueView<'_, f64>,
+    output: &mut mech_core::ManagedValueViewMut<'_, bool>,
+) -> MResult<()> {
+    let Predicate(CandidateFinite) = operation else {
+        return Err(operation_error(
+            operation,
+            FrozenEkfOperationFailure::OutputShape,
+        ));
+    };
+    publish_managed_bool(
+        operation,
+        output,
+        math::candidate_finite(
+            &managed_array(operation, 0, &first)?,
+            &managed_array(operation, 1, &second)?,
+        ),
+    )
+}
+
+fn evaluate_managed_ternary(
+    operation: FrozenEkfOperation,
+    first: mech_core::ManagedValueView<'_, f64>,
+    second: mech_core::ManagedValueView<'_, f64>,
+    third: mech_core::ManagedValueView<'_, f64>,
+    output: &mut mech_core::ManagedValueViewMut<'_, f64>,
+) -> MResult<()> {
+    match operation {
+        Kernel(InnovationCovariance) => publish_managed_array(
+            operation,
+            output,
+            math::innovation_covariance(
+                &managed_array(operation, 0, &first)?,
+                &managed_array(operation, 1, &second)?,
+                &managed_array(operation, 2, &third)?,
+            ),
+        ),
+        Kernel(KalmanGain) => publish_managed_array(
+            operation,
+            output,
+            math::kalman_gain(
+                &managed_array(operation, 0, &first)?,
+                &managed_array(operation, 1, &second)?,
+                &managed_array(operation, 2, &third)?,
+            ),
+        ),
+        Kernel(CorrectedState) => publish_managed_array(
             operation,
             output,
             math::corrected_state(
-                &read_array(operation, 0, &inputs[0])?,
-                &read_array(operation, 1, &inputs[1])?,
-                &read_array(operation, 2, &inputs[2])?,
+                &managed_array(operation, 0, &first)?,
+                &managed_array(operation, 1, &second)?,
+                &managed_array(operation, 2, &third)?,
             ),
         ),
-        Kernel(JosephCovarianceUpdate) => write_array(
+        _ => Err(operation_error(
+            operation,
+            FrozenEkfOperationFailure::Arity {
+                expected: operation_spec(operation).inputs.len(),
+                found: 3,
+            },
+        )),
+    }
+}
+
+fn evaluate_managed_quaternary(
+    operation: FrozenEkfOperation,
+    first: mech_core::ManagedValueView<'_, f64>,
+    second: mech_core::ManagedValueView<'_, f64>,
+    third: mech_core::ManagedValueView<'_, f64>,
+    fourth: mech_core::ManagedValueView<'_, f64>,
+    output: &mut mech_core::ManagedValueViewMut<'_, f64>,
+) -> MResult<()> {
+    match operation {
+        Kernel(MotionJacobian) => publish_managed_array(
+            operation,
+            output,
+            math::motion_jacobian(
+                &managed_array(operation, 1, &second)?,
+                &managed_array(operation, 2, &third)?,
+                managed_scalar(operation, 3, &fourth)?,
+            ),
+        ),
+        Kernel(PredictedState) => publish_managed_array(
+            operation,
+            output,
+            math::predicted_state(
+                &managed_array(operation, 0, &first)?,
+                &managed_array(operation, 1, &second)?,
+                &managed_array(operation, 2, &third)?,
+                managed_scalar(operation, 3, &fourth)?,
+            ),
+        ),
+        Kernel(PredictedCovariance) => publish_managed_array(
+            operation,
+            output,
+            math::predicted_covariance(
+                &managed_array(operation, 0, &first)?,
+                &managed_array(operation, 1, &second)?,
+                &managed_array(operation, 2, &third)?,
+                &managed_array(operation, 3, &fourth)?,
+            ),
+        ),
+        Kernel(JosephCovarianceUpdate) => publish_managed_array(
             operation,
             output,
             math::joseph_covariance_update(
-                &read_array(operation, 0, &inputs[0])?,
-                &read_array(operation, 1, &inputs[1])?,
-                &read_array(operation, 2, &inputs[2])?,
-                &read_array(operation, 3, &inputs[3])?,
+                &managed_array(operation, 0, &first)?,
+                &managed_array(operation, 1, &second)?,
+                &managed_array(operation, 2, &third)?,
+                &managed_array(operation, 3, &fourth)?,
             ),
         ),
-        Kernel(CovarianceSymmetrization) => write_array(
+        _ => Err(operation_error(
             operation,
-            output,
-            math::covariance_symmetrization(&read_array(operation, 0, &inputs[0])?),
-        ),
-        Predicate(CandidateFinite) => write_bool(
-            operation,
-            output,
-            math::candidate_finite(
-                &read_array(operation, 0, &inputs[0])?,
-                &read_array(operation, 1, &inputs[1])?,
-            ),
-        ),
-        Predicate(CovariancePositiveDiagonal) => write_bool(
-            operation,
-            output,
-            math::covariance_positive_diagonal(&read_array(operation, 0, &inputs[0])?),
-        ),
-        Predicate(CovarianceSymmetric) => write_bool(
-            operation,
-            output,
-            math::covariance_symmetric(&read_array(operation, 0, &inputs[0])?),
-        ),
+            FrozenEkfOperationFailure::Arity {
+                expected: operation_spec(operation).inputs.len(),
+                found: 4,
+            },
+        )),
     }
 }

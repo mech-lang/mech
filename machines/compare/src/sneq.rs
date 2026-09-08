@@ -4,16 +4,23 @@ use crate::*;
 pub struct StrictNotEqValue {
     lhs: FunctionValueInput,
     rhs: FunctionValueInput,
-    pub out: Ref<bool>,
+    pub out: ManagedPort<bool>,
 }
 
 impl MechFunctionImpl for StrictNotEqValue {
-    fn solve_result(&self) -> MResult<()> {
-        *self.out.borrow_mut() = !self.lhs.snapshot_eq(&self.rhs)?;
-        Ok(())
+    fn solve_managed(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        let next = !frame.function_value_inputs_equal(&self.lhs, &self.rhs)?;
+        frame.with_output_port_view(&self.out, |out| {
+            out.try_fill_column_major(|_| Ok(next))
+        })?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-        Some(FunctionStatePort::from_ref(&self.out))
+        Some(FunctionStatePort::from_cell(self.out.cell()))
     }
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(crate::compare_full_write_contract(
@@ -25,14 +32,14 @@ impl MechFunctionImpl for StrictNotEqValue {
     }
 
     fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
-        Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
+        Ok(Some(vec![FunctionStatePort::from_cell(self.out.cell())]))
     }
 }
 
 impl MechFunctionFactory for StrictNotEqValue {
-            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
-                mech_core::ImplementationMemoryClass::NoAdditionalScratch
-            }
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch
+    }
 
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
         FunctionValueRepresentation::Bool,
@@ -45,7 +52,7 @@ impl MechFunctionFactory for StrictNotEqValue {
         Ok(Box::new(Self {
             lhs: lhs.value(),
             rhs: rhs.value(),
-            out: out.try_ref()?,
+            out: out.try_managed_element::<bool>()?,
         }))
     }
 
@@ -59,7 +66,7 @@ impl MechFunctionFactory for StrictNotEqValue {
 #[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for StrictNotEqValue {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let destination = compile_register_brrw!(self.out, ctx);
+        let destination = compile_value_cell_register(self.out.cell(), ctx)?;
         let lhs = self.lhs.compile_register(ctx)?;
         let rhs = self.rhs.compile_register(ctx)?;
         ctx.emit_binop(hash_str("compare/sneq"), destination, lhs, rhs);

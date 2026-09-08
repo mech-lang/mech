@@ -80,6 +80,7 @@ mod tests {
     #[test]
     fn concat_has_one_specializer_and_both_frozen_exports() {
         let mut builder = FunctionCatalogBuilder::new();
+        install_runtime(&mut builder).unwrap();
         install_source(&mut builder).unwrap();
         let catalog = builder.build().unwrap();
         let operation = OperationId::from_name("string/concat");

@@ -31,27 +31,6 @@ impl CanonicalTurnJournal {
         function.capture_retained_state(&mut self.values)
     }
 
-    pub(crate) fn capture_primary_and_retained_function_state(
-        &mut self,
-        function: &dyn MechFunction,
-    ) -> MResult<()> {
-        function
-            .primary_output_state_port()
-            .ok_or_else(|| {
-                MechError::new(
-                    crate::TransactionStateUnsupportedError {
-                        function: function.to_string(),
-                        reason: "direct reactive functions must expose an exact primary state port"
-                            .into(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()
-            })?
-            .capture_into(&mut self.values)?;
-        self.capture_function_state(function)
-    }
-
     pub(crate) fn capture_function_instance(&mut self, instance: &FunctionInstance) -> MResult<()> {
         instance.capture_state(&mut self.values)
     }

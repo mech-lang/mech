@@ -1,21 +1,21 @@
 #[cfg(feature = "semantic-compiler")]
 use super::super::MechFunctionCompiler;
 use super::super::{
-    ActivationRegistrationScope, FunctionInstance, FunctionInvocation, MechFunctionImpl,
+    ActivationRegistrationScope, FunctionInvocation, MechFunctionImpl,
     PatternActivationRegistration, Plan, ReactiveDependency, ReactiveDependencyKind,
     ReactiveNodeKind, ReactivePlan, ReactivePlanFunction, ReactiveTurnState,
     reactive_function_identity,
 };
-use super::support::{TestFunction, index};
 #[cfg(feature = "f64")]
-use super::support::{f64_cell, reg};
+use super::support::reg;
+use super::support::{TestFunction, index};
 #[cfg(feature = "semantic-compiler")]
 use crate::{BytecodeCompilerContext, Register};
-use crate::{CanonicalCellId, MResult, Ref, ValueCell};
+use crate::{CanonicalCellId, MResult, ValueCell};
 
 fn register(plan: &mut ReactivePlan, function: TestFunction, inputs: Vec<ValueCell>) -> usize {
     plan.register_instance_with_activation(
-        FunctionInstance::new(
+        crate::function::test_planned_instance(
             Box::new(function),
             FunctionInvocation::variadic(ValueCell::unit(), inputs.into_boxed_slice()),
         ),
@@ -27,8 +27,13 @@ fn register(plan: &mut ReactivePlan, function: TestFunction, inputs: Vec<ValueCe
 struct RetainedZstFunction;
 
 impl MechFunctionImpl for RetainedZstFunction {
-    fn solve_result(&self) -> MResult<()> {
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut crate::KernelMemoryFrame<'_>,
+        _services: &mut dyn crate::MechExecutionServices,
+    ) -> MResult<crate::ReactiveSolveStatus> {
+        (|| -> MResult<()> { Ok(()) })()?;
+        Ok(crate::ReactiveSolveStatus::Changed)
     }
     fn to_string(&self) -> String {
         "retained-zst".into()
@@ -122,7 +127,9 @@ fn plan_rollback_restores_full_structure_and_rebuilds_consumers() {
         node.kind = ReactiveNodeKind::Register;
         reactive.pattern_activation_registrations.clear();
         reactive.activation_sampled_cells = vec![vec![replacement_cell]];
-        reactive.push(Box::new(TestFunction::new("tail")));
+        reactive
+            .push(TestFunction::new("tail").into_instance())
+            .unwrap();
     }
     {
         let mut scopes = plan.1.borrow_mut();
@@ -163,7 +170,8 @@ fn plan_rollback_restores_activation_registration_depth() {
 #[test]
 fn plan_rollback_rejects_removed_node_without_partial_restore() {
     let plan = Plan::new();
-    plan.add_function(Box::new(TestFunction::new("retained")));
+    plan.add_function(TestFunction::new("retained").into_instance())
+        .unwrap();
     let checkpoint = plan.checkpoint();
     plan.borrow_mut().nodes.pop();
     plan.push_activation_registration_scope(vec![CanonicalCellId::new(1)]);
@@ -178,13 +186,15 @@ fn plan_rollback_rejects_removed_node_without_partial_restore() {
 #[test]
 fn plan_rollback_rejects_replaced_function_without_partial_restore() {
     let plan = Plan::new();
-    let node_id = plan.add_function(Box::new(TestFunction::new("retained")));
+    let node_id = plan
+        .add_function(TestFunction::new("retained").into_instance())
+        .unwrap();
     let checkpoint = plan.checkpoint();
     {
         let mut reactive = plan.borrow_mut();
         reactive.nodes[node_id].plan_index = 123;
         reactive.nodes[node_id].function =
-            ReactivePlanFunction::new(Box::new(TestFunction::new("replacement")));
+            ReactivePlanFunction::new_instance(TestFunction::new("replacement").into_instance());
     }
     plan.push_activation_registration_scope(vec![CanonicalCellId::new(1)]);
 
@@ -198,7 +208,12 @@ fn plan_rollback_rejects_replaced_function_without_partial_restore() {
 #[test]
 fn plan_rollback_rejects_replaced_zero_sized_function_box() {
     let plan = Plan::new();
-    let node_id = plan.add_function(Box::new(RetainedZstFunction));
+    let node_id = plan
+        .add_function(crate::function::test_planned_instance(
+            Box::new(RetainedZstFunction),
+            FunctionInvocation::nullary(ValueCell::unit()),
+        ))
+        .unwrap();
     let checkpoint = plan.checkpoint();
     let saved_identity = {
         let reactive = plan.borrow();
@@ -206,7 +221,11 @@ fn plan_rollback_rejects_replaced_zero_sized_function_box() {
     };
     {
         let mut reactive = plan.borrow_mut();
-        reactive.nodes[node_id].function = ReactivePlanFunction::new(Box::new(RetainedZstFunction));
+        reactive.nodes[node_id].function =
+            ReactivePlanFunction::new_instance(crate::function::test_planned_instance(
+                Box::new(RetainedZstFunction),
+                FunctionInvocation::nullary(ValueCell::unit()),
+            ));
     }
     let replacement_identity = {
         let reactive = plan.borrow();
@@ -223,13 +242,13 @@ fn plan_rollback_rejects_replaced_zero_sized_function_box() {
 #[test]
 fn checkpoint_validation_accepts_duplicate_registers_from_retried_failed_turn() {
     let plan = Plan::new();
-    let input = Ref::new(1.);
-    let sink = Ref::new(1.);
+    let input = ValueCell::from_exact(1.).unwrap();
+    let sink = ValueCell::from_exact(1.).unwrap();
     let (register, _, stage, _) = {
         let mut reactive = plan.borrow_mut();
         reg(&mut reactive, input.clone(), sink, true)
     };
-    let dirty = [f64_cell(input).reactive_cell_id()];
+    let dirty = [input.reactive_cell_id()];
     let mut state = ReactiveTurnState::default();
 
     assert!(plan.advance_reactive_turn(&mut state, &dirty).is_err());

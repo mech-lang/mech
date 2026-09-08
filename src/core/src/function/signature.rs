@@ -780,6 +780,20 @@ impl FunctionValueRepresentation {
                     ..
                 },
             ) => expected_element == found_element,
+            // A canonical matrix has no committed physical backing class yet.
+            // An exact factory may realize it through the selected target-local
+            // layout when the semantic element kind agrees. Candidate output
+            // capability checks still reject incompatible vector/fixed shapes.
+            (
+                Self::Matrix {
+                    element: expected_element,
+                    storage: FunctionMatrixStoragePattern::Exact(_),
+                },
+                Self::Matrix {
+                    element: found_element,
+                    storage: FunctionMatrixStoragePattern::AnyStorage,
+                },
+            ) => expected_element == found_element,
             _ => self == found,
         }
     }

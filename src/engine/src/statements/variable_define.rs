@@ -7,9 +7,9 @@ use crate::intrinsics::define::{
 };
 #[cfg(feature = "variable_define")]
 use crate::{
-    CanonicalAggregateSourceAbsence, ExecutionTarget, FunctionInstance, FunctionInvocation,
-    InterpreterExecution, MResult, MechError, ResolvedOperationDescriptor, RuntimeFunctionId,
-    SpecializationInput, SpecializedFunction, ValueCell, VariableDefine, expression,
+    CanonicalAggregateSourceAbsence, ExecutionTarget, FunctionInvocation, InterpreterExecution,
+    MResult, MechError, ResolvedOperationDescriptor, RuntimeFunctionId, SpecializationInput,
+    SpecializedFunction, ValueCell, VariableDefine, expression,
 };
 #[cfg(all(
     feature = "variable_define",
@@ -186,7 +186,7 @@ pub fn variable_define(
     let runtime_name = canonical_variable_definition_runtime_name(value.representation())?;
     p.plan()
         .register_specialized(SpecializedFunction::syntax_directed(
-            FunctionInstance::new(
+            (
                 Box::new(CanonicalVariableDefinition {
                     value: value.clone(),
                     #[cfg(feature = "semantic-compiler")]

@@ -205,15 +205,22 @@ macro_rules! impl_range_range_fxn_v {
             C2: Dim,
             S2: Storage<T, R2, C2> + Clone + Debug,
         {
-            fn solve_result(&self) -> MResult<()> {
-                unsafe {
-                    let sink = &mut *self.sink.as_mut_ptr();
-                    let source = &*self.source.as_ptr();
-                    let ix1 = (*self.ixes.0.as_ptr()).as_ref();
-                    let ix2 = (*self.ixes.1.as_ptr()).as_ref();
-                    $op!(sink, ix1, ix2, source);
-                };
-                Ok(())
+            fn solve_managed(
+                &self,
+                _frame: &mut mech_core::KernelMemoryFrame<'_>,
+                _services: &mut dyn mech_core::MechExecutionServices,
+            ) -> MResult<mech_core::ReactiveSolveStatus> {
+                (|| -> MResult<()> {
+                    unsafe {
+                        let sink = &mut *self.sink.as_mut_ptr();
+                        let source = &*self.source.as_ptr();
+                        let ix1 = (*self.ixes.0.as_ptr()).as_ref();
+                        let ix2 = (*self.ixes.1.as_ptr()).as_ref();
+                        $op!(sink, ix1, ix2, source);
+                    };
+                    Ok(())
+                })()?;
+                Ok(mech_core::ReactiveSolveStatus::Changed)
             }
             fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
                 Some(FunctionStatePort::from_ref(&self.sink))
@@ -339,7 +346,12 @@ macro_rules! impl_all_fxn_v {
             C2: Dim,
             S2: Storage<T, R2, C2> + Clone + Debug,
         {
-            fn solve_result(&self) -> MResult<()> {
+            fn solve_managed(
+                &self,
+                _frame: &mut mech_core::KernelMemoryFrame<'_>,
+                _services: &mut dyn mech_core::MechExecutionServices,
+            ) -> MResult<mech_core::ReactiveSolveStatus> {
+                (|| -> MResult<()> {
                 unsafe {
                     let sink_ptr = &mut *self.sink.as_mut_ptr();
                     let source_ptr = &*self.source.as_ptr();
@@ -347,6 +359,9 @@ macro_rules! impl_all_fxn_v {
                     $op!(source_ptr, ix_ptr, sink_ptr);
                 };
                 Ok(())
+
+                })()?;
+                Ok(mech_core::ReactiveSolveStatus::Changed)
             }
             fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
                 Some(FunctionStatePort::from_ref(&self.sink))

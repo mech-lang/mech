@@ -3,11 +3,10 @@ use super::super::MechFunctionCompiler;
 use super::super::{
     FunctionInstance, FunctionInvocation, MechFunctionImpl, ReactiveDependencyKind,
     ReactiveDependencyScope, ReactiveNodeId, ReactiveNodeKind, ReactivePlan,
-    ReactiveRegisterCommit, reactive_register_sealed,
 };
 #[cfg(feature = "semantic-compiler")]
 use crate::{BytecodeCompilerContext, Register};
-use crate::{CanonicalCellId, FunctionStatePort, GenericError, MResult, MechError, Ref, ValueCell};
+use crate::{CanonicalCellId, FunctionStatePort, GenericError, MResult, MechError, ValueCell};
 use std::{cell::RefCell, rc::Rc};
 
 pub(super) struct TestFunction {
@@ -20,6 +19,11 @@ pub(super) struct TestFunction {
 }
 
 impl TestFunction {
+    pub(super) fn into_instance(self) -> FunctionInstance {
+        let output = self.output.clone();
+        crate::function::test_planned_instance(Box::new(self), FunctionInvocation::nullary(output))
+    }
+
     pub(super) fn new(name: &'static str) -> Self {
         Self::with_output(name, ValueCell::unit())
     }
@@ -63,8 +67,13 @@ impl TestFunction {
 }
 
 impl MechFunctionImpl for TestFunction {
-    fn solve_result(&self) -> MResult<()> {
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut crate::KernelMemoryFrame<'_>,
+        _services: &mut dyn crate::MechExecutionServices,
+    ) -> MResult<crate::ReactiveSolveStatus> {
+        (|| -> MResult<()> { Ok(()) })()?;
+        Ok(crate::ReactiveSolveStatus::Changed)
     }
 
     fn reactive_dependency_kinds(
@@ -111,59 +120,20 @@ pub(super) fn index(value: usize) -> (ValueCell, CanonicalCellId) {
 }
 
 #[cfg(feature = "f64")]
-pub(super) fn f64_cell(reference: Ref<f64>) -> ValueCell {
-    ValueCell::from_inferred_ref(reference, None).unwrap()
-}
-
-#[cfg(feature = "f64")]
-struct TestRegisterCommit {
-    sink: Ref<f64>,
-    next: f64,
-    cells: Vec<CanonicalCellId>,
-    count: Rc<RefCell<usize>>,
-}
-
-#[cfg(feature = "f64")]
-impl reactive_register_sealed::Sealed for TestRegisterCommit {}
-
-#[cfg(feature = "f64")]
-impl ReactiveRegisterCommit for TestRegisterCommit {
-    fn output_cells(&self) -> &[CanonicalCellId] {
-        &self.cells
-    }
-
-    fn commit(self: Box<Self>) {
-        *self.sink.borrow_mut() = self.next;
-        *self.count.borrow_mut() += 1;
-    }
-}
-
-#[cfg(feature = "f64")]
 struct TestRegister {
-    source: Ref<f64>,
-    sink: Ref<f64>,
-    solve: Rc<RefCell<usize>>,
+    source: crate::ManagedPort<f64>,
+    sink: crate::ManagedPort<f64>,
     stage: Rc<RefCell<usize>>,
-    commit: Rc<RefCell<usize>>,
     fail: bool,
 }
 
 #[cfg(feature = "f64")]
 impl MechFunctionImpl for TestRegister {
-    fn solve_result(&self) -> MResult<()> {
-        *self.solve.borrow_mut() += 1;
-        Ok(())
-    }
-
-    fn reactive_node_kind(&self) -> ReactiveNodeKind {
-        ReactiveNodeKind::Register
-    }
-
-    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-        Some(FunctionStatePort::from_ref(&self.sink))
-    }
-
-    fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
+    fn solve_managed(
+        &self,
+        frame: &mut crate::KernelMemoryFrame<'_>,
+        _services: &mut dyn crate::MechExecutionServices,
+    ) -> MResult<crate::ReactiveSolveStatus> {
         *self.stage.borrow_mut() += 1;
         if self.fail {
             return Err(MechError::new(
@@ -173,12 +143,27 @@ impl MechFunctionImpl for TestRegister {
                 None,
             ));
         }
-        Ok(Box::new(TestRegisterCommit {
-            sink: self.sink.clone(),
-            next: *self.source.borrow(),
-            cells: self.reactive_output_cell_ids(),
-            count: self.commit.clone(),
-        }))
+        frame.with_unary_port_views(&self.source, &self.sink, |source, sink| {
+            sink.try_fill_column_major(|index| {
+                source.get_column_major(index).ok_or_else(|| {
+                    MechError::new(
+                        GenericError {
+                            msg: "register input and output geometry disagree".into(),
+                        },
+                        None,
+                    )
+                })
+            })
+        })?;
+        Ok(crate::ReactiveSolveStatus::Changed)
+    }
+
+    fn reactive_node_kind(&self) -> ReactiveNodeKind {
+        ReactiveNodeKind::Register
+    }
+
+    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+        Some(FunctionStatePort::from_cell(self.sink.cell()))
     }
 
     fn to_string(&self) -> String {
@@ -196,8 +181,8 @@ impl MechFunctionCompiler for TestRegister {
 #[cfg(feature = "f64")]
 pub(super) fn reg(
     plan: &mut ReactivePlan,
-    source: Ref<f64>,
-    sink: Ref<f64>,
+    source: ValueCell,
+    sink: ValueCell,
     fail: bool,
 ) -> (
     ReactiveNodeId,
@@ -208,18 +193,16 @@ pub(super) fn reg(
     let solve = Rc::new(RefCell::new(0));
     let stage = Rc::new(RefCell::new(0));
     let commit = Rc::new(RefCell::new(0));
-    let source_cell = f64_cell(source.clone());
-    let sink_cell = f64_cell(sink.clone());
-    let instance = FunctionInstance::new(
+    let invocation = FunctionInvocation::unary(sink, source);
+    let (sink, source) = invocation.expect_unary().unwrap();
+    let instance = crate::function::test_planned_instance(
         Box::new(TestRegister {
-            source,
-            sink,
-            solve: solve.clone(),
+            source: source.try_managed_element::<f64>().unwrap(),
+            sink: sink.try_managed_element::<f64>().unwrap(),
             stage: stage.clone(),
-            commit: commit.clone(),
             fail,
         }),
-        FunctionInvocation::unary(sink_cell, source_cell),
+        invocation,
     );
     let node = plan
         .register_instance_with_activation(instance, None)

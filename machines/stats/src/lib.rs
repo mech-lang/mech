@@ -48,6 +48,38 @@ use std::fmt::Debug;
 use std::ops::*;
 use std::sync::LazyLock;
 
+#[cfg(test)]
+fn test_managed_factory<F: MechFunctionFactory>(
+    invocation: FunctionInvocation,
+    operation: &'static str,
+) -> SpecializedFunction {
+    let implementation = F::new_invocation(invocation.clone()).unwrap();
+    let contract = F::declared_operation_contract()
+        .or_else(|| implementation.semantic_operation_contract())
+        .expect("managed statistics fixture requires an operation contract");
+    SpecializedFunction::syntax_directed(
+        (implementation, invocation),
+        ResolvedOperationDescriptor::from_name(operation, contract.clone()).unwrap(),
+        RuntimeFunctionId::from_name(operation),
+        ExecutionTarget::DirectRuntime,
+        F::implementation_memory_class(),
+    )
+    .unwrap()
+}
+
+#[cfg(test)]
+fn assert_test_value(actual: &ValueCell, expected: ValueCell) {
+    let actual = actual.snapshot().unwrap();
+    let expected = expected.snapshot().unwrap();
+    let actual_schemas = actual.schemas().unwrap();
+    let expected_schemas = expected.schemas().unwrap();
+    assert!(
+        actual
+            .language_eq(&actual_schemas, &expected, &expected_schemas)
+            .unwrap()
+    );
+}
+
 static PURE_STATS_REDUCTION_CONTRACT: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| OperationContractDeclaration {
         inputs: InputPortLayout::Fixed(
@@ -159,12 +191,15 @@ macro_rules! impl_stats_unop {
     ($struct_name:ident, $arg_type:ty, $out_type:ty, $op:ident) => {
         #[derive(Debug)]
         pub(crate) struct $struct_name<T> {
-            arg: Ref<$arg_type>,
-            out: Ref<$out_type>,
+            arg: ManagedPort<T>,
+            out: ManagedPort<T>,
+            marker: core::marker::PhantomData<($arg_type, $out_type)>,
         }
         impl<T> MechFunctionFactory for $struct_name<T>
         where
-            T: Copy
+            T: ManagedElement
+                + CanonicalMatrixElementBacking
+                + FunctionPortBacking
                 + Debug
                 + Clone
                 + Sync
@@ -198,14 +233,19 @@ macro_rules! impl_stats_unop {
 
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (out, arg) = invocation.expect_unary()?;
-                let arg: Ref<$arg_type> = arg.try_ref()?;
-                let out: Ref<$out_type> = out.try_ref()?;
-                Ok(Box::new($struct_name { arg, out }))
+                let _ = arg.try_managed::<$arg_type>()?;
+                let _ = out.try_managed::<$out_type>()?;
+                Ok(Box::new($struct_name {
+                    arg: arg.try_managed_element::<T>()?,
+                    out: out.try_managed_element::<T>()?,
+                    marker: core::marker::PhantomData,
+                }))
             }
         }
         impl<T> MechFunctionImpl for $struct_name<T>
         where
-            T: Copy
+            T: ManagedElement
+                + CanonicalMatrixElementBacking
                 + Debug
                 + Clone
                 + Sync
@@ -222,20 +262,19 @@ macro_rules! impl_stats_unop {
             T: CanonicalMatrixElementBacking,
             $out_type: FunctionStateBacking,
         {
-            fn solve_result(&self) -> MResult<()> {
-                let mut next = self.out.borrow().clone();
-                {
-                    let arg = self.arg.borrow();
-                    $op!(&*arg, &mut next)?;
-                }
-                *self.out.borrow_mut() = next;
-                Ok(())
+            fn solve_managed(
+                &self,
+                frame: &mut mech_core::KernelMemoryFrame<'_>,
+                _services: &mut dyn mech_core::MechExecutionServices,
+            ) -> MResult<mech_core::ReactiveSolveStatus> {
+                frame.with_unary_port_views(&self.arg, &self.out, |arg, out| $op!(arg, out))?;
+                Ok(mech_core::ReactiveSolveStatus::Changed)
             }
             fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-                Some(FunctionStatePort::from_ref(&self.out))
+                Some(FunctionStatePort::from_cell(self.out.cell()))
             }
             fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
-                Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
+                Ok(Some(vec![FunctionStatePort::from_cell(self.out.cell())]))
             }
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
                 Some(&PURE_STATS_REDUCTION_CONTRACT)
@@ -255,7 +294,11 @@ macro_rules! impl_stats_unop {
                     stringify!($struct_name),
                     <T as FunctionRuntimeType>::REPRESENTATION
                 );
-                compile_unop!(name, self.out, self.arg, ctx);
+                let output = compile_value_cell_register(self.out.cell(), ctx)?;
+                let input = compile_value_cell_register(self.arg.cell(), ctx)?;
+                let function = ctx.function_id(&name)?;
+                ctx.emit_unop(function, output, input);
+                Ok(output)
             }
         }
     };

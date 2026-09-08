@@ -41,8 +41,13 @@ static WRONG_ARITY_CONTRACT: LazyLock<OperationContractDeclaration> =
 struct CatalogTestFunction;
 
 impl MechFunctionImpl for CatalogTestFunction {
-    fn solve_result(&self) -> MResult<()> {
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut crate::KernelMemoryFrame<'_>,
+        _services: &mut dyn crate::MechExecutionServices,
+    ) -> MResult<crate::ReactiveSolveStatus> {
+        (|| -> MResult<()> { Ok(()) })()?;
+        Ok(crate::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {

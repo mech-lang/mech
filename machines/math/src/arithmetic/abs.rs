@@ -7,23 +7,16 @@ use libm::fabs;
 #[cfg(feature = "f32")]
 use libm::fabsf;
 
-#[cfg(any(feature = "u8", feature = "u16", feature = "u32", feature = "u64", feature = "u128"))]
+#[cfg(any(
+    feature = "u8",
+    feature = "u16",
+    feature = "u32",
+    feature = "u64",
+    feature = "u128"
+))]
 macro_rules! uabs_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = (*$arg).clone();
-        }
-    };
-}
-
-#[cfg(any(feature = "u8", feature = "u16", feature = "u32", feature = "u64", feature = "u128"))]
-macro_rules! uabs_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                (&mut (*$out))[i] = (&(*$arg))[i].clone();
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(($arg))
     };
 }
 
@@ -87,90 +80,29 @@ fn checked_abs_value<T: RuntimeCheckedAbs>(value: T) -> MResult<T> {
     feature = "i128"
 ))]
 macro_rules! checked_abs_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            let next = checked_abs_value(*$arg)?;
-            *$out = next;
-        }
-    };
-}
-
-#[cfg(any(
-    feature = "i8",
-    feature = "i16",
-    feature = "i32",
-    feature = "i64",
-    feature = "i128"
-))]
-macro_rules! checked_abs_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            let mut next = (*$arg).clone();
-            for value in next.iter_mut() {
-                *value = checked_abs_value(*value)?;
-            }
-            *$out = next;
-        }
+    (@managed $arg:expr) => {
+        checked_abs_value($arg)
     };
 }
 
 #[cfg(any(feature = "c64", feature = "r64"))]
 macro_rules! abs_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = (*$arg).abs();
-        }
-    };
-}
-
-#[cfg(any(feature = "c64", feature = "r64"))]
-macro_rules! abs_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                (&mut (*$out))[i] = (&(*$arg))[i].abs();
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(($arg).abs())
     };
 }
 
 #[cfg(feature = "f64")]
 macro_rules! fabs_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = fabs((*$arg));
-        }
-    };
-}
-
-#[cfg(feature = "f64")]
-macro_rules! fabs_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = fabs(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(fabs(($arg)))
     };
 }
 
 #[cfg(feature = "f32")]
 macro_rules! fabsf_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = fabsf((*$arg));
-        }
-    };
-}
-
-#[cfg(feature = "f32")]
-macro_rules! fabsf_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = fabsf(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(fabsf(($arg)))
     };
 }
 
@@ -211,41 +143,83 @@ impl_math_unop!(MathAbs, R64, abs);
 mod checked_abs_tests {
     use super::*;
 
+    fn assert_snapshot_eq(actual: &ValueCell, expected: &Value) {
+        let actual = actual.snapshot().unwrap();
+        assert_eq!(actual.schema_key(), expected.schema_key());
+        assert_eq!(actual.shape(), expected.shape());
+        match (actual.data(), expected.data()) {
+            (ValueData::I8(actual), ValueData::I8(expected)) => assert_eq!(actual, expected),
+            #[cfg(feature = "matrixd")]
+            (ValueData::Matrix(actual), ValueData::Matrix(expected)) => {
+                let (snapshot::SequenceView::I8(actual), snapshot::SequenceView::I8(expected)) =
+                    (actual.elements(), expected.elements())
+                else {
+                    panic!("expected I8 matrix")
+                };
+                assert_eq!(actual, expected);
+            }
+            _ => panic!("unexpected absolute-value result"),
+        }
+    }
+
     #[test]
     fn signed_scalar_abs_rejects_minimum_and_retains_output() {
-        let arg = Ref::new(7_i8);
-        let out = Ref::new(19_i8);
-        let function = MathAbsI8S {
-            arg: arg.clone(),
-            out: out.clone(),
-        };
+        let arg = ValueCell::from_exact(7_i8).unwrap();
+        let out = ValueCell::from_exact(19_i8).unwrap();
+        let function = crate::catalog::bind_test_unary::<MathAbsI8S>(
+            "math/abs",
+            "MathAbsI8S",
+            arg.clone(),
+            out.clone(),
+        );
 
-        function.solve_result().unwrap();
-        assert_eq!(*out.borrow(), 7);
-        *arg.borrow_mut() = i8::MIN;
+        function.instance().solve_result().unwrap();
+        let expected = ValueCell::from_exact(7_i8).unwrap().snapshot().unwrap();
+        assert_snapshot_eq(&out, &expected);
+        arg.replace(&ValueCell::from_exact(i8::MIN).unwrap().snapshot().unwrap())
+            .unwrap();
 
-        let error = function.solve_result().unwrap_err();
+        let version = out.published_version();
+        let error = function.instance().solve_result().unwrap_err();
         assert_eq!(error.kind_name(), "MathArithmeticOverflow");
-        assert_eq!(*out.borrow(), 7);
+        assert_snapshot_eq(&out, &expected);
+        assert_eq!(out.published_version(), version);
     }
 
     #[cfg(feature = "matrixd")]
     #[test]
     fn signed_matrix_abs_is_transactional_when_any_element_is_minimum() {
-        let arg = Ref::new(DMatrix::from_row_slice(1, 2, &[-2_i8, 3]));
-        let out = Ref::new(DMatrix::from_row_slice(1, 2, &[11_i8, 12]));
-        let function = MathAbsI8MD {
-            arg: arg.clone(),
-            out: out.clone(),
-        };
-
-        function.solve_result().unwrap();
-        assert_eq!(&*out.borrow(), &DMatrix::from_row_slice(1, 2, &[2, 3]));
-        *arg.borrow_mut() = DMatrix::from_row_slice(1, 2, &[-4, i8::MIN]);
-
-        let error = function.solve_result().unwrap_err();
-        assert_eq!(error.kind_name(), "MathArithmeticOverflow");
-        assert_eq!(&*out.borrow(), &DMatrix::from_row_slice(1, 2, &[2, 3]));
+        let arg = ValueCell::from_exact(DMatrix::from_row_slice(2, 3, &[-2_i8, 3, -4, 5, -6, 7]))
+            .unwrap();
+        let out = ValueCell::from_exact(DMatrix::from_element(2, 3, 0_i8)).unwrap();
+        let function = crate::catalog::bind_test_unary::<MathAbsI8MD>(
+            "math/abs",
+            "MathAbsI8MD",
+            arg.clone(),
+            out.clone(),
+        );
+        function.instance().solve_result().unwrap();
+        let expected = ValueCell::from_exact(DMatrix::from_row_slice(2, 3, &[2_i8, 3, 4, 5, 6, 7]))
+            .unwrap()
+            .snapshot()
+            .unwrap();
+        assert_snapshot_eq(&out, &expected);
+        for position in [0, 2, 5] {
+            let mut values = [-4_i8; 6];
+            values[position] = i8::MIN;
+            arg.replace(
+                &ValueCell::from_exact(DMatrix::from_row_slice(2, 3, &values))
+                    .unwrap()
+                    .snapshot()
+                    .unwrap(),
+            )
+            .unwrap();
+            let version = out.published_version();
+            let error = function.instance().solve_result().unwrap_err();
+            assert_eq!(error.kind_name(), "MathArithmeticOverflow");
+            assert_snapshot_eq(&out, &expected);
+            assert_eq!(out.published_version(), version);
+        }
     }
 }
 
@@ -269,18 +243,11 @@ mod canonical_source_tests {
         )
         .unwrap();
         let catalog = builder.build().unwrap();
-        let invocation = SpecializationInvocation::from_cells(
-            vec![ValueCell::from_exact(-3.0_f32).unwrap()].into_boxed_slice(),
+        let specialized = crate::catalog::specialize_test_operation(
+            &catalog,
+            "math/abs",
+            vec![ValueCell::from_exact(-3.0_f32).unwrap()],
         );
-        let mut context =
-            SpecializationContext::for_invocation(&invocation, Some(&catalog)).unwrap();
-
-        let specialized = catalog
-            .specializer(OperationId::from_name("math/abs"))
-            .unwrap()
-            .specializer
-            .specialize_invocation(&invocation, &mut context)
-            .unwrap();
 
         assert!(
             specialized
@@ -289,11 +256,7 @@ mod canonical_source_tests {
                 .to_string()
                 .starts_with("MathAbsF32S")
         );
-        specialized
-            .instance()
-            .implementation()
-            .solve_result()
-            .unwrap();
+        specialized.instance().solve_result().unwrap();
         let output = specialized.output().snapshot().unwrap();
         let ValueData::F32(output) = output.data() else {
             panic!("expected the exact f32 absolute-value output")

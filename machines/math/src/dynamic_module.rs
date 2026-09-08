@@ -277,7 +277,11 @@ mod tests {
         assert_export_metadata(1, EXPORT_NAME, MechKernelKindV1::UNARY_F64_VIEW_TO_F64_VIEW);
 
         assert_export_metadata(2, SQRT_EXPORT_NAME, MechKernelKindV1::UNARY_F64_TO_F64);
-        assert_export_metadata(3, SQRT_EXPORT_NAME, MechKernelKindV1::UNARY_F64_VIEW_TO_F64_VIEW);
+        assert_export_metadata(
+            3,
+            SQRT_EXPORT_NAME,
+            MechKernelKindV1::UNARY_F64_VIEW_TO_F64_VIEW,
+        );
 
         assert_export_metadata(4, FLOOR_EXPORT_NAME, MechKernelKindV1::UNARY_F64_TO_F64);
         assert_export_metadata(
@@ -287,16 +291,32 @@ mod tests {
         );
 
         assert_export_metadata(6, CEIL_EXPORT_NAME, MechKernelKindV1::UNARY_F64_TO_F64);
-        assert_export_metadata(7, CEIL_EXPORT_NAME, MechKernelKindV1::UNARY_F64_VIEW_TO_F64_VIEW);
+        assert_export_metadata(
+            7,
+            CEIL_EXPORT_NAME,
+            MechKernelKindV1::UNARY_F64_VIEW_TO_F64_VIEW,
+        );
 
         assert_export_metadata(8, SIN_EXPORT_NAME, MechKernelKindV1::UNARY_F64_TO_F64);
-        assert_export_metadata(9, SIN_EXPORT_NAME, MechKernelKindV1::UNARY_F64_VIEW_TO_F64_VIEW);
+        assert_export_metadata(
+            9,
+            SIN_EXPORT_NAME,
+            MechKernelKindV1::UNARY_F64_VIEW_TO_F64_VIEW,
+        );
 
         assert_export_metadata(10, COS_EXPORT_NAME, MechKernelKindV1::UNARY_F64_TO_F64);
-        assert_export_metadata(11, COS_EXPORT_NAME, MechKernelKindV1::UNARY_F64_VIEW_TO_F64_VIEW);
+        assert_export_metadata(
+            11,
+            COS_EXPORT_NAME,
+            MechKernelKindV1::UNARY_F64_VIEW_TO_F64_VIEW,
+        );
 
         assert_export_metadata(12, TAN_EXPORT_NAME, MechKernelKindV1::UNARY_F64_TO_F64);
-        assert_export_metadata(13, TAN_EXPORT_NAME, MechKernelKindV1::UNARY_F64_VIEW_TO_F64_VIEW);
+        assert_export_metadata(
+            13,
+            TAN_EXPORT_NAME,
+            MechKernelKindV1::UNARY_F64_VIEW_TO_F64_VIEW,
+        );
 
         assert_export_metadata(14, ASIN_EXPORT_NAME, MechKernelKindV1::UNARY_F64_TO_F64);
         assert_export_metadata(
@@ -319,7 +339,11 @@ mod tests {
             MechKernelKindV1::UNARY_F64_VIEW_TO_F64_VIEW,
         );
 
-        assert_export_metadata(20, ATAN2_EXPORT_NAME, MechKernelKindV1::BINARY_F64_F64_TO_F64);
+        assert_export_metadata(
+            20,
+            ATAN2_EXPORT_NAME,
+            MechKernelKindV1::BINARY_F64_F64_TO_F64,
+        );
     }
 
     #[test]

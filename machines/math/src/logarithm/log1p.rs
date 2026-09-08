@@ -4,38 +4,14 @@ use crate::*;
 
 use libm::{log1p, log1pf};
 macro_rules! log1p_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = log1p((*$arg));
-        }
-    };
-}
-
-macro_rules! log1p_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = log1p(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(log1p(($arg)))
     };
 }
 
 macro_rules! log1pf_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = log1pf((*$arg));
-        }
-    };
-}
-
-macro_rules! log1pf_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = log1pf(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(log1pf(($arg)))
     };
 }
 

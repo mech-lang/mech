@@ -4,38 +4,14 @@ use crate::*;
 
 use libm::{tgamma, tgammaf};
 macro_rules! tgamma_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = tgamma((*$arg));
-        }
-    };
-}
-
-macro_rules! tgamma_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = tgamma(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(tgamma(($arg)))
     };
 }
 
 macro_rules! tgammaf_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = tgammaf((*$arg));
-        }
-    };
-}
-
-macro_rules! tgammaf_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = tgammaf(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(tgammaf(($arg)))
     };
 }
 

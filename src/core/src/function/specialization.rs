@@ -192,7 +192,11 @@ fn output_regions(bound_call: &BoundCall) -> MResult<Box<[RegionAccessPlan]>> {
             .iter()
             .map(|requirement| match requirement.construction.as_ref() {
                 Some(OutputConstruction::ReadModifyWrite { regions, .. }) => {
-                    RegionAccessPlan::Deferred(*regions)
+                    if *regions == crate::RegionPolicy::WholeValue {
+                        RegionAccessPlan::WholeValue
+                    } else {
+                        RegionAccessPlan::Deferred(*regions)
+                    }
                 }
                 _ => RegionAccessPlan::WholeValue,
             })
@@ -269,13 +273,20 @@ fn plan_specialized_call(
     let semantic_input_cells = semantic_input_cells(bound_call, input_cells, output_cell)?;
     let input_storage = semantic_input_cells
         .iter()
-        .map(|cell| physical_storage_descriptor(cell.representation(), &target, lifetime))
-        .collect::<Vec<_>>();
+        .map(|cell| cell_physical_storage_descriptor(cell, &target, lifetime))
+        .collect::<MResult<Vec<_>>>()?;
     let output_storage = bound_call
         .outputs()
         .iter()
-        .map(|_| physical_storage_descriptor(output_representation, &target, lifetime))
-        .collect::<Vec<_>>();
+        .map(|_| match output_cell {
+            Some(cell) => cell_physical_storage_descriptor(cell, &target, lifetime),
+            None => Ok(physical_storage_descriptor(
+                output_representation,
+                &target,
+                lifetime,
+            )),
+        })
+        .collect::<MResult<Vec<_>>>()?;
     let input_witnesses = semantic_input_cells
         .iter()
         .map(|cell| cell_memory_witness(cell))
@@ -301,6 +312,43 @@ fn plan_specialized_call(
         regions: &regions,
     })
     .map_err(|error| MechError::new(error, None).with_compiler_loc())
+}
+
+fn cell_physical_storage_descriptor(
+    cell: &ValueCell,
+    target: &TargetMemoryProfile,
+    lifetime: MemoryLifetime,
+) -> MResult<PhysicalStorageDescriptor> {
+    let representation = cell.representation();
+    #[cfg(feature = "matrix")]
+    let planned_representation = match representation {
+        FunctionValueRepresentation::Matrix {
+            element,
+            storage: crate::FunctionMatrixStoragePattern::AnyStorage,
+        } if !matches!(
+            element,
+            crate::FunctionMatrixElement::String | crate::FunctionMatrixElement::Value
+        ) =>
+        {
+            FunctionValueRepresentation::Matrix {
+                element,
+                storage: crate::FunctionMatrixStoragePattern::Exact(
+                    crate::FunctionMatrixRepresentation::MatrixD,
+                ),
+            }
+        }
+        _ => representation,
+    };
+    #[cfg(not(feature = "matrix"))]
+    let planned_representation = representation;
+    let mut storage = physical_storage_descriptor(planned_representation, target, lifetime);
+    if cell.has_managed_canonical_storage()?
+        && !matches!(storage.slot, PlannedSlotKind::FixedScalar(_))
+    {
+        storage.capabilities = cell.storage_capabilities();
+        storage.slot = PlannedSlotKind::CanonicalValueHandle;
+    }
+    Ok(storage)
 }
 
 fn validate_resolved_inputs(
@@ -611,6 +659,34 @@ pub struct BoundCall {
 }
 
 impl BoundCall {
+    /// Refreshes only live extent witnesses. The selected operation,
+    /// implementation, schemas, and program-lifetime dimensions remain
+    /// immutable semantic authority.
+    pub(crate) fn with_current_descriptors(
+        &self,
+        inputs: Box<[ResolvedValueDescriptor]>,
+        outputs: Box<[ResolvedValueDescriptor]>,
+    ) -> MResult<Self> {
+        for (expected, actual) in [(&self.inputs, &inputs), (&self.outputs, &outputs)] {
+            if expected.len() != actual.len()
+                || expected
+                    .iter()
+                    .zip(actual.iter())
+                    .any(|(old, new)| !old.has_same_type_contract(new))
+            {
+                return Err(
+                    MechError::new(crate::MemoryPlanError::DescriptorMismatch, None)
+                        .with_compiler_loc(),
+                );
+            }
+        }
+        Ok(Self {
+            inputs,
+            outputs,
+            ..self.clone()
+        })
+    }
+
     pub fn from_resolved_call(
         call: &ResolvedCall,
         inputs: Box<[ResolvedValueDescriptor]>,
@@ -1067,19 +1143,20 @@ impl<'a> SpecializationContext<'a> {
     /// descriptors; this method only records and validates them.
     pub fn certify_instance(
         &self,
-        instance: FunctionInstance,
+        parts: (Box<dyn crate::MechFunction>, FunctionInvocation),
         runtime_function: RuntimeFunctionId,
         target: ExecutionTarget,
         implementation_memory: ImplementationMemoryClass,
     ) -> MResult<SpecializedFunction> {
-        let inputs = instance
-            .inputs()
+        let inputs = parts
+            .1
+            .input_cells()
             .iter()
             .map(ValueCell::resolved_descriptor)
             .collect::<MResult<Vec<_>>>()?
             .into_boxed_slice();
         self.certify_instance_with_descriptors(
-            instance,
+            parts,
             runtime_function,
             target,
             inputs,
@@ -1091,7 +1168,7 @@ impl<'a> SpecializationContext<'a> {
     /// into an immutable runtime value during specialization.
     pub fn certify_instance_for_inputs(
         &self,
-        instance: FunctionInstance,
+        parts: (Box<dyn crate::MechFunction>, FunctionInvocation),
         runtime_function: RuntimeFunctionId,
         target: ExecutionTarget,
         inputs: &[&SpecializationInput],
@@ -1099,7 +1176,7 @@ impl<'a> SpecializationContext<'a> {
     ) -> MResult<SpecializedFunction> {
         let inputs = specialization_input_descriptors(inputs)?;
         self.certify_instance_with_descriptors(
-            instance,
+            parts,
             runtime_function,
             target,
             inputs,
@@ -1109,7 +1186,7 @@ impl<'a> SpecializationContext<'a> {
 
     fn certify_instance_with_descriptors(
         &self,
-        instance: FunctionInstance,
+        parts: (Box<dyn crate::MechFunction>, FunctionInvocation),
         runtime_function: RuntimeFunctionId,
         target: ExecutionTarget,
         inputs: Box<[ResolvedValueDescriptor]>,
@@ -1152,10 +1229,9 @@ impl<'a> SpecializationContext<'a> {
             )
             .with_compiler_loc());
         }
-        instance
-            .invocation()
-            .check_operation_memory_contract(&operation_descriptor.contract)?;
-        let outputs = vec![instance.output().resolved_descriptor()?].into_boxed_slice();
+        let invocation = &parts.1;
+        invocation.check_operation_memory_contract(&operation_descriptor.contract)?;
+        let outputs = vec![invocation.output_cell().resolved_descriptor()?].into_boxed_slice();
         let bound_call = if let Some(call) = self.resolved_call.as_ref() {
             BoundCall::from_resolved_call(call, inputs, outputs, runtime_function, target)?
         } else {
@@ -1169,12 +1245,12 @@ impl<'a> SpecializationContext<'a> {
         };
         let memory_plan = plan_specialized_call(
             &bound_call,
-            instance.inputs(),
-            instance.output().representation(),
-            Some(instance.output()),
+            invocation.input_cells(),
+            invocation.output_cell().representation(),
+            Some(invocation.output_cell()),
             implementation_memory,
         )?;
-        SpecializedFunction::new(instance, bound_call, memory_plan)
+        SpecializedFunction::new(parts, bound_call, memory_plan)
     }
 
     fn semantic_binding_inputs(&self) -> MResult<Box<[String]>> {
@@ -1260,8 +1336,23 @@ impl<'a> SpecializationContext<'a> {
             None,
             entry.implementation_memory_class(),
         )?;
-        let output =
-            ValueCell::allocate_for_descriptor(&output_descriptor, entry.signature().output)?;
+        let output = if matches!(
+            memory_plan.outputs[0].value.storage.planned_slot(),
+            PlannedSlotKind::FixedScalar(_)
+        ) {
+            let session = input_cells
+                .iter()
+                .find_map(ValueCell::memory_domain)
+                .map(Ok)
+                .unwrap_or_else(crate::MemoryDomain::new)?;
+            ValueCell::allocate_call_output_in(
+                &session,
+                Rc::new(memory_plan.clone()),
+                entry.signature().output,
+            )?
+        } else {
+            ValueCell::allocate_for_descriptor(&output_descriptor, entry.signature().output)?
+        };
         let invocation =
             invocation_for_runtime_inputs(entry.signature().inputs, output, input_cells)?;
         let instance = entry.bind_resolved_invocation(call.operation.id, target, invocation)?;
@@ -1345,7 +1436,7 @@ impl<'a> SpecializationContext<'a> {
         )?;
         let memory_plan = plan_specialized_call(
             &bound_call,
-            instance.inputs(),
+            instance.1.input_cells(),
             output_cell.representation(),
             Some(&output_cell),
             entry.implementation_memory_class(),
@@ -1540,13 +1631,11 @@ fn invocation_for_runtime_inputs(
 
 pub struct SpecializedFunction {
     instance: FunctionInstance,
-    bound_call: BoundCall,
-    memory_plan: CallMemoryPlan,
 }
 
 impl SpecializedFunction {
     pub fn new(
-        instance: FunctionInstance,
+        (implementation, invocation): (Box<dyn crate::MechFunction>, FunctionInvocation),
         bound_call: BoundCall,
         memory_plan: CallMemoryPlan,
     ) -> MResult<Self> {
@@ -1556,11 +1645,9 @@ impl SpecializedFunction {
                     .with_compiler_loc(),
             );
         }
-        Ok(Self {
-            instance,
-            bound_call,
-            memory_plan,
-        })
+        let memory_plan = Rc::new(memory_plan);
+        let instance = FunctionInstance::new(implementation, invocation, memory_plan)?;
+        Ok(Self { instance })
     }
 
     pub fn instance(&self) -> &FunctionInstance {
@@ -1572,45 +1659,74 @@ impl SpecializedFunction {
     }
 
     pub fn bound_call(&self) -> &BoundCall {
-        &self.bound_call
+        &self.memory_plan().bound_call
     }
 
     pub fn memory_plan(&self) -> &CallMemoryPlan {
-        &self.memory_plan
+        self.instance.memory_plan()
     }
 
     pub fn into_parts(self) -> (FunctionInstance, BoundCall, CallMemoryPlan) {
-        (self.instance, self.bound_call, self.memory_plan)
+        let plan = self.memory_plan().clone();
+        let bound_call = plan.bound_call.clone();
+        (self.instance, bound_call, plan)
+    }
+
+    pub fn into_instance(self) -> FunctionInstance {
+        self.instance
     }
 
     pub fn syntax_directed(
-        instance: FunctionInstance,
+        parts: (Box<dyn crate::MechFunction>, FunctionInvocation),
         operation: ResolvedOperationDescriptor,
         runtime_function: RuntimeFunctionId,
         target: ExecutionTarget,
         implementation_memory: ImplementationMemoryClass,
     ) -> MResult<Self> {
         operation.validate()?;
-        instance
-            .invocation()
-            .check_operation_memory_contract(&operation.contract)?;
-        let inputs = instance
-            .inputs()
+        let invocation = &parts.1;
+        invocation.check_operation_memory_contract(&operation.contract)?;
+        let output_descriptor = invocation.output_cell().resolved_descriptor()?;
+        let mut inputs = invocation
+            .input_cells()
             .iter()
             .map(ValueCell::resolved_descriptor)
-            .collect::<MResult<Vec<_>>>()?
-            .into_boxed_slice();
-        let outputs = vec![instance.output().resolved_descriptor()?].into_boxed_slice();
+            .collect::<MResult<Vec<_>>>()?;
+        if operation
+            .contract
+            .memory_requirements(inputs.len())
+            .is_err()
+            && let Some(base_input) =
+                crate::function::argument::coalesced_read_modify_write_input(&operation.contract)
+        {
+            operation
+                .contract
+                .memory_requirements(inputs.len().saturating_add(1))
+                .map_err(|error| {
+                    MechError::new(
+                        crate::GenericError {
+                            msg: format!(
+                                "invalid coalesced operation memory requirements: {error:?}"
+                            ),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                })?;
+            inputs.insert(base_input, output_descriptor.clone());
+        }
+        let inputs = inputs.into_boxed_slice();
+        let outputs = vec![output_descriptor].into_boxed_slice();
         let bound_call =
             BoundCall::syntax_directed(operation, inputs, outputs, runtime_function, target)?;
         let memory_plan = plan_specialized_call(
             &bound_call,
-            instance.inputs(),
-            instance.output().representation(),
-            Some(instance.output()),
+            invocation.input_cells(),
+            invocation.output_cell().representation(),
+            Some(invocation.output_cell()),
             implementation_memory,
         )?;
-        Self::new(instance, bound_call, memory_plan)
+        Self::new(parts, bound_call, memory_plan)
     }
 
     /// Binds a canonical output and canonical source inputs directly to a
@@ -1666,15 +1782,14 @@ impl SpecializedFunction {
             }
         };
         let implementation = F::new_invocation(invocation.clone())?;
-        let instance = FunctionInstance::new(implementation, invocation);
         let memory_plan = plan_specialized_call(
             &bound_call,
-            instance.inputs(),
-            instance.output().representation(),
-            Some(instance.output()),
+            invocation.input_cells(),
+            invocation.output_cell().representation(),
+            Some(invocation.output_cell()),
             F::implementation_memory_class(),
         )?;
-        Self::new(instance, bound_call, memory_plan)
+        Self::new((implementation, invocation), bound_call, memory_plan)
     }
 }
 

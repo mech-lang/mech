@@ -1,10 +1,10 @@
+#[cfg(all(feature = "source", feature = "n_choose_k"))]
+use crate::CombinatoricsNChooseK;
 use mech_core::{FunctionCatalogBuilder, MResult};
 #[cfg(feature = "source")]
 use mech_core::{FunctionExport, FunctionExposure};
 #[cfg(feature = "source")]
 use std::sync::Arc;
-#[cfg(all(feature = "source", feature = "n_choose_k"))]
-use crate::CombinatoricsNChooseK;
 
 macro_rules! for_each_combinatorics_scalar {
     ($callback:ident, $($context:tt)*) => {

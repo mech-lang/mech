@@ -215,15 +215,246 @@ fn validate_source_len(source_len: usize, selected_len: usize) -> MResult<()> {
     Ok(())
 }
 
+#[cfg(feature = "matrix")]
+fn apply_index_scalar_positions<T: ManagedElement>(
+    source: ManagedValueView<'_, T>,
+    indexes: ManagedValueView<'_, usize>,
+    sink: &mut ManagedValueViewMut<'_, T>,
+    operation: impl Fn(T, T) -> MResult<T>,
+) -> MResult<()> {
+    let source = source.get_column_major(0).ok_or_else(|| {
+        function_shape_contract_violation("op_assign_slice", "scalar source is empty")
+    })?;
+    for position in 0..indexes.len() {
+        let index = indexes
+            .get_column_major(position)
+            .expect("validated selector lane");
+        let destination = checked_one_based_index(index, sink.len())?;
+        let current = sink
+            .get_column_major(destination)
+            .expect("initialized destination lane");
+        sink.try_set_column_major(destination, operation(current, source)?)?;
+    }
+    Ok(())
+}
+
+#[cfg(feature = "matrix")]
+fn apply_index_scalar_mask<T: ManagedElement>(
+    source: ManagedValueView<'_, T>,
+    mask: ManagedValueView<'_, bool>,
+    sink: &mut ManagedValueViewMut<'_, T>,
+    operation: impl Fn(T, T) -> MResult<T>,
+) -> MResult<()> {
+    validate_mask_len(mask.len(), sink.len())?;
+    let source = source.get_column_major(0).ok_or_else(|| {
+        function_shape_contract_violation("op_assign_slice", "scalar source is empty")
+    })?;
+    for position in 0..mask.len() {
+        if mask
+            .get_column_major(position)
+            .expect("validated mask lane")
+        {
+            let current = sink
+                .get_column_major(position)
+                .expect("initialized destination lane");
+            sink.try_set_column_major(position, operation(current, source)?)?;
+        }
+    }
+    Ok(())
+}
+
+#[cfg(feature = "matrix")]
+fn apply_index_vector_positions<T: ManagedElement>(
+    source: ManagedValueView<'_, T>,
+    indexes: ManagedValueView<'_, usize>,
+    sink: &mut ManagedValueViewMut<'_, T>,
+    operation: impl Fn(T, T) -> MResult<T>,
+) -> MResult<()> {
+    validate_source_len(source.len(), indexes.len())?;
+    for position in 0..indexes.len() {
+        let index = indexes
+            .get_column_major(position)
+            .expect("validated selector lane");
+        let destination = checked_one_based_index(index, sink.len())?;
+        let current = sink
+            .get_column_major(destination)
+            .expect("initialized destination lane");
+        let source = source
+            .get_column_major(position)
+            .expect("validated source lane");
+        sink.try_set_column_major(destination, operation(current, source)?)?;
+    }
+    Ok(())
+}
+
+#[cfg(feature = "matrix")]
+fn apply_index_vector_mask<T: ManagedElement>(
+    source: ManagedValueView<'_, T>,
+    mask: ManagedValueView<'_, bool>,
+    sink: &mut ManagedValueViewMut<'_, T>,
+    operation: impl Fn(T, T) -> MResult<T>,
+) -> MResult<()> {
+    validate_mask_len(mask.len(), sink.len())?;
+    validate_source_len(source.len(), mask.len())?;
+    for position in 0..mask.len() {
+        if mask
+            .get_column_major(position)
+            .expect("validated mask lane")
+        {
+            let current = sink
+                .get_column_major(position)
+                .expect("initialized destination lane");
+            let source = source
+                .get_column_major(position)
+                .expect("validated source lane");
+            sink.try_set_column_major(position, operation(current, source)?)?;
+        }
+    }
+    Ok(())
+}
+
+#[cfg(feature = "matrix")]
+fn apply_rows_scalar_positions<T: ManagedElement>(
+    source: ManagedValueView<'_, T>,
+    rows: ManagedValueView<'_, usize>,
+    sink: &mut ManagedValueViewMut<'_, T>,
+    operation: impl Fn(T, T) -> MResult<T>,
+) -> MResult<()> {
+    let source = source.get_column_major(0).ok_or_else(|| {
+        function_shape_contract_violation("op_assign_slice", "scalar source is empty")
+    })?;
+    for position in 0..rows.len() {
+        checked_one_based_index(
+            rows.get_column_major(position)
+                .expect("validated selector lane"),
+            sink.rows(),
+        )?;
+    }
+    for column in 0..sink.columns() {
+        for position in 0..rows.len() {
+            let row = rows
+                .get_column_major(position)
+                .expect("validated selector lane")
+                - 1;
+            let destination = row + column * sink.rows();
+            let current = sink
+                .get_column_major(destination)
+                .expect("initialized destination lane");
+            sink.try_set_column_major(destination, operation(current, source)?)?;
+        }
+    }
+    Ok(())
+}
+
+#[cfg(feature = "matrix")]
+fn apply_rows_scalar_mask<T: ManagedElement>(
+    source: ManagedValueView<'_, T>,
+    mask: ManagedValueView<'_, bool>,
+    sink: &mut ManagedValueViewMut<'_, T>,
+    operation: impl Fn(T, T) -> MResult<T>,
+) -> MResult<()> {
+    validate_mask_len(mask.len(), sink.rows())?;
+    let source = source.get_column_major(0).ok_or_else(|| {
+        function_shape_contract_violation("op_assign_slice", "scalar source is empty")
+    })?;
+    for column in 0..sink.columns() {
+        for row in 0..mask.len() {
+            if mask.get_column_major(row).expect("validated mask lane") {
+                let destination = row + column * sink.rows();
+                let current = sink
+                    .get_column_major(destination)
+                    .expect("initialized destination lane");
+                sink.try_set_column_major(destination, operation(current, source)?)?;
+            }
+        }
+    }
+    Ok(())
+}
+
+#[cfg(feature = "matrix")]
+fn apply_rows_matrix_positions<T: ManagedElement>(
+    source: ManagedValueView<'_, T>,
+    rows: ManagedValueView<'_, usize>,
+    sink: &mut ManagedValueViewMut<'_, T>,
+    operation: impl Fn(T, T) -> MResult<T>,
+) -> MResult<()> {
+    validate_source_len(source.rows(), usize::from(!rows.is_empty()))?;
+    if source.columns() != sink.columns() {
+        return Err(function_shape_contract_violation(
+            "op_assign_slice",
+            "source and output column counts disagree",
+        ));
+    }
+    for selected in 0..rows.len() {
+        let destination_row = checked_one_based_index(
+            rows.get_column_major(selected)
+                .expect("validated selector lane"),
+            sink.rows(),
+        )?;
+        let source_row = selected % source.rows();
+        for column in 0..sink.columns() {
+            let destination = destination_row + column * sink.rows();
+            let source_index = source_row + column * source.rows();
+            let current = sink
+                .get_column_major(destination)
+                .expect("initialized destination lane");
+            let source = source
+                .get_column_major(source_index)
+                .expect("validated source lane");
+            sink.try_set_column_major(destination, operation(current, source)?)?;
+        }
+    }
+    Ok(())
+}
+
+#[cfg(feature = "matrix")]
+fn apply_rows_matrix_mask<T: ManagedElement>(
+    source: ManagedValueView<'_, T>,
+    mask: ManagedValueView<'_, bool>,
+    sink: &mut ManagedValueViewMut<'_, T>,
+    operation: impl Fn(T, T) -> MResult<T>,
+) -> MResult<()> {
+    validate_mask_len(mask.len(), sink.rows())?;
+    let selected = (0..mask.len())
+        .filter(|index| mask.get_column_major(*index).unwrap_or(false))
+        .count();
+    validate_source_len(source.rows(), selected)?;
+    if source.columns() != sink.columns() {
+        return Err(function_shape_contract_violation(
+            "op_assign_slice",
+            "source and output column counts disagree",
+        ));
+    }
+    let mut source_row = 0;
+    for row in 0..mask.len() {
+        if mask.get_column_major(row).expect("validated mask lane") {
+            for column in 0..sink.columns() {
+                let destination = row + column * sink.rows();
+                let source_index = source_row + column * source.rows();
+                let current = sink
+                    .get_column_major(destination)
+                    .expect("initialized destination lane");
+                let source = source
+                    .get_column_major(source_index)
+                    .expect("validated source lane");
+                sink.try_set_column_major(destination, operation(current, source)?)?;
+            }
+            source_row += 1;
+        }
+    }
+    Ok(())
+}
+
 #[macro_export]
 macro_rules! impl_op_assign_range_fxn_s {
     ($struct_name:ident, $op:ident, $ix:ty) => {
         #[derive(Debug)]
         pub struct $struct_name<T, MatA, IxVec> {
-            pub source: Ref<T>,
-            pub ixes: Ref<IxVec>,
-            pub sink: Ref<MatA>,
-            pub _marker: PhantomData<T>,
+            pub base: ManagedPort<T>,
+            pub source: ManagedPort<T>,
+            pub ixes: ManagedPort<$ix>,
+            pub sink: ManagedPort<T>,
+            pub _marker: PhantomData<(MatA, IxVec)>,
         }
         impl<T, R1: 'static, C1: 'static, S1: 'static, IxVec: 'static> MechFunctionFactory
             for $struct_name<T, naMatrix<T, R1, C1, S1>, IxVec>
@@ -248,6 +479,7 @@ macro_rules! impl_op_assign_range_fxn_s {
                 + PartialOrd
                 + FunctionRuntimeType,
             T: RuntimeCheckedOpAssign,
+            T: ManagedElement + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             T: CompileConst + ConstElem,
             IxVec: Debug + AsRef<[$ix]>,
@@ -259,7 +491,6 @@ macro_rules! impl_op_assign_range_fxn_s {
             naMatrix<T, R1, C1, S1>: Debug,
             naMatrix<T, R1, C1, S1>: FunctionStateBacking,
             IxVec: FunctionPortBacking,
-            T: FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
         {
@@ -279,10 +510,14 @@ macro_rules! impl_op_assign_range_fxn_s {
 
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (sink, source, ixes) = invocation.expect_binary()?;
-                let source: Ref<T> = source.try_ref()?;
-                let ixes: Ref<IxVec> = ixes.try_ref()?;
-                let sink: Ref<naMatrix<T, R1, C1, S1>> = sink.try_ref()?;
+                let _ = sink.try_managed::<naMatrix<T, R1, C1, S1>>()?;
+                let _ = ixes.try_managed::<IxVec>()?;
+                let base = sink.try_managed_element_base_input::<T>(0)?;
+                let sink = sink.try_managed_element::<T>()?;
+                let source = source.try_managed_at::<T>(1)?;
+                let ixes = ixes.try_managed_element_at::<$ix>(2)?;
                 Ok(Box::new(Self {
+                    base,
                     sink,
                     source,
                     ixes,
@@ -312,28 +547,44 @@ macro_rules! impl_op_assign_range_fxn_s {
                 + PartialEq
                 + PartialOrd,
             T: RuntimeCheckedOpAssign,
+            T: ManagedElement,
             IxVec: AsRef<[$ix]> + Debug,
             R1: Dim,
             C1: Dim,
             S1: StorageMut<T, R1, C1> + Clone + Debug,
             naMatrix<T, R1, C1, S1>: FunctionStateBacking,
+            $ix: ManagedElement,
         {
             fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-                Some(FunctionStatePort::from_ref(&self.sink))
+                Some(FunctionStatePort::from_cell(self.sink.cell()))
             }
             fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
-                Ok(Some(vec![FunctionStatePort::from_ref(&self.sink)]))
+                Ok(Some(vec![FunctionStatePort::from_cell(self.sink.cell())]))
             }
-            fn solve_result(&self) -> MResult<()> {
-                unsafe {
-                    let sink_ptr = &mut *self.sink.as_mut_ptr();
-                    let source_ptr = &*self.source.as_ptr();
-                    let ix_ptr = &(*self.ixes.as_ptr()).as_ref();
-                    let mut next = sink_ptr.clone();
-                    $op!(source_ptr, ix_ptr, &mut next)?;
-                    *sink_ptr = next;
-                };
-                Ok(())
+            fn solve_managed(
+                &self,
+                frame: &mut mech_core::KernelMemoryFrame<'_>,
+                _services: &mut dyn mech_core::MechExecutionServices,
+            ) -> MResult<mech_core::ReactiveSolveStatus> {
+                frame.with_ternary_typed_port_views(
+                    &self.base,
+                    &self.source,
+                    &self.ixes,
+                    &self.sink,
+                    |base, source, ixes, sink| {
+                        if base.len() != sink.len() || source.len() != 1 {
+                            return Err(function_shape_contract_violation(
+                                "op_assign_slice",
+                                "managed indexed scalar assignment geometry disagrees",
+                            ));
+                        }
+                        sink.try_fill_column_major(|index| {
+                            Ok(base.get_column_major(index).expect("validated base lane"))
+                        })?;
+                        $op!(source, ixes, sink)
+                    },
+                )?;
+                Ok(mech_core::ReactiveSolveStatus::Changed)
             }
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
                 Some(&PURE_INDEXED_AXIS_ZERO_RMW_CONTRACT)
@@ -358,7 +609,12 @@ macro_rules! impl_op_assign_range_fxn_s {
                     function_matrix_storage_name::<naMatrix<T, R1, C1, S1>>(),
                     function_matrix_storage_name::<IxVec>()
                 );
-                compile_binop!(name, self.sink, self.source, self.ixes, ctx);
+                let out = compile_value_cell_register(self.sink.cell(), ctx)?;
+                let source = compile_value_cell_register(self.source.cell(), ctx)?;
+                let ixes = compile_value_cell_register(self.ixes.cell(), ctx)?;
+                let function = ctx.function_id(&name)?;
+                ctx.emit_binop(function, out, source, ixes);
+                Ok(out)
             }
         }
     };
@@ -370,10 +626,11 @@ macro_rules! impl_op_assign_range_fxn_v {
         #[cfg(feature = "matrix")]
         #[derive(Debug)]
         pub struct $struct_name<T, MatA, MatB, IxVec> {
-            pub source: Ref<MatB>,
-            pub ixes: Ref<IxVec>,
-            pub sink: Ref<MatA>,
-            pub _marker: PhantomData<T>,
+            pub base: ManagedPort<T>,
+            pub source: ManagedPort<T>,
+            pub ixes: ManagedPort<$ix>,
+            pub sink: ManagedPort<T>,
+            pub _marker: PhantomData<(MatA, MatB, IxVec)>,
         }
         impl<
             T,
@@ -407,6 +664,7 @@ macro_rules! impl_op_assign_range_fxn_v {
                 + PartialOrd
                 + FunctionRuntimeType,
             T: RuntimeCheckedOpAssign,
+            T: ManagedElement + FunctionPortBacking,
             #[cfg(feature = "semantic-compiler")]
             T: CompileConst + ConstElem,
             IxVec: Debug + AsRef<[$ix]>,
@@ -444,10 +702,15 @@ macro_rules! impl_op_assign_range_fxn_v {
 
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (sink, source, ixes) = invocation.expect_binary()?;
-                let source: Ref<naMatrix<T, R2, C2, S2>> = source.try_ref()?;
-                let ixes: Ref<IxVec> = ixes.try_ref()?;
-                let sink: Ref<naMatrix<T, R1, C1, S1>> = sink.try_ref()?;
+                let _ = sink.try_managed::<naMatrix<T, R1, C1, S1>>()?;
+                let _ = source.try_managed::<naMatrix<T, R2, C2, S2>>()?;
+                let _ = ixes.try_managed::<IxVec>()?;
+                let base = sink.try_managed_element_base_input::<T>(0)?;
+                let sink = sink.try_managed_element::<T>()?;
+                let source = source.try_managed_element_at::<T>(1)?;
+                let ixes = ixes.try_managed_element_at::<$ix>(2)?;
                 Ok(Box::new(Self {
+                    base,
                     sink,
                     source,
                     ixes,
@@ -477,6 +740,7 @@ macro_rules! impl_op_assign_range_fxn_v {
                 + PartialEq
                 + PartialOrd,
             T: RuntimeCheckedOpAssign,
+            T: ManagedElement,
             IxVec: AsRef<[$ix]> + Debug,
             R1: Dim,
             C1: Dim,
@@ -485,23 +749,39 @@ macro_rules! impl_op_assign_range_fxn_v {
             C2: Dim,
             S2: Storage<T, R2, C2> + Clone + Debug,
             naMatrix<T, R1, C1, S1>: FunctionStateBacking,
+            T: ManagedElement,
+            $ix: ManagedElement,
         {
             fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-                Some(FunctionStatePort::from_ref(&self.sink))
+                Some(FunctionStatePort::from_cell(self.sink.cell()))
             }
             fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
-                Ok(Some(vec![FunctionStatePort::from_ref(&self.sink)]))
+                Ok(Some(vec![FunctionStatePort::from_cell(self.sink.cell())]))
             }
-            fn solve_result(&self) -> MResult<()> {
-                unsafe {
-                    let sink_ptr = &mut *self.sink.as_mut_ptr();
-                    let source_ptr = &*self.source.as_ptr();
-                    let ix_ptr = &(*self.ixes.as_ptr()).as_ref();
-                    let mut next = sink_ptr.clone();
-                    $op!(source_ptr, ix_ptr, &mut next)?;
-                    *sink_ptr = next;
-                };
-                Ok(())
+            fn solve_managed(
+                &self,
+                frame: &mut mech_core::KernelMemoryFrame<'_>,
+                _services: &mut dyn mech_core::MechExecutionServices,
+            ) -> MResult<mech_core::ReactiveSolveStatus> {
+                frame.with_ternary_typed_port_views(
+                    &self.base,
+                    &self.source,
+                    &self.ixes,
+                    &self.sink,
+                    |base, source, ixes, sink| {
+                        if base.len() != sink.len() {
+                            return Err(function_shape_contract_violation(
+                                "op_assign_slice",
+                                "managed indexed matrix assignment geometry disagrees",
+                            ));
+                        }
+                        sink.try_fill_column_major(|index| {
+                            Ok(base.get_column_major(index).expect("validated base lane"))
+                        })?;
+                        $op!(source, ixes, sink)
+                    },
+                )?;
+                Ok(mech_core::ReactiveSolveStatus::Changed)
             }
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
                 Some(&PURE_INDEXED_AXIS_ZERO_RMW_CONTRACT)
@@ -528,7 +808,12 @@ macro_rules! impl_op_assign_range_fxn_v {
                     function_matrix_storage_name::<naMatrix<T, R2, C2, S2>>(),
                     function_matrix_storage_name::<IxVec>()
                 );
-                compile_binop!(name, self.sink, self.source, self.ixes, ctx);
+                let out = compile_value_cell_register(self.sink.cell(), ctx)?;
+                let source = compile_value_cell_register(self.source.cell(), ctx)?;
+                let ixes = compile_value_cell_register(self.ixes.cell(), ctx)?;
+                let function = ctx.function_id(&name)?;
+                ctx.emit_binop(function, out, source, ixes);
+                Ok(out)
             }
         }
     };
@@ -539,7 +824,9 @@ macro_rules! impl_op_assign_range_fxn_v {
 macro_rules! try_canonical_op_assign_vs_shape {
     (($operation:ident, $sink:ident, $source:ident); $scalar:ty; $matrix:ty) => {
         paste::paste! {
-            if $sink.try_ref::<$matrix>().is_ok() && $source.try_ref::<$scalar>().is_ok() {
+            if $sink.representation() == <$matrix as FunctionRuntimeType>::REPRESENTATION
+                && $source.representation() == <$scalar as FunctionRuntimeType>::REPRESENTATION
+            {
                 return SpecializedFunction::bind_factory::<[<$operation AssignVS>]<$scalar, $matrix>>(
                     $sink.cell()?.clone(),
                     vec![$sink.cell()?.clone(), $source.cell()?.clone()].into_boxed_slice(),
@@ -742,8 +1029,9 @@ macro_rules! impl_assign_scalar_scalar {
     paste::paste! {
       #[derive(Debug)]
       pub(crate) struct [<$op_name AssignSS>]<T> {
-        sink: Ref<T>,
-        source: Ref<T>,
+        base: ManagedPort<T>,
+        sink: ManagedPort<T>,
+        source: ManagedPort<T>,
       }
       impl<T> MechFunctionFactory for [<$op_name AssignSS>]<T>
       where
@@ -751,6 +1039,7 @@ macro_rules! impl_assign_scalar_scalar {
            $op_name<Output = T> + [<$op_name Assign>] +
            PartialEq + PartialOrd + FunctionRuntimeType,
         T: RuntimeCheckedOpAssign,
+        T: ManagedElement + FunctionPortBacking,
         #[cfg(feature = "semantic-compiler")]
         T: CompileConst + ConstElem,
         T: FunctionStateBacking,
@@ -770,9 +1059,10 @@ macro_rules! impl_assign_scalar_scalar {
 
         fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
           let (sink, source) = invocation.expect_unary()?;
-          let source: Ref<T> = source.try_ref()?;
-          let sink: Ref<T> = sink.try_ref()?;
-          Ok(Box::new(Self { sink, source }))
+          let base = sink.try_managed_base_input::<T>(0)?;
+          let output = sink.try_managed::<T>()?;
+          let source = source.try_managed_at::<T>(1)?;
+          Ok(Box::new(Self { base, sink: output, source }))
         }
 
       }
@@ -782,22 +1072,28 @@ macro_rules! impl_assign_scalar_scalar {
            $op_name<Output = T> + [<$op_name Assign>] +
            PartialEq + PartialOrd,
         T: RuntimeCheckedOpAssign,
+        T: ManagedElement,
         T: FunctionStateBacking,
       {
         fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-          Some(FunctionStatePort::from_ref(&self.sink))
+          Some(FunctionStatePort::from_cell(self.sink.cell()))
         }
         fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
-          Ok(Some(vec![FunctionStatePort::from_ref(&self.sink)]))
+          Ok(Some(vec![FunctionStatePort::from_cell(self.sink.cell())]))
         }
-        fn solve_result(&self) -> MResult<()> {
-          let next = $checked_op(*self.sink.borrow(), *self.source.borrow())?;
-          *self.sink.borrow_mut() = next;
-          Ok(())
-        }
-        fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
-          let next = $checked_op(*self.sink.borrow(), *self.source.borrow())?;
-          Ok(Box::new(ReactiveRegisterWrite::new(self.sink.clone(), next, self.reactive_output_cell_ids())))
+        fn solve_managed(
+                &self,
+                frame: &mut mech_core::KernelMemoryFrame<'_>,
+                _services: &mut dyn mech_core::MechExecutionServices,
+            ) -> MResult<mech_core::ReactiveSolveStatus> {
+          frame.with_binary_port_views(&self.base, &self.source, &self.sink, |base, source, sink| {
+            if base.len() != 1 || source.len() != 1 || sink.len() != 1 {
+              return Err(MechError::new(GenericError { msg: "scalar assignment requires scalar managed ports".into() }, None));
+            }
+            let next = $checked_op(base.get_column_major(0).unwrap(), source.get_column_major(0).unwrap())?;
+            sink.try_fill_column_major(|_| Ok(next))
+          })?;
+            Ok(mech_core::ReactiveSolveStatus::Changed)
         }
         fn reactive_node_kind(&self) -> ReactiveNodeKind { ReactiveNodeKind::Register }
         fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
@@ -812,7 +1108,11 @@ macro_rules! impl_assign_scalar_scalar {
       {
         fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
           let name = format!("{}AssignSS<{}>", stringify!($op_name), <T as FunctionRuntimeType>::REPRESENTATION);
-          compile_unop!(name, self.sink, self.source, ctx );
+          let out = compile_value_cell_register(self.sink.cell(), ctx)?;
+          let source = compile_value_cell_register(self.source.cell(), ctx)?;
+          let function = ctx.function_id(&name)?;
+          ctx.emit_unop(function, out, source);
+          Ok(out)
         }
       }
     }
@@ -825,15 +1125,17 @@ macro_rules! impl_assign_vector_vector {
     paste::paste! {
       #[derive(Debug)]
       pub struct [<$op_name AssignVV>]<T, MatA, MatB> {
-        pub sink: Ref<MatA>,
-        pub source: Ref<MatB>,
-        _marker: PhantomData<T>,
+        pub base: ManagedPort<T>,
+        pub sink: ManagedPort<T>,
+        pub source: ManagedPort<T>,
+        _marker: PhantomData<(MatA, MatB)>,
       }
       impl<T, MatA, MatB> MechFunctionFactory for [<$op_name AssignVV>]<T, MatA, MatB>
       where
         T: Debug + Clone + Sync + Send + 'static + [<$op_name Assign>] +
         FunctionRuntimeType,
         T: RuntimeCheckedOpAssign,
+        T: ManagedElement + FunctionPortBacking,
         #[cfg(feature = "semantic-compiler")]
         T: CompileConst + ConstElem,
         for<'a> &'a MatA: IntoIterator<Item = &'a T>,
@@ -863,9 +1165,12 @@ macro_rules! impl_assign_vector_vector {
 
         fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
           let (sink, source) = invocation.expect_unary()?;
-          let source: Ref<MatB> = source.try_ref()?;
-          let sink: Ref<MatA> = sink.try_ref()?;
-          Ok(Box::new(Self { sink, source, _marker: PhantomData::default() }))
+          let _ = sink.try_managed::<MatA>()?;
+          let _ = source.try_managed::<MatB>()?;
+          let base = sink.try_managed_element_base_input::<T>(0)?;
+          let output = sink.try_managed_element::<T>()?;
+          let source = source.try_managed_element_at::<T>(1)?;
+          Ok(Box::new(Self { base, sink: output, source, _marker: PhantomData::default() }))
         }
 
       }
@@ -873,6 +1178,7 @@ macro_rules! impl_assign_vector_vector {
       where
         T: Debug + Clone + Sync + Send + 'static + [<$op_name Assign>],
         T: RuntimeCheckedOpAssign,
+        T: ManagedElement,
         for<'a> &'a MatA: IntoIterator<Item = &'a T>,
         for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
         for<'a> &'a MatB: IntoIterator<Item = &'a T>,
@@ -880,31 +1186,25 @@ macro_rules! impl_assign_vector_vector {
         MatB: Debug,
       {
         fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-          Some(FunctionStatePort::from_ref(&self.sink))
+          Some(FunctionStatePort::from_cell(self.sink.cell()))
         }
         fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
-          Ok(Some(vec![FunctionStatePort::from_ref(&self.sink)]))
+          Ok(Some(vec![FunctionStatePort::from_cell(self.sink.cell())]))
         }
-        fn solve_result(&self) -> MResult<()> {
-          let mut next = self.sink.borrow().clone();
-          {
-            let source = self.source.borrow();
-            for (dst, src) in (&mut next).into_iter().zip((&*source).into_iter()) {
-              *dst = $checked_op(*dst, *src)?;
+        fn solve_managed(
+                &self,
+                frame: &mut mech_core::KernelMemoryFrame<'_>,
+                _services: &mut dyn mech_core::MechExecutionServices,
+            ) -> MResult<mech_core::ReactiveSolveStatus> {
+          frame.with_binary_port_views(&self.base, &self.source, &self.sink, |base, source, sink| {
+            if base.len() != source.len() || base.len() != sink.len() {
+              return Err(MechError::new(GenericError { msg: "matrix assignment managed-port lengths disagree".into() }, None));
             }
-          }
-          *self.sink.borrow_mut() = next;
-          Ok(())
-        }
-        fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
-          let mut next = self.sink.borrow().clone();
-          {
-            let source = self.source.borrow();
-            for (dst, src) in (&mut next).into_iter().zip((&*source).into_iter()) {
-              *dst = $checked_op(*dst, *src)?;
-            }
-          }
-          Ok(Box::new(ReactiveRegisterWrite::new(self.sink.clone(), next, self.reactive_output_cell_ids())))
+            sink.try_fill_column_major(|index| {
+              $checked_op(base.get_column_major(index).unwrap(), source.get_column_major(index).unwrap())
+            })
+          })?;
+            Ok(mech_core::ReactiveSolveStatus::Changed)
         }
         fn reactive_node_kind(&self) -> ReactiveNodeKind { ReactiveNodeKind::Register }
         fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
@@ -921,7 +1221,11 @@ macro_rules! impl_assign_vector_vector {
       {
         fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
           let name = format!("{}AssignVV<{}>", stringify!($op_name), <MatA as FunctionRuntimeType>::REPRESENTATION);
-          compile_unop!(name, self.sink, self.source, ctx );
+          let out = compile_value_cell_register(self.sink.cell(), ctx)?;
+          let source = compile_value_cell_register(self.source.cell(), ctx)?;
+          let function = ctx.function_id(&name)?;
+          ctx.emit_unop(function, out, source);
+          Ok(out)
         }
       }
     }
@@ -934,15 +1238,17 @@ macro_rules! impl_assign_vector_scalar {
     paste::paste! {
       #[derive(Debug)]
       pub struct [<$op_name AssignVS>]<T, MatA> {
-        pub sink: Ref<MatA>,
-        pub source: Ref<T>,
-        _marker: PhantomData<T>,
+        pub base: ManagedPort<T>,
+        pub sink: ManagedPort<T>,
+        pub source: ManagedPort<T>,
+        _marker: PhantomData<MatA>,
       }
       impl<T, MatA> MechFunctionFactory for [<$op_name AssignVS>]<T, MatA>
       where
         T: Debug + Clone + Sync + Send + 'static + [<$op_name Assign>] +
         FunctionRuntimeType,
         T: RuntimeCheckedOpAssign,
+        T: ManagedElement,
         #[cfg(feature = "semantic-compiler")]
         T: CompileConst + ConstElem,
         for<'a> &'a MatA: IntoIterator<Item = &'a T>,
@@ -969,9 +1275,11 @@ macro_rules! impl_assign_vector_scalar {
 
         fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
           let (sink, _base, source) = invocation.expect_binary()?;
-          let source: Ref<T> = source.try_ref()?;
-          let sink: Ref<MatA> = sink.try_ref()?;
-          Ok(Box::new(Self { sink, source, _marker: PhantomData::default() }))
+          let _ = sink.try_managed::<MatA>()?;
+          let base = sink.try_managed_element_base_input::<T>(0)?;
+          let output = sink.try_managed_element::<T>()?;
+          let source = source.try_managed_at::<T>(1)?;
+          Ok(Box::new(Self { base, sink: output, source, _marker: PhantomData::default() }))
         }
 
       }
@@ -979,32 +1287,32 @@ macro_rules! impl_assign_vector_scalar {
       where
         T: Debug + Clone + Sync + Send + 'static + [<$op_name Assign>],
         T: RuntimeCheckedOpAssign,
+        T: ManagedElement,
         for<'a> &'a MatA: IntoIterator<Item = &'a T>,
         for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
         MatA: Debug + Clone + FunctionStateBacking + 'static,
       {
         fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-          Some(FunctionStatePort::from_ref(&self.sink))
+          Some(FunctionStatePort::from_cell(self.sink.cell()))
         }
         fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
-          Ok(Some(vec![FunctionStatePort::from_ref(&self.sink)]))
+          Ok(Some(vec![FunctionStatePort::from_cell(self.sink.cell())]))
         }
-        fn solve_result(&self) -> MResult<()> {
-          let mut next = self.sink.borrow().clone();
-          let source = *self.source.borrow();
-          for dst in (&mut next).into_iter() {
-            *dst = $checked_op(*dst, source)?;
-          }
-          *self.sink.borrow_mut() = next;
-          Ok(())
-        }
-        fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
-          let mut next = self.sink.borrow().clone();
-          let source = self.source.borrow().clone();
-          for dst in (&mut next).into_iter() {
-            *dst = $checked_op(*dst, source)?;
-          }
-          Ok(Box::new(ReactiveRegisterWrite::new(self.sink.clone(), next, self.reactive_output_cell_ids())))
+        fn solve_managed(
+                &self,
+                frame: &mut mech_core::KernelMemoryFrame<'_>,
+                _services: &mut dyn mech_core::MechExecutionServices,
+            ) -> MResult<mech_core::ReactiveSolveStatus> {
+          let source = frame.with_port_slice(&self.source, |source| source[0])?;
+          frame.with_unary_port_views(&self.base, &self.sink, |base, sink| {
+            if base.len() != sink.len() {
+              return Err(MechError::new(GenericError { msg: "matrix scalar-assignment managed-port lengths disagree".into() }, None));
+            }
+            sink.try_fill_column_major(|index| {
+              $checked_op(base.get_column_major(index).unwrap(), source)
+            })
+          })?;
+            Ok(mech_core::ReactiveSolveStatus::Changed)
         }
         fn reactive_node_kind(&self) -> ReactiveNodeKind { ReactiveNodeKind::Register }
         fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
@@ -1020,7 +1328,11 @@ macro_rules! impl_assign_vector_scalar {
       {
         fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
           let name = format!("{}AssignVS<{}>", stringify!($op_name), <MatA as FunctionRuntimeType>::REPRESENTATION);
-          compile_unop!(name, self.sink, self.source, ctx );
+          let out = compile_value_cell_register(self.sink.cell(), ctx)?;
+          let source = compile_value_cell_register(self.source.cell(), ctx)?;
+          let function = ctx.function_id(&name)?;
+          ctx.emit_unop(function, out, source);
+          Ok(out)
         }
       }
     }

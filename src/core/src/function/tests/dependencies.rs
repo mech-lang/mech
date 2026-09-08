@@ -6,7 +6,7 @@ use super::support::{TestFunction, index};
 use crate::ValueCell;
 
 fn instance(function: TestFunction, output: ValueCell, inputs: Vec<ValueCell>) -> FunctionInstance {
-    FunctionInstance::new(
+    crate::function::test_planned_instance(
         Box::new(function),
         FunctionInvocation::variadic(output, inputs.into_boxed_slice()),
     )

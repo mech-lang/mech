@@ -879,6 +879,13 @@ mod tests {
     #[test]
     fn source_catalog_matches_the_frozen_matrix_surface() {
         let mut builder = FunctionCatalogBuilder::new();
+        // Semantic source entries retain the contracts declared by their
+        // executable catalog, so install those declarations before source
+        // specializers just as ordinary catalog activation does.
+        install_runtime(&mut builder).unwrap();
+        let runtime_count = builder.build().unwrap().runtime_factory_count();
+        let mut builder = FunctionCatalogBuilder::new();
+        install_runtime(&mut builder).unwrap();
         install_source(&mut builder).unwrap();
         let catalog = builder.build().unwrap();
         let expected = expected_operations();
@@ -891,10 +898,18 @@ mod tests {
         ))]
         assert_eq!(expected.len(), 4);
         assert_eq!(catalog.specializer_count(), expected.len());
-        assert_eq!(catalog.runtime_factory_count(), 0);
+        assert_eq!(catalog.runtime_factory_count(), runtime_count);
         for name in expected {
             let operation = OperationId::from_name(name);
-            assert_eq!(catalog.specializer(operation).unwrap().canonical_name, name);
+            assert_eq!(
+                catalog
+                    .specializer(operation)
+                    .unwrap()
+                    .operation
+                    .canonical_name
+                    .as_ref(),
+                name
+            );
             assert_eq!(
                 catalog.exports_for_operation(operation),
                 &[FunctionExport {
@@ -913,6 +928,36 @@ mod tests {
 mod runtime_signature_tests {
     use super::*;
     use mech_core::{FunctionRuntimeType, MechFunctionFactory, RuntimeFunctionSignature};
+
+    #[cfg(all(
+        feature = "solve",
+        feature = "f64",
+        feature = "matrixd",
+        feature = "vectord"
+    ))]
+    #[test]
+    fn managed_solve_preserves_runtime_identity_and_exact_signature() {
+        use nalgebra::{DMatrix, DVector};
+
+        let expected = RuntimeFunctionSignature::binary(
+            <DVector<f64> as FunctionRuntimeType>::REPRESENTATION,
+            <DMatrix<f64> as FunctionRuntimeType>::REPRESENTATION,
+            <DVector<f64> as FunctionRuntimeType>::REPRESENTATION,
+        );
+        assert_eq!(
+            <crate::solve::MatrixSolveMDVD<f64> as MechFunctionFactory>::SIGNATURE,
+            expected
+        );
+        let mut builder = FunctionCatalogBuilder::new();
+        install_runtime(&mut builder).unwrap();
+        let catalog = builder.build().unwrap();
+        let entry = catalog
+            .runtime_entry(mech_core::RuntimeFunctionId::from_name(
+                "MatrixSolveMDVD<f64>",
+            ))
+            .unwrap();
+        assert_eq!(entry.signature(), expected);
+    }
 
     #[cfg(all(feature = "dot", feature = "f64", feature = "matrix1"))]
     #[test]

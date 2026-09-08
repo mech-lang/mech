@@ -1,9 +1,9 @@
+#[cfg(feature = "source")]
+use mech_core::{CanonicalFunctionSpecializer, FunctionExport, FunctionExposure};
 use mech_core::{
     ExtentEvolution, FunctionCatalogBuilder, MResult, RuntimeFunctionContract,
     RuntimeOutputAliasPolicy, SchemaBody, ValueCell, function_shape_contract_violation,
 };
-#[cfg(feature = "source")]
-use mech_core::{CanonicalFunctionSpecializer, FunctionExport, FunctionExposure};
 #[cfg(feature = "source")]
 use std::sync::Arc;
 
@@ -117,8 +117,10 @@ fn validate_canonical_range_contract(
             "output must be matrix-backed",
         ));
     };
-    let [mech_core::DimensionExpr::Constant(rows), mech_core::DimensionExpr::Constant(columns)] =
-        dimensions.as_ref()
+    let [
+        mech_core::DimensionExpr::Constant(rows),
+        mech_core::DimensionExpr::Constant(columns),
+    ] = dimensions.as_ref()
     else {
         return Err(function_shape_contract_violation(
             contract,

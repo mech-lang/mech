@@ -1,8 +1,8 @@
 #![cfg(feature = "dynamic-module")]
 
+use mech_abi::MechStatusV1;
 #[cfg(test)]
 use mech_abi::{MechExportV1, MechKernelFnV1, MechKernelKindV1, MechStrV1};
-use mech_abi::MechStatusV1;
 
 #[cfg(test)]
 const MODULE_NAME: &[u8] = b"combinatorics";

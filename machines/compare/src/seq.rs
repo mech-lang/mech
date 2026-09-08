@@ -4,16 +4,23 @@ use crate::*;
 pub struct StrictEqValue {
     lhs: FunctionValueInput,
     rhs: FunctionValueInput,
-    pub out: Ref<bool>,
+    pub out: ManagedPort<bool>,
 }
 
 impl MechFunctionImpl for StrictEqValue {
-    fn solve_result(&self) -> MResult<()> {
-        *self.out.borrow_mut() = self.lhs.snapshot_eq(&self.rhs)?;
-        Ok(())
+    fn solve_managed(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        let next = frame.function_value_inputs_equal(&self.lhs, &self.rhs)?;
+        frame.with_output_port_view(&self.out, |out| {
+            out.try_fill_column_major(|_| Ok(next))
+        })?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-        Some(FunctionStatePort::from_ref(&self.out))
+        Some(FunctionStatePort::from_cell(self.out.cell()))
     }
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(crate::compare_full_write_contract(
@@ -25,14 +32,14 @@ impl MechFunctionImpl for StrictEqValue {
     }
 
     fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
-        Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
+        Ok(Some(vec![FunctionStatePort::from_cell(self.out.cell())]))
     }
 }
 
 impl MechFunctionFactory for StrictEqValue {
-            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
-                mech_core::ImplementationMemoryClass::NoAdditionalScratch
-            }
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch
+    }
 
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
         FunctionValueRepresentation::Bool,
@@ -45,7 +52,7 @@ impl MechFunctionFactory for StrictEqValue {
         Ok(Box::new(Self {
             lhs: lhs.value(),
             rhs: rhs.value(),
-            out: out.try_ref()?,
+            out: out.try_managed_element::<bool>()?,
         }))
     }
 
@@ -59,7 +66,7 @@ impl MechFunctionFactory for StrictEqValue {
 #[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for StrictEqValue {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let destination = compile_register_brrw!(self.out, ctx);
+        let destination = compile_value_cell_register(self.out.cell(), ctx)?;
         let lhs = self.lhs.compile_register(ctx)?;
         let rhs = self.rhs.compile_register(ctx)?;
         ctx.emit_binop(hash_str("compare/seq"), destination, lhs, rhs);
@@ -127,41 +134,35 @@ mod canonical_strict_equality_tests {
         ValueCell::from_value(value, Rc::new(schemas)).unwrap()
     }
 
-    fn bool_output() -> (Ref<bool>, ValueCell) {
-        let reference = Ref::new(false);
-        let schema = SchemaDraft {
-            dimension_parameters: Box::new([]),
-            body: SchemaBody::Bool,
-        }
-        .finalize()
-        .unwrap();
-        let shape = schema.instantiate_shape(Box::new([])).unwrap();
-        let mut builder = SchemaTableBuilder::new();
-        let handle = builder.insert(schema).unwrap();
-        let build = builder.finish().unwrap();
-        let schema = build.resolve(handle).unwrap();
-        let (schemas, _) = build.into_parts();
-        let cell = ValueCell::from_ref(reference.clone(), schema, shape, Rc::new(schemas)).unwrap();
-        (reference, cell)
+    fn bool_output() -> ValueCell {
+        ValueCell::from_exact(false).unwrap()
     }
 
     fn strict_results(lhs: ValueCell, rhs: ValueCell) -> (bool, bool) {
-        let (equal, equal_cell) = bool_output();
-        StrictEqValue::new_invocation(FunctionInvocation::binary(
-            equal_cell,
-            lhs.clone(),
-            rhs.clone(),
-        ))
-        .unwrap()
+        let equal = bool_output();
+        managed_test_function::<StrictEqValue>(
+            FunctionInvocation::binary(equal.clone(), lhs.clone(), rhs.clone()),
+            "compare/seq",
+        )
+        .instance()
         .solve_result()
         .unwrap();
-        let (not_equal, not_equal_cell) = bool_output();
-        StrictNotEqValue::new_invocation(FunctionInvocation::binary(not_equal_cell, lhs, rhs))
-            .unwrap()
-            .solve_result()
-            .unwrap();
-        let results = (*equal.borrow(), *not_equal.borrow());
-        results
+        let not_equal = bool_output();
+        managed_test_function::<StrictNotEqValue>(
+            FunctionInvocation::binary(not_equal.clone(), lhs, rhs),
+            "compare/sneq",
+        )
+        .instance()
+        .solve_result()
+        .unwrap();
+        let bool_value = |cell: &ValueCell| {
+            let snapshot = cell.snapshot().unwrap();
+            let ValueData::Bool(value) = snapshot.data() else {
+                panic!("expected Boolean strict-comparison output")
+            };
+            *value
+        };
+        (bool_value(&equal), bool_value(&not_equal))
     }
 
     #[test]

@@ -1,7 +1,6 @@
 use mech_core::{
     ExecutionHostFunctionRequest, InitialSolvePolicy, MResult, MechExecutionServices,
-    MechFunctionImpl, NoMechExecutionServices, ReactiveDependencyScope, ReactiveSolveStatus,
-    ValueCell,
+    MechFunctionImpl, ReactiveDependencyScope, ValueCell,
 };
 
 #[cfg(feature = "semantic-compiler")]
@@ -16,7 +15,11 @@ pub struct ExternalHostCallFunction {
 }
 
 impl ExternalHostCallFunction {
-    fn solve_with_services(&self, services: &mut dyn MechExecutionServices) -> MResult<()> {
+    fn solve_with_services(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        services: &mut dyn MechExecutionServices,
+    ) -> MResult<()> {
         // Keep stable reactive inputs inside the plan, while exposing their
         // current logical values across the execution-service boundary.
         let arguments = self
@@ -25,30 +28,18 @@ impl ExternalHostCallFunction {
             .map(ValueCell::snapshot)
             .collect::<MResult<Vec<_>>>()?;
         let result = services.invoke_host_function(&self.request, &arguments)?;
-        super::install_external_value(&self.output, result)
+        frame.stage_output_value(&self.output, &result)
     }
 }
 
 impl MechFunctionImpl for ExternalHostCallFunction {
-    fn solve_result(&self) -> MResult<()> {
-        self.solve_with_services(&mut NoMechExecutionServices)
-    }
-
-    fn solve_result_with(&self, services: &mut dyn MechExecutionServices) -> MResult<()> {
-        self.solve_with_services(services)
-    }
-
-    fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
-        self.solve_result()?;
-        Ok(ReactiveSolveStatus::Changed)
-    }
-
-    fn solve_reactive_with(
+    fn solve_managed(
         &self,
-        services: &mut dyn MechExecutionServices,
-    ) -> MResult<ReactiveSolveStatus> {
-        self.solve_with_services(services)?;
-        Ok(ReactiveSolveStatus::Changed)
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        self.solve_with_services(frame, services)?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn initial_solve_policy(&self) -> InitialSolvePolicy {

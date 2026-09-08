@@ -25,12 +25,90 @@ static PURE_TRANSPOSE_CONTRACT: LazyLock<OperationContractDeclaration> =
 
 // Transpose ------------------------------------------------------------------
 
-macro_rules! transpose_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            *$out = (*$arg).transpose();
+trait ManagedTransposeElement: FunctionPortBacking {
+    fn transpose(
+        frame: &mut KernelMemoryFrame<'_>,
+        input: &ManagedPort<Self>,
+        output: &ManagedPort<Self>,
+    ) -> MResult<()>
+    where
+        Self: Sized;
+}
+
+macro_rules! managed_transpose_elements {
+    ($($type:ty),+ $(,)?) => {$(
+        impl ManagedTransposeElement for $type {
+            fn transpose(
+                frame: &mut KernelMemoryFrame<'_>,
+                input: &ManagedPort<Self>,
+                output: &ManagedPort<Self>,
+            ) -> MResult<()> {
+                frame.with_unary_port_views(input, output, |input, output| {
+                    let output_rows = output.rows();
+                    output.try_fill_column_major(|index| {
+                        let output_row = index % output_rows;
+                        let output_column = index / output_rows;
+                        input.get(output_column, output_row).ok_or_else(|| {
+                            MechError::from(MemoryRuntimeError::InvalidLayout {
+                                object: None,
+                                size: input.len() as u64,
+                                alignment: core::mem::align_of::<Self>() as u32,
+                                reason: "transpose input and output geometry disagree",
+                            })
+                        })
+                    })
+                })
+            }
         }
-    };
+    )+};
+}
+
+#[cfg(feature = "u8")]
+managed_transpose_elements!(u8);
+#[cfg(feature = "u16")]
+managed_transpose_elements!(u16);
+#[cfg(feature = "u32")]
+managed_transpose_elements!(u32);
+#[cfg(feature = "u64")]
+managed_transpose_elements!(u64);
+#[cfg(feature = "u128")]
+managed_transpose_elements!(u128);
+#[cfg(feature = "i8")]
+managed_transpose_elements!(i8);
+#[cfg(feature = "i16")]
+managed_transpose_elements!(i16);
+#[cfg(feature = "i32")]
+managed_transpose_elements!(i32);
+#[cfg(feature = "i64")]
+managed_transpose_elements!(i64);
+#[cfg(feature = "i128")]
+managed_transpose_elements!(i128);
+#[cfg(feature = "f32")]
+managed_transpose_elements!(f32);
+#[cfg(feature = "f64")]
+managed_transpose_elements!(f64);
+managed_transpose_elements!(usize);
+#[cfg(feature = "bool")]
+managed_transpose_elements!(bool);
+#[cfg(feature = "complex")]
+managed_transpose_elements!(C64);
+#[cfg(feature = "rational")]
+managed_transpose_elements!(R64);
+
+#[cfg(feature = "string")]
+impl ManagedTransposeElement for String {
+    fn transpose(
+        _: &mut KernelMemoryFrame<'_>,
+        _: &ManagedPort<Self>,
+        _: &ManagedPort<Self>,
+    ) -> MResult<()> {
+        Err(MechError::from(MemoryRuntimeError::InvalidLayout {
+            object: None,
+            size: 0,
+            alignment: 1,
+            reason: "String transpose requires the managed canonical payload frame",
+        }))
+    }
 }
 
 #[macro_export]
@@ -38,12 +116,21 @@ macro_rules! impl_transpose {
     ($struct_name:ident, $arg_type:ty, $out_type:ty, $op:ident) => {
         #[derive(Debug)]
         pub(crate) struct $struct_name<T> {
-            arg: Ref<$arg_type>,
-            out: Ref<$out_type>,
+            arg: ManagedPort<T>,
+            out: ManagedPort<T>,
         }
         impl<T> MechFunctionFactory for $struct_name<T>
         where
-            T: Debug + Clone + Sync + Send + 'static + FunctionRuntimeType + PartialEq + PartialOrd,
+            T: Debug
+                + Clone
+                + Sync
+                + Send
+                + 'static
+                + FunctionRuntimeType
+                + FunctionPortBacking
+                + ManagedTransposeElement
+                + PartialEq
+                + PartialOrd,
             #[cfg(feature = "semantic-compiler")]
             T: CanonicalMatrixElementBacking + CompileConst + ConstElem,
             $arg_type: FunctionPortBacking,
@@ -64,29 +151,39 @@ macro_rules! impl_transpose {
 
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (out, arg) = invocation.expect_unary()?;
-                let arg: Ref<$arg_type> = arg.try_ref()?;
-                let out: Ref<$out_type> = out.try_ref()?;
+                let arg = arg.try_managed_element::<T>()?;
+                let out = out.try_managed_element::<T>()?;
                 Ok(Box::new($struct_name { arg, out }))
             }
         }
         impl<T> MechFunctionImpl for $struct_name<T>
         where
-            T: Debug + Clone + Sync + Send + 'static + PartialEq + PartialOrd,
+            T: Debug
+                + Clone
+                + Sync
+                + Send
+                + 'static
+                + FunctionPortBacking
+                + ManagedTransposeElement
+                + PartialEq
+                + PartialOrd,
             #[cfg(feature = "semantic-compiler")]
             T: CanonicalMatrixElementBacking,
             $out_type: FunctionStateBacking,
         {
-            fn solve_result(&self) -> MResult<()> {
-                let arg_ptr = self.arg.as_ptr();
-                let out_ptr = self.out.as_mut_ptr();
-                $op!(arg_ptr, out_ptr);
-                Ok(())
+            fn solve_managed(
+                &self,
+                frame: &mut mech_core::KernelMemoryFrame<'_>,
+                _services: &mut dyn mech_core::MechExecutionServices,
+            ) -> MResult<mech_core::ReactiveSolveStatus> {
+                T::transpose(frame, &self.arg, &self.out)?;
+                Ok(mech_core::ReactiveSolveStatus::Changed)
             }
             fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-                Some(FunctionStatePort::from_ref(&self.out))
+                Some(FunctionStatePort::from_cell(self.out.cell()))
             }
             fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
-                Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
+                Ok(Some(vec![FunctionStatePort::from_cell(self.out.cell())]))
             }
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
                 Some(&PURE_TRANSPOSE_CONTRACT)
@@ -98,7 +195,12 @@ macro_rules! impl_transpose {
         #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $struct_name<T>
         where
-            T: CanonicalMatrixElementBacking + ConstElem + CompileConst + FunctionRuntimeType,
+            T: CanonicalMatrixElementBacking
+                + ConstElem
+                + CompileConst
+                + FunctionRuntimeType
+                + FunctionPortBacking
+                + ManagedTransposeElement,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 let name = format!(
@@ -106,7 +208,11 @@ macro_rules! impl_transpose {
                     stringify!($struct_name),
                     <T as FunctionRuntimeType>::REPRESENTATION
                 );
-                compile_unop!(name, self.out, self.arg, ctx);
+                let out = compile_value_cell_register(self.out.cell(), ctx)?;
+                let arg = compile_value_cell_register(self.arg.cell(), ctx)?;
+                let function = ctx.function_id(&name)?;
+                ctx.emit_unop(function, out, arg);
+                Ok(out)
             }
         }
     };

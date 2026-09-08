@@ -7,41 +7,15 @@ use libm::coshf;
 // Cosh ------------------------------------------------------------------------
 #[cfg(feature = "f64")]
 macro_rules! cosh_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = cosh((*$arg));
-        }
-    };
-}
-
-#[cfg(feature = "f64")]
-macro_rules! cosh_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = cosh(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(cosh(($arg)))
     };
 }
 
 #[cfg(feature = "f32")]
 macro_rules! coshf_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = coshf((*$arg));
-        }
-    };
-}
-
-#[cfg(feature = "f32")]
-macro_rules! coshf_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = coshf(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(coshf(($arg)))
     };
 }
 

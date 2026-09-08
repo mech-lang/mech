@@ -386,8 +386,8 @@ fn planned_type_conversion_instance(
     output: ValueCell,
     target: SchemaBody,
     plan: ConversionPlan,
-) -> FunctionInstance {
-    FunctionInstance::new(
+) -> (Box<dyn MechFunction>, FunctionInvocation) {
+    (
         Box::new(PlannedTypeConversion {
             source: source.clone(),
             output: output.clone(),
@@ -483,9 +483,17 @@ impl MechFunctionFactory for RuntimeKindConversion {
 
 #[cfg(feature = "convert")]
 impl MechFunctionImpl for RuntimeKindConversion {
-    fn solve_result(&self) -> MResult<()> {
-        let replacement = execute_conversion_plan(self.source.cell(), &self.target, &self.plan)?;
-        self.output.replace(&replacement.snapshot()?)
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            let replacement =
+                execute_conversion_plan(self.source.cell(), &self.target, &self.plan)?;
+            self.output.replace(&replacement.snapshot()?)
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn semantic_operation_name(&self) -> Option<&str> {
@@ -767,9 +775,16 @@ impl CanonicalFunctionSpecializer for ConvertKind {
 
 #[cfg(feature = "convert")]
 impl MechFunctionImpl for PlannedTypeConversion {
-    fn solve_result(&self) -> MResult<()> {
-        let replacement = execute_conversion_plan(&self.source, &self.target, &self.plan)?;
-        self.output.replace(&replacement.snapshot()?)
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            let replacement = execute_conversion_plan(&self.source, &self.target, &self.plan)?;
+            self.output.replace(&replacement.snapshot()?)
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn semantic_operation_name(&self) -> Option<&str> {
@@ -1226,12 +1241,9 @@ mod canonical_conversion_tests {
         let target_type = ResolvedType::from_schema_body(&target, &[]).unwrap();
         let plan = plan_explicit_cast(&source_type, &target_type).unwrap();
         let output = execute_conversion_plan(&source, &target, &plan).unwrap();
-        let conversion = PlannedTypeConversion {
-            source: source.clone(),
-            output: output.clone(),
-            target,
-            plan,
-        };
+        let conversion =
+            planned_type_conversion_specialized(source.clone(), output.clone(), target, plan)
+                .unwrap();
 
         source
             .replace(
@@ -1242,7 +1254,11 @@ mod canonical_conversion_tests {
             )
             .unwrap();
         assert_eq!(
-            conversion.solve_result().unwrap_err().kind_name(),
+            conversion
+                .instance()
+                .solve_result()
+                .unwrap_err()
+                .kind_name(),
             "ConversionNonFinite"
         );
         assert!(matches!(

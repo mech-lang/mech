@@ -991,7 +991,7 @@ impl CanonicalFunctionSpecializer for DynamicBinaryF64F64ToF64Specializer {
         };
         context.resolve_syntax_operation_contract(contract)?;
         context.certify_instance(
-            FunctionInstance::new(
+            (
                 implementation,
                 FunctionInvocation::binary(output, lhs_cell, rhs_cell),
             ),
@@ -1037,7 +1037,7 @@ impl CanonicalFunctionSpecializer for DynamicUnaryF64ToF64Specializer {
 
         context.resolve_syntax_operation_contract(&DYNAMIC_UNARY_SCALAR_CONTRACT)?;
         context.certify_instance(
-            FunctionInstance::new(
+            (
                 Box::new(DynamicUnaryF64ToF64Function {
                     name: self.name.clone(),
                     input: input.clone(),
@@ -1089,7 +1089,7 @@ impl CanonicalFunctionSpecializer for DynamicUnaryF64ViewToF64ViewSpecializer {
 
         context.resolve_syntax_operation_contract(&DYNAMIC_UNARY_VIEW_CONTRACT)?;
         context.certify_instance(
-            FunctionInstance::new(
+            (
                 Box::new(DynamicUnaryF64ViewToF64ViewFunction {
                     name: self.name.clone(),
                     input: input.clone(),
@@ -1373,8 +1373,15 @@ fn solve_dynamic_binary_scalar(
 
 #[cfg(feature = "dynamic-modules")]
 impl MechFunctionImpl for DynamicBinaryF64F64ToF64Function {
-    fn solve_result(&self) -> MResult<()> {
-        solve_dynamic_binary_scalar(&self.n, &self.k, &self.output, self.kernel, &self.name)
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            solve_dynamic_binary_scalar(&self.n, &self.k, &self.output, self.kernel, &self.name)
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
@@ -1435,8 +1442,21 @@ fn solve_dynamic_binary_broadcast(
 
 #[cfg(feature = "dynamic-modules")]
 impl MechFunctionImpl for DynamicBinaryF64F64BroadcastFunction {
-    fn solve_result(&self) -> MResult<()> {
-        solve_dynamic_binary_broadcast(&self.lhs, &self.rhs, &self.output, self.kernel, &self.name)
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            solve_dynamic_binary_broadcast(
+                &self.lhs,
+                &self.rhs,
+                &self.output,
+                self.kernel,
+                &self.name,
+            )
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
@@ -1496,8 +1516,15 @@ fn solve_dynamic_unary_scalar(
 
 #[cfg(feature = "dynamic-modules")]
 impl MechFunctionImpl for DynamicUnaryF64ToF64Function {
-    fn solve_result(&self) -> MResult<()> {
-        solve_dynamic_unary_scalar(&self.input, &self.output, self.kernel, &self.name)
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            solve_dynamic_unary_scalar(&self.input, &self.output, self.kernel, &self.name)
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
@@ -1569,8 +1596,15 @@ fn solve_dynamic_unary_view(
 
 #[cfg(feature = "dynamic-modules")]
 impl MechFunctionImpl for DynamicUnaryF64ViewToF64ViewFunction {
-    fn solve_result(&self) -> MResult<()> {
-        solve_dynamic_unary_view(&self.input, &self.output, self.kernel, &self.name)
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            solve_dynamic_unary_view(&self.input, &self.output, self.kernel, &self.name)
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {

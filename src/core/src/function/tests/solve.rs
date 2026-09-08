@@ -1,15 +1,15 @@
 #[cfg(feature = "semantic-compiler")]
 use super::super::MechFunctionCompiler;
 use super::super::{
-    FunctionDefinition, FunctionInstance, FunctionInvocation, MechFunctionImpl, ReactiveNodeId,
-    ReactiveNodeKind, ReactivePlan, ReactivePlanSolveOutcome, ReactiveRegisterCommitOutcome,
-    ReactiveSolveStatus, ReactiveTurnOutcome, ReactiveTurnState,
+    FunctionDefinition, FunctionInvocation, MechFunctionImpl, ReactiveNodeId, ReactiveNodeKind,
+    ReactivePlan, ReactivePlanSolveOutcome, ReactiveRegisterCommitOutcome, ReactiveSolveStatus,
+    ReactiveTurnOutcome, ReactiveTurnState,
 };
-use super::support::{f64_cell, reg};
+use super::support::reg;
 #[cfg(feature = "semantic-compiler")]
 use crate::{BytecodeCompilerContext, Register};
 use crate::{
-    FunctionDefine, GenericError, MResult, MechError, Ref, ValueCell, hash_str,
+    FunctionDefine, GenericError, MResult, MechError, ValueCell, hash_str,
     internal_pattern_value_identifier,
 };
 use std::{cell::RefCell, rc::Rc};
@@ -17,7 +17,7 @@ use std::{cell::RefCell, rc::Rc};
 #[cfg(feature = "f64")]
 struct SchedulerFunction {
     label: &'static str,
-    output: crate::ValueCell,
+    output: crate::ManagedPort<f64>,
     kind: ReactiveNodeKind,
     status: ReactiveSolveStatus,
     count: Rc<RefCell<usize>>,
@@ -26,10 +26,11 @@ struct SchedulerFunction {
 }
 #[cfg(feature = "f64")]
 impl MechFunctionImpl for SchedulerFunction {
-    fn solve_result(&self) -> MResult<()> {
-        Ok(())
-    }
-    fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
+    fn solve_managed(
+        &self,
+        frame: &mut crate::KernelMemoryFrame<'_>,
+        _services: &mut dyn crate::MechExecutionServices,
+    ) -> MResult<crate::ReactiveSolveStatus> {
         *self.count.borrow_mut() += 1;
         self.log.borrow_mut().push(self.label);
         if self.error {
@@ -40,6 +41,9 @@ impl MechFunctionImpl for SchedulerFunction {
                 None,
             ))
         } else {
+            if self.status == ReactiveSolveStatus::Changed {
+                frame.with_port_init_writer(&self.output, |writer| writer.write_next(0.0))?;
+            }
             Ok(self.status)
         }
     }
@@ -47,7 +51,7 @@ impl MechFunctionImpl for SchedulerFunction {
         self.kind
     }
     fn reactive_output_value_cells(&self) -> Vec<crate::ValueCell> {
-        vec![self.output.clone()]
+        vec![self.output.cell().clone()]
     }
     fn to_string(&self) -> String {
         self.label.into()
@@ -74,7 +78,7 @@ fn scheduler_node(
     let count = Rc::new(RefCell::new(0));
     let function = SchedulerFunction {
         label,
-        output: output.clone(),
+        output: crate::ManagedPort::output(output.clone()),
         kind,
         status,
         count: count.clone(),
@@ -83,7 +87,7 @@ fn scheduler_node(
     };
     (
         plan.register_instance_with_activation(
-            FunctionInstance::new(
+            crate::function::test_planned_instance(
                 Box::new(function),
                 FunctionInvocation::variadic(output.clone(), inputs.to_vec().into_boxed_slice()),
             ),
@@ -100,8 +104,8 @@ fn scheduler_source() -> ValueCell {
 }
 
 struct Comb {
-    source: Ref<f64>,
-    sink: Ref<f64>,
+    source: crate::ManagedPort<f64>,
+    sink: crate::ManagedPort<f64>,
     add: f64,
     count: Rc<RefCell<usize>>,
     fail: bool,
@@ -110,7 +114,7 @@ struct Comb {
 #[cfg(feature = "f64")]
 struct FalliblePlanStep {
     label: &'static str,
-    output: Ref<f64>,
+    output: crate::ManagedPort<f64>,
     next: f64,
     calls: Rc<RefCell<usize>>,
     fail: bool,
@@ -118,22 +122,29 @@ struct FalliblePlanStep {
 
 #[cfg(feature = "f64")]
 impl MechFunctionImpl for FalliblePlanStep {
-    fn solve_result(&self) -> MResult<()> {
-        *self.calls.borrow_mut() += 1;
-        if self.fail {
-            return Err(MechError::new(
-                GenericError {
-                    msg: self.label.into(),
-                },
-                None,
-            ));
-        }
-        *self.output.borrow_mut() = self.next;
-        Ok(())
+    fn solve_managed(
+        &self,
+        frame: &mut crate::KernelMemoryFrame<'_>,
+        _services: &mut dyn crate::MechExecutionServices,
+    ) -> MResult<crate::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            *self.calls.borrow_mut() += 1;
+            if self.fail {
+                return Err(MechError::new(
+                    GenericError {
+                        msg: self.label.into(),
+                    },
+                    None,
+                ));
+            }
+            frame.with_port_init_writer(&self.output, |writer| writer.write_next(self.next))?;
+            Ok(())
+        })()?;
+        Ok(crate::ReactiveSolveStatus::Changed)
     }
 
     fn primary_output_state_port(&self) -> Option<crate::FunctionStatePort<'_>> {
-        Some(crate::FunctionStatePort::from_ref(&self.output))
+        Some(crate::FunctionStatePort::from_cell(self.output.cell()))
     }
 
     fn to_string(&self) -> String {
@@ -162,38 +173,55 @@ fn function_definition_plan_propagates_solve_failure_without_publishing_later_ou
             match_arms: Vec::new(),
         },
     );
-    let failed_output = Ref::new(7.0);
-    let later_output = Ref::new(11.0);
+    let failed_output = ValueCell::from_exact(7.0_f64).unwrap();
+    let later_output = ValueCell::from_exact(11.0_f64).unwrap();
     let failed_calls = Rc::new(RefCell::new(0));
     let later_calls = Rc::new(RefCell::new(0));
-    definition.plan.add_function(Box::new(FalliblePlanStep {
-        label: "plan solve failed",
-        output: failed_output.clone(),
-        next: 8.0,
-        calls: failed_calls.clone(),
-        fail: true,
-    }));
-    definition.plan.add_function(Box::new(FalliblePlanStep {
-        label: "later plan step",
-        output: later_output.clone(),
-        next: 12.0,
-        calls: later_calls.clone(),
-        fail: false,
-    }));
+    definition
+        .plan
+        .add_function(crate::function::test_planned_instance(
+            Box::new(FalliblePlanStep {
+                label: "plan solve failed",
+                output: crate::ManagedPort::output(failed_output.clone()),
+                next: 8.0,
+                calls: failed_calls.clone(),
+                fail: true,
+            }),
+            FunctionInvocation::nullary(failed_output.clone()),
+        ))
+        .unwrap();
+    definition
+        .plan
+        .add_function(crate::function::test_planned_instance(
+            Box::new(FalliblePlanStep {
+                label: "later plan step",
+                output: crate::ManagedPort::output(later_output.clone()),
+                next: 12.0,
+                calls: later_calls.clone(),
+                fail: false,
+            }),
+            FunctionInvocation::nullary(later_output.clone()),
+        ))
+        .unwrap();
 
     let error = definition.solve_result().unwrap_err();
 
     assert!(error.full_chain_message().contains("plan solve failed"));
-    assert_eq!(*failed_output.borrow(), 7.0);
-    assert_eq!(*later_output.borrow(), 11.0);
+    assert!(
+        matches!(failed_output.snapshot().unwrap().data(), crate::ValueData::F64(value) if value.to_f64() == 7.0)
+    );
+    assert!(
+        matches!(later_output.snapshot().unwrap().data(), crate::ValueData::F64(value) if value.to_f64() == 11.0)
+    );
     assert_eq!(*failed_calls.borrow(), 1);
     assert_eq!(*later_calls.borrow(), 0);
 }
 impl MechFunctionImpl for Comb {
-    fn solve_result(&self) -> MResult<()> {
-        Ok(())
-    }
-    fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
+    fn solve_managed(
+        &self,
+        frame: &mut crate::KernelMemoryFrame<'_>,
+        _services: &mut dyn crate::MechExecutionServices,
+    ) -> MResult<crate::ReactiveSolveStatus> {
         *self.count.borrow_mut() += 1;
         if self.fail {
             return Err(MechError::new(
@@ -203,11 +231,25 @@ impl MechFunctionImpl for Comb {
                 None,
             ));
         }
-        *self.sink.borrow_mut() = *self.source.borrow() + self.add;
-        Ok(ReactiveSolveStatus::Changed)
+        frame.with_unary_port_views(&self.source, &self.sink, |source, sink| {
+            sink.try_fill_column_major(|index| {
+                source
+                    .get_column_major(index)
+                    .map(|value| value + self.add)
+                    .ok_or_else(|| {
+                        MechError::new(
+                            GenericError {
+                                msg: "combinational input and output geometry disagree".into(),
+                            },
+                            None,
+                        )
+                    })
+            })
+        })?;
+        Ok(crate::ReactiveSolveStatus::Changed)
     }
     fn primary_output_state_port(&self) -> Option<crate::FunctionStatePort<'_>> {
-        Some(crate::FunctionStatePort::from_ref(&self.sink))
+        Some(crate::FunctionStatePort::from_cell(self.sink.cell()))
     }
     fn to_string(&self) -> String {
         "test combinational".into()
@@ -221,24 +263,24 @@ impl MechFunctionCompiler for Comb {
 }
 fn comb(
     p: &mut ReactivePlan,
-    source: Ref<f64>,
-    sink: Ref<f64>,
+    source: ValueCell,
+    sink: ValueCell,
     fail: bool,
 ) -> (ReactiveNodeId, Rc<RefCell<usize>>) {
     let count = Rc::new(RefCell::new(0));
-    let source_cell = f64_cell(source.clone());
-    let sink_cell = f64_cell(sink.clone());
+    let invocation = FunctionInvocation::unary(sink, source);
+    let (sink, source) = invocation.expect_unary().unwrap();
     let node = p
         .register_instance_with_activation(
-            FunctionInstance::new(
+            crate::function::test_planned_instance(
                 Box::new(Comb {
-                    source: source.clone(),
-                    sink,
+                    source: source.try_managed_element::<f64>().unwrap(),
+                    sink: sink.try_managed_element::<f64>().unwrap(),
                     add: 1.,
                     count: count.clone(),
                     fail,
                 }),
-                FunctionInvocation::unary(sink_cell, source_cell),
+                invocation,
             ),
             None,
         )
@@ -247,10 +289,10 @@ fn comb(
 }
 fn chain() -> (
     ReactivePlan,
-    Ref<f64>,
-    Ref<f64>,
-    Ref<f64>,
-    Ref<f64>,
+    ValueCell,
+    ValueCell,
+    ValueCell,
+    ValueCell,
     ReactiveNodeId,
     ReactiveNodeId,
     ReactiveNodeId,
@@ -258,16 +300,29 @@ fn chain() -> (
     Rc<RefCell<usize>>,
 ) {
     let mut p = ReactivePlan::new();
-    let input = Ref::new(1.);
-    let a = Ref::new(1.);
-    let middle = Ref::new(2.);
-    let b = Ref::new(2.);
-    let final_value = Ref::new(3.);
-    let (ra, _, _, ca) = reg(&mut p, input.clone(), a.clone(), false);
+    let input = ValueCell::from_exact(1.).unwrap();
+    let a = ValueCell::from_exact(1.).unwrap();
+    let middle = ValueCell::from_exact(2.).unwrap();
+    let b = ValueCell::from_exact(2.).unwrap();
+    let final_value = ValueCell::from_exact(3.).unwrap();
+    let (ra, _, ca, _) = reg(&mut p, input.clone(), a.clone(), false);
     drop(comb(&mut p, a.clone(), middle.clone(), false));
-    let (rb, _, _, cb) = reg(&mut p, middle.clone(), b.clone(), false);
+    let (rb, _, cb, _) = reg(&mut p, middle.clone(), b.clone(), false);
     let (final_node, _) = comb(&mut p, b.clone(), final_value.clone(), false);
     (p, input, a, middle, b, ra, rb, final_node, ca, cb)
+}
+
+fn read_f64(cell: &ValueCell) -> f64 {
+    let value = cell.snapshot().unwrap();
+    let crate::ValueData::F64(value) = value.data() else {
+        panic!("expected f64 cell")
+    };
+    value.to_f64()
+}
+
+fn write_f64(cell: &ValueCell, value: f64) {
+    cell.replace(&ValueCell::from_exact(value).unwrap().snapshot().unwrap())
+        .unwrap();
 }
 
 #[cfg(feature = "f64")]
@@ -455,17 +510,32 @@ fn reactive_dirty_scheduler_stops_on_unchanged() {
     let (b, _, bc) = scheduler_node(
         &mut p,
         "B",
-        &[ao],
+        &[ao.clone()],
         ReactiveNodeKind::Combinational,
         ReactiveSolveStatus::Changed,
         l,
         false,
     );
+    let version = ao.published_version();
+    let before = ao.snapshot().unwrap();
+    let allocations = ao.memory_domain().unwrap().ledger();
     let o = p.solve_dirty_cells(&[d.reactive_cell_id()]).unwrap();
     assert_eq!(*ac.borrow(), 1);
     assert_eq!(*bc.borrow(), 0);
     assert_eq!(o.unchanged_nodes, vec![a]);
     assert!(!o.executed_nodes.contains(&b));
+    assert_eq!(ao.published_version(), version);
+    assert_eq!(ao.memory_domain().unwrap().ledger(), allocations);
+    let after = ao.snapshot().unwrap();
+    assert!(
+        before
+            .snapshot_eq(
+                before.schemas().as_ref().unwrap().as_ref(),
+                &after,
+                after.schemas().as_ref().unwrap().as_ref(),
+            )
+            .unwrap()
+    );
 }
 
 #[cfg(feature = "f64")]
@@ -629,15 +699,15 @@ fn reactive_dirty_scheduler_empty_dirty_set_is_noop() {
 #[test]
 fn reactive_turn_propagates_register_outputs_after_commit() {
     let mut p = ReactivePlan::new();
-    let input = Ref::new(1.);
-    let a = Ref::new(1.);
-    let out = Ref::new(2.);
-    let (r, solve, stage, commit) = reg(&mut p, input.clone(), a.clone(), false);
+    let input = ValueCell::from_exact(1.).unwrap();
+    let a = ValueCell::from_exact(1.).unwrap();
+    let out = ValueCell::from_exact(2.).unwrap();
+    let (r, solve, stage, _) = reg(&mut p, input.clone(), a.clone(), false);
     let (d, down) = comb(&mut p, a.clone(), out.clone(), false);
-    *input.borrow_mut() = 10.;
+    write_f64(&input, 10.);
     let mut s = ReactiveTurnState::default();
     let o = p
-        .advance_reactive_turn(&mut s, &[f64_cell(input.clone()).reactive_cell_id()])
+        .advance_reactive_turn(&mut s, &[input.reactive_cell_id()])
         .unwrap();
     assert_eq!(o.before_commit.pending_register_nodes, vec![r]);
     assert_eq!(o.register_commit.staged_nodes, vec![r]);
@@ -645,14 +715,13 @@ fn reactive_turn_propagates_register_outputs_after_commit() {
     assert!(o.after_commit.executed_nodes.contains(&d));
     assert_eq!(
         (
-            *a.borrow(),
-            *out.borrow(),
+            read_f64(&a),
+            read_f64(&out),
             *solve.borrow(),
             *stage.borrow(),
-            *commit.borrow(),
             *down.borrow()
         ),
-        (10., 11., 0, 1, 1, 1)
+        (10., 11., 0, 1, 1)
     );
     assert!(s.pending_register_nodes.is_empty());
 }
@@ -668,22 +737,21 @@ fn reactive_turn_defers_post_commit_registers_until_next_turn() {
         .instance()
         .unwrap()
         .output()
-        .try_ref::<f64>()
-        .unwrap();
-    *input.borrow_mut() = 10.;
+        .clone();
+    write_f64(&input, 10.);
     let mut s = ReactiveTurnState::default();
     let first = p
-        .advance_reactive_turn(&mut s, &[f64_cell(input.clone()).reactive_cell_id()])
+        .advance_reactive_turn(&mut s, &[input.reactive_cell_id()])
         .unwrap();
     assert_eq!(first.register_commit.committed_nodes, vec![ra]);
     assert_eq!(first.after_commit.pending_register_nodes, vec![rb]);
     assert_eq!(s.pending_register_nodes, vec![rb]);
     assert_eq!(
         (
-            *a.borrow(),
-            *middle.borrow(),
-            *b.borrow(),
-            *final_value.borrow(),
+            read_f64(&a),
+            read_f64(&middle),
+            read_f64(&b),
+            read_f64(&final_value),
             *cb.borrow()
         ),
         (10., 11., 2., 3., 0)
@@ -697,9 +765,9 @@ fn reactive_turn_defers_post_commit_registers_until_next_turn() {
 #[test]
 fn reactive_turn_commits_each_register_layer_at_most_once() {
     let (mut p, input, _, _, _, ra, rb, _, ca, cb) = chain();
-    *input.borrow_mut() = 10.;
+    write_f64(&input, 10.);
     let mut s = ReactiveTurnState::default();
-    p.advance_reactive_turn(&mut s, &[f64_cell(input.clone()).reactive_cell_id()])
+    p.advance_reactive_turn(&mut s, &[input.reactive_cell_id()])
         .unwrap();
     assert_eq!((*ca.borrow(), *cb.borrow()), (1, 0));
     p.advance_reactive_turn(&mut s, &[]).unwrap();
@@ -710,40 +778,47 @@ fn reactive_turn_commits_each_register_layer_at_most_once() {
 #[test]
 fn reactive_turn_combines_carried_and_new_registers() {
     let mut p = ReactivePlan::new();
-    let input = Ref::new(1.);
-    let (a, _, sa, ca) = reg(&mut p, input.clone(), Ref::new(0.), false);
-    let (b, _, sb, cb) = reg(&mut p, input.clone(), Ref::new(0.), false);
+    let input = ValueCell::from_exact(1.).unwrap();
+    let (a, _, sa, _) = reg(
+        &mut p,
+        input.clone(),
+        ValueCell::from_exact(0.).unwrap(),
+        false,
+    );
+    let (b, _, sb, _) = reg(
+        &mut p,
+        input.clone(),
+        ValueCell::from_exact(0.).unwrap(),
+        false,
+    );
     let mut s = ReactiveTurnState {
         pending_register_nodes: vec![b],
     };
     let o = p
-        .advance_reactive_turn(&mut s, &[f64_cell(input.clone()).reactive_cell_id()])
+        .advance_reactive_turn(&mut s, &[input.reactive_cell_id()])
         .unwrap();
     assert_eq!(o.register_commit.staged_nodes, vec![a, b]);
     assert_eq!(o.register_commit.committed_nodes, vec![a, b]);
-    assert_eq!(
-        (*sa.borrow(), *sb.borrow(), *ca.borrow(), *cb.borrow()),
-        (1, 1, 1, 1)
-    );
+    assert_eq!((*sa.borrow(), *sb.borrow()), (1, 1));
 }
 
 #[test]
 fn reactive_turn_combinational_only_has_empty_commit() {
     let mut p = ReactivePlan::new();
-    let input = Ref::new(1.);
-    let a = Ref::new(2.);
-    let b = Ref::new(3.);
+    let input = ValueCell::from_exact(1.).unwrap();
+    let a = ValueCell::from_exact(2.).unwrap();
+    let b = ValueCell::from_exact(3.).unwrap();
     let (na, _) = comb(&mut p, input.clone(), a.clone(), false);
     let (nb, _) = comb(&mut p, a.clone(), b.clone(), false);
-    *input.borrow_mut() = 10.;
+    write_f64(&input, 10.);
     let mut s = ReactiveTurnState::default();
     let o = p
-        .advance_reactive_turn(&mut s, &[f64_cell(input.clone()).reactive_cell_id()])
+        .advance_reactive_turn(&mut s, &[input.reactive_cell_id()])
         .unwrap();
     assert_eq!(o.before_commit.executed_nodes, vec![na, nb]);
     assert_eq!(o.register_commit, ReactiveRegisterCommitOutcome::default());
     assert_eq!(o.after_commit, ReactivePlanSolveOutcome::default());
-    assert_eq!(*b.borrow(), 12.);
+    assert_eq!(read_f64(&b), 12.);
 }
 
 #[test]
@@ -760,24 +835,28 @@ fn reactive_turn_empty_is_noop() {
 #[test]
 fn reactive_turn_commit_failure_skips_post_commit_propagation() {
     let mut p = ReactivePlan::new();
-    let input = Ref::new(1.);
-    let sink = Ref::new(1.);
-    let (r, solve, stage, commit) = reg(&mut p, input.clone(), sink.clone(), true);
-    let (_, down) = comb(&mut p, sink.clone(), Ref::new(2.), false);
+    let input = ValueCell::from_exact(1.).unwrap();
+    let sink = ValueCell::from_exact(1.).unwrap();
+    let (r, solve, stage, _) = reg(&mut p, input.clone(), sink.clone(), true);
+    let (_, down) = comb(
+        &mut p,
+        sink.clone(),
+        ValueCell::from_exact(2.).unwrap(),
+        false,
+    );
     let mut s = ReactiveTurnState::default();
     let e = p
-        .advance_reactive_turn(&mut s, &[f64_cell(input.clone()).reactive_cell_id()])
+        .advance_reactive_turn(&mut s, &[input.reactive_cell_id()])
         .unwrap_err();
     assert!(e.kind_message().contains("stage failure"));
     assert_eq!(
         (
             *solve.borrow(),
             *stage.borrow(),
-            *commit.borrow(),
             *down.borrow(),
-            *sink.borrow()
+            read_f64(&sink)
         ),
-        (0, 1, 0, 0, 1.)
+        (0, 1, 0, 1.)
     );
     assert_eq!(s.pending_register_nodes, vec![r]);
 }
@@ -785,62 +864,77 @@ fn reactive_turn_commit_failure_skips_post_commit_propagation() {
 #[test]
 fn reactive_turn_post_commit_failure_does_not_requeue_committed_registers() {
     let mut p = ReactivePlan::new();
-    let input = Ref::new(1.);
-    let sink = Ref::new(1.);
-    let (_, _, _, commit) = reg(&mut p, input.clone(), sink.clone(), false);
-    let (_, down) = comb(&mut p, sink.clone(), Ref::new(2.), true);
-    *input.borrow_mut() = 10.;
+    let input = ValueCell::from_exact(1.).unwrap();
+    let sink = ValueCell::from_exact(1.).unwrap();
+    reg(&mut p, input.clone(), sink.clone(), false);
+    let (_, down) = comb(
+        &mut p,
+        sink.clone(),
+        ValueCell::from_exact(2.).unwrap(),
+        true,
+    );
+    write_f64(&input, 10.);
     let mut s = ReactiveTurnState::default();
     assert!(
-        p.advance_reactive_turn(&mut s, &[f64_cell(input.clone()).reactive_cell_id()])
+        p.advance_reactive_turn(&mut s, &[input.reactive_cell_id()])
             .is_err()
     );
-    assert_eq!(
-        (*sink.borrow(), *commit.borrow(), *down.borrow()),
-        (10., 1, 1)
-    );
+    assert_eq!((read_f64(&sink), *down.borrow()), (10., 1));
     assert!(s.pending_register_nodes.is_empty());
 }
 
 #[test]
 fn reactive_turn_post_commit_failure_preserves_deferred_registers() {
     let mut p = ReactivePlan::new();
-    let input = Ref::new(1.);
-    let a = Ref::new(1.);
-    let middle = Ref::new(2.);
-    let b = Ref::new(2.);
-    let (a_register, _, _, a_commits) = reg(&mut p, input.clone(), a.clone(), false);
+    let input = ValueCell::from_exact(1.).unwrap();
+    let a = ValueCell::from_exact(1.).unwrap();
+    let middle = ValueCell::from_exact(2.).unwrap();
+    let b = ValueCell::from_exact(2.).unwrap();
+    let (a_register, _, a_stages, _) = reg(&mut p, input.clone(), a.clone(), false);
     let (_, middle_solves) = comb(&mut p, a.clone(), middle.clone(), false);
-    let (b_register, _, _, b_commits) = reg(&mut p, middle.clone(), b.clone(), false);
-    let (_, error_solves) = comb(&mut p, middle.clone(), Ref::new(0.), true);
+    let (b_register, _, b_stages, _) = reg(&mut p, middle.clone(), b.clone(), false);
+    let (_, error_solves) = comb(
+        &mut p,
+        middle.clone(),
+        ValueCell::from_exact(0.).unwrap(),
+        true,
+    );
 
-    *input.borrow_mut() = 10.;
+    write_f64(&input, 10.);
     let mut state = ReactiveTurnState::default();
     let error = p
-        .advance_reactive_turn(&mut state, &[f64_cell(input.clone()).reactive_cell_id()])
+        .advance_reactive_turn(&mut state, &[input.reactive_cell_id()])
         .unwrap_err();
 
     assert!(error.kind_message().contains("solve failure"));
-    assert_eq!((*a.borrow(), *middle.borrow(), *b.borrow()), (10., 11., 2.));
-    assert_eq!((*a_commits.borrow(), *b_commits.borrow()), (1, 0));
+    assert_eq!(
+        (read_f64(&a), read_f64(&middle), read_f64(&b)),
+        (10., 11., 2.)
+    );
+    assert_eq!((*a_stages.borrow(), *b_stages.borrow()), (1, 0));
     assert_eq!((*middle_solves.borrow(), *error_solves.borrow()), (1, 1));
     assert_eq!(state.pending_register_nodes, vec![b_register]);
     assert!(!state.pending_register_nodes.contains(&a_register));
 
     let retry = p.advance_reactive_turn(&mut state, &[]).unwrap();
     assert_eq!(retry.register_commit.committed_nodes, vec![b_register]);
-    assert_eq!((*a_commits.borrow(), *b_commits.borrow()), (1, 1));
-    assert_eq!(*b.borrow(), 11.);
+    assert_eq!((*a_stages.borrow(), *b_stages.borrow()), (1, 1));
+    assert_eq!(read_f64(&b), 11.);
     assert!(state.pending_register_nodes.is_empty());
 }
 
 #[test]
 fn reactive_turn_reuses_existing_plan() {
     let mut p = ReactivePlan::new();
-    let input = Ref::new(1.);
-    let sink = Ref::new(1.);
+    let input = ValueCell::from_exact(1.).unwrap();
+    let sink = ValueCell::from_exact(1.).unwrap();
     reg(&mut p, input.clone(), sink.clone(), false);
-    comb(&mut p, sink.clone(), Ref::new(2.), false);
+    comb(
+        &mut p,
+        sink.clone(),
+        ValueCell::from_exact(2.).unwrap(),
+        false,
+    );
     let len = p.len();
     let ids = p.nodes.iter().map(|n| n.id).collect::<Vec<_>>();
     let outputs = p
@@ -850,8 +944,8 @@ fn reactive_turn_reuses_existing_plan() {
         .collect::<Vec<_>>();
     let mut s = ReactiveTurnState::default();
     for value in [10., 20.] {
-        *input.borrow_mut() = value;
-        p.advance_reactive_turn(&mut s, &[f64_cell(input.clone()).reactive_cell_id()])
+        write_f64(&input, value);
+        p.advance_reactive_turn(&mut s, &[input.reactive_cell_id()])
             .unwrap();
         assert_eq!(p.len(), len);
         assert_eq!(p.nodes.iter().map(|n| n.id).collect::<Vec<_>>(), ids);
@@ -868,14 +962,24 @@ fn reactive_turn_reuses_existing_plan() {
 #[test]
 fn reactive_turn_pre_commit_failure_preserves_carried_registers() {
     let mut p = ReactivePlan::new();
-    let input = Ref::new(1.);
-    let (carried, solve, stage, commit) = reg(&mut p, Ref::new(2.), Ref::new(3.), false);
-    comb(&mut p, input.clone(), Ref::new(0.), true);
+    let input = ValueCell::from_exact(1.).unwrap();
+    let (carried, solve, stage, commit) = reg(
+        &mut p,
+        ValueCell::from_exact(2.).unwrap(),
+        ValueCell::from_exact(3.).unwrap(),
+        false,
+    );
+    comb(
+        &mut p,
+        input.clone(),
+        ValueCell::from_exact(0.).unwrap(),
+        true,
+    );
     let mut state = ReactiveTurnState {
         pending_register_nodes: vec![carried],
     };
     let error = p
-        .advance_reactive_turn(&mut state, &[f64_cell(input.clone()).reactive_cell_id()])
+        .advance_reactive_turn(&mut state, &[input.reactive_cell_id()])
         .unwrap_err();
     assert!(error.kind_message().contains("solve failure"));
     assert_eq!(

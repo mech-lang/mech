@@ -562,21 +562,16 @@ mod tests {
     #[test]
     fn result_borrow_conflict_is_an_aggregated_constraint_failure() {
         let program = program_with_constraint("safe! := true");
-        let result = program
+        let result = Ref::new(true);
+        program
             .interpreter
             .state
-            .borrow()
+            .borrow_mut()
             .integrity_constraints
-            .values()
+            .values_mut()
             .next()
             .unwrap()
-            .result
-            .clone();
-        let result = FunctionInvocation::nullary(result)
-            .expect_nullary()
-            .unwrap()
-            .try_ref::<bool>()
-            .unwrap();
+            .result = ValueCell::from_external_ref(result.clone(), None).unwrap();
         let _borrow = result.borrow_mut();
 
         let report = program.integrity_constraint_report().unwrap();
@@ -593,21 +588,15 @@ mod tests {
     fn operand_borrow_conflict_preserves_evaluated_false_reason() {
         let program =
             program_with_constraint("target := 2.0\nmaximum := 1.0\nsafe! := target <= maximum");
-        let lhs = program
+        let lhs = Ref::new(2.0_f64);
+        program
             .interpreter
             .state
-            .borrow()
+            .borrow_mut()
             .integrity_constraints
-            .get(&hash_str("safe!"))
+            .get_mut(&hash_str("safe!"))
             .unwrap()
-            .lhs
-            .clone()
-            .unwrap();
-        let lhs = FunctionInvocation::nullary(lhs)
-            .expect_nullary()
-            .unwrap()
-            .try_ref::<f64>()
-            .unwrap();
+            .lhs = Some(ValueCell::from_external_ref(lhs.clone(), None).unwrap());
         let _borrow = lhs.borrow_mut();
 
         let report = program.integrity_constraint_report().unwrap();

@@ -7,41 +7,15 @@ use libm::tanhf;
 // Tanh ------------------------------------------------------------------------
 #[cfg(feature = "f64")]
 macro_rules! tanh_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = tanh((*$arg));
-        }
-    };
-}
-
-#[cfg(feature = "f64")]
-macro_rules! tanh_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = tanh(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(tanh(($arg)))
     };
 }
 
 #[cfg(feature = "f32")]
 macro_rules! tanhf_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = tanhf((*$arg));
-        }
-    };
-}
-
-#[cfg(feature = "f32")]
-macro_rules! tanhf_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = tanhf(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(tanhf(($arg)))
     };
 }
 

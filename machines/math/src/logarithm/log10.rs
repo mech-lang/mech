@@ -4,38 +4,14 @@ use crate::*;
 
 use libm::{log10, log10f};
 macro_rules! log10_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = log10((*$arg));
-        }
-    };
-}
-
-macro_rules! log10_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = log10(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(log10(($arg)))
     };
 }
 
 macro_rules! log10f_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = log10f((*$arg));
-        }
-    };
-}
-
-macro_rules! log10f_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = log10f(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(log10f(($arg)))
     };
 }
 

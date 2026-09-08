@@ -327,11 +327,7 @@ mod tests {
                 .specialize_invocation(&invocation, &mut context)
                 .unwrap();
             assert_eq!(specialized.output().representation(), output);
-            specialized
-                .instance()
-                .implementation()
-                .solve_result()
-                .unwrap();
+            specialized.instance().solve_result().unwrap();
         }
     }
 }

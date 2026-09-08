@@ -449,7 +449,11 @@ mod tests {
 
     #[test]
     fn source_catalog_matches_the_frozen_compare_surface() {
+        let mut runtime_builder = FunctionCatalogBuilder::new();
+        install_runtime(&mut runtime_builder).unwrap();
+        let runtime_count = runtime_builder.build().unwrap().runtime_factory_count();
         let mut builder = FunctionCatalogBuilder::new();
+        install_runtime(&mut builder).unwrap();
         install_source(&mut builder).unwrap();
         let catalog = builder.build().unwrap();
         let expected = expected_operations();
@@ -468,10 +472,18 @@ mod tests {
         ))]
         assert_eq!(expected.len(), 10);
         assert_eq!(catalog.specializer_count(), expected.len());
-        assert_eq!(catalog.runtime_factory_count(), 0);
+        assert_eq!(catalog.runtime_factory_count(), runtime_count);
         for (name, exposure) in expected {
             let operation = OperationId::from_name(name);
-            assert_eq!(catalog.specializer(operation).unwrap().canonical_name, name);
+            assert_eq!(
+                catalog
+                    .specializer(operation)
+                    .unwrap()
+                    .operation
+                    .canonical_name
+                    .as_ref(),
+                name
+            );
             assert_eq!(
                 catalog.exports_for_operation(operation),
                 &[FunctionExport {

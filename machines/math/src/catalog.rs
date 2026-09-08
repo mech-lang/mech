@@ -1,5 +1,14 @@
+#[cfg(all(feature = "op_assign", feature = "matrix"))]
+use mech_core::snapshot::SequenceView;
+#[cfg(feature = "source")]
+use mech_core::{CanonicalFunctionSpecializer, FunctionExport, FunctionExposure};
+#[cfg(all(feature = "op_assign", feature = "matrix"))]
+use mech_core::{
+    DimensionExpr, SchemaBody, ValueCell, ValueData, function_shape_contract_violation,
+};
 use mech_core::{FunctionCatalogBuilder, MResult};
 #[cfg(any(
+    all(feature = "pow", feature = "rational", feature = "i32"),
     feature = "abs",
     feature = "neg",
     feature = "op_assign",
@@ -44,14 +53,6 @@ use mech_core::{FunctionCatalogBuilder, MResult};
     feature = "tanh"
 ))]
 use mech_core::{RuntimeFunctionContract, RuntimeOutputAliasPolicy};
-#[cfg(all(feature = "op_assign", feature = "matrix"))]
-use mech_core::{
-    DimensionExpr, SchemaBody, ValueCell, ValueData, function_shape_contract_violation,
-};
-#[cfg(all(feature = "op_assign", feature = "matrix"))]
-use mech_core::snapshot::SequenceView;
-#[cfg(feature = "source")]
-use mech_core::{CanonicalFunctionSpecializer, FunctionExport, FunctionExposure};
 #[cfg(all(feature = "op_assign", feature = "matrixd"))]
 use nalgebra::DMatrix;
 #[cfg(all(feature = "op_assign", feature = "vectord"))]
@@ -97,18 +98,18 @@ use crate::arithmetic::fmod::*;
 use crate::arithmetic::nextafter::*;
 #[cfg(feature = "remainder")]
 use crate::arithmetic::remainder::*;
-#[cfg(feature = "jn")]
-use crate::bessel::jn::*;
-#[cfg(feature = "yn")]
-use crate::bessel::yn::*;
 #[cfg(feature = "j0")]
 use crate::bessel::j0::*;
 #[cfg(feature = "j1")]
 use crate::bessel::j1::*;
+#[cfg(feature = "jn")]
+use crate::bessel::jn::*;
 #[cfg(feature = "y0")]
 use crate::bessel::y0::*;
 #[cfg(feature = "y1")]
 use crate::bessel::y1::*;
+#[cfg(feature = "yn")]
+use crate::bessel::yn::*;
 #[cfg(feature = "lgamma")]
 use crate::gamma::lgamma::*;
 #[cfg(feature = "tgamma")]
@@ -133,7 +134,10 @@ fn validate_canonical_op_assign_slice(output: &ValueCell, inputs: &[ValueCell]) 
             "output must be matrix-backed",
         ));
     };
-    let [DimensionExpr::Constant(rows), DimensionExpr::Constant(columns)] = dimensions.as_ref()
+    let [
+        DimensionExpr::Constant(rows),
+        DimensionExpr::Constant(columns),
+    ] = dimensions.as_ref()
     else {
         return Err(function_shape_contract_violation(
             contract,
@@ -479,12 +483,11 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         install_mul_assign_source_runtime(builder)?;
         // The baseline contains these two range forms, but no named
         // `math/mul-assign` source specializer.
-        builder
-            .insert_canonical_intrinsic_specializer(
-                "math/mul-assign",
-                crate::op_assign::PURE_WHOLE_VALUE_RMW_CONTRACT.clone(),
-                Arc::new(crate::MulAssignValue {}),
-            )?;
+        builder.insert_canonical_intrinsic_specializer(
+            "math/mul-assign",
+            crate::op_assign::PURE_WHOLE_VALUE_RMW_CONTRACT.clone(),
+            Arc::new(crate::MulAssignValue {}),
+        )?;
         install_canonical_prelude!(builder, "math/mul-assign/range", crate::MulAssignRange {});
         install_canonical_prelude!(
             builder,
@@ -598,12 +601,22 @@ macro_rules! for_each_math_unop_shape {
     reason = "native factory helpers are selected by disjoint feature profiles"
 )]
 macro_rules! math_float_unop_operation_ids {
-    (MathJ0, $feature:literal) => { [mech_core::OperationId::from_name("math/bessel/j0")] };
-    (MathJ1, $feature:literal) => { [mech_core::OperationId::from_name("math/bessel/j1")] };
-    (MathY0, $feature:literal) => { [mech_core::OperationId::from_name("math/bessel/y0")] };
-    (MathY1, $feature:literal) => { [mech_core::OperationId::from_name("math/bessel/y1")] };
+    (MathJ0, $feature:literal) => {
+        [mech_core::OperationId::from_name("math/bessel/j0")]
+    };
+    (MathJ1, $feature:literal) => {
+        [mech_core::OperationId::from_name("math/bessel/j1")]
+    };
+    (MathY0, $feature:literal) => {
+        [mech_core::OperationId::from_name("math/bessel/y0")]
+    };
+    (MathY1, $feature:literal) => {
+        [mech_core::OperationId::from_name("math/bessel/y1")]
+    };
     ($operation:ident, $feature:literal) => {
-        [mech_core::OperationId::from_name(concat!("math/", $feature))]
+        [mech_core::OperationId::from_name(concat!(
+            "math/", $feature
+        ))]
     };
 }
 
@@ -646,18 +659,44 @@ macro_rules! declare_math_float_unop_factory {
 }
 
 #[cfg(any(
-    feature = "j0", feature = "j1", feature = "y0", feature = "y1",
-    feature = "lgamma", feature = "tgamma",
-    feature = "log", feature = "log10", feature = "log1p", feature = "log2",
-    feature = "cbrt", feature = "sqrt",
-    feature = "ceil", feature = "floor", feature = "rint", feature = "round",
-    feature = "roundeven", feature = "trunc",
-    feature = "erf", feature = "erfc",
-    feature = "acos", feature = "acosh", feature = "acot", feature = "acsc",
-    feature = "asec", feature = "asin", feature = "asinh", feature = "atan",
-    feature = "atanh", feature = "cos", feature = "cosh", feature = "cot",
-    feature = "csc", feature = "sec", feature = "sin", feature = "sinh",
-    feature = "tan", feature = "tanh"
+    feature = "j0",
+    feature = "j1",
+    feature = "y0",
+    feature = "y1",
+    feature = "lgamma",
+    feature = "tgamma",
+    feature = "log",
+    feature = "log10",
+    feature = "log1p",
+    feature = "log2",
+    feature = "cbrt",
+    feature = "sqrt",
+    feature = "ceil",
+    feature = "floor",
+    feature = "rint",
+    feature = "round",
+    feature = "roundeven",
+    feature = "trunc",
+    feature = "erf",
+    feature = "erfc",
+    feature = "acos",
+    feature = "acosh",
+    feature = "acot",
+    feature = "acsc",
+    feature = "asec",
+    feature = "asin",
+    feature = "asinh",
+    feature = "atan",
+    feature = "atanh",
+    feature = "cos",
+    feature = "cosh",
+    feature = "cot",
+    feature = "csc",
+    feature = "sec",
+    feature = "sin",
+    feature = "sinh",
+    feature = "tan",
+    feature = "tanh"
 ))]
 macro_rules! register_math_float_unop_factory {
     (($builder:ident; $operation:ident; $_operation_feature:literal; $scalar:ident; $_scalar_feature:literal), $suffix:ident, $_shape_feature:tt) => {
@@ -669,18 +708,44 @@ macro_rules! register_math_float_unop_factory {
     feature = "native-link",
     any(feature = "f32", feature = "f64"),
     any(
-        feature = "j0", feature = "j1", feature = "y0", feature = "y1",
-        feature = "lgamma", feature = "tgamma",
-        feature = "log", feature = "log10", feature = "log1p", feature = "log2",
-        feature = "cbrt", feature = "sqrt",
-        feature = "ceil", feature = "floor", feature = "rint", feature = "round",
-        feature = "roundeven", feature = "trunc",
-        feature = "erf", feature = "erfc",
-        feature = "acos", feature = "acosh", feature = "acot", feature = "acsc",
-        feature = "asec", feature = "asin", feature = "asinh", feature = "atan",
-        feature = "atanh", feature = "cos", feature = "cosh", feature = "cot",
-        feature = "csc", feature = "sec", feature = "sin", feature = "sinh",
-        feature = "tan", feature = "tanh"
+        feature = "j0",
+        feature = "j1",
+        feature = "y0",
+        feature = "y1",
+        feature = "lgamma",
+        feature = "tgamma",
+        feature = "log",
+        feature = "log10",
+        feature = "log1p",
+        feature = "log2",
+        feature = "cbrt",
+        feature = "sqrt",
+        feature = "ceil",
+        feature = "floor",
+        feature = "rint",
+        feature = "round",
+        feature = "roundeven",
+        feature = "trunc",
+        feature = "erf",
+        feature = "erfc",
+        feature = "acos",
+        feature = "acosh",
+        feature = "acot",
+        feature = "acsc",
+        feature = "asec",
+        feature = "asin",
+        feature = "asinh",
+        feature = "atan",
+        feature = "atanh",
+        feature = "cos",
+        feature = "cosh",
+        feature = "cot",
+        feature = "csc",
+        feature = "sec",
+        feature = "sin",
+        feature = "sinh",
+        feature = "tan",
+        feature = "tanh"
     )
 ))]
 macro_rules! export_math_float_unop_factory {
@@ -697,18 +762,44 @@ macro_rules! declare_math_float_unop {
 }
 
 #[cfg(any(
-    feature = "j0", feature = "j1", feature = "y0", feature = "y1",
-    feature = "lgamma", feature = "tgamma",
-    feature = "log", feature = "log10", feature = "log1p", feature = "log2",
-    feature = "cbrt", feature = "sqrt",
-    feature = "ceil", feature = "floor", feature = "rint", feature = "round",
-    feature = "roundeven", feature = "trunc",
-    feature = "erf", feature = "erfc",
-    feature = "acos", feature = "acosh", feature = "acot", feature = "acsc",
-    feature = "asec", feature = "asin", feature = "asinh", feature = "atan",
-    feature = "atanh", feature = "cos", feature = "cosh", feature = "cot",
-    feature = "csc", feature = "sec", feature = "sin", feature = "sinh",
-    feature = "tan", feature = "tanh"
+    feature = "j0",
+    feature = "j1",
+    feature = "y0",
+    feature = "y1",
+    feature = "lgamma",
+    feature = "tgamma",
+    feature = "log",
+    feature = "log10",
+    feature = "log1p",
+    feature = "log2",
+    feature = "cbrt",
+    feature = "sqrt",
+    feature = "ceil",
+    feature = "floor",
+    feature = "rint",
+    feature = "round",
+    feature = "roundeven",
+    feature = "trunc",
+    feature = "erf",
+    feature = "erfc",
+    feature = "acos",
+    feature = "acosh",
+    feature = "acot",
+    feature = "acsc",
+    feature = "asec",
+    feature = "asin",
+    feature = "asinh",
+    feature = "atan",
+    feature = "atanh",
+    feature = "cos",
+    feature = "cosh",
+    feature = "cot",
+    feature = "csc",
+    feature = "sec",
+    feature = "sin",
+    feature = "sinh",
+    feature = "tan",
+    feature = "tanh"
 ))]
 macro_rules! install_math_float_unop {
     ($builder:ident, $operation:ident, $operation_feature:literal) => {
@@ -763,6 +854,83 @@ macro_rules! math_float_unop_families {
 }
 
 math_float_unop_families!(declare_math_float_unop);
+
+// Exercise the same family inventory that registers maintained implementations.
+// These are transport/ownership tests: element results come from the maintained
+// scalar operation, while matrices must preserve shape, order and live rebinding.
+#[cfg(all(
+    test,
+    feature = "source",
+    feature = "matrixd",
+    any(feature = "f32", feature = "f64")
+))]
+mod managed_unary_family_tests {
+    use mech_core::*;
+
+    macro_rules! check_family {
+        ($family:ident, $feature:literal, $scalar:ident, $data:ident, $convert:ident) => {
+            mech_core::paste::paste! {
+                #[cfg(all(feature = $feature, feature = "source"))]
+                #[test]
+                fn [<managed_ $family:snake _ $scalar _follows_live_matrix_geometry>]() {
+                    let mut builder = FunctionCatalogBuilder::new();
+                    super::install_runtime(&mut builder).unwrap();
+                    super::install_source(&mut builder).unwrap();
+                    let catalog = builder.build().unwrap();
+                    let id = math_float_unop_operation_ids!($family, $feature)[0];
+                    let name = &catalog.specializer(id).unwrap().operation.canonical_name;
+                    let values = [-1.25 as $scalar, -0.0, 0.5, 1.0, 2.0, 3.0];
+                    let expected = values.iter().map(|&value| {
+                        let scalar = super::specialize_test_operation(
+                            &catalog, name, vec![ValueCell::from_exact(value).unwrap()],
+                        );
+                        scalar.instance().solve_result().unwrap();
+                        let output = scalar.output().snapshot().unwrap();
+                        let ValueData::$data(value) = output.data() else { panic!("expected scalar") };
+                        value.$convert()
+                    }).collect::<Vec<$scalar>>();
+                    let session = MemoryDomain::new().unwrap();
+                    let input = ValueCell::from_exact_in(
+                        &session, nalgebra::DMatrix::from_row_slice(2, 3, &values),
+                    ).unwrap();
+                    let input_alias = input.clone();
+                    let function = super::specialize_test_operation(&catalog, name, vec![input.clone()]);
+                    let output_alias = function.output().clone();
+                    // The consumer is bound once. Equal-cardinality stride changes,
+                    // shrink-to-empty and growth all use ordinary cell publication.
+                    for (rows, columns) in [(2, 3), (3, 2), (1, 6), (6, 1), (1, 1), (0, 3), (3, 0), (2, 3)] {
+                        let count = rows * columns;
+                        let replacement = ValueCell::from_exact(
+                            nalgebra::DMatrix::from_row_slice(rows, columns, &values[..count]),
+                        ).unwrap().snapshot().unwrap();
+                        input.replace(&replacement).unwrap_or_else(|error| panic!("{name}: replacing with {rows}x{columns}: {error:?}"));
+                        function.instance().solve_result().unwrap_or_else(|error| panic!("{name}: executing {rows}x{columns}: {error:?}"));
+                        assert!(input.same_logical_cell(&input_alias));
+                        let output = output_alias.snapshot().unwrap();
+                        let ValueData::Matrix(matrix) = output.data() else { panic!("expected matrix") };
+                        let snapshot::SequenceView::$data(actual) = matrix.elements() else { panic!("expected typed matrix") };
+                        assert_eq!(actual.len(), count, "{name}: {rows}x{columns}");
+                        for (actual, expected) in actual.iter().zip(&expected[..count]) {
+                            let actual = actual.$convert();
+                            assert!(actual.to_bits() == expected.to_bits() || (actual.is_nan() && expected.is_nan()), "{name}: {actual:?} != {expected:?}");
+                        }
+                        assert_eq!(output_alias.current_top_level_extents().unwrap().as_ref(), &[rows as u64, columns as u64]);
+                    }
+                }
+            }
+        };
+    }
+
+    macro_rules! check_enabled_family {
+        ($family:ident, $feature:literal) => {
+            #[cfg(feature = "f32")]
+            check_family!($family, $feature, f32, F32, to_f32);
+            #[cfg(feature = "f64")]
+            check_family!($family, $feature, f64, F64, to_f64);
+        };
+    }
+    math_float_unop_families!(check_enabled_family);
+}
 
 macro_rules! declare_math_float_binop_factory {
     (($operation:ident; $operation_feature:literal; $canonical:literal; $scalar:ident; $scalar_feature:literal), S, none) => {
@@ -821,8 +989,13 @@ macro_rules! math_float_binop_families {
 math_float_binop_families!(declare_math_float_binop);
 
 #[cfg(any(
-    feature = "copysign", feature = "fdim", feature = "fmod",
-    feature = "nextafter", feature = "remainder", feature = "jn", feature = "yn"
+    feature = "copysign",
+    feature = "fdim",
+    feature = "fmod",
+    feature = "nextafter",
+    feature = "remainder",
+    feature = "jn",
+    feature = "yn"
 ))]
 macro_rules! register_math_float_binop_factory {
     (($builder:ident; $operation:ident; $_operation_feature:literal; $_canonical:literal; $scalar:ident), $suffix:ident, $_shape_feature:tt) => {
@@ -831,8 +1004,13 @@ macro_rules! register_math_float_binop_factory {
 }
 
 #[cfg(any(
-    feature = "copysign", feature = "fdim", feature = "fmod",
-    feature = "nextafter", feature = "remainder", feature = "jn", feature = "yn"
+    feature = "copysign",
+    feature = "fdim",
+    feature = "fmod",
+    feature = "nextafter",
+    feature = "remainder",
+    feature = "jn",
+    feature = "yn"
 ))]
 macro_rules! install_math_float_binop {
     ($builder:ident, $operation:ident, $operation_feature:literal, $canonical:literal) => {
@@ -919,10 +1097,20 @@ macro_rules! register_math_abs_factory {
     feature = "native-link",
     feature = "abs",
     any(
-        feature = "u8", feature = "u16", feature = "u32", feature = "u64",
-        feature = "u128", feature = "i8", feature = "i16", feature = "i32",
-        feature = "i64", feature = "i128", feature = "f32", feature = "f64",
-        feature = "complex", feature = "rational"
+        feature = "u8",
+        feature = "u16",
+        feature = "u32",
+        feature = "u64",
+        feature = "u128",
+        feature = "i8",
+        feature = "i16",
+        feature = "i32",
+        feature = "i64",
+        feature = "i128",
+        feature = "f32",
+        feature = "f64",
+        feature = "complex",
+        feature = "rational"
     )
 ))]
 macro_rules! export_math_abs_factory {
@@ -1086,18 +1274,44 @@ macro_rules! install_math_neg {
 }
 
 #[cfg(any(
-    feature = "j0", feature = "j1", feature = "y0", feature = "y1",
-    feature = "lgamma", feature = "tgamma",
-    feature = "log", feature = "log10", feature = "log1p", feature = "log2",
-    feature = "cbrt", feature = "sqrt",
-    feature = "ceil", feature = "floor", feature = "rint", feature = "round",
-    feature = "roundeven", feature = "trunc",
-    feature = "erf", feature = "erfc",
-    feature = "acos", feature = "acosh", feature = "acot", feature = "acsc",
-    feature = "asec", feature = "asin", feature = "asinh", feature = "atan",
-    feature = "atanh", feature = "cos", feature = "cosh", feature = "cot",
-    feature = "csc", feature = "sec", feature = "sin", feature = "sinh",
-    feature = "tan", feature = "tanh"
+    feature = "j0",
+    feature = "j1",
+    feature = "y0",
+    feature = "y1",
+    feature = "lgamma",
+    feature = "tgamma",
+    feature = "log",
+    feature = "log10",
+    feature = "log1p",
+    feature = "log2",
+    feature = "cbrt",
+    feature = "sqrt",
+    feature = "ceil",
+    feature = "floor",
+    feature = "rint",
+    feature = "round",
+    feature = "roundeven",
+    feature = "trunc",
+    feature = "erf",
+    feature = "erfc",
+    feature = "acos",
+    feature = "acosh",
+    feature = "acot",
+    feature = "acsc",
+    feature = "asec",
+    feature = "asin",
+    feature = "asinh",
+    feature = "atan",
+    feature = "atanh",
+    feature = "cos",
+    feature = "cosh",
+    feature = "cot",
+    feature = "csc",
+    feature = "sec",
+    feature = "sin",
+    feature = "sinh",
+    feature = "tan",
+    feature = "tanh"
 ))]
 macro_rules! install_float_unop {
     ($builder:ident, $family:ident) => {
@@ -1260,34 +1474,90 @@ macro_rules! for_each_canonical_op_assign_vector_range_source {
 
 #[cfg(feature = "op_assign")]
 macro_rules! op_assign_value_operation_ids {
-    (Add) => { [mech_core::OperationId::from_name("math/add-assign")] };
-    (Div) => { [mech_core::OperationId::from_name("math/div-assign")] };
-    (Mul) => { [mech_core::OperationId::from_name("math/mul-assign")] };
-    (Sub) => { [mech_core::OperationId::from_name("math/sub-assign")] };
+    (Add) => {
+        [mech_core::OperationId::from_name("math/add-assign")]
+    };
+    (Div) => {
+        [mech_core::OperationId::from_name("math/div-assign")]
+    };
+    (Mul) => {
+        [mech_core::OperationId::from_name("math/mul-assign")]
+    };
+    (Sub) => {
+        [mech_core::OperationId::from_name("math/sub-assign")]
+    };
 }
 
 #[cfg(feature = "op_assign")]
 macro_rules! op_assign_range_operation_ids {
-    (Add; Assign1DRS) => { [mech_core::OperationId::from_name("math/add-assign/range")] };
-    (Add; Assign1DRB) => { [mech_core::OperationId::from_name("math/add-assign/range")] };
-    (Add; Assign1DRV) => { [mech_core::OperationId::from_name("math/add-assign/range")] };
-    (Add; Assign1DRVB) => { [mech_core::OperationId::from_name("math/add-assign/range")] };
-    (Div; Assign1DRS) => { [mech_core::OperationId::from_name("math/div-assign/range")] };
-    (Div; Assign1DRB) => { [mech_core::OperationId::from_name("math/div-assign/range")] };
-    (Div; Assign1DRV) => { [mech_core::OperationId::from_name("math/div-assign/range")] };
-    (Div; Assign1DRVB) => { [mech_core::OperationId::from_name("math/div-assign/range")] };
-    (Mul; Assign1DRS) => { [mech_core::OperationId::from_name("math/mul-assign/range")] };
-    (Mul; Assign1DRB) => { [mech_core::OperationId::from_name("math/mul-assign/range")] };
-    (Mul; Assign1DRV) => { [mech_core::OperationId::from_name("math/mul-assign/range")] };
-    (Mul; Assign1DRVB) => { [mech_core::OperationId::from_name("math/mul-assign/range")] };
-    (Sub; Assign1DRS) => { [mech_core::OperationId::from_name("math/sub-assign/range")] };
-    (Sub; Assign1DRB) => { [mech_core::OperationId::from_name("math/sub-assign/range")] };
-    (Sub; Assign1DRV) => { [mech_core::OperationId::from_name("math/sub-assign/range")] };
-    (Sub; Assign1DRVB) => { [mech_core::OperationId::from_name("math/sub-assign/range")] };
-    (Add; $family:ident) => { [mech_core::OperationId::from_name("math/add-assign/range-all")] };
-    (Div; $family:ident) => { [mech_core::OperationId::from_name("math/div-assign/range-all")] };
-    (Mul; $family:ident) => { [mech_core::OperationId::from_name("math/mul-assign/range-all")] };
-    (Sub; $family:ident) => { [mech_core::OperationId::from_name("math/sub-assign/range-all")] };
+    (Add; Assign1DRS) => {
+        [mech_core::OperationId::from_name("math/add-assign/range")]
+    };
+    (Add; Assign1DRB) => {
+        [mech_core::OperationId::from_name("math/add-assign/range")]
+    };
+    (Add; Assign1DRV) => {
+        [mech_core::OperationId::from_name("math/add-assign/range")]
+    };
+    (Add; Assign1DRVB) => {
+        [mech_core::OperationId::from_name("math/add-assign/range")]
+    };
+    (Div; Assign1DRS) => {
+        [mech_core::OperationId::from_name("math/div-assign/range")]
+    };
+    (Div; Assign1DRB) => {
+        [mech_core::OperationId::from_name("math/div-assign/range")]
+    };
+    (Div; Assign1DRV) => {
+        [mech_core::OperationId::from_name("math/div-assign/range")]
+    };
+    (Div; Assign1DRVB) => {
+        [mech_core::OperationId::from_name("math/div-assign/range")]
+    };
+    (Mul; Assign1DRS) => {
+        [mech_core::OperationId::from_name("math/mul-assign/range")]
+    };
+    (Mul; Assign1DRB) => {
+        [mech_core::OperationId::from_name("math/mul-assign/range")]
+    };
+    (Mul; Assign1DRV) => {
+        [mech_core::OperationId::from_name("math/mul-assign/range")]
+    };
+    (Mul; Assign1DRVB) => {
+        [mech_core::OperationId::from_name("math/mul-assign/range")]
+    };
+    (Sub; Assign1DRS) => {
+        [mech_core::OperationId::from_name("math/sub-assign/range")]
+    };
+    (Sub; Assign1DRB) => {
+        [mech_core::OperationId::from_name("math/sub-assign/range")]
+    };
+    (Sub; Assign1DRV) => {
+        [mech_core::OperationId::from_name("math/sub-assign/range")]
+    };
+    (Sub; Assign1DRVB) => {
+        [mech_core::OperationId::from_name("math/sub-assign/range")]
+    };
+    (Add; $family:ident) => {
+        [mech_core::OperationId::from_name(
+            "math/add-assign/range-all",
+        )]
+    };
+    (Div; $family:ident) => {
+        [mech_core::OperationId::from_name(
+            "math/div-assign/range-all",
+        )]
+    };
+    (Mul; $family:ident) => {
+        [mech_core::OperationId::from_name(
+            "math/mul-assign/range-all",
+        )]
+    };
+    (Sub; $family:ident) => {
+        [mech_core::OperationId::from_name(
+            "math/sub-assign/range-all",
+        )]
+    };
 }
 
 #[cfg(feature = "op_assign")]
@@ -2183,12 +2453,225 @@ pub fn install_native_plan(builder: &mut FunctionCatalogBuilder) -> MResult<()> 
     Ok(())
 }
 
+#[cfg(all(test, feature = "source"))]
+pub(crate) fn specialize_test_operation(
+    catalog: &mech_core::FunctionCatalog,
+    name: &str,
+    cells: Vec<mech_core::ValueCell>,
+) -> mech_core::SpecializedFunction {
+    use mech_core::*;
+    let entry = catalog.specializer(OperationId::from_name(name)).unwrap();
+    let originals = cells
+        .iter()
+        .map(ValueCell::resolved_type)
+        .collect::<MResult<Vec<_>>>()
+        .unwrap();
+    let SourceTypeAuthority::Schemes(declaration) = &entry.type_authority else {
+        panic!("test operation must have a semantic scheme")
+    };
+    let instantiated = declaration.template.map(|template| {
+        FunctionTypeDeclaration::from_schemes(
+            instantiate_source_scheme_template(template, &originals).unwrap(),
+        )
+    });
+    let declaration = instantiated.as_ref().unwrap_or(declaration);
+    let candidates = declaration
+        .overloads
+        .iter()
+        .map(|overload| TypeOverloadCandidate {
+            id: u64::from(overload.id),
+            scheme: &overload.scheme,
+        })
+        .collect::<Vec<_>>();
+    let resolved = resolve_type_overloads(
+        TypeConstraintOrigin::new(name, None),
+        &candidates,
+        &originals,
+        None,
+    )
+    .unwrap();
+    let overload_id = u32::try_from(resolved.candidate_ids[0]).unwrap();
+    let overload = declaration
+        .overloads
+        .iter()
+        .find(|overload| overload.id == overload_id)
+        .unwrap();
+    assert!(
+        resolved
+            .conversions
+            .iter()
+            .all(|plan| matches!(plan.step, ConversionStep::Identity))
+    );
+    let converted_inputs = resolved
+        .conversions
+        .iter()
+        .map(|plan| plan.target.clone())
+        .collect::<Vec<_>>()
+        .into_boxed_slice();
+    let operation = entry
+        .resolved_operation(converted_inputs.len(), &resolved.outputs)
+        .unwrap();
+    let resolved = ResolvedCall {
+        operation,
+        overload_id,
+        original_inputs: originals.into_boxed_slice(),
+        converted_inputs,
+        input_conversions: resolved.conversions,
+        outputs: resolved.outputs,
+        output_schema_rules: overload.output_schema_rules.clone(),
+    };
+    let invocation = SpecializationInvocation::from_cells(cells.into_boxed_slice());
+    let mut context = SpecializationContext::for_resolved_invocation(
+        &invocation,
+        Some(catalog),
+        entry.operation.id,
+        name,
+        resolved,
+    )
+    .unwrap();
+    entry
+        .specializer
+        .specialize_invocation(&invocation, &mut context)
+        .unwrap()
+}
+
+#[cfg(all(
+    test,
+    any(
+        all(feature = "i32", any(feature = "div", feature = "mod")),
+        all(
+            feature = "pow",
+            any(feature = "u8", all(feature = "rational", feature = "i32"))
+        ),
+    )
+))]
+pub(crate) fn bind_test_binary<F: mech_core::MechFunctionFactory>(
+    operation: &str,
+    factory: &str,
+    lhs: mech_core::ValueCell,
+    rhs: mech_core::ValueCell,
+    output: mech_core::ValueCell,
+) -> mech_core::SpecializedFunction {
+    use mech_core::*;
+    let invocation = FunctionInvocation::binary(output, lhs, rhs);
+    let implementation = F::new_invocation(invocation.clone()).unwrap();
+    let operation = ResolvedOperationDescriptor::from_name(
+        operation,
+        F::declared_operation_contract().unwrap().clone(),
+    )
+    .unwrap();
+    SpecializedFunction::syntax_directed(
+        (implementation, invocation),
+        operation,
+        RuntimeFunctionId::from_name(factory),
+        ExecutionTarget::DirectRuntime,
+        F::implementation_memory_class(),
+    )
+    .unwrap()
+}
+
+#[cfg(all(test, feature = "i8", any(feature = "abs", feature = "neg")))]
+pub(crate) fn bind_test_unary<F: mech_core::MechFunctionFactory>(
+    operation: &str,
+    factory: &str,
+    input: mech_core::ValueCell,
+    output: mech_core::ValueCell,
+) -> mech_core::SpecializedFunction {
+    use mech_core::*;
+    let invocation = FunctionInvocation::unary(output, input);
+    let implementation = F::new_invocation(invocation.clone()).unwrap();
+    let operation = ResolvedOperationDescriptor::from_name(
+        operation,
+        F::declared_operation_contract().unwrap().clone(),
+    )
+    .unwrap();
+    SpecializedFunction::syntax_directed(
+        (implementation, invocation),
+        operation,
+        RuntimeFunctionId::from_name(factory),
+        ExecutionTarget::DirectRuntime,
+        F::implementation_memory_class(),
+    )
+    .unwrap()
+}
+
+#[cfg(all(
+    test,
+    feature = "source",
+    feature = "u8",
+    feature = "matrixd",
+    feature = "div",
+    feature = "mod",
+    feature = "pow"
+))]
+mod managed_checked_matrix_tests {
+    use mech_core::*;
+    use nalgebra::DMatrix;
+
+    fn values(cell: &ValueCell) -> Vec<u8> {
+        let value = cell.snapshot().unwrap();
+        let ValueData::Matrix(matrix) = value.data() else {
+            panic!("expected matrix")
+        };
+        let snapshot::SequenceView::U8(values) = matrix.elements() else {
+            panic!("expected U8")
+        };
+        values.to_vec()
+    }
+
+    #[test]
+    fn division_remainder_and_power_preserve_output_on_first_middle_and_last_errors() {
+        let mut builder = FunctionCatalogBuilder::new();
+        super::install_runtime(&mut builder).unwrap();
+        super::install_source(&mut builder).unwrap();
+        let catalog = builder.build().unwrap();
+        for (operation, left, valid, invalid, error) in [
+            ("math/div", 12_u8, 3_u8, 0_u8, "MathDivisionInvalid"),
+            ("math/mod", 12_u8, 5_u8, 0_u8, "MathRemainderInvalid"),
+            ("math/pow", 2_u8, 3_u8, 8_u8, "MathArithmeticOverflow"),
+        ] {
+            let lhs = ValueCell::from_exact(DMatrix::from_element(2, 3, left)).unwrap();
+            let rhs = ValueCell::from_exact(DMatrix::from_element(2, 3, valid)).unwrap();
+            let function =
+                super::specialize_test_operation(&catalog, operation, vec![lhs, rhs.clone()]);
+            let output_alias = function.output().clone();
+            function.instance().solve_result().unwrap();
+            let expected = values(&output_alias);
+            for position in [0, 2, 5] {
+                let mut next = [valid; 6];
+                next[position] = invalid;
+                let replacement = ValueCell::from_exact(DMatrix::from_row_slice(2, 3, &next))
+                    .unwrap()
+                    .snapshot()
+                    .unwrap();
+                rhs.replace(&replacement).unwrap();
+                let version = output_alias.published_version();
+                assert_eq!(
+                    function.instance().solve_result().unwrap_err().kind_name(),
+                    error,
+                    "{operation}, position {position}"
+                );
+                assert_eq!(values(&output_alias), expected);
+                assert_eq!(output_alias.published_version(), version);
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(all(feature = "source", feature = "math_default"))]
+    use mech_core::FunctionCatalog;
+    #[cfg(any(
+        all(feature = "source", feature = "math_default"),
+        all(feature = "neg", feature = "f64", feature = "matrixd")
+    ))]
+    use mech_core::OperationId;
+    use mech_core::RuntimeFunctionId;
+    #[cfg(all(feature = "neg", feature = "f64", feature = "matrixd"))]
     use mech_core::{
-        ExecutionTarget, FunctionCatalog, FunctionRuntimeType, OperationId, RuntimeBindingSelector,
-        RuntimeFunctionId, RuntimeFunctionSignature,
+        ExecutionTarget, FunctionRuntimeType, RuntimeBindingSelector, RuntimeFunctionSignature,
     };
     use std::collections::BTreeSet;
 
@@ -2325,7 +2808,7 @@ mod tests {
         let catalog = catalog();
         let actual = catalog
             .specializer_entries()
-            .map(|entry| entry.canonical_name.as_str())
+            .map(|entry| entry.operation.canonical_name.as_ref())
             .collect::<BTreeSet<_>>();
         let expected = EXPECTED_NAMES.into_iter().collect::<BTreeSet<_>>();
 

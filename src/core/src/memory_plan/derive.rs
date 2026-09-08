@@ -305,11 +305,180 @@ pub fn replan_call_memory(
     })
 }
 
+/// Re-derives the complete fixed-width call demand and placement after live
+/// dimensions change. No bytes or offsets are patched into an old placement.
+#[cfg(feature = "functions")]
+pub fn replan_fixed_call_geometry(
+    previous: &CallMemoryPlan,
+    current: &BoundCall,
+) -> Result<CallMemoryPlan, MemoryPlanError> {
+    fn witnesses(
+        descriptors: &[crate::ResolvedValueDescriptor],
+        storage: &[PhysicalStorageDescriptor],
+    ) -> Result<Vec<MemoryFootprintWitness>, MemoryPlanError> {
+        if descriptors.len() != storage.len() {
+            return Err(MemoryPlanError::DescriptorMismatch);
+        }
+        descriptors
+            .iter()
+            .zip(storage)
+            .map(|(descriptor, storage)| {
+                if !matches!(storage.slot, PlannedSlotKind::FixedScalar(_)) {
+                    return Err(MemoryPlanError::DescriptorMismatch);
+                }
+                let extents = descriptor
+                    .current_extents()
+                    .map_err(|_| MemoryPlanError::DescriptorMismatch)?;
+                let logical_elements = extents
+                    .iter()
+                    .try_fold(1_u64, |total, extent| total.checked_mul(*extent))
+                    .ok_or(MemoryPlanError::ArithmeticOverflow {
+                        field: "current call elements",
+                    })?;
+                Ok(MemoryFootprintWitness::Known(CurrentMemoryFootprint {
+                    logical_elements,
+                    shape_parameter_count: descriptor.shape().parameter_values().len() as u64,
+                    ..CurrentMemoryFootprint::default()
+                }))
+            })
+            .collect()
+    }
+    let input_witnesses = witnesses(current.inputs(), &previous.input_storage)?;
+    let output_witnesses = witnesses(current.outputs(), &previous.output_storage)?;
+    plan_call_memory(CallMemoryPlanningRequest {
+        bound_call: current,
+        input_storage: &previous.input_storage,
+        output_storage: &previous.output_storage,
+        input_witnesses: &input_witnesses,
+        output_witnesses: &output_witnesses,
+        implementation_memory: previous.implementation_memory,
+        target: &previous.target,
+        regions: &previous.output_regions,
+    })
+}
+
 pub struct ValueLayoutPlanningRequest<'a> {
     pub descriptor: &'a crate::ResolvedValueDescriptor,
     pub storage: &'a PhysicalStorageDescriptor,
     pub witness: MemoryFootprintWitness,
     pub target: &'a TargetMemoryProfile,
+}
+
+/// The single-value form of the existing R5 layout and publication plan,
+/// used by owned-value ingress before a program call has been bound.
+/// Object IDs are local to this plan, just as for a standalone call.
+#[derive(Clone, Debug)]
+pub struct OwnedValueMemoryPlan {
+    pub value: ValueLayoutPlan,
+    pub storage: PhysicalStorageDescriptor,
+    pub allocations: [super::AllocationPlan; 2],
+    pub arenas: [super::ArenaPlan; 1],
+    pub transactions: [super::TransactionRequirement; 1],
+    pub target: TargetMemoryProfile,
+    pub demand: super::ResourceDemand,
+    pub output_bytes: u64,
+}
+
+pub fn plan_owned_fixed_value_memory(
+    request: ValueLayoutPlanningRequest<'_>,
+) -> Result<OwnedValueMemoryPlan, MemoryPlanError> {
+    let value = plan_value_layout(ValueLayoutPlanningRequest {
+        descriptor: request.descriptor,
+        storage: request.storage,
+        witness: request.witness,
+        target: request.target,
+    })?;
+    if !matches!(
+        value.storage.planned_slot(),
+        PlannedSlotKind::FixedScalar(_)
+    ) {
+        return Err(MemoryPlanError::DescriptorMismatch);
+    }
+    let current = super::MemoryObjectId::new(0);
+    let staged = super::MemoryObjectId::new(1);
+    let arena = super::MemoryArenaId::new(0);
+    let staged_offset = align_up(value.capacity_bytes, value.slot.alignment)?;
+    let capacity = staged_offset.checked_add(value.capacity_bytes).ok_or(
+        MemoryPlanError::ArithmeticOverflow {
+            field: "owned value transaction arena",
+        },
+    )?;
+    if capacity > request.target.maximum_addressable_bytes {
+        return Err(MemoryPlanError::TargetAddressOverflow);
+    }
+    let owner = super::MemoryObjectOwner::DirectCallPort {
+        call: 0,
+        direction: crate::PortDirection::Output,
+        port: 0,
+    };
+    let allocation = super::AllocationPlan {
+        id: current,
+        owner: owner.clone(),
+        role: super::AllocationRole::FixedStorage,
+        slot: Some(value.storage.planned_slot()),
+        space: request.storage.space,
+        current_bytes: value.current_address_span_bytes,
+        capacity_bytes: value.capacity_bytes,
+        payload_block_capacity: 0,
+        alignment: value.slot.alignment,
+        lifetime: super::MemoryLifetime::Activation,
+        placement: super::ArenaPlacement { arena, offset: 0 },
+        reuse_group: None,
+    };
+    let stage = super::AllocationPlan {
+        id: staged,
+        role: super::AllocationRole::TransactionStage,
+        placement: super::ArenaPlacement {
+            arena,
+            offset: staged_offset,
+        },
+        lifetime: super::MemoryLifetime::Transaction {
+            first: super::MemoryPlanPoint::new(0),
+            last: super::MemoryPlanPoint::new(0),
+        },
+        ..allocation.clone()
+    };
+    let demand = super::ResourceDemand {
+        persistent_bytes: capacity,
+        activation_bytes: capacity,
+        turn_peak_bytes: value.capacity_bytes,
+        transaction_peak_bytes: value.capacity_bytes,
+        cloned_bytes: value.current_address_span_bytes,
+        output_elements: value.current_elements,
+        retained_nodes: value.current_elements,
+        storage_bindings: 1,
+        work: super::WorkDemand {
+            compute: value.current_elements,
+            ..super::WorkDemand::default()
+        },
+        ..super::ResourceDemand::default()
+    };
+    let output_bytes = value.current_address_span_bytes;
+    if let Some(violation) =
+        super::evaluate_memory_budget(owner, demand, output_bytes, capacity, request.target.limits)
+            .first()
+            .cloned()
+    {
+        return Err(MemoryPlanError::TargetLimitExceeded { violation });
+    }
+    let arenas = [super::ArenaPlan {
+        id: arena,
+        space: request.storage.space,
+        backing: super::ArenaBackingKind::ContiguousBytes,
+        alignment: value.slot.alignment,
+        capacity_bytes: capacity,
+        members: vec![current, staged].into_boxed_slice(),
+    }];
+    Ok(OwnedValueMemoryPlan {
+        value,
+        storage: request.storage.clone(),
+        allocations: [allocation, stage],
+        arenas,
+        transactions: [super::TransactionRequirement::StageAndSwap { current, staged }],
+        target: request.target.clone(),
+        demand,
+        output_bytes,
+    })
 }
 
 pub fn derive_dimension_capacity(

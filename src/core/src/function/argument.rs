@@ -237,6 +237,53 @@ impl FunctionInvocation {
         self.inputs.len()
     }
 
+    /// Resolves the semantic input ordinal used by a call-memory plan. A
+    /// read-modify-write output may be coalesced out of the physical runtime
+    /// invocation while remaining an explicit semantic input to planning.
+    pub(crate) fn planned_input_cell<'a>(
+        &'a self,
+        plan: &crate::CallMemoryPlan,
+        input: usize,
+    ) -> MResult<&'a ValueCell> {
+        if plan.inputs.len() == self.inputs.len() {
+            return self
+                .inputs
+                .get(input)
+                .ok_or_else(|| self.layout_error(input + 1));
+        }
+        if plan.inputs.len() != self.inputs.len().saturating_add(1) {
+            return Err(function_memory_contract_error(
+                FunctionMemoryContractViolationReason::OperationContractDerivation {
+                    error: crate::OperationContractError::PortCountMismatch {
+                        direction: crate::PortDirection::Input,
+                        expected: plan.inputs.len() as u64,
+                        actual: self.inputs.len() as u64,
+                    },
+                },
+            ));
+        }
+        let base = plan
+            .bound_call
+            .operation_descriptor()
+            .contract
+            .outputs
+            .iter()
+            .find_map(|output| match output.construction {
+                crate::OutputConstruction::ReadModifyWrite { base_input, .. } => {
+                    Some(base_input as usize)
+                }
+                _ => None,
+            })
+            .ok_or_else(|| self.layout_error(plan.inputs.len()))?;
+        if input == base {
+            return Ok(&self.output);
+        }
+        let physical = input - usize::from(input > base);
+        self.inputs
+            .get(physical)
+            .ok_or_else(|| self.layout_error(plan.inputs.len()))
+    }
+
     pub fn output(&self) -> FunctionOutputPort<'_> {
         FunctionOutputPort { invocation: self }
     }
@@ -613,7 +660,9 @@ fn check_invocation_cell_requirement(
     )
 }
 
-fn coalesced_read_modify_write_input(declaration: &OperationContractDeclaration) -> Option<usize> {
+pub(crate) fn coalesced_read_modify_write_input(
+    declaration: &OperationContractDeclaration,
+) -> Option<usize> {
     let [output] = declaration.outputs.as_ref() else {
         return None;
     };
@@ -886,7 +935,65 @@ impl FunctionInputPort<'_> {
             T::REPRESENTATION,
             FunctionArgumentRole::Input(self.index),
         )?;
-        Ok(ManagedPort::input(cell.reactive_cell_id(), self.index))
+        Ok(ManagedPort::input(cell.clone(), self.index))
+    }
+
+    /// Binds this physical input at its semantic ordinal when a coalesced
+    /// read-modify-write base output precedes it in the operation contract.
+    pub fn try_managed_at<T: FunctionPortBacking>(
+        self,
+        semantic_input: usize,
+    ) -> MResult<ManagedPort<T>> {
+        let cell = &self.invocation.inputs[self.index];
+        validate_cell_representation(
+            cell,
+            T::REPRESENTATION,
+            FunctionArgumentRole::Input(self.index),
+        )?;
+        Ok(ManagedPort::input(cell.clone(), semantic_input))
+    }
+
+    /// Binds either a scalar value or a dense matrix by its fixed-width
+    /// element kind. This is the canonical constructor used by shared kernel
+    /// families: storage shape is supplied by the call plan, not retained in
+    /// the port capability.
+    pub fn try_managed_element<T: FunctionPortBacking>(self) -> MResult<ManagedPort<T>> {
+        let cell = &self.invocation.inputs[self.index];
+        let representation = cell.representation();
+        if representation == T::REPRESENTATION {
+            return Ok(ManagedPort::input(cell.clone(), self.index));
+        }
+        #[cfg(feature = "matrix")]
+        if let FunctionValueRepresentation::Matrix { element, .. } = representation
+            && element == crate::matrix_element_for_representation(T::REPRESENTATION)
+        {
+            return Ok(ManagedPort::input(cell.clone(), self.index));
+        }
+        Err(function_argument_type_mismatch::<T>(
+            cell,
+            FunctionArgumentRole::Input(self.index),
+        ))
+    }
+
+    pub fn try_managed_element_at<T: FunctionPortBacking>(
+        self,
+        semantic_input: usize,
+    ) -> MResult<ManagedPort<T>> {
+        let cell = &self.invocation.inputs[self.index];
+        let representation = cell.representation();
+        if representation == T::REPRESENTATION {
+            return Ok(ManagedPort::input(cell.clone(), semantic_input));
+        }
+        #[cfg(feature = "matrix")]
+        if let FunctionValueRepresentation::Matrix { element, .. } = representation
+            && element == crate::matrix_element_for_representation(T::REPRESENTATION)
+        {
+            return Ok(ManagedPort::input(cell.clone(), semantic_input));
+        }
+        Err(function_argument_type_mismatch::<T>(
+            cell,
+            FunctionArgumentRole::Input(self.index),
+        ))
     }
 
     /// Binds a matrix logical input by element capability rather than by an
@@ -897,7 +1004,7 @@ impl FunctionInputPort<'_> {
         let expected = crate::matrix_element_for_representation(T::REPRESENTATION);
         match cell.representation() {
             FunctionValueRepresentation::Matrix { element, .. } if element == expected => {
-                Ok(ManagedPort::input(cell.reactive_cell_id(), self.index))
+                Ok(ManagedPort::input(cell.clone(), self.index))
             }
             _ => Err(function_argument_type_mismatch::<T>(
                 cell,
@@ -947,6 +1054,7 @@ impl FunctionInputPort<'_> {
     pub fn value(self) -> FunctionValueInput {
         FunctionValueInput {
             cell: self.invocation.inputs[self.index].clone(),
+            index: self.index,
         }
     }
 }
@@ -982,7 +1090,61 @@ impl FunctionOutputPort<'_> {
     pub fn try_managed<T: FunctionPortBacking>(self) -> MResult<ManagedPort<T>> {
         let cell = &self.invocation.output;
         validate_cell_representation(cell, T::REPRESENTATION, FunctionArgumentRole::Output)?;
-        Ok(ManagedPort::output(cell.reactive_cell_id()))
+        Ok(ManagedPort::output(cell.clone()))
+    }
+
+    /// Binds a read view of an output that is also the declared base input of
+    /// a read-modify-write operation. The operation contract remains the
+    /// authority for whether this semantic input ordinal is valid.
+    pub fn try_managed_base_input<T: FunctionPortBacking>(
+        self,
+        semantic_input: usize,
+    ) -> MResult<ManagedPort<T>> {
+        let cell = &self.invocation.output;
+        validate_cell_representation(cell, T::REPRESENTATION, FunctionArgumentRole::Output)?;
+        Ok(ManagedPort::input(cell.clone(), semantic_input))
+    }
+
+    /// Element-kind form of [`Self::try_managed_base_input`] for dense values.
+    pub fn try_managed_element_base_input<T: FunctionPortBacking>(
+        self,
+        semantic_input: usize,
+    ) -> MResult<ManagedPort<T>> {
+        let cell = &self.invocation.output;
+        let representation = cell.representation();
+        if representation == T::REPRESENTATION {
+            return Ok(ManagedPort::input(cell.clone(), semantic_input));
+        }
+        #[cfg(feature = "matrix")]
+        if let FunctionValueRepresentation::Matrix { element, .. } = representation
+            && element == crate::matrix_element_for_representation(T::REPRESENTATION)
+        {
+            return Ok(ManagedPort::input(cell.clone(), semantic_input));
+        }
+        Err(function_argument_type_mismatch::<T>(
+            cell,
+            FunctionArgumentRole::Output,
+        ))
+    }
+
+    /// Binds either a scalar output or a dense matrix by its fixed-width
+    /// element kind; the call plan remains the geometry authority.
+    pub fn try_managed_element<T: FunctionPortBacking>(self) -> MResult<ManagedPort<T>> {
+        let cell = &self.invocation.output;
+        let representation = cell.representation();
+        if representation == T::REPRESENTATION {
+            return Ok(ManagedPort::output(cell.clone()));
+        }
+        #[cfg(feature = "matrix")]
+        if let FunctionValueRepresentation::Matrix { element, .. } = representation
+            && element == crate::matrix_element_for_representation(T::REPRESENTATION)
+        {
+            return Ok(ManagedPort::output(cell.clone()));
+        }
+        Err(function_argument_type_mismatch::<T>(
+            cell,
+            FunctionArgumentRole::Output,
+        ))
     }
 
     /// Binds a matrix logical output by element capability rather than by an
@@ -993,7 +1155,7 @@ impl FunctionOutputPort<'_> {
         let expected = crate::matrix_element_for_representation(T::REPRESENTATION);
         match cell.representation() {
             FunctionValueRepresentation::Matrix { element, .. } if element == expected => {
-                Ok(ManagedPort::output(cell.reactive_cell_id()))
+                Ok(ManagedPort::output(cell.clone()))
             }
             _ => Err(function_argument_type_mismatch::<T>(
                 cell,
@@ -1012,6 +1174,7 @@ impl FunctionOutputPort<'_> {
 #[derive(Clone)]
 pub struct FunctionValueInput {
     cell: ValueCell,
+    index: usize,
 }
 
 #[derive(Clone)]
@@ -1023,6 +1186,10 @@ impl FunctionValueInput {
     /// Returns the canonical input cell retained by this invocation value.
     pub const fn cell(&self) -> &ValueCell {
         &self.cell
+    }
+
+    pub(crate) const fn managed_role(&self) -> crate::ManagedPortRole {
+        crate::ManagedPortRole::Input(self.index)
     }
 
     pub fn snapshot(&self) -> MResult<Value> {
@@ -1116,13 +1283,21 @@ impl FunctionValueOutput {
     }
 
     pub fn replace_set(&self, elements: Box<[ValueData]>) -> MResult<()> {
-        let next = self.cell.rebuild_set(elements)?;
+        let next = self.build_set(elements)?;
         self.cell.replace(&next)
     }
 
+    pub fn build_set(&self, elements: Box<[ValueData]>) -> MResult<Value> {
+        self.cell.rebuild_set(elements)
+    }
+
     pub fn replace_set_drafts(&self, elements: Box<[ValueDataDraft]>) -> MResult<()> {
-        let next = self.cell.rebuild_set_drafts(elements)?;
+        let next = self.build_set_drafts(elements)?;
         self.cell.replace(&next)
+    }
+
+    pub fn build_set_drafts(&self, elements: Box<[ValueDataDraft]>) -> MResult<Value> {
+        self.cell.rebuild_set_drafts(elements)
     }
 
     pub fn replace_matrix_drafts(

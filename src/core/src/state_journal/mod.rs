@@ -166,6 +166,82 @@ struct CanonicalValueCellStateEntry {
     after: Option<Value>,
 }
 
+struct PreparedCanonicalRestore {
+    publications: Vec<ReadyPublication>,
+    managed: Vec<bool>,
+}
+
+impl PreparedCanonicalRestore {
+    fn prepare(entries: &[CanonicalValueCellStateEntry], after: bool) -> MResult<Self> {
+        struct Group {
+            domain: MemoryDomain,
+            realized: RealizedMemoryPlan,
+            candidates: Vec<CellPublicationCandidate>,
+        }
+        let mut groups: Vec<Group> = Vec::new();
+        let mut managed = Vec::with_capacity(entries.len());
+        for entry in entries {
+            let value = if after {
+                entry.after.as_ref()
+            } else {
+                Some(&entry.before)
+            };
+            let Some(value) = value else {
+                managed.push(false);
+                continue;
+            };
+            if let Some(staged) = entry.target.stage_managed_replacement(value)? {
+                if let Some(group) = groups.iter_mut().find(|group| {
+                    group.domain.id() == staged.domain.id()
+                        && group.realized.revision() == staged.realized.revision()
+                }) {
+                    group.candidates.push(staged.candidate);
+                } else {
+                    groups.push(Group {
+                        domain: staged.domain,
+                        realized: staged.realized,
+                        candidates: vec![staged.candidate],
+                    });
+                }
+                managed.push(true);
+            } else {
+                if after {
+                    entry.preflight_restore_after()?;
+                } else {
+                    entry.preflight_restore_before()?;
+                }
+                managed.push(false);
+            }
+        }
+        let mut publications = Vec::with_capacity(groups.len());
+        for group in groups {
+            let prepared = group
+                .domain
+                .prepare_cell_publication(&group.realized, group.candidates)?;
+            publications.push(group.domain.ready_cell_publication(prepared)?);
+        }
+        Ok(Self {
+            publications,
+            managed,
+        })
+    }
+
+    fn commit(self, entries: &[CanonicalValueCellStateEntry], after: bool) {
+        for (entry, managed) in entries.iter().zip(self.managed) {
+            if !managed {
+                if after {
+                    entry.apply_restore_after();
+                } else {
+                    entry.apply_restore_before();
+                }
+            }
+        }
+        for publication in self.publications {
+            publication.commit();
+        }
+    }
+}
+
 impl CanonicalValueCellStateEntry {
     fn preflight_restore_before(&self) -> MResult<()> {
         self.target.preflight_replace()
@@ -199,6 +275,7 @@ pub struct CanonicalStateJournal {
     #[cfg(feature = "functions")]
     entries: Vec<Box<dyn ErasedValueStateEntry>>,
     canonical_entries: Vec<CanonicalValueCellStateEntry>,
+    prepared_restore: core::cell::RefCell<Option<PreparedCanonicalRestore>>,
     #[cfg(feature = "functions")]
     exact_roots: Vec<Box<dyn ErasedValueStateRoot>>,
     after_recorded: bool,
@@ -211,6 +288,7 @@ impl CanonicalStateJournal {
             #[cfg(feature = "functions")]
             entries: Vec::new(),
             canonical_entries: Vec::new(),
+            prepared_restore: core::cell::RefCell::new(None),
             #[cfg(feature = "functions")]
             exact_roots: Vec::new(),
             after_recorded: false,
@@ -270,13 +348,16 @@ impl CanonicalStateJournal {
     }
 
     pub fn preflight_restore_before(&self) -> MResult<()> {
+        // A repeated preflight first releases the preceding batch's gates.
+        self.prepared_restore.borrow_mut().take();
         #[cfg(feature = "functions")]
         for entry in &self.entries {
             entry.preflight_restore_before()?;
         }
-        for entry in &self.canonical_entries {
-            entry.preflight_restore_before()?;
-        }
+        *self.prepared_restore.borrow_mut() = Some(PreparedCanonicalRestore::prepare(
+            &self.canonical_entries,
+            false,
+        )?);
         Ok(())
     }
 
@@ -285,9 +366,11 @@ impl CanonicalStateJournal {
         for entry in &self.entries {
             entry.apply_restore_before();
         }
-        for entry in &self.canonical_entries {
-            entry.apply_restore_before();
-        }
+        self.prepared_restore
+            .borrow_mut()
+            .take()
+            .expect("journal restore was prepared before its infallible commit")
+            .commit(&self.canonical_entries, false);
     }
 
     pub fn record_after(&mut self) -> MResult<()> {
@@ -317,6 +400,7 @@ impl CanonicalStateJournal {
         if !self.after_recorded {
             return Err(MechError::new(ValueStateAfterNotRecorded, None).with_compiler_loc());
         }
+        drop(self.prepared_restore.into_inner());
         Ok(CommittedValueStateDelta {
             #[cfg(feature = "functions")]
             entries: self.entries,
@@ -437,16 +521,12 @@ impl CommittedValueStateDelta {
         for entry in &self.entries {
             entry.preflight_restore_before()?;
         }
-        for entry in &self.canonical_entries {
-            entry.preflight_restore_before()?;
-        }
+        let prepared = PreparedCanonicalRestore::prepare(&self.canonical_entries, false)?;
         #[cfg(feature = "functions")]
         for entry in &self.entries {
             entry.apply_restore_before();
         }
-        for entry in &self.canonical_entries {
-            entry.apply_restore_before();
-        }
+        prepared.commit(&self.canonical_entries, false);
         Ok(())
     }
 
@@ -455,16 +535,12 @@ impl CommittedValueStateDelta {
         for entry in &self.entries {
             entry.preflight_restore_after()?;
         }
-        for entry in &self.canonical_entries {
-            entry.preflight_restore_after()?;
-        }
+        let prepared = PreparedCanonicalRestore::prepare(&self.canonical_entries, true)?;
         #[cfg(feature = "functions")]
         for entry in &self.entries {
             entry.apply_restore_after();
         }
-        for entry in &self.canonical_entries {
-            entry.apply_restore_after();
-        }
+        prepared.commit(&self.canonical_entries, true);
         Ok(())
     }
 

@@ -42,13 +42,12 @@ use crate::intrinsics::canonical_access::{
 #[cfg(feature = "semantic-compiler")]
 use crate::{
     AccessMode, AliasPolicy, BytecodeCompilerContext, CanonicalFunctionSpecializer,
-    ChangeDetectionPolicy, DeliveryMode, DimensionExpr, ExternalInteraction, FunctionInstance,
-    FunctionInvocation, FunctionStatePort, FunctionValueRepresentation, GenericError,
-    InputPortLayout, InputPortPolicy, MechFunctionCompiler, MechFunctionImpl,
-    OperationContractDeclaration, OutputConstruction, OutputPortPolicy, ReactiveNodeKind, Register,
-    SchemaBody, ShapeRule, SpecializationContext, SpecializationInput, SpecializationInvocation,
-    SpecializedFunction, ValueCell, ValueData, ValueDataDraft, compile_value_cell_register,
-    hash_str,
+    ChangeDetectionPolicy, DeliveryMode, DimensionExpr, ExternalInteraction, FunctionInvocation,
+    FunctionStatePort, FunctionValueRepresentation, GenericError, InputPortLayout, InputPortPolicy,
+    MechFunctionCompiler, MechFunctionImpl, OperationContractDeclaration, OutputConstruction,
+    OutputPortPolicy, ReactiveNodeKind, Register, SchemaBody, ShapeRule, SpecializationContext,
+    SpecializationInput, SpecializationInvocation, SpecializedFunction, ValueCell, ValueData,
+    ValueDataDraft, compile_value_cell_register, hash_str,
 };
 use crate::{FunctionCatalogBuilder, MResult};
 #[cfg(all(feature = "native-plan", not(feature = "semantic-compiler")))]
@@ -133,8 +132,13 @@ macro_rules! declare_structural_access_alias {
         }
 
         impl MechFunctionImpl for $factory {
-            fn solve_result(&self) -> MResult<()> {
-                Ok(())
+            fn solve_managed(
+                &self,
+                _frame: &mut mech_core::KernelMemoryFrame<'_>,
+                _services: &mut dyn mech_core::MechExecutionServices,
+            ) -> MResult<mech_core::ReactiveSolveStatus> {
+                (|| -> MResult<()> { Ok(()) })()?;
+                Ok(mech_core::ReactiveSolveStatus::Changed)
             }
 
             fn reactive_output_value_cells(&self) -> Vec<ValueCell> {
@@ -281,9 +285,14 @@ struct CanonicalAccess {
 
 #[cfg(feature = "semantic-compiler")]
 impl MechFunctionImpl for CanonicalAccess {
-    fn solve_result(&self) -> MResult<()> {
-        let next = canonical_access_result(&self.source, &self.selectors)?;
-        self.output.replace(&next.snapshot()?)
+    fn solve_managed(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        let next = self.next_value()?;
+        frame.stage_output_value(&self.output, &next.snapshot()?)?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
@@ -318,6 +327,24 @@ impl MechFunctionImpl for CanonicalAccess {
 
 #[cfg(feature = "semantic-compiler")]
 impl CanonicalAccess {
+    fn next_value(&self) -> MResult<ValueCell> {
+        let next = canonical_access_result(&self.source, &self.selectors)?;
+        let expected = self.output.closed_schema_body()?;
+        let found = next.closed_schema_body()?;
+        if found != expected {
+            return Err(MechError::new(
+                GenericError {
+                    msg: format!(
+                        "reactive aggregate selector resolved output schema {found:?}, expected {expected:?}"
+                    ),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        Ok(next)
+    }
+
     fn selector_cells(&self) -> Vec<ValueCell> {
         self.selectors
             .iter()
@@ -668,7 +695,7 @@ fn canonical_access(
     };
     context.resolve_syntax_operation_contract(contract)?;
     context.certify_instance(
-        FunctionInstance::new(
+        (
             Box::new(CanonicalAccess {
                 source,
                 selectors,
@@ -705,8 +732,14 @@ impl CanonicalSwizzle {
 
 #[cfg(feature = "semantic-compiler")]
 impl MechFunctionImpl for CanonicalSwizzle {
-    fn solve_result(&self) -> MResult<()> {
-        self.output.replace(&self.result()?.snapshot()?)
+    fn solve_managed(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        let result = self.result()?;
+        frame.stage_output_value(&self.output, &result.snapshot()?)?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
@@ -784,7 +817,7 @@ fn canonical_swizzle(
         .into_boxed_slice();
     context.resolve_syntax_operation_contract(&PURE_CANONICAL_ACCESS_BINARY_CONTRACT)?;
     context.certify_instance(
-        FunctionInstance::new(
+        (
             Box::new(CanonicalSwizzle {
                 output: output.clone(),
                 ..implementation
@@ -962,7 +995,7 @@ mod canonical_aggregate_access_tests {
                     .unwrap(),
             )
             .unwrap();
-        assert!(access.solve_result().is_err());
+        assert!(access.next_value().is_err());
         assert!(matches!(
             output.snapshot().unwrap().data(),
             ValueData::U64(7)

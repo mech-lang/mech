@@ -230,20 +230,23 @@ pub enum InitialSolvePolicy {
 }
 
 pub trait MechFunctionImpl {
-    fn solve_result(&self) -> MResult<()>;
-    fn solve_result_with(&self, _: &mut dyn MechExecutionServices) -> MResult<()> {
-        self.solve_result()
-    }
-    fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
-        self.solve_result()?;
-        Ok(ReactiveSolveStatus::Changed)
-    }
-    fn solve_reactive_with(
+    /// Executes this implementation through the one maintained managed
+    /// runtime entry. Implementations retain logical ports only; every
+    /// physical view comes from `frame`.
+    fn solve_managed(
         &self,
-        _: &mut dyn MechExecutionServices,
-    ) -> MResult<ReactiveSolveStatus> {
-        self.solve_reactive()
+        frame: &mut KernelMemoryFrame<'_>,
+        services: &mut dyn MechExecutionServices,
+    ) -> MResult<ReactiveSolveStatus>;
+
+    /// Resolves value-dependent output extents before physical acquisition.
+    /// Most calls derive shapes solely from their closed type contract. Build
+    /// operations such as ranges override this hook so a changed scalar input
+    /// can produce a revised admitted stage before the kernel writes it.
+    fn planned_output_shapes(&self) -> MResult<Option<Box<[ShapeInstance]>>> {
+        Ok(None)
     }
+
     fn initial_solve_policy(&self) -> InitialSolvePolicy {
         InitialSolvePolicy::Solve
     }
@@ -252,17 +255,12 @@ pub trait MechFunctionImpl {
     ///
     /// This hook must not recompute or replace that planned output. Most
     /// functions need no extra initialization, so the default is a no-op.
-    fn initialize_preserved_output_with(&self, _: &mut dyn MechExecutionServices) -> MResult<()> {
+    fn initialize_preserved_output_with(
+        &self,
+        _: &mut KernelMemoryFrame<'_>,
+        _: &mut dyn MechExecutionServices,
+    ) -> MResult<()> {
         Ok(())
-    }
-    fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
-        Err(MechError::new(
-            ReactiveRegisterStagingUnsupportedError {
-                function: self.to_string(),
-            },
-            None,
-        )
-        .with_compiler_loc())
     }
     /// Returns the primary output as an exact typed state port.
     ///
@@ -354,177 +352,17 @@ pub trait MechFunctionImpl {
     fn to_string(&self) -> String;
 }
 
-/// R6 execution contract for kernels that retain only relocatable logical
-/// ports. This entry has no unmanaged default: execution authority must be a
-/// complete call-scoped [`KernelMemoryFrame`].
-pub trait ManagedMechFunctionImpl {
-    fn solve_managed(
-        &self,
-        frame: &mut KernelMemoryFrame<'_>,
-        services: &mut dyn MechExecutionServices,
-    ) -> MResult<ReactiveSolveStatus>;
-}
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ManagedExecutionScopeRequired;
 
-/// One managed kernel bound to its visible logical invocation.
-pub struct ManagedFunctionInstance {
-    implementation: Box<dyn ManagedMechFunctionImpl>,
-    invocation: FunctionInvocation,
-}
-
-impl ManagedFunctionInstance {
-    pub fn new(
-        implementation: Box<dyn ManagedMechFunctionImpl>,
-        invocation: FunctionInvocation,
-    ) -> Self {
-        Self {
-            implementation,
-            invocation,
-        }
+impl MechErrorKind for ManagedExecutionScopeRequired {
+    fn name(&self) -> &str {
+        "ManagedExecutionScopeRequired"
     }
 
-    pub fn solve_managed(
-        &self,
-        frame: &mut KernelMemoryFrame<'_>,
-        services: &mut dyn MechExecutionServices,
-    ) -> MResult<ReactiveSolveStatus> {
-        self.implementation.solve_managed(frame, services)
+    fn message(&self) -> String {
+        "managed execution requires a validated FunctionInstance scope".into()
     }
-
-    pub const fn invocation(&self) -> &FunctionInvocation {
-        &self.invocation
-    }
-}
-
-/// An already validated register write. Implementations must not fail or run
-/// arbitrary reactive work when they are committed.
-pub(crate) mod reactive_register_sealed {
-    pub trait Sealed {}
-}
-
-pub trait ReactiveRegisterCommit: reactive_register_sealed::Sealed {
-    fn output_cells(&self) -> &[CanonicalCellId];
-    fn commit(self: Box<Self>);
-}
-
-pub struct ReactiveRegisterWrite<T> {
-    sink: Ref<T>,
-    next: T,
-    output_cells: Vec<CanonicalCellId>,
-}
-
-impl<T> ReactiveRegisterWrite<T> {
-    pub fn new(sink: Ref<T>, next: T, output_cells: Vec<CanonicalCellId>) -> Self {
-        Self {
-            sink,
-            next,
-            output_cells,
-        }
-    }
-}
-
-impl<T> reactive_register_sealed::Sealed for ReactiveRegisterWrite<T> {}
-
-impl<T: 'static> ReactiveRegisterCommit for ReactiveRegisterWrite<T> {
-    fn output_cells(&self) -> &[CanonicalCellId] {
-        self.output_cells.as_slice()
-    }
-    fn commit(self: Box<Self>) {
-        let ReactiveRegisterWrite {
-            sink,
-            next,
-            output_cells: _,
-        } = *self;
-        *sink.borrow_mut() = next;
-    }
-}
-
-/// A prevalidated canonical-cell replacement staged at a register boundary.
-///
-/// The replacement snapshot is fully schema/shape validated before the commit
-/// object is returned. Commit therefore changes only the existing cell's
-/// payload and preserves its reactive identity.
-pub struct ReactiveValueCellWrite {
-    sink: ValueCell,
-    next: Value,
-    output_cells: Vec<CanonicalCellId>,
-}
-
-impl ReactiveValueCellWrite {
-    pub fn new(sink: ValueCell, next: Value) -> MResult<Self> {
-        sink.preflight_replace()?;
-        let validation = sink.detached_clone()?;
-        validation.replace(&next)?;
-        let output_cells = vec![sink.reactive_cell_id()];
-        Ok(Self {
-            sink,
-            next,
-            output_cells,
-        })
-    }
-}
-
-impl reactive_register_sealed::Sealed for ReactiveValueCellWrite {}
-
-impl ReactiveRegisterCommit for ReactiveValueCellWrite {
-    fn output_cells(&self) -> &[CanonicalCellId] {
-        &self.output_cells
-    }
-
-    fn commit(self: Box<Self>) {
-        self.sink
-            .replace(&self.next)
-            .expect("canonical register replacement was prevalidated");
-    }
-}
-
-/// A pre-staged collection of register writes that commits as one infallible
-/// unit. Composite register nodes use this to preserve every nested reactive
-/// cell while still reporting the outer register cell as their owned output.
-pub struct ReactiveRegisterCommitBatch {
-    commits: Vec<Box<dyn ReactiveRegisterCommit>>,
-    output_cells: Vec<CanonicalCellId>,
-}
-
-impl ReactiveRegisterCommitBatch {
-    pub fn new(
-        commits: Vec<Box<dyn ReactiveRegisterCommit>>,
-        output_cells: Vec<CanonicalCellId>,
-    ) -> Self {
-        Self {
-            commits,
-            output_cells,
-        }
-    }
-}
-
-impl reactive_register_sealed::Sealed for ReactiveRegisterCommitBatch {}
-
-impl ReactiveRegisterCommit for ReactiveRegisterCommitBatch {
-    fn output_cells(&self) -> &[CanonicalCellId] {
-        self.output_cells.as_slice()
-    }
-
-    fn commit(self: Box<Self>) {
-        for commit in self.commits {
-            commit.commit();
-        }
-    }
-}
-
-pub struct ReactiveRegisterNoopCommit {
-    output_cells: Vec<CanonicalCellId>,
-}
-impl ReactiveRegisterNoopCommit {
-    pub fn new(output_cells: Vec<CanonicalCellId>) -> Self {
-        Self { output_cells }
-    }
-}
-impl reactive_register_sealed::Sealed for ReactiveRegisterNoopCommit {}
-impl ReactiveRegisterCommit for ReactiveRegisterNoopCommit {
-    fn output_cells(&self) -> &[CanonicalCellId] {
-        self.output_cells.as_slice()
-    }
-    fn commit(self: Box<Self>) {}
 }
 
 #[cfg(feature = "semantic-compiler")]
@@ -558,37 +396,384 @@ impl<T> MechFunction for T where T: MechFunctionImpl {}
 pub struct FunctionInstance {
     implementation: Box<dyn MechFunction>,
     invocation: FunctionInvocation,
+    managed: ManagedFunctionBinding,
+}
+
+struct ManagedFunctionBinding {
+    plan: Rc<CallMemoryPlan>,
+    current: core::cell::RefCell<ManagedCallRealization>,
+}
+
+struct ManagedCallRealization {
+    domain: MemoryDomain,
+    plan: Rc<CallMemoryPlan>,
+    realized: RealizedMemoryPlan,
+    initialization: PreparedCallAccess,
+    execution: PreparedCallAccess,
+}
+
+struct PreparedFunctionPublication {
+    status: ReactiveSolveStatus,
+    publication: Option<PreparedCellPublication>,
+    next_realization: Option<ManagedCallRealization>,
+    _execution_scope: Option<MemoryPlanScope>,
+}
+
+impl ManagedCallRealization {
+    fn prepare(
+        domain: MemoryDomain,
+        plan: Rc<CallMemoryPlan>,
+        invocation: &FunctionInvocation,
+    ) -> MResult<Self> {
+        let existing = invocation
+            .output_cell()
+            .managed_host_binding()?
+            .filter(|live| {
+                live.realized.domain() == domain.id()
+                    && live
+                        .realized
+                        .call_plan()
+                        .is_some_and(|existing| existing.as_ref() == plan.as_ref())
+            });
+        let realized = if let Some(existing) = existing {
+            existing.realized
+        } else {
+            domain.prepare_call_memory_realization(plan)?
+        };
+        let plan = realized
+            .call_plan()
+            .expect("call realization retains immutable R5 authority")
+            .clone();
+        let initialization =
+            domain.prepare_function_input_initialization(&realized, plan.as_ref(), invocation)?;
+        let execution = domain.prepare_function_call(&realized, plan.as_ref(), invocation)?;
+        Ok(Self {
+            domain,
+            plan,
+            realized,
+            initialization,
+            execution,
+        })
+    }
+
+    fn refreshed_plan(
+        &self,
+        invocation: &FunctionInvocation,
+        output_shapes: Option<&[ShapeInstance]>,
+    ) -> MResult<Option<Rc<CallMemoryPlan>>> {
+        let planned_inputs = (0..self.plan.inputs.len())
+            .map(|index| invocation.planned_input_cell(self.plan.as_ref(), index))
+            .collect::<MResult<Vec<_>>>()?;
+        let inputs_unchanged = planned_inputs
+            .iter()
+            .zip(self.plan.inputs.iter())
+            .all(|(cell, port)| *cell.shape() == *port.descriptor.shape());
+        let outputs_unchanged = output_shapes.is_none_or(|shapes| {
+            shapes.len() == self.plan.outputs.len()
+                && shapes
+                    .iter()
+                    .zip(self.plan.outputs.iter())
+                    .all(|(shape, port)| shape == port.descriptor.shape())
+        });
+        if inputs_unchanged && outputs_unchanged {
+            return Ok(None);
+        }
+        let inputs = planned_inputs
+            .iter()
+            .map(|cell| cell.resolved_descriptor())
+            .collect::<MResult<Vec<_>>>()?
+            .into_boxed_slice();
+        let mut outputs = Vec::new();
+        for (index, previous) in self.plan.bound_call.outputs().iter().enumerate() {
+            if let Some(shape) = output_shapes.and_then(|shapes| shapes.get(index)) {
+                outputs.push(ResolvedValueDescriptor::from_schema(
+                    previous.schema().clone(),
+                    shape.clone(),
+                )?);
+                continue;
+            }
+            let policy = &self.plan.bound_call.operation_descriptor().contract.outputs[index];
+            let shape_rule = match policy.construction {
+                OutputConstruction::FullWrite { shape } | OutputConstruction::Replace { shape } => {
+                    shape
+                }
+                OutputConstruction::ReadModifyWrite { base_input, .. } => {
+                    ShapeRule::SameAsInput { input: base_input }
+                }
+                OutputConstruction::Build { .. } => {
+                    return Err(MechError::new(MemoryPlanError::DescriptorMismatch, None)
+                        .with_compiler_loc());
+                }
+            };
+            let extents = match shape_rule {
+                ShapeRule::Declared => previous.current_extents()?,
+                ShapeRule::SameAsInput { input } => inputs[input as usize].current_extents()?,
+                ShapeRule::TransposeOf { input } => {
+                    let mut extents = inputs[input as usize].current_extents()?;
+                    if extents.len() != 2 {
+                        return Err(MechError::new(MemoryPlanError::DescriptorMismatch, None)
+                            .with_compiler_loc());
+                    }
+                    extents.swap(0, 1);
+                    extents
+                }
+                ShapeRule::MatrixProduct { lhs, rhs } => {
+                    let left = inputs[lhs as usize].current_extents()?;
+                    let right = inputs[rhs as usize].current_extents()?;
+                    if left.len() != 2 || right.len() != 2 || left[1] != right[0] {
+                        return Err(MechError::new(MemoryPlanError::DescriptorMismatch, None)
+                            .with_compiler_loc());
+                    }
+                    vec![left[0], right[1]].into_boxed_slice()
+                }
+            };
+            let shape = shape_for_resolved_extents(previous.schema(), &extents)?;
+            outputs.push(ResolvedValueDescriptor::from_schema(
+                previous.schema().clone(),
+                shape,
+            )?);
+        }
+        let current = self
+            .plan
+            .bound_call
+            .with_current_descriptors(inputs, outputs.into_boxed_slice())?;
+        let plan = replan_fixed_call_geometry(&self.plan, &current)
+            .map_err(|error| MechError::new(error, None).with_compiler_loc())?;
+        Ok(Some(Rc::new(plan)))
+    }
+
+    fn initialize_inputs(&self, invocation: &FunctionInvocation) -> MResult<()> {
+        let mut frame = self
+            .domain
+            .acquire_call(&self.realized, &self.initialization)?;
+        for (index, planned) in self.plan.inputs.iter().enumerate() {
+            let input = invocation.planned_input_cell(self.plan.as_ref(), index)?;
+            if !input.requires_planned_import(&self.realized)? {
+                continue;
+            }
+            let object = self
+                .domain
+                .plan_object_key(self.realized.revision(), planned.object)?;
+            if input.has_managed_canonical_storage()?
+                && planned.value.storage.planned_slot() == PlannedSlotKind::CanonicalValueHandle
+            {
+                // Canonical inputs are immutable roots retained by their
+                // logical cells. The call object is the admitted access and
+                // accounting envelope, not a second serialized copy of the
+                // value. Mark the complete envelope initialized only after
+                // the binding and import authority have been validated.
+                self.realized
+                    .record_initialized(object, self.realized.binding(object)?.capacity_bytes())?;
+                continue;
+            }
+            let value = input.snapshot()?;
+            crate::cell_binding::initialize_managed_object_from_value(
+                &mut frame,
+                object,
+                input.representation(),
+                &value,
+            )?;
+        }
+        Ok(())
+    }
 }
 
 impl FunctionInstance {
-    pub fn new(implementation: Box<dyn MechFunction>, invocation: FunctionInvocation) -> Self {
-        Self {
+    pub fn new(
+        implementation: Box<dyn MechFunction>,
+        invocation: FunctionInvocation,
+        plan: Rc<CallMemoryPlan>,
+    ) -> MResult<Self> {
+        invocation
+            .check_operation_memory_contract(&plan.bound_call.operation_descriptor().contract)?;
+        let domain = invocation.output_cell().memory_domain().ok_or_else(|| {
+            MechError::from(MemoryRuntimeError::CandidateValidationFailed {
+                object: None,
+                reason: "owned function output has no memory session".into(),
+            })
+        })?;
+        let current = ManagedCallRealization::prepare(domain, plan, &invocation)?;
+        Ok(Self {
             implementation,
             invocation,
-        }
+            managed: ManagedFunctionBinding {
+                plan: current.plan.clone(),
+                current: core::cell::RefCell::new(current),
+            },
+        })
     }
 
     pub fn solve_result(&self) -> MResult<()> {
-        self.implementation.solve_result()
+        let mut services = NoMechExecutionServices;
+        self.solve_result_with(&mut services)
     }
 
     pub fn solve_result_with(&self, services: &mut dyn MechExecutionServices) -> MResult<()> {
-        self.implementation.solve_result_with(services)
+        self.solve_reactive_with(services).map(|_| ())
+    }
+
+    /// Initialization uses the same admitted ports and execution scope as a
+    /// solve, but does not publish or recompute a preserved planned output.
+    pub fn initialize_preserved_output_with(
+        &self,
+        services: &mut dyn MechExecutionServices,
+    ) -> MResult<()> {
+        let current =
+            self.managed.current.try_borrow().map_err(|_| {
+                MechError::new(ManagedExecutionScopeRequired, None).with_compiler_loc()
+            })?;
+        current
+            .domain
+            .require_standalone_execution()
+            .map_err(managed_scope_error)?;
+        let _scope = current
+            .domain
+            .enter_realized_plan_point(&current.realized, MemoryPlanPoint::new(0))
+            .map_err(managed_scope_error)?;
+        current.initialize_inputs(&self.invocation)?;
+        let mut frame = current
+            .domain
+            .acquire_call(&current.realized, &current.execution)?;
+        self.implementation
+            .initialize_preserved_output_with(&mut frame, services)
     }
 
     pub fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
-        self.implementation.solve_reactive()
+        let mut services = NoMechExecutionServices;
+        self.solve_reactive_with(&mut services)
     }
 
     pub fn solve_reactive_with(
         &self,
         services: &mut dyn MechExecutionServices,
     ) -> MResult<ReactiveSolveStatus> {
-        self.implementation.solve_reactive_with(services)
+        let mut prepared = self.prepare_reactive_publication(services)?;
+        let status = prepared.status;
+        if let Some(publication) = prepared.publication.take() {
+            PreparedCellPublicationBatch::new(vec![publication])?
+                .ready()?
+                .commit();
+        }
+        // Effect-only calls have no cell publication to carry a revised input
+        // geometry. Their successfully executed realization is nevertheless
+        // the new cold-path binding authority and must be promoted after the
+        // execution scope has validated it. Failed calls never reach here.
+        self.promote_prepared_realization(&mut prepared);
+        Ok(status)
+    }
+
+    fn prepare_reactive_publication(
+        &self,
+        services: &mut dyn MechExecutionServices,
+    ) -> MResult<PreparedFunctionPublication> {
+        let binding = &self.managed;
+        let current = binding
+            .current
+            .try_borrow()
+            .map_err(|_| MechError::new(ManagedExecutionScopeRequired, None).with_compiler_loc())?;
+        current
+            .domain
+            .require_standalone_execution()
+            .map_err(managed_scope_error)?;
+        let candidate = current
+            .refreshed_plan(
+                &self.invocation,
+                self.implementation.planned_output_shapes()?.as_deref(),
+            )?
+            .map(|plan| {
+                ManagedCallRealization::prepare(current.domain.clone(), plan, &self.invocation)
+            })
+            .transpose()?;
+        let managed = candidate.as_ref().unwrap_or(&current);
+        let _scope = managed
+            .domain
+            .enter_realized_plan_point(&managed.realized, MemoryPlanPoint::new(0))
+            .map_err(managed_scope_error)?;
+        managed.initialize_inputs(&self.invocation)?;
+        let (status, staged_output) = {
+            let mut frame = managed
+                .domain
+                .acquire_call(&managed.realized, &managed.execution)
+                .map_err(MechError::from)?;
+            let status = self.implementation.solve_managed(&mut frame, services)?;
+            if managed.plan.outputs.is_empty() {
+                (status, None)
+            } else {
+                if status == ReactiveSolveStatus::Unchanged {
+                    // No publication is requested. A kernel may deliberately leave
+                    // its stage uninitialized; the old binding and its own content
+                    // version remain authoritative. Dropping a cold candidate here
+                    // also leaves the previous executable realization intact.
+                    return Ok(PreparedFunctionPublication {
+                        status,
+                        publication: None,
+                        next_realization: None,
+                        _execution_scope: None,
+                    });
+                }
+                let (object, region) = frame.output_target(self.output(), 0)?;
+                let staged_value = frame.take_staged_output_value(object);
+                (status, Some((object, region, staged_value)))
+            }
+        };
+        let Some((output_object, output_region, staged_value)) = staged_output else {
+            return Ok(PreparedFunctionPublication {
+                status,
+                publication: None,
+                next_realization: candidate,
+                _execution_scope: Some(_scope),
+            });
+        };
+        let output = self.output();
+        let shape = managed.plan.outputs[0].descriptor.shape().clone();
+        let value = match staged_value {
+            Some(value) => value,
+            None => crate::cell_binding::value_from_managed_object(
+                &managed.domain,
+                &managed.realized,
+                output_object,
+                output_region,
+                output.representation(),
+                output.schema(),
+                &shape,
+                output.schema_table().as_ref(),
+            )?,
+        };
+        let binding = managed
+            .realized
+            .binding(output_object)
+            .map_err(MechError::from)?;
+        let publication = managed.domain.prepare_cell_publication(
+            &managed.realized,
+            vec![CellPublicationCandidate {
+                cell: output.clone(),
+                object: output_object,
+                binding,
+                region: output_region,
+                value,
+                changed: status == ReactiveSolveStatus::Changed,
+            }],
+        )?;
+        Ok(PreparedFunctionPublication {
+            status,
+            publication: Some(publication),
+            next_realization: candidate,
+            _execution_scope: Some(_scope),
+        })
+    }
+
+    fn promote_prepared_realization(&self, prepared: &mut PreparedFunctionPublication) {
+        if let Some(candidate) = prepared.next_realization.take() {
+            *self.managed.current.borrow_mut() = candidate;
+        }
     }
 
     pub fn invocation(&self) -> &FunctionInvocation {
         &self.invocation
+    }
+
+    pub fn memory_plan(&self) -> &CallMemoryPlan {
+        self.managed.plan.as_ref()
     }
 
     pub fn output(&self) -> &ValueCell {
@@ -644,12 +829,68 @@ impl FunctionInstance {
         let Self {
             implementation,
             invocation,
+            managed,
         } = self;
-        Self::new(
-            with_semantic_operation(operation, implementation),
+        Self {
+            implementation: with_semantic_operation(operation, implementation),
             invocation,
-        )
+            managed,
+        }
     }
+}
+
+fn managed_scope_error(error: MemoryRuntimeError) -> MechError {
+    if matches!(error, MemoryRuntimeError::TurnInFlight) {
+        MechError::new(ManagedExecutionScopeRequired, None).with_compiler_loc()
+    } else {
+        MechError::from(error)
+    }
+}
+
+/// Test fixtures use the production semantic planner and admitted constructor;
+/// no test-only executable can be created with missing memory authority.
+#[cfg(test)]
+pub(crate) fn test_planned_instance(
+    implementation: Box<dyn MechFunction>,
+    invocation: FunctionInvocation,
+) -> FunctionInstance {
+    let alias = invocation
+        .input_cells()
+        .iter()
+        .position(|input| input.same_logical_cell(invocation.output_cell()))
+        .map_or(AliasPolicy::NoAlias, |input| AliasPolicy::MayAlias {
+            input: u16::try_from(input).unwrap(),
+        });
+    let declaration = OperationContractDeclaration {
+        inputs: InputPortLayout::Variadic {
+            prefix: Box::new([]),
+            repeated: InputPortPolicy {
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            },
+            min_repetitions: 0,
+        },
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            alias,
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    };
+    SpecializedFunction::syntax_directed(
+        (implementation, invocation),
+        ResolvedOperationDescriptor::from_name("test/managed-fixture", declaration).unwrap(),
+        RuntimeFunctionId::from_name("test/managed-fixture"),
+        ExecutionTarget::DirectRuntime,
+        ImplementationMemoryClass::NoAdditionalScratch,
+    )
+    .unwrap()
+    .into_instance()
 }
 
 #[cfg(all(test, feature = "f64"))]
@@ -666,8 +907,13 @@ mod canonical_function_instance_tests {
     struct ExplicitSemanticFunction;
 
     impl MechFunctionImpl for OutputOnlyFunction {
-        fn solve_result(&self) -> MResult<()> {
-            Ok(())
+        fn solve_managed(
+            &self,
+            _frame: &mut KernelMemoryFrame<'_>,
+            _services: &mut dyn MechExecutionServices,
+        ) -> MResult<ReactiveSolveStatus> {
+            (|| -> MResult<()> { Ok(()) })()?;
+            Ok(ReactiveSolveStatus::Changed)
         }
 
         fn to_string(&self) -> String {
@@ -676,8 +922,13 @@ mod canonical_function_instance_tests {
     }
 
     impl MechFunctionImpl for ExplicitSemanticFunction {
-        fn solve_result(&self) -> MResult<()> {
-            Ok(())
+        fn solve_managed(
+            &self,
+            _frame: &mut KernelMemoryFrame<'_>,
+            _services: &mut dyn MechExecutionServices,
+        ) -> MResult<ReactiveSolveStatus> {
+            (|| -> MResult<()> { Ok(()) })()?;
+            Ok(ReactiveSolveStatus::Changed)
         }
 
         fn semantic_operation_name(&self) -> Option<&str> {
@@ -694,8 +945,13 @@ mod canonical_function_instance_tests {
     }
 
     impl MechFunctionImpl for RepeatedOutputFunction {
-        fn solve_result(&self) -> MResult<()> {
-            Ok(())
+        fn solve_managed(
+            &self,
+            _frame: &mut KernelMemoryFrame<'_>,
+            _services: &mut dyn MechExecutionServices,
+        ) -> MResult<ReactiveSolveStatus> {
+            (|| -> MResult<()> { Ok(()) })()?;
+            Ok(ReactiveSolveStatus::Changed)
         }
 
         fn retained_state_ports(&self) -> MResult<Vec<FunctionStatePort<'_>>> {
@@ -711,10 +967,17 @@ mod canonical_function_instance_tests {
     }
 
     impl MechFunctionImpl for CanonicalStateFunction {
-        fn solve_result(&self) -> MResult<()> {
-            *self.output.borrow_mut() += 1.0;
-            *self.hidden.borrow_mut() += 1.0;
-            Ok(())
+        fn solve_managed(
+            &self,
+            _frame: &mut KernelMemoryFrame<'_>,
+            _services: &mut dyn MechExecutionServices,
+        ) -> MResult<ReactiveSolveStatus> {
+            (|| -> MResult<()> {
+                *self.output.borrow_mut() += 1.0;
+                *self.hidden.borrow_mut() += 1.0;
+                Ok(())
+            })()?;
+            Ok(ReactiveSolveStatus::Changed)
         }
 
         fn retained_state_ports(&self) -> MResult<Vec<FunctionStatePort<'_>>> {
@@ -759,7 +1022,7 @@ mod canonical_function_instance_tests {
         let output = Ref::new(1.0_f64);
         let output_cell = ValueCell::from_inferred_ref(output.clone(), None).unwrap();
 
-        let output_only = FunctionInstance::new(
+        let output_only = crate::function::test_planned_instance(
             Box::new(OutputOnlyFunction),
             FunctionInvocation::nullary(output_cell.clone()),
         );
@@ -767,7 +1030,7 @@ mod canonical_function_instance_tests {
         output_only.capture_state(&mut journal).unwrap();
         assert_eq!(journal.cell_count(), 1);
 
-        let repeated = FunctionInstance::new(
+        let repeated = crate::function::test_planned_instance(
             with_semantic_operation(
                 "test/repeated-output",
                 Box::new(RepeatedOutputFunction { output }),
@@ -798,7 +1061,7 @@ mod canonical_function_instance_tests {
         let hidden = Ref::new(10.0_f64);
         let output_cell = ValueCell::from_inferred_ref(output.clone(), None).unwrap();
         let invocation = FunctionInvocation::nullary(output_cell.clone());
-        let instance = FunctionInstance::new(
+        let instance = crate::function::test_planned_instance(
             Box::new(CanonicalStateFunction {
                 output: output.clone(),
                 hidden: hidden.clone(),
@@ -824,7 +1087,7 @@ mod canonical_function_instance_tests {
         let output_cell = ValueCell::from_inferred_ref(output.clone(), None).unwrap();
         let input_cell = ValueCell::from_inferred_ref(input, None).unwrap();
         let invocation = FunctionInvocation::unary(output_cell.clone(), input_cell.clone());
-        let instance = FunctionInstance::new(
+        let instance = crate::function::test_planned_instance(
             Box::new(CanonicalStateFunction { output, hidden }),
             invocation,
         );
@@ -871,23 +1134,12 @@ struct SemanticMechFunction {
 }
 
 impl MechFunctionImpl for SemanticMechFunction {
-    fn solve_result(&self) -> MResult<()> {
-        self.function.solve_result()
-    }
-
-    fn solve_result_with(&self, services: &mut dyn MechExecutionServices) -> MResult<()> {
-        self.function.solve_result_with(services)
-    }
-
-    fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
-        self.function.solve_reactive()
-    }
-
-    fn solve_reactive_with(
+    fn solve_managed(
         &self,
+        frame: &mut KernelMemoryFrame<'_>,
         services: &mut dyn MechExecutionServices,
     ) -> MResult<ReactiveSolveStatus> {
-        self.function.solve_reactive_with(services)
+        self.function.solve_managed(frame, services)
     }
 
     fn initial_solve_policy(&self) -> InitialSolvePolicy {
@@ -896,13 +1148,11 @@ impl MechFunctionImpl for SemanticMechFunction {
 
     fn initialize_preserved_output_with(
         &self,
+        frame: &mut KernelMemoryFrame<'_>,
         services: &mut dyn MechExecutionServices,
     ) -> MResult<()> {
-        self.function.initialize_preserved_output_with(services)
-    }
-
-    fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
-        self.function.stage_register()
+        self.function
+            .initialize_preserved_output_with(frame, services)
     }
 
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
@@ -1115,9 +1365,16 @@ pub struct UserFunction {
 }
 
 impl MechFunctionImpl for UserFunction {
-    fn solve_result(&self) -> MResult<()> {
-        self.fxn.solve_result()?;
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut KernelMemoryFrame<'_>,
+        _services: &mut dyn MechExecutionServices,
+    ) -> MResult<ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            self.fxn.solve_result()?;
+            Ok(())
+        })()?;
+        Ok(ReactiveSolveStatus::Changed)
     }
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
         Some(FunctionStatePort::from_cell(&self.fxn.out))
@@ -1281,91 +1538,52 @@ pub struct ReactiveDependency {
     pub kind: ReactiveDependencyKind,
 }
 
-enum ReactivePlanFunctionStorage {
-    Direct(Box<dyn MechFunction>),
-    Bound {
-        instance: FunctionInstance,
-        bound_call: Option<BoundCall>,
-        memory_plan: Option<CallMemoryPlan>,
-    },
-}
-
 pub struct ReactivePlanFunction {
-    storage: ReactivePlanFunctionStorage,
+    instance: FunctionInstance,
     identity: Rc<()>,
 }
 
 impl ReactivePlanFunction {
-    fn new(function: Box<dyn MechFunction>) -> Self {
-        Self {
-            storage: ReactivePlanFunctionStorage::Direct(function),
-            identity: Rc::new(()),
-        }
-    }
-
     fn new_instance(instance: FunctionInstance) -> Self {
         Self {
-            storage: ReactivePlanFunctionStorage::Bound {
-                instance,
-                bound_call: None,
-                memory_plan: None,
-            },
-            identity: Rc::new(()),
-        }
-    }
-
-    fn new_specialized(
-        instance: FunctionInstance,
-        bound_call: BoundCall,
-        memory_plan: CallMemoryPlan,
-    ) -> Self {
-        Self {
-            storage: ReactivePlanFunctionStorage::Bound {
-                instance,
-                bound_call: Some(bound_call),
-                memory_plan: Some(memory_plan),
-            },
+            instance,
             identity: Rc::new(()),
         }
     }
 
     pub fn as_ref(&self) -> &(dyn MechFunction + 'static) {
-        match &self.storage {
-            ReactivePlanFunctionStorage::Direct(function) => function.as_ref(),
-            ReactivePlanFunctionStorage::Bound { instance, .. } => instance.implementation(),
-        }
+        self.instance.implementation()
     }
 
     pub fn instance(&self) -> Option<&FunctionInstance> {
-        match &self.storage {
-            ReactivePlanFunctionStorage::Direct(_) => None,
-            ReactivePlanFunctionStorage::Bound { instance, .. } => Some(instance),
-        }
+        Some(&self.instance)
     }
 
     pub fn bound_call(&self) -> Option<&BoundCall> {
-        match &self.storage {
-            ReactivePlanFunctionStorage::Direct(_) => None,
-            ReactivePlanFunctionStorage::Bound { bound_call, .. } => bound_call.as_ref(),
-        }
+        Some(&self.instance.memory_plan().bound_call)
     }
 
     pub fn memory_plan(&self) -> Option<&CallMemoryPlan> {
-        match &self.storage {
-            ReactivePlanFunctionStorage::Direct(_) => None,
-            ReactivePlanFunctionStorage::Bound { memory_plan, .. } => memory_plan.as_ref(),
-        }
+        Some(self.instance.memory_plan())
+    }
+
+    pub fn solve_result(&self) -> MResult<()> {
+        self.instance.solve_result()
+    }
+
+    pub fn solve_result_with(&self, services: &mut dyn MechExecutionServices) -> MResult<()> {
+        self.instance.solve_result_with(services)
+    }
+
+    pub fn solve_reactive_with(
+        &self,
+        services: &mut dyn MechExecutionServices,
+    ) -> MResult<ReactiveSolveStatus> {
+        self.instance.solve_reactive_with(services)
     }
 
     fn capture_reactive_state(&self, journal: &mut CanonicalTurnJournal) -> MResult<()> {
-        match &self.storage {
-            ReactivePlanFunctionStorage::Direct(function) => {
-                journal.capture_primary_and_retained_function_state(function.as_ref())
-            }
-            ReactivePlanFunctionStorage::Bound { instance, .. } => {
-                journal.capture_function_instance(instance)
-            }
-        }
+        journal.capture_function_instance(&self.instance)
     }
 }
 
@@ -1379,10 +1597,7 @@ impl core::ops::Deref for ReactivePlanFunction {
 
 impl core::ops::DerefMut for ReactivePlanFunction {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        match &mut self.storage {
-            ReactivePlanFunctionStorage::Direct(function) => function.as_mut(),
-            ReactivePlanFunctionStorage::Bound { instance, .. } => instance.implementation_mut(),
-        }
+        self.instance.implementation_mut()
     }
 }
 
@@ -1952,29 +2167,7 @@ impl ReactivePlan {
 
     pub fn capture_transaction_state(&self, journal: &mut FunctionCheckpoint) -> MResult<()> {
         for node in &self.nodes {
-            match &node.function.storage {
-                ReactivePlanFunctionStorage::Direct(function) => {
-                    function
-                        .primary_output_state_port()
-                        .ok_or_else(|| {
-                            MechError::new(
-                                TransactionStateUnsupportedError {
-                                    function: function.to_string(),
-                                    reason:
-                                        "direct plan nodes must expose an exact primary state port"
-                                            .into(),
-                                },
-                                None,
-                            )
-                            .with_compiler_loc()
-                        })?
-                        .capture_into(journal)?;
-                    function.capture_retained_state(journal)?;
-                }
-                ReactivePlanFunctionStorage::Bound { instance, .. } => {
-                    instance.capture_state(journal)?
-                }
-            }
+            node.function.instance.capture_state(journal)?;
         }
         Ok(())
     }
@@ -1983,26 +2176,8 @@ impl ReactivePlan {
         self.nodes.last().map(|node| &node.function)
     }
 
-    pub fn append(&mut self, functions: &mut Vec<Box<dyn MechFunction>>) {
-        for function in functions.drain(..) {
-            self.push(function);
-        }
-    }
-
-    pub fn push(&mut self, function: Box<dyn MechFunction>) -> ReactiveNodeId {
-        let node_id = self.nodes.len();
-        let outputs = function.reactive_output_cell_ids();
-        let node = ReactivePlanNode {
-            id: node_id,
-            plan_index: node_id,
-            inputs: Vec::new(),
-            outputs,
-            kind: function.reactive_node_kind(),
-            function: ReactivePlanFunction::new(function),
-        };
-
-        self.nodes.push(node);
-        node_id
+    pub fn push(&mut self, instance: FunctionInstance) -> MResult<ReactiveNodeId> {
+        self.register_instance_with_activation(instance, None)
     }
 
     pub fn register_instance_with_activation(
@@ -2010,7 +2185,7 @@ impl ReactivePlan {
         instance: FunctionInstance,
         activation: Option<&ActivationRegistrationScope>,
     ) -> MResult<ReactiveNodeId> {
-        self.register_bound_with_activation(instance, None, None, activation)
+        self.register_bound_with_activation(instance, activation)
     }
 
     pub fn register_specialized_with_activation(
@@ -2018,20 +2193,12 @@ impl ReactivePlan {
         specialized: SpecializedFunction,
         activation: Option<&ActivationRegistrationScope>,
     ) -> MResult<ReactiveNodeId> {
-        let (instance, bound_call, memory_plan) = specialized.into_parts();
-        self.register_bound_with_activation(
-            instance,
-            Some(bound_call),
-            Some(memory_plan),
-            activation,
-        )
+        self.register_bound_with_activation(specialized.into_instance(), activation)
     }
 
     fn register_bound_with_activation(
         &mut self,
         instance: FunctionInstance,
-        bound_call: Option<BoundCall>,
-        memory_plan: Option<CallMemoryPlan>,
         activation: Option<&ActivationRegistrationScope>,
     ) -> MResult<ReactiveNodeId> {
         let node_id = self.nodes.len();
@@ -2146,13 +2313,7 @@ impl ReactivePlan {
             inputs,
             outputs,
             kind: node_kind,
-            function: match (bound_call, memory_plan) {
-                (Some(bound_call), Some(memory_plan)) => {
-                    ReactivePlanFunction::new_specialized(instance, bound_call, memory_plan)
-                }
-                (None, None) => ReactivePlanFunction::new_instance(instance),
-                _ => unreachable!("bound call and memory plan remain paired"),
-            },
+            function: ReactivePlanFunction::new_instance(instance),
         };
 
         self.nodes.push(node);
@@ -2418,11 +2579,11 @@ impl ReactivePlan {
             }
         }
 
-        let mut staged: Vec<(ReactiveNodeId, Box<dyn ReactiveRegisterCommit>)> = Vec::new();
+        let mut staged: Vec<(ReactiveNodeId, PreparedFunctionPublication)> = Vec::new();
+        let mut services = NoMechExecutionServices;
         for (_, node_id) in &ordered {
             let node = &self.nodes[*node_id];
-            let commit = node.function.stage_register()?;
-            let found = commit.output_cells().to_vec();
+            let found = node.function.instance.reactive_output_cell_ids();
             if found != node.outputs {
                 return Err(MechError::new(
                     ReactiveRegisterStagedOutputMismatchError {
@@ -2433,7 +2594,11 @@ impl ReactivePlan {
                     None,
                 ));
             }
-            staged.push((node.id, commit));
+            let prepared = node
+                .function
+                .instance
+                .prepare_reactive_publication(&mut services)?;
+            staged.push((node.id, prepared));
         }
 
         let staged_nodes = staged.iter().map(|(id, _)| *id).collect();
@@ -2441,13 +2606,24 @@ impl ReactivePlan {
             staged_nodes,
             ..Default::default()
         };
-        for (node_id, commit) in staged {
-            let outputs = commit.output_cells().to_vec();
-            commit.commit();
+        let publications = staged
+            .iter_mut()
+            .filter_map(|(_, prepared)| prepared.publication.take())
+            .collect();
+        PreparedCellPublicationBatch::new(publications)?
+            .ready()?
+            .commit();
+        for (node_id, mut prepared) in staged {
+            self.nodes[node_id]
+                .function
+                .instance
+                .promote_prepared_realization(&mut prepared);
             outcome.committed_nodes.push(node_id);
-            for cell in outputs {
-                if !outcome.dirty_cells.contains(&cell) {
-                    outcome.dirty_cells.push(cell);
+            if prepared.status == ReactiveSolveStatus::Changed {
+                for cell in &self.nodes[node_id].outputs {
+                    if !outcome.dirty_cells.contains(&cell) {
+                        outcome.dirty_cells.push(*cell);
+                    }
                 }
             }
         }
@@ -2699,8 +2875,8 @@ impl Plan {
         self.0.borrow_mut()
     }
 
-    pub fn add_function(&self, function: Box<dyn MechFunction>) -> ReactiveNodeId {
-        self.0.borrow_mut().push(function)
+    pub fn add_function(&self, instance: FunctionInstance) -> MResult<ReactiveNodeId> {
+        self.register_instance(instance)
     }
 
     pub fn activation_registration_active(&self) -> bool {

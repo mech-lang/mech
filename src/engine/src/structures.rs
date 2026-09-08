@@ -95,7 +95,7 @@ fn register_composite_pack(
     output: ValueCell,
     inputs: Vec<ValueCell>,
 ) -> MResult<()> {
-    let instance = FunctionInstance::new(
+    let instance = (
         implementation,
         FunctionInvocation::variadic(output, inputs.into_boxed_slice()),
     );
@@ -124,8 +124,13 @@ impl CanonicalTuplePack {
 
 #[cfg(feature = "tuple")]
 impl MechFunctionImpl for CanonicalTuplePack {
-    fn solve_result(&self) -> MResult<()> {
-        self.output.replace(&self.next_value()?)
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> { self.output.replace(&self.next_value()?) })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn reactive_output_value_cells(&self) -> Vec<ValueCell> {
@@ -170,8 +175,13 @@ impl CanonicalRecordPack {
 
 #[cfg(feature = "record")]
 impl MechFunctionImpl for CanonicalRecordPack {
-    fn solve_result(&self) -> MResult<()> {
-        self.output.replace(&self.next_value()?)
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> { self.output.replace(&self.next_value()?) })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn reactive_output_value_cells(&self) -> Vec<ValueCell> {
@@ -221,8 +231,13 @@ impl CanonicalTablePack {
 
 #[cfg(feature = "table")]
 impl MechFunctionImpl for CanonicalTablePack {
-    fn solve_result(&self) -> MResult<()> {
-        self.output.replace(&self.next_value()?)
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> { self.output.replace(&self.next_value()?) })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn reactive_output_value_cells(&self) -> Vec<ValueCell> {
@@ -672,8 +687,13 @@ impl CanonicalMatrixPack {
 
 #[cfg(feature = "matrix")]
 impl MechFunctionImpl for CanonicalMatrixPack {
-    fn solve_result(&self) -> MResult<()> {
-        self.output.replace(&self.next_value()?)
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> { self.output.replace(&self.next_value()?) })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn reactive_output_value_cells(&self) -> Vec<ValueCell> {

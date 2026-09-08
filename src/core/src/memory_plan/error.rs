@@ -2,7 +2,7 @@ use super::{MemoryBudgetViolation, MemoryObjectId, MemoryPlanAuditMismatch, Memo
 
 #[cfg(feature = "no_std")]
 use alloc::string::String;
-#[cfg(all(feature = "no_std", feature = "functions"))]
+#[cfg(feature = "no_std")]
 use alloc::string::ToString;
 #[cfg(not(feature = "no_std"))]
 use std::string::String;
@@ -39,7 +39,6 @@ impl core::fmt::Display for MemoryPlanError {
     }
 }
 
-#[cfg(feature = "functions")]
 impl crate::MechErrorKind for MemoryPlanError {
     fn name(&self) -> &str {
         "MemoryPlanError"

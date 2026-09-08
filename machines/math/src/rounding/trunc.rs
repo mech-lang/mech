@@ -4,38 +4,14 @@ use crate::*;
 
 use libm::{trunc, truncf};
 macro_rules! trunc_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = trunc((*$arg));
-        }
-    };
-}
-
-macro_rules! trunc_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = trunc(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(trunc(($arg)))
     };
 }
 
 macro_rules! truncf_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = truncf((*$arg));
-        }
-    };
-}
-
-macro_rules! truncf_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = truncf(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(truncf(($arg)))
     };
 }
 

@@ -3,6 +3,7 @@ use crate::intrinsics::canonical_access::{
     CanonicalAccessSelector, canonical_draft, canonical_indices,
 };
 use crate::intrinsics::*;
+use core::marker::PhantomData;
 
 pub mod catalog;
 pub use self::catalog::install_runtime;
@@ -239,15 +240,239 @@ impl_matrix_assign_runtime_name!(RowVector3, "row_vector3");
 impl_matrix_assign_runtime_name!(RowVector4, "row_vector4");
 impl_matrix_assign_runtime_name!(RowDVector, "row_vectord");
 
+trait ManagedAssignBacking: FunctionStateBacking + Sized + 'static {
+    type Ports: Debug;
+
+    fn bind_ports(invocation: &FunctionInvocation) -> MResult<Self::Ports>;
+    fn sink_cell(ports: &Self::Ports) -> &ValueCell;
+    #[cfg(feature = "semantic-compiler")]
+    fn source_cell(ports: &Self::Ports) -> &ValueCell;
+    fn copy_to_stage(
+        ports: &Self::Ports,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+    ) -> MResult<()>;
+}
+
+macro_rules! impl_scalar_managed_assign_backing {
+    ($type:ty, $feature:literal) => {
+        #[cfg(feature = $feature)]
+        impl ManagedAssignBacking for $type {
+            type Ports = (ManagedPort<$type>, ManagedPort<$type>);
+
+            fn bind_ports(invocation: &FunctionInvocation) -> MResult<Self::Ports> {
+                let (sink, source) = invocation.expect_unary()?;
+                Ok((sink.try_managed::<$type>()?, source.try_managed::<$type>()?))
+            }
+
+            fn sink_cell(ports: &Self::Ports) -> &ValueCell {
+                ports.0.cell()
+            }
+
+            #[cfg(feature = "semantic-compiler")]
+            fn source_cell(ports: &Self::Ports) -> &ValueCell {
+                ports.1.cell()
+            }
+
+            fn copy_to_stage(
+                ports: &Self::Ports,
+                frame: &mut mech_core::KernelMemoryFrame<'_>,
+            ) -> MResult<()> {
+                frame.with_unary_port_views(&ports.1, &ports.0, |source, sink| {
+                    sink.try_fill_column_major(|index| {
+                        source.get_column_major(index).ok_or_else(|| {
+                            MechError::from(MemoryRuntimeError::InvalidLayout {
+                                object: None,
+                                size: source.len() as u64,
+                                alignment: core::mem::align_of::<$type>() as u32,
+                                reason: "assignment source and output geometry disagree",
+                            })
+                        })
+                    })
+                })
+            }
+        }
+    };
+}
+
+impl_scalar_managed_assign_backing!(u8, "u8");
+impl_scalar_managed_assign_backing!(u16, "u16");
+impl_scalar_managed_assign_backing!(u32, "u32");
+impl_scalar_managed_assign_backing!(u64, "u64");
+impl_scalar_managed_assign_backing!(u128, "u128");
+impl_scalar_managed_assign_backing!(i8, "i8");
+impl_scalar_managed_assign_backing!(i16, "i16");
+impl_scalar_managed_assign_backing!(i32, "i32");
+impl_scalar_managed_assign_backing!(i64, "i64");
+impl_scalar_managed_assign_backing!(i128, "i128");
+impl_scalar_managed_assign_backing!(f32, "f32");
+impl_scalar_managed_assign_backing!(f64, "f64");
+impl_scalar_managed_assign_backing!(bool, "bool");
+impl_scalar_managed_assign_backing!(R64, "r64");
+impl_scalar_managed_assign_backing!(C64, "c64");
+impl_scalar_managed_assign_backing!(usize, "functions");
+
+#[cfg(feature = "string")]
+impl ManagedAssignBacking for String {
+    type Ports = (ManagedPort<String>, ManagedPort<String>);
+
+    fn bind_ports(invocation: &FunctionInvocation) -> MResult<Self::Ports> {
+        let (sink, source) = invocation.expect_unary()?;
+        Ok((
+            sink.try_managed::<String>()?,
+            source.try_managed::<String>()?,
+        ))
+    }
+
+    fn sink_cell(ports: &Self::Ports) -> &ValueCell {
+        ports.0.cell()
+    }
+
+    #[cfg(feature = "semantic-compiler")]
+    fn source_cell(ports: &Self::Ports) -> &ValueCell {
+        ports.1.cell()
+    }
+
+    fn copy_to_stage(_: &Self::Ports, _: &mut mech_core::KernelMemoryFrame<'_>) -> MResult<()> {
+        Err(MechError::from(MemoryRuntimeError::InvalidLayout {
+            object: None,
+            size: 0,
+            alignment: 1,
+            reason: "String assignment requires the managed canonical payload stage",
+        }))
+    }
+}
+
+trait ManagedAssignElement: FunctionPortBacking + Clone + Debug + PartialEq + 'static {
+    fn copy_ports(
+        source: &ManagedPort<Self>,
+        sink: &ManagedPort<Self>,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+    ) -> MResult<()>
+    where
+        Self: Sized;
+}
+
+macro_rules! impl_fixed_managed_assign_element {
+    ($type:ty, $feature:literal) => {
+        #[cfg(feature = $feature)]
+        impl ManagedAssignElement for $type {
+            fn copy_ports(
+                source: &ManagedPort<Self>,
+                sink: &ManagedPort<Self>,
+                frame: &mut mech_core::KernelMemoryFrame<'_>,
+            ) -> MResult<()> {
+                frame.with_unary_port_views(source, sink, |source, sink| {
+                    sink.try_fill_column_major(|index| {
+                        source.get_column_major(index).ok_or_else(|| {
+                            MechError::from(MemoryRuntimeError::InvalidLayout {
+                                object: None,
+                                size: source.len() as u64,
+                                alignment: core::mem::align_of::<Self>() as u32,
+                                reason: "assignment source and output geometry disagree",
+                            })
+                        })
+                    })
+                })
+            }
+        }
+    };
+}
+
+impl_fixed_managed_assign_element!(u8, "u8");
+impl_fixed_managed_assign_element!(u16, "u16");
+impl_fixed_managed_assign_element!(u32, "u32");
+impl_fixed_managed_assign_element!(u64, "u64");
+impl_fixed_managed_assign_element!(u128, "u128");
+impl_fixed_managed_assign_element!(i8, "i8");
+impl_fixed_managed_assign_element!(i16, "i16");
+impl_fixed_managed_assign_element!(i32, "i32");
+impl_fixed_managed_assign_element!(i64, "i64");
+impl_fixed_managed_assign_element!(i128, "i128");
+impl_fixed_managed_assign_element!(f32, "f32");
+impl_fixed_managed_assign_element!(f64, "f64");
+impl_fixed_managed_assign_element!(bool, "bool");
+impl_fixed_managed_assign_element!(R64, "r64");
+impl_fixed_managed_assign_element!(C64, "c64");
+impl_fixed_managed_assign_element!(usize, "functions");
+
+#[cfg(feature = "string")]
+impl ManagedAssignElement for String {
+    fn copy_ports(
+        _: &ManagedPort<Self>,
+        _: &ManagedPort<Self>,
+        _: &mut mech_core::KernelMemoryFrame<'_>,
+    ) -> MResult<()> {
+        Err(MechError::from(MemoryRuntimeError::InvalidLayout {
+            object: None,
+            size: 0,
+            alignment: 1,
+            reason: "String matrix assignment requires the managed canonical payload stage",
+        }))
+    }
+}
+
+macro_rules! impl_matrix_managed_assign_backing {
+    ($shape:ident, $feature:literal) => {
+        #[cfg(feature = $feature)]
+        impl<T> ManagedAssignBacking for $shape<T>
+        where
+            T: ManagedAssignElement,
+            $shape<T>: FunctionStateBacking,
+        {
+            type Ports = (ManagedPort<T>, ManagedPort<T>);
+
+            fn bind_ports(invocation: &FunctionInvocation) -> MResult<Self::Ports> {
+                let (sink, source) = invocation.expect_unary()?;
+                Ok((
+                    sink.try_managed_element::<T>()?,
+                    source.try_managed_element::<T>()?,
+                ))
+            }
+
+            fn sink_cell(ports: &Self::Ports) -> &ValueCell {
+                ports.0.cell()
+            }
+
+            #[cfg(feature = "semantic-compiler")]
+            fn source_cell(ports: &Self::Ports) -> &ValueCell {
+                ports.1.cell()
+            }
+
+            fn copy_to_stage(
+                ports: &Self::Ports,
+                frame: &mut mech_core::KernelMemoryFrame<'_>,
+            ) -> MResult<()> {
+                T::copy_ports(&ports.1, &ports.0, frame)
+            }
+        }
+    };
+}
+
+impl_matrix_managed_assign_backing!(Matrix1, "matrix1");
+impl_matrix_managed_assign_backing!(Matrix2, "matrix2");
+impl_matrix_managed_assign_backing!(Matrix2x3, "matrix2x3");
+impl_matrix_managed_assign_backing!(Matrix3x2, "matrix3x2");
+impl_matrix_managed_assign_backing!(Matrix3, "matrix3");
+impl_matrix_managed_assign_backing!(Matrix4, "matrix4");
+impl_matrix_managed_assign_backing!(DMatrix, "matrixd");
+impl_matrix_managed_assign_backing!(Vector2, "vector2");
+impl_matrix_managed_assign_backing!(Vector3, "vector3");
+impl_matrix_managed_assign_backing!(Vector4, "vector4");
+impl_matrix_managed_assign_backing!(DVector, "vectord");
+impl_matrix_managed_assign_backing!(RowVector2, "row_vector2");
+impl_matrix_managed_assign_backing!(RowVector3, "row_vector3");
+impl_matrix_managed_assign_backing!(RowVector4, "row_vector4");
+impl_matrix_managed_assign_backing!(RowDVector, "row_vectord");
+
 #[derive(Debug)]
-struct Assign<T> {
-    sink: Ref<T>,
-    source: Ref<T>,
+struct Assign<T: ManagedAssignBacking> {
+    ports: T::Ports,
+    marker: PhantomData<fn() -> T>,
 }
 
 impl<T> MechFunctionFactory for Assign<T>
 where
-    T: Clone + Debug + Sync + Send + 'static,
+    T: Clone + Debug + Sync + Send + ManagedAssignBacking + 'static,
     #[cfg(feature = "semantic-compiler")]
     T: ConstElem + FunctionRuntimeType,
     #[cfg(feature = "semantic-compiler")]
@@ -263,10 +488,9 @@ where
     }
 
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (sink, source) = invocation.expect_unary()?;
         Ok(Box::new(Self {
-            sink: sink.try_ref()?,
-            source: source.try_ref()?,
+            ports: T::bind_ports(&invocation)?,
+            marker: PhantomData,
         }))
     }
 
@@ -276,30 +500,23 @@ where
 }
 impl<T> MechFunctionImpl for Assign<T>
 where
-    T: Clone + Debug + FunctionStateBacking + 'static,
+    T: Clone + Debug + ManagedAssignBacking + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        let source_ptr = self.source.as_ptr();
-        let sink_ptr = self.sink.as_mut_ptr();
-        unsafe {
-            *sink_ptr = (*source_ptr).clone();
-        };
-        Ok(())
-    }
-    fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
-        let next = self.source.borrow().clone();
-        let output_cells = self.reactive_output_cell_ids();
-        Ok(Box::new(ReactiveRegisterWrite::new(
-            self.sink.clone(),
-            next,
-            output_cells,
-        )))
+    fn solve_managed(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        T::copy_to_stage(&self.ports, frame)?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-        Some(FunctionStatePort::from_ref(&self.sink))
+        Some(FunctionStatePort::from_cell(T::sink_cell(&self.ports)))
     }
     fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
-        Ok(Some(vec![FunctionStatePort::from_ref(&self.sink)]))
+        Ok(Some(vec![FunctionStatePort::from_cell(T::sink_cell(
+            &self.ports,
+        ))]))
     }
     fn reactive_node_kind(&self) -> ReactiveNodeKind {
         ReactiveNodeKind::Register
@@ -314,11 +531,15 @@ where
 #[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for Assign<T>
 where
-    T: CompileConst + ConstElem + FunctionRuntimeType + AssignRuntimeName,
+    T: CompileConst + ConstElem + FunctionRuntimeType + AssignRuntimeName + ManagedAssignBacking,
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = T::assign_runtime_name();
-        compile_unop!(name, self.sink, self.source, ctx);
+        let sink = compile_value_cell_register(T::sink_cell(&self.ports), ctx)?;
+        let source = compile_value_cell_register(T::source_cell(&self.ports), ctx)?;
+        let function = ctx.function_id(&name)?;
+        ctx.emit_unop(function, sink, source);
+        Ok(sink)
     }
 }
 #[derive(Debug, Clone)]
@@ -345,16 +566,13 @@ struct AssignCanonicalCell {
 
 #[cfg(feature = "semantic-compiler")]
 impl MechFunctionImpl for AssignCanonicalCell {
-    fn solve_result(&self) -> MResult<()> {
-        let source = canonical_assignment_value(&self.sink, &self.source)?;
-        self.sink.replace(&source)
-    }
-
-    fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
-        Ok(Box::new(ReactiveValueCellWrite::new(
-            self.sink.clone(),
-            canonical_assignment_value(&self.sink, &self.source)?,
-        )?))
+    fn solve_managed(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        frame.copy_fixed_port_value(&self.source, &self.sink, self.sink.representation())?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
@@ -376,21 +594,6 @@ impl MechFunctionImpl for AssignCanonicalCell {
     fn to_string(&self) -> String {
         "AssignCanonicalCell".to_owned()
     }
-}
-
-#[cfg(feature = "semantic-compiler")]
-fn canonical_assignment_value(sink: &ValueCell, source: &ValueCell) -> MResult<Value> {
-    let value = source.snapshot()?;
-    if value.schema_key() == sink.schema_key() {
-        return Ok(value);
-    }
-    if source.closed_schema_body()? != sink.closed_schema_body()? {
-        return Ok(value);
-    }
-    let draft = value.canonical_data_draft().map_err(|error| {
-        MechError::new(ValueCellSnapshotFailure { error }, None).with_compiler_loc()
-    })?;
-    sink.rebuild_data_draft(draft)
 }
 
 #[cfg(feature = "semantic-compiler")]
@@ -538,6 +741,101 @@ impl CanonicalAssignmentSelectionKind {
 
 #[cfg(feature = "semantic-compiler")]
 impl AssignCanonicalSelection {
+    fn fixed_matrix_positions(&self) -> MResult<Option<Vec<usize>>> {
+        let SchemaBody::Matrix { dimensions, .. } = self.sink.closed_schema_body()? else {
+            return Ok(None);
+        };
+        let [
+            DimensionExpr::Constant(rows),
+            DimensionExpr::Constant(columns),
+        ] = dimensions.as_ref()
+        else {
+            unreachable!("closed matrix schemas have constant dimensions")
+        };
+        let dimension_error = |axis: &str| {
+            MechError::new(
+                GenericError {
+                    msg: format!("matrix {axis} extent exceeds the target index width"),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        };
+        let rows = usize::try_from(*rows).map_err(|_| dimension_error("row"))?;
+        let columns = usize::try_from(*columns).map_err(|_| dimension_error("column"))?;
+        let element_count = rows.checked_mul(columns).ok_or_else(|| {
+            MechError::new(
+                GenericError {
+                    msg: "matrix element count exceeds the target index width".to_owned(),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+        let physical = |row: usize, column: usize| {
+            column
+                .checked_mul(rows)
+                .and_then(|base| base.checked_add(row))
+                .ok_or_else(|| {
+                    MechError::new(
+                        GenericError {
+                            msg: "matrix selection position exceeds the target index width"
+                                .to_owned(),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                })
+        };
+        let positions = match self.selectors.as_slice() {
+            [CanonicalAccessSelector::All]
+            | [CanonicalAccessSelector::All, CanonicalAccessSelector::All] => {
+                let mut positions = Vec::with_capacity(element_count);
+                for row in 0..rows {
+                    for column in 0..columns {
+                        positions.push(physical(row, column)?);
+                    }
+                }
+                positions
+            }
+            [selector] => canonical_indices(selector, element_count)?,
+            [row, column] => {
+                let selected_rows = canonical_indices(row, rows)?;
+                let selected_columns = canonical_indices(column, columns)?;
+                let selection_count = selected_rows
+                    .len()
+                    .checked_mul(selected_columns.len())
+                    .ok_or_else(|| {
+                        MechError::new(
+                            GenericError {
+                                msg: "matrix assignment selection is too large".to_owned(),
+                            },
+                            None,
+                        )
+                        .with_compiler_loc()
+                    })?;
+                let mut positions = Vec::with_capacity(selection_count);
+                for row in selected_rows {
+                    for &column in &selected_columns {
+                        positions.push(physical(row, column)?);
+                    }
+                }
+                positions
+            }
+            _ => {
+                return Err(MechError::new(
+                    IncorrectNumberOfArguments {
+                        expected: 3,
+                        found: self.selectors.len() + 2,
+                    },
+                    None,
+                )
+                .with_compiler_loc());
+            }
+        };
+        Ok(Some(positions))
+    }
+
     fn next_value(&self) -> MResult<Value> {
         let sink_schema = self.sink.closed_schema_body()?;
         match &sink_schema {
@@ -917,15 +1215,28 @@ impl AssignCanonicalSelection {
 
 #[cfg(feature = "semantic-compiler")]
 impl MechFunctionImpl for AssignCanonicalSelection {
-    fn solve_result(&self) -> MResult<()> {
-        self.sink.replace(&self.next_value()?)
-    }
-
-    fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
-        Ok(Box::new(ReactiveValueCellWrite::new(
-            self.sink.clone(),
-            self.next_value()?,
-        )?))
+    fn solve_managed(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        let Some(positions) = self.fixed_matrix_positions()? else {
+            return Err(MechError::new(
+                GenericError {
+                    msg: "aggregate selection assignment requires the managed canonical payload stage"
+                        .to_owned(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        };
+        frame.assign_fixed_port_selection(
+            &self.sink,
+            &self.source,
+            self.sink.representation(),
+            &positions,
+        )?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
@@ -1074,7 +1385,7 @@ fn canonical_indexed_assignment(
     implementation.next_value()?;
     context.resolve_syntax_operation(selection_kind.operation(), selection_kind.contract())?;
     context.certify_instance(
-        FunctionInstance::new(
+        (
             Box::new(implementation),
             FunctionInvocation::variadic(sink, inputs),
         ),
@@ -1114,7 +1425,7 @@ impl CanonicalFunctionSpecializer for AssignValue {
         );
         context.resolve_syntax_operation_contract(&PURE_STATE_REGISTER_CONTRACT)?;
         context.certify_instance(
-            FunctionInstance::new(
+            (
                 Box::new(AssignCanonicalCell {
                     sink: sink.clone(),
                     source: source.clone(),
@@ -1242,15 +1553,13 @@ impl AddAssignCanonicalTable {
 
 #[cfg(feature = "semantic-compiler")]
 impl MechFunctionImpl for AddAssignCanonicalTable {
-    fn solve_result(&self) -> MResult<()> {
-        self.sink.replace(&self.next_value()?)
-    }
-
-    fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
-        Ok(Box::new(ReactiveValueCellWrite::new(
-            self.sink.clone(),
-            self.next_value()?,
-        )?))
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> { self.sink.replace(&self.next_value()?) })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
@@ -1323,7 +1632,7 @@ impl CanonicalFunctionSpecializer for AddAssignValue {
         implementation.next_value()?;
         context.resolve_syntax_operation_contract(&PURE_STATE_REGISTER_CONTRACT)?;
         context.certify_instance(
-            FunctionInstance::new(
+            (
                 Box::new(implementation),
                 FunctionInvocation::unary(sink, source),
             ),
@@ -1371,7 +1680,8 @@ mod canonical_aggregate_assignment_tests {
             selection_kind: CanonicalAssignmentSelectionKind::CollectionEntry,
         };
 
-        assignment.solve_result().unwrap();
+        let next = assignment.next_value().unwrap();
+        sink.replace(&next).unwrap();
         let ValueDataDraft::Map(entries) = sink.snapshot().unwrap().canonical_data_draft().unwrap()
         else {
             panic!("map assignment must preserve the map schema");

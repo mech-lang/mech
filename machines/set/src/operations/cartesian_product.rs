@@ -58,9 +58,9 @@ pub(crate) struct SetCartesianProductFxn {
 }
 
 impl MechFunctionFactory for SetCartesianProductFxn {
-            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
-                mech_core::ImplementationMemoryClass::CanonicalSortUnique
-            }
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalSortUnique
+    }
 
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
         FunctionValueRepresentation::Set,
@@ -88,9 +88,13 @@ impl MechFunctionImpl for SetCartesianProductFxn {
     fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
         self.out.transaction_state_ports()
     }
-    fn solve_result(&self) -> MResult<()> {
-        let lhs = self.lhs.canonical_value().set_element_drafts()?.into_vec();
-        let rhs = self.rhs.canonical_value().set_element_drafts()?.into_vec();
+    fn solve_managed(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        let lhs = self.lhs.element_drafts(frame)?.into_vec();
+        let rhs = self.rhs.element_drafts(frame)?.into_vec();
         let output_len = cartesian_product_output_len(lhs.len(), rhs.len())?;
         let mut next = Vec::with_capacity(output_len);
         for lhs in &lhs {
@@ -100,9 +104,8 @@ impl MechFunctionImpl for SetCartesianProductFxn {
                 ));
             }
         }
-        self.out
-            .canonical_value()
-            .replace_set_drafts(next.into_boxed_slice())
+        self.out.stage_set_drafts(frame, next.into_boxed_slice())?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_SET_BINARY_CONTRACT)

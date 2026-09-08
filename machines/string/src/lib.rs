@@ -115,18 +115,245 @@ impl Concat for String {
     }
 }
 
+fn canonical_string_extents(value: &Value) -> MResult<Option<(usize, usize)>> {
+    let schemas = value.schemas().ok_or_else(|| {
+        function_shape_contract_violation("string/concat", "canonical input has no schema table")
+    })?;
+    let schema = schemas.entry(value.schema()).ok_or_else(|| {
+        function_shape_contract_violation("string/concat", "canonical input schema is missing")
+    })?;
+    let SchemaBody::Matrix { dimensions, .. } = schema.schema().body() else {
+        return Ok(None);
+    };
+    let [rows, columns] = dimensions.as_ref() else {
+        return Err(function_shape_contract_violation(
+            "string/concat",
+            "string matrix must have rank two",
+        ));
+    };
+    Ok(Some((
+        usize::try_from(
+            value
+                .shape()
+                .resolve_dimension(rows)
+                .map_err(MechError::from)?,
+        )
+        .map_err(|_| {
+            function_shape_contract_violation("string/concat", "row extent exceeds usize")
+        })?,
+        usize::try_from(
+            value
+                .shape()
+                .resolve_dimension(columns)
+                .map_err(MechError::from)?,
+        )
+        .map_err(|_| {
+            function_shape_contract_violation("string/concat", "column extent exceeds usize")
+        })?,
+    )))
+}
+
+fn canonical_string_at<'a>(
+    value: &'a Value,
+    extents: Option<(usize, usize)>,
+    row: usize,
+    column: usize,
+) -> MResult<&'a str> {
+    match (value.data(), extents) {
+        (ValueData::String(value), None) => Ok(value.as_ref()),
+        (ValueData::Matrix(matrix), Some((rows, columns))) => {
+            let mech_core::snapshot::SequenceView::String(values) = matrix.elements() else {
+                return Err(function_shape_contract_violation(
+                    "string/concat",
+                    "matrix payload is not String-backed",
+                ));
+            };
+            let row = if rows == 1 { 0 } else { row };
+            let column = if columns == 1 { 0 } else { column };
+            values
+                .get(row.saturating_mul(columns).saturating_add(column))
+                .map(|value| value.as_ref())
+                .ok_or_else(|| {
+                    function_shape_contract_violation(
+                        "string/concat",
+                        "broadcast coordinate is outside the String input",
+                    )
+                })
+        }
+        _ => Err(function_shape_contract_violation(
+            "string/concat",
+            "canonical String input disagrees with its schema",
+        )),
+    }
+}
+
+fn canonical_concat_value(lhs: &Value, rhs: &Value, output: &ValueCell) -> MResult<Value> {
+    let lhs_extents = canonical_string_extents(lhs)?;
+    let rhs_extents = canonical_string_extents(rhs)?;
+    let concatenate = |left: &str, right: &str| {
+        let mut value = String::with_capacity(left.len().saturating_add(right.len()));
+        value.push_str(left);
+        value.push_str(right);
+        value
+    };
+    let extents = match (lhs_extents, rhs_extents) {
+        (None, None) => {
+            return output.rebuild_data_draft(ValueDataDraft::String(concatenate(
+                canonical_string_at(lhs, None, 0, 0)?,
+                canonical_string_at(rhs, None, 0, 0)?,
+            )));
+        }
+        (Some(extents), None) | (None, Some(extents)) => extents,
+        (Some((left_rows, left_columns)), Some((right_rows, right_columns))) => {
+            let rows = left_rows.max(right_rows);
+            let columns = left_columns.max(right_columns);
+            if (left_rows != 1 && left_rows != rows)
+                || (right_rows != 1 && right_rows != rows)
+                || (left_columns != 1 && left_columns != columns)
+                || (right_columns != 1 && right_columns != columns)
+            {
+                return Err(function_shape_contract_violation(
+                    "string/concat",
+                    "String matrix broadcast dimensions are incompatible",
+                ));
+            }
+            (rows, columns)
+        }
+    };
+    let (rows, columns) = extents;
+    let count = rows.checked_mul(columns).ok_or_else(|| {
+        function_shape_contract_violation("string/concat", "output cardinality overflowed usize")
+    })?;
+    let mut values = Vec::new();
+    values.try_reserve_exact(count).map_err(|_| {
+        function_shape_contract_violation("string/concat", "output staging allocation failed")
+    })?;
+    for row in 0..rows {
+        for column in 0..columns {
+            values.push(ValueDataDraft::String(concatenate(
+                canonical_string_at(lhs, lhs_extents, row, column)?,
+                canonical_string_at(rhs, rhs_extents, row, column)?,
+            )));
+        }
+    }
+    output.rebuild_matrix_drafts(
+        vec![rows as u64, columns as u64].into_boxed_slice(),
+        values.into_boxed_slice(),
+    )
+}
+
+#[cfg(test)]
+pub(crate) fn test_managed_factory<F: MechFunctionFactory>(
+    invocation: FunctionInvocation,
+    operation: &'static str,
+) -> SpecializedFunction {
+    let implementation = F::new_invocation(invocation.clone()).unwrap();
+    let contract = F::declared_operation_contract().unwrap().clone();
+    SpecializedFunction::syntax_directed(
+        (implementation, invocation),
+        ResolvedOperationDescriptor::from_name(operation, contract).unwrap(),
+        RuntimeFunctionId::from_name(operation),
+        ExecutionTarget::DirectRuntime,
+        F::implementation_memory_class(),
+    )
+    .unwrap()
+}
+
+#[cfg(all(test, feature = "source"))]
+pub(crate) fn test_source_specialize(
+    catalog: &FunctionCatalog,
+    name: &str,
+    cells: Vec<ValueCell>,
+) -> SpecializedFunction {
+    let entry = catalog.specializer(OperationId::from_name(name)).unwrap();
+    let originals = cells
+        .iter()
+        .map(ValueCell::resolved_type)
+        .collect::<MResult<Vec<_>>>()
+        .unwrap();
+    let SourceTypeAuthority::Schemes(declaration) = &entry.type_authority else {
+        panic!("String source operation must have one semantic scheme authority")
+    };
+    let instantiated = declaration.template.map(|template| {
+        FunctionTypeDeclaration::from_schemes(
+            instantiate_source_scheme_template(template, &originals).unwrap(),
+        )
+    });
+    let declaration = instantiated.as_ref().unwrap_or(declaration);
+    let candidates = declaration
+        .overloads
+        .iter()
+        .map(|overload| TypeOverloadCandidate {
+            id: u64::from(overload.id),
+            scheme: &overload.scheme,
+        })
+        .collect::<Vec<_>>();
+    let resolved = resolve_type_overloads(
+        TypeConstraintOrigin::new(name, None),
+        &candidates,
+        &originals,
+        None,
+    )
+    .unwrap();
+    let overload_id = u32::try_from(resolved.candidate_ids[0]).unwrap();
+    let overload = declaration
+        .overloads
+        .iter()
+        .find(|overload| overload.id == overload_id)
+        .unwrap();
+    let converted_inputs = resolved
+        .conversions
+        .iter()
+        .map(|plan| plan.target.clone())
+        .collect::<Vec<_>>()
+        .into_boxed_slice();
+    let operation = entry
+        .resolved_operation(converted_inputs.len(), &resolved.outputs)
+        .unwrap();
+    let resolved = ResolvedCall {
+        operation,
+        overload_id,
+        original_inputs: originals.into_boxed_slice(),
+        converted_inputs,
+        input_conversions: resolved.conversions,
+        outputs: resolved.outputs,
+        output_schema_rules: overload.output_schema_rules.clone(),
+    };
+    let invocation = SpecializationInvocation::from_cells(cells.into_boxed_slice());
+    let mut context = SpecializationContext::for_resolved_invocation(
+        &invocation,
+        Some(catalog),
+        entry.operation.id,
+        name,
+        resolved,
+    )
+    .unwrap();
+    entry
+        .specializer
+        .specialize_invocation(&invocation, &mut context)
+        .unwrap()
+}
+
 #[macro_export]
 macro_rules! impl_string_binop {
     ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident) => {
         #[derive(Debug)]
         pub(crate) struct $struct_name<T> {
-            lhs: Ref<$arg1_type>,
-            rhs: Ref<$arg2_type>,
-            out: Ref<$out_type>,
+            lhs: ManagedPort<T>,
+            rhs: ManagedPort<T>,
+            out: ManagedPort<T>,
+            marker: core::marker::PhantomData<($arg1_type, $arg2_type, $out_type)>,
         }
         impl<T> MechFunctionFactory for $struct_name<T>
         where
-            T: std::fmt::Debug + Clone + Sync + Send + 'static + FunctionRuntimeType + Concat,
+            T: std::fmt::Debug
+                + Clone
+                + Sync
+                + Send
+                + 'static
+                + FunctionRuntimeType
+                + FunctionPortBacking
+                + Concat,
             #[cfg(feature = "semantic-compiler")]
             T: CanonicalMatrixElementBacking + ConstElem + CompileConst,
             $arg1_type: FunctionPortBacking,
@@ -151,10 +378,15 @@ macro_rules! impl_string_binop {
 
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (out, lhs, rhs) = invocation.expect_binary()?;
-                let lhs: Ref<$arg1_type> = lhs.try_ref()?;
-                let rhs: Ref<$arg2_type> = rhs.try_ref()?;
-                let out: Ref<$out_type> = out.try_ref()?;
-                Ok(Box::new(Self { lhs, rhs, out }))
+                let _ = lhs.try_managed::<$arg1_type>()?;
+                let _ = rhs.try_managed::<$arg2_type>()?;
+                let _ = out.try_managed::<$out_type>()?;
+                Ok(Box::new(Self {
+                    lhs: lhs.try_managed_element::<T>()?,
+                    rhs: rhs.try_managed_element::<T>()?,
+                    out: out.try_managed_element::<T>()?,
+                    marker: core::marker::PhantomData,
+                }))
             }
         }
         impl<T> MechFunctionImpl for $struct_name<T>
@@ -165,17 +397,24 @@ macro_rules! impl_string_binop {
             $out_type: FunctionStateBacking,
         {
             fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-                Some(FunctionStatePort::from_ref(&self.out))
+                Some(FunctionStatePort::from_cell(self.out.cell()))
             }
             fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
-                Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
+                Ok(Some(vec![FunctionStatePort::from_cell(self.out.cell())]))
             }
-            fn solve_result(&self) -> MResult<()> {
-                let lhs_ptr = self.lhs.as_ptr();
-                let rhs_ptr = self.rhs.as_ptr();
-                let out_ptr = self.out.as_mut_ptr();
-                $op!(lhs_ptr, rhs_ptr, out_ptr);
-                Ok(())
+            fn solve_managed(
+                &self,
+                frame: &mut mech_core::KernelMemoryFrame<'_>,
+                _services: &mut dyn mech_core::MechExecutionServices,
+            ) -> MResult<mech_core::ReactiveSolveStatus> {
+                $op!();
+                frame.with_canonical_binary_port_values(
+                    &self.lhs,
+                    &self.rhs,
+                    &self.out,
+                    |lhs, rhs, output| Ok(((), $crate::canonical_concat_value(lhs, rhs, output)?)),
+                )?;
+                Ok(mech_core::ReactiveSolveStatus::Changed)
             }
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
                 Some($crate::string_binary_full_write_contract(
@@ -197,7 +436,11 @@ macro_rules! impl_string_binop {
                     stringify!($struct_name),
                     <T as FunctionRuntimeType>::REPRESENTATION
                 );
-                compile_binop!(name, self.out, self.lhs, self.rhs, ctx);
+                let output = compile_value_cell_register(self.out.cell(), ctx)?;
+                let lhs = compile_value_cell_register(self.lhs.cell(), ctx)?;
+                let rhs = compile_value_cell_register(self.rhs.cell(), ctx)?;
+                ctx.emit_binop(hash_str(&name), output, lhs, rhs);
+                Ok(output)
             }
         }
     };

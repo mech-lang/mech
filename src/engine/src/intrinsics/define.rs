@@ -61,8 +61,12 @@ pub(crate) struct CanonicalVariableDefinition {
     )
 ))]
 impl MechFunctionImpl for CanonicalVariableDefinition {
-    fn solve_result(&self) -> MResult<()> {
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        Ok(mech_core::ReactiveSolveStatus::Unchanged)
     }
 
     fn reactive_node_kind(&self) -> ReactiveNodeKind {
@@ -299,8 +303,13 @@ impl MechFunctionFactory for BytecodeIntegrityConstraintMarker {
 
 #[cfg(feature = "invariant_define")]
 impl MechFunctionImpl for BytecodeIntegrityConstraintMarker {
-    fn solve_result(&self) -> MResult<()> {
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> { Ok(()) })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn reactive_dependency_scopes(
@@ -398,8 +407,13 @@ where
         + CanonicalMatrixElementBacking,
     MatA: Debug,
 {
-    fn solve_result(&self) -> MResult<()> {
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> { Ok(()) })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
@@ -511,8 +525,16 @@ macro_rules! impl_variable_define_fxn {
 
           }
           impl MechFunctionImpl for [<VariableDefine $kind:camel>] {
-            fn solve_result(&self) -> MResult<()> {
+            fn solve_managed(
+                &self,
+                _frame: &mut mech_core::KernelMemoryFrame<'_>,
+                _services: &mut dyn mech_core::MechExecutionServices,
+            ) -> MResult<mech_core::ReactiveSolveStatus> {
+                (|| -> MResult<()> {
                 Ok(())
+
+                })()?;
+                Ok(mech_core::ReactiveSolveStatus::Changed)
             }
             fn to_string(&self) -> String { format!("{:#?}", self) }
 
@@ -1083,8 +1105,13 @@ mech_core::declare_native_runtime_factory! {
     extra_cargo_features: ["variable_define"],
 }
 impl MechFunctionImpl for VariableDefineEmpty {
-    fn solve_result(&self) -> MResult<()> {
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> { Ok(()) })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
@@ -1343,7 +1370,7 @@ impl CanonicalFunctionSpecializer for VarDefine {
         context.resolve_syntax_operation_contract(&PURE_VARIABLE_DEFINITION_CONTRACT)?;
         let runtime_name = canonical_variable_definition_runtime_name(value.representation())?;
         context.certify_instance(
-            FunctionInstance::new(Box::new(implementation), FunctionInvocation::nullary(value)),
+            (Box::new(implementation), FunctionInvocation::nullary(value)),
             mech_core::RuntimeFunctionId::from_name(&runtime_name),
             mech_core::ExecutionTarget::DirectRuntime,
             mech_core::ImplementationMemoryClass::CanonicalFinalize,

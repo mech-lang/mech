@@ -1,9 +1,9 @@
 use crate::{
     ContextBase, ContextDeclaration, ContextSend, ExecutionResourceRequest,
-    ExternalResourceReadFunction, ExternalResourceWriteFunction, FunctionInstance,
-    FunctionInvocation, GenericError, Identifier, InitialSolvePolicy, InterpreterExecution,
-    MResult, MechError, ResourceDelivery, ResourceIntent, SpecializationInput, SpecializedFunction,
-    UndefinedContextError, ValueCell, Var, execute_bound_specialized_function, expression_cell,
+    ExternalResourceReadFunction, ExternalResourceWriteFunction, FunctionInvocation, GenericError,
+    Identifier, InitialSolvePolicy, InterpreterExecution, MResult, MechError, ResourceDelivery,
+    ResourceIntent, SpecializationInput, SpecializedFunction, UndefinedContextError, ValueCell,
+    Var, execute_bound_specialized_function, expression_cell,
 };
 #[cfg(feature = "variable_assign")]
 use crate::{Environment, VariableAssign};
@@ -101,7 +101,7 @@ pub(crate) fn context_read(
     let invocation = FunctionInvocation::nullary(output.clone());
     execute_bound_specialized_function(
         SpecializedFunction::syntax_directed(
-            FunctionInstance::new(Box::new(function), invocation),
+            (Box::new(function), invocation),
             mech_core::ResolvedOperationDescriptor::from_name(
                 "context/read",
                 crate::function::external::RESOURCE_OBSERVATION_CONTRACT.clone(),
@@ -153,7 +153,7 @@ pub(crate) fn context_assign(
     let invocation = FunctionInvocation::unary(output, input_cell);
     execute_bound_specialized_function(
         SpecializedFunction::syntax_directed(
-            FunctionInstance::new(Box::new(function), invocation),
+            (Box::new(function), invocation),
             mech_core::ResolvedOperationDescriptor::from_name(
                 "context/write",
                 crate::function::external::RESOURCE_EFFECT_CONTRACT.clone(),
@@ -205,7 +205,7 @@ pub fn context_send(send: &ContextSend, p: &InterpreterExecution<'_>) -> MResult
     let invocation = FunctionInvocation::unary(output, input_cell);
     execute_bound_specialized_function(
         SpecializedFunction::syntax_directed(
-            FunctionInstance::new(Box::new(function), invocation),
+            (Box::new(function), invocation),
             mech_core::ResolvedOperationDescriptor::from_name(
                 "context/send",
                 crate::function::external::RESOURCE_EFFECT_CONTRACT.clone(),

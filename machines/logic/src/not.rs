@@ -5,8 +5,8 @@ use std::ops::Not;
 
 #[derive(Debug)]
 pub(crate) struct NotS<T> {
-    pub arg: Ref<T>,
-    pub out: Ref<T>,
+    pub arg: ManagedPort<T>,
+    pub out: ManagedPort<T>,
     pub _marker: PhantomData<T>,
 }
 
@@ -24,18 +24,19 @@ where
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst + ConstElem,
     T: FunctionStateBacking,
+    T: ManagedElement + FunctionPortBacking,
 {
     const SIGNATURE: RuntimeFunctionSignature =
         RuntimeFunctionSignature::unary(T::REPRESENTATION, T::REPRESENTATION);
 
-            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
-                mech_core::ImplementationMemoryClass::NoAdditionalScratch
-            }
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch
+    }
 
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
         let (out, arg) = invocation.expect_unary()?;
-        let arg: Ref<T> = arg.try_ref()?;
-        let out: Ref<T> = out.try_ref()?;
+        let arg = arg.try_managed::<T>()?;
+        let out = out.try_managed::<T>()?;
         Ok(Box::new(Self {
             arg,
             out,
@@ -58,19 +59,34 @@ where
         + PartialEq
         + 'static
         + Not<Output = T>
-        + FunctionStateBacking,
+        + FunctionStateBacking
+        + ManagedElement,
 {
-    fn solve_result(&self) -> MResult<()> {
-        let arg_ptr = self.arg.as_ptr();
-        let out_ptr = self.out.as_mut_ptr();
-        unsafe {
-            *out_ptr = !*arg_ptr;
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        frame.with_unary_port_views(&self.arg, &self.out, |arg, out| {
+            if arg.rows() != out.rows() || arg.columns() != out.columns() {
+                return Err(MechError::new(
+                    GenericError {
+                        msg: "logic/not managed input and output geometry disagree".into(),
+                    },
+                    None,
+                ));
+            }
+            out.try_fill_column_major(|index| {
+                Ok(!arg
+                    .get_column_major(index)
+                    .expect("validated logic/not input lane"))
+            })
+        })?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-        Some(FunctionStatePort::from_ref(&self.out))
+        Some(FunctionStatePort::from_cell(self.out.cell()))
     }
 
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
@@ -82,7 +98,7 @@ where
     }
 
     fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
-        Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
+        Ok(Some(vec![FunctionStatePort::from_cell(self.out.cell())]))
     }
 }
 
@@ -93,20 +109,25 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("NotS<{}>", <T as FunctionRuntimeType>::REPRESENTATION);
-        compile_unop!(name, self.out, self.arg, ctx);
+        let out = compile_value_cell_register(self.out.cell(), ctx)?;
+        let arg = compile_value_cell_register(self.arg.cell(), ctx)?;
+        let function = ctx.function_id(&name)?;
+        ctx.emit_unop(function, out, arg);
+        Ok(out)
     }
 }
 
 #[derive(Debug)]
 pub struct NotV<T, MatA> {
-    pub arg: Ref<MatA>,
-    pub out: Ref<MatA>,
-    pub _marker: PhantomData<T>,
+    pub arg: ManagedPort<T>,
+    pub out: ManagedPort<T>,
+    pub _marker: PhantomData<MatA>,
 }
 
 impl<T, MatA> MechFunctionFactory for NotV<T, MatA>
 where
     T: Debug + Clone + Sync + Send + 'static + FunctionRuntimeType + Not<Output = T>,
+    T: ManagedElement + FunctionPortBacking,
     #[cfg(feature = "semantic-compiler")]
     T: CompileConst + ConstElem,
     for<'a> &'a MatA: IntoIterator<Item = &'a T>,
@@ -118,15 +139,17 @@ where
     const SIGNATURE: RuntimeFunctionSignature =
         RuntimeFunctionSignature::unary(MatA::REPRESENTATION, MatA::REPRESENTATION);
 
-            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
-                mech_core::ImplementationMemoryClass::NoAdditionalScratch
-            }
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch
+    }
 
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
         let (out, arg) = invocation.expect_unary()?;
+        let _ = arg.try_managed::<MatA>()?;
+        let _ = out.try_managed::<MatA>()?;
         Ok(Box::new(Self {
-            arg: arg.try_ref()?,
-            out: out.try_ref()?,
+            arg: arg.try_managed_element::<T>()?,
+            out: out.try_managed_element::<T>()?,
             _marker: PhantomData,
         }))
     }
@@ -139,23 +162,36 @@ where
 impl<T, MatA> MechFunctionImpl for NotV<T, MatA>
 where
     T: Debug + Clone + Sync + Send + 'static + FunctionRuntimeType + Not<Output = T>,
+    T: ManagedElement,
     for<'a> &'a MatA: IntoIterator<Item = &'a T>,
     for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
     MatA: Debug + FunctionRuntimeType + FunctionStateBacking,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let output = &mut *self.out.as_mut_ptr();
-            let input = &*self.arg.as_ptr();
-            for (target, source) in output.into_iter().zip(input.into_iter()) {
-                *target = !source.clone();
+    fn solve_managed(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        frame.with_unary_port_views(&self.arg, &self.out, |arg, out| {
+            if arg.rows() != out.rows() || arg.columns() != out.columns() {
+                return Err(MechError::new(
+                    GenericError {
+                        msg: "logic/not managed input and output geometry disagree".into(),
+                    },
+                    None,
+                ));
             }
-        }
-        Ok(())
+            out.try_fill_column_major(|index| {
+                Ok(!arg
+                    .get_column_major(index)
+                    .expect("validated logic/not input lane"))
+            })
+        })?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-        Some(FunctionStatePort::from_ref(&self.out))
+        Some(FunctionStatePort::from_cell(self.out.cell()))
     }
 
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
@@ -167,7 +203,7 @@ where
     }
 
     fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
-        Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
+        Ok(Some(vec![FunctionStatePort::from_cell(self.out.cell())]))
     }
 }
 
@@ -183,7 +219,11 @@ where
             <T as FunctionRuntimeType>::REPRESENTATION,
             <MatA as FunctionRuntimeType>::REPRESENTATION,
         );
-        compile_unop!(name, self.out, self.arg, ctx);
+        let out = compile_value_cell_register(self.out.cell(), ctx)?;
+        let arg = compile_value_cell_register(self.arg.cell(), ctx)?;
+        let function = ctx.function_id(&name)?;
+        ctx.emit_unop(function, out, arg);
+        Ok(out)
     }
 }
 

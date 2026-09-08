@@ -4,14 +4,14 @@
 use alloc::{
     alloc::{AllocError, Allocator, Global, Layout},
     boxed::Box,
-    rc::Rc,
+    rc::{Rc, Weak},
     sync::Arc,
 };
 #[cfg(not(feature = "no_std"))]
 use std::{
     alloc::{AllocError, Allocator, Global, Layout},
     boxed::Box,
-    rc::Rc,
+    rc::{Rc, Weak},
     sync::Arc,
 };
 
@@ -212,7 +212,9 @@ impl Drop for PayloadBlockRecord {
 struct PlannedAllocationAuthority {
     owner: Rc<PayloadEnvelopeOwner>,
     object: PlanObjectKey,
-    realized: RealizedMemoryPlan,
+    // Initialization notification is revocable metadata, never byte
+    // ownership. Allocators and live payloads do not retain a mutable domain.
+    initialization: Weak<RefCell<super::DomainState>>,
 }
 
 /// Sealed allocator backed by one realized indirect-payload envelope.
@@ -266,9 +268,23 @@ impl PlannedAllocator {
     }
 
     fn record_initialized(&self, bytes: u64) -> MemoryRuntimeResult<()> {
-        self.authority
-            .realized
-            .record_initialized(self.authority.object, bytes)
+        let domain = self
+            .authority
+            .initialization
+            .upgrade()
+            .ok_or(MemoryRuntimeError::DomainClosed)?;
+        let mut state = domain.borrow_mut();
+        if state.closed {
+            return Err(MemoryRuntimeError::DomainClosed);
+        }
+        let region = state.regions.get_mut(&self.authority.object).ok_or(
+            MemoryRuntimeError::UnknownPlanObject {
+                key: self.authority.object,
+            },
+        )?;
+        region.initialization.mark_range(0, bytes)?;
+        region.initialized_bytes = region.initialized_bytes.max(bytes);
+        Ok(())
     }
 }
 
@@ -283,12 +299,10 @@ unsafe impl Allocator for PlannedAllocator {
 
     unsafe fn deallocate(&self, pointer: NonNull<u8>, layout: Layout) {
         let mut blocks = self.authority.owner.blocks.borrow_mut();
-        let Some(index) = blocks
+        let index = blocks
             .iter()
             .position(|block| block.pointer == pointer && block.layout == layout)
-        else {
-            return;
-        };
+            .expect("planned allocator deallocation must name a live owned block");
         drop(blocks.swap_remove(index));
     }
 }
@@ -334,7 +348,7 @@ impl MemoryDomain {
             authority: Rc::new(PlannedAllocationAuthority {
                 owner,
                 object,
-                realized: realized.clone(),
+                initialization: Rc::downgrade(&self.state),
             }),
         })
     }

@@ -291,12 +291,19 @@ macro_rules! impl_binop {
                 + One,
             $out_type: FunctionStateBacking,
         {
-            fn solve_result(&self) -> MResult<()> {
-                let lhs_ptr = self.lhs.as_ptr();
-                let rhs_ptr = self.rhs.as_ptr();
-                let out_ptr = self.out.as_mut_ptr();
-                $op!(lhs_ptr, rhs_ptr, out_ptr);
-                Ok(())
+            fn solve_managed(
+                &self,
+                _frame: &mut KernelMemoryFrame<'_>,
+                _services: &mut dyn MechExecutionServices,
+            ) -> MResult<ReactiveSolveStatus> {
+                (|| -> MResult<()> {
+                    let lhs_ptr = self.lhs.as_ptr();
+                    let rhs_ptr = self.rhs.as_ptr();
+                    let out_ptr = self.out.as_mut_ptr();
+                    $op!(lhs_ptr, rhs_ptr, out_ptr);
+                    Ok(())
+                })()?;
+                Ok(ReactiveSolveStatus::Changed)
             }
             fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
                 Some(FunctionStatePort::from_ref(&self.out))
@@ -328,11 +335,11 @@ macro_rules! impl_binop {
 
 #[macro_export]
 macro_rules! impl_unop {
-    ($struct_name:ident, $arg_type:ty, $out_type:ty, $op:ident $(, $semantic_contract:path)?) => {
+    ($struct_name:ident, $element:ty, $arg_type:ty, $out_type:ty, $op:ident $(, $semantic_contract:path)?) => {
         #[derive(Debug)]
         pub(crate) struct $struct_name {
-            arg: Ref<$arg_type>,
-            out: Ref<$out_type>,
+            arg: $crate::ManagedPort<$element>,
+            out: $crate::ManagedPort<$element>,
         }
         impl MechFunctionFactory for $struct_name
         where
@@ -360,8 +367,8 @@ macro_rules! impl_unop {
                 invocation: FunctionInvocation,
             ) -> MResult<Box<dyn MechFunction>> {
                 let (out, arg) = invocation.expect_unary()?;
-                let arg: Ref<$arg_type> = arg.try_ref()?;
-                let out: Ref<$out_type> = out.try_ref()?;
+                let arg = arg.try_managed_element::<$element>()?;
+                let out = out.try_managed_element::<$element>()?;
                 Ok(Box::new(Self { arg, out }))
             }
 
@@ -370,14 +377,32 @@ macro_rules! impl_unop {
         where
             $out_type: FunctionStateBacking,
         {
-            fn solve_result(&self) -> MResult<()> {
-                let arg_ptr = self.arg.as_ptr();
-                let out_ptr = self.out.as_mut_ptr();
-                $op!(arg_ptr, out_ptr);
-                Ok(())
+            fn solve_managed(
+                &self,
+                frame: &mut KernelMemoryFrame<'_>,
+                _services: &mut dyn MechExecutionServices,
+            ) -> MResult<ReactiveSolveStatus> {
+                frame.with_unary_port_views(&self.arg, &self.out, |arg, out| {
+                    let rows = out.rows();
+                    let geometry_error = || $crate::MemoryRuntimeError::InvalidLayout {
+                        object: None,
+                        size: arg.len() as u64,
+                        alignment: core::mem::align_of::<$element>() as u32,
+                        reason: "elementwise input and output geometry disagree",
+                    };
+                    if (arg.rows(), arg.columns()) != (rows, out.columns()) {
+                        return Err(geometry_error().into());
+                    }
+                    out.try_fill_column_major(|index| {
+                        let value = arg.get(index % rows, index / rows)
+                            .ok_or_else(geometry_error)?;
+                        $op!(@managed value)
+                    })
+                })?;
+                Ok(ReactiveSolveStatus::Changed)
             }
             fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-                Some(FunctionStatePort::from_ref(&self.out))
+                Some(FunctionStatePort::from_cell(self.out.cell()))
             }
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
                 let contract: Option<&'static OperationContractDeclaration> = None;
@@ -391,14 +416,18 @@ macro_rules! impl_unop {
             }
 
             fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
-                Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
+                Ok(Some(vec![FunctionStatePort::from_cell(self.out.cell())]))
             }
         }
         #[cfg(feature = "semantic-compiler")]
         impl MechFunctionCompiler for $struct_name {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 let name = format!("{}", stringify!($struct_name));
-                compile_unop!(name, self.out, self.arg, ctx);
+                let out = $crate::compile_value_cell_register(self.out.cell(), ctx)?;
+                let arg = $crate::compile_value_cell_register(self.arg.cell(), ctx)?;
+                let function = ctx.function_id(&name)?;
+                ctx.emit_unop(function, out, arg);
+                Ok(out)
             }
         }
     };

@@ -88,14 +88,21 @@ macro_rules! vertcat_two_args {
         where
             T: Debug + Clone + Sync + Send + PartialEq + 'static,
         {
-            fn solve_result(&self) -> MResult<()> {
-                unsafe {
-                    let e0_ptr = (*(self.e0.as_ptr())).clone();
-                    let e1_ptr = (*(self.e1.as_ptr())).clone();
-                    let out_ptr = (&mut *(self.out.as_mut_ptr()));
-                    $opt!(out_ptr, e0_ptr, e1_ptr);
-                };
-                Ok(())
+            fn solve_managed(
+                &self,
+                _frame: &mut mech_core::KernelMemoryFrame<'_>,
+                _services: &mut dyn mech_core::MechExecutionServices,
+            ) -> MResult<mech_core::ReactiveSolveStatus> {
+                (|| -> MResult<()> {
+                    unsafe {
+                        let e0_ptr = (*(self.e0.as_ptr())).clone();
+                        let e1_ptr = (*(self.e1.as_ptr())).clone();
+                        let out_ptr = (&mut *(self.out.as_mut_ptr()));
+                        $opt!(out_ptr, e0_ptr, e1_ptr);
+                    };
+                    Ok(())
+                })()?;
+                Ok(mech_core::ReactiveSolveStatus::Changed)
             }
 
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
@@ -184,15 +191,22 @@ macro_rules! vertcat_three_args {
         where
             T: Debug + Clone + Sync + Send + PartialEq + 'static,
         {
-            fn solve_result(&self) -> MResult<()> {
-                unsafe {
-                    let e0_ptr = (*(self.e0.as_ptr())).clone();
-                    let e1_ptr = (*(self.e1.as_ptr())).clone();
-                    let e2_ptr = (*(self.e2.as_ptr())).clone();
-                    let out_ptr = (&mut *(self.out.as_mut_ptr()));
-                    $opt!(out_ptr, e0_ptr, e1_ptr, e2_ptr);
-                };
-                Ok(())
+            fn solve_managed(
+                &self,
+                _frame: &mut mech_core::KernelMemoryFrame<'_>,
+                _services: &mut dyn mech_core::MechExecutionServices,
+            ) -> MResult<mech_core::ReactiveSolveStatus> {
+                (|| -> MResult<()> {
+                    unsafe {
+                        let e0_ptr = (*(self.e0.as_ptr())).clone();
+                        let e1_ptr = (*(self.e1.as_ptr())).clone();
+                        let e2_ptr = (*(self.e2.as_ptr())).clone();
+                        let out_ptr = (&mut *(self.out.as_mut_ptr()));
+                        $opt!(out_ptr, e0_ptr, e1_ptr, e2_ptr);
+                    };
+                    Ok(())
+                })()?;
+                Ok(mech_core::ReactiveSolveStatus::Changed)
             }
 
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
@@ -282,16 +296,23 @@ macro_rules! vertcat_four_args {
         where
             T: Debug + Clone + Sync + Send + PartialEq + 'static,
         {
-            fn solve_result(&self) -> MResult<()> {
-                unsafe {
-                    let e0_ptr = (*(self.e0.as_ptr())).clone();
-                    let e1_ptr = (*(self.e1.as_ptr())).clone();
-                    let e2_ptr = (*(self.e2.as_ptr())).clone();
-                    let e3_ptr = (*(self.e3.as_ptr())).clone();
-                    let out_ptr = (&mut *(self.out.as_mut_ptr()));
-                    $opt!(out_ptr, e0_ptr, e1_ptr, e2_ptr, e3_ptr);
-                };
-                Ok(())
+            fn solve_managed(
+                &self,
+                _frame: &mut mech_core::KernelMemoryFrame<'_>,
+                _services: &mut dyn mech_core::MechExecutionServices,
+            ) -> MResult<mech_core::ReactiveSolveStatus> {
+                (|| -> MResult<()> {
+                    unsafe {
+                        let e0_ptr = (*(self.e0.as_ptr())).clone();
+                        let e1_ptr = (*(self.e1.as_ptr())).clone();
+                        let e2_ptr = (*(self.e2.as_ptr())).clone();
+                        let e3_ptr = (*(self.e3.as_ptr())).clone();
+                        let out_ptr = (&mut *(self.out.as_mut_ptr()));
+                        $opt!(out_ptr, e0_ptr, e1_ptr, e2_ptr, e3_ptr);
+                    };
+                    Ok(())
+                })()?;
+                Ok(mech_core::ReactiveSolveStatus::Changed)
             }
 
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
@@ -369,10 +390,17 @@ impl<T> MechFunctionImpl for VerticalConcatenateTwoArgs<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        let offset = self.e0.copy_into_row_major(&self.out, 0);
-        self.e1.copy_into_row_major(&self.out, offset);
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            let offset = self.e0.copy_into_row_major(&self.out, 0);
+            self.e1.copy_into_row_major(&self.out, offset);
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
@@ -463,11 +491,18 @@ impl<T> MechFunctionImpl for VerticalConcatenateThreeArgs<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        let mut offset = self.e0.copy_into_row_major(&self.out, 0);
-        offset += self.e1.copy_into_row_major(&self.out, offset);
-        self.e2.copy_into_row_major(&self.out, offset);
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            let mut offset = self.e0.copy_into_row_major(&self.out, 0);
+            offset += self.e1.copy_into_row_major(&self.out, offset);
+            self.e2.copy_into_row_major(&self.out, offset);
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
@@ -568,12 +603,19 @@ impl<T> MechFunctionImpl for VerticalConcatenateFourArgs<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        let mut offset = self.e0.copy_into_row_major(&self.out, 0);
-        offset += self.e1.copy_into_row_major(&self.out, offset);
-        offset += self.e2.copy_into_row_major(&self.out, offset);
-        self.e3.copy_into_row_major(&self.out, offset);
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            let mut offset = self.e0.copy_into_row_major(&self.out, 0);
+            offset += self.e1.copy_into_row_major(&self.out, offset);
+            offset += self.e2.copy_into_row_major(&self.out, offset);
+            self.e3.copy_into_row_major(&self.out, offset);
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
@@ -664,12 +706,19 @@ impl<T> MechFunctionImpl for VerticalConcatenateNArgs<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        let mut offset = 0;
-        for e in &self.e0 {
-            offset += e.copy_into_row_major(&self.out, offset);
-        }
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            let mut offset = 0;
+            for e in &self.e0 {
+                offset += e.copy_into_row_major(&self.out, offset);
+            }
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
@@ -816,8 +865,16 @@ macro_rules! vertical_concatenate {
           where
             T: Debug + Clone + Sync + Send + PartialEq + 'static,
           {
-            fn solve_result(&self) -> MResult<()> {
+            fn solve_managed(
+                &self,
+                _frame: &mut mech_core::KernelMemoryFrame<'_>,
+                _services: &mut dyn mech_core::MechExecutionServices,
+            ) -> MResult<mech_core::ReactiveSolveStatus> {
+                (|| -> MResult<()> {
                 Ok(())
+
+                })()?;
+                Ok(mech_core::ReactiveSolveStatus::Changed)
             }
 
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
@@ -895,10 +952,17 @@ impl<T> MechFunctionImpl for VerticalConcatenateVD2<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        let offset = self.e0.copy_into_v(&self.out, 0);
-        self.e1.copy_into_v(&self.out, offset);
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            let offset = self.e0.copy_into_v(&self.out, 0);
+            self.e1.copy_into_v(&self.out, offset);
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
@@ -990,11 +1054,18 @@ impl<T> MechFunctionImpl for VerticalConcatenateVD3<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        let mut offset = self.e0.copy_into_v(&self.out, 0);
-        offset += self.e1.copy_into_v(&self.out, offset);
-        self.e2.copy_into_v(&self.out, offset);
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            let mut offset = self.e0.copy_into_v(&self.out, 0);
+            offset += self.e1.copy_into_v(&self.out, offset);
+            self.e2.copy_into_v(&self.out, offset);
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
@@ -1095,12 +1166,19 @@ impl<T> MechFunctionImpl for VerticalConcatenateVD4<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        let mut offset = self.e0.copy_into_v(&self.out, 0);
-        offset += self.e1.copy_into_v(&self.out, offset);
-        offset += self.e2.copy_into_v(&self.out, offset);
-        self.e3.copy_into_v(&self.out, offset);
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            let mut offset = self.e0.copy_into_v(&self.out, 0);
+            offset += self.e1.copy_into_v(&self.out, offset);
+            offset += self.e2.copy_into_v(&self.out, offset);
+            self.e3.copy_into_v(&self.out, offset);
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
@@ -1204,17 +1282,24 @@ impl<T> MechFunctionImpl for VerticalConcatenateVDN<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            for (e, i) in &self.matrix {
-                e.copy_into_v(&self.out, *i);
-            }
-            for (e, i) in &self.scalar {
-                out_ptr[*i] = e.borrow().clone();
-            }
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                for (e, i) in &self.matrix {
+                    e.copy_into_v(&self.out, *i);
+                }
+                for (e, i) in &self.scalar {
+                    out_ptr[*i] = e.borrow().clone();
+                }
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
@@ -1307,8 +1392,13 @@ impl<T> MechFunctionImpl for VerticalConcatenateS1<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> { Ok(()) })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
@@ -1400,8 +1490,13 @@ impl<T> MechFunctionImpl for VerticalConcatenateSD<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> { Ok(()) })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -1685,19 +1780,26 @@ impl<T> MechFunctionImpl for VerticalConcatenateM1M1M1M1<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let e2_ptr = (*(self.e2.as_ptr())).clone();
-            let e3_ptr = (*(self.e3.as_ptr())).clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr[0].clone();
-            out_ptr[1] = e1_ptr[0].clone();
-            out_ptr[2] = e2_ptr[0].clone();
-            out_ptr[3] = e3_ptr[0].clone();
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let e0_ptr = (*(self.e0.as_ptr())).clone();
+                let e1_ptr = (*(self.e1.as_ptr())).clone();
+                let e2_ptr = (*(self.e2.as_ptr())).clone();
+                let e3_ptr = (*(self.e3.as_ptr())).clone();
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                out_ptr[0] = e0_ptr[0].clone();
+                out_ptr[1] = e1_ptr[0].clone();
+                out_ptr[2] = e2_ptr[0].clone();
+                out_ptr[3] = e3_ptr[0].clone();
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {

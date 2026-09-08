@@ -690,6 +690,7 @@ mod tests {
     #[test]
     fn source_catalog_matches_the_frozen_set_surface() {
         let mut builder = FunctionCatalogBuilder::new();
+        install_runtime(&mut builder).unwrap();
         install_source(&mut builder).unwrap();
         let catalog = builder.build().unwrap();
 

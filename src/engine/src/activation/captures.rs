@@ -1,8 +1,8 @@
 use super::ActivationPatternCaptureKindUnsupported;
 use crate::{
     AccessMode, AliasPolicy, ChangeDetectionPolicy, DeliveryMode, DimensionExpr, ExecutionTarget,
-    ExternalInteraction, FloatWidth, FunctionInstance, FunctionInvocation, InputPortLayout,
-    InputPortPolicy, IntegerWidth, MResult, MechError, MechFunction, OperationContractDeclaration,
+    ExternalInteraction, FloatWidth, FunctionInvocation, InputPortLayout, InputPortPolicy,
+    IntegerWidth, MResult, MechError, MechFunction, OperationContractDeclaration,
     OutputConstruction, OutputPortPolicy, PatternBindingSink, PatternMatch, Plan, ReactiveNodeId,
     ResolvedOperationDescriptor, RuntimeFunctionId, SchemaBody, ShapeRule, SpecializedFunction,
     ValueCell, ValueCellSnapshotFailure, ValueDataDraft,
@@ -84,8 +84,17 @@ fn encode_selected_arm(arm: usize) -> usize {
     }
 }
 
+#[cfg(test)]
 pub(super) fn increment(cell: &ValueCell) -> MResult<()> {
     write_index(cell, read_index(cell)?.saturating_add(1))
+}
+
+pub(super) fn stage_increment(
+    frame: &mut mech_core::KernelMemoryFrame<'_>,
+    cell: &ValueCell,
+) -> MResult<()> {
+    let next = ValueCell::from_exact(read_index(cell)?.saturating_add(1))?;
+    frame.stage_output_value(cell, &next.snapshot()?)
 }
 
 pub(super) fn register_node(
@@ -117,7 +126,7 @@ pub(super) fn register_node(
         .into_boxed_slice(),
         interaction: ExternalInteraction::Pure,
     };
-    let instance = FunctionInstance::new(
+    let instance = (
         implementation,
         FunctionInvocation::variadic(output, inputs.into_boxed_slice()),
     );
@@ -423,7 +432,7 @@ pub(super) fn commit_proposed_captures(captures: &[ActivationPatternCapture]) ->
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{CardinalitySpec, ExtentSpec, MechFunctionImpl, SchemaField};
+    use crate::{CardinalitySpec, ExtentSpec, SchemaField};
     use mech_core::snapshot::{F64Bits, MapEntryDraft, NamedValueDraft, TableColumnDraft};
 
     fn f64_draft(value: f64) -> ValueDataDraft {
@@ -634,7 +643,7 @@ mod tests {
             captures: vec![valid.clone(), invalid],
             out: pulse.clone(),
         };
-        let error = selected_gate.solve_reactive().unwrap_err();
+        let error = selected_gate.solve_gate().unwrap_err();
         assert_eq!(error.kind_name(), "ActivationPatternCaptureKindUnsupported");
         assert!(
             valid
@@ -663,7 +672,7 @@ mod tests {
             out: pulse.clone(),
         };
         assert_eq!(
-            unselected_gate.solve_reactive().unwrap(),
+            unselected_gate.solve_gate().unwrap(),
             crate::ReactiveSolveStatus::Unchanged
         );
         assert!(

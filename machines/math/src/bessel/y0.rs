@@ -4,38 +4,14 @@ use crate::*;
 
 use libm::{y0, y0f};
 macro_rules! y0_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = y0((*$arg));
-        }
-    };
-}
-
-macro_rules! y0_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = y0(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(y0(($arg)))
     };
 }
 
 macro_rules! y0f_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = y0f((*$arg));
-        }
-    };
-}
-
-macro_rules! y0f_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = y0f(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(y0f(($arg)))
     };
 }
 

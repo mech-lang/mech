@@ -53,49 +53,27 @@ impl_assign_vector_scalar!(Mul, checked_mul_assign);
 // x[1..3] *= 1 ----------------------------------------------------------------
 
 macro_rules! mul_assign_1d_range {
-    ($source:expr, $ix:expr, $sink:expr) => {{
-        for &index in ($ix).iter() {
-            let offset = checked_one_based_index(index, ($sink).len())?;
-            ($sink)[offset] = checked_mul_assign(($sink)[offset], *($source))?;
-        }
-        Ok::<(), MechError>(())
-    }};
+    ($source:expr, $ix:expr, $sink:expr) => {
+        apply_index_scalar_positions($source, $ix, $sink, checked_mul_assign)
+    };
 }
 
 macro_rules! mul_assign_1d_range_b {
-    ($source:expr, $ix:expr, $sink:expr) => {{
-        validate_mask_len(($ix).len(), ($sink).len())?;
-        for (i, selected) in ($ix).iter().copied().enumerate() {
-            if selected {
-                ($sink)[i] = checked_mul_assign(($sink)[i], *($source))?;
-            }
-        }
-        Ok::<(), MechError>(())
-    }};
+    ($source:expr, $ix:expr, $sink:expr) => {
+        apply_index_scalar_mask($source, $ix, $sink, checked_mul_assign)
+    };
 }
 
 macro_rules! mul_assign_1d_range_vec {
-    ($source:expr, $ix:expr, $sink:expr) => {{
-        validate_source_len(($source).len(), ($ix).len())?;
-        for (i, &index) in ($ix).iter().enumerate() {
-            let offset = checked_one_based_index(index, ($sink).len())?;
-            ($sink)[offset] = checked_mul_assign(($sink)[offset], ($source)[i])?;
-        }
-        Ok::<(), MechError>(())
-    }};
+    ($source:expr, $ix:expr, $sink:expr) => {
+        apply_index_vector_positions($source, $ix, $sink, checked_mul_assign)
+    };
 }
 
 macro_rules! mul_assign_1d_range_vec_b {
-    ($source:expr, $ix:expr, $sink:expr) => {{
-        validate_mask_len(($ix).len(), ($sink).len())?;
-        validate_source_len(($source).len(), ($ix).len())?;
-        for (i, selected) in ($ix).iter().copied().enumerate() {
-            if selected {
-                ($sink)[i] = checked_mul_assign(($sink)[i], ($source)[i])?;
-            }
-        }
-        Ok::<(), MechError>(())
-    }};
+    ($source:expr, $ix:expr, $sink:expr) => {
+        apply_index_vector_mask($source, $ix, $sink, checked_mul_assign)
+    };
 }
 
 #[cfg(feature = "matrix")]
@@ -110,72 +88,27 @@ impl_mul_assign_range_fxn_v!(MulAssign1DRVB, mul_assign_1d_range_vec_b, bool);
 // x[1..3,:] *= 1 ------------------------------------------------------------------
 
 macro_rules! mul_assign_2d_vector_all {
-    ($source:expr, $ix:expr, $sink:expr) => {{
-        for &index in ($ix).iter() {
-            checked_one_based_index(index, ($sink).nrows())?;
-        }
-        for cix in 0..($sink).ncols() {
-            for &index in ($ix).iter() {
-                let row = index - 1;
-                let value = ($sink).column(cix)[row];
-                ($sink).column_mut(cix)[row] = checked_mul_assign(value, *($source))?;
-            }
-        }
-        Ok::<(), MechError>(())
-    }};
+    ($source:expr, $ix:expr, $sink:expr) => {
+        apply_rows_scalar_positions($source, $ix, $sink, checked_mul_assign)
+    };
 }
 
 macro_rules! mul_assign_2d_vector_all_b {
-    ($source:expr, $ix:expr, $sink:expr) => {{
-        validate_mask_len(($ix).len(), ($sink).nrows())?;
-        for cix in 0..($sink).ncols() {
-            for (row, selected) in ($ix).iter().copied().enumerate() {
-                if selected {
-                    let value = ($sink).column(cix)[row];
-                    ($sink).column_mut(cix)[row] = checked_mul_assign(value, *($source))?;
-                }
-            }
-        }
-        Ok::<(), MechError>(())
-    }};
+    ($source:expr, $ix:expr, $sink:expr) => {
+        apply_rows_scalar_mask($source, $ix, $sink, checked_mul_assign)
+    };
 }
 
 macro_rules! mul_assign_2d_vector_all_mat {
-    ($source:expr, $ix:expr, $sink:expr) => {{
-        let nsrc = $source.nrows();
-        validate_source_len(nsrc, if ($ix).is_empty() { 0 } else { 1 })?;
-        for (i, &rix) in $ix.iter().enumerate() {
-            let row_index = checked_one_based_index(rix, ($sink).nrows())?;
-            let mut sink_row = $sink.row_mut(row_index);
-            let src_row = $source.row(i % nsrc); // wrap around!
-            for (dst, src) in sink_row.iter_mut().zip(src_row.iter()) {
-                *dst = checked_mul_assign(*dst, *src)?;
-            }
-        }
-        Ok::<(), MechError>(())
-    }};
+    ($source:expr, $ix:expr, $sink:expr) => {
+        apply_rows_matrix_positions($source, $ix, $sink, checked_mul_assign)
+    };
 }
 
 macro_rules! mul_assign_2d_vector_all_mat_b {
-    ($source:expr, $ix:expr, $sink:expr) => {{
-        validate_mask_len(($ix).len(), ($sink).nrows())?;
-        validate_source_len(
-            ($source).nrows(),
-            ($ix).iter().filter(|selected| **selected).count(),
-        )?;
-        let mut src_i = 0;
-        for (i, rix) in (&$ix).iter().enumerate() {
-            if *rix == true {
-                let mut sink_row = ($sink).row_mut(i);
-                let src_row = ($source).row(src_i);
-                for (dst, src) in sink_row.iter_mut().zip(src_row.iter()) {
-                    *dst = checked_mul_assign(*dst, *src)?;
-                }
-                src_i += 1;
-            }
-        }
-        Ok::<(), MechError>(())
-    }};
+    ($source:expr, $ix:expr, $sink:expr) => {
+        apply_rows_matrix_mask($source, $ix, $sink, checked_mul_assign)
+    };
 }
 
 #[cfg(feature = "matrix")]

@@ -8,41 +8,15 @@ use libm::sqrt;
 use libm::sqrtf;
 #[cfg(feature = "f64")]
 macro_rules! sqrt_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = sqrt((*$arg));
-        }
-    };
-}
-
-#[cfg(feature = "f64")]
-macro_rules! sqrt_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = sqrt(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(sqrt(($arg)))
     };
 }
 
 #[cfg(feature = "f32")]
 macro_rules! sqrtf_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = sqrtf((*$arg));
-        }
-    };
-}
-
-#[cfg(feature = "f32")]
-macro_rules! sqrtf_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = sqrtf(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(sqrtf(($arg)))
     };
 }
 

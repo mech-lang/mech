@@ -1,10 +1,4 @@
-use crate::*;
 use mech_core::*;
-use nalgebra::{
-    Dim, Scalar,
-    base::{Matrix as naMatrix, StorageMut},
-};
-use std::marker::PhantomData;
 use std::sync::LazyLock;
 
 static PURE_INCLUSIVE_RANGE_CONTRACT: LazyLock<OperationContractDeclaration> =
@@ -40,107 +34,7 @@ static PURE_INCLUSIVE_RANGE_CONTRACT: LazyLock<OperationContractDeclaration> =
 
 // Inclusive ------------------------------------------------------------------
 
-#[derive(Debug)]
-pub struct RangeInclusiveScalar<T, MatA> {
-    pub from: Ref<T>,
-    pub to: Ref<T>,
-    pub out: Ref<MatA>,
-    output_value: FunctionValueOutput,
-    phantom: PhantomData<T>,
-}
-impl<T, R1, C1, S1> MechFunctionFactory for RangeInclusiveScalar<T, naMatrix<T, R1, C1, S1>>
-where
-    T: Copy
-        + CanonicalMatrixElementBacking
-        + Debug
-        + Clone
-        + Sync
-        + Send
-        + FunctionRuntimeType
-        + PartialOrd
-        + 'static
-        + One
-        + Add<Output = T>
-        + mech_core::CanonicalRangeScalar,
-    #[cfg(feature = "semantic-compiler")]
-    T: CompileConst + ConstElem,
-    naMatrix<T, R1, C1, S1>: FunctionStateBacking,
-    T: FunctionPortBacking,
-    #[cfg(feature = "semantic-compiler")]
-    naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
-    R1: Dim + 'static,
-    C1: Dim,
-    S1: StorageMut<T, R1, C1> + Clone + Debug + 'static,
-{
-    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
-        <naMatrix<T, R1, C1, S1> as FunctionRuntimeType>::REPRESENTATION,
-        T::REPRESENTATION,
-        T::REPRESENTATION,
-    );
-
-            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
-                mech_core::ImplementationMemoryClass::NoAdditionalScratch
-            }
-
-    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, from, to) = invocation.expect_binary()?;
-        let output_value = out.value();
-        let from: Ref<T> = from.try_ref()?;
-        let to: Ref<T> = to.try_ref()?;
-        let out: Ref<naMatrix<T, R1, C1, S1>> = out.try_ref()?;
-        Ok(Box::new(Self {
-            from,
-            to,
-            out,
-            output_value,
-            phantom: PhantomData::default(),
-        }))
-    }
-
-    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
-        Some(&PURE_INCLUSIVE_RANGE_CONTRACT)
-    }
-}
-impl<T, R1, C1, S1> MechFunctionImpl for RangeInclusiveScalar<T, naMatrix<T, R1, C1, S1>>
-where
-    naMatrix<T, R1, C1, S1>: FunctionStateBacking,
-    T: Copy
-        + CanonicalMatrixElementBacking
-        + Scalar
-        + Clone
-        + Debug
-        + Sync
-        + Send
-        + 'static
-        + PartialOrd
-        + One
-        + Add<Output = T>
-        + mech_core::CanonicalRangeScalar
-        + 'static,
-    R1: Dim,
-    C1: Dim,
-    S1: StorageMut<T, R1, C1> + Clone + Debug,
-{
-    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-        Some(self.output_value.state_port())
-    }
-    fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
-        Ok(Some(vec![self.output_value.state_port()]))
-    }
-    fn solve_result(&self) -> MResult<()> {
-        let elements =
-            crate::canonical_range_drafts(*self.from.borrow(), None, *self.to.borrow(), true)?;
-        let output_len = elements.len();
-        self.output_value
-            .replace_matrix_drafts(vec![1, output_len as u64].into_boxed_slice(), elements)
-    }
-    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
-        Some(&PURE_INCLUSIVE_RANGE_CONTRACT)
-    }
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
+crate::impl_managed_binary_range!(RangeInclusiveScalar, &PURE_INCLUSIVE_RANGE_CONTRACT, true);
 
 #[cfg(all(test, feature = "u128", feature = "matrixd"))]
 mod tests {
@@ -149,45 +43,53 @@ mod tests {
 
     #[test]
     fn inclusive_range_does_not_increment_past_the_final_max_value() {
-        let out = Ref::new(DMatrix::from_element(1, 2, 0_u128));
-        let function = RangeInclusiveScalar::<u128, DMatrix<u128>>::new_invocation(
+        let output = ValueCell::from_exact(DMatrix::from_element(1, 2, 0_u128)).unwrap();
+        let function = crate::test_managed_factory::<RangeInclusiveScalar<u128, DMatrix<u128>>>(
             FunctionInvocation::binary(
-                ValueCell::from_exact_matrix_ref(out.clone(), 1, 2).unwrap(),
+                output.clone(),
                 ValueCell::from_exact(u128::MAX - 1).unwrap(),
                 ValueCell::from_exact(u128::MAX).unwrap(),
             ),
-        )
-        .unwrap();
+            "test/range-inclusive",
+        );
 
-        function.solve_result().unwrap();
-        assert_eq!(out.borrow().as_slice(), &[u128::MAX - 1, u128::MAX]);
+        function.instance().solve_result().unwrap();
+        crate::assert_test_value(
+            &output,
+            ValueCell::from_exact(DMatrix::from_row_slice(1, 2, &[u128::MAX - 1, u128::MAX]))
+                .unwrap(),
+        );
     }
 
     #[test]
     fn inclusive_range_revalidates_extent_and_rolls_back_without_replacing_identity() {
         let to = ValueCell::from_exact(2_u128).unwrap();
-        let out = Ref::new(DMatrix::from_element(1, 2, 0_u128));
-        let out_alias = out.clone();
-        let output = ValueCell::from_exact_matrix_ref(out.clone(), 1, 2).unwrap();
+        let output = ValueCell::from_exact(DMatrix::from_element(1, 2, 0_u128)).unwrap();
         let output_alias = output.clone();
         let schema = output.schema_key();
-        let function = RangeInclusiveScalar::<u128, DMatrix<u128>>::new_invocation(
+        let function = crate::test_managed_factory::<RangeInclusiveScalar<u128, DMatrix<u128>>>(
             FunctionInvocation::binary(
                 output.clone(),
                 ValueCell::from_exact(1_u128).unwrap(),
                 to.clone(),
             ),
-        )
-        .unwrap();
+            "test/range-inclusive",
+        );
 
-        function.solve_result().unwrap();
-        assert_eq!(out.borrow().as_slice(), &[1, 2]);
+        function.instance().solve_result().unwrap();
+        crate::assert_test_value(
+            &output,
+            ValueCell::from_exact(DMatrix::from_row_slice(1, 2, &[1_u128, 2])).unwrap(),
+        );
 
         with_reactive_journal_participant(|mut participant| -> MResult<()> {
-            participant.capture_function_state(function.as_ref())?;
+            participant.capture_function_instance(function.instance())?;
             to.replace(&ValueCell::from_exact(3_u128).unwrap().snapshot().unwrap())?;
-            function.solve_result()?;
-            assert_eq!(out.borrow().as_slice(), &[1, 2, 3]);
+            function.instance().solve_result()?;
+            crate::assert_test_value(
+                &output,
+                ValueCell::from_exact(DMatrix::from_row_slice(1, 3, &[1_u128, 2, 3])).unwrap(),
+            );
             assert_eq!(output.shape().parameter_values(), &[1, 3]);
             participant.preflight_restore_before()?;
             participant.apply_restore_before();
@@ -195,29 +97,15 @@ mod tests {
         })
         .unwrap();
 
-        assert!(out.same_handle(&out_alias));
         assert!(output.same_cell(&output_alias));
         assert_eq!(output.schema_key(), schema);
         assert_eq!(output.shape().parameter_values(), &[1, 2]);
-        assert_eq!(out.borrow().as_slice(), &[1, 2]);
-    }
-}
-#[cfg(feature = "semantic-compiler")]
-impl<T, R1, C1, S1> MechFunctionCompiler for RangeInclusiveScalar<T, naMatrix<T, R1, C1, S1>>
-where
-    T: CompileConst + ConstElem + FunctionRuntimeType,
-    naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "RangeInclusiveScalar<{}{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION,
-            function_matrix_storage_name::<naMatrix<T, R1, C1, S1>>()
+        crate::assert_test_value(
+            &output,
+            ValueCell::from_exact(DMatrix::from_row_slice(1, 2, &[1_u128, 2])).unwrap(),
         );
-        compile_binop!(name, self.out, self.from, self.to, ctx);
     }
 }
-
 #[cfg(feature = "source")]
 pub struct RangeInclusive;
 
@@ -246,7 +134,7 @@ impl CanonicalFunctionSpecializer for RangeInclusive {
                 if from.representation() == Some(<$scalar as FunctionRuntimeType>::REPRESENTATION)
                     && to.representation() == Some(<$scalar as FunctionRuntimeType>::REPRESENTATION)
                 {
-                    bind_dynamic_binary_range!(
+                    $crate::bind_dynamic_binary_range!(
                         RangeInclusiveScalar,
                         $scalar,
                         from,

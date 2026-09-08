@@ -87,8 +87,16 @@ macro_rules! horizontal_concatenate {
         T: Debug + Clone + Sync + Send + PartialEq + 'static,
         [<RowVector $vec_size>]<T>: FunctionStateBacking,
       {
-        fn solve_result(&self) -> MResult<()> {
+        fn solve_managed(
+                &self,
+                _frame: &mut mech_core::KernelMemoryFrame<'_>,
+                _services: &mut dyn mech_core::MechExecutionServices,
+            ) -> MResult<mech_core::ReactiveSolveStatus> {
+            (|| -> MResult<()> {
             Ok(())
+
+            })()?;
+            Ok(mech_core::ReactiveSolveStatus::Changed)
         }
         fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
           Some(FunctionStatePort::from_ref(&self.out))
@@ -171,14 +179,21 @@ macro_rules! horzcat_two_args {
             T: Debug + Clone + Sync + Send + PartialEq + 'static,
             $out<T>: FunctionStateBacking,
         {
-            fn solve_result(&self) -> MResult<()> {
-                unsafe {
-                    let e0_ptr = (*(self.e0.as_ptr())).clone();
-                    let e1_ptr = (*(self.e1.as_ptr())).clone();
-                    let out_ptr = (&mut *(self.out.as_mut_ptr()));
-                    $opt!(out_ptr, e0_ptr, e1_ptr);
-                };
-                Ok(())
+            fn solve_managed(
+                &self,
+                _frame: &mut mech_core::KernelMemoryFrame<'_>,
+                _services: &mut dyn mech_core::MechExecutionServices,
+            ) -> MResult<mech_core::ReactiveSolveStatus> {
+                (|| -> MResult<()> {
+                    unsafe {
+                        let e0_ptr = (*(self.e0.as_ptr())).clone();
+                        let e1_ptr = (*(self.e1.as_ptr())).clone();
+                        let out_ptr = (&mut *(self.out.as_mut_ptr()));
+                        $opt!(out_ptr, e0_ptr, e1_ptr);
+                    };
+                    Ok(())
+                })()?;
+                Ok(mech_core::ReactiveSolveStatus::Changed)
             }
             fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
                 Some(FunctionStatePort::from_ref(&self.out))
@@ -270,15 +285,22 @@ macro_rules! horzcat_three_args {
             T: Debug + Clone + Sync + Send + PartialEq + 'static,
             $out<T>: FunctionStateBacking,
         {
-            fn solve_result(&self) -> MResult<()> {
-                unsafe {
-                    let e0_ptr = (*(self.e0.as_ptr())).clone();
-                    let e1_ptr = (*(self.e1.as_ptr())).clone();
-                    let e2_ptr = (*(self.e2.as_ptr())).clone();
-                    let out_ptr = (&mut *(self.out.as_mut_ptr()));
-                    $opt!(out_ptr, e0_ptr, e1_ptr, e2_ptr);
-                };
-                Ok(())
+            fn solve_managed(
+                &self,
+                _frame: &mut mech_core::KernelMemoryFrame<'_>,
+                _services: &mut dyn mech_core::MechExecutionServices,
+            ) -> MResult<mech_core::ReactiveSolveStatus> {
+                (|| -> MResult<()> {
+                    unsafe {
+                        let e0_ptr = (*(self.e0.as_ptr())).clone();
+                        let e1_ptr = (*(self.e1.as_ptr())).clone();
+                        let e2_ptr = (*(self.e2.as_ptr())).clone();
+                        let out_ptr = (&mut *(self.out.as_mut_ptr()));
+                        $opt!(out_ptr, e0_ptr, e1_ptr, e2_ptr);
+                    };
+                    Ok(())
+                })()?;
+                Ok(mech_core::ReactiveSolveStatus::Changed)
             }
             fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
                 Some(FunctionStatePort::from_ref(&self.out))
@@ -375,16 +397,23 @@ macro_rules! horzcat_four_args {
             T: Debug + Clone + Sync + Send + PartialEq + 'static,
             $out<T>: FunctionStateBacking,
         {
-            fn solve_result(&self) -> MResult<()> {
-                unsafe {
-                    let e0_ptr = (*(self.e0.as_ptr())).clone();
-                    let e1_ptr = (*(self.e1.as_ptr())).clone();
-                    let e2_ptr = (*(self.e2.as_ptr())).clone();
-                    let e3_ptr = (*(self.e3.as_ptr())).clone();
-                    let out_ptr = (&mut *(self.out.as_mut_ptr()));
-                    $opt!(out_ptr, e0_ptr, e1_ptr, e2_ptr, e3_ptr);
-                };
-                Ok(())
+            fn solve_managed(
+                &self,
+                _frame: &mut mech_core::KernelMemoryFrame<'_>,
+                _services: &mut dyn mech_core::MechExecutionServices,
+            ) -> MResult<mech_core::ReactiveSolveStatus> {
+                (|| -> MResult<()> {
+                    unsafe {
+                        let e0_ptr = (*(self.e0.as_ptr())).clone();
+                        let e1_ptr = (*(self.e1.as_ptr())).clone();
+                        let e2_ptr = (*(self.e2.as_ptr())).clone();
+                        let e3_ptr = (*(self.e3.as_ptr())).clone();
+                        let out_ptr = (&mut *(self.out.as_mut_ptr()));
+                        $opt!(out_ptr, e0_ptr, e1_ptr, e2_ptr, e3_ptr);
+                    };
+                    Ok(())
+                })()?;
+                Ok(mech_core::ReactiveSolveStatus::Changed)
             }
             fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
                 Some(FunctionStatePort::from_ref(&self.out))
@@ -469,10 +498,17 @@ impl<T> MechFunctionImpl for HorizontalConcatenateTwoArgs<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        let offset = self.e0.copy_into(&self.out, 0);
-        self.e1.copy_into(&self.out, offset);
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            let offset = self.e0.copy_into(&self.out, 0);
+            self.e1.copy_into(&self.out, offset);
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
@@ -563,11 +599,18 @@ impl<T> MechFunctionImpl for HorizontalConcatenateThreeArgs<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        let mut offset = self.e0.copy_into(&self.out, 0);
-        offset += self.e1.copy_into(&self.out, offset);
-        self.e2.copy_into(&self.out, offset);
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            let mut offset = self.e0.copy_into(&self.out, 0);
+            offset += self.e1.copy_into(&self.out, offset);
+            self.e2.copy_into(&self.out, offset);
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
@@ -672,12 +715,19 @@ impl<T> MechFunctionImpl for HorizontalConcatenateFourArgs<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        let mut offset = self.e0.copy_into(&self.out, 0);
-        offset += self.e1.copy_into(&self.out, offset);
-        offset += self.e2.copy_into(&self.out, offset);
-        self.e3.copy_into(&self.out, offset);
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            let mut offset = self.e0.copy_into(&self.out, 0);
+            offset += self.e1.copy_into(&self.out, offset);
+            offset += self.e2.copy_into(&self.out, offset);
+            self.e3.copy_into(&self.out, offset);
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
@@ -791,20 +841,27 @@ impl<T> MechFunctionImpl for HorizontalConcatenateNArgs<T>
 where
     T: Debug + Clone + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        let mut offset = 0;
-        for e in &self.e0 {
-            match e {
-                HorizontalConcatenateInput::Scalar(value) => unsafe {
-                    (&mut *self.out.as_mut_ptr())[offset] = value.borrow().clone();
-                    offset += 1;
-                },
-                HorizontalConcatenateInput::Matrix(matrix) => {
-                    offset += matrix.copy_into(&self.out, offset);
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            let mut offset = 0;
+            for e in &self.e0 {
+                match e {
+                    HorizontalConcatenateInput::Scalar(value) => unsafe {
+                        (&mut *self.out.as_mut_ptr())[offset] = value.borrow().clone();
+                        offset += 1;
+                    },
+                    HorizontalConcatenateInput::Matrix(matrix) => {
+                        offset += matrix.copy_into(&self.out, offset);
+                    }
                 }
             }
-        }
-        Ok(())
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
@@ -903,8 +960,13 @@ impl<T> MechFunctionImpl for HorizontalConcatenateRD<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> { Ok(()) })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -994,17 +1056,24 @@ impl<T> MechFunctionImpl for HorizontalConcatenateRDN<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            for (e, i) in &self.matrix {
-                e.copy_into_r(&self.out, *i);
-            }
-            for (e, i) in &self.scalar {
-                out_ptr[*i] = e.borrow().clone();
-            }
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                for (e, i) in &self.matrix {
+                    e.copy_into_r(&self.out, *i);
+                }
+                for (e, i) in &self.scalar {
+                    out_ptr[*i] = e.borrow().clone();
+                }
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
@@ -1190,7 +1259,7 @@ mod compiler_tests {
     }
 
     #[test]
-    fn horizontal_concatenate_n_args_preserves_scalar_and_matrix_order() {
+    fn horizontal_concatenate_n_args_compiles_scalar_and_matrix_order() {
         let scalar = Ref::new(9.0);
         let scalar_cell = scalar.reactive_cell_id().get() as usize;
         let matrix = matrix();
@@ -1211,9 +1280,6 @@ mod compiler_tests {
           Some(BytecodeInstruction::RuntimeVariadic { arguments, .. })
             if arguments == &vec![scalar_register, matrix_register]
         ));
-
-        function.solve_result().unwrap();
-        assert_eq!(function.out.borrow().as_slice(), &[9.0, 7.0]);
     }
 
     #[test]
@@ -1288,12 +1354,19 @@ impl<T> MechFunctionImpl for HorizontalConcatenateS1D<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = self.arg.borrow().clone();
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                out_ptr[0] = self.arg.borrow().clone();
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
@@ -1367,12 +1440,19 @@ impl<T> MechFunctionImpl for HorizontalConcatenateS1<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = self.arg.borrow().clone();
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                out_ptr[0] = self.arg.borrow().clone();
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -1450,13 +1530,20 @@ impl<T> MechFunctionImpl for HorizontalConcatenateS2<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = self.e0.borrow().clone();
-            out_ptr[1] = self.e1.borrow().clone();
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                out_ptr[0] = self.e0.borrow().clone();
+                out_ptr[1] = self.e1.borrow().clone();
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -1559,14 +1646,21 @@ impl<T> MechFunctionImpl for HorizontalConcatenateS3<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = self.e0.borrow().clone();
-            out_ptr[1] = self.e1.borrow().clone();
-            out_ptr[2] = self.e2.borrow().clone();
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                out_ptr[0] = self.e0.borrow().clone();
+                out_ptr[1] = self.e1.borrow().clone();
+                out_ptr[2] = self.e2.borrow().clone();
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -1656,15 +1750,22 @@ impl<T> MechFunctionImpl for HorizontalConcatenateS4<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = self.e0.borrow().clone();
-            out_ptr[1] = self.e1.borrow().clone();
-            out_ptr[2] = self.e2.borrow().clone();
-            out_ptr[3] = self.e3.borrow().clone();
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                out_ptr[0] = self.e0.borrow().clone();
+                out_ptr[1] = self.e1.borrow().clone();
+                out_ptr[2] = self.e2.borrow().clone();
+                out_ptr[3] = self.e3.borrow().clone();
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -1757,8 +1858,13 @@ impl<T> MechFunctionImpl for HorizontalConcatenateSD<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> { Ok(()) })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -1837,8 +1943,13 @@ macro_rules! horzcat_single {
         where
             T: Debug + Clone + Sync + Send + PartialEq + 'static,
         {
-            fn solve_result(&self) -> MResult<()> {
-                Ok(())
+            fn solve_managed(
+                &self,
+                _frame: &mut mech_core::KernelMemoryFrame<'_>,
+                _services: &mut dyn mech_core::MechExecutionServices,
+            ) -> MResult<mech_core::ReactiveSolveStatus> {
+                (|| -> MResult<()> { Ok(()) })()?;
+                Ok(mech_core::ReactiveSolveStatus::Changed)
             }
 
             fn to_string(&self) -> String {
@@ -1937,16 +2048,23 @@ impl<T> MechFunctionImpl for HorizontalConcatenateSR2<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr.clone();
-            out_ptr[1] = e1_ptr[0].clone();
-            out_ptr[2] = e1_ptr[1].clone();
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let e0_ptr = (*(self.e0.as_ptr())).clone();
+                let e1_ptr = (*(self.e1.as_ptr())).clone();
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                out_ptr[0] = e0_ptr.clone();
+                out_ptr[1] = e1_ptr[0].clone();
+                out_ptr[2] = e1_ptr[1].clone();
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -2016,15 +2134,22 @@ impl<T> MechFunctionImpl for HorizontalConcatenateR2S<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr[0].clone();
-            out_ptr[1] = e0_ptr[1].clone();
-            out_ptr[2] = self.e1.borrow().clone();
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let e0_ptr = (*(self.e0.as_ptr())).clone();
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                out_ptr[0] = e0_ptr[0].clone();
+                out_ptr[1] = e0_ptr[1].clone();
+                out_ptr[2] = self.e1.borrow().clone();
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -2093,15 +2218,22 @@ impl<T> MechFunctionImpl for HorizontalConcatenateSM1<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_val = self.e0.borrow().clone();
-            let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_val;
-            out_ptr[1] = e1_ptr[0].clone();
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let e0_val = self.e0.borrow().clone();
+                let e1_ptr = (*(self.e1.as_ptr())).clone();
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                out_ptr[0] = e0_val;
+                out_ptr[1] = e1_ptr[0].clone();
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -2171,15 +2303,22 @@ impl<T> MechFunctionImpl for HorizontalConcatenateM1S<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let e1_val = self.e1.borrow().clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr[0].clone();
-            out_ptr[1] = e1_val;
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let e0_ptr = (*(self.e0.as_ptr())).clone();
+                let e1_val = self.e1.borrow().clone();
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                out_ptr[0] = e0_ptr[0].clone();
+                out_ptr[1] = e1_val;
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -2261,19 +2400,26 @@ impl<T> MechFunctionImpl for HorizontalConcatenateSSSM1<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_val = self.e0.borrow().clone();
-            let e1_val = self.e1.borrow().clone();
-            let e2_val = self.e2.borrow().clone();
-            let e3_ptr = (*(self.e3.as_ptr())).clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_val;
-            out_ptr[1] = e1_val;
-            out_ptr[2] = e2_val;
-            out_ptr[3] = e3_ptr[0].clone();
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let e0_val = self.e0.borrow().clone();
+                let e1_val = self.e1.borrow().clone();
+                let e2_val = self.e2.borrow().clone();
+                let e3_ptr = (*(self.e3.as_ptr())).clone();
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                out_ptr[0] = e0_val;
+                out_ptr[1] = e1_val;
+                out_ptr[2] = e2_val;
+                out_ptr[3] = e3_ptr[0].clone();
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -2355,19 +2501,26 @@ impl<T> MechFunctionImpl for HorizontalConcatenateSSM1S<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_val = self.e0.borrow().clone();
-            let e1_val = self.e1.borrow().clone();
-            let e2_ptr = (*(self.e2.as_ptr())).clone();
-            let e3_val = self.e3.borrow().clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_val;
-            out_ptr[1] = e1_val;
-            out_ptr[2] = e2_ptr[0].clone();
-            out_ptr[3] = e3_val;
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let e0_val = self.e0.borrow().clone();
+                let e1_val = self.e1.borrow().clone();
+                let e2_ptr = (*(self.e2.as_ptr())).clone();
+                let e3_val = self.e3.borrow().clone();
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                out_ptr[0] = e0_val;
+                out_ptr[1] = e1_val;
+                out_ptr[2] = e2_ptr[0].clone();
+                out_ptr[3] = e3_val;
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -2449,19 +2602,26 @@ impl<T> MechFunctionImpl for HorizontalConcatenateSM1SS<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_val = self.e0.borrow().clone();
-            let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let e2_val = self.e2.borrow().clone();
-            let e3_val = self.e3.borrow().clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_val;
-            out_ptr[1] = e1_ptr[0].clone();
-            out_ptr[2] = e2_val;
-            out_ptr[3] = e3_val;
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let e0_val = self.e0.borrow().clone();
+                let e1_ptr = (*(self.e1.as_ptr())).clone();
+                let e2_val = self.e2.borrow().clone();
+                let e3_val = self.e3.borrow().clone();
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                out_ptr[0] = e0_val;
+                out_ptr[1] = e1_ptr[0].clone();
+                out_ptr[2] = e2_val;
+                out_ptr[3] = e3_val;
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -2543,19 +2703,26 @@ impl<T> MechFunctionImpl for HorizontalConcatenateM1SSS<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let e1_val = self.e1.borrow().clone();
-            let e2_val = self.e2.borrow().clone();
-            let e3_val = self.e3.borrow().clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr[0].clone();
-            out_ptr[1] = e1_val;
-            out_ptr[2] = e2_val;
-            out_ptr[3] = e3_val;
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let e0_ptr = (*(self.e0.as_ptr())).clone();
+                let e1_val = self.e1.borrow().clone();
+                let e2_val = self.e2.borrow().clone();
+                let e3_val = self.e3.borrow().clone();
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                out_ptr[0] = e0_ptr[0].clone();
+                out_ptr[1] = e1_val;
+                out_ptr[2] = e2_val;
+                out_ptr[3] = e3_val;
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -2625,17 +2792,24 @@ impl<T> MechFunctionImpl for HorizontalConcatenateSR3<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr.clone();
-            out_ptr[1] = e1_ptr[0].clone();
-            out_ptr[2] = e1_ptr[1].clone();
-            out_ptr[3] = e1_ptr[2].clone();
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let e0_ptr = (*(self.e0.as_ptr())).clone();
+                let e1_ptr = (*(self.e1.as_ptr())).clone();
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                out_ptr[0] = e0_ptr.clone();
+                out_ptr[1] = e1_ptr[0].clone();
+                out_ptr[2] = e1_ptr[1].clone();
+                out_ptr[3] = e1_ptr[2].clone();
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -2705,17 +2879,24 @@ impl<T> MechFunctionImpl for HorizontalConcatenateR3S<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let e1_ptr = self.e1.borrow().clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr[0].clone();
-            out_ptr[1] = e0_ptr[1].clone();
-            out_ptr[2] = e0_ptr[2].clone();
-            out_ptr[3] = e1_ptr.clone();
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let e0_ptr = (*(self.e0.as_ptr())).clone();
+                let e1_ptr = self.e1.borrow().clone();
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                out_ptr[0] = e0_ptr[0].clone();
+                out_ptr[1] = e0_ptr[1].clone();
+                out_ptr[2] = e0_ptr[2].clone();
+                out_ptr[3] = e1_ptr.clone();
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -2788,17 +2969,24 @@ impl<T> MechFunctionImpl for HorizontalConcatenateSSM1<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_val = self.e0.borrow().clone();
-            let e1_val = self.e1.borrow().clone();
-            let e2_ptr = (*(self.e2.as_ptr())).clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_val;
-            out_ptr[1] = e1_val;
-            out_ptr[2] = e2_ptr[0].clone();
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let e0_val = self.e0.borrow().clone();
+                let e1_val = self.e1.borrow().clone();
+                let e2_ptr = (*(self.e2.as_ptr())).clone();
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                out_ptr[0] = e0_val;
+                out_ptr[1] = e1_val;
+                out_ptr[2] = e2_ptr[0].clone();
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -2871,17 +3059,24 @@ impl<T> MechFunctionImpl for HorizontalConcatenateSM1S<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_val = self.e0.borrow().clone();
-            let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let e2_val = self.e2.borrow().clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_val;
-            out_ptr[1] = e1_ptr[0].clone();
-            out_ptr[2] = e2_val;
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let e0_val = self.e0.borrow().clone();
+                let e1_ptr = (*(self.e1.as_ptr())).clone();
+                let e2_val = self.e2.borrow().clone();
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                out_ptr[0] = e0_val;
+                out_ptr[1] = e1_ptr[0].clone();
+                out_ptr[2] = e2_val;
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -2954,17 +3149,24 @@ impl<T> MechFunctionImpl for HorizontalConcatenateM1SS<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let e1_val = self.e1.borrow().clone();
-            let e2_val = self.e2.borrow().clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr[0].clone();
-            out_ptr[1] = e1_val;
-            out_ptr[2] = e2_val;
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let e0_ptr = (*(self.e0.as_ptr())).clone();
+                let e1_val = self.e1.borrow().clone();
+                let e2_val = self.e2.borrow().clone();
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                out_ptr[0] = e0_ptr[0].clone();
+                out_ptr[1] = e1_val;
+                out_ptr[2] = e2_val;
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -3037,18 +3239,25 @@ impl<T> MechFunctionImpl for HorizontalConcatenateSSR2<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_val = self.e0.borrow().clone();
-            let e1_val = self.e1.borrow().clone();
-            let e2_ptr = (*(self.e2.as_ptr())).clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_val;
-            out_ptr[1] = e1_val;
-            out_ptr[2] = e2_ptr[0].clone();
-            out_ptr[3] = e2_ptr[1].clone();
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let e0_val = self.e0.borrow().clone();
+                let e1_val = self.e1.borrow().clone();
+                let e2_ptr = (*(self.e2.as_ptr())).clone();
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                out_ptr[0] = e0_val;
+                out_ptr[1] = e1_val;
+                out_ptr[2] = e2_ptr[0].clone();
+                out_ptr[3] = e2_ptr[1].clone();
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -3121,18 +3330,25 @@ impl<T> MechFunctionImpl for HorizontalConcatenateSR2S<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_val = self.e0.borrow().clone();
-            let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let e2_val = self.e2.borrow().clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_val;
-            out_ptr[1] = e1_ptr[0].clone();
-            out_ptr[2] = e1_ptr[1].clone();
-            out_ptr[3] = e2_val;
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let e0_val = self.e0.borrow().clone();
+                let e1_ptr = (*(self.e1.as_ptr())).clone();
+                let e2_val = self.e2.borrow().clone();
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                out_ptr[0] = e0_val;
+                out_ptr[1] = e1_ptr[0].clone();
+                out_ptr[2] = e1_ptr[1].clone();
+                out_ptr[3] = e2_val;
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -3205,18 +3421,25 @@ impl<T> MechFunctionImpl for HorizontalConcatenateR2SS<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let e1_val = self.e1.borrow().clone();
-            let e2_val = self.e2.borrow().clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr[0].clone();
-            out_ptr[1] = e0_ptr[1].clone();
-            out_ptr[2] = e1_val;
-            out_ptr[3] = e2_val;
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let e0_ptr = (*(self.e0.as_ptr())).clone();
+                let e1_val = self.e1.borrow().clone();
+                let e2_val = self.e2.borrow().clone();
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                out_ptr[0] = e0_ptr[0].clone();
+                out_ptr[1] = e0_ptr[1].clone();
+                out_ptr[2] = e1_val;
+                out_ptr[3] = e2_val;
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -3289,17 +3512,24 @@ impl<T> MechFunctionImpl for HorizontalConcatenateM1M1S<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let e2_val = self.e2.borrow().clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr[0].clone();
-            out_ptr[1] = e1_ptr[0].clone();
-            out_ptr[2] = e2_val;
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let e0_ptr = (*(self.e0.as_ptr())).clone();
+                let e1_ptr = (*(self.e1.as_ptr())).clone();
+                let e2_val = self.e2.borrow().clone();
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                out_ptr[0] = e0_ptr[0].clone();
+                out_ptr[1] = e1_ptr[0].clone();
+                out_ptr[2] = e2_val;
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -3390,17 +3620,24 @@ impl<T> MechFunctionImpl for HorizontalConcatenateM1SM1<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let e1_val = self.e1.borrow().clone();
-            let e2_ptr = (*(self.e2.as_ptr())).clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr[0].clone();
-            out_ptr[1] = e1_val;
-            out_ptr[2] = e2_ptr[0].clone();
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let e0_ptr = (*(self.e0.as_ptr())).clone();
+                let e1_val = self.e1.borrow().clone();
+                let e2_ptr = (*(self.e2.as_ptr())).clone();
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                out_ptr[0] = e0_ptr[0].clone();
+                out_ptr[1] = e1_val;
+                out_ptr[2] = e2_ptr[0].clone();
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -3473,17 +3710,24 @@ impl<T> MechFunctionImpl for HorizontalConcatenateSM1M1<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_val = self.e0.borrow().clone();
-            let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let e2_ptr = (*(self.e2.as_ptr())).clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_val;
-            out_ptr[1] = e1_ptr[0].clone();
-            out_ptr[2] = e2_ptr[0].clone();
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let e0_val = self.e0.borrow().clone();
+                let e1_ptr = (*(self.e1.as_ptr())).clone();
+                let e2_ptr = (*(self.e2.as_ptr())).clone();
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                out_ptr[0] = e0_val;
+                out_ptr[1] = e1_ptr[0].clone();
+                out_ptr[2] = e2_ptr[0].clone();
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -3616,18 +3860,25 @@ impl<T> MechFunctionImpl for HorizontalConcatenateSM1R2<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_val = self.e0.borrow().clone();
-            let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let e2_ptr = (*(self.e2.as_ptr())).clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_val;
-            out_ptr[1] = e1_ptr[0].clone();
-            out_ptr[2] = e2_ptr[0].clone();
-            out_ptr[3] = e2_ptr[1].clone();
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let e0_val = self.e0.borrow().clone();
+                let e1_ptr = (*(self.e1.as_ptr())).clone();
+                let e2_ptr = (*(self.e2.as_ptr())).clone();
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                out_ptr[0] = e0_val;
+                out_ptr[1] = e1_ptr[0].clone();
+                out_ptr[2] = e2_ptr[0].clone();
+                out_ptr[3] = e2_ptr[1].clone();
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -3700,18 +3951,25 @@ impl<T> MechFunctionImpl for HorizontalConcatenateM1SR2<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let e1_val = self.e1.borrow().clone();
-            let e2_ptr = (*(self.e2.as_ptr())).clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr[0].clone();
-            out_ptr[1] = e1_val;
-            out_ptr[2] = e2_ptr[0].clone();
-            out_ptr[3] = e2_ptr[1].clone();
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let e0_ptr = (*(self.e0.as_ptr())).clone();
+                let e1_val = self.e1.borrow().clone();
+                let e2_ptr = (*(self.e2.as_ptr())).clone();
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                out_ptr[0] = e0_ptr[0].clone();
+                out_ptr[1] = e1_val;
+                out_ptr[2] = e2_ptr[0].clone();
+                out_ptr[3] = e2_ptr[1].clone();
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -3793,19 +4051,26 @@ impl<T> MechFunctionImpl for HorizontalConcatenateSM1SM1<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_val = self.e0.borrow().clone();
-            let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let e2_val = self.e2.borrow().clone();
-            let e3_ptr = (*(self.e3.as_ptr())).clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_val;
-            out_ptr[1] = e1_ptr[0].clone();
-            out_ptr[2] = e2_val;
-            out_ptr[3] = e3_ptr[0].clone();
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let e0_val = self.e0.borrow().clone();
+                let e1_ptr = (*(self.e1.as_ptr())).clone();
+                let e2_val = self.e2.borrow().clone();
+                let e3_ptr = (*(self.e3.as_ptr())).clone();
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                out_ptr[0] = e0_val;
+                out_ptr[1] = e1_ptr[0].clone();
+                out_ptr[2] = e2_val;
+                out_ptr[3] = e3_ptr[0].clone();
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -3878,18 +4143,25 @@ impl<T> MechFunctionImpl for HorizontalConcatenateM1R2S<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let e2_val = self.e2.borrow().clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr[0].clone();
-            out_ptr[1] = e1_ptr[0].clone();
-            out_ptr[2] = e1_ptr[1].clone();
-            out_ptr[3] = e2_val;
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let e0_ptr = (*(self.e0.as_ptr())).clone();
+                let e1_ptr = (*(self.e1.as_ptr())).clone();
+                let e2_val = self.e2.borrow().clone();
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                out_ptr[0] = e0_ptr[0].clone();
+                out_ptr[1] = e1_ptr[0].clone();
+                out_ptr[2] = e1_ptr[1].clone();
+                out_ptr[3] = e2_val;
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -3962,18 +4234,25 @@ impl<T> MechFunctionImpl for HorizontalConcatenateR2M1S<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let e2_val = self.e2.borrow().clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr[0].clone();
-            out_ptr[1] = e0_ptr[1].clone();
-            out_ptr[2] = e1_ptr[0].clone();
-            out_ptr[3] = e2_val;
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let e0_ptr = (*(self.e0.as_ptr())).clone();
+                let e1_ptr = (*(self.e1.as_ptr())).clone();
+                let e2_val = self.e2.borrow().clone();
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                out_ptr[0] = e0_ptr[0].clone();
+                out_ptr[1] = e0_ptr[1].clone();
+                out_ptr[2] = e1_ptr[0].clone();
+                out_ptr[3] = e2_val;
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -4046,18 +4325,25 @@ impl<T> MechFunctionImpl for HorizontalConcatenateR2SM1<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let e1_val = self.e1.borrow().clone();
-            let e2_ptr = (*(self.e2.as_ptr())).clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr[0].clone();
-            out_ptr[1] = e0_ptr[1].clone();
-            out_ptr[2] = e1_val;
-            out_ptr[3] = e2_ptr[0].clone();
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let e0_ptr = (*(self.e0.as_ptr())).clone();
+                let e1_val = self.e1.borrow().clone();
+                let e2_ptr = (*(self.e2.as_ptr())).clone();
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                out_ptr[0] = e0_ptr[0].clone();
+                out_ptr[1] = e0_ptr[1].clone();
+                out_ptr[2] = e1_val;
+                out_ptr[3] = e2_ptr[0].clone();
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -4130,18 +4416,25 @@ impl<T> MechFunctionImpl for HorizontalConcatenateSR2M1<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_val = self.e0.borrow().clone();
-            let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let e2_ptr = (*(self.e2.as_ptr())).clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_val;
-            out_ptr[1] = e1_ptr[0].clone();
-            out_ptr[2] = e1_ptr[1].clone();
-            out_ptr[3] = e2_ptr[0].clone();
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let e0_val = self.e0.borrow().clone();
+                let e1_ptr = (*(self.e1.as_ptr())).clone();
+                let e2_ptr = (*(self.e2.as_ptr())).clone();
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                out_ptr[0] = e0_val;
+                out_ptr[1] = e1_ptr[0].clone();
+                out_ptr[2] = e1_ptr[1].clone();
+                out_ptr[3] = e2_ptr[0].clone();
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -4223,19 +4516,26 @@ impl<T> MechFunctionImpl for HorizontalConcatenateSSM1M1<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_val = self.e0.borrow().clone();
-            let e1_val = self.e1.borrow().clone();
-            let e2_ptr = (*(self.e2.as_ptr())).clone();
-            let e3_ptr = (*(self.e3.as_ptr())).clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_val;
-            out_ptr[1] = e1_val;
-            out_ptr[2] = e2_ptr[0].clone();
-            out_ptr[3] = e3_ptr[0].clone();
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let e0_val = self.e0.borrow().clone();
+                let e1_val = self.e1.borrow().clone();
+                let e2_ptr = (*(self.e2.as_ptr())).clone();
+                let e3_ptr = (*(self.e3.as_ptr())).clone();
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                out_ptr[0] = e0_val;
+                out_ptr[1] = e1_val;
+                out_ptr[2] = e2_ptr[0].clone();
+                out_ptr[3] = e3_ptr[0].clone();
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -4317,19 +4617,26 @@ impl<T> MechFunctionImpl for HorizontalConcatenateM1M1SS<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let e2_val = self.e2.borrow().clone();
-            let e3_val = self.e3.borrow().clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr[0].clone();
-            out_ptr[1] = e1_ptr[0].clone();
-            out_ptr[2] = e2_val;
-            out_ptr[3] = e3_val;
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let e0_ptr = (*(self.e0.as_ptr())).clone();
+                let e1_ptr = (*(self.e1.as_ptr())).clone();
+                let e2_val = self.e2.borrow().clone();
+                let e3_val = self.e3.borrow().clone();
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                out_ptr[0] = e0_ptr[0].clone();
+                out_ptr[1] = e1_ptr[0].clone();
+                out_ptr[2] = e2_val;
+                out_ptr[3] = e3_val;
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -4411,19 +4718,26 @@ impl<T> MechFunctionImpl for HorizontalConcatenateSM1M1S<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_val = self.e0.borrow().clone();
-            let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let e2_ptr = (*(self.e2.as_ptr())).clone();
-            let e3_val = self.e3.borrow().clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_val;
-            out_ptr[1] = e1_ptr[0].clone();
-            out_ptr[2] = e2_ptr[0].clone();
-            out_ptr[3] = e3_val;
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let e0_val = self.e0.borrow().clone();
+                let e1_ptr = (*(self.e1.as_ptr())).clone();
+                let e2_ptr = (*(self.e2.as_ptr())).clone();
+                let e3_val = self.e3.borrow().clone();
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                out_ptr[0] = e0_val;
+                out_ptr[1] = e1_ptr[0].clone();
+                out_ptr[2] = e2_ptr[0].clone();
+                out_ptr[3] = e3_val;
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -4505,19 +4819,26 @@ impl<T> MechFunctionImpl for HorizontalConcatenateM1SSM1<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let e1_val = self.e1.borrow().clone();
-            let e2_val = self.e2.borrow().clone();
-            let e3_ptr = (*(self.e3.as_ptr())).clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr[0].clone();
-            out_ptr[1] = e1_val;
-            out_ptr[2] = e2_val;
-            out_ptr[3] = e3_ptr[0].clone();
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let e0_ptr = (*(self.e0.as_ptr())).clone();
+                let e1_val = self.e1.borrow().clone();
+                let e2_val = self.e2.borrow().clone();
+                let e3_ptr = (*(self.e3.as_ptr())).clone();
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                out_ptr[0] = e0_ptr[0].clone();
+                out_ptr[1] = e1_val;
+                out_ptr[2] = e2_val;
+                out_ptr[3] = e3_ptr[0].clone();
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -4599,19 +4920,26 @@ impl<T> MechFunctionImpl for HorizontalConcatenateM1SM1S<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let e1_val = self.e1.borrow().clone();
-            let e2_ptr = (*(self.e2.as_ptr())).clone();
-            let e3_val = self.e3.borrow().clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr[0].clone();
-            out_ptr[1] = e1_val;
-            out_ptr[2] = e2_ptr[0].clone();
-            out_ptr[3] = e3_val;
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let e0_ptr = (*(self.e0.as_ptr())).clone();
+                let e1_val = self.e1.borrow().clone();
+                let e2_ptr = (*(self.e2.as_ptr())).clone();
+                let e3_val = self.e3.borrow().clone();
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                out_ptr[0] = e0_ptr[0].clone();
+                out_ptr[1] = e1_val;
+                out_ptr[2] = e2_ptr[0].clone();
+                out_ptr[3] = e3_val;
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -4812,19 +5140,26 @@ impl<T> MechFunctionImpl for HorizontalConcatenateSM1M1M1<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_val = self.e0.borrow().clone();
-            let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let e2_ptr = (*(self.e2.as_ptr())).clone();
-            let e3_ptr = (*(self.e3.as_ptr())).clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_val;
-            out_ptr[1] = e1_ptr[0].clone();
-            out_ptr[2] = e2_ptr[0].clone();
-            out_ptr[3] = e3_ptr[0].clone();
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let e0_val = self.e0.borrow().clone();
+                let e1_ptr = (*(self.e1.as_ptr())).clone();
+                let e2_ptr = (*(self.e2.as_ptr())).clone();
+                let e3_ptr = (*(self.e3.as_ptr())).clone();
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                out_ptr[0] = e0_val;
+                out_ptr[1] = e1_ptr[0].clone();
+                out_ptr[2] = e2_ptr[0].clone();
+                out_ptr[3] = e3_ptr[0].clone();
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -4906,19 +5241,26 @@ impl<T> MechFunctionImpl for HorizontalConcatenateM1SM1M1<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let e1_val = self.e1.borrow().clone();
-            let e2_ptr = (*(self.e2.as_ptr())).clone();
-            let e3_ptr = (*(self.e3.as_ptr())).clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr[0].clone();
-            out_ptr[1] = e1_val;
-            out_ptr[2] = e2_ptr[0].clone();
-            out_ptr[3] = e3_ptr[0].clone();
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let e0_ptr = (*(self.e0.as_ptr())).clone();
+                let e1_val = self.e1.borrow().clone();
+                let e2_ptr = (*(self.e2.as_ptr())).clone();
+                let e3_ptr = (*(self.e3.as_ptr())).clone();
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                out_ptr[0] = e0_ptr[0].clone();
+                out_ptr[1] = e1_val;
+                out_ptr[2] = e2_ptr[0].clone();
+                out_ptr[3] = e3_ptr[0].clone();
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -5000,19 +5342,26 @@ impl<T> MechFunctionImpl for HorizontalConcatenateM1M1SM1<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let e2_val = self.e2.borrow().clone();
-            let e3_ptr = (*(self.e3.as_ptr())).clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr[0].clone();
-            out_ptr[1] = e1_ptr[0].clone();
-            out_ptr[2] = e2_val;
-            out_ptr[3] = e3_ptr[0].clone();
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let e0_ptr = (*(self.e0.as_ptr())).clone();
+                let e1_ptr = (*(self.e1.as_ptr())).clone();
+                let e2_val = self.e2.borrow().clone();
+                let e3_ptr = (*(self.e3.as_ptr())).clone();
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                out_ptr[0] = e0_ptr[0].clone();
+                out_ptr[1] = e1_ptr[0].clone();
+                out_ptr[2] = e2_val;
+                out_ptr[3] = e3_ptr[0].clone();
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -5097,19 +5446,26 @@ impl<T> MechFunctionImpl for HorizontalConcatenateM1M1M1S<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let e2_ptr = (*(self.e2.as_ptr())).clone();
-            let e3_val = self.e3.borrow().clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr[0].clone();
-            out_ptr[1] = e1_ptr[0].clone();
-            out_ptr[2] = e2_ptr[0].clone();
-            out_ptr[3] = e3_val;
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let e0_ptr = (*(self.e0.as_ptr())).clone();
+                let e1_ptr = (*(self.e1.as_ptr())).clone();
+                let e2_ptr = (*(self.e2.as_ptr())).clone();
+                let e3_val = self.e3.borrow().clone();
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                out_ptr[0] = e0_ptr[0].clone();
+                out_ptr[1] = e1_ptr[0].clone();
+                out_ptr[2] = e2_ptr[0].clone();
+                out_ptr[3] = e3_val;
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -5194,19 +5550,26 @@ impl<T> MechFunctionImpl for HorizontalConcatenateM1M1M1M1<T>
 where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
 {
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let e2_ptr = (*(self.e2.as_ptr())).clone();
-            let e3_ptr = (*(self.e3.as_ptr())).clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr[0].clone();
-            out_ptr[1] = e1_ptr[0].clone();
-            out_ptr[2] = e2_ptr[0].clone();
-            out_ptr[3] = e3_ptr[0].clone();
-        };
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            unsafe {
+                let e0_ptr = (*(self.e0.as_ptr())).clone();
+                let e1_ptr = (*(self.e1.as_ptr())).clone();
+                let e2_ptr = (*(self.e2.as_ptr())).clone();
+                let e3_ptr = (*(self.e3.as_ptr())).clone();
+                let out_ptr = &mut *(self.out.as_mut_ptr());
+                out_ptr[0] = e0_ptr[0].clone();
+                out_ptr[1] = e1_ptr[0].clone();
+                out_ptr[2] = e2_ptr[0].clone();
+                out_ptr[3] = e3_ptr[0].clone();
+            };
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {

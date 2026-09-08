@@ -117,19 +117,39 @@ pub(super) struct Gate {
     pub(super) out: ValueCell,
 }
 
-impl MechFunctionImpl for Gate {
-    fn solve_result(&self) -> MResult<()> {
-        Ok(())
-    }
-
-    fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
+impl Gate {
+    #[cfg(test)]
+    pub(super) fn solve_gate(&self) -> MResult<mech_core::ReactiveSolveStatus> {
         if super::captures::read_selected_arm(&self.selected)? == self.arm {
             commit_proposed_captures(&self.captures)?;
             super::captures::increment(&self.out)?;
-            Ok(ReactiveSolveStatus::Changed)
+            Ok(mech_core::ReactiveSolveStatus::Changed)
         } else {
             Ok(ReactiveSolveStatus::Unchanged)
         }
+    }
+
+    fn solve_gate_managed(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        if super::captures::read_selected_arm(&self.selected)? == self.arm {
+            commit_proposed_captures(&self.captures)?;
+            super::captures::stage_increment(frame, &self.out)?;
+            Ok(mech_core::ReactiveSolveStatus::Changed)
+        } else {
+            Ok(ReactiveSolveStatus::Unchanged)
+        }
+    }
+}
+
+impl MechFunctionImpl for Gate {
+    fn solve_managed(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        self.solve_gate_managed(frame)
     }
 
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
