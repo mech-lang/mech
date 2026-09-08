@@ -1,6 +1,10 @@
 #![cfg_attr(all(feature = "no_std", not(feature = "std")), no_std)]
 #![feature(allocator_api)]
 #![feature(where_clause_attrs)]
+#![allow(
+    unused_features,
+    reason = "the public macro surface expands cfg attributes on where clauses in downstream crates"
+)]
 
 //extern crate core as rust_core;
 extern crate seahash;

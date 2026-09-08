@@ -38,6 +38,15 @@
       "reason": "exact matrix constructors are feature-selected below"
     },
     {
+      "directive": "allow",
+      "expiry_condition": "Remove when the public function macros no longer require cfg attributes on generated where clauses.",
+      "lint": "unused_features",
+      "occurrences": 1,
+      "owner": "Core function macro surface",
+      "path": "src/core/src/lib.rs",
+      "reason": "the public macro surface expands cfg attributes on where clauses in downstream crates"
+    },
+    {
       "directive": "expect",
       "expiry_condition": "Remove when the GPU backend installs managed device bindings during its R6 cutover.",
       "lint": "dead_code",
@@ -117,6 +126,15 @@
       "owner": "Canonical structure dispatch",
       "path": "src/engine/src/structures.rs",
       "reason": "the fallback is reachable only in narrow structure feature profiles"
+    },
+    {
+      "directive": "allow",
+      "expiry_condition": "Remove when every assignment-enabled host profile also selects a typed matrix backing.",
+      "lint": "dead_code",
+      "occurrences": 1,
+      "owner": "Managed assignment kernels",
+      "path": "src/engine/src/intrinsics/assign/mod.rs",
+      "reason": "reduced host profiles can enable assignment without any typed matrix backing"
     },
     {
       "directive": "allow",

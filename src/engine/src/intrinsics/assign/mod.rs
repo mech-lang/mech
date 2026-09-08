@@ -342,6 +342,10 @@ impl ManagedAssignBacking for String {
     }
 }
 
+#[allow(
+    dead_code,
+    reason = "reduced host profiles can enable assignment without any typed matrix backing"
+)]
 trait ManagedAssignElement: FunctionPortBacking + Clone + Debug + PartialEq + 'static {
     fn copy_ports(
         source: &ManagedPort<Self>,
