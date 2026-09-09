@@ -814,7 +814,7 @@ impl AssignCanonicalSelection {
     fn stage_managed(&self, frame: &mut mech_core::KernelMemoryFrame<'_>) -> MResult<()> {
         let footprint = self.prospective_output_footprint()?;
         frame.with_admitted_canonical_output(&self.sink, footprint, |_, construction| {
-            let next = construction.try_build_assignment_candidate_with(|| self.next_value())?;
+            let next = construction.try_build_assignment_candidate_with(|_| self.next_value())?;
             Ok(((), next))
         })?;
         Ok(())
@@ -1668,7 +1668,7 @@ impl MechFunctionImpl for AddAssignCanonicalTable {
         frame.snapshot_input_cell(&self.source, 1)?;
         let footprint = self.prospective_output_footprint()?;
         frame.with_admitted_canonical_output(&self.sink, footprint, |_, construction| {
-            let next = construction.try_build_canonical_candidate_with(|| self.next_value())?;
+            let next = construction.try_build_canonical_candidate_with(|_| self.next_value())?;
             Ok(((), next))
         })?;
         Ok(mech_core::ReactiveSolveStatus::Changed)

@@ -202,6 +202,10 @@ impl RetainedPayloadTicket {
     pub fn bytes(&self) -> u64 {
         self.charge.bytes
     }
+
+    pub(crate) fn shares_charge_with(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.charge, &other.charge)
+    }
 }
 
 impl Drop for PayloadBlockRecord {
@@ -556,6 +560,41 @@ impl FrozenSnapshotConstruction {
         output.rebuild_data_draft_with_construction(data, self)
     }
 
+    /// Rebuilds one tuple from values resolved through the current call
+    /// frame. The child cells contribute semantic schema identity only; their
+    /// backing is never reread behind the frame.
+    #[cfg(all(feature = "functions", feature = "tuple"))]
+    pub fn try_rebuild_tuple_values(
+        &mut self,
+        output: &crate::ValueCell,
+        cells: &[crate::ValueCell],
+        values: &[crate::Value],
+    ) -> crate::MResult<crate::Value> {
+        output.rebuild_tuple_values_with_construction(cells, values, self)
+    }
+
+    /// Rebuilds one record from frame-resolved child values.
+    #[cfg(all(feature = "functions", feature = "record"))]
+    pub fn try_rebuild_record_values(
+        &mut self,
+        output: &crate::ValueCell,
+        fields: &[(String, crate::ValueCell)],
+        values: &[crate::Value],
+    ) -> crate::MResult<crate::Value> {
+        output.rebuild_record_values_with_construction(fields, values, self)
+    }
+
+    /// Rebuilds one table from frame-resolved column values.
+    #[cfg(all(feature = "functions", feature = "table"))]
+    pub fn try_rebuild_table_values(
+        &mut self,
+        output: &crate::ValueCell,
+        columns: &[(String, Box<[crate::ValueCell]>)],
+        values: &[crate::Value],
+    ) -> crate::MResult<crate::Value> {
+        output.rebuild_table_values_with_construction(columns, values, self)
+    }
+
     /// Finalizes one matrix draft through the same call-bound authority. The
     /// dimensions and element storage must already have been constructed by
     /// this capability's fallible helpers.
@@ -642,7 +681,7 @@ impl FrozenSnapshotConstruction {
     #[cfg(feature = "functions")]
     pub fn try_build_assignment_candidate_with(
         &mut self,
-        build: impl FnOnce() -> crate::MResult<crate::Value>,
+        build: impl FnOnce(&mut Self) -> crate::MResult<crate::Value>,
     ) -> crate::MResult<crate::Value> {
         self.try_build_canonical_candidate_with(build)
     }
@@ -654,10 +693,10 @@ impl FrozenSnapshotConstruction {
     #[cfg(feature = "functions")]
     pub fn try_build_canonical_candidate_with(
         &mut self,
-        build: impl FnOnce() -> crate::MResult<crate::Value>,
+        build: impl FnOnce(&mut Self) -> crate::MResult<crate::Value>,
     ) -> crate::MResult<crate::Value> {
         self.charge_remaining_temporary()?;
-        build()
+        build(self)
     }
 
     pub(crate) fn complete(

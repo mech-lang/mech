@@ -242,15 +242,13 @@ fn string_transpose(
         0,
         0,
     )?;
-    let mut next = Vec::with_capacity(output.len());
+    let mut changed = false;
     for index in 0..output.len() {
         let output_row = index % columns;
         let output_column = index / columns;
-        next.push(input[output_column + output_row * rows].clone());
-    }
-    let changed = output != next;
-    for (target, value) in output.iter_mut().zip(next) {
-        *target = value;
+        let incoming = &input[output_column + output_row * rows];
+        changed |= output[index] != *incoming;
+        output[index] = incoming.clone();
     }
     Ok(changed)
 }
@@ -352,15 +350,15 @@ fn string_gather(
         0,
         index_bytes,
     )?;
-    let mut next = Vec::with_capacity(output.len());
+    let mut output_ordinal = 0usize;
+    let mut changed = false;
     super::numeric::selector_for_each_access_index(selector, source.len(), |index| {
-        next.push(source[index].clone());
+        let incoming = &source[index];
+        changed |= output[output_ordinal] != *incoming;
+        output[output_ordinal] = incoming.clone();
+        output_ordinal += 1;
         Ok(())
     })?;
-    let changed = output != next;
-    for (target, value) in output.iter_mut().zip(next) {
-        *target = value;
-    }
     Ok(changed)
 }
 

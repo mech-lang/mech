@@ -484,11 +484,19 @@ fn realize_managed_canonical_value(
     let realized = owner.realize_owned_value_plan(plan)?;
     let object = owner.plan_object_key(realized.revision(), object_id)?;
     let payload = planned_payload_object(owner, &realized, object)?;
-    let allocator = owner.planned_allocator(&realized, payload)?;
-    let ownership = allocator
-        .admit_frozen_snapshot(footprint.retained_bytes, footprint.node_count)
-        .map_err(MechError::from)?;
-    let value = value.into_retained_payload_ticket(ownership);
+    let value = if value.has_retained_payload_ticket() {
+        // This cell admits its own logical envelope through the R5 plan, but
+        // the shared immutable data already owns the one physical payload
+        // ticket. Importing it must not mint another full allocation charge.
+        realized.record_initialized(payload, footprint.retained_bytes)?;
+        value
+    } else {
+        let allocator = owner.planned_allocator(&realized, payload)?;
+        let ownership = allocator
+            .admit_frozen_snapshot(footprint.retained_bytes, footprint.node_count)
+            .map_err(MechError::from)?;
+        value.into_retained_payload_ticket(ownership)
+    };
     let initialized = realized.binding(object)?.required_initialization_bytes();
     realized.record_initialized(object, initialized)?;
     Ok((realized, object, payload, region, value))
@@ -1304,6 +1312,25 @@ pub(crate) fn value_from_managed_object(
         representation: managed_host_representation(representation),
     }
     .snapshot(schema, shape, schemas)
+}
+
+#[cfg(feature = "functions")]
+pub(crate) fn value_from_kernel_frame_object_with_construction(
+    frame: &crate::KernelMemoryFrame<'_>,
+    object: crate::PlanObjectKey,
+    representation: FunctionValueRepresentation,
+    schema: SchemaId,
+    shape: &ShapeInstance,
+    schemas: &SchemaTable,
+    construction: &dyn crate::snapshot::validation::SnapshotConstructionAuthority,
+) -> MResult<Value> {
+    let data = snapshot_managed_host_data_with_construction(
+        frame,
+        object,
+        managed_host_representation(representation),
+        Some(construction),
+    )?;
+    finalize_draft_with_construction(schema, shape, schemas, data, construction)
 }
 
 /// An opaque, schema-aware mutable program location.
@@ -2883,6 +2910,43 @@ impl ValueCell {
         self.rebuild_data_draft(ValueDataDraft::Tuple(values.into_boxed_slice()))
     }
 
+    #[cfg(all(feature = "functions", feature = "tuple"))]
+    pub(crate) fn rebuild_tuple_values_with_construction(
+        &self,
+        cells: &[Self],
+        values: &[Value],
+        construction: &dyn crate::snapshot::validation::SnapshotConstructionAuthority,
+    ) -> MResult<Value> {
+        let SchemaBody::Tuple(elements) = self.closed_schema_body()? else {
+            return Err(aggregate_rebuild_unsupported(self, "tuple"));
+        };
+        if elements.len() != cells.len() || cells.len() != values.len() {
+            return Err(aggregate_rebuild_arity(
+                self,
+                "tuple",
+                elements.len(),
+                values.len(),
+            ));
+        }
+        let drafts = cells
+            .iter()
+            .zip(values)
+            .zip(&elements)
+            .map(|((cell, value), expected)| {
+                canonical_value_draft_for_schema(
+                    cell,
+                    value,
+                    expected,
+                    self.binding.schemas.as_ref(),
+                )
+            })
+            .collect::<MResult<Vec<_>>>()?;
+        self.rebuild_data_draft_with_construction(
+            ValueDataDraft::Tuple(drafts.into_boxed_slice()),
+            construction,
+        )
+    }
+
     /// Constructs a canonical record from named child cells in one schema
     /// arena, including concrete schemas retained below dynamic children.
     pub fn record_from_cells(fields: &[(String, Self)]) -> MResult<Self> {
@@ -2918,6 +2982,59 @@ impl ValueCell {
         }
         let data = record_cell_fields_draft(fields, &schema_fields, self.binding.schemas.as_ref())?;
         self.rebuild_data_draft(data)
+    }
+
+    #[cfg(all(feature = "functions", feature = "record"))]
+    pub(crate) fn rebuild_record_values_with_construction(
+        &self,
+        fields: &[(String, Self)],
+        values: &[Value],
+        construction: &dyn crate::snapshot::validation::SnapshotConstructionAuthority,
+    ) -> MResult<Value> {
+        let SchemaBody::Record(schema_fields) = self.closed_schema_body()? else {
+            return Err(aggregate_rebuild_unsupported(self, "record"));
+        };
+        if schema_fields.len() != fields.len() || fields.len() != values.len() {
+            return Err(aggregate_rebuild_arity(
+                self,
+                "record",
+                schema_fields.len(),
+                values.len(),
+            ));
+        }
+        let drafts = fields
+            .iter()
+            .zip(values)
+            .zip(&schema_fields)
+            .map(|(((name, cell), value), field)| {
+                if *name != field.name {
+                    return Err(MechError::new(
+                        ValueCellOutputConstructionUnsupported {
+                            representation: FunctionValueRepresentation::Record,
+                            reason: format!(
+                                "record schema field {} does not match supplied field {name}",
+                                field.name,
+                            ),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc());
+                }
+                Ok(crate::snapshot::NamedValueDraft {
+                    name: name.clone(),
+                    value: canonical_value_draft_for_schema(
+                        cell,
+                        value,
+                        &field.schema,
+                        self.binding.schemas.as_ref(),
+                    )?,
+                })
+            })
+            .collect::<MResult<Vec<_>>>()?;
+        self.rebuild_data_draft_with_construction(
+            ValueDataDraft::Record(drafts.into_boxed_slice()),
+            construction,
+        )
     }
 
     /// Constructs a canonical table from source cells while retaining every
@@ -2998,6 +3115,74 @@ impl ValueCell {
             .collect::<MResult<Vec<_>>>()?;
         let data = table_cell_columns_draft(&columns, self.binding.schemas.as_ref())?;
         self.rebuild_data_draft(data)
+    }
+
+    #[cfg(all(feature = "functions", feature = "table"))]
+    pub(crate) fn rebuild_table_values_with_construction(
+        &self,
+        columns: &[(String, Box<[Self]>)],
+        values: &[Value],
+        construction: &dyn crate::snapshot::validation::SnapshotConstructionAuthority,
+    ) -> MResult<Value> {
+        let SchemaBody::Table {
+            columns: schema_columns,
+            ..
+        } = self.closed_schema_body()?
+        else {
+            return Err(aggregate_rebuild_unsupported(self, "table"));
+        };
+        let supplied = columns.iter().map(|(_, cells)| cells.len()).sum::<usize>();
+        if schema_columns.len() != columns.len() || supplied != values.len() {
+            return Err(aggregate_rebuild_arity(
+                self,
+                "table",
+                supplied,
+                values.len(),
+            ));
+        }
+        let mut cursor = 0;
+        let drafts = columns
+            .iter()
+            .zip(&schema_columns)
+            .map(|((name, cells), field)| {
+                if *name != field.name {
+                    return Err(MechError::new(
+                        ValueCellOutputConstructionUnsupported {
+                            representation: self.representation(),
+                            reason: format!(
+                                "table schema column {} does not match supplied column {name}",
+                                field.name,
+                            ),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc());
+                }
+                let column_values = cells
+                    .iter()
+                    .map(|cell| {
+                        let value = values.get(cursor).ok_or_else(|| {
+                            aggregate_rebuild_arity(self, "table", supplied, cursor)
+                        })?;
+                        cursor += 1;
+                        canonical_value_draft_for_schema(
+                            cell,
+                            value,
+                            &field.schema,
+                            self.binding.schemas.as_ref(),
+                        )
+                    })
+                    .collect::<MResult<Vec<_>>>()?;
+                Ok(crate::snapshot::TableColumnDraft {
+                    name: name.clone(),
+                    values: column_values.into_boxed_slice(),
+                })
+            })
+            .collect::<MResult<Vec<_>>>()?;
+        self.rebuild_data_draft_with_construction(
+            ValueDataDraft::Table(drafts.into_boxed_slice()),
+            construction,
+        )
     }
 
     /// Constructs a row-major dynamic matrix from homogeneous canonical child
@@ -5572,9 +5757,18 @@ fn canonical_cell_draft_for_schema(
     expected: &SchemaBody,
     schemas: &SchemaTable,
 ) -> MResult<ValueDataDraft> {
+    let snapshot = cell.snapshot()?;
+    canonical_value_draft_for_schema(cell, &snapshot, expected, schemas)
+}
+
+fn canonical_value_draft_for_schema(
+    cell: &ValueCell,
+    snapshot: &Value,
+    expected: &SchemaBody,
+    schemas: &SchemaTable,
+) -> MResult<ValueDataDraft> {
     let actual = cell.closed_schema_body()?;
     if matches!(expected, SchemaBody::Dynamic) {
-        let snapshot = cell.snapshot()?;
         let concrete = match snapshot.data() {
             ValueData::Dynamic(value) => {
                 let Some(value) = value.value() else {
@@ -5618,7 +5812,6 @@ fn canonical_cell_draft_for_schema(
         )
         .with_compiler_loc());
     }
-    let snapshot = cell.snapshot()?;
     let schema = schemas.find_by_key(snapshot.schema_key()).ok_or_else(|| {
         MechError::new(
             ValueCellOutputConstructionUnsupported {

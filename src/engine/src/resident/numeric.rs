@@ -6540,7 +6540,10 @@ fn assign_dense_matrix_selection<T: Clone>(
     {
         return Err(ResidentKernelError::InvalidShape);
     }
-    let mut staged = target.to_vec();
+    // The Resident caller supplies the unpublished transaction candidate as
+    // `target`. Validate every fallible coordinate/source lookup before the
+    // first clone, then write that candidate directly instead of allocating
+    // a second output-sized String/Snapshot staging vector.
     let mut ordinal = 0usize;
     for row in selected_rows {
         for column in selected_columns {
@@ -6556,20 +6559,34 @@ fn assign_dense_matrix_selection<T: Clone>(
                     dense_compact_source_index(ordinal, plan)?
                 }
             };
-            staged[destination] = source
+            source
                 .get(source_index)
-                .ok_or(ResidentKernelError::InvalidShape)?
-                .clone();
+                .ok_or(ResidentKernelError::InvalidShape)?;
             ordinal = ordinal
                 .checked_add(1)
                 .ok_or(ResidentKernelError::InvalidShape)?;
         }
     }
-    let output_changed = target
-        .iter()
-        .zip(&staged)
-        .any(|(current, next)| changed(current, next));
-    target.clone_from_slice(&staged);
+    let mut output_changed = false;
+    ordinal = 0;
+    for row in selected_rows {
+        for column in selected_columns {
+            let destination = column * plan.rows + *row;
+            let source_index = match plan.source_routing {
+                ResolvedSourceRouting::ScalarBroadcast => 0,
+                ResolvedSourceRouting::Positional => destination,
+                ResolvedSourceRouting::CompactSelectionOrder => {
+                    let row = ordinal / plan.source_columns;
+                    let column = ordinal % plan.source_columns;
+                    column * plan.source_rows + row
+                }
+            };
+            let incoming = &source[source_index];
+            output_changed |= changed(&target[destination], incoming);
+            target[destination] = incoming.clone();
+            ordinal += 1;
+        }
+    }
     Ok(output_changed)
 }
 

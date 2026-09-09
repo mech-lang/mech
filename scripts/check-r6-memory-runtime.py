@@ -46,6 +46,7 @@ REQUIRED = (
     "src/engine/src/intrinsics/vertcat.rs",
     "src/engine/src/function/external/resource_read.rs",
     "src/engine/src/function/external/host_call.rs",
+    "src/engine/src/function/module.rs",
     "src/core/src/cell_binding.rs",
     "src/core/src/function/argument.rs",
     "src/core/src/function/mod.rs",
@@ -363,6 +364,9 @@ def failures(root: Path) -> list[str]:
         )
     ):
         found.append("canonical payload admission is not completed after valid construction")
+    generic_builders = list(function_bodies(payload, "try_build_canonical_candidate_with"))
+    if not generic_builders or "build(self)" not in generic_builders[0]:
+        found.append("canonical candidate callback does not receive its construction authority")
     envelope = balanced_body(payload, "PayloadEnvelopeOwner")
     if (
         envelope is None
@@ -399,15 +403,36 @@ def failures(root: Path) -> list[str]:
     ):
         found.append("scalar matrix or table finalization bypasses packed construction")
     rebinds = list(function_bodies(snapshot, "rebind"))
+    frozen_data = balanced_body(snapshot, "FrozenSnapshotData")
+    frozen_storage = balanced_body(snapshot, "FrozenSnapshotStorage")
     if (
         "FrozenSnapshotData" not in snapshot
         or not rebinds
         or "return Ok(self.clone())" not in rebinds[0]
-        or "data: self.root.data.clone()" not in snapshot
+        or "root: self.root.clone()" not in snapshot
         or "schema_body_contains_dynamic" not in rebinds[0]
         or "schemas: Some(Arc::new(schemas.clone()))" not in rebinds[0]
     ):
         found.append("canonical snapshots do not preserve shared frozen ownership")
+    if (
+        frozen_data is None
+        or "RetainedPayloadTicket" not in frozen_data
+        or frozen_storage is None
+        or "RetainedPayloadTicket" in frozen_storage
+        or "has_retained_payload_ticket" not in snapshot
+    ):
+        found.append("frozen physical accounting is not attached to shared immutable data")
+
+    region = balanced_body(domain, "RuntimeRegionRecord")
+    retired = list(function_bodies(domain, "collect_retired"))
+    if (
+        region is None
+        or "realization_owner" not in region
+        or not retired
+        or not re.search(r"state\s*\.\s*regions\s*\.\s*retain", retired[0])
+        or not re.search(r"state\s*\.\s*realization_owners\s*\.\s*retain", retired[0])
+    ):
+        found.append("retired realizations retain historical region initialization metadata")
     if "publication_shape" not in cell or not any(
         "publication_shape" in body and "publication_locked" in body
         for body in function_bodies(cell, "lock_publication")
@@ -733,6 +758,44 @@ def failures(root: Path) -> list[str]:
         found.append("Interpreter does not own one ordinary program memory session")
     if not re.search(r"\.\s*import_owned_in\s*\(\s*p\.memory_domain\s*\(\s*\)\s*\)", literal):
         found.append("source literals do not enter the interpreter memory session")
+    conversion_staging = list(function_bodies(literal, "stage_conversion_output"))
+    if (
+        not conversion_staging
+        or "snapshot_input_cell_with_construction" not in conversion_staging[0]
+        or "try_rebuild_data_draft" not in conversion_staging[0]
+        or "execute_conversion_plan" in conversion_staging[0]
+        or "from_resolved_descriptor_data" in conversion_staging[0]
+    ):
+        found.append("managed conversion escapes its frame-owned construction authority")
+
+    structures = rust_code(sources.get("src/engine/src/structures.rs", ""))
+    if (
+        "snapshot_input_cell_with_construction" not in structures
+        or "try_rebuild_tuple_values" not in structures
+        or "try_rebuild_record_values" not in structures
+        or "try_rebuild_table_values" not in structures
+        or "try_rebuild_matrix_drafts_with" not in structures
+    ):
+        found.append("aggregate packs reread cells outside frame-owned construction")
+    table_ops = rust_code(sources.get("src/engine/src/intrinsics/table_ops.rs", ""))
+    join_solves = list(function_bodies(table_ops, "solve_managed"))
+    if not any(
+        "snapshot_input_cell_with_construction" in body
+        and "joined_table_data" in body
+        and "try_rebuild_data_draft" in body
+        for body in join_solves
+    ):
+        found.append("table join constructs a detached logical cell during execution")
+
+    module = rust_code(sources.get("src/engine/src/function/module.rs", ""))
+    dynamic_resident = list(function_bodies(module, "dynamic_resident_execute"))
+    if (
+        not dynamic_resident
+        or "candidate.as_mut_ptr()" not in dynamic_resident[0]
+        or re.search(r"\bvec\s*!\s*\[", dynamic_resident[0])
+        or ".to_vec(" in dynamic_resident[0]
+    ):
+        found.append("dynamic Resident module allocates private output-sized scratch")
 
     # A runtime factory may retain a stable logical cell, never a physical
     # `Ref`/matrix wrapper captured during binding.  Compiler-only compatibility

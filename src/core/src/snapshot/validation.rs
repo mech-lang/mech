@@ -16,6 +16,11 @@ use alloc::{boxed::Box, string::String, sync::Arc, vec::Vec};
 #[cfg(not(feature = "no_std"))]
 use std::{boxed::Box, string::String, sync::Arc, vec::Vec};
 
+#[cfg(feature = "no_std")]
+type SharedOwnershipCell<T> = core::cell::OnceCell<T>;
+#[cfg(not(feature = "no_std"))]
+type SharedOwnershipCell<T> = std::sync::OnceLock<T>;
+
 pub struct SnapshotValidationContext<'a> {
     schemas: &'a SchemaTable,
     named_kinds: Option<&'a dyn NamedKindPathResolver>,
@@ -253,15 +258,19 @@ pub struct Value {
 #[derive(Debug)]
 pub struct FrozenSnapshotStorage {
     data: Arc<FrozenSnapshotData>,
-    _ownership: Option<crate::RetainedPayloadTicket>,
 }
 
-/// The immutable canonical tree is separated from its accounting wrapper so
-/// an admitted ownership ticket can be attached without recursively cloning
-/// an already shared tree.
+/// The immutable canonical tree and its one physical accounting ticket share
+/// the same lifetime. Outer [`FrozenSnapshotStorage`] wrappers may be replaced
+/// or imported across domains without duplicating that physical charge.
 #[derive(Debug)]
 struct FrozenSnapshotData {
     data: ValueData,
+    // Physical accounting follows the one shared immutable data lifetime,
+    // not each cell/import wrapper. Standard builds use a thread-safe once
+    // cell so detached Values retain their Send/Sync behavior. no_std has no
+    // cross-thread execution surface and uses the core equivalent.
+    ownership: SharedOwnershipCell<crate::RetainedPayloadTicket>,
 }
 
 impl core::fmt::Debug for Value {
@@ -280,6 +289,17 @@ impl Value {
     #[doc(hidden)]
     pub fn shares_frozen_storage(&self, other: &Self) -> bool {
         Arc::ptr_eq(&self.root.data, &other.root.data)
+    }
+
+    #[doc(hidden)]
+    pub fn shares_retained_payload_ticket(&self, other: &Self) -> bool {
+        match (
+            self.root.data.ownership.get(),
+            other.root.data.ownership.get(),
+        ) {
+            (Some(left), Some(right)) => left.shares_charge_with(right),
+            _ => false,
+        }
     }
 
     /// Clones only the small shape metadata through an admitted construction
@@ -342,18 +362,17 @@ impl Value {
     /// detached immutable root. The root owns the concrete canonical tree;
     /// the pointer-free ticket owns its retained allocation charge.
     pub(crate) fn into_retained_payload_ticket(
-        mut self,
+        self,
         ownership: crate::RetainedPayloadTicket,
     ) -> Self {
-        if let Some(root) = Arc::get_mut(&mut self.root) {
-            root._ownership = Some(ownership);
-            return self;
-        }
-        self.root = Arc::new(FrozenSnapshotStorage {
-            data: self.root.data.clone(),
-            _ownership: Some(ownership),
-        });
+        // Losing this race only drops the redundant newly admitted ticket;
+        // the winning ticket remains inseparable from the shared data Arc.
+        let _ = self.root.data.ownership.set(ownership);
         self
+    }
+
+    pub(crate) fn has_retained_payload_ticket(&self) -> bool {
+        self.root.data.ownership.get().is_some()
     }
 
     pub const fn schema(&self) -> SchemaId {
@@ -1750,8 +1769,10 @@ fn finalized_value(
         schema_key,
         shape,
         root: Arc::new(FrozenSnapshotStorage {
-            data: Arc::new(FrozenSnapshotData { data }),
-            _ownership: None,
+            data: Arc::new(FrozenSnapshotData {
+                data,
+                ownership: SharedOwnershipCell::new(),
+            }),
         }),
         resident_token,
         schemas,
@@ -1772,11 +1793,11 @@ fn finalized_value_with_construction(
         resident_token = token_word(resident_token, *value);
     }
     resident_token = token_data(resident_token, &data);
-    let data = context.try_arc(FrozenSnapshotData { data })?;
-    let root = context.try_arc(FrozenSnapshotStorage {
+    let data = context.try_arc(FrozenSnapshotData {
         data,
-        _ownership: None,
+        ownership: SharedOwnershipCell::new(),
     })?;
+    let root = context.try_arc(FrozenSnapshotStorage { data })?;
     Ok(Value {
         schema,
         schema_key,

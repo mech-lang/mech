@@ -252,6 +252,18 @@ pub struct ManagedAllocationObservation {
     pub device_lost: bool,
 }
 
+/// Cold-path visibility used by the R6 reclamation regressions. These counts
+/// describe metadata that owns heap storage; they are not part of execution
+/// planning or a substitute for the byte ledger.
+#[doc(hidden)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct ManagedMetadataObservation {
+    pub regions: usize,
+    pub revisions: usize,
+    pub reuse_groups: usize,
+    pub initialization_bytes: u64,
+}
+
 #[derive(Clone, Debug)]
 struct ObjectAuthorization {
     key: PlanObjectKey,
@@ -269,6 +281,7 @@ struct ObjectAuthorization {
 
 #[derive(Debug)]
 pub(crate) struct RuntimeRegionRecord {
+    realization_owner: Weak<()>,
     pub(crate) handle: Option<AllocationHandle>,
     lifetime: MemoryLifetime,
     reuse_group: Option<ReuseGroupId>,
@@ -331,6 +344,12 @@ impl InitializationMap {
 
     fn clear(&mut self) {
         self.words.fill(0);
+    }
+
+    fn metadata_bytes(&self) -> u64 {
+        u64::try_from(self.words.len())
+            .unwrap_or(u64::MAX)
+            .saturating_mul(core::mem::size_of::<u64>() as u64)
     }
 
     pub(crate) fn can_copy_from(&self, source: &Self) -> bool {
@@ -1104,6 +1123,7 @@ pub(crate) struct DomainState {
     pub allocations: Vec<AllocationSlot>,
     pub(crate) regions: BTreeMap<PlanObjectKey, RuntimeRegionRecord>,
     active_reuse_regions: BTreeMap<(MemoryPlanRevision, ReuseGroupId), Option<PlanObjectKey>>,
+    realization_owners: BTreeMap<MemoryPlanRevision, Weak<()>>,
     pub active_point: Rc<Cell<Option<MemoryPlanPoint>>>,
     scope_cleanup_pending: Rc<Cell<bool>>,
     failure_injection: Option<(MemoryFailurePoint, u32)>,
@@ -1499,6 +1519,7 @@ impl MemoryDomain {
                 allocations: Vec::new(),
                 regions: BTreeMap::new(),
                 active_reuse_regions: BTreeMap::new(),
+                realization_owners: BTreeMap::new(),
                 active_point: Rc::new(Cell::new(None)),
                 scope_cleanup_pending: Rc::new(Cell::new(false)),
                 failure_injection: None,
@@ -1646,6 +1667,23 @@ impl MemoryDomain {
     }
 
     pub fn prepare_realization(
+        &self,
+        view: RuntimePlanView<'_>,
+    ) -> MemoryRuntimeResult<MemoryReservation> {
+        let revision = view.revision;
+        let result = self.prepare_realization_inner(view);
+        if result.is_err() {
+            let mut state = self.state.borrow_mut();
+            if state.revisions.get(&revision) == Some(&PlanRevisionLifecycle::Candidate) {
+                state
+                    .revisions
+                    .insert(revision, PlanRevisionLifecycle::Retired);
+            }
+        }
+        result
+    }
+
+    fn prepare_realization_inner(
         &self,
         view: RuntimePlanView<'_>,
     ) -> MemoryRuntimeResult<MemoryReservation> {
@@ -1984,6 +2022,9 @@ impl MemoryDomain {
         // keep an abandoned candidate alive. Cleanup never needs a Drop-time
         // RefCell borrow: collect observes the exhausted owner token.
         let storage_ownership = Rc::new(());
+        state
+            .realization_owners
+            .insert(reservation.revision, Rc::downgrade(&storage_ownership));
         let mut arena_handles = BTreeMap::new();
         for pending in contiguous {
             let capacity = pending.authorization.capacity_bytes;
@@ -2090,6 +2131,7 @@ impl MemoryDomain {
                 .insert(
                     object.key,
                     RuntimeRegionRecord {
+                        realization_owner: Rc::downgrade(&storage_ownership),
                         handle: binding.handle(),
                         lifetime: object.lifetime,
                         reuse_group: object.reuse_group,
@@ -2281,6 +2323,43 @@ impl MemoryDomain {
                 current: u64::from(state.ledger.retired_allocations),
                 change: u64::from(reclaimed),
             })?;
+
+        // Physical handles remain generational, so stale-key rejection does
+        // not require retaining every historical initialization bitmap or
+        // revision record. A live realization (including a cell, candidate,
+        // frame, or typed projection) keeps its shared owner strong.
+        state
+            .realization_owners
+            .retain(|_, owner| owner.strong_count() != 0);
+        let live_revisions = state
+            .realization_owners
+            .keys()
+            .copied()
+            .collect::<BTreeSet<_>>();
+        state
+            .regions
+            .retain(|_, region| region.realization_owner.strong_count() != 0);
+        state
+            .active_reuse_regions
+            .retain(|(revision, _), _| live_revisions.contains(revision));
+        if state
+            .active_revision
+            .is_some_and(|revision| !live_revisions.contains(&revision))
+        {
+            state.active_revision = None;
+        }
+        if state
+            .execution_revision
+            .is_some_and(|revision| !live_revisions.contains(&revision))
+        {
+            state.execution_revision = None;
+        }
+        state.revisions.retain(|revision, lifecycle| {
+            matches!(
+                lifecycle,
+                PlanRevisionLifecycle::Candidate | PlanRevisionLifecycle::Admitted
+            ) || live_revisions.contains(revision)
+        });
         Ok(reclaimed)
     }
 
@@ -2883,6 +2962,19 @@ impl MemoryDomain {
             })
             .collect::<Vec<_>>()
             .into_boxed_slice()
+    }
+
+    #[doc(hidden)]
+    pub fn metadata_observation(&self) -> ManagedMetadataObservation {
+        let state = self.state.borrow();
+        ManagedMetadataObservation {
+            regions: state.regions.len(),
+            revisions: state.revisions.len(),
+            reuse_groups: state.active_reuse_regions.len(),
+            initialization_bytes: state.regions.values().fold(0_u64, |total, region| {
+                total.saturating_add(region.initialization.metadata_bytes())
+            }),
+        }
     }
 }
 

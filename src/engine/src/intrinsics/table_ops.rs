@@ -1,4 +1,3 @@
-use crate::intrinsics::canonical_access::canonical_draft;
 use crate::intrinsics::*;
 use mech_core::snapshot::{OptionDraft, TableColumnDraft};
 use std::sync::LazyLock;
@@ -51,10 +50,18 @@ struct CanonicalTable {
 
 impl CanonicalTable {
     fn from_cell(cell: &ValueCell) -> MResult<Self> {
+        let snapshot = cell.snapshot()?;
+        Self::from_value(cell, &snapshot)
+    }
+
+    fn from_value(cell: &ValueCell, snapshot: &mech_core::Value) -> MResult<Self> {
         let SchemaBody::Table { columns, .. } = cell.closed_schema_body()? else {
             return Err(table_join_error("input must be a canonical table"));
         };
-        let ValueDataDraft::Table(values) = canonical_draft(cell)? else {
+        let ValueDataDraft::Table(values) = snapshot.canonical_data_draft().map_err(|error| {
+            MechError::new(ValueCellSnapshotFailure { error }, None).with_compiler_loc()
+        })?
+        else {
             return Err(table_join_error("table input has a non-table payload"));
         };
         let rows = values.first().map_or(0, |column| column.values.len());
@@ -63,7 +70,6 @@ impl CanonicalTable {
                 "table columns have inconsistent row counts",
             ));
         }
-        let snapshot = cell.snapshot()?;
         let ValueData::Table(table) = snapshot.data() else {
             return Err(table_join_error("table input has a non-table snapshot"));
         };
@@ -221,6 +227,15 @@ pub(crate) fn joined_table_fields(
 pub(crate) fn joined_table(lhs: &ValueCell, rhs: &ValueCell, mode: JoinMode) -> MResult<ValueCell> {
     let lhs = CanonicalTable::from_cell(lhs)?;
     let rhs = CanonicalTable::from_cell(rhs)?;
+    let (schema, data) = joined_table_data(&lhs, &rhs, mode)?;
+    ValueCell::from_schema_data(schema, data)
+}
+
+fn joined_table_data(
+    lhs: &CanonicalTable,
+    rhs: &CanonicalTable,
+    mode: JoinMode,
+) -> MResult<(SchemaBody, ValueDataDraft)> {
     let common = common_columns(&lhs.fields, &rhs.fields)?;
     let common_rhs = common
         .iter()
@@ -313,13 +328,13 @@ pub(crate) fn joined_table(lhs: &ValueCell, rhs: &ValueCell, mode: JoinMode) -> 
     for (column, values) in output_columns.iter_mut().zip(values) {
         column.values = values.into_boxed_slice();
     }
-    ValueCell::from_schema_data(
+    Ok((
         SchemaBody::Table {
             columns: fields,
             rows: CardinalitySpec::Dynamic { upper_bound: None },
         },
         ValueDataDraft::Table(output_columns.into_boxed_slice()),
-    )
+    ))
 }
 
 #[derive(Debug)]
@@ -379,15 +394,30 @@ impl MechFunctionImpl for TableJoinFxn {
         frame: &mut mech_core::KernelMemoryFrame<'_>,
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
-        frame.snapshot_function_value_input(&self.lhs)?;
-        frame.snapshot_function_value_input(&self.rhs)?;
         let footprint = self.prospective_output_footprint()?;
-        frame.with_admitted_canonical_output(self.out.cell(), footprint, |_, construction| {
-            let next = construction.try_rebind_snapshot_candidate_with(self.out.cell(), || {
-                joined_table(self.lhs.cell(), self.rhs.cell(), self.mode)?.snapshot()
-            })?;
-            Ok(((), next))
-        })?;
+        frame.with_admitted_canonical_output(
+            self.out.cell(),
+            footprint,
+            |frame, construction| {
+                let next = construction.try_build_canonical_candidate_with(|construction| {
+                    let lhs = frame.snapshot_input_cell_with_construction(
+                        self.lhs.cell(),
+                        0,
+                        construction,
+                    )?;
+                    let rhs = frame.snapshot_input_cell_with_construction(
+                        self.rhs.cell(),
+                        1,
+                        construction,
+                    )?;
+                    let lhs = CanonicalTable::from_value(self.lhs.cell(), &lhs)?;
+                    let rhs = CanonicalTable::from_value(self.rhs.cell(), &rhs)?;
+                    let (_, draft) = joined_table_data(&lhs, &rhs, self.mode)?;
+                    construction.try_rebuild_data_draft(self.out.cell(), draft)
+                })?;
+                Ok(((), next))
+            },
+        )?;
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 

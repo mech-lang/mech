@@ -1871,6 +1871,30 @@ impl KernelMemoryFrame<'_> {
         input: &crate::ValueCell,
         semantic_input: usize,
     ) -> crate::MResult<crate::Value> {
+        self.snapshot_input_cell_inner(input, semantic_input, None)
+    }
+
+    /// Reconstructs a fixed-width input directly from this frame while
+    /// charging every draft/finalization allocation to the caller's finite
+    /// canonical construction authority. Canonical inputs retain their
+    /// already frozen root and therefore require no reconstruction.
+    #[cfg(feature = "functions")]
+    pub fn snapshot_input_cell_with_construction(
+        &self,
+        input: &crate::ValueCell,
+        semantic_input: usize,
+        construction: &super::FrozenSnapshotConstruction,
+    ) -> crate::MResult<crate::Value> {
+        self.snapshot_input_cell_inner(input, semantic_input, Some(construction))
+    }
+
+    #[cfg(feature = "functions")]
+    fn snapshot_input_cell_inner(
+        &self,
+        input: &crate::ValueCell,
+        semantic_input: usize,
+        construction: Option<&super::FrozenSnapshotConstruction>,
+    ) -> crate::MResult<crate::Value> {
         let lease = self.port_lease(
             input.reactive_cell_id(),
             ManagedPortRole::Input(semantic_input),
@@ -1881,16 +1905,29 @@ impl KernelMemoryFrame<'_> {
         }
         let shape = input.shape().clone();
         let schemas = input.schema_table();
-        crate::cell_binding::value_from_managed_object(
-            self.domain,
-            self.realized,
-            lease.object,
-            lease.region,
-            input.representation(),
-            input.schema(),
-            &shape,
-            schemas.as_ref(),
-        )
+        match construction {
+            Some(construction) => {
+                crate::cell_binding::value_from_kernel_frame_object_with_construction(
+                    self,
+                    lease.object,
+                    input.representation(),
+                    input.schema(),
+                    &shape,
+                    schemas.as_ref(),
+                    construction,
+                )
+            }
+            None => crate::cell_binding::value_from_managed_object(
+                self.domain,
+                self.realized,
+                lease.object,
+                lease.region,
+                input.representation(),
+                input.schema(),
+                &shape,
+                schemas.as_ref(),
+            ),
+        }
     }
 
     /// Compares two semantic values only after both logical input leases have

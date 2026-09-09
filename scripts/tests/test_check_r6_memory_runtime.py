@@ -798,8 +798,8 @@ fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunctio
         self.replace(
             root,
             "src/core/src/snapshot/validation.rs",
-            "let data = context.try_arc(FrozenSnapshotData { data })?;",
-            "let data = Arc::new(FrozenSnapshotData { data });",
+            "let data = context.try_arc(FrozenSnapshotData {",
+            "let data = Arc::new(FrozenSnapshotData {",
         )
         self.assert_failure(root, "common canonical finalization bypasses")
 
@@ -868,6 +868,46 @@ impl MechFunctionImpl for Bypass {
 """,
         )
         self.assert_failure(root, "solve_managed bypasses frame-owned staged publication")
+
+    def test_80_retired_region_metadata_must_be_collected(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/memory_runtime/domain.rs",
+            ".regions\n            .retain(|_, region| region.realization_owner.strong_count() != 0);",
+            ".regions\n            .iter().for_each(|_| {});",
+        )
+        self.assert_failure(root, "retain historical region initialization metadata")
+
+    def test_81_frozen_ticket_must_follow_shared_data(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/snapshot/validation.rs",
+            "ownership: SharedOwnershipCell<crate::RetainedPayloadTicket>,",
+            "ownership_removed: (),",
+        )
+        self.assert_failure(root, "accounting is not attached to shared immutable data")
+
+    def test_82_conversion_cannot_restore_detached_runtime_cell(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/engine/src/literals.rs",
+            "construction.try_rebuild_data_draft(output, converted)",
+            "execute_conversion_plan(source, target, plan)?.snapshot()",
+        )
+        self.assert_failure(root, "conversion escapes its frame-owned construction authority")
+
+    def test_83_dynamic_module_cannot_restore_private_output_scratch(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/engine/src/function/module.rs",
+            "let changed = match state.kernel {",
+            "let next = vec![0.0; candidate.len()];\n    let changed = match state.kernel {",
+        )
+        self.assert_failure(root, "module allocates private output-sized scratch")
 
 
 if __name__ == "__main__":

@@ -137,15 +137,21 @@ fn stage_composite_pack(
     frame: &mut mech_core::KernelMemoryFrame<'_>,
     output: &ValueCell,
     footprint: Option<CurrentMemoryFootprint>,
-    build: impl FnOnce() -> MResult<mech_core::Value>,
+    build: impl FnOnce(
+        &mut mech_core::KernelMemoryFrame<'_>,
+        Option<&mut mech_core::FrozenSnapshotConstruction>,
+    ) -> MResult<mech_core::Value>,
 ) -> MResult<()> {
     if let Some(footprint) = footprint {
-        frame.with_admitted_canonical_output(output, footprint, |_, construction| {
-            let next = construction.try_build_canonical_candidate_with(build)?;
+        frame.with_admitted_canonical_output(output, footprint, |frame, construction| {
+            let next = construction.try_build_canonical_candidate_with(|construction| {
+                build(frame, Some(construction))
+            })?;
             Ok(((), next))
         })
     } else {
-        frame.stage_output_value(output, build()?)
+        let next = build(frame, None)?;
+        frame.stage_output_value(output, next)
     }
 }
 
@@ -176,11 +182,21 @@ impl MechFunctionImpl for CanonicalTuplePack {
         frame: &mut mech_core::KernelMemoryFrame<'_>,
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
-        for (index, input) in self.elements.iter().enumerate() {
-            frame.snapshot_input_cell(input, index)?;
-        }
         let footprint = prospective_composite_pack_footprint(&self.output, self.elements.iter())?;
-        stage_composite_pack(frame, &self.output, footprint, || self.next_value())?;
+        stage_composite_pack(frame, &self.output, footprint, |frame, construction| {
+            let Some(construction) = construction else {
+                return self.next_value();
+            };
+            let values = self
+                .elements
+                .iter()
+                .enumerate()
+                .map(|(index, input)| {
+                    frame.snapshot_input_cell_with_construction(input, index, construction)
+                })
+                .collect::<MResult<Vec<_>>>()?;
+            construction.try_rebuild_tuple_values(&self.output, &self.elements, &values)
+        })?;
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
@@ -239,14 +255,24 @@ impl MechFunctionImpl for CanonicalRecordPack {
         frame: &mut mech_core::KernelMemoryFrame<'_>,
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
-        for (index, (_, input)) in self.fields.iter().enumerate() {
-            frame.snapshot_input_cell(input, index)?;
-        }
         let footprint = prospective_composite_pack_footprint(
             &self.output,
             self.fields.iter().map(|(_, input)| input),
         )?;
-        stage_composite_pack(frame, &self.output, footprint, || self.next_value())?;
+        stage_composite_pack(frame, &self.output, footprint, |frame, construction| {
+            let Some(construction) = construction else {
+                return self.next_value();
+            };
+            let values = self
+                .fields
+                .iter()
+                .enumerate()
+                .map(|(index, (_, input))| {
+                    frame.snapshot_input_cell_with_construction(input, index, construction)
+                })
+                .collect::<MResult<Vec<_>>>()?;
+            construction.try_rebuild_record_values(&self.output, &self.fields, &values)
+        })?;
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
@@ -310,19 +336,25 @@ impl MechFunctionImpl for CanonicalTablePack {
         frame: &mut mech_core::KernelMemoryFrame<'_>,
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
-        for (index, input) in self
-            .columns
-            .iter()
-            .flat_map(|(_, values)| values.iter())
-            .enumerate()
-        {
-            frame.snapshot_input_cell(input, index)?;
-        }
         let footprint = prospective_composite_pack_footprint(
             &self.output,
             self.columns.iter().flat_map(|(_, values)| values.iter()),
         )?;
-        stage_composite_pack(frame, &self.output, footprint, || self.next_value())?;
+        stage_composite_pack(frame, &self.output, footprint, |frame, construction| {
+            let Some(construction) = construction else {
+                return self.next_value();
+            };
+            let values = self
+                .columns
+                .iter()
+                .flat_map(|(_, values)| values.iter())
+                .enumerate()
+                .map(|(index, input)| {
+                    frame.snapshot_input_cell_with_construction(input, index, construction)
+                })
+                .collect::<MResult<Vec<_>>>()?;
+            construction.try_rebuild_table_values(&self.output, &self.columns, &values)
+        })?;
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
@@ -786,20 +818,31 @@ impl MechFunctionImpl for CanonicalMatrixPack {
         frame: &mut mech_core::KernelMemoryFrame<'_>,
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
-        for (index, input) in self
-            .rows
-            .iter()
-            .flatten()
-            .filter_map(Option::as_ref)
-            .enumerate()
-        {
-            frame.snapshot_input_cell(input, index)?;
-        }
         let footprint = prospective_composite_pack_footprint(
             &self.output,
             self.rows.iter().flatten().filter_map(Option::as_ref),
         )?;
-        stage_composite_pack(frame, &self.output, footprint, || self.next_value())?;
+        stage_composite_pack(frame, &self.output, footprint, |frame, construction| {
+            let Some(construction) = construction else {
+                return self.next_value();
+            };
+            let mut semantic_input = 0;
+            let matrix = matrix_from_source_rows_with(&self.rows, self.optional, |input| {
+                let value = frame.snapshot_input_cell_with_construction(
+                    input,
+                    semantic_input,
+                    construction,
+                )?;
+                semantic_input += 1;
+                matrix_block_from_value(input, &value)
+            })?;
+            construction.try_rebuild_matrix_drafts_with(&self.output, || {
+                Ok((
+                    vec![matrix.rows as u64, matrix.columns as u64].into_boxed_slice(),
+                    matrix.values.into_boxed_slice(),
+                ))
+            })
+        })?;
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
@@ -855,8 +898,16 @@ impl MechFunctionCompiler for CanonicalMatrixPack {
 
 #[cfg(feature = "matrix")]
 fn matrix_block(cell: &ValueCell) -> MResult<MatrixBlock> {
+    let value = cell.snapshot()?;
+    matrix_block_from_value(cell, &value)
+}
+
+#[cfg(feature = "matrix")]
+fn matrix_block_from_value(cell: &ValueCell, value: &mech_core::Value) -> MResult<MatrixBlock> {
     let schema = cell.closed_schema_body()?;
-    let draft = snapshot_draft(cell)?;
+    let draft = value.canonical_data_draft().map_err(|error| {
+        MechError::new(ValueCellSnapshotFailure { error }, None).with_compiler_loc()
+    })?;
     match (schema, draft) {
         (
             SchemaBody::Matrix {
@@ -1098,11 +1149,20 @@ fn matrix_from_source_rows(
     inputs: &[Box<[Option<ValueCell>]>],
     optional: bool,
 ) -> MResult<MatrixBlock> {
+    matrix_from_source_rows_with(inputs, optional, matrix_block)
+}
+
+#[cfg(feature = "matrix")]
+fn matrix_from_source_rows_with(
+    inputs: &[Box<[Option<ValueCell>]>],
+    optional: bool,
+    mut resolve: impl FnMut(&ValueCell) -> MResult<MatrixBlock>,
+) -> MResult<MatrixBlock> {
     let element = inputs
         .iter()
         .flatten()
         .find_map(|input| input.as_ref())
-        .map(matrix_block)
+        .map(&mut resolve)
         .transpose()?
         .map(|block| block.element)
         .unwrap_or_else(|| SchemaBody::Tuple(Box::new([])));
@@ -1113,7 +1173,7 @@ fn matrix_from_source_rows(
                 .iter()
                 .map(|input| match input {
                     Some(value) => {
-                        let mut block = matrix_block(value)?;
+                        let mut block = resolve(value)?;
                         if optional {
                             if block.element != element {
                                 return Err(schema_mismatch(

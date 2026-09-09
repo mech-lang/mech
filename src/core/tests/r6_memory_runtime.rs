@@ -1,5 +1,3 @@
-#![cfg(feature = "full")]
-
 use mech_core::snapshot::{F64Bits, SnapshotValidationContext};
 use mech_core::{
     AllocationPlan, AllocationRole, ArenaBackingKind, ArenaPlacement, ArenaPlan, CallAccessRequest,
@@ -1492,6 +1490,169 @@ fn ordinary_dynamic_cell_snapshots_retain_the_frozen_root_after_close() {
     domain.close().unwrap();
     assert!(matches!(first.data(), mech_core::ValueData::Tuple(_)));
     assert!(first.shares_frozen_storage(&second));
+}
+
+#[test]
+fn reclaimed_realizations_release_historical_region_and_revision_metadata() {
+    const CAPACITY: u64 = 4 * 1024 * 1024;
+
+    let domain = MemoryDomain::new().unwrap();
+    let mut stale_key = None;
+    for iteration in 0..12_u64 {
+        let revision = domain.issue_plan_revision().unwrap();
+        let capacity = CAPACITY + (iteration % 3) * 64;
+        let allocations = [allocation(
+            0,
+            0,
+            0,
+            1,
+            capacity,
+            MemoryLifetime::Activation,
+            None,
+        )];
+        let arenas = [arena(0, ArenaBackingKind::ContiguousBytes, capacity, &[0])];
+        let realized = domain
+            .materialize(
+                domain
+                    .prepare_realization(runtime_plan_view(
+                        revision,
+                        &allocations,
+                        &arenas,
+                        ResourceDemand::default(),
+                        MemoryBudgetLimits::default(),
+                        &[],
+                    ))
+                    .unwrap(),
+            )
+            .unwrap();
+        let key = domain
+            .plan_object_key(revision, MemoryObjectId::new(0))
+            .unwrap();
+        let write = domain
+            .prepare_call(
+                &realized,
+                &[CallAccessRequest {
+                    object: key,
+                    mode: MemoryAccessMode::Write,
+                    region: MemoryAccessRegion::Contiguous {
+                        offset_bytes: 0,
+                        length_bytes: 1,
+                    },
+                }],
+            )
+            .unwrap();
+        domain
+            .acquire_call(&realized, &write)
+            .unwrap()
+            .with_object_init_writer::<u8>(key, |writer| writer.write_next(7))
+            .unwrap();
+        stale_key.get_or_insert(key);
+
+        let retained = (iteration == 0).then(|| realized.clone());
+        drop(realized);
+        if let Some(retained) = retained {
+            assert_eq!(domain.collect_retired().unwrap(), 0);
+            let metadata = domain.metadata_observation();
+            assert_eq!(metadata.regions, 1);
+            assert!(metadata.initialization_bytes >= CAPACITY / 8);
+            drop(retained);
+        }
+        assert_eq!(domain.collect_retired().unwrap(), 1);
+        assert_eq!(domain.metadata_observation(), Default::default());
+        assert_eq!(domain.ledger().committed_bytes, 0);
+    }
+
+    let rejected = domain.issue_plan_revision().unwrap();
+    let allocations = [allocation(0, 0, 0, 0, 8, MemoryLifetime::Activation, None)];
+    let arenas = [arena(0, ArenaBackingKind::ContiguousBytes, 8, &[0])];
+    let limits = MemoryBudgetLimits {
+        max_temporary_bytes: Some(1),
+        ..MemoryBudgetLimits::default()
+    };
+    assert!(
+        domain
+            .prepare_realization(runtime_plan_view(
+                rejected,
+                &allocations,
+                &arenas,
+                ResourceDemand {
+                    turn_peak_bytes: 2,
+                    ..ResourceDemand::default()
+                },
+                limits,
+                &[],
+            ))
+            .is_err()
+    );
+    domain.collect_retired().unwrap();
+    assert_eq!(domain.metadata_observation(), Default::default());
+
+    let revision = domain.issue_plan_revision().unwrap();
+    let realized = domain
+        .materialize(
+            domain
+                .prepare_realization(runtime_plan_view(
+                    revision,
+                    &allocations,
+                    &arenas,
+                    ResourceDemand::default(),
+                    MemoryBudgetLimits::default(),
+                    &[],
+                ))
+                .unwrap(),
+        )
+        .unwrap();
+    assert!(matches!(
+        domain.prepare_call(
+            &realized,
+            &[CallAccessRequest {
+                object: stale_key.unwrap(),
+                mode: MemoryAccessMode::Read,
+                region: MemoryAccessRegion::WholeInitialized,
+            }],
+        ),
+        Err(MemoryRuntimeError::InvalidPlanRevision { .. })
+            | Err(MemoryRuntimeError::UnknownPlanObject { .. })
+    ));
+}
+
+#[test]
+fn immutable_snapshot_imports_share_one_physical_payload_ticket() {
+    let source_cell = ValueCell::from_exact("x".repeat(256 * 1024)).unwrap();
+    let source = source_cell.snapshot().unwrap();
+    let left_domain = MemoryDomain::new().unwrap();
+    let right_domain = MemoryDomain::new().unwrap();
+
+    let left = ValueCell::from_snapshot_in(&left_domain, source.clone()).unwrap();
+    let right = ValueCell::from_snapshot_in(&right_domain, source.clone()).unwrap();
+    let left_snapshot = left.snapshot().unwrap();
+    let right_snapshot = right.snapshot().unwrap();
+
+    assert!(source.shares_frozen_storage(&left_snapshot));
+    assert!(left_snapshot.shares_frozen_storage(&right_snapshot));
+    assert!(source.shares_retained_payload_ticket(&left_snapshot));
+    assert!(left_snapshot.shares_retained_payload_ticket(&right_snapshot));
+    assert!(left_domain.ledger().committed_bytes > 0);
+    assert!(right_domain.ledger().committed_bytes > 0);
+
+    let deep_copy = ValueCell::from_exact("x".repeat(256 * 1024))
+        .unwrap()
+        .snapshot()
+        .unwrap();
+    assert!(!source.shares_frozen_storage(&deep_copy));
+    assert!(!source.shares_retained_payload_ticket(&deep_copy));
+
+    drop(source_cell);
+    drop(source);
+    left_domain.close().unwrap();
+    right_domain.close().unwrap();
+    drop(left);
+    drop(right);
+    assert!(matches!(
+        left_snapshot.data(),
+        mech_core::ValueData::String(value) if value.len() == 256 * 1024
+    ));
+    assert!(left_snapshot.shares_retained_payload_ticket(&right_snapshot));
 }
 
 #[test]

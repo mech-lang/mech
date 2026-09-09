@@ -115,8 +115,21 @@ pub fn plan_turn_memory(
                 *region = actual.clone();
             }
         }
-        let mut resolved_call = derive_turn_call(&template, &resolved)?;
-        adjust_publication_comparison(&mut resolved_call, node, facts)?;
+        let published = (0..template.outputs.len())
+            .map(|ordinal| {
+                facts
+                    .published_footprints
+                    .get(&(node, ordinal as u16))
+                    .copied()
+                    .or_else(|| {
+                        resolved
+                            .get(&(PortDirection::Output, ordinal as u16))
+                            .copied()
+                    })
+                    .unwrap_or_default()
+            })
+            .collect::<Vec<_>>();
+        let resolved_call = derive_turn_call(&template, &resolved, Some(&published))?;
         refresh_turn_allocations(&mut allocations, call, &resolved_call, node, facts)?;
         demand = checked_demand_add(demand, resolved_call.demand)?;
         transactions.extend(call_transactions.iter().copied());
@@ -499,7 +512,7 @@ pub(crate) fn apply_observed_turn_demand(
             plan.facts
                 .resolved_footprints
                 .insert((plan.node, PortDirection::Output, 0), candidate);
-            let resolved = plan
+            let resolved: BTreeMap<(PortDirection, u16), CurrentMemoryFootprint> = plan
                 .facts
                 .resolved_footprints
                 .iter()
@@ -507,8 +520,21 @@ pub(crate) fn apply_observed_turn_demand(
                     (node == plan.node).then_some(((direction, port), f))
                 })
                 .collect();
-            let mut complete = derive_turn_call(&call, &resolved)?;
-            adjust_publication_comparison(&mut complete, plan.node, &plan.facts)?;
+            let published = (0..call.outputs.len())
+                .map(|ordinal| {
+                    plan.facts
+                        .published_footprints
+                        .get(&(plan.node, ordinal as u16))
+                        .copied()
+                        .or_else(|| {
+                            resolved
+                                .get(&(PortDirection::Output, ordinal as u16))
+                                .copied()
+                        })
+                        .unwrap_or_default()
+                })
+                .collect::<Vec<_>>();
+            let complete = derive_turn_call(&call, &resolved, Some(&published))?;
             refresh_turn_allocations(
                 &mut plan.allocations,
                 &call,
@@ -570,17 +596,22 @@ pub(crate) fn plan_current_resident_turn(
     plan_turn_memory(plan, node, facts)
 }
 
-/// Call derivation uses a same-candidate publication estimate. A turn must
-/// first replace that estimate with the distinct old/candidate evidence before
-/// evaluating policy budgets. Semantic bounds, addressability, and checked
-/// arithmetic remain enforced by the core planner throughout.
+/// Re-run the complete call derivation with both the live candidate and the
+/// distinct published output footprints. Publication comparison is therefore
+/// derived once by the core planner rather than patched through subtraction.
 fn derive_turn_call(
     template: &mech_core::CallMemoryPlan,
     resolved: &BTreeMap<(PortDirection, u16), CurrentMemoryFootprint>,
+    published: Option<&[CurrentMemoryFootprint]>,
 ) -> Result<mech_core::CallMemoryPlan, MemoryPlanError> {
     let mut derivation = template.clone();
     derivation.target.limits = MemoryBudgetLimits::default();
-    let mut call = mech_core::resolve_deferred_call_memory(&derivation, resolved)?;
+    let mut call = mech_core::resolve_current_call_memory(
+        &derivation,
+        &derivation.bound_call,
+        resolved,
+        published,
+    )?;
     call.target = template.target.clone();
     Ok(call)
 }
@@ -601,45 +632,6 @@ fn scope_turn_call(
     resolved.transactions = original.transactions.clone();
     resolved.allocations = allocations.into();
     resolved
-}
-
-fn adjust_publication_comparison(
-    call: &mut mech_core::CallMemoryPlan,
-    node: NodeId,
-    facts: &TurnMemoryFacts,
-) -> Result<(), MemoryPlanError> {
-    let requirements = call
-        .bound_call
-        .operation_descriptor()
-        .contract
-        .memory_requirements(call.inputs.len())
-        .map_err(|_| MemoryPlanError::DescriptorMismatch)?;
-    for (ordinal, output) in requirements.outputs.iter().enumerate() {
-        if output.change_detection != Some(mech_core::ChangeDetectionPolicy::SemanticHash) {
-            continue;
-        }
-        let Some(current) = facts.published_footprints.get(&(node, ordinal as u16)) else {
-            continue;
-        };
-        let mech_core::MemoryFootprintWitness::Known(candidate) = call.output_witnesses[ordinal]
-        else {
-            return Err(MemoryPlanError::MissingFootprintWitness {
-                stage: mech_core::MemoryWitnessStage::Turn,
-            });
-        };
-        let previous = mech_core::publication_comparison_work(candidate, candidate)?;
-        let replacement = mech_core::publication_comparison_work(*current, candidate)?;
-        call.demand.work.comparison = call
-            .demand
-            .work
-            .comparison
-            .checked_sub(previous)
-            .and_then(|work| work.checked_add(replacement))
-            .ok_or(MemoryPlanError::ArithmeticOverflow {
-                field: "live publication comparison",
-            })?;
-    }
-    Ok(())
 }
 
 /// Refresh stable global objects from a freshly derived call-local plan.

@@ -719,30 +719,37 @@ fn dynamic_resident_execute(
     let state = bound
         .retained_state::<DynamicResidentKernelState>()
         .ok_or(ResidentKernelError::InvalidInput)?;
-    let ResidentValueMut::F64(output) = output else {
+    let ResidentValueMut::F64(candidate) = output else {
         return Err(ResidentKernelError::InvalidOutput);
     };
-    let mut next = vec![0.0; output.len()];
-    match state.kernel {
+    // Resident supplies the non-published transaction stage as `candidate`.
+    // The module writes that admitted storage directly: a partial ABI write
+    // is discarded with the turn on error, so no output-sized bridge Vec is
+    // allocated and published state remains failure-atomic.
+    let changed = match state.kernel {
         DynamicResidentKernelKind::UnaryScalar(kernel) => {
             let input = inputs.f64(0).ok_or(ResidentKernelError::InvalidInput)?;
-            if input.len() != 1 || next.len() != 1 {
+            if input.len() != 1 || candidate.len() != 1 {
                 return Err(ResidentKernelError::InvalidShape);
             }
-            let status = unsafe { kernel(input[0], next.as_mut_ptr()) };
+            let previous = candidate[0].to_bits();
+            let status = unsafe { kernel(input[0], candidate.as_mut_ptr()) };
             if status != mech_abi::MechStatusV1::OK {
                 return Err(ResidentKernelError::Arithmetic);
             }
+            candidate[0].to_bits() != previous
         }
         DynamicResidentKernelKind::BinaryScalar(kernel) => {
             let lhs = inputs.f64(0).ok_or(ResidentKernelError::InvalidInput)?;
             let rhs = inputs.f64(1).ok_or(ResidentKernelError::InvalidInput)?;
-            if (lhs.len() != 1 && lhs.len() != next.len())
-                || (rhs.len() != 1 && rhs.len() != next.len())
+            if (lhs.len() != 1 && lhs.len() != candidate.len())
+                || (rhs.len() != 1 && rhs.len() != candidate.len())
             {
                 return Err(ResidentKernelError::InvalidShape);
             }
-            for (index, target) in next.iter_mut().enumerate() {
+            let mut changed = false;
+            for (index, target) in candidate.iter_mut().enumerate() {
+                let previous = target.to_bits();
                 let status = unsafe {
                     kernel(
                         lhs[if lhs.len() == 1 { 0 } else { index }],
@@ -753,11 +760,13 @@ fn dynamic_resident_execute(
                 if status != mech_abi::MechStatusV1::OK {
                     return Err(ResidentKernelError::Arithmetic);
                 }
+                changed |= target.to_bits() != previous;
             }
+            changed
         }
         DynamicResidentKernelKind::UnaryView(kernel) => {
             let input = inputs.f64(0).ok_or(ResidentKernelError::InvalidInput)?;
-            if input.len() != next.len() {
+            if input.len() != candidate.len() {
                 return Err(ResidentKernelError::InvalidShape);
             }
             let [rows, columns] = bound.parameters() else {
@@ -766,7 +775,7 @@ fn dynamic_resident_execute(
             let rows = usize::try_from(*rows).map_err(|_| ResidentKernelError::InvalidShape)?;
             let columns =
                 usize::try_from(*columns).map_err(|_| ResidentKernelError::InvalidShape)?;
-            if rows.checked_mul(columns) != Some(output.len()) {
+            if rows.checked_mul(columns) != Some(candidate.len()) {
                 return Err(ResidentKernelError::InvalidShape);
             }
             let status = unsafe {
@@ -778,8 +787,8 @@ fn dynamic_resident_execute(
                         cols: columns,
                     },
                     mech_abi::MechF64ViewMutV1 {
-                        ptr: next.as_mut_ptr(),
-                        len: next.len(),
+                        ptr: candidate.as_mut_ptr(),
+                        len: candidate.len(),
                         rows,
                         cols: columns,
                     },
@@ -788,13 +797,12 @@ fn dynamic_resident_execute(
             if status != mech_abi::MechStatusV1::OK {
                 return Err(ResidentKernelError::Arithmetic);
             }
+            // The ABI owns the whole candidate view and does not expose a
+            // per-element write callback. Conservatively report a successful
+            // non-empty call as changed without allocating a comparison copy.
+            !candidate.is_empty()
         }
-    }
-    let changed = output
-        .iter()
-        .zip(&next)
-        .any(|(current, incoming)| current.to_bits() != incoming.to_bits());
-    output.copy_from_slice(&next);
+    };
     Ok(changed)
 }
 

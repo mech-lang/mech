@@ -341,6 +341,24 @@ fn execute_conversion_plan(
 }
 
 #[cfg(feature = "convert")]
+fn execute_conversion_draft_from_snapshot(
+    source: &ValueCell,
+    snapshot: &mech_core::Value,
+    plan: &ConversionPlan,
+) -> MResult<ValueDataDraft> {
+    let live_type = source.resolved_type()?;
+    if !exact_type_equal(&live_type, &plan.source) {
+        return Err(conversion_execution_error(
+            ConversionExecutionError::ConversionPlanSourceMismatch,
+        ));
+    }
+    let draft = snapshot.canonical_data_draft().map_err(|error| {
+        MechError::new(ValueCellSnapshotFailure { error }, None).with_compiler_loc()
+    })?;
+    execute_conversion_draft(draft, &plan.step).map_err(conversion_execution_error)
+}
+
+#[cfg(feature = "convert")]
 fn conversion_target_schema(
     source: &SchemaBody,
     step: &ConversionStep,
@@ -396,22 +414,22 @@ fn stage_conversion_output(
     frame: &mut mech_core::KernelMemoryFrame<'_>,
     source: &ValueCell,
     output: &ValueCell,
-    target: &SchemaBody,
     plan: &ConversionPlan,
 ) -> MResult<()> {
-    // Resolve and validate the live logical input before consulting the
-    // retained cell. The call lease keeps that binding stable while the
-    // conversion builds its candidate.
-    frame.snapshot_input_cell(source, 0)?;
     if let Some(footprint) = prospective_conversion_output_footprint(output, source)? {
-        frame.with_admitted_canonical_output(output, footprint, |_, construction| {
-            let next = construction.try_build_canonical_candidate_with(|| {
-                execute_conversion_plan(source, target, plan)?.snapshot()
+        frame.with_admitted_canonical_output(output, footprint, |frame, construction| {
+            let next = construction.try_build_canonical_candidate_with(|construction| {
+                let snapshot =
+                    frame.snapshot_input_cell_with_construction(source, 0, construction)?;
+                let converted = execute_conversion_draft_from_snapshot(source, &snapshot, plan)?;
+                construction.try_rebuild_data_draft(output, converted)
             })?;
             Ok(((), next))
         })
     } else {
-        let next = execute_conversion_plan(source, target, plan)?.snapshot()?;
+        let snapshot = frame.snapshot_input_cell(source, 0)?;
+        let converted = execute_conversion_draft_from_snapshot(source, &snapshot, plan)?;
+        let next = output.rebuild_data_draft(converted)?;
         frame.stage_output_value(output, next)
     }
 }
@@ -421,7 +439,6 @@ fn stage_conversion_output(
 struct PlannedTypeConversion {
     source: ValueCell,
     output: ValueCell,
-    target: SchemaBody,
     plan: ConversionPlan,
 }
 
@@ -429,14 +446,12 @@ struct PlannedTypeConversion {
 fn planned_type_conversion_instance(
     source: ValueCell,
     output: ValueCell,
-    target: SchemaBody,
     plan: ConversionPlan,
 ) -> (Box<dyn MechFunction>, FunctionInvocation) {
     (
         Box::new(PlannedTypeConversion {
             source: source.clone(),
             output: output.clone(),
-            target,
             plan,
         }),
         FunctionInvocation::unary(output, source),
@@ -447,10 +462,9 @@ fn planned_type_conversion_instance(
 fn planned_type_conversion_specialized(
     source: ValueCell,
     output: ValueCell,
-    target: SchemaBody,
     plan: ConversionPlan,
 ) -> MResult<SpecializedFunction> {
-    let instance = planned_type_conversion_instance(source, output, target, plan);
+    let instance = planned_type_conversion_instance(source, output, plan);
     SpecializedFunction::syntax_directed(
         instance,
         ResolvedOperationDescriptor::from_name(
@@ -459,7 +473,7 @@ fn planned_type_conversion_specialized(
         )?,
         RuntimeFunctionId::from_name("convert/kind"),
         ExecutionTarget::DirectRuntime,
-        mech_core::ImplementationMemoryClass::NoAdditionalScratch,
+        mech_core::ImplementationMemoryClass::CanonicalFinalize,
     )
 }
 
@@ -472,15 +486,11 @@ fn planned_type_conversion_specialized(
 pub struct RuntimeKindConversion {
     source: FunctionValueInput,
     output: FunctionValueOutput,
-    target: SchemaBody,
     plan: ConversionPlan,
 }
 
 #[cfg(feature = "convert")]
-fn runtime_kind_conversion_plan(
-    output: &ValueCell,
-    source: &ValueCell,
-) -> MResult<(SchemaBody, ConversionPlan)> {
+fn runtime_kind_conversion_plan(output: &ValueCell, source: &ValueCell) -> MResult<ConversionPlan> {
     let source_type = source.resolved_type()?;
     let target_type = output.resolved_type()?;
     let plan = plan_explicit_cast(&source_type, &target_type).map_err(|error| {
@@ -494,7 +504,7 @@ fn runtime_kind_conversion_plan(
             ConversionExecutionError::ConversionShapeMismatch,
         ));
     }
-    Ok((target, plan))
+    Ok(plan)
 }
 
 #[cfg(feature = "convert")]
@@ -512,11 +522,10 @@ impl MechFunctionFactory for RuntimeKindConversion {
         let (output, source) = invocation.expect_unary()?;
         let output = output.value();
         let source = source.value();
-        let (target, plan) = runtime_kind_conversion_plan(output.cell(), source.cell())?;
+        let plan = runtime_kind_conversion_plan(output.cell(), source.cell())?;
         Ok(Box::new(Self {
             source,
             output,
-            target,
             plan,
         }))
     }
@@ -540,13 +549,7 @@ impl MechFunctionImpl for RuntimeKindConversion {
         frame: &mut mech_core::KernelMemoryFrame<'_>,
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
-        stage_conversion_output(
-            frame,
-            self.source.cell(),
-            self.output.cell(),
-            &self.target,
-            &self.plan,
-        )?;
+        stage_conversion_output(frame, self.source.cell(), self.output.cell(), &self.plan)?;
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
@@ -819,7 +822,7 @@ impl CanonicalFunctionSpecializer for ConvertKind {
         let _ = target_cell;
         context.resolve_syntax_operation_contract(&PURE_TYPE_CONVERSION_CONTRACT)?;
         context.certify_instance(
-            planned_type_conversion_instance(source, output, target, plan),
+            planned_type_conversion_instance(source, output, plan),
             mech_core::RuntimeFunctionId::from_name("convert/kind"),
             mech_core::ExecutionTarget::DirectRuntime,
             mech_core::ImplementationMemoryClass::CanonicalFinalize,
@@ -841,7 +844,7 @@ impl MechFunctionImpl for PlannedTypeConversion {
         frame: &mut mech_core::KernelMemoryFrame<'_>,
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
-        stage_conversion_output(frame, &self.source, &self.output, &self.target, &self.plan)?;
+        stage_conversion_output(frame, &self.source, &self.output, &self.plan)?;
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
@@ -899,7 +902,6 @@ pub(crate) fn convert_cell_with_plan_reactively(
         .register_specialized(planned_type_conversion_specialized(
             value,
             output.clone(),
-            target,
             plan.clone(),
         )?)?;
     Ok(output)
@@ -931,7 +933,6 @@ pub(crate) fn convert_cell_implicitly_reactively(
         .register_specialized(planned_type_conversion_specialized(
             value,
             output.clone(),
-            target,
             plan,
         )?)?;
     Ok(output)
@@ -962,7 +963,6 @@ pub(crate) fn convert_cell_reactively(
         .register_specialized(planned_type_conversion_specialized(
             value,
             output.clone(),
-            target,
             plan,
         )?)?;
     Ok(output)
@@ -1300,8 +1300,7 @@ mod canonical_conversion_tests {
         let plan = plan_explicit_cast(&source_type, &target_type).unwrap();
         let output = execute_conversion_plan(&source, &target, &plan).unwrap();
         let conversion =
-            planned_type_conversion_specialized(source.clone(), output.clone(), target, plan)
-                .unwrap();
+            planned_type_conversion_specialized(source.clone(), output.clone(), plan).unwrap();
 
         source
             .replace(&ValueCell::from_exact(13.9_f64).unwrap().snapshot().unwrap())
