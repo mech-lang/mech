@@ -88,6 +88,7 @@ impl PreparedCellPublication {
     /// their storage authority directly, so a reactive batch may finish
     /// staging sibling calls before acquiring the one atomic publication
     /// gate for the complete batch.
+    #[cfg(feature = "functions")]
     pub(crate) const fn requires_active_plan(&self) -> bool {
         self.memory.requires_active_plan
     }

@@ -21,6 +21,14 @@ PROFILES = {
             "static fromSource(",
         ),
     ),
+    "browser-compute-canary": (
+        "browser_compute_canary",
+        (
+            "export class WasmDocument",
+            "export class WasmMixedComputeProject",
+            "static fromSource(",
+        ),
+    ),
 }
 
 

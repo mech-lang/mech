@@ -244,6 +244,13 @@ class DevTools:
             if response_id != request_id:
                 if isinstance(response_id, int):
                     self.pending[response_id] = response
+                elif response.get("method") == "Runtime.consoleAPICalled":
+                    for argument in response.get("params", {}).get("args", ()):
+                        value = argument.get("value")
+                        if isinstance(value, str) and value.startswith(
+                            "[mech-gpu-smoke-phase]"
+                        ):
+                            print(value, file=sys.stderr, flush=True)
                 continue
             break
         else:

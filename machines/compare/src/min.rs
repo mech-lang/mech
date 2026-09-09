@@ -4,7 +4,7 @@ use crate::*;
 
 #[cfg(feature = "matrix")]
 macro_rules! min_scalar_lhs_op {
-    (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => { apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::RightScalar, |lhs, rhs| if lhs <= rhs { lhs.to_owned() } else { rhs.to_owned() }) };
+    (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => { apply_canonical_string_selection($frame, $lhs, $rhs, $out, ComparisonBroadcast::RightScalar, |lhs, rhs| lhs <= rhs) };
     (managed, $lhs:expr, $rhs:expr, $out:expr) => {
         apply_managed_comparison(
             $lhs,
@@ -37,7 +37,7 @@ macro_rules! min_scalar_lhs_op {
 
 #[cfg(feature = "matrix")]
 macro_rules! min_scalar_rhs_op {
-    (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => { apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::LeftScalar, |lhs, rhs| if lhs <= rhs { lhs.to_owned() } else { rhs.to_owned() }) };
+    (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => { apply_canonical_string_selection($frame, $lhs, $rhs, $out, ComparisonBroadcast::LeftScalar, |lhs, rhs| lhs <= rhs) };
     (managed, $lhs:expr, $rhs:expr, $out:expr) => {
         apply_managed_comparison(
             $lhs,
@@ -70,7 +70,7 @@ macro_rules! min_scalar_rhs_op {
 
 #[cfg(feature = "matrix")]
 macro_rules! min_vec_op {
-    (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => { apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::Exact, |lhs, rhs| if lhs <= rhs { lhs.to_owned() } else { rhs.to_owned() }) };
+    (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => { apply_canonical_string_selection($frame, $lhs, $rhs, $out, ComparisonBroadcast::Exact, |lhs, rhs| lhs <= rhs) };
     (managed, $lhs:expr, $rhs:expr, $out:expr) => {
         apply_managed_comparison($lhs, $rhs, $out, ComparisonBroadcast::Exact, |lhs, rhs| {
             if lhs.partial_cmp(&rhs) != Some(std::cmp::Ordering::Greater) {
@@ -96,7 +96,7 @@ macro_rules! min_vec_op {
 }
 
 macro_rules! min_op {
-    (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => { apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::Exact, |lhs, rhs| if lhs <= rhs { lhs.to_owned() } else { rhs.to_owned() }) };
+    (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => { apply_canonical_string_selection($frame, $lhs, $rhs, $out, ComparisonBroadcast::Exact, |lhs, rhs| lhs <= rhs) };
     (managed, $lhs:expr, $rhs:expr, $out:expr) => {
         apply_managed_comparison($lhs, $rhs, $out, ComparisonBroadcast::Exact, |lhs, rhs| {
             if lhs.partial_cmp(&rhs) != Some(std::cmp::Ordering::Greater) {
@@ -121,7 +121,7 @@ macro_rules! min_op {
 
 #[cfg(feature = "matrix")]
 macro_rules! min_mat_vec_op {
-    (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => { apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::RightColumn, |lhs, rhs| if lhs <= rhs { lhs.to_owned() } else { rhs.to_owned() }) };
+    (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => { apply_canonical_string_selection($frame, $lhs, $rhs, $out, ComparisonBroadcast::RightColumn, |lhs, rhs| lhs <= rhs) };
     (managed, $lhs:expr, $rhs:expr, $out:expr) => {
         apply_managed_comparison(
             $lhs,
@@ -159,7 +159,7 @@ macro_rules! min_mat_vec_op {
 
 #[cfg(feature = "matrix")]
 macro_rules! min_vec_mat_op {
-    (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => { apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::LeftColumn, |lhs, rhs| if lhs <= rhs { lhs.to_owned() } else { rhs.to_owned() }) };
+    (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => { apply_canonical_string_selection($frame, $lhs, $rhs, $out, ComparisonBroadcast::LeftColumn, |lhs, rhs| lhs <= rhs) };
     (managed, $lhs:expr, $rhs:expr, $out:expr) => {
         apply_managed_comparison(
             $lhs,
@@ -197,7 +197,7 @@ macro_rules! min_vec_mat_op {
 
 #[cfg(feature = "matrix")]
 macro_rules! min_mat_row_op {
-    (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => { apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::RightRow, |lhs, rhs| if lhs <= rhs { lhs.to_owned() } else { rhs.to_owned() }) };
+    (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => { apply_canonical_string_selection($frame, $lhs, $rhs, $out, ComparisonBroadcast::RightRow, |lhs, rhs| lhs <= rhs) };
     (managed, $lhs:expr, $rhs:expr, $out:expr) => {
         apply_managed_comparison(
             $lhs,
@@ -235,7 +235,7 @@ macro_rules! min_mat_row_op {
 
 #[cfg(feature = "matrix")]
 macro_rules! min_row_mat_op {
-    (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => { apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::LeftRow, |lhs, rhs| if lhs <= rhs { lhs.to_owned() } else { rhs.to_owned() }) };
+    (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => { apply_canonical_string_selection($frame, $lhs, $rhs, $out, ComparisonBroadcast::LeftRow, |lhs, rhs| lhs <= rhs) };
     (managed, $lhs:expr, $rhs:expr, $out:expr) => {
         apply_managed_comparison(
             $lhs,

@@ -28,6 +28,12 @@ let project;
 let running = false;
 let lastFrame = null;
 
+function reportComputeSmokePhase(phase) {
+  if (new URLSearchParams(window.location.search).has('mech-gpu-smoke')) {
+    console.info(`[mech-gpu-smoke-phase] ${phase}`);
+  }
+}
+
 async function fetchText(path) {
   const response = await fetch(new URL(path, projectBase));
   if (!response.ok) {
@@ -186,12 +192,14 @@ class BrowserComputeProject {
     }
     const compileStarted = performance.now();
     const requestedBackend = globalThis.__MECH_COMPUTE_BACKEND_OVERRIDE || '';
+    reportComputeSmokePhase('source-compilation-started');
     const controller = mech.WasmMixedComputeProject.fromSource(
       config,
       source,
       requestedBackend,
       Boolean(adapter),
     );
+    reportComputeSmokePhase('source-compilation-finished');
     const manifest = controller.computeManifest();
     return new BrowserComputeProject(
       controller,
@@ -797,6 +805,16 @@ function installComputeSmokeTest(target) {
       root.dataset.mechGpuSmokeStateAdvanced = String(state.totalDispatches >= 2);
       running = false;
       target.stop();
+      // R6 retains a submitted batch through its completion fence. Teardown
+      // may therefore finish asynchronously when the animation loop has
+      // already queued the next frame; observe that exact lifecycle rather
+      // than treating delayed destruction as a leak.
+      if (target.computeSession?.completion) {
+        await Promise.resolve(target.computeSession.completion).catch(() => {});
+      }
+      if (target.computeResource?.disposeCompletion) {
+        await target.computeResource.disposeCompletion;
+      }
       root.dataset.mechGpuSmokeDisposed = String(
         target.stopped === true && target.computeResource?.disposed === true,
       );
@@ -812,7 +830,9 @@ function installComputeSmokeTest(target) {
 }
 
 async function main() {
+  reportComputeSmokePhase('wasm-initialization-started');
   await init();
+  reportComputeSmokePhase('wasm-initialization-finished');
   const config = await fetchText('mech.mcfg');
   const manifest =
     await readProjectSourceManifest(import.meta.url);
@@ -833,8 +853,11 @@ async function main() {
   }
   const gpuCanvas = document.querySelector('canvas[data-mech-gpu-renderer="points2d"]');
   if (gpuCanvas) {
+    reportComputeSmokePhase('project-preparation-started');
     project = await BrowserComputeProject.fromSources(config, sourceEntries, sources);
+    reportComputeSmokePhase('project-preparation-finished');
     await project.start();
+    reportComputeSmokePhase('project-started');
     running = true;
     requestAnimationFrame(frame);
     installComputeSmokeTest(project);
@@ -928,6 +951,7 @@ window.addEventListener('beforeunload', () => {
 main().catch((error) => {
   running = false;
   console.error(error);
+  const detail = error instanceof Error ? error.message : String(error);
   const status = document.querySelector('[data-mech-gpu-status]');
   if (status) {
     status.className = 'status error';
@@ -936,6 +960,10 @@ main().catch((error) => {
   }
   const message = document.querySelector('[data-mech-gpu-message]');
   if (message) {
-    message.textContent = error instanceof Error ? error.message : String(error);
+    message.textContent = detail;
+  }
+  if (new URLSearchParams(window.location.search).has('mech-gpu-smoke')) {
+    document.documentElement.dataset.mechGpuSmoke = 'failed';
+    document.documentElement.dataset.mechGpuSmokeError = detail;
   }
 });

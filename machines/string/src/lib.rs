@@ -307,31 +307,35 @@ fn canonical_concat_value(
 ) -> MResult<Value> {
     let geometry = canonical_concat_geometry(lhs, rhs)?;
     let Some((rows, columns)) = geometry.output else {
-        return output.rebuild_data_draft(ValueDataDraft::String(
+        let next = ValueDataDraft::String(
             construction.try_concatenate_string(
                 canonical_string_at(lhs, None, 0, 0)?,
                 canonical_string_at(rhs, None, 0, 0)?,
             )?,
-        ));
+        );
+        return construction.try_rebuild_data_draft(output, next);
     };
     let count = rows.checked_mul(columns).ok_or_else(|| {
         function_shape_contract_violation("string/concat", "output cardinality overflowed usize")
     })?;
-    let mut values = construction.try_vec_with_capacity::<ValueDataDraft>(count)?;
-    for row in 0..rows {
-        for column in 0..columns {
-            values.push(ValueDataDraft::String(
-                construction.try_concatenate_string(
-                    canonical_string_at(lhs, geometry.lhs, row, column)?,
-                    canonical_string_at(rhs, geometry.rhs, row, column)?,
-                )?,
-            ));
-        }
-    }
-    output.rebuild_matrix_drafts(
-        vec![rows as u64, columns as u64].into_boxed_slice(),
-        values.into_boxed_slice(),
-    )
+    let values = construction.try_boxed_slice_with(count, |construction, index| {
+        let row = index / columns;
+        let column = index % columns;
+        Ok(ValueDataDraft::String(
+            construction.try_concatenate_string(
+                canonical_string_at(lhs, geometry.lhs, row, column)?,
+                canonical_string_at(rhs, geometry.rhs, row, column)?,
+            )?,
+        ))
+    })?;
+    let dimensions = construction.try_boxed_slice_with(2, |_construction, index| {
+        Ok(if index == 0 {
+            rows as u64
+        } else {
+            columns as u64
+        })
+    })?;
+    construction.try_rebuild_matrix_drafts(output, dimensions, values)
 }
 
 #[cfg(test)]

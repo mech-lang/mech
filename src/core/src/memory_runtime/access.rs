@@ -372,6 +372,7 @@ pub(crate) struct PreparedUndoSnapshot {
     target: PlanObjectKey,
     undo: PlanObjectKey,
     armed: bool,
+    #[cfg_attr(not(feature = "functions"), allow(dead_code))]
     retained_lease: Option<RetainedPublicationLease>,
 }
 
@@ -1378,6 +1379,7 @@ pub struct KernelMemoryFrame<'a> {
     leases: RefMut<'a, CallAccessWorkspace>,
     #[cfg(feature = "functions")]
     staged_canonical_output: Option<(PlanObjectKey, crate::Value)>,
+    #[cfg_attr(not(feature = "functions"), allow(dead_code))]
     undo_snapshot: Option<PreparedUndoSnapshot>,
 }
 
@@ -1883,12 +1885,15 @@ impl KernelMemoryFrame<'_> {
     pub fn with_admitted_canonical_output<R>(
         &mut self,
         output: &crate::ValueCell,
-        footprint: crate::CurrentMemoryFootprint,
+        mut footprint: crate::CurrentMemoryFootprint,
         build: impl FnOnce(
             &mut Self,
             &mut super::FrozenSnapshotConstruction,
         ) -> crate::MResult<(R, crate::Value)>,
     ) -> crate::MResult<R> {
+        footprint.schema_bytes = footprint
+            .schema_bytes
+            .max(output.schema_clone_allocation_bound_bytes()?);
         let (object, _) = self.output_target(output, 0)?;
         if self.staged_canonical_output.is_some() {
             return Err(MemoryRuntimeError::CandidateValidationFailed {
@@ -1945,7 +1950,8 @@ impl KernelMemoryFrame<'_> {
                     }
                 })
             })?;
-        let finalization_bytes = footprint.payload_bytes.max(footprint.encoded_bytes);
+        let finalization_bytes = crate::canonical_snapshot_finalization_bytes(footprint)
+            .map_err(|error| crate::MechError::new(error, None).with_compiler_loc())?;
         let mut construction = admission.begin_construction(finalization_bytes, temporary_bytes)?;
         let (result, next) = build(self, &mut construction)?;
         let actual = next

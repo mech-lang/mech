@@ -279,7 +279,7 @@ jobs:
       - name: Build mixed compute WASM and refresh the server
         run: |
           node scripts/test-browser-compute-lifecycle.mjs
-          python3 scripts/build-wasm.py --profile browser-compute
+          python3 scripts/build-wasm.py --profile browser-compute-canary
           grep -q '^export class WasmDocument' src/wasm/pkg/mech_wasm.js
           grep -q '^export class WasmMixedComputeProject' src/wasm/pkg/mech_wasm.js
           cargo build --locked --bin mech --features compute_backends_native

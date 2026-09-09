@@ -810,8 +810,9 @@ impl AssignCanonicalSelection {
 
     fn stage_managed(&self, frame: &mut mech_core::KernelMemoryFrame<'_>) -> MResult<()> {
         let footprint = self.prospective_output_footprint()?;
-        frame.with_admitted_canonical_output(&self.sink, footprint, |_, _construction| {
-            Ok(((), self.next_value()?))
+        frame.with_admitted_canonical_output(&self.sink, footprint, |_, construction| {
+            let next = construction.try_build_assignment_candidate_with(|| self.next_value())?;
+            Ok(((), next))
         })?;
         Ok(())
     }

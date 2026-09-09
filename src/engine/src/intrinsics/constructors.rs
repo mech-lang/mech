@@ -325,17 +325,19 @@ impl MechFunctionImpl for ValueSetComprehension {
         frame.with_admitted_canonical_output(
             self.output.cell(),
             footprint,
-            |frame, _construction| {
-                let values = self
-                    .arguments
-                    .iter()
-                    .map(|argument| frame.snapshot_function_value_input(argument))
-                    .collect::<MResult<Vec<_>>>()?
-                    .into_iter()
-                    .map(|value| value.data().clone())
-                    .collect::<Vec<_>>()
-                    .into_boxed_slice();
-                Ok(((), self.output.build_set(values)?))
+            |frame, construction| {
+                let next = construction.try_build_set_with(&self.output, || {
+                    Ok(self
+                        .arguments
+                        .iter()
+                        .map(|argument| frame.snapshot_function_value_input(argument))
+                        .collect::<MResult<Vec<_>>>()?
+                        .into_iter()
+                        .map(|value| value.data().clone())
+                        .collect::<Vec<_>>()
+                        .into_boxed_slice())
+                })?;
+                Ok(((), next))
             },
         )?;
         Ok(mech_core::ReactiveSolveStatus::Changed)
@@ -394,11 +396,19 @@ impl MechFunctionCompiler for ValueSetComprehension {
     feature = "matrix_horzcat",
     feature = "matrix_vertcat"
 ))]
-fn matrix_input_cells(input: &ValueCell) -> MResult<(usize, usize, Vec<ValueCell>)> {
-    if let Some(elements) = input.matrix_elements()? {
-        let SchemaBody::Matrix { dimensions, .. } = input.closed_schema_body()? else {
-            unreachable!("matrix elements retain a matrix schema")
-        };
+fn source_matrix_input_drafts(
+    input: &ValueCell,
+) -> MResult<(usize, usize, SchemaBody, Vec<ValueDataDraft>)> {
+    let body = input.closed_schema_body()?;
+    let draft = input
+        .snapshot()?
+        .canonical_data_draft()
+        .map_err(|error| matrix_comprehension_error(format!("{error:?}")))?;
+    if let SchemaBody::Matrix {
+        element,
+        dimensions,
+    } = body
+    {
         let [
             DimensionExpr::Constant(rows),
             DimensionExpr::Constant(columns),
@@ -408,25 +418,21 @@ fn matrix_input_cells(input: &ValueCell) -> MResult<(usize, usize, Vec<ValueCell
                 "matrix input must have exactly two dimensions",
             ));
         };
-        let owner = input.memory_domain().ok_or_else(|| {
-            MechError::from(MemoryRuntimeError::CandidateValidationFailed {
-                object: None,
-                reason: "owned matrix input has no memory session".into(),
-            })
-        })?;
-        let elements = elements
-            .into_iter()
-            .map(|element| element.import_owned_in(&owner))
-            .collect::<MResult<Vec<_>>>()?;
+        let ValueDataDraft::Matrix(elements) = draft else {
+            return Err(matrix_comprehension_error(
+                "matrix input did not retain canonical matrix data",
+            ));
+        };
         return Ok((
             usize::try_from(*rows)
                 .map_err(|_| matrix_comprehension_error("matrix row extent exceeds usize"))?,
             usize::try_from(*columns)
                 .map_err(|_| matrix_comprehension_error("matrix column extent exceeds usize"))?,
-            elements,
+            *element,
+            elements.into_vec(),
         ));
     }
-    Ok((1, 1, vec![input.clone()]))
+    Ok((1, 1, body, vec![draft]))
 }
 
 #[cfg(all(
@@ -530,61 +536,77 @@ mod matrix_input_tests {
 }
 
 #[cfg(any(feature = "matrix_comprehensions", feature = "matrix_horzcat"))]
-fn horizontal_comprehension_cells(
+fn horizontal_comprehension_drafts(
     arguments: &[ValueCell],
-) -> MResult<(usize, usize, Vec<ValueCell>)> {
+) -> MResult<(usize, usize, SchemaBody, Box<[ValueDataDraft]>)> {
     if arguments.is_empty() {
-        return Ok((0, 0, Vec::new()));
+        return Err(matrix_comprehension_error(
+            "an empty matrix constructor requires an explicit element schema",
+        ));
     }
     let parts = arguments
         .iter()
-        .map(matrix_input_cells)
+        .map(source_matrix_input_drafts)
         .collect::<MResult<Vec<_>>>()?;
     let rows = parts[0].0;
-    if parts.iter().any(|(candidate, _, _)| *candidate != rows) {
+    let element = parts[0].2.clone();
+    if parts.iter().any(|(candidate, _, candidate_element, _)| {
+        *candidate != rows || *candidate_element != element
+    }) {
         return Err(matrix_comprehension_error(
-            "horizontal inputs must have the same row extent",
+            "horizontal inputs must have the same row extent and element schema",
         ));
     }
-    let columns = parts.iter().try_fold(0_usize, |total, (_, columns, _)| {
-        total
-            .checked_add(*columns)
-            .ok_or_else(|| matrix_comprehension_error("matrix column extent overflowed"))
-    })?;
-    let mut cells = Vec::with_capacity(rows.saturating_mul(columns));
+    let columns = parts
+        .iter()
+        .try_fold(0_usize, |total, (_, columns, _, _)| {
+            total
+                .checked_add(*columns)
+                .ok_or_else(|| matrix_comprehension_error("matrix column extent overflowed"))
+        })?;
+    let mut values = Vec::with_capacity(rows.saturating_mul(columns));
     for row in 0..rows {
-        for (_, part_columns, part_cells) in &parts {
+        for (_, part_columns, _, part_values) in &parts {
             let start = row.saturating_mul(*part_columns);
-            cells.extend_from_slice(&part_cells[start..start + part_columns]);
+            values.extend_from_slice(&part_values[start..start + part_columns]);
         }
     }
-    Ok((rows, columns, cells))
+    Ok((rows, columns, element, values.into_boxed_slice()))
 }
 
 #[cfg(feature = "matrix_vertcat")]
-fn vertical_concatenation_cells(
+fn vertical_concatenation_drafts(
     arguments: &[ValueCell],
-) -> MResult<(usize, usize, Vec<ValueCell>)> {
+) -> MResult<(usize, usize, SchemaBody, Box<[ValueDataDraft]>)> {
     if arguments.is_empty() {
-        return Ok((0, 0, Vec::new()));
+        return Err(matrix_comprehension_error(
+            "an empty matrix constructor requires an explicit element schema",
+        ));
     }
     let parts = arguments
         .iter()
-        .map(matrix_input_cells)
+        .map(source_matrix_input_drafts)
         .collect::<MResult<Vec<_>>>()?;
     let columns = parts[0].1;
-    if parts.iter().any(|(_, candidate, _)| *candidate != columns) {
+    let element = parts[0].2.clone();
+    if parts.iter().any(|(_, candidate, candidate_element, _)| {
+        *candidate != columns || *candidate_element != element
+    }) {
         return Err(matrix_comprehension_error(
-            "vertical inputs must have the same column extent",
+            "vertical inputs must have the same column extent and element schema",
         ));
     }
-    let rows = parts.iter().try_fold(0_usize, |total, (rows, _, _)| {
+    let rows = parts.iter().try_fold(0_usize, |total, (rows, _, _, _)| {
         total
             .checked_add(*rows)
             .ok_or_else(|| matrix_comprehension_error("matrix row extent overflowed"))
     })?;
-    let cells = parts.into_iter().flat_map(|(_, _, cells)| cells).collect();
-    Ok((rows, columns, cells))
+    let values = parts
+        .into_iter()
+        .flat_map(|(_, _, _, values)| values)
+        .collect::<Vec<_>>()
+        .into_boxed_slice();
+    Ok((rows, columns, element, values))
 }
 
 #[cfg(any(
@@ -605,26 +627,37 @@ pub(crate) fn matrix_comprehension_output(arguments: &[ValueCell]) -> MResult<Va
             Box::new([]),
         );
     }
-    let (rows, columns, cells) = horizontal_comprehension_cells(arguments)?;
-    ValueCell::dynamic_matrix_from_cells(rows, columns, &cells)
+    let (rows, columns, element, values) = horizontal_comprehension_drafts(arguments)?;
+    let owner = arguments[0].memory_domain().ok_or_else(|| {
+        MechError::from(MemoryRuntimeError::CandidateValidationFailed {
+            object: None,
+            reason: "owned matrix input has no memory session".into(),
+        })
+    })?;
+    ValueCell::dynamic_matrix_in(
+        &owner,
+        element,
+        vec![rows as u64, columns as u64].into_boxed_slice(),
+        values,
+    )
 }
 
 #[cfg(any(feature = "matrix_horzcat", feature = "matrix_vertcat"))]
-fn matrix_concatenation_cells(
+fn matrix_concatenation_drafts(
     arguments: &[ValueCell],
     vertical: bool,
-) -> MResult<(usize, usize, Vec<ValueCell>)> {
+) -> MResult<(usize, usize, SchemaBody, Box<[ValueDataDraft]>)> {
     if vertical {
         #[cfg(feature = "matrix_vertcat")]
         {
-            vertical_concatenation_cells(arguments)
+            vertical_concatenation_drafts(arguments)
         }
         #[cfg(not(feature = "matrix_vertcat"))]
         unreachable!()
     } else {
         #[cfg(feature = "matrix_horzcat")]
         {
-            horizontal_comprehension_cells(arguments)
+            horizontal_comprehension_drafts(arguments)
         }
         #[cfg(not(feature = "matrix_horzcat"))]
         unreachable!()
@@ -827,20 +860,31 @@ fn matrix_concatenation_output(
     vertical: bool,
     resolved: Option<&ResolvedType>,
 ) -> MResult<ValueCell> {
-    let (rows, columns, cells) = matrix_concatenation_cells(arguments, vertical)?;
-    if let Some(resolved) = resolved {
-        return ValueCell::matrix_from_resolved_type_cells(
-            resolved, rows, columns, &cells, arguments,
-        );
-    }
-    if cells.is_empty() {
+    if arguments.is_empty() {
         return ValueCell::dynamic_matrix(
             SchemaBody::Tuple(Box::new([])),
-            vec![rows as u64, columns as u64].into_boxed_slice(),
+            vec![0, 0].into_boxed_slice(),
             Box::new([]),
         );
     }
-    ValueCell::dynamic_matrix_from_cells(rows, columns, &cells)
+    let (rows, columns, element, values) = matrix_concatenation_drafts(arguments, vertical)?;
+    let owner = arguments[0].memory_domain().ok_or_else(|| {
+        MechError::from(MemoryRuntimeError::CandidateValidationFailed {
+            object: None,
+            reason: "resolved matrix output has no owning memory session".into(),
+        })
+    })?;
+    if let Some(resolved) = resolved {
+        return ValueCell::matrix_from_resolved_type_drafts_in(
+            &owner, resolved, rows, columns, element, values, arguments,
+        );
+    }
+    ValueCell::dynamic_matrix_in(
+        &owner,
+        element,
+        vec![rows as u64, columns as u64].into_boxed_slice(),
+        values,
+    )
 }
 
 #[cfg(any(feature = "matrix_horzcat", feature = "matrix_vertcat"))]
@@ -883,16 +927,17 @@ impl<const VERTICAL: bool> MechFunctionImpl for ValueMatrixConcatenation<VERTICA
             frame.with_admitted_canonical_output(
                 self.output.cell(),
                 footprint,
-                |frame, _construction| {
-                    let (rows, columns, values) =
-                        managed_matrix_concatenation_drafts(frame, &self.arguments, VERTICAL)?;
-                    Ok((
-                        (),
-                        self.output.cell().rebuild_matrix_drafts(
-                            vec![rows as u64, columns as u64].into_boxed_slice(),
-                            values,
-                        )?,
-                    ))
+                |frame, construction| {
+                    let next =
+                        construction.try_rebuild_matrix_drafts_with(self.output.cell(), || {
+                            let (rows, columns, values) = managed_matrix_concatenation_drafts(
+                                frame,
+                                &self.arguments,
+                                VERTICAL,
+                            )?;
+                            Ok((vec![rows as u64, columns as u64].into_boxed_slice(), values))
+                        })?;
+                    Ok(((), next))
                 },
             )?;
         } else {
@@ -1105,16 +1150,14 @@ impl MechFunctionImpl for ValueMatrixComprehension {
             frame.with_admitted_canonical_output(
                 self.output.cell(),
                 footprint,
-                |frame, _construction| {
-                    let (rows, columns, drafts) =
-                        managed_matrix_concatenation_drafts(frame, &self.arguments, false)?;
-                    Ok((
-                        (),
-                        self.output.cell().rebuild_matrix_drafts(
-                            vec![rows as u64, columns as u64].into_boxed_slice(),
-                            drafts,
-                        )?,
-                    ))
+                |frame, construction| {
+                    let next =
+                        construction.try_rebuild_matrix_drafts_with(self.output.cell(), || {
+                            let (rows, columns, drafts) =
+                                managed_matrix_concatenation_drafts(frame, &self.arguments, false)?;
+                            Ok((vec![rows as u64, columns as u64].into_boxed_slice(), drafts))
+                        })?;
+                    Ok(((), next))
                 },
             )?;
         } else {

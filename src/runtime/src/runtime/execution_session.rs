@@ -592,12 +592,12 @@ impl MechExecutionServices for RuntimeExecutionSession<'_> {
         .write_external_resource(request, value)
     }
 
-    fn bind_live_resource(
-        &mut self,
+    fn prepare_live_resource_binding<'a>(
+        &'a mut self,
         _interpreter_id: u64,
         _request: &ExecutionResourceRequest,
         _target: ValueCell,
-    ) -> MResult<()> {
+    ) -> MResult<mech_core::PreparedLiveResourceBinding<'a>> {
         Err(MechError::new(
             RuntimeInvalidOperationError {
                 operation: "bind_live_resource",

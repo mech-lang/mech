@@ -1536,6 +1536,7 @@ impl MemoryDomain {
         }
     }
 
+    #[cfg(feature = "functions")]
     pub(crate) fn check_managed_host_allocation(
         &self,
         requested: u64,

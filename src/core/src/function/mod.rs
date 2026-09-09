@@ -21,6 +21,7 @@ use crate::*;
 
 #[cfg(all(feature = "no_std", not(feature = "std")))]
 use alloc::{
+    borrow::ToOwned,
     collections::{BTreeMap, BTreeSet},
     rc::Rc,
 };
@@ -298,18 +299,19 @@ pub trait MechFunctionImpl {
         .with_compiler_loc())
     }
 
-    /// Completes fallible external coordination only after the publication
-    /// batch has acquired its infallible commit authority.
-    fn prepare_external_publication(&self, _: &mut dyn MechExecutionServices) -> MResult<()> {
-        Ok(())
+    /// Prepares fallible external coordination without making it observable.
+    /// A returned token installs that state only after cell publication and
+    /// realization promotion have become infallible.
+    fn prepare_external_publication<'a>(
+        &self,
+        _: &'a mut dyn MechExecutionServices,
+    ) -> MResult<Option<PreparedLiveResourceBinding<'a>>> {
+        Ok(None)
     }
 
-    /// Performs an explicitly non-rollbackable external handoff after the
-    /// infallible cell commit. Live observers therefore cannot see the
-    /// subscription before the adopted value is published.
-    fn external_publication_committed(&self, _: &mut dyn MechExecutionServices) -> MResult<()> {
-        Ok(())
-    }
+    /// Applies implementation-local state after publication. This hook is
+    /// deliberately infallible and must not call external services.
+    fn external_publication_committed(&self) {}
 
     fn initial_solve_policy(&self) -> InitialSolvePolicy {
         InitialSolvePolicy::Solve
@@ -686,11 +688,14 @@ impl ManagedCallRealization {
                         .with_compiler_loc(),
                 );
             }
-            for (index, footprint) in footprints.iter().copied().enumerate() {
+            for (index, mut footprint) in footprints.iter().copied().enumerate() {
                 let port = u16::try_from(index).map_err(|_| {
                     MechError::new(MemoryPlanError::DescriptorArityMismatch, None)
                         .with_compiler_loc()
                 })?;
+                footprint.schema_bytes = footprint
+                    .schema_bytes
+                    .max(output.schema_clone_allocation_bound_bytes()?);
                 resolved.insert((PortDirection::Output, port), footprint);
             }
         } else {
@@ -785,55 +790,35 @@ impl ManagedCallRealization {
             .domain
             .acquire_call(&self.realized, &self.execution)
             .map_err(MechError::from)?;
-        let argument_bytes = core::mem::size_of::<Value>()
-            .checked_mul(managed_inputs.len())
-            .and_then(|bytes| u64::try_from(bytes).ok())
-            .ok_or_else(|| {
-                MechError::new(
-                    MemoryPlanError::ArithmeticOverflow {
-                        field: "external argument vector bytes",
-                    },
-                    None,
-                )
-                .with_compiler_loc()
+        let (scratch_object, scratch_bytes) = self
+            .plan
+            .allocations
+            .iter()
+            .filter(|allocation| allocation.role == AllocationRole::Scratch)
+            .try_fold((None, 0_u64), |(first, total), allocation| {
+                total
+                    .checked_add(allocation.capacity_bytes)
+                    .map(|total| (first.or(Some(allocation.id)), total))
+                    .ok_or_else(|| {
+                        MechError::new(
+                            MemoryPlanError::ArithmeticOverflow {
+                                field: "external marshalling scratch bytes",
+                            },
+                            None,
+                        )
+                        .with_compiler_loc()
+                    })
             })?;
-        if argument_bytes != 0 {
-            self.domain.check_managed_host_allocation(
-                argument_bytes,
-                core::mem::align_of::<Value>() as u32,
-            )?;
-        }
-        let mut arguments = Vec::new();
-        arguments
-            .try_reserve_exact(managed_inputs.len())
-            .map_err(|_| {
-                MechError::from(MemoryRuntimeError::AllocationFailed {
-                    object: self.plan.inputs.first().map(|input| input.object),
-                    requested: managed_inputs.len() as u64,
-                    alignment: core::mem::align_of::<Value>() as u32,
-                    space: MemorySpace::Host,
-                })
-            })?;
+        let construction = crate::memory_runtime::ExternalMarshallingConstruction::new(
+            self.domain.clone(),
+            scratch_object,
+            scratch_bytes,
+        );
+        let mut arguments = construction
+            .try_vec_with_capacity::<Value>(managed_inputs.len())
+            .map_err(MechError::from)?;
         for input in managed_inputs {
-            let footprint = input.current_memory_footprint()?;
-            let retained = footprint
-                .fixed_bytes
-                .checked_add(footprint.payload_bytes)
-                .ok_or_else(|| {
-                    MechError::new(
-                        MemoryPlanError::ArithmeticOverflow {
-                            field: "external input marshalling bytes",
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()
-                })?;
-            let snapshot_bytes = retained.max(footprint.encoded_bytes);
-            if snapshot_bytes != 0 {
-                self.domain
-                    .check_managed_host_allocation(snapshot_bytes, 1)?;
-            }
-            arguments.push(input.snapshot()?);
+            arguments.push(input.snapshot_for_external_marshalling(&construction)?);
         }
         Ok(arguments.into_boxed_slice())
     }
@@ -1023,21 +1008,31 @@ impl FunctionInstance {
         let mut prepared = self.prepare_reactive_publication(services)?;
         let status = prepared.status;
         if let Some(publication) = prepared.publication.take() {
+            let external = prepared
+                .external
+                .then(|| self.implementation.prepare_external_publication(services))
+                .transpose()?
+                .flatten();
             let ready = PreparedCellPublicationBatch::new(vec![publication])?.ready()?;
-            if prepared.external {
-                self.implementation.prepare_external_publication(services)?;
-            }
             ready.commit();
+            // Publication and realization become one observable transition.
+            // Promote before installing an external subscription so a live
+            // observer can never resolve the newly published cell through the
+            // preceding physical realization.
+            self.promote_prepared_realization(&mut prepared);
             if prepared.external {
-                self.implementation
-                    .external_publication_committed(services)?;
+                self.implementation.external_publication_committed();
+                if let Some(external) = external {
+                    external.commit();
+                }
             }
+        } else {
+            // Effect-only calls have no cell publication to carry a revised
+            // input geometry. Their successfully executed realization is
+            // nevertheless the new cold-path binding authority. Failed calls
+            // never reach here.
+            self.promote_prepared_realization(&mut prepared);
         }
-        // Effect-only calls have no cell publication to carry a revised input
-        // geometry. Their successfully executed realization is nevertheless
-        // the new cold-path binding authority and must be promoted after the
-        // execution scope has validated it. Failed calls never reach here.
-        self.promote_prepared_realization(&mut prepared);
         Ok(status)
     }
 
@@ -1653,18 +1648,15 @@ impl MechFunctionImpl for SemanticMechFunction {
             .stage_prepared_external_output(frame, services, result)
     }
 
-    fn prepare_external_publication(
+    fn prepare_external_publication<'a>(
         &self,
-        services: &mut dyn MechExecutionServices,
-    ) -> MResult<()> {
+        services: &'a mut dyn MechExecutionServices,
+    ) -> MResult<Option<PreparedLiveResourceBinding<'a>>> {
         self.function.prepare_external_publication(services)
     }
 
-    fn external_publication_committed(
-        &self,
-        services: &mut dyn MechExecutionServices,
-    ) -> MResult<()> {
-        self.function.external_publication_committed(services)
+    fn external_publication_committed(&self) {
+        self.function.external_publication_committed()
     }
 
     fn initial_solve_policy(&self) -> InitialSolvePolicy {

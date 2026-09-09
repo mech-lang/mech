@@ -7,15 +7,15 @@ Unverified rows remain explicitly open.
 ## Candidate identity
 
 - R5 base: `941fbbce44712b7f738813170ca1561a313190db`
-- reconciled pushed R6 head: `94d10fb795040a32808ab8d78860aea322d1668e`
-- current packet: W1 lifecycle closure is validated locally and awaiting its
-  checkpoint commit and push
-- latest remote normal CI: run 34299006847 on `94d10fb79`; every owner slice,
-  Linux, and Windows passed. Static contracts found one missing narrow warning
-  exception and Browser Canary exposed a 30-second DevTools-command timeout
-  after serially spending 28 minutes in three independent build/test groups.
-  Both failures are corrected on the current local packet; the three browser
-  groups now run in parallel behind the unchanged aggregate gate.
+- reconciled pushed R6 head: `352f8671ef8bd4de22b4cc1721e81745ec8253fb`
+- current packet: the shared W1 construction/publication corrections requested
+  at that head are validated locally and awaiting their checkpoint commit and
+  push; caller-family work continues under W2
+- latest remote normal CI: run 34302832269 on `352f8671e` failed in the broad
+  browser-compute build. The current packet removes per-element source-cell
+  expansion for dense matrix construction and gives that canary a bounded
+  feature profile. The 16,384-element CI workload and the independent browser
+  gates remain unchanged.
 
 No completion claim is attached to this checkpoint. Exact candidate and CI
 SHAs will advance only after each bounded packet is committed and pushed.
@@ -58,13 +58,25 @@ Statuses distinguish catalog classification from behavioral qualification.
 | F07 | Owned constructors, literals, conversions, artifact constants/import | Fixed initialization or admitted canonical construction; pinned storage only for explicit external `Ref` | ordinary source literal session test; explicit external registration tests | Core ingress subset verified; decoder/artifact constant matrix pending W2/W3 |
 | F08 | `snapshot/*` and managed canonical cell adapter | Retained immutable root; explicit transforming rebind/deep-copy only | `ordinary_dynamic_cell_snapshots_retain_the_frozen_root_after_close`; canonical shared-root safety tests | Nested Dynamic ordinary snapshot verified locally; cross-table transform/export coverage pending W2 |
 | F09 | Variable/invariant definitions, captures, state/register/checkpoint | Retained immutable or published invariant; state publication uses existing journal | `ValueSet` and `CanonicalVariableDefinition` policy checks; `maintained_set_definition_preserves_its_specialized_frozen_output_without_write_access`; `published_invariant_policy_cannot_obtain_output_write_authority`; state journal tests | Published-invariant output isolation and folded semantic planning inputs verified locally; full state/register inventory pending W2 |
-| F10 | External host/resource/module/ABI adapters | Inputs marshalled under `ExternalMarshalling`; result captured once in call-scoped preparation; borrowed measurement, `ExternalAdoption`, atomic publish | `external_resource_adoption_replans_each_captured_result_once`; `marshalling_is_admitted_before_provider_and_captured_rejection_is_scoped` | Pre-provider admission, grow/shrink, one-read, post-capture rejection, cleanup, and recovery verified locally; module/ABI pending W3 |
+| F10 | External host/resource/module/ABI adapters | Inputs marshalled under a finite `ExternalMarshallingConstruction`; result captured once in call-scoped preparation; live binding prepared before publication; borrowed measurement, `ExternalAdoption`, atomic publish | `external_resource_adoption_replans_each_captured_result_once`; `numeric_marshalling_budget_covers_draft_expansion_and_finalization`; `failed_live_binding_preserves_output_adapter_state_and_active_instance` | Numeric draft/finalization admission, failed-live-binding atomicity, grow/shrink, one-read, post-capture cleanup, and recovery verified locally; module/ABI pending W3 |
 | F11 | Resident executor, numeric/String/Snapshot lanes, real arena projection | `PreparedResidentTurn`, R5 transaction target, retained arena owner | Resident projection ownership test; Resident String/set regression suites; owner test command | Substantial existing coverage; lane-by-lane inventory and actual reuse proof pending W3 |
 | F12 | Artifact/native/WASM/compute/GPU/browser adapters | Target-local realization; registered buffer/submission ownership; planned bridges | compute and GPU R6 suites; prior exact-head owner/normal CI; browser canary diagnostics | Local packet qualification and exact-head backend CI pending W3/W5 |
 
 ## Current packet evidence
 
-Executed successfully on the working tree descended from `94d10fb79`:
+Executed successfully on the working tree descended from `352f8671e`:
+
+- common canonical finalization now debits the same sealed construction
+  authority as draft and String construction; an injected failure at the real
+  finalizer boundary preserves the old publication and recovers on retry.
+- ordinary live-resource execution prepares the fallible subscription before
+  the cell commit and installs only a non-fallible token afterward; rejection
+  preserves output, version, adapter state, and active realization.
+- numeric `u8` matrix host-call marshalling rejects under an insufficient
+  finite budget before provider invocation and succeeds under the matching
+  draft-plus-finalization budget.
+- narrowed browser-compute WASM builds successfully; the packed dense-matrix
+  ingress was also exercised locally at 16,384 and 1,000,000 elements.
 
 - `mech-core --all-features --test r6_memory_runtime publication`: 3 passed.
 - sibling-call atomic batch test: 1 passed.
@@ -81,7 +93,9 @@ Executed successfully on the working tree descended from `94d10fb79`:
   `row_vector4`, `vector2`, `vector3`, and `vector4`: 1 passed per feature.
 - published-invariant false-writer regression: 1 passed; value and content
   version remained unchanged after rejected writer acquisition.
-- R6 architecture checker and all 71 architecture mutations: passed.
+- R6 architecture checker and all 120 prior architecture/planner mutations:
+  passed; four new finalizer, marshalling-token, and live-binding mutations also
+  pass in the focused packet run.
 - CI workflow/impact contract suite: 32 passed; the fixed-shape coverage set is
   enforced as twelve one-feature jobs to bound compiler, linker, and disk use,
   and all three browser groups remain required through one aggregate gate.

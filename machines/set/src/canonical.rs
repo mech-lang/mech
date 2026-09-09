@@ -66,9 +66,7 @@ impl SetInput {
         self.planning_snapshot()?
             .set_view()
             .map(|set| set.elements().len())
-            .ok_or_else(|| {
-                function_shape_contract_violation("set/operation", "input is not a set")
-            })
+            .ok_or_else(|| function_shape_contract_violation("set/operation", "input is not a set"))
     }
 
     pub(crate) fn prospective_binary_footprint(
@@ -100,9 +98,9 @@ impl SetInput {
     ) -> MResult<CurrentMemoryFootprint> {
         let set = self.planning_snapshot()?;
         let candidate = candidate.planning_snapshot()?;
-        let set = set.set_view().ok_or_else(|| {
-            function_shape_contract_violation("set/update", "input is not a set")
-        })?;
+        let set = set
+            .set_view()
+            .ok_or_else(|| function_shape_contract_violation("set/update", "input is not a set"))?;
         output.0.cell().prospective_set_data_memory_footprint(
             set.elements()
                 .iter()
@@ -330,9 +328,9 @@ impl SetOutput {
         footprint: CurrentMemoryFootprint,
         build: impl FnOnce(&mut KernelMemoryFrame<'_>) -> MResult<Box<[ValueData]>>,
     ) -> MResult<()> {
-        frame.with_admitted_canonical_output(self.0.cell(), footprint, |frame, _construction| {
-            let elements = build(frame)?;
-            Ok(((), self.0.build_set(elements)?))
+        frame.with_admitted_canonical_output(self.0.cell(), footprint, |frame, construction| {
+            let next = construction.try_build_set_with(&self.0, || build(frame))?;
+            Ok(((), next))
         })
     }
 
@@ -398,9 +396,9 @@ impl SetOutput {
         footprint: CurrentMemoryFootprint,
         build: impl FnOnce(&mut KernelMemoryFrame<'_>) -> MResult<Box<[ValueDataDraft]>>,
     ) -> MResult<()> {
-        frame.with_admitted_canonical_output(self.0.cell(), footprint, |frame, _construction| {
-            let elements = build(frame)?;
-            Ok(((), self.0.build_set_drafts(elements)?))
+        frame.with_admitted_canonical_output(self.0.cell(), footprint, |frame, construction| {
+            let next = construction.try_build_set_drafts_with(&self.0, || build(frame))?;
+            Ok(((), next))
         })
     }
 

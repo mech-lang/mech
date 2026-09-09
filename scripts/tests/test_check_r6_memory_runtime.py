@@ -734,6 +734,49 @@ fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunctio
         )
         self.assert_failure(root, "external result is not captured once")
 
+    def test_68_common_finalizer_must_consume_construction_authority(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/cell_binding.rs",
+            "SnapshotValidationContext::new(schemas).with_construction_authority(construction)",
+            "SnapshotValidationContext::new(schemas)",
+        )
+        self.assert_failure(root, "common canonical finalization bypasses construction authority")
+
+    def test_69_external_marshalling_must_use_its_finite_construction_token(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/function/mod.rs",
+            "input.snapshot_for_external_marshalling(&construction)?",
+            "input.snapshot()?",
+        )
+        self.assert_failure(
+            root,
+            "external marshalling is not governed by canonical construction authority",
+        )
+
+    def test_70_live_binding_must_be_prepared_before_publication(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/function/mod.rs",
+            "prepare_external_publication(services)",
+            "prepare_external_publication_after_commit(services)",
+        )
+        self.assert_failure(root, "external live binding is fallible after cell publication")
+
+    def test_71_live_binding_token_allocation_must_be_fallible(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/execution.rs",
+            "Box::try_new(commit)",
+            "Box::new(commit)",
+        )
+        self.assert_failure(root, "external live binding is fallible after cell publication")
+
 
 if __name__ == "__main__":
     unittest.main()

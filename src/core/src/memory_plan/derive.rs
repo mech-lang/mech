@@ -11,11 +11,11 @@ use alloc::collections::BTreeMap;
 #[cfg(feature = "no_std")]
 use alloc::collections::BTreeSet;
 #[cfg(feature = "no_std")]
-use alloc::{vec, vec::Vec};
+use alloc::{boxed::Box, vec, vec::Vec};
 #[cfg(all(not(feature = "no_std"), feature = "functions"))]
 use std::collections::BTreeMap;
 #[cfg(not(feature = "no_std"))]
-use std::{collections::BTreeSet, vec::Vec};
+use std::{boxed::Box, collections::BTreeSet, vec::Vec};
 
 #[cfg(feature = "functions")]
 use super::{
@@ -1539,13 +1539,28 @@ fn derive_scratch_allocations(
                 u32::try_from(core::mem::align_of::<crate::Value>()).unwrap_or(u32::MAX),
                 MemorySpace::Host,
             )?;
-            for input in inputs {
-                scratch(
-                    AllocationRole::Scratch,
-                    value_current_bytes(&input.value)?,
-                    input.value.slot.alignment,
-                    MemorySpace::Host,
+            for (ordinal, input) in inputs.iter().enumerate() {
+                let (draft_bytes, finalization_bytes) = external_marshalling_input_bytes(
+                    input,
+                    request.input_witnesses.get(ordinal).copied(),
                 )?;
+                if draft_bytes != 0 {
+                    scratch(
+                        AllocationRole::Scratch,
+                        draft_bytes,
+                        u32::try_from(core::mem::align_of::<crate::ValueDataDraft>())
+                            .unwrap_or(u32::MAX),
+                        MemorySpace::Host,
+                    )?;
+                }
+                if finalization_bytes != 0 {
+                    scratch(
+                        AllocationRole::Scratch,
+                        finalization_bytes,
+                        input.value.slot.alignment,
+                        MemorySpace::Host,
+                    )?;
+                }
             }
         }
         ImplementationMemoryClass::MatrixSolve => {
@@ -1596,19 +1611,22 @@ fn derive_scratch_allocations(
             for (ordinal, output) in outputs.iter().enumerate() {
                 let footprint =
                     known_footprint(request.output_witnesses[ordinal])?.unwrap_or_default();
-                // A serialized footprint is not a retained footprint. Both the
-                // draft and finalized candidate must fit the larger bound.
-                let size = value_required_bytes(&output.value)?.max(footprint.encoded_bytes);
+                // Draft and frozen finalization are separate coexistence
+                // obligations. The finalizer includes packed payload plus its
+                // immutable roots and schema/shape metadata.
+                let draft_size = value_required_bytes(&output.value)?
+                    .max(canonical_snapshot_draft_bytes(footprint)?);
+                let finalization_size = canonical_snapshot_finalization_bytes(footprint)?;
                 let space = request.output_storage[ordinal].space;
                 scratch(
                     AllocationRole::Scratch,
-                    size,
+                    draft_size,
                     output.value.slot.alignment,
                     space,
                 )?;
                 scratch(
                     AllocationRole::Scratch,
-                    size,
+                    finalization_size,
                     output.value.slot.alignment,
                     space,
                 )?;
@@ -1760,24 +1778,39 @@ fn apply_implementation_demand(
         }
         ImplementationMemoryClass::ExternalMarshalling => {
             for (ordinal, input) in inputs.iter().enumerate() {
+                let (draft_bytes, finalization_bytes) = external_marshalling_input_bytes(
+                    input,
+                    request.input_witnesses.get(ordinal).copied(),
+                )?;
                 demand.cloned_bytes = checked_add(
                     demand.cloned_bytes,
-                    value_current_bytes(&input.value)?,
+                    checked_add(
+                        draft_bytes,
+                        finalization_bytes,
+                        "external argument construction bytes",
+                    )?,
                     "external argument marshalling bytes",
                 )?;
-                if let Some(footprint) = request
-                    .input_witnesses
-                    .get(ordinal)
-                    .copied()
-                    .map(known_footprint)
-                    .transpose()?
-                    .flatten()
-                {
-                    demand.retained_nodes = checked_add(
-                        demand.retained_nodes,
-                        footprint.retained_nodes,
-                        "external argument retained nodes",
+                if input.value.storage.planned_slot() != PlannedSlotKind::CanonicalValueHandle {
+                    demand.work.compute = checked_add(
+                        demand.work.compute,
+                        input.value.current_elements,
+                        "external argument marshalling work",
                     )?;
+                    if let Some(footprint) = request
+                        .input_witnesses
+                        .get(ordinal)
+                        .copied()
+                        .map(known_footprint)
+                        .transpose()?
+                        .flatten()
+                    {
+                        demand.retained_nodes = checked_add(
+                            demand.retained_nodes,
+                            footprint.retained_nodes,
+                            "external argument retained nodes",
+                        )?;
+                    }
                 }
             }
         }
@@ -1841,6 +1874,113 @@ fn apply_implementation_demand(
         }
     }
     Ok(())
+}
+
+/// Conservative bytes required by the selected common canonical finalizer.
+/// The payload/encoding term covers the packed immutable data; the fixed
+/// metadata term covers the two shared roots, Value metadata, schema-table
+/// shell, and shape parameters. Nested schema payload is supplied through the
+/// witness's schema byte count when present.
+pub fn canonical_snapshot_finalization_bytes(
+    footprint: CurrentMemoryFootprint,
+) -> Result<u64, MemoryPlanError> {
+    let payload = footprint.payload_bytes.max(footprint.encoded_bytes);
+    let shape = footprint
+        .shape_parameter_count
+        .checked_mul(core::mem::size_of::<u64>() as u64)
+        .ok_or(MemoryPlanError::ArithmeticOverflow {
+            field: "canonical finalization shape bytes",
+        })?;
+    let metadata = (core::mem::size_of::<crate::Value>() as u64)
+        .checked_mul(4)
+        .and_then(|bytes| bytes.checked_add(core::mem::size_of::<crate::SchemaTable>() as u64))
+        .ok_or(MemoryPlanError::ArithmeticOverflow {
+            field: "canonical finalization metadata bytes",
+        })?;
+    [payload, footprint.schema_bytes, shape, metadata]
+        .into_iter()
+        .try_fold(0_u64, |total, bytes| {
+            checked_add(total, bytes, "canonical finalization bytes")
+        })
+}
+
+/// Conservative draft/build workspace for one canonical candidate. Draft
+/// nodes coexist with cloned String/nested payload and dimension metadata
+/// until the common finalizer consumes them.
+pub fn canonical_snapshot_draft_bytes(
+    footprint: CurrentMemoryFootprint,
+) -> Result<u64, MemoryPlanError> {
+    let nodes = footprint.logical_elements.max(footprint.retained_nodes);
+    let node_bytes = nodes
+        .checked_mul(core::mem::size_of::<crate::ValueDataDraft>() as u64)
+        .ok_or(MemoryPlanError::ArithmeticOverflow {
+            field: "canonical draft node bytes",
+        })?;
+    let shape = footprint
+        .shape_parameter_count
+        .checked_mul(core::mem::size_of::<u64>() as u64)
+        .ok_or(MemoryPlanError::ArithmeticOverflow {
+            field: "canonical draft shape bytes",
+        })?;
+    [
+        node_bytes,
+        footprint.payload_bytes,
+        footprint.encoded_bytes,
+        shape,
+    ]
+    .into_iter()
+    .try_fold(0_u64, |total, bytes| {
+        checked_add(total, bytes, "canonical draft bytes")
+    })
+}
+
+#[cfg(feature = "functions")]
+fn external_marshalling_input_bytes(
+    input: &PortMemoryPlan,
+    witness: Option<MemoryFootprintWitness>,
+) -> Result<(u64, u64), MemoryPlanError> {
+    if input.value.storage.planned_slot() == PlannedSlotKind::CanonicalValueHandle {
+        return Ok((0, 0));
+    }
+    let footprint = witness
+        .map(known_footprint)
+        .transpose()?
+        .flatten()
+        .unwrap_or(CurrentMemoryFootprint {
+            logical_elements: input.value.current_elements,
+            fixed_bytes: value_current_bytes(&input.value)?,
+            shape_parameter_count: input.descriptor.shape().parameter_values().len() as u64,
+            ..CurrentMemoryFootprint::default()
+        });
+    let draft_bytes = if matches!(
+        input.value.storage,
+        StorageLayoutClass::DenseColumnMajor { .. }
+    ) {
+        input
+            .value
+            .current_elements
+            .checked_mul(core::mem::size_of::<crate::ValueDataDraft>() as u64)
+            .ok_or(MemoryPlanError::ArithmeticOverflow {
+                field: "external canonical draft bytes",
+            })?
+    } else {
+        0
+    };
+    let canonical = CurrentMemoryFootprint {
+        logical_elements: footprint.logical_elements.max(input.value.current_elements),
+        payload_bytes: footprint
+            .payload_bytes
+            .max(value_current_bytes(&input.value)?),
+        encoded_bytes: footprint.encoded_bytes,
+        retained_nodes: footprint.retained_nodes,
+        schema_bytes: footprint.schema_bytes,
+        shape_parameter_count: footprint.shape_parameter_count,
+        ..CurrentMemoryFootprint::default()
+    };
+    Ok((
+        draft_bytes,
+        canonical_snapshot_finalization_bytes(canonical)?,
+    ))
 }
 
 #[cfg(feature = "functions")]
@@ -2046,7 +2186,6 @@ fn value_current_bytes(value: &ValueLayoutPlan) -> Result<u64, MemoryPlanError> 
     )
 }
 
-#[cfg(feature = "functions")]
 fn value_required_bytes(value: &ValueLayoutPlan) -> Result<u64, MemoryPlanError> {
     checked_add(
         value.capacity_bytes,
@@ -2055,7 +2194,6 @@ fn value_required_bytes(value: &ValueLayoutPlan) -> Result<u64, MemoryPlanError>
     )
 }
 
-#[cfg(feature = "functions")]
 fn checked_add(left: u64, right: u64, field: &'static str) -> Result<u64, MemoryPlanError> {
     left.checked_add(right)
         .ok_or(MemoryPlanError::ArithmeticOverflow { field })

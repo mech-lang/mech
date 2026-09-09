@@ -1029,12 +1029,12 @@ impl MechExecutionServices for FrozenEkfCompilationServices {
         )))
     }
 
-    fn bind_live_resource(
-        &mut self,
+    fn prepare_live_resource_binding<'a>(
+        &'a mut self,
         interpreter_id: u64,
         request: &ExecutionResourceRequest,
         target: ValueCell,
-    ) -> MResult<()> {
+    ) -> MResult<mech_core::PreparedLiveResourceBinding<'a>> {
         Self::validate_request(request)?;
         if let Some(existing) = self
             .live_bindings
@@ -1042,18 +1042,23 @@ impl MechExecutionServices for FrozenEkfCompilationServices {
             .find(|binding| binding.interpreter_id == interpreter_id && binding.request == *request)
         {
             if existing.target.same_cell(&target) {
-                return Ok(());
+                return Ok(mech_core::PreparedLiveResourceBinding::no_op());
             }
             return Err(frozen_service_error(
                 "live EKF observation rebound to a different target",
             ));
         }
-        self.live_bindings.push(FrozenLiveBinding {
+        self.live_bindings
+            .try_reserve(1)
+            .map_err(|_| frozen_service_error("live EKF binding capacity allocation failed"))?;
+        let binding = FrozenLiveBinding {
             interpreter_id,
             request: request.clone(),
             target,
-        });
-        Ok(())
+        };
+        mech_core::PreparedLiveResourceBinding::try_new(move || {
+            self.live_bindings.push(binding);
+        })
     }
 }
 

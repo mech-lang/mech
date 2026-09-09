@@ -19,6 +19,8 @@ REQUIRED = (
     "src/core/src/memory_runtime/payload.rs",
     "src/core/src/memory_runtime/transaction.rs",
     "src/core/src/memory_runtime/error.rs",
+    "src/core/src/memory_plan/derive.rs",
+    "src/core/src/execution.rs",
     "src/core/src/snapshot/encoding.rs",
     "src/core/src/snapshot/validation.rs",
     "machines/string/src/lib.rs",
@@ -366,6 +368,18 @@ def failures(root: Path) -> list[str]:
     ):
         found.append("payload node admission depends on allocator spare capacity")
     snapshot = rust_code(sources.get("src/core/src/snapshot/validation.rs", ""))
+    finalizers = list(function_bodies(snapshot, "finalize_data"))
+    admitted_finalizers = list(function_bodies(cell, "finalize_draft_with_construction"))
+    if (
+        "SnapshotConstructionAuthority" not in snapshot
+        or not admitted_finalizers
+        or "with_construction_authority(construction)" not in admitted_finalizers[0]
+        or not finalizers
+        or "context.try_vec_with_capacity" not in finalizers[0]
+        or "context.try_boxed_str" not in finalizers[0]
+        or "finalized_value_with_construction" not in snapshot
+    ):
+        found.append("common canonical finalization bypasses construction authority")
     rebinds = list(function_bodies(snapshot, "rebind"))
     if (
         "FrozenSnapshotData" not in snapshot
@@ -553,6 +567,33 @@ def failures(root: Path) -> list[str]:
         > prepared_publication[0].index("capture_external_output")
     ):
         found.append("external provider invocation precedes admitted call-scoped marshalling")
+    marshalling = list(function_bodies(function, "marshal_external_inputs"))
+    planning = rust_code(sources.get("src/core/src/memory_plan/derive.rs", ""))
+    marshalling_requirements = list(
+        function_bodies(planning, "external_marshalling_input_bytes")
+    )
+    if (
+        not marshalling
+        or "ExternalMarshallingConstruction" not in marshalling[0]
+        or "snapshot_for_external_marshalling" not in marshalling[0]
+        or not marshalling_requirements
+        or "canonical_snapshot_finalization_bytes" not in marshalling_requirements[0]
+        or "ValueDataDraft" not in marshalling_requirements[0]
+    ):
+        found.append("external marshalling is not governed by canonical construction authority")
+    reactive_solve = list(function_bodies(function, "solve_reactive_with"))
+    if (
+        "PreparedLiveResourceBinding" not in function
+        or "Box::try_new(commit)" not in rust_code(sources.get("src/core/src/execution.rs", ""))
+        or not reactive_solve
+        or "prepare_external_publication(services)" not in reactive_solve[0]
+        or "external.commit()" not in reactive_solve[0]
+        or reactive_solve[0].index("prepare_external_publication(services)")
+        > reactive_solve[0].index("ready.commit()")
+        or reactive_solve[0].index("external.commit()")
+        < reactive_solve[0].index("ready.commit()")
+    ):
+        found.append("external live binding is fallible after cell publication")
     instance = balanced_body(function, "FunctionInstance")
     binding = balanced_body(function, "ManagedFunctionBinding")
     realization = balanced_body(function, "ManagedCallRealization")

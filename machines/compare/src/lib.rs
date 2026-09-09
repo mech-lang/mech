@@ -427,23 +427,19 @@ fn apply_managed_comparison<T: ManagedElement, O: ManagedElement>(
     })
 }
 
-#[cfg(feature = "string")]
-trait CanonicalStringComparisonResult: FunctionPortBacking {
-    fn into_draft(self) -> ValueDataDraft;
+trait ComparisonOutputMemoryClass {
+    const IMPLEMENTATION_MEMORY: ImplementationMemoryClass;
+}
+
+impl<T: FixedComparisonElement> ComparisonOutputMemoryClass for T {
+    const IMPLEMENTATION_MEMORY: ImplementationMemoryClass =
+        ImplementationMemoryClass::NoAdditionalScratch;
 }
 
 #[cfg(feature = "string")]
-impl CanonicalStringComparisonResult for bool {
-    fn into_draft(self) -> ValueDataDraft {
-        ValueDataDraft::Bool(self)
-    }
-}
-
-#[cfg(feature = "string")]
-impl CanonicalStringComparisonResult for String {
-    fn into_draft(self) -> ValueDataDraft {
-        ValueDataDraft::String(self)
-    }
+impl ComparisonOutputMemoryClass for String {
+    const IMPLEMENTATION_MEMORY: ImplementationMemoryClass =
+        ImplementationMemoryClass::CanonicalFinalize;
 }
 
 #[cfg(feature = "string")]
@@ -516,20 +512,17 @@ fn canonical_string_at(
 }
 
 #[cfg(feature = "string")]
-fn apply_canonical_string_comparison<O: CanonicalStringComparisonResult>(
-    frame: &mut KernelMemoryFrame<'_>,
-    lhs: &ManagedPort<String>,
-    rhs: &ManagedPort<String>,
-    out: &ManagedPort<O>,
+fn canonical_string_comparison_geometry(
+    lhs: &Value,
+    lhs_cell: &ValueCell,
+    rhs: &Value,
+    rhs_cell: &ValueCell,
+    output: &ValueCell,
     broadcast: ComparisonBroadcast,
-    operation: impl Fn(&str, &str) -> O,
-) -> MResult<()> {
-    let lhs_value = frame.snapshot_canonical_port_value(lhs)?;
-    let rhs_value = frame.snapshot_canonical_port_value(rhs)?;
-    let lhs_extents = canonical_string_extents(&lhs_value, lhs.cell())?;
-    let rhs_extents = canonical_string_extents(&rhs_value, rhs.cell())?;
-    let output_shape = out
-        .cell()
+) -> MResult<(Option<(usize, usize)>, Option<(usize, usize)>, Option<(usize, usize)>)> {
+    let lhs_extents = canonical_string_extents(lhs, lhs_cell)?;
+    let rhs_extents = canonical_string_extents(rhs, rhs_cell)?;
+    let output_shape = output
         .resolved_descriptor()?
         .current_extents()
         .map_err(MechError::from)?;
@@ -583,44 +576,220 @@ fn apply_canonical_string_comparison<O: CanonicalStringComparisonResult>(
             "String broadcast geometry is invalid",
         ));
     }
+    Ok((lhs_extents, rhs_extents, output_extents))
+}
 
-    let next = match output_extents {
-        None => out.cell().rebuild_data_draft(
-            operation(
-                canonical_string_at(&lhs_value, lhs_extents, 0, 0)?,
-                canonical_string_at(&rhs_value, rhs_extents, 0, 0)?,
-            )
-            .into_draft(),
-        )?,
-        Some((rows, columns)) => {
-            let count = rows.checked_mul(columns).ok_or_else(|| {
-                function_shape_contract_violation("comparison", "output cardinality overflow")
-            })?;
-            let mut drafts = Vec::new();
-            drafts.try_reserve_exact(count).map_err(|_| {
-                function_shape_contract_violation(
-                    "comparison",
-                    "output staging allocation failed",
-                )
-            })?;
-            for row in 0..rows {
-                for column in 0..columns {
-                    drafts.push(
-                        operation(
-                            canonical_string_at(&lhs_value, lhs_extents, row, column)?,
-                            canonical_string_at(&rhs_value, rhs_extents, row, column)?,
-                        )
-                        .into_draft(),
-                    );
-                }
-            }
-            out.cell().rebuild_matrix_drafts(
-                vec![rows as u64, columns as u64].into_boxed_slice(),
-                drafts.into_boxed_slice(),
-            )?
+#[cfg(feature = "string")]
+fn apply_canonical_string_comparison(
+    frame: &mut KernelMemoryFrame<'_>,
+    lhs: &ManagedPort<String>,
+    rhs: &ManagedPort<String>,
+    out: &ManagedPort<bool>,
+    broadcast: ComparisonBroadcast,
+    operation: impl Fn(&str, &str) -> bool,
+) -> MResult<()> {
+    let lhs_value = frame.snapshot_canonical_port_value(lhs)?;
+    let rhs_value = frame.snapshot_canonical_port_value(rhs)?;
+    let (lhs_extents, rhs_extents, output_extents) = canonical_string_comparison_geometry(
+        &lhs_value,
+        lhs.cell(),
+        &rhs_value,
+        rhs.cell(),
+        out.cell(),
+        broadcast,
+    )?;
+    let columns = output_extents.map_or(1, |(_, columns)| columns);
+    frame.with_output_port_view(out, |output| {
+        output.try_fill_column_major(|index| {
+            let row = index / columns;
+            let column = index % columns;
+            Ok(operation(
+                canonical_string_at(&lhs_value, lhs_extents, row, column)?,
+                canonical_string_at(&rhs_value, rhs_extents, row, column)?,
+            ))
+        })
+    })
+}
+
+#[cfg(feature = "string")]
+fn canonical_string_output_footprint(
+    lhs: &Value,
+    lhs_cell: &ValueCell,
+    rhs: &Value,
+    rhs_cell: &ValueCell,
+    output: &ValueCell,
+) -> MResult<CurrentMemoryFootprint> {
+    let lhs_extents = canonical_string_extents(lhs, lhs_cell)?;
+    let rhs_extents = canonical_string_extents(rhs, rhs_cell)?;
+    let output_extents = output
+        .resolved_descriptor()?
+        .current_extents()
+        .map_err(MechError::from)?;
+    let (rows, columns, matrix) = match output_extents.as_ref() {
+        [] => (1, 1, false),
+        [rows, columns] => (
+            usize::try_from(*rows).map_err(|_| {
+                function_shape_contract_violation("comparison", "row extent exceeds usize")
+            })?,
+            usize::try_from(*columns).map_err(|_| {
+                function_shape_contract_violation("comparison", "column extent exceeds usize")
+            })?,
+            true,
+        ),
+        _ => {
+            return Err(function_shape_contract_violation(
+                "comparison",
+                "output must be scalar or rank two",
+            ));
         }
     };
-    frame.stage_output_value(out.cell(), next)
+    let mut payload_bytes = 0_u64;
+    for row in 0..rows {
+        for column in 0..columns {
+            let left = canonical_string_at(lhs, lhs_extents, row, column)?;
+            let right = canonical_string_at(rhs, rhs_extents, row, column)?;
+            payload_bytes = payload_bytes
+                .checked_add(u64::try_from(left.len().max(right.len())).map_err(|_| {
+                    function_shape_contract_violation("comparison", "String size exceeds u64")
+                })?)
+                .ok_or_else(|| {
+                    function_shape_contract_violation("comparison", "String output size overflow")
+                })?;
+        }
+    }
+    let logical_elements = u64::try_from(rows.checked_mul(columns).ok_or_else(|| {
+        function_shape_contract_violation("comparison", "output cardinality overflow")
+    })?)
+    .map_err(|_| function_shape_contract_violation("comparison", "output size exceeds u64"))?;
+    let shape_parameter_count = output.shape().parameter_values().len();
+    let footprint = snapshot::prospective_string_value_footprint(
+        shape_parameter_count,
+        matrix,
+        logical_elements,
+        payload_bytes,
+    )
+    .map_err(|_| function_shape_contract_violation("comparison", "output footprint overflow"))?;
+    Ok(CurrentMemoryFootprint {
+        logical_elements,
+        payload_bytes: footprint.retained_bytes,
+        encoded_bytes: footprint.encoded_bytes,
+        retained_nodes: footprint.node_count,
+        shape_parameter_count: shape_parameter_count as u64,
+        ..CurrentMemoryFootprint::default()
+    })
+}
+
+#[cfg(feature = "string")]
+fn canonical_string_selection_footprint(
+    lhs: &Value,
+    lhs_cell: &ValueCell,
+    rhs: &Value,
+    rhs_cell: &ValueCell,
+    output: &ValueCell,
+    broadcast: ComparisonBroadcast,
+    choose_left: impl Fn(&str, &str) -> bool,
+) -> MResult<CurrentMemoryFootprint> {
+    let (lhs_extents, rhs_extents, output_extents) = canonical_string_comparison_geometry(
+        lhs, lhs_cell, rhs, rhs_cell, output, broadcast,
+    )?;
+    let (rows, columns, matrix) = output_extents
+        .map(|(rows, columns)| (rows, columns, true))
+        .unwrap_or((1, 1, false));
+    let mut payload_bytes = 0_u64;
+    for row in 0..rows {
+        for column in 0..columns {
+            let lhs = canonical_string_at(lhs, lhs_extents, row, column)?;
+            let rhs = canonical_string_at(rhs, rhs_extents, row, column)?;
+            payload_bytes = payload_bytes
+                .checked_add(if choose_left(lhs, rhs) { lhs } else { rhs }.len() as u64)
+                .ok_or_else(|| {
+                    function_shape_contract_violation("comparison", "String output size overflow")
+                })?;
+        }
+    }
+    let logical_elements = u64::try_from(rows.checked_mul(columns).ok_or_else(|| {
+        function_shape_contract_violation("comparison", "output cardinality overflow")
+    })?)
+    .map_err(|_| function_shape_contract_violation("comparison", "output size exceeds u64"))?;
+    let shape_parameter_count = output.shape().parameter_values().len();
+    let footprint = snapshot::prospective_string_value_footprint(
+        shape_parameter_count,
+        matrix,
+        logical_elements,
+        payload_bytes,
+    )
+    .map_err(|_| function_shape_contract_violation("comparison", "output footprint overflow"))?;
+    Ok(CurrentMemoryFootprint {
+        logical_elements,
+        payload_bytes: footprint.retained_bytes,
+        encoded_bytes: footprint.encoded_bytes,
+        retained_nodes: footprint.node_count,
+        shape_parameter_count: shape_parameter_count as u64,
+        ..CurrentMemoryFootprint::default()
+    })
+}
+
+#[cfg(feature = "string")]
+fn apply_canonical_string_selection(
+    frame: &mut KernelMemoryFrame<'_>,
+    lhs: &ManagedPort<String>,
+    rhs: &ManagedPort<String>,
+    out: &ManagedPort<String>,
+    broadcast: ComparisonBroadcast,
+    choose_left: impl Fn(&str, &str) -> bool,
+) -> MResult<()> {
+    let lhs_value = frame.snapshot_canonical_port_value(lhs)?;
+    let rhs_value = frame.snapshot_canonical_port_value(rhs)?;
+    let footprint = canonical_string_selection_footprint(
+        &lhs_value,
+        lhs.cell(),
+        &rhs_value,
+        rhs.cell(),
+        out.cell(),
+        broadcast,
+        &choose_left,
+    )?;
+    frame.with_admitted_canonical_output(out.cell(), footprint, |_frame, construction| {
+        let (lhs_extents, rhs_extents, output_extents) = canonical_string_comparison_geometry(
+            &lhs_value,
+            lhs.cell(),
+            &rhs_value,
+            rhs.cell(),
+            out.cell(),
+            broadcast,
+        )?;
+        let next = match output_extents {
+            None => {
+                let lhs = canonical_string_at(&lhs_value, lhs_extents, 0, 0)?;
+                let rhs = canonical_string_at(&rhs_value, rhs_extents, 0, 0)?;
+                let selected = if choose_left(lhs, rhs) { lhs } else { rhs };
+                let draft = ValueDataDraft::String(
+                    construction.try_concatenate_string(selected, "")?,
+                );
+                construction.try_rebuild_data_draft(out.cell(), draft)?
+            }
+            Some((rows, columns)) => {
+                let count = rows.checked_mul(columns).ok_or_else(|| {
+                    function_shape_contract_violation("comparison", "output cardinality overflow")
+                })?;
+                let drafts = construction.try_boxed_slice_with(count, |construction, index| {
+                    let row = index / columns;
+                    let column = index % columns;
+                    let lhs = canonical_string_at(&lhs_value, lhs_extents, row, column)?;
+                    let rhs = canonical_string_at(&rhs_value, rhs_extents, row, column)?;
+                    let selected = if choose_left(lhs, rhs) { lhs } else { rhs };
+                    Ok(ValueDataDraft::String(
+                        construction.try_concatenate_string(selected, "")?,
+                    ))
+                })?;
+                let dimensions = construction.try_boxed_slice_with(2, |_construction, index| {
+                    Ok(if index == 0 { rows as u64 } else { columns as u64 })
+                })?;
+                construction.try_rebuild_matrix_drafts(out.cell(), dimensions, drafts)?
+            }
+        };
+        Ok(((), next))
+    })
 }
 
 #[macro_export]
@@ -664,6 +833,7 @@ macro_rules! impl_compare_typed_binop {
             $arg1_type: FunctionRuntimeType + FunctionPortBacking,
             $arg2_type: FunctionRuntimeType + FunctionPortBacking,
             $out_type: FunctionStateBacking + FunctionPortBacking,
+            $out_element: ComparisonOutputMemoryClass,
         {
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
                 <$out_type as FunctionRuntimeType>::REPRESENTATION,
@@ -672,7 +842,7 @@ macro_rules! impl_compare_typed_binop {
             );
 
             fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
-                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+                <$out_element as ComparisonOutputMemoryClass>::IMPLEMENTATION_MEMORY
             }
 
             fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
@@ -737,6 +907,34 @@ macro_rules! impl_compare_typed_binop {
         }
         #[cfg(feature = "string")]
         impl MechFunctionImpl for $struct_name<String> {
+            fn planned_output_footprints(
+                &self,
+            ) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+                if !matches!(
+                    self.invocation.output_cell().representation(),
+                    FunctionValueRepresentation::String
+                        | FunctionValueRepresentation::Matrix {
+                            element: FunctionMatrixElement::String,
+                            ..
+                        }
+                ) {
+                    return Ok(None);
+                }
+                let inputs = self.invocation.input_cells();
+                let lhs = inputs[0].snapshot()?;
+                let rhs = inputs[1].snapshot()?;
+                Ok(Some(
+                    vec![canonical_string_output_footprint(
+                        &lhs,
+                        &inputs[0],
+                        &rhs,
+                        &inputs[1],
+                        self.invocation.output_cell(),
+                    )?]
+                    .into_boxed_slice(),
+                ))
+            }
+
             fn solve_managed(
                 &self,
                 frame: &mut KernelMemoryFrame<'_>,
@@ -769,6 +967,7 @@ macro_rules! impl_compare_typed_binop {
             T: ComparisonPort<$arg1_type, T>
                 + ComparisonPort<$arg2_type, T>
                 + ComparisonPort<$out_type, $out_element>,
+            $out_element: ComparisonOutputMemoryClass,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 let name = format!(

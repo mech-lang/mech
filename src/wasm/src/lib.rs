@@ -22,12 +22,12 @@ mod project;
 #[cfg(feature = "browser_compute")]
 mod gpu;
 
-#[cfg(all(feature = "browser_compute", feature = "browser_project"))]
+#[cfg(feature = "browser_compute")]
 mod mixed_compute;
 
 #[cfg(feature = "browser_project_core")]
 pub use project::*;
 
-#[cfg(all(feature = "browser_compute", feature = "browser_project"))]
+#[cfg(feature = "browser_compute")]
 pub use mixed_compute::*;
 pub use repl::*;

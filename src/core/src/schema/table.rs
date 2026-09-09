@@ -266,6 +266,22 @@ impl SchemaTable {
     pub fn entries(&self) -> impl ExactSizeIterator<Item = &SchemaEntry> {
         self.entries.iter()
     }
+
+    /// Conservative allocation bound for retaining an independently owned
+    /// clone of this canonical schema context. Canonical bytes bound the
+    /// variable-sized schema tree; the multiplier covers both the cloned
+    /// semantic nodes and their retained canonical encodings.
+    pub(crate) fn clone_allocation_bound_bytes(&self) -> Option<u64> {
+        let entries = u64::try_from(self.entries.len())
+            .ok()?
+            .checked_mul(core::mem::size_of::<SchemaEntry>() as u64)?;
+        let canonical = self.entries.iter().try_fold(0_u64, |total, entry| {
+            total.checked_add(u64::try_from(entry.canonical_bytes.len()).ok()?)
+        })?;
+        (core::mem::size_of::<Self>() as u64)
+            .checked_add(entries)?
+            .checked_add(canonical.checked_mul(4)?)
+    }
 }
 
 impl SchemaEntry {

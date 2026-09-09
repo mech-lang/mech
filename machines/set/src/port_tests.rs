@@ -9,8 +9,8 @@
 mod dynamic_outputs {
     use crate::*;
     use mech_core::{
-        CardinalitySpec, DimensionExpr, MResult, SchemaBody, ValueCell, ValueData, ValueDataDraft,
-        with_reactive_journal_participant,
+        CardinalitySpec, DimensionExpr, MResult, MemoryFailurePoint, SchemaBody, ValueCell,
+        ValueData, ValueDataDraft, with_reactive_journal_participant,
     };
 
     fn set(values: &[u64]) -> ValueCell {
@@ -154,6 +154,30 @@ mod dynamic_outputs {
             assert!(output.same_logical_cell(&alias));
         }
         assert_dynamic_set(&output);
+    }
+
+    #[test]
+    fn set_draft_allocation_failure_preserves_the_published_root() {
+        let lhs = set(&[1, 2]);
+        let rhs = set(&[3]);
+        let function = specialize("set/union", vec![lhs, rhs.clone()]);
+        function.instance().solve_result().unwrap();
+        let output = function.output().clone();
+        let before = set_values(&output);
+        let version = output.published_version();
+
+        replace_set(&rhs, &[3, 4, 5]);
+        output
+            .memory_domain()
+            .unwrap()
+            .inject_failure_after(MemoryFailurePoint::HostAllocation, 1)
+            .unwrap();
+        assert!(function.instance().solve_result().is_err());
+        assert_eq!(set_values(&output), before);
+        assert_eq!(output.published_version(), version);
+
+        function.instance().solve_result().unwrap();
+        assert_eq!(set_values(&output), vec![1, 2, 3, 4, 5]);
     }
 
     #[test]

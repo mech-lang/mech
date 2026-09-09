@@ -173,21 +173,26 @@ impl ManagedTransposeElement for String {
                     }));
                 }
             };
-            let mut next = construction.try_vec_with_capacity::<ValueDataDraft>(values.len())?;
-            for output_row in 0..columns {
-                for output_column in 0..rows {
-                    next.push(ValueDataDraft::String(construction.try_concatenate_string(
+            let next = construction.try_boxed_slice_with(values.len(), |construction, index| {
+                let output_row = index / rows;
+                let output_column = index % rows;
+                Ok(ValueDataDraft::String(
+                    construction.try_concatenate_string(
                         &values[output_column * columns + output_row],
                         "",
-                    )?));
-                }
-            }
+                    )?,
+                ))
+            })?;
+            let dimensions = construction.try_boxed_slice_with(2, |_construction, index| {
+                Ok(if index == 0 {
+                    columns as u64
+                } else {
+                    rows as u64
+                })
+            })?;
             Ok((
                 (),
-                output.cell().rebuild_matrix_drafts(
-                    vec![columns as u64, rows as u64].into_boxed_slice(),
-                    next.into_boxed_slice(),
-                )?,
+                construction.try_rebuild_matrix_drafts(output.cell(), dimensions, next)?,
             ))
         })
     }

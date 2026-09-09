@@ -8,9 +8,9 @@ use nalgebra::DVector;
 struct RecordingContextReadServices {
     result: ValueCell,
     fail_read: bool,
+    fail_live_binding: bool,
     reads: Vec<ExecutionResourceRequest>,
     live_bindings: Vec<(u64, ExecutionResourceRequest, ValueCell)>,
-    live_binding_values: Vec<Value>,
     host_calls: Vec<ExecutionHostFunctionRequest>,
     writes: Vec<(ExecutionResourceRequest, Value)>,
 }
@@ -20,9 +20,9 @@ impl RecordingContextReadServices {
         Self {
             result,
             fail_read: false,
+            fail_live_binding: false,
             reads: Vec::new(),
             live_bindings: Vec::new(),
-            live_binding_values: Vec::new(),
             host_calls: Vec::new(),
             writes: Vec::new(),
         }
@@ -32,9 +32,9 @@ impl RecordingContextReadServices {
         let mut services = Self {
             result: ValueCell::unit(),
             fail_read: false,
+            fail_live_binding: false,
             reads: Vec::new(),
             live_bindings: Vec::new(),
-            live_binding_values: Vec::new(),
             host_calls: Vec::new(),
             writes: Vec::new(),
         };
@@ -75,16 +75,32 @@ impl MechExecutionServices for RecordingContextReadServices {
         Ok(())
     }
 
-    fn bind_live_resource(
-        &mut self,
+    fn prepare_live_resource_binding<'a>(
+        &'a mut self,
         interpreter_id: u64,
         request: &ExecutionResourceRequest,
         target: ValueCell,
-    ) -> MResult<()> {
-        self.live_binding_values.push(target.snapshot()?);
-        self.live_bindings
-            .push((interpreter_id, request.clone(), target));
-        Ok(())
+    ) -> MResult<mech_core::PreparedLiveResourceBinding<'a>> {
+        if self.fail_live_binding {
+            return Err(MechError::new(
+                GenericError {
+                    msg: "deliberate live binding failure".to_string(),
+                },
+                None,
+            ));
+        }
+        self.live_bindings.try_reserve(1).map_err(|_| {
+            MechError::new(
+                GenericError {
+                    msg: "live binding capacity allocation failed".to_string(),
+                },
+                None,
+            )
+        })?;
+        let request = request.clone();
+        mech_core::PreparedLiveResourceBinding::try_new(move || {
+            self.live_bindings.push((interpreter_id, request, target));
+        })
     }
 }
 
@@ -113,13 +129,6 @@ fn cell_f64(cell: &ValueCell) -> f64 {
 fn cell_string(cell: &ValueCell) -> String {
     let snapshot = cell.snapshot().unwrap();
     match snapshot.data() {
-        mech_core::ValueData::String(value) => value.to_string(),
-        other => panic!("expected String, got {other:?}"),
-    }
-}
-
-fn value_string(value: &Value) -> String {
-    match value.data() {
         mech_core::ValueData::String(value) => value.to_string(),
         other => panic!("expected String, got {other:?}"),
     }
@@ -306,7 +315,7 @@ fn external_resource_adoption_replans_each_captured_result_once() {
     let output = output.unwrap().unwrap();
     assert_eq!(cell_string(&output), "a");
     assert_eq!(services.reads.len(), 1);
-    assert_eq!(value_string(&services.live_binding_values[0]), "a");
+    assert_eq!(cell_string(&services.live_bindings[0].2), "a");
 
     let solve_resource = |services: &mut RecordingContextReadServices| {
         let plan = interpreter.plan();
@@ -329,7 +338,7 @@ fn external_resource_adoption_replans_each_captured_result_once() {
     assert_eq!(cell_string(&output), larger);
     assert_eq!(services.reads.len(), 2);
     assert_eq!(
-        value_string(services.live_binding_values.last().unwrap()),
+        cell_string(&services.live_bindings.last().unwrap().2),
         larger
     );
 
@@ -338,9 +347,25 @@ fn external_resource_adoption_replans_each_captured_result_once() {
     assert_eq!(cell_string(&output), "small again");
     assert_eq!(services.reads.len(), 3);
     assert_eq!(
-        value_string(services.live_binding_values.last().unwrap()),
+        cell_string(&services.live_bindings.last().unwrap().2),
         "small again"
     );
+
+    let before = cell_string(&output);
+    let version = output.published_version();
+    let bindings = services.live_bindings.len();
+    services.result = ValueCell::from_exact("binding-rejected".to_owned()).unwrap();
+    services.fail_live_binding = true;
+    assert!(solve_resource(&mut services).is_err());
+    services.fail_live_binding = false;
+    assert_eq!(cell_string(&output), before);
+    assert_eq!(output.published_version(), version);
+    assert_eq!(services.live_bindings.len(), bindings);
+
+    solve_resource(&mut services).unwrap();
+    assert_eq!(cell_string(&output), "binding-rejected");
+    assert_eq!(output.published_version().get(), version.get() + 1);
+    assert_eq!(services.live_bindings.len(), bindings + 1);
 
     let before = cell_string(&output);
     let version = output.published_version();
@@ -351,21 +376,21 @@ fn external_resource_adoption_replans_each_captured_result_once() {
         .inject_failure_after(mech_core::MemoryFailurePoint::Admission, 0)
         .unwrap();
     assert!(solve_resource(&mut services).is_err());
-    assert_eq!(services.reads.len(), 4, "the rejected result was read once");
+    assert_eq!(services.reads.len(), 6, "the rejected result was read once");
     assert_eq!(cell_string(&output), before);
     assert_eq!(output.published_version(), version);
     assert_eq!(
-        value_string(services.live_binding_values.last().unwrap()),
-        "small again",
+        cell_string(&services.live_bindings.last().unwrap().2),
+        "binding-rejected",
         "rejected capture cannot install a live subscription"
     );
 
     services.result = ValueCell::from_exact("valid after rejection".to_owned()).unwrap();
     solve_resource(&mut services).unwrap();
-    assert_eq!(services.reads.len(), 5);
+    assert_eq!(services.reads.len(), 7);
     assert_eq!(cell_string(&output), "valid after rejection");
     assert_eq!(
-        value_string(services.live_binding_values.last().unwrap()),
+        cell_string(&services.live_bindings.last().unwrap().2),
         "valid after rejection"
     );
 }

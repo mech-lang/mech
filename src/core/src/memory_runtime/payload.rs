@@ -21,7 +21,7 @@ use std::{
 
 use core::{
     cell::{Cell, RefCell},
-    mem::MaybeUninit,
+    mem::{self, MaybeUninit},
     ptr::NonNull,
     str,
     sync::atomic::{AtomicU64, Ordering},
@@ -257,8 +257,9 @@ impl PreparedFrozenSnapshotAdmission {
         }
         Ok(FrozenSnapshotConstruction {
             admission: Some(self),
-            remaining_temporary_bytes: temporary_bytes - finalization_bytes,
-            charged_temporary_bytes: finalization_bytes,
+            remaining_temporary_bytes: Cell::new(temporary_bytes - finalization_bytes),
+            remaining_finalization_bytes: Cell::new(finalization_bytes),
+            charged_temporary_bytes: Cell::new(0),
         })
     }
 }
@@ -272,13 +273,115 @@ impl PreparedFrozenSnapshotAdmission {
 /// Dropping this value before `complete` releases the retained candidate charge.
 pub struct FrozenSnapshotConstruction {
     admission: Option<PreparedFrozenSnapshotAdmission>,
-    remaining_temporary_bytes: u64,
-    charged_temporary_bytes: u64,
+    remaining_temporary_bytes: Cell<u64>,
+    remaining_finalization_bytes: Cell<u64>,
+    charged_temporary_bytes: Cell<u64>,
+}
+
+/// Call-scoped authority for external argument marshalling. The R5 call plan
+/// owns the finite scratch capacity; this token debits that capacity at every
+/// argument-container, numeric-draft, and canonical-finalization allocation.
+/// It owns no published data and is dropped before provider result adoption.
+#[cfg(feature = "functions")]
+pub(crate) struct ExternalMarshallingConstruction {
+    domain: MemoryDomain,
+    object: Option<crate::MemoryObjectId>,
+    capacity_bytes: u64,
+    remaining_bytes: Cell<u64>,
+}
+
+#[cfg(feature = "functions")]
+impl ExternalMarshallingConstruction {
+    pub(crate) fn new(
+        domain: MemoryDomain,
+        object: Option<crate::MemoryObjectId>,
+        capacity_bytes: u64,
+    ) -> Self {
+        Self {
+            domain,
+            object,
+            capacity_bytes,
+            remaining_bytes: Cell::new(capacity_bytes),
+        }
+    }
+
+    pub(crate) fn try_vec_with_capacity<T>(&self, count: usize) -> MemoryRuntimeResult<Vec<T>> {
+        let bytes = core::mem::size_of::<T>()
+            .checked_mul(count)
+            .and_then(|bytes| u64::try_from(bytes).ok())
+            .ok_or(MemoryRuntimeError::InvalidLayout {
+                object: self.object,
+                size: u64::MAX,
+                alignment: u32::try_from(core::mem::align_of::<T>()).unwrap_or(u32::MAX),
+                reason: "external marshalling vector layout overflows",
+            })?;
+        let alignment = u32::try_from(core::mem::align_of::<T>()).unwrap_or(u32::MAX);
+        <Self as crate::snapshot::validation::SnapshotConstructionAuthority>::admit_snapshot_allocation(
+            self, bytes, alignment,
+        )?;
+        let mut values = Vec::new();
+        values
+            .try_reserve_exact(count)
+            .map_err(|_| MemoryRuntimeError::AllocationFailed {
+                object: self.object,
+                requested: bytes,
+                alignment,
+                space: crate::MemorySpace::Host,
+            })?;
+        Ok(values)
+    }
+}
+
+#[cfg(feature = "functions")]
+impl crate::snapshot::validation::SnapshotConstructionAuthority
+    for ExternalMarshallingConstruction
+{
+    fn admit_snapshot_allocation(&self, bytes: u64, alignment: u32) -> MemoryRuntimeResult<()> {
+        if bytes == 0 {
+            return Ok(());
+        }
+        let remaining = self.remaining_bytes.get();
+        if bytes > remaining {
+            return Err(MemoryRuntimeError::CapacityExceeded {
+                object: self.object.unwrap_or(crate::MemoryObjectId::new(0)),
+                requested: self
+                    .capacity_bytes
+                    .checked_sub(remaining)
+                    .and_then(|used| used.checked_add(bytes))
+                    .unwrap_or(u64::MAX),
+                capacity: self.capacity_bytes,
+            });
+        }
+        self.domain
+            .check_managed_host_allocation(bytes, alignment)?;
+        self.remaining_bytes.set(remaining - bytes);
+        Ok(())
+    }
+
+    fn allocation_object(&self) -> Option<crate::MemoryObjectId> {
+        self.object
+    }
+}
+
+struct InitializedBoxPrefix<'a, T> {
+    storage: &'a mut [MaybeUninit<T>],
+    initialized: usize,
+}
+
+impl<T> Drop for InitializedBoxPrefix<'_, T> {
+    fn drop(&mut self) {
+        for value in &mut self.storage[..self.initialized] {
+            // SAFETY: the prefix length advances only after one successful
+            // write, and every initialized slot is dropped exactly once if a
+            // later element builder returns an error or unwinds.
+            unsafe { value.assume_init_drop() };
+        }
+    }
 }
 
 impl FrozenSnapshotConstruction {
     pub fn remaining_temporary_bytes(&self) -> u64 {
-        self.remaining_temporary_bytes
+        self.remaining_temporary_bytes.get()
     }
 
     fn object(&self) -> crate::MemoryObjectId {
@@ -292,17 +395,16 @@ impl FrozenSnapshotConstruction {
     }
 
     fn charge_temporary(&mut self, bytes: u64) -> MemoryRuntimeResult<()> {
-        if bytes > self.remaining_temporary_bytes {
+        if bytes == 0 {
+            return Ok(());
+        }
+        let remaining = self.remaining_temporary_bytes.get();
+        let charged = self.charged_temporary_bytes.get();
+        if bytes > remaining {
             return Err(MemoryRuntimeError::CapacityExceeded {
                 object: self.object(),
-                requested: self
-                    .charged_temporary_bytes
-                    .checked_add(bytes)
-                    .unwrap_or(u64::MAX),
-                capacity: self
-                    .charged_temporary_bytes
-                    .checked_add(self.remaining_temporary_bytes)
-                    .unwrap_or(u64::MAX),
+                requested: charged.checked_add(bytes).unwrap_or(u64::MAX),
+                capacity: charged.checked_add(remaining).unwrap_or(u64::MAX),
             });
         }
         let admission = self
@@ -319,15 +421,21 @@ impl FrozenSnapshotConstruction {
         } else {
             return Err(MemoryRuntimeError::DomainClosed);
         }
-        self.remaining_temporary_bytes -= bytes;
-        self.charged_temporary_bytes = self.charged_temporary_bytes.checked_add(bytes).ok_or(
-            MemoryRuntimeError::AccountingInvariantViolation {
-                dimension: "canonical construction temporary bytes",
-                current: self.charged_temporary_bytes,
-                change: bytes,
-            },
-        )?;
+        self.remaining_temporary_bytes.set(remaining - bytes);
+        self.charged_temporary_bytes
+            .set(charged.checked_add(bytes).ok_or(
+                MemoryRuntimeError::AccountingInvariantViolation {
+                    dimension: "canonical construction temporary bytes",
+                    current: charged,
+                    change: bytes,
+                },
+            )?);
         Ok(())
+    }
+
+    #[cfg(feature = "functions")]
+    fn charge_remaining_temporary(&mut self) -> MemoryRuntimeResult<()> {
+        self.charge_temporary(self.remaining_temporary_bytes.get())
     }
 
     /// Allocates an exact-capacity temporary vector after charging its full
@@ -360,6 +468,52 @@ impl FrozenSnapshotConstruction {
         Ok(values)
     }
 
+    /// Builds one exact-length boxed draft through a precharged, fallible
+    /// allocation. A failed element builder drops the initialized prefix and
+    /// never exposes partially initialized storage.
+    pub fn try_boxed_slice_with<T>(
+        &mut self,
+        count: usize,
+        mut build: impl FnMut(&mut Self, usize) -> crate::MResult<T>,
+    ) -> crate::MResult<Box<[T]>> {
+        let bytes = u64::try_from(core::mem::size_of::<T>().checked_mul(count).ok_or(
+            MemoryRuntimeError::InvalidLayout {
+                object: Some(self.object()),
+                size: u64::MAX,
+                alignment: u32::try_from(core::mem::align_of::<T>()).unwrap_or(u32::MAX),
+                reason: "canonical boxed-slice layout overflows",
+            },
+        )?)
+        .map_err(|_| MemoryRuntimeError::InvalidLayout {
+            object: Some(self.object()),
+            size: u64::MAX,
+            alignment: u32::try_from(core::mem::align_of::<T>()).unwrap_or(u32::MAX),
+            reason: "canonical boxed-slice byte count exceeds u64",
+        })?;
+        self.charge_temporary(bytes)?;
+        let mut storage = Box::<[T]>::try_new_uninit_slice(count).map_err(|_| {
+            MemoryRuntimeError::AllocationFailed {
+                object: Some(self.object()),
+                requested: bytes,
+                alignment: u32::try_from(core::mem::align_of::<T>()).unwrap_or(u32::MAX),
+                space: crate::MemorySpace::Host,
+            }
+        })?;
+        let mut prefix = InitializedBoxPrefix {
+            storage: storage.as_mut(),
+            initialized: 0,
+        };
+        for index in 0..count {
+            let value = build(self, index)?;
+            prefix.storage[index].write(value);
+            prefix.initialized += 1;
+        }
+        mem::forget(prefix);
+        // SAFETY: every element was initialized exactly once above. The
+        // prefix guard handles every early return and unwind before this point.
+        Ok(unsafe { storage.assume_init() })
+    }
+
     /// Builds one exact-capacity String temporary after charging the bytes
     /// before allocation. This is the maintained String concatenation path;
     /// final immutable storage is covered separately by the retained ticket.
@@ -390,6 +544,108 @@ impl FrozenSnapshotConstruction {
         value.push_str(left);
         value.push_str(right);
         Ok(value)
+    }
+
+    /// Finalizes one schema-directed scalar or aggregate draft through the
+    /// call's pre-admitted canonical finalization boundary.
+    pub fn try_rebuild_data_draft(
+        &mut self,
+        output: &crate::ValueCell,
+        data: crate::ValueDataDraft,
+    ) -> crate::MResult<crate::Value> {
+        output.rebuild_data_draft_with_construction(data, self)
+    }
+
+    /// Finalizes one matrix draft through the same call-bound authority. The
+    /// dimensions and element storage must already have been constructed by
+    /// this capability's fallible helpers.
+    pub fn try_rebuild_matrix_drafts(
+        &mut self,
+        output: &crate::ValueCell,
+        dimensions: Box<[u64]>,
+        elements: Box<[crate::ValueDataDraft]>,
+    ) -> crate::MResult<crate::Value> {
+        output.rebuild_matrix_drafts_with_construction(dimensions, elements, self)
+    }
+
+    /// Finalizes one canonical set draft through the call-bound authority.
+    #[cfg(feature = "functions")]
+    pub fn try_rebuild_set_drafts(
+        &mut self,
+        output: &crate::FunctionValueOutput,
+        elements: Box<[crate::ValueDataDraft]>,
+    ) -> crate::MResult<crate::Value> {
+        output
+            .cell()
+            .rebuild_set_drafts_with_construction(elements, self)
+    }
+
+    /// Runs the maintained set-value builder only after the call's complete
+    /// draft workspace has been charged. Set algorithms may allocate while
+    /// merging canonical inputs, so their output construction cannot remain
+    /// an unmetered callback at the call site.
+    #[cfg(feature = "functions")]
+    pub fn try_build_set_with(
+        &mut self,
+        output: &crate::FunctionValueOutput,
+        build: impl FnOnce() -> crate::MResult<Box<[crate::ValueData]>>,
+    ) -> crate::MResult<crate::Value> {
+        self.charge_remaining_temporary()?;
+        let elements = build()?;
+        output.cell().rebuild_set_with_construction(elements, self)
+    }
+
+    /// Draft counterpart of [`Self::try_build_set_with`] used by set
+    /// expansion operations whose nested result schema is finalized only
+    /// after enumeration.
+    #[cfg(feature = "functions")]
+    pub fn try_build_set_drafts_with(
+        &mut self,
+        output: &crate::FunctionValueOutput,
+        build: impl FnOnce() -> crate::MResult<Box<[crate::ValueDataDraft]>>,
+    ) -> crate::MResult<crate::Value> {
+        self.charge_remaining_temporary()?;
+        let elements = build()?;
+        output
+            .cell()
+            .rebuild_set_drafts_with_construction(elements, self)
+    }
+
+    /// Constructs and finalizes one maintained aggregate matrix only after
+    /// its complete draft workspace is charged.
+    #[cfg(feature = "functions")]
+    pub fn try_rebuild_matrix_drafts_with(
+        &mut self,
+        output: &crate::ValueCell,
+        build: impl FnOnce() -> crate::MResult<(Box<[u64]>, Box<[crate::ValueDataDraft]>)>,
+    ) -> crate::MResult<crate::Value> {
+        self.charge_remaining_temporary()?;
+        let (dimensions, elements) = build()?;
+        output.rebuild_matrix_drafts_with_construction(dimensions, elements, self)
+    }
+
+    /// Constructs an aggregate selection candidate and rebinds it to the
+    /// already closed output schema under one precharged workspace.
+    #[cfg(feature = "functions")]
+    pub fn try_rebind_snapshot_candidate_with(
+        &mut self,
+        output: &crate::ValueCell,
+        build: impl FnOnce() -> crate::MResult<crate::Value>,
+    ) -> crate::MResult<crate::Value> {
+        self.charge_remaining_temporary()?;
+        let next = build()?;
+        output.rebind_snapshot_candidate(&next)
+    }
+
+    /// Constructs one canonical assignment candidate after reserving the
+    /// operation's complete admitted mutation workspace.
+    #[cfg(feature = "functions")]
+    pub fn try_build_assignment_candidate_with(
+        &mut self,
+        build: impl FnOnce() -> crate::MResult<crate::Value>,
+    ) -> crate::MResult<crate::Value> {
+        self.charge_remaining_temporary()?;
+        build()
     }
 
     pub(crate) fn complete(
@@ -430,6 +686,54 @@ impl FrozenSnapshotConstruction {
             charge.bytes = actual_retained_bytes;
         }
         Ok(ticket)
+    }
+}
+
+impl crate::snapshot::validation::SnapshotConstructionAuthority for FrozenSnapshotConstruction {
+    fn admit_snapshot_allocation(&self, bytes: u64, alignment: u32) -> MemoryRuntimeResult<()> {
+        if bytes == 0 {
+            return Ok(());
+        }
+        let remaining = self.remaining_finalization_bytes.get();
+        if bytes > remaining {
+            return Err(MemoryRuntimeError::CapacityExceeded {
+                object: self.object(),
+                requested: bytes,
+                capacity: remaining,
+            });
+        }
+        let admission = self
+            .admission
+            .as_ref()
+            .expect("live construction retains its admission");
+        let domain = admission
+            .allocator
+            .authority
+            .initialization
+            .upgrade()
+            .ok_or(MemoryRuntimeError::DomainClosed)?;
+        domain.borrow_mut().check_failure_injection(
+            super::MemoryFailurePoint::HostAllocation,
+            bytes,
+            alignment,
+            crate::MemorySpace::Host,
+        )?;
+        self.remaining_finalization_bytes.set(remaining - bytes);
+        self.charged_temporary_bytes.set(
+            self.charged_temporary_bytes
+                .get()
+                .checked_add(bytes)
+                .ok_or(MemoryRuntimeError::AccountingInvariantViolation {
+                    dimension: "canonical finalization bytes",
+                    current: self.charged_temporary_bytes.get(),
+                    change: bytes,
+                })?,
+        );
+        Ok(())
+    }
+
+    fn allocation_object(&self) -> Option<crate::MemoryObjectId> {
+        Some(self.object())
     }
 }
 

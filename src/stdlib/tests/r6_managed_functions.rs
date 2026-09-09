@@ -412,6 +412,46 @@ mod ordinary_managed_execution {
         specialize("string/concat", vec![left, right])
     }
 
+    fn bind_runtime(name: &str, invocation: FunctionInvocation) -> SpecializedFunction {
+        let catalog = mech_stdlib::source_catalog();
+        let operation = OperationId::from_name(name);
+        let mut candidates = catalog
+            .runtime_entries_for_binding(
+                RuntimeBindingSelector::Operation(operation),
+                ExecutionTarget::DirectRuntime,
+            )
+            .filter_map(|entry| {
+                let parts = entry
+                    .bind_resolved_invocation(
+                        operation,
+                        ExecutionTarget::DirectRuntime,
+                        invocation.clone(),
+                    )
+                    .ok()?;
+                Some((
+                    parts,
+                    entry.id,
+                    entry.implementation_memory_class(),
+                    entry.operation_contract(operation)?.clone(),
+                ))
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(
+            candidates.len(),
+            1,
+            "expected one runtime binding for {name}"
+        );
+        let (parts, runtime, memory, contract) = candidates.pop().unwrap();
+        SpecializedFunction::syntax_directed(
+            parts,
+            ResolvedOperationDescriptor::from_name(name, contract).unwrap(),
+            runtime,
+            ExecutionTarget::DirectRuntime,
+            memory,
+        )
+        .unwrap()
+    }
+
     fn matrix_values(cell: &ValueCell) -> (Vec<u64>, Vec<f64>) {
         let value = cell.snapshot().unwrap();
         let ValueData::Matrix(matrix) = value.data() else {
@@ -440,6 +480,20 @@ mod ordinary_managed_execution {
             panic!("expected String scalar")
         };
         value.to_string()
+    }
+
+    fn string_matrix_values(cell: &ValueCell) -> (Vec<u64>, Vec<String>) {
+        let value = cell.snapshot().unwrap();
+        let ValueData::Matrix(matrix) = value.data() else {
+            panic!("expected String matrix")
+        };
+        let snapshot::SequenceView::String(values) = matrix.elements() else {
+            panic!("expected String matrix elements")
+        };
+        (
+            value.shape().parameter_values().to_vec(),
+            values.iter().map(ToString::to_string).collect(),
+        )
     }
 
     #[cfg(any(
@@ -615,6 +669,122 @@ mod ordinary_managed_execution {
 
         function.instance().solve_result().unwrap();
         assert_eq!(string_value(&output), "valid!");
+
+        // The first checked allocation constructs the String draft. Allow it,
+        // then fail the next checked allocation inside the common canonical
+        // finalizer itself. Publication and ownership remain unchanged.
+        let before = string_value(&output);
+        let version = output.published_version();
+        let ledger = session.ledger();
+        session
+            .inject_failure_after(MemoryFailurePoint::HostAllocation, 1)
+            .unwrap();
+        assert!(function.instance().solve_result().is_err());
+        assert_eq!(string_value(&output), before);
+        assert_eq!(output.published_version(), version);
+        assert_eq!(session.ledger(), ledger);
+
+        function.instance().solve_result().unwrap();
+        assert_eq!(string_value(&output), "valid!");
+    }
+
+    #[test]
+    fn string_matrix_concat_and_transpose_share_admitted_canonical_construction() {
+        let session = MemoryDomain::new().unwrap();
+        let left = ValueCell::from_exact_in(
+            &session,
+            DMatrix::from_row_slice(
+                2,
+                2,
+                &[
+                    "a".to_owned(),
+                    "b".to_owned(),
+                    "c".to_owned(),
+                    "d".to_owned(),
+                ],
+            ),
+        )
+        .unwrap();
+        let right = ValueCell::from_exact_in(
+            &session,
+            DMatrix::from_row_slice(
+                2,
+                2,
+                &[
+                    "1".to_owned(),
+                    "2".to_owned(),
+                    "3".to_owned(),
+                    "4".to_owned(),
+                ],
+            ),
+        )
+        .unwrap();
+        let concat_output =
+            ValueCell::from_exact_in(&session, DMatrix::from_element(2, 2, String::new())).unwrap();
+        let concatenated = bind_runtime(
+            "string/concat",
+            FunctionInvocation::binary(concat_output, left.clone(), right.clone()),
+        );
+        let transpose_output =
+            ValueCell::from_exact_in(&session, DMatrix::from_element(2, 2, String::new())).unwrap();
+        let transposed = bind_runtime(
+            "matrix/transpose",
+            FunctionInvocation::unary(transpose_output, concatenated.output().clone()),
+        );
+
+        concatenated.instance().solve_result().unwrap();
+        transposed.instance().solve_result().unwrap();
+        assert_eq!(
+            string_matrix_values(transposed.output()),
+            (
+                vec![2, 2],
+                vec![
+                    "a1".to_owned(),
+                    "c3".to_owned(),
+                    "b2".to_owned(),
+                    "d4".to_owned(),
+                ],
+            )
+        );
+
+        left.replace(
+            &ValueCell::from_exact(DMatrix::from_row_slice(
+                2,
+                2,
+                &[
+                    "left-a-".repeat(256),
+                    "left-b-".repeat(256),
+                    "left-c-".repeat(256),
+                    "left-d-".repeat(256),
+                ],
+            ))
+            .unwrap()
+            .snapshot()
+            .unwrap(),
+        )
+        .unwrap();
+        concatenated.instance().solve_result().unwrap();
+        transposed.instance().solve_result().unwrap();
+        let before = string_matrix_values(transposed.output());
+        let version = transposed.output().published_version();
+
+        session
+            .inject_failure_after(MemoryFailurePoint::HostAllocation, 0)
+            .unwrap();
+        assert!(transposed.instance().solve_result().is_err());
+        assert_eq!(string_matrix_values(transposed.output()), before);
+        assert_eq!(transposed.output().published_version(), version);
+
+        transposed.instance().solve_result().unwrap();
+        assert_eq!(
+            string_matrix_values(transposed.output()).1,
+            vec![
+                format!("{}1", "left-a-".repeat(256)),
+                format!("{}3", "left-c-".repeat(256)),
+                format!("{}2", "left-b-".repeat(256)),
+                format!("{}4", "left-d-".repeat(256)),
+            ]
+        );
     }
 
     #[test]

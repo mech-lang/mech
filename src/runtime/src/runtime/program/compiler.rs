@@ -2154,13 +2154,13 @@ impl MechExecutionServices for CompilerPlanningServices<'_> {
         })
     }
 
-    fn bind_live_resource(
-        &mut self,
+    fn prepare_live_resource_binding<'b>(
+        &'b mut self,
         _interpreter_id: u64,
         _request: &ExecutionResourceRequest,
         _target: ValueCell,
-    ) -> MResult<()> {
-        Ok(())
+    ) -> MResult<mech_core::PreparedLiveResourceBinding<'b>> {
+        Ok(mech_core::PreparedLiveResourceBinding::no_op())
     }
 }
 

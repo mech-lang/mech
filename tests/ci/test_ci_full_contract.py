@@ -55,6 +55,7 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertNotIn("Verify N-body physics against independent references", standard)
         self.assertIn("Verify N-body physics against independent references", nbody)
         self.assertIn("Build mixed compute WASM and refresh the server", compute)
+        self.assertIn("--profile browser-compute-canary", compute)
         self.assertIn("Verify report-only particle WebGPU execution", compute)
         self.assertIn("Verify scalar and WebGPU EKF rendering", compute)
         for dependency in (
