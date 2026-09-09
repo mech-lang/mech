@@ -16,9 +16,9 @@ use alloc::{boxed::Box, string::String, sync::Arc, vec::Vec};
 #[cfg(not(feature = "no_std"))]
 use std::{boxed::Box, string::String, sync::Arc, vec::Vec};
 
-#[cfg(feature = "no_std")]
+#[cfg(all(feature = "no_std", not(feature = "std")))]
 type SharedOwnershipCell<T> = core::cell::OnceCell<T>;
-#[cfg(not(feature = "no_std"))]
+#[cfg(any(not(feature = "no_std"), feature = "std"))]
 type SharedOwnershipCell<T> = std::sync::OnceLock<T>;
 
 pub struct SnapshotValidationContext<'a> {
