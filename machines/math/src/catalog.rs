@@ -1422,9 +1422,9 @@ macro_rules! for_each_op_assign_vector_range_source {
         $callback!($context; feature = "vector2"; Vector2; "vector2"; Vector2; "vector2");
         $callback!($context; feature = "vector3"; Vector3; "vector3"; Vector3; "vector3");
         $callback!($context; feature = "vector4"; Vector4; "vector4"; Vector4; "vector4");
-        $callback!($context; feature = "row_vector2"; RowVector2; "row_vector2"; Vector2; "vector2");
-        $callback!($context; feature = "row_vector3"; RowVector3; "row_vector3"; Vector3; "vector3");
-        $callback!($context; feature = "row_vector4"; RowVector4; "row_vector4"; Vector4; "vector4");
+        $callback!($context; all(feature = "row_vector2", feature = "vector2"); RowVector2; "row_vector2"; Vector2; "vector2");
+        $callback!($context; all(feature = "row_vector3", feature = "vector3"); RowVector3; "row_vector3"; Vector3; "vector3");
+        $callback!($context; all(feature = "row_vector4", feature = "vector4"); RowVector4; "row_vector4"; Vector4; "vector4");
     };
 }
 

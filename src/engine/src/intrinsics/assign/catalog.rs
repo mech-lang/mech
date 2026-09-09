@@ -972,11 +972,11 @@ macro_rules! install_legacy_impl_set_range_arms {
             install_legacy_assign!($emit, $context, [<$fxn_name V>], $value_kind, $value_string, $shape, Vector3, Vector3);
             #[cfg(all(feature = $value_string, feature = "vector4"))]
             install_legacy_assign!($emit, $context, [<$fxn_name V>], $value_kind, $value_string, $shape, Vector4, Vector4);
-            #[cfg(all(feature = $value_string, feature = "row_vector2"))]
+            #[cfg(all(feature = $value_string, feature = "row_vector2", feature = "vector2"))]
             install_legacy_assign!($emit, $context, [<$fxn_name V>], $value_kind, $value_string, $shape, RowVector2, Vector2);
-            #[cfg(all(feature = $value_string, feature = "row_vector3"))]
+            #[cfg(all(feature = $value_string, feature = "row_vector3", feature = "vector3"))]
             install_legacy_assign!($emit, $context, [<$fxn_name V>], $value_kind, $value_string, $shape, RowVector3, Vector3);
-            #[cfg(all(feature = $value_string, feature = "row_vector4"))]
+            #[cfg(all(feature = $value_string, feature = "row_vector4", feature = "vector4"))]
             install_legacy_assign!($emit, $context, [<$fxn_name V>], $value_kind, $value_string, $shape, RowVector4, Vector4);
         }
     };
@@ -1020,11 +1020,11 @@ macro_rules! install_legacy_impl_set_range_all_arms {
             install_legacy_assign!($emit, $context, [<$fxn_name V>], $value_kind, $value_string, $shape, Vector3, Vector3);
             #[cfg(all(feature = $value_string, feature = "vector4"))]
             install_legacy_assign!($emit, $context, [<$fxn_name V>], $value_kind, $value_string, $shape, Vector4, Vector4);
-            #[cfg(all(feature = $value_string, feature = "row_vector2"))]
+            #[cfg(all(feature = $value_string, feature = "row_vector2", feature = "vector2"))]
             install_legacy_assign!($emit, $context, [<$fxn_name V>], $value_kind, $value_string, $shape, RowVector2, Vector2);
-            #[cfg(all(feature = $value_string, feature = "row_vector3"))]
+            #[cfg(all(feature = $value_string, feature = "row_vector3", feature = "vector3"))]
             install_legacy_assign!($emit, $context, [<$fxn_name V>], $value_kind, $value_string, $shape, RowVector3, Vector3);
-            #[cfg(all(feature = $value_string, feature = "row_vector4"))]
+            #[cfg(all(feature = $value_string, feature = "row_vector4", feature = "vector4"))]
             install_legacy_assign!($emit, $context, [<$fxn_name V>], $value_kind, $value_string, $shape, RowVector4, Vector4);
         }
     };
@@ -1064,11 +1064,11 @@ macro_rules! install_legacy_impl_assign_range_scalar_arms {
             install_legacy_assign!($emit, $context, [<$fxn_name V>], $value_kind, $value_string, $shape, Vector3, Vector3);
             #[cfg(all(feature = $value_string, feature = "vector4"))]
             install_legacy_assign!($emit, $context, [<$fxn_name V>], $value_kind, $value_string, $shape, Vector4, Vector4);
-            #[cfg(all(feature = $value_string, feature = "row_vector2"))]
+            #[cfg(all(feature = $value_string, feature = "row_vector2", feature = "vector2"))]
             install_legacy_assign!($emit, $context, [<$fxn_name V>], $value_kind, $value_string, $shape, RowVector2, Vector2);
-            #[cfg(all(feature = $value_string, feature = "row_vector3"))]
+            #[cfg(all(feature = $value_string, feature = "row_vector3", feature = "vector3"))]
             install_legacy_assign!($emit, $context, [<$fxn_name V>], $value_kind, $value_string, $shape, RowVector3, Vector3);
-            #[cfg(all(feature = $value_string, feature = "row_vector4"))]
+            #[cfg(all(feature = $value_string, feature = "row_vector4", feature = "vector4"))]
             install_legacy_assign!($emit, $context, [<$fxn_name V>], $value_kind, $value_string, $shape, RowVector4, Vector4);
             #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vectord"))]
             install_legacy_assign!($emit, $context, [<$fxn_name V>], $value_kind, $value_string, $shape, DMatrix, DVector);
@@ -1114,11 +1114,11 @@ macro_rules! install_legacy_impl_assign_scalar_range_arms {
             install_legacy_assign!($emit, $context, [<$fxn_name V>], $value_kind, $value_string, $shape, Vector3, Vector3);
             #[cfg(all(feature = $value_string, feature = "vector4"))]
             install_legacy_assign!($emit, $context, [<$fxn_name V>], $value_kind, $value_string, $shape, Vector4, Vector4);
-            #[cfg(all(feature = $value_string, feature = "row_vector2"))]
+            #[cfg(all(feature = $value_string, feature = "row_vector2", feature = "vector2"))]
             install_legacy_assign!($emit, $context, [<$fxn_name V>], $value_kind, $value_string, $shape, RowVector2, Vector2);
-            #[cfg(all(feature = $value_string, feature = "row_vector3"))]
+            #[cfg(all(feature = $value_string, feature = "row_vector3", feature = "vector3"))]
             install_legacy_assign!($emit, $context, [<$fxn_name V>], $value_kind, $value_string, $shape, RowVector3, Vector3);
-            #[cfg(all(feature = $value_string, feature = "row_vector4"))]
+            #[cfg(all(feature = $value_string, feature = "row_vector4", feature = "vector4"))]
             install_legacy_assign!($emit, $context, [<$fxn_name V>], $value_kind, $value_string, $shape, RowVector4, Vector4);
             #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vectord"))]
             install_legacy_assign!($emit, $context, [<$fxn_name V>], $value_kind, $value_string, $shape, DMatrix, DVector);
@@ -1188,17 +1188,17 @@ macro_rules! install_legacy_impl_assign_range_range_arms {
             install_legacy_assign_srr2!($emit, $context, [<$fxn_name V>], $value_kind, $value_string, $shape, Matrix1, Matrix1, Matrix1);
             #[cfg(all(feature = $value_string, feature = "matrix1", feature = "vector2"))]
             install_legacy_assign_srr2!($emit, $context, [<$fxn_name V>], $value_kind, $value_string, $shape, Vector2, Matrix1, Vector2);
-            #[cfg(all(feature = $value_string, feature = "matrix1", feature = "row_vector2"))]
+            #[cfg(all(feature = $value_string, feature = "matrix1", feature = "row_vector2", feature = "vector2"))]
             install_legacy_assign_srr2!($emit, $context, [<$fxn_name V>], $value_kind, $value_string, $shape, RowVector2, Matrix1, Vector2);
             #[cfg(all(feature = $value_string, feature = "matrix1", feature = "vector3"))]
             install_legacy_assign_srr2!($emit, $context, [<$fxn_name V>], $value_kind, $value_string, $shape, Vector3, Matrix1, Vector3);
-            #[cfg(all(feature = $value_string, feature = "matrix1", feature = "row_vector3"))]
+            #[cfg(all(feature = $value_string, feature = "matrix1", feature = "row_vector3", feature = "vector3"))]
             install_legacy_assign_srr2!($emit, $context, [<$fxn_name V>], $value_kind, $value_string, $shape, RowVector3, Matrix1, Vector3);
             #[cfg(all(feature = $value_string, feature = "matrix1", feature = "vector4"))]
             install_legacy_assign_srr2!($emit, $context, [<$fxn_name V>], $value_kind, $value_string, $shape, Vector4, Matrix1, Vector4);
             #[cfg(all(feature = $value_string, feature = "matrix1", feature = "vector2", feature = "matrix2"))]
             install_legacy_assign_srr2!($emit, $context, [<$fxn_name V>], $value_kind, $value_string, $shape, Matrix2, Matrix1, Vector2);
-            #[cfg(all(feature = $value_string, feature = "matrix1", feature = "row_vector4"))]
+            #[cfg(all(feature = $value_string, feature = "matrix1", feature = "row_vector4", feature = "vector4"))]
             install_legacy_assign_srr2!($emit, $context, [<$fxn_name V>], $value_kind, $value_string, $shape, RowVector4, Matrix1, Vector4);
             #[cfg(all(feature = $value_string, feature = "matrix1", feature = "vectord"))]
             install_legacy_assign_srr2!($emit, $context, [<$fxn_name V>], $value_kind, $value_string, $shape, DVector, Matrix1, DVector);
@@ -1362,11 +1362,11 @@ macro_rules! install_legacy_impl_assign_all_range_arms {
             install_legacy_assign!($emit, $context, [<$fxn_name V>], $value_kind, $value_string, $shape, Vector3, Vector3);
             #[cfg(all(feature = $value_string, feature = "vector4"))]
             install_legacy_assign!($emit, $context, [<$fxn_name V>], $value_kind, $value_string, $shape, Vector4, Vector4);
-            #[cfg(all(feature = $value_string, feature = "row_vector2"))]
+            #[cfg(all(feature = $value_string, feature = "row_vector2", feature = "vector2"))]
             install_legacy_assign!($emit, $context, [<$fxn_name V>], $value_kind, $value_string, $shape, RowVector2, Vector2);
-            #[cfg(all(feature = $value_string, feature = "row_vector3"))]
+            #[cfg(all(feature = $value_string, feature = "row_vector3", feature = "vector3"))]
             install_legacy_assign!($emit, $context, [<$fxn_name V>], $value_kind, $value_string, $shape, RowVector3, Vector3);
-            #[cfg(all(feature = $value_string, feature = "row_vector4"))]
+            #[cfg(all(feature = $value_string, feature = "row_vector4", feature = "vector4"))]
             install_legacy_assign!($emit, $context, [<$fxn_name V>], $value_kind, $value_string, $shape, RowVector4, Vector4);
         }
     };
@@ -1736,11 +1736,11 @@ macro_rules! install_legacy_impl_assign_range_scalar_arms_b {
             install_legacy_assign_b!($emit, $context, [<$fxn_name VB>], $value_kind, $value_string, $shape, Vector3, Vector3);
             #[cfg(all(feature = $value_string, feature = "vector4"))]
             install_legacy_assign_b!($emit, $context, [<$fxn_name VB>], $value_kind, $value_string, $shape, Vector4, Vector4);
-            #[cfg(all(feature = $value_string, feature = "row_vector2"))]
+            #[cfg(all(feature = $value_string, feature = "row_vector2", feature = "vector2"))]
             install_legacy_assign_b!($emit, $context, [<$fxn_name VB>], $value_kind, $value_string, $shape, RowVector2, Vector2);
-            #[cfg(all(feature = $value_string, feature = "row_vector3"))]
+            #[cfg(all(feature = $value_string, feature = "row_vector3", feature = "vector3"))]
             install_legacy_assign_b!($emit, $context, [<$fxn_name VB>], $value_kind, $value_string, $shape, RowVector3, Vector3);
-            #[cfg(all(feature = $value_string, feature = "row_vector4"))]
+            #[cfg(all(feature = $value_string, feature = "row_vector4", feature = "vector4"))]
             install_legacy_assign_b!($emit, $context, [<$fxn_name VB>], $value_kind, $value_string, $shape, RowVector4, Vector4);
             #[cfg(all(feature = $value_string, feature = "vectord"))]
             install_legacy_assign_b!($emit, $context, [<$fxn_name VB>], $value_kind, $value_string, $shape, DVector, DVector);
@@ -1784,11 +1784,11 @@ macro_rules! install_legacy_impl_assign_scalar_range_arms_b {
             install_legacy_assign_b!($emit, $context, [<$fxn_name VB>], $value_kind, $value_string, $shape, Vector3, Vector3);
             #[cfg(all(feature = $value_string, feature = "vector4"))]
             install_legacy_assign_b!($emit, $context, [<$fxn_name VB>], $value_kind, $value_string, $shape, Vector4, Vector4);
-            #[cfg(all(feature = $value_string, feature = "row_vector2"))]
+            #[cfg(all(feature = $value_string, feature = "row_vector2", feature = "vector2"))]
             install_legacy_assign_b!($emit, $context, [<$fxn_name VB>], $value_kind, $value_string, $shape, RowVector2, Vector2);
-            #[cfg(all(feature = $value_string, feature = "row_vector3"))]
+            #[cfg(all(feature = $value_string, feature = "row_vector3", feature = "vector3"))]
             install_legacy_assign_b!($emit, $context, [<$fxn_name VB>], $value_kind, $value_string, $shape, RowVector3, Vector3);
-            #[cfg(all(feature = $value_string, feature = "row_vector4"))]
+            #[cfg(all(feature = $value_string, feature = "row_vector4", feature = "vector4"))]
             install_legacy_assign_b!($emit, $context, [<$fxn_name VB>], $value_kind, $value_string, $shape, RowVector4, Vector4);
             #[cfg(all(feature = $value_string, feature = "vectord"))]
             install_legacy_assign_b!($emit, $context, [<$fxn_name VB>], $value_kind, $value_string, $shape, DVector, DVector);
@@ -1806,11 +1806,11 @@ macro_rules! install_legacy_impl_assign_range_range_arms_b {
         mech_core::paste::paste! {
             #[cfg(all(feature = $value_string, feature = "matrix1"))]
             install_legacy_assign_srr_b!($emit, $context, [<$fxn_name BB>], $value_kind, $value_string, Matrix1, Matrix1, Matrix1);
-            #[cfg(all(feature = $value_string, feature = "row_vector2", feature = "matrix1", feature = "row_vector2"))]
+            #[cfg(all(feature = $value_string, feature = "row_vector2", feature = "matrix1", feature = "vector2"))]
             install_legacy_assign_srr_b!($emit, $context, [<$fxn_name BB>], $value_kind, $value_string, RowVector2, Matrix1, Vector2);
-            #[cfg(all(feature = $value_string, feature = "row_vector3", feature = "matrix1", feature = "row_vector3"))]
+            #[cfg(all(feature = $value_string, feature = "row_vector3", feature = "matrix1", feature = "vector3"))]
             install_legacy_assign_srr_b!($emit, $context, [<$fxn_name BB>], $value_kind, $value_string, RowVector3, Matrix1, Vector3);
-            #[cfg(all(feature = $value_string, feature = "row_vector4", feature = "matrix1", feature = "row_vector4"))]
+            #[cfg(all(feature = $value_string, feature = "row_vector4", feature = "matrix1", feature = "vector4"))]
             install_legacy_assign_srr_b!($emit, $context, [<$fxn_name BB>], $value_kind, $value_string, RowVector4, Matrix1, Vector4);
             #[cfg(all(feature = $value_string, feature = "row_vectord", feature = "matrix1", feature = "row_vectord"))]
             install_legacy_assign_srr_b!($emit, $context, [<$fxn_name BB>], $value_kind, $value_string, RowDVector,Matrix1,DVector);
@@ -1846,11 +1846,11 @@ macro_rules! install_legacy_impl_assign_range_range_arms_b {
             install_legacy_assign_srr_b!($emit, $context, [<$fxn_name BB>], $value_kind, $value_string, DMatrix, DVector, DVector);
             #[cfg(all(feature = $value_string, feature = "matrix1"))]
             install_legacy_assign_srr_b2!($emit, $context, [<$fxn_name VBB>], $value_kind, $value_string, Matrix1, Matrix1, Matrix1, Matrix1);
-            #[cfg(all(feature = $value_string, feature = "row_vector2", feature = "matrix1", feature = "row_vector2"))]
+            #[cfg(all(feature = $value_string, feature = "row_vector2", feature = "matrix1", feature = "vector2"))]
             install_legacy_assign_srr_b2!($emit, $context, [<$fxn_name VBB>], $value_kind, $value_string, RowVector2, RowVector2, Matrix1, Vector2);
-            #[cfg(all(feature = $value_string, feature = "row_vector3", feature = "matrix1", feature = "row_vector3"))]
+            #[cfg(all(feature = $value_string, feature = "row_vector3", feature = "matrix1", feature = "vector3"))]
             install_legacy_assign_srr_b2!($emit, $context, [<$fxn_name VBB>], $value_kind, $value_string, RowVector3, RowVector3, Matrix1, Vector3);
-            #[cfg(all(feature = $value_string, feature = "row_vector4", feature = "matrix1", feature = "row_vector4"))]
+            #[cfg(all(feature = $value_string, feature = "row_vector4", feature = "matrix1", feature = "vector4"))]
             install_legacy_assign_srr_b2!($emit, $context, [<$fxn_name VBB>], $value_kind, $value_string, RowVector4, RowVector4, Matrix1, Vector4);
             #[cfg(all(feature = $value_string, feature = "row_vectord", feature = "matrix1", feature = "row_vectord"))]
             install_legacy_assign_srr_b2!($emit, $context, [<$fxn_name VBB>], $value_kind, $value_string, RowDVector, RowDVector, Matrix1, DVector);
