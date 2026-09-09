@@ -890,13 +890,20 @@ impl DynamicF64BinaryBroadcastPlan {
 impl DynamicF64Arg {
     fn matrix_shape(&self) -> Option<(usize, usize)> {
         match self {
-            DynamicF64Arg::Scalar(_) => None,
+            DynamicF64Arg::Scalar(value) => {
+                // Retain and validate the semantic scalar while deriving the
+                // broadcast category; execution resolves its physical lane
+                // from the managed call frame.
+                let _scalar = canonical_f64(value).ok()?;
+                None
+            }
             DynamicF64Arg::Matrix(matrix) => canonical_f64_matrix_values(matrix)
                 .ok()
                 .map(|(rows, columns, _)| (rows, columns)),
         }
     }
 
+    #[cfg(test)]
     fn value_at(&self, index: usize) -> MResult<f64> {
         match self {
             DynamicF64Arg::Scalar(value) => canonical_f64(value),
@@ -952,14 +959,17 @@ impl CanonicalFunctionSpecializer for DynamicBinaryF64F64ToF64Specializer {
         );
 
         let (implementation, output): (Box<dyn MechFunction>, ValueCell) = match (&lhs, &rhs) {
-            (DynamicF64Arg::Scalar(n), DynamicF64Arg::Scalar(k)) => {
+            (DynamicF64Arg::Scalar(_), DynamicF64Arg::Scalar(_)) => {
                 let output = ValueCell::from_exact(0.0_f64)?;
+                let runtime_invocation =
+                    FunctionInvocation::binary(output.clone(), lhs_cell.clone(), rhs_cell.clone());
+                let (out, n, k) = runtime_invocation.expect_binary()?;
                 (
                     Box::new(DynamicBinaryF64F64ToF64Function {
                         name: self.name.clone(),
-                        n: n.clone(),
-                        k: k.clone(),
-                        output: output.clone(),
+                        n: n.try_managed_element::<f64>()?,
+                        k: k.try_managed_element::<f64>()?,
+                        output: out.try_managed_element::<f64>()?,
                         kernel: self.kernel,
                         _library: self._library.clone(),
                     }),
@@ -970,13 +980,16 @@ impl CanonicalFunctionSpecializer for DynamicBinaryF64F64ToF64Specializer {
             _ => {
                 let plan = dynamic_binary_broadcast_plan(&lhs, &rhs, &self.name)?;
                 let output = dynamic_f64_matrix_output(plan.rows, plan.cols)?;
+                let runtime_invocation =
+                    FunctionInvocation::binary(output.clone(), lhs_cell.clone(), rhs_cell.clone());
+                let (out, lhs, rhs) = runtime_invocation.expect_binary()?;
 
                 (
                     Box::new(DynamicBinaryF64F64BroadcastFunction {
                         name: self.name.clone(),
-                        lhs,
-                        rhs,
-                        output: output.clone(),
+                        lhs: lhs.try_managed_element::<f64>()?,
+                        rhs: rhs.try_managed_element::<f64>()?,
+                        output: out.try_managed_element::<f64>()?,
                         kernel: self.kernel,
                         _library: self._library.clone(),
                     }),
@@ -1034,18 +1047,20 @@ impl CanonicalFunctionSpecializer for DynamicUnaryF64ToF64Specializer {
             .clone();
         dynamic_arg_as_f64_ref(&input, &self.name)?;
         let output = ValueCell::from_exact(0.0_f64)?;
+        let runtime_invocation = FunctionInvocation::unary(output.clone(), input.clone());
+        let (out, managed_input) = runtime_invocation.expect_unary()?;
 
         context.resolve_syntax_operation_contract(&DYNAMIC_UNARY_SCALAR_CONTRACT)?;
         context.certify_instance(
             (
                 Box::new(DynamicUnaryF64ToF64Function {
                     name: self.name.clone(),
-                    input: input.clone(),
-                    output: output.clone(),
+                    input: managed_input.try_managed_element::<f64>()?,
+                    output: out.try_managed_element::<f64>()?,
                     kernel: self.kernel,
                     _library: self._library.clone(),
                 }),
-                FunctionInvocation::unary(output, input),
+                runtime_invocation,
             ),
             mech_core::RuntimeFunctionId::from_name(&self.name),
             mech_core::ExecutionTarget::DirectRuntime,
@@ -1086,18 +1101,20 @@ impl CanonicalFunctionSpecializer for DynamicUnaryF64ViewToF64ViewSpecializer {
             .clone();
         let (rows, cols, _) = dynamic_arg_as_f64_matrix(&input, &self.name)?;
         let output = dynamic_f64_matrix_output(rows, cols)?;
+        let runtime_invocation = FunctionInvocation::unary(output.clone(), input.clone());
+        let (out, managed_input) = runtime_invocation.expect_unary()?;
 
         context.resolve_syntax_operation_contract(&DYNAMIC_UNARY_VIEW_CONTRACT)?;
         context.certify_instance(
             (
                 Box::new(DynamicUnaryF64ViewToF64ViewFunction {
                     name: self.name.clone(),
-                    input: input.clone(),
-                    output: output.clone(),
+                    input: managed_input.try_managed_element::<f64>()?,
+                    output: out.try_managed_element::<f64>()?,
                     kernel: self.kernel,
                     _library: self._library.clone(),
                 }),
-                FunctionInvocation::unary(output, input),
+                runtime_invocation,
             ),
             mech_core::RuntimeFunctionId::from_name(&self.name),
             mech_core::ExecutionTarget::DirectRuntime,
@@ -1238,7 +1255,7 @@ fn dynamic_f64_matrix_output(rows: usize, columns: usize) -> MResult<ValueCell> 
     )
 }
 
-#[cfg(feature = "dynamic-modules")]
+#[cfg(all(test, feature = "dynamic-modules"))]
 fn replace_dynamic_matrix_output(
     output: &ValueCell,
     rows: usize,
@@ -1350,37 +1367,46 @@ fn dynamic_arg_as_f64_matrix(
 #[cfg(feature = "dynamic-modules")]
 struct DynamicBinaryF64F64ToF64Function {
     name: String,
-    n: ValueCell,
-    k: ValueCell,
-    output: ValueCell,
+    n: ManagedPort<f64>,
+    k: ManagedPort<f64>,
+    output: ManagedPort<f64>,
     kernel: mech_abi::MechBinaryF64F64ToF64KernelV1,
     _library: Arc<libloading::Library>,
-}
-
-#[cfg(feature = "dynamic-modules")]
-fn solve_dynamic_binary_scalar(
-    n: &ValueCell,
-    k: &ValueCell,
-    output: &ValueCell,
-    kernel: mech_abi::MechBinaryF64F64ToF64KernelV1,
-    name: &str,
-) -> MResult<()> {
-    let mut next = canonical_f64(output)?;
-    let status = unsafe { (kernel)(canonical_f64(n)?, canonical_f64(k)?, &mut next as *mut f64) };
-    check_dynamic_kernel_status(name, status)?;
-    output.replace(&ValueCell::from_exact(next)?.snapshot()?)
 }
 
 #[cfg(feature = "dynamic-modules")]
 impl MechFunctionImpl for DynamicBinaryF64F64ToF64Function {
     fn solve_managed(
         &self,
-        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
-        (|| -> MResult<()> {
-            solve_dynamic_binary_scalar(&self.n, &self.k, &self.output, self.kernel, &self.name)
-        })()?;
+        frame.with_binary_port_views(&self.n, &self.k, &self.output, |n, k, output| {
+            if n.len() != 1 || k.len() != 1 || output.len() != 1 {
+                return Err(MechError::new(
+                    GenericError {
+                        msg: format!(
+                            "dynamic function `{}` requires scalar managed ports",
+                            self.name
+                        ),
+                    },
+                    None,
+                )
+                .with_compiler_loc());
+            }
+            output.try_fill_column_major(|_| {
+                let mut next = 0.0;
+                let status = unsafe {
+                    (self.kernel)(
+                        n.get_column_major(0).expect("validated scalar input"),
+                        k.get_column_major(0).expect("validated scalar input"),
+                        &mut next as *mut f64,
+                    )
+                };
+                check_dynamic_kernel_status(&self.name, status)?;
+                Ok(next)
+            })
+        })?;
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
@@ -1396,9 +1422,9 @@ impl MechFunctionImpl for DynamicBinaryF64F64ToF64Function {
 #[cfg(all(feature = "dynamic-modules", feature = "semantic-compiler"))]
 impl MechFunctionCompiler for DynamicBinaryF64F64ToF64Function {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let output = compile_value_cell_register(&self.output, ctx)?;
-        let lhs = compile_value_cell_register(&self.n, ctx)?;
-        let rhs = compile_value_cell_register(&self.k, ctx)?;
+        let output = compile_value_cell_register(self.output.cell(), ctx)?;
+        let lhs = compile_value_cell_register(self.n.cell(), ctx)?;
+        let rhs = compile_value_cell_register(self.k.cell(), ctx)?;
         let function = ctx.function_id(&self.name)?;
         ctx.emit_binop(function, output, lhs, rhs);
         Ok(output)
@@ -1408,14 +1434,14 @@ impl MechFunctionCompiler for DynamicBinaryF64F64ToF64Function {
 #[cfg(feature = "dynamic-modules")]
 struct DynamicBinaryF64F64BroadcastFunction {
     name: String,
-    lhs: DynamicF64Arg,
-    rhs: DynamicF64Arg,
-    output: ValueCell,
+    lhs: ManagedPort<f64>,
+    rhs: ManagedPort<f64>,
+    output: ManagedPort<f64>,
     kernel: mech_abi::MechBinaryF64F64ToF64KernelV1,
     _library: Arc<libloading::Library>,
 }
 
-#[cfg(feature = "dynamic-modules")]
+#[cfg(all(test, feature = "dynamic-modules"))]
 fn solve_dynamic_binary_broadcast(
     lhs: &DynamicF64Arg,
     rhs: &DynamicF64Arg,
@@ -1424,38 +1450,79 @@ fn solve_dynamic_binary_broadcast(
     name: &str,
 ) -> MResult<()> {
     let plan = dynamic_binary_broadcast_plan(lhs, rhs, name)?;
-    let mut out_vec = Vec::with_capacity(plan.len);
+    let mut values = Vec::with_capacity(plan.len);
     for index in 1..=plan.len {
         let mut value = 0.0;
-        let status = unsafe {
-            (kernel)(
-                lhs.value_at(index)?,
-                rhs.value_at(index)?,
-                &mut value as *mut f64,
-            )
-        };
+        let status = unsafe { (kernel)(lhs.value_at(index)?, rhs.value_at(index)?, &mut value) };
         check_dynamic_kernel_status(name, status)?;
-        out_vec.push(value);
+        values.push(value);
     }
-    replace_dynamic_matrix_output(output, plan.rows, plan.cols, out_vec, name)
+    replace_dynamic_matrix_output(output, plan.rows, plan.cols, values, name)
+}
+
+#[cfg(feature = "dynamic-modules")]
+fn dynamic_managed_broadcast_element(
+    input: &mech_core::ManagedValueView<'_, f64>,
+    row: usize,
+    column: usize,
+    output_rows: usize,
+    output_columns: usize,
+    name: &str,
+) -> MResult<f64> {
+    let position = match (input.rows(), input.columns()) {
+        (1, 1) => Some((0, 0)),
+        (rows, columns) if rows == output_rows && columns == output_columns => Some((row, column)),
+        _ => None,
+    };
+    let Some((input_row, input_column)) = position else {
+        return Err(MechError::new(
+            GenericError {
+                msg: format!(
+                    "dynamic function `{name}` cannot broadcast managed input shape {}x{} to {output_rows}x{output_columns}",
+                    input.rows(),
+                    input.columns(),
+                ),
+            },
+            None,
+        )
+        .with_compiler_loc());
+    };
+    input.get(input_row, input_column).ok_or_else(|| {
+        MechError::new(
+            GenericError {
+                msg: format!("dynamic function `{name}` input coordinate is out of bounds"),
+            },
+            None,
+        )
+        .with_compiler_loc()
+    })
 }
 
 #[cfg(feature = "dynamic-modules")]
 impl MechFunctionImpl for DynamicBinaryF64F64BroadcastFunction {
     fn solve_managed(
         &self,
-        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
-        (|| -> MResult<()> {
-            solve_dynamic_binary_broadcast(
-                &self.lhs,
-                &self.rhs,
-                &self.output,
-                self.kernel,
-                &self.name,
-            )
-        })()?;
+        frame.with_binary_port_views(&self.lhs, &self.rhs, &self.output, |lhs, rhs, output| {
+            let rows = output.rows();
+            let columns = output.columns();
+            output.try_fill_column_major(|index| {
+                let row = index % rows;
+                let column = index / rows;
+                let lhs = dynamic_managed_broadcast_element(
+                    &lhs, row, column, rows, columns, &self.name,
+                )?;
+                let rhs = dynamic_managed_broadcast_element(
+                    &rhs, row, column, rows, columns, &self.name,
+                )?;
+                let mut next = 0.0;
+                let status = unsafe { (self.kernel)(lhs, rhs, &mut next as *mut f64) };
+                check_dynamic_kernel_status(&self.name, status)?;
+                Ok(next)
+            })
+        })?;
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
@@ -1471,59 +1538,56 @@ impl MechFunctionImpl for DynamicBinaryF64F64BroadcastFunction {
 #[cfg(all(feature = "dynamic-modules", feature = "semantic-compiler"))]
 impl MechFunctionCompiler for DynamicBinaryF64F64BroadcastFunction {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let output = compile_value_cell_register(&self.output, ctx)?;
-        let lhs = compile_dynamic_f64_arg(&self.lhs, ctx)?;
-        let rhs = compile_dynamic_f64_arg(&self.rhs, ctx)?;
+        let output = compile_value_cell_register(self.output.cell(), ctx)?;
+        let lhs = compile_value_cell_register(self.lhs.cell(), ctx)?;
+        let rhs = compile_value_cell_register(self.rhs.cell(), ctx)?;
         let function = ctx.function_id(&self.name)?;
         ctx.emit_binop(function, output, lhs, rhs);
         Ok(output)
     }
 }
 
-#[cfg(all(feature = "dynamic-modules", feature = "semantic-compiler"))]
-fn compile_dynamic_f64_arg(
-    argument: &DynamicF64Arg,
-    ctx: &mut dyn BytecodeCompilerContext,
-) -> MResult<Register> {
-    Ok(match argument {
-        DynamicF64Arg::Scalar(value) | DynamicF64Arg::Matrix(value) => {
-            compile_value_cell_register(value, ctx)?
-        }
-    })
-}
-
 #[cfg(feature = "dynamic-modules")]
 struct DynamicUnaryF64ToF64Function {
     name: String,
-    input: ValueCell,
-    output: ValueCell,
+    input: ManagedPort<f64>,
+    output: ManagedPort<f64>,
     kernel: mech_abi::MechUnaryF64ToF64KernelV1,
     _library: Arc<libloading::Library>,
-}
-
-#[cfg(feature = "dynamic-modules")]
-fn solve_dynamic_unary_scalar(
-    input: &ValueCell,
-    output: &ValueCell,
-    kernel: mech_abi::MechUnaryF64ToF64KernelV1,
-    name: &str,
-) -> MResult<()> {
-    let mut next = canonical_f64(output)?;
-    let status = unsafe { (kernel)(canonical_f64(input)?, &mut next as *mut f64) };
-    check_dynamic_kernel_status(name, status)?;
-    output.replace(&ValueCell::from_exact(next)?.snapshot()?)
 }
 
 #[cfg(feature = "dynamic-modules")]
 impl MechFunctionImpl for DynamicUnaryF64ToF64Function {
     fn solve_managed(
         &self,
-        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
-        (|| -> MResult<()> {
-            solve_dynamic_unary_scalar(&self.input, &self.output, self.kernel, &self.name)
-        })()?;
+        frame.with_unary_port_views(&self.input, &self.output, |input, output| {
+            if input.len() != 1 || output.len() != 1 {
+                return Err(MechError::new(
+                    GenericError {
+                        msg: format!(
+                            "dynamic function `{}` requires scalar managed ports",
+                            self.name
+                        ),
+                    },
+                    None,
+                )
+                .with_compiler_loc());
+            }
+            output.try_fill_column_major(|_| {
+                let mut next = 0.0;
+                let status = unsafe {
+                    (self.kernel)(
+                        input.get_column_major(0).expect("validated scalar input"),
+                        &mut next as *mut f64,
+                    )
+                };
+                check_dynamic_kernel_status(&self.name, status)?;
+                Ok(next)
+            })
+        })?;
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
@@ -1539,8 +1603,8 @@ impl MechFunctionImpl for DynamicUnaryF64ToF64Function {
 #[cfg(all(feature = "dynamic-modules", feature = "semantic-compiler"))]
 impl MechFunctionCompiler for DynamicUnaryF64ToF64Function {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let output = compile_value_cell_register(&self.output, ctx)?;
-        let input = compile_value_cell_register(&self.input, ctx)?;
+        let output = compile_value_cell_register(self.output.cell(), ctx)?;
+        let input = compile_value_cell_register(self.input.cell(), ctx)?;
         let function = ctx.function_id(&self.name)?;
         ctx.emit_unop(function, output, input);
         Ok(output)
@@ -1550,40 +1614,40 @@ impl MechFunctionCompiler for DynamicUnaryF64ToF64Function {
 #[cfg(feature = "dynamic-modules")]
 struct DynamicUnaryF64ViewToF64ViewFunction {
     name: String,
-    input: ValueCell,
-    output: ValueCell,
+    input: ManagedPort<f64>,
+    output: ManagedPort<f64>,
     kernel: mech_abi::MechUnaryF64ViewToF64ViewKernelV1,
     _library: Arc<libloading::Library>,
 }
 
-#[cfg(feature = "dynamic-modules")]
+#[cfg(all(test, feature = "dynamic-modules"))]
 fn solve_dynamic_unary_view(
     input: &ValueCell,
     output: &ValueCell,
     kernel: mech_abi::MechUnaryF64ViewToF64ViewKernelV1,
     name: &str,
 ) -> MResult<()> {
-    let (rows, cols, input_vec) = canonical_f64_matrix_values(input)?;
+    let (rows, cols, input_values) = canonical_f64_matrix_values(input)?;
     let len = rows.checked_mul(cols).ok_or_else(|| {
         MechError::new(
             GenericError {
-                msg: format!("dynamic function `{}` matrix shape overflows", name),
+                msg: format!("dynamic function `{name}` matrix shape overflows"),
             },
             None,
         )
         .with_compiler_loc()
     })?;
-    let mut out_vec = vec![0.0; len];
+    let mut output_values = vec![0.0; len];
     let status = unsafe {
         (kernel)(
             mech_abi::MechF64ViewV1 {
-                ptr: input_vec.as_ptr(),
+                ptr: input_values.as_ptr(),
                 len,
                 rows,
                 cols,
             },
             mech_abi::MechF64ViewMutV1 {
-                ptr: out_vec.as_mut_ptr(),
+                ptr: output_values.as_mut_ptr(),
                 len,
                 rows,
                 cols,
@@ -1591,19 +1655,39 @@ fn solve_dynamic_unary_view(
         )
     };
     check_dynamic_kernel_status(name, status)?;
-    replace_dynamic_matrix_output(output, rows, cols, out_vec, name)
+    replace_dynamic_matrix_output(output, rows, cols, output_values, name)
 }
 
 #[cfg(feature = "dynamic-modules")]
 impl MechFunctionImpl for DynamicUnaryF64ViewToF64ViewFunction {
     fn solve_managed(
         &self,
-        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
-        (|| -> MResult<()> {
-            solve_dynamic_unary_view(&self.input, &self.output, self.kernel, &self.name)
-        })()?;
+        frame.with_f64_abi_contiguous_bridge(
+            &self.input,
+            &self.output,
+            |input, rows, cols, output| {
+                let status = unsafe {
+                    (self.kernel)(
+                        mech_abi::MechF64ViewV1 {
+                            ptr: input.as_ptr(),
+                            len: input.len(),
+                            rows,
+                            cols,
+                        },
+                        mech_abi::MechF64ViewMutV1 {
+                            ptr: output.as_mut_ptr(),
+                            len: output.len(),
+                            rows,
+                            cols,
+                        },
+                    )
+                };
+                check_dynamic_kernel_status(&self.name, status)
+            },
+        )?;
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
@@ -1619,8 +1703,8 @@ impl MechFunctionImpl for DynamicUnaryF64ViewToF64ViewFunction {
 #[cfg(all(feature = "dynamic-modules", feature = "semantic-compiler"))]
 impl MechFunctionCompiler for DynamicUnaryF64ViewToF64ViewFunction {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let output = compile_value_cell_register(&self.output, ctx)?;
-        let input = compile_value_cell_register(&self.input, ctx)?;
+        let output = compile_value_cell_register(self.output.cell(), ctx)?;
+        let input = compile_value_cell_register(self.input.cell(), ctx)?;
         let function = ctx.function_id(&self.name)?;
         ctx.emit_unop(function, output, input);
         Ok(output)

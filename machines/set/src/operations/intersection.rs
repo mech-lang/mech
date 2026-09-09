@@ -37,7 +37,9 @@ impl MechFunctionFactory for SetIntersectionFxn {
 impl MechFunctionImpl for SetIntersectionFxn {
     fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
         Ok(Some(
-            vec![self.lhs.prospective_binary_footprint(&self.rhs, &self.out)?]
+            vec![self
+                .lhs
+                .prospective_intersection_footprint(&self.rhs, &self.out)?]
                 .into_boxed_slice(),
         ))
     }
@@ -53,7 +55,9 @@ impl MechFunctionImpl for SetIntersectionFxn {
         frame: &mut mech_core::KernelMemoryFrame<'_>,
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
-        let footprint = self.lhs.prospective_binary_footprint(&self.rhs, &self.out)?;
+        let footprint = self
+            .lhs
+            .prospective_intersection_footprint(&self.rhs, &self.out)?;
         self.out.with_admitted_set(frame, footprint, |frame| {
             self.lhs.intersection_elements(frame, &self.rhs)
         })?;

@@ -18,9 +18,9 @@ use mech_core::Value;
 use mech_core::{
     ApplicationRequirement, BytecodeCompilerContext, BytecodeInstruction, BytecodeProgram,
     EncodedConstant, ExecutionHostFunctionRequest, FunctionCatalog, FunctionCatalogBuilder,
-    FunctionInvocation, FunctionRuntimeType, FunctionValueRepresentation, MResult, MatrixStorage,
-    MechFunction, MechFunctionCompiler, MechFunctionFactory, MechFunctionImpl,
-    NativeFunctionLinkage, Ref, Register, RuntimeFamilyId, RuntimeFunctionContract,
+    FunctionInvocation, FunctionRuntimeType, FunctionValueOutput, FunctionValueRepresentation,
+    MResult, MatrixStorage, MechFunction, MechFunctionCompiler, MechFunctionFactory,
+    MechFunctionImpl, NativeFunctionLinkage, Register, RuntimeFamilyId, RuntimeFunctionContract,
     RuntimeFunctionSignature, RuntimeOutputAliasPolicy, RuntimeType, RuntimeTypeTag, hash_str,
     write_bytecode,
 };

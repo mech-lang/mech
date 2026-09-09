@@ -387,6 +387,30 @@ fn storage_specificity(representation: FunctionValueRepresentation) -> StorageSp
     }
 }
 
+fn runtime_input_storage_specificity(signature: RuntimeFunctionInputs, arity: usize) -> u16 {
+    let score = |representation| match storage_specificity(representation) {
+        StorageSpecificity::ErasedCanonical => 0_u16,
+        StorageSpecificity::FullyDynamicMatrix => 1,
+        StorageSpecificity::InvariantAxisDynamicMatrix => 2,
+        StorageSpecificity::FixedShapeMatrix => 3,
+        StorageSpecificity::ExactScalarOrAggregate => 4,
+    };
+    match signature {
+        RuntimeFunctionInputs::Nullary => 0,
+        RuntimeFunctionInputs::Unary(first) => score(first),
+        RuntimeFunctionInputs::Binary(first, second) => score(first) + score(second),
+        RuntimeFunctionInputs::Ternary(first, second, third) => {
+            score(first) + score(second) + score(third)
+        }
+        RuntimeFunctionInputs::Quaternary(first, second, third, fourth) => {
+            score(first) + score(second) + score(third) + score(fourth)
+        }
+        RuntimeFunctionInputs::Variadic { element } => {
+            score(element).saturating_mul(u16::try_from(arity).unwrap_or(u16::MAX))
+        }
+    }
+}
+
 const fn execution_profile(target: ExecutionTarget) -> &'static str {
     match target {
         ExecutionTarget::DirectRuntime => "direct runtime",
@@ -1282,6 +1306,7 @@ impl<'a> SpecializationContext<'a> {
         let (entry, rejections) = self.select_runtime_candidate(
             selector,
             target,
+            &input_descriptors,
             &input_representations,
             &output_descriptor,
             None,
@@ -1388,6 +1413,7 @@ impl<'a> SpecializationContext<'a> {
         let (entry, _) = self.select_runtime_candidate(
             selector,
             target,
+            &runtime_input_descriptors,
             &input_representations,
             &output_descriptor,
             Some(output_representation),
@@ -1420,6 +1446,7 @@ impl<'a> SpecializationContext<'a> {
         &self,
         selector: RuntimeBindingSelector,
         target: ExecutionTarget,
+        input_descriptors: &[ResolvedValueDescriptor],
         input_representations: &[FunctionValueRepresentation],
         output: &ResolvedValueDescriptor,
         existing_output: Option<FunctionValueRepresentation>,
@@ -1441,6 +1468,10 @@ impl<'a> SpecializationContext<'a> {
         for entry in catalog.runtime_entries_for_binding(selector, target) {
             let reason = if !runtime_inputs_match(entry.signature().inputs, input_representations) {
                 Some("physical input signature mismatch".into())
+            } else if let Some(reason) =
+                runtime_input_storage_mismatch(entry.signature().inputs, input_descriptors)
+            {
+                Some(reason)
             } else if existing_output
                 .is_some_and(|actual| !entry.signature().output.matches(actual))
             {
@@ -1463,7 +1494,16 @@ impl<'a> SpecializationContext<'a> {
                     reason,
                 });
             } else {
-                eligible.push((storage_specificity(entry.signature().output), entry));
+                eligible.push((
+                    (
+                        storage_specificity(entry.signature().output),
+                        runtime_input_storage_specificity(
+                            entry.signature().inputs,
+                            input_representations.len(),
+                        ),
+                    ),
+                    entry,
+                ));
             }
         }
         let Some(best_specificity) = eligible.iter().map(|(specificity, _)| *specificity).max()
@@ -1550,6 +1590,54 @@ fn runtime_inputs_match(
         }
         _ => false,
     }
+}
+
+fn runtime_input_storage_mismatch(
+    signature: RuntimeFunctionInputs,
+    descriptors: &[ResolvedValueDescriptor],
+) -> Option<String> {
+    let representations = match signature {
+        RuntimeFunctionInputs::Nullary => Vec::new(),
+        RuntimeFunctionInputs::Unary(first) => vec![first],
+        RuntimeFunctionInputs::Binary(first, second) => vec![first, second],
+        RuntimeFunctionInputs::Ternary(first, second, third) => vec![first, second, third],
+        RuntimeFunctionInputs::Quaternary(first, second, third, fourth) => {
+            vec![first, second, third, fourth]
+        }
+        RuntimeFunctionInputs::Variadic { element } => vec![element; descriptors.len()],
+    };
+    if representations.len() != descriptors.len() {
+        return Some("physical input descriptor arity mismatch".into());
+    }
+    representations
+        .into_iter()
+        .zip(descriptors)
+        .enumerate()
+        .find_map(|(ordinal, (representation, descriptor))| {
+            // AnyStorage is an implementation promise, not an opaque backing.
+            // Exact matrix layouts still have to satisfy resolved dimensions.
+            if matches!(
+                representation,
+                FunctionValueRepresentation::Matrix {
+                    storage: crate::FunctionMatrixStoragePattern::AnyStorage,
+                    ..
+                }
+            ) {
+                return None;
+            }
+            let capabilities = crate::runtime_storage::actual_backing_capabilities(representation);
+            crate::check_schema_storage_compatibility(
+                descriptor.schema(),
+                descriptor.shape(),
+                &capabilities,
+            )
+            .err()
+            .map(|error| {
+                format!(
+                    "input {ordinal} storage is incompatible with the physical runtime signature: {error:?}",
+                )
+            })
+        })
 }
 
 fn invocation_for_runtime_inputs(

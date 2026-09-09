@@ -38,8 +38,7 @@ impl MechFunctionFactory for SetDifferenceFxn {
 impl MechFunctionImpl for SetDifferenceFxn {
     fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
         Ok(Some(
-            vec![self.lhs.prospective_binary_footprint(&self.rhs, &self.out)?]
-                .into_boxed_slice(),
+            vec![self.lhs.prospective_retained_footprint(&self.out)?].into_boxed_slice(),
         ))
     }
 
@@ -54,7 +53,7 @@ impl MechFunctionImpl for SetDifferenceFxn {
         frame: &mut mech_core::KernelMemoryFrame<'_>,
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
-        let footprint = self.lhs.prospective_binary_footprint(&self.rhs, &self.out)?;
+        let footprint = self.lhs.prospective_retained_footprint(&self.out)?;
         self.out.with_admitted_set(frame, footprint, |frame| {
             self.lhs.difference_elements(frame, &self.rhs)
         })?;

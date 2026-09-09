@@ -1,6 +1,9 @@
 #![cfg(feature = "full_compiler")]
 
-use mech_core::{ImplementationMemoryClass, OperationId, RuntimeBindingSelector};
+use mech_core::{
+    FunctionMatrixElement, FunctionValueRepresentation, ImplementationMemoryClass, OperationId,
+    RuntimeBindingSelector,
+};
 
 #[test]
 fn every_maintained_runtime_entry_declares_one_closed_memory_class() {
@@ -21,7 +24,7 @@ fn every_maintained_runtime_entry_declares_one_closed_memory_class() {
 }
 
 #[test]
-fn maintained_scratch_families_are_declared_by_semantic_operation() {
+fn maintained_scratch_families_are_declared_by_concrete_specialization() {
     let catalog = mech_stdlib::source_catalog();
     let expected = [
         ("matrix/solve", ImplementationMemoryClass::MatrixSolve),
@@ -29,10 +32,6 @@ fn maintained_scratch_families_are_declared_by_semantic_operation() {
         (
             "set/intersection",
             ImplementationMemoryClass::CanonicalSortUnique,
-        ),
-        (
-            "matrix/transpose",
-            ImplementationMemoryClass::NoAdditionalScratch,
         ),
     ];
     for (operation, class) in expected {
@@ -56,6 +55,46 @@ fn maintained_scratch_families_are_declared_by_semantic_operation() {
             operation.raw()
         );
     }
+
+    // Transpose has one semantic operation but two physical memory obligations:
+    // fixed-width elements write directly into their admitted output, while String
+    // elements must construct and finalize canonical payload storage. The closed
+    // implementation class therefore belongs to the concrete specialization, not
+    // to the operation name alone.
+    let operation = OperationId::from_name("matrix/transpose");
+    let entries = catalog
+        .runtime_entries_for_binding(
+            RuntimeBindingSelector::Operation(operation),
+            mech_core::ExecutionTarget::DirectRuntime,
+        )
+        .collect::<Vec<_>>();
+    assert!(!entries.is_empty(), "missing matrix/transpose");
+    let mut saw_fixed_width = false;
+    let mut saw_string = false;
+    for entry in entries {
+        let expected = match entry.signature().output {
+            FunctionValueRepresentation::Matrix {
+                element: FunctionMatrixElement::String,
+                ..
+            } => {
+                saw_string = true;
+                ImplementationMemoryClass::CanonicalFinalize
+            }
+            FunctionValueRepresentation::Matrix { .. } => {
+                saw_fixed_width = true;
+                ImplementationMemoryClass::NoAdditionalScratch
+            }
+            output => panic!("matrix/transpose specialization has non-matrix output {output:?}"),
+        };
+        assert_eq!(
+            entry.implementation_memory_class(),
+            expected,
+            "matrix/transpose specialization {} declares the wrong memory class",
+            entry.name,
+        );
+    }
+    assert!(saw_fixed_width, "missing fixed-width matrix/transpose");
+    assert!(saw_string, "missing String matrix/transpose");
 }
 
 #[test]

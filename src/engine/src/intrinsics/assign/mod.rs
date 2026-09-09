@@ -637,10 +637,7 @@ fn canonical_assignment_runtime_name(
         FunctionValueRepresentation::R64 => Some("r64"),
         FunctionValueRepresentation::C64 => Some("c64"),
         FunctionValueRepresentation::Index => return Ok("Assign<index>".to_owned()),
-        FunctionValueRepresentation::Matrix {
-            element,
-            storage: FunctionMatrixStoragePattern::Exact(storage),
-        } => {
+        FunctionValueRepresentation::Matrix { element, storage } => {
             let element = match element {
                 FunctionMatrixElement::Index => "index",
                 FunctionMatrixElement::Bool => "bool",
@@ -662,21 +659,27 @@ fn canonical_assignment_runtime_name(
                 FunctionMatrixElement::Value => "value",
             };
             let storage = match storage {
-                FunctionMatrixRepresentation::Matrix1 => "Matrix1",
-                FunctionMatrixRepresentation::Matrix2 => "Matrix2",
-                FunctionMatrixRepresentation::Matrix3 => "Matrix3",
-                FunctionMatrixRepresentation::Matrix4 => "Matrix4",
-                FunctionMatrixRepresentation::Matrix2x3 => "Matrix2x3",
-                FunctionMatrixRepresentation::Matrix3x2 => "Matrix3x2",
-                FunctionMatrixRepresentation::RowVector2 => "RowVector2",
-                FunctionMatrixRepresentation::RowVector3 => "RowVector3",
-                FunctionMatrixRepresentation::RowVector4 => "RowVector4",
-                FunctionMatrixRepresentation::Vector2 => "Vector2",
-                FunctionMatrixRepresentation::Vector3 => "Vector3",
-                FunctionMatrixRepresentation::Vector4 => "Vector4",
-                FunctionMatrixRepresentation::RowVectorD => "RowDVector",
-                FunctionMatrixRepresentation::VectorD => "DVector",
-                FunctionMatrixRepresentation::MatrixD => "DMatrix",
+                FunctionMatrixStoragePattern::Exact(storage) => match storage {
+                    FunctionMatrixRepresentation::Matrix1 => "Matrix1",
+                    FunctionMatrixRepresentation::Matrix2 => "Matrix2",
+                    FunctionMatrixRepresentation::Matrix3 => "Matrix3",
+                    FunctionMatrixRepresentation::Matrix4 => "Matrix4",
+                    FunctionMatrixRepresentation::Matrix2x3 => "Matrix2x3",
+                    FunctionMatrixRepresentation::Matrix3x2 => "Matrix3x2",
+                    FunctionMatrixRepresentation::RowVector2 => "RowVector2",
+                    FunctionMatrixRepresentation::RowVector3 => "RowVector3",
+                    FunctionMatrixRepresentation::RowVector4 => "RowVector4",
+                    FunctionMatrixRepresentation::Vector2 => "Vector2",
+                    FunctionMatrixRepresentation::Vector3 => "Vector3",
+                    FunctionMatrixRepresentation::Vector4 => "Vector4",
+                    FunctionMatrixRepresentation::RowVectorD => "RowDVector",
+                    FunctionMatrixRepresentation::VectorD => "DVector",
+                    FunctionMatrixRepresentation::MatrixD => "DMatrix",
+                },
+                // Canonical bytecode encodes an abstract matrix backing as
+                // MatrixD. Assignment must select the same portable runtime
+                // instead of depending on a transient source-side backing.
+                FunctionMatrixStoragePattern::AnyStorage => "DMatrix",
             };
             return Ok(format!("Assign<{element}{storage}>"));
         }

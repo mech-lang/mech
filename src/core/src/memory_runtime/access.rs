@@ -2185,6 +2185,159 @@ impl KernelMemoryFrame<'_> {
         self.with_binary_typed_port_views(first, second, output, access)
     }
 
+    /// Opens the two planner-owned contiguous buffers for a maintained f64
+    /// module ABI call. Logical matrices are copied to and from the bridge in
+    /// row-major order; capacity stride gaps never cross the ABI boundary.
+    #[cfg(all(feature = "functions", feature = "f64"))]
+    pub fn with_f64_abi_contiguous_bridge<R>(
+        &mut self,
+        input: &ManagedPort<f64>,
+        output: &ManagedPort<f64>,
+        access: impl FnOnce(&[f64], usize, usize, &mut [f64]) -> crate::MResult<R>,
+    ) -> crate::MResult<R> {
+        let input_lease = self.port_lease(input.logical_cell_id(), input.role(), false)?;
+        let output_lease = self.port_lease(output.logical_cell_id(), output.role(), true)?;
+        self.validate_managed_element::<f64>(input_lease, false)?;
+        self.validate_managed_element::<f64>(output_lease, false)?;
+        let input_view = self.read_view::<f64>(input_lease)?;
+        let mut output_view = self.write_view::<f64>(output_lease)?;
+        if input_view.rows() != output_view.rows() || input_view.columns() != output_view.columns()
+        {
+            return Err(MemoryRuntimeError::InvalidLayout {
+                object: Some(output_lease.object.object()),
+                size: output_lease.relative_end,
+                alignment: mem::align_of::<f64>() as u32,
+                reason: "ABI bridge input and output geometry disagree",
+            }
+            .into());
+        }
+        let rows = input_view.rows();
+        let columns = input_view.columns();
+        let elements =
+            rows.checked_mul(columns)
+                .ok_or(MemoryRuntimeError::AccountingInvariantViolation {
+                    dimension: "ABI bridge element cardinality",
+                    current: rows as u64,
+                    change: columns as u64,
+                })?;
+        let input_scratch = self.abi_contiguous_scratch(0, elements)?;
+        let output_scratch = self.abi_contiguous_scratch(1, elements)?;
+        let mut input_bridge = self.write_view::<f64>(input_scratch)?;
+        let mut output_bridge = self.write_view::<f64>(output_scratch)?;
+        input_bridge.try_fill_column_major(|index| {
+            let row = index / columns;
+            let column = index % columns;
+            input_view.get(row, column).ok_or_else(|| {
+                MemoryRuntimeError::CapacityExceeded {
+                    object: input_lease.object.object(),
+                    requested: index.saturating_add(1) as u64,
+                    capacity: elements as u64,
+                }
+                .into()
+            })
+        })?;
+        output_bridge.try_fill_column_major(|_| Ok(0.0))?;
+
+        // SAFETY: both scratch allocations are sealed f64 slots, their exact
+        // logical prefixes were initialized above, and the frame retains the
+        // exclusive leases for the duration of the callback.
+        let input_values = unsafe {
+            core::slice::from_raw_parts(input_bridge.base.cast::<f64>().as_ptr(), elements)
+        };
+        // SAFETY: identical authority applies to the exclusive output prefix.
+        let output_values = unsafe {
+            core::slice::from_raw_parts_mut(output_bridge.base.cast::<f64>().as_ptr(), elements)
+        };
+        let result = access(input_values, rows, columns, output_values)?;
+        output_view.try_fill_column_major(|index| {
+            let row = index % rows;
+            let column = index / rows;
+            let bridge_index = row
+                .checked_mul(columns)
+                .and_then(|base| base.checked_add(column))
+                .ok_or(MemoryRuntimeError::AccountingInvariantViolation {
+                    dimension: "ABI bridge output index",
+                    current: row as u64,
+                    change: column as u64,
+                })?;
+            Ok(output_values[bridge_index])
+        })?;
+        self.record_view_initialized::<f64>(input_scratch)?;
+        self.record_view_initialized::<f64>(output_scratch)?;
+        self.record_view_initialized::<f64>(output_lease)?;
+        Ok(result)
+    }
+
+    #[cfg(all(feature = "functions", feature = "f64"))]
+    fn abi_contiguous_scratch(
+        &self,
+        ordinal: u16,
+        elements: usize,
+    ) -> MemoryRuntimeResult<HeldLease> {
+        let invalid = || MemoryRuntimeError::InvalidLayout {
+            object: None,
+            size: elements as u64,
+            alignment: mem::align_of::<f64>() as u32,
+            reason: "ABI bridge scratch does not match its admitted implementation plan",
+        };
+        let plan = self.realized.call_plan().ok_or_else(invalid)?;
+        let crate::ImplementationMemoryClass::AbiContiguousBridge { input, output } =
+            plan.implementation_memory
+        else {
+            return Err(invalid());
+        };
+        let input_slot = plan.inputs.get(input as usize).and_then(|port| {
+            plan.allocations
+                .iter()
+                .find(|allocation| allocation.id == port.object)
+                .and_then(|allocation| allocation.slot)
+        });
+        let output_slot = plan.outputs.get(output as usize).and_then(|port| {
+            plan.allocations
+                .iter()
+                .find(|allocation| allocation.id == port.object)
+                .and_then(|allocation| allocation.slot)
+        });
+        if input_slot != Some(<f64 as ManagedElement>::SLOT)
+            || output_slot != Some(<f64 as ManagedElement>::SLOT)
+        {
+            return Err(invalid());
+        }
+        let allocation = plan
+            .allocations
+            .iter()
+            .find(|allocation| {
+                matches!(
+                    allocation.owner,
+                    crate::MemoryObjectOwner::NodeScratch { ordinal: found, .. } if found == ordinal
+                )
+            })
+            .ok_or_else(invalid)?;
+        let bytes = elements
+            .checked_mul(mem::size_of::<f64>())
+            .and_then(|bytes| u64::try_from(bytes).ok())
+            .ok_or_else(invalid)?;
+        let object = self
+            .domain
+            .plan_object_key(self.realized.revision(), allocation.id)?;
+        let mut lease = self
+            .leases
+            .iter()
+            .find(|lease| lease.object == object && lease.mode.writes())
+            .copied()
+            .ok_or_else(invalid)?;
+        if bytes > lease.relative_end {
+            return Err(invalid());
+        }
+        lease.end = lease.start.checked_add(bytes).ok_or_else(invalid)?;
+        lease.relative_end = bytes;
+        lease.region = MemoryAccessRegion::Contiguous {
+            offset_bytes: 0,
+            length_bytes: bytes,
+        };
+        Ok(lease)
+    }
+
     /// Opens the three sealed MatrixSolve scratch ordinals together with its
     /// inputs and transaction output. Scratch element identity comes from the
     /// selected implementation contract and validated ports, never from a

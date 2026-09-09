@@ -91,6 +91,7 @@ declare_matrix_selection_contract!(
     2,
     "all-rows-explicit-columns-output"
 );
+#[cfg(feature = "logical_indexing")]
 declare_matrix_selection_contract!(
     PURE_BINARY_ALL_ROWS_LOGICAL_COLUMNS_CONTRACT,
     2,
@@ -2330,9 +2331,12 @@ impl_access_fxn_shape2!(
     PURE_TERNARY_LOGICAL_ROWS_SCALAR_COLUMN_CONTRACT
 );
 
+#[cfg(feature = "logical_indexing")]
 impl_range_range_fxn_v!(Access2DRRVBB, access_2d_range_range_vbb, bool, bool);
+#[cfg(feature = "logical_indexing")]
 impl_range_range_fxn_v!(Access2DRRVBU, access_2d_range_range_vbu, bool, usize);
 impl_range_range_fxn_v!(Access2DRRVUU, access_2d_range_range_vuu, usize, usize);
+#[cfg(feature = "logical_indexing")]
 impl_range_range_fxn_v!(Access2DRRVUB, access_2d_range_range_vub, usize, bool);
 
 impl_all_fxn_v!(
@@ -2341,6 +2345,7 @@ impl_all_fxn_v!(
     usize,
     PURE_BINARY_ALL_ROWS_EXPLICIT_COLUMNS_CONTRACT
 );
+#[cfg(feature = "logical_indexing")]
 impl_all_fxn_v!(
     Access2DARVB,
     assign_2d_all_range_vb,
@@ -3552,7 +3557,10 @@ impl MechFunctionCompiler for CanonicalIndexConversion {
     }
 }
 
-#[cfg(any(feature = "subscript_formula", feature = "subscript_range"))]
+#[cfg(all(
+    feature = "semantic-compiler",
+    any(feature = "subscript_formula", feature = "subscript_range")
+))]
 fn canonical_portable_index(value: &ValueCell) -> MResult<usize> {
     let snapshot = value.snapshot()?;
     let value = mech_core::canonical_positional_ordinal(snapshot.data()).map_err(|_| {

@@ -38,8 +38,7 @@ impl MechFunctionFactory for SetRemoveFxn {
 impl MechFunctionImpl for SetRemoveFxn {
     fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
         Ok(Some(
-            vec![self.arg1.prospective_update_footprint(&self.arg2, &self.out)?]
-                .into_boxed_slice(),
+            vec![self.arg1.prospective_retained_footprint(&self.out)?].into_boxed_slice(),
         ))
     }
 
@@ -54,7 +53,7 @@ impl MechFunctionImpl for SetRemoveFxn {
         frame: &mut mech_core::KernelMemoryFrame<'_>,
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
-        let footprint = self.arg1.prospective_update_footprint(&self.arg2, &self.out)?;
+        let footprint = self.arg1.prospective_retained_footprint(&self.out)?;
         self.out.with_admitted_set(frame, footprint, |frame| {
             self.arg1.elements_after_remove(frame, &self.arg2)
         })?;

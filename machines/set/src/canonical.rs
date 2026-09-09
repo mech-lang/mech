@@ -18,6 +18,7 @@ impl ArbitraryInput {
         frame.snapshot_function_value_input(&self.0)
     }
 
+    #[cfg(feature = "modify")]
     pub(crate) fn planning_snapshot(&self) -> MResult<Value> {
         self.0.snapshot()
     }
@@ -57,6 +58,16 @@ impl SetInput {
         Ok(Self(value))
     }
 
+    #[cfg(any(
+        feature = "cartesian_product",
+        feature = "difference",
+        feature = "insert",
+        feature = "intersection",
+        feature = "powerset",
+        feature = "remove",
+        feature = "symmetric_difference",
+        feature = "union",
+    ))]
     pub(crate) fn planning_snapshot(&self) -> MResult<Value> {
         self.0.snapshot()
     }
@@ -69,7 +80,13 @@ impl SetInput {
             .ok_or_else(|| function_shape_contract_violation("set/operation", "input is not a set"))
     }
 
-    pub(crate) fn prospective_binary_footprint(
+    #[cfg(any(
+        feature = "difference",
+        feature = "intersection",
+        feature = "symmetric_difference",
+        feature = "union",
+    ))]
+    pub(crate) fn prospective_combined_footprint(
         &self,
         other: &Self,
         output: &SetOutput,
@@ -88,6 +105,46 @@ impl SetInput {
                 .chain(right.elements())
                 .map(|entry| entry.data()),
         )
+    }
+
+    #[cfg(any(feature = "difference", feature = "intersection", feature = "remove"))]
+    pub(crate) fn prospective_retained_footprint(
+        &self,
+        output: &SetOutput,
+    ) -> MResult<CurrentMemoryFootprint> {
+        let set = self.planning_snapshot()?;
+        let set = set.set_view().ok_or_else(|| {
+            function_shape_contract_violation("set/operation", "input is not a set")
+        })?;
+        output
+            .0
+            .cell()
+            .prospective_set_data_memory_footprint(set.elements().iter().map(|entry| entry.data()))
+    }
+
+    #[cfg(feature = "intersection")]
+    pub(crate) fn prospective_intersection_footprint(
+        &self,
+        other: &Self,
+        output: &SetOutput,
+    ) -> MResult<CurrentMemoryFootprint> {
+        // An intersection is a subset of each input. Every footprint field is
+        // therefore bounded independently by both complete input footprints;
+        // taking their field-wise minimum is conservative without pretending
+        // that values unique to either input can be published.
+        let left = self.prospective_retained_footprint(output)?;
+        let right = other.prospective_retained_footprint(output)?;
+        Ok(CurrentMemoryFootprint {
+            logical_elements: left.logical_elements.min(right.logical_elements),
+            fixed_bytes: left.fixed_bytes.min(right.fixed_bytes),
+            payload_bytes: left.payload_bytes.min(right.payload_bytes),
+            encoded_bytes: left.encoded_bytes.min(right.encoded_bytes),
+            retained_nodes: left.retained_nodes.min(right.retained_nodes),
+            schema_bytes: left.schema_bytes.min(right.schema_bytes),
+            shape_parameter_count: left
+                .shape_parameter_count
+                .min(right.shape_parameter_count),
+        })
     }
 
     #[cfg(feature = "modify")]
@@ -204,6 +261,7 @@ impl SetInput {
         set.set_element_drafts(&schemas).map_err(snapshot_error)
     }
 
+    #[cfg(feature = "insert")]
     pub(crate) fn elements_after_insert(
         &self,
         frame: &KernelMemoryFrame<'_>,
@@ -212,6 +270,7 @@ impl SetInput {
         self.with_candidate(frame, candidate, Value::set_elements_after_insert)
     }
 
+    #[cfg(feature = "remove")]
     pub(crate) fn elements_after_remove(
         &self,
         frame: &KernelMemoryFrame<'_>,
@@ -220,6 +279,7 @@ impl SetInput {
         self.with_candidate(frame, candidate, Value::set_elements_after_remove)
     }
 
+    #[cfg(feature = "union")]
     pub(crate) fn union_elements(
         &self,
         frame: &KernelMemoryFrame<'_>,
@@ -228,6 +288,7 @@ impl SetInput {
         self.with_set(frame, other, Value::set_union_elements)
     }
 
+    #[cfg(feature = "intersection")]
     pub(crate) fn intersection_elements(
         &self,
         frame: &KernelMemoryFrame<'_>,
@@ -236,6 +297,7 @@ impl SetInput {
         self.with_set(frame, other, Value::set_intersection_elements)
     }
 
+    #[cfg(feature = "difference")]
     pub(crate) fn difference_elements(
         &self,
         frame: &KernelMemoryFrame<'_>,
@@ -244,6 +306,7 @@ impl SetInput {
         self.with_set(frame, other, Value::set_difference_elements)
     }
 
+    #[cfg(feature = "symmetric_difference")]
     pub(crate) fn symmetric_difference_elements(
         &self,
         frame: &KernelMemoryFrame<'_>,
@@ -252,6 +315,7 @@ impl SetInput {
         self.with_set(frame, other, Value::set_symmetric_difference_elements)
     }
 
+    #[cfg(any(feature = "insert", feature = "remove"))]
     fn with_candidate(
         &self,
         frame: &KernelMemoryFrame<'_>,
@@ -274,6 +338,12 @@ impl SetInput {
         operation(&set, &set_schemas, &candidate, &candidate_schemas).map_err(snapshot_error)
     }
 
+    #[cfg(any(
+        feature = "difference",
+        feature = "intersection",
+        feature = "symmetric_difference",
+        feature = "union",
+    ))]
     fn with_set(
         &self,
         frame: &KernelMemoryFrame<'_>,

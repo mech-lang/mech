@@ -38,7 +38,7 @@ impl MechFunctionFactory for SetUnionFxn {
 impl MechFunctionImpl for SetUnionFxn {
     fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
         Ok(Some(
-            vec![self.lhs.prospective_binary_footprint(&self.rhs, &self.out)?]
+            vec![self.lhs.prospective_combined_footprint(&self.rhs, &self.out)?]
                 .into_boxed_slice(),
         ))
     }
@@ -56,7 +56,7 @@ impl MechFunctionImpl for SetUnionFxn {
         frame: &mut mech_core::KernelMemoryFrame<'_>,
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
-        let footprint = self.lhs.prospective_binary_footprint(&self.rhs, &self.out)?;
+        let footprint = self.lhs.prospective_combined_footprint(&self.rhs, &self.out)?;
         self.out.with_admitted_set(frame, footprint, |frame| {
             self.lhs.union_elements(frame, &self.rhs)
         })?;
