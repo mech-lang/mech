@@ -92,7 +92,11 @@ jobs:
           rustup toolchain install nightly-2026-03-03 --profile minimal
           if ! command -v rg >/dev/null 2>&1
           then
-            sudo apt-get update
+            # Ignore unrelated preinstalled third-party repositories. A stale
+            # Chrome index must not prevent architecture validation from running.
+            sudo apt-get update \
+              -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources \
+              -o Dir::Etc::sourceparts=-
             sudo apt-get install --yes ripgrep
           fi
       - name: Fetch locked architecture dependencies
@@ -401,7 +405,9 @@ jobs:
 
       - name: Install required CI tools
         run: |
-          sudo apt-get update
+          sudo apt-get update \
+            -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources \
+            -o Dir::Etc::sourceparts=-
           sudo apt-get install --yes ripgrep
 
       - name: Install Rust nightly-2026-03-03
@@ -440,7 +446,9 @@ jobs:
 
       - name: Install required CI tools
         run: |
-          sudo apt-get update
+          sudo apt-get update \
+            -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources \
+            -o Dir::Etc::sourceparts=-
           sudo apt-get install --yes ripgrep
 
       - name: Install Rust nightly-2026-03-03
@@ -474,7 +482,9 @@ jobs:
 
       - name: Install required CI tools
         run: |
-          sudo apt-get update
+          sudo apt-get update \
+            -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources \
+            -o Dir::Etc::sourceparts=-
           sudo apt-get install --yes ripgrep
 
       - name: Install Rust nightly-2026-03-03
@@ -502,7 +512,9 @@ jobs:
 
       - name: Install required CI tools
         run: |
-          sudo apt-get update
+          sudo apt-get update \
+            -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources \
+            -o Dir::Etc::sourceparts=-
           sudo apt-get install --yes ripgrep
 
       - name: Install Rust nightly-2026-03-03
@@ -1139,7 +1151,9 @@ jobs:
 
       - name: Install required CI tools
         run: |
-          sudo apt-get update
+          sudo apt-get update \
+            -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources \
+            -o Dir::Etc::sourceparts=-
           sudo apt-get install --yes ripgrep
 
       - name: Disk report at start

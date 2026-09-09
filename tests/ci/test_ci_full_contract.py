@@ -44,14 +44,20 @@ def job_block(source: str, job: str) -> str:
 
 
 class FullWorkflowContractTests(unittest.TestCase):
-    def test_static_tool_install_ignores_unrelated_apt_sources(self):
-        static = job_block(CI, "static-contracts")
-        self.assertIn(
-            "Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources",
-            static,
-        )
-        self.assertIn("Dir::Etc::sourceparts=-", static)
-        self.assertIn("sudo apt-get install --yes ripgrep", static)
+    def test_ci_tool_installs_ignore_unrelated_apt_sources(self):
+        for workflow_name, workflow in (("CI", CI), ("Full CI", FULL)):
+            installs = workflow.count("sudo apt-get install --yes ripgrep")
+            with self.subTest(workflow=workflow_name):
+                self.assertGreater(installs, 0)
+                self.assertEqual(
+                    workflow.count(
+                        "Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources"
+                    ),
+                    installs,
+                )
+                self.assertEqual(
+                    workflow.count("Dir::Etc::sourceparts=-"), installs
+                )
 
     def test_browser_suites_run_in_parallel_behind_one_required_gate(self):
         standard = job_block(CI, "browser-standard-canary")
