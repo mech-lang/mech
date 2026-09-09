@@ -482,7 +482,8 @@ def failures(root: Path) -> list[str]:
     turn = rust_code(sources.get("src/engine/src/memory_planner/turn.rs", ""))
     for required in (
         "resolved_footprints",
-        "resolve_deferred_call_memory",
+        "resolve_current_call_memory",
+        "published_footprints",
         "place_allocations(&mut allocations)",
         "apply_observed_turn_demand",
         "grow_transaction_family",

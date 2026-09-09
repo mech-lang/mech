@@ -340,9 +340,9 @@ class R5MemoryPlannerCheckerTests(unittest.TestCase):
     def test_28_deferred_call_demand_resolution_fails(self):
         root = self.fixture()
         path = "src/engine/src/memory_planner/turn.rs"
-        source = (root / path).read_text().replace("resolve_deferred_call_memory", "lost_deferred_resolution")
+        source = (root / path).read_text().replace("resolve_current_call_memory", "lost_deferred_resolution")
         self.write(root, path, source)
-        self.assert_failure(root, "turn planning omits deferred budget closure: resolve_deferred_call_memory")
+        self.assert_failure(root, "turn planning omits deferred budget closure: resolve_current_call_memory")
 
     def test_29_turn_replacement_fails(self):
         root = self.fixture()
