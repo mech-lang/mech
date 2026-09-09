@@ -109,13 +109,14 @@ impl MechFunctionCompiler for ExternalHostCallFunction {
 mod tests {
     use super::*;
     use mech_core::{
-        AccessMode, AliasPolicy, ChangeDetectionPolicy, DeliveryMode, ExecutionResourceRequest,
-        ExecutionTarget, ExternalInteraction, FunctionInvocation, ImplementationMemoryClass,
-        InputPortLayout, InputPortPolicy, MemoryDomain, MemoryFailurePoint,
-        OperationContractDeclaration, OutputConstruction, OutputPortPolicy, ReactiveSolveStatus,
-        ResolvedOperationDescriptor, RuntimeFunctionId, ShapeRule, SpecializedFunction,
+        AccessMode, AliasPolicy, AllocationRole, ChangeDetectionPolicy, DeliveryMode,
+        ExecutionResourceRequest, ExecutionTarget, ExternalInteraction, FunctionInvocation,
+        ImplementationMemoryClass, InputPortLayout, InputPortPolicy, MemoryDomain,
+        MemoryFailurePoint, OperationContractDeclaration, OutputConstruction, OutputPortPolicy,
+        ReactiveSolveStatus, ResolvedOperationDescriptor, RuntimeFunctionId, ShapeRule,
+        SpecializedFunction,
     };
-    #[cfg(all(feature = "matrixd", feature = "u8"))]
+    #[cfg(feature = "matrixd")]
     use nalgebra::DMatrix;
 
     struct RecordingServices {
@@ -268,6 +269,64 @@ mod tests {
             .instance()
             .solve_result_with(&mut services)
             .unwrap();
+        assert_eq!(services.calls, 1);
+        assert_eq!(text(&output), "accepted");
+    }
+
+    #[cfg(feature = "matrixd")]
+    #[test]
+    fn parameterized_canonical_marshalling_admits_shape_before_provider_invocation() {
+        let domain = MemoryDomain::new().unwrap();
+        let input = ValueCell::from_exact_in(
+            &domain,
+            DMatrix::from_row_slice(
+                2,
+                3,
+                &[
+                    "a".to_owned(),
+                    "b".to_owned(),
+                    "c".to_owned(),
+                    "d".to_owned(),
+                    "e".to_owned(),
+                    "f".to_owned(),
+                ],
+            ),
+        )
+        .unwrap();
+        assert_eq!(input.shape().parameter_values(), &[2, 3]);
+        let output = ValueCell::from_exact_in(&domain, "old".to_owned()).unwrap();
+        let function = instance(input, output.clone());
+        let shape_bytes = 2 * core::mem::size_of::<u64>() as u64;
+        let scratch_bytes = function
+            .memory_plan()
+            .allocations
+            .iter()
+            .filter(|allocation| allocation.role == AllocationRole::Scratch)
+            .map(|allocation| allocation.capacity_bytes)
+            .sum::<u64>();
+        assert!(
+            scratch_bytes >= shape_bytes,
+            "parameterized canonical input shape is absent from finite marshalling scratch"
+        );
+
+        let mut services = RecordingServices {
+            calls: 0,
+            result: ValueCell::from_exact("accepted".to_owned())
+                .unwrap()
+                .snapshot()
+                .unwrap(),
+        };
+        domain
+            .inject_failure_after(MemoryFailurePoint::HostAllocation, 0)
+            .unwrap();
+        assert!(function.solve_result_with(&mut services).is_err());
+        assert_eq!(
+            services.calls, 0,
+            "provider ran before parameterized canonical metadata was admitted"
+        );
+        assert_eq!(text(&output), "old");
+
+        function.solve_result_with(&mut services).unwrap();
         assert_eq!(services.calls, 1);
         assert_eq!(text(&output), "accepted");
     }

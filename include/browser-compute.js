@@ -1015,5 +1015,23 @@ class Session {
   }
 }
 
-return Object.freeze({ Device, ResetTracker, Session });
+async function awaitSmokeTargetCompletion(target) {
+  const completion = target.computeSession?.completion;
+  if (completion) {
+    await Promise.resolve(completion);
+  }
+  if (target.bridgeFailure) {
+    throw target.bridgeFailure;
+  }
+  target.stop();
+  const disposal = target.computeResource?.disposeCompletion;
+  if (disposal) {
+    await Promise.resolve(disposal);
+  }
+  if (target.bridgeFailure) {
+    throw target.bridgeFailure;
+  }
+}
+
+return Object.freeze({ Device, ResetTracker, Session, awaitSmokeTargetCompletion });
 })();

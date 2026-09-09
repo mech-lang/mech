@@ -4,12 +4,50 @@ globalThis.GPUMapMode = { READ: 1 };
 globalThis.GPUBufferUsage = { COPY_DST: 1, MAP_READ: 2 };
 await import("../include/browser-compute.js");
 
-const { Device, ResetTracker, Session } = globalThis.MechBrowserCompute;
+const { Device, ResetTracker, Session, awaitSmokeTargetCompletion } =
+  globalThis.MechBrowserCompute;
 assert.equal(Object.isFrozen(globalThis.MechBrowserCompute), true);
 assert.equal(globalThis.MechComputeSubmissionLifecycle, undefined);
 assert.equal(globalThis.MechComputeStateResetLedger, undefined);
 assert.equal(globalThis.MechComputeStateResetTracker, undefined);
 assert.equal(globalThis.MechBrowserComputeDevice, undefined);
+
+let releaseLateCompletion;
+const lateCompletionFailure = new Error("late submitted work failed");
+const lateTarget = {
+  computeSession: {
+    completion: new Promise(resolve => {
+      releaseLateCompletion = resolve;
+    }),
+  },
+  computeResource: null,
+  bridgeFailure: null,
+  stopped: false,
+  stop() {
+    this.stopped = true;
+  },
+};
+const lateSettlement = awaitSmokeTargetCompletion(lateTarget);
+lateTarget.bridgeFailure = lateCompletionFailure;
+releaseLateCompletion();
+await assert.rejects(lateSettlement, /late submitted work failed/);
+assert.equal(
+  lateTarget.stopped,
+  false,
+  "a failed final completion must be reported before smoke teardown publishes success",
+);
+
+const successfulTarget = {
+  computeSession: { completion: Promise.resolve() },
+  computeResource: { disposeCompletion: Promise.resolve() },
+  bridgeFailure: null,
+  stopped: false,
+  stop() {
+    this.stopped = true;
+  },
+};
+await awaitSmokeTargetCompletion(successfulTarget);
+assert.equal(successfulTarget.stopped, true);
 
 const resets = new ResetTracker();
 assert.equal(

@@ -9,7 +9,7 @@ use crate::{
     FloatWidth, IntegerWidth, NamedKindPathResolver, Schema, SchemaBody, SchemaId, SchemaKey,
     SchemaTable, ShapeInstance,
 };
-use core::cell::Cell;
+use core::cell::{Cell, OnceCell};
 
 #[cfg(feature = "no_std")]
 use alloc::{boxed::Box, string::String, sync::Arc, vec::Vec};
@@ -21,6 +21,7 @@ pub struct SnapshotValidationContext<'a> {
     named_kinds: Option<&'a dyn NamedKindPathResolver>,
     canonicalization_budget: Option<&'a SnapshotCanonicalizationBudget>,
     construction_authority: Option<&'a dyn SnapshotConstructionAuthority>,
+    shared_schemas: OnceCell<Arc<SchemaTable>>,
 }
 
 /// Sealed allocation authority used by managed canonical construction. The
@@ -80,6 +81,7 @@ impl<'a> SnapshotValidationContext<'a> {
             named_kinds: None,
             canonicalization_budget: None,
             construction_authority: None,
+            shared_schemas: OnceCell::new(),
         }
     }
 
@@ -92,6 +94,7 @@ impl<'a> SnapshotValidationContext<'a> {
             named_kinds: Some(named_kinds),
             canonicalization_budget: None,
             construction_authority: None,
+            shared_schemas: OnceCell::new(),
         }
     }
 
@@ -199,6 +202,9 @@ impl<'a> SnapshotValidationContext<'a> {
     }
 
     fn try_clone_schemas(&self) -> Result<Arc<SchemaTable>, SnapshotValueError> {
+        if let Some(schemas) = self.shared_schemas.get() {
+            return Ok(schemas.clone());
+        }
         let bytes = self.schemas.clone_allocation_bound_bytes().ok_or(
             crate::MemoryRuntimeError::InvalidLayout {
                 object: self
@@ -213,17 +219,21 @@ impl<'a> SnapshotValidationContext<'a> {
         if let Some(authority) = self.construction_authority {
             authority.admit_snapshot_allocation(bytes, alignment)?;
         }
-        Arc::try_new(self.schemas.clone()).map_err(|_| {
-            crate::MemoryRuntimeError::AllocationFailed {
+        let schemas = Arc::try_new(self.schemas.clone()).map_err(|_| {
+            SnapshotValueError::from(crate::MemoryRuntimeError::AllocationFailed {
                 object: self
                     .construction_authority
                     .and_then(SnapshotConstructionAuthority::allocation_object),
                 requested: bytes,
                 alignment,
                 space: crate::MemorySpace::Host,
-            }
-            .into()
-        })
+            })
+        })?;
+        // Recursive Dynamic values use the same immutable schema owner. The
+        // complete schema-table allocation is therefore admitted exactly once
+        // per finalization tree rather than once per nested Value node.
+        let _ = self.shared_schemas.set(schemas.clone());
+        Ok(schemas)
     }
 }
 
@@ -270,6 +280,62 @@ impl Value {
     #[doc(hidden)]
     pub fn shares_frozen_storage(&self, other: &Self) -> bool {
         Arc::ptr_eq(&self.root.data, &other.root.data)
+    }
+
+    /// Clones only the small shape metadata through an admitted construction
+    /// token while sharing the immutable payload and schema owners.
+    #[cfg(feature = "functions")]
+    pub(crate) fn try_clone_for_external_marshalling(
+        &self,
+        construction: &dyn SnapshotConstructionAuthority,
+    ) -> Result<Self, SnapshotValueError> {
+        let shape_bytes = self
+            .shape
+            .parameter_values()
+            .len()
+            .checked_mul(core::mem::size_of::<u64>())
+            .and_then(|bytes| u64::try_from(bytes).ok())
+            .ok_or(crate::MemoryRuntimeError::InvalidLayout {
+                object: construction.allocation_object(),
+                size: u64::MAX,
+                alignment: u32::try_from(core::mem::align_of::<u64>()).unwrap_or(u32::MAX),
+                reason: "external canonical shape clone layout overflows",
+            })?;
+        construction.admit_snapshot_allocation(
+            shape_bytes,
+            u32::try_from(core::mem::align_of::<u64>()).unwrap_or(u32::MAX),
+        )?;
+        let mut shape_values = Vec::new();
+        shape_values
+            .try_reserve_exact(self.shape.parameter_values().len())
+            .map_err(|_| {
+                SnapshotValueError::from(crate::MemoryRuntimeError::AllocationFailed {
+                    object: construction.allocation_object(),
+                    requested: shape_bytes,
+                    alignment: u32::try_from(core::mem::align_of::<u64>()).unwrap_or(u32::MAX),
+                    space: crate::MemorySpace::Host,
+                })
+            })?;
+        shape_values.extend_from_slice(self.shape.parameter_values());
+        let shape_schema = self
+            .schemas
+            .as_ref()
+            .and_then(|schemas| schemas.get(self.schema))
+            .ok_or_else(|| {
+                SnapshotValueError::from(crate::MemoryRuntimeError::CandidateValidationFailed {
+                    object: construction.allocation_object(),
+                    reason: "external canonical input has no retained schema context".into(),
+                })
+            })?;
+        let shape = shape_schema.instantiate_shape(shape_values.into_boxed_slice())?;
+        Ok(Self {
+            schema: self.schema,
+            schema_key: self.schema_key,
+            shape,
+            root: self.root.clone(),
+            resident_token: self.resident_token,
+            schemas: self.schemas.clone(),
+        })
     }
 
     /// Sealed handoff from an admitted mutable payload envelope into a
@@ -2236,7 +2302,13 @@ pub(super) fn finalize_data(
             ensure_cardinality(path, expected, values.len())?;
             if scalar_sequence_schema(element) {
                 return Ok(ValueData::Matrix(MatrixValue {
-                    elements: finalize_scalar_sequence(element, values, path, context)?,
+                    elements: finalize_scalar_sequence(
+                        element,
+                        values,
+                        path,
+                        ScalarSequenceElement::Matrix,
+                        context,
+                    )?,
                 }));
             }
             let mut finalized = context.try_vec_with_capacity(values.len())?;
@@ -2265,6 +2337,16 @@ pub(super) fn finalize_data(
                         expected: actual_rows as u64,
                         actual: drafts.len() as u64,
                     });
+                }
+                if scalar_sequence_schema(&column.schema) {
+                    finalized_columns.push(finalize_scalar_sequence(
+                        &column.schema,
+                        drafts,
+                        path,
+                        ScalarSequenceElement::TableColumn(column_index as u32),
+                        context,
+                    )?);
+                    continue;
                 }
                 let mut finalized = context.try_vec_with_capacity(drafts.len())?;
                 for (row, draft) in drafts.into_vec().into_iter().enumerate() {
@@ -2401,6 +2483,7 @@ fn finalize_scalar_sequence(
     schema: &SchemaBody,
     values: Box<[ValueDataDraft]>,
     path: &SnapshotPath,
+    element: ScalarSequenceElement,
     context: &SnapshotValidationContext<'_>,
 ) -> Result<SequenceStorage, SnapshotValueError> {
     macro_rules! pack {
@@ -2412,7 +2495,7 @@ fn finalize_scalar_sequence(
                     return Err(data_mismatch_kind(
                         schema,
                         actual,
-                        &path.child(SnapshotPathSegment::MatrixElement(index as u64)),
+                        &element.path(path, index),
                     ));
                 };
                 packed.push(value);
@@ -2437,6 +2520,7 @@ fn finalize_scalar_sequence(
         SchemaBody::Complex(FloatWidth::W32) => pack!(Complex32, Complex32),
         SchemaBody::Complex(FloatWidth::W64) => pack!(Complex64, Complex64),
         SchemaBody::Bool => pack!(Bool, Bool),
+        SchemaBody::Id => pack!(Id, Id),
         SchemaBody::String => {
             let mut packed = context.try_vec_with_capacity(values.len())?;
             for (index, draft) in values.into_vec().into_iter().enumerate() {
@@ -2445,7 +2529,7 @@ fn finalize_scalar_sequence(
                     return Err(data_mismatch_kind(
                         schema,
                         actual,
-                        &path.child(SnapshotPathSegment::MatrixElement(index as u64)),
+                        &element.path(path, index),
                     ));
                 };
                 packed.push(context.try_boxed_str(value)?);
@@ -2464,7 +2548,7 @@ fn finalize_scalar_sequence(
                     return Err(data_mismatch_kind(
                         schema,
                         actual,
-                        &path.child(SnapshotPathSegment::MatrixElement(index as u64)),
+                        &element.path(path, index),
                     ));
                 };
                 packed.push(super::Rational64Value::new(numerator, denominator)?);
@@ -2479,12 +2563,12 @@ fn finalize_scalar_sequence(
                     return Err(data_mismatch_kind(
                         schema,
                         actual,
-                        &path.child(SnapshotPathSegment::MatrixElement(index as u64)),
+                        &element.path(path, index),
                     ));
                 };
                 if value == 0 {
                     return Err(SnapshotValueError::InvalidIndexV1 {
-                        path: path.child(SnapshotPathSegment::MatrixElement(index as u64)),
+                        path: element.path(path, index),
                         value,
                     });
                 }
@@ -2498,13 +2582,30 @@ fn finalize_scalar_sequence(
                     return Err(data_mismatch_kind(
                         schema,
                         draft.kind(),
-                        &path.child(SnapshotPathSegment::MatrixElement(index as u64)),
+                        &element.path(path, index),
                     ));
                 }
             }
             Ok(SequenceStorage::Unit(values.len() as u64))
         }
         _ => unreachable!("scalar sequence fast path is selected by its closed schema"),
+    }
+}
+
+#[derive(Clone, Copy)]
+enum ScalarSequenceElement {
+    Matrix,
+    TableColumn(u32),
+}
+
+impl ScalarSequenceElement {
+    fn path(self, root: &SnapshotPath, index: usize) -> SnapshotPath {
+        match self {
+            Self::Matrix => root.child(SnapshotPathSegment::MatrixElement(index as u64)),
+            Self::TableColumn(column) => root
+                .child(SnapshotPathSegment::TableColumn(column))
+                .child(SnapshotPathSegment::TableRow(index as u64)),
+        }
     }
 }
 
@@ -2708,11 +2809,416 @@ pub(super) const fn schema_kind(schema: &SchemaBody) -> SchemaDataKind {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::snapshot::{F64Bits, TableColumnDraft};
+    use crate::snapshot::{
+        Complex32Bits, Complex64Bits, F32Bits, F64Bits, SequenceView, TableColumnDraft,
+    };
     use crate::{
         DimensionExpr, DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
-        DimensionParameterOrigin, SchemaDraft, SchemaField, SchemaTableBuilder,
+        DimensionParameterOrigin, NominalKey, SchemaDraft, SchemaField, SchemaTableBuilder,
     };
+    use core::cell::{Cell, RefCell};
+
+    #[derive(Default)]
+    struct RecordingConstructionAuthority {
+        allocations: RefCell<Vec<(u64, u32)>>,
+    }
+
+    impl SnapshotConstructionAuthority for RecordingConstructionAuthority {
+        fn admit_snapshot_allocation(
+            &self,
+            bytes: u64,
+            alignment: u32,
+        ) -> Result<(), crate::MemoryRuntimeError> {
+            self.allocations.borrow_mut().push((bytes, alignment));
+            Ok(())
+        }
+
+        fn allocation_object(&self) -> Option<crate::MemoryObjectId> {
+            None
+        }
+    }
+
+    struct FailAfterConstructionAuthority {
+        remaining: Cell<usize>,
+    }
+
+    impl SnapshotConstructionAuthority for FailAfterConstructionAuthority {
+        fn admit_snapshot_allocation(
+            &self,
+            bytes: u64,
+            _alignment: u32,
+        ) -> Result<(), crate::MemoryRuntimeError> {
+            let remaining = self.remaining.get();
+            if remaining == 0 {
+                return Err(crate::MemoryRuntimeError::CapacityExceeded {
+                    object: crate::MemoryObjectId::new(0),
+                    requested: bytes,
+                    capacity: 0,
+                });
+            }
+            self.remaining.set(remaining - 1);
+            Ok(())
+        }
+
+        fn allocation_object(&self) -> Option<crate::MemoryObjectId> {
+            Some(crate::MemoryObjectId::new(0))
+        }
+    }
+
+    #[test]
+    fn scalar_sequence_fast_path_is_total_for_every_accepted_schema() {
+        let cases = vec![
+            (
+                SchemaBody::UnsignedInteger(IntegerWidth::W8),
+                ValueDataDraft::U8(1),
+            ),
+            (
+                SchemaBody::UnsignedInteger(IntegerWidth::W16),
+                ValueDataDraft::U16(1),
+            ),
+            (
+                SchemaBody::UnsignedInteger(IntegerWidth::W32),
+                ValueDataDraft::U32(1),
+            ),
+            (
+                SchemaBody::UnsignedInteger(IntegerWidth::W64),
+                ValueDataDraft::U64(1),
+            ),
+            (
+                SchemaBody::UnsignedInteger(IntegerWidth::W128),
+                ValueDataDraft::U128(1),
+            ),
+            (
+                SchemaBody::SignedInteger(IntegerWidth::W8),
+                ValueDataDraft::I8(-1),
+            ),
+            (
+                SchemaBody::SignedInteger(IntegerWidth::W16),
+                ValueDataDraft::I16(-1),
+            ),
+            (
+                SchemaBody::SignedInteger(IntegerWidth::W32),
+                ValueDataDraft::I32(-1),
+            ),
+            (
+                SchemaBody::SignedInteger(IntegerWidth::W64),
+                ValueDataDraft::I64(-1),
+            ),
+            (
+                SchemaBody::SignedInteger(IntegerWidth::W128),
+                ValueDataDraft::I128(-1),
+            ),
+            (
+                SchemaBody::FloatingPoint(FloatWidth::W32),
+                ValueDataDraft::F32(F32Bits::from_f32(1.25)),
+            ),
+            (
+                SchemaBody::FloatingPoint(FloatWidth::W64),
+                ValueDataDraft::F64(F64Bits::from_f64(1.25)),
+            ),
+            (
+                SchemaBody::Complex(FloatWidth::W32),
+                ValueDataDraft::Complex32(Complex32Bits::new(
+                    F32Bits::from_f32(1.0),
+                    F32Bits::from_f32(-1.0),
+                )),
+            ),
+            (
+                SchemaBody::Complex(FloatWidth::W64),
+                ValueDataDraft::Complex64(Complex64Bits::new(
+                    F64Bits::from_f64(1.0),
+                    F64Bits::from_f64(-1.0),
+                )),
+            ),
+            (
+                SchemaBody::Rational64,
+                ValueDataDraft::Rational64 {
+                    numerator: 1,
+                    denominator: 2,
+                },
+            ),
+            (SchemaBody::Bool, ValueDataDraft::Bool(true)),
+            (
+                SchemaBody::String,
+                ValueDataDraft::String("packed".to_owned()),
+            ),
+            (SchemaBody::Id, ValueDataDraft::Id(7)),
+            (SchemaBody::Index, ValueDataDraft::Index(1)),
+            (
+                SchemaBody::Atom(NominalKey::from_bytes([7; 32])),
+                ValueDataDraft::Atom,
+            ),
+        ];
+        let (schemas, _) = SchemaTableBuilder::new().finish().unwrap().into_parts();
+        let context = SnapshotValidationContext::new(&schemas);
+        let path = SnapshotPath::root();
+
+        for (schema, valid) in cases {
+            assert!(scalar_sequence_schema(&schema));
+            finalize_scalar_sequence(
+                &schema,
+                vec![valid].into_boxed_slice(),
+                &path,
+                ScalarSequenceElement::Matrix,
+                &context,
+            )
+            .unwrap_or_else(|error| panic!("valid {schema:?} scalar sequence failed: {error:?}"));
+            finalize_scalar_sequence(
+                &schema,
+                Box::new([]),
+                &path,
+                ScalarSequenceElement::Matrix,
+                &context,
+            )
+            .unwrap_or_else(|error| panic!("empty {schema:?} scalar sequence failed: {error:?}"));
+            let invalid = if matches!(schema, SchemaBody::Bool) {
+                ValueDataDraft::U8(1)
+            } else {
+                ValueDataDraft::Bool(true)
+            };
+            assert!(
+                finalize_scalar_sequence(
+                    &schema,
+                    vec![invalid].into_boxed_slice(),
+                    &path,
+                    ScalarSequenceElement::Matrix,
+                    &context,
+                )
+                .is_err(),
+                "mismatched {schema:?} scalar sequence was accepted"
+            );
+        }
+
+        assert!(matches!(
+            finalize_scalar_sequence(
+                &SchemaBody::Index,
+                vec![ValueDataDraft::Index(0)].into_boxed_slice(),
+                &path,
+                ScalarSequenceElement::Matrix,
+                &context,
+            ),
+            Err(SnapshotValueError::InvalidIndexV1 { .. })
+        ));
+        assert!(
+            finalize_scalar_sequence(
+                &SchemaBody::Rational64,
+                vec![ValueDataDraft::Rational64 {
+                    numerator: 1,
+                    denominator: 0,
+                }]
+                .into_boxed_slice(),
+                &path,
+                ScalarSequenceElement::Matrix,
+                &context,
+            )
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn packed_scalar_matrices_cover_id_values() {
+        let schema = SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body: SchemaBody::Matrix {
+                element: Box::new(SchemaBody::Id),
+                dimensions: vec![DimensionExpr::Constant(2)].into_boxed_slice(),
+            },
+        }
+        .finalize()
+        .unwrap();
+        let mut builder = SchemaTableBuilder::new();
+        let handle = builder.insert(schema).unwrap();
+        let build = builder.finish().unwrap();
+        let schema = build.resolve(handle).unwrap();
+        let (schemas, _) = build.into_parts();
+        let value = ValueDraft {
+            schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Matrix(
+                vec![ValueDataDraft::Id(7), ValueDataDraft::Id(11)].into_boxed_slice(),
+            ),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        let ValueData::Matrix(matrix) = value.data() else {
+            panic!("expected Id matrix")
+        };
+        assert!(matches!(matrix.elements(), SequenceView::Id(&[7, 11])));
+    }
+
+    #[test]
+    fn scalar_table_columns_pack_without_intermediate_value_data() {
+        let row_count = 64_usize;
+        let schema = SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body: SchemaBody::Table {
+                columns: vec![
+                    SchemaField {
+                        name: "byte".to_owned(),
+                        schema: SchemaBody::UnsignedInteger(IntegerWidth::W8),
+                    },
+                    SchemaField {
+                        name: "flag".to_owned(),
+                        schema: SchemaBody::Bool,
+                    },
+                    SchemaField {
+                        name: "text".to_owned(),
+                        schema: SchemaBody::String,
+                    },
+                ]
+                .into_boxed_slice(),
+                rows: crate::CardinalitySpec::Exact(DimensionExpr::Constant(row_count as u64)),
+            },
+        }
+        .finalize()
+        .unwrap();
+        let mut builder = SchemaTableBuilder::new();
+        let handle = builder.insert(schema).unwrap();
+        let build = builder.finish().unwrap();
+        let schema = build.resolve(handle).unwrap();
+        let (schemas, _) = build.into_parts();
+        let authority = RecordingConstructionAuthority::default();
+        let draft = ValueDraft {
+            schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Table(
+                vec![
+                    TableColumnDraft {
+                        name: "byte".to_owned(),
+                        values: (0..row_count)
+                            .map(|value| ValueDataDraft::U8(value as u8))
+                            .collect::<Vec<_>>()
+                            .into_boxed_slice(),
+                    },
+                    TableColumnDraft {
+                        name: "flag".to_owned(),
+                        values: (0..row_count)
+                            .map(|value| ValueDataDraft::Bool(value % 2 == 0))
+                            .collect::<Vec<_>>()
+                            .into_boxed_slice(),
+                    },
+                    TableColumnDraft {
+                        name: "text".to_owned(),
+                        values: (0..row_count)
+                            .map(|value| ValueDataDraft::String(format!("row-{value}")))
+                            .collect::<Vec<_>>()
+                            .into_boxed_slice(),
+                    },
+                ]
+                .into_boxed_slice(),
+            ),
+        };
+        let failing = FailAfterConstructionAuthority {
+            remaining: Cell::new(1),
+        };
+        assert!(
+            draft
+                .clone()
+                .finalize(
+                    &SnapshotValidationContext::new(&schemas).with_construction_authority(&failing),
+                )
+                .is_err(),
+            "a partial packed-table build must fail through construction authority"
+        );
+        let value = draft
+            .finalize(
+                &SnapshotValidationContext::new(&schemas).with_construction_authority(&authority),
+            )
+            .unwrap();
+        let ValueData::Table(table) = value.data() else {
+            panic!("expected table")
+        };
+        assert!(
+            matches!(table.column(0), Some(SequenceView::U8(values)) if values.len() == row_count)
+        );
+        assert!(
+            matches!(table.column(1), Some(SequenceView::Bool(values)) if values.len() == row_count)
+        );
+        assert!(
+            matches!(table.column(2), Some(SequenceView::String(values)) if values.len() == row_count)
+        );
+        let expanded = (
+            (row_count * core::mem::size_of::<ValueData>()) as u64,
+            core::mem::align_of::<ValueData>() as u32,
+        );
+        assert!(!authority.allocations.borrow().contains(&expanded));
+        assert!(
+            authority
+                .allocations
+                .borrow()
+                .contains(&(row_count as u64, core::mem::align_of::<u8>() as u32,))
+        );
+    }
+
+    #[test]
+    fn recursive_dynamic_values_share_one_admitted_schema_owner() {
+        let scalar = SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body: SchemaBody::UnsignedInteger(IntegerWidth::W64),
+        }
+        .finalize()
+        .unwrap();
+        let dynamic_matrix = SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body: SchemaBody::Matrix {
+                element: Box::new(SchemaBody::Dynamic),
+                dimensions: vec![DimensionExpr::Constant(2)].into_boxed_slice(),
+            },
+        }
+        .finalize()
+        .unwrap();
+        let mut builder = SchemaTableBuilder::new();
+        let scalar_handle = builder.insert(scalar).unwrap();
+        let matrix_handle = builder.insert(dynamic_matrix).unwrap();
+        let build = builder.finish().unwrap();
+        let scalar = build.resolve(scalar_handle).unwrap();
+        let matrix = build.resolve(matrix_handle).unwrap();
+        let (schemas, _) = build.into_parts();
+        let nested = |value| {
+            ValueDataDraft::Dynamic(Some(Box::new(ValueDraft {
+                schema: scalar,
+                shape_values: Box::new([]),
+                data: ValueDataDraft::U64(value),
+            })))
+        };
+        let authority = RecordingConstructionAuthority::default();
+        let value = ValueDraft {
+            schema: matrix,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Matrix(vec![nested(1), nested(2)].into_boxed_slice()),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas).with_construction_authority(&authority))
+        .unwrap();
+        let ValueData::Matrix(dynamic) = value.data() else {
+            panic!("expected Dynamic matrix")
+        };
+        let SequenceView::Values(values) = dynamic.elements() else {
+            panic!("expected recursively stored Dynamic values")
+        };
+        let owners = values
+            .iter()
+            .map(|value| {
+                let ValueData::Dynamic(value) = value else {
+                    panic!("expected Dynamic element")
+                };
+                value.value().unwrap().schemas().unwrap()
+            })
+            .collect::<Vec<_>>();
+        assert!(Arc::ptr_eq(&owners[0], &owners[1]));
+        let schema_clone = (
+            schemas.clone_allocation_bound_bytes().unwrap(),
+            core::mem::align_of::<SchemaTable>() as u32,
+        );
+        assert_eq!(
+            authority
+                .allocations
+                .borrow()
+                .iter()
+                .filter(|allocation| **allocation == schema_clone)
+                .count(),
+            1,
+        );
+    }
 
     #[test]
     fn metadata_only_rebind_shares_storage_but_schema_transform_rebuilds() {

@@ -1241,6 +1241,14 @@ impl FunctionInstance {
         self.managed.plan.as_ref()
     }
 
+    /// Exposes only the active plan revision for lifecycle diagnostics and
+    /// integration tests. The revision carries no allocation or publication
+    /// authority.
+    #[doc(hidden)]
+    pub fn managed_plan_revision(&self) -> crate::MemoryPlanRevision {
+        self.managed.current.borrow().realized.revision()
+    }
+
     pub fn output(&self) -> &ValueCell {
         self.invocation.output_cell()
     }

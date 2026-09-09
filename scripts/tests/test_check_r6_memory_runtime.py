@@ -777,6 +777,82 @@ fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunctio
         )
         self.assert_failure(root, "external live binding is fallible after cell publication")
 
+    def test_72_live_binding_install_must_follow_realization_promotion(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/function/mod.rs",
+            "self.promote_prepared_realization(&mut prepared);\n            if prepared.external {",
+            "if prepared.external {",
+        )
+        self.replace(
+            root,
+            "src/core/src/function/mod.rs",
+            "                    external.commit();\n                }\n            }\n        } else {",
+            "                    external.commit();\n                }\n            }\n            self.promote_prepared_realization(&mut prepared);\n        } else {",
+        )
+        self.assert_failure(root, "external live binding is fallible after cell publication")
+
+    def test_73_finalizer_data_root_must_use_construction_authority(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/snapshot/validation.rs",
+            "let data = context.try_arc(FrozenSnapshotData { data })?;",
+            "let data = Arc::new(FrozenSnapshotData { data });",
+        )
+        self.assert_failure(root, "common canonical finalization bypasses")
+
+    def test_74_finalizer_storage_root_must_use_construction_authority(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/snapshot/validation.rs",
+            "let root = context.try_arc(FrozenSnapshotStorage {",
+            "let root = Arc::new(FrozenSnapshotStorage {",
+        )
+        self.assert_failure(root, "common canonical finalization bypasses")
+
+    def test_75_recursive_values_must_share_one_schema_owner(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/snapshot/validation.rs",
+            "self.shared_schemas.get()",
+            "None",
+        )
+        self.assert_failure(root, "clone their schema owner repeatedly")
+
+    def test_76_scalar_id_matrices_must_use_packed_finalization(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/snapshot/validation.rs",
+            "SchemaBody::Id => pack!(Id, Id)",
+            "SchemaBody::Id => unreachable!()",
+        )
+        self.assert_failure(root, "scalar matrix or table finalization bypasses packed")
+
+    def test_77_external_canonical_shape_clone_must_be_planned(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/memory_plan/derive.rs",
+            "external_canonical_shape_clone_bytes(input)?",
+            "0",
+        )
+        self.assert_failure(root, "external canonical metadata cloning bypasses")
+
+    def test_78_browser_smoke_must_observe_final_completion_before_pass(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "include/project.js",
+            "await globalThis.MechBrowserCompute.awaitSmokeTargetCompletion(target);",
+            "await globalThis.MechBrowserCompute.awaitSmokeTargetCompletion(target).catch(() => {});",
+        )
+        self.assert_failure(root, "browser compute smoke can pass before")
+
 
 if __name__ == "__main__":
     unittest.main()

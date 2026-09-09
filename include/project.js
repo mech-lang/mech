@@ -790,7 +790,14 @@ function installComputeSmokeTest(target) {
         clientX: 0,
         clientY: 0,
       }));
-      root.dataset.mechGpuSmoke = 'passed';
+      running = false;
+      // R6 retains a submitted batch through its completion fence. Teardown
+      // may therefore finish asynchronously when the animation loop queued a
+      // final frame while the queue-wide fence above was pending. Observe the
+      // session's exact last completion while it is still current, and reject
+      // its recorded failure before retirement can suppress generation-local
+      // callbacks.
+      await globalThis.MechBrowserCompute.awaitSmokeTargetCompletion(target);
       root.dataset.mechGpuSmokeDispatches = String(state.totalDispatches);
       root.dataset.mechGpuSmokeInputs = JSON.stringify(state.lastInputs);
       root.dataset.mechGpuSmokeDelayedCompletions = String(delayedCompletions);
@@ -803,22 +810,11 @@ function installComputeSmokeTest(target) {
         root.dataset.mechComputeGpuToCpuReadbackBytes || "0";
       root.dataset.mechComputeBackend = state.backend;
       root.dataset.mechGpuSmokeStateAdvanced = String(state.totalDispatches >= 2);
-      running = false;
-      target.stop();
-      // R6 retains a submitted batch through its completion fence. Teardown
-      // may therefore finish asynchronously when the animation loop has
-      // already queued the next frame; observe that exact lifecycle rather
-      // than treating delayed destruction as a leak.
-      if (target.computeSession?.completion) {
-        await Promise.resolve(target.computeSession.completion).catch(() => {});
-      }
-      if (target.computeResource?.disposeCompletion) {
-        await target.computeResource.disposeCompletion;
-      }
       root.dataset.mechGpuSmokeDisposed = String(
         target.stopped === true && target.computeResource?.disposed === true,
       );
       root.dataset.mechGpuSmokePageErrors = String(pageErrors);
+      root.dataset.mechGpuSmoke = 'passed';
       window.removeEventListener('error', recordWindowError);
       window.removeEventListener('unhandledrejection', recordRejection);
       console.error = originalConsoleError;

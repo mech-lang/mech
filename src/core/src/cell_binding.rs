@@ -690,6 +690,32 @@ impl ErasedCellStorage for ManagedHostCellStorage {
     }
 }
 
+#[cfg(feature = "functions")]
+impl ManagedCanonicalCellStorage {
+    fn snapshot_for_external_marshalling(
+        &self,
+        schema: SchemaId,
+        shape: &ShapeInstance,
+        schemas: &SchemaTable,
+        construction: &dyn crate::snapshot::validation::SnapshotConstructionAuthority,
+    ) -> MResult<Value> {
+        if schema != self.value.schema()
+            || shape != self.value.shape()
+            || schemas.entry(schema).map(|entry| entry.key()) != Some(self.value.schema_key())
+        {
+            return Err(crate::MemoryRuntimeError::CandidateValidationFailed {
+                object: Some(self.object.object()),
+                reason: "external canonical input metadata differs from its published binding"
+                    .into(),
+            }
+            .into());
+        }
+        self.value
+            .try_clone_for_external_marshalling(construction)
+            .map_err(snapshot_failure)
+    }
+}
+
 impl ErasedCellStorage for ManagedCanonicalCellStorage {
     fn as_any(&self) -> &dyn Any {
         self
@@ -3608,7 +3634,7 @@ impl ValueCell {
         &self,
         construction: &dyn crate::snapshot::validation::SnapshotConstructionAuthority,
     ) -> MResult<Value> {
-        let shape = self.binding.shape().clone();
+        let shape = self.binding.shape();
         let storage = self.binding.storage()?;
         if let Some(managed) = storage.as_any().downcast_ref::<ManagedHostCellStorage>() {
             managed.snapshot_with_authority_and_construction(
@@ -3617,6 +3643,16 @@ impl ValueCell {
                 &shape,
                 &self.binding.schemas,
                 Some(construction),
+            )
+        } else if let Some(managed) = storage
+            .as_any()
+            .downcast_ref::<ManagedCanonicalCellStorage>()
+        {
+            managed.snapshot_for_external_marshalling(
+                self.binding.schema,
+                &shape,
+                &self.binding.schemas,
+                construction,
             )
         } else {
             storage.snapshot(self.binding.schema, &shape, &self.binding.schemas)

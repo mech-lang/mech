@@ -292,8 +292,9 @@ mod tests {
         )
         .unwrap();
         let version = output.published_version();
+        let revision = function.instance().managed_plan_revision();
         let mut services = LiveServices {
-            result: ValueCell::from_exact("new".to_owned())
+            result: ValueCell::from_exact("new value with a larger admitted payload".to_owned())
                 .unwrap()
                 .snapshot()
                 .unwrap(),
@@ -311,15 +312,17 @@ mod tests {
         assert_eq!(output.published_version(), version);
         assert_eq!(*state.borrow(), 0);
         assert_eq!(services.bindings, 0);
+        assert_eq!(function.instance().managed_plan_revision(), revision);
 
         services.reject_binding = false;
         function
             .instance()
             .solve_result_with(&mut services)
             .unwrap();
-        assert_eq!(text(&output), "new");
+        assert_eq!(text(&output), "new value with a larger admitted payload");
         assert_eq!(output.published_version().get(), version.get() + 1);
         assert_eq!(*state.borrow(), 1);
         assert_eq!(services.bindings, 1);
+        assert_ne!(function.instance().managed_plan_revision(), revision);
     }
 }

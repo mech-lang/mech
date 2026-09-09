@@ -258,7 +258,6 @@ fn scratch_owning_families_never_fall_back_to_an_open_memory_class() {
 #[cfg(any(feature = "standard_compiler", feature = "full_compiler"))]
 mod ordinary_managed_execution {
     use mech_core::*;
-    use nalgebra::DMatrix;
     #[cfg(any(
         feature = "matrix1",
         feature = "matrix2",
@@ -274,6 +273,7 @@ mod ordinary_managed_execution {
         feature = "vector4",
     ))]
     use nalgebra::SMatrix;
+    use nalgebra::{DMatrix, DVector, RowDVector};
 
     struct OversizedCanonicalTemporary {
         output: ValueCell,
@@ -495,6 +495,101 @@ mod ordinary_managed_execution {
             value.shape().parameter_values().to_vec(),
             values.iter().map(ToString::to_string).collect(),
         )
+    }
+
+    fn bool_matrix_values(cell: &ValueCell) -> Vec<bool> {
+        let value = cell.snapshot().unwrap();
+        let ValueData::Matrix(matrix) = value.data() else {
+            panic!("expected Bool matrix")
+        };
+        let snapshot::SequenceView::Bool(values) = matrix.elements() else {
+            panic!("expected Bool matrix elements")
+        };
+        values.to_vec()
+    }
+
+    #[test]
+    fn bound_string_matrix_comparisons_preserve_rectangular_coordinates() {
+        fn matrix(rows: usize, columns: usize, values: &[&str]) -> ValueCell {
+            ValueCell::from_exact(DMatrix::from_row_slice(
+                rows,
+                columns,
+                &values
+                    .iter()
+                    .map(|value| (*value).to_owned())
+                    .collect::<Vec<_>>(),
+            ))
+            .unwrap()
+        }
+        fn compare(
+            operation: &str,
+            rows: usize,
+            columns: usize,
+            left: ValueCell,
+            right: ValueCell,
+            expected: &[bool],
+        ) {
+            let output =
+                ValueCell::from_exact(DMatrix::from_element(rows, columns, false)).unwrap();
+            bind_runtime(
+                operation,
+                FunctionInvocation::binary(output.clone(), left, right),
+            )
+            .instance()
+            .solve_result()
+            .unwrap();
+            assert_eq!(bool_matrix_values(&output), expected);
+        }
+
+        compare(
+            "compare/eq",
+            2,
+            3,
+            matrix(2, 3, &["a", "b", "c", "d", "e", "f"]),
+            matrix(2, 3, &["a", "x", "x", "d", "e", "x"]),
+            &[true, false, false, true, true, false],
+        );
+        compare(
+            "compare/lt",
+            3,
+            2,
+            matrix(3, 2, &["a", "z", "c", "m", "y", "f"]),
+            matrix(3, 2, &["b", "y", "c", "n", "x", "g"]),
+            &[true, false, false, true, false, true],
+        );
+        compare(
+            "compare/eq",
+            2,
+            3,
+            ValueCell::from_exact("a".to_owned()).unwrap(),
+            matrix(2, 3, &["a", "b", "a", "c", "a", "d"]),
+            &[true, false, true, false, true, false],
+        );
+        compare(
+            "compare/eq",
+            2,
+            3,
+            matrix(2, 3, &["a", "b", "c", "a", "x", "c"]),
+            ValueCell::from_exact(RowDVector::from_row_slice(&[
+                "a".to_owned(),
+                "b".to_owned(),
+                "c".to_owned(),
+            ]))
+            .unwrap(),
+            &[true, true, true, true, false, true],
+        );
+        compare(
+            "compare/eq",
+            2,
+            3,
+            matrix(2, 3, &["a", "x", "a", "b", "b", "y"]),
+            ValueCell::from_exact(DVector::from_column_slice(&[
+                "a".to_owned(),
+                "b".to_owned(),
+            ]))
+            .unwrap(),
+            &[true, false, true, true, true, false],
+        );
     }
 
     #[cfg(any(

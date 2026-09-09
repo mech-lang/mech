@@ -23,6 +23,7 @@ REQUIRED = (
     "src/core/src/execution.rs",
     "src/core/src/snapshot/encoding.rs",
     "src/core/src/snapshot/validation.rs",
+    "include/project.js",
     "machines/string/src/lib.rs",
     "machines/matrix/src/transpose.rs",
     "machines/set/src/canonical.rs",
@@ -369,6 +370,7 @@ def failures(root: Path) -> list[str]:
         found.append("payload node admission depends on allocator spare capacity")
     snapshot = rust_code(sources.get("src/core/src/snapshot/validation.rs", ""))
     finalizers = list(function_bodies(snapshot, "finalize_data"))
+    finalized_values = list(function_bodies(snapshot, "finalized_value_with_construction"))
     admitted_finalizers = list(function_bodies(cell, "finalize_draft_with_construction"))
     if (
         "SnapshotConstructionAuthority" not in snapshot
@@ -378,8 +380,22 @@ def failures(root: Path) -> list[str]:
         or "context.try_vec_with_capacity" not in finalizers[0]
         or "context.try_boxed_str" not in finalizers[0]
         or "finalized_value_with_construction" not in snapshot
+        or not finalized_values
+        or finalized_values[0].count("context.try_arc(") < 2
+        or "Arc::new(" in finalized_values[0]
     ):
         found.append("common canonical finalization bypasses construction authority")
+    if (
+        "shared_schemas: OnceCell<Arc<SchemaTable>>" not in snapshot
+        or "self.shared_schemas.get()" not in snapshot
+    ):
+        found.append("recursive canonical values clone their schema owner repeatedly")
+    if (
+        "SchemaBody::Id => pack!(Id, Id)" not in snapshot
+        or "ScalarSequenceElement::TableColumn" not in snapshot
+        or "scalar_sequence_schema(&column.schema)" not in snapshot
+    ):
+        found.append("scalar matrix or table finalization bypasses packed construction")
     rebinds = list(function_bodies(snapshot, "rebind"))
     if (
         "FrozenSnapshotData" not in snapshot
@@ -581,6 +597,13 @@ def failures(root: Path) -> list[str]:
         or "ValueDataDraft" not in marshalling_requirements[0]
     ):
         found.append("external marshalling is not governed by canonical construction authority")
+    external_snapshots = list(function_bodies(cell, "snapshot_for_external_marshalling"))
+    if (
+        not any("try_clone_for_external_marshalling" in body for body in external_snapshots)
+        or "external_canonical_shape_clone_bytes(input)" not in marshalling_requirements[0]
+        or "return Ok((0, 0))" in marshalling_requirements[0]
+    ):
+        found.append("external canonical metadata cloning bypasses marshalling authority")
     reactive_solve = list(function_bodies(function, "solve_reactive_with"))
     if (
         "PreparedLiveResourceBinding" not in function
@@ -592,6 +615,9 @@ def failures(root: Path) -> list[str]:
         > reactive_solve[0].index("ready.commit()")
         or reactive_solve[0].index("external.commit()")
         < reactive_solve[0].index("ready.commit()")
+        or "self.promote_prepared_realization(&mut prepared)" not in reactive_solve[0]
+        or reactive_solve[0].index("external.commit()")
+        < reactive_solve[0].index("self.promote_prepared_realization(&mut prepared)")
     ):
         found.append("external live binding is fallible after cell publication")
     instance = balanced_body(function, "FunctionInstance")
@@ -807,6 +833,18 @@ def failures(root: Path) -> list[str]:
         found.append("browser GPU ownership is not retained through queue completion")
     if "Promise.allSettled" not in browser:
         found.append("browser GPU mapping cleanup can skip siblings after rejection")
+    project = sources.get("include/project.js", "")
+    completion = "await globalThis.MechBrowserCompute.awaitSmokeTargetCompletion(target);"
+    passed = "root.dataset.mechGpuSmoke = 'passed';"
+    if (
+        completion not in project
+        or passed not in project
+        or project.index(completion) > project.index(passed)
+        or "async function awaitSmokeTargetCompletion(target)" not in browser
+        or "await Promise.resolve(completion);" not in browser
+        or "throw target.bridgeFailure;" not in browser
+    ):
+        found.append("browser compute smoke can pass before its final submission completes")
 
     # The execution-owned core may use unsafe only in the sealed allocation and
     # typed-view modules. Policy, identity, payload, and transaction code stay safe.

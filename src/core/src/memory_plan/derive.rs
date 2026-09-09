@@ -1988,12 +1988,24 @@ pub fn canonical_snapshot_draft_bytes(
 }
 
 #[cfg(feature = "functions")]
+fn external_canonical_shape_clone_bytes(input: &PortMemoryPlan) -> Result<u64, MemoryPlanError> {
+    (input.descriptor.shape().parameter_values().len() as u64)
+        .checked_mul(core::mem::size_of::<u64>() as u64)
+        .ok_or(MemoryPlanError::ArithmeticOverflow {
+            field: "external canonical shape clone bytes",
+        })
+}
+
+#[cfg(feature = "functions")]
 fn external_marshalling_input_bytes(
     input: &PortMemoryPlan,
     witness: Option<MemoryFootprintWitness>,
 ) -> Result<(u64, u64), MemoryPlanError> {
     if input.value.storage.planned_slot() == PlannedSlotKind::CanonicalValueHandle {
-        return Ok((0, 0));
+        let shape_bytes = external_canonical_shape_clone_bytes(input)?;
+        // Canonical payload and schema owners are shared. Only the owned
+        // ShapeInstance metadata inside the argument Value is copied.
+        return Ok((shape_bytes, 0));
     }
     let footprint = witness
         .map(known_footprint)

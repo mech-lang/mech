@@ -590,7 +590,7 @@ fn apply_canonical_string_comparison(
 ) -> MResult<()> {
     let lhs_value = frame.snapshot_canonical_port_value(lhs)?;
     let rhs_value = frame.snapshot_canonical_port_value(rhs)?;
-    let (lhs_extents, rhs_extents, output_extents) = canonical_string_comparison_geometry(
+    let (lhs_extents, rhs_extents, _) = canonical_string_comparison_geometry(
         &lhs_value,
         lhs.cell(),
         &rhs_value,
@@ -598,11 +598,11 @@ fn apply_canonical_string_comparison(
         out.cell(),
         broadcast,
     )?;
-    let columns = output_extents.map_or(1, |(_, columns)| columns);
     frame.with_output_port_view(out, |output| {
+        let rows = output.rows();
         output.try_fill_column_major(|index| {
-            let row = index / columns;
-            let column = index % columns;
+            let row = index % rows;
+            let column = index / rows;
             Ok(operation(
                 canonical_string_at(&lhs_value, lhs_extents, row, column)?,
                 canonical_string_at(&rhs_value, rhs_extents, row, column)?,
