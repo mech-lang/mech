@@ -782,14 +782,14 @@ fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunctio
         self.replace(
             root,
             "src/core/src/function/mod.rs",
-            "self.promote_prepared_realization(&mut prepared);\n            if prepared.external {",
+            "self.promote_prepared_realization(&mut prepared)?;\n            if prepared.external {",
             "if prepared.external {",
         )
         self.replace(
             root,
             "src/core/src/function/mod.rs",
             "                    external.commit();\n                }\n            }\n        } else {",
-            "                    external.commit();\n                }\n            }\n            self.promote_prepared_realization(&mut prepared);\n        } else {",
+            "                    external.commit();\n                }\n            }\n            self.promote_prepared_realization(&mut prepared)?;\n        } else {",
         )
         self.assert_failure(root, "external live binding is fallible after cell publication")
 
@@ -918,6 +918,46 @@ impl MechFunctionImpl for Bypass {
             "None",
         )
         self.assert_failure(root, "conversion footprint ignores target payload expansion")
+
+    def test_85_boolean_storage_cannot_regain_raw_byte_access(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/memory_runtime/access.rs",
+            "&& region.slot.is_none();",
+            "&& matches!(region.slot, None | Some(crate::PlannedSlotKind::FixedScalar(_)));",
+        )
+        self.assert_failure(root, "typed Boolean storage can be exposed through raw byte access")
+
+    def test_86_ordinary_promotion_must_collect_retired_realizations(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/function/mod.rs",
+            "fn promote_prepared_realization(",
+            "fn promote_prepared_realization_without_collection(",
+        )
+        self.assert_failure(root, "ordinary cold-path replacement or promotion omits retired collection")
+
+    def test_87_construction_workspace_cannot_regain_contiguous_backing(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/memory_plan/model.rs",
+            "ReservationOnlyWorkspace,",
+            "",
+        )
+        self.assert_failure(root, "canonical construction workspace retains duplicate contiguous backing")
+
+    def test_88_fixed_conversion_cannot_restore_snapshot_materialization(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/engine/src/literals.rs",
+            "frame.execute_fixed_conversion_plan(source, output, plan)",
+            "frame.stage_output_value(output, output.snapshot()?)",
+        )
+        self.assert_failure(root, "conversion escapes its frame-owned construction authority")
 
 
 if __name__ == "__main__":

@@ -1191,6 +1191,12 @@ fn payload_arena_for_space(space: MemorySpace) -> MemoryArenaId {
 }
 
 #[cfg(feature = "functions")]
+fn construction_arena_for_space(space: MemorySpace) -> MemoryArenaId {
+    let base = arena_for_space(space).get();
+    MemoryArenaId::new(base | (1_u32 << 30))
+}
+
+#[cfg(feature = "functions")]
 fn allocate_offset(
     offsets: &mut BTreeMap<MemoryArenaId, u64>,
     arena: MemoryArenaId,
@@ -1456,6 +1462,11 @@ fn derive_scratch_allocations(
     let mut scratch = |role, size, alignment, space| -> Result<(), MemoryPlanError> {
         let id = MemoryObjectId::new(*next_object);
         *next_object = checked_next_object(*next_object)?;
+        let arena = if role == AllocationRole::ConstructionWorkspace {
+            construction_arena_for_space(space)
+        } else {
+            arena_for_space(space)
+        };
         allocations.push(AllocationPlan {
             id,
             owner: MemoryObjectOwner::NodeScratch {
@@ -1473,7 +1484,7 @@ fn derive_scratch_allocations(
                 first: super::MemoryPlanPoint::new(0),
                 last: super::MemoryPlanPoint::new(0),
             },
-            placement: allocate_offset(offsets, arena_for_space(space), size, alignment)?,
+            placement: allocate_offset(offsets, arena, size, alignment)?,
             reuse_group: None,
         });
         ordinal += 1;
@@ -1511,7 +1522,7 @@ fn derive_scratch_allocations(
                 .get(input as usize)
                 .ok_or(MemoryPlanError::DescriptorArityMismatch)?;
             scratch(
-                AllocationRole::Scratch,
+                AllocationRole::ConstructionWorkspace,
                 value_current_bytes(&port.value)?,
                 port.value.slot.alignment,
                 request.input_storage[input as usize].space,
@@ -1524,13 +1535,13 @@ fn derive_scratch_allocations(
                 let finalization_size = canonical_snapshot_finalization_bytes(footprint)?;
                 let space = request.output_storage[ordinal].space;
                 scratch(
-                    AllocationRole::Scratch,
+                    AllocationRole::ConstructionWorkspace,
                     draft_size,
                     output.value.slot.alignment,
                     space,
                 )?;
                 scratch(
-                    AllocationRole::Scratch,
+                    AllocationRole::ConstructionWorkspace,
                     finalization_size,
                     output.value.slot.alignment,
                     space,
@@ -1565,7 +1576,7 @@ fn derive_scratch_allocations(
                     field: "external argument container bytes",
                 })?;
             scratch(
-                AllocationRole::Scratch,
+                AllocationRole::ConstructionWorkspace,
                 value_container_bytes,
                 u32::try_from(core::mem::align_of::<crate::Value>()).unwrap_or(u32::MAX),
                 MemorySpace::Host,
@@ -1577,7 +1588,7 @@ fn derive_scratch_allocations(
                 )?;
                 if draft_bytes != 0 {
                     scratch(
-                        AllocationRole::Scratch,
+                        AllocationRole::ConstructionWorkspace,
                         draft_bytes,
                         u32::try_from(core::mem::align_of::<crate::ValueDataDraft>())
                             .unwrap_or(u32::MAX),
@@ -1586,7 +1597,7 @@ fn derive_scratch_allocations(
                 }
                 if finalization_bytes != 0 {
                     scratch(
-                        AllocationRole::Scratch,
+                        AllocationRole::ConstructionWorkspace,
                         finalization_bytes,
                         input.value.slot.alignment,
                         MemorySpace::Host,
@@ -1650,13 +1661,13 @@ fn derive_scratch_allocations(
                 let finalization_size = canonical_snapshot_finalization_bytes(footprint)?;
                 let space = request.output_storage[ordinal].space;
                 scratch(
-                    AllocationRole::Scratch,
+                    AllocationRole::ConstructionWorkspace,
                     draft_size,
                     output.value.slot.alignment,
                     space,
                 )?;
                 scratch(
-                    AllocationRole::Scratch,
+                    AllocationRole::ConstructionWorkspace,
                     finalization_size,
                     output.value.slot.alignment,
                     space,
@@ -1674,7 +1685,12 @@ fn derive_scratch_allocations(
                         .ok_or(MemoryPlanError::ArithmeticOverflow {
                             field: "canonical index bytes",
                         })?;
-                    scratch(AllocationRole::OrderedIndex, size, index.alignment, space)?;
+                    scratch(
+                        AllocationRole::ConstructionWorkspace,
+                        size,
+                        index.alignment,
+                        space,
+                    )?;
                 }
             }
         }

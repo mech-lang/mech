@@ -78,21 +78,46 @@ review findings as families rather than call-site exceptions:
 - Numeric-to-String conversion witnesses include a source-kind-aware bound for
   the exact `Display` representation selected by the conversion plan, including
   subnormal floats and complex components.
+- Raw byte initialization and mutation are now limited to explicitly untyped
+  scratch/transfer objects. Planned Boolean storage remains accessible only
+  through the typed Boolean codec, so safe callers cannot manufacture an
+  invalid Rust `bool` representation.
+- Successful cold realization promotion, failed/abandoned function candidates,
+  and ordinary managed cell replacement now collect retired ownership after
+  scopes and staging owners unwind. The invariant fixed-width turn remains free
+  of a full-domain collection scan.
+- Canonical and external-marshalling construction workspace uses the explicit
+  `ReservationOnlyWorkspace` backing. It retains finite R5 authority and a
+  collectible runtime record but materializes neither a host arena nor a fake
+  persistent payload registry; numeric scratch and ABI bridges remain
+  contiguous.
+- Fixed-width conversions execute the selected `ConversionPlan` directly over
+  managed input and candidate output views. Table joins allocate their row,
+  match, column, and nested-value containers through the same sealed
+  construction capability before cloning or finalization work begins.
 
 Local qualification on the correction tree:
 
-- `mech-engine` library with `full_compiler,dynamic-modules,resident-artifact`:
-  410 passed, zero failed.
+- `mech-engine` library under the owner `full_compiler` profile: 225 passed,
+  zero failed.
 - `mech-engine` R6 runtime integration suite: 16 passed, zero failed.
-- `mech-core` R6 runtime suite under the prescribed narrow profile: 23 passed,
+- `mech-core` all-feature library suite: 230 passed, zero failed.
+- `mech-core` R6 runtime suite under the prescribed narrow profile: 24 passed,
   zero failed. The obsolete file-wide `full` gate was removed, so this command
   executes the tests instead of reporting a zero-test pass.
-- `mech-core` R6 safety suite under the same profile: 17 passed, zero failed.
-- no-std core compile, formatting, diff validation, and the permanent R6
-  architecture checker: passed.
+- `mech-core` R6 safety suite with `bool` enabled: 19 passed in normal mode and
+  19 passed with release debug assertions disabled. The Boolean validity case
+  also passed under pinned-toolchain Miri.
+- The maintained scalar String concatenation regression completed 24 alternating
+  large/small replans plus injected failure and recovery without manual
+  collection; live allocation and revision metadata remained at one steady
+  shape after warm-up.
+- Formatting, warning policy, unsafe-boundary audit, R5 planner checker, and the
+  permanent R6 architecture checker: passed.
 - New mutation checks reject removal of retired-metadata cleanup, shared-data
-  ticket ownership, frame-bound conversion construction, and direct Resident
-  candidate staging.
+  ticket ownership, frame-bound fixed conversion, reservation-only construction
+  backing, typed-byte validity, ordinary cold-path collection, and direct
+  Resident candidate staging.
 
 ## Remaining qualification work
 

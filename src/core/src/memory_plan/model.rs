@@ -208,6 +208,10 @@ pub enum MemoryObjectOwner {
 pub enum AllocationRole {
     FixedStorage,
     VariablePayload,
+    /// Reservation-backed heap construction workspace. Unlike numeric
+    /// `Scratch`, this authority is realized indirectly and never allocates
+    /// an otherwise-unused contiguous host block.
+    ConstructionWorkspace,
     OrderedIndex,
     SelectorPlan,
     Scratch,
@@ -278,6 +282,10 @@ pub struct ArenaPlan {
 pub enum ArenaBackingKind {
     ContiguousBytes,
     IndirectOwnedPayloads,
+    /// Finite construction authority for allocator-backed temporary objects.
+    /// The arena is an accounting coordinate only: realization must not also
+    /// allocate a contiguous block or a persistent payload registry for it.
+    ReservationOnlyWorkspace,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]

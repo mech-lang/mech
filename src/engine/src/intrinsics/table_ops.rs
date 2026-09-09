@@ -181,6 +181,33 @@ fn common_columns(lhs: &[SchemaField], rhs: &[SchemaField]) -> MResult<Vec<(usiz
     Ok(common)
 }
 
+fn common_columns_with_construction(
+    lhs: &[SchemaField],
+    rhs: &[SchemaField],
+    construction: &mut FrozenSnapshotConstruction,
+) -> MResult<Vec<(usize, usize)>> {
+    let count = lhs
+        .iter()
+        .filter(|field| rhs.iter().any(|candidate| candidate.name == field.name))
+        .count();
+    let mut common = construction.try_vec_with_capacity(count)?;
+    for (left, field) in lhs.iter().enumerate() {
+        let Some(right) = rhs
+            .iter()
+            .position(|candidate| candidate.name == field.name)
+        else {
+            continue;
+        };
+        if field.schema != rhs[right].schema {
+            return Err(table_join_error(
+                "common join columns must have identical schemas",
+            ));
+        }
+        common.push((left, right));
+    }
+    Ok(common)
+}
+
 pub(crate) fn joined_table_fields(
     lhs: &[SchemaField],
     rhs: &[SchemaField],
@@ -337,6 +364,177 @@ fn joined_table_data(
     ))
 }
 
+fn visit_join_row_pairs(
+    lhs: &CanonicalTable,
+    rhs: &CanonicalTable,
+    mode: JoinMode,
+    common: &[(usize, usize)],
+    rhs_matched: &mut [bool],
+    mut visit: impl FnMut(Option<usize>, Option<usize>) -> MResult<()>,
+) -> MResult<()> {
+    rhs_matched.fill(false);
+    for lhs_row in 0..lhs.rows {
+        let mut any_match = false;
+        for rhs_row in 0..rhs.rows {
+            if !rows_match(lhs, lhs_row, rhs, rhs_row, common) {
+                continue;
+            }
+            any_match = true;
+            rhs_matched[rhs_row] = true;
+            match mode {
+                JoinMode::Inner
+                | JoinMode::LeftOuter
+                | JoinMode::RightOuter
+                | JoinMode::FullOuter => visit(Some(lhs_row), Some(rhs_row))?,
+                JoinMode::LeftSemi => break,
+                JoinMode::LeftAnti => {}
+            }
+        }
+        match mode {
+            JoinMode::LeftOuter | JoinMode::FullOuter if !any_match => visit(Some(lhs_row), None)?,
+            JoinMode::LeftSemi if any_match => visit(Some(lhs_row), None)?,
+            JoinMode::LeftAnti if !any_match => visit(Some(lhs_row), None)?,
+            _ => {}
+        }
+    }
+    if matches!(mode, JoinMode::RightOuter | JoinMode::FullOuter) {
+        for (rhs_row, matched) in rhs_matched.iter().enumerate() {
+            if !matched {
+                visit(None, Some(rhs_row))?;
+            }
+        }
+    }
+    Ok(())
+}
+
+fn joined_table_data_with_construction(
+    lhs: &CanonicalTable,
+    rhs: &CanonicalTable,
+    mode: JoinMode,
+    construction: &mut FrozenSnapshotConstruction,
+) -> MResult<(SchemaBody, ValueDataDraft)> {
+    let common = common_columns_with_construction(&lhs.fields, &rhs.fields, construction)?;
+    let lhs_only = matches!(mode, JoinMode::LeftSemi | JoinMode::LeftAnti);
+    let rhs_output_count = if lhs_only {
+        0
+    } else {
+        rhs.fields
+            .iter()
+            .enumerate()
+            .filter(|(right, _)| !common.iter().any(|(_, candidate)| candidate == right))
+            .count()
+    };
+    let field_count = lhs
+        .fields
+        .len()
+        .checked_add(rhs_output_count)
+        .ok_or_else(|| table_join_error("table join column count overflows"))?;
+
+    let mut rhs_matched = construction.try_vec_with_capacity(rhs.rows)?;
+    rhs_matched.resize(rhs.rows, false);
+    let mut pair_count = 0usize;
+    visit_join_row_pairs(lhs, rhs, mode, &common, &mut rhs_matched, |_, _| {
+        pair_count = pair_count
+            .checked_add(1)
+            .ok_or_else(|| table_join_error("table join row count overflows"))?;
+        Ok(())
+    })?;
+    let mut row_pairs = construction.try_vec_with_capacity(pair_count)?;
+    visit_join_row_pairs(lhs, rhs, mode, &common, &mut rhs_matched, |left, right| {
+        row_pairs.push((left, right));
+        Ok(())
+    })?;
+
+    let mut fields = construction.try_vec_with_capacity(field_count)?;
+    let mut output_columns = construction.try_vec_with_capacity(field_count)?;
+    let mut values = construction.try_vec_with_capacity(field_count)?;
+    for _ in 0..field_count {
+        values.push(construction.try_vec_with_capacity(pair_count)?);
+    }
+
+    construction.try_finish_preallocated_with(move || {
+        let lhs_outer = matches!(mode, JoinMode::RightOuter | JoinMode::FullOuter);
+        let rhs_outer = matches!(mode, JoinMode::LeftOuter | JoinMode::FullOuter);
+        for (index, field) in lhs.fields.iter().enumerate() {
+            fields.push(SchemaField {
+                name: field.name.clone(),
+                schema: if lhs_outer && !common.iter().any(|(left, _)| *left == index) {
+                    optional_schema(&field.schema)
+                } else {
+                    field.schema.clone()
+                },
+            });
+        }
+        if !lhs_only {
+            for (right, field) in rhs.fields.iter().enumerate() {
+                if common.iter().any(|(_, candidate)| *candidate == right) {
+                    continue;
+                }
+                fields.push(SchemaField {
+                    name: field.name.clone(),
+                    schema: if rhs_outer {
+                        optional_schema(&field.schema)
+                    } else {
+                        field.schema.clone()
+                    },
+                });
+            }
+        }
+
+        for field in &fields {
+            output_columns.push(TableColumnDraft {
+                name: field.name.clone(),
+                values: Box::new([]),
+            });
+        }
+        for (lhs_row, rhs_row) in row_pairs {
+            for (index, field) in lhs.fields.iter().enumerate() {
+                let target = &fields[index].schema;
+                let value = if let Some(row) = lhs_row {
+                    present_for_schema(target, &field.schema, lhs.value(index, row))
+                } else if let Some((_, rhs_index)) = common.iter().find(|(left, _)| *left == index)
+                {
+                    let row = rhs_row.expect("right outer row has a right source");
+                    present_for_schema(
+                        target,
+                        &rhs.fields[*rhs_index].schema,
+                        rhs.value(*rhs_index, row),
+                    )
+                } else {
+                    absent_for_schema(target)?
+                };
+                values[index].push(value);
+            }
+            if !lhs_only {
+                let mut output = lhs.fields.len();
+                for (index, field) in rhs.fields.iter().enumerate() {
+                    if common.iter().any(|(_, right)| *right == index) {
+                        continue;
+                    }
+                    let target = &fields[output].schema;
+                    let value = if let Some(row) = rhs_row {
+                        present_for_schema(target, &field.schema, rhs.value(index, row))
+                    } else {
+                        absent_for_schema(target)?
+                    };
+                    values[output].push(value);
+                    output += 1;
+                }
+            }
+        }
+        for (column, values) in output_columns.iter_mut().zip(values) {
+            column.values = values.into_boxed_slice();
+        }
+        Ok((
+            SchemaBody::Table {
+                columns: fields.into_boxed_slice(),
+                rows: CardinalitySpec::Dynamic { upper_bound: None },
+            },
+            ValueDataDraft::Table(output_columns.into_boxed_slice()),
+        ))
+    })
+}
+
 #[derive(Debug)]
 struct TableJoinFxn {
     lhs: FunctionValueInput,
@@ -399,22 +597,21 @@ impl MechFunctionImpl for TableJoinFxn {
             self.out.cell(),
             footprint,
             |frame, construction| {
-                let next = construction.try_build_canonical_candidate_with(|construction| {
-                    let lhs = frame.snapshot_input_cell_with_construction(
-                        self.lhs.cell(),
-                        0,
-                        construction,
-                    )?;
-                    let rhs = frame.snapshot_input_cell_with_construction(
-                        self.rhs.cell(),
-                        1,
-                        construction,
-                    )?;
-                    let lhs = CanonicalTable::from_value(self.lhs.cell(), &lhs)?;
-                    let rhs = CanonicalTable::from_value(self.rhs.cell(), &rhs)?;
-                    let (_, draft) = joined_table_data(&lhs, &rhs, self.mode)?;
-                    construction.try_rebuild_data_draft(self.out.cell(), draft)
-                })?;
+                let lhs = frame.snapshot_input_cell_with_construction(
+                    self.lhs.cell(),
+                    0,
+                    construction,
+                )?;
+                let rhs = frame.snapshot_input_cell_with_construction(
+                    self.rhs.cell(),
+                    1,
+                    construction,
+                )?;
+                let lhs = CanonicalTable::from_value(self.lhs.cell(), &lhs)?;
+                let rhs = CanonicalTable::from_value(self.rhs.cell(), &rhs)?;
+                let (_, draft) =
+                    joined_table_data_with_construction(&lhs, &rhs, self.mode, construction)?;
+                let next = construction.try_rebuild_data_draft(self.out.cell(), draft)?;
                 Ok(((), next))
             },
         )?;

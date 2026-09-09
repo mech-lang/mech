@@ -20,6 +20,7 @@ REQUIRED = (
     "src/core/src/memory_runtime/transaction.rs",
     "src/core/src/memory_runtime/error.rs",
     "src/core/src/memory_plan/derive.rs",
+    "src/core/src/memory_plan/model.rs",
     "src/core/src/execution.rs",
     "src/core/src/snapshot/encoding.rs",
     "src/core/src/snapshot/validation.rs",
@@ -31,6 +32,7 @@ REQUIRED = (
     "src/engine/src/memory_runtime/mod.rs",
     "src/engine/src/memory_runtime/realize.rs",
     "src/engine/src/memory_runtime/resident.rs",
+    "src/engine/src/memory_planner/program.rs",
     "src/engine/src/resident/general/mod.rs",
     "src/engine/src/interpreter/mod.rs",
     "src/engine/src/literals.rs",
@@ -350,6 +352,22 @@ def failures(root: Path) -> list[str]:
         r"initialization\s*\.\s*contains_region", object_value_views[0]
     ):
         found.append("read-capable object views can expose uninitialized managed storage")
+    managed_element_checks = list(function_bodies(access, "validate_managed_element"))
+    raw_byte_checks = list(function_bodies(access, "validate_raw_byte_object"))
+    raw_mutators = list(function_bodies(access, "with_bytes_mut"))
+    raw_prefix_mutators = list(function_bodies(access, "with_bytes_mut_prefix"))
+    if (
+        not managed_element_checks
+        or "region.slot.is_none()" not in managed_element_checks[0]
+        or "IntegerWidth::W8" not in managed_element_checks[0]
+        or not raw_byte_checks
+        or "region.slot.is_some()" not in raw_byte_checks[0]
+        or not raw_mutators
+        or "with_bytes_mut_inner(object, true" not in raw_mutators[0]
+        or not raw_prefix_mutators
+        or "validate_raw_byte_object" not in raw_prefix_mutators[0]
+    ):
+        found.append("typed Boolean storage can be exposed through raw byte access")
     payload = rust_code(sources.get("src/core/src/memory_runtime/payload.rs", ""))
     if (
         "PreparedFrozenSnapshotAdmission" not in payload
@@ -433,6 +451,17 @@ def failures(root: Path) -> list[str]:
         or not re.search(r"state\s*\.\s*realization_owners\s*\.\s*retain", retired[0])
     ):
         found.append("retired realizations retain historical region initialization metadata")
+    replacement_paths = list(function_bodies(cell, "replace"))
+    function_source = rust_code(sources.get("src/core/src/function/mod.rs", ""))
+    promotion_paths = list(
+        function_bodies(function_source, "promote_prepared_realization")
+    )
+    if (
+        not any("collect_retired" in body for body in replacement_paths)
+        or not promotion_paths
+        or "collect_retired" not in promotion_paths[0]
+    ):
+        found.append("ordinary cold-path replacement or promotion omits retired collection")
     if "publication_shape" not in cell or not any(
         "publication_shape" in body and "publication_locked" in body
         for body in function_bodies(cell, "lock_publication")
@@ -763,10 +792,22 @@ def failures(root: Path) -> list[str]:
         not conversion_staging
         or "snapshot_input_cell_with_construction" not in conversion_staging[0]
         or "try_rebuild_data_draft" not in conversion_staging[0]
+        or "execute_fixed_conversion_plan" not in conversion_staging[0]
         or "execute_conversion_plan" in conversion_staging[0]
         or "from_resolved_descriptor_data" in conversion_staging[0]
     ):
         found.append("managed conversion escapes its frame-owned construction authority")
+    memory_model = rust_code(sources.get("src/core/src/memory_plan/model.rs", ""))
+    memory_derive = rust_code(sources.get("src/core/src/memory_plan/derive.rs", ""))
+    program_planner = rust_code(sources.get("src/engine/src/memory_planner/program.rs", ""))
+    if (
+        "ReservationOnlyWorkspace" not in memory_model
+        or "construction_arena_for_space" not in memory_derive
+        or "AllocationRole::ConstructionWorkspace" not in memory_derive
+        or "ArenaBackingKind::ReservationOnlyWorkspace" not in domain
+        or "ArenaBackingKind::ReservationOnlyWorkspace" not in program_planner
+    ):
+        found.append("canonical construction workspace retains duplicate contiguous backing")
     conversion_footprints = list(
         function_bodies(literal, "prospective_conversion_output_footprint")
     )
@@ -791,10 +832,10 @@ def failures(root: Path) -> list[str]:
     join_solves = list(function_bodies(table_ops, "solve_managed"))
     if not any(
         "snapshot_input_cell_with_construction" in body
-        and "joined_table_data" in body
+        and "joined_table_data_with_construction" in body
         and "try_rebuild_data_draft" in body
         for body in join_solves
-    ):
+    ) or "try_finish_preallocated_with" not in table_ops or table_ops.count("try_vec_with_capacity") < 5:
         found.append("table join constructs a detached logical cell during execution")
 
     module = rust_code(sources.get("src/engine/src/function/module.rs", ""))

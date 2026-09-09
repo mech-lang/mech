@@ -125,6 +125,64 @@ fn reservations_are_finite_and_release_unused_authority() {
 }
 
 #[test]
+fn construction_workspace_is_reserved_without_a_duplicate_host_block() {
+    let domain = MemoryDomain::new().unwrap();
+    let revision = domain.issue_plan_revision().unwrap();
+    let mut workspace = allocation(
+        0,
+        0,
+        0,
+        64 * 1024,
+        64 * 1024,
+        MemoryLifetime::Turn {
+            first: MemoryPlanPoint::new(0),
+            last: MemoryPlanPoint::new(0),
+        },
+        None,
+    );
+    workspace.role = AllocationRole::ConstructionWorkspace;
+    workspace.slot = None;
+    workspace.alignment = 1;
+    let arenas = [arena(
+        0,
+        ArenaBackingKind::ReservationOnlyWorkspace,
+        workspace.capacity_bytes,
+        &[0],
+    )];
+    let realized = domain
+        .materialize(
+            domain
+                .prepare_realization(runtime_plan_view(
+                    revision,
+                    &[workspace.clone()],
+                    &arenas,
+                    ResourceDemand {
+                        turn_peak_bytes: workspace.capacity_bytes,
+                        ..ResourceDemand::default()
+                    },
+                    MemoryBudgetLimits::default(),
+                    &[],
+                ))
+                .unwrap(),
+        )
+        .unwrap();
+    let object = domain
+        .plan_object_key(revision, MemoryObjectId::new(0))
+        .unwrap();
+    assert!(matches!(
+        realized.binding(object).unwrap(),
+        RuntimeBinding::ReservationOnly {
+            capacity_bytes: 65_536,
+            ..
+        }
+    ));
+    let observations = domain.allocation_observations();
+    assert_eq!(observations.len(), 1);
+    assert_eq!(observations[0].capacity_bytes, 65_536);
+    assert_eq!(observations[0].actual_block_bytes, 0);
+}
+
+#[test]
 fn realization_recomputes_budget_instead_of_trusting_cached_violations() {
     let domain = MemoryDomain::new().unwrap();
     let revision = domain.issue_plan_revision().unwrap();
@@ -213,7 +271,7 @@ fn realization_tracks_initialization_and_scoped_access() {
     domain
         .acquire_call(&realized, &write)
         .unwrap()
-        .with_object_init_writer::<u8>(key, |writer| writer.copy_from_slice(&42_u64.to_ne_bytes()))
+        .with_object_init_writer::<u64>(key, |writer| writer.write_next(42))
         .unwrap();
     assert_eq!(realized.binding(key).unwrap().initialized_bytes(), 8);
 
@@ -797,11 +855,8 @@ fn lease_acquisition_is_atomic_and_region_aware() {
         domain
             .acquire_call(&realized, &write)
             .unwrap()
-            .with_object_init_writer::<u8>(key, |writer| {
-                for _ in 0..8 {
-                    writer.write_next(key.object().get() as u8)?;
-                }
-                Ok::<(), MemoryRuntimeError>(())
+            .with_object_init_writer::<u64>(key, |writer| {
+                writer.write_next(u64::from(key.object().get()))
             })
             .unwrap();
     }
@@ -863,12 +918,14 @@ fn lease_acquisition_is_atomic_and_region_aware() {
     };
     let empty_domain = MemoryDomain::new().unwrap();
     let empty_revision = empty_domain.issue_plan_revision().unwrap();
+    let mut empty_allocation = allocation(0, 0, 0, 0, 8, MemoryLifetime::Activation, None);
+    empty_allocation.slot = None;
     let empty_realized = empty_domain
         .materialize(
             empty_domain
                 .prepare_realization(runtime_plan_view(
                     empty_revision,
-                    &[allocation(0, 0, 0, 0, 8, MemoryLifetime::Activation, None)],
+                    &[empty_allocation],
                     &[arena(0, ArenaBackingKind::ContiguousBytes, 8, &[0])],
                     ResourceDemand::default(),
                     MemoryBudgetLimits::default(),
@@ -903,7 +960,7 @@ fn lease_acquisition_is_atomic_and_region_aware() {
 fn overlapping_regions_require_a_disjoint_lifetime_reuse_group() {
     let domain = MemoryDomain::new().unwrap();
     let revision = domain.issue_plan_revision().unwrap();
-    let allocations = [
+    let mut allocations = [
         allocation(
             0,
             0,
@@ -929,6 +986,9 @@ fn overlapping_regions_require_a_disjoint_lifetime_reuse_group() {
             Some(3),
         ),
     ];
+    for allocation in &mut allocations {
+        allocation.slot = None;
+    }
     let arenas = [arena(0, ArenaBackingKind::ContiguousBytes, 32, &[0, 1])];
     assert!(
         domain
@@ -967,7 +1027,7 @@ fn overlapping_regions_require_a_disjoint_lifetime_reuse_group() {
 fn reused_regions_are_leaseable_only_during_their_declared_plan_interval() {
     let domain = MemoryDomain::new().unwrap();
     let revision = domain.issue_plan_revision().unwrap();
-    let allocations = [
+    let mut allocations = [
         allocation(
             0,
             0,
@@ -993,6 +1053,9 @@ fn reused_regions_are_leaseable_only_during_their_declared_plan_interval() {
             Some(7),
         ),
     ];
+    for allocation in &mut allocations {
+        allocation.slot = None;
+    }
     let arenas = [arena(0, ArenaBackingKind::ContiguousBytes, 16, &[0, 1])];
     let realized = domain
         .materialize(
@@ -1156,9 +1219,7 @@ fn retired_allocations_wait_for_held_leases_before_reclamation() {
     domain
         .acquire_call(&realized, &write)
         .unwrap()
-        .with_object_init_writer::<u8>(object, |writer| {
-            writer.copy_from_slice(&23_u64.to_ne_bytes())
-        })
+        .with_object_init_writer::<u64>(object, |writer| writer.write_next(23))
         .unwrap();
     let read = domain
         .prepare_call(
@@ -1503,7 +1564,7 @@ fn reclaimed_realizations_release_historical_region_and_revision_metadata() {
     for iteration in 0..12_u64 {
         let revision = domain.issue_plan_revision().unwrap();
         let capacity = CAPACITY + (iteration % 3) * 64;
-        let allocations = [allocation(
+        let mut allocations = [allocation(
             0,
             0,
             0,
@@ -1512,6 +1573,7 @@ fn reclaimed_realizations_release_historical_region_and_revision_metadata() {
             MemoryLifetime::Activation,
             None,
         )];
+        allocations[0].slot = None;
         let arenas = [arena(0, ArenaBackingKind::ContiguousBytes, capacity, &[0])];
         let realized = domain
             .materialize(

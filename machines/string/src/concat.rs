@@ -180,6 +180,64 @@ mod scalar_port_tests {
     }
 
     #[test]
+    fn ordinary_concat_replanning_collects_without_a_manual_collector_loop() {
+        let output = ValueCell::from_exact(String::new()).unwrap();
+        let lhs = ValueCell::from_exact("seed".to_owned()).unwrap();
+        let rhs = ValueCell::from_exact("!".to_owned()).unwrap();
+        let function = crate::test_managed_factory::<ConcatSS<String>>(
+            FunctionInvocation::binary(output.clone(), lhs.clone(), rhs),
+            "string/concat",
+        );
+        let domain = output.memory_domain().unwrap();
+        function.instance().solve_result().unwrap();
+
+        let retained = output.snapshot().unwrap();
+        let mut steady = None;
+        for turn in 0..24 {
+            let next = if turn % 2 == 0 {
+                "x".repeat(64 * 1024)
+            } else {
+                "y".repeat(1024)
+            };
+            lhs.replace(&ValueCell::from_exact(next.clone()).unwrap().snapshot().unwrap())
+                .unwrap();
+
+            if turn == 8 {
+                let before = string_value(&output);
+                let version = output.published_version();
+                domain
+                    .inject_failure_after(MemoryFailurePoint::HostAllocation, 0)
+                    .unwrap();
+                assert!(function.instance().solve_result().is_err());
+                assert_eq!(output.published_version(), version);
+                assert_eq!(string_value(&output), before);
+            }
+
+            function.instance().solve_result().unwrap();
+            assert_eq!(string_value(&output), format!("{next}!"));
+            if turn >= 4 {
+                let metadata = domain.metadata_observation();
+                let live = domain.ledger().live_allocations;
+                let current = (
+                    metadata.regions,
+                    metadata.revisions,
+                    metadata.reuse_groups,
+                    live,
+                );
+                assert_eq!(*steady.get_or_insert(current), current);
+                assert_eq!(domain.ledger().retired_allocations, 0);
+            }
+        }
+
+        // Holding a detached immutable result keeps only its own frozen root;
+        // it neither pins obsolete call realizations nor changes its contents.
+        assert!(matches!(
+            retained.data(),
+            ValueData::String(value) if value.as_ref() == "seed!"
+        ));
+    }
+
+    #[test]
     fn resident_concat_rejects_oversized_candidate_before_result_allocation_and_recovers() {
         let output = ValueCell::from_exact(String::new()).unwrap();
         let lhs = ValueCell::from_exact("a".to_owned()).unwrap();

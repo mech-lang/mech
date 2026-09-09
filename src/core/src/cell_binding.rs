@@ -4034,11 +4034,34 @@ impl ValueCell {
     }
 
     pub fn replace(&self, value: &Value) -> MResult<()> {
-        if let Some(staged) = self.stage_managed_replacement(value)? {
-            let prepared = staged
-                .domain
-                .prepare_cell_publication(&staged.realized, vec![staged.candidate])?;
-            staged.domain.ready_cell_publication(prepared)?.commit();
+        let staged = match self.stage_managed_replacement(value) {
+            Ok(staged) => staged,
+            Err(error) => {
+                if let Some(domain) = self.memory_domain() {
+                    // Replacement failure is a cold safe point: any candidate
+                    // owner created by staging has already unwound.
+                    domain.collect_retired().map_err(MechError::from)?;
+                }
+                return Err(error);
+            }
+        };
+        if let Some(staged) = staged {
+            let StagedManagedCellUpdate {
+                domain,
+                realized,
+                candidate,
+            } = staged;
+            let publication = domain
+                .prepare_cell_publication(&realized, vec![candidate])
+                .and_then(|prepared| domain.ready_cell_publication(prepared));
+            let result = publication.map(|ready| ready.commit());
+            drop(realized);
+            // On success the newly published binding retains its realization;
+            // on failure the candidate has unwound. In either case dropping
+            // the staging owner above makes obsolete storage collectible
+            // without burdening ordinary fixed-width turns.
+            domain.collect_retired().map_err(MechError::from)?;
+            result.map_err(MechError::from)?;
             return Ok(());
         }
         if value.schema_key() != self.binding.schema_key {

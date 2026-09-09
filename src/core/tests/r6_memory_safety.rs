@@ -3,6 +3,7 @@
     feature = "u8",
     feature = "u64",
     feature = "f64",
+    feature = "bool",
     feature = "string",
     feature = "matrixd"
 ))]
@@ -21,6 +22,168 @@ mod allocation_probe;
 
 #[global_allocator]
 static ALLOCATOR: allocation_probe::ProbeAllocator = allocation_probe::ProbeAllocator;
+
+#[test]
+fn boolean_storage_rejects_raw_byte_initialization_and_mutation() {
+    let domain = MemoryDomain::new().unwrap();
+    let revision = domain.issue_plan_revision().unwrap();
+    let mut boolean = allocation(0, 0, MemoryLifetime::Activation);
+    boolean.slot = Some(mech_core::PlannedSlotKind::FixedScalar(
+        mech_core::ScalarMemoryKind::Bool,
+    ));
+    boolean.current_bytes = 1;
+    boolean.capacity_bytes = 1;
+    boolean.alignment = 1;
+    let boolean_arena = ArenaPlan {
+        id: MemoryArenaId::new(0),
+        space: MemorySpace::Host,
+        backing: ArenaBackingKind::ContiguousBytes,
+        alignment: 1,
+        capacity_bytes: 1,
+        members: vec![MemoryObjectId::new(0)].into_boxed_slice(),
+    };
+    let realized = domain
+        .materialize(
+            domain
+                .prepare_realization(runtime_plan_view(
+                    revision,
+                    &[boolean],
+                    &[boolean_arena],
+                    ResourceDemand::default(),
+                    MemoryBudgetLimits::default(),
+                    &[],
+                ))
+                .unwrap(),
+        )
+        .unwrap();
+    let object = domain
+        .plan_object_key(revision, MemoryObjectId::new(0))
+        .unwrap();
+    let write = domain
+        .prepare_call(
+            &realized,
+            &[CallAccessRequest {
+                object,
+                mode: MemoryAccessMode::Write,
+                region: MemoryAccessRegion::Contiguous {
+                    offset_bytes: 0,
+                    length_bytes: 1,
+                },
+            }],
+        )
+        .unwrap();
+    let mut frame = domain.acquire_call(&realized, &write).unwrap();
+    assert!(matches!(
+        frame.with_object_init_writer::<u8>(object, |writer| writer.write_next(2)),
+        Err(MemoryRuntimeError::InvalidLayout { .. })
+    ));
+    frame
+        .with_object_init_writer::<bool>(object, |writer| writer.write_next(true))
+        .unwrap();
+    assert!(matches!(
+        frame.with_bytes_mut(object, |bytes| bytes[0] = 2),
+        Err(MemoryRuntimeError::InvalidLayout { .. })
+    ));
+    assert!(matches!(
+        frame.with_bytes_mut_prefix(object, 1, |bytes| bytes[0] = 2),
+        Err(MemoryRuntimeError::InvalidLayout { .. })
+    ));
+    drop(frame);
+
+    let read = domain
+        .prepare_call(
+            &realized,
+            &[CallAccessRequest {
+                object,
+                mode: MemoryAccessMode::Read,
+                region: MemoryAccessRegion::WholeInitialized,
+            }],
+        )
+        .unwrap();
+    let frame = domain.acquire_call(&realized, &read).unwrap();
+    assert!(
+        frame
+            .with_object_value_view::<bool, _>(object, |view| {
+                assert_eq!(view.get_column_major(0), Some(true));
+            })
+            .is_ok()
+    );
+}
+
+#[test]
+fn explicitly_untyped_transfer_storage_accepts_raw_bytes() {
+    let domain = MemoryDomain::new().unwrap();
+    let revision = domain.issue_plan_revision().unwrap();
+    let mut transfer = allocation(0, 0, MemoryLifetime::Activation);
+    transfer.slot = None;
+    transfer.current_bytes = 4;
+    transfer.capacity_bytes = 4;
+    transfer.alignment = 1;
+    let transfer_arena = ArenaPlan {
+        id: MemoryArenaId::new(0),
+        space: MemorySpace::Host,
+        backing: ArenaBackingKind::ContiguousBytes,
+        alignment: 1,
+        capacity_bytes: 4,
+        members: vec![MemoryObjectId::new(0)].into_boxed_slice(),
+    };
+    let realized = domain
+        .materialize(
+            domain
+                .prepare_realization(runtime_plan_view(
+                    revision,
+                    &[transfer],
+                    &[transfer_arena],
+                    ResourceDemand::default(),
+                    MemoryBudgetLimits::default(),
+                    &[],
+                ))
+                .unwrap(),
+        )
+        .unwrap();
+    let object = domain
+        .plan_object_key(revision, MemoryObjectId::new(0))
+        .unwrap();
+    let write = domain
+        .prepare_call(
+            &realized,
+            &[CallAccessRequest {
+                object,
+                mode: MemoryAccessMode::Write,
+                region: MemoryAccessRegion::Contiguous {
+                    offset_bytes: 0,
+                    length_bytes: 4,
+                },
+            }],
+        )
+        .unwrap();
+    let mut frame = domain.acquire_call(&realized, &write).unwrap();
+    frame
+        .with_object_init_writer::<u8>(object, |writer| writer.copy_from_slice(&[1, 2, 3, 4]))
+        .unwrap();
+    frame
+        .with_bytes_mut_prefix(object, 2, |bytes| bytes.copy_from_slice(&[5, 6]))
+        .unwrap();
+    drop(frame);
+    let read = domain
+        .prepare_call(
+            &realized,
+            &[CallAccessRequest {
+                object,
+                mode: MemoryAccessMode::Read,
+                region: MemoryAccessRegion::WholeInitialized,
+            }],
+        )
+        .unwrap();
+    assert_eq!(
+        domain
+            .acquire_call(&realized, &read)
+            .unwrap()
+            .with_bytes(object, |bytes| bytes.to_vec())
+            .unwrap(),
+        vec![5, 6, 3, 4]
+    );
+}
 
 #[test]
 fn explicit_external_wrappers_share_one_publication_record() {
@@ -174,7 +337,9 @@ fn repeated_complete_call_acquisition_and_release_allocate_no_metadata() {
                 .with_bytes(first, |bytes| u64::from_ne_bytes(bytes.try_into().unwrap()))
                 .unwrap();
             frame
-                .with_bytes_mut(second, |bytes| bytes.copy_from_slice(&value.to_ne_bytes()))
+                .with_object_init_view::<u64, _>(second, |output| {
+                    output.try_fill_column_major(|_| Ok(value))
+                })
                 .unwrap();
         }
     });
@@ -635,7 +800,7 @@ fn initializer_marks_nothing_when_its_callback_returns_an_error() {
         .unwrap();
     let mut frame = domain.acquire_call(&realized, &write).unwrap();
     frame
-        .with_object_init_writer::<u8>(object, |_writer| Ok(()))
+        .with_object_init_writer::<u64>(object, |_writer| Ok(()))
         .unwrap();
     assert!(matches!(
         frame.with_object_value_view::<u64, _>(object, |_| ()),
@@ -645,7 +810,7 @@ fn initializer_marks_nothing_when_its_callback_returns_an_error() {
     assert_eq!(realized.binding(object).unwrap().initialized_bytes(), 0);
 
     let mut frame = domain.acquire_call(&realized, &write).unwrap();
-    let injected = frame.with_object_init_writer::<u8>(object, |writer| {
+    let injected = frame.with_object_init_writer::<u64>(object, |writer| {
         writer.write_next(7)?;
         Err::<(), _>(MemoryRuntimeError::DomainClosed)
     });
@@ -669,7 +834,9 @@ fn initializer_marks_nothing_when_its_callback_returns_an_error() {
 fn initialization_tracking_does_not_authorize_stride_gaps() {
     let domain = MemoryDomain::new().unwrap();
     let revision = domain.issue_plan_revision().unwrap();
-    let allocations = [allocation(0, 0, MemoryLifetime::Activation)];
+    let mut allocation = allocation(0, 0, MemoryLifetime::Activation);
+    allocation.slot = None;
+    let allocations = [allocation];
     let realized = domain
         .materialize(
             domain
@@ -831,9 +998,7 @@ fn a_lease_cannot_observe_a_reused_region_outside_its_lifetime() {
     let _scope = domain.enter_plan_point(MemoryPlanPoint::new(1)).unwrap();
     let mut frame = domain.acquire_call(&realized, &prepared).unwrap();
     frame
-        .with_object_init_writer::<u8>(object, |writer| {
-            writer.copy_from_slice(&7_u64.to_ne_bytes())
-        })
+        .with_object_init_writer::<u64>(object, |writer| writer.write_next(7))
         .unwrap();
     frame
         .with_bytes(object, |bytes| assert_eq!(bytes, 7_u64.to_ne_bytes()))

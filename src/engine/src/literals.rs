@@ -502,10 +502,13 @@ fn stage_conversion_output(
             Ok(((), next))
         })
     } else {
-        let snapshot = frame.snapshot_input_cell(source, 0)?;
-        let converted = execute_conversion_draft_from_snapshot(source, &snapshot, plan)?;
-        let next = output.rebuild_data_draft(converted)?;
-        frame.stage_output_value(output, next)
+        let live_type = source.resolved_type()?;
+        if !exact_type_equal(&live_type, &plan.source) {
+            return Err(conversion_execution_error(
+                ConversionExecutionError::ConversionPlanSourceMismatch,
+            ));
+        }
+        frame.execute_fixed_conversion_plan(source, output, plan)
     }
 }
 
@@ -1408,6 +1411,98 @@ mod canonical_conversion_tests {
             output.snapshot().unwrap().data(),
             ValueData::I32(13)
         ));
+    }
+
+    #[cfg(all(feature = "matrix", feature = "u8", feature = "f64"))]
+    #[test]
+    fn managed_matrix_conversion_is_atomic_after_a_valid_prefix_and_recovers() {
+        let matrix = |values: &[f64]| {
+            let cells = values
+                .iter()
+                .map(|value| ValueCell::from_exact(*value).unwrap())
+                .collect::<Vec<_>>();
+            ValueCell::dynamic_matrix_from_cells(2, 3, &cells).unwrap()
+        };
+        let source = matrix(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0]);
+        let SchemaBody::Matrix { dimensions, .. } = source.closed_schema_body().unwrap() else {
+            panic!("fixture must be matrix-backed")
+        };
+        let target = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
+            dimensions,
+        };
+        let source_type = source.resolved_type().unwrap();
+        let KindExpr::Matrix { dimensions, .. } = source_type.kind() else {
+            panic!("fixture must resolve to a matrix")
+        };
+        let target_type = ResolvedType::new(
+            KindExpr::Matrix {
+                element: Box::new(BuiltinScalarKind::U8.kind_expr()),
+                dimensions: dimensions.clone(),
+            },
+            source_type
+                .dimension_parameters()
+                .to_vec()
+                .into_boxed_slice(),
+        )
+        .unwrap();
+        let plan = plan_explicit_cast(&source_type, &target_type).unwrap();
+        let output = execute_conversion_plan(&source, &target, &plan).unwrap();
+        let conversion =
+            planned_type_conversion_specialized(source.clone(), output.clone(), plan).unwrap();
+
+        let values = |cell: &ValueCell| {
+            let snapshot = cell.snapshot().unwrap();
+            let ValueData::Matrix(matrix) = snapshot.data() else {
+                panic!("converted value must remain a matrix")
+            };
+            let mech_core::snapshot::SequenceView::U8(values) = matrix.elements() else {
+                panic!("converted matrix must use u8 elements")
+            };
+            values.to_vec()
+        };
+
+        source
+            .replace(
+                &matrix(&[10.0, 11.0, 12.0, 13.0, 14.0, 15.0])
+                    .snapshot()
+                    .unwrap(),
+            )
+            .unwrap();
+        conversion.instance().solve_result().unwrap();
+        assert_eq!(values(&output), vec![10, 11, 12, 13, 14, 15]);
+        let successful_version = output.published_version();
+
+        // The final lane is out of range. The managed conversion writes only
+        // its private candidate, so the valid prefix cannot become visible.
+        source
+            .replace(
+                &matrix(&[20.0, 21.0, 22.0, 23.0, 24.0, 300.0])
+                    .snapshot()
+                    .unwrap(),
+            )
+            .unwrap();
+        assert_eq!(
+            conversion
+                .instance()
+                .solve_result()
+                .unwrap_err()
+                .kind_name(),
+            "ConversionOutOfRange"
+        );
+        assert_eq!(values(&output), vec![10, 11, 12, 13, 14, 15]);
+        assert_eq!(output.published_version(), successful_version);
+
+        source
+            .replace(
+                &matrix(&[30.0, 31.0, 32.0, 33.0, 34.0, 35.0])
+                    .snapshot()
+                    .unwrap(),
+            )
+            .unwrap();
+        conversion.instance().solve_result().unwrap();
+        assert_eq!(values(&output), vec![30, 31, 32, 33, 34, 35]);
+        assert!(output.published_version() > successful_version);
     }
 
     #[cfg(feature = "matrix")]

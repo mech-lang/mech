@@ -41,6 +41,7 @@ pub(crate) fn remap_call_allocations(
                     mech_core::AllocationRole::OrderedIndex
                         | mech_core::AllocationRole::SelectorPlan
                         | mech_core::AllocationRole::Scratch
+                        | mech_core::AllocationRole::ConstructionWorkspace
                         | mech_core::AllocationRole::TransactionStage
                         | mech_core::AllocationRole::TransferStage
                 )

@@ -794,7 +794,7 @@ impl ManagedCallRealization {
             .plan
             .allocations
             .iter()
-            .filter(|allocation| allocation.role == AllocationRole::Scratch)
+            .filter(|allocation| allocation.role == AllocationRole::ConstructionWorkspace)
             .try_fold((None, 0_u64), |(first, total), allocation| {
                 total
                     .checked_add(allocation.capacity_bytes)
@@ -1005,7 +1005,18 @@ impl FunctionInstance {
         &self,
         services: &mut dyn MechExecutionServices,
     ) -> MResult<ReactiveSolveStatus> {
-        let mut prepared = self.prepare_reactive_publication(services)?;
+        let mut prepared = match self.prepare_reactive_publication(services) {
+            Ok(prepared) => prepared,
+            Err(error) => {
+                // Candidate construction and its scopes have unwound. A
+                // failed cold path is therefore a safe reclamation point;
+                // callers do not need a manual collector loop to release an
+                // abandoned realization.
+                let domain = self.managed.current.borrow().domain.clone();
+                domain.collect_retired().map_err(MechError::from)?;
+                return Err(error);
+            }
+        };
         let status = prepared.status;
         if let Some(publication) = prepared.publication.take() {
             let external = prepared
@@ -1019,7 +1030,7 @@ impl FunctionInstance {
             // Promote before installing an external subscription so a live
             // observer can never resolve the newly published cell through the
             // preceding physical realization.
-            self.promote_prepared_realization(&mut prepared);
+            self.promote_prepared_realization(&mut prepared)?;
             if prepared.external {
                 self.implementation.external_publication_committed();
                 if let Some(external) = external {
@@ -1031,7 +1042,7 @@ impl FunctionInstance {
             // input geometry. Their successfully executed realization is
             // nevertheless the new cold-path binding authority. Failed calls
             // never reach here.
-            self.promote_prepared_realization(&mut prepared);
+            self.promote_prepared_realization(&mut prepared)?;
         }
         Ok(status)
     }
@@ -1168,6 +1179,10 @@ impl FunctionInstance {
                     // its stage uninitialized; the old binding and its own content
                     // version remain authoritative. Dropping a cold candidate here
                     // also leaves the previous executable realization intact.
+                    drop(frame);
+                    drop(_scope);
+                    drop(candidate);
+                    current.domain.collect_retired().map_err(MechError::from)?;
                     return Ok(PreparedFunctionPublication {
                         status,
                         publication: None,
@@ -1227,10 +1242,20 @@ impl FunctionInstance {
         })
     }
 
-    fn promote_prepared_realization(&self, prepared: &mut PreparedFunctionPublication) {
+    fn promote_prepared_realization(
+        &self,
+        prepared: &mut PreparedFunctionPublication,
+    ) -> MResult<()> {
         if let Some(candidate) = prepared.next_realization.take() {
-            *self.managed.current.borrow_mut() = candidate;
+            let domain = candidate.domain.clone();
+            let previous = core::mem::replace(&mut *self.managed.current.borrow_mut(), candidate);
+            drop(previous);
+            // Promotion is a cold path. All publication locks and old call
+            // frames have been released before this point, so collecting here
+            // cannot add work to the invariant numeric execution path.
+            domain.collect_retired().map_err(MechError::from)?;
         }
+        Ok(())
     }
 
     pub fn invocation(&self) -> &FunctionInvocation {
@@ -3066,10 +3091,25 @@ impl ReactivePlan {
                     None,
                 ));
             }
-            let prepared = node
+            let prepared = match node
                 .function
                 .instance
-                .prepare_reactive_publication(&mut services)?;
+                .prepare_reactive_publication(&mut services)
+            {
+                Ok(prepared) => prepared,
+                Err(error) => {
+                    let domain = node
+                        .function
+                        .instance
+                        .managed
+                        .current
+                        .borrow()
+                        .domain
+                        .clone();
+                    domain.collect_retired().map_err(MechError::from)?;
+                    return Err(error);
+                }
+            };
             staged.push((node.id, prepared));
         }
 
@@ -3089,7 +3129,7 @@ impl ReactivePlan {
             self.nodes[node_id]
                 .function
                 .instance
-                .promote_prepared_realization(&mut prepared);
+                .promote_prepared_realization(&mut prepared)?;
             outcome.committed_nodes.push(node_id);
             if prepared.status == ReactiveSolveStatus::Changed {
                 for cell in &self.nodes[node_id].outputs {

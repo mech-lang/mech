@@ -301,7 +301,7 @@ mod tests {
             .memory_plan()
             .allocations
             .iter()
-            .filter(|allocation| allocation.role == AllocationRole::Scratch)
+            .filter(|allocation| allocation.role == AllocationRole::ConstructionWorkspace)
             .map(|allocation| allocation.capacity_bytes)
             .sum::<u64>();
         assert!(

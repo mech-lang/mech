@@ -294,6 +294,180 @@ managed_elements!(
     crate::R64 => crate::PlannedSlotKind::FixedScalar(crate::ScalarMemoryKind::Rational64)
 );
 
+#[cfg(all(
+    feature = "functions",
+    any(
+        feature = "u8",
+        feature = "u16",
+        feature = "u32",
+        feature = "u64",
+        feature = "u128",
+        feature = "i8",
+        feature = "i16",
+        feature = "i32",
+        feature = "i64",
+        feature = "i128",
+        feature = "f32",
+        feature = "f64",
+        feature = "complex",
+        feature = "rational"
+    )
+))]
+trait FixedConversionLane: ManagedElement {
+    const KIND: crate::BuiltinScalarKind;
+
+    fn into_conversion_draft(self) -> crate::ValueDataDraft;
+    fn from_conversion_draft(
+        draft: crate::ValueDataDraft,
+    ) -> Result<Self, crate::ConversionExecutionError>;
+}
+
+#[cfg(all(
+    feature = "functions",
+    any(
+        feature = "u8",
+        feature = "u16",
+        feature = "u32",
+        feature = "u64",
+        feature = "u128",
+        feature = "i8",
+        feature = "i16",
+        feature = "i32",
+        feature = "i64",
+        feature = "i128"
+    )
+))]
+macro_rules! fixed_integer_conversion_lane {
+    ($type:ty, $kind:ident, $variant:ident) => {
+        impl FixedConversionLane for $type {
+            const KIND: crate::BuiltinScalarKind = crate::BuiltinScalarKind::$kind;
+
+            fn into_conversion_draft(self) -> crate::ValueDataDraft {
+                crate::ValueDataDraft::$variant(self)
+            }
+
+            fn from_conversion_draft(
+                draft: crate::ValueDataDraft,
+            ) -> Result<Self, crate::ConversionExecutionError> {
+                match draft {
+                    crate::ValueDataDraft::$variant(value) => Ok(value),
+                    _ => Err(crate::ConversionExecutionError::ConversionPlanSourceMismatch),
+                }
+            }
+        }
+    };
+}
+
+#[cfg(all(feature = "functions", feature = "u8"))]
+fixed_integer_conversion_lane!(u8, U8, U8);
+#[cfg(all(feature = "functions", feature = "u16"))]
+fixed_integer_conversion_lane!(u16, U16, U16);
+#[cfg(all(feature = "functions", feature = "u32"))]
+fixed_integer_conversion_lane!(u32, U32, U32);
+#[cfg(all(feature = "functions", feature = "u64"))]
+fixed_integer_conversion_lane!(u64, U64, U64);
+#[cfg(all(feature = "functions", feature = "u128"))]
+fixed_integer_conversion_lane!(u128, U128, U128);
+#[cfg(all(feature = "functions", feature = "i8"))]
+fixed_integer_conversion_lane!(i8, I8, I8);
+#[cfg(all(feature = "functions", feature = "i16"))]
+fixed_integer_conversion_lane!(i16, I16, I16);
+#[cfg(all(feature = "functions", feature = "i32"))]
+fixed_integer_conversion_lane!(i32, I32, I32);
+#[cfg(all(feature = "functions", feature = "i64"))]
+fixed_integer_conversion_lane!(i64, I64, I64);
+#[cfg(all(feature = "functions", feature = "i128"))]
+fixed_integer_conversion_lane!(i128, I128, I128);
+
+#[cfg(all(feature = "functions", feature = "f32"))]
+impl FixedConversionLane for f32 {
+    const KIND: crate::BuiltinScalarKind = crate::BuiltinScalarKind::F32;
+
+    fn into_conversion_draft(self) -> crate::ValueDataDraft {
+        crate::ValueDataDraft::F32(crate::snapshot::F32Bits::from_f32(self))
+    }
+
+    fn from_conversion_draft(
+        draft: crate::ValueDataDraft,
+    ) -> Result<Self, crate::ConversionExecutionError> {
+        match draft {
+            crate::ValueDataDraft::F32(value) => Ok(value.to_f32()),
+            _ => Err(crate::ConversionExecutionError::ConversionPlanSourceMismatch),
+        }
+    }
+}
+
+#[cfg(all(feature = "functions", feature = "f64"))]
+impl FixedConversionLane for f64 {
+    const KIND: crate::BuiltinScalarKind = crate::BuiltinScalarKind::F64;
+
+    fn into_conversion_draft(self) -> crate::ValueDataDraft {
+        crate::ValueDataDraft::F64(crate::snapshot::F64Bits::from_f64(self))
+    }
+
+    fn from_conversion_draft(
+        draft: crate::ValueDataDraft,
+    ) -> Result<Self, crate::ConversionExecutionError> {
+        match draft {
+            crate::ValueDataDraft::F64(value) => Ok(value.to_f64()),
+            _ => Err(crate::ConversionExecutionError::ConversionPlanSourceMismatch),
+        }
+    }
+}
+
+#[cfg(all(feature = "functions", feature = "complex"))]
+impl FixedConversionLane for crate::C64 {
+    const KIND: crate::BuiltinScalarKind = crate::BuiltinScalarKind::C64;
+
+    fn into_conversion_draft(self) -> crate::ValueDataDraft {
+        crate::ValueDataDraft::Complex64(crate::snapshot::Complex64Bits::new(
+            crate::snapshot::F64Bits::from_f64(self.0.re),
+            crate::snapshot::F64Bits::from_f64(self.0.im),
+        ))
+    }
+
+    fn from_conversion_draft(
+        draft: crate::ValueDataDraft,
+    ) -> Result<Self, crate::ConversionExecutionError> {
+        match draft {
+            crate::ValueDataDraft::Complex64(value) => Ok(crate::C64::new(
+                value.real().to_f64(),
+                value.imaginary().to_f64(),
+            )),
+            _ => Err(crate::ConversionExecutionError::ConversionPlanSourceMismatch),
+        }
+    }
+}
+
+#[cfg(all(feature = "functions", feature = "rational"))]
+impl FixedConversionLane for crate::R64 {
+    const KIND: crate::BuiltinScalarKind = crate::BuiltinScalarKind::R64;
+
+    fn into_conversion_draft(self) -> crate::ValueDataDraft {
+        crate::ValueDataDraft::Rational64 {
+            numerator: *self.numer(),
+            denominator: u64::try_from(*self.denom())
+                .expect("normalized Rational64 has a positive denominator"),
+        }
+    }
+
+    fn from_conversion_draft(
+        draft: crate::ValueDataDraft,
+    ) -> Result<Self, crate::ConversionExecutionError> {
+        match draft {
+            crate::ValueDataDraft::Rational64 {
+                numerator,
+                denominator,
+            } => i64::try_from(denominator)
+                .ok()
+                .filter(|denominator| *denominator != 0)
+                .map(|denominator| crate::R64::new(numerator, denominator))
+                .ok_or(crate::ConversionExecutionError::ConversionOutOfRange),
+            _ => Err(crate::ConversionExecutionError::ConversionPlanSourceMismatch),
+        }
+    }
+}
+
 /// Sealed sequential constructor for fresh planned storage. It exposes only
 /// `MaybeUninit<T>` writes and records how many leading elements were actually
 /// constructed; it never permits reading an uninitialized slot.
@@ -2003,7 +2177,7 @@ impl KernelMemoryFrame<'_> {
             .filter(|allocation| {
                 matches!(
                     allocation.role,
-                    crate::AllocationRole::Scratch | crate::AllocationRole::OrderedIndex
+                    crate::AllocationRole::ConstructionWorkspace
                 )
             })
             .try_fold(0_u64, |total, allocation| {
@@ -2759,6 +2933,232 @@ impl KernelMemoryFrame<'_> {
     /// Copies one already-resolved fixed-width logical input into its staged
     /// output. Semantic routing has already selected the operation; this
     /// adapter only chooses the sealed physical lane codec after binding.
+    #[cfg(all(
+        feature = "functions",
+        any(
+            feature = "u8",
+            feature = "u16",
+            feature = "u32",
+            feature = "u64",
+            feature = "u128",
+            feature = "i8",
+            feature = "i16",
+            feature = "i32",
+            feature = "i64",
+            feature = "i128",
+            feature = "f32",
+            feature = "f64",
+            feature = "complex",
+            feature = "rational"
+        )
+    ))]
+    pub fn execute_fixed_conversion_plan(
+        &mut self,
+        input: &crate::ValueCell,
+        output: &crate::ValueCell,
+        plan: &crate::ConversionPlan,
+    ) -> crate::MResult<()> {
+        use crate::{BuiltinScalarKind as K, ConversionStep, ScalarConversion};
+
+        let (source, target) = match &plan.step {
+            ConversionStep::Identity => {
+                return self.copy_fixed_port_value(input, output, input.representation());
+            }
+            ConversionStep::Scalar(ScalarConversion::Builtin { source, target, .. }) => {
+                (*source, *target)
+            }
+            ConversionStep::MatrixElements(element) => match &element.step {
+                ConversionStep::Scalar(ScalarConversion::Builtin { source, target, .. }) => {
+                    (*source, *target)
+                }
+                _ => {
+                    return Err(crate::MechError::new(
+                        crate::ConversionExecutionError::ConversionExecutionUnsupported,
+                        None,
+                    )
+                    .with_compiler_loc());
+                }
+            },
+            ConversionStep::OptionPayload(_) => {
+                return Err(crate::MechError::new(
+                    crate::ConversionExecutionError::ConversionExecutionUnsupported,
+                    None,
+                )
+                .with_compiler_loc());
+            }
+        };
+
+        macro_rules! target {
+            ($input:ty) => {
+                match target {
+                    #[cfg(feature = "u8")]
+                    K::U8 => self.convert_fixed_port_lanes::<$input, u8>(input, output),
+                    #[cfg(feature = "u16")]
+                    K::U16 => self.convert_fixed_port_lanes::<$input, u16>(input, output),
+                    #[cfg(feature = "u32")]
+                    K::U32 => self.convert_fixed_port_lanes::<$input, u32>(input, output),
+                    #[cfg(feature = "u64")]
+                    K::U64 => self.convert_fixed_port_lanes::<$input, u64>(input, output),
+                    #[cfg(feature = "u128")]
+                    K::U128 => self.convert_fixed_port_lanes::<$input, u128>(input, output),
+                    #[cfg(feature = "i8")]
+                    K::I8 => self.convert_fixed_port_lanes::<$input, i8>(input, output),
+                    #[cfg(feature = "i16")]
+                    K::I16 => self.convert_fixed_port_lanes::<$input, i16>(input, output),
+                    #[cfg(feature = "i32")]
+                    K::I32 => self.convert_fixed_port_lanes::<$input, i32>(input, output),
+                    #[cfg(feature = "i64")]
+                    K::I64 => self.convert_fixed_port_lanes::<$input, i64>(input, output),
+                    #[cfg(feature = "i128")]
+                    K::I128 => self.convert_fixed_port_lanes::<$input, i128>(input, output),
+                    #[cfg(feature = "f32")]
+                    K::F32 => self.convert_fixed_port_lanes::<$input, f32>(input, output),
+                    #[cfg(feature = "f64")]
+                    K::F64 => self.convert_fixed_port_lanes::<$input, f64>(input, output),
+                    #[cfg(feature = "complex")]
+                    K::C64 => self.convert_fixed_port_lanes::<$input, crate::C64>(input, output),
+                    #[cfg(feature = "rational")]
+                    K::R64 => self.convert_fixed_port_lanes::<$input, crate::R64>(input, output),
+                    _ => Err(crate::MechError::new(
+                        crate::ConversionExecutionError::ConversionExecutionUnsupported,
+                        None,
+                    )
+                    .with_compiler_loc()),
+                }
+            };
+        }
+
+        match source {
+            #[cfg(feature = "u8")]
+            K::U8 => target!(u8),
+            #[cfg(feature = "u16")]
+            K::U16 => target!(u16),
+            #[cfg(feature = "u32")]
+            K::U32 => target!(u32),
+            #[cfg(feature = "u64")]
+            K::U64 => target!(u64),
+            #[cfg(feature = "u128")]
+            K::U128 => target!(u128),
+            #[cfg(feature = "i8")]
+            K::I8 => target!(i8),
+            #[cfg(feature = "i16")]
+            K::I16 => target!(i16),
+            #[cfg(feature = "i32")]
+            K::I32 => target!(i32),
+            #[cfg(feature = "i64")]
+            K::I64 => target!(i64),
+            #[cfg(feature = "i128")]
+            K::I128 => target!(i128),
+            #[cfg(feature = "f32")]
+            K::F32 => target!(f32),
+            #[cfg(feature = "f64")]
+            K::F64 => target!(f64),
+            #[cfg(feature = "complex")]
+            K::C64 => target!(crate::C64),
+            #[cfg(feature = "rational")]
+            K::R64 => target!(crate::R64),
+            _ => Err(crate::MechError::new(
+                crate::ConversionExecutionError::ConversionExecutionUnsupported,
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+
+    #[cfg(all(
+        feature = "functions",
+        not(any(
+            feature = "u8",
+            feature = "u16",
+            feature = "u32",
+            feature = "u64",
+            feature = "u128",
+            feature = "i8",
+            feature = "i16",
+            feature = "i32",
+            feature = "i64",
+            feature = "i128",
+            feature = "f32",
+            feature = "f64",
+            feature = "complex",
+            feature = "rational"
+        ))
+    ))]
+    pub fn execute_fixed_conversion_plan(
+        &mut self,
+        _input: &crate::ValueCell,
+        _output: &crate::ValueCell,
+        _plan: &crate::ConversionPlan,
+    ) -> crate::MResult<()> {
+        Err(crate::MechError::new(
+            crate::ConversionExecutionError::ConversionExecutionUnsupported,
+            None,
+        )
+        .with_compiler_loc())
+    }
+
+    #[cfg(all(
+        feature = "functions",
+        any(
+            feature = "u8",
+            feature = "u16",
+            feature = "u32",
+            feature = "u64",
+            feature = "u128",
+            feature = "i8",
+            feature = "i16",
+            feature = "i32",
+            feature = "i64",
+            feature = "i128",
+            feature = "f32",
+            feature = "f64",
+            feature = "complex",
+            feature = "rational"
+        )
+    ))]
+    fn convert_fixed_port_lanes<I: FixedConversionLane, O: FixedConversionLane>(
+        &mut self,
+        input: &crate::ValueCell,
+        output: &crate::ValueCell,
+    ) -> crate::MResult<()> {
+        let input_lease =
+            self.port_lease(input.reactive_cell_id(), ManagedPortRole::Input(0), false)?;
+        let output_lease =
+            self.port_lease(output.reactive_cell_id(), ManagedPortRole::Output(0), true)?;
+        self.validate_managed_element::<I>(input_lease, false)?;
+        self.validate_managed_element::<O>(output_lease, false)?;
+        let input_view = self.read_view::<I>(input_lease)?;
+        let mut output_view = self.write_view::<O>(output_lease)?;
+        if input_view.len() != output_view.len()
+            || input_view.rows() != output_view.rows()
+            || input_view.columns() != output_view.columns()
+        {
+            return Err(MemoryRuntimeError::InvalidLayout {
+                object: Some(output_lease.object.object()),
+                size: output_view.len() as u64,
+                alignment: core::mem::align_of::<O>() as u32,
+                reason: "conversion input and staged output geometry disagree",
+            }
+            .into());
+        }
+        output_view.try_fill_column_major(|index| {
+            let value = input_view.get_column_major(index).ok_or_else(|| {
+                MemoryRuntimeError::CapacityExceeded {
+                    object: input_lease.object.object(),
+                    requested: index as u64 + 1,
+                    capacity: input_view.len() as u64,
+                }
+            })?;
+            let converted =
+                crate::execute_scalar_conversion(value.into_conversion_draft(), I::KIND, O::KIND)
+                    .map_err(|error| crate::MechError::new(error, None).with_compiler_loc())?;
+            O::from_conversion_draft(converted)
+                .map_err(|error| crate::MechError::new(error, None).with_compiler_loc())
+        })?;
+        self.record_view_initialized::<O>(output_lease)?;
+        Ok(())
+    }
+
     #[cfg(feature = "functions")]
     pub fn copy_fixed_port_value(
         &mut self,
@@ -3503,7 +3903,7 @@ impl KernelMemoryFrame<'_> {
         let lease = self.port_lease(port.logical_cell_id(), port.role(), true)?;
         validate_contiguous_typed_region(lease.object.object(), lease.region)?;
         self.validate_managed_element::<T>(lease, false)?;
-        self.with_bytes_mut(lease.object, |bytes| {
+        self.with_bytes_mut_inner(lease.object, false, |bytes| {
             if bytes.is_empty() {
                 return Ok(access(&mut []));
             }
@@ -3562,12 +3962,16 @@ impl KernelMemoryFrame<'_> {
             .regions
             .get(&lease.object)
             .ok_or(MemoryRuntimeError::UnknownPlanObject { key: lease.object })?;
+        // Raw initialization is a capability of an explicitly untyped
+        // scratch/transfer object, not a consequence of an element having a
+        // one-byte representation. In particular, `u8` must never initialize
+        // a planned Boolean slot: arbitrary bytes are not valid Rust bools.
         let byte_codec = allow_raw_bytes
-            && mem::size_of::<T>() == 1
-            && matches!(
-                region.slot,
-                None | Some(crate::PlannedSlotKind::FixedScalar(_))
-            );
+            && T::SLOT
+                == crate::PlannedSlotKind::FixedScalar(crate::ScalarMemoryKind::Unsigned(
+                    crate::IntegerWidth::W8,
+                ))
+            && region.slot.is_none();
         if region.slot != Some(T::SLOT) && !byte_codec {
             return Err(MemoryRuntimeError::InvalidLayout {
                 object: Some(lease.object.object()),
@@ -3811,6 +4215,15 @@ impl KernelMemoryFrame<'_> {
         object: PlanObjectKey,
         access: impl FnOnce(&mut [u8]) -> R,
     ) -> MemoryRuntimeResult<R> {
+        self.with_bytes_mut_inner(object, true, access)
+    }
+
+    fn with_bytes_mut_inner<R>(
+        &mut self,
+        object: PlanObjectKey,
+        require_raw_slot: bool,
+        access: impl FnOnce(&mut [u8]) -> R,
+    ) -> MemoryRuntimeResult<R> {
         let lease = self
             .leases
             .iter()
@@ -3820,6 +4233,9 @@ impl KernelMemoryFrame<'_> {
                 object: object.object(),
             })?;
         validate_contiguous_region(object.object(), lease.region)?;
+        if require_raw_slot {
+            self.validate_raw_byte_object(lease)?;
+        }
         let (base, capacity, initialized_bytes) = {
             let state = self.domain.state.borrow();
             let region = state
@@ -3913,6 +4329,7 @@ impl KernelMemoryFrame<'_> {
                 object: object.object(),
             })?;
         validate_contiguous_region(object.object(), lease.region)?;
+        self.validate_raw_byte_object(lease)?;
         let leased_length = lease.end.checked_sub(lease.start).ok_or(
             MemoryRuntimeError::AccountingInvariantViolation {
                 dimension: "lease span",
@@ -4019,6 +4436,23 @@ impl KernelMemoryFrame<'_> {
         // region, and the checked prefix remains within that region.
         let bytes = unsafe { slice::from_raw_parts_mut(base.as_ptr().add(start), length) };
         Ok(access(bytes))
+    }
+
+    fn validate_raw_byte_object(&self, lease: HeldLease) -> MemoryRuntimeResult<()> {
+        let state = self.domain.state.borrow();
+        let region = state
+            .regions
+            .get(&lease.object)
+            .ok_or(MemoryRuntimeError::UnknownPlanObject { key: lease.object })?;
+        if region.slot.is_some() {
+            return Err(MemoryRuntimeError::InvalidLayout {
+                object: Some(lease.object.object()),
+                size: lease.end.saturating_sub(lease.start),
+                alignment: 1,
+                reason: "raw byte mutation requires an explicitly untyped scratch or transfer object",
+            });
+        }
+        Ok(())
     }
 }
 
@@ -4219,6 +4653,7 @@ pub(super) fn enclosing_span(
         RuntimeBinding::ManagedHostRegion { offset_bytes, .. } => *offset_bytes,
         RuntimeBinding::Device { offset_bytes, .. } => *offset_bytes,
         RuntimeBinding::ManagedCanonicalPayload { .. }
+        | RuntimeBinding::ReservationOnly { .. }
         | RuntimeBinding::PinnedExternal { .. }
         | RuntimeBinding::Empty { .. } => 0,
     };

@@ -699,6 +699,25 @@ impl FrozenSnapshotConstruction {
         build(self)
     }
 
+    /// Finishes an aggregate algorithm after all of its explicit temporary
+    /// containers have been allocated through this construction authority.
+    ///
+    /// Some algorithms (notably table joins) need their temporary containers
+    /// while they discover the final output cardinality.  Those containers
+    /// must use [`Self::try_vec_with_capacity`]; this boundary then admits the
+    /// rest of the prepared workspace before nested draft cloning or other
+    /// allocator-using work begins.  The closure cannot obtain the authority,
+    /// so it cannot allocate another declared container after the workspace
+    /// has been sealed.
+    #[cfg(feature = "functions")]
+    pub fn try_finish_preallocated_with<T>(
+        &mut self,
+        finish: impl FnOnce() -> crate::MResult<T>,
+    ) -> crate::MResult<T> {
+        self.charge_remaining_temporary()?;
+        finish()
+    }
+
     pub(crate) fn complete(
         mut self,
         actual_retained_bytes: u64,

@@ -108,6 +108,11 @@ pub enum RuntimeBinding {
         initialized_bytes: u64,
         incarnation: RegionIncarnation,
     },
+    ReservationOnly {
+        handle: AllocationHandle,
+        capacity_bytes: u64,
+        incarnation: RegionIncarnation,
+    },
     Device {
         handle: AllocationHandle,
         offset_bytes: u64,
@@ -127,6 +132,7 @@ impl RuntimeBinding {
         match self {
             Self::ManagedHostRegion { handle, .. }
             | Self::ManagedCanonicalPayload { handle, .. }
+            | Self::ReservationOnly { handle, .. }
             | Self::Device { handle, .. } => Some(*handle),
             Self::Empty { .. } | Self::PinnedExternal { .. } => None,
         }
@@ -137,6 +143,7 @@ impl RuntimeBinding {
             Self::Empty { .. } => 0,
             Self::ManagedHostRegion { capacity_bytes, .. }
             | Self::ManagedCanonicalPayload { capacity_bytes, .. }
+            | Self::ReservationOnly { capacity_bytes, .. }
             | Self::Device { capacity_bytes, .. }
             | Self::PinnedExternal { capacity_bytes, .. } => *capacity_bytes,
         }
@@ -154,6 +161,7 @@ impl RuntimeBinding {
             | Self::Device {
                 initialized_bytes, ..
             } => *initialized_bytes,
+            Self::ReservationOnly { .. } => 0,
             Self::PinnedExternal { capacity_bytes, .. } => *capacity_bytes,
         }
     }
@@ -173,6 +181,7 @@ impl RuntimeBinding {
                 required_initialization_bytes,
                 ..
             } => *required_initialization_bytes,
+            Self::ReservationOnly { .. } => 0,
             Self::PinnedExternal { capacity_bytes, .. } => *capacity_bytes,
         }
     }
@@ -182,6 +191,7 @@ impl RuntimeBinding {
             Self::Empty { incarnation, .. }
             | Self::ManagedHostRegion { incarnation, .. }
             | Self::ManagedCanonicalPayload { incarnation, .. }
+            | Self::ReservationOnly { incarnation, .. }
             | Self::Device { incarnation, .. }
             | Self::PinnedExternal { incarnation, .. } => *incarnation,
         }
@@ -192,6 +202,7 @@ impl RuntimeBinding {
             Self::Empty { incarnation, .. }
             | Self::ManagedHostRegion { incarnation, .. }
             | Self::ManagedCanonicalPayload { incarnation, .. }
+            | Self::ReservationOnly { incarnation, .. }
             | Self::Device { incarnation, .. }
             | Self::PinnedExternal { incarnation, .. } => *incarnation = next,
         }
@@ -208,7 +219,7 @@ impl RuntimeBinding {
             | Self::Device {
                 initialized_bytes, ..
             } => *initialized_bytes = next,
-            Self::Empty { .. } | Self::PinnedExternal { .. } => {}
+            Self::Empty { .. } | Self::ReservationOnly { .. } | Self::PinnedExternal { .. } => {}
         }
     }
 }
@@ -887,7 +898,9 @@ impl RealizedMemoryPlan {
                 ..
             } => *current = (*current).max(initialized_end),
             RuntimeBinding::Empty { .. } if initialized_end == 0 => {}
-            RuntimeBinding::Empty { .. } | RuntimeBinding::PinnedExternal { .. } => {
+            RuntimeBinding::Empty { .. }
+            | RuntimeBinding::ReservationOnly { .. }
+            | RuntimeBinding::PinnedExternal { .. } => {
                 return Err(MemoryRuntimeError::UnplannedAllocation {
                     object: Some(key.object()),
                     requested: initialized_end,
@@ -1412,10 +1425,12 @@ impl MemoryDomain {
     ) -> MemoryRuntimeResult<RealizedMemoryPlan> {
         let mut arenas: BTreeMap<MemoryArenaId, ArenaPlan> = BTreeMap::new();
         for allocation in plan.allocations.iter() {
-            let backing = if allocation.role == crate::AllocationRole::VariablePayload {
-                ArenaBackingKind::IndirectOwnedPayloads
-            } else {
-                ArenaBackingKind::ContiguousBytes
+            let backing = match allocation.role {
+                crate::AllocationRole::VariablePayload => ArenaBackingKind::IndirectOwnedPayloads,
+                crate::AllocationRole::ConstructionWorkspace => {
+                    ArenaBackingKind::ReservationOnlyWorkspace
+                }
+                _ => ArenaBackingKind::ContiguousBytes,
             };
             let end = allocation
                 .placement
@@ -1754,7 +1769,7 @@ impl MemoryDomain {
                 .filter(|object| {
                     arenas.iter().any(|arena| {
                         arena.id == object.arena
-                            && arena.backing == ArenaBackingKind::IndirectOwnedPayloads
+                            && arena.backing != ArenaBackingKind::ContiguousBytes
                     })
                 })
                 .count();
@@ -1832,9 +1847,14 @@ impl MemoryDomain {
             leases: Vec<ActiveLeaseRecord>,
             accounted_bytes: u64,
         }
+        struct PendingWorkspace {
+            authorization: ObjectAuthorization,
+            accounted_bytes: u64,
+        }
 
         let mut contiguous = Vec::new();
         let mut indirect = Vec::new();
+        let mut workspaces = Vec::new();
         let payload_accounting = self.state.borrow().payload_accounting.clone();
         contiguous
             .try_reserve_exact(reservation.arenas.len())
@@ -1849,6 +1869,14 @@ impl MemoryDomain {
             .map_err(|_| MemoryRuntimeError::AllocationFailed {
                 object: None,
                 requested: reservation.bytes,
+                alignment: 1,
+                space: MemorySpace::Host,
+            })?;
+        workspaces
+            .try_reserve_exact(reservation.objects.len())
+            .map_err(|_| MemoryRuntimeError::AllocationFailed {
+                object: None,
+                requested: reservation.objects.len() as u64,
                 alignment: 1,
                 space: MemorySpace::Host,
             })?;
@@ -1915,7 +1943,8 @@ impl MemoryDomain {
                         accounted_bytes,
                     });
                 }
-                ArenaBackingKind::IndirectOwnedPayloads => {}
+                ArenaBackingKind::IndirectOwnedPayloads
+                | ArenaBackingKind::ReservationOnlyWorkspace => {}
             }
         }
         for object in reservation.objects.iter().cloned() {
@@ -1967,6 +1996,12 @@ impl MemoryDomain {
                     authorization: object,
                     payload_owner,
                     leases,
+                    accounted_bytes,
+                });
+            } else if backing == ArenaBackingKind::ReservationOnlyWorkspace {
+                let accounted_bytes = object.capacity_bytes;
+                workspaces.push(PendingWorkspace {
+                    authorization: object,
                     accounted_bytes,
                 });
             }
@@ -2069,6 +2104,27 @@ impl MemoryDomain {
             })?;
             indirect_handles.insert(pending.authorization.key, handle);
         }
+        let mut workspace_handles = BTreeMap::new();
+        for pending in workspaces {
+            let handle = state.insert_record(AllocationRecord {
+                realization_owner: Rc::downgrade(&storage_ownership),
+                arena_projection_owner: Weak::new(),
+                state: OwnedAllocationState::Live,
+                block: None,
+                capacity_bytes: pending.authorization.capacity_bytes,
+                accounted_bytes: pending.accounted_bytes,
+                alignment: pending.authorization.alignment,
+                space: pending.authorization.space,
+                leases: Vec::new(),
+                snapshot_pins: 0,
+                submission_pins: 0,
+                payload_owner: None,
+                device_owner_pins: 0,
+                device_actual_bytes: 0,
+                device_lost: false,
+            })?;
+            workspace_handles.insert(pending.authorization.key, handle);
+        }
         for (object, initialization) in reservation
             .objects
             .iter()
@@ -2124,6 +2180,13 @@ impl MemoryDomain {
                             incarnation,
                         }
                     }
+                    ArenaBackingKind::ReservationOnlyWorkspace => RuntimeBinding::ReservationOnly {
+                        handle: *workspace_handles
+                            .get(&object.key)
+                            .ok_or(MemoryRuntimeError::UnknownPlanObject { key: object.key })?,
+                        capacity_bytes: object.capacity_bytes,
+                        incarnation,
+                    },
                 }
             };
             if state
@@ -3144,7 +3207,7 @@ fn validate_plan_view(
                     capacity: arena.capacity_bytes,
                 });
             }
-        } else {
+        } else if arena.backing == ArenaBackingKind::IndirectOwnedPayloads {
             if allocation.slot.is_some() {
                 return Err(MemoryRuntimeError::InvalidLayout {
                     object: Some(allocation.id),
@@ -3159,6 +3222,15 @@ fn validate_plan_view(
                     size: allocation.capacity_bytes,
                     alignment: allocation.alignment,
                     reason: "indirect payload envelope lacks planned block registrations",
+                });
+            }
+        } else {
+            if allocation.slot.is_some() || allocation.payload_block_capacity != 0 {
+                return Err(MemoryRuntimeError::InvalidLayout {
+                    object: Some(allocation.id),
+                    size: allocation.capacity_bytes,
+                    alignment: allocation.alignment,
+                    reason: "reservation-only workspace cannot expose typed storage or payload registrations",
                 });
             }
         }
@@ -3209,7 +3281,10 @@ fn validate_plan_view(
             .iter()
             .find(|arena| arena.id == object.arena)
             .expect("validated object arena exists");
-        if arena.backing == ArenaBackingKind::IndirectOwnedPayloads {
+        if matches!(
+            arena.backing,
+            ArenaBackingKind::IndirectOwnedPayloads | ArenaBackingKind::ReservationOnlyWorkspace
+        ) {
             bytes = bytes.checked_add(object.capacity_bytes).ok_or(
                 MemoryRuntimeError::AccountingInvariantViolation {
                     dimension: "reservation bytes",
@@ -3217,21 +3292,23 @@ fn validate_plan_view(
                     change: object.capacity_bytes,
                 },
             )?;
-            let metadata_bytes = object
-                .payload_block_capacity
-                .checked_mul(core::mem::size_of::<super::PayloadBlockRecord>() as u64)
-                .ok_or(MemoryRuntimeError::AccountingInvariantViolation {
-                    dimension: "payload registration metadata bytes",
-                    current: object.payload_block_capacity,
-                    change: core::mem::size_of::<super::PayloadBlockRecord>() as u64,
-                })?;
-            bytes = bytes.checked_add(metadata_bytes).ok_or(
-                MemoryRuntimeError::AccountingInvariantViolation {
-                    dimension: "reservation bytes",
-                    current: bytes,
-                    change: metadata_bytes,
-                },
-            )?;
+            if arena.backing == ArenaBackingKind::IndirectOwnedPayloads {
+                let metadata_bytes = object
+                    .payload_block_capacity
+                    .checked_mul(core::mem::size_of::<super::PayloadBlockRecord>() as u64)
+                    .ok_or(MemoryRuntimeError::AccountingInvariantViolation {
+                        dimension: "payload registration metadata bytes",
+                        current: object.payload_block_capacity,
+                        change: core::mem::size_of::<super::PayloadBlockRecord>() as u64,
+                    })?;
+                bytes = bytes.checked_add(metadata_bytes).ok_or(
+                    MemoryRuntimeError::AccountingInvariantViolation {
+                        dimension: "reservation bytes",
+                        current: bytes,
+                        change: metadata_bytes,
+                    },
+                )?;
+            }
         } else if matches!(object.space, MemorySpace::Host | MemorySpace::ResidentCpu) {
             let metadata_bytes = initialization_metadata_bytes(object.capacity_bytes, true)?;
             bytes = bytes.checked_add(metadata_bytes).ok_or(
@@ -3251,7 +3328,7 @@ fn validate_overlaps(
     arenas: &[ArenaPlan],
 ) -> MemoryRuntimeResult<()> {
     for arena in arenas {
-        if arena.backing == ArenaBackingKind::IndirectOwnedPayloads {
+        if arena.backing != ArenaBackingKind::ContiguousBytes {
             continue;
         }
         let members = allocations

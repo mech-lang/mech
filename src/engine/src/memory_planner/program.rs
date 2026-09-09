@@ -1419,10 +1419,10 @@ pub(crate) fn place_allocations(
 }
 
 fn allocation_backing(allocation: &AllocationPlan) -> ArenaBackingKind {
-    if allocation.role == AllocationRole::VariablePayload {
-        ArenaBackingKind::IndirectOwnedPayloads
-    } else {
-        ArenaBackingKind::ContiguousBytes
+    match allocation.role {
+        AllocationRole::VariablePayload => ArenaBackingKind::IndirectOwnedPayloads,
+        AllocationRole::ConstructionWorkspace => ArenaBackingKind::ReservationOnlyWorkspace,
+        _ => ArenaBackingKind::ContiguousBytes,
     }
 }
 
