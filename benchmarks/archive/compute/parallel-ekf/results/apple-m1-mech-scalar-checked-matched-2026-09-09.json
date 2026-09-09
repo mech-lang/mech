@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-09",
+  "implementation_commit": "59e582c9535f35e69e9ce6c59aeb3cd5c2505f0f",
+  "platform": {
+    "adapter": "Apple M1 (Metal)",
+    "machine": "arm64",
+    "operating_system": "macOS 15.6.1 (24G90)",
+    "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)"
+  },
+  "configuration": {
+    "instances": 10000,
+    "turns": 20,
+    "process_warmups_discarded": 1,
+    "measured_processes": 5,
+    "internal_warmup_turns_per_lane": 5,
+    "build_command": "cargo build -p mech-gpu --release --features native,jit --example parallel_ekf_benchmark",
+    "run_command": "target/release/examples/parallel_ekf_benchmark 10000 20 20 20",
+    "timed_region": "Twenty state-dependent EKF turns after lane-local warmup; program compilation, backend preparation, warmup, and checksum readback are excluded.",
+    "integrity_constraints": [
+      "finite-candidate!",
+      "positive-covariance!",
+      "symmetric-covariance!"
+    ],
+    "unchecked_control": "The same compiled Mech program and inputs with its three integrity constraints disabled before backend preparation."
+  },
+  "discarded_warmup": {
+    "scalar_checked_million_ekf_turns_per_second": 1.027,
+    "scalar_unchecked_million_ekf_turns_per_second": 1.187,
+    "jit_checked_million_ekf_turns_per_second": 16.618,
+    "jit_unchecked_million_ekf_turns_per_second": 18.633,
+    "checksum": 2682056.056255098,
+    "maximum_scalar_jit_absolute_error": 0.0
+  },
+  "samples": [
+    {
+      "scalar_checked_million_ekf_turns_per_second": 1.035,
+      "scalar_unchecked_million_ekf_turns_per_second": 1.206,
+      "jit_checked_million_ekf_turns_per_second": 16.697,
+      "jit_unchecked_million_ekf_turns_per_second": 18.747,
+      "checksum": 2682056.056255098,
+      "maximum_scalar_jit_absolute_error": 0.0
+    },
+    {
+      "scalar_checked_million_ekf_turns_per_second": 1.031,
+      "scalar_unchecked_million_ekf_turns_per_second": 1.206,
+      "jit_checked_million_ekf_turns_per_second": 16.705,
+      "jit_unchecked_million_ekf_turns_per_second": 18.837,
+      "checksum": 2682056.056255098,
+      "maximum_scalar_jit_absolute_error": 0.0
+    },
+    {
+      "scalar_checked_million_ekf_turns_per_second": 1.032,
+      "scalar_unchecked_million_ekf_turns_per_second": 1.204,
+      "jit_checked_million_ekf_turns_per_second": 16.795,
+      "jit_unchecked_million_ekf_turns_per_second": 18.692,
+      "checksum": 2682056.056255098,
+      "maximum_scalar_jit_absolute_error": 0.0
+    },
+    {
+      "scalar_checked_million_ekf_turns_per_second": 1.033,
+      "scalar_unchecked_million_ekf_turns_per_second": 1.206,
+      "jit_checked_million_ekf_turns_per_second": 16.772,
+      "jit_unchecked_million_ekf_turns_per_second": 18.776,
+      "checksum": 2682056.056255098,
+      "maximum_scalar_jit_absolute_error": 0.0
+    },
+    {
+      "scalar_checked_million_ekf_turns_per_second": 1.032,
+      "scalar_unchecked_million_ekf_turns_per_second": 1.206,
+      "jit_checked_million_ekf_turns_per_second": 16.741,
+      "jit_unchecked_million_ekf_turns_per_second": 18.777,
+      "checksum": 2682056.056255098,
+      "maximum_scalar_jit_absolute_error": 0.0
+    }
+  ],
+  "medians": {
+    "scalar_checked_million_ekf_turns_per_second": 1.032,
+    "scalar_unchecked_million_ekf_turns_per_second": 1.206,
+    "jit_checked_million_ekf_turns_per_second": 16.741,
+    "jit_unchecked_million_ekf_turns_per_second": 18.776,
+    "checksum": 2682056.056255098,
+    "maximum_scalar_jit_absolute_error": 0.0
+  },
+  "comparison": {
+    "scalar_checked_throughput_reduction_percent": 14.4,
+    "scalar_checked_time_overhead_percent": 16.9,
+    "jit_checked_throughput_reduction_percent": 10.8,
+    "jit_checked_time_overhead_percent": 12.2
+  }
+}
