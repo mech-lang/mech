@@ -1,3 +1,5 @@
+#![cfg(feature = "functions")]
+
 use mech_core::snapshot::{F64Bits, SnapshotValidationContext};
 use mech_core::{
     AllocationPlan, AllocationRole, ArenaBackingKind, ArenaPlacement, ArenaPlan, CallAccessRequest,
