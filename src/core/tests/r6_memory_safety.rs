@@ -190,17 +190,21 @@ fn repeated_complete_call_acquisition_and_release_allocate_no_metadata() {
 
 #[test]
 fn managed_numeric_footprint_measurement_does_not_copy_matrix_payload() {
+    // Keep the payload larger than the allocation ceiling so a copied matrix
+    // still fails this regression, without making Miri interpret hundreds of
+    // thousands of identical element writes.
+    const SIDE: usize = 64;
     let domain = MemoryDomain::new().unwrap();
     let cell = ValueCell::from_exact_in(
         &domain,
-        nalgebra::DMatrix::<f64>::from_element(512, 512, 1.0),
+        nalgebra::DMatrix::<f64>::from_element(SIDE, SIDE, 1.0),
     )
     .unwrap();
     let (footprint, _, allocated_bytes) =
         allocation_probe::measured_with_bytes(|| cell.current_memory_footprint().unwrap());
 
-    assert_eq!(footprint.logical_elements, 512 * 512);
-    assert_eq!(footprint.fixed_bytes, 512 * 512 * 8);
+    assert_eq!(footprint.logical_elements, (SIDE * SIDE) as u64);
+    assert_eq!(footprint.fixed_bytes, (SIDE * SIDE * 8) as u64);
     assert_eq!(footprint.payload_bytes, 0);
     assert!(
         allocated_bytes < 16 * 1024,
@@ -210,8 +214,10 @@ fn managed_numeric_footprint_measurement_does_not_copy_matrix_payload() {
 
 #[test]
 fn fixed_width_publication_retains_region_evidence_without_a_canonical_copy() {
-    let rows = 256_u64;
-    let columns = 256_u64;
+    // This remains larger than the allocation ceiling below, so constructing
+    // a canonical payload copy is observable while the Miri case stays small.
+    let rows = 64_u64;
+    let columns = 64_u64;
     let elements = rows * columns;
     let bytes = elements * 8;
     let domain = MemoryDomain::new().unwrap();
@@ -315,7 +321,7 @@ fn fixed_width_publication_retains_region_evidence_without_a_canonical_copy() {
         domain.ready_cell_publication(prepared).unwrap().commit()
     });
     assert!(
-        allocated_bytes < 64 * 1024,
+        allocated_bytes < 16 * 1024,
         "fixed-width publication allocated {allocated_bytes} bytes of evidence for a {bytes}-byte initialized region",
     );
     assert_eq!(cell.current_memory_footprint().unwrap().fixed_bytes, bytes);
