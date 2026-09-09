@@ -56,7 +56,11 @@ jobs:
           rustup toolchain install nightly-2026-03-03 --profile minimal --component rustfmt
           if ! command -v rg >/dev/null 2>&1
           then
-            sudo apt-get update
+            # Only Ubuntu provides ripgrep. Do not let an unrelated preinstalled
+            # third-party repository make the architecture gate unavailable.
+            sudo apt-get update \
+              -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources \
+              -o Dir::Etc::sourceparts=-
             sudo apt-get install --yes ripgrep
           fi
       - name: Check formatting and cheap global contracts
