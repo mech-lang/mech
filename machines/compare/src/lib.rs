@@ -679,7 +679,7 @@ fn canonical_string_output_footprint(
     })
 }
 
-#[cfg(feature = "string")]
+#[cfg(all(feature = "string", any(feature = "min", feature = "max")))]
 fn canonical_string_selection_footprint(
     lhs: &Value,
     lhs_cell: &ValueCell,
@@ -729,7 +729,7 @@ fn canonical_string_selection_footprint(
     })
 }
 
-#[cfg(feature = "string")]
+#[cfg(all(feature = "string", any(feature = "min", feature = "max")))]
 fn apply_canonical_string_selection(
     frame: &mut KernelMemoryFrame<'_>,
     lhs: &ManagedPort<String>,
