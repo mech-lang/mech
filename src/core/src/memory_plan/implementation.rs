@@ -4,6 +4,12 @@ pub enum ImplementationMemoryClass {
     CloneInput {
         input: u16,
     },
+    /// Clones one input while constructing the result through the common
+    /// canonical draft/finalization lifecycle. Both obligations coexist and
+    /// must be represented by the same implementation contract.
+    CanonicalCloneInput {
+        input: u16,
+    },
     AbiContiguousBridge {
         input: u16,
         output: u16,

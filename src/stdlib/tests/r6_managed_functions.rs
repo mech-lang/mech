@@ -10,6 +10,7 @@ fn maintained_catalog_has_no_open_or_unclassified_memory_implementation() {
         match entry.implementation_memory_class() {
             ImplementationMemoryClass::NoAdditionalScratch
             | ImplementationMemoryClass::CloneInput { .. }
+            | ImplementationMemoryClass::CanonicalCloneInput { .. }
             | ImplementationMemoryClass::AbiContiguousBridge { .. }
             | ImplementationMemoryClass::ExternalMarshalling
             | ImplementationMemoryClass::MatrixSolve

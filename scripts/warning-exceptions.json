@@ -47,6 +47,24 @@
       "reason": "the public macro surface expands cfg attributes on where clauses in downstream crates"
     },
     {
+      "directive": "allow",
+      "expiry_condition": "Remove when undo lease ownership is compiled independently of the functions feature.",
+      "lint": "dead_code",
+      "occurrences": 1,
+      "owner": "Managed transaction access",
+      "path": "src/core/src/memory_runtime/access.rs",
+      "reason": "undo lease ownership is exercised only by function-enabled transaction plans"
+    },
+    {
+      "directive": "allow",
+      "expiry_condition": "Remove when undo snapshot authority is compiled independently of the functions feature.",
+      "lint": "dead_code",
+      "occurrences": 1,
+      "owner": "Managed transaction access",
+      "path": "src/core/src/memory_runtime/access.rs",
+      "reason": "undo snapshot authority is exercised only by function-enabled transaction plans"
+    },
+    {
       "directive": "expect",
       "expiry_condition": "Remove when the GPU backend installs managed device bindings during its R6 cutover.",
       "lint": "dead_code",

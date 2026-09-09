@@ -10,6 +10,7 @@ fn every_maintained_runtime_entry_declares_one_closed_memory_class() {
         match entry.implementation_memory_class() {
             ImplementationMemoryClass::NoAdditionalScratch
             | ImplementationMemoryClass::CloneInput { .. }
+            | ImplementationMemoryClass::CanonicalCloneInput { .. }
             | ImplementationMemoryClass::AbiContiguousBridge { .. }
             | ImplementationMemoryClass::ExternalMarshalling
             | ImplementationMemoryClass::MatrixSolve

@@ -1407,7 +1407,7 @@ impl_managed_fixed_access_element!(R64);
 #[cfg(feature = "string")]
 impl ManagedAccessElement for String {
     const MEMORY_CLASS: mech_core::ImplementationMemoryClass =
-        mech_core::ImplementationMemoryClass::CloneInput { input: 0 };
+        mech_core::ImplementationMemoryClass::CanonicalCloneInput { input: 0 };
 
     fn validate_input(port: FunctionInputPort<'_>) -> MResult<()> {
         let _ = port.try_managed_element::<Self>()?;

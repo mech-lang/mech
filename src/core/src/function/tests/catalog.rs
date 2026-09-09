@@ -66,6 +66,7 @@ impl crate::MechFunctionCompiler for CatalogTestFunction {
 }
 
 static FACTORY_CALLS: AtomicUsize = AtomicUsize::new(0);
+static WRONG_CONTRACT_FACTORY_CALLS: AtomicUsize = AtomicUsize::new(0);
 
 struct IndexUnaryFactory;
 
@@ -104,7 +105,7 @@ impl MechFunctionFactory for WrongContractFactory {
     }
 
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        FACTORY_CALLS.fetch_add(1, Ordering::SeqCst);
+        WRONG_CONTRACT_FACTORY_CALLS.fetch_add(1, Ordering::SeqCst);
         invocation.expect_unary()?;
         Ok(Box::new(CatalogTestFunction))
     }
@@ -361,7 +362,7 @@ fn operation_memory_contract_is_checked_before_factory_construction() {
     let entry = catalog
         .runtime_entry(RuntimeFunctionId::from_name("WrongContractRuntime"))
         .unwrap();
-    let before = FACTORY_CALLS.load(Ordering::SeqCst);
+    let before = WRONG_CONTRACT_FACTORY_CALLS.load(Ordering::SeqCst);
     let error = entry
         .bind_resolved_invocation(
             operation,
@@ -374,7 +375,7 @@ fn operation_memory_contract_is_checked_before_factory_construction() {
         .err()
         .expect("the wrong operation-memory contract must fail");
     assert_eq!(error.kind_name(), "RuntimeFunctionContractViolation");
-    assert_eq!(FACTORY_CALLS.load(Ordering::SeqCst), before);
+    assert_eq!(WRONG_CONTRACT_FACTORY_CALLS.load(Ordering::SeqCst), before);
 }
 
 #[test]

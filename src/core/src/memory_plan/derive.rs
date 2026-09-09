@@ -1506,6 +1506,37 @@ fn derive_scratch_allocations(
                 request.input_storage[input as usize].space,
             )?;
         }
+        ImplementationMemoryClass::CanonicalCloneInput { input } => {
+            let port = inputs
+                .get(input as usize)
+                .ok_or(MemoryPlanError::DescriptorArityMismatch)?;
+            scratch(
+                AllocationRole::Scratch,
+                value_current_bytes(&port.value)?,
+                port.value.slot.alignment,
+                request.input_storage[input as usize].space,
+            )?;
+            for (ordinal, output) in outputs.iter().enumerate() {
+                let footprint =
+                    known_footprint(request.output_witnesses[ordinal])?.unwrap_or_default();
+                let draft_size = value_required_bytes(&output.value)?
+                    .max(canonical_snapshot_draft_bytes(footprint)?);
+                let finalization_size = canonical_snapshot_finalization_bytes(footprint)?;
+                let space = request.output_storage[ordinal].space;
+                scratch(
+                    AllocationRole::Scratch,
+                    draft_size,
+                    output.value.slot.alignment,
+                    space,
+                )?;
+                scratch(
+                    AllocationRole::Scratch,
+                    finalization_size,
+                    output.value.slot.alignment,
+                    space,
+                )?;
+            }
+        }
         ImplementationMemoryClass::AbiContiguousBridge { input, output } => {
             let input = inputs
                 .get(input as usize)
@@ -1751,6 +1782,28 @@ fn apply_implementation_demand(
                 .ok_or(MemoryPlanError::DescriptorArityMismatch)?;
             let bytes = value_current_bytes(&input.value)?;
             demand.cloned_bytes = checked_add(demand.cloned_bytes, bytes, "input clone bytes")?;
+        }
+        ImplementationMemoryClass::CanonicalCloneInput { input } => {
+            let input = inputs
+                .get(input as usize)
+                .ok_or(MemoryPlanError::DescriptorArityMismatch)?;
+            let bytes = value_current_bytes(&input.value)?;
+            demand.cloned_bytes = checked_add(demand.cloned_bytes, bytes, "input clone bytes")?;
+            let contribution = canonical_footprint_demand(
+                ImplementationMemoryClass::CanonicalFinalize,
+                outputs,
+                request.output_witnesses,
+            )?;
+            demand.work.canonicalization = checked_add(
+                demand.work.canonicalization,
+                contribution.canonicalization,
+                "canonicalization work",
+            )?;
+            demand.retained_nodes = checked_add(
+                demand.retained_nodes,
+                contribution.retained_nodes,
+                "retained nodes",
+            )?;
         }
         ImplementationMemoryClass::AbiContiguousBridge { input, output } => {
             let input = inputs

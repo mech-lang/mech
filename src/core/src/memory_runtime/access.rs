@@ -372,7 +372,10 @@ pub(crate) struct PreparedUndoSnapshot {
     target: PlanObjectKey,
     undo: PlanObjectKey,
     armed: bool,
-    #[cfg_attr(not(feature = "functions"), allow(dead_code))]
+    #[allow(
+        dead_code,
+        reason = "undo lease ownership is exercised only by function-enabled transaction plans"
+    )]
     retained_lease: Option<RetainedPublicationLease>,
 }
 
@@ -1379,7 +1382,10 @@ pub struct KernelMemoryFrame<'a> {
     leases: RefMut<'a, CallAccessWorkspace>,
     #[cfg(feature = "functions")]
     staged_canonical_output: Option<(PlanObjectKey, crate::Value)>,
-    #[cfg_attr(not(feature = "functions"), allow(dead_code))]
+    #[allow(
+        dead_code,
+        reason = "undo snapshot authority is exercised only by function-enabled transaction plans"
+    )]
     undo_snapshot: Option<PreparedUndoSnapshot>,
 }
 

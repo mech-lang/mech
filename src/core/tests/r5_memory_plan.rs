@@ -1347,6 +1347,10 @@ fn matrix_solve_and_indexed_mutation_have_explicit_scratch_and_regions() {
 fn implementation_scratch_records_are_the_source_of_temporary_byte_demand() {
     for (class, count) in [
         (ImplementationMemoryClass::CloneInput { input: 0 }, 1),
+        (
+            ImplementationMemoryClass::CanonicalCloneInput { input: 0 },
+            3,
+        ),
         (ImplementationMemoryClass::CanonicalFinalize, 2),
         (ImplementationMemoryClass::CanonicalSortUnique, 3),
     ] {
