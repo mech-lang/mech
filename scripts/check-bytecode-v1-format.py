@@ -16,19 +16,19 @@ CORPUS = ROOT / "tests/architecture/bytecode-v1"
 MANIFEST = CORPUS / "manifest.json"
 # This manual seal covers only durable bytecode wire and semantic evidence.
 # Native-build plans have their own content-addressed contract and are excluded.
-EXPECTED_MANIFEST_SHA256 = "f678435ca1d13814bf96ee888c76128b7ba8e045735271ed1e4b801376314f8c"
+EXPECTED_MANIFEST_SHA256 = "2a9e0d3f38dbfea1743a3b65535256d78325475f4044859d9d170289ff6d52b0"
 EXPECTED_FIXTURE_SHA256 = {
     "canonical-scalars.mecb": "09f26317e73f9d8a6840cbb95de195b34fb0b77fdcfef18488490b51e130c551",
     "canonical-matrices.mecb": "1c73f8203dbe66f535b30b4e5ff80d0d6a1d7800b2e660a737caefdaffb7db90",
     "canonical-composites.mecb": "fc1aa5f79f3f4ad48de5ac73faa5e73564e0e231cbb83300461a8262bfcb8071",
     "literal-f64.mecb": "ee2bb56ea808f5f0eb394e19c50c297a3f77c43c08238eae29e61112e481ee06",
     "scalar-add-f64.mecb": "0ca719d6cbfeddf431b4e0e5a82408a5f63780f0d4d4b68a4d9eecf7405e824c",
-    "fixed-matrix-add-f64.mecb": "33b5835f5eea5610c82403d0b23c66343af6f8ec52c48f7ffbb8ff9cd82014bd",
-    "dynamic-matrix-add-f64.mecb": "933ebf002c66f089b51df1c172aeedcc03075c8312979029cd1dd2adf0a080a8",
+    "fixed-matrix-add-f64.mecb": "f58faf82972d24921c908251046d11a750c608ec43c0d339dbd89de8bfe345f2",
+    "dynamic-matrix-add-f64.mecb": "51feae0e363828cdde860c14c8969eb79a32382699f64f14a18e3f966b86ea9d",
     "variadic-horzcat-f64.mecb": "4f1a78777c046c7da86db3b8394b5e712cd0838938d9aa3c27ea8fdaf724094a",
     "string.mecb": "f1d6f944a4b17053219e3ddc3b387113ac51817576d2b8021ae91e9fc51b6989",
     "unary.mecb": "06121a378e5e5e1881ff767b12017e5f1531e043626a692f117d4068af9c5026",
-    "ternary.mecb": "b54d0ed79c738c594a1e9abc82f4894654b24798c98d534ec4cd1cd583dbaf42",
+    "ternary.mecb": "f6f3956e0e0ad1ac4dbfbe34501ab46ce758fc5808adfebc68c1651aa3df35cb",
     "quaternary.mecb": "12fb2a340abaa236dbd726868656e5746e4b5f6ac34ae15b4688c05911123079",
     "named-module-operation.mecb": "994a63985c5f0f36626603f55d8dc6b7a5e6b1f5a42a115ee9f48ae68a94fe6e",
     "cli-stdout.mecb": "6e5456c54a93a98112694410027941a244122eb15b44fb144d68d67f342474e4",
