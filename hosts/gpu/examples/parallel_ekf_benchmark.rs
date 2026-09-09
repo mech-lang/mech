@@ -99,6 +99,14 @@ fn main() {
     let cpu_per_turn = cpu_started.elapsed() / cpu_turns;
     let cpu_checksum = state_checksum(cpu.state());
 
+    let mut cpu_unchecked_warmup = unchecked_program.prepare_cpu(&inputs).unwrap();
+    cpu_unchecked_warmup.dispatch_turns(5).unwrap();
+    let mut cpu_unchecked = unchecked_program.prepare_cpu(&inputs).unwrap();
+    let cpu_unchecked_started = Instant::now();
+    cpu_unchecked.dispatch_turns(cpu_turns).unwrap();
+    let cpu_unchecked_per_turn = cpu_unchecked_started.elapsed() / cpu_turns;
+    let cpu_unchecked_checksum = state_checksum(cpu_unchecked.state());
+
     let mut simd_warmup = program.prepare_simd_cpu(&inputs).unwrap();
     simd_warmup.dispatch_turns(5).unwrap();
     let mut simd = program.prepare_simd_cpu(&inputs).unwrap();
@@ -249,6 +257,10 @@ fn main() {
         millis(cpu_per_turn)
     );
     println!(
+        "Mech scalar CPU unchecked: {:.3} ms/turn ({cpu_turns} turns)",
+        millis(cpu_unchecked_per_turn)
+    );
+    println!(
         "Mech SIMD CPU: {:.3} ms/turn ({cpu_turns} turns)",
         millis(simd_per_turn)
     );
@@ -279,6 +291,10 @@ fn main() {
     println!(
         "Mech scalar throughput: {:.3} million EKF-turns/s",
         throughput(instances, cpu_per_turn)
+    );
+    println!(
+        "Mech scalar unchecked throughput: {:.3} million EKF-turns/s",
+        throughput(instances, cpu_unchecked_per_turn)
     );
     println!(
         "Mech SIMD throughput: {:.3} million EKF-turns/s",
@@ -329,6 +345,7 @@ fn main() {
     println!("maximum scalar/JIT absolute error: {jit_max_error:.3e}");
     println!("maximum scalar/parallel JIT absolute error: {jit_parallel_max_error:.3e}");
     println!("Mech scalar checksum: {cpu_checksum:.9}");
+    println!("Mech scalar unchecked checksum: {cpu_unchecked_checksum:.9}");
     println!("Mech SIMD checksum: {simd_checksum:.9}");
     println!("Mech Cranelift JIT checksum: {jit_checksum:.9}");
     println!("Mech Cranelift JIT unchecked checksum: {jit_unchecked_checksum:.9}");
