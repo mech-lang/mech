@@ -44,6 +44,35 @@ def job_block(source: str, job: str) -> str:
 
 
 class FullWorkflowContractTests(unittest.TestCase):
+    def test_browser_suites_run_in_parallel_behind_one_required_gate(self):
+        standard = job_block(CI, "browser-standard-canary")
+        nbody = job_block(CI, "browser-nbody-reference")
+        compute = job_block(CI, "browser-compute-canary")
+        aggregate = job_block(CI, "browser-canary")
+
+        self.assertIn("Build standard WASM and the standard server", standard)
+        self.assertIn("Verify resident rendering without browser errors", standard)
+        self.assertNotIn("Verify N-body physics against independent references", standard)
+        self.assertIn("Verify N-body physics against independent references", nbody)
+        self.assertIn("Build mixed compute WASM and refresh the server", compute)
+        self.assertIn("Verify report-only particle WebGPU execution", compute)
+        self.assertIn("Verify scalar and WebGPU EKF rendering", compute)
+        for dependency in (
+            "browser-standard-canary",
+            "browser-nbody-reference",
+            "browser-compute-canary",
+        ):
+            self.assertIn(f"- {dependency}", aggregate)
+        self.assertIn('test "$STANDARD_RESULT" = success', aggregate)
+        self.assertIn('test "$NBODY_RESULT" = success', aggregate)
+        self.assertIn('test "$COMPUTE_RESULT" = success', aggregate)
+
+        self.assertIn("smoke-served-resident-nbody-browser.sh", standard)
+        self.assertNotIn("smoke-gpu-particles-browser.py", standard)
+        self.assertIn("smoke-gpu-particles-browser.py", compute)
+        self.assertIn("smoke-served-resident-ekf-browser.sh", compute)
+        self.assertNotIn("smoke-served-resident-nbody-browser.sh", compute)
+
     def test_pr_full_validation_receives_exact_head(self):
         block = job_block(CI, "full-validation")
         self.assertIn(

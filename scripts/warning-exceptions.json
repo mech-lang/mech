@@ -66,6 +66,15 @@
     },
     {
       "directive": "allow",
+      "expiry_condition": "Remove when every isolated fixed-shape feature selects at least one closed matrix-product triple.",
+      "lint": "unused_macros",
+      "occurrences": 1,
+      "owner": "Matrix runtime catalog",
+      "path": "machines/matrix/src/catalog.rs",
+      "reason": "an isolated fixed-shape forwarding profile can contain no closed matmul triple"
+    },
+    {
+      "directive": "allow",
       "expiry_condition": "Remove when every comparison profile constructs every supported broadcast mode.",
       "lint": "dead_code",
       "occurrences": 1,

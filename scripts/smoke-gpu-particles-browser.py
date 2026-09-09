@@ -150,8 +150,10 @@ def main() -> None:
             dom = ""
             while time.monotonic() < deadline:
                 try:
+                    remaining = max(0.1, deadline - time.monotonic())
                     dom = browser_session.evaluate(
-                        "document.documentElement?.outerHTML || ''"
+                        "document.documentElement?.outerHTML || ''",
+                        timeout=remaining,
                     ) or ""
                 except NavigationContextPending:
                     time.sleep(0.1)
