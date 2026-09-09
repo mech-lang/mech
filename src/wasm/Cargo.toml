@@ -89,7 +89,9 @@ browser_compute_canary = [
   "state_machines", "access", "assign", "subscript_default", "matrix_solve",
   "matrix_vertcat", "matrix_matmul", "matrix_transpose", "matrix_dot",
   "matrix_comprehensions", "bool", "string_default", "record", "table",
-  "atom", "enum",
+  # The document includes hexadecimal and rational source literals in its
+  # executable/embedded source, so retain their semantic scalar families.
+  "atom", "enum", "r64",
 ]
 browser_compute = [
   "compiler", "f32", "f64", "row_vectord", "matrixd", "kind_annotation", "convert", "matrix_horzcat", "range_inclusive",
