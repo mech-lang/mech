@@ -343,18 +343,51 @@ impl TableJoinFxn {
             mode,
         }))
     }
+
+    fn prospective_output_footprint(&self) -> MResult<CurrentMemoryFootprint> {
+        let row_count = |input: &ValueCell| -> MResult<u64> {
+            let value = input.snapshot()?;
+            let ValueData::Table(table) = value.data() else {
+                return Err(table_join_error("input must be a canonical table"));
+            };
+            if table.is_empty() {
+                return Ok(0);
+            }
+            table
+                .column(0)
+                .and_then(|values| u64::try_from(values.len()).ok())
+                .ok_or_else(|| table_join_error("table row count exceeds memory-plan limits"))
+        };
+        let lhs_rows = row_count(self.lhs.cell())?;
+        let rhs_rows = row_count(self.rhs.cell())?;
+        self.out.cell().prospective_aggregate_memory_footprint([
+            (self.lhs.cell(), rhs_rows.max(1)),
+            (self.rhs.cell(), lhs_rows.max(1)),
+        ])
+    }
 }
 
 impl MechFunctionImpl for TableJoinFxn {
+    fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+        Ok(Some(
+            vec![self.prospective_output_footprint()?].into_boxed_slice(),
+        ))
+    }
+
     fn solve_managed(
         &self,
-        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
-        (|| -> MResult<()> {
-            let joined = joined_table(self.lhs.cell(), self.rhs.cell(), self.mode)?;
-            self.out.replace(&joined.snapshot()?)
-        })()?;
+        frame.snapshot_function_value_input(&self.lhs)?;
+        frame.snapshot_function_value_input(&self.rhs)?;
+        let footprint = self.prospective_output_footprint()?;
+        frame.with_admitted_canonical_output(self.out.cell(), footprint, |_, construction| {
+            let next = construction.try_rebind_snapshot_candidate_with(self.out.cell(), || {
+                joined_table(self.lhs.cell(), self.rhs.cell(), self.mode)?.snapshot()
+            })?;
+            Ok(((), next))
+        })?;
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
@@ -564,6 +597,58 @@ mod tests {
 
         let nan = CanonicalTable::from_cell(&table(f64::NAN.to_bits())).unwrap();
         assert!(!rows_match(&nan, 0, &nan, 0, &[(0, 0)]));
+    }
+
+    #[test]
+    fn reactive_table_join_publishes_through_its_managed_candidate() {
+        let table = |id| {
+            ValueCell::from_schema_data(
+                SchemaBody::Table {
+                    columns: vec![field("id", SchemaBody::UnsignedInteger(IntegerWidth::W64))]
+                        .into_boxed_slice(),
+                    rows: CardinalitySpec::Dynamic { upper_bound: None },
+                },
+                ValueDataDraft::Table(
+                    vec![TableColumnDraft {
+                        name: "id".to_owned(),
+                        values: vec![ValueDataDraft::U64(id)].into_boxed_slice(),
+                    }]
+                    .into_boxed_slice(),
+                ),
+            )
+            .unwrap()
+        };
+        let lhs = table(1);
+        let rhs = table(2);
+        let output = joined_table(&lhs, &rhs, JoinMode::Inner).unwrap();
+        let invocation = FunctionInvocation::binary(output.clone(), lhs.clone(), rhs.clone());
+        let specialized = SpecializedFunction::syntax_directed(
+            (
+                TableJoinFxn::from_invocation(invocation.clone(), JoinMode::Inner).unwrap(),
+                invocation,
+            ),
+            ResolvedOperationDescriptor::from_name(
+                "table/inner-join",
+                PURE_TABLE_JOIN_CONTRACT.clone(),
+            )
+            .unwrap(),
+            RuntimeFunctionId::from_name("TableJoinInner"),
+            ExecutionTarget::DirectRuntime,
+            ImplementationMemoryClass::CanonicalFinalize,
+        )
+        .unwrap();
+
+        rhs.replace(&table(1).snapshot().unwrap()).unwrap();
+        specialized.instance().solve_result().unwrap();
+
+        let value = output.snapshot().unwrap();
+        let ValueData::Table(table) = value.data() else {
+            panic!("join output must remain a table")
+        };
+        let mech_core::snapshot::SequenceView::U64(values) = table.column(0).unwrap() else {
+            panic!("join key column must remain packed u64")
+        };
+        assert_eq!(values, &[1]);
     }
 }
 

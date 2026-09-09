@@ -1852,13 +1852,35 @@ impl KernelMemoryFrame<'_> {
         &self,
         input: &crate::FunctionValueInput,
     ) -> crate::MResult<crate::Value> {
-        let lease =
-            self.port_lease(input.cell().reactive_cell_id(), input.managed_role(), false)?;
-        if input.cell().has_managed_canonical_storage()? {
+        let ManagedPortRole::Input(index) = input.managed_role() else {
+            unreachable!("function inputs always retain an input role")
+        };
+        self.snapshot_input_cell(input.cell(), index)
+    }
+
+    /// Snapshots one logical input by its semantic call-plan ordinal.
+    ///
+    /// Aggregate source implementations retain heterogeneous [`ValueCell`]
+    /// identities rather than a single typed [`FunctionValueInput`].  They
+    /// still must resolve every read through the live call frame so a revised
+    /// binding or region incarnation cannot be bypassed by reading the cell
+    /// directly.
+    #[cfg(feature = "functions")]
+    pub fn snapshot_input_cell(
+        &self,
+        input: &crate::ValueCell,
+        semantic_input: usize,
+    ) -> crate::MResult<crate::Value> {
+        let lease = self.port_lease(
+            input.reactive_cell_id(),
+            ManagedPortRole::Input(semantic_input),
+            false,
+        )?;
+        if input.has_managed_canonical_storage()? {
             return input.snapshot();
         }
-        let shape = input.cell().shape().clone();
-        let schemas = input.cell().schema_table();
+        let shape = input.shape().clone();
+        let schemas = input.schema_table();
         crate::cell_binding::value_from_managed_object(
             self.domain,
             self.realized,

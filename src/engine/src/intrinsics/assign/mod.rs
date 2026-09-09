@@ -1558,6 +1558,11 @@ struct AddAssignCanonicalTable {
 
 #[cfg(feature = "semantic-compiler")]
 impl AddAssignCanonicalTable {
+    fn prospective_output_footprint(&self) -> MResult<CurrentMemoryFootprint> {
+        self.sink
+            .prospective_aggregate_memory_footprint([(&self.sink, 1), (&self.source, 1)])
+    }
+
     fn next_value(&self) -> MResult<Value> {
         let sink_schema = self.sink.closed_schema_body()?;
         let SchemaBody::Table { columns, .. } = &sink_schema else {
@@ -1648,12 +1653,24 @@ impl AddAssignCanonicalTable {
 
 #[cfg(feature = "semantic-compiler")]
 impl MechFunctionImpl for AddAssignCanonicalTable {
+    fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+        Ok(Some(
+            vec![self.prospective_output_footprint()?].into_boxed_slice(),
+        ))
+    }
+
     fn solve_managed(
         &self,
-        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
-        (|| -> MResult<()> { self.sink.replace(&self.next_value()?) })()?;
+        frame.snapshot_input_cell(&self.sink, 0)?;
+        frame.snapshot_input_cell(&self.source, 1)?;
+        let footprint = self.prospective_output_footprint()?;
+        frame.with_admitted_canonical_output(&self.sink, footprint, |_, construction| {
+            let next = construction.try_build_canonical_candidate_with(|| self.next_value())?;
+            Ok(((), next))
+        })?;
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
@@ -1725,7 +1742,7 @@ impl CanonicalFunctionSpecializer for AddAssignValue {
             source: source.clone(),
         };
         implementation.next_value()?;
-        context.resolve_syntax_operation_contract(&PURE_STATE_REGISTER_CONTRACT)?;
+        context.resolve_syntax_operation_contract(&PURE_WHOLE_VALUE_STATE_REGISTER_CONTRACT)?;
         context.certify_instance(
             (
                 Box::new(implementation),
@@ -1741,6 +1758,68 @@ impl CanonicalFunctionSpecializer for AddAssignValue {
 #[cfg(all(test, feature = "semantic-compiler"))]
 mod canonical_aggregate_assignment_tests {
     use super::*;
+
+    #[cfg(all(feature = "table", feature = "u64"))]
+    fn one_column_table(values: &[u64]) -> ValueCell {
+        ValueCell::from_schema_data(
+            SchemaBody::Table {
+                columns: vec![SchemaField {
+                    name: "value".to_owned(),
+                    schema: SchemaBody::UnsignedInteger(IntegerWidth::W64),
+                }]
+                .into_boxed_slice(),
+                rows: CardinalitySpec::Dynamic { upper_bound: None },
+            },
+            ValueDataDraft::Table(
+                vec![mech_core::snapshot::TableColumnDraft {
+                    name: "value".to_owned(),
+                    values: values
+                        .iter()
+                        .copied()
+                        .map(ValueDataDraft::U64)
+                        .collect::<Vec<_>>()
+                        .into_boxed_slice(),
+                }]
+                .into_boxed_slice(),
+            ),
+        )
+        .unwrap()
+    }
+
+    #[cfg(all(feature = "table", feature = "u64"))]
+    #[test]
+    fn reactive_table_append_uses_the_managed_state_stage() {
+        let sink = one_column_table(&[1]);
+        let source = one_column_table(&[2]);
+        let implementation = AddAssignCanonicalTable {
+            sink: sink.clone(),
+            source: source.clone(),
+        };
+        let invocation = FunctionInvocation::unary(sink.clone(), source);
+        let specialized = SpecializedFunction::syntax_directed(
+            (Box::new(implementation), invocation),
+            ResolvedOperationDescriptor::from_name(
+                "assign/add",
+                PURE_WHOLE_VALUE_STATE_REGISTER_CONTRACT.clone(),
+            )
+            .unwrap(),
+            RuntimeFunctionId::from_name("AddAssignCanonicalTable"),
+            ExecutionTarget::DirectRuntime,
+            ImplementationMemoryClass::CanonicalFinalize,
+        )
+        .unwrap();
+
+        specialized.instance().solve_result().unwrap();
+
+        let value = sink.snapshot().unwrap();
+        let ValueData::Table(table) = value.data() else {
+            panic!("append output must remain a table")
+        };
+        let mech_core::snapshot::SequenceView::U64(values) = table.column(0).unwrap() else {
+            panic!("append column must remain packed u64")
+        };
+        assert_eq!(values, &[1, 2]);
+    }
 
     #[test]
     fn map_assignment_uses_canonical_key_equality() {

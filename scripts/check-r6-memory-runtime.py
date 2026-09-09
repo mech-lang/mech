@@ -34,8 +34,10 @@ REQUIRED = (
     "src/engine/src/resident/general/mod.rs",
     "src/engine/src/interpreter/mod.rs",
     "src/engine/src/literals.rs",
+    "src/engine/src/structures.rs",
     "src/engine/src/intrinsics/define.rs",
     "src/engine/src/intrinsics/constructors.rs",
+    "src/engine/src/intrinsics/table_ops.rs",
     "src/engine/src/intrinsics/access/mod.rs",
     "src/engine/src/intrinsics/access/matrix.rs",
     "src/engine/src/intrinsics/assign/mod.rs",
@@ -432,6 +434,19 @@ def failures(root: Path) -> list[str]:
         found.append("MechFunctionImpl does not require solve_managed")
     if implementation is not None and re.search(r"\bfn\s+solve_result(?:_with)?\b", implementation):
         found.append("MechFunctionImpl retains an unmanaged solve entry")
+    for relative, source in rust_files(
+        root, ("src/engine/src", "machines")
+    ):
+        if any(
+            re.search(
+                r"\.\s*(?:replace|replace_set|replace_set_drafts|replace_matrix_drafts)\s*\(",
+                body,
+            )
+            for body in function_bodies(source, "solve_managed")
+        ):
+            found.append(
+                f"{relative}: solve_managed bypasses frame-owned staged publication"
+            )
     if "planned_output_footprints" not in function or "resolve_current_call_memory" not in function:
         found.append("payload-dependent calls do not refresh live and prospective footprints")
     publications = list(function_bodies(function, "prepare_reactive_publication"))

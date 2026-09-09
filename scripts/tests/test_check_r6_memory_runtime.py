@@ -853,6 +853,22 @@ fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunctio
         )
         self.assert_failure(root, "browser compute smoke can pass before")
 
+    def test_79_managed_solve_cannot_publish_through_a_logical_cell(self):
+        root = self.fixture()
+        self.append(
+            root,
+            "src/engine/src/structures.rs",
+            """
+impl MechFunctionImpl for Bypass {
+    fn solve_managed(&self, _frame: &mut KernelMemoryFrame<'_>, _services: &mut dyn MechExecutionServices) -> MResult<ReactiveSolveStatus> {
+        self.output.replace(&self.next_value()?)?;
+        Ok(ReactiveSolveStatus::Changed)
+    }
+}
+""",
+        )
+        self.assert_failure(root, "solve_managed bypasses frame-owned staged publication")
+
 
 if __name__ == "__main__":
     unittest.main()

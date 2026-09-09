@@ -1336,6 +1336,15 @@ impl ValueCell {
         ))
     }
 
+    /// Reports whether a maintained runtime output must be constructed
+    /// through the admitted canonical payload builder. This is physical
+    /// planning information used only after semantic specialization has
+    /// already fixed the operation and output type.
+    #[cfg(feature = "functions")]
+    pub fn requires_canonical_output_builder(&self) -> MResult<bool> {
+        self.has_managed_canonical_storage()
+    }
+
     #[cfg(feature = "functions")]
     pub(crate) fn allocate_call_output_in(
         owner: &MemoryDomain,
@@ -1552,6 +1561,100 @@ impl ValueCell {
             shape_parameter_count,
             ..crate::CurrentMemoryFootprint::default()
         })
+    }
+
+    /// Computes a conservative complete candidate witness for a canonical
+    /// aggregate assembled from borrowed logical inputs.
+    ///
+    /// The previous published output is deliberately not part of this
+    /// witness: coexistence with that value is accounted by the turn planner.
+    /// Each source can carry an amplification factor (for example, the
+    /// opposite row count of a table join). Fixed-width source bytes are
+    /// charged as candidate payload as well because packing them into a
+    /// canonical aggregate materializes owned sequence or value storage.
+    #[cfg(feature = "functions")]
+    pub fn prospective_aggregate_memory_footprint<'a>(
+        &self,
+        sources: impl IntoIterator<Item = (&'a Self, u64)>,
+    ) -> MResult<crate::CurrentMemoryFootprint> {
+        let overflow = |field| {
+            MechError::new(crate::MemoryPlanError::ArithmeticOverflow { field }, None)
+                .with_compiler_loc()
+        };
+        let schema_bytes = self.schema_clone_allocation_bound_bytes()?;
+        let shape_parameter_count = self.shape().parameter_values().len() as u64;
+        let shape_bytes = shape_parameter_count
+            .checked_mul(core::mem::size_of::<u64>() as u64)
+            .ok_or_else(|| overflow("aggregate candidate shape bytes"))?;
+        let root_bytes = (core::mem::size_of::<Value>() as u64)
+            .checked_mul(4)
+            .and_then(|bytes| bytes.checked_add(core::mem::size_of::<ValueData>() as u64))
+            .and_then(|bytes| bytes.checked_add(shape_bytes))
+            .and_then(|bytes| bytes.checked_add(schema_bytes))
+            .ok_or_else(|| overflow("aggregate candidate root bytes"))?;
+        let mut candidate = crate::CurrentMemoryFootprint {
+            payload_bytes: root_bytes,
+            encoded_bytes: schema_bytes,
+            // Schema bytes also conservatively bound empty aggregate
+            // containers in the independent retained-node dimension.
+            retained_nodes: schema_bytes.max(3),
+            schema_bytes,
+            shape_parameter_count,
+            ..crate::CurrentMemoryFootprint::default()
+        };
+        let inline_width = core::mem::size_of::<ValueData>() as u64;
+        for (source, multiplicity) in sources {
+            let source = source.current_memory_footprint()?;
+            let logical = source
+                .logical_elements
+                .checked_mul(multiplicity)
+                .ok_or_else(|| overflow("aggregate candidate logical elements"))?;
+            let retained = source
+                .payload_bytes
+                .checked_add(source.fixed_bytes)
+                .and_then(|bytes| {
+                    source
+                        .logical_elements
+                        .checked_mul(inline_width)
+                        .and_then(|inline| bytes.checked_add(inline))
+                })
+                .and_then(|bytes| bytes.checked_mul(multiplicity))
+                .ok_or_else(|| overflow("aggregate candidate retained bytes"))?;
+            let encoded = source
+                .encoded_bytes
+                .checked_add(source.fixed_bytes)
+                .and_then(|bytes| {
+                    source
+                        .logical_elements
+                        .checked_mul(8)
+                        .and_then(|prefixes| bytes.checked_add(prefixes))
+                })
+                .and_then(|bytes| bytes.checked_mul(multiplicity))
+                .ok_or_else(|| overflow("aggregate candidate encoded bytes"))?;
+            let nodes = source
+                .retained_nodes
+                .checked_add(source.logical_elements)
+                .and_then(|nodes| nodes.checked_add(1))
+                .and_then(|nodes| nodes.checked_mul(multiplicity))
+                .ok_or_else(|| overflow("aggregate candidate retained nodes"))?;
+            candidate.logical_elements = candidate
+                .logical_elements
+                .checked_add(logical)
+                .ok_or_else(|| overflow("aggregate candidate logical elements"))?;
+            candidate.payload_bytes = candidate
+                .payload_bytes
+                .checked_add(retained)
+                .ok_or_else(|| overflow("aggregate candidate retained bytes"))?;
+            candidate.encoded_bytes = candidate
+                .encoded_bytes
+                .checked_add(encoded)
+                .ok_or_else(|| overflow("aggregate candidate encoded bytes"))?;
+            candidate.retained_nodes = candidate
+                .retained_nodes
+                .checked_add(nodes)
+                .ok_or_else(|| overflow("aggregate candidate retained nodes"))?;
+        }
+        Ok(candidate)
     }
 
     /// Measures an existing immutable value for prospective adoption without

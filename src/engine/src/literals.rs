@@ -379,6 +379,44 @@ fn conversion_execution_error(error: ConversionExecutionError) -> MechError {
 }
 
 #[cfg(feature = "convert")]
+fn prospective_conversion_output_footprint(
+    output: &ValueCell,
+    source: &ValueCell,
+) -> MResult<Option<CurrentMemoryFootprint>> {
+    if !output.requires_canonical_output_builder()? {
+        return Ok(None);
+    }
+    Ok(Some(
+        output.prospective_aggregate_memory_footprint([(source, 1)])?,
+    ))
+}
+
+#[cfg(feature = "convert")]
+fn stage_conversion_output(
+    frame: &mut mech_core::KernelMemoryFrame<'_>,
+    source: &ValueCell,
+    output: &ValueCell,
+    target: &SchemaBody,
+    plan: &ConversionPlan,
+) -> MResult<()> {
+    // Resolve and validate the live logical input before consulting the
+    // retained cell. The call lease keeps that binding stable while the
+    // conversion builds its candidate.
+    frame.snapshot_input_cell(source, 0)?;
+    if let Some(footprint) = prospective_conversion_output_footprint(output, source)? {
+        frame.with_admitted_canonical_output(output, footprint, |_, construction| {
+            let next = construction.try_build_canonical_candidate_with(|| {
+                execute_conversion_plan(source, target, plan)?.snapshot()
+            })?;
+            Ok(((), next))
+        })
+    } else {
+        let next = execute_conversion_plan(source, target, plan)?.snapshot()?;
+        frame.stage_output_value(output, next)
+    }
+}
+
+#[cfg(feature = "convert")]
 #[derive(Debug)]
 struct PlannedTypeConversion {
     source: ValueCell,
@@ -490,16 +528,25 @@ impl MechFunctionFactory for RuntimeKindConversion {
 
 #[cfg(feature = "convert")]
 impl MechFunctionImpl for RuntimeKindConversion {
+    fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+        Ok(
+            prospective_conversion_output_footprint(self.output.cell(), self.source.cell())?
+                .map(|footprint| vec![footprint].into_boxed_slice()),
+        )
+    }
+
     fn solve_managed(
         &self,
-        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
-        (|| -> MResult<()> {
-            let replacement =
-                execute_conversion_plan(self.source.cell(), &self.target, &self.plan)?;
-            self.output.replace(&replacement.snapshot()?)
-        })()?;
+        stage_conversion_output(
+            frame,
+            self.source.cell(),
+            self.output.cell(),
+            &self.target,
+            &self.plan,
+        )?;
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
@@ -782,15 +829,19 @@ impl CanonicalFunctionSpecializer for ConvertKind {
 
 #[cfg(feature = "convert")]
 impl MechFunctionImpl for PlannedTypeConversion {
+    fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+        Ok(
+            prospective_conversion_output_footprint(&self.output, &self.source)?
+                .map(|footprint| vec![footprint].into_boxed_slice()),
+        )
+    }
+
     fn solve_managed(
         &self,
-        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
-        (|| -> MResult<()> {
-            let replacement = execute_conversion_plan(&self.source, &self.target, &self.plan)?;
-            self.output.replace(&replacement.snapshot()?)
-        })()?;
+        stage_conversion_output(frame, &self.source, &self.output, &self.target, &self.plan)?;
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
@@ -1241,7 +1292,7 @@ mod canonical_conversion_tests {
     }
 
     #[test]
-    fn failed_reactive_conversion_leaves_the_output_unchanged() {
+    fn reactive_conversion_stages_success_and_keeps_failures_atomic() {
         let source = ValueCell::from_exact(12.9_f64).unwrap();
         let target = SchemaBody::SignedInteger(IntegerWidth::W32);
         let source_type = source.resolved_type().unwrap();
@@ -1251,6 +1302,15 @@ mod canonical_conversion_tests {
         let conversion =
             planned_type_conversion_specialized(source.clone(), output.clone(), target, plan)
                 .unwrap();
+
+        source
+            .replace(&ValueCell::from_exact(13.9_f64).unwrap().snapshot().unwrap())
+            .unwrap();
+        conversion.instance().solve_result().unwrap();
+        assert!(matches!(
+            output.snapshot().unwrap().data(),
+            ValueData::I32(13)
+        ));
 
         source
             .replace(
@@ -1270,7 +1330,7 @@ mod canonical_conversion_tests {
         );
         assert!(matches!(
             output.snapshot().unwrap().data(),
-            ValueData::I32(12)
+            ValueData::I32(13)
         ));
     }
 

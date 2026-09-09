@@ -109,6 +109,46 @@ fn register_composite_pack(
     Ok(())
 }
 
+#[cfg(any(
+    feature = "tuple",
+    feature = "record",
+    feature = "table",
+    feature = "matrix"
+))]
+fn prospective_composite_pack_footprint<'a>(
+    output: &ValueCell,
+    inputs: impl IntoIterator<Item = &'a ValueCell>,
+) -> MResult<Option<CurrentMemoryFootprint>> {
+    if !output.requires_canonical_output_builder()? {
+        return Ok(None);
+    }
+    Ok(Some(output.prospective_aggregate_memory_footprint(
+        inputs.into_iter().map(|input| (input, 1)),
+    )?))
+}
+
+#[cfg(any(
+    feature = "tuple",
+    feature = "record",
+    feature = "table",
+    feature = "matrix"
+))]
+fn stage_composite_pack(
+    frame: &mut mech_core::KernelMemoryFrame<'_>,
+    output: &ValueCell,
+    footprint: Option<CurrentMemoryFootprint>,
+    build: impl FnOnce() -> MResult<mech_core::Value>,
+) -> MResult<()> {
+    if let Some(footprint) = footprint {
+        frame.with_admitted_canonical_output(output, footprint, |_, construction| {
+            let next = construction.try_build_canonical_candidate_with(build)?;
+            Ok(((), next))
+        })
+    } else {
+        frame.stage_output_value(output, build()?)
+    }
+}
+
 #[cfg(feature = "tuple")]
 struct CanonicalTuplePack {
     output: ValueCell,
@@ -124,12 +164,23 @@ impl CanonicalTuplePack {
 
 #[cfg(feature = "tuple")]
 impl MechFunctionImpl for CanonicalTuplePack {
+    fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+        Ok(
+            prospective_composite_pack_footprint(&self.output, self.elements.iter())?
+                .map(|footprint| vec![footprint].into_boxed_slice()),
+        )
+    }
+
     fn solve_managed(
         &self,
-        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
-        (|| -> MResult<()> { self.output.replace(&self.next_value()?) })()?;
+        for (index, input) in self.elements.iter().enumerate() {
+            frame.snapshot_input_cell(input, index)?;
+        }
+        let footprint = prospective_composite_pack_footprint(&self.output, self.elements.iter())?;
+        stage_composite_pack(frame, &self.output, footprint, || self.next_value())?;
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
@@ -175,12 +226,27 @@ impl CanonicalRecordPack {
 
 #[cfg(feature = "record")]
 impl MechFunctionImpl for CanonicalRecordPack {
+    fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+        Ok(prospective_composite_pack_footprint(
+            &self.output,
+            self.fields.iter().map(|(_, input)| input),
+        )?
+        .map(|footprint| vec![footprint].into_boxed_slice()))
+    }
+
     fn solve_managed(
         &self,
-        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
-        (|| -> MResult<()> { self.output.replace(&self.next_value()?) })()?;
+        for (index, (_, input)) in self.fields.iter().enumerate() {
+            frame.snapshot_input_cell(input, index)?;
+        }
+        let footprint = prospective_composite_pack_footprint(
+            &self.output,
+            self.fields.iter().map(|(_, input)| input),
+        )?;
+        stage_composite_pack(frame, &self.output, footprint, || self.next_value())?;
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
@@ -231,12 +297,32 @@ impl CanonicalTablePack {
 
 #[cfg(feature = "table")]
 impl MechFunctionImpl for CanonicalTablePack {
+    fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+        Ok(prospective_composite_pack_footprint(
+            &self.output,
+            self.columns.iter().flat_map(|(_, values)| values.iter()),
+        )?
+        .map(|footprint| vec![footprint].into_boxed_slice()))
+    }
+
     fn solve_managed(
         &self,
-        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
-        (|| -> MResult<()> { self.output.replace(&self.next_value()?) })()?;
+        for (index, input) in self
+            .columns
+            .iter()
+            .flat_map(|(_, values)| values.iter())
+            .enumerate()
+        {
+            frame.snapshot_input_cell(input, index)?;
+        }
+        let footprint = prospective_composite_pack_footprint(
+            &self.output,
+            self.columns.iter().flat_map(|(_, values)| values.iter()),
+        )?;
+        stage_composite_pack(frame, &self.output, footprint, || self.next_value())?;
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
@@ -687,12 +773,33 @@ impl CanonicalMatrixPack {
 
 #[cfg(feature = "matrix")]
 impl MechFunctionImpl for CanonicalMatrixPack {
+    fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+        Ok(prospective_composite_pack_footprint(
+            &self.output,
+            self.rows.iter().flatten().filter_map(Option::as_ref),
+        )?
+        .map(|footprint| vec![footprint].into_boxed_slice()))
+    }
+
     fn solve_managed(
         &self,
-        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
-        (|| -> MResult<()> { self.output.replace(&self.next_value()?) })()?;
+        for (index, input) in self
+            .rows
+            .iter()
+            .flatten()
+            .filter_map(Option::as_ref)
+            .enumerate()
+        {
+            frame.snapshot_input_cell(input, index)?;
+        }
+        let footprint = prospective_composite_pack_footprint(
+            &self.output,
+            self.rows.iter().flatten().filter_map(Option::as_ref),
+        )?;
+        stage_composite_pack(frame, &self.output, footprint, || self.next_value())?;
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
@@ -1243,6 +1350,56 @@ pub(crate) fn schema_body_from_kind(
             None,
         )
         .with_compiler_loc()),
+    }
+}
+
+#[cfg(all(test, feature = "tuple", feature = "string"))]
+mod managed_composite_tests {
+    use super::*;
+
+    #[test]
+    fn reactive_tuple_pack_stages_the_complete_canonical_candidate() {
+        let source = ValueCell::from_exact("old".to_owned()).unwrap();
+        let output = ValueCell::tuple_from_cells(&[source.clone()]).unwrap();
+        let implementation = CanonicalTuplePack {
+            output: output.clone(),
+            elements: vec![source.clone()].into_boxed_slice(),
+        };
+        let specialized = SpecializedFunction::syntax_directed(
+            (
+                Box::new(implementation),
+                FunctionInvocation::unary(output.clone(), source.clone()),
+            ),
+            ResolvedOperationDescriptor::from_name(
+                "core/composite-pack",
+                composite_pack_contract(),
+            )
+            .unwrap(),
+            RuntimeFunctionId::from_name("core/composite-pack"),
+            ExecutionTarget::DirectRuntime,
+            ImplementationMemoryClass::CanonicalFinalize,
+        )
+        .unwrap();
+
+        let replacement = "a substantially larger reactive tuple payload".to_owned();
+        source
+            .replace(
+                &ValueCell::from_exact(replacement.clone())
+                    .unwrap()
+                    .snapshot()
+                    .unwrap(),
+            )
+            .unwrap();
+        specialized.instance().solve_result().unwrap();
+
+        let value = output.snapshot().unwrap();
+        let ValueData::Tuple(values) = value.data() else {
+            panic!("composite output must remain a tuple")
+        };
+        assert!(matches!(
+            values.as_ref(),
+            [ValueData::String(value)] if value.as_ref() == replacement
+        ));
     }
 }
 

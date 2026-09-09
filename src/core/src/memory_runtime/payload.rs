@@ -644,6 +644,18 @@ impl FrozenSnapshotConstruction {
         &mut self,
         build: impl FnOnce() -> crate::MResult<crate::Value>,
     ) -> crate::MResult<crate::Value> {
+        self.try_build_canonical_candidate_with(build)
+    }
+
+    /// Constructs a general canonical candidate only after reserving the
+    /// operation's complete admitted build workspace. Conversion, aggregate
+    /// packing, joins, and assignment all share this boundary rather than
+    /// publishing through a logical cell while its managed turn is active.
+    #[cfg(feature = "functions")]
+    pub fn try_build_canonical_candidate_with(
+        &mut self,
+        build: impl FnOnce() -> crate::MResult<crate::Value>,
+    ) -> crate::MResult<crate::Value> {
         self.charge_remaining_temporary()?;
         build()
     }
