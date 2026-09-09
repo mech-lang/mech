@@ -927,6 +927,10 @@ class Session {
       this.lifecycle.markSubmitted(dispatchToken);
       this.lastDispatchToken = dispatchToken;
       this.pending = true;
+      // Install the exact accepted-submission completion before exposing the
+      // submitted hook. That hook may synchronously retire the document; the
+      // retirement path must already have an ownership anchor to wait on.
+      this.completion = this.finish(dispatchToken, submission, hooks);
       hooks.onSubmitted?.({ dispatchToken, ...submission });
     } catch (error) {
       if (submission) {
@@ -934,16 +938,18 @@ class Session {
         // or an observation hook failed afterward. Drive the exact submission
         // through resource cleanup, and keep retirement from destroying its
         // buffers until that cleanup reaches completion or device loss.
-        let cleanup;
-        try {
-          cleanup = this.resource.finish(submission);
-        } catch (cleanupError) {
-          cleanup = Promise.reject(cleanupError);
+        if (!this.completion) {
+          let cleanup;
+          try {
+            cleanup = this.resource.finish(submission);
+          } catch (cleanupError) {
+            cleanup = Promise.reject(cleanupError);
+          }
+          this.pending = true;
+          this.completion = Promise.resolve(cleanup)
+            .catch(() => {})
+            .finally(() => { this.pending = false; });
         }
-        this.pending = true;
-        this.completion = Promise.resolve(cleanup)
-          .catch(() => {})
-          .finally(() => { this.pending = false; });
       } else {
         this.pending = false;
       }
@@ -955,7 +961,6 @@ class Session {
       }
       throw this.failure;
     }
-    this.completion = this.finish(dispatchToken, submission, hooks);
     return submission;
   }
 
@@ -963,7 +968,7 @@ class Session {
     let completionSent = false;
     try {
       const { outputs, integrity } = await this.resource.finish(submission);
-      if (!this.isCurrent()) return;
+      if (!this.isCurrent() || this.failure) return;
       if (integrity) {
         this.complete({
           token: dispatchToken,

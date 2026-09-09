@@ -742,6 +742,52 @@ await Promise.resolve();
 assert.equal(submittedHookSession.pending, false);
 assert.equal(submittedHookDisposals, 1);
 
+const terminalRetirementBoundary = deferred();
+let terminalRetirementFinishes = 0;
+let terminalRetirementDisposals = 0;
+const terminalRetirementCompletions = [];
+let terminalRetirementSession;
+terminalRetirementSession = new Session({
+  generation: 24,
+  controller: {
+    completeComputeCommand(payload) { terminalRetirementCompletions.push(payload); },
+  },
+  resource: {
+    physicalRevision: "sha256:terminal-retirement",
+    device: { lost: new Promise(() => {}) },
+    setRequestedOutputs() {},
+    submit() {
+      return { outputIndex: 1, completion: terminalRetirementBoundary.promise };
+    },
+    async finish(submission) {
+      terminalRetirementFinishes += 1;
+      await submission.completion;
+      return { outputs: [], integrity: null };
+    },
+    dispose() { terminalRetirementDisposals += 1; },
+  },
+});
+terminalRetirementSession.submit(command("24:1"), {
+  onSubmitted() { terminalRetirementSession.retire(); },
+});
+assert.equal(terminalRetirementSession.pending, true);
+assert.equal(terminalRetirementFinishes, 1);
+assert.equal(
+  terminalRetirementDisposals,
+  0,
+  "synchronous retirement from the submitted hook must retain accepted work",
+);
+terminalRetirementBoundary.resolve();
+await terminalRetirementSession.completion;
+await Promise.resolve();
+assert.equal(terminalRetirementSession.pending, false);
+assert.equal(terminalRetirementDisposals, 1);
+assert.deepEqual(
+  terminalRetirementCompletions,
+  [],
+  "a retired generation must not publish its terminal completion",
+);
+
 const publicationAttempts = [];
 const publicationSession = new Session({
   generation: 22,

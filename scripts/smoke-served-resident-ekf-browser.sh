@@ -447,6 +447,15 @@ harness = r'''<script>
     window.requestAnimationFrame = (callback) => originalSetTimeout(() => {
       if (root.dataset.mechDone === "true" || root.dataset.mechTimedOut === "true") return;
       callback(performance.now());
+      // The terminal-submission lifecycle probe deliberately disposes the
+      // document controller from inside the submitted frame. Do not let this
+      // same wrapper continue into the ordinary rendering oracle after that
+      // synchronous disposal; the probe's completion timer below owns the
+      // only remaining observation.
+      if (
+        terminalSubmitProbe &&
+        root.dataset.mechTerminalSubmitObserved === "true"
+      ) return;
 
       // Adapter discovery and pipeline creation are asynchronous. Chrome's
       // virtual-time budget can advance thousands of unrelated layout frames
