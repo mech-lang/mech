@@ -325,28 +325,11 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIsNotNone(declared)
         self.assertEqual(tuple(declared.group("profiles").splitlines()), SIZE_PROFILES)
 
-    def test_distribution_size_workflow_consumes_one_profile_output(self):
-        plan = job_block(FULL, "distribution-size-plan")
-        shards = job_block(FULL, "distribution-size-shards")
-        combine = job_block(FULL, "distribution-sizes")
-        self.assertIn("report-distribution-sizes.sh --profiles-json", plan)
-        self.assertIn(
-            "profile: ${{ fromJSON(needs.distribution-size-plan.outputs.profiles) }}",
-            shards,
-        )
-        self.assertIn(
-            "PROFILES_JSON: ${{ needs.distribution-size-plan.outputs.profiles }}",
-            combine,
-        )
-        self.assertNotIn("continue-on-error", shards)
-        self.assertNotIn("continue-on-error", combine)
-        self.assertIn('test "$missing" -eq 0', combine)
-        for stale in (
-            "standard-bytecode-runtime",
-            "standard-source-runtime",
-            "standard-compiler-tooling",
-        ):
-            self.assertNotIn(stale, FULL)
+    def test_distribution_size_measurement_is_not_a_full_ci_gate(self):
+        self.assertNotIn("distribution-size-plan:", FULL)
+        self.assertNotIn("distribution-size-shards:", FULL)
+        self.assertNotIn("distribution-sizes:", FULL)
+        self.assertNotIn("report-distribution-sizes.sh", FULL)
 
     def test_unknown_distribution_size_profile_still_fails(self):
         completed = subprocess.run(
