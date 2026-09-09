@@ -400,13 +400,88 @@ fn conversion_execution_error(error: ConversionExecutionError) -> MechError {
 fn prospective_conversion_output_footprint(
     output: &ValueCell,
     source: &ValueCell,
+    plan: &ConversionPlan,
 ) -> MResult<Option<CurrentMemoryFootprint>> {
     if !output.requires_canonical_output_builder()? {
         return Ok(None);
     }
-    Ok(Some(
-        output.prospective_aggregate_memory_footprint([(source, 1)])?,
-    ))
+    let mut footprint = output.prospective_aggregate_memory_footprint([(source, 1)])?;
+    if let Some(maximum_string_bytes) = conversion_string_payload_bound(&plan.step) {
+        let source_elements = source.current_memory_footprint()?.logical_elements;
+        let string_payload = source_elements
+            .checked_mul(maximum_string_bytes)
+            .ok_or_else(|| {
+                MechError::new(
+                    mech_core::MemoryPlanError::ArithmeticOverflow {
+                        field: "converted String payload bound",
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+        footprint.payload_bytes = footprint
+            .payload_bytes
+            .checked_add(string_payload)
+            .ok_or_else(|| {
+                MechError::new(
+                    mech_core::MemoryPlanError::ArithmeticOverflow {
+                        field: "converted String retained bytes",
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+        footprint.encoded_bytes = footprint
+            .encoded_bytes
+            .checked_add(string_payload)
+            .ok_or_else(|| {
+                MechError::new(
+                    mech_core::MemoryPlanError::ArithmeticOverflow {
+                        field: "converted String encoded bytes",
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+    }
+    Ok(Some(footprint))
+}
+
+#[cfg(feature = "convert")]
+fn conversion_string_payload_bound(step: &ConversionStep) -> Option<u64> {
+    let source = match step {
+        ConversionStep::Scalar(ScalarConversion::Builtin {
+            source,
+            target: BuiltinScalarKind::String,
+            ..
+        }) => *source,
+        ConversionStep::MatrixElements(inner) | ConversionStep::OptionPayload(inner) => {
+            return conversion_string_payload_bound(&inner.step);
+        }
+        ConversionStep::Identity | ConversionStep::Scalar(_) => return None,
+    };
+    // These bounds cover the complete `Display` spelling emitted by the
+    // selected conversion plan, including fixed decimal spellings of the
+    // smallest subnormal floats and both components of complex values.
+    Some(match source {
+        BuiltinScalarKind::U8 => 3,
+        BuiltinScalarKind::U16 => 5,
+        BuiltinScalarKind::U32 => 10,
+        BuiltinScalarKind::U64 => 20,
+        BuiltinScalarKind::U128 => 39,
+        BuiltinScalarKind::I8 => 4,
+        BuiltinScalarKind::I16 => 6,
+        BuiltinScalarKind::I32 => 11,
+        BuiltinScalarKind::I64 => 20,
+        BuiltinScalarKind::I128 => 40,
+        BuiltinScalarKind::F32 => 48,
+        BuiltinScalarKind::F64 => 328,
+        BuiltinScalarKind::C32 => 98,
+        BuiltinScalarKind::C64 => 658,
+        BuiltinScalarKind::R64 => 41,
+        BuiltinScalarKind::Bool => 5,
+        BuiltinScalarKind::String => return None,
+    })
 }
 
 #[cfg(feature = "convert")]
@@ -416,7 +491,7 @@ fn stage_conversion_output(
     output: &ValueCell,
     plan: &ConversionPlan,
 ) -> MResult<()> {
-    if let Some(footprint) = prospective_conversion_output_footprint(output, source)? {
+    if let Some(footprint) = prospective_conversion_output_footprint(output, source, plan)? {
         frame.with_admitted_canonical_output(output, footprint, |frame, construction| {
             let next = construction.try_build_canonical_candidate_with(|construction| {
                 let snapshot =
@@ -538,10 +613,12 @@ impl MechFunctionFactory for RuntimeKindConversion {
 #[cfg(feature = "convert")]
 impl MechFunctionImpl for RuntimeKindConversion {
     fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
-        Ok(
-            prospective_conversion_output_footprint(self.output.cell(), self.source.cell())?
-                .map(|footprint| vec![footprint].into_boxed_slice()),
-        )
+        Ok(prospective_conversion_output_footprint(
+            self.output.cell(),
+            self.source.cell(),
+            &self.plan,
+        )?
+        .map(|footprint| vec![footprint].into_boxed_slice()))
     }
 
     fn solve_managed(
@@ -834,7 +911,7 @@ impl CanonicalFunctionSpecializer for ConvertKind {
 impl MechFunctionImpl for PlannedTypeConversion {
     fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
         Ok(
-            prospective_conversion_output_footprint(&self.output, &self.source)?
+            prospective_conversion_output_footprint(&self.output, &self.source, &self.plan)?
                 .map(|footprint| vec![footprint].into_boxed_slice()),
         )
     }
@@ -1388,6 +1465,56 @@ mod canonical_conversion_tests {
                 .collect::<Vec<_>>(),
             vec![1.0, 2.0, 3.0],
         );
+    }
+
+    #[cfg(all(feature = "matrix", feature = "string"))]
+    #[test]
+    fn numeric_to_string_conversion_plans_the_converted_payload() {
+        let source = ValueCell::dynamic_matrix_from_cells(
+            1,
+            4,
+            &[
+                ValueCell::from_exact(f64::MAX).unwrap(),
+                ValueCell::from_exact(f64::MIN).unwrap(),
+                ValueCell::from_exact(f64::from_bits(1)).unwrap(),
+                ValueCell::from_exact(-f64::from_bits(1)).unwrap(),
+            ],
+        )
+        .unwrap();
+        let SchemaBody::Matrix { dimensions, .. } = source.closed_schema_body().unwrap() else {
+            panic!("fixture must be matrix-backed")
+        };
+        let target = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::String),
+            dimensions,
+        };
+        let source_type = source.resolved_type().unwrap();
+        let KindExpr::Matrix { dimensions, .. } = source_type.kind() else {
+            panic!("fixture must resolve to a matrix")
+        };
+        let target_type = ResolvedType::new(
+            KindExpr::Matrix {
+                element: Box::new(BuiltinScalarKind::String.kind_expr()),
+                dimensions: dimensions.clone(),
+            },
+            source_type
+                .dimension_parameters()
+                .to_vec()
+                .into_boxed_slice(),
+        )
+        .unwrap();
+        let plan = plan_explicit_cast(&source_type, &target_type).unwrap();
+        let output = execute_conversion_plan(&source, &target, &plan).unwrap();
+        let planned = prospective_conversion_output_footprint(&output, &source, &plan)
+            .unwrap()
+            .unwrap();
+        let actual = output.current_memory_footprint().unwrap();
+        assert!(planned.payload_bytes >= actual.payload_bytes);
+        assert!(planned.encoded_bytes >= actual.encoded_bytes);
+        assert!(planned.retained_nodes >= actual.retained_nodes);
+
+        let conversion = planned_type_conversion_specialized(source, output, plan).unwrap();
+        conversion.instance().solve_result().unwrap();
     }
 
     #[cfg(all(feature = "matrix", feature = "string"))]

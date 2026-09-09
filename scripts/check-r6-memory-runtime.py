@@ -767,6 +767,16 @@ def failures(root: Path) -> list[str]:
         or "from_resolved_descriptor_data" in conversion_staging[0]
     ):
         found.append("managed conversion escapes its frame-owned construction authority")
+    conversion_footprints = list(
+        function_bodies(literal, "prospective_conversion_output_footprint")
+    )
+    if (
+        not conversion_footprints
+        or "conversion_string_payload_bound(&plan.step)" not in conversion_footprints[0]
+        or "footprint.payload_bytes" not in conversion_footprints[0]
+        or "footprint.encoded_bytes" not in conversion_footprints[0]
+    ):
+        found.append("conversion footprint ignores target payload expansion")
 
     structures = rust_code(sources.get("src/engine/src/structures.rs", ""))
     if (

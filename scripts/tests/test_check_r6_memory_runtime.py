@@ -909,6 +909,16 @@ impl MechFunctionImpl for Bypass {
         )
         self.assert_failure(root, "module allocates private output-sized scratch")
 
+    def test_84_conversion_footprint_must_include_target_payload(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/engine/src/literals.rs",
+            "conversion_string_payload_bound(&plan.step)",
+            "None",
+        )
+        self.assert_failure(root, "conversion footprint ignores target payload expansion")
+
 
 if __name__ == "__main__":
     unittest.main()
