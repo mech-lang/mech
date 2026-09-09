@@ -153,8 +153,30 @@ class R5MemoryPlannerCheckerTests(unittest.TestCase):
         self.replace(
             root,
             "src/core/src/function/specialization.rs",
-            "memory_plan: CallMemoryPlan,",
-            "memory_plan: (),",
+            "pub fn new(\n"
+            "        (implementation, invocation): (Box<dyn crate::MechFunction>, FunctionInvocation),\n"
+            "        bound_call: BoundCall,\n"
+            "        memory_plan: CallMemoryPlan,",
+            "pub fn new(\n"
+            "        (implementation, invocation): (Box<dyn crate::MechFunction>, FunctionInvocation),\n"
+            "        bound_call: BoundCall,\n"
+            "        memory_plan: (),",
+        )
+        self.assert_failure(root, "SpecializedFunction omits CallMemoryPlan")
+
+    def test_13b_folded_specialized_function_without_call_plan_fails(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/function/specialization.rs",
+            "fn new_with_managed_inputs(\n"
+            "        (implementation, invocation): (Box<dyn crate::MechFunction>, FunctionInvocation),\n"
+            "        bound_call: BoundCall,\n"
+            "        memory_plan: CallMemoryPlan,",
+            "fn new_with_managed_inputs(\n"
+            "        (implementation, invocation): (Box<dyn crate::MechFunction>, FunctionInvocation),\n"
+            "        bound_call: BoundCall,\n"
+            "        memory_plan: (),",
         )
         self.assert_failure(root, "SpecializedFunction omits CallMemoryPlan")
 

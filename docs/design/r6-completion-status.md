@@ -32,11 +32,12 @@ unclassified entry.
 The fixed-shape qualification test also proves that the selected exact matrix
 representation is installed in the runtime catalog and executes `math/add`
 through the ordinary managed `FunctionInstance`. `matrix1`, `matrix2`,
-`matrix3`, `matrix4`, `matrix2x3`, and `matrix3x2` have each been compiled and
-executed as separate local feature slices. Combining all square representations
-in one macOS link exceeded the local linker/object-size boundary, so Full CI
-now isolates every fixed representation in its own bounded job. The six vector
-and row-vector slices remain pending locally.
+`matrix3`, `matrix4`, `matrix2x3`, `matrix3x2`, `row_vector2`, `row_vector3`,
+and `row_vector4` have each been compiled and executed as separate local feature
+slices. Combining all square representations in one macOS link exceeded the
+local linker/object-size boundary, so Full CI now isolates every fixed
+representation in its own bounded job. The three column-vector slices remain
+pending locally.
 
 ## Family inventory
 
@@ -72,12 +73,15 @@ Executed successfully on the uncommitted working tree descended from
 - full and standard catalog inventory classification: both passed with the
   denominators above.
 - isolated managed fixed-shape execution for each of `matrix1`, `matrix2`,
-  `matrix3`, `matrix4`, `matrix2x3`, and `matrix3x2`: 1 passed per feature.
+  `matrix3`, `matrix4`, `matrix2x3`, `matrix3x2`, `row_vector2`, `row_vector3`,
+  and `row_vector4`: 1 passed per feature.
 - published-invariant false-writer regression: 1 passed; value and content
   version remained unchanged after rejected writer acquisition.
 - R6 architecture checker and all 67 architecture mutations: passed.
 - CI workflow/impact contract suite: 31 passed; the fixed-shape coverage set is
   enforced as twelve one-feature jobs to bound compiler, linker, and disk use.
+- R5 specialized-function plan mutation: normal and folded constructors both
+  reject removal of their `CallMemoryPlan` authority.
 
 Earlier focused tests in the same working tree established typed String
 access/assignment, canonical map/tuple/record/table access, borrowed fixed

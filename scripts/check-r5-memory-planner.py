@@ -347,10 +347,32 @@ def failures(root: Path) -> list[str]:
             if function_runtime_path.is_file()
             else ""
         )
+        specialized_impl = specialization[
+            specialization.find("impl SpecializedFunction") :
+        ]
+
+        def constructor_requires_call_plan(name: str) -> bool:
+            match = re.search(rf"\bfn\s+{re.escape(name)}\b", specialized_impl)
+            if match is None:
+                return False
+            body = specialized_impl.find("{", match.end())
+            return body >= 0 and re.search(
+                r"\bmemory_plan\s*:\s*CallMemoryPlan\b",
+                specialized_impl[match.start() : body],
+            ) is not None
+
+        constructor_names = ["new"]
+        if "fn new_with_managed_inputs" in specialized_impl:
+            constructor_names.append("new_with_managed_inputs")
         r6_constructor_retains_plan = (
-            "memory_plan: CallMemoryPlan" in specialization
-            and "let memory_plan = Rc::new(memory_plan);" in specialization
-            and "FunctionInstance::new(implementation, invocation, memory_plan)" in specialization
+            all(constructor_requires_call_plan(name) for name in constructor_names)
+            and "let memory_plan = Rc::new(memory_plan);" in specialized_impl
+            and "FunctionInstance::new(implementation, invocation, memory_plan)"
+            in specialized_impl
+            and (
+                "fn new_with_managed_inputs" not in specialized_impl
+                or "FunctionInstance::new_with_managed_inputs" in specialized_impl
+            )
         )
         if not (
             re.search(r"\binstance\s*:\s*FunctionInstance\b", specialized)
