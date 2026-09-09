@@ -1468,9 +1468,10 @@ impl<'a> SpecializationContext<'a> {
         for entry in catalog.runtime_entries_for_binding(selector, target) {
             let reason = if !runtime_inputs_match(entry.signature().inputs, input_representations) {
                 Some("physical input signature mismatch".into())
-            } else if let Some(reason) =
-                runtime_input_storage_mismatch(entry.signature().inputs, input_descriptors)
-            {
+            } else if let Some(reason) = crate::function::catalog::runtime_input_storage_mismatch(
+                entry.signature().inputs,
+                input_descriptors,
+            ) {
                 Some(reason)
             } else if existing_output
                 .is_some_and(|actual| !entry.signature().output.matches(actual))
@@ -1590,54 +1591,6 @@ fn runtime_inputs_match(
         }
         _ => false,
     }
-}
-
-fn runtime_input_storage_mismatch(
-    signature: RuntimeFunctionInputs,
-    descriptors: &[ResolvedValueDescriptor],
-) -> Option<String> {
-    let representations = match signature {
-        RuntimeFunctionInputs::Nullary => Vec::new(),
-        RuntimeFunctionInputs::Unary(first) => vec![first],
-        RuntimeFunctionInputs::Binary(first, second) => vec![first, second],
-        RuntimeFunctionInputs::Ternary(first, second, third) => vec![first, second, third],
-        RuntimeFunctionInputs::Quaternary(first, second, third, fourth) => {
-            vec![first, second, third, fourth]
-        }
-        RuntimeFunctionInputs::Variadic { element } => vec![element; descriptors.len()],
-    };
-    if representations.len() != descriptors.len() {
-        return Some("physical input descriptor arity mismatch".into());
-    }
-    representations
-        .into_iter()
-        .zip(descriptors)
-        .enumerate()
-        .find_map(|(ordinal, (representation, descriptor))| {
-            // AnyStorage is an implementation promise, not an opaque backing.
-            // Exact matrix layouts still have to satisfy resolved dimensions.
-            if matches!(
-                representation,
-                FunctionValueRepresentation::Matrix {
-                    storage: crate::FunctionMatrixStoragePattern::AnyStorage,
-                    ..
-                }
-            ) {
-                return None;
-            }
-            let capabilities = crate::runtime_storage::actual_backing_capabilities(representation);
-            crate::check_schema_storage_compatibility(
-                descriptor.schema(),
-                descriptor.shape(),
-                &capabilities,
-            )
-            .err()
-            .map(|error| {
-                format!(
-                    "input {ordinal} storage is incompatible with the physical runtime signature: {error:?}",
-                )
-            })
-        })
 }
 
 fn invocation_for_runtime_inputs(

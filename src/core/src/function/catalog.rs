@@ -953,11 +953,11 @@ impl FunctionCatalog {
     }
 }
 
-fn validate_bound_physical_signature(
-    signature: RuntimeFunctionSignature,
-    binding: &crate::BoundCall,
-) -> MResult<()> {
-    let inputs = match signature.inputs {
+pub(crate) fn runtime_input_storage_mismatch(
+    signature: crate::RuntimeFunctionInputs,
+    descriptors: &[crate::ResolvedValueDescriptor],
+) -> Option<String> {
+    let representations = match signature {
         crate::RuntimeFunctionInputs::Nullary => Vec::new(),
         crate::RuntimeFunctionInputs::Unary(first) => vec![first],
         crate::RuntimeFunctionInputs::Binary(first, second) => vec![first, second],
@@ -968,10 +968,48 @@ fn validate_bound_physical_signature(
             vec![first, second, third, fourth]
         }
         crate::RuntimeFunctionInputs::Variadic { element } => {
-            vec![element; binding.inputs().len()]
+            vec![element; descriptors.len()]
         }
     };
-    if inputs.len() != binding.inputs().len() || binding.outputs().len() != 1 {
+    if representations.len() != descriptors.len() {
+        return Some("physical input descriptor arity mismatch".into());
+    }
+    representations
+        .into_iter()
+        .zip(descriptors)
+        .enumerate()
+        .find_map(|(ordinal, (representation, descriptor))| {
+            // AnyStorage is an implementation promise, not an opaque backing.
+            // Exact matrix layouts still have to satisfy resolved dimensions.
+            if matches!(
+                representation,
+                crate::FunctionValueRepresentation::Matrix {
+                    storage: crate::FunctionMatrixStoragePattern::AnyStorage,
+                    ..
+                }
+            ) {
+                return None;
+            }
+            let capabilities = crate::runtime_storage::actual_backing_capabilities(representation);
+            crate::check_schema_storage_compatibility(
+                descriptor.schema(),
+                descriptor.shape(),
+                &capabilities,
+            )
+            .err()
+            .map(|error| {
+                format!(
+                    "input {ordinal} storage is incompatible with the physical runtime signature: {error:?}",
+                )
+            })
+        })
+}
+
+fn validate_bound_physical_signature(
+    signature: RuntimeFunctionSignature,
+    binding: &crate::BoundCall,
+) -> MResult<()> {
+    if binding.outputs().len() != 1 {
         return Err(MechError::new(
             RuntimeOperationBindingMismatch {
                 operation: Some(binding.operation()),
@@ -981,27 +1019,15 @@ fn validate_bound_physical_signature(
         )
         .with_compiler_loc());
     }
-    for (ordinal, (representation, descriptor)) in
-        inputs.into_iter().zip(binding.inputs()).enumerate()
-    {
-        let capabilities = crate::runtime_storage::actual_backing_capabilities(representation);
-        crate::check_schema_storage_compatibility(
-            descriptor.schema(),
-            descriptor.shape(),
-            &capabilities,
+    if let Some(reason) = runtime_input_storage_mismatch(signature.inputs, binding.inputs()) {
+        return Err(MechError::new(
+            RuntimeOperationBindingMismatch {
+                operation: Some(binding.operation()),
+                reason,
+            },
+            None,
         )
-        .map_err(|error| {
-            MechError::new(
-                RuntimeOperationBindingMismatch {
-                    operation: Some(binding.operation()),
-                    reason: format!(
-                        "input {ordinal} is incompatible with the physical runtime signature: {error:?}",
-                    ),
-                },
-                None,
-            )
-            .with_compiler_loc()
-        })?;
+        .with_compiler_loc());
     }
     let output = &binding.outputs()[0];
     let capabilities = crate::runtime_storage::actual_backing_capabilities(signature.output);
