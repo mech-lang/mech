@@ -270,6 +270,14 @@ pub trait MechFunctionImpl {
         PayloadOutputPlanPolicy::Missing
     }
 
+    /// Captures one externally produced result before output planning. The
+    /// same immutable result must supply the prospective witness and later be
+    /// consumed by `solve_managed`; implementations must not probe the
+    /// external service a second time to discover its size.
+    fn prepare_external_output(&self, _: &mut dyn MechExecutionServices) -> MResult<()> {
+        Ok(())
+    }
+
     fn initial_solve_policy(&self) -> InitialSolvePolicy {
         InitialSolvePolicy::Solve
     }
@@ -419,6 +427,14 @@ impl<T> MechFunction for T where T: MechFunctionImpl {}
 pub struct FunctionInstance {
     implementation: Box<dyn MechFunction>,
     invocation: FunctionInvocation,
+    /// Exact semantic input cells retained by the managed memory plan.
+    ///
+    /// These normally derive from `invocation`, including an inserted
+    /// read-modify-write base cell. Specialization-time folded operations may
+    /// have a nullary runtime invocation while their semantic call still owns
+    /// input planning evidence, so this binding is intentionally independent
+    /// from reactive dependency registration.
+    managed_inputs: Box<[ValueCell]>,
     managed: ManagedFunctionBinding,
 }
 
@@ -446,18 +462,17 @@ impl ManagedCallRealization {
     fn prepare(
         domain: MemoryDomain,
         plan: Rc<CallMemoryPlan>,
-        invocation: &FunctionInvocation,
+        output: &ValueCell,
+        managed_inputs: &[ValueCell],
+        output_policy: PayloadOutputPlanPolicy,
     ) -> MResult<Self> {
-        let existing = invocation
-            .output_cell()
-            .managed_host_binding()?
-            .filter(|live| {
-                live.realized.domain() == domain.id()
-                    && live
-                        .realized
-                        .call_plan()
-                        .is_some_and(|existing| existing.as_ref() == plan.as_ref())
-            });
+        let existing = output.managed_host_binding()?.filter(|live| {
+            live.realized.domain() == domain.id()
+                && live
+                    .realized
+                    .call_plan()
+                    .is_some_and(|existing| existing.as_ref() == plan.as_ref())
+        });
         let realized = if let Some(existing) = existing {
             existing.realized
         } else {
@@ -467,9 +482,18 @@ impl ManagedCallRealization {
             .call_plan()
             .expect("call realization retains immutable R5 authority")
             .clone();
-        let initialization =
-            domain.prepare_function_input_initialization(&realized, plan.as_ref(), invocation)?;
-        let execution = domain.prepare_function_call(&realized, plan.as_ref(), invocation)?;
+        let initialization = domain.prepare_function_input_initialization(
+            &realized,
+            plan.as_ref(),
+            managed_inputs,
+        )?;
+        let execution = domain.prepare_function_call(
+            &realized,
+            plan.as_ref(),
+            managed_inputs,
+            output,
+            output_policy != PayloadOutputPlanPolicy::PublishedInvariant,
+        )?;
         Ok(Self {
             domain,
             plan,
@@ -481,14 +505,18 @@ impl ManagedCallRealization {
 
     fn refreshed_plan(
         &self,
-        invocation: &FunctionInvocation,
+        managed_inputs: &[ValueCell],
+        output: &ValueCell,
         output_shapes: Option<&[ShapeInstance]>,
         output_footprints: Option<&[CurrentMemoryFootprint]>,
         output_policy: PayloadOutputPlanPolicy,
     ) -> MResult<Option<Rc<CallMemoryPlan>>> {
-        let planned_inputs = (0..self.plan.inputs.len())
-            .map(|index| invocation.planned_input_cell(self.plan.as_ref(), index))
-            .collect::<MResult<Vec<_>>>()?;
+        if managed_inputs.len() != self.plan.inputs.len() {
+            return Err(
+                MechError::new(MemoryPlanError::DescriptorArityMismatch, None).with_compiler_loc(),
+            );
+        }
+        let planned_inputs = managed_inputs.iter().collect::<Vec<_>>();
         let inputs_unchanged = planned_inputs
             .iter()
             .zip(self.plan.inputs.iter())
@@ -632,11 +660,11 @@ impl ManagedCallRealization {
                 })?;
                 resolved.insert(
                     (PortDirection::Output, port),
-                    invocation.output_cell().current_memory_footprint()?,
+                    output.current_memory_footprint()?,
                 );
             }
         }
-        let published_outputs = [invocation.output_cell().current_memory_footprint()?];
+        let published_outputs = [output.current_memory_footprint()?];
         let plan =
             resolve_current_call_memory(&self.plan, &current, &resolved, Some(&published_outputs))
                 .map_err(|error| MechError::new(error, None).with_compiler_loc())?;
@@ -647,12 +675,17 @@ impl ManagedCallRealization {
         }
     }
 
-    fn initialize_inputs(&self, invocation: &FunctionInvocation) -> MResult<()> {
+    fn initialize_inputs(&self, managed_inputs: &[ValueCell]) -> MResult<()> {
+        if managed_inputs.len() != self.plan.inputs.len() {
+            return Err(
+                MechError::new(MemoryPlanError::DescriptorArityMismatch, None).with_compiler_loc(),
+            );
+        }
         let mut frame = self
             .domain
             .acquire_call(&self.realized, &self.initialization)?;
         for (index, planned) in self.plan.inputs.iter().enumerate() {
-            let input = invocation.planned_input_cell(self.plan.as_ref(), index)?;
+            let input = &managed_inputs[index];
             if !input.requires_planned_import(&self.realized)? {
                 continue;
             }
@@ -764,7 +797,25 @@ impl FunctionInstance {
         invocation: FunctionInvocation,
         plan: Rc<CallMemoryPlan>,
     ) -> MResult<Self> {
+        let managed_inputs = (0..plan.inputs.len())
+            .map(|index| invocation.planned_input_cell(plan.as_ref(), index).cloned())
+            .collect::<MResult<Vec<_>>>()?
+            .into_boxed_slice();
+        Self::new_with_managed_inputs(implementation, invocation, plan, managed_inputs)
+    }
+
+    fn new_with_managed_inputs(
+        implementation: Box<dyn MechFunction>,
+        invocation: FunctionInvocation,
+        plan: Rc<CallMemoryPlan>,
+        managed_inputs: Box<[ValueCell]>,
+    ) -> MResult<Self> {
         validate_transaction_authority(&plan)?;
+        if managed_inputs.len() != plan.inputs.len() {
+            return Err(
+                MechError::new(MemoryPlanError::DescriptorArityMismatch, None).with_compiler_loc(),
+            );
+        }
         invocation
             .check_operation_memory_contract(&plan.bound_call.operation_descriptor().contract)?;
         let domain = invocation.output_cell().memory_domain().ok_or_else(|| {
@@ -773,10 +824,18 @@ impl FunctionInstance {
                 reason: "owned function output has no memory session".into(),
             })
         })?;
-        let current = ManagedCallRealization::prepare(domain, plan, &invocation)?;
+        let output_policy = implementation.payload_output_plan_policy();
+        let current = ManagedCallRealization::prepare(
+            domain,
+            plan,
+            invocation.output_cell(),
+            &managed_inputs,
+            output_policy,
+        )?;
         Ok(Self {
             implementation,
             invocation,
+            managed_inputs,
             managed: ManagedFunctionBinding {
                 plan: current.plan.clone(),
                 current: core::cell::RefCell::new(current),
@@ -811,7 +870,7 @@ impl FunctionInstance {
             .domain
             .enter_realized_plan_point(&current.realized, MemoryPlanPoint::new(0))
             .map_err(managed_scope_error)?;
-        current.initialize_inputs(&self.invocation)?;
+        current.initialize_inputs(&self.managed_inputs)?;
         let mut frame = current
             .domain
             .acquire_call(&current.realized, &current.execution)?;
@@ -871,18 +930,26 @@ impl FunctionInstance {
             .domain
             .require_standalone_execution()
             .map_err(managed_scope_error)?;
+        self.implementation.prepare_external_output(services)?;
         let output_shapes = self.implementation.planned_output_shapes()?;
         let output_footprints = self.implementation.planned_output_footprints()?;
         let output_policy = self.implementation.payload_output_plan_policy();
         let candidate = current
             .refreshed_plan(
-                &self.invocation,
+                &self.managed_inputs,
+                self.output(),
                 output_shapes.as_deref(),
                 output_footprints.as_deref(),
                 output_policy,
             )?
             .map(|plan| {
-                ManagedCallRealization::prepare(current.domain.clone(), plan, &self.invocation)
+                ManagedCallRealization::prepare(
+                    current.domain.clone(),
+                    plan,
+                    self.output(),
+                    &self.managed_inputs,
+                    output_policy,
+                )
             })
             .transpose()?;
         let managed = candidate.as_ref().unwrap_or(&current);
@@ -890,7 +957,7 @@ impl FunctionInstance {
             .domain
             .enter_realized_plan_point(&managed.realized, MemoryPlanPoint::new(0))
             .map_err(managed_scope_error)?;
-        managed.initialize_inputs(&self.invocation)?;
+        managed.initialize_inputs(&self.managed_inputs)?;
         let publication_shape = managed
             .plan
             .outputs
@@ -918,31 +985,21 @@ impl FunctionInstance {
                     });
                 }
                 let (object, region) = frame.output_target(self.output(), 0)?;
-                let value = match frame.take_staged_output_value(object) {
-                    Some(value) => value,
+                let evidence = match frame.take_staged_output_value(object) {
+                    Some(value) => CellPublicationEvidence::frozen(value),
                     None => {
                         let shape = publication_shape.as_ref().ok_or_else(|| {
                             MechError::new(MemoryPlanError::DescriptorArityMismatch, None)
                                 .with_compiler_loc()
                         })?;
-                        let data = crate::cell_binding::snapshot_managed_host_data(
-                            &frame,
-                            object,
-                            self.output().representation(),
-                        )?;
-                        crate::cell_binding::finalize_draft(
-                            self.output().schema(),
-                            shape,
-                            self.output().schema_table().as_ref(),
-                            data,
-                        )?
+                        CellPublicationEvidence::initialized_region(shape.clone())
                     }
                 };
                 let undo = frame.take_undo_snapshot().map_err(MechError::from)?;
-                (status, Some((object, region, value, undo)))
+                (status, Some((object, region, evidence, undo)))
             }
         };
-        let Some((output_object, output_region, value, undo)) = staged_output else {
+        let Some((output_object, output_region, evidence, undo)) = staged_output else {
             return Ok(PreparedFunctionPublication {
                 status,
                 publication: None,
@@ -962,7 +1019,7 @@ impl FunctionInstance {
                 object: output_object,
                 binding,
                 region: output_region,
-                value,
+                evidence,
                 changed: status == ReactiveSolveStatus::Changed,
             }],
             undo,
@@ -1043,11 +1100,13 @@ impl FunctionInstance {
         let Self {
             implementation,
             invocation,
+            managed_inputs,
             managed,
         } = self;
         Self {
             implementation: with_semantic_operation(operation, implementation),
             invocation,
+            managed_inputs,
             managed,
         }
     }
@@ -1363,6 +1422,22 @@ impl MechFunctionImpl for SemanticMechFunction {
         services: &mut dyn MechExecutionServices,
     ) -> MResult<ReactiveSolveStatus> {
         self.function.solve_managed(frame, services)
+    }
+
+    fn planned_output_shapes(&self) -> MResult<Option<Box<[ShapeInstance]>>> {
+        self.function.planned_output_shapes()
+    }
+
+    fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+        self.function.planned_output_footprints()
+    }
+
+    fn payload_output_plan_policy(&self) -> PayloadOutputPlanPolicy {
+        self.function.payload_output_plan_policy()
+    }
+
+    fn prepare_external_output(&self, services: &mut dyn MechExecutionServices) -> MResult<()> {
+        self.function.prepare_external_output(services)
     }
 
     fn initial_solve_policy(&self) -> InitialSolvePolicy {

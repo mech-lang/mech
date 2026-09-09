@@ -597,6 +597,20 @@ mod matrix_access_contract_tests {
             .collect()
     }
 
+    #[cfg(feature = "string")]
+    fn string_elements(value: &ValueCell) -> Vec<String> {
+        value
+            .matrix_elements()
+            .unwrap()
+            .expect("String matrix elements")
+            .iter()
+            .map(|element| match element.snapshot().unwrap().data() {
+                ValueData::String(value) => value.to_string(),
+                other => panic!("expected String matrix element, found {other:?}"),
+            })
+            .collect()
+    }
+
     fn replace_exact<T>(cell: &ValueCell, value: T)
     where
         T: CanonicalCellBacking,
@@ -659,6 +673,36 @@ mod matrix_access_contract_tests {
         replace_exact(&ixes, DVector::from_vec(vec![1_usize, 2, 3]));
         assert!(function.instance().solve_result().is_err());
         assert_eq!(u8_elements(&out), vec![10, 30]);
+    }
+
+    #[cfg(feature = "string")]
+    #[test]
+    fn typed_string_gather_uses_prospective_managed_admission() {
+        let source = ValueCell::from_exact(DMatrix::from_row_slice(
+            2,
+            2,
+            &[
+                "first".to_owned(),
+                "second".to_owned(),
+                "third".to_owned(),
+                "fourth".to_owned(),
+            ],
+        ))
+        .unwrap();
+        let ixes = ValueCell::from_exact(DVector::from_vec(vec![4_usize, 1, 4])).unwrap();
+        let out = ValueCell::from_exact(DVector::from_element(3, String::new())).unwrap();
+        let invocation = FunctionInvocation::binary(out.clone(), source, ixes);
+        let function = crate::test_support::managed_factory_instance::<Access1DVDMD<String>>(
+            invocation,
+            "test/access-string-gather",
+        )
+        .unwrap();
+
+        function.instance().solve_result().unwrap();
+        assert_eq!(
+            string_elements(&out),
+            vec!["fourth".to_owned(), "first".to_owned(), "fourth".to_owned()]
+        );
     }
 
     #[test]
@@ -1202,6 +1246,28 @@ trait ManagedAccessElement:
 
     fn validate_input(port: FunctionInputPort<'_>) -> MResult<()>;
     fn validate_output(port: FunctionOutputPort<'_>) -> MResult<()>;
+    fn planned_binary_output_footprint(
+        _source: &FunctionValueInput,
+        _selector: &FunctionValueInput,
+        _output: &FunctionValueOutput,
+        _kernel: ManagedMatrixAccessKernel,
+    ) -> MResult<Option<CurrentMemoryFootprint>> {
+        Ok(None)
+    }
+    fn planned_ternary_output_footprint(
+        _source: &FunctionValueInput,
+        _rows: &FunctionValueInput,
+        _columns: &FunctionValueInput,
+        _output: &FunctionValueOutput,
+    ) -> MResult<Option<CurrentMemoryFootprint>> {
+        Ok(None)
+    }
+    fn planned_all_output_footprint(
+        _source: &FunctionValueInput,
+        _output: &FunctionValueOutput,
+    ) -> MResult<Option<CurrentMemoryFootprint>> {
+        Ok(None)
+    }
     fn solve_binary<S: ManagedAccessSelectorElement>(
         frame: &mut mech_core::KernelMemoryFrame<'_>,
         source: &FunctionValueInput,
@@ -1353,6 +1419,64 @@ impl ManagedAccessElement for String {
         Ok(())
     }
 
+    fn planned_binary_output_footprint(
+        source: &FunctionValueInput,
+        selector: &FunctionValueInput,
+        output: &FunctionValueOutput,
+        kernel: ManagedMatrixAccessKernel,
+    ) -> MResult<Option<CurrentMemoryFootprint>> {
+        #[cfg(feature = "semantic-compiler")]
+        {
+            let access = string_binary_access(source, selector, output, kernel);
+            return access
+                .planned_output_footprints()
+                .map(|footprints| footprints.and_then(|values| values.first().copied()));
+        }
+        #[cfg(not(feature = "semantic-compiler"))]
+        {
+            let _ = (source, selector, output, kernel);
+            Ok(None)
+        }
+    }
+
+    fn planned_ternary_output_footprint(
+        source: &FunctionValueInput,
+        rows: &FunctionValueInput,
+        columns: &FunctionValueInput,
+        output: &FunctionValueOutput,
+    ) -> MResult<Option<CurrentMemoryFootprint>> {
+        #[cfg(feature = "semantic-compiler")]
+        {
+            let access = string_ternary_access(source, rows, columns, output);
+            return access
+                .planned_output_footprints()
+                .map(|footprints| footprints.and_then(|values| values.first().copied()));
+        }
+        #[cfg(not(feature = "semantic-compiler"))]
+        {
+            let _ = (source, rows, columns, output);
+            Ok(None)
+        }
+    }
+
+    fn planned_all_output_footprint(
+        source: &FunctionValueInput,
+        output: &FunctionValueOutput,
+    ) -> MResult<Option<CurrentMemoryFootprint>> {
+        #[cfg(feature = "semantic-compiler")]
+        {
+            let access = string_all_access(source, output);
+            return access
+                .planned_output_footprints()
+                .map(|footprints| footprints.and_then(|values| values.first().copied()));
+        }
+        #[cfg(not(feature = "semantic-compiler"))]
+        {
+            let _ = (source, output);
+            Ok(None)
+        }
+    }
+
     fn solve_binary<S: ManagedAccessSelectorElement>(
         frame: &mut mech_core::KernelMemoryFrame<'_>,
         source: &FunctionValueInput,
@@ -1360,27 +1484,16 @@ impl ManagedAccessElement for String {
         output: &FunctionValueOutput,
         kernel: ManagedMatrixAccessKernel,
     ) -> MResult<()> {
-        let selectors = match kernel {
-            ManagedMatrixAccessKernel::Column => vec![
-                crate::intrinsics::canonical_access::CanonicalAccessSelector::All,
-                crate::intrinsics::canonical_access::CanonicalAccessSelector::Cell(
-                    selector.cell().clone(),
-                ),
-            ],
-            ManagedMatrixAccessKernel::Row | ManagedMatrixAccessKernel::Rows => vec![
-                crate::intrinsics::canonical_access::CanonicalAccessSelector::Cell(
-                    selector.cell().clone(),
-                ),
-                crate::intrinsics::canonical_access::CanonicalAccessSelector::All,
-            ],
-            _ => vec![
-                crate::intrinsics::canonical_access::CanonicalAccessSelector::Cell(
-                    selector.cell().clone(),
-                ),
-            ],
-        };
-        let next = super::canonical_access_result(source.cell(), &selectors)?;
-        frame.stage_output_value(output.cell(), next.snapshot()?)
+        #[cfg(feature = "semantic-compiler")]
+        return string_binary_access(source, selector, output, kernel).stage_managed(frame);
+        #[cfg(not(feature = "semantic-compiler"))]
+        {
+            let _ = (frame, source, selector, output, kernel);
+            Err(function_shape_contract_violation(
+                "matrix_access",
+                "String matrix access requires canonical runtime support",
+            ))
+        }
     }
 
     fn solve_ternary<R: ManagedAccessSelectorElement, C: ManagedAccessSelectorElement>(
@@ -1391,14 +1504,16 @@ impl ManagedAccessElement for String {
         output: &FunctionValueOutput,
         _kernel: ManagedMatrixAccessKernel,
     ) -> MResult<()> {
-        let selectors = vec![
-            crate::intrinsics::canonical_access::CanonicalAccessSelector::Cell(rows.cell().clone()),
-            crate::intrinsics::canonical_access::CanonicalAccessSelector::Cell(
-                columns.cell().clone(),
-            ),
-        ];
-        let next = super::canonical_access_result(source.cell(), &selectors)?;
-        frame.stage_output_value(output.cell(), next.snapshot()?)
+        #[cfg(feature = "semantic-compiler")]
+        return string_ternary_access(source, rows, columns, output).stage_managed(frame);
+        #[cfg(not(feature = "semantic-compiler"))]
+        {
+            let _ = (frame, source, rows, columns, output);
+            Err(function_shape_contract_violation(
+                "matrix_access",
+                "String matrix access requires canonical runtime support",
+            ))
+        }
     }
 
     fn solve_all(
@@ -1406,12 +1521,77 @@ impl ManagedAccessElement for String {
         source: &FunctionValueInput,
         output: &FunctionValueOutput,
     ) -> MResult<()> {
-        let next = super::canonical_access_result(
-            source.cell(),
-            &[crate::intrinsics::canonical_access::CanonicalAccessSelector::All],
-        )?;
-        frame.stage_output_value(output.cell(), next.snapshot()?)
+        #[cfg(feature = "semantic-compiler")]
+        return string_all_access(source, output).stage_managed(frame);
+        #[cfg(not(feature = "semantic-compiler"))]
+        {
+            let _ = (frame, source, output);
+            Err(function_shape_contract_violation(
+                "matrix_access",
+                "String matrix access requires canonical runtime support",
+            ))
+        }
     }
+}
+
+#[cfg(all(feature = "string", feature = "semantic-compiler"))]
+fn string_binary_access(
+    source: &FunctionValueInput,
+    selector: &FunctionValueInput,
+    output: &FunctionValueOutput,
+    kernel: ManagedMatrixAccessKernel,
+) -> super::CanonicalAccess {
+    let selectors = match kernel {
+        ManagedMatrixAccessKernel::Column => vec![
+            crate::intrinsics::canonical_access::CanonicalAccessSelector::All,
+            crate::intrinsics::canonical_access::CanonicalAccessSelector::Cell(
+                selector.cell().clone(),
+            ),
+        ],
+        ManagedMatrixAccessKernel::Row | ManagedMatrixAccessKernel::Rows => vec![
+            crate::intrinsics::canonical_access::CanonicalAccessSelector::Cell(
+                selector.cell().clone(),
+            ),
+            crate::intrinsics::canonical_access::CanonicalAccessSelector::All,
+        ],
+        _ => vec![
+            crate::intrinsics::canonical_access::CanonicalAccessSelector::Cell(
+                selector.cell().clone(),
+            ),
+        ],
+    };
+    super::CanonicalAccess::typed_matrix(source.cell().clone(), selectors, output.cell().clone())
+}
+
+#[cfg(all(feature = "string", feature = "semantic-compiler"))]
+fn string_ternary_access(
+    source: &FunctionValueInput,
+    rows: &FunctionValueInput,
+    columns: &FunctionValueInput,
+    output: &FunctionValueOutput,
+) -> super::CanonicalAccess {
+    super::CanonicalAccess::typed_matrix(
+        source.cell().clone(),
+        vec![
+            crate::intrinsics::canonical_access::CanonicalAccessSelector::Cell(rows.cell().clone()),
+            crate::intrinsics::canonical_access::CanonicalAccessSelector::Cell(
+                columns.cell().clone(),
+            ),
+        ],
+        output.cell().clone(),
+    )
+}
+
+#[cfg(all(feature = "string", feature = "semantic-compiler"))]
+fn string_all_access(
+    source: &FunctionValueInput,
+    output: &FunctionValueOutput,
+) -> super::CanonicalAccess {
+    super::CanonicalAccess::typed_matrix(
+        source.cell().clone(),
+        vec![crate::intrinsics::canonical_access::CanonicalAccessSelector::All],
+        output.cell().clone(),
+    )
 }
 
 macro_rules! impl_access_fxn {
@@ -1469,6 +1649,16 @@ macro_rules! impl_access_fxn {
                     self.invocation.input_cells(),
                 )?
                 .map(|shape| vec![shape].into_boxed_slice()))
+            }
+
+            fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+                Ok(T::planned_binary_output_footprint(
+                    &self.source,
+                    &self.ixes,
+                    &self.out,
+                    managed_access_kernel!($op),
+                )?
+                .map(|footprint| vec![footprint].into_boxed_slice()))
             }
 
             fn solve_managed(
@@ -1576,6 +1766,11 @@ macro_rules! impl_access_all_fxn {
                     self.invocation.input_cells(),
                 )?
                 .map(|shape| vec![shape].into_boxed_slice()))
+            }
+
+            fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+                Ok(T::planned_all_output_footprint(&self.source, &self.out)?
+                    .map(|footprint| vec![footprint].into_boxed_slice()))
             }
 
             fn solve_managed(
@@ -1695,6 +1890,16 @@ macro_rules! impl_access_fxn2 {
                     self.invocation.input_cells(),
                 )?
                 .map(|shape| vec![shape].into_boxed_slice()))
+            }
+
+            fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+                Ok(T::planned_ternary_output_footprint(
+                    &self.source,
+                    &self.ix1,
+                    &self.ix2,
+                    &self.out,
+                )?
+                .map(|footprint| vec![footprint].into_boxed_slice()))
             }
 
             fn solve_managed(

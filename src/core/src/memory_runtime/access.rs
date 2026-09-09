@@ -469,10 +469,11 @@ impl MemoryDomain {
         &self,
         realized: &RealizedMemoryPlan,
         plan: &crate::CallMemoryPlan,
-        invocation: &crate::FunctionInvocation,
+        input_cells: &[crate::ValueCell],
+        output_cell: &crate::ValueCell,
+        writable_outputs: bool,
     ) -> MemoryRuntimeResult<PreparedCallAccess> {
-        if !(plan.inputs.len() == invocation.input_cells().len()
-            || plan.inputs.len() == invocation.input_cells().len().saturating_add(1))
+        if plan.inputs.len() != input_cells.len()
             || plan.outputs.len() > 1
             || plan.transactions.len() != plan.outputs.len()
         {
@@ -502,12 +503,7 @@ impl MemoryDomain {
                 space: crate::MemorySpace::Host,
             })?;
         for (index, input) in plan.inputs.iter().enumerate() {
-            let cell = invocation.planned_input_cell(plan, index).map_err(|_| {
-                MemoryRuntimeError::CandidateValidationFailed {
-                    object: Some(input.object),
-                    reason: "semantic input cannot be mapped to the physical invocation".into(),
-                }
-            })?;
+            let cell = &input_cells[index];
             let planned_object = self.plan_object_key(realized.revision(), input.object)?;
             let (object, binding, region, lifetime) = if let Some(live) = cell
                 .managed_host_binding()
@@ -556,6 +552,9 @@ impl MemoryDomain {
             });
         }
         for (index, output) in plan.outputs.iter().enumerate() {
+            if !writable_outputs {
+                continue;
+            }
             let transaction = plan.transactions[index];
             let target = match transaction {
                 crate::TransactionRequirement::StageAndSwap { staged, .. } => staged,
@@ -603,7 +602,7 @@ impl MemoryDomain {
                         reason: "undo transaction target is not a planned logical input".into(),
                     })?;
                 input_request.mode = MemoryAccessMode::ExclusiveInPlace;
-                input_request.alias_cell = Some(invocation.output_cell().reactive_cell_id());
+                input_request.alias_cell = Some(output_cell.reactive_cell_id());
                 input_request.alias_role = Some(ManagedPortRole::Output(index));
                 let undo = self.plan_object_key(realized.revision(), undo)?;
                 let undo_binding = realized.binding(undo)?;
@@ -627,7 +626,7 @@ impl MemoryDomain {
                 prepared_undo = Some(PreparedUndoAccess { input, undo });
             } else {
                 resolved.push(ResolvedAccessRequest {
-                    cell: Some(invocation.output_cell().reactive_cell_id()),
+                    cell: Some(output_cell.reactive_cell_id()),
                     role: Some(ManagedPortRole::Output(index)),
                     alias_cell: None,
                     alias_role: None,
@@ -647,7 +646,7 @@ impl MemoryDomain {
                 _ => None,
             };
             logical_ports.push(PreparedLogicalPort {
-                cell: invocation.output_cell().clone(),
+                cell: output_cell.clone(),
                 role: ManagedPortRole::Output(index),
                 transaction_pair,
             });
@@ -712,11 +711,9 @@ impl MemoryDomain {
         &self,
         realized: &RealizedMemoryPlan,
         plan: &crate::CallMemoryPlan,
-        invocation: &crate::FunctionInvocation,
+        input_cells: &[crate::ValueCell],
     ) -> MemoryRuntimeResult<PreparedCallAccess> {
-        if !(plan.inputs.len() == invocation.input_cells().len()
-            || plan.inputs.len() == invocation.input_cells().len().saturating_add(1))
-        {
+        if plan.inputs.len() != input_cells.len() {
             return Err(MemoryRuntimeError::CandidateValidationFailed {
                 object: None,
                 reason: "function invocation and input plan arity differ".into(),
@@ -732,12 +729,7 @@ impl MemoryDomain {
             }
         })?;
         for (index, input) in plan.inputs.iter().enumerate() {
-            let cell = invocation.planned_input_cell(plan, index).map_err(|_| {
-                MemoryRuntimeError::CandidateValidationFailed {
-                    object: Some(input.object),
-                    reason: "semantic input cannot be mapped to the physical invocation".into(),
-                }
-            })?;
+            let cell = &input_cells[index];
             if !cell.requires_planned_import(realized).map_err(|_| {
                 MemoryRuntimeError::CandidateValidationFailed {
                     object: Some(input.object),

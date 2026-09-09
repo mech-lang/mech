@@ -7,7 +7,7 @@ use super::{
     MemoryAccessRegion, MemoryDomain, MemoryRuntimeError, MemoryRuntimeResult, PlanObjectKey,
     PublishedValueVersion, RealizedMemoryPlan, RuntimeBinding,
 };
-use crate::{MResult, MechError, Value, ValueCell};
+use crate::{MResult, MechError, ShapeInstance, Value, ValueCell};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PublicationCandidate {
@@ -38,13 +38,41 @@ pub struct PreparedPublication {
     completed: bool,
 }
 
+/// The already-owned evidence that a logical cell may publish.
+///
+/// Fixed-width kernels publish the initialized managed region directly. They
+/// must not construct a canonical copy merely to prove the region's schema or
+/// shape. Variable-payload builders instead retain the finalized immutable
+/// value whose owner is installed by publication.
+pub enum CellPublicationEvidence {
+    InitializedManagedRegion { shape: ShapeInstance },
+    FrozenValue(Value),
+}
+
+impl CellPublicationEvidence {
+    pub fn initialized_region(shape: ShapeInstance) -> Self {
+        Self::InitializedManagedRegion { shape }
+    }
+
+    pub fn frozen(value: Value) -> Self {
+        Self::FrozenValue(value)
+    }
+
+    pub fn shape(&self) -> &ShapeInstance {
+        match self {
+            Self::InitializedManagedRegion { shape } => shape,
+            Self::FrozenValue(value) => value.shape(),
+        }
+    }
+}
+
 pub struct CellPublicationCandidate {
     pub cell: ValueCell,
     pub object: PlanObjectKey,
     pub binding: RuntimeBinding,
     /// Exact initialized geometry that becomes the cell's published view.
     pub region: MemoryAccessRegion,
-    pub value: Value,
+    pub evidence: CellPublicationEvidence,
     pub changed: bool,
 }
 
@@ -609,7 +637,7 @@ impl MemoryDomain {
                 object: candidate.object,
                 binding: candidate.binding.clone(),
                 shape: candidate
-                    .value
+                    .evidence
                     .shape()
                     .parameter_values()
                     .to_vec()
@@ -672,7 +700,7 @@ impl MemoryDomain {
                 realized,
                 candidate.object,
                 candidate.region,
-                &candidate.value,
+                &candidate.evidence,
                 candidate.changed,
             ) {
                 Ok(replacement) => replacements.push(replacement),

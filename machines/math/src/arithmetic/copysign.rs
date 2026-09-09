@@ -74,7 +74,7 @@ impl_two_arg_fxn!(
     Matrix2x3<f32>,
     copysignf_vec_op
 );
-#[cfg(all(feature = "f32", feature = "matrix3"))]
+#[cfg(all(feature = "f32", feature = "matrix3x2"))]
 impl_two_arg_fxn!(
     CopysignM3x2F32,
     f32,
@@ -213,7 +213,7 @@ impl_two_arg_fxn!(
     Matrix2x3<f64>,
     copysign_vec_op
 );
-#[cfg(all(feature = "f64", feature = "matrix3"))]
+#[cfg(all(feature = "f64", feature = "matrix3x2"))]
 impl_two_arg_fxn!(
     CopysignM3x2F64,
     f64,

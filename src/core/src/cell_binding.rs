@@ -685,6 +685,18 @@ impl ErasedCellStorage for ManagedCanonicalCellStorage {
         shape: &ShapeInstance,
         schemas: &SchemaTable,
     ) -> MResult<Value> {
+        // An ordinary managed canonical cell already owns a validated frozen
+        // value. Its cell-local schema table is an equivalent Rc copy because
+        // Value retains its source table in an Arc, but that representation
+        // detail must not force dynamic payload reconstruction on every read.
+        // Exact metadata can return the immutable root directly; explicit
+        // cross-schema/table conversions still use Value::rebind below.
+        if schema == self.value.schema()
+            && shape == self.value.shape()
+            && schemas.entry(schema).map(|entry| entry.key()) == Some(self.value.schema_key())
+        {
+            return Ok(self.value.clone());
+        }
         self.value
             .rebind(schema, shape, schemas)
             .map_err(snapshot_failure)
@@ -1369,6 +1381,58 @@ impl ValueCell {
                 )
                 .with_compiler_loc()
             })?;
+        let shape_parameter_count = descriptor.shape().parameter_values().len() as u64;
+        let storage = self.binding.storage()?;
+        if let Some(managed) = storage.as_any().downcast_ref::<ManagedHostCellStorage>() {
+            // Fixed-width managed storage is already described by its live
+            // realized binding. Measuring it must not first allocate and copy
+            // a complete semantic Value snapshot—the admission witness is
+            // needed precisely before such materialization is allowed.
+            let fixed_bytes = match managed.region {
+                crate::MemoryAccessRegion::WholeInitialized => managed
+                    .realized
+                    .binding(managed.object)
+                    .map_err(MechError::from)?
+                    .required_initialization_bytes(),
+                crate::MemoryAccessRegion::Contiguous { length_bytes, .. } => length_bytes,
+                crate::MemoryAccessRegion::Strided {
+                    count,
+                    element_bytes,
+                    ..
+                } => count.checked_mul(element_bytes).ok_or_else(|| {
+                    MechError::new(
+                        crate::MemoryPlanError::ArithmeticOverflow {
+                            field: "live strided value bytes",
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                })?,
+                crate::MemoryAccessRegion::Rectangle {
+                    rows,
+                    columns,
+                    element_bytes,
+                    ..
+                } => rows
+                    .checked_mul(columns)
+                    .and_then(|elements| elements.checked_mul(element_bytes))
+                    .ok_or_else(|| {
+                        MechError::new(
+                            crate::MemoryPlanError::ArithmeticOverflow {
+                                field: "live matrix value bytes",
+                            },
+                            None,
+                        )
+                        .with_compiler_loc()
+                    })?,
+            };
+            return Ok(crate::CurrentMemoryFootprint {
+                logical_elements,
+                fixed_bytes,
+                shape_parameter_count,
+                ..crate::CurrentMemoryFootprint::default()
+            });
+        }
         let snapshot = self.snapshot()?;
         let retained = snapshot
             .retained_footprint(self.schema_table().as_ref())
@@ -1386,7 +1450,56 @@ impl ValueCell {
             payload_bytes: retained.retained_bytes,
             encoded_bytes: retained.encoded_bytes,
             retained_nodes: retained.node_count,
-            shape_parameter_count: descriptor.shape().parameter_values().len() as u64,
+            shape_parameter_count,
+            ..crate::CurrentMemoryFootprint::default()
+        })
+    }
+
+    /// Measures an existing immutable value for prospective adoption without
+    /// cloning or rebinding its canonical tree.
+    #[cfg(feature = "functions")]
+    pub fn prospective_snapshot_memory_footprint(
+        value: &Value,
+    ) -> MResult<crate::CurrentMemoryFootprint> {
+        let schemas = value.schemas().ok_or_else(|| {
+            MechError::new(ValueSchemaContextUnavailable, None).with_compiler_loc()
+        })?;
+        let schema = schemas.get(value.schema()).cloned().ok_or_else(|| {
+            snapshot_failure(SnapshotValueError::UnknownSnapshotSchema {
+                schema: value.schema(),
+            })
+        })?;
+        let descriptor = crate::ResolvedValueDescriptor::from_schema(schema, value.shape().clone())
+            .map_err(MechError::from)?;
+        let logical_elements = descriptor
+            .current_extents()
+            .map_err(MechError::from)?
+            .iter()
+            .try_fold(1_u64, |product, extent| product.checked_mul(*extent))
+            .ok_or_else(|| {
+                MechError::new(
+                    crate::MemoryPlanError::ArithmeticOverflow {
+                        field: "prospective value logical elements",
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+        let retained = value.retained_footprint(&schemas).map_err(|error| {
+            MechError::new(
+                crate::GenericError {
+                    msg: format!("unable to measure prospective value: {error:?}"),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+        Ok(crate::CurrentMemoryFootprint {
+            logical_elements,
+            payload_bytes: retained.retained_bytes,
+            encoded_bytes: retained.encoded_bytes,
+            retained_nodes: retained.node_count,
+            shape_parameter_count: value.shape().parameter_values().len() as u64,
             ..crate::CurrentMemoryFootprint::default()
         })
     }
@@ -1561,6 +1674,116 @@ impl ValueCell {
                 })?;
         }
         Ok(footprint)
+    }
+
+    /// Computes a fail-closed selection witness without materializing the
+    /// selector result. The largest borrowed source element is charged for
+    /// every possible selected position, preserving duplicate amplification
+    /// while keeping planning allocation-free with respect to result size.
+    #[cfg(feature = "functions")]
+    pub fn prospective_repeated_sequence_memory_footprint(
+        &self,
+        element_schema: &SchemaBody,
+        values: crate::snapshot::SequenceView<'_>,
+        selected_count: u64,
+    ) -> MResult<crate::CurrentMemoryFootprint> {
+        let shape_parameter_count = self.shape().parameter_values().len() as u64;
+        let shape_bytes = shape_parameter_count
+            .checked_mul(core::mem::size_of::<u64>() as u64)
+            .ok_or_else(|| {
+                MechError::new(
+                    crate::MemoryPlanError::ArithmeticOverflow {
+                        field: "selected value shape bytes",
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+        let mut largest = crate::snapshot::ValueFootprint::default();
+        for index in 0..values.len() {
+            let element = crate::snapshot::canonical_sequence_element_retained_footprint(
+                element_schema,
+                values,
+                index,
+            )
+            .map_err(|error| {
+                MechError::new(
+                    crate::GenericError {
+                        msg: format!("unable to measure canonical source element: {error:?}"),
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+            largest.retained_bytes = largest.retained_bytes.max(element.retained_bytes);
+            largest.encoded_bytes = largest.encoded_bytes.max(element.encoded_bytes);
+            largest.node_count = largest.node_count.max(element.node_count);
+        }
+        let selected_bytes = largest
+            .retained_bytes
+            .checked_mul(selected_count)
+            .ok_or_else(|| {
+                MechError::new(
+                    crate::MemoryPlanError::ArithmeticOverflow {
+                        field: "selected value retained bytes",
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+        let selected_encoded = largest
+            .encoded_bytes
+            .checked_mul(selected_count)
+            .ok_or_else(|| {
+                MechError::new(
+                    crate::MemoryPlanError::ArithmeticOverflow {
+                        field: "selected value encoded bytes",
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+        let selected_nodes = largest
+            .node_count
+            .checked_mul(selected_count)
+            .ok_or_else(|| {
+                MechError::new(
+                    crate::MemoryPlanError::ArithmeticOverflow {
+                        field: "selected value retained nodes",
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+        let payload_bytes = (core::mem::size_of::<Value>() as u64)
+            .checked_add(shape_bytes)
+            .and_then(|bytes| bytes.checked_add(core::mem::size_of::<ValueData>() as u64))
+            .and_then(|bytes| bytes.checked_add(selected_bytes))
+            .ok_or_else(|| {
+                MechError::new(
+                    crate::MemoryPlanError::ArithmeticOverflow {
+                        field: "selected value retained bytes",
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+        Ok(crate::CurrentMemoryFootprint {
+            logical_elements: selected_count,
+            payload_bytes,
+            encoded_bytes: selected_encoded,
+            retained_nodes: 3_u64.checked_add(selected_nodes).ok_or_else(|| {
+                MechError::new(
+                    crate::MemoryPlanError::ArithmeticOverflow {
+                        field: "selected value retained nodes",
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?,
+            shape_parameter_count,
+            ..crate::CurrentMemoryFootprint::default()
+        })
     }
 
     /// Computes a conservative prospective footprint for a set assembled
@@ -3218,6 +3441,44 @@ impl ValueCell {
         }
     }
 
+    /// Revalidates an immutable candidate against this logical cell's schema
+    /// context without publishing it. Managed builders use this inside their
+    /// admitted construction closure so footprint validation observes the
+    /// same schema table that owns the output binding.
+    #[cfg(feature = "functions")]
+    pub fn rebind_snapshot_candidate(&self, value: &Value) -> MResult<Value> {
+        let source_schemas = value.schemas().ok_or_else(|| {
+            MechError::new(ValueSchemaContextUnavailable, None).with_compiler_loc()
+        })?;
+        let source_schema = source_schemas.get(value.schema()).cloned().ok_or_else(|| {
+            snapshot_failure(SnapshotValueError::UnknownSnapshotSchema {
+                schema: value.schema(),
+            })
+        })?;
+        let extents =
+            crate::ResolvedValueDescriptor::from_schema(source_schema, value.shape().clone())
+                .map_err(MechError::from)?
+                .current_extents()
+                .map_err(MechError::from)?;
+        let target_schema = self
+            .binding
+            .schemas
+            .get(self.binding.schema)
+            .ok_or_else(|| {
+                snapshot_failure(SnapshotValueError::UnknownSnapshotSchema {
+                    schema: self.binding.schema,
+                })
+            })?;
+        let target_shape = crate::shape_for_resolved_extents(target_schema, &extents)?;
+        value
+            .rebind(
+                self.binding.schema,
+                &target_shape,
+                self.binding.schemas.as_ref(),
+            )
+            .map_err(snapshot_failure)
+    }
+
     /// Clones this cell's exact backing into a new, independent mutable cell.
     ///
     /// Schema, shape, and storage representation are retained while physical
@@ -3384,7 +3645,7 @@ impl ValueCell {
                     object,
                     binding,
                     region,
-                    value,
+                    evidence: crate::CellPublicationEvidence::frozen(value),
                     changed: true,
                 },
             }));
@@ -3479,6 +3740,7 @@ impl ValueCell {
             }
             region => region,
         };
+        let candidate_shape = value.shape().clone();
         {
             let _scope = managed
                 .owner
@@ -3509,7 +3771,7 @@ impl ValueCell {
                 object,
                 binding: managed.realized.binding(object)?,
                 region,
-                value,
+                evidence: crate::CellPublicationEvidence::initialized_region(candidate_shape),
                 changed: true,
             },
         }))
@@ -3620,6 +3882,7 @@ impl ValueCell {
                 &value,
             )?;
         }
+        let candidate_shape = value.shape().clone();
         let binding = realized.binding(object)?;
         Ok(StagedManagedCellUpdate {
             domain: managed.owner.clone(),
@@ -3629,7 +3892,7 @@ impl ValueCell {
                 object,
                 binding,
                 region,
-                value,
+                evidence: crate::CellPublicationEvidence::initialized_region(candidate_shape),
                 changed: true,
             },
         })
@@ -3641,7 +3904,7 @@ impl ValueCell {
         realized: &crate::RealizedMemoryPlan,
         object: crate::PlanObjectKey,
         region: crate::MemoryAccessRegion,
-        value: &Value,
+        evidence: &crate::CellPublicationEvidence,
         changed: bool,
     ) -> MResult<PreparedManagedCellBinding> {
         let cell_owner = self.binding.memory_domain().ok_or_else(|| {
@@ -3660,24 +3923,6 @@ impl ValueCell {
             ));
         }
         owner.ensure_open().map_err(MechError::from)?;
-        if value.schema_key() != self.binding.schema_key {
-            return Err(MechError::new(
-                ValueCellSchemaMismatch {
-                    expected: self.binding.schema_key,
-                    actual: value.schema_key(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        let next = if value.schema() == self.binding.schema {
-            value
-                .validate_against(self.binding.schemas.as_ref())
-                .map_err(snapshot_failure)?;
-            value.clone()
-        } else {
-            rebind_value(value.clone(), self.binding.schemas.as_ref())?
-        };
         let published = self
             .binding
             .published
@@ -3688,7 +3933,8 @@ impl ValueCell {
             .schemas
             .get(self.binding.schema)
             .expect("value-cell schema remains present");
-        if !shape_change_allowed(schema, &published.shape, next.shape()) {
+        let next_shape = evidence.shape().clone();
+        if !shape_change_allowed(schema, &published.shape, &next_shape) {
             return Err(MechError::new(
                 ValueCellShapeMismatch {
                     expected: published
@@ -3696,39 +3942,77 @@ impl ValueCell {
                         .parameter_values()
                         .to_vec()
                         .into_boxed_slice(),
-                    actual: next.shape().parameter_values().to_vec().into_boxed_slice(),
+                    actual: next_shape.parameter_values().to_vec().into_boxed_slice(),
                 },
                 None,
             )
             .with_compiler_loc());
         }
-        next.validate_against(&self.binding.schemas)
-            .map_err(snapshot_failure)?;
-        let next_shape = next.shape().clone();
         let representation = self.representation();
         realized.binding(object).map_err(MechError::from)?;
-        let next_storage = match planned_payload_object_optional(owner, realized, object)? {
-            Some(payload) => CellStorageBinding::ManagedCanonical {
-                owner: owner.clone(),
-                storage: Rc::new(ManagedCanonicalCellStorage {
+        let payload = planned_payload_object_optional(owner, realized, object)?;
+        let next_storage = match evidence {
+            crate::CellPublicationEvidence::FrozenValue(value) => {
+                if value.schema_key() != self.binding.schema_key {
+                    return Err(MechError::new(
+                        ValueCellSchemaMismatch {
+                            expected: self.binding.schema_key,
+                            actual: value.schema_key(),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc());
+                }
+                let next = if value.schema() == self.binding.schema {
+                    value
+                        .validate_against(self.binding.schemas.as_ref())
+                        .map_err(snapshot_failure)?;
+                    value.clone()
+                } else {
+                    rebind_value(value.clone(), self.binding.schemas.as_ref())?
+                };
+                next.validate_against(&self.binding.schemas)
+                    .map_err(snapshot_failure)?;
+                let payload = payload.ok_or_else(|| {
+                    managed_host_shape_error(
+                        object,
+                        "a frozen publication candidate has no admitted payload envelope",
+                    )
+                })?;
+                CellStorageBinding::ManagedCanonical {
                     owner: owner.clone(),
-                    realized: realized.clone(),
-                    object,
-                    payload,
-                    value: next.clone(),
-                    representation,
-                }),
-            },
-            None => CellStorageBinding::ManagedHost {
-                owner: owner.clone(),
-                storage: Rc::new(ManagedHostCellStorage {
+                    storage: Rc::new(ManagedCanonicalCellStorage {
+                        owner: owner.clone(),
+                        realized: realized.clone(),
+                        object,
+                        payload,
+                        value: next,
+                        representation,
+                    }),
+                }
+            }
+            crate::CellPublicationEvidence::InitializedManagedRegion { shape } => {
+                if payload.is_some() {
+                    return Err(managed_host_shape_error(
+                        object,
+                        "a canonical payload candidate requires a finalized frozen value",
+                    ));
+                }
+                crate::ResolvedValueDescriptor::from_schema(schema.clone(), shape.clone())
+                    .map_err(MechError::from)?
+                    .current_extents()
+                    .map_err(MechError::from)?;
+                CellStorageBinding::ManagedHost {
                     owner: owner.clone(),
-                    realized: realized.clone(),
-                    object,
-                    region,
-                    representation: managed_host_representation(representation),
-                }),
-            },
+                    storage: Rc::new(ManagedHostCellStorage {
+                        owner: owner.clone(),
+                        realized: realized.clone(),
+                        object,
+                        region,
+                        representation: managed_host_representation(representation),
+                    }),
+                }
+            }
         };
         Ok(PreparedManagedCellBinding {
             cell: self.clone(),

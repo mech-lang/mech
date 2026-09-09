@@ -19,15 +19,30 @@ use nalgebra::DMatrix;
 use nalgebra::DVector;
 #[cfg(feature = "matrix1")]
 use nalgebra::Matrix1;
-#[cfg(feature = "matrix2")]
+#[cfg(all(
+    feature = "matrix2",
+    any(feature = "row_vector2", feature = "vector2")
+))]
 use nalgebra::Matrix2;
-#[cfg(feature = "matrix2x3")]
+#[cfg(all(
+    feature = "matrix2x3",
+    any(feature = "row_vector3", feature = "vector2")
+))]
 use nalgebra::Matrix2x3;
-#[cfg(feature = "matrix3")]
+#[cfg(all(
+    feature = "matrix3",
+    any(feature = "row_vector3", feature = "vector3")
+))]
 use nalgebra::Matrix3;
-#[cfg(feature = "matrix3x2")]
+#[cfg(all(
+    feature = "matrix3x2",
+    any(feature = "row_vector2", feature = "vector3")
+))]
 use nalgebra::Matrix3x2;
-#[cfg(feature = "matrix4")]
+#[cfg(all(
+    feature = "matrix4",
+    any(feature = "row_vector4", feature = "vector4")
+))]
 use nalgebra::Matrix4;
 #[cfg(feature = "row_vectord")]
 use nalgebra::RowDVector;

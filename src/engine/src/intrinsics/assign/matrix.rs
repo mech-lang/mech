@@ -744,6 +744,36 @@ trait ManagedAssignmentElement:
 
     fn validate_input(port: FunctionInputPort<'_>, semantic_input: usize) -> MResult<()>;
     fn validate_output(port: FunctionOutputPort<'_>) -> MResult<()>;
+    fn planned_selection_output_footprint(
+        _sink: &ValueCell,
+        _source: &ValueCell,
+        _selector: &ValueCell,
+        _mode: ManagedMatrixAssignmentMode,
+    ) -> MResult<Option<CurrentMemoryFootprint>> {
+        Ok(None)
+    }
+    fn planned_element_output_footprint(
+        _sink: &ValueCell,
+        _source: &ValueCell,
+        _row: &ValueCell,
+        _column: &ValueCell,
+    ) -> MResult<Option<CurrentMemoryFootprint>> {
+        Ok(None)
+    }
+    fn planned_rectangle_output_footprint(
+        _sink: &ValueCell,
+        _source: &ValueCell,
+        _rows: &ValueCell,
+        _columns: &ValueCell,
+    ) -> MResult<Option<CurrentMemoryFootprint>> {
+        Ok(None)
+    }
+    fn planned_whole_output_footprint(
+        _sink: &ValueCell,
+        _source: &ValueCell,
+    ) -> MResult<Option<CurrentMemoryFootprint>> {
+        Ok(None)
+    }
     fn solve_selection<S: ManagedAssignmentSelectorElement>(
         frame: &mut mech_core::KernelMemoryFrame<'_>,
         sink: &ValueCell,
@@ -943,6 +973,72 @@ impl ManagedAssignmentElement for String {
         Ok(())
     }
 
+    fn planned_selection_output_footprint(
+        sink: &ValueCell,
+        source: &ValueCell,
+        selector: &ValueCell,
+        mode: ManagedMatrixAssignmentMode,
+    ) -> MResult<Option<CurrentMemoryFootprint>> {
+        #[cfg(feature = "semantic-compiler")]
+        return string_selection_assignment(sink, source, selector, mode)
+            .prospective_output_footprint()
+            .map(Some);
+        #[cfg(not(feature = "semantic-compiler"))]
+        {
+            let _ = (sink, source, selector, mode);
+            Ok(None)
+        }
+    }
+
+    fn planned_element_output_footprint(
+        sink: &ValueCell,
+        source: &ValueCell,
+        row: &ValueCell,
+        column: &ValueCell,
+    ) -> MResult<Option<CurrentMemoryFootprint>> {
+        #[cfg(feature = "semantic-compiler")]
+        return string_element_assignment(sink, source, row, column)
+            .prospective_output_footprint()
+            .map(Some);
+        #[cfg(not(feature = "semantic-compiler"))]
+        {
+            let _ = (sink, source, row, column);
+            Ok(None)
+        }
+    }
+
+    fn planned_rectangle_output_footprint(
+        sink: &ValueCell,
+        source: &ValueCell,
+        rows: &ValueCell,
+        columns: &ValueCell,
+    ) -> MResult<Option<CurrentMemoryFootprint>> {
+        #[cfg(feature = "semantic-compiler")]
+        return string_rectangle_assignment(sink, source, rows, columns)
+            .prospective_output_footprint()
+            .map(Some);
+        #[cfg(not(feature = "semantic-compiler"))]
+        {
+            let _ = (sink, source, rows, columns);
+            Ok(None)
+        }
+    }
+
+    fn planned_whole_output_footprint(
+        sink: &ValueCell,
+        source: &ValueCell,
+    ) -> MResult<Option<CurrentMemoryFootprint>> {
+        #[cfg(feature = "semantic-compiler")]
+        return string_whole_assignment(sink, source)
+            .prospective_output_footprint()
+            .map(Some);
+        #[cfg(not(feature = "semantic-compiler"))]
+        {
+            let _ = (sink, source);
+            Ok(None)
+        }
+    }
+
     fn solve_selection<S: ManagedAssignmentSelectorElement>(
         frame: &mut mech_core::KernelMemoryFrame<'_>,
         sink: &ValueCell,
@@ -953,49 +1049,7 @@ impl ManagedAssignmentElement for String {
     ) -> MResult<()> {
         #[cfg(feature = "semantic-compiler")]
         {
-            let selectors = match mode {
-                ManagedMatrixAssignmentMode::Linear => vec![
-                    crate::intrinsics::canonical_access::CanonicalAccessSelector::Cell(
-                        selector.clone(),
-                    ),
-                ],
-                ManagedMatrixAssignmentMode::Rows => vec![
-                    crate::intrinsics::canonical_access::CanonicalAccessSelector::Cell(
-                        selector.clone(),
-                    ),
-                    crate::intrinsics::canonical_access::CanonicalAccessSelector::All,
-                ],
-                ManagedMatrixAssignmentMode::Columns => vec![
-                    crate::intrinsics::canonical_access::CanonicalAccessSelector::All,
-                    crate::intrinsics::canonical_access::CanonicalAccessSelector::Cell(
-                        selector.clone(),
-                    ),
-                ],
-                ManagedMatrixAssignmentMode::WholeIf => {
-                    vec![crate::intrinsics::canonical_access::CanonicalAccessSelector::All]
-                }
-            };
-            let assignment = super::AssignCanonicalSelection {
-                sink: sink.clone(),
-                source: source.clone(),
-                selectors,
-                selection_kind: match mode {
-                    ManagedMatrixAssignmentMode::Linear => {
-                        super::CanonicalAssignmentSelectionKind::Linear
-                    }
-                    ManagedMatrixAssignmentMode::Rows => {
-                        super::CanonicalAssignmentSelectionKind::Rows
-                    }
-                    ManagedMatrixAssignmentMode::Columns => {
-                        super::CanonicalAssignmentSelectionKind::Columns
-                    }
-                    ManagedMatrixAssignmentMode::WholeIf => {
-                        super::CanonicalAssignmentSelectionKind::WholeValue
-                    }
-                },
-            };
-            let next = assignment.next_value()?;
-            return frame.stage_output_value(sink, next);
+            return string_selection_assignment(sink, source, selector, mode).stage_managed(frame);
         }
         #[cfg(not(feature = "semantic-compiler"))]
         {
@@ -1016,18 +1070,7 @@ impl ManagedAssignmentElement for String {
     ) -> MResult<()> {
         #[cfg(feature = "semantic-compiler")]
         {
-            let assignment = super::AssignCanonicalSelection {
-                sink: sink.clone(),
-                source: source.clone(),
-                selectors: vec![
-                    crate::intrinsics::canonical_access::CanonicalAccessSelector::Cell(row.clone()),
-                    crate::intrinsics::canonical_access::CanonicalAccessSelector::Cell(
-                        column.clone(),
-                    ),
-                ],
-                selection_kind: super::CanonicalAssignmentSelectionKind::SingleElement,
-            };
-            return frame.stage_output_value(sink, assignment.next_value()?);
+            return string_element_assignment(sink, source, row, column).stage_managed(frame);
         }
         #[cfg(not(feature = "semantic-compiler"))]
         {
@@ -1049,20 +1092,7 @@ impl ManagedAssignmentElement for String {
     ) -> MResult<()> {
         #[cfg(feature = "semantic-compiler")]
         {
-            let assignment = super::AssignCanonicalSelection {
-                sink: sink.clone(),
-                source: source.clone(),
-                selectors: vec![
-                    crate::intrinsics::canonical_access::CanonicalAccessSelector::Cell(
-                        rows.clone(),
-                    ),
-                    crate::intrinsics::canonical_access::CanonicalAccessSelector::Cell(
-                        columns.clone(),
-                    ),
-                ],
-                selection_kind: super::CanonicalAssignmentSelectionKind::Rectangular,
-            };
-            return frame.stage_output_value(sink, assignment.next_value()?);
+            return string_rectangle_assignment(sink, source, rows, columns).stage_managed(frame);
         }
         #[cfg(not(feature = "semantic-compiler"))]
         {
@@ -1082,13 +1112,7 @@ impl ManagedAssignmentElement for String {
     ) -> MResult<()> {
         #[cfg(feature = "semantic-compiler")]
         {
-            let assignment = super::AssignCanonicalSelection {
-                sink: sink.clone(),
-                source: source.clone(),
-                selectors: vec![crate::intrinsics::canonical_access::CanonicalAccessSelector::All],
-                selection_kind: super::CanonicalAssignmentSelectionKind::WholeValue,
-            };
-            return frame.stage_output_value(sink, assignment.next_value()?);
+            return string_whole_assignment(sink, source).stage_managed(frame);
         }
         #[cfg(not(feature = "semantic-compiler"))]
         {
@@ -1098,6 +1122,102 @@ impl ManagedAssignmentElement for String {
                 "String whole-value assignment requires canonical runtime support",
             ))
         }
+    }
+}
+
+#[cfg(all(feature = "string", feature = "semantic-compiler"))]
+fn string_selection_assignment(
+    sink: &ValueCell,
+    source: &ValueCell,
+    selector: &ValueCell,
+    mode: ManagedMatrixAssignmentMode,
+) -> super::AssignCanonicalSelection {
+    let (selectors, selection_kind) = match mode {
+        ManagedMatrixAssignmentMode::Linear => (
+            vec![
+                crate::intrinsics::canonical_access::CanonicalAccessSelector::Cell(
+                    selector.clone(),
+                ),
+            ],
+            super::CanonicalAssignmentSelectionKind::Linear,
+        ),
+        ManagedMatrixAssignmentMode::Rows => (
+            vec![
+                crate::intrinsics::canonical_access::CanonicalAccessSelector::Cell(
+                    selector.clone(),
+                ),
+                crate::intrinsics::canonical_access::CanonicalAccessSelector::All,
+            ],
+            super::CanonicalAssignmentSelectionKind::Rows,
+        ),
+        ManagedMatrixAssignmentMode::Columns => (
+            vec![
+                crate::intrinsics::canonical_access::CanonicalAccessSelector::All,
+                crate::intrinsics::canonical_access::CanonicalAccessSelector::Cell(
+                    selector.clone(),
+                ),
+            ],
+            super::CanonicalAssignmentSelectionKind::Columns,
+        ),
+        ManagedMatrixAssignmentMode::WholeIf => (
+            vec![crate::intrinsics::canonical_access::CanonicalAccessSelector::All],
+            super::CanonicalAssignmentSelectionKind::WholeValue,
+        ),
+    };
+    super::AssignCanonicalSelection {
+        sink: sink.clone(),
+        source: source.clone(),
+        selectors,
+        selection_kind,
+    }
+}
+
+#[cfg(all(feature = "string", feature = "semantic-compiler"))]
+fn string_element_assignment(
+    sink: &ValueCell,
+    source: &ValueCell,
+    row: &ValueCell,
+    column: &ValueCell,
+) -> super::AssignCanonicalSelection {
+    super::AssignCanonicalSelection {
+        sink: sink.clone(),
+        source: source.clone(),
+        selectors: vec![
+            crate::intrinsics::canonical_access::CanonicalAccessSelector::Cell(row.clone()),
+            crate::intrinsics::canonical_access::CanonicalAccessSelector::Cell(column.clone()),
+        ],
+        selection_kind: super::CanonicalAssignmentSelectionKind::SingleElement,
+    }
+}
+
+#[cfg(all(feature = "string", feature = "semantic-compiler"))]
+fn string_rectangle_assignment(
+    sink: &ValueCell,
+    source: &ValueCell,
+    rows: &ValueCell,
+    columns: &ValueCell,
+) -> super::AssignCanonicalSelection {
+    super::AssignCanonicalSelection {
+        sink: sink.clone(),
+        source: source.clone(),
+        selectors: vec![
+            crate::intrinsics::canonical_access::CanonicalAccessSelector::Cell(rows.clone()),
+            crate::intrinsics::canonical_access::CanonicalAccessSelector::Cell(columns.clone()),
+        ],
+        selection_kind: super::CanonicalAssignmentSelectionKind::Rectangular,
+    }
+}
+
+#[cfg(all(feature = "string", feature = "semantic-compiler"))]
+fn string_whole_assignment(
+    sink: &ValueCell,
+    source: &ValueCell,
+) -> super::AssignCanonicalSelection {
+    super::AssignCanonicalSelection {
+        sink: sink.clone(),
+        source: source.clone(),
+        selectors: vec![crate::intrinsics::canonical_access::CanonicalAccessSelector::All],
+        selection_kind: super::CanonicalAssignmentSelectionKind::WholeValue,
     }
 }
 
@@ -1170,6 +1290,18 @@ macro_rules! impl_set_all_fxn_s {
             C1: Dim,
             S1: StorageMut<T, R1, C1> + Clone + Debug,
         {
+            fn planned_output_footprints(
+                &self,
+            ) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+                Ok(T::planned_selection_output_footprint(
+                    &self.sink,
+                    &self.source,
+                    &self.ixes,
+                    managed_assignment_mode!($op),
+                )?
+                .map(|footprint| vec![footprint].into_boxed_slice()))
+            }
+
             fn solve_managed(
                 &self,
                 frame: &mut mech_core::KernelMemoryFrame<'_>,
@@ -1316,6 +1448,18 @@ macro_rules! impl_all_fxn_v {
             C2: Dim,
             S2: Storage<T, R2, C2> + Clone + Debug,
         {
+            fn planned_output_footprints(
+                &self,
+            ) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+                Ok(T::planned_selection_output_footprint(
+                    &self.sink,
+                    &self.source,
+                    &self.ixes,
+                    managed_assignment_mode!($op),
+                )?
+                .map(|footprint| vec![footprint].into_boxed_slice()))
+            }
+
             fn solve_managed(
                 &self,
                 frame: &mut mech_core::KernelMemoryFrame<'_>,
@@ -1472,6 +1616,18 @@ macro_rules! impl_assign_fxn_s {
             C: Dim,
             S: StorageMut<T, R, C> + Clone + Debug,
         {
+            fn planned_output_footprints(
+                &self,
+            ) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+                Ok(T::planned_selection_output_footprint(
+                    &self.sink,
+                    &self.source,
+                    &self.ixes,
+                    managed_assignment_mode!($op),
+                )?
+                .map(|footprint| vec![footprint].into_boxed_slice()))
+            }
+
             fn solve_managed(
                 &self,
                 frame: &mut mech_core::KernelMemoryFrame<'_>,
@@ -1618,6 +1774,11 @@ where
     C: Dim,
     S: StorageMut<T, R, C> + Debug + IsContiguous,
 {
+    fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+        Ok(T::planned_whole_output_footprint(&self.sink, &self.source)?
+            .map(|footprint| vec![footprint].into_boxed_slice()))
+    }
+
     fn solve_managed(
         &self,
         frame: &mut mech_core::KernelMemoryFrame<'_>,
@@ -1716,6 +1877,16 @@ where
     C1: Dim,
     S1: StorageMut<T, R1, C1> + Clone + Debug,
 {
+    fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+        Ok(T::planned_element_output_footprint(
+            &self.sink,
+            &self.source,
+            &self.ixes.0,
+            &self.ixes.1,
+        )?
+        .map(|footprint| vec![footprint].into_boxed_slice()))
+    }
+
     fn solve_managed(
         &self,
         frame: &mut mech_core::KernelMemoryFrame<'_>,
@@ -1826,6 +1997,16 @@ macro_rules! impl_assign_scalar_fxn_v {
             C2: Dim,
             S2: Storage<T, R2, C2> + Clone + Debug,
         {
+            fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+                Ok(T::planned_selection_output_footprint(
+                    &self.sink,
+                    &self.source,
+                    &self.ixes,
+                    managed_assignment_mode!($op),
+                )?
+                .map(|footprint| vec![footprint].into_boxed_slice()))
+            }
+
             fn solve_managed(
                 &self,
                 frame: &mut mech_core::KernelMemoryFrame<'_>,
@@ -1948,6 +2129,16 @@ macro_rules! impl_assign_range_scalar_fxn_s {
             C: Dim,
             S: StorageMut<T, R, C> + Clone + Debug,
         {
+            fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+                Ok(T::planned_rectangle_output_footprint(
+                    &self.sink,
+                    &self.source,
+                    &self.ixes.0,
+                    &self.ixes.1,
+                )?
+                .map(|footprint| vec![footprint].into_boxed_slice()))
+            }
+
             fn solve_managed(
                 &self,
                 frame: &mut mech_core::KernelMemoryFrame<'_>,
@@ -2086,6 +2277,16 @@ macro_rules! impl_assign_range_scalar_fxn_v {
             C2: Dim,
             S2: Storage<T, R2, C2> + Clone + Debug,
         {
+            fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+                Ok(T::planned_rectangle_output_footprint(
+                    &self.sink,
+                    &self.source,
+                    &self.ixes.0,
+                    &self.ixes.1,
+                )?
+                .map(|footprint| vec![footprint].into_boxed_slice()))
+            }
+
             fn solve_managed(
                 &self,
                 frame: &mut mech_core::KernelMemoryFrame<'_>,
@@ -2215,6 +2416,16 @@ macro_rules! impl_assign_scalar_range_fxn_s {
             C: Dim,
             S: StorageMut<T, R, C> + Clone + Debug,
         {
+            fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+                Ok(T::planned_rectangle_output_footprint(
+                    &self.sink,
+                    &self.source,
+                    &self.ixes.0,
+                    &self.ixes.1,
+                )?
+                .map(|footprint| vec![footprint].into_boxed_slice()))
+            }
+
             fn solve_managed(
                 &self,
                 frame: &mut mech_core::KernelMemoryFrame<'_>,
@@ -2353,6 +2564,16 @@ macro_rules! impl_assign_scalar_range_fxn_v {
             C2: Dim,
             S2: Storage<T, R2, C2> + Clone + Debug,
         {
+            fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+                Ok(T::planned_rectangle_output_footprint(
+                    &self.sink,
+                    &self.source,
+                    &self.ixes.0,
+                    &self.ixes.1,
+                )?
+                .map(|footprint| vec![footprint].into_boxed_slice()))
+            }
+
             fn solve_managed(
                 &self,
                 frame: &mut mech_core::KernelMemoryFrame<'_>,
@@ -2484,6 +2705,16 @@ macro_rules! impl_assign_range_range_fxn_s {
             C: Dim,
             S: StorageMut<T, R, C> + Clone + Debug,
         {
+            fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+                Ok(T::planned_rectangle_output_footprint(
+                    &self.sink,
+                    &self.source,
+                    &self.ixes.0,
+                    &self.ixes.1,
+                )?
+                .map(|footprint| vec![footprint].into_boxed_slice()))
+            }
+
             fn solve_managed(
                 &self,
                 frame: &mut mech_core::KernelMemoryFrame<'_>,
@@ -2630,6 +2861,16 @@ macro_rules! impl_range_range_fxn_v {
             S2: Storage<T, R2, C2> + Clone + Debug,
             naMatrix<T, R1, C1, S1>: FunctionStateBacking,
         {
+            fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+                Ok(T::planned_rectangle_output_footprint(
+                    &self.sink,
+                    &self.source,
+                    &self.ixes.0,
+                    &self.ixes.1,
+                )?
+                .map(|footprint| vec![footprint].into_boxed_slice()))
+            }
+
             fn solve_managed(
                 &self,
                 frame: &mut mech_core::KernelMemoryFrame<'_>,
@@ -2919,6 +3160,20 @@ mod tests {
             .collect()
     }
 
+    #[cfg(feature = "string")]
+    fn string_elements(value: &ValueCell) -> Vec<String> {
+        value
+            .matrix_elements()
+            .unwrap()
+            .expect("String matrix elements")
+            .iter()
+            .map(|element| match element.snapshot().unwrap().data() {
+                ValueData::String(value) => value.to_string(),
+                other => panic!("expected String matrix element, found {other:?}"),
+            })
+            .collect()
+    }
+
     fn replace_exact<T: CanonicalCellBacking>(cell: &ValueCell, value: T) {
         cell.replace(&ValueCell::from_exact(value).unwrap().snapshot().unwrap())
             .unwrap();
@@ -2950,6 +3205,36 @@ mod tests {
         function.instance().solve_result().unwrap();
 
         assert!(u8_elements(&sink).is_empty());
+    }
+
+    #[cfg(feature = "string")]
+    #[test]
+    fn typed_string_index_assignment_uses_complete_candidate_admission() {
+        let source = ValueCell::from_exact(DVector::from_vec(vec![
+            "long replacement".to_owned(),
+            "last write wins".to_owned(),
+        ]))
+        .unwrap();
+        let indices = ValueCell::from_exact(DVector::from_vec(vec![2_usize, 2])).unwrap();
+        let sink = ValueCell::from_exact(DVector::from_vec(vec![
+            "unchanged".to_owned(),
+            "old".to_owned(),
+            "also unchanged".to_owned(),
+        ]))
+        .unwrap();
+        let function = managed::<
+            Assign1DRV<String, DVector<String>, DVector<String>, DVector<usize>>,
+        >(FunctionInvocation::binary(sink.clone(), source, indices));
+
+        function.instance().solve_result().unwrap();
+        assert_eq!(
+            string_elements(&sink),
+            vec![
+                "unchanged".to_owned(),
+                "last write wins".to_owned(),
+                "also unchanged".to_owned(),
+            ]
+        );
     }
 
     #[test]

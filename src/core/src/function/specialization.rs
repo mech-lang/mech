@@ -1106,6 +1106,7 @@ impl<'a> SpecializationContext<'a> {
             runtime_function,
             target,
             inputs,
+            None,
             implementation_memory,
         )
     }
@@ -1120,12 +1121,18 @@ impl<'a> SpecializationContext<'a> {
         inputs: &[&SpecializationInput],
         implementation_memory: ImplementationMemoryClass,
     ) -> MResult<SpecializedFunction> {
-        let inputs = specialization_input_descriptors(inputs)?;
+        let planning_inputs = specialization_input_cells(inputs)?;
+        let inputs = planning_inputs
+            .iter()
+            .map(ValueCell::resolved_descriptor)
+            .collect::<MResult<Vec<_>>>()?
+            .into_boxed_slice();
         self.certify_instance_with_descriptors(
             parts,
             runtime_function,
             target,
             inputs,
+            Some(planning_inputs),
             implementation_memory,
         )
     }
@@ -1136,6 +1143,7 @@ impl<'a> SpecializationContext<'a> {
         runtime_function: RuntimeFunctionId,
         target: ExecutionTarget,
         inputs: Box<[ResolvedValueDescriptor]>,
+        planning_inputs: Option<Box<[ValueCell]>>,
         implementation_memory: ImplementationMemoryClass,
     ) -> MResult<SpecializedFunction> {
         let operation = self.selected_operation.ok_or_else(|| {
@@ -1191,12 +1199,23 @@ impl<'a> SpecializationContext<'a> {
         };
         let memory_plan = plan_specialized_call(
             &bound_call,
-            invocation.input_cells(),
+            planning_inputs
+                .as_deref()
+                .unwrap_or_else(|| invocation.input_cells()),
             invocation.output_cell().representation(),
             Some(invocation.output_cell()),
             implementation_memory,
         )?;
-        SpecializedFunction::new(parts, bound_call, memory_plan)
+        if let Some(planning_inputs) = planning_inputs {
+            SpecializedFunction::new_with_managed_inputs(
+                parts,
+                bound_call,
+                memory_plan,
+                planning_inputs,
+            )
+        } else {
+            SpecializedFunction::new(parts, bound_call, memory_plan)
+        }
     }
 
     fn semantic_binding_inputs(&self) -> MResult<Box<[String]>> {
@@ -1600,6 +1619,28 @@ impl SpecializedFunction {
         }
         let memory_plan = Rc::new(memory_plan);
         let instance = FunctionInstance::new(implementation, invocation, memory_plan)?;
+        Ok(Self { instance })
+    }
+
+    fn new_with_managed_inputs(
+        (implementation, invocation): (Box<dyn crate::MechFunction>, FunctionInvocation),
+        bound_call: BoundCall,
+        memory_plan: CallMemoryPlan,
+        managed_inputs: Box<[ValueCell]>,
+    ) -> MResult<Self> {
+        if memory_plan.bound_call != bound_call {
+            return Err(
+                MechError::new(crate::MemoryPlanError::DescriptorMismatch, None)
+                    .with_compiler_loc(),
+            );
+        }
+        let memory_plan = Rc::new(memory_plan);
+        let instance = FunctionInstance::new_with_managed_inputs(
+            implementation,
+            invocation,
+            memory_plan,
+            managed_inputs,
+        )?;
         Ok(Self { instance })
     }
 

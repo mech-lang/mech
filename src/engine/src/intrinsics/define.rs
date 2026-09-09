@@ -37,6 +37,10 @@ pub(crate) struct CanonicalVariableDefinition {
 
 #[cfg(feature = "variable_define")]
 impl MechFunctionImpl for CanonicalVariableDefinition {
+    fn payload_output_plan_policy(&self) -> mech_core::PayloadOutputPlanPolicy {
+        mech_core::PayloadOutputPlanPolicy::PublishedInvariant
+    }
+
     fn solve_managed(
         &self,
         _frame: &mut mech_core::KernelMemoryFrame<'_>,

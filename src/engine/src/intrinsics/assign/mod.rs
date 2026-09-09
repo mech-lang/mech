@@ -808,6 +808,14 @@ impl AssignCanonicalSelection {
         })
     }
 
+    fn stage_managed(&self, frame: &mut mech_core::KernelMemoryFrame<'_>) -> MResult<()> {
+        let footprint = self.prospective_output_footprint()?;
+        frame.with_admitted_canonical_output(&self.sink, footprint, |_| {
+            Ok(((), self.next_value()?))
+        })?;
+        Ok(())
+    }
+
     fn fixed_matrix_positions(&self) -> MResult<Option<Vec<usize>>> {
         let SchemaBody::Matrix { dimensions, .. } = self.sink.closed_schema_body()? else {
             return Ok(None);
@@ -1310,10 +1318,7 @@ impl MechFunctionImpl for AssignCanonicalSelection {
                 ..
             }
         ) {
-            let footprint = self.prospective_output_footprint()?;
-            frame.with_admitted_canonical_output(&self.sink, footprint, |_| {
-                Ok(((), self.next_value()?))
-            })?;
+            self.stage_managed(frame)?;
         } else {
             frame.assign_fixed_port_selection(
                 &self.sink,

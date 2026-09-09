@@ -36,6 +36,7 @@ pub struct ExternalResourceReadFunction {
     pub initial_solve_policy: InitialSolvePolicy,
     pub semantic_contract: Option<&'static OperationContractDeclaration>,
     initialized: Ref<usize>,
+    prepared_result: Ref<Option<Value>>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -72,17 +73,8 @@ impl ExternalResourceReadFunction {
             initial_solve_policy,
             semantic_contract,
             initialized: Ref::new(usize::from(initialized)),
+            prepared_result: Ref::new(None),
         }
-    }
-
-    fn stage_read_result(
-        &self,
-        frame: &mut mech_core::KernelMemoryFrame<'_>,
-        result: Value,
-    ) -> MResult<()> {
-        frame.stage_output_value(&self.output, result)?;
-        *self.initialized.borrow_mut() = 1;
-        Ok(())
     }
 
     fn solve_with_services(
@@ -90,11 +82,21 @@ impl ExternalResourceReadFunction {
         frame: &mut mech_core::KernelMemoryFrame<'_>,
         services: &mut dyn MechExecutionServices,
     ) -> MResult<()> {
-        let result = services.read_resource(&self.request)?;
-        self.stage_read_result(frame, result)?;
+        let result = self.prepared_result.borrow_mut().take().ok_or_else(|| {
+            MechError::new(
+                mech_core::GenericError {
+                    msg: "resource result was not captured before managed output planning"
+                        .to_owned(),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+        frame.stage_output_value(&self.output, result)?;
         if self.request.delivery == ResourceDelivery::Live {
             services.bind_live_resource(self.interpreter_id, &self.request, self.output.clone())?;
         }
+        *self.initialized.borrow_mut() = 1;
         Ok(())
     }
 }
@@ -102,6 +104,32 @@ impl ExternalResourceReadFunction {
 impl MechFunctionImpl for ExternalResourceReadFunction {
     fn payload_output_plan_policy(&self) -> mech_core::PayloadOutputPlanPolicy {
         mech_core::PayloadOutputPlanPolicy::ExternalAdoption
+    }
+
+    fn prepare_external_output(&self, services: &mut dyn MechExecutionServices) -> MResult<()> {
+        let result = services.read_resource(&self.request)?;
+        *self.prepared_result.borrow_mut() = Some(result);
+        Ok(())
+    }
+
+    fn planned_output_shapes(&self) -> MResult<Option<Box<[mech_core::ShapeInstance]>>> {
+        Ok(self
+            .prepared_result
+            .borrow()
+            .as_ref()
+            .map(|value| vec![value.shape().clone()].into_boxed_slice()))
+    }
+
+    fn planned_output_footprints(
+        &self,
+    ) -> MResult<Option<Box<[mech_core::CurrentMemoryFootprint]>>> {
+        let prepared = self.prepared_result.borrow();
+        let Some(value) = prepared.as_ref() else {
+            return Ok(None);
+        };
+        Ok(Some(
+            vec![ValueCell::prospective_snapshot_memory_footprint(value)?].into_boxed_slice(),
+        ))
     }
 
     fn solve_managed(

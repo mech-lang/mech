@@ -195,6 +195,10 @@ pub struct ValueSet {
 
 #[cfg(all(feature = "set", feature = "functions"))]
 impl MechFunctionImpl for ValueSet {
+    fn payload_output_plan_policy(&self) -> mech_core::PayloadOutputPlanPolicy {
+        mech_core::PayloadOutputPlanPolicy::PublishedInvariant
+    }
+
     fn solve_managed(
         &self,
         _frame: &mut mech_core::KernelMemoryFrame<'_>,
@@ -647,11 +651,41 @@ fn prospective_matrix_output_footprint(
     output: &ValueCell,
     arguments: &[FunctionValueInput],
 ) -> MResult<CurrentMemoryFootprint> {
-    let mut footprint = output.current_memory_footprint()?;
-    if arguments.is_empty() {
-        return Ok(footprint);
-    }
-    footprint.logical_elements = 0;
+    // The candidate is a wholly new aggregate. The published output remains
+    // live during staging, but is accounted by the published-footprint input
+    // to turn planning; carrying it into this candidate witness charges the
+    // old payload twice and makes admission depend on stale contents.
+    let shape_parameter_count = output.shape().parameter_values().len() as u64;
+    let shape_bytes = shape_parameter_count
+        .checked_mul(core::mem::size_of::<u64>() as u64)
+        .ok_or_else(|| {
+            MechError::new(
+                MemoryPlanError::ArithmeticOverflow {
+                    field: "matrix construction shape bytes",
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+    let payload_bytes = (core::mem::size_of::<Value>() as u64)
+        .checked_add(shape_bytes)
+        .and_then(|bytes| bytes.checked_add(core::mem::size_of::<ValueData>() as u64))
+        .ok_or_else(|| {
+            MechError::new(
+                MemoryPlanError::ArithmeticOverflow {
+                    field: "matrix construction retained bytes",
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+    let mut footprint = CurrentMemoryFootprint {
+        payload_bytes,
+        // Root + matrix aggregate + sequence container.
+        retained_nodes: 3,
+        shape_parameter_count,
+        ..CurrentMemoryFootprint::default()
+    };
     for argument in arguments {
         let input = argument.cell().current_memory_footprint()?;
         footprint.logical_elements = footprint
@@ -680,7 +714,6 @@ fn prospective_matrix_output_footprint(
         add_input_bound!(retained_nodes, "matrix construction retained nodes");
         add_input_bound!(schema_bytes, "matrix construction schema bytes");
     }
-    footprint.shape_parameter_count = output.shape().parameter_values().len() as u64;
     Ok(footprint)
 }
 
