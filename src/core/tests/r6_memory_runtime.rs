@@ -1,15 +1,16 @@
 #![cfg(feature = "full")]
 
-use mech_core::snapshot::F64Bits;
+use mech_core::snapshot::{F64Bits, SnapshotValidationContext};
 use mech_core::{
     AllocationPlan, AllocationRole, ArenaBackingKind, ArenaPlacement, ArenaPlan, CallAccessRequest,
-    CellPublicationCandidate, FunctionInvocation, KernelMemoryFrame, ManagedCallAccessRequest,
-    ManagedPort, ManagedSequence, ManagedString, MechExecutionServices, MechFunctionImpl,
-    MemoryAccessMode, MemoryAccessRegion, MemoryArenaId, MemoryBudgetLimits, MemoryBudgetViolation,
-    MemoryDomain, MemoryLifetime, MemoryObjectId, MemoryObjectOwner, MemoryPlanPoint,
-    MemoryPlanRevision, MemoryRuntimeError, MemorySpace, NoMechExecutionServices,
+    CellPublicationCandidate, CellPublicationEvidence, FunctionInvocation, KernelMemoryFrame,
+    ManagedCallAccessRequest, ManagedPort, ManagedSequence, ManagedString, MechExecutionServices,
+    MechFunctionImpl, MemoryAccessMode, MemoryAccessRegion, MemoryArenaId, MemoryBudgetLimits,
+    MemoryBudgetViolation, MemoryDomain, MemoryLifetime, MemoryObjectId, MemoryObjectOwner,
+    MemoryPlanPoint, MemoryPlanRevision, MemoryRuntimeError, MemorySpace, NoMechExecutionServices,
     PreparedCellPublication, PreparedCellPublicationBatch, PublicationCandidate,
-    ReactiveSolveStatus, ResourceDemand, ReuseGroupId, RuntimeBinding, RuntimePlanView, ValueCell,
+    ReactiveSolveStatus, ResourceDemand, ReuseGroupId, RuntimeBinding, RuntimePlanView, SchemaBody,
+    SchemaDraft, SchemaTableBuilder, ValueCell, ValueDataDraft, ValueDraft,
 };
 
 fn runtime_plan_view<'a>(
@@ -1461,6 +1462,39 @@ fn detached_values_share_one_sendable_immutable_payload_root() {
 }
 
 #[test]
+fn ordinary_dynamic_cell_snapshots_retain_the_frozen_root_after_close() {
+    let schema = SchemaDraft {
+        dimension_parameters: Box::new([]),
+        body: SchemaBody::Tuple(vec![SchemaBody::Dynamic].into_boxed_slice()),
+    }
+    .finalize()
+    .unwrap();
+    let mut builder = SchemaTableBuilder::new();
+    let handle = builder.insert(schema).unwrap();
+    let build = builder.finish().unwrap();
+    let schema = build.resolve(handle).unwrap();
+    let (schemas, _) = build.into_parts();
+    let value = ValueDraft {
+        schema,
+        shape_values: Box::new([]),
+        data: ValueDataDraft::Tuple(vec![ValueDataDraft::Dynamic(None)].into_boxed_slice()),
+    }
+    .finalize(&SnapshotValidationContext::new(&schemas))
+    .unwrap();
+    let domain = MemoryDomain::new().unwrap();
+    let cell = ValueCell::from_snapshot_in(&domain, value.clone()).unwrap();
+    let first = cell.snapshot().unwrap();
+    let second = cell.snapshot().unwrap();
+    assert!(value.shares_frozen_storage(&first));
+    assert!(first.shares_frozen_storage(&second));
+
+    drop(cell);
+    domain.close().unwrap();
+    assert!(matches!(first.data(), mech_core::ValueData::Tuple(_)));
+    assert!(first.shares_frozen_storage(&second));
+}
+
+#[test]
 fn publication_versions_change_only_for_changed_candidates() {
     let domain = MemoryDomain::new().unwrap();
     let revision = domain.issue_plan_revision().unwrap();
@@ -1622,7 +1656,9 @@ fn multi_cell_publication_rejects_late_conflict_before_any_value_changes() {
                         offset_bytes: 0,
                         length_bytes: 8,
                     },
-                    value: left_next,
+                    evidence: CellPublicationEvidence::initialized_region(
+                        left_next.shape().clone(),
+                    ),
                     changed: true,
                 },
                 CellPublicationCandidate {
@@ -1633,7 +1669,9 @@ fn multi_cell_publication_rejects_late_conflict_before_any_value_changes() {
                         offset_bytes: 0,
                         length_bytes: 8,
                     },
-                    value: right_next,
+                    evidence: CellPublicationEvidence::initialized_region(
+                        right_next.shape().clone(),
+                    ),
                     changed: true,
                 },
             ],
@@ -1658,9 +1696,7 @@ fn multi_cell_publication_rejects_late_conflict_before_any_value_changes() {
                         offset_bytes: 0,
                         length_bytes: 8,
                     },
-                    value: left
-                        .rebuild_data_draft(mech_core::ValueDataDraft::U64(10))
-                        .unwrap(),
+                    evidence: CellPublicationEvidence::initialized_region(left.shape().clone()),
                     changed: true,
                 },
                 CellPublicationCandidate {
@@ -1671,9 +1707,7 @@ fn multi_cell_publication_rejects_late_conflict_before_any_value_changes() {
                         offset_bytes: 0,
                         length_bytes: 8,
                     },
-                    value: right
-                        .rebuild_data_draft(mech_core::ValueDataDraft::U64(20))
-                        .unwrap(),
+                    evidence: CellPublicationEvidence::initialized_region(right.shape().clone()),
                     changed: true,
                 },
             ],
@@ -1745,9 +1779,7 @@ fn sibling_call_candidates_in_one_session_publish_as_one_atomic_batch() {
                         offset_bytes: 0,
                         length_bytes: 8,
                     },
-                    value: cell
-                        .rebuild_data_draft(mech_core::ValueDataDraft::U64(value))
-                        .unwrap(),
+                    evidence: CellPublicationEvidence::initialized_region(cell.shape().clone()),
                     changed: true,
                 }],
             )

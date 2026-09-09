@@ -1,9 +1,10 @@
 use mech_core::{
     AllocationPlan, AllocationRole, ArenaBackingKind, ArenaPlacement, ArenaPlan, CallAccessRequest,
-    FunctionInvocation, ManagedCallAccessRequest, ManagedString, MemoryAccessMode,
-    MemoryAccessRegion, MemoryArenaId, MemoryBudgetLimits, MemoryBudgetViolation, MemoryDomain,
-    MemoryLifetime, MemoryObjectId, MemoryObjectOwner, MemoryPlanPoint, MemoryPlanRevision,
-    MemoryRuntimeError, MemorySpace, ResourceDemand, ReuseGroupId, RuntimePlanView, ValueCell,
+    CellPublicationCandidate, CellPublicationEvidence, FunctionInvocation,
+    ManagedCallAccessRequest, ManagedString, MemoryAccessMode, MemoryAccessRegion, MemoryArenaId,
+    MemoryBudgetLimits, MemoryBudgetViolation, MemoryDomain, MemoryLifetime, MemoryObjectId,
+    MemoryObjectOwner, MemoryPlanPoint, MemoryPlanRevision, MemoryRuntimeError, MemorySpace,
+    ResourceDemand, ReuseGroupId, RuntimePlanView, ValueCell,
 };
 
 #[path = "support/r6_allocation_probe.rs"]
@@ -176,6 +177,139 @@ fn repeated_complete_call_acquisition_and_release_allocate_no_metadata() {
             .iter()
             .all(|allocation| allocation.active_leases == 0)
     );
+}
+
+#[test]
+fn managed_numeric_footprint_measurement_does_not_copy_matrix_payload() {
+    let domain = MemoryDomain::new().unwrap();
+    let cell = ValueCell::from_exact_in(
+        &domain,
+        nalgebra::DMatrix::<f64>::from_element(512, 512, 1.0),
+    )
+    .unwrap();
+    let (footprint, _, allocated_bytes) =
+        allocation_probe::measured_with_bytes(|| cell.current_memory_footprint().unwrap());
+
+    assert_eq!(footprint.logical_elements, 512 * 512);
+    assert_eq!(footprint.fixed_bytes, 512 * 512 * 8);
+    assert_eq!(footprint.payload_bytes, 0);
+    assert!(
+        allocated_bytes < 16 * 1024,
+        "footprint inspection allocated {allocated_bytes} bytes for a managed numeric matrix"
+    );
+}
+
+#[test]
+fn fixed_width_publication_retains_region_evidence_without_a_canonical_copy() {
+    let rows = 256_u64;
+    let columns = 256_u64;
+    let elements = rows * columns;
+    let bytes = elements * 8;
+    let domain = MemoryDomain::new().unwrap();
+    let cell = ValueCell::from_exact_in(
+        &domain,
+        nalgebra::DMatrix::<f64>::from_element(rows as usize, columns as usize, 1.0),
+    )
+    .unwrap();
+    let revision = domain.issue_plan_revision().unwrap();
+    let allocation = AllocationPlan {
+        id: MemoryObjectId::new(0),
+        owner: MemoryObjectOwner::DirectCallPort {
+            call: 0,
+            direction: mech_core::PortDirection::Output,
+            port: 0,
+        },
+        role: AllocationRole::TransactionStage,
+        slot: Some(mech_core::PlannedSlotKind::FixedScalar(
+            mech_core::ScalarMemoryKind::Floating(mech_core::FloatWidth::W64),
+        )),
+        space: MemorySpace::Host,
+        current_bytes: 0,
+        capacity_bytes: bytes,
+        payload_block_capacity: 0,
+        alignment: 8,
+        lifetime: MemoryLifetime::Activation,
+        placement: ArenaPlacement {
+            arena: MemoryArenaId::new(0),
+            offset: 0,
+        },
+        reuse_group: None,
+    };
+    let arena = ArenaPlan {
+        id: MemoryArenaId::new(0),
+        space: MemorySpace::Host,
+        backing: ArenaBackingKind::ContiguousBytes,
+        capacity_bytes: bytes,
+        alignment: 8,
+        members: vec![MemoryObjectId::new(0)].into_boxed_slice(),
+    };
+    let realized = domain
+        .materialize(
+            domain
+                .prepare_realization(runtime_plan_view(
+                    revision,
+                    &[allocation],
+                    &[arena],
+                    ResourceDemand::default(),
+                    MemoryBudgetLimits::default(),
+                    &[],
+                ))
+                .unwrap(),
+        )
+        .unwrap();
+    let object = domain
+        .plan_object_key(revision, MemoryObjectId::new(0))
+        .unwrap();
+    domain.activate_realization(&realized).unwrap();
+    let region = MemoryAccessRegion::Rectangle {
+        offset_bytes: 0,
+        rows,
+        columns,
+        row_stride_bytes: 8,
+        column_stride_bytes: rows * 8,
+        element_bytes: 8,
+    };
+    let initialization = domain
+        .prepare_call(
+            &realized,
+            &[CallAccessRequest {
+                object,
+                mode: MemoryAccessMode::Write,
+                region: MemoryAccessRegion::Contiguous {
+                    offset_bytes: 0,
+                    length_bytes: bytes,
+                },
+            }],
+        )
+        .unwrap();
+    let values = vec![22.0_f64; elements as usize];
+    domain
+        .acquire_call(&realized, &initialization)
+        .unwrap()
+        .with_object_init_writer::<f64>(object, |writer| writer.copy_from_slice(&values))
+        .unwrap();
+    let shape = cell.shape().clone();
+    let (_, _, allocated_bytes) = allocation_probe::measured_with_bytes(|| {
+        let prepared = domain
+            .prepare_cell_publication(
+                &realized,
+                vec![CellPublicationCandidate {
+                    cell: cell.clone(),
+                    object,
+                    binding: realized.binding(object).unwrap(),
+                    region,
+                    evidence: CellPublicationEvidence::initialized_region(shape),
+                    changed: true,
+                }],
+            )
+            .unwrap();
+        domain.ready_cell_publication(prepared).unwrap().commit()
+    });
+    assert!(
+        allocated_bytes < 64 * 1024,
+        "fixed-width publication allocated {allocated_bytes} bytes of evidence for a {bytes}-byte initialized region",
+    );
+    assert_eq!(cell.current_memory_footprint().unwrap().fixed_bytes, bytes);
 }
 
 #[test]

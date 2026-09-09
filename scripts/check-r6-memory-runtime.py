@@ -33,8 +33,14 @@ REQUIRED = (
     "src/engine/src/literals.rs",
     "src/engine/src/intrinsics/define.rs",
     "src/engine/src/intrinsics/constructors.rs",
+    "src/engine/src/intrinsics/access/mod.rs",
+    "src/engine/src/intrinsics/access/matrix.rs",
+    "src/engine/src/intrinsics/assign/mod.rs",
+    "src/engine/src/intrinsics/assign/matrix.rs",
     "src/engine/src/intrinsics/horzcat.rs",
     "src/engine/src/intrinsics/vertcat.rs",
+    "src/engine/src/function/external/resource_read.rs",
+    "src/engine/src/function/external/host_call.rs",
     "src/core/src/cell_binding.rs",
     "src/core/src/function/argument.rs",
     "src/core/src/function/mod.rs",
@@ -57,6 +63,8 @@ REQUIRED = (
     "scripts/check-r6-memory-runtime.py",
     "scripts/tests/test_check_r6_memory_runtime.py",
     "docs/design/r6-memory-runtime-cutover.md",
+    "docs/design/r6-completion-status.md",
+    "docs/design/r6-completion-status.md",
     ".github/workflows/ci.yml",
     ".github/workflows/ci-full.yml",
     ".github/ci/owners.toml",
@@ -360,6 +368,17 @@ def failures(root: Path) -> list[str]:
         for body in function_bodies(cell, "lock_publication")
     ):
         found.append("ready publication does not retain conflict-free shape authority")
+    live_footprints = list(function_bodies(cell, "current_memory_footprint"))
+    if (
+        not live_footprints
+        or "ManagedHostCellStorage" not in live_footprints[0]
+        or "required_initialization_bytes" not in live_footprints[0]
+        or live_footprints[0].index("ManagedHostCellStorage")
+        > live_footprints[0].index("self.snapshot")
+    ):
+        found.append("managed-host footprint measurement materializes a semantic snapshot")
+    if "return Ok(self.value.clone())" not in cell:
+        found.append("ordinary managed canonical snapshots rebuild their frozen payload")
 
     # The maintained entry itself must require a frame. A second opt-in trait is
     # not a cutover because FunctionInstance can still invoke raw implementations.
@@ -372,9 +391,40 @@ def failures(root: Path) -> list[str]:
         found.append("MechFunctionImpl retains an unmanaged solve entry")
     if "planned_output_footprints" not in function or "resolve_current_call_memory" not in function:
         found.append("payload-dependent calls do not refresh live and prospective footprints")
+    publications = list(function_bodies(function, "prepare_reactive_publication"))
+    transaction = rust_code(
+        sources.get("src/core/src/memory_runtime/transaction.rs", "")
+    )
+    evidence = balanced_body(transaction, "CellPublicationEvidence")
+    if (
+        not publications
+        or "snapshot_managed_host_data" in publications[0]
+        or "CellPublicationEvidence::initialized_region" not in publications[0]
+        or evidence is None
+        or "InitializedManagedRegion" not in evidence
+        or "FrozenValue" not in evidence
+    ):
+        found.append("fixed-width publication constructs a canonical evidence copy")
+    prepared_calls = list(function_bodies(access, "prepare_function_call"))
+    realization_preparation = list(function_bodies(function, "prepare"))
+    if (
+        not prepared_calls
+        or "writable_outputs" not in prepared_calls[0]
+        or not realization_preparation
+        or "PayloadOutputPlanPolicy::PublishedInvariant" not in realization_preparation[0]
+    ):
+        found.append("published-invariant functions receive writable candidate authority")
+    semantic_wrappers = list(function_bodies(function, "prepare_external_output"))
+    if len(semantic_wrappers) < 2 or not any(
+        "self.function.prepare_external_output" in body for body in semantic_wrappers
+    ):
+        found.append("semantic function wrappers discard external-result planning authority")
+    binding_constructors = list(function_bodies(function, "new"))
+    binding_constructors.extend(
+        function_bodies(function, "new_with_managed_inputs")
+    )
     if "validate_transaction_authority" not in function or not any(
-        "validate_transaction_authority" in body
-        for body in function_bodies(function, "new")
+        "validate_transaction_authority" in body for body in binding_constructors
     ):
         found.append("function binding does not validate transaction semantics")
     string_runtime = rust_code(sources.get("machines/string/src/lib.rs", ""))
@@ -415,6 +465,59 @@ def failures(root: Path) -> list[str]:
         or len(re.findall(r"with_admitted_canonical_output", matrix_constructors)) < 3
     ):
         found.append("canonical matrix constructors bypass prospective payload admission")
+    prospective_matrices = list(
+        function_bodies(matrix_constructors, "prospective_matrix_output_footprint")
+    )
+    if not prospective_matrices or "output.current_memory_footprint" in prospective_matrices[0]:
+        found.append("matrix candidate footprint includes the previous published payload")
+    variable_definitions_source = rust_code(
+        sources.get("src/engine/src/intrinsics/define.rs", "")
+    )
+    if "PayloadOutputPlanPolicy::PublishedInvariant" not in variable_definitions_source:
+        found.append("frozen variable definitions lack explicit published-output authority")
+    if "PayloadOutputPlanPolicy::PublishedInvariant" not in matrix_constructors:
+        found.append("frozen set definitions lack explicit published-output authority")
+    canonical_access_source = rust_code(
+        sources.get("src/engine/src/intrinsics/access/mod.rs", "")
+    )
+    canonical_access_plans = list(
+        function_bodies(canonical_access_source, "planned_output_footprints")
+    )
+    if (
+        not canonical_access_plans
+        or "prospective_repeated_sequence_memory_footprint" not in canonical_access_plans[0]
+        or "canonical_indices" in canonical_access_plans[0]
+    ):
+        found.append("canonical access materializes selectors or omits payload witnesses")
+    typed_access = rust_code(
+        sources.get("src/engine/src/intrinsics/access/matrix.rs", "")
+    )
+    typed_assignment = rust_code(
+        sources.get("src/engine/src/intrinsics/assign/matrix.rs", "")
+    )
+    if "planned_binary_output_footprint" not in typed_access or "stage_managed(frame)" not in typed_access:
+        found.append("typed String matrix access bypasses prospective payload admission")
+    if (
+        "planned_selection_output_footprint" not in typed_assignment
+        or "stage_managed(frame)" not in typed_assignment
+    ):
+        found.append("typed String matrix assignment bypasses prospective payload admission")
+    for relative in (
+        "src/engine/src/function/external/resource_read.rs",
+        "src/engine/src/function/external/host_call.rs",
+    ):
+        external = rust_code(sources.get(relative, ""))
+        prepared = list(function_bodies(external, "prepare_external_output"))
+        if (
+            "prepared_result" not in external
+            or "planned_output_footprints" not in external
+            or not prepared
+            or not any(
+                token in prepared[0]
+                for token in ("read_resource", "invoke_host_function")
+            )
+        ):
+            found.append(f"{relative}: external result is not captured once before replanning")
     instance = balanced_body(function, "FunctionInstance")
     binding = balanced_body(function, "ManagedFunctionBinding")
     realization = balanced_body(function, "ManagedCallRealization")

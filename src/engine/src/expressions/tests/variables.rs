@@ -106,6 +106,14 @@ fn cell_f64(cell: &ValueCell) -> f64 {
     }
 }
 
+fn cell_string(cell: &ValueCell) -> String {
+    let snapshot = cell.snapshot().unwrap();
+    match snapshot.data() {
+        mech_core::ValueData::String(value) => value.to_string(),
+        other => panic!("expected String, got {other:?}"),
+    }
+}
+
 fn symbol_value(interpreter: &Interpreter, name: &str) -> ValueCell {
     interpreter
         .symbols()
@@ -274,6 +282,63 @@ fn repeated_context_read_reuses_one_live_binding() {
         addressed.reactive_cell_id(),
         symbol_value(&interpreter, "first").reactive_cell_id(),
     );
+}
+
+#[test]
+fn external_resource_adoption_replans_each_captured_result_once() {
+    let mut services =
+        RecordingContextReadServices::returning(ValueCell::from_exact("a".to_owned()).unwrap());
+    let (interpreter, output) = interpret_with_context_services(
+        "@input := test://provider/root\nvalue := @input/item",
+        &mut services,
+    );
+    let output = output.unwrap().unwrap();
+    assert_eq!(cell_string(&output), "a");
+    assert_eq!(services.reads.len(), 1);
+
+    let solve_resource = |services: &mut RecordingContextReadServices| {
+        let plan = interpreter.plan();
+        let functions = plan.get_functions();
+        let node = functions
+            .nodes
+            .iter()
+            .find(|node| {
+                node.function
+                    .to_string()
+                    .starts_with("ExternalResourceReadFunction::")
+            })
+            .expect("resource read node remains registered");
+        node.function.solve_result_with(services)
+    };
+
+    let larger = "managed external result ".repeat(512);
+    services.result = ValueCell::from_exact(larger.clone()).unwrap();
+    solve_resource(&mut services).unwrap();
+    assert_eq!(cell_string(&output), larger);
+    assert_eq!(services.reads.len(), 2);
+
+    services.result = ValueCell::from_exact("small again".to_owned()).unwrap();
+    solve_resource(&mut services).unwrap();
+    assert_eq!(cell_string(&output), "small again");
+    assert_eq!(services.reads.len(), 3);
+
+    let before = cell_string(&output);
+    let version = output.published_version();
+    services.result = ValueCell::from_exact("captured-but-rejected".repeat(128)).unwrap();
+    output
+        .memory_domain()
+        .unwrap()
+        .inject_failure_after(mech_core::MemoryFailurePoint::Admission, 0)
+        .unwrap();
+    assert!(solve_resource(&mut services).is_err());
+    assert_eq!(services.reads.len(), 4, "the rejected result was read once");
+    assert_eq!(cell_string(&output), before);
+    assert_eq!(output.published_version(), version);
+
+    services.result = ValueCell::from_exact("valid after rejection".to_owned()).unwrap();
+    solve_resource(&mut services).unwrap();
+    assert_eq!(services.reads.len(), 5);
+    assert_eq!(cell_string(&output), "valid after rejection");
 }
 
 #[test]

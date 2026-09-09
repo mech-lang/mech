@@ -615,6 +615,86 @@ fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunctio
         )
         self.assert_failure(root, "canonical matrix constructors bypass prospective")
 
+    def test_56_managed_host_footprint_cannot_snapshot_payload(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/cell_binding.rs",
+            "if let Some(managed) = storage.as_any().downcast_ref::<ManagedHostCellStorage>()",
+            "if false",
+        )
+        self.assert_failure(root, "footprint measurement materializes a semantic snapshot")
+
+    def test_57_ordinary_canonical_snapshot_must_share_frozen_root(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/cell_binding.rs",
+            "return Ok(self.value.clone());",
+            "return self.value.rebuild();",
+        )
+        self.assert_failure(root, "ordinary managed canonical snapshots rebuild")
+
+    def test_58_matrix_candidate_cannot_include_previous_output(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/engine/src/intrinsics/constructors.rs",
+            "let mut footprint = CurrentMemoryFootprint {",
+            "let mut footprint = output.current_memory_footprint()?; /* CurrentMemoryFootprint { */",
+        )
+        self.assert_failure(root, "matrix candidate footprint includes the previous")
+
+    def test_59_canonical_access_cannot_materialize_selector_plan(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/engine/src/intrinsics/access/mod.rs",
+            "prospective_repeated_sequence_memory_footprint",
+            "canonical_indices",
+        )
+        self.assert_failure(root, "canonical access materializes selectors")
+
+    def test_60_external_resource_result_must_be_captured_before_replanning(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/engine/src/function/external/resource_read.rs",
+            "fn prepare_external_output(",
+            "fn capture_after_execution(",
+        )
+        self.assert_failure(root, "external result is not captured once")
+
+    def test_61_frozen_definition_requires_explicit_policy(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/engine/src/intrinsics/define.rs",
+            "PayloadOutputPlanPolicy::PublishedInvariant",
+            "PayloadOutputPlanPolicy::Missing",
+        )
+        self.assert_failure(root, "frozen variable definitions lack explicit")
+
+    def test_62_fixed_publication_cannot_snapshot_for_evidence(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/function/mod.rs",
+            "CellPublicationEvidence::initialized_region(shape.clone())",
+            "snapshot_managed_host_data(&frame, object, self.output().representation())?",
+        )
+        self.assert_failure(root, "fixed-width publication constructs a canonical evidence copy")
+
+    def test_63_published_invariant_cannot_receive_output_write_authority(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/function/mod.rs",
+            "output_policy != PayloadOutputPlanPolicy::PublishedInvariant",
+            "true",
+        )
+        self.assert_failure(root, "published-invariant functions receive writable")
+
 
 if __name__ == "__main__":
     unittest.main()

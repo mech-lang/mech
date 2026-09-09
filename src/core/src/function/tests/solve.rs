@@ -14,6 +14,59 @@ use crate::{
 };
 use std::{cell::RefCell, rc::Rc};
 
+#[cfg(feature = "u64")]
+struct FalseInvariantWriter {
+    output: crate::ManagedPort<u64>,
+}
+
+#[cfg(feature = "u64")]
+impl MechFunctionImpl for FalseInvariantWriter {
+    fn payload_output_plan_policy(&self) -> crate::PayloadOutputPlanPolicy {
+        crate::PayloadOutputPlanPolicy::PublishedInvariant
+    }
+
+    fn solve_managed(
+        &self,
+        frame: &mut crate::KernelMemoryFrame<'_>,
+        _services: &mut dyn crate::MechExecutionServices,
+    ) -> MResult<ReactiveSolveStatus> {
+        frame.with_port_init_writer(&self.output, |writer| writer.write_next(99))?;
+        Ok(ReactiveSolveStatus::Changed)
+    }
+
+    fn to_string(&self) -> String {
+        "false published-invariant writer".into()
+    }
+}
+
+#[cfg(all(feature = "u64", feature = "semantic-compiler"))]
+impl MechFunctionCompiler for FalseInvariantWriter {
+    fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        Ok(0)
+    }
+}
+
+#[cfg(feature = "u64")]
+#[test]
+fn published_invariant_policy_cannot_obtain_output_write_authority() {
+    let output = ValueCell::from_exact(7_u64).unwrap();
+    let version = output.published_version();
+    let instance = crate::function::test_planned_instance(
+        Box::new(FalseInvariantWriter {
+            output: crate::ManagedPort::output(output.clone()),
+        }),
+        FunctionInvocation::nullary(output.clone()),
+    );
+
+    let error = instance.solve_result().unwrap_err();
+    assert_eq!(error.kind_name(), "MemoryRuntimeError");
+    assert!(matches!(
+        output.snapshot().unwrap().data(),
+        crate::ValueData::U64(7)
+    ));
+    assert_eq!(output.published_version(), version);
+}
+
 #[cfg(feature = "f64")]
 struct SchedulerFunction {
     label: &'static str,

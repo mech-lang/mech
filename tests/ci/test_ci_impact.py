@@ -36,9 +36,12 @@ class ImpactClassifierTests(unittest.TestCase):
                 self.assertEqual(result["owner_shards"], [])
                 self.assertFalse(result["browser_canary_required"])
 
-    def test_machine_change_runs_mech_integration_not_machine_private_tests(self):
+    def test_machine_change_runs_r6_catalog_integration_not_machine_private_tests(self):
         result = self.classify(["machines/math/src/add.rs"])
-        self.assertEqual(result["changed_owners"], [])
+        self.assertEqual(result["changed_owners"], ["mech-math"])
+        command = OWNERS["mech-math"]["command"]
+        self.assertIn("mech-stdlib", command)
+        self.assertNotIn("mech-math", command)
         self.assertTrue(result["standard_canaries_required"])
         self.assertTrue(result["browser_canary_required"])
         self.assertFalse(result["cross_cutting_standard_suite_required"])
@@ -105,6 +108,29 @@ class ImpactClassifierTests(unittest.TestCase):
         requested = self.classify(["machines/math/src/add.rs"], ["ci:full"])
         self.assertFalse(ordinary["full_validation_required"])
         self.assertTrue(requested["full_validation_required"])
+
+    def test_machine_changes_select_the_r6_catalog_owner_suite(self):
+        for owner in (
+            "mech-math",
+            "mech-compare",
+            "mech-logic",
+            "mech-range",
+            "mech-matrix",
+            "mech-set",
+            "mech-string",
+            "mech-stats",
+            "mech-combinatorics",
+        ):
+            package = owner.removeprefix("mech-")
+            with self.subTest(owner=owner):
+                result = self.classify([f"machines/{package}/src/lib.rs"])
+                self.assertEqual(result["changed_owners"], [owner])
+                command = OWNERS[owner]["command"]
+                self.assertIn("r6_managed_functions", command)
+                self.assertIn(
+                    "catalog_inventory_is_classified_into_r6_implementation_families",
+                    command,
+                )
 
     def test_architecture_contract_changes_require_full_validation(self):
         for path in (

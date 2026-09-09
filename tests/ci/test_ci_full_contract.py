@@ -164,9 +164,11 @@ class FullWorkflowContractTests(unittest.TestCase):
             self.assertNotIn("continue-on-error", block)
 
         runtime = job_block(FULL, "r6-memory-runtime")
+        fixed = job_block(FULL, "r6-memory-fixed-profiles")
         miri = job_block(FULL, "r6-memory-miri")
         cargo = job_block(FULL, "cargo")
         self.assertIn(FULL_CHECKOUT_REF, runtime)
+        self.assertIn(FULL_CHECKOUT_REF, fixed)
         self.assertIn(FULL_CHECKOUT_REF, miri)
         self.assertIn("--test r6_memory_runtime", runtime)
         self.assertIn("--test r6_memory_safety", runtime)
@@ -174,11 +176,33 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertGreaterEqual(runtime.count(safety_features), 2)
         self.assertIn("--release -p mech-core", runtime)
         self.assertIn("-C debug-assertions=no", runtime)
+        self.assertIn("--features standard_compiler", runtime)
+        self.assertIn("--features full_compiler", runtime)
+        for feature in (
+            "matrix1",
+            "matrix2",
+            "matrix3",
+            "matrix4",
+            "matrix2x3",
+            "matrix3x2",
+            "row_vector2",
+            "row_vector3",
+            "row_vector4",
+            "vector2",
+            "vector3",
+            "vector4",
+        ):
+            self.assertIn(f"- {feature}", fixed)
+        self.assertNotIn("for fixed in", fixed)
+        self.assertIn('--features "full_compiler,${{ matrix.feature }}"', fixed)
+        self.assertIn("--test r6_managed_functions", fixed)
         self.assertIn("miri test --locked", miri)
         self.assertIn(safety_features, miri)
         self.assertIn("- r6-memory-runtime", cargo)
+        self.assertIn("- r6-memory-fixed-profiles", cargo)
         self.assertIn("- r6-memory-miri", cargo)
         self.assertIn('test "$R6_MEMORY_RESULT" = success', cargo)
+        self.assertIn('test "$R6_FIXED_PROFILES_RESULT" = success', cargo)
         self.assertIn('test "$R6_MIRI_RESULT" = success', cargo)
 
     def test_architecture_contracts_prefetch_before_offline_historical_evidence(self):

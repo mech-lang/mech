@@ -1,7 +1,7 @@
-#[cfg(feature = "full_compiler")]
+#[cfg(any(feature = "standard_compiler", feature = "full_compiler"))]
 use mech_core::{ExecutionTarget, ImplementationMemoryClass, OperationId, RuntimeBindingSelector};
 
-#[cfg(feature = "full_compiler")]
+#[cfg(any(feature = "standard_compiler", feature = "full_compiler"))]
 #[test]
 fn maintained_catalog_has_no_open_or_unclassified_memory_implementation() {
     let catalog = mech_stdlib::source_catalog();
@@ -18,7 +18,210 @@ fn maintained_catalog_has_no_open_or_unclassified_memory_implementation() {
     }
 }
 
-#[cfg(feature = "full_compiler")]
+#[cfg(any(feature = "standard_compiler", feature = "full_compiler"))]
+fn r6_runtime_family(entry: &mech_core::RuntimeFunctionEntry) -> Option<&'static str> {
+    use mech_core::{
+        FunctionMatrixElement, FunctionMatrixStoragePattern, FunctionValueRepresentation,
+    };
+
+    let name = entry.name.as_str();
+    if name.starts_with("Access")
+        || name.starts_with("RecordAccess")
+        || name.starts_with("TableAccess")
+        || name.starts_with("TupleAccess")
+        || name == "access/index"
+    {
+        return Some("F04");
+    }
+    if name.starts_with("Assign")
+        || name.starts_with("Set") && name.as_bytes().get(3).is_some_and(u8::is_ascii_digit)
+    {
+        return Some("F05");
+    }
+    if name.starts_with("AddAssign")
+        || name.starts_with("SubAssign")
+        || name.starts_with("MulAssign")
+        || name.starts_with("DivAssign")
+        || name.starts_with("Dot")
+        || name.starts_with("MatMul")
+        || name.starts_with("MatrixSolve")
+    {
+        return Some("F02");
+    }
+    if name.starts_with("Transpose") {
+        return match entry.signature().output {
+            FunctionValueRepresentation::Matrix {
+                element: FunctionMatrixElement::String,
+                storage: FunctionMatrixStoragePattern::Exact(_),
+            } => Some("F03"),
+            _ => Some("F02"),
+        };
+    }
+    if name.starts_with("Concat") {
+        return Some("F03");
+    }
+    if name.starts_with("HorizontalConcatenate")
+        || name.starts_with("VerticalConcatenate")
+        || name.starts_with("Set")
+        || name.starts_with("Table")
+        || matches!(
+            name,
+            "set/define"
+                | "set/comprehension"
+                | "matrix/comprehension"
+                | "matrix/horzcat"
+                | "matrix/vertcat"
+        )
+    {
+        return Some("F06");
+    }
+    if name.starts_with("Convert") || name == "convert/kind" {
+        return Some("F07");
+    }
+    if name.starts_with("VariableDefine") || name == "integrity/constraint" {
+        return Some("F09");
+    }
+    if [
+        "Add",
+        "And",
+        "Atan",
+        "Atom",
+        "Copysign",
+        "Div",
+        "Fdim",
+        "Fmod",
+        "EQ",
+        "GT",
+        "Jn",
+        "LT",
+        "Math",
+        "Max",
+        "Min",
+        "Mod",
+        "Mul",
+        "NChooseK",
+        "NEQ",
+        "Negate",
+        "Nextafter",
+        "Not",
+        "Or",
+        "Pow",
+        "Range",
+        "Remainder",
+        "Stats",
+        "Sub",
+        "Xor",
+        "Yn",
+        "compare/",
+    ]
+    .iter()
+    .any(|prefix| name.starts_with(prefix))
+    {
+        return Some("F01");
+    }
+    None
+}
+
+#[cfg(any(feature = "standard_compiler", feature = "full_compiler"))]
+fn r6_source_family(name: &str, intrinsic: bool) -> Option<&'static str> {
+    if intrinsic {
+        return if name.starts_with("access/") {
+            Some("F04")
+        } else if name.starts_with("assign") || name.ends_with("-assign") {
+            Some("F05")
+        } else if name.starts_with("convert/") {
+            Some("F07")
+        } else if name == "var/define" {
+            Some("F09")
+        } else {
+            None
+        };
+    }
+    if name.starts_with("string/") {
+        Some("F03")
+    } else if name.starts_with("table/")
+        || name.starts_with("set/")
+        || matches!(
+            name,
+            "matrix/comprehension" | "matrix/horzcat" | "matrix/vertcat"
+        )
+    {
+        Some("F06")
+    } else if matches!(
+        name,
+        "matrix/transpose" | "matrix/matmul" | "matrix/dot" | "matrix/solve"
+    ) || name.starts_with("math/add-assign")
+        || name.starts_with("math/sub-assign")
+        || name.starts_with("math/mul-assign")
+        || name.starts_with("math/div-assign")
+    {
+        Some("F02")
+    } else if name.starts_with("math/")
+        || name.starts_with("logic/")
+        || name.starts_with("compare/")
+        || name.starts_with("range/")
+        || name.starts_with("stats/")
+        || name.starts_with("combinatorics/")
+    {
+        Some("F01")
+    } else {
+        None
+    }
+}
+
+#[cfg(any(feature = "standard_compiler", feature = "full_compiler"))]
+#[test]
+fn catalog_inventory_is_classified_into_r6_implementation_families() {
+    let catalog = mech_stdlib::source_catalog();
+    let mut family_counts = std::collections::BTreeMap::<&str, usize>::new();
+    let mut unclassified = Vec::new();
+    for entry in catalog.runtime_entries() {
+        if let Some(family) = r6_runtime_family(entry) {
+            *family_counts.entry(family).or_default() += 1;
+        } else {
+            unclassified.push(format!("runtime {} {:?}", entry.name, entry.signature()));
+        }
+    }
+    for entry in catalog.specializer_entries() {
+        if let Some(family) = r6_source_family(&entry.operation.canonical_name, false) {
+            *family_counts.entry(family).or_default() += 1;
+        } else {
+            unclassified.push(format!("source {}", entry.operation.canonical_name));
+        }
+    }
+    for entry in catalog.intrinsic_specializer_entries() {
+        if let Some(family) = r6_source_family(&entry.operation.canonical_name, true) {
+            *family_counts.entry(family).or_default() += 1;
+        } else {
+            unclassified.push(format!("intrinsic {}", entry.operation.canonical_name));
+        }
+    }
+    assert_eq!(
+        catalog.runtime_entries().len(),
+        catalog.runtime_execution_capabilities().len(),
+        "every concrete runtime registration must expose one target capability record",
+    );
+    assert!(
+        unclassified.is_empty(),
+        "unclassified maintained R6 registrations:\n{}",
+        unclassified.join("\n"),
+    );
+    for family in ["F01", "F02", "F03", "F04", "F05", "F06", "F07", "F09"] {
+        assert!(
+            family_counts.get(family).copied().unwrap_or_default() > 0,
+            "catalog profile has no classified {family} registration",
+        );
+    }
+    eprintln!(
+        "R6 catalog coverage: runtime={} capabilities={} specializers={} intrinsics={} families={family_counts:?}",
+        catalog.runtime_entries().len(),
+        catalog.runtime_execution_capabilities().len(),
+        catalog.specializer_entries().len(),
+        catalog.intrinsic_specializer_entries().len(),
+    );
+}
+
+#[cfg(any(feature = "standard_compiler", feature = "full_compiler"))]
 #[test]
 fn scratch_owning_families_never_fall_back_to_an_open_memory_class() {
     let catalog = mech_stdlib::source_catalog();
@@ -50,10 +253,25 @@ fn scratch_owning_families_never_fall_back_to_an_open_memory_class() {
     }
 }
 
-#[cfg(feature = "full_compiler")]
+#[cfg(any(feature = "standard_compiler", feature = "full_compiler"))]
 mod ordinary_managed_execution {
     use mech_core::*;
     use nalgebra::DMatrix;
+    #[cfg(any(
+        feature = "matrix1",
+        feature = "matrix2",
+        feature = "matrix3",
+        feature = "matrix4",
+        feature = "matrix2x3",
+        feature = "matrix3x2",
+        feature = "row_vector2",
+        feature = "row_vector3",
+        feature = "row_vector4",
+        feature = "vector2",
+        feature = "vector3",
+        feature = "vector4",
+    ))]
+    use nalgebra::SMatrix;
 
     fn specialize(name: &str, inputs: Vec<ValueCell>) -> SpecializedFunction {
         let catalog = mech_stdlib::source_catalog();
@@ -65,6 +283,12 @@ mod ordinary_managed_execution {
         let SourceTypeAuthority::Schemes(declaration) = &entry.type_authority else {
             panic!("{name} must be selected by its semantic scheme")
         };
+        let instantiated = declaration.template.map(|template| {
+            FunctionTypeDeclaration::from_schemes(
+                instantiate_source_scheme_template(template, &original).unwrap(),
+            )
+        });
+        let declaration = instantiated.as_ref().unwrap_or(declaration);
         let candidates = declaration
             .overloads
             .iter()
@@ -127,6 +351,10 @@ mod ordinary_managed_execution {
         specialize("math/add", vec![left, right])
     }
 
+    fn concat(left: ValueCell, right: ValueCell) -> SpecializedFunction {
+        specialize("string/concat", vec![left, right])
+    }
+
     fn matrix_values(cell: &ValueCell) -> (Vec<u64>, Vec<f64>) {
         let value = cell.snapshot().unwrap();
         let ValueData::Matrix(matrix) = value.data() else {
@@ -149,6 +377,110 @@ mod ordinary_managed_execution {
         value.to_f64()
     }
 
+    fn string_value(cell: &ValueCell) -> String {
+        let value = cell.snapshot().unwrap();
+        let ValueData::String(value) = value.data() else {
+            panic!("expected String scalar")
+        };
+        value.to_string()
+    }
+
+    #[cfg(any(
+        feature = "matrix1",
+        feature = "matrix2",
+        feature = "matrix3",
+        feature = "matrix4",
+        feature = "matrix2x3",
+        feature = "matrix3x2",
+        feature = "row_vector2",
+        feature = "row_vector3",
+        feature = "row_vector4",
+        feature = "vector2",
+        feature = "vector3",
+        feature = "vector4",
+    ))]
+    fn execute_fixed_add<const ROWS: usize, const COLUMNS: usize>(
+        storage: FunctionMatrixRepresentation,
+        values: &[f64],
+    ) where
+        SMatrix<f64, ROWS, COLUMNS>: CanonicalCellBacking,
+    {
+        let catalog = mech_stdlib::source_catalog();
+        let expected = FunctionValueRepresentation::Matrix {
+            element: FunctionMatrixElement::F64,
+            storage: FunctionMatrixStoragePattern::Exact(storage),
+        };
+        assert!(
+            catalog
+                .runtime_entries()
+                .any(|entry| entry.signature().output == expected),
+            "selected fixed-shape profile did not install an F64 {} runtime entry",
+            storage.runtime_name(),
+        );
+
+        let session = MemoryDomain::new().unwrap();
+        let input = ValueCell::from_exact_in(
+            &session,
+            SMatrix::<f64, ROWS, COLUMNS>::from_row_slice(values),
+        )
+        .unwrap();
+        let function = add(input.clone(), input);
+        function.instance().solve_result().unwrap();
+        let (shape, result) = matrix_values(function.output());
+        assert_eq!(shape, Vec::<u64>::new());
+        assert_eq!(
+            result,
+            values.iter().map(|value| value * 2.0).collect::<Vec<_>>()
+        );
+    }
+
+    #[cfg(any(
+        feature = "matrix1",
+        feature = "matrix2",
+        feature = "matrix3",
+        feature = "matrix4",
+        feature = "matrix2x3",
+        feature = "matrix3x2",
+        feature = "row_vector2",
+        feature = "row_vector3",
+        feature = "row_vector4",
+        feature = "vector2",
+        feature = "vector3",
+        feature = "vector4",
+    ))]
+    #[test]
+    fn selected_fixed_shape_profile_installs_and_executes_its_managed_runtime_entry() {
+        let mut executed = 0_u32;
+        macro_rules! run {
+            ($feature:literal, $storage:ident, $rows:literal, $columns:literal) => {
+                #[cfg(feature = $feature)]
+                {
+                    let values = (1..=($rows * $columns))
+                        .map(|value| value as f64)
+                        .collect::<Vec<_>>();
+                    execute_fixed_add::<$rows, $columns>(
+                        FunctionMatrixRepresentation::$storage,
+                        &values,
+                    );
+                    executed += 1;
+                }
+            };
+        }
+        run!("matrix1", Matrix1, 1, 1);
+        run!("matrix2", Matrix2, 2, 2);
+        run!("matrix3", Matrix3, 3, 3);
+        run!("matrix4", Matrix4, 4, 4);
+        run!("matrix2x3", Matrix2x3, 2, 3);
+        run!("matrix3x2", Matrix3x2, 3, 2);
+        run!("row_vector2", RowVector2, 1, 2);
+        run!("row_vector3", RowVector3, 1, 3);
+        run!("row_vector4", RowVector4, 1, 4);
+        run!("vector2", Vector2, 2, 1);
+        run!("vector3", Vector3, 3, 1);
+        run!("vector4", Vector4, 4, 1);
+        assert_ne!(executed, 0, "the fixed-shape test was compiled out");
+    }
+
     #[test]
     fn maintained_scalar_add_uses_the_ordinary_managed_function_entry() {
         let session = MemoryDomain::new().unwrap();
@@ -165,6 +497,86 @@ mod ordinary_managed_execution {
             .unwrap();
         function.instance().solve_result().unwrap();
         assert_eq!(scalar_value(&output), 23.5);
+    }
+
+    #[test]
+    fn maintained_string_concat_replans_payload_growth_and_recovers_after_rejection() {
+        let session = MemoryDomain::new().unwrap();
+        let left = ValueCell::from_exact_in(&session, "a".to_owned()).unwrap();
+        let right = ValueCell::from_exact_in(&session, "!".to_owned()).unwrap();
+        let function = concat(left.clone(), right);
+        let output = function.output().clone();
+
+        function.instance().solve_result().unwrap();
+        assert_eq!(string_value(&output), "a!");
+
+        let grown = "same-shape-payload-growth".repeat(1_024);
+        left.replace(
+            &ValueCell::from_exact(grown.clone())
+                .unwrap()
+                .snapshot()
+                .unwrap(),
+        )
+        .unwrap();
+        function.instance().solve_result().unwrap();
+        assert_eq!(string_value(&output), format!("{grown}!"));
+
+        let before = string_value(&output);
+        let version = output.published_version();
+        left.replace(
+            &ValueCell::from_exact("captured-rejected-candidate".repeat(512))
+                .unwrap()
+                .snapshot()
+                .unwrap(),
+        )
+        .unwrap();
+        session
+            .inject_failure_after(MemoryFailurePoint::Admission, 0)
+            .unwrap();
+        assert!(function.instance().solve_result().is_err());
+        assert_eq!(string_value(&output), before);
+        assert_eq!(output.published_version(), version);
+
+        left.replace(
+            &ValueCell::from_exact("valid".to_owned())
+                .unwrap()
+                .snapshot()
+                .unwrap(),
+        )
+        .unwrap();
+        function.instance().solve_result().unwrap();
+        assert_eq!(string_value(&output), "valid!");
+    }
+
+    #[test]
+    fn maintained_set_definition_preserves_its_specialized_frozen_output_without_write_access() {
+        let session = MemoryDomain::new().unwrap();
+        let function = specialize(
+            "set/define",
+            vec![
+                ValueCell::from_exact_in(&session, "left".to_owned()).unwrap(),
+                ValueCell::from_exact_in(&session, "right".to_owned()).unwrap(),
+            ],
+        );
+        let output = function.output().clone();
+        let before = output.snapshot().unwrap();
+        let version = output.published_version();
+
+        assert_eq!(
+            function.instance().solve_reactive().unwrap(),
+            ReactiveSolveStatus::Unchanged,
+        );
+        assert_eq!(output.published_version(), version);
+        let after = output.snapshot().unwrap();
+        assert!(
+            before
+                .language_eq(
+                    &before.schemas().unwrap(),
+                    &after,
+                    &after.schemas().unwrap()
+                )
+                .unwrap()
+        );
     }
 
     #[test]
