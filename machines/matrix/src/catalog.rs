@@ -327,6 +327,10 @@ macro_rules! for_each_matrix_matmul_fixed_family {
         feature = "row_vector4",
     )
 ))]
+#[allow(
+    unused_macros,
+    reason = "an isolated fixed-shape forwarding profile can contain no closed matmul triple"
+)]
 macro_rules! declare_matrix_matmul_fixed_family {
     (; $factory:ident; [$($feature:literal),+]) => {
         declare_matrix_numeric_family! {

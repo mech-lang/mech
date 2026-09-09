@@ -7,14 +7,15 @@ Unverified rows remain explicitly open.
 ## Candidate identity
 
 - R5 base: `941fbbce44712b7f738813170ca1561a313190db`
-- reconciled R6 head: `8fd275d19eb4d9166e648b49ce2ef99784cfc724`
-- current packet: W0/W1 corrections are local and uncommitted
-- latest remote normal CI: run 34278263488 on `8fd275d19`; all jobs except
-  Browser Canary passed. The canary timed out after 30 seconds while evaluating
-  the report-only 16,384-particle software-adapter smoke test.
+- reconciled R6 head: `ed8970248e9275bec9f77511c6325e3c605d82cf`
+- current packet: the W0/W1 checkpoint is pushed; the two remaining shared W1
+  lifecycle boundaries are under active correction
+- latest remote normal CI: run 34297278408 on `ed8970248`; all completed jobs
+  are green while Browser Canary continues its serial browser build/workload
+  sequence.
 
-No completion claim is attached to the local working tree. Exact candidate and
-CI SHAs will replace this line after the packet is committed and pushed.
+No completion claim is attached to this checkpoint. Exact candidate and CI
+SHAs will advance only after each bounded packet is committed and pushed.
 
 ## Catalog denominator
 
@@ -33,11 +34,10 @@ The fixed-shape qualification test also proves that the selected exact matrix
 representation is installed in the runtime catalog and executes `math/add`
 through the ordinary managed `FunctionInstance`. `matrix1`, `matrix2`,
 `matrix3`, `matrix4`, `matrix2x3`, `matrix3x2`, `row_vector2`, `row_vector3`,
-and `row_vector4` have each been compiled and executed as separate local feature
-slices. Combining all square representations in one macOS link exceeded the
+`row_vector4`, `vector2`, `vector3`, and `vector4` have each been compiled and
+executed as separate local feature slices. Combining all square representations in one macOS link exceeded the
 local linker/object-size boundary, so Full CI now isolates every fixed
-representation in its own bounded job. The three column-vector slices remain
-pending locally.
+representation in its own bounded job.
 
 ## Family inventory
 
@@ -61,8 +61,7 @@ Statuses distinguish catalog classification from behavioral qualification.
 
 ## Current packet evidence
 
-Executed successfully on the uncommitted working tree descended from
-`8fd275d19`:
+Executed successfully on the working tree descended from `ed8970248`:
 
 - `mech-core --all-features --test r6_memory_runtime publication`: 3 passed.
 - sibling-call atomic batch test: 1 passed.
@@ -74,7 +73,7 @@ Executed successfully on the uncommitted working tree descended from
   denominators above.
 - isolated managed fixed-shape execution for each of `matrix1`, `matrix2`,
   `matrix3`, `matrix4`, `matrix2x3`, `matrix3x2`, `row_vector2`, `row_vector3`,
-  and `row_vector4`: 1 passed per feature.
+  `row_vector4`, `vector2`, `vector3`, and `vector4`: 1 passed per feature.
 - published-invariant false-writer regression: 1 passed; value and content
   version remained unchanged after rejected writer acquisition.
 - R6 architecture checker and all 67 architecture mutations: passed.
@@ -91,7 +90,6 @@ the current edits settle.
 
 ## Remaining completion work
 
-- Run all fixed-profile shards and correct any feature-isolation defects.
 - Complete F01-F09 production representatives and scratch reconciliation (W2).
 - Complete external/module/Resident/native/WASM/GPU/browser integration rows
   (W3).
