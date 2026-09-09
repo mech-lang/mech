@@ -69,6 +69,7 @@ impl ValueCell {
     pub fn validate_storage_contract(&self) { check_schema_storage_compatibility(); }
     pub fn same_logical_cell(&self) {}
     pub fn same_storage(&self, other: &Self) -> bool { true }
+    pub(crate) fn same_writable_storage(&self, other: &Self) -> bool { true }
     pub fn same_cell(&self, other: &Self) -> bool { self.same_storage(other) }
 }
 """
@@ -76,7 +77,7 @@ ARGUMENT = """
 impl FunctionInvocation {
     pub fn check_operation_memory_contract(&self) {}
     fn check_operation_output_alias(&self, input: &ValueCell) {
-        self.output.same_storage(input);
+        self.output.same_writable_storage(input);
     }
 }
 fn check_invocation_cell_requirement() {
@@ -293,13 +294,18 @@ class R2TypeMemoryBoundaryTests(unittest.TestCase):
 
     def test_25_alias_logical_identity_fails(self):
         root = self.fixture()
-        self.replace(root, "src/core/src/function/argument.rs", "same_storage", "same_logical_cell")
+        self.replace(root, "src/core/src/function/argument.rs", "same_writable_storage", "same_logical_cell")
         self.assert_failure(root, "forbidden identity same_logical_cell")
 
     def test_26_alias_same_cell_fails(self):
         root = self.fixture()
-        self.replace(root, "src/core/src/function/argument.rs", "same_storage", "same_cell")
+        self.replace(root, "src/core/src/function/argument.rs", "same_writable_storage", "same_cell")
         self.assert_failure(root, "forbidden identity same_cell")
+
+    def test_26b_alias_raw_physical_identity_fails(self):
+        root = self.fixture()
+        self.replace(root, "src/core/src/function/argument.rs", "same_writable_storage", "same_storage")
+        self.assert_failure(root, "does not use same_writable_storage")
 
     def test_27_missing_conformance_marker_fails(self):
         root = self.fixture()

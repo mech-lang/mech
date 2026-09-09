@@ -413,7 +413,12 @@ def failures(root: Path) -> list[str]:
 
     argument_source = sources["src/core/src/function/argument.rs"]
     alias = extract_item_body(argument_source, re.compile(r"\bfn\s+check_operation_output_alias\s*\([^)]*\)")) or ""
-    _require(alias, r"\bsame_storage\b", "operation alias checker does not use same_storage", found)
+    _require(
+        alias,
+        r"\bsame_writable_storage\b",
+        "operation alias checker does not use same_writable_storage",
+        found,
+    )
     for forbidden_alias in ("same_logical_cell", "same_cell", "reactive_cell_id", "CanonicalCellId", "ptr_eq"):
         if re.search(rf"\b{forbidden_alias}\b", alias):
             found.append(f"operation alias checker uses forbidden identity {forbidden_alias}")

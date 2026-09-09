@@ -2947,9 +2947,11 @@ macro_rules! install_access_dynamic_for_shape {
             ($builder, Access2DARV, DMatrix, $shape, DVector, usize)
         );
 
-        // This row-vector bool case intentionally lacked logical_indexing in
-        // the legacy registration; preserve that source-visible quirk.
-        #[cfg(all(feature = "row_vectord", feature = "vectord"))]
+        #[cfg(all(
+            feature = "row_vectord",
+            feature = "vectord",
+            feature = "logical_indexing"
+        ))]
         for_each_access_scalar!(
             install_access_all_range_scalar,
             ($builder, Access2DARVB, RowDVector, $shape, DVector, bool)
@@ -3157,7 +3159,13 @@ macro_rules! declare_access_dynamic_for_shape {
             $shape,
             DVector,
             bool,
-            ["bool", "row_vectord", "vectord", $shape_feature]
+            [
+                "bool",
+                "row_vectord",
+                "vectord",
+                "logical_indexing",
+                $shape_feature
+            ]
         );
         declare_access_all_range_family!(
             Access2DARVB,

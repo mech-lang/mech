@@ -194,6 +194,7 @@ impl SetInput {
             .map_err(snapshot_error)
     }
 
+    #[cfg(feature = "membership")]
     pub(crate) fn contains(
         &self,
         frame: &KernelMemoryFrame<'_>,

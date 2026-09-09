@@ -450,7 +450,7 @@ impl FunctionInvocation {
     pub fn validate_contract(&self, contract: RuntimeFunctionContract) -> MResult<()> {
         if contract.output_alias == RuntimeOutputAliasPolicy::DisallowInputAlias {
             for (index, input) in self.inputs.iter().enumerate() {
-                if self.output.same_cell(input) {
+                if self.output.same_writable_storage(input) {
                     return Err(
                         MechError::new(FunctionCellAliasViolation { input: index }, None)
                             .with_compiler_loc(),
@@ -595,7 +595,7 @@ impl FunctionInvocation {
         match alias {
             crate::AliasPolicy::NoAlias => {
                 for (index, input) in self.inputs.iter().enumerate() {
-                    if self.output.same_storage(input) {
+                    if self.output.same_writable_storage(input) {
                         return Err(function_memory_contract_error(
                             FunctionMemoryContractViolationReason::NoAliasViolation {
                                 input: index,
@@ -610,7 +610,9 @@ impl FunctionInvocation {
                     self.input_count() + usize::from(coalesced_input.is_some());
                 for index in 0..semantic_input_count {
                     let candidate = self.semantic_input_cell(index, coalesced_input)?;
-                    if self.output.same_storage(candidate) && !designated.same_storage(candidate) {
+                    if self.output.same_writable_storage(candidate)
+                        && !designated.same_writable_storage(candidate)
+                    {
                         return Err(function_memory_contract_error(
                             FunctionMemoryContractViolationReason::MayAliasViolation {
                                 declared_input: input,
@@ -622,7 +624,7 @@ impl FunctionInvocation {
             }
             crate::AliasPolicy::InPlaceRequired { input } => {
                 let designated = self.declared_alias_input(input, coalesced_input)?;
-                if !self.output.same_storage(designated) {
+                if !self.output.same_writable_storage(designated) {
                     return Err(function_memory_contract_error(
                         FunctionMemoryContractViolationReason::InPlaceRequiredViolation { input },
                     ));
@@ -1466,6 +1468,21 @@ mod operation_memory_tests {
             .check_operation_memory_contract(&declaration(AliasPolicy::InPlaceRequired {
                 input: 0,
             }))
+            .unwrap();
+    }
+
+    #[cfg(feature = "string")]
+    #[test]
+    fn shared_immutable_roots_are_not_writable_output_aliases() {
+        let output = ValueCell::from_exact("seed".to_owned()).unwrap();
+        let input = output.detached_clone().unwrap();
+
+        assert!(output.same_storage(&input));
+        assert!(!output.same_writable_storage(&input));
+        FunctionInvocation::unary(output, input)
+            .validate_contract(RuntimeFunctionContract::no_matrix(
+                RuntimeOutputAliasPolicy::DisallowInputAlias,
+            ))
             .unwrap();
     }
 

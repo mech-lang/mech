@@ -3334,7 +3334,7 @@ impl ValueCell {
         Self::from_ref(reference, schema, shape, schemas)
     }
 
-    #[cfg(test)]
+    #[cfg(all(test, feature = "f64", feature = "matrixd"))]
     pub(crate) fn from_inferred_ref<T>(
         reference: Ref<T>,
         matrix_extents: Option<(usize, usize)>,
@@ -4358,6 +4358,32 @@ impl ValueCell {
         storage.same_storage(other_storage.as_ref())
     }
 
+    /// Reports whether publishing through one cell can mutate storage observed
+    /// through the other cell.
+    ///
+    /// Independently published managed-canonical cells may share one immutable
+    /// snapshot root until either cell is replaced. That sharing is physical
+    /// deduplication, not a writable output alias. Clones of the same cell
+    /// record remain aliases because publication changes their shared binding.
+    #[cfg(feature = "functions")]
+    pub(crate) fn same_writable_storage(&self, other: &Self) -> bool {
+        if Rc::ptr_eq(&self.binding.record, &other.binding.record) {
+            return true;
+        }
+        let Ok(storage) = self.binding.storage() else {
+            return false;
+        };
+        let Ok(other_storage) = other.binding.storage() else {
+            return false;
+        };
+        if storage.as_any().is::<ManagedCanonicalCellStorage>()
+            && other_storage.as_any().is::<ManagedCanonicalCellStorage>()
+        {
+            return false;
+        }
+        storage.same_storage(other_storage.as_ref())
+    }
+
     /// Compatibility spelling for physical storage identity.
     ///
     /// New code should choose `same_logical_cell` or `same_storage`
@@ -4376,7 +4402,7 @@ impl ValueCell {
         self.binding.publication_version()
     }
 
-    #[cfg(test)]
+    #[cfg(all(test, feature = "f64"))]
     pub(crate) fn test_with_identity_and_payload(
         identity_source: &Self,
         storage_source: &Self,

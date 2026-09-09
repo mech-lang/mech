@@ -10,12 +10,14 @@ macro_rules! and_op {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! and_vec_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         and_op!($lhs, $rhs, $out)
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! and_scalar_rhs_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         apply_logic_binary($lhs, $rhs, $out, LogicBroadcast::LeftScalar, |lhs, rhs| {
@@ -24,6 +26,7 @@ macro_rules! and_scalar_rhs_op {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! and_scalar_lhs_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         apply_logic_binary($lhs, $rhs, $out, LogicBroadcast::RightScalar, |lhs, rhs| {
@@ -32,6 +35,7 @@ macro_rules! and_scalar_lhs_op {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! and_mat_vec_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         apply_logic_binary($lhs, $rhs, $out, LogicBroadcast::RightColumn, |lhs, rhs| {
@@ -40,6 +44,7 @@ macro_rules! and_mat_vec_op {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! and_vec_mat_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         apply_logic_binary($lhs, $rhs, $out, LogicBroadcast::LeftColumn, |lhs, rhs| {
@@ -48,6 +53,7 @@ macro_rules! and_vec_mat_op {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! and_mat_row_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         apply_logic_binary($lhs, $rhs, $out, LogicBroadcast::RightRow, |lhs, rhs| {
@@ -56,6 +62,7 @@ macro_rules! and_mat_row_op {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! and_row_mat_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         apply_logic_binary($lhs, $rhs, $out, LogicBroadcast::LeftRow, |lhs, rhs| {

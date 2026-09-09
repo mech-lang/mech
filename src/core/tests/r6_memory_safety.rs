@@ -1,3 +1,12 @@
+#![cfg(all(
+    feature = "functions",
+    feature = "u8",
+    feature = "u64",
+    feature = "f64",
+    feature = "string",
+    feature = "matrixd"
+))]
+
 use mech_core::{
     AllocationPlan, AllocationRole, ArenaBackingKind, ArenaPlacement, ArenaPlan, CallAccessRequest,
     CellPublicationCandidate, CellPublicationEvidence, FunctionInvocation,
