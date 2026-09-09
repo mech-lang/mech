@@ -330,7 +330,7 @@ impl SetOutput {
         footprint: CurrentMemoryFootprint,
         build: impl FnOnce(&mut KernelMemoryFrame<'_>) -> MResult<Box<[ValueData]>>,
     ) -> MResult<()> {
-        frame.with_admitted_canonical_output(self.0.cell(), footprint, |frame| {
+        frame.with_admitted_canonical_output(self.0.cell(), footprint, |frame, _construction| {
             let elements = build(frame)?;
             Ok(((), self.0.build_set(elements)?))
         })
@@ -398,7 +398,7 @@ impl SetOutput {
         footprint: CurrentMemoryFootprint,
         build: impl FnOnce(&mut KernelMemoryFrame<'_>) -> MResult<Box<[ValueDataDraft]>>,
     ) -> MResult<()> {
-        frame.with_admitted_canonical_output(self.0.cell(), footprint, |frame| {
+        frame.with_admitted_canonical_output(self.0.cell(), footprint, |frame, _construction| {
             let elements = build(frame)?;
             Ok(((), self.0.build_set_drafts(elements)?))
         })

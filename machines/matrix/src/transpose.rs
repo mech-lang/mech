@@ -26,6 +26,10 @@ static PURE_TRANSPOSE_CONTRACT: LazyLock<OperationContractDeclaration> =
 // Transpose ------------------------------------------------------------------
 
 trait ManagedTransposeElement: FunctionPortBacking {
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch
+    }
+
     fn planned_output_footprint(
         _input: &ManagedPort<Self>,
         _output: &ManagedPort<Self>,
@@ -107,6 +111,10 @@ managed_transpose_elements!(R64);
 
 #[cfg(feature = "string")]
 impl ManagedTransposeElement for String {
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
+    }
+
     fn planned_output_footprint(
         input: &ManagedPort<Self>,
         _output: &ManagedPort<Self>,
@@ -120,7 +128,7 @@ impl ManagedTransposeElement for String {
         output: &ManagedPort<Self>,
     ) -> MResult<()> {
         let footprint = input.cell().current_memory_footprint()?;
-        frame.with_admitted_canonical_output(output.cell(), footprint, |frame| {
+        frame.with_admitted_canonical_output(output.cell(), footprint, |frame, construction| {
             let value = frame.snapshot_canonical_port_value(input)?;
             let extents = input.cell().resolved_descriptor()?.current_extents()?;
             let [rows, columns] = extents.as_ref() else {
@@ -165,20 +173,13 @@ impl ManagedTransposeElement for String {
                     }));
                 }
             };
-            let mut next = Vec::new();
-            next.try_reserve_exact(values.len()).map_err(|_| {
-                MechError::from(MemoryRuntimeError::AllocationFailed {
-                    object: None,
-                    requested: values.len() as u64,
-                    alignment: core::mem::align_of::<ValueDataDraft>() as u32,
-                    space: MemorySpace::Host,
-                })
-            })?;
+            let mut next = construction.try_vec_with_capacity::<ValueDataDraft>(values.len())?;
             for output_row in 0..columns {
                 for output_column in 0..rows {
-                    next.push(ValueDataDraft::String(
-                        values[output_column * columns + output_row].to_string(),
-                    ));
+                    next.push(ValueDataDraft::String(construction.try_concatenate_string(
+                        &values[output_column * columns + output_row],
+                        "",
+                    )?));
                 }
             }
             Ok((
@@ -223,7 +224,7 @@ macro_rules! impl_transpose {
             );
 
             fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
-                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+                T::implementation_memory_class()
             }
 
             fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {

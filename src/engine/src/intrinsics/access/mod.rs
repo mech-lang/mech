@@ -533,7 +533,7 @@ impl CanonicalAccess {
 
     fn stage_managed(&self, frame: &mut mech_core::KernelMemoryFrame<'_>) -> MResult<()> {
         let footprint = self.prospective_output_footprint()?;
-        frame.with_admitted_canonical_output(&self.output, footprint, |_| {
+        frame.with_admitted_canonical_output(&self.output, footprint, |_, _construction| {
             let next = self.next_value()?.snapshot()?;
             let next = self.output.rebind_snapshot_candidate(&next)?;
             Ok(((), next))

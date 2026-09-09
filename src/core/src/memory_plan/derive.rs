@@ -1526,6 +1526,28 @@ fn derive_scratch_allocations(
                 MemorySpace::Host,
             )?;
         }
+        ImplementationMemoryClass::ExternalMarshalling => {
+            let value_container_bytes = u64::try_from(inputs.len())
+                .ok()
+                .and_then(|count| count.checked_mul(core::mem::size_of::<crate::Value>() as u64))
+                .ok_or(MemoryPlanError::ArithmeticOverflow {
+                    field: "external argument container bytes",
+                })?;
+            scratch(
+                AllocationRole::Scratch,
+                value_container_bytes,
+                u32::try_from(core::mem::align_of::<crate::Value>()).unwrap_or(u32::MAX),
+                MemorySpace::Host,
+            )?;
+            for input in inputs {
+                scratch(
+                    AllocationRole::Scratch,
+                    value_current_bytes(&input.value)?,
+                    input.value.slot.alignment,
+                    MemorySpace::Host,
+                )?;
+            }
+        }
         ImplementationMemoryClass::MatrixSolve => {
             let [coefficients, _rhs] = inputs else {
                 return Err(MemoryPlanError::MatrixSolveLayoutInvalid);
@@ -1735,6 +1757,29 @@ fn apply_implementation_demand(
                     })?,
                 "ABI bridge element work",
             )?;
+        }
+        ImplementationMemoryClass::ExternalMarshalling => {
+            for (ordinal, input) in inputs.iter().enumerate() {
+                demand.cloned_bytes = checked_add(
+                    demand.cloned_bytes,
+                    value_current_bytes(&input.value)?,
+                    "external argument marshalling bytes",
+                )?;
+                if let Some(footprint) = request
+                    .input_witnesses
+                    .get(ordinal)
+                    .copied()
+                    .map(known_footprint)
+                    .transpose()?
+                    .flatten()
+                {
+                    demand.retained_nodes = checked_add(
+                        demand.retained_nodes,
+                        footprint.retained_nodes,
+                        "external argument retained nodes",
+                    )?;
+                }
+            }
         }
         ImplementationMemoryClass::MatrixSolve => {
             let [coefficients, rhs] = inputs else {

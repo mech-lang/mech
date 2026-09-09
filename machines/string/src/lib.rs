@@ -299,36 +299,33 @@ fn canonical_concat_footprint(
     })
 }
 
-fn canonical_concat_value(lhs: &Value, rhs: &Value, output: &ValueCell) -> MResult<Value> {
+fn canonical_concat_value(
+    lhs: &Value,
+    rhs: &Value,
+    output: &ValueCell,
+    construction: &mut mech_core::FrozenSnapshotConstruction,
+) -> MResult<Value> {
     let geometry = canonical_concat_geometry(lhs, rhs)?;
-    let concatenate = |left: &str, right: &str| -> MResult<String> {
-        let capacity = left.len().checked_add(right.len()).ok_or_else(|| {
-            function_shape_contract_violation("string/concat", "output String length overflowed")
-        })?;
-        let mut value = String::with_capacity(capacity);
-        value.push_str(left);
-        value.push_str(right);
-        Ok(value)
-    };
     let Some((rows, columns)) = geometry.output else {
-        return output.rebuild_data_draft(ValueDataDraft::String(concatenate(
-            canonical_string_at(lhs, None, 0, 0)?,
-            canonical_string_at(rhs, None, 0, 0)?,
-        )?));
+        return output.rebuild_data_draft(ValueDataDraft::String(
+            construction.try_concatenate_string(
+                canonical_string_at(lhs, None, 0, 0)?,
+                canonical_string_at(rhs, None, 0, 0)?,
+            )?,
+        ));
     };
     let count = rows.checked_mul(columns).ok_or_else(|| {
         function_shape_contract_violation("string/concat", "output cardinality overflowed usize")
     })?;
-    let mut values = Vec::new();
-    values.try_reserve_exact(count).map_err(|_| {
-        function_shape_contract_violation("string/concat", "output staging allocation failed")
-    })?;
+    let mut values = construction.try_vec_with_capacity::<ValueDataDraft>(count)?;
     for row in 0..rows {
         for column in 0..columns {
-            values.push(ValueDataDraft::String(concatenate(
-                canonical_string_at(lhs, geometry.lhs, row, column)?,
-                canonical_string_at(rhs, geometry.rhs, row, column)?,
-            )?));
+            values.push(ValueDataDraft::String(
+                construction.try_concatenate_string(
+                    canonical_string_at(lhs, geometry.lhs, row, column)?,
+                    canonical_string_at(rhs, geometry.rhs, row, column)?,
+                )?,
+            ));
         }
     }
     output.rebuild_matrix_drafts(
@@ -471,7 +468,7 @@ macro_rules! impl_string_binop {
             );
 
             fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
-                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+                mech_core::ImplementationMemoryClass::CanonicalFinalize
             }
 
             fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
@@ -533,7 +530,14 @@ macro_rules! impl_string_binop {
                     |lhs, rhs, output| {
                         $crate::canonical_concat_footprint(lhs, rhs, output)
                     },
-                    |lhs, rhs, output| Ok(((), $crate::canonical_concat_value(lhs, rhs, output)?)),
+                    |lhs, rhs, output, construction| {
+                        Ok(((), $crate::canonical_concat_value(
+                            lhs,
+                            rhs,
+                            output,
+                            construction,
+                        )?))
+                    },
                 )?;
                 Ok(mech_core::ReactiveSolveStatus::Changed)
             }

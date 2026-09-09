@@ -270,11 +270,44 @@ pub trait MechFunctionImpl {
         PayloadOutputPlanPolicy::Missing
     }
 
-    /// Captures one externally produced result before output planning. The
-    /// same immutable result must supply the prospective witness and later be
-    /// consumed by `solve_managed`; implementations must not probe the
-    /// external service a second time to discover its size.
-    fn prepare_external_output(&self, _: &mut dyn MechExecutionServices) -> MResult<()> {
+    /// Invokes one external provider after the call's input-marshalling plan
+    /// has been admitted. The returned immutable value is owned by the
+    /// prepared call, not by mutable implementation state.
+    fn capture_external_output(
+        &self,
+        _: &mut dyn MechExecutionServices,
+        _: &[Value],
+    ) -> MResult<Option<Value>> {
+        Ok(None)
+    }
+
+    /// Consumes the prepared external handoff into the already admitted
+    /// transaction stage. This hook must not call the provider again.
+    fn stage_prepared_external_output(
+        &self,
+        _: &mut KernelMemoryFrame<'_>,
+        _: &mut dyn MechExecutionServices,
+        _: Value,
+    ) -> MResult<ReactiveSolveStatus> {
+        Err(MechError::new(
+            GenericError {
+                msg: "implementation cannot consume a prepared external result".to_owned(),
+            },
+            None,
+        )
+        .with_compiler_loc())
+    }
+
+    /// Completes fallible external coordination only after the publication
+    /// batch has acquired its infallible commit authority.
+    fn prepare_external_publication(&self, _: &mut dyn MechExecutionServices) -> MResult<()> {
+        Ok(())
+    }
+
+    /// Performs an explicitly non-rollbackable external handoff after the
+    /// infallible cell commit. Live observers therefore cannot see the
+    /// subscription before the adopted value is published.
+    fn external_publication_committed(&self, _: &mut dyn MechExecutionServices) -> MResult<()> {
         Ok(())
     }
 
@@ -455,7 +488,32 @@ struct PreparedFunctionPublication {
     status: ReactiveSolveStatus,
     publication: Option<PreparedCellPublication>,
     next_realization: Option<ManagedCallRealization>,
+    external: bool,
     _execution_scope: Option<MemoryPlanScope>,
+}
+
+struct PreparedExternalResult {
+    value: Option<Value>,
+    shape: ShapeInstance,
+    footprint: CurrentMemoryFootprint,
+}
+
+impl PreparedExternalResult {
+    fn new(value: Value) -> MResult<Self> {
+        let shape = value.shape().clone();
+        let footprint = ValueCell::prospective_snapshot_memory_footprint(&value)?;
+        Ok(Self {
+            value: Some(value),
+            shape,
+            footprint,
+        })
+    }
+
+    fn take(&mut self) -> Value {
+        self.value
+            .take()
+            .expect("prepared external result is consumed exactly once")
+    }
 }
 
 impl ManagedCallRealization {
@@ -714,6 +772,71 @@ impl ManagedCallRealization {
         }
         Ok(())
     }
+
+    fn marshal_external_inputs(&self, managed_inputs: &[ValueCell]) -> MResult<Box<[Value]>> {
+        if self.plan.implementation_memory != ImplementationMemoryClass::ExternalMarshalling {
+            return Err(MemoryRuntimeError::CandidateValidationFailed {
+                object: self.plan.inputs.first().map(|input| input.object),
+                reason: "external input marshalling has no R5 scratch authority".into(),
+            }
+            .into());
+        }
+        let _frame = self
+            .domain
+            .acquire_call(&self.realized, &self.execution)
+            .map_err(MechError::from)?;
+        let argument_bytes = core::mem::size_of::<Value>()
+            .checked_mul(managed_inputs.len())
+            .and_then(|bytes| u64::try_from(bytes).ok())
+            .ok_or_else(|| {
+                MechError::new(
+                    MemoryPlanError::ArithmeticOverflow {
+                        field: "external argument vector bytes",
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+        if argument_bytes != 0 {
+            self.domain.check_managed_host_allocation(
+                argument_bytes,
+                core::mem::align_of::<Value>() as u32,
+            )?;
+        }
+        let mut arguments = Vec::new();
+        arguments
+            .try_reserve_exact(managed_inputs.len())
+            .map_err(|_| {
+                MechError::from(MemoryRuntimeError::AllocationFailed {
+                    object: self.plan.inputs.first().map(|input| input.object),
+                    requested: managed_inputs.len() as u64,
+                    alignment: core::mem::align_of::<Value>() as u32,
+                    space: MemorySpace::Host,
+                })
+            })?;
+        for input in managed_inputs {
+            let footprint = input.current_memory_footprint()?;
+            let retained = footprint
+                .fixed_bytes
+                .checked_add(footprint.payload_bytes)
+                .ok_or_else(|| {
+                    MechError::new(
+                        MemoryPlanError::ArithmeticOverflow {
+                            field: "external input marshalling bytes",
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                })?;
+            let snapshot_bytes = retained.max(footprint.encoded_bytes);
+            if snapshot_bytes != 0 {
+                self.domain
+                    .check_managed_host_allocation(snapshot_bytes, 1)?;
+            }
+            arguments.push(input.snapshot()?);
+        }
+        Ok(arguments.into_boxed_slice())
+    }
 }
 
 fn validate_transaction_authority(plan: &CallMemoryPlan) -> MResult<()> {
@@ -825,6 +948,16 @@ impl FunctionInstance {
             })
         })?;
         let output_policy = implementation.payload_output_plan_policy();
+        if output_policy == PayloadOutputPlanPolicy::ExternalAdoption
+            && plan.implementation_memory != ImplementationMemoryClass::ExternalMarshalling
+        {
+            return Err(MemoryRuntimeError::CandidateValidationFailed {
+                object: plan.outputs.first().map(|output| output.object),
+                reason: "external adoption requires the R5 external-marshalling memory class"
+                    .into(),
+            }
+            .into());
+        }
         let current = ManagedCallRealization::prepare(
             domain,
             plan,
@@ -890,9 +1023,15 @@ impl FunctionInstance {
         let mut prepared = self.prepare_reactive_publication(services)?;
         let status = prepared.status;
         if let Some(publication) = prepared.publication.take() {
-            PreparedCellPublicationBatch::new(vec![publication])?
-                .ready()?
-                .commit();
+            let ready = PreparedCellPublicationBatch::new(vec![publication])?.ready()?;
+            if prepared.external {
+                self.implementation.prepare_external_publication(services)?;
+            }
+            ready.commit();
+            if prepared.external {
+                self.implementation
+                    .external_publication_committed(services)?;
+            }
         }
         // Effect-only calls have no cell publication to carry a revised input
         // geometry. Their successfully executed realization is nevertheless
@@ -930,28 +1069,78 @@ impl FunctionInstance {
             .domain
             .require_standalone_execution()
             .map_err(managed_scope_error)?;
-        self.implementation.prepare_external_output(services)?;
-        let output_shapes = self.implementation.planned_output_shapes()?;
-        let output_footprints = self.implementation.planned_output_footprints()?;
         let output_policy = self.implementation.payload_output_plan_policy();
-        let candidate = current
-            .refreshed_plan(
-                &self.managed_inputs,
-                self.output(),
-                output_shapes.as_deref(),
-                output_footprints.as_deref(),
-                output_policy,
-            )?
-            .map(|plan| {
-                ManagedCallRealization::prepare(
-                    current.domain.clone(),
-                    plan,
-                    self.output(),
+        let mut preliminary_candidate = None;
+        let mut external_result = None;
+        if output_policy == PayloadOutputPlanPolicy::ExternalAdoption {
+            preliminary_candidate = current
+                .refreshed_plan(
                     &self.managed_inputs,
+                    self.output(),
+                    None,
+                    None,
                     output_policy,
-                )
-            })
-            .transpose()?;
+                )?
+                .map(|plan| {
+                    ManagedCallRealization::prepare(
+                        current.domain.clone(),
+                        plan,
+                        self.output(),
+                        &self.managed_inputs,
+                        output_policy,
+                    )
+                })
+                .transpose()?;
+            let preliminary = preliminary_candidate.as_ref().unwrap_or(&current);
+            let captured = {
+                let _scope = preliminary
+                    .domain
+                    .enter_realized_plan_point(&preliminary.realized, MemoryPlanPoint::new(0))
+                    .map_err(managed_scope_error)?;
+                preliminary.initialize_inputs(&self.managed_inputs)?;
+                let arguments = preliminary.marshal_external_inputs(&self.managed_inputs)?;
+                self.implementation
+                    .capture_external_output(services, &arguments)?
+                    .ok_or_else(|| {
+                        MechError::new(
+                            GenericError {
+                                msg: "external-adoption implementation returned no prepared result"
+                                    .to_owned(),
+                            },
+                            None,
+                        )
+                        .with_compiler_loc()
+                    })?
+            };
+            external_result = Some(PreparedExternalResult::new(captured)?);
+        }
+        let output_shapes = match external_result.as_ref() {
+            Some(result) => Some(vec![result.shape.clone()].into_boxed_slice()),
+            None => self.implementation.planned_output_shapes()?,
+        };
+        let output_footprints = match external_result.as_ref() {
+            Some(result) => Some(vec![result.footprint].into_boxed_slice()),
+            None => self.implementation.planned_output_footprints()?,
+        };
+        let planning = preliminary_candidate.as_ref().unwrap_or(&current);
+        let final_plan = planning.refreshed_plan(
+            &self.managed_inputs,
+            self.output(),
+            output_shapes.as_deref(),
+            output_footprints.as_deref(),
+            output_policy,
+        )?;
+        let candidate = if let Some(plan) = final_plan {
+            Some(ManagedCallRealization::prepare(
+                current.domain.clone(),
+                plan,
+                self.output(),
+                &self.managed_inputs,
+                output_policy,
+            )?)
+        } else {
+            preliminary_candidate
+        };
         let managed = candidate.as_ref().unwrap_or(&current);
         let _scope = managed
             .domain
@@ -968,7 +1157,14 @@ impl FunctionInstance {
                 .domain
                 .acquire_call(&managed.realized, &managed.execution)
                 .map_err(MechError::from)?;
-            let status = self.solve_in_scope(&mut frame, services)?;
+            let status = match external_result.as_mut() {
+                Some(result) => self.implementation.stage_prepared_external_output(
+                    &mut frame,
+                    services,
+                    result.take(),
+                )?,
+                None => self.solve_in_scope(&mut frame, services)?,
+            };
             if managed.plan.outputs.is_empty() {
                 (status, None)
             } else {
@@ -981,6 +1177,7 @@ impl FunctionInstance {
                         status,
                         publication: None,
                         next_realization: None,
+                        external: external_result.is_some(),
                         _execution_scope: None,
                     });
                 }
@@ -1004,6 +1201,7 @@ impl FunctionInstance {
                 status,
                 publication: None,
                 next_realization: candidate,
+                external: external_result.is_some(),
                 _execution_scope: Some(_scope),
             });
         };
@@ -1029,6 +1227,7 @@ impl FunctionInstance {
             status,
             publication: Some(publication),
             next_realization: candidate,
+            external: external_result.is_some(),
             _execution_scope: execution_scope,
         })
     }
@@ -1436,8 +1635,36 @@ impl MechFunctionImpl for SemanticMechFunction {
         self.function.payload_output_plan_policy()
     }
 
-    fn prepare_external_output(&self, services: &mut dyn MechExecutionServices) -> MResult<()> {
-        self.function.prepare_external_output(services)
+    fn capture_external_output(
+        &self,
+        services: &mut dyn MechExecutionServices,
+        arguments: &[Value],
+    ) -> MResult<Option<Value>> {
+        self.function.capture_external_output(services, arguments)
+    }
+
+    fn stage_prepared_external_output(
+        &self,
+        frame: &mut KernelMemoryFrame<'_>,
+        services: &mut dyn MechExecutionServices,
+        result: Value,
+    ) -> MResult<ReactiveSolveStatus> {
+        self.function
+            .stage_prepared_external_output(frame, services, result)
+    }
+
+    fn prepare_external_publication(
+        &self,
+        services: &mut dyn MechExecutionServices,
+    ) -> MResult<()> {
+        self.function.prepare_external_publication(services)
+    }
+
+    fn external_publication_committed(
+        &self,
+        services: &mut dyn MechExecutionServices,
+    ) -> MResult<()> {
+        self.function.external_publication_committed(services)
     }
 
     fn initial_solve_policy(&self) -> InitialSolvePolicy {

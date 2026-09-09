@@ -322,18 +322,22 @@ impl MechFunctionImpl for ValueSetComprehension {
                 .iter()
                 .map(|argument| frame.snapshot_function_value_input(argument)),
         )?;
-        frame.with_admitted_canonical_output(self.output.cell(), footprint, |frame| {
-            let values = self
-                .arguments
-                .iter()
-                .map(|argument| frame.snapshot_function_value_input(argument))
-                .collect::<MResult<Vec<_>>>()?
-                .into_iter()
-                .map(|value| value.data().clone())
-                .collect::<Vec<_>>()
-                .into_boxed_slice();
-            Ok(((), self.output.build_set(values)?))
-        })?;
+        frame.with_admitted_canonical_output(
+            self.output.cell(),
+            footprint,
+            |frame, _construction| {
+                let values = self
+                    .arguments
+                    .iter()
+                    .map(|argument| frame.snapshot_function_value_input(argument))
+                    .collect::<MResult<Vec<_>>>()?
+                    .into_iter()
+                    .map(|value| value.data().clone())
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice();
+                Ok(((), self.output.build_set(values)?))
+            },
+        )?;
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
@@ -876,17 +880,21 @@ impl<const VERTICAL: bool> MechFunctionImpl for ValueMatrixConcatenation<VERTICA
         if canonical_matrix_output_requires_builder(self.output.cell()) {
             let footprint =
                 prospective_matrix_output_footprint(self.output.cell(), &self.arguments)?;
-            frame.with_admitted_canonical_output(self.output.cell(), footprint, |frame| {
-                let (rows, columns, values) =
-                    managed_matrix_concatenation_drafts(frame, &self.arguments, VERTICAL)?;
-                Ok((
-                    (),
-                    self.output.cell().rebuild_matrix_drafts(
-                        vec![rows as u64, columns as u64].into_boxed_slice(),
-                        values,
-                    )?,
-                ))
-            })?;
+            frame.with_admitted_canonical_output(
+                self.output.cell(),
+                footprint,
+                |frame, _construction| {
+                    let (rows, columns, values) =
+                        managed_matrix_concatenation_drafts(frame, &self.arguments, VERTICAL)?;
+                    Ok((
+                        (),
+                        self.output.cell().rebuild_matrix_drafts(
+                            vec![rows as u64, columns as u64].into_boxed_slice(),
+                            values,
+                        )?,
+                    ))
+                },
+            )?;
         } else {
             let (rows, columns, values) =
                 managed_matrix_concatenation_drafts(frame, &self.arguments, VERTICAL)?;
@@ -1094,17 +1102,21 @@ impl MechFunctionImpl for ValueMatrixComprehension {
         if canonical_matrix_output_requires_builder(self.output.cell()) {
             let footprint =
                 prospective_matrix_output_footprint(self.output.cell(), &self.arguments)?;
-            frame.with_admitted_canonical_output(self.output.cell(), footprint, |frame| {
-                let (rows, columns, drafts) =
-                    managed_matrix_concatenation_drafts(frame, &self.arguments, false)?;
-                Ok((
-                    (),
-                    self.output.cell().rebuild_matrix_drafts(
-                        vec![rows as u64, columns as u64].into_boxed_slice(),
-                        drafts,
-                    )?,
-                ))
-            })?;
+            frame.with_admitted_canonical_output(
+                self.output.cell(),
+                footprint,
+                |frame, _construction| {
+                    let (rows, columns, drafts) =
+                        managed_matrix_concatenation_drafts(frame, &self.arguments, false)?;
+                    Ok((
+                        (),
+                        self.output.cell().rebuild_matrix_drafts(
+                            vec![rows as u64, columns as u64].into_boxed_slice(),
+                            drafts,
+                        )?,
+                    ))
+                },
+            )?;
         } else {
             let (rows, columns, drafts) =
                 managed_matrix_concatenation_drafts(frame, &self.arguments, false)?;

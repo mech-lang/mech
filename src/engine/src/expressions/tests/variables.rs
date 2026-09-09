@@ -10,6 +10,7 @@ struct RecordingContextReadServices {
     fail_read: bool,
     reads: Vec<ExecutionResourceRequest>,
     live_bindings: Vec<(u64, ExecutionResourceRequest, ValueCell)>,
+    live_binding_values: Vec<Value>,
     host_calls: Vec<ExecutionHostFunctionRequest>,
     writes: Vec<(ExecutionResourceRequest, Value)>,
 }
@@ -21,6 +22,7 @@ impl RecordingContextReadServices {
             fail_read: false,
             reads: Vec::new(),
             live_bindings: Vec::new(),
+            live_binding_values: Vec::new(),
             host_calls: Vec::new(),
             writes: Vec::new(),
         }
@@ -32,6 +34,7 @@ impl RecordingContextReadServices {
             fail_read: false,
             reads: Vec::new(),
             live_bindings: Vec::new(),
+            live_binding_values: Vec::new(),
             host_calls: Vec::new(),
             writes: Vec::new(),
         };
@@ -78,6 +81,7 @@ impl MechExecutionServices for RecordingContextReadServices {
         request: &ExecutionResourceRequest,
         target: ValueCell,
     ) -> MResult<()> {
+        self.live_binding_values.push(target.snapshot()?);
         self.live_bindings
             .push((interpreter_id, request.clone(), target));
         Ok(())
@@ -109,6 +113,13 @@ fn cell_f64(cell: &ValueCell) -> f64 {
 fn cell_string(cell: &ValueCell) -> String {
     let snapshot = cell.snapshot().unwrap();
     match snapshot.data() {
+        mech_core::ValueData::String(value) => value.to_string(),
+        other => panic!("expected String, got {other:?}"),
+    }
+}
+
+fn value_string(value: &Value) -> String {
+    match value.data() {
         mech_core::ValueData::String(value) => value.to_string(),
         other => panic!("expected String, got {other:?}"),
     }
@@ -295,6 +306,7 @@ fn external_resource_adoption_replans_each_captured_result_once() {
     let output = output.unwrap().unwrap();
     assert_eq!(cell_string(&output), "a");
     assert_eq!(services.reads.len(), 1);
+    assert_eq!(value_string(&services.live_binding_values[0]), "a");
 
     let solve_resource = |services: &mut RecordingContextReadServices| {
         let plan = interpreter.plan();
@@ -316,11 +328,19 @@ fn external_resource_adoption_replans_each_captured_result_once() {
     solve_resource(&mut services).unwrap();
     assert_eq!(cell_string(&output), larger);
     assert_eq!(services.reads.len(), 2);
+    assert_eq!(
+        value_string(services.live_binding_values.last().unwrap()),
+        larger
+    );
 
     services.result = ValueCell::from_exact("small again".to_owned()).unwrap();
     solve_resource(&mut services).unwrap();
     assert_eq!(cell_string(&output), "small again");
     assert_eq!(services.reads.len(), 3);
+    assert_eq!(
+        value_string(services.live_binding_values.last().unwrap()),
+        "small again"
+    );
 
     let before = cell_string(&output);
     let version = output.published_version();
@@ -334,11 +354,20 @@ fn external_resource_adoption_replans_each_captured_result_once() {
     assert_eq!(services.reads.len(), 4, "the rejected result was read once");
     assert_eq!(cell_string(&output), before);
     assert_eq!(output.published_version(), version);
+    assert_eq!(
+        value_string(services.live_binding_values.last().unwrap()),
+        "small again",
+        "rejected capture cannot install a live subscription"
+    );
 
     services.result = ValueCell::from_exact("valid after rejection".to_owned()).unwrap();
     solve_resource(&mut services).unwrap();
     assert_eq!(services.reads.len(), 5);
     assert_eq!(cell_string(&output), "valid after rejection");
+    assert_eq!(
+        value_string(services.live_binding_values.last().unwrap()),
+        "valid after rejection"
+    );
 }
 
 #[test]

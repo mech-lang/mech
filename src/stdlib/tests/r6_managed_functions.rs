@@ -11,6 +11,7 @@ fn maintained_catalog_has_no_open_or_unclassified_memory_implementation() {
             ImplementationMemoryClass::NoAdditionalScratch
             | ImplementationMemoryClass::CloneInput { .. }
             | ImplementationMemoryClass::AbiContiguousBridge { .. }
+            | ImplementationMemoryClass::ExternalMarshalling
             | ImplementationMemoryClass::MatrixSolve
             | ImplementationMemoryClass::CanonicalFinalize
             | ImplementationMemoryClass::CanonicalSortUnique => {}
@@ -272,6 +273,62 @@ mod ordinary_managed_execution {
         feature = "vector4",
     ))]
     use nalgebra::SMatrix;
+
+    struct OversizedCanonicalTemporary {
+        output: ValueCell,
+    }
+
+    impl MechFunctionImpl for OversizedCanonicalTemporary {
+        fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+            Ok(Some(
+                vec![self.output.current_memory_footprint()?].into_boxed_slice(),
+            ))
+        }
+
+        fn solve_managed(
+            &self,
+            frame: &mut KernelMemoryFrame<'_>,
+            _services: &mut dyn MechExecutionServices,
+        ) -> MResult<ReactiveSolveStatus> {
+            let footprint = self.output.current_memory_footprint()?;
+            frame.with_admitted_canonical_output(
+                &self.output,
+                footprint,
+                |_frame, construction| {
+                    let oversized = construction
+                        .remaining_temporary_bytes()
+                        .checked_add(1)
+                        .and_then(|bytes| usize::try_from(bytes).ok())
+                        .ok_or_else(|| {
+                            MechError::new(
+                                MemoryPlanError::ArithmeticOverflow {
+                                    field: "test canonical temporary bytes",
+                                },
+                                None,
+                            )
+                            .with_compiler_loc()
+                        })?;
+                    let _temporary = construction.try_vec_with_capacity::<u8>(oversized)?;
+                    Ok((
+                        (),
+                        self.output
+                            .rebuild_data_draft(ValueDataDraft::String("tiny".to_owned()))?,
+                    ))
+                },
+            )?;
+            Ok(ReactiveSolveStatus::Changed)
+        }
+
+        fn to_string(&self) -> String {
+            "OversizedCanonicalTemporary".to_owned()
+        }
+    }
+
+    impl MechFunctionCompiler for OversizedCanonicalTemporary {
+        fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+            compile_value_cell_register(&self.output, context)
+        }
+    }
 
     fn specialize(name: &str, inputs: Vec<ValueCell>) -> SpecializedFunction {
         let catalog = mech_stdlib::source_catalog();
@@ -546,6 +603,56 @@ mod ordinary_managed_execution {
         .unwrap();
         function.instance().solve_result().unwrap();
         assert_eq!(string_value(&output), "valid!");
+
+        let before = string_value(&output);
+        let version = output.published_version();
+        session
+            .inject_failure_after(MemoryFailurePoint::HostAllocation, 0)
+            .unwrap();
+        assert!(function.instance().solve_result().is_err());
+        assert_eq!(string_value(&output), before);
+        assert_eq!(output.published_version(), version);
+
+        function.instance().solve_result().unwrap();
+        assert_eq!(string_value(&output), "valid!");
+    }
+
+    #[test]
+    fn canonical_construction_rejects_temporary_peak_before_allocation() {
+        let session = MemoryDomain::new().unwrap();
+        let output = ValueCell::from_exact_in(&session, "tiny".to_owned()).unwrap();
+        let contract = OperationContractDeclaration {
+            inputs: InputPortLayout::Fixed(Box::new([])),
+            outputs: vec![OutputPortPolicy {
+                access: AccessMode::Write,
+                delivery: DeliveryMode::Signal,
+                construction: OutputConstruction::FullWrite {
+                    shape: ShapeRule::Declared,
+                },
+                alias: AliasPolicy::NoAlias,
+                change_detection: ChangeDetectionPolicy::AlwaysChanged,
+            }]
+            .into_boxed_slice(),
+            interaction: ExternalInteraction::Pure,
+        };
+        let function = SpecializedFunction::syntax_directed(
+            (
+                Box::new(OversizedCanonicalTemporary {
+                    output: output.clone(),
+                }),
+                FunctionInvocation::nullary(output.clone()),
+            ),
+            ResolvedOperationDescriptor::from_name("test/canonical-temporary", contract).unwrap(),
+            RuntimeFunctionId::from_name("test/canonical-temporary"),
+            ExecutionTarget::DirectRuntime,
+            ImplementationMemoryClass::CanonicalFinalize,
+        )
+        .unwrap();
+        let version = output.published_version();
+
+        assert!(function.instance().solve_result().is_err());
+        assert_eq!(string_value(&output), "tiny");
+        assert_eq!(output.published_version(), version);
     }
 
     #[test]

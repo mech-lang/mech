@@ -1884,7 +1884,10 @@ impl KernelMemoryFrame<'_> {
         &mut self,
         output: &crate::ValueCell,
         footprint: crate::CurrentMemoryFootprint,
-        build: impl FnOnce(&mut Self) -> crate::MResult<(R, crate::Value)>,
+        build: impl FnOnce(
+            &mut Self,
+            &mut super::FrozenSnapshotConstruction,
+        ) -> crate::MResult<(R, crate::Value)>,
     ) -> crate::MResult<R> {
         let (object, _) = self.output_target(output, 0)?;
         if self.staged_canonical_output.is_some() {
@@ -1924,7 +1927,27 @@ impl KernelMemoryFrame<'_> {
         let allocator = self.domain.planned_allocator(self.realized, payload)?;
         let admission =
             allocator.prepare_frozen_snapshot(footprint.payload_bytes, footprint.retained_nodes)?;
-        let (result, next) = build(self)?;
+        let temporary_bytes = plan
+            .allocations
+            .iter()
+            .filter(|allocation| {
+                matches!(
+                    allocation.role,
+                    crate::AllocationRole::Scratch | crate::AllocationRole::OrderedIndex
+                )
+            })
+            .try_fold(0_u64, |total, allocation| {
+                total.checked_add(allocation.capacity_bytes).ok_or_else(|| {
+                    MemoryRuntimeError::AccountingInvariantViolation {
+                        dimension: "canonical construction scratch bytes",
+                        current: total,
+                        change: allocation.capacity_bytes,
+                    }
+                })
+            })?;
+        let finalization_bytes = footprint.payload_bytes.max(footprint.encoded_bytes);
+        let mut construction = admission.begin_construction(finalization_bytes, temporary_bytes)?;
+        let (result, next) = build(self, &mut construction)?;
         let actual = next
             .retained_footprint(output.schema_table().as_ref())
             .map_err(|_| MemoryRuntimeError::CandidateValidationFailed {
@@ -1958,7 +1981,7 @@ impl KernelMemoryFrame<'_> {
             }
             .into());
         }
-        let ownership = admission.complete()?;
+        let ownership = construction.complete(actual.retained_bytes, actual.node_count)?;
         let staged = next.into_retained_payload_ticket(ownership);
         let initialized = self
             .realized
@@ -1988,6 +2011,7 @@ impl KernelMemoryFrame<'_> {
             &crate::Value,
             &crate::Value,
             &crate::ValueCell,
+            &mut super::FrozenSnapshotConstruction,
         ) -> crate::MResult<(R, crate::Value)>,
     ) -> crate::MResult<R> {
         let first_lease = self.port_lease(first.logical_cell_id(), first.role(), false)?;
@@ -2011,86 +2035,9 @@ impl KernelMemoryFrame<'_> {
         let first_value = first.cell().snapshot()?;
         let second_value = second.cell().snapshot()?;
         let footprint = requirements(&first_value, &second_value, output.cell())?;
-        if self.staged_canonical_output.is_some() {
-            return Err(MemoryRuntimeError::CandidateValidationFailed {
-                object: Some(output_lease.object.object()),
-                reason: "canonical output was staged more than once in one invocation".into(),
-            }
-            .into());
-        }
-        let plan = self.realized.call_plan().ok_or_else(|| {
-            MemoryRuntimeError::CandidateValidationFailed {
-                object: Some(output_lease.object.object()),
-                reason: "canonical output construction requires its authoritative call plan".into(),
-            }
-        })?;
-        let header = plan
-            .allocations
-            .iter()
-            .find(|allocation| allocation.id == output_lease.object.object())
-            .ok_or(MemoryRuntimeError::UnknownPlanObject {
-                key: output_lease.object,
-            })?;
-        let payload = plan
-            .allocations
-            .iter()
-            .find(|allocation| {
-                allocation.role == crate::AllocationRole::VariablePayload
-                    && allocation.owner == header.owner
-                    && allocation.lifetime == header.lifetime
-            })
-            .ok_or_else(|| MemoryRuntimeError::CandidateValidationFailed {
-                object: Some(output_lease.object.object()),
-                reason: "canonical output has no planned payload envelope".into(),
-            })?;
-        let payload = self
-            .domain
-            .plan_object_key(self.realized.revision(), payload.id)?;
-        let allocator = self.domain.planned_allocator(self.realized, payload)?;
-        // This is the fail-closed boundary: the result-building closure is
-        // unreachable until its exact retained bytes and recursive nodes have
-        // been reserved by the candidate call plan.
-        let admission =
-            allocator.prepare_frozen_snapshot(footprint.payload_bytes, footprint.retained_nodes)?;
-        let (result, next) = build(&first_value, &second_value, output.cell())?;
-        let actual = next
-            .retained_footprint(output.cell().schema_table().as_ref())
-            .map_err(|_| MemoryRuntimeError::CandidateValidationFailed {
-                object: Some(payload.object()),
-                reason: "canonical builder produced an invalid footprint".into(),
-            })?;
-        if actual.retained_bytes != footprint.payload_bytes
-            || actual.node_count != footprint.retained_nodes
-            || actual.encoded_bytes != footprint.encoded_bytes
-        {
-            return Err(MemoryRuntimeError::CandidateValidationFailed {
-                object: Some(payload.object()),
-                reason: "canonical builder output differs from its admitted prospective footprint"
-                    .into(),
-            }
-            .into());
-        }
-        let expected_shape = plan.outputs[0].descriptor.shape();
-        if next.schema_key() != output.cell().schema_key()
-            || (next.shape() != expected_shape
-                && !output.cell().accepts_published_shape(next.shape()))
-        {
-            return Err(MemoryRuntimeError::CandidateValidationFailed {
-                object: Some(output_lease.object.object()),
-                reason: "canonical builder output differs from its closed schema or shape".into(),
-            }
-            .into());
-        }
-        let ownership = admission.complete()?;
-        let staged = next.into_retained_payload_ticket(ownership);
-        let initialized = self
-            .realized
-            .binding(output_lease.object)?
-            .required_initialization_bytes();
-        self.realized
-            .record_initialized(output_lease.object, initialized)?;
-        self.staged_canonical_output = Some((output_lease.object, staged));
-        Ok(result)
+        self.with_admitted_canonical_output(output.cell(), footprint, |_frame, construction| {
+            build(&first_value, &second_value, output.cell(), construction)
+        })
     }
 
     #[cfg(feature = "functions")]

@@ -1,6 +1,6 @@
 use mech_core::{
     ExecutionHostFunctionRequest, InitialSolvePolicy, MResult, MechError, MechExecutionServices,
-    MechFunctionImpl, ReactiveDependencyScope, Ref, Value, ValueCell,
+    MechFunctionImpl, ReactiveDependencyScope, Value, ValueCell,
 };
 
 #[cfg(feature = "semantic-compiler")]
@@ -12,7 +12,6 @@ pub struct ExternalHostCallFunction {
     pub arguments: Vec<ValueCell>,
     pub output: ValueCell,
     pub initial_solve_policy: InitialSolvePolicy,
-    prepared_result: Ref<Option<Value>>,
 }
 
 impl ExternalHostCallFunction {
@@ -27,26 +26,7 @@ impl ExternalHostCallFunction {
             arguments,
             output,
             initial_solve_policy,
-            prepared_result: Ref::new(None),
         }
-    }
-
-    fn solve_with_services(
-        &self,
-        frame: &mut mech_core::KernelMemoryFrame<'_>,
-        services: &mut dyn MechExecutionServices,
-    ) -> MResult<()> {
-        let _ = services;
-        let result = self.prepared_result.borrow_mut().take().ok_or_else(|| {
-            MechError::new(
-                mech_core::GenericError {
-                    msg: "host result was not captured before managed output planning".to_owned(),
-                },
-                None,
-            )
-            .with_compiler_loc()
-        })?;
-        frame.stage_output_value(&self.output, result)
     }
 }
 
@@ -55,45 +35,37 @@ impl MechFunctionImpl for ExternalHostCallFunction {
         mech_core::PayloadOutputPlanPolicy::ExternalAdoption
     }
 
-    fn prepare_external_output(&self, services: &mut dyn MechExecutionServices) -> MResult<()> {
-        // Keep stable reactive inputs inside the plan, while exposing their
-        // current logical values across the execution-service boundary.
-        let arguments = self
-            .arguments
-            .iter()
-            .map(ValueCell::snapshot)
-            .collect::<MResult<Vec<_>>>()?;
-        let result = services.invoke_host_function(&self.request, &arguments)?;
-        *self.prepared_result.borrow_mut() = Some(result);
-        Ok(())
-    }
-
-    fn planned_output_shapes(&self) -> MResult<Option<Box<[mech_core::ShapeInstance]>>> {
-        Ok(self
-            .prepared_result
-            .borrow()
-            .as_ref()
-            .map(|value| vec![value.shape().clone()].into_boxed_slice()))
-    }
-
-    fn planned_output_footprints(
+    fn capture_external_output(
         &self,
-    ) -> MResult<Option<Box<[mech_core::CurrentMemoryFootprint]>>> {
-        let prepared = self.prepared_result.borrow();
-        let Some(value) = prepared.as_ref() else {
-            return Ok(None);
-        };
+        services: &mut dyn MechExecutionServices,
+        arguments: &[Value],
+    ) -> MResult<Option<Value>> {
         Ok(Some(
-            vec![ValueCell::prospective_snapshot_memory_footprint(value)?].into_boxed_slice(),
+            services.invoke_host_function(&self.request, arguments)?,
         ))
     }
 
     fn solve_managed(
         &self,
-        frame: &mut mech_core::KernelMemoryFrame<'_>,
-        services: &mut dyn mech_core::MechExecutionServices,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
-        self.solve_with_services(frame, services)?;
+        Err(MechError::new(
+            mech_core::GenericError {
+                msg: "external host calls require a prepared result handoff".to_owned(),
+            },
+            None,
+        )
+        .with_compiler_loc())
+    }
+
+    fn stage_prepared_external_output(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+        result: Value,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        frame.stage_output_value(&self.output, result)?;
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
@@ -130,5 +102,163 @@ impl MechFunctionCompiler for ExternalHostCallFunction {
             .intern_requirement(ApplicationRequirement::HostFunction(self.request.clone()))?;
         context.emit_host_call(requirement, output, arguments);
         Ok(output)
+    }
+}
+
+#[cfg(all(test, feature = "functions", feature = "string"))]
+mod tests {
+    use super::*;
+    use mech_core::{
+        AccessMode, AliasPolicy, ChangeDetectionPolicy, DeliveryMode, ExecutionResourceRequest,
+        ExecutionTarget, ExternalInteraction, FunctionInvocation, ImplementationMemoryClass,
+        InputPortLayout, InputPortPolicy, MemoryDomain, MemoryFailurePoint,
+        OperationContractDeclaration, OutputConstruction, OutputPortPolicy, ReactiveSolveStatus,
+        ResolvedOperationDescriptor, RuntimeFunctionId, ShapeRule, SpecializedFunction,
+    };
+
+    struct RecordingServices {
+        calls: usize,
+        result: Value,
+    }
+
+    impl MechExecutionServices for RecordingServices {
+        fn invoke_host_function(
+            &mut self,
+            _request: &ExecutionHostFunctionRequest,
+            arguments: &[Value],
+        ) -> MResult<Value> {
+            self.calls += 1;
+            assert_eq!(arguments.len(), 1);
+            Ok(self.result.clone())
+        }
+
+        fn read_resource(&mut self, _request: &ExecutionResourceRequest) -> MResult<Value> {
+            unreachable!("host-call test does not read resources")
+        }
+
+        fn write_resource(
+            &mut self,
+            _request: &ExecutionResourceRequest,
+            _value: &Value,
+        ) -> MResult<()> {
+            unreachable!("host-call test does not write resources")
+        }
+
+        fn bind_live_resource(
+            &mut self,
+            _interpreter_id: u64,
+            _request: &ExecutionResourceRequest,
+            _target: ValueCell,
+        ) -> MResult<()> {
+            unreachable!("host-call test does not bind resources")
+        }
+    }
+
+    fn instance(input: ValueCell, output: ValueCell) -> mech_core::FunctionInstance {
+        let request = ExecutionHostFunctionRequest {
+            name: "test/captured".to_owned(),
+        };
+        let implementation = ExternalHostCallFunction::new(
+            request,
+            vec![input.clone()],
+            output.clone(),
+            InitialSolvePolicy::Solve,
+        );
+        let contract = OperationContractDeclaration {
+            inputs: InputPortLayout::Fixed(
+                vec![InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                }]
+                .into_boxed_slice(),
+            ),
+            outputs: vec![OutputPortPolicy {
+                access: AccessMode::Write,
+                delivery: DeliveryMode::Signal,
+                construction: OutputConstruction::FullWrite {
+                    shape: ShapeRule::Declared,
+                },
+                alias: AliasPolicy::NoAlias,
+                change_detection: ChangeDetectionPolicy::AlwaysChanged,
+            }]
+            .into_boxed_slice(),
+            interaction: ExternalInteraction::Pure,
+        };
+        SpecializedFunction::syntax_directed(
+            (
+                Box::new(implementation),
+                FunctionInvocation::unary(output, input),
+            ),
+            ResolvedOperationDescriptor::from_name("test/external-host", contract).unwrap(),
+            RuntimeFunctionId::from_name("test/external-host"),
+            ExecutionTarget::DirectRuntime,
+            ImplementationMemoryClass::ExternalMarshalling,
+        )
+        .unwrap()
+        .into_instance()
+    }
+
+    fn text(cell: &ValueCell) -> String {
+        match cell.snapshot().unwrap().data() {
+            mech_core::ValueData::String(value) => value.to_string(),
+            other => panic!("expected String output, found {other:?}"),
+        }
+    }
+
+    #[test]
+    fn marshalling_is_admitted_before_provider_and_captured_rejection_is_scoped() {
+        let domain = MemoryDomain::new().unwrap();
+        let input = ValueCell::from_exact_in(&domain, "argument".to_owned()).unwrap();
+        let output = ValueCell::from_exact_in(&domain, "old".to_owned()).unwrap();
+        let function = instance(input, output.clone());
+        let mut services = RecordingServices {
+            calls: 0,
+            result: ValueCell::from_exact("first".to_owned())
+                .unwrap()
+                .snapshot()
+                .unwrap(),
+        };
+
+        domain
+            .inject_failure_after(MemoryFailurePoint::HostAllocation, 0)
+            .unwrap();
+        assert!(function.solve_result_with(&mut services).is_err());
+        assert_eq!(
+            services.calls, 0,
+            "provider is unreachable before marshalling admission"
+        );
+        assert_eq!(text(&output), "old");
+
+        assert_eq!(
+            function.solve_reactive_with(&mut services).unwrap(),
+            ReactiveSolveStatus::Changed,
+        );
+        assert_eq!(services.calls, 1);
+        assert_eq!(text(&output), "first");
+
+        services.result = ValueCell::from_exact("captured then rejected".repeat(64))
+            .unwrap()
+            .snapshot()
+            .unwrap();
+        domain
+            .inject_failure_after(MemoryFailurePoint::Admission, 0)
+            .unwrap();
+        assert!(function.solve_result_with(&mut services).is_err());
+        assert_eq!(
+            services.calls, 2,
+            "the rejected provider result is captured once"
+        );
+        assert_eq!(text(&output), "first");
+
+        services.result = ValueCell::from_exact("after rejection".to_owned())
+            .unwrap()
+            .snapshot()
+            .unwrap();
+        function.solve_result_with(&mut services).unwrap();
+        assert_eq!(
+            services.calls, 3,
+            "no stale captured result survives rejection"
+        );
+        assert_eq!(text(&output), "after rejection");
     }
 }

@@ -11,6 +11,7 @@ fn every_maintained_runtime_entry_declares_one_closed_memory_class() {
             ImplementationMemoryClass::NoAdditionalScratch
             | ImplementationMemoryClass::CloneInput { .. }
             | ImplementationMemoryClass::AbiContiguousBridge { .. }
+            | ImplementationMemoryClass::ExternalMarshalling
             | ImplementationMemoryClass::MatrixSolve
             | ImplementationMemoryClass::CanonicalFinalize
             | ImplementationMemoryClass::CanonicalSortUnique => {}

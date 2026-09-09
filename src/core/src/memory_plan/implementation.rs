@@ -1,8 +1,16 @@
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum ImplementationMemoryClass {
     NoAdditionalScratch,
-    CloneInput { input: u16 },
-    AbiContiguousBridge { input: u16, output: u16 },
+    CloneInput {
+        input: u16,
+    },
+    AbiContiguousBridge {
+        input: u16,
+        output: u16,
+    },
+    /// Marshals every logical input through the admitted host-call boundary.
+    /// The provider-owned result is accounted separately as external adoption.
+    ExternalMarshalling,
     MatrixSolve,
     CanonicalFinalize,
     CanonicalSortUnique,

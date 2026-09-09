@@ -108,7 +108,7 @@ pub(crate) fn context_read(
             )?,
             mech_core::RuntimeFunctionId::from_name("ExternalResourceReadFunction"),
             mech_core::ExecutionTarget::DirectRuntime,
-            mech_core::ImplementationMemoryClass::NoAdditionalScratch,
+            mech_core::ImplementationMemoryClass::ExternalMarshalling,
         )?,
         &arguments,
         interpreter,

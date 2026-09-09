@@ -5,14 +5,18 @@ use alloc::{
     alloc::{AllocError, Allocator, Global, Layout},
     boxed::Box,
     rc::{Rc, Weak},
+    string::String,
     sync::Arc,
+    vec::Vec,
 };
 #[cfg(not(feature = "no_std"))]
 use std::{
     alloc::{AllocError, Allocator, Global, Layout},
     boxed::Box,
     rc::{Rc, Weak},
+    string::String,
     sync::Arc,
+    vec::Vec,
 };
 
 use core::{
@@ -235,15 +239,197 @@ pub(crate) struct PreparedFrozenSnapshotAdmission {
     allocator: PlannedAllocator,
     ticket: Option<RetainedPayloadTicket>,
     retained_bytes: u64,
+    retained_nodes: u64,
 }
 
 impl PreparedFrozenSnapshotAdmission {
-    pub(crate) fn complete(mut self) -> MemoryRuntimeResult<RetainedPayloadTicket> {
-        self.allocator.record_initialized(self.retained_bytes)?;
-        Ok(self
+    pub(crate) fn begin_construction(
+        self,
+        finalization_bytes: u64,
+        temporary_bytes: u64,
+    ) -> MemoryRuntimeResult<FrozenSnapshotConstruction> {
+        if finalization_bytes > temporary_bytes {
+            return Err(MemoryRuntimeError::CapacityExceeded {
+                object: self.allocator.authority.object.object(),
+                requested: finalization_bytes,
+                capacity: temporary_bytes,
+            });
+        }
+        Ok(FrozenSnapshotConstruction {
+            admission: Some(self),
+            remaining_temporary_bytes: temporary_bytes - finalization_bytes,
+            charged_temporary_bytes: finalization_bytes,
+        })
+    }
+}
+
+/// Sealed call-bound authority for constructing one immutable canonical root.
+///
+/// The retained candidate and its finalization workspace are admitted before
+/// this value can be obtained. Maintained builders request any additional
+/// draft/container storage through the fallible helpers below, which debit the
+/// remaining R5 scratch authority before asking the global allocator for it.
+/// Dropping this value before `complete` releases the retained candidate charge.
+pub struct FrozenSnapshotConstruction {
+    admission: Option<PreparedFrozenSnapshotAdmission>,
+    remaining_temporary_bytes: u64,
+    charged_temporary_bytes: u64,
+}
+
+impl FrozenSnapshotConstruction {
+    pub fn remaining_temporary_bytes(&self) -> u64 {
+        self.remaining_temporary_bytes
+    }
+
+    fn object(&self) -> crate::MemoryObjectId {
+        self.admission
+            .as_ref()
+            .expect("live construction retains its admission")
+            .allocator
+            .authority
+            .object
+            .object()
+    }
+
+    fn charge_temporary(&mut self, bytes: u64) -> MemoryRuntimeResult<()> {
+        if bytes > self.remaining_temporary_bytes {
+            return Err(MemoryRuntimeError::CapacityExceeded {
+                object: self.object(),
+                requested: self
+                    .charged_temporary_bytes
+                    .checked_add(bytes)
+                    .unwrap_or(u64::MAX),
+                capacity: self
+                    .charged_temporary_bytes
+                    .checked_add(self.remaining_temporary_bytes)
+                    .unwrap_or(u64::MAX),
+            });
+        }
+        let admission = self
+            .admission
+            .as_ref()
+            .expect("live construction retains its admission");
+        if let Some(domain) = admission.allocator.authority.initialization.upgrade() {
+            domain.borrow_mut().check_failure_injection(
+                super::MemoryFailurePoint::HostAllocation,
+                bytes,
+                1,
+                crate::MemorySpace::Host,
+            )?;
+        } else {
+            return Err(MemoryRuntimeError::DomainClosed);
+        }
+        self.remaining_temporary_bytes -= bytes;
+        self.charged_temporary_bytes = self.charged_temporary_bytes.checked_add(bytes).ok_or(
+            MemoryRuntimeError::AccountingInvariantViolation {
+                dimension: "canonical construction temporary bytes",
+                current: self.charged_temporary_bytes,
+                change: bytes,
+            },
+        )?;
+        Ok(())
+    }
+
+    /// Allocates an exact-capacity temporary vector after charging its full
+    /// element storage against the call's prepared construction workspace.
+    pub fn try_vec_with_capacity<T>(&mut self, count: usize) -> MemoryRuntimeResult<Vec<T>> {
+        let bytes = u64::try_from(core::mem::size_of::<T>().checked_mul(count).ok_or(
+            MemoryRuntimeError::InvalidLayout {
+                object: Some(self.object()),
+                size: u64::MAX,
+                alignment: u32::try_from(core::mem::align_of::<T>()).unwrap_or(u32::MAX),
+                reason: "canonical temporary vector layout overflows",
+            },
+        )?)
+        .map_err(|_| MemoryRuntimeError::InvalidLayout {
+            object: Some(self.object()),
+            size: u64::MAX,
+            alignment: u32::try_from(core::mem::align_of::<T>()).unwrap_or(u32::MAX),
+            reason: "canonical temporary vector byte count exceeds u64",
+        })?;
+        self.charge_temporary(bytes)?;
+        let mut values = Vec::new();
+        values
+            .try_reserve_exact(count)
+            .map_err(|_| MemoryRuntimeError::AllocationFailed {
+                object: Some(self.object()),
+                requested: bytes,
+                alignment: u32::try_from(core::mem::align_of::<T>()).unwrap_or(u32::MAX),
+                space: crate::MemorySpace::Host,
+            })?;
+        Ok(values)
+    }
+
+    /// Builds one exact-capacity String temporary after charging the bytes
+    /// before allocation. This is the maintained String concatenation path;
+    /// final immutable storage is covered separately by the retained ticket.
+    pub fn try_concatenate_string(
+        &mut self,
+        left: &str,
+        right: &str,
+    ) -> MemoryRuntimeResult<String> {
+        let capacity =
+            left.len()
+                .checked_add(right.len())
+                .ok_or(MemoryRuntimeError::InvalidLayout {
+                    object: Some(self.object()),
+                    size: u64::MAX,
+                    alignment: 1,
+                    reason: "canonical String length overflows",
+                })?;
+        self.charge_temporary(u64::try_from(capacity).unwrap_or(u64::MAX))?;
+        let mut value = String::new();
+        value
+            .try_reserve_exact(capacity)
+            .map_err(|_| MemoryRuntimeError::AllocationFailed {
+                object: Some(self.object()),
+                requested: u64::try_from(capacity).unwrap_or(u64::MAX),
+                alignment: 1,
+                space: crate::MemorySpace::Host,
+            })?;
+        value.push_str(left);
+        value.push_str(right);
+        Ok(value)
+    }
+
+    pub(crate) fn complete(
+        mut self,
+        actual_retained_bytes: u64,
+        actual_retained_nodes: u64,
+    ) -> MemoryRuntimeResult<RetainedPayloadTicket> {
+        let mut admission = self
+            .admission
+            .take()
+            .expect("live construction retains its admission");
+        if actual_retained_bytes > admission.retained_bytes
+            || actual_retained_nodes > admission.retained_nodes
+        {
+            return Err(MemoryRuntimeError::CapacityExceeded {
+                object: admission.allocator.authority.object.object(),
+                requested: actual_retained_bytes.max(actual_retained_nodes),
+                capacity: admission.retained_bytes.max(admission.retained_nodes),
+            });
+        }
+        admission
+            .allocator
+            .record_initialized(actual_retained_bytes)?;
+        let mut ticket = admission
             .ticket
             .take()
-            .expect("prepared frozen snapshot retains its charge until completion"))
+            .expect("prepared frozen snapshot retains its charge until completion");
+        let unused = admission.retained_bytes - actual_retained_bytes;
+        if unused != 0 {
+            admission
+                .allocator
+                .authority
+                .owner
+                .accounting
+                .subtract(unused);
+            let charge = Arc::get_mut(&mut ticket.charge)
+                .expect("prepared retained ticket cannot be shared before completion");
+            charge.bytes = actual_retained_bytes;
+        }
+        Ok(ticket)
     }
 }
 
@@ -325,6 +511,7 @@ impl PlannedAllocator {
             allocator: self.clone(),
             ticket: Some(ticket),
             retained_bytes,
+            retained_nodes,
         })
     }
 
@@ -337,7 +524,8 @@ impl PlannedAllocator {
         retained_nodes: u64,
     ) -> MemoryRuntimeResult<RetainedPayloadTicket> {
         self.prepare_frozen_snapshot(retained_bytes, retained_nodes)?
-            .complete()
+            .begin_construction(0, 0)?
+            .complete(retained_bytes, retained_nodes)
     }
 
     fn record_initialized(&self, bytes: u64) -> MemoryRuntimeResult<()> {

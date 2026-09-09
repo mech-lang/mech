@@ -660,7 +660,7 @@ fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunctio
         self.replace(
             root,
             "src/engine/src/function/external/resource_read.rs",
-            "fn prepare_external_output(",
+            "fn capture_external_output(",
             "fn capture_after_execution(",
         )
         self.assert_failure(root, "external result is not captured once")
@@ -694,6 +694,45 @@ fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunctio
             "true",
         )
         self.assert_failure(root, "published-invariant functions receive writable")
+
+    def test_64_canonical_builder_must_receive_construction_authority(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/memory_runtime/access.rs",
+            "build(self, &mut construction)",
+            "build(self)",
+        )
+        self.assert_failure(root, "canonical construction does not admit before building")
+
+    def test_65_binary_canonical_builder_must_delegate_to_shared_path(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/memory_runtime/access.rs",
+            "self.with_admitted_canonical_output(",
+            "self.with_separate_binary_admission(",
+        )
+        self.assert_failure(root, "canonical construction does not admit before building")
+
+    def test_66_external_marshalling_must_precede_provider_capture(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/function/mod.rs",
+            "let arguments = preliminary.marshal_external_inputs(&self.managed_inputs)?;",
+            "let arguments = unadmitted_external_inputs(&self.managed_inputs)?;",
+        )
+        self.assert_failure(root, "provider invocation precedes admitted call-scoped marshalling")
+
+    def test_67_external_result_cannot_live_in_implementation_state(self):
+        root = self.fixture()
+        self.append(
+            root,
+            "src/engine/src/function/external/host_call.rs",
+            "\nstruct StaleExternalState { prepared_result: Option<Value> }\n",
+        )
+        self.assert_failure(root, "external result is not captured once")
 
 
 if __name__ == "__main__":

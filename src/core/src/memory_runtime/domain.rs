@@ -1110,7 +1110,7 @@ pub(crate) struct DomainState {
 }
 
 impl DomainState {
-    fn check_failure_injection(
+    pub(crate) fn check_failure_injection(
         &mut self,
         point: MemoryFailurePoint,
         requested: u64,
@@ -1534,6 +1534,19 @@ impl MemoryDomain {
         } else {
             Ok(())
         }
+    }
+
+    pub(crate) fn check_managed_host_allocation(
+        &self,
+        requested: u64,
+        alignment: u32,
+    ) -> MemoryRuntimeResult<()> {
+        self.state.borrow_mut().check_failure_injection(
+            MemoryFailurePoint::HostAllocation,
+            requested,
+            alignment,
+            MemorySpace::Host,
+        )
     }
 
     /// A convenience call may not prepare a new independent realization

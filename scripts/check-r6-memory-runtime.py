@@ -324,14 +324,19 @@ def failures(root: Path) -> list[str]:
     ):
         found.append("canonical output staging bypasses its admitted payload owner")
     admitted_builders = list(function_bodies(access, "with_admitted_canonical_output"))
-    admitted_builders.extend(
+    binary_builders = list(
         function_bodies(access, "with_admitted_canonical_binary_port_values")
     )
-    if not admitted_builders or not all(
-        "prepare_frozen_snapshot" in body
-        and "build(" in body
-        and body.index("prepare_frozen_snapshot") < body.index("build(")
-        for body in admitted_builders
+    if (
+        not admitted_builders
+        or "prepare_frozen_snapshot" not in admitted_builders[0]
+        or "begin_construction" not in admitted_builders[0]
+        or "build(self, &mut construction)" not in admitted_builders[0]
+        or admitted_builders[0].index("begin_construction")
+        > admitted_builders[0].index("build(self, &mut construction)")
+        or not binary_builders
+        or "with_admitted_canonical_output" not in binary_builders[0]
+        or "prepare_frozen_snapshot" in binary_builders[0]
     ):
         found.append("maintained canonical construction does not admit before building")
     object_value_views = list(function_bodies(access, "with_object_value_view"))
@@ -340,9 +345,17 @@ def failures(root: Path) -> list[str]:
     ):
         found.append("read-capable object views can expose uninitialized managed storage")
     payload = rust_code(sources.get("src/core/src/memory_runtime/payload.rs", ""))
-    if "PreparedFrozenSnapshotAdmission" not in payload or not any(
-        "record_initialized" in body
-        for body in function_bodies(payload, "complete")
+    if (
+        "PreparedFrozenSnapshotAdmission" not in payload
+        or "FrozenSnapshotConstruction" not in payload
+        or "try_vec_with_capacity" not in payload
+        or "try_concatenate_string" not in payload
+        or not any(
+            "record_initialized" in body
+            and "actual_retained_bytes" in body
+            and "subtract(unused)" in body
+            for body in function_bodies(payload, "complete")
+        )
     ):
         found.append("canonical payload admission is not completed after valid construction")
     envelope = balanced_body(payload, "PayloadEnvelopeOwner")
@@ -414,9 +427,18 @@ def failures(root: Path) -> list[str]:
         or "PayloadOutputPlanPolicy::PublishedInvariant" not in realization_preparation[0]
     ):
         found.append("published-invariant functions receive writable candidate authority")
-    semantic_wrappers = list(function_bodies(function, "prepare_external_output"))
-    if len(semantic_wrappers) < 2 or not any(
-        "self.function.prepare_external_output" in body for body in semantic_wrappers
+    semantic_wrappers = list(function_bodies(function, "capture_external_output"))
+    staged_external_wrappers = list(
+        function_bodies(function, "stage_prepared_external_output")
+    )
+    if (
+        len(semantic_wrappers) < 2
+        or not any("self.function.capture_external_output" in body for body in semantic_wrappers)
+        or len(staged_external_wrappers) < 2
+        or not any(
+            "self.function" in body and "stage_prepared_external_output" in body
+            for body in staged_external_wrappers
+        )
     ):
         found.append("semantic function wrappers discard external-result planning authority")
     binding_constructors = list(function_bodies(function, "new"))
@@ -507,17 +529,30 @@ def failures(root: Path) -> list[str]:
         "src/engine/src/function/external/host_call.rs",
     ):
         external = rust_code(sources.get(relative, ""))
-        prepared = list(function_bodies(external, "prepare_external_output"))
+        prepared = list(function_bodies(external, "capture_external_output"))
+        staged = list(function_bodies(external, "stage_prepared_external_output"))
         if (
-            "prepared_result" not in external
-            or "planned_output_footprints" not in external
+            "prepared_result" in external
             or not prepared
             or not any(
                 token in prepared[0]
                 for token in ("read_resource", "invoke_host_function")
             )
+            or not staged
+            or "stage_output_value" not in staged[0]
         ):
             found.append(f"{relative}: external result is not captured once before replanning")
+    prepared_publication = list(function_bodies(function, "prepare_reactive_publication"))
+    if (
+        "PreparedExternalResult" not in function
+        or "ExternalMarshalling" not in function
+        or not prepared_publication
+        or "marshal_external_inputs" not in prepared_publication[0]
+        or "capture_external_output" not in prepared_publication[0]
+        or prepared_publication[0].index("marshal_external_inputs")
+        > prepared_publication[0].index("capture_external_output")
+    ):
+        found.append("external provider invocation precedes admitted call-scoped marshalling")
     instance = balanced_body(function, "FunctionInstance")
     binding = balanced_body(function, "ManagedFunctionBinding")
     realization = balanced_body(function, "ManagedCallRealization")
