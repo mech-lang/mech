@@ -1035,6 +1035,19 @@ impl MechFunctionImpl for Bypass {
             "failed register preparation omits its candidate domain",
         )
 
+    def test_96_failed_register_domain_must_enter_collection_set(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/function/mod.rs",
+            "            domains.push(domain.clone());\n",
+            "",
+        )
+        self.assert_failure(
+            root,
+            "failed register preparation omits its candidate domain",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

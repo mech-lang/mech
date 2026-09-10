@@ -514,6 +514,11 @@ def failures(root: Path) -> list[str]:
         not in register_paths[0]
         or not abandoned_batches
         or "additional_domains" not in abandoned_batches[0]
+        or not re.search(
+            r"for\s+domain\s+in\s+additional_domains\s*\{.*?domains\s*\.\s*push\s*\(\s*domain\s*\.\s*clone\s*\(\s*\)\s*\)\s*;",
+            abandoned_batches[0],
+            re.DOTALL,
+        )
     ):
         found.append("failed register preparation omits its candidate domain")
     if "publication_shape" not in cell or not any(
