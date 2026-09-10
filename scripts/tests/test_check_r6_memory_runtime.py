@@ -1343,6 +1343,50 @@ impl MechFunctionImpl for Bypass {
             "malformed arena plans do not prove atomic admission",
         )
 
+    def test_116_placement_rejection_body_must_be_unconditional(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/memory_runtime/domain.rs",
+            """        if member_arena != Some(arena.id) {
+            return Err(MemoryRuntimeError::InvalidLayout {
+                object: Some(allocation.id),
+                size: allocation.capacity_bytes,
+                alignment: allocation.alignment,
+                reason: "allocation is absent from its arena member list",
+            });
+        }""",
+            """        if member_arena != Some(arena.id) {
+            if false {
+                return Err(MemoryRuntimeError::InvalidLayout {
+                    object: Some(allocation.id),
+                    size: allocation.capacity_bytes,
+                    alignment: allocation.alignment,
+                    reason: "allocation is absent from its arena member list",
+                });
+            }
+        }""",
+        )
+        self.assert_failure(
+            root,
+            "runtime plan member authority is not one-to-one",
+        )
+
+    def test_117_ledger_comparison_must_be_unconditional(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/tests/r6_memory_runtime.rs",
+            "    assert_eq!(wrong_arena_domain.ledger(), wrong_arena_ledger);",
+            """    if false {
+        assert_eq!(wrong_arena_domain.ledger(), wrong_arena_ledger);
+    }""",
+        )
+        self.assert_failure(
+            root,
+            "malformed arena plans do not prove atomic admission",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
