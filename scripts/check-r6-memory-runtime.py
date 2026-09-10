@@ -220,6 +220,43 @@ def function_bodies(source: str, name: str):
                     break
 
 
+def brace_depth_at(source: str, offset: int) -> int:
+    """Return the lexical Rust block depth at offset in literal-free source."""
+    depth = 0
+    for character in source[:offset]:
+        if character == "{":
+            depth += 1
+        elif character == "}":
+            depth -= 1
+    return depth
+
+
+def direct_match(pattern: str, source: str, *, depth: int = 0) -> re.Match[str] | None:
+    """Find a match that executes directly at one lexical block depth."""
+    for match in re.finditer(pattern, source):
+        if brace_depth_at(source, match.start()) == depth:
+            return match
+    return None
+
+
+def matched_block(source: str, match: re.Match[str] | None) -> str | None:
+    """Return the balanced block opened by a matched Rust control expression."""
+    if match is None:
+        return None
+    start = source.find("{", match.start(), match.end())
+    if start < 0:
+        return None
+    depth = 1
+    for index in range(start + 1, len(source)):
+        if source[index] == "{":
+            depth += 1
+        elif source[index] == "}":
+            depth -= 1
+            if depth == 0:
+                return source[start + 1 : index]
+    return None
+
+
 def rust_files(root: Path, entries: tuple[str, ...]):
     seen: set[Path] = set()
     for entry in entries:
@@ -792,8 +829,9 @@ def failures(root: Path) -> list[str]:
     handle_filtered_projection = bool(
         arena_projection_paths
         and re.search(
-            r"\bbinding\b[\s()]*\.\s*handle\s*\(",
+            r"\bbinding\b(?:(?![;{}]).)*?\.\s*handle\s*\(",
             arena_projection_paths[0],
+            re.DOTALL,
         )
     )
     if not any(
@@ -842,31 +880,57 @@ def failures(root: Path) -> list[str]:
         r"\bmember_placements\s*\.\s*([A-Za-z_][A-Za-z0-9_]*)\s*\(",
         member_index_body,
     )
-    member_index_reservation = re.search(
+    member_index_reservation = direct_match(
         r"member_placements\s*\.\s*try_reserve_exact\s*"
         r"\(\s*member_count\s*\)\s*\.\s*map_err\s*"
         r"\(\s*\|_\|\s*MemoryRuntimeError\s*::\s*AllocationFailed\s*"
         r"\{[\s\S]*?\}\s*\)\s*\?\s*;",
         member_index_body,
     )
+    member_flatten_loop = direct_match(
+        r"for\s*\(\s*arena\s*,\s*members\s*\)\s*in\s*arena_members\s*\{",
+        member_index_body,
+    )
+    member_flatten_body = matched_block(member_index_body, member_flatten_loop)
+    member_flatten_extend = direct_match(
+        r"member_placements\s*\.\s*extend\s*\(\s*members\s*\.\s*iter\s*\(\s*\)"
+        r"\s*\.\s*map\s*\(\s*\|member\|\s*\(\s*\*member\s*,\s*\*arena\s*\)\s*\)"
+        r"\s*\)\s*;",
+        member_flatten_body or "",
+    )
     member_index_duplicates = re.search(
         r"member_placements\s*\.\s*windows\s*\(\s*2\s*\)\s*"
         r"\.\s*find\s*\(\s*\|pair\|\s*pair\[0\]\.0\s*==\s*pair\[1\]\.0\s*\)",
         member_index_body,
     )
-    member_index_search = re.search(
-        r"member_placements\s*\.\s*binary_search_by_key\s*\(",
+    allocation_loop = direct_match(
+        r"for\s+allocation\s+in\s+view\s*\.\s*allocations\s*\{",
         plan_validation_paths[0] if plan_validation_paths else "",
     )
-    member_index_call = re.search(
+    allocation_loop_body = matched_block(
+        plan_validation_paths[0] if plan_validation_paths else "", allocation_loop
+    )
+    member_index_search = direct_match(
+        r"member_placements\s*\.\s*binary_search_by_key\s*\(",
+        allocation_loop_body or "",
+    )
+    member_index_call = direct_match(
         r"let\s+member_placements\s*=\s*build_member_placement_index\s*"
         r"\(\s*&arena_members\s*\)\s*\?\s*;",
         plan_validation_paths[0] if plan_validation_paths else "",
     )
-    member_placement_guard = re.search(
+    member_placement_guard = direct_match(
         r"if\s+member_arena\s*!=\s*Some\s*\(\s*arena\s*\.\s*id\s*\)\s*"
         r"\{\s*return\s+Err\s*\(\s*MemoryRuntimeError\s*::\s*InvalidLayout\s*"
         r"\{[\s\S]*?\}\s*\)\s*;\s*\}",
+        allocation_loop_body or "",
+    )
+    validation_member_bindings = re.findall(
+        r"\blet\s+(?:mut\s+)?member_placements\b",
+        plan_validation_paths[0] if plan_validation_paths else "",
+    )
+    validation_member_methods = re.findall(
+        r"\bmember_placements\s*\.\s*([A-Za-z_][A-Za-z0-9_]*)\s*\(",
         plan_validation_paths[0] if plan_validation_paths else "",
     )
     if (
@@ -881,10 +945,15 @@ def failures(root: Path) -> list[str]:
             "into_boxed_slice",
         ]
         or member_index_reservation is None
+        or member_flatten_loop is None
+        or member_flatten_extend is None
+        or re.search(r"&\s*mut\s+member_placements\b", member_index_body)
         or member_index_duplicates is None
         or member_index_search is None
         or member_index_call is None
         or member_placement_guard is None
+        or len(validation_member_bindings) != 1
+        or validation_member_methods != ["binary_search_by_key", "get"]
         or "memory object is listed by more than one arena"
         not in sources.get("src/core/src/memory_runtime/domain.rs", "")
     ):
@@ -898,18 +967,18 @@ def failures(root: Path) -> list[str]:
     member_regression = member_regression_paths[0] if member_regression_paths else ""
     malformed_admission_is_atomic = bool(member_regression)
     for case in ("cross_listed", "wrong_arena", "nonadjacent"):
-        ledger_capture = re.search(
-            rf"(?m)^    let\s+{case}_ledger\s*=\s*{case}_domain\s*\.\s*"
-            rf"ledger\s*\(\s*\)\s*;\s*$",
+        ledger_capture = direct_match(
+            rf"let\s+{case}_ledger\s*=\s*{case}_domain\s*\.\s*"
+            rf"ledger\s*\(\s*\)\s*;",
             member_regression,
         )
         rejected_admission = re.search(
             rf"\b{case}_domain\s*\.\s*prepare_realization\s*\(",
             member_regression,
         )
-        ledger_comparison = re.search(
-            rf"(?m)^    assert_eq!\s*\(\s*{case}_domain\s*\.\s*ledger\s*"
-            rf"\(\s*\)\s*,\s*{case}_ledger\s*\)\s*;\s*$",
+        ledger_comparison = direct_match(
+            rf"assert_eq!\s*\(\s*{case}_domain\s*\.\s*ledger\s*"
+            rf"\(\s*\)\s*,\s*{case}_ledger\s*\)\s*;",
             member_regression,
         )
         malformed_admission_is_atomic = malformed_admission_is_atomic and bool(
