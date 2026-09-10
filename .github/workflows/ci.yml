@@ -112,7 +112,7 @@ jobs:
       - name: Execute one balanced mutation shard
         run: |
           python3 -B scripts/run-python-unittest-shards.py \
-            --jobs 1 \
+            --jobs 2 \
             --shard-count 4 \
             --shard-index ${{ matrix.shard }} \
             scripts/tests/test_check_obsolete_program_reachability.py \

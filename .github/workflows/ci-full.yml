@@ -176,7 +176,7 @@ jobs:
       - name: Execute one balanced architecture mutation shard
         run: |
           python3 -B scripts/run-python-unittest-shards.py \
-            --jobs 1 \
+            --jobs 2 \
             --shard-count 4 \
             --shard-index ${{ matrix.shard }} \
             tests/ci/test_ci_full_contract.py \
