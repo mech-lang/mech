@@ -122,7 +122,7 @@ jobs:
           python3 scripts/check-gate-d-contract.py \
             --report benchmarks/runtime/gate-d/d3-resident-external.json \
             --expected-phase D3-resident-external
-          printf '%s\n' \
+          python3 -B scripts/run-python-unittest-shards.py --jobs 4 \
             tests/ci/test_ci_full_contract.py \
             scripts/tests/test_check_obsolete_program_reachability.py \
             scripts/tests/test_check_no_retired_value_system.py \
@@ -132,6 +132,7 @@ jobs:
             scripts/tests/test_check_r4_type_cutover.py \
             scripts/tests/test_check_r5_memory_planner.py \
             scripts/tests/test_check_r6_memory_runtime.py \
+            scripts/tests/test_run_python_unittest_shards.py \
             scripts/tests/test_check_program_artifact_contract.py \
             scripts/tests/test_check_operation_contract.py \
             scripts/tests/test_generate_resident_activation_contract.py \
@@ -142,8 +143,7 @@ jobs:
             scripts/tests/test_generate_d2_contract.py \
             scripts/tests/test_check_d2_contract.py \
             scripts/tests/test_run_gate_a_benchmarks.py \
-            scripts/tests/test_run_gate_b_benchmarks.py \
-            | xargs -P 4 -n 1 python3 -B -m unittest
+            scripts/tests/test_run_gate_b_benchmarks.py
       - name: Execute the complete R2 conformance boundary
         run: >-
           cargo +nightly-2026-03-03 test --locked -p mech-core
