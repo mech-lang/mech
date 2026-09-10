@@ -1113,6 +1113,19 @@ impl MechFunctionImpl for Bypass {
             "Resident lanes use one member as whole-arena projection authority",
         )
 
+    def test_102_resident_effect_payload_must_retain_its_typed_slot(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/engine/src/memory_planner/resident.rs",
+            "slot: Some(resident_planned_slot(kind)),",
+            "slot: None,",
+        )
+        self.assert_failure(
+            root,
+            "Resident effect payload omits its typed arena slot",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

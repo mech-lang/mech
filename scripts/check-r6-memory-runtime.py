@@ -33,6 +33,7 @@ REQUIRED = (
     "src/engine/src/memory_runtime/realize.rs",
     "src/engine/src/memory_runtime/resident.rs",
     "src/engine/src/memory_planner/program.rs",
+    "src/engine/src/memory_planner/resident.rs",
     "src/engine/src/resident/general/mod.rs",
     "src/engine/src/interpreter/mod.rs",
     "src/engine/src/literals.rs",
@@ -1049,6 +1050,17 @@ def failures(root: Path) -> list[str]:
         or "arena.members.first()" in resident_lane_paths[0]
     ):
         found.append("Resident lanes use one member as whole-arena projection authority")
+    resident_planner = rust_code(
+        sources.get("src/engine/src/memory_planner/resident.rs", "")
+    )
+    effect_payload_paths = list(
+        function_bodies(resident_planner, "plan_resident_effect_payload")
+    )
+    if (
+        not effect_payload_paths
+        or "slot: Some(resident_planned_slot(kind))" not in effect_payload_paths[0]
+    ):
+        found.append("Resident effect payload omits its typed arena slot")
     if reactive is None or not re.search(r"\bManagedProgramMemory\b", reactive):
         found.append("ReactiveInstance does not retain its managed program realization")
     if re.search(r"\b[A-Za-z_][A-Za-z0-9_]*\.state\.clone\s*\(", resident):

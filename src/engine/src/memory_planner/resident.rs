@@ -699,7 +699,7 @@ pub fn plan_resident_effect_payload(
         id,
         owner: MemoryObjectOwner::NodeInput { node, port: 0 },
         role: AllocationRole::Scratch,
-        slot: None,
+        slot: Some(resident_planned_slot(kind)),
         space: MemorySpace::ResidentCpu,
         current_bytes: bytes,
         capacity_bytes: bytes,
@@ -901,6 +901,35 @@ mod tests {
             resident_arena_id((PlannedValueClass::State, ResidentValueKind::F64, 1)).unwrap();
         assert_eq!(current, MemoryArenaId::new(12));
         assert_eq!(next, MemoryArenaId::new(32));
+    }
+
+    #[test]
+    fn resident_effect_payload_retains_its_typed_arena_slot() {
+        let mut projection = plan_resident_arenas(&[]).unwrap();
+        plan_resident_effect_payload(
+            &mut projection.plan,
+            mech_core::NodeId::new(7),
+            0,
+            ResidentValueKind::Bool,
+            3,
+        )
+        .unwrap();
+        let effect = projection
+            .plan
+            .allocations
+            .iter()
+            .find(|allocation| {
+                allocation.owner
+                    == MemoryObjectOwner::NodeInput {
+                        node: mech_core::NodeId::new(7),
+                        port: 0,
+                    }
+            })
+            .unwrap();
+        assert_eq!(
+            effect.slot,
+            Some(PlannedSlotKind::FixedScalar(ScalarMemoryKind::Bool))
+        );
     }
 
     #[test]
