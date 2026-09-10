@@ -792,7 +792,7 @@ def failures(root: Path) -> list[str]:
     handle_filtered_projection = bool(
         arena_projection_paths
         and re.search(
-            r"\bbinding\s*\.\s*handle\s*\(",
+            r"\bbinding\b[\s()]*\.\s*handle\s*\(",
             arena_projection_paths[0],
         )
     )
@@ -834,62 +834,57 @@ def failures(root: Path) -> list[str]:
         or "collect::<BTreeSet" in plan_validation_paths[0]
     ):
         found.append("runtime plan member validation can allocate infallibly")
-    member_index_reserve = re.search(
+    member_index_paths = list(
+        function_bodies(domain_code, "build_member_placement_index")
+    )
+    member_index_body = member_index_paths[0] if member_index_paths else ""
+    member_index_methods = re.findall(
+        r"\bmember_placements\s*\.\s*([A-Za-z_][A-Za-z0-9_]*)\s*\(",
+        member_index_body,
+    )
+    member_index_reservation = re.search(
         r"member_placements\s*\.\s*try_reserve_exact\s*"
-        r"\(\s*member_count\s*\)",
-        plan_validation_paths[0] if plan_validation_paths else "",
-    )
-    member_index_extends = list(
-        re.finditer(
-            r"member_placements\s*\.\s*extend\s*\(",
-            plan_validation_paths[0] if plan_validation_paths else "",
-        )
-    )
-    member_index_sorts = list(
-        re.finditer(
-            r"member_placements\s*\.\s*sort_unstable\s*\(\s*\)",
-            plan_validation_paths[0] if plan_validation_paths else "",
-        )
+        r"\(\s*member_count\s*\)\s*\.\s*map_err\s*"
+        r"\(\s*\|_\|\s*MemoryRuntimeError\s*::\s*AllocationFailed\s*"
+        r"\{[\s\S]*?\}\s*\)\s*\?\s*;",
+        member_index_body,
     )
     member_index_duplicates = re.search(
         r"member_placements\s*\.\s*windows\s*\(\s*2\s*\)\s*"
         r"\.\s*find\s*\(\s*\|pair\|\s*pair\[0\]\.0\s*==\s*pair\[1\]\.0\s*\)",
-        plan_validation_paths[0] if plan_validation_paths else "",
+        member_index_body,
     )
     member_index_search = re.search(
         r"member_placements\s*\.\s*binary_search_by_key\s*\(",
         plan_validation_paths[0] if plan_validation_paths else "",
     )
-    member_placement_guard = re.search(
-        r"if\s+member_arena\s*!=\s*Some\s*\(\s*arena\s*\.\s*id\s*\)\s*\{",
+    member_index_call = re.search(
+        r"let\s+member_placements\s*=\s*build_member_placement_index\s*"
+        r"\(\s*&arena_members\s*\)\s*\?\s*;",
         plan_validation_paths[0] if plan_validation_paths else "",
     )
-    member_reservation_propagates = False
-    if member_index_reserve is not None and member_index_extends:
-        reservation_tail = (plan_validation_paths[0] if plan_validation_paths else "")[
-            member_index_reserve.end() : member_index_extends[0].start()
-        ]
-        member_reservation_propagates = bool(
-            re.search(r"\.\s*map_err\s*\([\s\S]*\)\s*\?\s*;", reservation_tail)
-        )
-    final_member_sort = member_index_sorts[-1] if member_index_sorts else None
+    member_placement_guard = re.search(
+        r"if\s+member_arena\s*!=\s*Some\s*\(\s*arena\s*\.\s*id\s*\)\s*"
+        r"\{\s*return\s+Err\s*\(\s*MemoryRuntimeError\s*::\s*InvalidLayout\s*"
+        r"\{[\s\S]*?\}\s*\)\s*;\s*\}",
+        plan_validation_paths[0] if plan_validation_paths else "",
+    )
     if (
         not plan_validation_paths
-        or member_index_reserve is None
-        or not member_reservation_propagates
-        or not member_index_extends
-        or final_member_sort is None
+        or not member_index_paths
+        or member_index_methods
+        != [
+            "try_reserve_exact",
+            "extend",
+            "sort_unstable",
+            "windows",
+            "into_boxed_slice",
+        ]
+        or member_index_reservation is None
         or member_index_duplicates is None
         or member_index_search is None
+        or member_index_call is None
         or member_placement_guard is None
-        or not (
-            member_index_reserve.start()
-            < member_index_extends[0].start()
-            and member_index_extends[-1].end()
-            < final_member_sort.start()
-            < member_index_duplicates.start()
-        )
-        or final_member_sort.start() > member_index_search.start()
         or "memory object is listed by more than one arena"
         not in sources.get("src/core/src/memory_runtime/domain.rs", "")
     ):
@@ -901,18 +896,31 @@ def failures(root: Path) -> list[str]:
         )
     )
     member_regression = member_regression_paths[0] if member_regression_paths else ""
-    if not member_regression or any(
-        not re.search(
-            rf"let\s+{case}_ledger\s*=\s*{case}_domain\s*\.\s*ledger\s*\(\s*\)\s*;",
+    malformed_admission_is_atomic = bool(member_regression)
+    for case in ("cross_listed", "wrong_arena", "nonadjacent"):
+        ledger_capture = re.search(
+            rf"(?m)^    let\s+{case}_ledger\s*=\s*{case}_domain\s*\.\s*"
+            rf"ledger\s*\(\s*\)\s*;\s*$",
             member_regression,
         )
-        or not re.search(
-            rf"assert_eq!\s*\(\s*{case}_domain\s*\.\s*ledger\s*\(\s*\)\s*,\s*"
-            rf"{case}_ledger\s*\)",
+        rejected_admission = re.search(
+            rf"\b{case}_domain\s*\.\s*prepare_realization\s*\(",
             member_regression,
         )
-        for case in ("cross_listed", "wrong_arena", "nonadjacent")
-    ):
+        ledger_comparison = re.search(
+            rf"(?m)^    assert_eq!\s*\(\s*{case}_domain\s*\.\s*ledger\s*"
+            rf"\(\s*\)\s*,\s*{case}_ledger\s*\)\s*;\s*$",
+            member_regression,
+        )
+        malformed_admission_is_atomic = malformed_admission_is_atomic and bool(
+            ledger_capture
+            and rejected_admission
+            and ledger_comparison
+            and ledger_capture.start()
+            < rejected_admission.start()
+            < ledger_comparison.start()
+        )
+    if not malformed_admission_is_atomic:
         found.append("malformed arena plans do not prove atomic admission")
     if not any(
         "*active != Some(key)" in body and "initialization.clear()" in body

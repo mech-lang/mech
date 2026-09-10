@@ -1182,7 +1182,7 @@ impl MechFunctionImpl for Bypass {
             "src/core/src/memory_runtime/domain.rs",
             "            for (key, binding) in bindings.iter() {\n                let region = state",
             """            for (key, binding) in bindings.iter() {
-                if { binding.handle() != Some(handle) } {
+                if { (binding).handle() != Some(handle) } {
                     continue;
                 }
                 let region = state""",
@@ -1263,7 +1263,9 @@ impl MechFunctionImpl for Bypass {
             alignment: core::mem::align_of::<(MemoryObjectId, MemoryArenaId)>() as u32,
             space: MemorySpace::Host,
         })?;""",
-            "    let _ = member_placements.try_reserve_exact(member_count);",
+            """    let _ = member_placements.try_reserve_exact(member_count);
+    Result::<(), MemoryRuntimeError>::Ok(())
+        .map_err(|error| error)?;""",
         )
         self.assert_failure(
             root,
@@ -1288,7 +1290,7 @@ impl MechFunctionImpl for Bypass {
         self.replace(
             root,
             "src/core/src/memory_runtime/domain.rs",
-            """    for (arena, members) in &arena_members {
+            """    for (arena, members) in arena_members {
         member_placements.extend(members.iter().map(|member| (*member, *arena)));
     }
     member_placements.sort_unstable();""",
@@ -1298,7 +1300,9 @@ impl MechFunctionImpl for Bypass {
     }
     member_placements.sort_unstable();
     for (arena, members) in arena_members.iter().skip(split) {
-        member_placements.extend(members.iter().map(|member| (*member, *arena)));
+        for member in members {
+            member_placements.push((*member, *arena));
+        }
     }""",
         )
         self.assert_failure(
@@ -1313,6 +1317,26 @@ impl MechFunctionImpl for Bypass {
             "src/core/tests/r6_memory_runtime.rs",
             "    assert_eq!(wrong_arena_domain.ledger(), wrong_arena_ledger);\n",
             "",
+        )
+        self.assert_failure(
+            root,
+            "malformed arena plans do not prove atomic admission",
+        )
+
+    def test_115_ledger_snapshot_must_precede_rejected_admission(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/tests/r6_memory_runtime.rs",
+            "    let wrong_arena_ledger = wrong_arena_domain.ledger();\n",
+            "",
+        )
+        self.replace(
+            root,
+            "src/core/tests/r6_memory_runtime.rs",
+            "    assert_eq!(wrong_arena_domain.ledger(), wrong_arena_ledger);",
+            """    let wrong_arena_ledger = wrong_arena_domain.ledger();
+    assert_eq!(wrong_arena_domain.ledger(), wrong_arena_ledger);""",
         )
         self.assert_failure(
             root,

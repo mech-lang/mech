@@ -3127,6 +3127,49 @@ impl MemoryDomain {
     }
 }
 
+fn build_member_placement_index(
+    arena_members: &[(MemoryArenaId, Vec<MemoryObjectId>)],
+) -> MemoryRuntimeResult<Box<[(MemoryObjectId, MemoryArenaId)]>> {
+    let member_count = arena_members
+        .iter()
+        .try_fold(0_usize, |total, (_, members)| {
+            total.checked_add(members.len())
+        })
+        .ok_or(MemoryRuntimeError::AccountingInvariantViolation {
+            dimension: "arena member count",
+            current: u64::try_from(arena_members.len()).unwrap_or(u64::MAX),
+            change: u64::MAX,
+        })?;
+    let mut member_placements = Vec::<(MemoryObjectId, MemoryArenaId)>::new();
+    member_placements
+        .try_reserve_exact(member_count)
+        .map_err(|_| MemoryRuntimeError::AllocationFailed {
+            object: None,
+            requested: u64::try_from(member_count)
+                .unwrap_or(u64::MAX)
+                .saturating_mul(core::mem::size_of::<(MemoryObjectId, MemoryArenaId)>() as u64),
+            alignment: core::mem::align_of::<(MemoryObjectId, MemoryArenaId)>() as u32,
+            space: MemorySpace::Host,
+        })?;
+    for (arena, members) in arena_members {
+        member_placements.extend(members.iter().map(|member| (*member, *arena)));
+    }
+    member_placements.sort_unstable();
+    if let Some(duplicate) = member_placements
+        .windows(2)
+        .find(|pair| pair[0].0 == pair[1].0)
+        .map(|pair| pair[0].0)
+    {
+        return Err(MemoryRuntimeError::InvalidLayout {
+            object: Some(duplicate),
+            size: 0,
+            alignment: 1,
+            reason: "memory object is listed by more than one arena",
+        });
+    }
+    Ok(member_placements.into_boxed_slice())
+}
+
 fn validate_plan_view(
     domain: MemoryDomainId,
     view: RuntimePlanView<'_>,
@@ -3222,43 +3265,7 @@ fn validate_plan_view(
         });
     }
 
-    let member_count = arena_members
-        .iter()
-        .try_fold(0_usize, |total, (_, members)| {
-            total.checked_add(members.len())
-        })
-        .ok_or(MemoryRuntimeError::AccountingInvariantViolation {
-            dimension: "arena member count",
-            current: u64::try_from(arena_members.len()).unwrap_or(u64::MAX),
-            change: u64::MAX,
-        })?;
-    let mut member_placements = Vec::<(MemoryObjectId, MemoryArenaId)>::new();
-    member_placements
-        .try_reserve_exact(member_count)
-        .map_err(|_| MemoryRuntimeError::AllocationFailed {
-            object: None,
-            requested: u64::try_from(member_count)
-                .unwrap_or(u64::MAX)
-                .saturating_mul(core::mem::size_of::<(MemoryObjectId, MemoryArenaId)>() as u64),
-            alignment: core::mem::align_of::<(MemoryObjectId, MemoryArenaId)>() as u32,
-            space: MemorySpace::Host,
-        })?;
-    for (arena, members) in &arena_members {
-        member_placements.extend(members.iter().map(|member| (*member, *arena)));
-    }
-    member_placements.sort_unstable();
-    if let Some(duplicate) = member_placements
-        .windows(2)
-        .find(|pair| pair[0].0 == pair[1].0)
-        .map(|pair| pair[0].0)
-    {
-        return Err(MemoryRuntimeError::InvalidLayout {
-            object: Some(duplicate),
-            size: 0,
-            alignment: 1,
-            reason: "memory object is listed by more than one arena",
-        });
-    }
+    let member_placements = build_member_placement_index(&arena_members)?;
 
     let mut object_ids = Vec::new();
     object_ids
