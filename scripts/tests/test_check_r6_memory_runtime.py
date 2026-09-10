@@ -1542,6 +1542,164 @@ impl MechFunctionImpl for Bypass {
             "resident arena projection is not bound to its complete planned slot",
         )
 
+    def test_125_character_literals_cannot_spoof_structural_depth(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/memory_runtime/domain.rs",
+            """    member_placements
+        .try_reserve_exact(member_count)
+        .map_err(|_| MemoryRuntimeError::AllocationFailed {
+            object: None,
+            requested: u64::try_from(member_count)
+                .unwrap_or(u64::MAX)
+                .saturating_mul(core::mem::size_of::<(MemoryObjectId, MemoryArenaId)>() as u64),
+            alignment: core::mem::align_of::<(MemoryObjectId, MemoryArenaId)>() as u32,
+            space: MemorySpace::Host,
+        })?;""",
+            """    if member_count == 0 {
+        let _depth_adjust = '}';
+        member_placements
+            .try_reserve_exact(member_count)
+            .map_err(|_| MemoryRuntimeError::AllocationFailed {
+                object: None,
+                requested: u64::try_from(member_count)
+                    .unwrap_or(u64::MAX)
+                    .saturating_mul(core::mem::size_of::<(MemoryObjectId, MemoryArenaId)>() as u64),
+                alignment: core::mem::align_of::<(MemoryObjectId, MemoryArenaId)>() as u32,
+                space: MemorySpace::Host,
+            })?;
+        let _depth_restore = '{';
+    }""",
+        )
+        self.assert_failure(
+            root,
+            "runtime plan member authority is not one-to-one",
+        )
+
+    def test_126_projection_cannot_filter_a_binding_alias_by_handle(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/memory_runtime/domain.rs",
+            "            for (key, binding) in bindings.iter() {\n                let region = state",
+            """            for (key, binding) in bindings.iter() {
+                let candidate = binding.clone();
+                if candidate.handle() != Some(handle) {
+                    continue;
+                }
+                let region = state""",
+        )
+        self.assert_failure(
+            root,
+            "resident arena projection is not bound to its complete planned slot",
+        )
+
+    def test_127_flat_member_index_cannot_change_after_duplicate_check(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/memory_runtime/domain.rs",
+            "    Ok(member_placements.into_boxed_slice())",
+            """    if member_count > 1 {
+        member_placements[0] = member_placements[1];
+    }
+    Ok(member_placements.into_boxed_slice())""",
+        )
+        self.assert_failure(
+            root,
+            "runtime plan member authority is not one-to-one",
+        )
+
+    def test_128_member_arena_search_result_cannot_be_shadowed(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/memory_runtime/domain.rs",
+            """            .map(|(_, member_arena)| *member_arena);
+        if member_arena != Some(arena.id) {""",
+            """            .map(|(_, member_arena)| *member_arena);
+        let member_arena = Some(arena.id);
+        if member_arena != Some(arena.id) {""",
+        )
+        self.assert_failure(
+            root,
+            "runtime plan member authority is not one-to-one",
+        )
+
+    def test_129_rejected_admission_assertion_must_be_top_level(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/tests/r6_memory_runtime.rs",
+            """    assert!(matches!(
+        wrong_arena_domain.prepare_realization(runtime_plan_view(""",
+            """    if false {
+        assert!(matches!(
+            wrong_arena_domain.prepare_realization(runtime_plan_view(""",
+        )
+        self.replace(
+            root,
+            "src/core/tests/r6_memory_runtime.rs",
+            """        }) if object == MemoryObjectId::new(0)
+    ));
+    assert_eq!(wrong_arena_domain.ledger(), wrong_arena_ledger);""",
+            """        }) if object == MemoryObjectId::new(0)
+        ));
+    }
+    assert_eq!(wrong_arena_domain.ledger(), wrong_arena_ledger);""",
+        )
+        self.assert_failure(
+            root,
+            "malformed arena plans do not prove atomic admission",
+        )
+
+    def test_130_member_source_cannot_be_rebound_before_flattening(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/memory_runtime/domain.rs",
+            """    for (arena, members) in arena_members {
+        member_placements.extend(members.iter().map(|member| (*member, *arena)));
+    }""",
+            """    let arena_members = &arena_members[..0];
+    for (arena, members) in arena_members {
+        member_placements.extend(members.iter().map(|member| (*member, *arena)));
+    }""",
+        )
+        self.assert_failure(
+            root,
+            "runtime plan member authority is not one-to-one",
+        )
+
+    def test_131_flat_member_index_cannot_allocate_infallibly(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/memory_runtime/domain.rs",
+            "    let mut member_placements = Vec::<(MemoryObjectId, MemoryArenaId)>::new();",
+            """    let mut member_placements =
+        Vec::<(MemoryObjectId, MemoryArenaId)>::with_capacity(member_count);""",
+        )
+        self.assert_failure(
+            root,
+            "runtime plan member authority is not one-to-one",
+        )
+
+    def test_132_ledger_snapshot_cannot_be_rebound_after_rejection(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/tests/r6_memory_runtime.rs",
+            "    assert_eq!(wrong_arena_domain.ledger(), wrong_arena_ledger);",
+            """    let wrong_arena_ledger = wrong_arena_domain.ledger();
+    assert_eq!(wrong_arena_domain.ledger(), wrong_arena_ledger);""",
+        )
+        self.assert_failure(
+            root,
+            "malformed arena plans do not prove atomic admission",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

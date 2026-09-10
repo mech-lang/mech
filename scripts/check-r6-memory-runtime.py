@@ -122,6 +122,9 @@ WIRE_TYPES = {
 }
 
 RAW_LITERAL = re.compile(r'(?:br|rb|r)(?P<hashes>#{0,255})"')
+CHAR_LITERAL = re.compile(
+    r"(?:b)?'(?:\\(?:x[0-9A-Fa-f]{2}|u\{[0-9A-Fa-f_]+\}|[^\r\n])|[^\\'\r\n])'"
+)
 
 
 def rust_code(source: str) -> str:
@@ -163,6 +166,11 @@ def rust_code(source: str) -> str:
             end = size if end < 0 else end + len(delimiter)
             blank(index, end)
             index = end
+            continue
+        character = CHAR_LITERAL.match(source, index)
+        if character:
+            blank(index, character.end())
+            index = character.end()
             continue
         prefix = 1 if source.startswith(('b"', "b'"), index) else 0
         quote = index + prefix
@@ -239,6 +247,15 @@ def direct_match(pattern: str, source: str, *, depth: int = 0) -> re.Match[str] 
     return None
 
 
+def direct_matches(pattern: str, source: str, *, depth: int = 0) -> list[re.Match[str]]:
+    """Return every match that executes directly at one lexical block depth."""
+    return [
+        match
+        for match in re.finditer(pattern, source)
+        if brace_depth_at(source, match.start()) == depth
+    ]
+
+
 def matched_block(source: str, match: re.Match[str] | None) -> str | None:
     """Return the balanced block opened by a matched Rust control expression."""
     if match is None:
@@ -254,6 +271,24 @@ def matched_block(source: str, match: re.Match[str] | None) -> str | None:
             depth -= 1
             if depth == 0:
                 return source[start + 1 : index]
+    return None
+
+
+def matched_block_end(source: str, match: re.Match[str] | None) -> int | None:
+    """Return the exclusive end offset of a matched balanced Rust block."""
+    if match is None:
+        return None
+    start = source.find("{", match.start(), match.end())
+    if start < 0:
+        return None
+    depth = 1
+    for index in range(start + 1, len(source)):
+        if source[index] == "{":
+            depth += 1
+        elif source[index] == "}":
+            depth -= 1
+            if depth == 0:
+                return index + 1
     return None
 
 
@@ -828,11 +863,7 @@ def failures(root: Path) -> list[str]:
     arena_projection_paths = list(function_bodies(domain_code, "project_host_arena"))
     handle_filtered_projection = bool(
         arena_projection_paths
-        and re.search(
-            r"\bbinding\b(?:(?![;{}]).)*?\.\s*handle\s*\(",
-            arena_projection_paths[0],
-            re.DOTALL,
-        )
+        and re.search(r"\.\s*handle\s*\(", arena_projection_paths[0])
     )
     if not any(
         "arena_projection_owner" in body and "leases.is_empty()" in body
@@ -880,6 +911,20 @@ def failures(root: Path) -> list[str]:
         r"\bmember_placements\s*\.\s*([A-Za-z_][A-Za-z0-9_]*)\s*\(",
         member_index_body,
     )
+    member_count_definition = direct_match(
+        r"let\s+member_count\s*=\s*arena_members\s*\.\s*iter\s*\(\s*\)\s*"
+        r"\.\s*try_fold\s*\(\s*0_usize\s*,\s*\|total\s*,\s*\(_\s*,\s*members\)\|\s*"
+        r"\{\s*total\s*\.\s*checked_add\s*\(\s*members\s*\.\s*len\s*\(\s*\)\s*\)\s*\}\s*\)\s*"
+        r"\.\s*ok_or\s*\(\s*MemoryRuntimeError\s*::\s*AccountingInvariantViolation\s*"
+        r"\{[\s\S]*?\}\s*\)\s*\?\s*;",
+        member_index_body,
+    )
+    member_index_constructor = direct_match(
+        r"let\s+mut\s+member_placements\s*=\s*"
+        r"Vec\s*::\s*<\s*\(\s*MemoryObjectId\s*,\s*MemoryArenaId\s*\)\s*>\s*"
+        r"::\s*new\s*\(\s*\)\s*;",
+        member_index_body,
+    )
     member_index_reservation = direct_match(
         r"member_placements\s*\.\s*try_reserve_exact\s*"
         r"\(\s*member_count\s*\)\s*\.\s*map_err\s*"
@@ -892,16 +937,56 @@ def failures(root: Path) -> list[str]:
         member_index_body,
     )
     member_flatten_body = matched_block(member_index_body, member_flatten_loop)
+    member_flatten_end = matched_block_end(member_index_body, member_flatten_loop)
     member_flatten_extend = direct_match(
         r"member_placements\s*\.\s*extend\s*\(\s*members\s*\.\s*iter\s*\(\s*\)"
         r"\s*\.\s*map\s*\(\s*\|member\|\s*\(\s*\*member\s*,\s*\*arena\s*\)\s*\)"
         r"\s*\)\s*;",
         member_flatten_body or "",
     )
-    member_index_duplicates = re.search(
-        r"member_placements\s*\.\s*windows\s*\(\s*2\s*\)\s*"
-        r"\.\s*find\s*\(\s*\|pair\|\s*pair\[0\]\.0\s*==\s*pair\[1\]\.0\s*\)",
+    member_index_sort = direct_match(
+        r"member_placements\s*\.\s*sort_unstable\s*\(\s*\)\s*;",
         member_index_body,
+    )
+    member_duplicate_guard = direct_match(
+        r"if\s+let\s+Some\s*\(\s*duplicate\s*\)\s*=\s*member_placements\s*"
+        r"\.\s*windows\s*\(\s*2\s*\)\s*\.\s*find\s*"
+        r"\(\s*\|pair\|\s*pair\[0\]\.0\s*==\s*pair\[1\]\.0\s*\)\s*"
+        r"\.\s*map\s*\(\s*\|pair\|\s*pair\[0\]\.0\s*\)\s*\{",
+        member_index_body,
+    )
+    member_duplicate_end = matched_block_end(member_index_body, member_duplicate_guard)
+    member_index_freeze = direct_match(
+        r"Ok\s*\(\s*member_placements\s*\.\s*into_boxed_slice\s*\(\s*\)\s*\)\s*$",
+        member_index_body,
+    )
+    member_index_sequence = bool(
+        member_count_definition
+        and member_index_constructor
+        and member_index_reservation
+        and member_flatten_loop
+        and member_flatten_end is not None
+        and member_index_sort
+        and member_duplicate_guard
+        and member_duplicate_end is not None
+        and member_index_freeze
+        and not member_index_body[: member_count_definition.start()].strip()
+        and not member_index_body[
+            member_count_definition.end() : member_index_constructor.start()
+        ].strip()
+        and not member_index_body[
+            member_index_constructor.end() : member_index_reservation.start()
+        ].strip()
+        and not member_index_body[
+            member_index_reservation.end() : member_flatten_loop.start()
+        ].strip()
+        and not member_index_body[member_flatten_end : member_index_sort.start()].strip()
+        and not member_index_body[
+            member_index_sort.end() : member_duplicate_guard.start()
+        ].strip()
+        and not member_index_body[
+            member_duplicate_end : member_index_freeze.start()
+        ].strip()
     )
     allocation_loop = direct_match(
         r"for\s+allocation\s+in\s+view\s*\.\s*allocations\s*\{",
@@ -911,7 +996,12 @@ def failures(root: Path) -> list[str]:
         plan_validation_paths[0] if plan_validation_paths else "", allocation_loop
     )
     member_index_search = direct_match(
-        r"member_placements\s*\.\s*binary_search_by_key\s*\(",
+        r"let\s+member_arena\s*=\s*member_placements\s*"
+        r"\.\s*binary_search_by_key\s*\(\s*&allocation\s*\.\s*id\s*,\s*"
+        r"\|\(member\s*,\s*_\)\|\s*\*member\s*\)\s*\.\s*ok\s*\(\s*\)\s*"
+        r"\.\s*and_then\s*\(\s*\|index\|\s*member_placements\s*\.\s*get\s*"
+        r"\(\s*index\s*\)\s*\)\s*\.\s*map\s*"
+        r"\(\s*\|\(_\s*,\s*member_arena\)\|\s*\*member_arena\s*\)\s*;",
         allocation_loop_body or "",
     )
     member_index_call = direct_match(
@@ -933,6 +1023,16 @@ def failures(root: Path) -> list[str]:
         r"\bmember_placements\s*\.\s*([A-Za-z_][A-Za-z0-9_]*)\s*\(",
         plan_validation_paths[0] if plan_validation_paths else "",
     )
+    member_arena_bindings = re.findall(
+        r"\blet\s+(?:mut\s+)?member_arena\b", allocation_loop_body or ""
+    )
+    member_search_guard_sequence = bool(
+        member_index_search
+        and member_placement_guard
+        and not (allocation_loop_body or "")[
+            member_index_search.end() : member_placement_guard.start()
+        ].strip()
+    )
     if (
         not plan_validation_paths
         or not member_index_paths
@@ -945,14 +1045,18 @@ def failures(root: Path) -> list[str]:
             "into_boxed_slice",
         ]
         or member_index_reservation is None
+        or not member_index_sequence
         or member_flatten_loop is None
         or member_flatten_extend is None
-        or re.search(r"&\s*mut\s+member_placements\b", member_index_body)
-        or member_index_duplicates is None
+        or (member_flatten_body or "").strip()
+        != "member_placements.extend(members.iter().map(|member| (*member, *arena)));"
+        or re.search(r"\blet\s+(?:mut\s+)?arena_members\b", member_index_body)
         or member_index_search is None
         or member_index_call is None
         or member_placement_guard is None
+        or not member_search_guard_sequence
         or len(validation_member_bindings) != 1
+        or len(member_arena_bindings) != 1
         or validation_member_methods != ["binary_search_by_key", "get"]
         or "memory object is listed by more than one arena"
         not in sources.get("src/core/src/memory_runtime/domain.rs", "")
@@ -967,19 +1071,27 @@ def failures(root: Path) -> list[str]:
     member_regression = member_regression_paths[0] if member_regression_paths else ""
     malformed_admission_is_atomic = bool(member_regression)
     for case in ("cross_listed", "wrong_arena", "nonadjacent"):
-        ledger_capture = direct_match(
+        ledger_captures = direct_matches(
             rf"let\s+{case}_ledger\s*=\s*{case}_domain\s*\.\s*"
             rf"ledger\s*\(\s*\)\s*;",
             member_regression,
         )
-        rejected_admission = re.search(
-            rf"\b{case}_domain\s*\.\s*prepare_realization\s*\(",
+        rejected_admissions = direct_matches(
+            rf"assert!\s*\(\s*matches!\s*\(\s*{case}_domain\s*\.\s*"
+            rf"prepare_realization\s*\(",
             member_regression,
         )
-        ledger_comparison = direct_match(
+        ledger_comparisons = direct_matches(
             rf"assert_eq!\s*\(\s*{case}_domain\s*\.\s*ledger\s*"
             rf"\(\s*\)\s*,\s*{case}_ledger\s*\)\s*;",
             member_regression,
+        )
+        ledger_capture = ledger_captures[0] if len(ledger_captures) == 1 else None
+        rejected_admission = (
+            rejected_admissions[0] if len(rejected_admissions) == 1 else None
+        )
+        ledger_comparison = (
+            ledger_comparisons[0] if len(ledger_comparisons) == 1 else None
         )
         malformed_admission_is_atomic = malformed_admission_is_atomic and bool(
             ledger_capture
