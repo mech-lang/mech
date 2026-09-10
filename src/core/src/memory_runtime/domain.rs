@@ -1,5 +1,5 @@
 use crate::{
-    AllocationPlan, ArenaBackingKind, ArenaPlan, MemoryArenaId, MemoryBudgetLimits,
+    AllocationPlan, AllocationRole, ArenaBackingKind, ArenaPlan, MemoryArenaId, MemoryBudgetLimits,
     MemoryBudgetViolation, MemoryLifetime, MemoryObjectId, MemoryPlanPoint, MemorySpace,
     ResourceDemand, ReuseGroupId, TransactionRequirement,
 };
@@ -3140,6 +3140,16 @@ fn validate_plan_view(
                 size: allocation.capacity_bytes,
                 alignment: allocation.alignment,
                 reason: "allocation is absent from its arena member list",
+            });
+        }
+        let construction = allocation.role == AllocationRole::ConstructionWorkspace;
+        let reservation_only = arena.backing == ArenaBackingKind::ReservationOnlyWorkspace;
+        if construction != reservation_only {
+            return Err(MemoryRuntimeError::InvalidLayout {
+                object: Some(allocation.id),
+                size: allocation.capacity_bytes,
+                alignment: allocation.alignment,
+                reason: "construction workspace role and reservation-only backing must be paired",
             });
         }
         if arena.space != allocation.space {

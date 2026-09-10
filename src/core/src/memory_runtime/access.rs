@@ -3028,6 +3028,46 @@ impl KernelMemoryFrame<'_> {
             };
         }
 
+        #[cfg(feature = "complex")]
+        macro_rules! canonical_c32_target {
+            () => {
+                match target {
+                    #[cfg(feature = "u8")]
+                    K::U8 => self.convert_canonical_c32_port_lanes::<u8>(input, output),
+                    #[cfg(feature = "u16")]
+                    K::U16 => self.convert_canonical_c32_port_lanes::<u16>(input, output),
+                    #[cfg(feature = "u32")]
+                    K::U32 => self.convert_canonical_c32_port_lanes::<u32>(input, output),
+                    #[cfg(feature = "u64")]
+                    K::U64 => self.convert_canonical_c32_port_lanes::<u64>(input, output),
+                    #[cfg(feature = "u128")]
+                    K::U128 => self.convert_canonical_c32_port_lanes::<u128>(input, output),
+                    #[cfg(feature = "i8")]
+                    K::I8 => self.convert_canonical_c32_port_lanes::<i8>(input, output),
+                    #[cfg(feature = "i16")]
+                    K::I16 => self.convert_canonical_c32_port_lanes::<i16>(input, output),
+                    #[cfg(feature = "i32")]
+                    K::I32 => self.convert_canonical_c32_port_lanes::<i32>(input, output),
+                    #[cfg(feature = "i64")]
+                    K::I64 => self.convert_canonical_c32_port_lanes::<i64>(input, output),
+                    #[cfg(feature = "i128")]
+                    K::I128 => self.convert_canonical_c32_port_lanes::<i128>(input, output),
+                    #[cfg(feature = "f32")]
+                    K::F32 => self.convert_canonical_c32_port_lanes::<f32>(input, output),
+                    #[cfg(feature = "f64")]
+                    K::F64 => self.convert_canonical_c32_port_lanes::<f64>(input, output),
+                    K::C64 => self.convert_canonical_c32_port_lanes::<crate::C64>(input, output),
+                    #[cfg(feature = "rational")]
+                    K::R64 => self.convert_canonical_c32_port_lanes::<crate::R64>(input, output),
+                    _ => Err(crate::MechError::new(
+                        crate::ConversionExecutionError::ConversionExecutionUnsupported,
+                        None,
+                    )
+                    .with_compiler_loc()),
+                }
+            };
+        }
+
         match source {
             #[cfg(feature = "u8")]
             K::U8 => target!(u8),
@@ -3053,6 +3093,8 @@ impl KernelMemoryFrame<'_> {
             K::F32 => target!(f32),
             #[cfg(feature = "f64")]
             K::F64 => target!(f64),
+            #[cfg(feature = "complex")]
+            K::C32 => canonical_c32_target!(),
             #[cfg(feature = "complex")]
             K::C64 => target!(crate::C64),
             #[cfg(feature = "rational")]
@@ -3155,6 +3197,83 @@ impl KernelMemoryFrame<'_> {
             O::from_conversion_draft(converted)
                 .map_err(|error| crate::MechError::new(error, None).with_compiler_loc())
         })?;
+        self.record_view_initialized::<O>(output_lease)?;
+        Ok(())
+    }
+
+    /// Converts the canonical C32 representation directly into a fixed-width
+    /// staged output. C32 intentionally has no public native runtime lane, so
+    /// the input remains a borrowed immutable snapshot while the selected
+    /// conversion plan writes through the ordinary managed output view.
+    #[cfg(all(feature = "functions", feature = "complex"))]
+    fn convert_canonical_c32_port_lanes<O: FixedConversionLane>(
+        &mut self,
+        input: &crate::ValueCell,
+        output: &crate::ValueCell,
+    ) -> crate::MResult<()> {
+        let snapshot = self.snapshot_input_cell(input, 0)?;
+        let output_lease =
+            self.port_lease(output.reactive_cell_id(), ManagedPortRole::Output(0), true)?;
+        self.validate_managed_element::<O>(output_lease, false)?;
+        let mut output_view = self.write_view::<O>(output_lease)?;
+        let convert = |value: crate::snapshot::Complex32Bits| {
+            let converted = crate::execute_scalar_conversion(
+                crate::ValueDataDraft::Complex32(value),
+                crate::BuiltinScalarKind::C32,
+                O::KIND,
+            )
+            .map_err(|error| crate::MechError::new(error, None).with_compiler_loc())?;
+            O::from_conversion_draft(converted)
+                .map_err(|error| crate::MechError::new(error, None).with_compiler_loc())
+        };
+
+        match snapshot.data() {
+            crate::ValueData::Complex32(value) if output_view.len() == 1 => {
+                output_view.try_fill_column_major(|_| convert(*value))?;
+            }
+            crate::ValueData::Matrix(matrix) => {
+                let crate::snapshot::SequenceView::Complex32(values) = matrix.elements() else {
+                    return Err(crate::MechError::new(
+                        crate::ConversionExecutionError::ConversionPlanSourceMismatch,
+                        None,
+                    )
+                    .with_compiler_loc());
+                };
+                if values.len() != output_view.len() {
+                    return Err(MemoryRuntimeError::InvalidLayout {
+                        object: Some(output_lease.object.object()),
+                        size: output_view.len() as u64,
+                        alignment: core::mem::align_of::<O>() as u32,
+                        reason: "C32 conversion input and staged output geometry disagree",
+                    }
+                    .into());
+                }
+                let rows = output_view.rows();
+                let columns = output_view.columns();
+                output_view.try_fill_column_major(|index| {
+                    let row = index % rows;
+                    let column = index / rows;
+                    let source = row
+                        .checked_mul(columns)
+                        .and_then(|base| base.checked_add(column))
+                        .and_then(|source| values.get(source))
+                        .copied()
+                        .ok_or(MemoryRuntimeError::CapacityExceeded {
+                            object: output_lease.object.object(),
+                            requested: index as u64 + 1,
+                            capacity: values.len() as u64,
+                        })?;
+                    convert(source)
+                })?;
+            }
+            _ => {
+                return Err(crate::MechError::new(
+                    crate::ConversionExecutionError::ConversionPlanSourceMismatch,
+                    None,
+                )
+                .with_compiler_loc());
+            }
+        }
         self.record_view_initialized::<O>(output_lease)?;
         Ok(())
     }

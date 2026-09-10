@@ -294,7 +294,7 @@ mod tests {
         let version = output.published_version();
         let revision = function.instance().managed_plan_revision();
         let mut services = LiveServices {
-            result: ValueCell::from_exact("new value with a larger admitted payload".to_owned())
+            result: ValueCell::from_exact("initial rejected value".repeat(4_096))
                 .unwrap()
                 .snapshot()
                 .unwrap(),
@@ -302,24 +302,40 @@ mod tests {
             bindings: 0,
         };
 
-        assert!(
-            function
-                .instance()
-                .solve_result_with(&mut services)
-                .is_err()
-        );
-        assert_eq!(text(&output), "old");
-        assert_eq!(output.published_version(), version);
-        assert_eq!(*state.borrow(), 0);
-        assert_eq!(services.bindings, 0);
-        assert_eq!(function.instance().managed_plan_revision(), revision);
+        let steady_metadata = domain.metadata_observation();
+        let steady_ledger = domain.ledger();
+        for attempt in 0..8 {
+            services.result =
+                ValueCell::from_exact(format!("rejected-{attempt}-").repeat(4_096 + attempt * 257))
+                    .unwrap()
+                    .snapshot()
+                    .unwrap();
+            assert!(
+                function
+                    .instance()
+                    .solve_result_with(&mut services)
+                    .is_err()
+            );
+            assert_eq!(text(&output), "old");
+            assert_eq!(output.published_version(), version);
+            assert_eq!(*state.borrow(), 0);
+            assert_eq!(services.bindings, 0);
+            assert_eq!(function.instance().managed_plan_revision(), revision);
+            assert_eq!(domain.metadata_observation(), steady_metadata);
+            assert_eq!(domain.ledger(), steady_ledger);
+        }
 
+        let recovered = "new value with a larger admitted payload".repeat(2_048);
+        services.result = ValueCell::from_exact(recovered.clone())
+            .unwrap()
+            .snapshot()
+            .unwrap();
         services.reject_binding = false;
         function
             .instance()
             .solve_result_with(&mut services)
             .unwrap();
-        assert_eq!(text(&output), "new value with a larger admitted payload");
+        assert_eq!(text(&output), recovered);
         assert_eq!(output.published_version().get(), version.get() + 1);
         assert_eq!(*state.borrow(), 1);
         assert_eq!(services.bindings, 1);

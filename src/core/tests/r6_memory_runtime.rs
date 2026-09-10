@@ -183,6 +183,51 @@ fn construction_workspace_is_reserved_without_a_duplicate_host_block() {
 }
 
 #[test]
+fn construction_workspace_role_and_reservation_backing_are_a_sealed_pair() {
+    let construction_domain = MemoryDomain::new().unwrap();
+    let construction_revision = construction_domain.issue_plan_revision().unwrap();
+    let mut construction = allocation(0, 0, 0, 4_096, 4_096, MemoryLifetime::Activation, None);
+    construction.role = AllocationRole::ConstructionWorkspace;
+    construction.slot = None;
+    construction.alignment = 1;
+    assert!(matches!(
+        construction_domain.prepare_realization(runtime_plan_view(
+            construction_revision,
+            &[construction],
+            &[arena(0, ArenaBackingKind::ContiguousBytes, 4_096, &[0])],
+            ResourceDemand::default(),
+            MemoryBudgetLimits::default(),
+            &[],
+        )),
+        Err(MemoryRuntimeError::InvalidLayout { .. })
+    ));
+    assert_eq!(construction_domain.ledger(), Default::default());
+
+    let storage_domain = MemoryDomain::new().unwrap();
+    let storage_revision = storage_domain.issue_plan_revision().unwrap();
+    let mut storage = allocation(0, 0, 0, 4_096, 4_096, MemoryLifetime::Activation, None);
+    storage.slot = None;
+    storage.alignment = 1;
+    assert!(matches!(
+        storage_domain.prepare_realization(runtime_plan_view(
+            storage_revision,
+            &[storage],
+            &[arena(
+                0,
+                ArenaBackingKind::ReservationOnlyWorkspace,
+                4_096,
+                &[0],
+            )],
+            ResourceDemand::default(),
+            MemoryBudgetLimits::default(),
+            &[],
+        )),
+        Err(MemoryRuntimeError::InvalidLayout { .. })
+    ));
+    assert_eq!(storage_domain.ledger(), Default::default());
+}
+
+#[test]
 fn realization_recomputes_budget_instead_of_trusting_cached_violations() {
     let domain = MemoryDomain::new().unwrap();
     let revision = domain.issue_plan_revision().unwrap();

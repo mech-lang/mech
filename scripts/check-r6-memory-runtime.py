@@ -462,6 +462,51 @@ def failures(root: Path) -> list[str]:
         or "collect_retired" not in promotion_paths[0]
     ):
         found.append("ordinary cold-path replacement or promotion omits retired collection")
+    solve_publication_paths = [
+        body
+        for body in function_bodies(function_source, "solve_reactive_with")
+        if "prepare_reactive_publication" in body
+    ]
+    if (
+        not solve_publication_paths
+        or "prepare_external_publication" not in solve_publication_paths[0]
+        or not re.search(
+            r"Err\s*\(\s*error\s*\).*?drop\s*\(\s*prepared\s*\)\s*;.*?collect_retired\s*\(\s*\).*?Err\s*\(\s*error\s*\)",
+            solve_publication_paths[0],
+            re.DOTALL,
+        )
+    ):
+        found.append("late publication preparation failure omits retired collection")
+    preparation_paths = list(
+        function_bodies(function_source, "prepare_reactive_publication")
+    )
+    if (
+        not preparation_paths
+        or "let abandoned_candidate = candidate.is_some()" not in preparation_paths[0]
+        or not re.search(
+            r"drop\s*\(\s*candidate\s*\)\s*;\s*if\s+abandoned_candidate\s*\{\s*current\s*\.\s*domain\s*\.\s*collect_retired",
+            preparation_paths[0],
+            re.DOTALL,
+        )
+    ):
+        found.append("unchanged invariant turn invokes cold reclamation without a candidate")
+    register_paths = list(
+        function_bodies(function_source, "commit_pending_registers_impl")
+    )
+    abandoned_batches = list(
+        function_bodies(function_source, "collect_abandoned_function_publications")
+    )
+    if (
+        not register_paths
+        or register_paths[0].count("collect_abandoned_function_publications(staged)") < 2
+        or not abandoned_batches
+        or not re.search(
+            r"drop\s*\(\s*prepared\s*\)\s*;.*?collect_retired",
+            abandoned_batches[0],
+            re.DOTALL,
+        )
+    ):
+        found.append("failed register batch collects while staged candidates remain owned")
     if "publication_shape" not in cell or not any(
         "publication_shape" in body and "publication_locked" in body
         for body in function_bodies(cell, "lock_publication")
@@ -797,6 +842,17 @@ def failures(root: Path) -> list[str]:
         or "from_resolved_descriptor_data" in conversion_staging[0]
     ):
         found.append("managed conversion escapes its frame-owned construction authority")
+    fixed_conversion = list(function_bodies(access, "execute_fixed_conversion_plan"))
+    canonical_c32 = list(function_bodies(access, "convert_canonical_c32_port_lanes"))
+    if (
+        not fixed_conversion
+        or not any("K::C32 => canonical_c32_target!()" in body for body in fixed_conversion)
+        or not canonical_c32
+        or "snapshot_input_cell(input, 0)" not in canonical_c32[0]
+        or "execute_scalar_conversion" not in canonical_c32[0]
+        or "try_fill_column_major" not in canonical_c32[0]
+    ):
+        found.append("managed fixed conversion rejects canonical C32 sources")
     memory_model = rust_code(sources.get("src/core/src/memory_plan/model.rs", ""))
     memory_derive = rust_code(sources.get("src/core/src/memory_plan/derive.rs", ""))
     program_planner = rust_code(sources.get("src/engine/src/memory_planner/program.rs", ""))
@@ -808,6 +864,41 @@ def failures(root: Path) -> list[str]:
         or "ArenaBackingKind::ReservationOnlyWorkspace" not in program_planner
     ):
         found.append("canonical construction workspace retains duplicate contiguous backing")
+    if (
+        "allocation.role == AllocationRole::ConstructionWorkspace" not in domain
+        or "construction != reservation_only" not in domain
+    ):
+        found.append("construction workspace role can enter a physical arena")
+
+    table_ops = rust_code(sources.get("src/engine/src/intrinsics/table_ops.rs", ""))
+    canonical_table = balanced_body(table_ops, "CanonicalTable")
+    managed_join = [
+        body
+        for body in function_bodies(table_ops, "solve_managed")
+        if "joined_table_data_with_construction" in body
+    ]
+    join_construction = list(
+        function_bodies(table_ops, "joined_table_data_with_construction")
+    )
+    table_value = list(function_bodies(table_ops, "value"))
+    sequence_draft = list(function_bodies(table_ops, "sequence_draft_at"))
+    if (
+        canonical_table is None
+        or "snapshot: mech_core::Value" not in canonical_table
+        or not managed_join
+        or managed_join[0].count("CanonicalTable::from_borrowed") != 2
+        or "canonical_data_draft" in managed_join[0]
+        or "to_values" in managed_join[0]
+        or not join_construction
+        or not table_value
+        or "sequence_draft_at" not in table_value[0]
+        or not sequence_draft
+        or "canonical_snapshot_data_draft" not in sequence_draft[0]
+        or "lhs.value" not in join_construction[0]
+        or "rhs.value" not in join_construction[0]
+        or "try_finish_preallocated_with" not in join_construction[0]
+    ):
+        found.append("managed table join materializes input columns before construction admission")
     conversion_footprints = list(
         function_bodies(literal, "prospective_conversion_output_footprint")
     )

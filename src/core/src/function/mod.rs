@@ -494,6 +494,30 @@ struct PreparedFunctionPublication {
     _execution_scope: Option<MemoryPlanScope>,
 }
 
+fn collect_abandoned_function_publications(
+    prepared: Vec<(ReactiveNodeId, PreparedFunctionPublication)>,
+) -> MResult<()> {
+    let mut domains = Vec::new();
+    for (_, publication) in &prepared {
+        let Some(candidate) = publication.next_realization.as_ref() else {
+            continue;
+        };
+        if !domains
+            .iter()
+            .any(|domain: &MemoryDomain| domain.id() == candidate.domain.id())
+        {
+            domains.push(candidate.domain.clone());
+        }
+    }
+    // Every candidate and execution scope must unwind before collection or
+    // its realization owner will still pin the allocation records.
+    drop(prepared);
+    for domain in domains {
+        domain.collect_retired().map_err(MechError::from)?;
+    }
+    Ok(())
+}
+
 struct PreparedExternalResult {
     value: Option<Value>,
     shape: ShapeInstance,
@@ -1017,34 +1041,50 @@ impl FunctionInstance {
                 return Err(error);
             }
         };
-        let status = prepared.status;
-        if let Some(publication) = prepared.publication.take() {
-            let external = prepared
-                .external
-                .then(|| self.implementation.prepare_external_publication(services))
-                .transpose()?
-                .flatten();
-            let ready = PreparedCellPublicationBatch::new(vec![publication])?.ready()?;
-            ready.commit();
-            // Publication and realization become one observable transition.
-            // Promote before installing an external subscription so a live
-            // observer can never resolve the newly published cell through the
-            // preceding physical realization.
-            self.promote_prepared_realization(&mut prepared)?;
-            if prepared.external {
-                self.implementation.external_publication_committed();
-                if let Some(external) = external {
-                    external.commit();
+        let result = (|| -> MResult<ReactiveSolveStatus> {
+            let status = prepared.status;
+            if let Some(publication) = prepared.publication.take() {
+                let external = prepared
+                    .external
+                    .then(|| self.implementation.prepare_external_publication(services))
+                    .transpose()?
+                    .flatten();
+                let ready = PreparedCellPublicationBatch::new(vec![publication])?.ready()?;
+                ready.commit();
+                // Publication and realization become one observable transition.
+                // Promote before installing an external subscription so a live
+                // observer can never resolve the newly published cell through the
+                // preceding physical realization.
+                self.promote_prepared_realization(&mut prepared)?;
+                if prepared.external {
+                    self.implementation.external_publication_committed();
+                    if let Some(external) = external {
+                        external.commit();
+                    }
                 }
+            } else {
+                // Effect-only calls have no cell publication to carry a revised
+                // input geometry. Their successfully executed realization is
+                // nevertheless the new cold-path binding authority. Failed calls
+                // never reach here.
+                self.promote_prepared_realization(&mut prepared)?;
             }
-        } else {
-            // Effect-only calls have no cell publication to carry a revised
-            // input geometry. Their successfully executed realization is
-            // nevertheless the new cold-path binding authority. Failed calls
-            // never reach here.
-            self.promote_prepared_realization(&mut prepared)?;
+            Ok(status)
+        })();
+        match result {
+            Ok(status) => Ok(status),
+            Err(error) => {
+                // External-publication preparation and publication readiness are
+                // part of the same cold path as candidate realization. Unwind all
+                // borrowed publication state and candidate owners before asking
+                // the registry to reclaim them; a continuously failing provider
+                // must not need a later successful turn to release its attempts.
+                let domain = self.managed.current.borrow().domain.clone();
+                drop(prepared);
+                domain.collect_retired().map_err(MechError::from)?;
+                Err(error)
+            }
         }
-        Ok(status)
     }
 
     /// Runs this implementation inside an executor-owned managed frame.
@@ -1179,10 +1219,13 @@ impl FunctionInstance {
                     // its stage uninitialized; the old binding and its own content
                     // version remain authoritative. Dropping a cold candidate here
                     // also leaves the previous executable realization intact.
+                    let abandoned_candidate = candidate.is_some();
                     drop(frame);
                     drop(_scope);
                     drop(candidate);
-                    current.domain.collect_retired().map_err(MechError::from)?;
+                    if abandoned_candidate {
+                        current.domain.collect_retired().map_err(MechError::from)?;
+                    }
                     return Ok(PreparedFunctionPublication {
                         status,
                         publication: None,
@@ -3082,14 +3125,16 @@ impl ReactivePlan {
             let node = &self.nodes[*node_id];
             let found = node.function.instance.reactive_output_cell_ids();
             if found != node.outputs {
-                return Err(MechError::new(
+                let error = MechError::new(
                     ReactiveRegisterStagedOutputMismatchError {
                         node_id: node.id,
                         expected: node.outputs.clone(),
                         found,
                     },
                     None,
-                ));
+                );
+                collect_abandoned_function_publications(staged)?;
+                return Err(error);
             }
             let prepared = match node
                 .function
@@ -3098,15 +3143,7 @@ impl ReactivePlan {
             {
                 Ok(prepared) => prepared,
                 Err(error) => {
-                    let domain = node
-                        .function
-                        .instance
-                        .managed
-                        .current
-                        .borrow()
-                        .domain
-                        .clone();
-                    domain.collect_retired().map_err(MechError::from)?;
+                    collect_abandoned_function_publications(staged)?;
                     return Err(error);
                 }
             };
@@ -3122,9 +3159,16 @@ impl ReactivePlan {
             .iter_mut()
             .filter_map(|(_, prepared)| prepared.publication.take())
             .collect();
-        PreparedCellPublicationBatch::new(publications)?
-            .ready()?
-            .commit();
+        let ready = match PreparedCellPublicationBatch::new(publications)
+            .and_then(PreparedCellPublicationBatch::ready)
+        {
+            Ok(ready) => ready,
+            Err(error) => {
+                collect_abandoned_function_publications(staged)?;
+                return Err(error);
+            }
+        };
+        ready.commit();
         for (node_id, mut prepared) in staged {
             self.nodes[node_id]
                 .function

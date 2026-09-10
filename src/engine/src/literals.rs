@@ -1371,6 +1371,77 @@ mod canonical_conversion_tests {
         ));
     }
 
+    #[cfg(feature = "complex")]
+    #[test]
+    fn canonical_c32_executes_selected_fixed_conversions_and_recovers_atomically() {
+        let c32 = |real: f32, imaginary: f32| {
+            ValueCell::from_schema_data(
+                SchemaBody::Complex(FloatWidth::W32),
+                ValueDataDraft::Complex32(mech_core::snapshot::Complex32Bits::new(
+                    F32Bits::from_f32(real),
+                    F32Bits::from_f32(imaginary),
+                )),
+            )
+            .unwrap()
+        };
+
+        let source = c32(1.5, 0.0);
+        let target = SchemaBody::FloatingPoint(FloatWidth::W64);
+        let source_type = source.resolved_type().unwrap();
+        let target_type = ResolvedType::from_schema_body(&target, &[]).unwrap();
+        let plan = plan_explicit_cast(&source_type, &target_type).unwrap();
+        let output = execute_conversion_plan(&source, &target, &plan).unwrap();
+        let conversion =
+            planned_type_conversion_specialized(source.clone(), output.clone(), plan).unwrap();
+
+        conversion.instance().solve_result().unwrap();
+        assert!(matches!(
+            output.snapshot().unwrap().data(),
+            ValueData::F64(value) if value.to_f64() == 1.5
+        ));
+        let successful_version = output.published_version();
+
+        source.replace(&c32(1.5, 2.0).snapshot().unwrap()).unwrap();
+        assert_eq!(
+            conversion
+                .instance()
+                .solve_result()
+                .unwrap_err()
+                .kind_name(),
+            "ConversionImaginaryPartNonZero"
+        );
+        assert!(matches!(
+            output.snapshot().unwrap().data(),
+            ValueData::F64(value) if value.to_f64() == 1.5
+        ));
+        assert_eq!(output.published_version(), successful_version);
+
+        source.replace(&c32(2.5, 0.0).snapshot().unwrap()).unwrap();
+        conversion.instance().solve_result().unwrap();
+        assert!(matches!(
+            output.snapshot().unwrap().data(),
+            ValueData::F64(value) if value.to_f64() == 2.5
+        ));
+        assert!(output.published_version() > successful_version);
+
+        let complex_source = c32(1.5, 2.0);
+        let complex_target = SchemaBody::Complex(FloatWidth::W64);
+        let source_type = complex_source.resolved_type().unwrap();
+        let target_type = ResolvedType::from_schema_body(&complex_target, &[]).unwrap();
+        let plan = plan_implicit_conversion(&source_type, &target_type).unwrap();
+        let complex_output =
+            execute_conversion_plan(&complex_source, &complex_target, &plan).unwrap();
+        let complex_conversion =
+            planned_type_conversion_specialized(complex_source, complex_output.clone(), plan)
+                .unwrap();
+        complex_conversion.instance().solve_result().unwrap();
+        assert!(matches!(
+            complex_output.snapshot().unwrap().data(),
+            ValueData::Complex64(value)
+                if value.real().to_f64() == 1.5 && value.imaginary().to_f64() == 2.0
+        ));
+    }
+
     #[test]
     fn reactive_conversion_stages_success_and_keeps_failures_atomic() {
         let source = ValueCell::from_exact(12.9_f64).unwrap();

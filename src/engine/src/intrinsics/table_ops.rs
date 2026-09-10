@@ -1,5 +1,6 @@
 use crate::intrinsics::*;
-use mech_core::snapshot::{OptionDraft, TableColumnDraft};
+use mech_core::snapshot::{OptionDraft, SequenceView, TableColumnDraft};
+use std::borrow::Cow;
 use std::sync::LazyLock;
 
 pub(crate) static PURE_TABLE_JOIN_CONTRACT: LazyLock<OperationContractDeclaration> =
@@ -41,62 +42,68 @@ pub(crate) enum JoinMode {
 }
 
 #[derive(Clone)]
-struct CanonicalTable {
-    fields: Box<[SchemaField]>,
-    columns: Box<[TableColumnDraft]>,
-    canonical_columns: Box<[Box<[ValueData]>]>,
+struct CanonicalTable<'a> {
+    fields: Cow<'a, [SchemaField]>,
+    snapshot: mech_core::Value,
     rows: usize,
 }
 
-impl CanonicalTable {
+impl CanonicalTable<'static> {
     fn from_cell(cell: &ValueCell) -> MResult<Self> {
         let snapshot = cell.snapshot()?;
-        Self::from_value(cell, &snapshot)
+        let fields = table_fields(cell)?;
+        Self::from_parts(Cow::Owned(fields.into_vec()), snapshot)
+    }
+}
+
+impl<'a> CanonicalTable<'a> {
+    fn from_borrowed(fields: &'a [SchemaField], snapshot: mech_core::Value) -> MResult<Self> {
+        Self::from_parts(Cow::Borrowed(fields), snapshot)
     }
 
-    fn from_value(cell: &ValueCell, snapshot: &mech_core::Value) -> MResult<Self> {
-        let SchemaBody::Table { columns, .. } = cell.closed_schema_body()? else {
-            return Err(table_join_error("input must be a canonical table"));
+    fn from_parts(fields: Cow<'a, [SchemaField]>, snapshot: mech_core::Value) -> MResult<Self> {
+        let ValueData::Table(table) = snapshot.data() else {
+            return Err(table_join_error("table input has a non-table snapshot"));
         };
-        let ValueDataDraft::Table(values) = snapshot.canonical_data_draft().map_err(|error| {
-            MechError::new(ValueCellSnapshotFailure { error }, None).with_compiler_loc()
-        })?
-        else {
-            return Err(table_join_error("table input has a non-table payload"));
-        };
-        let rows = values.first().map_or(0, |column| column.values.len());
-        if values.iter().any(|column| column.values.len() != rows) {
+        if table.len() != fields.len() {
+            return Err(table_join_error("table snapshot omitted a schema column"));
+        }
+        let rows = table.column(0).map_or(0, SequenceView::len);
+        if (0..fields.len()).any(|column| {
+            table
+                .column(column)
+                .is_none_or(|values| values.len() != rows)
+        }) {
             return Err(table_join_error(
                 "table columns have inconsistent row counts",
             ));
         }
-        let ValueData::Table(table) = snapshot.data() else {
-            return Err(table_join_error("table input has a non-table snapshot"));
-        };
-        let canonical_columns = (0..columns.len())
-            .map(|index| {
-                table
-                    .column(index)
-                    .map(|column| column.to_values().into_boxed_slice())
-                    .ok_or_else(|| table_join_error("table snapshot omitted a schema column"))
-            })
-            .collect::<MResult<Vec<_>>>()?
-            .into_boxed_slice();
         Ok(Self {
-            fields: columns,
-            columns: values,
-            canonical_columns,
+            fields,
+            snapshot,
             rows,
         })
     }
 
-    fn value(&self, column: usize, row: usize) -> &ValueDataDraft {
-        &self.columns[column].values[row]
+    fn value(&self, column: usize, row: usize) -> MResult<ValueDataDraft> {
+        sequence_draft_at(&self.fields[column].schema, self.column(column), row)
     }
 
-    fn canonical_value(&self, column: usize, row: usize) -> &ValueData {
-        &self.canonical_columns[column][row]
+    fn column(&self, column: usize) -> SequenceView<'_> {
+        let ValueData::Table(table) = self.snapshot.data() else {
+            unreachable!("CanonicalTable construction validates the table payload")
+        };
+        table
+            .column(column)
+            .expect("CanonicalTable construction validates every schema column")
     }
+}
+
+fn table_fields(cell: &ValueCell) -> MResult<Box<[SchemaField]>> {
+    let SchemaBody::Table { columns, .. } = cell.closed_schema_body()? else {
+        return Err(table_join_error("input must be a canonical table"));
+    };
+    Ok(columns)
 }
 
 fn table_join_error(message: impl Into<String>) -> MechError {
@@ -109,6 +116,126 @@ fn table_join_error(message: impl Into<String>) -> MechError {
     .with_compiler_loc()
 }
 
+fn sequence_draft_at(
+    schema: &SchemaBody,
+    values: SequenceView<'_>,
+    index: usize,
+) -> MResult<ValueDataDraft> {
+    macro_rules! copied {
+        ($values:expr, $variant:ident) => {
+            $values.get(index).copied().map(ValueDataDraft::$variant)
+        };
+    }
+    let draft = match values {
+        SequenceView::U8(values) => copied!(values, U8),
+        SequenceView::U16(values) => copied!(values, U16),
+        SequenceView::U32(values) => copied!(values, U32),
+        SequenceView::U64(values) => copied!(values, U64),
+        SequenceView::U128(values) => copied!(values, U128),
+        SequenceView::I8(values) => copied!(values, I8),
+        SequenceView::I16(values) => copied!(values, I16),
+        SequenceView::I32(values) => copied!(values, I32),
+        SequenceView::I64(values) => copied!(values, I64),
+        SequenceView::I128(values) => copied!(values, I128),
+        SequenceView::F32(values) => copied!(values, F32),
+        SequenceView::F64(values) => copied!(values, F64),
+        SequenceView::Complex32(values) => copied!(values, Complex32),
+        SequenceView::Complex64(values) => copied!(values, Complex64),
+        SequenceView::Rational64(values) => {
+            values.get(index).map(|value| ValueDataDraft::Rational64 {
+                numerator: value.numerator(),
+                denominator: value.denominator(),
+            })
+        }
+        SequenceView::Bool(values) => copied!(values, Bool),
+        SequenceView::String(values) => values
+            .get(index)
+            .map(|value| ValueDataDraft::String(value.as_ref().to_owned())),
+        SequenceView::Id(values) => copied!(values, Id),
+        SequenceView::Index(values) => copied!(values, Index),
+        SequenceView::Unit(count) => (u64::try_from(index).ok().is_some_and(|index| index < count))
+            .then_some(ValueDataDraft::Atom),
+        SequenceView::Values(values) => values
+            .get(index)
+            .map(|value| {
+                mech_core::snapshot::canonical_snapshot_data_draft(schema, value).map_err(|error| {
+                    MechError::new(ValueCellSnapshotFailure { error }, None).with_compiler_loc()
+                })
+            })
+            .transpose()?,
+    };
+    draft.ok_or_else(|| table_join_error("table row index exceeds its canonical column"))
+}
+
+fn sequence_language_eq_at(
+    schema: &SchemaBody,
+    lhs: SequenceView<'_>,
+    lhs_row: usize,
+    rhs: SequenceView<'_>,
+    rhs_row: usize,
+) -> bool {
+    macro_rules! exact {
+        ($lhs:expr, $rhs:expr) => {
+            $lhs.get(lhs_row) == $rhs.get(rhs_row)
+        };
+    }
+    match (lhs, rhs) {
+        (SequenceView::U8(lhs), SequenceView::U8(rhs)) => exact!(lhs, rhs),
+        (SequenceView::U16(lhs), SequenceView::U16(rhs)) => exact!(lhs, rhs),
+        (SequenceView::U32(lhs), SequenceView::U32(rhs)) => exact!(lhs, rhs),
+        (SequenceView::U64(lhs), SequenceView::U64(rhs)) => exact!(lhs, rhs),
+        (SequenceView::U128(lhs), SequenceView::U128(rhs)) => exact!(lhs, rhs),
+        (SequenceView::I8(lhs), SequenceView::I8(rhs)) => exact!(lhs, rhs),
+        (SequenceView::I16(lhs), SequenceView::I16(rhs)) => exact!(lhs, rhs),
+        (SequenceView::I32(lhs), SequenceView::I32(rhs)) => exact!(lhs, rhs),
+        (SequenceView::I64(lhs), SequenceView::I64(rhs)) => exact!(lhs, rhs),
+        (SequenceView::I128(lhs), SequenceView::I128(rhs)) => exact!(lhs, rhs),
+        (SequenceView::F32(lhs), SequenceView::F32(rhs)) => lhs
+            .get(lhs_row)
+            .zip(rhs.get(rhs_row))
+            .is_some_and(|(lhs, rhs)| lhs.to_f32() == rhs.to_f32()),
+        (SequenceView::F64(lhs), SequenceView::F64(rhs)) => lhs
+            .get(lhs_row)
+            .zip(rhs.get(rhs_row))
+            .is_some_and(|(lhs, rhs)| lhs.to_f64() == rhs.to_f64()),
+        (SequenceView::Complex32(lhs), SequenceView::Complex32(rhs)) => lhs
+            .get(lhs_row)
+            .zip(rhs.get(rhs_row))
+            .is_some_and(|(lhs, rhs)| {
+                lhs.real().to_f32() == rhs.real().to_f32()
+                    && lhs.imaginary().to_f32() == rhs.imaginary().to_f32()
+            }),
+        (SequenceView::Complex64(lhs), SequenceView::Complex64(rhs)) => lhs
+            .get(lhs_row)
+            .zip(rhs.get(rhs_row))
+            .is_some_and(|(lhs, rhs)| {
+                lhs.real().to_f64() == rhs.real().to_f64()
+                    && lhs.imaginary().to_f64() == rhs.imaginary().to_f64()
+            }),
+        (SequenceView::Rational64(lhs), SequenceView::Rational64(rhs)) => lhs
+            .get(lhs_row)
+            .zip(rhs.get(rhs_row))
+            .is_some_and(|(lhs, rhs)| {
+                lhs.numerator() == rhs.numerator() && lhs.denominator() == rhs.denominator()
+            }),
+        (SequenceView::Bool(lhs), SequenceView::Bool(rhs)) => exact!(lhs, rhs),
+        (SequenceView::String(lhs), SequenceView::String(rhs)) => exact!(lhs, rhs),
+        (SequenceView::Id(lhs), SequenceView::Id(rhs)) => exact!(lhs, rhs),
+        (SequenceView::Index(lhs), SequenceView::Index(rhs)) => exact!(lhs, rhs),
+        (SequenceView::Unit(lhs), SequenceView::Unit(rhs)) => {
+            u64::try_from(lhs_row).is_ok_and(|row| row < lhs)
+                && u64::try_from(rhs_row).is_ok_and(|row| row < rhs)
+        }
+        (SequenceView::Values(lhs), SequenceView::Values(rhs)) => lhs
+            .get(lhs_row)
+            .zip(rhs.get(rhs_row))
+            .is_some_and(|(lhs, rhs)| {
+                mech_core::snapshot::schema_data_language_eq(schema, lhs, rhs)
+            }),
+        _ => false,
+    }
+}
+
 fn optional_schema(schema: &SchemaBody) -> SchemaBody {
     match schema {
         SchemaBody::Option(_) => schema.clone(),
@@ -119,15 +246,15 @@ fn optional_schema(schema: &SchemaBody) -> SchemaBody {
 fn present_for_schema(
     target: &SchemaBody,
     source: &SchemaBody,
-    value: &ValueDataDraft,
+    value: ValueDataDraft,
 ) -> ValueDataDraft {
     if matches!(target, SchemaBody::Option(_)) && !matches!(source, SchemaBody::Option(_)) {
         ValueDataDraft::Option(OptionDraft {
             present: true,
-            value: Some(Box::new(value.clone())),
+            value: Some(Box::new(value)),
         })
     } else {
-        value.clone()
+        value
     }
 }
 
@@ -145,17 +272,19 @@ fn absent_for_schema(target: &SchemaBody) -> MResult<ValueDataDraft> {
 }
 
 fn rows_match(
-    lhs: &CanonicalTable,
+    lhs: &CanonicalTable<'_>,
     lhs_row: usize,
-    rhs: &CanonicalTable,
+    rhs: &CanonicalTable<'_>,
     rhs_row: usize,
     common: &[(usize, usize)],
 ) -> bool {
     common.iter().all(|(left, right)| {
-        mech_core::snapshot::schema_data_language_eq(
+        sequence_language_eq_at(
             &lhs.fields[*left].schema,
-            lhs.canonical_value(*left, lhs_row),
-            rhs.canonical_value(*right, rhs_row),
+            lhs.column(*left),
+            lhs_row,
+            rhs.column(*right),
+            rhs_row,
         )
     })
 }
@@ -259,8 +388,8 @@ pub(crate) fn joined_table(lhs: &ValueCell, rhs: &ValueCell, mode: JoinMode) -> 
 }
 
 fn joined_table_data(
-    lhs: &CanonicalTable,
-    rhs: &CanonicalTable,
+    lhs: &CanonicalTable<'_>,
+    rhs: &CanonicalTable<'_>,
     mode: JoinMode,
 ) -> MResult<(SchemaBody, ValueDataDraft)> {
     let common = common_columns(&lhs.fields, &rhs.fields)?;
@@ -322,13 +451,13 @@ fn joined_table_data(
         for (index, field) in lhs.fields.iter().enumerate() {
             let target = &fields[index].schema;
             let value = if let Some(row) = lhs_row {
-                present_for_schema(target, &field.schema, lhs.value(index, row))
+                present_for_schema(target, &field.schema, lhs.value(index, row)?)
             } else if let Some((_, rhs_index)) = common.iter().find(|(left, _)| *left == index) {
                 let row = rhs_row.expect("right outer row has a right source");
                 present_for_schema(
                     target,
                     &rhs.fields[*rhs_index].schema,
-                    rhs.value(*rhs_index, row),
+                    rhs.value(*rhs_index, row)?,
                 )
             } else {
                 absent_for_schema(target)?
@@ -343,7 +472,7 @@ fn joined_table_data(
                 }
                 let target = &fields[output].schema;
                 let value = if let Some(row) = rhs_row {
-                    present_for_schema(target, &field.schema, rhs.value(index, row))
+                    present_for_schema(target, &field.schema, rhs.value(index, row)?)
                 } else {
                     absent_for_schema(target)?
                 };
@@ -365,8 +494,8 @@ fn joined_table_data(
 }
 
 fn visit_join_row_pairs(
-    lhs: &CanonicalTable,
-    rhs: &CanonicalTable,
+    lhs: &CanonicalTable<'_>,
+    rhs: &CanonicalTable<'_>,
     mode: JoinMode,
     common: &[(usize, usize)],
     rhs_matched: &mut [bool],
@@ -408,8 +537,8 @@ fn visit_join_row_pairs(
 }
 
 fn joined_table_data_with_construction(
-    lhs: &CanonicalTable,
-    rhs: &CanonicalTable,
+    lhs: &CanonicalTable<'_>,
+    rhs: &CanonicalTable<'_>,
     mode: JoinMode,
     construction: &mut FrozenSnapshotConstruction,
 ) -> MResult<(SchemaBody, ValueDataDraft)> {
@@ -491,14 +620,14 @@ fn joined_table_data_with_construction(
             for (index, field) in lhs.fields.iter().enumerate() {
                 let target = &fields[index].schema;
                 let value = if let Some(row) = lhs_row {
-                    present_for_schema(target, &field.schema, lhs.value(index, row))
+                    present_for_schema(target, &field.schema, lhs.value(index, row)?)
                 } else if let Some((_, rhs_index)) = common.iter().find(|(left, _)| *left == index)
                 {
                     let row = rhs_row.expect("right outer row has a right source");
                     present_for_schema(
                         target,
                         &rhs.fields[*rhs_index].schema,
-                        rhs.value(*rhs_index, row),
+                        rhs.value(*rhs_index, row)?,
                     )
                 } else {
                     absent_for_schema(target)?
@@ -513,7 +642,7 @@ fn joined_table_data_with_construction(
                     }
                     let target = &fields[output].schema;
                     let value = if let Some(row) = rhs_row {
-                        present_for_schema(target, &field.schema, rhs.value(index, row))
+                        present_for_schema(target, &field.schema, rhs.value(index, row)?)
                     } else {
                         absent_for_schema(target)?
                     };
@@ -540,6 +669,8 @@ struct TableJoinFxn {
     lhs: FunctionValueInput,
     rhs: FunctionValueInput,
     out: FunctionValueOutput,
+    lhs_fields: Box<[SchemaField]>,
+    rhs_fields: Box<[SchemaField]>,
     mode: JoinMode,
 }
 
@@ -549,10 +680,17 @@ impl TableJoinFxn {
         mode: JoinMode,
     ) -> MResult<Box<dyn MechFunction>> {
         let (out, lhs, rhs) = invocation.expect_binary()?;
+        let lhs = lhs.value();
+        let rhs = rhs.value();
+        let out = out.value();
+        let lhs_fields = table_fields(lhs.cell())?;
+        let rhs_fields = table_fields(rhs.cell())?;
         Ok(Box::new(Self {
-            lhs: lhs.value(),
-            rhs: rhs.value(),
-            out: out.value(),
+            lhs,
+            rhs,
+            out,
+            lhs_fields,
+            rhs_fields,
             mode,
         }))
     }
@@ -607,8 +745,8 @@ impl MechFunctionImpl for TableJoinFxn {
                     1,
                     construction,
                 )?;
-                let lhs = CanonicalTable::from_value(self.lhs.cell(), &lhs)?;
-                let rhs = CanonicalTable::from_value(self.rhs.cell(), &rhs)?;
+                let lhs = CanonicalTable::from_borrowed(&self.lhs_fields, lhs)?;
+                let rhs = CanonicalTable::from_borrowed(&self.rhs_fields, rhs)?;
                 let (_, draft) =
                     joined_table_data_with_construction(&lhs, &rhs, self.mode, construction)?;
                 let next = construction.try_rebuild_data_draft(self.out.cell(), draft)?;

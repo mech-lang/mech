@@ -9,12 +9,17 @@
 ))]
 
 use mech_core::{
-    AllocationPlan, AllocationRole, ArenaBackingKind, ArenaPlacement, ArenaPlan, CallAccessRequest,
-    CellPublicationCandidate, CellPublicationEvidence, FunctionInvocation,
-    ManagedCallAccessRequest, ManagedString, MemoryAccessMode, MemoryAccessRegion, MemoryArenaId,
-    MemoryBudgetLimits, MemoryBudgetViolation, MemoryDomain, MemoryLifetime, MemoryObjectId,
-    MemoryObjectOwner, MemoryPlanPoint, MemoryPlanRevision, MemoryRuntimeError, MemorySpace,
-    ResourceDemand, ReuseGroupId, RuntimePlanView, ValueCell,
+    AccessMode, AliasPolicy, AllocationPlan, AllocationRole, ArenaBackingKind, ArenaPlacement,
+    ArenaPlan, CallAccessRequest, CellPublicationCandidate, CellPublicationEvidence,
+    ChangeDetectionPolicy, DeliveryMode, ExecutionTarget, ExternalInteraction, FunctionInvocation,
+    ImplementationMemoryClass, InputPortLayout, KernelMemoryFrame, MResult,
+    ManagedCallAccessRequest, ManagedString, MechExecutionServices, MechFunctionImpl,
+    MemoryAccessMode, MemoryAccessRegion, MemoryArenaId, MemoryBudgetLimits, MemoryBudgetViolation,
+    MemoryDomain, MemoryLifetime, MemoryObjectId, MemoryObjectOwner, MemoryPlanPoint,
+    MemoryPlanRevision, MemoryRuntimeError, MemorySpace, OperationContractDeclaration,
+    OutputConstruction, OutputPortPolicy, PayloadOutputPlanPolicy, ReactiveSolveStatus,
+    ResolvedOperationDescriptor, ResourceDemand, ReuseGroupId, RuntimeFunctionId, RuntimePlanView,
+    ShapeRule, SpecializedFunction, ValueCell,
 };
 
 #[path = "support/r6_allocation_probe.rs"]
@@ -22,6 +27,73 @@ mod allocation_probe;
 
 #[global_allocator]
 static ALLOCATOR: allocation_probe::ProbeAllocator = allocation_probe::ProbeAllocator;
+
+#[derive(Debug)]
+struct PublishedInvariantUnchanged;
+
+impl MechFunctionImpl for PublishedInvariantUnchanged {
+    fn payload_output_plan_policy(&self) -> PayloadOutputPlanPolicy {
+        PayloadOutputPlanPolicy::PublishedInvariant
+    }
+
+    fn solve_managed(
+        &self,
+        _frame: &mut KernelMemoryFrame<'_>,
+        _services: &mut dyn MechExecutionServices,
+    ) -> MResult<ReactiveSolveStatus> {
+        Ok(ReactiveSolveStatus::Unchanged)
+    }
+
+    fn to_string(&self) -> String {
+        "PublishedInvariantUnchanged".to_owned()
+    }
+}
+
+#[test]
+fn unchanged_published_invariant_turns_do_not_run_the_cold_collector() {
+    let output = ValueCell::from_exact(7_u64).unwrap();
+    let contract = OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(Box::new([])),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    };
+    let function = SpecializedFunction::syntax_directed(
+        (
+            Box::new(PublishedInvariantUnchanged),
+            FunctionInvocation::nullary(output.clone()),
+        ),
+        ResolvedOperationDescriptor::from_name("test/published-invariant", contract).unwrap(),
+        RuntimeFunctionId::from_name("test/published-invariant"),
+        ExecutionTarget::DirectRuntime,
+        ImplementationMemoryClass::NoAdditionalScratch,
+    )
+    .unwrap();
+
+    function.instance().solve_result().unwrap();
+    let version = output.published_version();
+    let (_, allocations) = allocation_probe::measured(|| {
+        for _ in 0..128 {
+            assert_eq!(
+                function.instance().solve_reactive().unwrap(),
+                ReactiveSolveStatus::Unchanged
+            );
+        }
+    });
+    assert_eq!(
+        allocations, 0,
+        "unchanged invariant turns ran cold-path work"
+    );
+    assert_eq!(output.published_version(), version);
+}
 
 #[test]
 fn boolean_storage_rejects_raw_byte_initialization_and_mutation() {

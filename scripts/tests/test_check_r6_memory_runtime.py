@@ -959,6 +959,75 @@ impl MechFunctionImpl for Bypass {
         )
         self.assert_failure(root, "conversion escapes its frame-owned construction authority")
 
+    def test_89_late_publication_failure_must_collect_abandoned_realization(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/function/mod.rs",
+            "drop(prepared);\n                domain.collect_retired()",
+            "drop(prepared);\n                Ok(0).map(|_| 0)",
+        )
+        self.assert_failure(root, "late publication preparation failure omits retired collection")
+
+    def test_90_fixed_conversion_must_accept_canonical_c32_sources(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/memory_runtime/access.rs",
+            "K::C32 => canonical_c32_target!(),",
+            "K::C32 => Err(crate::MechError::new(\n                crate::ConversionExecutionError::ConversionExecutionUnsupported,\n                None,\n            )\n            .with_compiler_loc()),",
+        )
+        self.assert_failure(root, "managed fixed conversion rejects canonical C32 sources")
+
+    def test_91_unchanged_invariant_turn_cannot_collect_without_a_candidate(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/function/mod.rs",
+            "if abandoned_candidate {\n                        current.domain.collect_retired()",
+            "if true {\n                        current.domain.collect_retired()",
+        )
+        self.assert_failure(
+            root,
+            "unchanged invariant turn invokes cold reclamation without a candidate",
+        )
+
+    def test_92_failed_register_batch_must_drop_candidates_before_collection(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/function/mod.rs",
+            "drop(prepared);\n    for domain in domains",
+            "for domain in domains",
+        )
+        self.assert_failure(
+            root,
+            "failed register batch collects while staged candidates remain owned",
+        )
+
+    def test_93_construction_role_cannot_regain_physical_arena_backing(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/memory_runtime/domain.rs",
+            "if construction != reservation_only {",
+            "if false {",
+        )
+        self.assert_failure(root, "construction workspace role can enter a physical arena")
+
+    def test_94_managed_join_cannot_rematerialize_inputs_before_admission(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/engine/src/intrinsics/table_ops.rs",
+            "CanonicalTable::from_borrowed(&self.lhs_fields, lhs)",
+            "CanonicalTable::from_value(self.lhs.cell(), &lhs)",
+        )
+        self.assert_failure(
+            root,
+            "managed table join materializes input columns before construction admission",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
