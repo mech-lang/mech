@@ -40,8 +40,8 @@ jobs:
     needs: impact
     if: needs.impact.outputs.static_contracts_required == 'true'
     runs-on: ubuntu-latest
-    # Temporary headroom while the resident-architecture projection suite is stabilized.
-    timeout-minutes: 30
+    # Mutation contracts are independent shards; keep the ordinary gate bounded.
+    timeout-minutes: 12
     env:
       CARGO_INCREMENTAL: 0
       CARGO_PROFILE_TEST_DEBUG: "0"
@@ -84,7 +84,7 @@ jobs:
           python3 scripts/check-r4-type-cutover.py
           python3 scripts/check-r5-memory-planner.py
           python3 scripts/check-r6-memory-runtime.py
-          python3 -B -m unittest \
+          printf '%s\n' \
             scripts/tests/test_check_obsolete_program_reachability.py \
             scripts/tests/test_check_compiler_planning_quarantine.py \
             scripts/tests/test_check_no_retired_value_system.py \
@@ -95,7 +95,8 @@ jobs:
             scripts/tests/test_check_r5_memory_planner.py \
             scripts/tests/test_check_r6_memory_runtime.py \
             scripts/tests/test_check_value_execution_boundary.py \
-            scripts/tests/test_warning_policy.py
+            scripts/tests/test_warning_policy.py \
+            | xargs -P 4 -n 1 python3 -B -m unittest
           python3 scripts/check-bytecode-v1-format.py
           cargo +nightly-2026-03-03 fetch --locked
           python3 -B scripts/check-distribution-contracts.py --profile standard
