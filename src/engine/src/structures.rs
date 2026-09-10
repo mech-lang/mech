@@ -9,12 +9,9 @@ use mech_core::snapshot::MapEntryDraft;
 use mech_core::snapshot::OptionDraft;
 
 #[cfg(any(
-    feature = "tuple",
+    all(feature = "tuple", feature = "atom"),
     feature = "map",
-    feature = "record",
-    feature = "set",
-    feature = "table",
-    feature = "matrix"
+    feature = "set"
 ))]
 fn snapshot_draft(cell: &ValueCell) -> MResult<ValueDataDraft> {
     cell.snapshot()?.canonical_data_draft().map_err(|error| {

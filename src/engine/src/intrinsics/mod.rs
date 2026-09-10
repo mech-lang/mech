@@ -78,13 +78,10 @@ pub mod catalog;
 pub mod access;
 #[cfg(feature = "assign")]
 pub mod assign;
-#[cfg(all(any(
-    feature = "table",
-    all(
-        feature = "semantic-compiler",
-        any(feature = "access", feature = "assign")
-    )
-)))]
+#[cfg(all(
+    feature = "semantic-compiler",
+    any(feature = "access", feature = "assign")
+))]
 pub(crate) mod canonical_access;
 #[cfg(any(
     feature = "set",
