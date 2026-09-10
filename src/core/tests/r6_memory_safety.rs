@@ -21,6 +21,8 @@ use mech_core::{
     ResolvedOperationDescriptor, ResourceDemand, ReuseGroupId, RuntimeFunctionId, RuntimePlanView,
     ShapeRule, SpecializedFunction, ValueCell,
 };
+#[cfg(feature = "semantic-compiler")]
+use mech_core::{BytecodeCompilerContext, MechFunctionCompiler, Register};
 
 #[path = "support/r6_allocation_probe.rs"]
 mod allocation_probe;
@@ -46,6 +48,13 @@ impl MechFunctionImpl for PublishedInvariantUnchanged {
 
     fn to_string(&self) -> String {
         "PublishedInvariantUnchanged".to_owned()
+    }
+}
+
+#[cfg(feature = "semantic-compiler")]
+impl MechFunctionCompiler for PublishedInvariantUnchanged {
+    fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        Ok(0)
     }
 }
 
