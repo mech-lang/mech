@@ -309,15 +309,11 @@ impl<T: PlannedArenaElement + core::fmt::Debug> core::fmt::Debug for PlannedAren
 }
 
 impl<T: PlannedArenaElement> PlannedArenaProjection<T> {
-    pub(crate) fn from_realized_parts(
-        realized: RealizedMemoryPlan,
-        projection_owner: Rc<()>,
-        arena: MemoryArenaId,
-        pointer: NonNull<u8>,
+    pub(crate) fn validate_realized_layout(
         bytes: usize,
         alignment: usize,
         len: usize,
-    ) -> MemoryRuntimeResult<Self> {
+    ) -> MemoryRuntimeResult<()> {
         let expected = Layout::array::<T>(len).map_err(|_| MemoryRuntimeError::InvalidLayout {
             object: None,
             size: u64::MAX,
@@ -332,6 +328,19 @@ impl<T: PlannedArenaElement> PlannedArenaProjection<T> {
                 reason: "resident lane type does not exactly cover its planned arena",
             });
         }
+        Ok(())
+    }
+
+    pub(crate) fn from_realized_parts(
+        realized: RealizedMemoryPlan,
+        projection_owner: Rc<()>,
+        arena: MemoryArenaId,
+        pointer: NonNull<u8>,
+        bytes: usize,
+        alignment: usize,
+        len: usize,
+    ) -> MemoryRuntimeResult<Self> {
+        Self::validate_realized_layout(bytes, alignment, len)?;
         let allocator = PlannedHostArenaAllocator::from_realized_parts(
             realized,
             projection_owner,

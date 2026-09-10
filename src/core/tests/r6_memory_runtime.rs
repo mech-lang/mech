@@ -2325,6 +2325,41 @@ fn resident_projection_requires_one_planned_slot_kind_across_the_complete_arena(
             .is_ok()
     );
 
+    let index_mixed_revision = domain.issue_plan_revision().unwrap();
+    let mut index_member = allocation(6, 3, 8, 8, 8, MemoryLifetime::Activation, None);
+    index_member.slot = Some(mech_core::PlannedSlotKind::FixedScalar(
+        mech_core::ScalarMemoryKind::Index,
+    ));
+    let index_mixed_allocations = [
+        allocation(5, 3, 0, 8, 8, MemoryLifetime::Activation, None),
+        index_member,
+    ];
+    let index_mixed_arenas = [arena(3, ArenaBackingKind::ContiguousBytes, 16, &[5, 6])];
+    let index_mixed = domain
+        .materialize(
+            domain
+                .prepare_realization(runtime_plan_view(
+                    index_mixed_revision,
+                    &index_mixed_allocations,
+                    &index_mixed_arenas,
+                    ResourceDemand {
+                        activation_bytes: 16,
+                        ..ResourceDemand::default()
+                    },
+                    MemoryBudgetLimits::default(),
+                    &[],
+                ))
+                .unwrap(),
+        )
+        .unwrap();
+    assert!(matches!(
+        domain.project_host_arena::<u64>(&index_mixed, MemoryArenaId::new(3), 2),
+        Err(MemoryRuntimeError::InvalidLayout {
+            reason: "resident arena projection requires one exact planned slot kind",
+            ..
+        })
+    ));
+
     let mixed_revision = domain.issue_plan_revision().unwrap();
     let mixed_allocations = [
         allocation(3, 2, 0, 8, 8, MemoryLifetime::Activation, None),
@@ -2355,6 +2390,84 @@ fn resident_projection_requires_one_planned_slot_kind_across_the_complete_arena(
             ..
         })
     ));
+}
+
+#[test]
+fn rejected_resident_projection_layout_preserves_initialization() {
+    let domain = MemoryDomain::new().unwrap();
+    let revision = domain.issue_plan_revision().unwrap();
+    let allocations = [allocation(
+        0,
+        0,
+        0,
+        16,
+        16,
+        MemoryLifetime::Activation,
+        None,
+    )];
+    let arenas = [arena(0, ArenaBackingKind::ContiguousBytes, 16, &[0])];
+    let realized = domain
+        .materialize(
+            domain
+                .prepare_realization(runtime_plan_view(
+                    revision,
+                    &allocations,
+                    &arenas,
+                    ResourceDemand {
+                        activation_bytes: 16,
+                        ..ResourceDemand::default()
+                    },
+                    MemoryBudgetLimits::default(),
+                    &[],
+                ))
+                .unwrap(),
+        )
+        .unwrap();
+    let object = domain
+        .plan_object_key(revision, MemoryObjectId::new(0))
+        .unwrap();
+    let write = domain
+        .prepare_call(
+            &realized,
+            &[CallAccessRequest {
+                object,
+                mode: MemoryAccessMode::Write,
+                region: MemoryAccessRegion::Contiguous {
+                    offset_bytes: 0,
+                    length_bytes: 16,
+                },
+            }],
+        )
+        .unwrap();
+    domain
+        .acquire_call(&realized, &write)
+        .unwrap()
+        .with_object_init_writer::<u64>(object, |writer| {
+            writer.write_next(11)?;
+            writer.write_next(22)
+        })
+        .unwrap();
+    assert_eq!(realized.binding(object).unwrap().initialized_bytes(), 16);
+
+    assert!(matches!(
+        domain.project_host_arena::<u64>(&realized, MemoryArenaId::new(0), 1),
+        Err(MemoryRuntimeError::InvalidLayout {
+            reason: "resident lane type does not exactly cover its planned arena",
+            ..
+        })
+    ));
+    assert_eq!(realized.binding(object).unwrap().initialized_bytes(), 16);
+    let read = domain
+        .prepare_call(
+            &realized,
+            &[CallAccessRequest {
+                object,
+                mode: MemoryAccessMode::Read,
+                region: MemoryAccessRegion::WholeInitialized,
+            }],
+        )
+        .unwrap();
+    assert!(domain.acquire_call(&realized, &read).is_ok());
 }
 
 #[cfg(feature = "bool")]

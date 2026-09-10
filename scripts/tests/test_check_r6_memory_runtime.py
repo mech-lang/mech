@@ -1126,6 +1126,42 @@ impl MechFunctionImpl for Bypass {
             "Resident effect payload omits its typed arena slot",
         )
 
+    def test_103_resident_projection_must_require_one_exact_slot_kind(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/memory_runtime/domain.rs",
+            "Some(expected) if expected != slot =>",
+            "Some(expected) if T::supports_planned_slot(expected) && false =>",
+        )
+        self.assert_failure(
+            root,
+            "resident arena projection is not bound to its complete planned slot",
+        )
+
+    def test_104_projection_layout_validation_must_precede_revocation(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/memory_runtime/domain.rs",
+            """            PlannedArenaProjection::<T>::validate_realized_layout(
+                block_bytes,
+                block_alignment,
+                len,
+            )?;
+            record.arena_projection_owner = Rc::downgrade(&projection_owner);""",
+            """            record.arena_projection_owner = Rc::downgrade(&projection_owner);
+            PlannedArenaProjection::<T>::validate_realized_layout(
+                block_bytes,
+                block_alignment,
+                len,
+            )?;""",
+        )
+        self.assert_failure(
+            root,
+            "resident arena projection is not bound to its complete planned slot",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

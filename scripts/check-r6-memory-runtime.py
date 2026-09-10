@@ -801,8 +801,16 @@ def failures(root: Path) -> list[str]:
         or "realized.arena_bindings.get(&arena)" not in arena_projection_paths[0]
         or "realized.binding(" in arena_projection_paths[0]
         or "T::supports_planned_slot(slot)" not in arena_projection_paths[0]
+        or "Some(expected) if expected != slot" not in arena_projection_paths[0]
+        or "PlannedArenaProjection::<T>::validate_realized_layout" not in arena_projection_paths[0]
         or "region.handle == Some(handle)" not in arena_projection_paths[0]
         or "region.initialization.clear()" not in arena_projection_paths[0]
+        or arena_projection_paths[0].find(
+            "PlannedArenaProjection::<T>::validate_realized_layout"
+        )
+        > arena_projection_paths[0].find(
+            "record.arena_projection_owner = Rc::downgrade"
+        )
     ):
         found.append("resident arena projection is not bound to its complete planned slot")
     plan_validation_paths = list(function_bodies(domain_code, "validate_plan_view"))

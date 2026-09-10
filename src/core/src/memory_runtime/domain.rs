@@ -1341,6 +1341,7 @@ impl MemoryDomain {
                 return Err(MemoryRuntimeError::DomainClosed);
             }
             let mut first_object = None;
+            let mut first_slot = None;
             for (key, binding) in bindings.iter() {
                 if binding.handle() != Some(handle) {
                     continue;
@@ -1372,6 +1373,18 @@ impl MemoryDomain {
                         alignment: 1,
                         reason: "resident arena element type does not match its planned slot",
                     });
+                }
+                match first_slot {
+                    None => first_slot = Some(slot),
+                    Some(expected) if expected != slot => {
+                        return Err(MemoryRuntimeError::InvalidLayout {
+                            object: Some(key.object()),
+                            size: binding.capacity_bytes(),
+                            alignment: 1,
+                            reason: "resident arena projection requires one exact planned slot kind",
+                        });
+                    }
+                    Some(_) => {}
                 }
                 first_object.get_or_insert(key.object());
             }
@@ -1417,9 +1430,14 @@ impl MemoryDomain {
                 alignment: record.alignment,
                 reason: "nonempty resident arena has no host pointer",
             })?;
-            record.arena_projection_owner = Rc::downgrade(&projection_owner);
             let block_bytes = block.bytes();
             let block_alignment = block.alignment();
+            PlannedArenaProjection::<T>::validate_realized_layout(
+                block_bytes,
+                block_alignment,
+                len,
+            )?;
+            record.arena_projection_owner = Rc::downgrade(&projection_owner);
             // The projection owns live Rust values independently of the
             // managed access codecs. Revoke the managed initialization proof
             // before exposing mutable projected lanes so a later codec can
