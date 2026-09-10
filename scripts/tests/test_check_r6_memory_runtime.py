@@ -782,14 +782,8 @@ fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunctio
         self.replace(
             root,
             "src/core/src/function/mod.rs",
-            "self.promote_prepared_realization(&mut prepared)?;\n            if prepared.external {",
-            "if prepared.external {",
-        )
-        self.replace(
-            root,
-            "src/core/src/function/mod.rs",
-            "                    external.commit();\n                }\n            }\n        } else {",
-            "                    external.commit();\n                }\n            }\n            self.promote_prepared_realization(&mut prepared)?;\n        } else {",
+            "                self.promote_prepared_realization(&mut prepared)?;\n                if prepared.external {",
+            "                if prepared.external {",
         )
         self.assert_failure(root, "external live binding is fallible after cell publication")
 
