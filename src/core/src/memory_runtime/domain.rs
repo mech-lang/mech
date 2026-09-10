@@ -1325,7 +1325,13 @@ impl MemoryDomain {
             });
         }
         let binding = realized.binding(object)?;
-        let RuntimeBinding::ManagedHostRegion { handle, .. } = binding else {
+        let RuntimeBinding::ManagedHostRegion {
+            handle,
+            offset_bytes,
+            capacity_bytes,
+            ..
+        } = binding
+        else {
             return Err(MemoryRuntimeError::InvalidLayout {
                 object: Some(object.object()),
                 size: binding.capacity_bytes(),
@@ -1338,6 +1344,33 @@ impl MemoryDomain {
             let mut state = self.state.borrow_mut();
             if state.closed {
                 return Err(MemoryRuntimeError::DomainClosed);
+            }
+            let region = state
+                .regions
+                .get(&object)
+                .ok_or(MemoryRuntimeError::UnknownPlanObject { key: object })?;
+            let Some(slot) = region.slot else {
+                return Err(MemoryRuntimeError::InvalidLayout {
+                    object: Some(object.object()),
+                    size: capacity_bytes,
+                    alignment: 1,
+                    reason: "resident arena projection requires a typed planned slot",
+                });
+            };
+            if !T::supports_planned_slot(slot) {
+                return Err(MemoryRuntimeError::InvalidLayout {
+                    object: Some(object.object()),
+                    size: capacity_bytes,
+                    alignment: 1,
+                    reason: "resident arena element type does not match its planned slot",
+                });
+            }
+            if region.handle != Some(handle) {
+                return Err(MemoryRuntimeError::CandidateValidationFailed {
+                    object: Some(object.object()),
+                    reason: "resident arena projection binding does not own its planned region"
+                        .into(),
+                });
             }
             let record = state.record_mut(handle)?;
             if record.state != OwnedAllocationState::Live {
@@ -1358,6 +1391,14 @@ impl MemoryDomain {
                     object: object.object(),
                 });
             }
+            if offset_bytes != 0 || capacity_bytes != record.capacity_bytes {
+                return Err(MemoryRuntimeError::InvalidLayout {
+                    object: Some(object.object()),
+                    size: capacity_bytes,
+                    alignment: record.alignment,
+                    reason: "resident arena projection object does not cover the complete arena",
+                });
+            }
             let block = record
                 .block
                 .as_ref()
@@ -1374,7 +1415,19 @@ impl MemoryDomain {
                 reason: "nonempty resident arena has no host pointer",
             })?;
             record.arena_projection_owner = Rc::downgrade(&projection_owner);
-            (pointer, block.bytes(), block.alignment())
+            let block_bytes = block.bytes();
+            let block_alignment = block.alignment();
+            let region = state
+                .regions
+                .get_mut(&object)
+                .ok_or(MemoryRuntimeError::UnknownPlanObject { key: object })?;
+            // The projection owns live Rust values independently of the
+            // managed access codecs. Revoke the managed initialization proof
+            // before exposing mutable projected lanes so a later codec can
+            // never reinterpret bytes left behind by a dropped projection.
+            region.initialized_bytes = 0;
+            region.initialization.clear();
+            (pointer, block_bytes, block_alignment)
         };
         PlannedArenaProjection::from_realized_parts(
             realized.clone(),
@@ -3045,8 +3098,20 @@ fn validate_plan_view(
     domain: MemoryDomainId,
     view: RuntimePlanView<'_>,
 ) -> MemoryRuntimeResult<(Box<[ArenaAuthorization]>, Box<[ObjectAuthorization]>, u64)> {
-    let mut arena_ids = BTreeSet::new();
-    let mut arena_members = BTreeMap::<MemoryArenaId, BTreeSet<MemoryObjectId>>::new();
+    let mut arena_members = Vec::<(MemoryArenaId, Vec<MemoryObjectId>)>::new();
+    arena_members
+        .try_reserve_exact(view.arenas.len())
+        .map_err(|_| MemoryRuntimeError::AllocationFailed {
+            object: None,
+            requested:
+                u64::try_from(view.arenas.len())
+                    .unwrap_or(u64::MAX)
+                    .saturating_mul(
+                        core::mem::size_of::<(MemoryArenaId, Vec<MemoryObjectId>)>() as u64
+                    ),
+            alignment: core::mem::align_of::<(MemoryArenaId, Vec<MemoryObjectId>)>() as u32,
+            space: MemorySpace::Host,
+        })?;
     let mut arenas = Vec::new();
     arenas.try_reserve_exact(view.arenas.len()).map_err(|_| {
         MemoryRuntimeError::AllocationFailed {
@@ -3057,14 +3122,6 @@ fn validate_plan_view(
         }
     })?;
     for arena in view.arenas {
-        if !arena_ids.insert(arena.id) {
-            return Err(MemoryRuntimeError::InvalidLayout {
-                object: None,
-                size: arena.capacity_bytes,
-                alignment: arena.alignment,
-                reason: "duplicate arena id",
-            });
-        }
         if arena.alignment == 0 || !arena.alignment.is_power_of_two() {
             return Err(MemoryRuntimeError::InvalidLayout {
                 object: None,
@@ -3083,8 +3140,20 @@ fn validate_plan_view(
                 limit,
             });
         }
-        let members = arena.members.iter().copied().collect::<BTreeSet<_>>();
-        if members.len() != arena.members.len() {
+        let mut members = Vec::new();
+        members
+            .try_reserve_exact(arena.members.len())
+            .map_err(|_| MemoryRuntimeError::AllocationFailed {
+                object: None,
+                requested: u64::try_from(arena.members.len())
+                    .unwrap_or(u64::MAX)
+                    .saturating_mul(core::mem::size_of::<MemoryObjectId>() as u64),
+                alignment: core::mem::align_of::<MemoryObjectId>() as u32,
+                space: MemorySpace::Host,
+            })?;
+        members.extend_from_slice(&arena.members);
+        members.sort_unstable();
+        if members.windows(2).any(|pair| pair[0] == pair[1]) {
             return Err(MemoryRuntimeError::InvalidLayout {
                 object: None,
                 size: arena.capacity_bytes,
@@ -3092,7 +3161,7 @@ fn validate_plan_view(
                 reason: "arena repeats a member object",
             });
         }
-        arena_members.insert(arena.id, members);
+        arena_members.push((arena.id, members));
         arenas.push(ArenaAuthorization {
             id: arena.id,
             space: arena.space,
@@ -3101,8 +3170,36 @@ fn validate_plan_view(
             capacity_bytes: arena.capacity_bytes,
         });
     }
+    arena_members.sort_unstable_by_key(|(arena, _)| *arena);
+    if let Some(duplicate) = arena_members
+        .windows(2)
+        .find(|pair| pair[0].0 == pair[1].0)
+        .map(|pair| pair[0].0)
+    {
+        let arena = view
+            .arenas
+            .iter()
+            .find(|arena| arena.id == duplicate)
+            .expect("duplicate arena came from the supplied plan");
+        return Err(MemoryRuntimeError::InvalidLayout {
+            object: None,
+            size: arena.capacity_bytes,
+            alignment: arena.alignment,
+            reason: "duplicate arena id",
+        });
+    }
 
-    let mut object_ids = BTreeSet::new();
+    let mut object_ids = Vec::new();
+    object_ids
+        .try_reserve_exact(view.allocations.len())
+        .map_err(|_| MemoryRuntimeError::AllocationFailed {
+            object: None,
+            requested: u64::try_from(view.allocations.len())
+                .unwrap_or(u64::MAX)
+                .saturating_mul(core::mem::size_of::<MemoryObjectId>() as u64),
+            alignment: core::mem::align_of::<MemoryObjectId>() as u32,
+            space: MemorySpace::Host,
+        })?;
     let mut objects = Vec::new();
     objects
         .try_reserve_exact(view.allocations.len())
@@ -3113,14 +3210,7 @@ fn validate_plan_view(
             space: MemorySpace::Host,
         })?;
     for allocation in view.allocations {
-        if !object_ids.insert(allocation.id) {
-            return Err(MemoryRuntimeError::InvalidLayout {
-                object: Some(allocation.id),
-                size: allocation.capacity_bytes,
-                alignment: allocation.alignment,
-                reason: "duplicate memory object id",
-            });
-        }
+        object_ids.push(allocation.id);
         let arena = view
             .arenas
             .iter()
@@ -3132,8 +3222,10 @@ fn validate_plan_view(
                 reason: "allocation references an unknown arena",
             })?;
         if !arena_members
-            .get(&arena.id)
-            .is_some_and(|members| members.contains(&allocation.id))
+            .binary_search_by_key(&arena.id, |(candidate, _)| *candidate)
+            .ok()
+            .and_then(|index| arena_members.get(index))
+            .is_some_and(|(_, members)| members.binary_search(&allocation.id).is_ok())
         {
             return Err(MemoryRuntimeError::InvalidLayout {
                 object: Some(allocation.id),
@@ -3258,11 +3350,29 @@ fn validate_plan_view(
             reuse_group: allocation.reuse_group,
         });
     }
+    object_ids.sort_unstable();
+    if let Some(duplicate) = object_ids
+        .windows(2)
+        .find(|pair| pair[0] == pair[1])
+        .map(|pair| pair[0])
+    {
+        let allocation = view
+            .allocations
+            .iter()
+            .find(|allocation| allocation.id == duplicate)
+            .expect("duplicate object came from the supplied plan");
+        return Err(MemoryRuntimeError::InvalidLayout {
+            object: Some(duplicate),
+            size: allocation.capacity_bytes,
+            alignment: allocation.alignment,
+            reason: "duplicate memory object id",
+        });
+    }
     for arena in view.arenas {
         if arena
             .members
             .iter()
-            .any(|member| !object_ids.contains(member))
+            .any(|member| object_ids.binary_search(member).is_err())
         {
             return Err(MemoryRuntimeError::InvalidLayout {
                 object: None,

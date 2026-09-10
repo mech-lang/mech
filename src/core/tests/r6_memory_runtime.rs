@@ -125,6 +125,103 @@ fn reservations_are_finite_and_release_unused_authority() {
 }
 
 #[test]
+fn plan_member_identity_validation_handles_many_zero_byte_objects_exactly() {
+    const MEMBER_COUNT: u32 = 2_048;
+
+    let domain = MemoryDomain::new().unwrap();
+    let revision = domain.issue_plan_revision().unwrap();
+    let allocations = (0..MEMBER_COUNT)
+        .map(|id| allocation(id, 0, 0, 0, 0, MemoryLifetime::Activation, None))
+        .collect::<Vec<_>>();
+    let members = (0..MEMBER_COUNT)
+        .map(MemoryObjectId::new)
+        .collect::<Vec<_>>()
+        .into_boxed_slice();
+    let arenas = [ArenaPlan {
+        id: MemoryArenaId::new(0),
+        space: MemorySpace::Host,
+        backing: ArenaBackingKind::ContiguousBytes,
+        alignment: 8,
+        capacity_bytes: 0,
+        members,
+    }];
+    let reservation = domain
+        .prepare_realization(runtime_plan_view(
+            revision,
+            &allocations,
+            &arenas,
+            ResourceDemand::default(),
+            MemoryBudgetLimits::default(),
+            &[],
+        ))
+        .unwrap();
+    assert_eq!(reservation.reserved_bytes(), 0);
+
+    let duplicate_domain = MemoryDomain::new().unwrap();
+    let duplicate_revision = duplicate_domain.issue_plan_revision().unwrap();
+    let duplicate_allocations = [allocation(0, 0, 0, 0, 0, MemoryLifetime::Activation, None)];
+    let duplicate_arenas = [arena(0, ArenaBackingKind::ContiguousBytes, 0, &[0, 0])];
+    assert!(matches!(
+        duplicate_domain.prepare_realization(runtime_plan_view(
+            duplicate_revision,
+            &duplicate_allocations,
+            &duplicate_arenas,
+            ResourceDemand::default(),
+            MemoryBudgetLimits::default(),
+            &[],
+        )),
+        Err(MemoryRuntimeError::InvalidLayout {
+            reason: "arena repeats a member object",
+            ..
+        })
+    ));
+
+    let duplicate_object_domain = MemoryDomain::new().unwrap();
+    let duplicate_object_revision = duplicate_object_domain.issue_plan_revision().unwrap();
+    let duplicate_object_allocations = [
+        allocation(0, 0, 0, 0, 0, MemoryLifetime::Activation, None),
+        allocation(0, 0, 0, 0, 0, MemoryLifetime::Activation, None),
+    ];
+    let duplicate_object_arenas = [arena(0, ArenaBackingKind::ContiguousBytes, 0, &[0])];
+    assert!(matches!(
+        duplicate_object_domain.prepare_realization(runtime_plan_view(
+            duplicate_object_revision,
+            &duplicate_object_allocations,
+            &duplicate_object_arenas,
+            ResourceDemand::default(),
+            MemoryBudgetLimits::default(),
+            &[],
+        )),
+        Err(MemoryRuntimeError::InvalidLayout {
+            reason: "duplicate memory object id",
+            ..
+        })
+    ));
+
+    let duplicate_arena_domain = MemoryDomain::new().unwrap();
+    let duplicate_arena_revision = duplicate_arena_domain.issue_plan_revision().unwrap();
+    let duplicate_arena_allocations = [allocation(0, 0, 0, 0, 0, MemoryLifetime::Activation, None)];
+    let duplicate_arena_arenas = [
+        arena(0, ArenaBackingKind::ContiguousBytes, 0, &[0]),
+        arena(0, ArenaBackingKind::ContiguousBytes, 0, &[]),
+    ];
+    assert!(matches!(
+        duplicate_arena_domain.prepare_realization(runtime_plan_view(
+            duplicate_arena_revision,
+            &duplicate_arena_allocations,
+            &duplicate_arena_arenas,
+            ResourceDemand::default(),
+            MemoryBudgetLimits::default(),
+            &[],
+        )),
+        Err(MemoryRuntimeError::InvalidLayout {
+            reason: "duplicate arena id",
+            ..
+        })
+    ));
+}
+
+#[test]
 fn construction_workspace_is_reserved_without_a_duplicate_host_block() {
     let domain = MemoryDomain::new().unwrap();
     let revision = domain.issue_plan_revision().unwrap();
@@ -2166,4 +2263,142 @@ fn resident_projection_uses_the_realized_arena_without_a_second_allocation() {
             .is_ok(),
         "dropping the typed projection releases only its claim, not the arena",
     );
+}
+
+#[test]
+fn resident_projection_requires_the_planned_slot_and_complete_arena() {
+    let domain = MemoryDomain::new().unwrap();
+    let wrong_slot_revision = domain.issue_plan_revision().unwrap();
+    let wrong_slot_allocations = [allocation(0, 0, 0, 8, 8, MemoryLifetime::Activation, None)];
+    let wrong_slot_arenas = [arena(0, ArenaBackingKind::ContiguousBytes, 8, &[0])];
+    let wrong_slot = domain
+        .materialize(
+            domain
+                .prepare_realization(runtime_plan_view(
+                    wrong_slot_revision,
+                    &wrong_slot_allocations,
+                    &wrong_slot_arenas,
+                    ResourceDemand {
+                        activation_bytes: 8,
+                        ..ResourceDemand::default()
+                    },
+                    MemoryBudgetLimits::default(),
+                    &[],
+                ))
+                .unwrap(),
+        )
+        .unwrap();
+    let wrong_slot_object = domain
+        .plan_object_key(wrong_slot_revision, MemoryObjectId::new(0))
+        .unwrap();
+    assert!(matches!(
+        domain.project_host_arena::<f64>(&wrong_slot, wrong_slot_object, 1),
+        Err(MemoryRuntimeError::InvalidLayout {
+            reason: "resident arena element type does not match its planned slot",
+            ..
+        })
+    ));
+
+    let partial_revision = domain.issue_plan_revision().unwrap();
+    let partial_allocations = [allocation(1, 1, 8, 8, 8, MemoryLifetime::Activation, None)];
+    let partial_arenas = [arena(1, ArenaBackingKind::ContiguousBytes, 16, &[1])];
+    let partial = domain
+        .materialize(
+            domain
+                .prepare_realization(runtime_plan_view(
+                    partial_revision,
+                    &partial_allocations,
+                    &partial_arenas,
+                    ResourceDemand {
+                        activation_bytes: 16,
+                        ..ResourceDemand::default()
+                    },
+                    MemoryBudgetLimits::default(),
+                    &[],
+                ))
+                .unwrap(),
+        )
+        .unwrap();
+    let partial_object = domain
+        .plan_object_key(partial_revision, MemoryObjectId::new(1))
+        .unwrap();
+    assert!(matches!(
+        domain.project_host_arena::<u64>(&partial, partial_object, 2),
+        Err(MemoryRuntimeError::InvalidLayout {
+            reason: "resident arena projection object does not cover the complete arena",
+            ..
+        })
+    ));
+}
+
+#[cfg(feature = "bool")]
+#[test]
+fn resident_projection_revokes_managed_initialization_before_mutable_access() {
+    let domain = MemoryDomain::new().unwrap();
+    let revision = domain.issue_plan_revision().unwrap();
+    let mut bool_allocation = allocation(0, 0, 0, 1, 1, MemoryLifetime::Activation, None);
+    bool_allocation.slot = Some(mech_core::PlannedSlotKind::FixedScalar(
+        mech_core::ScalarMemoryKind::Bool,
+    ));
+    bool_allocation.alignment = 1;
+    let allocations = [bool_allocation];
+    let arenas = [arena(0, ArenaBackingKind::ContiguousBytes, 1, &[0])];
+    let realized = domain
+        .materialize(
+            domain
+                .prepare_realization(runtime_plan_view(
+                    revision,
+                    &allocations,
+                    &arenas,
+                    ResourceDemand {
+                        activation_bytes: 1,
+                        ..ResourceDemand::default()
+                    },
+                    MemoryBudgetLimits::default(),
+                    &[],
+                ))
+                .unwrap(),
+        )
+        .unwrap();
+    let object = domain
+        .plan_object_key(revision, MemoryObjectId::new(0))
+        .unwrap();
+    let write = domain
+        .prepare_call(
+            &realized,
+            &[CallAccessRequest {
+                object,
+                mode: MemoryAccessMode::Write,
+                region: MemoryAccessRegion::Contiguous {
+                    offset_bytes: 0,
+                    length_bytes: 1,
+                },
+            }],
+        )
+        .unwrap();
+    domain
+        .acquire_call(&realized, &write)
+        .unwrap()
+        .with_object_init_writer::<bool>(object, |writer| writer.write_next(true))
+        .unwrap();
+    assert_eq!(realized.binding(object).unwrap().initialized_bytes(), 1);
+
+    let mut projection = domain
+        .project_host_arena::<u8>(&realized, object, 1)
+        .unwrap();
+    projection[0] = 2;
+    drop(projection);
+
+    assert_eq!(realized.binding(object).unwrap().initialized_bytes(), 0);
+    assert!(matches!(
+        domain.prepare_call(
+            &realized,
+            &[CallAccessRequest {
+                object,
+                mode: MemoryAccessMode::Read,
+                region: MemoryAccessRegion::WholeInitialized,
+            }],
+        ),
+        Err(MemoryRuntimeError::UninitializedAccess { .. })
+    ));
 }

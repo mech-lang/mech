@@ -1048,6 +1048,58 @@ impl MechFunctionImpl for Bypass {
             "failed register preparation omits its candidate domain",
         )
 
+    def test_97_resident_projection_must_validate_its_planned_slot(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/memory_runtime/domain.rs",
+            "if !T::supports_planned_slot(slot) {",
+            "if false {",
+        )
+        self.assert_failure(
+            root,
+            "resident arena projection is not bound to its complete planned slot",
+        )
+
+    def test_98_resident_projection_must_cover_the_complete_arena(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/memory_runtime/domain.rs",
+            "if offset_bytes != 0 || capacity_bytes != record.capacity_bytes {",
+            "if false {",
+        )
+        self.assert_failure(
+            root,
+            "resident arena projection is not bound to its complete planned slot",
+        )
+
+    def test_99_resident_projection_must_revoke_managed_initialization(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/memory_runtime/domain.rs",
+            "            region.initialization.clear();\n",
+            "",
+        )
+        self.assert_failure(
+            root,
+            "resident arena projection is not bound to its complete planned slot",
+        )
+
+    def test_100_plan_member_validation_must_reserve_fallibly(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/memory_runtime/domain.rs",
+            "            .try_reserve_exact(arena.members.len())",
+            "            .reserve_exact(arena.members.len())",
+        )
+        self.assert_failure(
+            root,
+            "runtime plan member validation can allocate infallibly",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

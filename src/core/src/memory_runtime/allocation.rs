@@ -238,16 +238,59 @@ mod planned_arena_element_sealed {
 /// Closed set of resident lane elements that may inhabit a typed projection
 /// over a planned host arena. Pointer-containing values remain real Rust
 /// objects; the API never exposes their representation as arbitrary bytes.
-pub trait PlannedArenaElement: planned_arena_element_sealed::Sealed + Default + 'static {}
-
-macro_rules! planned_arena_elements {
-    ($($type:ty),+ $(,)?) => {$(
-        impl planned_arena_element_sealed::Sealed for $type {}
-        impl PlannedArenaElement for $type {}
-    )+};
+pub trait PlannedArenaElement: planned_arena_element_sealed::Sealed + Default + 'static {
+    #[doc(hidden)]
+    fn supports_planned_slot(slot: crate::PlannedSlotKind) -> bool;
 }
 
-planned_arena_elements!(u8, u64, f64, String, Option<crate::Value>);
+impl planned_arena_element_sealed::Sealed for u8 {}
+impl PlannedArenaElement for u8 {
+    fn supports_planned_slot(slot: crate::PlannedSlotKind) -> bool {
+        matches!(
+            slot,
+            crate::PlannedSlotKind::FixedScalar(crate::ScalarMemoryKind::Bool)
+        )
+    }
+}
+
+impl planned_arena_element_sealed::Sealed for u64 {}
+impl PlannedArenaElement for u64 {
+    fn supports_planned_slot(slot: crate::PlannedSlotKind) -> bool {
+        matches!(
+            slot,
+            crate::PlannedSlotKind::FixedScalar(crate::ScalarMemoryKind::Index)
+                | crate::PlannedSlotKind::FixedScalar(crate::ScalarMemoryKind::Unsigned(
+                    crate::IntegerWidth::W64
+                ))
+        )
+    }
+}
+
+impl planned_arena_element_sealed::Sealed for f64 {}
+impl PlannedArenaElement for f64 {
+    fn supports_planned_slot(slot: crate::PlannedSlotKind) -> bool {
+        matches!(
+            slot,
+            crate::PlannedSlotKind::FixedScalar(crate::ScalarMemoryKind::Floating(
+                crate::FloatWidth::W64
+            ))
+        )
+    }
+}
+
+impl planned_arena_element_sealed::Sealed for String {}
+impl PlannedArenaElement for String {
+    fn supports_planned_slot(slot: crate::PlannedSlotKind) -> bool {
+        slot == crate::PlannedSlotKind::StringHeader
+    }
+}
+
+impl planned_arena_element_sealed::Sealed for Option<crate::Value> {}
+impl PlannedArenaElement for Option<crate::Value> {
+    fn supports_planned_slot(slot: crate::PlannedSlotKind) -> bool {
+        slot == crate::PlannedSlotKind::CanonicalValueHandle
+    }
+}
 
 /// Typed owner of one complete realized host arena. Dropping the projection
 /// destroys every initialized Rust element and then releases its claim; the

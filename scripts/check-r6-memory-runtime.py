@@ -787,13 +787,33 @@ def failures(root: Path) -> list[str]:
         found.append("empty undo transactions require a fictitious physical lease")
 
     domain_code = rust_code(sources.get("src/core/src/memory_runtime/domain.rs", ""))
+    arena_projection_paths = list(function_bodies(domain_code, "project_host_arena"))
     if not any(
         "arena_projection_owner" in body and "leases.is_empty()" in body
-        for body in function_bodies(domain_code, "project_host_arena")
+        for body in arena_projection_paths
     ) or not any(
         "arena_projection_owner" in body for body in function_bodies(access, "acquire_call")
     ):
         found.append("resident arena projections and frame leases have separate authorities")
+    if (
+        not arena_projection_paths
+        or "T::supports_planned_slot(slot)" not in arena_projection_paths[0]
+        or "offset_bytes != 0 || capacity_bytes != record.capacity_bytes"
+        not in arena_projection_paths[0]
+        or "region.initialization.clear()" not in arena_projection_paths[0]
+    ):
+        found.append("resident arena projection is not bound to its complete planned slot")
+    plan_validation_paths = list(function_bodies(domain_code, "validate_plan_view"))
+    if (
+        not plan_validation_paths
+        or not re.search(
+            r"members\s*\.\s*try_reserve_exact\s*\(\s*arena\s*\.\s*members\s*\.\s*len\s*\(\s*\)\s*\)",
+            plan_validation_paths[0],
+        )
+        or "members.windows(2)" not in plan_validation_paths[0]
+        or "collect::<BTreeSet" in plan_validation_paths[0]
+    ):
+        found.append("runtime plan member validation can allocate infallibly")
     if not any(
         "*active != Some(key)" in body and "initialization.clear()" in body
         for body in function_bodies(domain_code, "enter_revision_point")
