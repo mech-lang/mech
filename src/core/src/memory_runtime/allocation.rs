@@ -18,7 +18,7 @@ use std::{
     string::String,
 };
 
-use crate::{MemoryObjectId, MemorySpace};
+use crate::{MemoryArenaId, MemoryObjectId, MemorySpace};
 
 use super::{MemoryRuntimeError, MemoryRuntimeResult, RealizedMemoryPlan};
 
@@ -105,7 +105,7 @@ struct PlannedHostArenaAuthority {
     // inhabits. The registry itself intentionally holds only a weak owner.
     _realized: RealizedMemoryPlan,
     _projection_owner: Rc<()>,
-    object: MemoryObjectId,
+    arena: MemoryArenaId,
     pointer: NonNull<u8>,
     bytes: usize,
     alignment: usize,
@@ -129,7 +129,7 @@ impl core::fmt::Debug for PlannedHostArenaAllocator {
         match &self.kind {
             PlannedHostArenaAllocatorKind::Arena(authority) => formatter
                 .debug_struct("PlannedHostArenaAllocator")
-                .field("object", &authority.object)
+                .field("arena", &authority.arena)
                 .field("bytes", &authority.bytes)
                 .field("alignment", &authority.alignment)
                 .finish(),
@@ -146,14 +146,14 @@ impl PlannedHostArenaAllocator {
     pub(crate) fn from_realized_parts(
         realized: RealizedMemoryPlan,
         projection_owner: Rc<()>,
-        object: MemoryObjectId,
+        arena: MemoryArenaId,
         pointer: NonNull<u8>,
         bytes: usize,
         alignment: usize,
     ) -> MemoryRuntimeResult<Self> {
         Layout::from_size_align(bytes, alignment).map_err(|_| {
             MemoryRuntimeError::InvalidLayout {
-                object: Some(object),
+                object: None,
                 size: u64::try_from(bytes).unwrap_or(u64::MAX),
                 alignment: u32::try_from(alignment).unwrap_or(u32::MAX),
                 reason: "realized host arena layout is invalid",
@@ -163,7 +163,7 @@ impl PlannedHostArenaAllocator {
             kind: PlannedHostArenaAllocatorKind::Arena(Rc::new(PlannedHostArenaAuthority {
                 _realized: realized,
                 _projection_owner: projection_owner,
-                object,
+                arena,
                 pointer,
                 bytes,
                 alignment,
@@ -312,21 +312,21 @@ impl<T: PlannedArenaElement> PlannedArenaProjection<T> {
     pub(crate) fn from_realized_parts(
         realized: RealizedMemoryPlan,
         projection_owner: Rc<()>,
-        object: MemoryObjectId,
+        arena: MemoryArenaId,
         pointer: NonNull<u8>,
         bytes: usize,
         alignment: usize,
         len: usize,
     ) -> MemoryRuntimeResult<Self> {
         let expected = Layout::array::<T>(len).map_err(|_| MemoryRuntimeError::InvalidLayout {
-            object: Some(object),
+            object: None,
             size: u64::MAX,
             alignment: core::mem::align_of::<T>() as u32,
             reason: "resident arena element count overflows",
         })?;
         if expected.size() != bytes || expected.align() > alignment {
             return Err(MemoryRuntimeError::InvalidLayout {
-                object: Some(object),
+                object: None,
                 size: u64::try_from(bytes).unwrap_or(u64::MAX),
                 alignment: u32::try_from(alignment).unwrap_or(u32::MAX),
                 reason: "resident lane type does not exactly cover its planned arena",
@@ -335,12 +335,12 @@ impl<T: PlannedArenaElement> PlannedArenaProjection<T> {
         let allocator = PlannedHostArenaAllocator::from_realized_parts(
             realized,
             projection_owner,
-            object,
+            arena,
             pointer,
             bytes,
             alignment,
         )?;
-        Self::initialize(len, allocator, Some(object))
+        Self::initialize(len, allocator, None)
     }
 
     pub fn empty() -> MemoryRuntimeResult<Self> {

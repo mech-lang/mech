@@ -1061,13 +1061,13 @@ impl MechFunctionImpl for Bypass {
             "resident arena projection is not bound to its complete planned slot",
         )
 
-    def test_98_resident_projection_must_cover_the_complete_arena(self):
+    def test_98_resident_projection_must_use_direct_arena_authority(self):
         root = self.fixture()
         self.replace(
             root,
             "src/core/src/memory_runtime/domain.rs",
-            "if offset_bytes != 0 || capacity_bytes != record.capacity_bytes {",
-            "if false {",
+            "realized.arena_bindings.get(&arena)",
+            "realized.arena_bindings.values().next()",
         )
         self.assert_failure(
             root,
@@ -1098,6 +1098,19 @@ impl MechFunctionImpl for Bypass {
         self.assert_failure(
             root,
             "runtime plan member validation can allocate infallibly",
+        )
+
+    def test_101_resident_lane_cannot_use_one_member_as_arena_authority(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/engine/src/resident/general/mod.rs",
+            ".project_host_arena(memory.realized(), arena.id, len)",
+            ".project_host_arena(memory.realized(), arena.members[0], len)",
+        )
+        self.assert_failure(
+            root,
+            "Resident lanes use one member as whole-arena projection authority",
         )
 
 

@@ -757,6 +757,7 @@ pub struct RealizedMemoryPlan {
     domain_state: Rc<RefCell<DomainState>>,
     _storage_ownership: Rc<()>,
     bindings: Rc<RefCell<Box<[(PlanObjectKey, RuntimeBinding)]>>>,
+    arena_bindings: Rc<BTreeMap<MemoryArenaId, AllocationHandle>>,
     lifetimes: Rc<Box<[(PlanObjectKey, MemoryLifetime)]>>,
     transactions: Rc<Box<[TransactionRequirement]>>,
     owned_value_plan: Option<Rc<crate::OwnedValueMemoryPlan>>,
@@ -1315,7 +1316,7 @@ impl MemoryDomain {
     pub fn project_host_arena<T: PlannedArenaElement>(
         &self,
         realized: &RealizedMemoryPlan,
-        object: PlanObjectKey,
+        arena: MemoryArenaId,
         len: usize,
     ) -> MemoryRuntimeResult<PlannedArenaProjection<T>> {
         if realized.domain() != self.id() {
@@ -1324,92 +1325,94 @@ impl MemoryDomain {
                 actual: realized.domain(),
             });
         }
-        let binding = realized.binding(object)?;
-        let RuntimeBinding::ManagedHostRegion {
-            handle,
-            offset_bytes,
-            capacity_bytes,
-            ..
-        } = binding
-        else {
+        let Some(handle) = realized.arena_bindings.get(&arena).copied() else {
             return Err(MemoryRuntimeError::InvalidLayout {
-                object: Some(object.object()),
-                size: binding.capacity_bytes(),
+                object: None,
+                size: 0,
                 alignment: 1,
-                reason: "resident arena projection requires contiguous managed host storage",
+                reason: "resident arena projection references an unknown realized arena",
             });
         };
         let projection_owner = Rc::new(());
         let (pointer, bytes, alignment) = {
+            let bindings = realized.bindings.borrow();
             let mut state = self.state.borrow_mut();
             if state.closed {
                 return Err(MemoryRuntimeError::DomainClosed);
             }
-            let region = state
-                .regions
-                .get(&object)
-                .ok_or(MemoryRuntimeError::UnknownPlanObject { key: object })?;
-            let Some(slot) = region.slot else {
+            let mut first_object = None;
+            for (key, binding) in bindings.iter() {
+                if binding.handle() != Some(handle) {
+                    continue;
+                }
+                if !matches!(binding, RuntimeBinding::ManagedHostRegion { .. }) {
+                    return Err(MemoryRuntimeError::InvalidLayout {
+                        object: Some(key.object()),
+                        size: binding.capacity_bytes(),
+                        alignment: 1,
+                        reason: "resident arena projection requires contiguous managed host storage",
+                    });
+                }
+                let region = state
+                    .regions
+                    .get(key)
+                    .ok_or(MemoryRuntimeError::UnknownPlanObject { key: *key })?;
+                let Some(slot) = region.slot else {
+                    return Err(MemoryRuntimeError::InvalidLayout {
+                        object: Some(key.object()),
+                        size: binding.capacity_bytes(),
+                        alignment: 1,
+                        reason: "resident arena projection requires a typed planned slot",
+                    });
+                };
+                if !T::supports_planned_slot(slot) {
+                    return Err(MemoryRuntimeError::InvalidLayout {
+                        object: Some(key.object()),
+                        size: binding.capacity_bytes(),
+                        alignment: 1,
+                        reason: "resident arena element type does not match its planned slot",
+                    });
+                }
+                first_object.get_or_insert(key.object());
+            }
+            let Some(first_object) = first_object else {
                 return Err(MemoryRuntimeError::InvalidLayout {
-                    object: Some(object.object()),
-                    size: capacity_bytes,
+                    object: None,
+                    size: 0,
                     alignment: 1,
-                    reason: "resident arena projection requires a typed planned slot",
+                    reason: "resident arena projection has no realized member regions",
                 });
             };
-            if !T::supports_planned_slot(slot) {
-                return Err(MemoryRuntimeError::InvalidLayout {
-                    object: Some(object.object()),
-                    size: capacity_bytes,
-                    alignment: 1,
-                    reason: "resident arena element type does not match its planned slot",
-                });
-            }
-            if region.handle != Some(handle) {
-                return Err(MemoryRuntimeError::CandidateValidationFailed {
-                    object: Some(object.object()),
-                    reason: "resident arena projection binding does not own its planned region"
-                        .into(),
-                });
-            }
             let record = state.record_mut(handle)?;
             if record.state != OwnedAllocationState::Live {
                 return Err(MemoryRuntimeError::InvalidLifetimeTransition {
-                    object: Some(object.object()),
+                    object: None,
                     from: "retired allocation",
                     to: "resident arena projection",
                 });
             }
             if record.arena_projection_owner.upgrade().is_some() {
                 return Err(MemoryRuntimeError::CandidateValidationFailed {
-                    object: Some(object.object()),
+                    object: None,
                     reason: "the realized arena already has a live typed projection".into(),
                 });
             }
             if !record.leases.is_empty() {
                 return Err(MemoryRuntimeError::BorrowConflict {
-                    object: object.object(),
-                });
-            }
-            if offset_bytes != 0 || capacity_bytes != record.capacity_bytes {
-                return Err(MemoryRuntimeError::InvalidLayout {
-                    object: Some(object.object()),
-                    size: capacity_bytes,
-                    alignment: record.alignment,
-                    reason: "resident arena projection object does not cover the complete arena",
+                    object: first_object,
                 });
             }
             let block = record
                 .block
                 .as_ref()
                 .ok_or(MemoryRuntimeError::InvalidLayout {
-                    object: Some(object.object()),
+                    object: None,
                     size: record.capacity_bytes,
                     alignment: record.alignment,
                     reason: "resident arena projection has no host block",
                 })?;
             let pointer = block.pointer().ok_or(MemoryRuntimeError::InvalidLayout {
-                object: Some(object.object()),
+                object: None,
                 size: record.capacity_bytes,
                 alignment: record.alignment,
                 reason: "nonempty resident arena has no host pointer",
@@ -1417,22 +1420,24 @@ impl MemoryDomain {
             record.arena_projection_owner = Rc::downgrade(&projection_owner);
             let block_bytes = block.bytes();
             let block_alignment = block.alignment();
-            let region = state
-                .regions
-                .get_mut(&object)
-                .ok_or(MemoryRuntimeError::UnknownPlanObject { key: object })?;
             // The projection owns live Rust values independently of the
             // managed access codecs. Revoke the managed initialization proof
             // before exposing mutable projected lanes so a later codec can
             // never reinterpret bytes left behind by a dropped projection.
-            region.initialized_bytes = 0;
-            region.initialization.clear();
+            for region in state
+                .regions
+                .values_mut()
+                .filter(|region| region.handle == Some(handle))
+            {
+                region.initialized_bytes = 0;
+                region.initialization.clear();
+            }
             (pointer, block_bytes, block_alignment)
         };
         PlannedArenaProjection::from_realized_parts(
             realized.clone(),
             projection_owner,
-            object.object(),
+            arena,
             pointer,
             bytes,
             alignment,
@@ -2308,6 +2313,7 @@ impl MemoryDomain {
             domain_state: self.state.clone(),
             _storage_ownership: storage_ownership,
             bindings: Rc::new(RefCell::new(bindings.into_boxed_slice())),
+            arena_bindings: Rc::new(arena_handles),
             lifetimes: Rc::new(lifetimes.into_boxed_slice()),
             transactions: Rc::new(transactions),
             owned_value_plan: None,

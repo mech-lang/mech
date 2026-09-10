@@ -494,18 +494,9 @@ fn resident_lane<T: PlannedArenaElement>(
             .map(ResidentLane::Managed)
             .map_err(|error| ResidentActivationError::MemoryRuntime { error });
     }
-    let object = arena
-        .members
-        .first()
-        .copied()
-        .ok_or(ResidentActivationError::RegionSizeOverflow)?;
-    let key = memory
-        .domain()
-        .plan_object_key(memory.realized().revision(), object)
-        .map_err(|error| ResidentActivationError::MemoryRuntime { error })?;
     memory
         .domain()
-        .project_host_arena(memory.realized(), key, len)
+        .project_host_arena(memory.realized(), arena.id, len)
         .map(ResidentLane::Managed)
         .map_err(|error| ResidentActivationError::MemoryRuntime { error })
 }

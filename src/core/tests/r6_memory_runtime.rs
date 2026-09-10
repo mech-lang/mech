@@ -2220,7 +2220,7 @@ fn resident_projection_uses_the_realized_arena_without_a_second_allocation() {
         .plan_object_key(revision, MemoryObjectId::new(0))
         .unwrap();
     let mut storage = domain
-        .project_host_arena::<u64>(&realized, object, 2)
+        .project_host_arena::<u64>(&realized, MemoryArenaId::new(0), 2)
         .unwrap();
     let managed_write = domain
         .prepare_call(
@@ -2241,7 +2241,7 @@ fn resident_projection_uses_the_realized_arena_without_a_second_allocation() {
     ));
     assert!(
         domain
-            .project_host_arena::<u64>(&realized, object, 2)
+            .project_host_arena::<u64>(&realized, MemoryArenaId::new(0), 2)
             .is_err(),
         "one physical arena cannot acquire two simultaneous typed owners",
     );
@@ -2253,20 +2253,20 @@ fn resident_projection_uses_the_realized_arena_without_a_second_allocation() {
     drop(storage);
     let held = domain.acquire_call(&realized, &managed_write).unwrap();
     assert!(matches!(
-        domain.project_host_arena::<u64>(&realized, object, 2),
+        domain.project_host_arena::<u64>(&realized, MemoryArenaId::new(0), 2),
         Err(MemoryRuntimeError::BorrowConflict { .. })
     ));
     drop(held);
     assert!(
         domain
-            .project_host_arena::<u64>(&realized, object, 2)
+            .project_host_arena::<u64>(&realized, MemoryArenaId::new(0), 2)
             .is_ok(),
         "dropping the typed projection releases only its claim, not the arena",
     );
 }
 
 #[test]
-fn resident_projection_requires_the_planned_slot_and_complete_arena() {
+fn resident_projection_requires_one_planned_slot_kind_across_the_complete_arena() {
     let domain = MemoryDomain::new().unwrap();
     let wrong_slot_revision = domain.issue_plan_revision().unwrap();
     let wrong_slot_allocations = [allocation(0, 0, 0, 8, 8, MemoryLifetime::Activation, None)];
@@ -2288,27 +2288,27 @@ fn resident_projection_requires_the_planned_slot_and_complete_arena() {
                 .unwrap(),
         )
         .unwrap();
-    let wrong_slot_object = domain
-        .plan_object_key(wrong_slot_revision, MemoryObjectId::new(0))
-        .unwrap();
     assert!(matches!(
-        domain.project_host_arena::<f64>(&wrong_slot, wrong_slot_object, 1),
+        domain.project_host_arena::<f64>(&wrong_slot, MemoryArenaId::new(0), 1),
         Err(MemoryRuntimeError::InvalidLayout {
             reason: "resident arena element type does not match its planned slot",
             ..
         })
     ));
 
-    let partial_revision = domain.issue_plan_revision().unwrap();
-    let partial_allocations = [allocation(1, 1, 8, 8, 8, MemoryLifetime::Activation, None)];
-    let partial_arenas = [arena(1, ArenaBackingKind::ContiguousBytes, 16, &[1])];
-    let partial = domain
+    let packed_revision = domain.issue_plan_revision().unwrap();
+    let packed_allocations = [
+        allocation(1, 1, 0, 8, 8, MemoryLifetime::Activation, None),
+        allocation(2, 1, 8, 8, 8, MemoryLifetime::Activation, None),
+    ];
+    let packed_arenas = [arena(1, ArenaBackingKind::ContiguousBytes, 16, &[1, 2])];
+    let packed = domain
         .materialize(
             domain
                 .prepare_realization(runtime_plan_view(
-                    partial_revision,
-                    &partial_allocations,
-                    &partial_arenas,
+                    packed_revision,
+                    &packed_allocations,
+                    &packed_arenas,
                     ResourceDemand {
                         activation_bytes: 16,
                         ..ResourceDemand::default()
@@ -2319,13 +2319,39 @@ fn resident_projection_requires_the_planned_slot_and_complete_arena() {
                 .unwrap(),
         )
         .unwrap();
-    let partial_object = domain
-        .plan_object_key(partial_revision, MemoryObjectId::new(1))
+    assert!(
+        domain
+            .project_host_arena::<u64>(&packed, MemoryArenaId::new(1), 2)
+            .is_ok()
+    );
+
+    let mixed_revision = domain.issue_plan_revision().unwrap();
+    let mixed_allocations = [
+        allocation(3, 2, 0, 8, 8, MemoryLifetime::Activation, None),
+        f64_allocation(4, 2, 8, 8, 8, MemoryLifetime::Activation),
+    ];
+    let mixed_arenas = [arena(2, ArenaBackingKind::ContiguousBytes, 16, &[3, 4])];
+    let mixed = domain
+        .materialize(
+            domain
+                .prepare_realization(runtime_plan_view(
+                    mixed_revision,
+                    &mixed_allocations,
+                    &mixed_arenas,
+                    ResourceDemand {
+                        activation_bytes: 16,
+                        ..ResourceDemand::default()
+                    },
+                    MemoryBudgetLimits::default(),
+                    &[],
+                ))
+                .unwrap(),
+        )
         .unwrap();
     assert!(matches!(
-        domain.project_host_arena::<u64>(&partial, partial_object, 2),
+        domain.project_host_arena::<u64>(&mixed, MemoryArenaId::new(2), 2),
         Err(MemoryRuntimeError::InvalidLayout {
-            reason: "resident arena projection object does not cover the complete arena",
+            reason: "resident arena element type does not match its planned slot",
             ..
         })
     ));
@@ -2384,7 +2410,7 @@ fn resident_projection_revokes_managed_initialization_before_mutable_access() {
     assert_eq!(realized.binding(object).unwrap().initialized_bytes(), 1);
 
     let mut projection = domain
-        .project_host_arena::<u8>(&realized, object, 1)
+        .project_host_arena::<u8>(&realized, MemoryArenaId::new(0), 1)
         .unwrap();
     projection[0] = 2;
     drop(projection);

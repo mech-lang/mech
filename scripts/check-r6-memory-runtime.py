@@ -797,9 +797,10 @@ def failures(root: Path) -> list[str]:
         found.append("resident arena projections and frame leases have separate authorities")
     if (
         not arena_projection_paths
+        or "realized.arena_bindings.get(&arena)" not in arena_projection_paths[0]
+        or "realized.binding(" in arena_projection_paths[0]
         or "T::supports_planned_slot(slot)" not in arena_projection_paths[0]
-        or "offset_bytes != 0 || capacity_bytes != record.capacity_bytes"
-        not in arena_projection_paths[0]
+        or "region.handle == Some(handle)" not in arena_projection_paths[0]
         or "region.initialization.clear()" not in arena_projection_paths[0]
     ):
         found.append("resident arena projection is not bound to its complete planned slot")
@@ -1038,8 +1039,16 @@ def failures(root: Path) -> list[str]:
     resident = rust_code(sources.get(resident_relative, ""))
     lane = balanced_body(resident, "ResidentLane")
     reactive = balanced_body(resident, "ReactiveInstance")
+    resident_lane_paths = list(function_bodies(resident, "resident_lane"))
     if lane is None or "PlannedArenaProjection" not in lane:
         found.append("Resident lanes do not project their realized R5 host arenas")
+    if (
+        not resident_lane_paths
+        or "project_host_arena(memory.realized(), arena.id, len)"
+        not in resident_lane_paths[0]
+        or "arena.members.first()" in resident_lane_paths[0]
+    ):
+        found.append("Resident lanes use one member as whole-arena projection authority")
     if reactive is None or not re.search(r"\bManagedProgramMemory\b", reactive):
         found.append("ReactiveInstance does not retain its managed program realization")
     if re.search(r"\b[A-Za-z_][A-Za-z0-9_]*\.state\.clone\s*\(", resident):
