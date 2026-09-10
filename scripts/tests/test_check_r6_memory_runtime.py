@@ -1022,6 +1022,19 @@ impl MechFunctionImpl for Bypass {
             "managed table join materializes input columns before construction admission",
         )
 
+    def test_95_failed_register_preparation_must_collect_its_own_domain(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/function/mod.rs",
+            "collect_abandoned_function_publications(staged, &[failing_domain])",
+            "collect_abandoned_function_publications(staged, &[])",
+        )
+        self.assert_failure(
+            root,
+            "failed register preparation omits its candidate domain",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

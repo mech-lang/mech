@@ -498,7 +498,7 @@ def failures(root: Path) -> list[str]:
     )
     if (
         not register_paths
-        or register_paths[0].count("collect_abandoned_function_publications(staged)") < 2
+        or register_paths[0].count("collect_abandoned_function_publications(staged,") < 3
         or not abandoned_batches
         or not re.search(
             r"drop\s*\(\s*prepared\s*\)\s*;.*?collect_retired",
@@ -507,6 +507,15 @@ def failures(root: Path) -> list[str]:
         )
     ):
         found.append("failed register batch collects while staged candidates remain owned")
+    if (
+        not register_paths
+        or "let failing_domain" not in register_paths[0]
+        or "collect_abandoned_function_publications(staged, &[failing_domain])"
+        not in register_paths[0]
+        or not abandoned_batches
+        or "additional_domains" not in abandoned_batches[0]
+    ):
+        found.append("failed register preparation omits its candidate domain")
     if "publication_shape" not in cell or not any(
         "publication_shape" in body and "publication_locked" in body
         for body in function_bodies(cell, "lock_publication")

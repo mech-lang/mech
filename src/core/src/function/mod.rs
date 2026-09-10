@@ -496,8 +496,17 @@ struct PreparedFunctionPublication {
 
 fn collect_abandoned_function_publications(
     prepared: Vec<(ReactiveNodeId, PreparedFunctionPublication)>,
+    additional_domains: &[MemoryDomain],
 ) -> MResult<()> {
     let mut domains = Vec::new();
+    for domain in additional_domains {
+        if !domains
+            .iter()
+            .any(|candidate: &MemoryDomain| candidate.id() == domain.id())
+        {
+            domains.push(domain.clone());
+        }
+    }
     for (_, publication) in &prepared {
         let Some(candidate) = publication.next_realization.as_ref() else {
             continue;
@@ -3133,9 +3142,17 @@ impl ReactivePlan {
                     },
                     None,
                 );
-                collect_abandoned_function_publications(staged)?;
+                collect_abandoned_function_publications(staged, &[])?;
                 return Err(error);
             }
+            let failing_domain = node
+                .function
+                .instance
+                .managed
+                .current
+                .borrow()
+                .domain
+                .clone();
             let prepared = match node
                 .function
                 .instance
@@ -3143,7 +3160,7 @@ impl ReactivePlan {
             {
                 Ok(prepared) => prepared,
                 Err(error) => {
-                    collect_abandoned_function_publications(staged)?;
+                    collect_abandoned_function_publications(staged, &[failing_domain])?;
                     return Err(error);
                 }
             };
@@ -3164,7 +3181,7 @@ impl ReactivePlan {
         {
             Ok(ready) => ready,
             Err(error) => {
-                collect_abandoned_function_publications(staged)?;
+                collect_abandoned_function_publications(staged, &[])?;
                 return Err(error);
             }
         };

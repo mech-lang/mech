@@ -10,7 +10,10 @@ use crate::{
     FunctionStatePort, GenericError, MResult, ManagedPort, MechError, ReactiveSolveStatus,
     ValueCell, ValueData,
 };
-use std::{cell::RefCell, rc::Rc};
+use std::{
+    cell::{Cell, RefCell},
+    rc::Rc,
+};
 
 struct RegisterFunction {
     label: &'static str,
@@ -99,6 +102,231 @@ fn f64_value(cell: &ValueCell) -> f64 {
         panic!("expected f64 cell")
     };
     value.to_f64()
+}
+
+struct ColdReplanRegister {
+    output: ManagedPort<f64>,
+    source: ManagedPort<f64>,
+    fail: Rc<Cell<bool>>,
+}
+
+impl MechFunctionImpl for ColdReplanRegister {
+    fn solve_managed(
+        &self,
+        frame: &mut crate::KernelMemoryFrame<'_>,
+        _services: &mut dyn crate::MechExecutionServices,
+    ) -> MResult<ReactiveSolveStatus> {
+        if self.fail.get() {
+            return Err(MechError::new(
+                GenericError {
+                    msg: "cold-replan register failed after preparation".into(),
+                },
+                None,
+            ));
+        }
+        frame.with_unary_port_views(&self.source, &self.output, |source, output| {
+            let mut next = 0.0;
+            for index in 0..source.len() {
+                next += source.get_column_major(index).ok_or_else(|| {
+                    MechError::new(
+                        GenericError {
+                            msg: "cold-replan source geometry is incomplete".into(),
+                        },
+                        None,
+                    )
+                })?;
+            }
+            output.try_fill_column_major(|_| Ok(next))
+        })?;
+        Ok(ReactiveSolveStatus::Changed)
+    }
+
+    fn reactive_node_kind(&self) -> ReactiveNodeKind {
+        ReactiveNodeKind::Register
+    }
+
+    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+        Some(FunctionStatePort::from_cell(self.output.cell()))
+    }
+
+    fn to_string(&self) -> String {
+        "cold-replan register".into()
+    }
+}
+
+#[cfg(feature = "semantic-compiler")]
+impl MechFunctionCompiler for ColdReplanRegister {
+    fn compile(&self, _context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        Ok(0)
+    }
+}
+
+fn cold_replan_register(
+    plan: &mut ReactivePlan,
+    output: ValueCell,
+    source: ValueCell,
+    fail: Rc<Cell<bool>>,
+) -> ReactiveNodeId {
+    let invocation = FunctionInvocation::unary(output, source);
+    let (output, source) = invocation.expect_unary().unwrap();
+    plan.register_instance_with_activation(
+        crate::function::test_planned_instance(
+            Box::new(ColdReplanRegister {
+                output: output.try_managed_element::<f64>().unwrap(),
+                source: source.try_managed_element::<f64>().unwrap(),
+                fail,
+            }),
+            invocation,
+        ),
+        None,
+    )
+    .unwrap()
+}
+
+fn replace_f64_matrix(cell: &ValueCell, rows: usize, columns: usize, value: f64) {
+    let replacement = ValueCell::from_exact(nalgebra::DMatrix::from_element(rows, columns, value))
+        .unwrap()
+        .snapshot()
+        .unwrap();
+    cell.replace(&replacement).unwrap();
+}
+
+#[test]
+fn failed_cold_replan_registers_reclaim_first_and_distinct_later_domains() {
+    let mut first_plan = ReactivePlan::new();
+    let first_output = ValueCell::from_exact(1.0_f64).unwrap();
+    let first_source =
+        ValueCell::from_exact(nalgebra::DMatrix::from_element(1, 1, 2.0_f64)).unwrap();
+    let first_fail = Rc::new(Cell::new(true));
+    let first = cold_replan_register(
+        &mut first_plan,
+        first_output.clone(),
+        first_source.clone(),
+        first_fail.clone(),
+    );
+    let first_domain = first_output.memory_domain().unwrap();
+    let first_ledger = first_domain.ledger();
+    let first_metadata = first_domain.metadata_observation();
+    let first_revision = first_plan[first]
+        .instance()
+        .unwrap()
+        .managed_plan_revision();
+    let first_version = first_output.published_version();
+    replace_f64_matrix(&first_source, 2, 3, 2.0);
+
+    for _ in 0..8 {
+        let error = first_plan.commit_pending_registers(&[first]).unwrap_err();
+        assert!(
+            error
+                .simple_message()
+                .contains("cold-replan register failed after preparation")
+        );
+        assert_eq!(first_domain.ledger(), first_ledger);
+        assert_eq!(first_domain.metadata_observation(), first_metadata);
+        assert_eq!(f64_value(&first_output), 1.0);
+        assert_eq!(first_output.published_version(), first_version);
+        assert_eq!(
+            first_plan[first]
+                .instance()
+                .unwrap()
+                .managed_plan_revision(),
+            first_revision
+        );
+    }
+    first_fail.set(false);
+    first_plan.commit_pending_registers(&[first]).unwrap();
+    assert_eq!(f64_value(&first_output), 12.0);
+    assert_ne!(
+        first_plan[first]
+            .instance()
+            .unwrap()
+            .managed_plan_revision(),
+        first_revision
+    );
+
+    let mut batch_plan = ReactivePlan::new();
+    let earlier_output = ValueCell::from_exact(3.0_f64).unwrap();
+    let failing_output = ValueCell::from_exact(4.0_f64).unwrap();
+    let earlier_source =
+        ValueCell::from_exact(nalgebra::DMatrix::from_element(1, 1, 5.0_f64)).unwrap();
+    let failing_source =
+        ValueCell::from_exact(nalgebra::DMatrix::from_element(1, 1, 6.0_f64)).unwrap();
+    let earlier_fail = Rc::new(Cell::new(false));
+    let later_fail = Rc::new(Cell::new(true));
+    let earlier = cold_replan_register(
+        &mut batch_plan,
+        earlier_output.clone(),
+        earlier_source.clone(),
+        earlier_fail,
+    );
+    let later = cold_replan_register(
+        &mut batch_plan,
+        failing_output.clone(),
+        failing_source.clone(),
+        later_fail.clone(),
+    );
+    let earlier_domain = earlier_output.memory_domain().unwrap();
+    let later_domain = failing_output.memory_domain().unwrap();
+    assert_ne!(earlier_domain.id(), later_domain.id());
+    let earlier_ledger = earlier_domain.ledger();
+    let later_ledger = later_domain.ledger();
+    let earlier_metadata = earlier_domain.metadata_observation();
+    let later_metadata = later_domain.metadata_observation();
+    let earlier_revision = batch_plan[earlier]
+        .instance()
+        .unwrap()
+        .managed_plan_revision();
+    let later_revision = batch_plan[later]
+        .instance()
+        .unwrap()
+        .managed_plan_revision();
+    let earlier_version = earlier_output.published_version();
+    let later_version = failing_output.published_version();
+    replace_f64_matrix(&earlier_source, 2, 2, 5.0);
+    replace_f64_matrix(&failing_source, 3, 2, 6.0);
+
+    for _ in 0..8 {
+        let error = batch_plan
+            .commit_pending_registers(&[earlier, later])
+            .unwrap_err();
+        assert!(
+            error
+                .simple_message()
+                .contains("cold-replan register failed after preparation")
+        );
+        assert_eq!(earlier_domain.ledger(), earlier_ledger);
+        assert_eq!(later_domain.ledger(), later_ledger);
+        assert_eq!(earlier_domain.metadata_observation(), earlier_metadata);
+        assert_eq!(later_domain.metadata_observation(), later_metadata);
+        assert_eq!(
+            (f64_value(&earlier_output), f64_value(&failing_output)),
+            (3.0, 4.0)
+        );
+        assert_eq!(earlier_output.published_version(), earlier_version);
+        assert_eq!(failing_output.published_version(), later_version);
+        assert_eq!(
+            batch_plan[earlier]
+                .instance()
+                .unwrap()
+                .managed_plan_revision(),
+            earlier_revision
+        );
+        assert_eq!(
+            batch_plan[later]
+                .instance()
+                .unwrap()
+                .managed_plan_revision(),
+            later_revision
+        );
+    }
+    later_fail.set(false);
+    batch_plan
+        .commit_pending_registers(&[earlier, later])
+        .unwrap();
+    assert_eq!(
+        (f64_value(&earlier_output), f64_value(&failing_output)),
+        (20.0, 36.0)
+    );
 }
 
 #[test]
