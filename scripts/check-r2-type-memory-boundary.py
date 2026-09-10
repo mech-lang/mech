@@ -473,6 +473,16 @@ def failures(root: Path) -> list[str]:
         "python3 scripts/check-r2-type-memory-boundary.py", "scripts/tests/test_check_r2_type_memory_boundary.py")
     for relative, job_name in ((".github/workflows/ci.yml", "static-contracts"), (".github/workflows/ci-full.yml", "architecture-contracts")):
         block = _job(sources[relative], job_name)
+        if relative.endswith("ci.yml"):
+            block = "\n".join(
+                _job(sources[relative], name)
+                for name in ("static-architecture", "static-mutations", job_name)
+            )
+        else:
+            block = "\n".join(
+                _job(sources[relative], name)
+                for name in (job_name, "architecture-mutations")
+            )
         if not block:
             found.append(f"{relative} is missing {job_name}")
             continue

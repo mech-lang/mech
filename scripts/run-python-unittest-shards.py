@@ -38,6 +38,14 @@ def partition(test_ids: list[str], jobs: int) -> list[list[str]]:
     return shards
 
 
+def select_shard(test_ids: list[str], shard_index: int, shard_count: int) -> list[str]:
+    if shard_count < 1:
+        raise ValueError("shard count must be positive")
+    if shard_index < 0 or shard_index >= shard_count:
+        raise ValueError("shard index is outside the shard count")
+    return test_ids[shard_index::shard_count]
+
+
 def run_shard(index: int, test_ids: list[str]) -> tuple[int, int, str]:
     completed = subprocess.run(
         [sys.executable, "-B", "-m", "unittest", *test_ids],
@@ -52,10 +60,16 @@ def run_shard(index: int, test_ids: list[str]) -> tuple[int, int, str]:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--jobs", type=int, default=4)
+    parser.add_argument("--shard-count", type=int, default=1)
+    parser.add_argument("--shard-index", type=int, default=0)
     parser.add_argument("tests", nargs="+")
     arguments = parser.parse_args()
     if arguments.jobs < 1:
         parser.error("--jobs must be positive")
+    if arguments.shard_count < 1:
+        parser.error("--shard-count must be positive")
+    if arguments.shard_index < 0 or arguments.shard_index >= arguments.shard_count:
+        parser.error("--shard-index must be within --shard-count")
 
     # Executing this file makes scripts/ sys.path[0]; add the repository so
     # dotted test IDs remain importable in both discovery and child processes.
@@ -63,7 +77,11 @@ def main() -> int:
     suite = unittest.defaultTestLoader.loadTestsFromNames(
         [module_name(argument) for argument in arguments.tests]
     )
-    test_ids = [test.id() for test in iter_cases(suite)]
+    test_ids = select_shard(
+        [test.id() for test in iter_cases(suite)],
+        arguments.shard_index,
+        arguments.shard_count,
+    )
     if not test_ids:
         print("no unittest cases discovered", file=sys.stderr)
         return 2

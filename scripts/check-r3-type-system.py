@@ -619,6 +619,16 @@ def failures(root: Path) -> list[str]:
         (".github/workflows/ci-full.yml", "architecture-contracts"),
     ):
         block = _job(sources[relative], job)
+        if relative.endswith("ci.yml"):
+            block = "\n".join(
+                _job(sources[relative], name)
+                for name in ("static-architecture", "static-mutations", job)
+            )
+        else:
+            block = "\n".join(
+                _job(sources[relative], name)
+                for name in (job, "architecture-mutations")
+            )
         if r3 not in block:
             found.append(f"{relative} does not run the R3 architecture checker")
         if unit not in block:

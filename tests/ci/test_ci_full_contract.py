@@ -43,7 +43,53 @@ def job_block(source: str, job: str) -> str:
     return match.group("body")
 
 
+def normal_static_contracts() -> str:
+    return "\n".join(
+        job_block(CI, job)
+        for job in (
+            "static-architecture",
+            "static-mutations",
+            "static-distribution",
+            "static-contracts",
+        )
+    )
+
+
+def full_architecture_contracts() -> str:
+    return "\n".join(
+        job_block(FULL, job)
+        for job in ("architecture-contracts", "architecture-mutations")
+    )
+
+
 class FullWorkflowContractTests(unittest.TestCase):
+    def test_architecture_mutations_are_bounded_parallel_exact_head_shards(self):
+        normal = job_block(CI, "static-mutations")
+        full = job_block(FULL, "architecture-mutations")
+        for block, checkout in (
+            (normal, "ref: ${{ github.event.pull_request.head.sha }}"),
+            (full, FULL_CHECKOUT_REF),
+        ):
+            with self.subTest(checkout=checkout):
+                self.assertIn("shard: [0, 1, 2, 3]", block)
+                self.assertIn("timeout-minutes: 8", block)
+                self.assertIn("--shard-count 4", block)
+                self.assertIn("--shard-index ${{ matrix.shard }}", block)
+                self.assertIn("scripts/tests/test_check_r6_memory_runtime.py", block)
+                self.assertIn(checkout, block)
+                self.assertNotIn("continue-on-error", block)
+
+        aggregate = job_block(CI, "static-contracts")
+        for dependency in (
+            "static-architecture",
+            "static-mutations",
+            "static-distribution",
+        ):
+            self.assertIn(f"- {dependency}", aggregate)
+        self.assertIn('test "$ARCHITECTURE_RESULT" = success', aggregate)
+        self.assertIn('test "$MUTATIONS_RESULT" = success', aggregate)
+        self.assertIn('test "$DISTRIBUTION_RESULT" = success', aggregate)
+
     def test_ci_tool_installs_ignore_unrelated_apt_sources(self):
         for workflow_name, workflow in (("CI", CI), ("Full CI", FULL)):
             installs = workflow.count("sudo apt-get install --yes ripgrep")
@@ -122,8 +168,8 @@ class FullWorkflowContractTests(unittest.TestCase):
                 )
 
     def test_value_system_absence_and_permanent_contracts_are_unwaived(self):
-        static = job_block(CI, "static-contracts")
-        architecture = job_block(FULL, "architecture-contracts")
+        static = normal_static_contracts()
+        architecture = full_architecture_contracts()
         permanent = "python3 scripts/check-value-system-contract.py"
         absence = "python3 scripts/check-no-retired-value-system.py"
 
@@ -138,8 +184,8 @@ class FullWorkflowContractTests(unittest.TestCase):
         r2 = "python3 scripts/check-r2-type-memory-boundary.py"
         unit = "scripts/tests/test_check_r2_type_memory_boundary.py"
         for block in (
-            job_block(CI, "static-contracts"),
-            job_block(FULL, "architecture-contracts"),
+            normal_static_contracts(),
+            full_architecture_contracts(),
         ):
             self.assertIn(r1, block)
             self.assertIn(r2, block)
@@ -159,8 +205,8 @@ class FullWorkflowContractTests(unittest.TestCase):
         r3 = "python3 scripts/check-r3-type-system.py"
         unit = "scripts/tests/test_check_r3_type_system.py"
         for block in (
-            job_block(CI, "static-contracts"),
-            job_block(FULL, "architecture-contracts"),
+            normal_static_contracts(),
+            full_architecture_contracts(),
         ):
             self.assertIn(r2, block)
             self.assertIn(r3, block)
@@ -182,8 +228,8 @@ class FullWorkflowContractTests(unittest.TestCase):
         r4 = "python3 scripts/check-r4-type-cutover.py"
         unit = "scripts/tests/test_check_r4_type_cutover.py"
         for block in (
-            job_block(CI, "static-contracts"),
-            job_block(FULL, "architecture-contracts"),
+            normal_static_contracts(),
+            full_architecture_contracts(),
         ):
             self.assertIn(r3, block)
             self.assertIn(r4, block)
@@ -199,8 +245,8 @@ class FullWorkflowContractTests(unittest.TestCase):
         r6 = "python3 scripts/check-r6-memory-runtime.py"
         unit = "scripts/tests/test_check_r6_memory_runtime.py"
         for block in (
-            job_block(CI, "static-contracts"),
-            job_block(FULL, "architecture-contracts"),
+            normal_static_contracts(),
+            full_architecture_contracts(),
         ):
             self.assertIn(r5, block)
             self.assertIn(r6, block)

@@ -35,13 +35,12 @@ jobs:
           --head "${{ github.event.pull_request.head.sha }}"
           --labels "$PR_LABELS"
 
-  static-contracts:
-    name: Static contracts
+  static-architecture:
+    name: Static architecture contracts
     needs: impact
     if: needs.impact.outputs.static_contracts_required == 'true'
     runs-on: ubuntu-latest
-    # Mutation contracts are independent shards; keep the ordinary gate bounded.
-    timeout-minutes: 12
+    timeout-minutes: 8
     env:
       CARGO_INCREMENTAL: 0
       CARGO_PROFILE_TEST_DEBUG: "0"
@@ -63,7 +62,7 @@ jobs:
               -o Dir::Etc::sourceparts=-
             sudo apt-get install --yes ripgrep
           fi
-      - name: Check formatting and cheap global contracts
+      - name: Check formatting and global contracts
         run: |
           cargo +nightly-2026-03-03 fmt --all -- --check
           python3 -B -m unittest \
@@ -84,7 +83,38 @@ jobs:
           python3 scripts/check-r4-type-cutover.py
           python3 scripts/check-r5-memory-planner.py
           python3 scripts/check-r6-memory-runtime.py
-          python3 -B scripts/run-python-unittest-shards.py --jobs 4 \
+          python3 scripts/check-bytecode-v1-format.py
+
+  static-mutations:
+    name: Static mutation contracts (${{ matrix.shard }})
+    needs: impact
+    if: needs.impact.outputs.static_contracts_required == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - name: Install mutation contract tools
+        run: |
+          if ! command -v rg >/dev/null 2>&1
+          then
+            sudo apt-get update \
+              -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources \
+              -o Dir::Etc::sourceparts=-
+            sudo apt-get install --yes ripgrep
+          fi
+      - name: Execute one balanced mutation shard
+        run: |
+          python3 -B scripts/run-python-unittest-shards.py \
+            --jobs 1 \
+            --shard-count 4 \
+            --shard-index ${{ matrix.shard }} \
             scripts/tests/test_check_obsolete_program_reachability.py \
             scripts/tests/test_check_compiler_planning_quarantine.py \
             scripts/tests/test_check_no_retired_value_system.py \
@@ -97,12 +127,59 @@ jobs:
             scripts/tests/test_run_python_unittest_shards.py \
             scripts/tests/test_check_value_execution_boundary.py \
             scripts/tests/test_warning_policy.py
-          python3 scripts/check-bytecode-v1-format.py
+
+  static-distribution:
+    name: Static distribution contracts
+    needs: impact
+    if: needs.impact.outputs.static_contracts_required == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_TEST_DEBUG: "0"
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - name: Install distribution contract tools
+        run: |
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          if ! command -v rg >/dev/null 2>&1
+          then
+            sudo apt-get update \
+              -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources \
+              -o Dir::Etc::sourceparts=-
+            sudo apt-get install --yes ripgrep
+          fi
+      - name: Check static distribution contracts
+        run: |
           cargo +nightly-2026-03-03 fetch --locked
           python3 -B scripts/check-distribution-contracts.py --profile standard
           python3 -B scripts/check-distribution-packaging.py
           python3 scripts/check-native-host-catalog.py
           bash scripts/check-static-distribution-profiles.sh static
+
+  static-contracts:
+    name: Static contracts
+    needs:
+      - impact
+      - static-architecture
+      - static-mutations
+      - static-distribution
+    if: always() && needs.impact.outputs.static_contracts_required == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - name: Require every static contract family
+        env:
+          ARCHITECTURE_RESULT: ${{ needs.static-architecture.result }}
+          MUTATIONS_RESULT: ${{ needs.static-mutations.result }}
+          DISTRIBUTION_RESULT: ${{ needs.static-distribution.result }}
+        run: |
+          test "$ARCHITECTURE_RESULT" = success
+          test "$MUTATIONS_RESULT" = success
+          test "$DISTRIBUTION_RESULT" = success
 
   standard-linux:
     name: Standard Linux
