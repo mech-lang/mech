@@ -1182,7 +1182,10 @@ impl MechFunctionImpl for Bypass {
             "src/core/src/memory_runtime/domain.rs",
             "            for (key, binding) in bindings.iter() {\n                let region = state",
             """            for (key, binding) in bindings.iter() {
-                if binding.handle() != Some(handle) {
+                if binding
+                    .handle()
+                    != Some(handle)
+                {
                     continue;
                 }
                 let region = state""",
@@ -1203,6 +1206,45 @@ impl MechFunctionImpl for Bypass {
             """    if let Some(duplicate) = member_placements
         .windows(2)
         .find(|_| false)""",
+        )
+        self.assert_failure(
+            root,
+            "runtime plan member authority is not one-to-one",
+        )
+
+    def test_108_flat_member_index_must_reserve_complete_capacity(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/memory_runtime/domain.rs",
+            ".try_reserve_exact(member_count)",
+            ".try_reserve_exact(0)",
+        )
+        self.assert_failure(
+            root,
+            "runtime plan member authority is not one-to-one",
+        )
+
+    def test_109_declared_arena_comparison_cannot_be_disabled(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/memory_runtime/domain.rs",
+            "if member_arena != Some(arena.id) {",
+            "if false && member_arena != Some(arena.id) {",
+        )
+        self.assert_failure(
+            root,
+            "runtime plan member authority is not one-to-one",
+        )
+
+    def test_110_flat_member_index_must_be_sorted_before_validation(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/memory_runtime/domain.rs",
+            "    member_placements.sort_unstable();\n",
+            "",
         )
         self.assert_failure(
             root,

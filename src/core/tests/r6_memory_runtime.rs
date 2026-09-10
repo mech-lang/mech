@@ -251,6 +251,58 @@ fn plan_member_identity_validation_handles_many_zero_byte_objects_exactly() {
     ));
     assert_eq!(cross_listed_domain.ledger().reserved_bytes, 0);
     assert_eq!(cross_listed_domain.ledger().active_reservations, 0);
+
+    let wrong_arena_domain = MemoryDomain::new().unwrap();
+    let wrong_arena_revision = wrong_arena_domain.issue_plan_revision().unwrap();
+    let wrong_arena_allocations = [allocation(0, 1, 0, 0, 0, MemoryLifetime::Activation, None)];
+    let wrong_arena_arenas = [
+        arena(0, ArenaBackingKind::ContiguousBytes, 0, &[0]),
+        arena(1, ArenaBackingKind::ContiguousBytes, 0, &[]),
+    ];
+    assert!(matches!(
+        wrong_arena_domain.prepare_realization(runtime_plan_view(
+            wrong_arena_revision,
+            &wrong_arena_allocations,
+            &wrong_arena_arenas,
+            ResourceDemand::default(),
+            MemoryBudgetLimits::default(),
+            &[],
+        )),
+        Err(MemoryRuntimeError::InvalidLayout {
+            object: Some(object),
+            reason: "allocation is absent from its arena member list",
+            ..
+        }) if object == MemoryObjectId::new(0)
+    ));
+    assert_eq!(wrong_arena_domain.ledger().reserved_bytes, 0);
+
+    let nonadjacent_domain = MemoryDomain::new().unwrap();
+    let nonadjacent_revision = nonadjacent_domain.issue_plan_revision().unwrap();
+    let nonadjacent_allocations = [
+        allocation(0, 0, 0, 0, 0, MemoryLifetime::Activation, None),
+        allocation(1, 1, 0, 0, 0, MemoryLifetime::Activation, None),
+        allocation(2, 1, 0, 0, 0, MemoryLifetime::Activation, None),
+    ];
+    let nonadjacent_arenas = [
+        arena(0, ArenaBackingKind::ContiguousBytes, 0, &[0, 2]),
+        arena(1, ArenaBackingKind::ContiguousBytes, 0, &[1, 2]),
+    ];
+    assert!(matches!(
+        nonadjacent_domain.prepare_realization(runtime_plan_view(
+            nonadjacent_revision,
+            &nonadjacent_allocations,
+            &nonadjacent_arenas,
+            ResourceDemand::default(),
+            MemoryBudgetLimits::default(),
+            &[],
+        )),
+        Err(MemoryRuntimeError::InvalidLayout {
+            object: Some(object),
+            reason: "memory object is listed by more than one arena",
+            ..
+        }) if object == MemoryObjectId::new(2)
+    ));
+    assert_eq!(nonadjacent_domain.ledger().reserved_bytes, 0);
 }
 
 #[test]

@@ -789,6 +789,14 @@ def failures(root: Path) -> list[str]:
 
     domain_code = rust_code(sources.get("src/core/src/memory_runtime/domain.rs", ""))
     arena_projection_paths = list(function_bodies(domain_code, "project_host_arena"))
+    handle_filtered_projection = bool(
+        arena_projection_paths
+        and re.search(
+            r"if\s+binding\s*\.\s*handle\s*\(\s*\)\s*!=\s*"
+            r"Some\s*\(\s*handle\s*\)",
+            arena_projection_paths[0],
+        )
+    )
     if not any(
         "arena_projection_owner" in body and "leases.is_empty()" in body
         for body in arena_projection_paths
@@ -803,7 +811,7 @@ def failures(root: Path) -> list[str]:
         or "T::supports_planned_slot(slot)" not in arena_projection_paths[0]
         or "Some(expected) if expected != slot" not in arena_projection_paths[0]
         or "region.arena != arena" not in arena_projection_paths[0]
-        or "if binding.handle() != Some(handle)" in arena_projection_paths[0]
+        or handle_filtered_projection
         or "PlannedArenaProjection::<T>::validate_realized_layout" not in arena_projection_paths[0]
         or "region.handle == Some(handle)" not in arena_projection_paths[0]
         or "region.initialization.clear()" not in arena_projection_paths[0]
@@ -827,16 +835,49 @@ def failures(root: Path) -> list[str]:
         or "collect::<BTreeSet" in plan_validation_paths[0]
     ):
         found.append("runtime plan member validation can allocate infallibly")
+    member_index_reserve = re.search(
+        r"member_placements\s*\.\s*try_reserve_exact\s*"
+        r"\(\s*member_count\s*\)",
+        plan_validation_paths[0] if plan_validation_paths else "",
+    )
+    member_index_extend = re.search(
+        r"member_placements\s*\.\s*extend\s*\(",
+        plan_validation_paths[0] if plan_validation_paths else "",
+    )
+    member_index_sort = re.search(
+        r"member_placements\s*\.\s*sort_unstable\s*\(\s*\)",
+        plan_validation_paths[0] if plan_validation_paths else "",
+    )
+    member_index_duplicates = re.search(
+        r"member_placements\s*\.\s*windows\s*\(\s*2\s*\)\s*"
+        r"\.\s*find\s*\(\s*\|pair\|\s*pair\[0\]\.0\s*==\s*pair\[1\]\.0\s*\)",
+        plan_validation_paths[0] if plan_validation_paths else "",
+    )
+    member_index_search = re.search(
+        r"member_placements\s*\.\s*binary_search_by_key\s*\(",
+        plan_validation_paths[0] if plan_validation_paths else "",
+    )
+    member_placement_guard = re.search(
+        r"if\s+member_arena\s*!=\s*Some\s*\(\s*arena\s*\.\s*id\s*\)",
+        plan_validation_paths[0] if plan_validation_paths else "",
+    )
     if (
         not plan_validation_paths
-        or not re.search(
-            r"member_placements\s*\.\s*windows\s*\(\s*2\s*\)\s*"
-            r"\.\s*find\s*\(\s*\|pair\|\s*pair\[0\]\.0\s*==\s*pair\[1\]\.0\s*\)",
-            plan_validation_paths[0],
+        or member_index_reserve is None
+        or member_index_extend is None
+        or member_index_sort is None
+        or member_index_duplicates is None
+        or member_index_search is None
+        or member_placement_guard is None
+        or not (
+            member_index_reserve.start()
+            < member_index_extend.start()
+            < member_index_sort.start()
+            < member_index_duplicates.start()
         )
+        or member_index_sort.start() > member_index_search.start()
         or "memory object is listed by more than one arena"
         not in sources.get("src/core/src/memory_runtime/domain.rs", "")
-        or "member_arena != Some(arena.id)" not in plan_validation_paths[0]
     ):
         found.append("runtime plan member authority is not one-to-one")
     if not any(
