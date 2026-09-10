@@ -802,9 +802,11 @@ def failures(root: Path) -> list[str]:
         or "realized.binding(" in arena_projection_paths[0]
         or "T::supports_planned_slot(slot)" not in arena_projection_paths[0]
         or "Some(expected) if expected != slot" not in arena_projection_paths[0]
+        or "region.arena != arena" not in arena_projection_paths[0]
         or "PlannedArenaProjection::<T>::validate_realized_layout" not in arena_projection_paths[0]
         or "region.handle == Some(handle)" not in arena_projection_paths[0]
         or "region.initialization.clear()" not in arena_projection_paths[0]
+        or "arena: object.arena" not in domain_code
         or arena_projection_paths[0].find(
             "PlannedArenaProjection::<T>::validate_realized_layout"
         )

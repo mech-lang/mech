@@ -294,6 +294,7 @@ struct ObjectAuthorization {
 pub(crate) struct RuntimeRegionRecord {
     realization_owner: Weak<()>,
     pub(crate) handle: Option<AllocationHandle>,
+    arena: MemoryArenaId,
     lifetime: MemoryLifetime,
     reuse_group: Option<ReuseGroupId>,
     pub(crate) incarnation: RegionIncarnation,
@@ -1343,10 +1344,21 @@ impl MemoryDomain {
             let mut first_object = None;
             let mut first_slot = None;
             for (key, binding) in bindings.iter() {
-                if binding.handle() != Some(handle) {
+                let region = state
+                    .regions
+                    .get(key)
+                    .ok_or(MemoryRuntimeError::UnknownPlanObject { key: *key })?;
+                if region.arena != arena {
                     continue;
                 }
-                if !matches!(binding, RuntimeBinding::ManagedHostRegion { .. }) {
+                if !matches!(
+                    binding,
+                    RuntimeBinding::ManagedHostRegion {
+                        handle: member_handle,
+                        ..
+                    } if *member_handle == handle
+                ) && !matches!(binding, RuntimeBinding::Empty { .. })
+                {
                     return Err(MemoryRuntimeError::InvalidLayout {
                         object: Some(key.object()),
                         size: binding.capacity_bytes(),
@@ -1354,10 +1366,6 @@ impl MemoryDomain {
                         reason: "resident arena projection requires contiguous managed host storage",
                     });
                 }
-                let region = state
-                    .regions
-                    .get(key)
-                    .ok_or(MemoryRuntimeError::UnknownPlanObject { key: *key })?;
                 let Some(slot) = region.slot else {
                     return Err(MemoryRuntimeError::InvalidLayout {
                         object: Some(key.object()),
@@ -2272,6 +2280,7 @@ impl MemoryDomain {
                     RuntimeRegionRecord {
                         realization_owner: Rc::downgrade(&storage_ownership),
                         handle: binding.handle(),
+                        arena: object.arena,
                         lifetime: object.lifetime,
                         reuse_group: object.reuse_group,
                         incarnation,

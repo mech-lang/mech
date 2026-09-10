@@ -1162,6 +1162,19 @@ impl MechFunctionImpl for Bypass {
             "resident arena projection is not bound to its complete planned slot",
         )
 
+    def test_105_empty_arena_members_must_retain_slot_authority(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/memory_runtime/domain.rs",
+            "                        arena: object.arena,\n",
+            "",
+        )
+        self.assert_failure(
+            root,
+            "resident arena projection is not bound to its complete planned slot",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

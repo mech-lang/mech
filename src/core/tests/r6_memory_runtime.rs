@@ -2360,6 +2360,41 @@ fn resident_projection_requires_one_planned_slot_kind_across_the_complete_arena(
         })
     ));
 
+    let empty_index_mixed_revision = domain.issue_plan_revision().unwrap();
+    let mut empty_index_member = allocation(8, 4, 8, 0, 0, MemoryLifetime::Activation, None);
+    empty_index_member.slot = Some(mech_core::PlannedSlotKind::FixedScalar(
+        mech_core::ScalarMemoryKind::Index,
+    ));
+    let empty_index_mixed_allocations = [
+        allocation(7, 4, 0, 8, 8, MemoryLifetime::Activation, None),
+        empty_index_member,
+    ];
+    let empty_index_mixed_arenas = [arena(4, ArenaBackingKind::ContiguousBytes, 8, &[7, 8])];
+    let empty_index_mixed = domain
+        .materialize(
+            domain
+                .prepare_realization(runtime_plan_view(
+                    empty_index_mixed_revision,
+                    &empty_index_mixed_allocations,
+                    &empty_index_mixed_arenas,
+                    ResourceDemand {
+                        activation_bytes: 8,
+                        ..ResourceDemand::default()
+                    },
+                    MemoryBudgetLimits::default(),
+                    &[],
+                ))
+                .unwrap(),
+        )
+        .unwrap();
+    assert!(matches!(
+        domain.project_host_arena::<u64>(&empty_index_mixed, MemoryArenaId::new(4), 1),
+        Err(MemoryRuntimeError::InvalidLayout {
+            reason: "resident arena projection requires one exact planned slot kind",
+            ..
+        })
+    ));
+
     let mixed_revision = domain.issue_plan_revision().unwrap();
     let mixed_allocations = [
         allocation(3, 2, 0, 8, 8, MemoryLifetime::Activation, None),
