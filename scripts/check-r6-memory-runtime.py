@@ -803,6 +803,7 @@ def failures(root: Path) -> list[str]:
         or "T::supports_planned_slot(slot)" not in arena_projection_paths[0]
         or "Some(expected) if expected != slot" not in arena_projection_paths[0]
         or "region.arena != arena" not in arena_projection_paths[0]
+        or "if binding.handle() != Some(handle)" in arena_projection_paths[0]
         or "PlannedArenaProjection::<T>::validate_realized_layout" not in arena_projection_paths[0]
         or "region.handle == Some(handle)" not in arena_projection_paths[0]
         or "region.initialization.clear()" not in arena_projection_paths[0]
@@ -826,6 +827,18 @@ def failures(root: Path) -> list[str]:
         or "collect::<BTreeSet" in plan_validation_paths[0]
     ):
         found.append("runtime plan member validation can allocate infallibly")
+    if (
+        not plan_validation_paths
+        or not re.search(
+            r"member_placements\s*\.\s*windows\s*\(\s*2\s*\)\s*"
+            r"\.\s*find\s*\(\s*\|pair\|\s*pair\[0\]\.0\s*==\s*pair\[1\]\.0\s*\)",
+            plan_validation_paths[0],
+        )
+        or "memory object is listed by more than one arena"
+        not in sources.get("src/core/src/memory_runtime/domain.rs", "")
+        or "member_arena != Some(arena.id)" not in plan_validation_paths[0]
+    ):
+        found.append("runtime plan member authority is not one-to-one")
     if not any(
         "*active != Some(key)" in body and "initialization.clear()" in body
         for body in function_bodies(domain_code, "enter_revision_point")

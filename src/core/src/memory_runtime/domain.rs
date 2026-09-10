@@ -3222,6 +3222,44 @@ fn validate_plan_view(
         });
     }
 
+    let member_count = arena_members
+        .iter()
+        .try_fold(0_usize, |total, (_, members)| {
+            total.checked_add(members.len())
+        })
+        .ok_or(MemoryRuntimeError::AccountingInvariantViolation {
+            dimension: "arena member count",
+            current: u64::try_from(arena_members.len()).unwrap_or(u64::MAX),
+            change: u64::MAX,
+        })?;
+    let mut member_placements = Vec::<(MemoryObjectId, MemoryArenaId)>::new();
+    member_placements
+        .try_reserve_exact(member_count)
+        .map_err(|_| MemoryRuntimeError::AllocationFailed {
+            object: None,
+            requested: u64::try_from(member_count)
+                .unwrap_or(u64::MAX)
+                .saturating_mul(core::mem::size_of::<(MemoryObjectId, MemoryArenaId)>() as u64),
+            alignment: core::mem::align_of::<(MemoryObjectId, MemoryArenaId)>() as u32,
+            space: MemorySpace::Host,
+        })?;
+    for (arena, members) in &arena_members {
+        member_placements.extend(members.iter().map(|member| (*member, *arena)));
+    }
+    member_placements.sort_unstable();
+    if let Some(duplicate) = member_placements
+        .windows(2)
+        .find(|pair| pair[0].0 == pair[1].0)
+        .map(|pair| pair[0].0)
+    {
+        return Err(MemoryRuntimeError::InvalidLayout {
+            object: Some(duplicate),
+            size: 0,
+            alignment: 1,
+            reason: "memory object is listed by more than one arena",
+        });
+    }
+
     let mut object_ids = Vec::new();
     object_ids
         .try_reserve_exact(view.allocations.len())
@@ -3254,12 +3292,12 @@ fn validate_plan_view(
                 alignment: allocation.alignment,
                 reason: "allocation references an unknown arena",
             })?;
-        if !arena_members
-            .binary_search_by_key(&arena.id, |(candidate, _)| *candidate)
+        let member_arena = member_placements
+            .binary_search_by_key(&allocation.id, |(member, _)| *member)
             .ok()
-            .and_then(|index| arena_members.get(index))
-            .is_some_and(|(_, members)| members.binary_search(&allocation.id).is_ok())
-        {
+            .and_then(|index| member_placements.get(index))
+            .map(|(_, member_arena)| *member_arena);
+        if member_arena != Some(arena.id) {
             return Err(MemoryRuntimeError::InvalidLayout {
                 object: Some(allocation.id),
                 size: allocation.capacity_bytes,

@@ -1175,6 +1175,40 @@ impl MechFunctionImpl for Bypass {
             "resident arena projection is not bound to its complete planned slot",
         )
 
+    def test_106_projection_cannot_filter_members_by_physical_handle(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/memory_runtime/domain.rs",
+            "            for (key, binding) in bindings.iter() {\n                let region = state",
+            """            for (key, binding) in bindings.iter() {
+                if binding.handle() != Some(handle) {
+                    continue;
+                }
+                let region = state""",
+        )
+        self.assert_failure(
+            root,
+            "resident arena projection is not bound to its complete planned slot",
+        )
+
+    def test_107_plan_membership_must_be_one_to_one(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/memory_runtime/domain.rs",
+            """    if let Some(duplicate) = member_placements
+        .windows(2)
+        .find(|pair| pair[0].0 == pair[1].0)""",
+            """    if let Some(duplicate) = member_placements
+        .windows(2)
+        .find(|_| false)""",
+        )
+        self.assert_failure(
+            root,
+            "runtime plan member authority is not one-to-one",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

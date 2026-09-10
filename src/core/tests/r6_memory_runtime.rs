@@ -219,6 +219,38 @@ fn plan_member_identity_validation_handles_many_zero_byte_objects_exactly() {
             ..
         })
     ));
+
+    let cross_listed_domain = MemoryDomain::new().unwrap();
+    let cross_listed_revision = cross_listed_domain.issue_plan_revision().unwrap();
+    let mut empty_index = allocation(1, 1, 0, 0, 0, MemoryLifetime::Activation, None);
+    empty_index.slot = Some(mech_core::PlannedSlotKind::FixedScalar(
+        mech_core::ScalarMemoryKind::Index,
+    ));
+    let cross_listed_allocations = [
+        allocation(0, 0, 0, 8, 8, MemoryLifetime::Activation, None),
+        empty_index,
+    ];
+    let cross_listed_arenas = [
+        arena(0, ArenaBackingKind::ContiguousBytes, 8, &[0, 1]),
+        arena(1, ArenaBackingKind::ContiguousBytes, 0, &[1]),
+    ];
+    assert!(matches!(
+        cross_listed_domain.prepare_realization(runtime_plan_view(
+            cross_listed_revision,
+            &cross_listed_allocations,
+            &cross_listed_arenas,
+            ResourceDemand::default(),
+            MemoryBudgetLimits::default(),
+            &[],
+        )),
+        Err(MemoryRuntimeError::InvalidLayout {
+            object: Some(object),
+            reason: "memory object is listed by more than one arena",
+            ..
+        }) if object == MemoryObjectId::new(1)
+    ));
+    assert_eq!(cross_listed_domain.ledger().reserved_bytes, 0);
+    assert_eq!(cross_listed_domain.ledger().active_reservations, 0);
 }
 
 #[test]
