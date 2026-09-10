@@ -99,7 +99,9 @@ ENDGAME = "## R2 closure\nPackage 0.3.6\n"
 R1 = "python3 scripts/check-r1-compatibility-closure.py"
 R2 = "python3 scripts/check-r2-type-memory-boundary.py"
 UNIT = "scripts/tests/test_check_r2_type_memory_boundary.py"
-R2_SUITE = "cargo +nightly-2026-03-03 test --locked -p mech-core --all-features --test type_memory_boundary"
+R2_SUITE = "cargo +nightly-2026-03-03 test --locked -p mech-core --all-features " + " ".join(
+    f"--test {target}" for target in CHECKER.R2_CONFORMANCE_TARGETS
+)
 CI = f"""  static-contracts:
     run: |
       {R1}
@@ -108,6 +110,9 @@ CI = f"""  static-contracts:
 """
 FULL = CI.replace("static-contracts", "architecture-contracts") + f"      {R2_SUITE}\n"
 OWNERS = '[owners.architecture-contracts]\npaths = ["scripts/check-r2-type-memory-boundary.py", "' + UNIT + '", "' + '", "'.join(CHECKER.R2_DOCS) + '"]\n'
+OWNERS += '[owners.mech-core]\ncommand = ["cargo", "test", "-p", "mech-core", "--all-features", ' + ', '.join(
+    f'"--test", "{target}"' for target in CHECKER.R2_CONFORMANCE_TARGETS
+) + ']\n'
 
 
 class R2TypeMemoryBoundaryTests(unittest.TestCase):
@@ -338,6 +343,30 @@ class R2TypeMemoryBoundaryTests(unittest.TestCase):
         root = self.fixture()
         self.replace(root, ".github/workflows/ci-full.yml", R2_SUITE, "")
         self.assert_failure(root, "R2 conformance target")
+
+    def test_31b_every_retained_r2_target_is_required_in_full_ci(self):
+        for target in CHECKER.R2_CONFORMANCE_TARGETS:
+            with self.subTest(target=target):
+                root = self.fixture()
+                self.replace(root, ".github/workflows/ci-full.yml", f"--test {target}", "")
+                self.assert_failure(root, f"missing R2 conformance target {target}")
+
+    def test_31c_full_ci_cannot_waive_r2_conformance(self):
+        root = self.fixture()
+        self.write(root, ".github/workflows/ci-full.yml", FULL + "    continue-on-error: true\n")
+        self.assert_failure(root, "waives the R2 conformance targets")
+
+    def test_31d_every_retained_r2_target_is_required_in_core_owner(self):
+        for target in CHECKER.R2_CONFORMANCE_TARGETS:
+            with self.subTest(target=target):
+                root = self.fixture()
+                self.replace(root, ".github/ci/owners.toml", f'"--test", "{target}"', '"--test", "unrelated"')
+                self.assert_failure(root, f"core owner is missing R2 conformance target {target}")
+
+    def test_31e_core_owner_requires_all_features(self):
+        root = self.fixture()
+        self.replace(root, ".github/ci/owners.toml", '"--all-features"', '"--no-default-features"')
+        self.assert_failure(root, "core owner does not execute the R2 conformance targets with all features")
 
     def test_32_incorrect_checker_order_fails(self):
         root = self.fixture()

@@ -33,8 +33,19 @@ fn semantic_logic_extents(inputs: &[&SpecializationInput]) -> MResult<Box<[u64]>
             .current_extents()
             .map_err(MechError::from)?;
         if !current.is_empty() {
-            if extents.is_empty() || extents == current {
+            if extents.is_empty() {
                 extents = current;
+            } else if extents.len() == current.len()
+                && extents
+                    .iter()
+                    .zip(current.iter())
+                    .all(|(left, right)| left == right || *left == 1 || *right == 1)
+            {
+                for (extent, current) in extents.iter_mut().zip(current.iter()) {
+                    if *extent == 1 {
+                        *extent = *current;
+                    }
+                }
             } else {
                 return Err(MechError::new(
                     DimensionMismatch {

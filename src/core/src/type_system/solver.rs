@@ -820,8 +820,17 @@ impl TypeConstraintEnvironment {
             }
             return Ok(());
         }
-        if !self.predicate_constrained_kinds.contains(&id) {
-            let penalty = unconstrained_binding_generality(kind);
+        let generality = unconstrained_binding_generality(kind);
+        // A predicate constrains the leaf kind, but does not make a variable
+        // that absorbs an entire aggregate as specific as a shaped pattern.
+        // In particular, Equatable<T> must not outrank Matrix<Equatable<T>>
+        // merely because the latter also binds its axes.
+        let penalty = if self.predicate_constrained_kinds.contains(&id) {
+            generality - 1
+        } else {
+            generality
+        };
+        if penalty != 0 {
             self.score.unconstrained_kind_bindings = self
                 .score
                 .unconstrained_kind_bindings

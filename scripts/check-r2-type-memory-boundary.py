@@ -6,11 +6,18 @@ from __future__ import annotations
 import argparse
 import re
 import sys
+import tomllib
 from pathlib import Path
 from typing import Pattern
 
 
 ROOT = Path(__file__).resolve().parents[1]
+R2_CONFORMANCE_TARGETS = (
+    "type_memory_contract",
+    "storage_capability",
+    "operation_memory_requirement",
+    "type_memory_boundary",
+)
 REQUIRED = (
     "src/core/src/lib.rs",
     "src/core/src/memory_contract/mod.rs",
@@ -495,9 +502,29 @@ def failures(root: Path) -> list[str]:
         if any("continue-on-error" in _step_containing(block, marker) for marker in (r2, unit)):
             found.append(f"{relative} waives the R2 architecture gate")
         if relative.endswith("ci-full.yml"):
-            normalized_block = re.sub(r"\s+", " ", block)
-            if not re.search(r"cargo \+nightly-2026-03-03 test .*--all-features .*--test type_memory_boundary", normalized_block):
-                found.append("Full CI does not execute the R2 conformance target with all features")
+            conformance_step = _step_containing(block, "--test type_memory_boundary")
+            normalized_step = re.sub(r"\s+", " ", conformance_step)
+            if not re.search(r"cargo \+nightly-2026-03-03 test .* -p mech-core .*--all-features", normalized_step):
+                found.append("Full CI does not execute the R2 conformance targets with all features")
+            for target in R2_CONFORMANCE_TARGETS:
+                if not re.search(rf"--test {target}\b", normalized_step):
+                    found.append(f"Full CI is missing R2 conformance target {target}")
+            if "continue-on-error" in conformance_step:
+                found.append("Full CI waives the R2 conformance targets")
+    try:
+        core_command = tomllib.loads(sources[".github/ci/owners.toml"]).get("owners", {}).get("mech-core", {}).get("command", [])
+    except tomllib.TOMLDecodeError:
+        core_command = []
+    if "--all-features" not in core_command:
+        found.append("core owner does not execute the R2 conformance targets with all features")
+    core_targets = {
+        core_command[index + 1]
+        for index, argument in enumerate(core_command[:-1])
+        if argument == "--test"
+    }
+    for target in R2_CONFORMANCE_TARGETS:
+        if target not in core_targets:
+            found.append(f"core owner is missing R2 conformance target {target}")
     owner_match = re.search(r"(?ms)^\[owners\.architecture-contracts\]\n(.*?)(?=^\[owners\.|\Z)", sources[".github/ci/owners.toml"])
     owners = "" if owner_match is None else owner_match.group(1)
     for path in ("scripts/check-r2-type-memory-boundary.py", "scripts/tests/test_check_r2_type_memory_boundary.py") + R2_DOCS:

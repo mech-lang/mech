@@ -511,3 +511,117 @@ fn set_membership_keeps_the_candidate_schema_independent() {
         &BuiltinScalarKind::Bool.kind_expr()
     );
 }
+
+fn resolve_named_overload(
+    name: &str,
+    inputs: &[ResolvedType],
+) -> Result<mech_core::ResolvedOverload, mech_core::TypeResolutionError> {
+    let declaration = maintained_source_type_declaration(name).unwrap();
+    let candidates = declaration
+        .overloads
+        .iter()
+        .map(|overload| mech_core::TypeOverloadCandidate {
+            id: u64::from(overload.id),
+            scheme: &overload.scheme,
+        })
+        .collect::<Vec<_>>();
+    mech_core::resolve_type_overloads(
+        TypeConstraintOrigin::new(name, None),
+        &candidates,
+        inputs,
+        None,
+    )
+}
+
+#[test]
+fn ordinary_matrix_equality_wins_over_whole_aggregate_equality() {
+    for name in ["compare/eq", "compare/neq"] {
+        for element in [
+            BuiltinScalarKind::F64,
+            BuiltinScalarKind::Bool,
+            BuiltinScalarKind::String,
+        ] {
+            let matrix = fixed_matrix(element, 2, 3);
+            let resolved = resolve_named_overload(name, &[matrix.clone(), matrix]).unwrap();
+            assert_eq!(
+                resolved.outputs.as_ref(),
+                &[fixed_matrix(BuiltinScalarKind::Bool, 2, 3)]
+            );
+            assert!(resolved.conversions.iter().all(|plan| plan.cost == 0));
+        }
+        let aggregate = ResolvedType::new(
+            KindExpr::Tuple(
+                vec![
+                    BuiltinScalarKind::F64.kind_expr(),
+                    BuiltinScalarKind::Bool.kind_expr(),
+                ]
+                .into_boxed_slice(),
+            ),
+            Box::new([]),
+        )
+        .unwrap();
+        let resolved = resolve_named_overload(name, &[aggregate.clone(), aggregate]).unwrap();
+        assert_eq!(
+            resolved.outputs.as_ref(),
+            &[scalar(BuiltinScalarKind::Bool)]
+        );
+    }
+    let matrix = fixed_matrix(BuiltinScalarKind::F64, 2, 3);
+    let strict = resolve_named_overload("compare/seq", &[matrix.clone(), matrix]).unwrap();
+    assert_eq!(strict.outputs.as_ref(), &[scalar(BuiltinScalarKind::Bool)]);
+}
+
+#[test]
+fn boolean_broadcast_overloads_preserve_axes_in_both_operand_orders() {
+    for name in ["logic/and", "logic/or", "logic/xor"] {
+        let matrix = fixed_matrix(BuiltinScalarKind::Bool, 2, 3);
+        for other in [
+            scalar(BuiltinScalarKind::Bool),
+            fixed_matrix(BuiltinScalarKind::Bool, 2, 1),
+            fixed_matrix(BuiltinScalarKind::Bool, 1, 3),
+        ] {
+            for inputs in [
+                [matrix.clone(), other.clone()],
+                [other.clone(), matrix.clone()],
+            ] {
+                let resolved = resolve_named_overload(name, &inputs).unwrap();
+                assert_eq!(resolved.outputs.as_ref(), &[matrix.clone()]);
+                assert!(resolved.conversions.iter().all(|plan| plan.cost == 0));
+            }
+        }
+        for other in [
+            fixed_matrix(BuiltinScalarKind::Bool, 3, 1),
+            fixed_matrix(BuiltinScalarKind::Bool, 1, 4),
+            fixed_matrix(BuiltinScalarKind::Bool, 3, 2),
+        ] {
+            assert!(resolve_named_overload(name, &[matrix.clone(), other]).is_err());
+        }
+        let changing_matrix = turn_row_matrix(BuiltinScalarKind::Bool, 3);
+        let changing_column = turn_row_matrix(BuiltinScalarKind::Bool, 1);
+        for inputs in [
+            [changing_matrix.clone(), changing_column.clone()],
+            [changing_column, changing_matrix.clone()],
+        ] {
+            let resolved = resolve_named_overload(name, &inputs).unwrap();
+            assert_eq!(resolved.outputs.as_ref(), &[changing_matrix.clone()]);
+        }
+    }
+}
+
+#[test]
+fn rational_power_selects_its_exact_integral_exponent() {
+    let rational = scalar(BuiltinScalarKind::R64);
+    let exponent = scalar(BuiltinScalarKind::I32);
+    let resolved =
+        resolve_named_overload("math/pow", &[rational.clone(), exponent.clone()]).unwrap();
+    assert_eq!(resolved.outputs.as_ref(), &[rational.clone()]);
+    assert_eq!(resolved.conversions[0].target, rational);
+    assert_eq!(resolved.conversions[1].target, exponent);
+    assert_eq!(resolved.conversion_count, 0);
+    assert!(
+        resolved
+            .conversions
+            .iter()
+            .all(|plan| matches!(plan.step, mech_core::ConversionStep::Identity))
+    );
+}

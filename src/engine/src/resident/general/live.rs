@@ -495,7 +495,12 @@ mod turn_tests {
             ImplementationMemoryClass::CanonicalFinalize
         );
         assert!(plan.allocations.iter().any(|allocation| {
-            allocation.role == mech_core::AllocationRole::Scratch && allocation.capacity_bytes > 0
+            allocation.role == mech_core::AllocationRole::ConstructionWorkspace
+                && allocation.capacity_bytes > 0
+                && plan.arenas.iter().any(|arena| {
+                    arena.id == allocation.placement.arena
+                        && arena.backing == mech_core::ArenaBackingKind::ReservationOnlyWorkspace
+                })
         }));
         for work in [0, 1, mech_core::RESIDENT_MAX_COMPUTE_WORK + 1] {
             let observed = ResourceDemand {

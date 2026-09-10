@@ -454,7 +454,7 @@ pub fn instantiate_program_memory_plan_with_target_overrides(
             },
             reuse_group: None,
         });
-        if layout.payload.required_bytes != 0 {
+        if layout.payload.required_bytes != 0 || layout.payload.maximum_bytes.is_none() {
             let payload = MemoryObjectId::new(next_id);
             next_id = checked_next_id(next_id)?;
             allocations.push(AllocationPlan {
@@ -494,18 +494,6 @@ pub fn instantiate_program_memory_plan_with_target_overrides(
             } else {
                 MemoryLifetime::Activation
             };
-            let staged_current_bytes = layout
-                .current_address_span_bytes
-                .checked_add(layout.payload.current_bytes)
-                .ok_or(MemoryPlanError::ArithmeticOverflow {
-                    field: "program transaction current bytes",
-                })?;
-            let staged_capacity_bytes = layout
-                .capacity_bytes
-                .checked_add(layout.payload.required_bytes)
-                .ok_or(MemoryPlanError::ArithmeticOverflow {
-                    field: "program transaction capacity bytes",
-                })?;
             let next = MemoryObjectId::new(next_id);
             next_id = checked_next_id(next_id)?;
             allocations.push(AllocationPlan {
@@ -514,8 +502,8 @@ pub fn instantiate_program_memory_plan_with_target_overrides(
                 role: AllocationRole::TransactionStage,
                 slot: Some(layout.storage.planned_slot()),
                 space: fact.storage.space,
-                current_bytes: staged_current_bytes,
-                capacity_bytes: staged_capacity_bytes,
+                current_bytes: layout.current_address_span_bytes,
+                capacity_bytes: layout.capacity_bytes,
                 payload_block_capacity: 0,
                 alignment: layout.slot.alignment,
                 lifetime: stage_lifetime,
@@ -525,6 +513,27 @@ pub fn instantiate_program_memory_plan_with_target_overrides(
                 },
                 reuse_group: None,
             });
+            if layout.payload.required_bytes != 0 || layout.payload.maximum_bytes.is_none() {
+                let payload = MemoryObjectId::new(next_id);
+                next_id = checked_next_id(next_id)?;
+                allocations.push(AllocationPlan {
+                    id: payload,
+                    owner: MemoryObjectOwner::Slot(value.slot),
+                    role: AllocationRole::TransactionStage,
+                    slot: None,
+                    space: fact.storage.space,
+                    current_bytes: layout.payload.current_bytes,
+                    capacity_bytes: layout.payload.required_bytes,
+                    payload_block_capacity: layout.payload.required_nodes.max(1),
+                    alignment: 1,
+                    lifetime: stage_lifetime,
+                    placement: ArenaPlacement {
+                        arena: MemoryArenaId::new(0),
+                        offset: 0,
+                    },
+                    reuse_group: None,
+                });
+            }
             if state_double_buffer {
                 TransactionRequirement::DoubleBuffer {
                     current: object,
@@ -665,7 +674,13 @@ pub fn instantiate_program_memory_plan_with_target_overrides(
                     .and_then(|transaction| transaction_stage_object(*transaction)),
                 transaction_stage_object(value.transaction),
             ) {
-                insert_object_mapping(&mut object_map, local_stage, global_stage)?;
+                map_transaction_family(
+                    &mut object_map,
+                    local_stage,
+                    global_stage,
+                    &call.allocations,
+                    &allocations,
+                )?;
             }
         }
         let remapped_allocations = remap_call_allocations(
@@ -908,7 +923,13 @@ pub(crate) fn attach_resident_call_memory_template(
                     .and_then(|transaction| transaction_stage_object(*transaction)),
                 transaction_stage_object(value.transaction),
             ) {
-                insert_object_mapping(&mut object_map, local_stage, global_stage)?;
+                map_transaction_family(
+                    &mut object_map,
+                    local_stage,
+                    global_stage,
+                    &call.allocations,
+                    &plan.allocations,
+                )?;
             }
         }
         let remapped_allocations = remap_call_allocations(
@@ -1049,6 +1070,40 @@ fn insert_object_mapping(
         && previous != global
     {
         return Err(MemoryPlanError::DescriptorMismatch);
+    }
+    Ok(())
+}
+
+fn map_transaction_family(
+    mapping: &mut BTreeMap<MemoryObjectId, MemoryObjectId>,
+    local_stage: MemoryObjectId,
+    global_stage: MemoryObjectId,
+    local_allocations: &[AllocationPlan],
+    global_allocations: &[AllocationPlan],
+) -> Result<(), MemoryPlanError> {
+    insert_object_mapping(mapping, local_stage, global_stage)?;
+    let local = local_allocations
+        .iter()
+        .find(|a| a.id == local_stage)
+        .ok_or(MemoryPlanError::DescriptorMismatch)?;
+    let global = global_allocations
+        .iter()
+        .find(|a| a.id == global_stage)
+        .ok_or(MemoryPlanError::DescriptorMismatch)?;
+    if let Some(payload) = local_allocations.iter().find(|a| {
+        a.owner == local.owner
+            && a.lifetime == local.lifetime
+            && a.role == AllocationRole::VariablePayload
+    }) {
+        let global_payload = global_allocations
+            .iter()
+            .find(|a| {
+                a.owner == global.owner
+                    && a.role == AllocationRole::TransactionStage
+                    && a.payload_block_capacity != 0
+            })
+            .ok_or(MemoryPlanError::DescriptorMismatch)?;
+        insert_object_mapping(mapping, payload.id, global_payload.id)?;
     }
     Ok(())
 }
@@ -1371,7 +1426,21 @@ pub(crate) fn place_allocations(
         let mut cursor = 0_u64;
         let mut alignment = 1_u32;
         let mut members = Vec::new();
-        let mut reused = BTreeMap::<ReuseGroupId, (u64, u64)>::new();
+        // Group selection follows the execution schedule, while allocation
+        // iteration follows object identity. Reserve the complete group before
+        // placing any member so a smaller later-lived member cannot truncate
+        // the group or choose an offset with insufficient alignment.
+        let mut group_layouts = BTreeMap::<ReuseGroupId, (u64, u32)>::new();
+        for allocation in allocations.iter().filter(|allocation| {
+            allocation.space == space && allocation_backing(allocation) == backing
+        }) {
+            if let Some(group) = allocation.reuse_group {
+                let layout = group_layouts.entry(group).or_insert((0, 1));
+                layout.0 = layout.0.max(allocation.capacity_bytes);
+                layout.1 = layout.1.max(allocation.alignment);
+            }
+        }
+        let mut reused = BTreeMap::<ReuseGroupId, u64>::new();
         for allocation in allocations.iter_mut().filter(|allocation| {
             allocation.space == space && allocation_backing(allocation) == backing
         }) {
@@ -1379,18 +1448,18 @@ pub(crate) fn place_allocations(
             let offset = if backing == ArenaBackingKind::ContiguousBytes
                 && let Some(group) = allocation.reuse_group
             {
-                if let Some((offset, capacity)) = reused.get_mut(&group) {
-                    *capacity = (*capacity).max(allocation.capacity_bytes);
+                if let Some(offset) = reused.get(&group) {
                     *offset
                 } else {
-                    cursor = align_up(cursor, allocation.alignment)?;
+                    let (capacity, group_alignment) = group_layouts[&group];
+                    cursor = align_up(cursor, group_alignment)?;
                     let offset = cursor;
-                    cursor = cursor.checked_add(allocation.capacity_bytes).ok_or(
+                    cursor = cursor.checked_add(capacity).ok_or(
                         MemoryPlanError::ArithmeticOverflow {
                             field: "arena capacity",
                         },
                     )?;
-                    reused.insert(group, (offset, allocation.capacity_bytes));
+                    reused.insert(group, offset);
                     offset
                 }
             } else {
@@ -1421,6 +1490,9 @@ pub(crate) fn place_allocations(
 fn allocation_backing(allocation: &AllocationPlan) -> ArenaBackingKind {
     match allocation.role {
         AllocationRole::VariablePayload => ArenaBackingKind::IndirectOwnedPayloads,
+        AllocationRole::TransactionStage if allocation.payload_block_capacity != 0 => {
+            ArenaBackingKind::IndirectOwnedPayloads
+        }
         AllocationRole::ConstructionWorkspace => ArenaBackingKind::ReservationOnlyWorkspace,
         _ => ArenaBackingKind::ContiguousBytes,
     }

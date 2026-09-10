@@ -36,7 +36,7 @@ pub(crate) fn remap_call_allocations(
         // call double-counts its live ports or its publication stage.
         .filter(|allocation| {
             !existing_objects.contains_key(&allocation.id)
-                && matches!(
+                && (matches!(
                     allocation.role,
                     mech_core::AllocationRole::OrderedIndex
                         | mech_core::AllocationRole::SelectorPlan
@@ -44,7 +44,8 @@ pub(crate) fn remap_call_allocations(
                         | mech_core::AllocationRole::ConstructionWorkspace
                         | mech_core::AllocationRole::TransactionStage
                         | mech_core::AllocationRole::TransferStage
-                )
+                ) || (allocation.role == mech_core::AllocationRole::VariablePayload
+                    && matches!(allocation.lifetime, MemoryLifetime::Transaction { .. })))
         })
         .map(|allocation| {
             let id = MemoryObjectId::new(*next_id);
@@ -77,7 +78,11 @@ pub(crate) fn remap_call_allocations(
                 AllocationPlan {
                     id,
                     owner,
-                    role: allocation.role,
+                    role: if allocation.role == mech_core::AllocationRole::VariablePayload {
+                        mech_core::AllocationRole::TransactionStage
+                    } else {
+                        allocation.role
+                    },
                     slot: allocation.slot,
                     space: allocation.space,
                     current_bytes: allocation.current_bytes,

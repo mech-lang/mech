@@ -33,12 +33,23 @@ pub fn audit_program_memory_plan(
         let Some(observation) = observed.get(&object) else {
             return Err(MemoryPlanError::ObservationMissing { object });
         };
+        // Fixed Resident/device backing must cover the current extent exactly.
+        // Only future capacity and variable payload/workspace facts are bounds.
+        let exact_current = matches!(
+            allocation.space,
+            mech_core::MemorySpace::ResidentCpu | mech_core::MemorySpace::Device { .. }
+        ) && !matches!(
+            allocation.role,
+            mech_core::AllocationRole::VariablePayload
+                | mech_core::AllocationRole::ConstructionWorkspace
+        ) && allocation.payload_block_capacity == 0;
         compare(
             &mut mismatches,
             object,
             "current_bytes",
             allocation.current_bytes,
             observation.current_bytes,
+            exact_current,
         );
         compare(
             &mut mismatches,
@@ -46,6 +57,7 @@ pub fn audit_program_memory_plan(
             "capacity_bytes",
             allocation.capacity_bytes,
             observation.capacity_bytes,
+            false,
         );
         let value = plan.values.iter().find(|value| value.object == object);
         if let Some(value) = value {
@@ -55,6 +67,7 @@ pub fn audit_program_memory_plan(
                 "payload_bytes",
                 value.layout.payload.current_bytes,
                 observation.payload_bytes,
+                false,
             );
             compare(
                 &mut mismatches,
@@ -62,6 +75,7 @@ pub fn audit_program_memory_plan(
                 "retained_nodes",
                 value.layout.payload.current_nodes,
                 observation.retained_nodes,
+                false,
             );
             compare(
                 &mut mismatches,
@@ -69,6 +83,11 @@ pub fn audit_program_memory_plan(
                 "logical_elements",
                 value.layout.current_elements,
                 observation.logical_elements,
+                exact_current
+                    && !matches!(
+                        value.layout.storage,
+                        mech_core::StorageLayoutClass::CanonicalSnapshot { .. }
+                    ),
             );
         } else {
             compare(
@@ -77,6 +96,7 @@ pub fn audit_program_memory_plan(
                 "payload_bytes",
                 0,
                 observation.payload_bytes,
+                false,
             );
             compare(
                 &mut mismatches,
@@ -84,6 +104,7 @@ pub fn audit_program_memory_plan(
                 "retained_nodes",
                 0,
                 observation.retained_nodes,
+                false,
             );
         }
         let current_exact = allocation.current_bytes == observation.current_bytes
@@ -125,8 +146,9 @@ fn compare(
     field: &'static str,
     planned: u64,
     observed: u64,
+    exact: bool,
 ) {
-    if observed > planned {
+    if observed > planned || (exact && observed != planned) {
         mismatches.push(MemoryPlanAuditMismatch {
             object,
             field,

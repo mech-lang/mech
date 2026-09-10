@@ -196,6 +196,9 @@ class FullWorkflowContractTests(unittest.TestCase):
         for token in (
             "cargo +nightly-2026-03-03 test",
             "--all-features",
+            "--test type_memory_contract",
+            "--test storage_capability",
+            "--test operation_memory_requirement",
             "--test type_memory_boundary",
         ):
             self.assertIn(token, full)
@@ -295,6 +298,20 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn('test "$R6_MEMORY_RESULT" = success', cargo)
         self.assertIn('test "$R6_FIXED_PROFILES_RESULT" = success', cargo)
         self.assertIn('test "$R6_MIRI_RESULT" = success', cargo)
+
+    def test_r6_retains_resident_live_admission_unit_tests(self):
+        runtime = job_block(FULL, "r6-memory-runtime")
+        commands = [
+            " ".join(line.split())
+            for line in runtime.replace("\\\n", " ").splitlines()
+        ]
+        self.assertIn(
+            "cargo +nightly-2026-03-03 test --locked -p mech-engine "
+            "--no-default-features --features full_compiler,resident-artifact "
+            "--lib resident::general::live::",
+            commands,
+        )
+        self.assertNotIn("continue-on-error", runtime)
 
     def test_architecture_contracts_prefetch_before_offline_historical_evidence(self):
         block = job_block(FULL, "architecture-contracts")

@@ -189,29 +189,6 @@ pub fn plan_turn_memory(
                         maximum: output.value.capacity_elements.maximum.unwrap(),
                     });
                 }
-                if let Some(stage) = call
-                    .transactions
-                    .get(usize::from(ordinal))
-                    .and_then(|transaction| transaction_stage(*transaction))
-                {
-                    let resolved_stage = resolved_call
-                        .transactions
-                        .get(usize::from(ordinal))
-                        .and_then(|transaction| transaction_stage(*transaction))
-                        .and_then(|stage| {
-                            resolved_call
-                                .allocations
-                                .iter()
-                                .find(|allocation| allocation.id == stage)
-                        })
-                        .ok_or(MemoryPlanError::DescriptorMismatch)?;
-                    grow_transaction_family(
-                        &mut allocations,
-                        stage,
-                        resolved_stage.current_bytes,
-                        resolved_stage.capacity_bytes,
-                    )?;
-                }
             }
             let resolved_output = resolved_call
                 .outputs
@@ -239,6 +216,9 @@ pub fn plan_turn_memory(
         )?;
     }
     let arenas = place_allocations(&mut allocations)?;
+    if let Some(call) = &mut turn_call {
+        call.allocations = allocations.clone().into_boxed_slice();
+    }
     demand.turn_peak_bytes = demand.turn_peak_bytes.max(turn_storage_peak(&allocations)?);
     let mut budget_violations = plan
         .budget_violations
@@ -555,6 +535,9 @@ pub(crate) fn apply_observed_turn_demand(
         observed.persistent_bytes,
     )?;
     plan.arenas = place_allocations(&mut plan.allocations)?;
+    if let Some(call) = &mut plan.call {
+        call.allocations = plan.allocations.clone();
+    }
     plan.demand.turn_peak_bytes = plan
         .demand
         .turn_peak_bytes
@@ -671,6 +654,9 @@ fn refresh_turn_allocations(
             {
                 payload.current_bytes = current.payload_bytes;
                 payload.capacity_bytes = payload.capacity_bytes.max(current.payload_bytes);
+                payload.payload_block_capacity = payload
+                    .payload_block_capacity
+                    .max(current.retained_nodes.max(1));
             }
         }
     }
@@ -688,7 +674,20 @@ fn refresh_turn_allocations(
             .ok_or(MemoryPlanError::DescriptorMismatch)?;
         global.current_bytes = local.current_bytes;
         global.capacity_bytes = local.capacity_bytes;
+        global.payload_block_capacity = local.payload_block_capacity;
         global.alignment = local.alignment;
+    }
+    for (old, new) in original.transactions.iter().zip(&resolved.transactions) {
+        if let (Some(primary), Some(resolved_primary)) =
+            (transaction_stage(*old), transaction_stage(*new))
+        {
+            grow_transaction_family(
+                allocations,
+                primary,
+                resolved_primary,
+                &resolved.allocations,
+            )?;
+        }
     }
     Ok(())
 }
@@ -754,24 +753,48 @@ fn demand_max(left: ResourceDemand, right: ResourceDemand) -> ResourceDemand {
 fn grow_transaction_family(
     allocations: &mut [AllocationPlan],
     primary: mech_core::MemoryObjectId,
-    current_bytes: u64,
-    capacity_bytes: u64,
+    resolved_primary: mech_core::MemoryObjectId,
+    resolved: &[AllocationPlan],
 ) -> Result<(), MemoryPlanError> {
-    let owner = allocations
+    let local = resolved
         .iter()
-        .find(|allocation| allocation.id == primary)
-        .map(|allocation| allocation.owner.clone())
+        .find(|a| a.id == resolved_primary)
         .ok_or(MemoryPlanError::DescriptorMismatch)?;
-    let indices = allocations
-        .iter()
-        .enumerate()
-        .filter(|(_, allocation)| {
-            allocation.role == mech_core::AllocationRole::TransactionStage
-                && allocation.owner == owner
-        })
-        .map(|(index, _)| index)
-        .collect::<Vec<_>>();
-    grow_transaction_stage_indices(allocations, &indices, current_bytes, capacity_bytes)
+    let fixed = allocations
+        .iter_mut()
+        .find(|allocation| allocation.id == primary)
+        .ok_or(MemoryPlanError::DescriptorMismatch)?;
+    let owner = fixed.owner.clone();
+    let lifetime = fixed.lifetime;
+    fixed.current_bytes = local.current_bytes;
+    fixed.capacity_bytes = fixed.capacity_bytes.max(local.capacity_bytes);
+    fixed.alignment = local.alignment;
+    if let Some(local_payload) = resolved.iter().find(|a| {
+        a.owner == local.owner
+            && a.lifetime == local.lifetime
+            && a.role == mech_core::AllocationRole::VariablePayload
+    }) {
+        // Standalone calls retain VariablePayload transaction members. Program
+        // and Resident projections identify them as TransactionStage members;
+        // both represent the same separately owned payload, never header bytes.
+        let payload = allocations
+            .iter_mut()
+            .find(|a| {
+                a.owner == owner
+                    && a.payload_block_capacity != 0
+                    && (a.role == mech_core::AllocationRole::TransactionStage
+                        || (a.role == mech_core::AllocationRole::VariablePayload
+                            && a.lifetime == lifetime))
+            })
+            .ok_or(MemoryPlanError::DescriptorMismatch)?;
+        payload.current_bytes = local_payload.current_bytes;
+        payload.capacity_bytes = payload.capacity_bytes.max(local_payload.capacity_bytes);
+        payload.payload_block_capacity = payload
+            .payload_block_capacity
+            .max(local_payload.payload_block_capacity);
+        payload.alignment = local_payload.alignment;
+    }
+    Ok(())
 }
 
 fn grow_transaction_stage_total(
@@ -782,7 +805,14 @@ fn grow_transaction_stage_total(
     let indices = allocations
         .iter()
         .enumerate()
-        .filter(|(_, allocation)| allocation.role == mech_core::AllocationRole::TransactionStage)
+        .filter(|(_, allocation)| {
+            allocation.role == mech_core::AllocationRole::TransactionStage
+                || (allocation.role == mech_core::AllocationRole::VariablePayload
+                    && matches!(
+                        allocation.lifetime,
+                        mech_core::MemoryLifetime::Transaction { .. }
+                    ))
+        })
         .map(|(index, _)| index)
         .collect::<Vec<_>>();
     if indices.is_empty() && (current_bytes != 0 || capacity_bytes != 0) {
@@ -817,7 +847,7 @@ fn grow_transaction_stage_indices(
     let target = indices
         .iter()
         .copied()
-        .find(|&index| allocations[index].alignment == 1)
+        .find(|&index| allocations[index].payload_block_capacity != 0)
         .unwrap_or(indices[0]);
     let capacity_delta = capacity_bytes.saturating_sub(capacity_total);
     allocations[target].capacity_bytes = allocations[target]

@@ -103,6 +103,13 @@ and recursive child-block metadata are bounded before activation becomes
 visible. Accounting underflow and overflow are structured invariant errors;
 they are never hidden by saturating arithmetic.
 
+Temporary-byte admission also checks the capacities and closed lifetimes of
+the supplied allocations independently of the semantic demand summary. All
+objects live at one plan point count together, including transaction payloads
+and construction workspace; disjoint reuse members count only during their
+own lifetimes. An understated summary cannot authorize an over-budget physical
+plan, and this validation does not change its placement or capacity.
+
 Detached immutable snapshots retain a pointer-free accounting ticket. The
 ticket does not retain a mutable domain, cell, or executor, and releases its
 physical charge when the last snapshot owner is dropped.

@@ -2,7 +2,7 @@ version = 1
 
 [owners.mech-core]
 paths = ["src/core/**"]
-command = ["cargo", "test", "--locked", "--offline", "-p", "mech-core", "--lib", "--test", "r6_memory_runtime", "--test", "r6_memory_safety", "--all-features"]
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-core", "--lib", "--test", "type_memory_contract", "--test", "storage_capability", "--test", "operation_memory_requirement", "--test", "type_memory_boundary", "--test", "r6_memory_runtime", "--test", "r6_memory_safety", "--all-features"]
 standard = true
 cross_cutting = true
 

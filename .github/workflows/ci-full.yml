@@ -125,7 +125,8 @@ jobs:
       - name: Execute the complete R2 conformance boundary
         run: >-
           cargo +nightly-2026-03-03 test --locked -p mech-core
-          --all-features --test type_memory_boundary
+          --all-features --test type_memory_contract --test storage_capability
+          --test operation_memory_requirement --test type_memory_boundary
       - name: Execute the complete R3 conformance boundary
         run: |
           cargo +nightly-2026-03-03 test --locked -p mech-core --all-features \
@@ -264,6 +265,9 @@ jobs:
           cargo +nightly-2026-03-03 test --locked -p mech-engine \
             --no-default-features --features full_compiler \
             --test r6_memory_runtime
+          cargo +nightly-2026-03-03 test --locked -p mech-engine \
+            --no-default-features --features full_compiler,resident-artifact \
+            --lib resident::general::live::
           cargo +nightly-2026-03-03 test --locked -p mech-stdlib \
             --no-default-features --features standard_compiler \
             --test r6_managed_functions

@@ -1511,6 +1511,11 @@ impl MemoryDomain {
         for allocation in plan.allocations.iter() {
             let backing = match allocation.role {
                 crate::AllocationRole::VariablePayload => ArenaBackingKind::IndirectOwnedPayloads,
+                crate::AllocationRole::TransactionStage
+                    if allocation.payload_block_capacity != 0 =>
+                {
+                    ArenaBackingKind::IndirectOwnedPayloads
+                }
                 crate::AllocationRole::ConstructionWorkspace => {
                     ArenaBackingKind::ReservationOnlyWorkspace
                 }
@@ -1833,6 +1838,7 @@ impl MemoryDomain {
                 limit: violation.limit,
             });
         }
+        validate_temporary_allocation_budget(view.allocations, view.limits.max_temporary_bytes)?;
         let mut transactions = Vec::new();
         transactions
             .try_reserve_exact(view.transactions.len())
@@ -3168,6 +3174,88 @@ fn build_member_placement_index(
         });
     }
     Ok(member_placements.into_boxed_slice())
+}
+
+/// Check the allocation-derived lower bound independently of the caller's
+/// semantic demand summary. This validates the supplied capacities and closed
+/// lifetimes; it does not choose new placements or revise the physical plan.
+fn validate_temporary_allocation_budget(
+    allocations: &[AllocationPlan],
+    limit: Option<u64>,
+) -> MemoryRuntimeResult<()> {
+    let Some(limit) = limit else {
+        return Ok(());
+    };
+    // Start events sort before end events at the same point: both allocations
+    // are live at a shared endpoint. Disjoint reuse members are consequently
+    // charged only while their own declared lifetime is active.
+    let mut events = Vec::<(MemoryPlanPoint, bool, u64)>::new();
+    let event_count =
+        allocations
+            .len()
+            .checked_mul(2)
+            .ok_or(MemoryRuntimeError::IdentityExhausted {
+                identity: "allocation budget event count",
+            })?;
+    events
+        .try_reserve_exact(event_count)
+        .map_err(|_| MemoryRuntimeError::AllocationFailed {
+            object: None,
+            requested: u64::try_from(event_count)
+                .ok()
+                .and_then(|count| {
+                    count.checked_mul(core::mem::size_of::<(MemoryPlanPoint, bool, u64)>() as u64)
+                })
+                .unwrap_or(u64::MAX),
+            alignment: core::mem::align_of::<(MemoryPlanPoint, bool, u64)>() as u32,
+            space: MemorySpace::Host,
+        })?;
+    for allocation in allocations {
+        let (first, last) = match allocation.lifetime {
+            MemoryLifetime::Program | MemoryLifetime::Activation => continue,
+            MemoryLifetime::Turn { first, last }
+            | MemoryLifetime::Transaction { first, last }
+            | MemoryLifetime::Transfer { first, last } => (first, last),
+        };
+        if last < first {
+            return Err(MemoryRuntimeError::InvalidLifetimeTransition {
+                object: Some(allocation.id),
+                from: "reversed planned lifetime",
+                to: "temporary allocation admission",
+            });
+        }
+        events.push((first, false, allocation.capacity_bytes));
+        events.push((last, true, allocation.capacity_bytes));
+    }
+    events.sort_unstable();
+    let mut live = 0_u64;
+    for (_, ending, bytes) in events {
+        if ending {
+            live = live.checked_sub(bytes).ok_or(
+                MemoryRuntimeError::AccountingInvariantViolation {
+                    dimension: "temporary allocation lifetime end",
+                    current: live,
+                    change: bytes,
+                },
+            )?;
+        } else {
+            live = live.checked_add(bytes).ok_or(
+                MemoryRuntimeError::AccountingInvariantViolation {
+                    dimension: "temporary allocation lifetime start",
+                    current: live,
+                    change: bytes,
+                },
+            )?;
+            if live > limit {
+                return Err(MemoryRuntimeError::BudgetExceeded {
+                    operation: None,
+                    requested: live,
+                    limit,
+                });
+            }
+        }
+    }
+    Ok(())
 }
 
 fn validate_plan_view(

@@ -445,6 +445,203 @@ fn realization_recomputes_budget_instead_of_trusting_cached_violations() {
 }
 
 #[test]
+fn realization_rejects_underreported_temporary_allocations_before_reservation() {
+    for lifetime in [
+        MemoryLifetime::Turn {
+            first: MemoryPlanPoint::new(0),
+            last: MemoryPlanPoint::new(1),
+        },
+        MemoryLifetime::Transaction {
+            first: MemoryPlanPoint::new(0),
+            last: MemoryPlanPoint::new(1),
+        },
+        MemoryLifetime::Transfer {
+            first: MemoryPlanPoint::new(0),
+            last: MemoryPlanPoint::new(1),
+        },
+    ] {
+        for backing in [
+            ArenaBackingKind::ContiguousBytes,
+            ArenaBackingKind::IndirectOwnedPayloads,
+            ArenaBackingKind::ReservationOnlyWorkspace,
+        ] {
+            let domain = MemoryDomain::new().unwrap();
+            let revision = domain.issue_plan_revision().unwrap();
+            // Required capacity is charged before initialization, including
+            // indirect payloads and deferred construction workspace.
+            let mut temporary = allocation(0, 0, 0, 0, 1_024, lifetime, None);
+            temporary.role = AllocationRole::Scratch;
+            match backing {
+                ArenaBackingKind::ContiguousBytes => {}
+                ArenaBackingKind::IndirectOwnedPayloads => {
+                    temporary.role = AllocationRole::VariablePayload;
+                    temporary.slot = None;
+                    temporary.payload_block_capacity = 1;
+                }
+                ArenaBackingKind::ReservationOnlyWorkspace => {
+                    temporary.role = AllocationRole::ConstructionWorkspace;
+                    temporary.slot = None;
+                }
+            }
+            assert!(matches!(
+                domain.prepare_realization(runtime_plan_view(
+                    revision,
+                    &[temporary],
+                    &[arena(0, backing, 1_024, &[0])],
+                    ResourceDemand::default(),
+                    MemoryBudgetLimits {
+                        max_temporary_bytes: Some(0),
+                        ..Default::default()
+                    },
+                    &[],
+                )),
+                Err(MemoryRuntimeError::BudgetExceeded {
+                    requested: 1_024,
+                    limit: 0,
+                    ..
+                })
+            ));
+            assert_eq!(domain.ledger(), Default::default());
+            assert!(domain.allocation_observations().is_empty());
+        }
+    }
+}
+
+#[test]
+fn temporary_budget_checks_closed_lifetime_peaks_and_disjoint_reuse() {
+    for (first_last, second_first, reuse, limit, admitted) in [
+        (1, 1, false, 127, false),
+        (1, 1, false, 128, true),
+        (0, 1, true, 64, true),
+    ] {
+        let domain = MemoryDomain::new().unwrap();
+        let revision = domain.issue_plan_revision().unwrap();
+        let reuse_group = reuse.then_some(0);
+        let allocations = [
+            allocation(
+                0,
+                0,
+                0,
+                0,
+                64,
+                MemoryLifetime::Turn {
+                    first: MemoryPlanPoint::new(0),
+                    last: MemoryPlanPoint::new(first_last),
+                },
+                reuse_group,
+            ),
+            allocation(
+                1,
+                0,
+                if reuse { 0 } else { 64 },
+                0,
+                64,
+                MemoryLifetime::Transaction {
+                    first: MemoryPlanPoint::new(second_first),
+                    last: MemoryPlanPoint::new(2),
+                },
+                reuse_group,
+            ),
+            // Retained instance storage is governed by its own lifetime,
+            // even when it shares the same physical arena.
+            allocation(2, 0, 128, 64, 64, MemoryLifetime::Activation, None),
+        ];
+        let result = domain.prepare_realization(runtime_plan_view(
+            revision,
+            &allocations,
+            &[arena(0, ArenaBackingKind::ContiguousBytes, 192, &[0, 1, 2])],
+            ResourceDemand::default(),
+            MemoryBudgetLimits {
+                max_temporary_bytes: Some(limit),
+                ..Default::default()
+            },
+            &[],
+        ));
+        if admitted {
+            let realized = domain.materialize(result.unwrap()).unwrap();
+            assert!(
+                realized
+                    .bindings()
+                    .iter()
+                    .all(|(_, binding)| binding.handle().is_some())
+            );
+        } else {
+            assert!(matches!(
+                result,
+                Err(MemoryRuntimeError::BudgetExceeded {
+                    requested: 128,
+                    limit: 127,
+                    ..
+                })
+            ));
+            assert_eq!(domain.ledger(), Default::default());
+        }
+    }
+}
+
+#[test]
+fn temporary_budget_rejects_reversed_lifetimes_and_overflow_without_reserving() {
+    for reversed in [true, false] {
+        let domain = MemoryDomain::new().unwrap();
+        let revision = domain.issue_plan_revision().unwrap();
+        let capacity = if reversed { 8 } else { 1_u64 << 63 };
+        let allocations = [
+            allocation(
+                0,
+                0,
+                0,
+                0,
+                capacity,
+                MemoryLifetime::Turn {
+                    first: MemoryPlanPoint::new(if reversed { 2 } else { 0 }),
+                    last: MemoryPlanPoint::new(1),
+                },
+                None,
+            ),
+            allocation(
+                1,
+                1,
+                0,
+                0,
+                capacity,
+                MemoryLifetime::Turn {
+                    first: MemoryPlanPoint::new(0),
+                    last: MemoryPlanPoint::new(1),
+                },
+                None,
+            ),
+        ];
+        let result = domain.prepare_realization(runtime_plan_view(
+            revision,
+            &allocations,
+            &[
+                arena(0, ArenaBackingKind::ContiguousBytes, capacity, &[0]),
+                arena(1, ArenaBackingKind::ContiguousBytes, capacity, &[1]),
+            ],
+            ResourceDemand::default(),
+            MemoryBudgetLimits {
+                max_temporary_bytes: Some(u64::MAX),
+                ..Default::default()
+            },
+            &[],
+        ));
+        if reversed {
+            assert!(matches!(
+                result,
+                Err(MemoryRuntimeError::InvalidLifetimeTransition { .. })
+            ));
+        } else {
+            assert!(matches!(
+                result,
+                Err(MemoryRuntimeError::AccountingInvariantViolation { .. })
+            ));
+        }
+        assert_eq!(domain.ledger(), Default::default());
+        assert!(domain.allocation_observations().is_empty());
+    }
+}
+
+#[test]
 fn realization_tracks_initialization_and_scoped_access() {
     let domain = MemoryDomain::new().unwrap();
     let revision = domain.issue_plan_revision().unwrap();

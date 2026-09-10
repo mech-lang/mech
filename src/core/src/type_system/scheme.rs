@@ -363,7 +363,7 @@ pub fn bool_unary() -> Result<Vec<KindScheme>, SemanticModelError> {
 
 pub fn bool_binary() -> Result<Vec<KindScheme>, SemanticModelError> {
     let bool_kind = BuiltinScalarKind::Bool.kind_expr();
-    Ok(vec![
+    let mut schemes = vec![
         exact_binary(bool_kind.clone(), bool_kind.clone(), bool_kind.clone())?,
         make(
             0,
@@ -372,10 +372,45 @@ pub fn bool_binary() -> Result<Vec<KindScheme>, SemanticModelError> {
                 matrix(bool_kind.clone(), dim(0), dim(1)),
                 matrix(bool_kind.clone(), dim(0), dim(1)),
             ],
-            vec![matrix(bool_kind, dim(0), dim(1))],
+            vec![matrix(bool_kind.clone(), dim(0), dim(1))],
             Vec::new(),
         )?,
-    ])
+    ];
+    for reversed in [false, true] {
+        let shaped = matrix(bool_kind.clone(), dim(0), dim(1));
+        let operands = |other: KindExpr| {
+            if reversed {
+                vec![other, shaped.clone()]
+            } else {
+                vec![shaped.clone(), other]
+            }
+        };
+        schemes.push(make(
+            0,
+            2,
+            operands(bool_kind.clone()),
+            vec![shaped.clone()],
+            Vec::new(),
+        )?);
+        for column in [true, false] {
+            let broadcast = if column {
+                matrix(bool_kind.clone(), dim(2), DimensionExpr::Constant(1))
+            } else {
+                matrix(bool_kind.clone(), DimensionExpr::Constant(1), dim(2))
+            };
+            schemes.push(make(
+                0,
+                3,
+                operands(broadcast),
+                vec![shaped.clone()],
+                vec![KindConstraint::DimensionCompatible(
+                    dim(if column { 0 } else { 1 }),
+                    dim(2),
+                )],
+            )?);
+        }
+    }
+    Ok(schemes)
 }
 
 fn range_scheme(arity: usize) -> Result<KindScheme, SemanticModelError> {
@@ -1171,8 +1206,17 @@ pub fn maintained_source_schemes(
             };
             exact_assignment(arity)?
         }
-        "math/add" | "math/sub" | "math/mul" | "math/div" | "math/pow" => {
-            promoted_binary_elementwise()?
+        "math/add" | "math/sub" | "math/mul" | "math/div" => promoted_binary_elementwise()?,
+        "math/pow" => {
+            let mut schemes = promoted_binary_elementwise()?;
+            // Rational power has an integral exponent; promoting that input
+            // to the base's kind would erase the operation's exact signature.
+            schemes.push(exact_binary(
+                BuiltinScalarKind::R64.kind_expr(),
+                BuiltinScalarKind::I32.kind_expr(),
+                BuiltinScalarKind::R64.kind_expr(),
+            )?);
+            schemes
         }
         "math/mod" => {
             let mut values = numeric_binary_for_predicate(BuiltinKindPredicate::Integer)?;

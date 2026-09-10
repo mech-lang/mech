@@ -6,22 +6,21 @@ mod catalog;
 mod dynamic_matrix_factory;
 
 use mech_core::{
-    BytecodeInstruction, MResult, ParsedProgram, RuntimeType, SchemaBody, Value, ValueData,
-    hash_str, snapshot::SequenceView,
+    BytecodeInstruction, MResult, ParsedProgram, ResolvedSelectionMode, RuntimeType, SchemaBody,
+    Value, ValueData, hash_str, snapshot::SequenceView,
 };
 #[cfg(feature = "distribution-full")]
 use mech_core::{
-    ExecutionTarget, ResolvedRangeMode, ResolvedReductionMode, ResolvedSelectionMode,
-    RuntimeOperationBinding,
+    ExecutionTarget, ResolvedRangeMode, ResolvedReductionMode, RuntimeOperationBinding,
 };
-use mech_engine::decode_program_artifact_bytecode_v1;
 #[cfg(feature = "distribution-full")]
+use mech_engine::ProgramArtifactDraft;
+use mech_engine::decode_program_artifact_bytecode_v1;
 use mech_engine::resident::{
     ActivationFacts, ResidentActivationOptions, preflight_resident_target,
 };
-#[cfg(feature = "distribution-full")]
 use mech_engine::{
-    ArtifactSource, BindingDeclaration, ProducerReference, ProgramArtifact, ProgramArtifactDraft,
+    ArtifactSource, BindingDeclaration, ProducerReference, ProgramArtifact,
     encode_program_artifact_bytecode_v1,
 };
 use mech_runtime::{ResidentDurabilityPolicy, RuntimeBuilder, RuntimeProgramRoute};
@@ -34,7 +33,6 @@ fn compile_source(source: &str) -> MResult<Vec<u8>> {
         .map(|product| product.into_parts().1)
 }
 
-#[cfg(feature = "distribution-full")]
 fn expected_artifact_selector(
     artifact: &ProgramArtifact,
     source: ArtifactSource,
@@ -95,7 +93,6 @@ fn run_compiled_source(source: &str) -> MResult<(ParsedProgram, Value)> {
     Ok((parsed, loaded.initial_value.into_value()))
 }
 
-#[cfg(feature = "distribution-full")]
 fn assert_source_and_bytecode_resident_parity(source: &str) -> MResult<()> {
     let catalog = mech::stdlib::source_catalog();
     let mut source_runtime = RuntimeBuilder::new()
@@ -1467,6 +1464,33 @@ fn table_joins_remain_bytecode_v1_but_are_resident_target_gated() -> MResult<()>
             error.reason.contains("MissingResidentFactory"),
             "unexpected table join preflight failure for {operator}: {error:?}",
         );
+    }
+    Ok(())
+}
+
+#[test]
+fn restored_source_overloads_survive_bytecode_and_resident_binding() -> MResult<()> {
+    for source in [
+        "[1.0 2.0; 3.0 4.0] == [1.0 0.0; 3.0 0.0]",
+        "[1.0 2.0; 3.0 4.0] != [1.0 0.0; 3.0 0.0]",
+        "[true false] == [true true]",
+        "[\"a\" \"b\"] != [\"a\" \"c\"]",
+    ] {
+        assert_source_and_bytecode_resident_parity(source)?;
+    }
+    #[cfg(feature = "distribution-full")]
+    for source in ["3/2 ^ 2<i32>", "3/2 ^ -2<i32>"] {
+        assert_source_and_bytecode_resident_parity(source)?;
+    }
+    let matrix = "[true false true; false true false]";
+    for other in ["true", "[true; false]", "[false true false]"] {
+        for operation in ["and", "or", "xor"] {
+            for (lhs, rhs) in [(matrix, other), (other, matrix)] {
+                assert_source_and_bytecode_resident_parity(&format!(
+                    "logic/{operation}({lhs}, {rhs})"
+                ))?;
+            }
+        }
     }
     Ok(())
 }

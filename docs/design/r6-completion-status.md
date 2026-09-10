@@ -9,17 +9,53 @@ gate is pending.
 
 - R5 base: `941fbbce44712b7f738813170ca1561a313190db`.
 - Latest completed implementation checkpoint before this ledger update:
-  `59a14dd1ee07f55b8dee445d4e8359364ab61688`.
+  `04eda42150cbc0f1fe6f901647a5806c94e13f60`.
 - Qualification candidate: the commit containing this ledger. The PR head,
   checked-out source, and CI head must be identical before approval; use
   `git rev-parse HEAD` rather than a self-referential hash embedded in this
   commit.
 - Last completed exact-head normal CI before the current correction:
-  [run 34386673015](https://github.com/mech-lang/mech/actions/runs/34386673015),
-  green at `f1d0256889a4afb5513525934a38794d72da7f09` with 114 checks.
+  [run 34475259493](https://github.com/mech-lang/mech/actions/runs/34475259493),
+  green at `04eda42150cbc0f1fe6f901647a5806c94e13f60` with 124 checks.
 - Current-candidate CI: pending at the time of this ledger update. Its final
   run and conclusion belong in the PR qualification record, not in an amended
   implementation commit.
+
+## Combined R1–R6 review corrections (2026-09-10)
+
+The integration review assessed the complete R6 tree with every R1–R5 ancestor.
+This correction closes all eight findings at that combined boundary:
+
+- Shaped matrix equality outranks whole-aggregate equality without changing
+  scalar, tuple, or strict-equality semantics.
+- Boolean AND, OR, and XOR retain scalar, row, and column broadcasts in both
+  operand orders through semantic resolution and source specialization.
+- Rational power preserves its exact `r64, i32 -> r64` input signature.
+- Program and turn plans retain distinct transaction header and payload
+  allocations, refresh payload bytes and registration bounds, and keep scoped
+  call geometry consistent with the final turn arenas.
+- Reuse placement reserves the maximum capacity and alignment of the entire
+  group before assigning any member's offset.
+- Runtime admission independently checks temporary allocation capacities over
+  their closed lifetimes before reservation, even when the supplied semantic
+  demand summary underreports them.
+- Fixed Resident/device audits reject missing current storage and logical
+  elements while preserving deferred future capacity and variable-payload bounds.
+- Retained R2 storage tests assert immutable sharing and mutation isolation, and
+  all four R2 targets now run in both owner CI and the full conformance gate.
+  The related Resident workspace assertion now checks reservation-only
+  construction authority, and Full CI retains its nine live admission tests.
+
+Local validation includes the complete core integration/unit corpus (522 tests),
+the engine R5 planner and R6 runtime suites (13 and 16 tests), internal planner
+tests (11), Resident budget/live tests (18), and full source/R4 tests (18).
+The standard bytecode suite passes all 21 tests, including 22 matrix/Boolean
+regression cases; the full profile passes all 24 source/bytecode/Resident cases,
+including rational power. R2/R5 checker mutations, CI contract tests, R2–R6
+architecture checks, warning policy, and the unsafe-boundary audit pass.
+Independent review of runtime admission and the planner corrections found no
+remaining concrete blocker. The new commit still requires its own CI result;
+the earlier green run does not qualify these corrections.
 
 ## Catalog denominator
 
@@ -54,7 +90,7 @@ local object-size boundary.
 | Resident execution | `PreparedResidentTurn`, R5 transaction targets, real arena projection; numeric and String staging no longer creates an output-sized second buffer. |
 | Native, WASM, compute, GPU, browser | Target-local realization and registered submission ownership; owner suites and required browser groups are part of the exact-head gate. |
 
-## Current correction evidence
+## Earlier R6 correction evidence
 
 The correction after the last green baseline closes the bounded completion
 review findings as families rather than call-site exceptions:

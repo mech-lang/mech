@@ -193,15 +193,19 @@ fn every_exact_scalar_and_string_backing_reports_its_actual_capabilities() {
     );
 
     let string = ValueCell::from_exact("text".to_owned()).unwrap();
-    let capabilities = string.storage_capabilities();
+    let semantic = string.resolved_type_memory_contract().unwrap();
     assert_eq!(
-        capabilities.topology,
-        StorageTopology::Scalar(ScalarMemoryKind::String)
+        semantic.topology,
+        MemoryTopology::Scalar(ScalarMemoryKind::String)
     );
-    assert_eq!(capabilities.extent, StorageExtentCapability::Single);
+    assert_eq!(semantic.extent, ResolvedMemoryExtent::Single);
+    assert_eq!(semantic.addressing.positional_rank, Some(1));
+    let capabilities = string.storage_capabilities();
+    assert_eq!(capabilities.topology, StorageTopology::CanonicalValue);
+    assert_eq!(capabilities.extent, StorageExtentCapability::Any);
     assert_eq!(
         capabilities.addressing.positional,
-        PositionalAddressingCapability::Rank(1)
+        PositionalAddressingCapability::AnyRank
     );
     assert!(capabilities.addressing.arbitrary_regions);
     assert!(capabilities.access.region_mutable);
@@ -717,7 +721,13 @@ fn addressing_canonicalization_and_accounting_fail_independently() {
     check_fixture_storage_compatibility(&set_schema, &set_shape, &canonical).unwrap();
 }
 
-fn assert_replacement_laws(target: ValueCell, replacement: ValueCell, invalid: ValueCell) {
+fn assert_replacement_laws(
+    target: ValueCell,
+    replacement: ValueCell,
+    invalid: ValueCell,
+    shares_immutable_storage: bool,
+) {
+    let original = target.snapshot().unwrap();
     target.replace(&replacement.snapshot().unwrap()).unwrap();
     assert!(target.snapshot_eq(&replacement).unwrap());
     let before_failure = target.detached_clone().unwrap();
@@ -726,8 +736,15 @@ fn assert_replacement_laws(target: ValueCell, replacement: ValueCell, invalid: V
     assert!(target.storage_capabilities().ownership.detachable);
     let detached = target.detached_clone().unwrap();
     assert!(!target.same_logical_cell(&detached));
-    assert!(!target.same_storage(&detached));
+    assert_eq!(target.same_storage(&detached), shares_immutable_storage);
     assert!(target.snapshot_eq(&detached).unwrap());
+
+    // A detached cell owns publication independently, even when its initial
+    // immutable payload is shared with the source cell.
+    detached.replace(&original).unwrap();
+    assert!(!target.same_storage(&detached));
+    assert!(!target.snapshot_eq(&detached).unwrap());
+    assert!(target.snapshot_eq(&replacement).unwrap());
 }
 
 #[test]
@@ -738,16 +755,19 @@ fn truthful_descriptors_match_replacement_and_detachment_behavior() {
         ValueCell::from_exact(1_f64).unwrap(),
         ValueCell::from_exact(2_f64).unwrap(),
         invalid_string.clone(),
+        false,
     );
     assert_replacement_laws(
         ValueCell::from_exact("one".to_owned()).unwrap(),
         ValueCell::from_exact("two".to_owned()).unwrap(),
         invalid_bool.clone(),
+        true,
     );
     assert_replacement_laws(
         ValueCell::from_exact(DMatrix::<f64>::zeros(2, 3)).unwrap(),
         ValueCell::from_exact(DMatrix::<f64>::from_element(2, 3, 2.0)).unwrap(),
         invalid_bool.clone(),
+        false,
     );
 
     let record_body = SchemaBody::Record(
@@ -769,7 +789,7 @@ fn truthful_descriptors_match_replacement_and_detachment_behavior() {
             ),
         )
     };
-    assert_replacement_laws(record(false), record(true), invalid_bool);
+    assert_replacement_laws(record(false), record(true), invalid_bool, true);
 }
 
 #[cfg(feature = "matrix2")]
@@ -779,6 +799,7 @@ fn fixed_matrix_descriptor_matches_replacement_and_detachment_behavior() {
         ValueCell::from_exact(Matrix2::<f64>::zeros()).unwrap(),
         ValueCell::from_exact(Matrix2::<f64>::from_element(2.0)).unwrap(),
         ValueCell::from_exact(Matrix2::<bool>::from_element(false)).unwrap(),
+        false,
     );
 }
 

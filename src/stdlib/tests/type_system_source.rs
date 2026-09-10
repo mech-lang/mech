@@ -302,3 +302,75 @@ fn representative_named_outputs_match_their_resolved_calls_exactly() {
             .unwrap_or_else(|error| panic!("{source}: {error:?}"));
     }
 }
+
+fn assert_bool_matrix(source: &str, expected: &[bool]) {
+    let value = evaluate(source).unwrap_or_else(|error| panic!("{source}: {error:?}"));
+    let snapshot = value.snapshot().unwrap();
+    let ValueData::Matrix(matrix) = snapshot.data() else {
+        panic!("{source}: expected an elementwise Boolean matrix")
+    };
+    let SequenceView::Bool(elements) = matrix.elements() else {
+        panic!("{source}: expected Boolean elements")
+    };
+    assert_eq!(elements, expected, "{source}");
+}
+
+#[test]
+fn source_same_type_matrix_comparisons_remain_elementwise() {
+    for (lhs, rhs) in [
+        ("[1.0 2.0; 3.0 4.0]", "[1.0 0.0; 3.0 0.0]"),
+        ("[true false; false true]", "[true true; false false]"),
+        ("[\"a\" \"b\"; \"c\" \"d\"]", "[\"a\" \"x\"; \"c\" \"y\"]"),
+    ] {
+        assert_bool_matrix(&format!("{lhs} == {rhs}"), &[true, false, true, false]);
+        assert_bool_matrix(&format!("{lhs} != {rhs}"), &[false, true, false, true]);
+    }
+}
+
+#[test]
+fn source_boolean_broadcasts_cover_each_operation_and_operand_order() {
+    let matrix = "[true false true; false true false]";
+    for (other, and, or, xor) in [
+        (
+            "true",
+            vec![true, false, true, false, true, false],
+            vec![true; 6],
+            vec![false, true, false, true, false, true],
+        ),
+        (
+            "[true; false]",
+            vec![true, false, true, false, false, false],
+            vec![true, true, true, false, true, false],
+            vec![false, true, false, false, true, false],
+        ),
+        (
+            "[false true false]",
+            vec![false, false, false, false, true, false],
+            vec![true, true, true, false, true, false],
+            vec![true, true, true, false, false, false],
+        ),
+    ] {
+        for (operator, expected) in [("&&", and), ("||", or), ("xor", xor)] {
+            for (lhs, rhs) in [(matrix, other), (other, matrix)] {
+                let source = if operator == "xor" {
+                    format!("logic/xor({lhs}, {rhs})")
+                } else {
+                    format!("{lhs} {operator} {rhs}")
+                };
+                assert_bool_matrix(&source, &expected);
+            }
+        }
+    }
+}
+
+#[test]
+fn source_rational_power_preserves_the_integral_exponent() {
+    for (source, numerator, denominator) in [("3/2 ^ 2<i32>", 9, 4), ("3/2 ^ -2<i32>", 4, 9)] {
+        let value = evaluate(source).unwrap_or_else(|error| panic!("{source}: {error:?}"));
+        assert!(
+            matches!(value.snapshot().unwrap().data(), ValueData::Rational64(value)
+            if value.numerator() == numerator && value.denominator() == denominator),
+            "{source}"
+        );
+    }
+}
