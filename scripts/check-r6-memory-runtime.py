@@ -792,8 +792,7 @@ def failures(root: Path) -> list[str]:
     handle_filtered_projection = bool(
         arena_projection_paths
         and re.search(
-            r"if\s+binding\s*\.\s*handle\s*\(\s*\)\s*!=\s*"
-            r"Some\s*\(\s*handle\s*\)",
+            r"\bbinding\s*\.\s*handle\s*\(",
             arena_projection_paths[0],
         )
     )
@@ -840,13 +839,17 @@ def failures(root: Path) -> list[str]:
         r"\(\s*member_count\s*\)",
         plan_validation_paths[0] if plan_validation_paths else "",
     )
-    member_index_extend = re.search(
-        r"member_placements\s*\.\s*extend\s*\(",
-        plan_validation_paths[0] if plan_validation_paths else "",
+    member_index_extends = list(
+        re.finditer(
+            r"member_placements\s*\.\s*extend\s*\(",
+            plan_validation_paths[0] if plan_validation_paths else "",
+        )
     )
-    member_index_sort = re.search(
-        r"member_placements\s*\.\s*sort_unstable\s*\(\s*\)",
-        plan_validation_paths[0] if plan_validation_paths else "",
+    member_index_sorts = list(
+        re.finditer(
+            r"member_placements\s*\.\s*sort_unstable\s*\(\s*\)",
+            plan_validation_paths[0] if plan_validation_paths else "",
+        )
     )
     member_index_duplicates = re.search(
         r"member_placements\s*\.\s*windows\s*\(\s*2\s*\)\s*"
@@ -858,28 +861,59 @@ def failures(root: Path) -> list[str]:
         plan_validation_paths[0] if plan_validation_paths else "",
     )
     member_placement_guard = re.search(
-        r"if\s+member_arena\s*!=\s*Some\s*\(\s*arena\s*\.\s*id\s*\)",
+        r"if\s+member_arena\s*!=\s*Some\s*\(\s*arena\s*\.\s*id\s*\)\s*\{",
         plan_validation_paths[0] if plan_validation_paths else "",
     )
+    member_reservation_propagates = False
+    if member_index_reserve is not None and member_index_extends:
+        reservation_tail = (plan_validation_paths[0] if plan_validation_paths else "")[
+            member_index_reserve.end() : member_index_extends[0].start()
+        ]
+        member_reservation_propagates = bool(
+            re.search(r"\.\s*map_err\s*\([\s\S]*\)\s*\?\s*;", reservation_tail)
+        )
+    final_member_sort = member_index_sorts[-1] if member_index_sorts else None
     if (
         not plan_validation_paths
         or member_index_reserve is None
-        or member_index_extend is None
-        or member_index_sort is None
+        or not member_reservation_propagates
+        or not member_index_extends
+        or final_member_sort is None
         or member_index_duplicates is None
         or member_index_search is None
         or member_placement_guard is None
         or not (
             member_index_reserve.start()
-            < member_index_extend.start()
-            < member_index_sort.start()
+            < member_index_extends[0].start()
+            and member_index_extends[-1].end()
+            < final_member_sort.start()
             < member_index_duplicates.start()
         )
-        or member_index_sort.start() > member_index_search.start()
+        or final_member_sort.start() > member_index_search.start()
         or "memory object is listed by more than one arena"
         not in sources.get("src/core/src/memory_runtime/domain.rs", "")
     ):
         found.append("runtime plan member authority is not one-to-one")
+    member_regression_paths = list(
+        function_bodies(
+            sources.get("src/core/tests/r6_memory_runtime.rs", ""),
+            "plan_member_identity_validation_handles_many_zero_byte_objects_exactly",
+        )
+    )
+    member_regression = member_regression_paths[0] if member_regression_paths else ""
+    if not member_regression or any(
+        not re.search(
+            rf"let\s+{case}_ledger\s*=\s*{case}_domain\s*\.\s*ledger\s*\(\s*\)\s*;",
+            member_regression,
+        )
+        or not re.search(
+            rf"assert_eq!\s*\(\s*{case}_domain\s*\.\s*ledger\s*\(\s*\)\s*,\s*"
+            rf"{case}_ledger\s*\)",
+            member_regression,
+        )
+        for case in ("cross_listed", "wrong_arena", "nonadjacent")
+    ):
+        found.append("malformed arena plans do not prove atomic admission")
     if not any(
         "*active != Some(key)" in body and "initialization.clear()" in body
         for body in function_bodies(domain_code, "enter_revision_point")

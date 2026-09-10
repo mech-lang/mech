@@ -1182,10 +1182,7 @@ impl MechFunctionImpl for Bypass {
             "src/core/src/memory_runtime/domain.rs",
             "            for (key, binding) in bindings.iter() {\n                let region = state",
             """            for (key, binding) in bindings.iter() {
-                if binding
-                    .handle()
-                    != Some(handle)
-                {
+                if { binding.handle() != Some(handle) } {
                     continue;
                 }
                 let region = state""",
@@ -1249,6 +1246,77 @@ impl MechFunctionImpl for Bypass {
         self.assert_failure(
             root,
             "runtime plan member authority is not one-to-one",
+        )
+
+    def test_111_flat_member_index_reservation_error_must_propagate(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/memory_runtime/domain.rs",
+            """    member_placements
+        .try_reserve_exact(member_count)
+        .map_err(|_| MemoryRuntimeError::AllocationFailed {
+            object: None,
+            requested: u64::try_from(member_count)
+                .unwrap_or(u64::MAX)
+                .saturating_mul(core::mem::size_of::<(MemoryObjectId, MemoryArenaId)>() as u64),
+            alignment: core::mem::align_of::<(MemoryObjectId, MemoryArenaId)>() as u32,
+            space: MemorySpace::Host,
+        })?;""",
+            "    let _ = member_placements.try_reserve_exact(member_count);",
+        )
+        self.assert_failure(
+            root,
+            "runtime plan member authority is not one-to-one",
+        )
+
+    def test_112_declared_arena_comparison_cannot_be_disabled_afterward(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/memory_runtime/domain.rs",
+            "if member_arena != Some(arena.id) {",
+            "if member_arena != Some(arena.id) && false {",
+        )
+        self.assert_failure(
+            root,
+            "runtime plan member authority is not one-to-one",
+        )
+
+    def test_113_final_member_extension_must_precede_sorting(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/memory_runtime/domain.rs",
+            """    for (arena, members) in &arena_members {
+        member_placements.extend(members.iter().map(|member| (*member, *arena)));
+    }
+    member_placements.sort_unstable();""",
+            """    let split = arena_members.len().min(1);
+    for (arena, members) in arena_members.iter().take(split) {
+        member_placements.extend(members.iter().map(|member| (*member, *arena)));
+    }
+    member_placements.sort_unstable();
+    for (arena, members) in arena_members.iter().skip(split) {
+        member_placements.extend(members.iter().map(|member| (*member, *arena)));
+    }""",
+        )
+        self.assert_failure(
+            root,
+            "runtime plan member authority is not one-to-one",
+        )
+
+    def test_114_malformed_plan_must_prove_the_complete_ledger_is_unchanged(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/tests/r6_memory_runtime.rs",
+            "    assert_eq!(wrong_arena_domain.ledger(), wrong_arena_ledger);\n",
+            "",
+        )
+        self.assert_failure(
+            root,
+            "malformed arena plans do not prove atomic admission",
         )
 
 

@@ -222,6 +222,7 @@ fn plan_member_identity_validation_handles_many_zero_byte_objects_exactly() {
 
     let cross_listed_domain = MemoryDomain::new().unwrap();
     let cross_listed_revision = cross_listed_domain.issue_plan_revision().unwrap();
+    let cross_listed_ledger = cross_listed_domain.ledger();
     let mut empty_index = allocation(1, 1, 0, 0, 0, MemoryLifetime::Activation, None);
     empty_index.slot = Some(mech_core::PlannedSlotKind::FixedScalar(
         mech_core::ScalarMemoryKind::Index,
@@ -249,11 +250,11 @@ fn plan_member_identity_validation_handles_many_zero_byte_objects_exactly() {
             ..
         }) if object == MemoryObjectId::new(1)
     ));
-    assert_eq!(cross_listed_domain.ledger().reserved_bytes, 0);
-    assert_eq!(cross_listed_domain.ledger().active_reservations, 0);
+    assert_eq!(cross_listed_domain.ledger(), cross_listed_ledger);
 
     let wrong_arena_domain = MemoryDomain::new().unwrap();
     let wrong_arena_revision = wrong_arena_domain.issue_plan_revision().unwrap();
+    let wrong_arena_ledger = wrong_arena_domain.ledger();
     let wrong_arena_allocations = [allocation(0, 1, 0, 0, 0, MemoryLifetime::Activation, None)];
     let wrong_arena_arenas = [
         arena(0, ArenaBackingKind::ContiguousBytes, 0, &[0]),
@@ -274,10 +275,11 @@ fn plan_member_identity_validation_handles_many_zero_byte_objects_exactly() {
             ..
         }) if object == MemoryObjectId::new(0)
     ));
-    assert_eq!(wrong_arena_domain.ledger().reserved_bytes, 0);
+    assert_eq!(wrong_arena_domain.ledger(), wrong_arena_ledger);
 
     let nonadjacent_domain = MemoryDomain::new().unwrap();
     let nonadjacent_revision = nonadjacent_domain.issue_plan_revision().unwrap();
+    let nonadjacent_ledger = nonadjacent_domain.ledger();
     let nonadjacent_allocations = [
         allocation(0, 0, 0, 0, 0, MemoryLifetime::Activation, None),
         allocation(1, 1, 0, 0, 0, MemoryLifetime::Activation, None),
@@ -302,7 +304,7 @@ fn plan_member_identity_validation_handles_many_zero_byte_objects_exactly() {
             ..
         }) if object == MemoryObjectId::new(2)
     ));
-    assert_eq!(nonadjacent_domain.ledger().reserved_bytes, 0);
+    assert_eq!(nonadjacent_domain.ledger(), nonadjacent_ledger);
 }
 
 #[test]
