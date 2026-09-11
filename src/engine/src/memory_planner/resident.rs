@@ -287,8 +287,13 @@ pub fn plan_resident_arenas(
         });
     }
     arenas.sort_by_key(|arena| arena.id);
-    let budget_violations =
-        resident_budget_violations(&allocations, &footprints_by_owner, demand, target.limits)?;
+    let budget_violations = resident_budget_violations(
+        &allocations,
+        &values,
+        &footprints_by_owner,
+        demand,
+        target.limits,
+    )?;
     Ok(ResidentArenaProjection {
         plan: ProgramMemoryPlan {
             values: values.into_boxed_slice(),
@@ -390,13 +395,19 @@ pub fn finalize_resident_current_footprints(
             })?;
     }
     plan.peak = demand;
-    plan.budget_violations =
-        resident_budget_violations(&plan.allocations, footprints, demand, plan.budget_limits)?;
+    plan.budget_violations = resident_budget_violations(
+        &plan.allocations,
+        &plan.values,
+        footprints,
+        demand,
+        plan.budget_limits,
+    )?;
     Ok(())
 }
 
 fn resident_budget_violations(
     allocations: &[AllocationPlan],
+    values: &[ValueMemoryPlan],
     footprints_by_owner: &BTreeMap<MemoryObjectOwner, mech_core::CurrentMemoryFootprint>,
     demand: ResourceDemand,
     limits: mech_core::MemoryBudgetLimits,
@@ -410,7 +421,19 @@ fn resident_budget_violations(
             limits,
         ));
     }
-    for (owner, footprint) in footprints_by_owner {
+    // A storage lane is not necessarily an operation output. External inputs
+    // and literal constants participate in aggregate memory admission, but
+    // only values with a producing call carry that call's output limits.
+    // Retain producer identity even for activation-folded constants.
+    for value in values.iter().filter(|value| value.producer.is_some()) {
+        let owner = &allocations
+            .iter()
+            .find(|allocation| allocation.id == value.object)
+            .ok_or(MemoryPlanError::DescriptorMismatch)?
+            .owner;
+        let footprint = footprints_by_owner
+            .get(owner)
+            .ok_or(MemoryPlanError::DescriptorMismatch)?;
         let output_bytes = allocations
             .iter()
             .filter(|allocation| {
@@ -912,13 +935,71 @@ mod tests {
                 ..mech_core::CurrentMemoryFootprint::default()
             },
             lifetime: MemoryLifetime::Activation,
-            producer: None,
+            producer: Some(mech_core::NodeId::new(0)),
         }])
         .unwrap();
         assert!(projection.plan.budget_violations.iter().any(|violation| {
             violation.dimension == mech_core::MemoryBudgetDimension::OutputElements
                 && violation.required == 65_537
         }));
+    }
+
+    #[test]
+    fn resident_inputs_and_constants_do_not_inherit_call_output_limits() {
+        let target = TargetMemoryProfile::current_resident_cpu().unwrap();
+        let elements = target.limits.max_output_elements.unwrap() + 1;
+        let schema = SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body: SchemaBody::Matrix {
+                element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+                dimensions: vec![
+                    DimensionExpr::Constant(1),
+                    DimensionExpr::Constant(elements),
+                ]
+                .into_boxed_slice(),
+            },
+        }
+        .finalize()
+        .unwrap();
+        let shape = schema.instantiate_shape(Box::new([])).unwrap();
+        let descriptor = mech_core::ResolvedValueDescriptor::from_schema(schema, shape).unwrap();
+        let footprint = mech_core::CurrentMemoryFootprint {
+            logical_elements: elements,
+            ..mech_core::CurrentMemoryFootprint::default()
+        };
+        for (owner, slot, class) in [
+            (
+                MemoryObjectOwner::Constant(mech_core::ConstantId::new(0)),
+                None,
+                PlannedValueClass::Constant,
+            ),
+            (
+                MemoryObjectOwner::Slot(mech_core::CellSlotId::new(0)),
+                Some(mech_core::CellSlotId::new(0)),
+                PlannedValueClass::Input,
+            ),
+        ] {
+            let mut projection = plan_resident_arenas(&[ResidentValuePlanInput {
+                owner: owner.clone(),
+                slot,
+                descriptor: descriptor.clone(),
+                class,
+                kind: ResidentValueKind::F64,
+                elements,
+                footprint,
+                lifetime: MemoryLifetime::Activation,
+                producer: None,
+            }])
+            .unwrap();
+            assert!(projection.plan.budget_violations.is_empty());
+            let footprints = BTreeMap::from([(owner, footprint)]);
+            finalize_resident_current_footprints(&mut projection.plan, &footprints).unwrap();
+            assert!(projection.plan.budget_violations.is_empty());
+
+            // Removing the output quota does not remove the input's actual
+            // backing from the aggregate memory plan.
+            assert_eq!(projection.plan.peak.activation_bytes, elements * 8);
+        }
     }
 
     #[test]

@@ -58,7 +58,7 @@ macro_rules! impl_atan2_binop {
             );
 
             fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
-                Some(crate::ops::arithmetic_full_write_contract(
+                Some(crate::managed_binary::arithmetic_full_write_contract(
                     <$out_type as FunctionRuntimeType>::REPRESENTATION,
                 ))
             }
@@ -102,10 +102,10 @@ macro_rules! impl_atan2_binop {
                         out.try_fill_column_major(|index| {
                             let row = index % rows;
                             let column = index / rows;
-                            let arg1 = crate::ops::managed_broadcast_element(
+                            let arg1 = crate::managed_binary::managed_broadcast_element(
                                 &arg1, row, column, rows, columns,
                             )?;
-                            let arg2 = crate::ops::managed_broadcast_element(
+                            let arg2 = crate::managed_binary::managed_broadcast_element(
                                 &arg2, row, column, rows, columns,
                             )?;
                             Ok(arg1.runtime_atan2(arg2))
@@ -118,7 +118,7 @@ macro_rules! impl_atan2_binop {
                 Some(FunctionStatePort::from_cell(self.out.cell()))
             }
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
-                Some(crate::ops::arithmetic_full_write_contract(
+                Some(crate::managed_binary::arithmetic_full_write_contract(
                     <$out_type as FunctionRuntimeType>::REPRESENTATION,
                 ))
             }
@@ -142,10 +142,10 @@ macro_rules! impl_atan2_binop {
                 + std::fmt::Debug,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-                let name = format!(
-                    "{}<{}>",
+                let name = crate::float_binary_runtime_name(
+                    "Atan2",
                     stringify!($struct_name),
-                    <T as FunctionRuntimeType>::REPRESENTATION
+                    <T as FunctionRuntimeType>::REPRESENTATION,
                 );
                 let output = compile_value_cell_register(self.out.cell(), ctx)?;
                 let arg1 = compile_value_cell_register(self.arg1.cell(), ctx)?;
@@ -186,7 +186,7 @@ mod canonical_port_tests {
         let function = SpecializedFunction::syntax_directed(
             (implementation, invocation),
             operation,
-            RuntimeFunctionId::from_name("Atan2SS<f64>"),
+            RuntimeFunctionId::from_name("Atan2F64"),
             ExecutionTarget::DirectRuntime,
             Atan2SS::<f64>::implementation_memory_class(),
         )

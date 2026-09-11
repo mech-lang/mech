@@ -59,6 +59,10 @@ the earlier green run does not qualify these corrections.
 
 ## Catalog denominator
 
+The following historical denominator belongs to the earlier R6 checkpoint, not
+the integration follow-up. Current measured counts and pending qualification
+are recorded in the [2026-09-10 integration report](../../output/reviews/r1-r6-second-review-fixes-2026-09-10.md).
+
 The inventory test enumerates runtime entries, execution capabilities, named
 specializers, and intrinsic specializers. It classifies concrete maintained
 implementations, not only exported names, and fails on an unclassified entry.
@@ -162,9 +166,11 @@ The remaining gates are operational:
 
 1. Complete required CI on one unchanged PR head and investigate any concrete
    failure without rerunning unrelated expensive jobs.
-2. Answer and resolve the bounded review threads against that same head.
-3. Obtain a bounded completion review of only the correction diff. Any new
-   implementation work must be tied to a concrete finding from that review.
+2. Finish the integration follow-up's generated catalog, native feature, profile,
+   and bytecode qualification and answer any existing applicable review threads.
+3. Preserve the current stabilization instruction: no new review loop. Promote
+   the qualified follow-up only after rechecking the expected remote R6 head;
+   earlier green CI does not qualify the correction candidate.
 
 R7 remains release qualification; it is not a fallback for unfinished R6
 memory-runtime cutover work.

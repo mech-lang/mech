@@ -70,7 +70,9 @@ macro_rules! managed_negation {
             }
 
             fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
-                Some(crate::ops::unary_full_write_contract(O::REPRESENTATION))
+                Some(crate::managed_unary::unary_full_write_contract(
+                    O::REPRESENTATION,
+                ))
             }
         }
 
@@ -109,7 +111,9 @@ macro_rules! managed_negation {
                 Some(FunctionStatePort::from_cell(self.out.cell()))
             }
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
-                Some(crate::ops::unary_full_write_contract(O::REPRESENTATION))
+                Some(crate::managed_unary::unary_full_write_contract(
+                    O::REPRESENTATION,
+                ))
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)

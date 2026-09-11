@@ -1,3 +1,5 @@
+#[cfg(feature = "atan2")]
+use crate::trig::atan2::*;
 #[cfg(all(feature = "op_assign", feature = "matrix"))]
 use mech_core::snapshot::SequenceView;
 #[cfg(feature = "source")]
@@ -7,14 +9,11 @@ use mech_core::{
     DimensionExpr, SchemaBody, ValueCell, ValueData, function_shape_contract_violation,
 };
 use mech_core::{FunctionCatalogBuilder, MResult};
-#[cfg(feature = "atan2")]
-use crate::trig::atan2::*;
 #[cfg(any(
     all(feature = "pow", feature = "rational", feature = "i32"),
     feature = "abs",
     feature = "neg",
     feature = "op_assign",
-    feature = "atan2",
     feature = "j0",
     feature = "j1",
     feature = "y0",
@@ -934,19 +933,85 @@ mod managed_unary_family_tests {
     math_float_unop_families!(check_enabled_family);
 }
 
+#[cfg(all(
+    any(feature = "f32", feature = "f64"),
+    any(
+        feature = "atan2",
+        feature = "copysign",
+        feature = "fdim",
+        feature = "fmod",
+        feature = "nextafter",
+        feature = "remainder",
+        feature = "jn",
+        feature = "yn"
+    )
+))]
+macro_rules! declare_math_float_binop_with_installer {
+    (
+        ($operation:ident; $operation_feature:literal; $canonical:literal;
+         $suffix:ident; $scalar:ty; $scalar_feature:literal; $scalar_token:ident),
+        $installer:ident
+    ) => {
+        mech_core::paste::paste! {
+            mech_core::declare_native_runtime_factory! {
+                cfg: all(feature = $operation_feature, feature = $scalar_feature),
+                registration: [<register_ $operation:snake _ $suffix:lower _ $scalar_token>],
+                installer: $installer,
+                name: crate::float_binary_runtime_name(
+                    stringify!($operation),
+                    concat!(stringify!($operation), stringify!($suffix)),
+                    <$scalar as mech_core::FunctionRuntimeType>::REPRESENTATION,
+                ),
+                factory_type: [<$operation $suffix>]<$scalar>,
+                contract: mech_core::__mech_elementwise_binop_contract!($suffix),
+                operations: [mech_core::OperationId::from_name($canonical)],
+                package: "mech-math",
+                crate_name: "mech_math",
+                installer_path: concat!("mech_math::__mech_native::", stringify!($installer)),
+                extra_cargo_features: [$operation_feature],
+            }
+        }
+    };
+}
+
+#[cfg(all(
+    any(feature = "f32", feature = "f64"),
+    any(
+        feature = "atan2",
+        feature = "copysign",
+        feature = "fdim",
+        feature = "fmod",
+        feature = "nextafter",
+        feature = "remainder",
+        feature = "jn",
+        feature = "yn"
+    )
+))]
+macro_rules! declare_math_float_binop_factory {
+    (
+        ($operation_feature:literal; $canonical:literal; $scalar_feature:literal),
+        $operation:ident, $suffix:ident, $_shape_features:tt,
+        $scalar:ty, $_scalar_name:literal, $scalar_token:ident
+    ) => {
+        with_float_binary_installer!(
+            $operation, $suffix, $scalar_token, declare_math_float_binop_with_installer,
+            ($operation; $operation_feature; $canonical; $suffix; $scalar; $scalar_feature; $scalar_token)
+        );
+    };
+}
+
 macro_rules! declare_math_float_binop {
     ($operation:ident, $operation_feature:literal, $canonical:literal) => {
-        mech_core::declare_native_binop_runtime_factories! {
-            package: "mech-math",
-            crate_name: "mech_math",
-            operation: $operation,
-            canonical_operation: $canonical,
-            operation_feature: $operation_feature,
-            additional_features: [],
-            scalars:
-                ("f32", f32, "f32", f32),
-                ("f64", f64, "f64", f64),
-        }
+        #[cfg(all(feature = $operation_feature, feature = "f32"))]
+        mech_core::__mech_for_each_exact_binop_runtime_factory_for_type!(
+            declare_math_float_binop_factory, ($operation_feature; $canonical; "f32"),
+            $operation, f32, "f32", f32
+        );
+        #[cfg(all(feature = $operation_feature, feature = "f64"))]
+        mech_core::__mech_for_each_exact_binop_runtime_factory_for_type!(
+            declare_math_float_binop_factory, ($operation_feature; $canonical; "f64"),
+            $operation, f64, "f64", f64
+        );
     };
 }
 
@@ -963,6 +1028,55 @@ macro_rules! math_float_binop_families {
 }
 
 math_float_binop_families!(declare_math_float_binop);
+
+#[cfg(all(
+    feature = "native-link",
+    any(feature = "f32", feature = "f64"),
+    any(
+        feature = "atan2",
+        feature = "copysign",
+        feature = "fdim",
+        feature = "fmod",
+        feature = "nextafter",
+        feature = "remainder",
+        feature = "jn",
+        feature = "yn"
+    )
+))]
+macro_rules! export_math_float_binop_with_installer {
+    ((), $installer:ident) => {
+        pub use super::$installer;
+    };
+}
+
+#[cfg(all(
+    feature = "native-link",
+    any(feature = "f32", feature = "f64"),
+    any(
+        feature = "atan2",
+        feature = "copysign",
+        feature = "fdim",
+        feature = "fmod",
+        feature = "nextafter",
+        feature = "remainder",
+        feature = "jn",
+        feature = "yn"
+    )
+))]
+macro_rules! export_math_float_binop_factory {
+    (
+        (), $operation:ident, $suffix:ident, $_shape_features:tt,
+        $_scalar:ty, $_scalar_name:literal, $scalar_token:ident
+    ) => {
+        with_float_binary_installer!(
+            $operation,
+            $suffix,
+            $scalar_token,
+            export_math_float_binop_with_installer,
+            ()
+        );
+    };
+}
 
 #[cfg(any(
     feature = "copysign",
@@ -1887,17 +2001,7 @@ fn install_sub_assign_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
     install_native_op_assign_runtime_factories!(builder, Sub; "sub_assign")
 }
 
-mech_core::declare_native_binop_runtime_factories! {
-    package: "mech-math",
-    crate_name: "mech_math",
-    operation: Atan2,
-    canonical_operation: "math/atan2",
-    operation_feature: "atan2",
-    additional_features: [],
-    scalars:
-        ("f32", f32, "f32", f32),
-        ("f64", f64, "f64", f64),
-}
+declare_math_float_binop!(Atan2, "atan2", "math/atan2");
 
 #[cfg(feature = "atan2")]
 fn install_atan2_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
@@ -2043,12 +2147,24 @@ pub mod __mech_native {
 
     macro_rules! export_math_float_binop {
         ($operation:ident, $operation_feature:literal, $_canonical:literal) => {
-            mech_core::export_native_binop_runtime_factories! {
-                operation_feature: $operation_feature,
-                operation: $operation;
-                ("f32", f32, "f32", f32),
-                ("f64", f64, "f64", f64),
-            }
+            #[cfg(all(feature = $operation_feature, feature = "f32"))]
+            mech_core::__mech_for_each_exact_binop_runtime_factory_for_type!(
+                export_math_float_binop_factory,
+                (),
+                $operation,
+                f32,
+                "f32",
+                f32
+            );
+            #[cfg(all(feature = $operation_feature, feature = "f64"))]
+            mech_core::__mech_for_each_exact_binop_runtime_factory_for_type!(
+                export_math_float_binop_factory,
+                (),
+                $operation,
+                f64,
+                "f64",
+                f64
+            );
         };
     }
 
@@ -2085,11 +2201,7 @@ pub mod __mech_native {
 
     for_each_math_neg_scalar!(export_math_neg_for_scalar, ());
 
-    mech_core::export_native_binop_runtime_factories! {
-        operation_feature: "atan2", operation: Atan2;
-        ("f32", f32, "f32", f32),
-        ("f64", f64, "f64", f64),
-    }
+    export_math_float_binop!(Atan2, "atan2", "math/atan2");
 
     mech_core::export_native_binop_runtime_factories! {
         operation_feature: "div", operation: Div;

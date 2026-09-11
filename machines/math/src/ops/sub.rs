@@ -28,7 +28,7 @@ macro_rules! impl_checked_sub_binop {
             $arg2_type,
             $out_type,
             sub_op,
-            crate::ops::arithmetic_full_write_contract
+            crate::managed_binary::arithmetic_full_write_contract
         );
     };
 }

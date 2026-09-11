@@ -83,7 +83,31 @@ impl MechErrorKind for MathArithmeticOverflow {
     }
 }
 
-#[cfg(all(feature = "runtime", not(feature = "dynamic-module")))]
+#[cfg(all(
+    feature = "runtime",
+    not(feature = "dynamic-module"),
+    any(
+        feature = "add",
+        feature = "sub",
+        feature = "mul",
+        feature = "pow",
+        feature = "neg",
+        feature = "add_assign",
+        feature = "sub_assign",
+        feature = "mul_assign",
+        feature = "div_assign",
+        all(
+            feature = "abs",
+            any(
+                feature = "i8",
+                feature = "i16",
+                feature = "i32",
+                feature = "i64",
+                feature = "i128"
+            )
+        )
+    )
+))]
 pub(crate) fn arithmetic_overflow<T>(operation: &'static str) -> MechError {
     MechError::new(
         MathArithmeticOverflow {
@@ -94,6 +118,121 @@ pub(crate) fn arithmetic_overflow<T>(operation: &'static str) -> MechError {
     )
     .with_compiler_loc()
 }
+
+// The generic implementation type does not rename an existing runtime ABI.
+// This table controls both the established same-shape runtime name and its
+// native installer. All other suffixes describe newly added broadcasts.
+#[cfg(all(
+    feature = "runtime",
+    not(feature = "dynamic-module"),
+    any(feature = "f32", feature = "f64", feature = "semantic-compiler"),
+    any(
+        feature = "atan2",
+        feature = "copysign",
+        feature = "fdim",
+        feature = "fmod",
+        feature = "nextafter",
+        feature = "remainder",
+        feature = "jn",
+        feature = "yn"
+    )
+))]
+macro_rules! define_float_binary_identity {
+    ($d:tt; $(($suffix:ident, $shape_name:literal, $installer_suffix:ident, $atan2_installer_suffix:ident)),+ $(,)?) => {
+        pub(crate) fn float_binary_runtime_name(
+            operation: &str,
+            factory: &str,
+            scalar: FunctionValueRepresentation,
+        ) -> String {
+            let suffix = factory
+                .strip_prefix(operation)
+                .expect("floating binary factory belongs to its declared operation");
+            match suffix {
+                $(stringify!($suffix) => {
+                    format!("{operation}{}{}", $shape_name, scalar.to_string().to_uppercase())
+                },)+
+                _ => format!("{factory}<{scalar}>"),
+            }
+        }
+
+        #[cfg(any(feature = "f32", feature = "f64"))]
+        macro_rules! with_float_binary_installer {
+            // Atan2's established scalar installer omits the shape suffix.
+            (Atan2, SS, $d scalar:ident, $d callback:ident, $d context:tt) => {
+                mech_core::paste::paste! {
+                    $d callback!($d context, [<install_atan2_ $d scalar>]);
+                }
+            };
+            $((Atan2, $suffix, $d scalar:ident, $d callback:ident, $d context:tt) => {
+                mech_core::paste::paste! {
+                    $d callback!($d context, [<install_atan2_ $atan2_installer_suffix:lower _ $d scalar>]);
+                }
+            };)+
+            $(($d operation:ident, $suffix, $d scalar:ident, $d callback:ident, $d context:tt) => {
+                mech_core::paste::paste! {
+                    $d callback!($d context, [<install_ $d operation:snake _ $installer_suffix:lower _ $d scalar>]);
+                }
+            };)+
+            ($d operation:ident, $d suffix:ident, $d scalar:ident, $d callback:ident, $d context:tt) => {
+                mech_core::paste::paste! {
+                    $d callback!($d context, [<install_ $d operation:snake _ $d suffix:lower _ $d scalar>]);
+                }
+            };
+        }
+    };
+}
+
+#[cfg(all(
+    feature = "runtime",
+    not(feature = "dynamic-module"),
+    any(feature = "f32", feature = "f64", feature = "semantic-compiler"),
+    any(
+        feature = "atan2",
+        feature = "copysign",
+        feature = "fdim",
+        feature = "fmod",
+        feature = "nextafter",
+        feature = "remainder",
+        feature = "jn",
+        feature = "yn"
+    )
+))]
+define_float_binary_identity! {
+    $;
+    (SS, "", S, S),
+    (M1M1, "M1", M1, M1),
+    (M2M2, "M2", M2, M2),
+    (M3M3, "M3", M3, M3),
+    (M4M4, "M4", M4, M4),
+    (M2x3M2x3, "M2x3", M2x3, M2x3),
+    (M3x2M3x2, "M3x2", M3x2, M3x2),
+    (MDMD, "MD", MD, M_D),
+    (R2R2, "R2", R2, R2),
+    (R3R3, "R3", R3, R3),
+    (R4R4, "R4", R4, R4),
+    (RDRD, "RD", RD, R_D),
+    (V2V2, "V2", V2, V2),
+    (V3V3, "V3", V3, V3),
+    (V4V4, "V4", V4, V4),
+    (VDVD, "VD", VD, V_D),
+}
+
+#[cfg(all(
+    test,
+    feature = "native-plan",
+    any(feature = "f32", feature = "f64"),
+    any(
+        feature = "atan2",
+        feature = "copysign",
+        feature = "fdim",
+        feature = "fmod",
+        feature = "nextafter",
+        feature = "remainder",
+        feature = "jn",
+        feature = "yn"
+    )
+))]
+mod float_binary_identity_tests;
 
 /// Defines one binary floating-point factory from the shared physical-shape
 /// enumeration. The operation module supplies only the scalar kernel trait;
@@ -112,7 +251,7 @@ pub(crate) fn arithmetic_overflow<T>(operation: &'static str) -> MechError {
     )
 ))]
 macro_rules! impl_managed_math_broadcast_binary_full_write {
-    ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $element_bound:path, $op:ident, $semantic:literal) => {
+    ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $element_bound:path, $op:ident, $semantic:literal, $identity:ident) => {
         #[derive(Debug)]
         pub(crate) struct $struct_name<T> {
             arg1: ManagedPort<T>,
@@ -158,7 +297,7 @@ macro_rules! impl_managed_math_broadcast_binary_full_write {
             }
 
             fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
-                Some(crate::ops::arithmetic_full_write_contract(
+                Some(crate::managed_binary::arithmetic_full_write_contract(
                     <$out_type as FunctionRuntimeType>::REPRESENTATION,
                 ))
             }
@@ -186,10 +325,10 @@ macro_rules! impl_managed_math_broadcast_binary_full_write {
                         out.try_fill_column_major(|index| {
                             let row = index % rows;
                             let column = index / rows;
-                            let arg1 = crate::ops::managed_broadcast_element(
+                            let arg1 = crate::managed_binary::managed_broadcast_element(
                                 &arg1, row, column, rows, columns,
                             )?;
-                            let arg2 = crate::ops::managed_broadcast_element(
+                            let arg2 = crate::managed_binary::managed_broadcast_element(
                                 &arg2, row, column, rows, columns,
                             )?;
                             Ok($op!(arg1, arg2))
@@ -204,7 +343,7 @@ macro_rules! impl_managed_math_broadcast_binary_full_write {
             }
 
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
-                Some(crate::ops::arithmetic_full_write_contract(
+                Some(crate::managed_binary::arithmetic_full_write_contract(
                     <$out_type as FunctionRuntimeType>::REPRESENTATION,
                 ))
             }
@@ -231,10 +370,10 @@ macro_rules! impl_managed_math_broadcast_binary_full_write {
                 + std::fmt::Debug,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-                let name = format!(
-                    "{}<{}>",
+                let name = crate::float_binary_runtime_name(
+                    stringify!($identity),
                     stringify!($struct_name),
-                    <T as FunctionRuntimeType>::REPRESENTATION
+                    <T as FunctionRuntimeType>::REPRESENTATION,
                 );
                 let output = compile_value_cell_register(self.out.cell(), ctx)?;
                 let first = compile_value_cell_register(self.arg1.cell(), ctx)?;
@@ -246,6 +385,76 @@ macro_rules! impl_managed_math_broadcast_binary_full_write {
         }
     };
 }
+
+#[cfg(all(
+    feature = "runtime",
+    not(feature = "dynamic-module"),
+    any(
+        feature = "add",
+        feature = "sub",
+        feature = "mul",
+        feature = "div",
+        feature = "mod",
+        feature = "pow",
+        feature = "atan2",
+        feature = "copysign",
+        feature = "fdim",
+        feature = "fmod",
+        feature = "nextafter",
+        feature = "remainder",
+        feature = "jn",
+        feature = "yn"
+    )
+))]
+mod managed_binary;
+
+#[cfg(all(
+    feature = "runtime",
+    not(feature = "dynamic-module"),
+    any(
+        feature = "abs",
+        feature = "neg",
+        feature = "j0",
+        feature = "j1",
+        feature = "y0",
+        feature = "y1",
+        feature = "lgamma",
+        feature = "tgamma",
+        feature = "log",
+        feature = "log10",
+        feature = "log1p",
+        feature = "log2",
+        feature = "cbrt",
+        feature = "sqrt",
+        feature = "ceil",
+        feature = "floor",
+        feature = "rint",
+        feature = "round",
+        feature = "roundeven",
+        feature = "trunc",
+        feature = "erf",
+        feature = "erfc",
+        feature = "acos",
+        feature = "acosh",
+        feature = "acot",
+        feature = "acsc",
+        feature = "asec",
+        feature = "asin",
+        feature = "asinh",
+        feature = "atan",
+        feature = "atanh",
+        feature = "cos",
+        feature = "cosh",
+        feature = "cot",
+        feature = "csc",
+        feature = "sec",
+        feature = "sin",
+        feature = "sinh",
+        feature = "tan",
+        feature = "tanh"
+    )
+))]
+mod managed_unary;
 
 #[cfg(any(feature = "round", feature = "dynamic-module"))]
 pub mod kernels;
@@ -314,6 +523,13 @@ pub mod __mech_native {
         feature = "abs",
         feature = "neg",
         feature = "atan2",
+        feature = "copysign",
+        feature = "fdim",
+        feature = "fmod",
+        feature = "nextafter",
+        feature = "remainder",
+        feature = "jn",
+        feature = "yn",
         feature = "div",
         feature = "mod",
         feature = "mul",
@@ -532,37 +748,37 @@ pub fn semantic_broadcast_extents(inputs: &[&SpecializationInput]) -> MResult<Bo
 macro_rules! impl_math_unop {
   ($fxn_name:ident, $type:ident, $op_fxn:ident) => {
     paste!{
-      impl_unop!([<$fxn_name $type:camel S>], $type, $type, $type, [<$op_fxn _op>], crate::ops::unary_full_write_contract);
+      impl_unop!([<$fxn_name $type:camel S>], $type, $type, $type, [<$op_fxn _op>], crate::managed_unary::unary_full_write_contract);
       #[cfg(feature = "matrix1")]
-      impl_unop!([<$fxn_name $type:camel M1>], $type, Matrix1<$type>, Matrix1<$type>, [<$op_fxn _op>], crate::ops::unary_full_write_contract);
+      impl_unop!([<$fxn_name $type:camel M1>], $type, Matrix1<$type>, Matrix1<$type>, [<$op_fxn _op>], crate::managed_unary::unary_full_write_contract);
       #[cfg(feature = "matrix2")]
-      impl_unop!([<$fxn_name $type:camel M2>], $type, Matrix2<$type>, Matrix2<$type>, [<$op_fxn _op>], crate::ops::unary_full_write_contract);
+      impl_unop!([<$fxn_name $type:camel M2>], $type, Matrix2<$type>, Matrix2<$type>, [<$op_fxn _op>], crate::managed_unary::unary_full_write_contract);
       #[cfg(feature = "matrix3")]
-      impl_unop!([<$fxn_name $type:camel M3>], $type, Matrix3<$type>, Matrix3<$type>, [<$op_fxn _op>], crate::ops::unary_full_write_contract);
+      impl_unop!([<$fxn_name $type:camel M3>], $type, Matrix3<$type>, Matrix3<$type>, [<$op_fxn _op>], crate::managed_unary::unary_full_write_contract);
       #[cfg(feature = "matrix4")]
-      impl_unop!([<$fxn_name $type:camel M4>], $type, Matrix4<$type>, Matrix4<$type>, [<$op_fxn _op>], crate::ops::unary_full_write_contract);
+      impl_unop!([<$fxn_name $type:camel M4>], $type, Matrix4<$type>, Matrix4<$type>, [<$op_fxn _op>], crate::managed_unary::unary_full_write_contract);
       #[cfg(feature = "matrix2x3")]
-      impl_unop!([<$fxn_name $type:camel M2x3>], $type, Matrix2x3<$type>, Matrix2x3<$type>, [<$op_fxn _op>], crate::ops::unary_full_write_contract);
+      impl_unop!([<$fxn_name $type:camel M2x3>], $type, Matrix2x3<$type>, Matrix2x3<$type>, [<$op_fxn _op>], crate::managed_unary::unary_full_write_contract);
       #[cfg(feature = "matrix3x2")]
-      impl_unop!([<$fxn_name $type:camel M3x2>], $type, Matrix3x2<$type>, Matrix3x2<$type>, [<$op_fxn _op>], crate::ops::unary_full_write_contract);
+      impl_unop!([<$fxn_name $type:camel M3x2>], $type, Matrix3x2<$type>, Matrix3x2<$type>, [<$op_fxn _op>], crate::managed_unary::unary_full_write_contract);
       #[cfg(feature = "matrixd")]
-      impl_unop!([<$fxn_name $type:camel MD>], $type, DMatrix<$type>, DMatrix<$type>, [<$op_fxn _op>], crate::ops::unary_full_write_contract);
+      impl_unop!([<$fxn_name $type:camel MD>], $type, DMatrix<$type>, DMatrix<$type>, [<$op_fxn _op>], crate::managed_unary::unary_full_write_contract);
       #[cfg(feature = "row_vector2")]
-      impl_unop!([<$fxn_name $type:camel R2>], $type, RowVector2<$type>, RowVector2<$type>, [<$op_fxn _op>], crate::ops::unary_full_write_contract);
+      impl_unop!([<$fxn_name $type:camel R2>], $type, RowVector2<$type>, RowVector2<$type>, [<$op_fxn _op>], crate::managed_unary::unary_full_write_contract);
       #[cfg(feature = "row_vector3")]
-      impl_unop!([<$fxn_name $type:camel R3>], $type, RowVector3<$type>, RowVector3<$type>, [<$op_fxn _op>], crate::ops::unary_full_write_contract);
+      impl_unop!([<$fxn_name $type:camel R3>], $type, RowVector3<$type>, RowVector3<$type>, [<$op_fxn _op>], crate::managed_unary::unary_full_write_contract);
       #[cfg(feature = "row_vector4")]
-      impl_unop!([<$fxn_name $type:camel R4>], $type, RowVector4<$type>, RowVector4<$type>, [<$op_fxn _op>], crate::ops::unary_full_write_contract);
+      impl_unop!([<$fxn_name $type:camel R4>], $type, RowVector4<$type>, RowVector4<$type>, [<$op_fxn _op>], crate::managed_unary::unary_full_write_contract);
       #[cfg(feature = "row_vectord")]
-      impl_unop!([<$fxn_name $type:camel RD>], $type, RowDVector<$type>, RowDVector<$type>, [<$op_fxn _op>], crate::ops::unary_full_write_contract);
+      impl_unop!([<$fxn_name $type:camel RD>], $type, RowDVector<$type>, RowDVector<$type>, [<$op_fxn _op>], crate::managed_unary::unary_full_write_contract);
       #[cfg(feature = "vector2")]
-      impl_unop!([<$fxn_name $type:camel V2>], $type, Vector2<$type>, Vector2<$type>, [<$op_fxn _op>], crate::ops::unary_full_write_contract);
+      impl_unop!([<$fxn_name $type:camel V2>], $type, Vector2<$type>, Vector2<$type>, [<$op_fxn _op>], crate::managed_unary::unary_full_write_contract);
       #[cfg(feature = "vector3")]
-      impl_unop!([<$fxn_name $type:camel V3>], $type, Vector3<$type>, Vector3<$type>, [<$op_fxn _op>], crate::ops::unary_full_write_contract);
+      impl_unop!([<$fxn_name $type:camel V3>], $type, Vector3<$type>, Vector3<$type>, [<$op_fxn _op>], crate::managed_unary::unary_full_write_contract);
       #[cfg(feature = "vector4")]
-      impl_unop!([<$fxn_name $type:camel V4>], $type, Vector4<$type>, Vector4<$type>, [<$op_fxn _op>], crate::ops::unary_full_write_contract);
+      impl_unop!([<$fxn_name $type:camel V4>], $type, Vector4<$type>, Vector4<$type>, [<$op_fxn _op>], crate::managed_unary::unary_full_write_contract);
       #[cfg(feature = "vectord")]
-      impl_unop!([<$fxn_name $type:camel VD>], $type, DVector<$type>, DVector<$type>, [<$op_fxn _op>], crate::ops::unary_full_write_contract);
+      impl_unop!([<$fxn_name $type:camel VD>], $type, DVector<$type>, DVector<$type>, [<$op_fxn _op>], crate::managed_unary::unary_full_write_contract);
     }}}
 
 #[macro_export]

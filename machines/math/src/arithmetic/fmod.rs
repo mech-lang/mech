@@ -33,7 +33,8 @@ macro_rules! impl_fmod_binop {
             $out_type,
             RuntimeFmod,
             fmod_op,
-            "math/fmod"
+            "math/fmod",
+            Fmod
         );
     };
 }

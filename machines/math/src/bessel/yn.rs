@@ -33,7 +33,8 @@ macro_rules! impl_yn_binop {
             $out_type,
             RuntimeYn,
             yn_op,
-            "math/bessel/yn"
+            "math/bessel/yn",
+            Yn
         );
     };
 }

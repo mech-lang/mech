@@ -33,7 +33,8 @@ macro_rules! impl_remainder_binop {
             $out_type,
             RuntimeRemainder,
             remainder_op,
-            "math/remainder"
+            "math/remainder",
+            Remainder
         );
     };
 }

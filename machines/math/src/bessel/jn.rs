@@ -33,7 +33,8 @@ macro_rules! impl_jn_binop {
             $out_type,
             RuntimeJn,
             jn_op,
-            "math/bessel/jn"
+            "math/bessel/jn",
+            Jn
         );
     };
 }

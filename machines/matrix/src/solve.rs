@@ -367,12 +367,7 @@ impl_solve!(MatrixSolveMDMD, DMatrix<T>, DMatrix<T>, DMatrix<T>);
 // coefficient matrix. Retain that exact representation for the valid
 // one-equation, multiple-right-hand-side solve.
 #[cfg(feature = "row_vectord")]
-impl_solve!(
-    MatrixSolveRDRD,
-    RowDVector<T>,
-    RowDVector<T>,
-    RowDVector<T>
-);
+impl_solve!(MatrixSolveRDRD, RowDVector<T>, RowDVector<T>, RowDVector<T>);
 
 // Keep fixed-shape source mathematical. The semantic compiler sees the
 // ordinary solve operation and compute backends can scalarize it without the
@@ -460,11 +455,8 @@ mod canonical_port_tests {
         let lhs = ValueCell::from_exact(RowDVector::from_vec(vec![2.0_f64])).unwrap();
         let rhs = ValueCell::from_exact(RowDVector::from_vec(vec![2.0, 4.0, 8.0])).unwrap();
         let out = ValueCell::from_exact(RowDVector::<f64>::zeros(3)).unwrap();
-        let function = managed::<MatrixSolveRDRD<f64>>(FunctionInvocation::binary(
-            out.clone(),
-            lhs,
-            rhs,
-        ));
+        let function =
+            managed::<MatrixSolveRDRD<f64>>(FunctionInvocation::binary(out.clone(), lhs, rhs));
         function.instance().solve_result().unwrap();
         assert_close(&values(&out), &[1.0, 2.0, 4.0]);
     }

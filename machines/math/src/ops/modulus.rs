@@ -73,7 +73,7 @@ macro_rules! impl_binop2 {
     ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident) => {
         impl_checked_arithmetic_binop!(@bound RuntimeCheckedRem;
             $struct_name, $arg1_type, $arg2_type, $out_type, managed_rem_op,
-            crate::ops::arithmetic_full_write_contract);
+            crate::managed_binary::arithmetic_full_write_contract);
     };
 }
 

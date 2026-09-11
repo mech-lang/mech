@@ -2,57 +2,57 @@
   "schema": "mech.native-linkage-coverage-summary.v1",
   "detail_schema": "mech.native-linkage-coverage.v2",
   "full": {
-    "entry_count": 9374,
-    "linked_entry_count": 9374,
+    "entry_count": 9716,
+    "linked_entry_count": 9716,
     "missing_linkage_count": 0,
-    "runtime_surface_digest": "df44ac5e8fea38236086746b5934e36c7a5713a5d686c150e65069effe295a9d",
-    "installer_surface_digest": "7a80aaab18ac9d40d91139b83235f4f3eeed54d608d75ec0f064cb8adce50cda",
-    "feature_surface_digest": "e502714c7ae35cc461321d84b5f2238330db56b57344b1abcaf119f6eb1dfac7",
-    "runtime_contract_count": 9374,
+    "runtime_surface_digest": "7bea0428c0696aab2251c3e15e9085688887de9e7f2114d80213ac5facca1374",
+    "installer_surface_digest": "539635912ca72d7635447d206798e8e30e28cc7a4c8e734ef8dbdfb22c32e642",
+    "feature_surface_digest": "e9509aeac89aa5cfcaeaba33f6944cf9ae2056fa3b8e9e6a56e4e3832b9de7d8",
+    "runtime_contract_count": 9716,
     "missing_contract_count": 0,
-    "runtime_contract_surface_digest": "b0479bffe302d236ed0a700baca584486125a25ad60bcdfc388e42085b5c7b3c",
-    "runtime_signature_count": 9374,
+    "runtime_contract_surface_digest": "b97bb0e328b87120b613a7a149da827e97399fe64ac981091c204a4b1788632b",
+    "runtime_signature_count": 9716,
     "missing_signature_count": 0,
-    "runtime_signature_surface_digest": "a15e0d63f75ed1f40c584058a3c30476c7ffd7dea6ac06d67fa925ef5a415485"
+    "runtime_signature_surface_digest": "3d3ede4a1d45accfcf3d43ba42a06e6c084df444c7c3e5bcbc313994c586e4de"
   },
   "extended": {
-    "entry_count": 120647,
-    "linked_entry_count": 120647,
+    "entry_count": 121897,
+    "linked_entry_count": 121897,
     "missing_linkage_count": 0,
-    "runtime_surface_digest": "5456e55ea61d293762ffe657a4442efc7d6bed8930b0b08130958e6e150bd083",
-    "installer_surface_digest": "dbea735f1345f1d2d7e9c68562b0dc242cb689bd1fad5b47acc1127de3daa29c",
-    "feature_surface_digest": "57c3069dd0e37312dcccc8d6ab9a3b6448bd0a416e7553394fe2052243dc37bb",
-    "runtime_contract_count": 120647,
+    "runtime_surface_digest": "f699e8fc4dd368d14fadb507fbf4dc9cbf7a4c8558837cbde93f807beaa57429",
+    "installer_surface_digest": "86b6126d5bb3976fbec7f7ad9e83501d9febfe562c71f5704fd21e8502916c39",
+    "feature_surface_digest": "3c4cda7d89e1fea3110c87038cc326a3a9e12fed595e26f16007e85f69d1aba8",
+    "runtime_contract_count": 121897,
     "missing_contract_count": 0,
-    "runtime_contract_surface_digest": "1b0c174256f68afe546689e5e1fde5f7ea28b6fecffc8c7cebabe4330b5579a9",
-    "runtime_signature_count": 120647,
+    "runtime_contract_surface_digest": "d26d7106aeda79a2198fdf30ef64012e72462c90b93c5d0959c63675a7fb14f5",
+    "runtime_signature_count": 121897,
     "missing_signature_count": 0,
-    "runtime_signature_surface_digest": "ec17b3b6aec82413b9a04fe14555f445418d9320ce7585d5a36d3ead4e15892d"
+    "runtime_signature_surface_digest": "9a23039b0921c7964f97a7bcf4ec0217248d4743e6ee0145e00d7ae581880735"
   },
   "complete_catalog": {
-    "entry_count": 120833,
-    "runtime_surface_digest": "3d514bd8793185bea4ff1c44c25f2e462f99611386a6bc5f0928b6c6e600c039"
+    "entry_count": 122083,
+    "runtime_surface_digest": "34db793ac637b3b1bc532978c6e8a6e0be1b8be63c33ec5f3043045f765616f5"
   },
   "signature_invariants": {
     "same_runtime_id_different_signature_count": 0,
     "representation_feature_missing_count": 0,
     "representation_feature_manually_listed_extra_count": 0,
     "feature_dependent_output_representation_count": 0,
-    "exact_closure_count": 34524,
+    "exact_closure_count": 34916,
     "exact_closure_shard_counts": [
-      4377,
-      4280,
+      4421,
       4321,
-      4175,
-      4295,
-      4328,
-      4308,
-      4440
+      4377,
+      4226,
+      4330,
+      4366,
+      4370,
+      4505
     ]
   },
   "coverage_digest": {
     "algorithm": "sha256-canonical-json-without-coverage-digest-v2",
-    "sha256": "c3b91d61f23ebfaad767674b870332d5da2b4f2055b5cc05fd906a03e2864d5f"
+    "sha256": "3c4eb2b828b1bf74df6548191c192d7bb21cb5efff4c8767541ba8b4cb50d4bd"
   },
   "detail_artifact": {
     "path": "target/native-linkage/coverage-full.json",

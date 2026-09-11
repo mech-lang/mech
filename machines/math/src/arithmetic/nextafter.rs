@@ -33,7 +33,8 @@ macro_rules! impl_nextafter_binop {
             $out_type,
             RuntimeNextafter,
             nextafter_op,
-            "math/nextafter"
+            "math/nextafter",
+            Nextafter
         );
     };
 }

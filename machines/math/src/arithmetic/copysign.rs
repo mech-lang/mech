@@ -33,7 +33,8 @@ macro_rules! impl_copysign_binop {
             $out_type,
             RuntimeCopysign,
             copysign_op,
-            "math/copysign"
+            "math/copysign",
+            Copysign
         );
     };
 }

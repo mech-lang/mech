@@ -268,6 +268,9 @@ jobs:
           cargo +nightly-2026-03-03 test --locked -p mech-engine \
             --no-default-features --features full_compiler,resident-artifact \
             --lib resident::general::live::
+          cargo +nightly-2026-03-03 test --locked -p mech-engine \
+            --no-default-features --features full_compiler,resident-artifact \
+            --lib memory_planner::resident::tests
           cargo +nightly-2026-03-03 test --locked -p mech-stdlib \
             --no-default-features --features standard_compiler \
             --test r6_managed_functions
@@ -654,6 +657,17 @@ jobs:
         run: cargo +nightly-2026-03-03 fetch --locked
       - name: Generate and execute catalog closure witnesses
         run: python3 scripts/check-native-linkage-coverage.py catalog-closure "${{ matrix.profile }}"
+      - name: Preserve floating factory bytecode and native identities
+        if: matrix.profile == 'full'
+        run: |
+          cargo +nightly-2026-03-03 test --offline \
+            --manifest-path machines/math/Cargo.toml --no-default-features \
+            --features compiler,native-plan,native-link,atan2,copysign,fdim,fmod,nextafter,remainder,jn,yn,f32,f64,matrixd,row_vectord,vectord,matrix2x3 \
+            --lib float_binary_identity_tests
+          cargo +nightly-2026-03-03 test --offline \
+            --manifest-path machines/math/Cargo.toml --no-default-features \
+            --features compiler,native-plan,native-link,fmod,f64 \
+            --lib float_binary_identity_tests
       - name: Validate frozen catalog profile
         run: |
           if test "${{ matrix.profile }}" = standard

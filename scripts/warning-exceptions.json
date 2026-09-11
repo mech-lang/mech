@@ -77,7 +77,7 @@
       "directive": "allow",
       "expiry_condition": "Remove when feature-specific factory generation no longer leaves helper macros unused in reduced and native-link profiles.",
       "lint": "unused_macros",
-      "occurrences": 3,
+      "occurrences": 2,
       "owner": "Math runtime catalog",
       "path": "machines/math/src/catalog.rs",
       "reason": "native factory helpers are selected by disjoint feature profiles"

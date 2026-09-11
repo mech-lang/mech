@@ -18,7 +18,7 @@ macro_rules! impl_powop {
     ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident) => {
         impl_checked_arithmetic_binop!(@bound RuntimeCheckedPow;
             $struct_name, $arg1_type, $arg2_type, $out_type, managed_pow_op,
-            crate::ops::arithmetic_full_write_contract);
+            crate::managed_binary::arithmetic_full_write_contract);
     };
 }
 macro_rules! impl_math_fxns_pow {
@@ -58,7 +58,7 @@ impl MechFunctionFactory for PowRational {
     }
 
     fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
-        Some(crate::ops::arithmetic_full_write_contract(
+        Some(crate::managed_binary::arithmetic_full_write_contract(
             FunctionValueRepresentation::R64,
         ))
     }
@@ -88,7 +88,7 @@ impl MechFunctionImpl for PowRational {
     }
 
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
-        Some(crate::ops::arithmetic_full_write_contract(
+        Some(crate::managed_binary::arithmetic_full_write_contract(
             FunctionValueRepresentation::R64,
         ))
     }

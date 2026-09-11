@@ -87,7 +87,7 @@ macro_rules! impl_checked_div_binop {
     ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident) => {
         impl_checked_arithmetic_binop!(@bound RuntimeCheckedDiv;
             $struct_name, $arg1_type, $arg2_type, $out_type, managed_div_op,
-            crate::ops::arithmetic_full_write_contract);
+            crate::managed_binary::arithmetic_full_write_contract);
     };
 }
 

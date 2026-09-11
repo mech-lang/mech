@@ -33,7 +33,8 @@ macro_rules! impl_fdim_binop {
             $out_type,
             RuntimeFdim,
             fdim_op,
-            "math/fdim"
+            "math/fdim",
+            Fdim
         );
     };
 }
