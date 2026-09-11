@@ -135,6 +135,7 @@ class ImpactClassifierTests(unittest.TestCase):
     def test_architecture_contract_changes_require_full_validation(self):
         for path in (
             ".github/workflows/ci-full.yml",
+            ".github/workflows/ci-native-plan.yml",
             "scripts/check-operation-contract.py",
             "scripts/check-r2-type-memory-boundary.py",
             "scripts/tests/test_check_r2_type_memory_boundary.py",

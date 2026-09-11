@@ -3,6 +3,7 @@
 import json
 import re
 import subprocess
+import textwrap
 import unittest
 from pathlib import Path
 
@@ -10,6 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 CI = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
 FULL = (ROOT / ".github/workflows/ci-full.yml").read_text(encoding="utf-8")
+NATIVE = (ROOT / ".github/workflows/ci-native-plan.yml").read_text(encoding="utf-8")
 STATIC = (ROOT / "scripts/check-static-distribution-profiles.sh").read_text(
     encoding="utf-8"
 )
@@ -63,6 +65,62 @@ def full_architecture_contracts() -> str:
 
 
 class FullWorkflowContractTests(unittest.TestCase):
+    def test_native_plan_starts_early_once_on_the_exact_head(self):
+        early = job_block(CI, "early-native-plan")
+        delegated = job_block(FULL, "native-plan")
+        caller = job_block(CI, "full-validation")
+        self.assertIn("needs: impact", early)
+        self.assertNotIn("needs:\n", early)
+        self.assertIn("if: needs.impact.outputs.full_validation_required == 'true'", early)
+        self.assertIn("validation_ref: ${{ github.event.pull_request.head.sha }}", early)
+        self.assertIn("native_plan_in_caller: true", caller)
+        for block in (early, delegated):
+            self.assertIn("uses: ./.github/workflows/ci-native-plan.yml", block)
+            self.assertNotIn("steps:", block)
+            self.assertNotIn("continue-on-error", block)
+        self.assertIn("if: ${{ !inputs.native_plan_in_caller }}", delegated)
+        self.assertIn("validation_ref: ${{ inputs.validation_ref || github.sha }}", delegated)
+        call, dispatch = FULL.split("  workflow_dispatch:", 1)
+        self.assertRegex(call, r"(?s)native_plan_in_caller:.*?type: boolean\n        default: false")
+        self.assertNotIn("native_plan_in_caller:", dispatch.split("\nconcurrency:", 1)[0])
+        self.assertIn("- early-native-plan", job_block(CI, "pr-gate"))
+        self.assertIn("- native-plan", job_block(FULL, "cargo"))
+
+        native = job_block(NATIVE, "native-plan")
+        self.assertIn("ref: ${{ inputs.validation_ref }}", native)
+        self.assertNotIn("continue-on-error", native)
+        pair = "cargo +nightly-2026-03-03 test -p mech-build --all-features --test registry_generated_project"
+        pruning = "cargo +nightly-2026-03-03 test -p mech-build --all-features --test native_host_pruning"
+        self.assertLess(native.index(pair), native.index(pruning))
+        self.assertEqual(re.findall(r"--skip ([a-z_]+)", native), [
+            "registry_project_is_exact_unpatched_and_buildable_with_a_test_only_patch",
+            "live_registry_project_runs_once_handles_ctrlc_and_cleans_up_after_failure",
+        ])
+        for script in ("check-native-host-catalog.py", "check-generated-project-determinism.py", "check-native-application-graphs.py"):
+            self.assertIn(f"python3 scripts/{script}", native)
+
+    def test_native_plan_handoff_gates_fail_closed(self):
+        def accepts(block, **overrides):
+            script = textwrap.dedent(block.split("        run: |\n", 1)[1])
+            environment = dict.fromkeys(re.findall(r"^          ([A-Z0-9_]+):", block, re.M), "success")
+            environment.update(overrides)
+            return subprocess.run(
+                ["/bin/bash", "-e", "-c", script], env=environment,
+                capture_output=True, text=True,
+            ).returncode == 0
+
+        pr = job_block(CI, "pr-gate")
+        cargo = job_block(FULL, "cargo")
+        self.assertTrue(accepts(pr, DOCS_ONLY="false", FULL_REQUIRED="true"))
+        for result in ("failure", "cancelled", "skipped", ""):
+            with self.subTest(result=result):
+                self.assertFalse(accepts(pr, DOCS_ONLY="false", FULL_REQUIRED="true", NATIVE_PLAN_RESULT=result))
+                self.assertFalse(accepts(cargo, NATIVE_PLAN_IN_CALLER="false", NATIVE_PLAN_RESULT=result))
+        self.assertTrue(accepts(pr, DOCS_ONLY="false", FULL_REQUIRED="false", FULL_RESULT="skipped", NATIVE_PLAN_RESULT="skipped"))
+        self.assertTrue(accepts(cargo, NATIVE_PLAN_IN_CALLER="false"))
+        self.assertTrue(accepts(cargo, NATIVE_PLAN_IN_CALLER="true", NATIVE_PLAN_RESULT="skipped"))
+        self.assertFalse(accepts(cargo, NATIVE_PLAN_IN_CALLER="true", NATIVE_PLAN_RESULT="failure"))
+
     def test_architecture_mutations_are_bounded_parallel_exact_head_shards(self):
         normal = job_block(CI, "static-mutations")
         full = job_block(FULL, "architecture-mutations")

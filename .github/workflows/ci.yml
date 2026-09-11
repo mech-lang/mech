@@ -35,6 +35,14 @@ jobs:
           --head "${{ github.event.pull_request.head.sha }}"
           --labels "$PR_LABELS"
 
+  early-native-plan:
+    name: Early native plan
+    needs: impact
+    if: needs.impact.outputs.full_validation_required == 'true'
+    uses: ./.github/workflows/ci-native-plan.yml
+    with:
+      validation_ref: ${{ github.event.pull_request.head.sha }}
+
   static-architecture:
     name: Static architecture contracts
     needs: impact
@@ -540,6 +548,7 @@ jobs:
     with:
       release_channel: stable
       validation_ref: ${{ github.event.pull_request.head.sha }}
+      native_plan_in_caller: true
 
   pr-gate:
     name: PR gate
@@ -551,6 +560,7 @@ jobs:
       - changed-owner-tests
       - standard-windows
       - browser-canary
+      - early-native-plan
       - full-validation
     runs-on: ubuntu-latest
     timeout-minutes: 12
@@ -566,6 +576,7 @@ jobs:
           WINDOWS_RESULT: ${{ needs.standard-windows.result }}
           BROWSER_RESULT: ${{ needs.browser-canary.result }}
           FULL_RESULT: ${{ needs.full-validation.result }}
+          NATIVE_PLAN_RESULT: ${{ needs.early-native-plan.result }}
         run: |
           test "$IMPACT_RESULT" = success
           if test "$DOCS_ONLY" = true
@@ -585,6 +596,8 @@ jobs:
           if test "$FULL_REQUIRED" = true
           then
             test "$FULL_RESULT" = success
+            test "$NATIVE_PLAN_RESULT" = success
           else
             test "$FULL_RESULT" = skipped
+            test "$NATIVE_PLAN_RESULT" = skipped
           fi

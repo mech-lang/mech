@@ -425,3 +425,53 @@ so the new ordinary Resident tests actually execute. Its existing non-Resident
 owner profile remains supported. No new CI job, Python mutation suite,
 allocator, executor, or broad review was added. Complete normal and Full CI
 must qualify the corrected unchanged head before it is reported green.
+
+## Configured aggregate-budget checkpoint and early native qualification
+
+The security advisory on `84ed702e02` correctly identifies the absence of an
+aggregate Resident allocation ceiling. The existing caller configuration
+`RuntimeLimits.max_memory_bytes` supplies the policy; this checkpoint does not
+invent a finite default or reuse the per-operation output quota as a program
+limit. `None` remains unconfigured.
+
+A shared managed-memory account now reserves validated unique arena/envelope
+capacity and existing planned metadata before physical materialization. Its
+non-cloneable charges follow actual allocation and payload-envelope owners,
+including outstanding reservations, retained immutable roots, and old/new
+program coexistence. Source and bytecode activation receive the runtime's
+account; reactivation preserves it. Failure releases candidate ownership and
+does not alter the previous program's publication. Aliases are not charged as
+additional arenas and persistent/activation summaries are not added together.
+
+Pinned local validation passed three core configured-budget integration tests,
+two core account unit tests, one ordinary Resident integration test, and one
+runtime test exercising source and bytecode loading. These cover exact limits,
+one-over-limit rejection, overflow, shared-owner lifetime, old/candidate
+coexistence, rejected replacement followed by successful old-plan execution,
+and unload/retry. The R6 architecture checker and unsafe-boundary audit passed.
+New-checkpoint release and Miri qualification have not yet run.
+
+This is a checkpoint, not closure of the security advisory: Resident mutable
+String/Snapshot lane construction and growth still need connection to the same
+account before their materialization. Their existing per-call admission is
+not a substitute for aggregate retained ownership. The review thread remains
+open until that integration and its regressions are complete.
+
+Run `34599294964` on `84ed702e02` finished with 123 successful checks and three
+failures: Native plan and its two dependent aggregate gates. The native runner
+reported a shutdown signal at 13:59:46 UTC and exit 143, not a failed Rust
+assertion. One registry test completed successfully; its live/CTRL-C sibling
+was interrupted without a result. The log does not establish who initiated
+shutdown or whether the underlying cause was infrastructure or intervention.
+No agent cancellation or superseding run was issued.
+
+That native job began about 50 minutes after the workflow started because Full
+CI waited for normal CI. Required PR validation now launches the same native
+qualification after impact detection, concurrently with normal CI. Its two
+registry tests run first in a separately reported step, and only those already
+executed tests are excluded from the later broad invocation. Full CI delegates
+that one job to the caller; the final PR gate requires its success. Standalone
+Full CI still executes and requires the native job itself. No test assertion or
+required gate is removed. All 37 CI contract/impact tests pass, including shell
+execution proving failed, cancelled, skipped, or missing early native results
+cannot make a required PR gate green.
