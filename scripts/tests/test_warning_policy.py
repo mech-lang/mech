@@ -26,7 +26,8 @@ class WarningPolicyTests(unittest.TestCase):
         (root / "scripts/warning-exceptions.json").write_text(
             json.dumps(
                 {
-                    "schema_version": 1,
+                    "schema_version": 2,
+                    "policy_release": "0.4.0",
                     "lint_exceptions": lint_exceptions,
                     "deprecated_apis": [],
                 }
@@ -59,11 +60,14 @@ pub const OldName: usize = 1;
             [
                 {
                     "directive": "expect",
+                    "expires_release": "1.0.0",
                     "expiry_condition": "remove after the compatibility window",
+                    "introduced_release": "0.4.0",
                     "lint": "non_upper_case_globals",
                     "occurrences": 1,
                     "owner": "test owner",
                     "path": "src/lib.rs",
+                    "production_or_test": "production",
                     "reason": reason,
                 }
             ],
@@ -134,6 +138,55 @@ hidden_with!(allow(dead_code));
         process = self.run_checker(root)
         self.assertNotEqual(process.returncode, 0)
         self.assertIn("src/target/hidden.rs", process.stderr)
+
+    def test_expired_production_exception_is_rejected(self):
+        reason = "temporary production debt"
+        root = self.fixture(
+            f'#[expect(dead_code, reason = "{reason}")]\nfn hidden() {{}}\n',
+            [
+                {
+                    "directive": "expect",
+                    "expires_release": "0.4.0",
+                    "expiry_condition": "remove before v0.4 ships",
+                    "introduced_release": "0.3.0",
+                    "lint": "dead_code",
+                    "occurrences": 1,
+                    "owner": "test owner",
+                    "path": "src/lib.rs",
+                    "production_or_test": "production",
+                    "reason": reason,
+                }
+            ],
+        )
+
+        process = self.run_checker(root)
+
+        self.assertNotEqual(process.returncode, 0)
+        self.assertIn("expired production warning exception", process.stderr)
+
+    def test_expired_test_exception_does_not_block_a_release(self):
+        reason = "temporary test debt"
+        root = self.fixture(
+            f'#[expect(dead_code, reason = "{reason}")]\nfn hidden() {{}}\n',
+            [
+                {
+                    "directive": "expect",
+                    "expires_release": "0.4.0",
+                    "expiry_condition": "remove when the test is reorganized",
+                    "introduced_release": "0.3.0",
+                    "lint": "dead_code",
+                    "occurrences": 1,
+                    "owner": "test owner",
+                    "path": "src/lib.rs",
+                    "production_or_test": "test",
+                    "reason": reason,
+                }
+            ],
+        )
+
+        process = self.run_checker(root)
+
+        self.assertEqual(process.returncode, 0, process.stderr)
 
 
 if __name__ == "__main__":
