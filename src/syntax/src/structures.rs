@@ -14,6 +14,7 @@ use nom::{
 use crate::nodes::Matrix;
 
 #[cfg(test)]
+#[path = "structure_phase_2h_parity.rs"]
 mod phase_2h_parity;
 
 // Structures

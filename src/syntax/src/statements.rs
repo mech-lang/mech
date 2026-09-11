@@ -627,9 +627,9 @@ pub fn kind_define(input: ParseString) -> ParseResult<KindDefine> {
 }
 
 #[cfg(test)]
-#[path = "statements/phase_2f_parity.rs"]
+#[path = "statement_phase_2f_parity.rs"]
 mod canonical_phase_2f_parity;
 
 #[cfg(test)]
-#[path = "statements/phase_2g_parity.rs"]
+#[path = "statement_phase_2g_parity.rs"]
 mod canonical_phase_2g_parity;
