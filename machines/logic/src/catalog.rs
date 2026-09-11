@@ -3,8 +3,6 @@ use mech_core::CanonicalFunctionSpecializer;
 use mech_core::{FunctionCatalogBuilder, MResult};
 #[cfg(feature = "source")]
 use mech_core::{FunctionExport, FunctionExposure};
-#[cfg(feature = "not")]
-use mech_core::{RuntimeFunctionContract, RuntimeOutputAliasPolicy};
 #[cfg(feature = "source")]
 use std::sync::Arc;
 
@@ -133,18 +131,103 @@ declare_logic_binop_runtime!(and, And, "and");
 declare_logic_binop_runtime!(or, Or, "or");
 declare_logic_binop_runtime!(xor, Xor, "xor");
 
+#[cfg(feature = "not")]
+macro_rules! for_each_logic_not_shape {
+    ($callback:ident, $context:tt) => {
+        #[cfg(feature = "matrix1")]
+        $callback!($context, m1, "matrix1", nalgebra::Matrix1<bool>);
+        #[cfg(feature = "matrix2")]
+        $callback!($context, m2, "matrix2", nalgebra::Matrix2<bool>);
+        #[cfg(feature = "matrix3")]
+        $callback!($context, m3, "matrix3", nalgebra::Matrix3<bool>);
+        #[cfg(feature = "matrix4")]
+        $callback!($context, m4, "matrix4", nalgebra::Matrix4<bool>);
+        #[cfg(feature = "matrix2x3")]
+        $callback!($context, m2x3, "matrix2x3", nalgebra::Matrix2x3<bool>);
+        #[cfg(feature = "matrix3x2")]
+        $callback!($context, m3x2, "matrix3x2", nalgebra::Matrix3x2<bool>);
+        #[cfg(feature = "matrixd")]
+        $callback!($context, md, "matrixd", nalgebra::DMatrix<bool>);
+        #[cfg(feature = "row_vector2")]
+        $callback!($context, r2, "row_vector2", nalgebra::RowVector2<bool>);
+        #[cfg(feature = "row_vector3")]
+        $callback!($context, r3, "row_vector3", nalgebra::RowVector3<bool>);
+        #[cfg(feature = "row_vector4")]
+        $callback!($context, r4, "row_vector4", nalgebra::RowVector4<bool>);
+        #[cfg(feature = "row_vectord")]
+        $callback!($context, rd, "row_vectord", nalgebra::RowDVector<bool>);
+        #[cfg(feature = "vector2")]
+        $callback!($context, v2, "vector2", nalgebra::Vector2<bool>);
+        #[cfg(feature = "vector3")]
+        $callback!($context, v3, "vector3", nalgebra::Vector3<bool>);
+        #[cfg(feature = "vector4")]
+        $callback!($context, v4, "vector4", nalgebra::Vector4<bool>);
+        #[cfg(feature = "vectord")]
+        $callback!($context, vd, "vectord", nalgebra::DVector<bool>);
+    };
+}
+
+#[cfg(feature = "not")]
+macro_rules! declare_logic_not_factory {
+    (scalar, $suffix:ident, $shape_feature:literal, $shape:ty) => {
+        compile_error!("scalar logic/not uses its dedicated declaration");
+    };
+    (vector, $suffix:ident, $shape_feature:literal, $shape:ty) => {
+        paste::paste! {
+            mech_core::declare_native_runtime_factory! {
+                cfg: all(feature = "not", feature = "bool", feature = $shape_feature),
+                registration: [<register_logic_not_ $suffix>],
+                installer: [<install_logic_not_ $suffix>],
+                name: crate::not::not_vector_runtime_name::<$shape>(),
+                factory_type: crate::not::NotV<bool, $shape>,
+                contract: mech_core::RuntimeFunctionContract::output_matches_input(
+                    0,
+                    mech_core::RuntimeOutputAliasPolicy::DisallowInputAlias,
+                ),
+                operations: [mech_core::OperationId::from_name("logic/not")],
+                package: "mech-logic",
+                crate_name: "mech_logic",
+                installer_path: concat!(
+                    "mech_logic::__mech_native::install_logic_not_",
+                    stringify!($suffix),
+                ),
+                extra_cargo_features: ["not"],
+            }
+        }
+    };
+}
+
 mech_core::declare_native_runtime_factory! {
     cfg: all(feature = "not", feature = "bool"),
     registration: register_logic_not_s,
     installer: install_logic_not_s,
     name: "NotS<bool>",
     factory_type: crate::not::NotS<bool>,
-    contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
+    contract: mech_core::RuntimeFunctionContract::no_matrix(
+        mech_core::RuntimeOutputAliasPolicy::DisallowInputAlias,
+    ),
     operations: [mech_core::OperationId::from_name("logic/not")],
     package: "mech-logic",
     crate_name: "mech_logic",
     installer_path: "mech_logic::__mech_native::install_logic_not_s",
     extra_cargo_features: ["not"],
+}
+
+#[cfg(feature = "not")]
+for_each_logic_not_shape!(declare_logic_not_factory, vector);
+
+#[cfg(feature = "not")]
+macro_rules! register_logic_not_factory {
+    ($builder:ident, $suffix:ident, $_shape_feature:literal, $_shape:ty) => {
+        paste::paste! { [<register_logic_not_ $suffix>]($builder)?; }
+    };
+}
+
+#[cfg(all(feature = "native-link", feature = "not"))]
+macro_rules! export_logic_not_factory {
+    (export, $suffix:ident, $_shape_feature:literal, $_shape:ty) => {
+        paste::paste! { pub use super::[<install_logic_not_ $suffix>]; }
+    };
 }
 
 #[cfg(any(feature = "and", feature = "or", feature = "xor"))]
@@ -181,6 +264,8 @@ pub mod __mech_native {
     export_logic_binop_runtime!(xor, Xor, "xor");
     #[cfg(all(feature = "not", feature = "bool"))]
     pub use super::install_logic_not_s;
+    #[cfg(feature = "not")]
+    for_each_logic_not_shape!(export_logic_not_factory, export);
 }
 
 /// Installs every enabled concrete bytecode factory owned by `mech-logic`.
@@ -193,6 +278,8 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     install_native_logic_binop_runtime!(builder, xor, Xor, "xor");
     #[cfg(all(feature = "not", feature = "bool"))]
     register_logic_not_s(builder)?;
+    #[cfg(feature = "not")]
+    for_each_logic_not_shape!(register_logic_not_factory, builder);
     Ok(())
 }
 

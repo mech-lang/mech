@@ -4,7 +4,14 @@ use crate::*;
 
 macro_rules! neq_scalar_lhs_op {
     (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => {
-        apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::RightScalar, |lhs, rhs| lhs != rhs)
+        apply_canonical_string_comparison(
+            $frame,
+            $lhs,
+            $rhs,
+            $out,
+            ComparisonBroadcast::RightScalar,
+            |lhs, rhs| lhs != rhs,
+        )
     };
     (managed, $lhs:expr, $rhs:expr, $out:expr) => {
         apply_managed_comparison(
@@ -26,7 +33,14 @@ macro_rules! neq_scalar_lhs_op {
 
 macro_rules! neq_scalar_rhs_op {
     (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => {
-        apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::LeftScalar, |lhs, rhs| lhs != rhs)
+        apply_canonical_string_comparison(
+            $frame,
+            $lhs,
+            $rhs,
+            $out,
+            ComparisonBroadcast::LeftScalar,
+            |lhs, rhs| lhs != rhs,
+        )
     };
     (managed, $lhs:expr, $rhs:expr, $out:expr) => {
         apply_managed_comparison(
@@ -48,7 +62,14 @@ macro_rules! neq_scalar_rhs_op {
 
 macro_rules! neq_vec_op {
     (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => {
-        apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::Exact, |lhs, rhs| lhs != rhs)
+        apply_canonical_string_comparison(
+            $frame,
+            $lhs,
+            $rhs,
+            $out,
+            ComparisonBroadcast::Exact,
+            |lhs, rhs| lhs != rhs,
+        )
     };
     (managed, $lhs:expr, $rhs:expr, $out:expr) => {
         apply_managed_comparison($lhs, $rhs, $out, ComparisonBroadcast::Exact, |lhs, rhs| {
@@ -66,7 +87,14 @@ macro_rules! neq_vec_op {
 
 macro_rules! neq_op {
     (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => {
-        apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::Exact, |lhs, rhs| lhs != rhs)
+        apply_canonical_string_comparison(
+            $frame,
+            $lhs,
+            $rhs,
+            $out,
+            ComparisonBroadcast::Exact,
+            |lhs, rhs| lhs != rhs,
+        )
     };
     (managed, $lhs:expr, $rhs:expr, $out:expr) => {
         apply_managed_comparison($lhs, $rhs, $out, ComparisonBroadcast::Exact, |lhs, rhs| {
@@ -82,7 +110,14 @@ macro_rules! neq_op {
 
 macro_rules! neq_mat_vec_op {
     (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => {
-        apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::RightColumn, |lhs, rhs| lhs != rhs)
+        apply_canonical_string_comparison(
+            $frame,
+            $lhs,
+            $rhs,
+            $out,
+            ComparisonBroadcast::RightColumn,
+            |lhs, rhs| lhs != rhs,
+        )
     };
     (managed, $lhs:expr, $rhs:expr, $out:expr) => {
         apply_managed_comparison(
@@ -109,7 +144,14 @@ macro_rules! neq_mat_vec_op {
 
 macro_rules! neq_vec_mat_op {
     (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => {
-        apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::LeftColumn, |lhs, rhs| lhs != rhs)
+        apply_canonical_string_comparison(
+            $frame,
+            $lhs,
+            $rhs,
+            $out,
+            ComparisonBroadcast::LeftColumn,
+            |lhs, rhs| lhs != rhs,
+        )
     };
     (managed, $lhs:expr, $rhs:expr, $out:expr) => {
         apply_managed_comparison(
@@ -136,7 +178,14 @@ macro_rules! neq_vec_mat_op {
 
 macro_rules! neq_mat_row_op {
     (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => {
-        apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::RightRow, |lhs, rhs| lhs != rhs)
+        apply_canonical_string_comparison(
+            $frame,
+            $lhs,
+            $rhs,
+            $out,
+            ComparisonBroadcast::RightRow,
+            |lhs, rhs| lhs != rhs,
+        )
     };
     (managed, $lhs:expr, $rhs:expr, $out:expr) => {
         apply_managed_comparison(
@@ -163,7 +212,14 @@ macro_rules! neq_mat_row_op {
 
 macro_rules! neq_row_mat_op {
     (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => {
-        apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::LeftRow, |lhs, rhs| lhs != rhs)
+        apply_canonical_string_comparison(
+            $frame,
+            $lhs,
+            $rhs,
+            $out,
+            ComparisonBroadcast::LeftRow,
+            |lhs, rhs| lhs != rhs,
+        )
     };
     (managed, $lhs:expr, $rhs:expr, $out:expr) => {
         apply_managed_comparison(
@@ -229,9 +285,7 @@ impl MechFunctionImpl for AtomNeq {
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
         let next = !frame.function_value_inputs_equal(&self.lhs, &self.rhs)?;
-        frame.with_output_port_view(&self.out, |out| {
-            out.try_fill_column_major(|_| Ok(next))
-        })?;
+        frame.with_output_port_view(&self.out, |out| out.try_fill_column_major(|_| Ok(next)))?;
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
@@ -299,9 +353,7 @@ impl MechFunctionImpl for TableNeq {
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
         let next = !frame.function_value_inputs_equal(&self.lhs, &self.rhs)?;
-        frame.with_output_port_view(&self.out, |out| {
-            out.try_fill_column_major(|_| Ok(next))
-        })?;
+        frame.with_output_port_view(&self.out, |out| out.try_fill_column_major(|_| Ok(next)))?;
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {

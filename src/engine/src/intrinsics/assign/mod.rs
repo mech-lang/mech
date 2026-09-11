@@ -814,7 +814,8 @@ impl AssignCanonicalSelection {
     fn stage_managed(&self, frame: &mut mech_core::KernelMemoryFrame<'_>) -> MResult<()> {
         let footprint = self.prospective_output_footprint()?;
         frame.with_admitted_canonical_output(&self.sink, footprint, |_, construction| {
-            let next = construction.try_build_assignment_candidate_with(|_| self.next_value())?;
+            let next = construction
+                .try_rebind_snapshot_candidate_with(&self.sink, || self.next_value())?;
             Ok(((), next))
         })?;
         Ok(())
@@ -1305,31 +1306,28 @@ impl MechFunctionImpl for AssignCanonicalSelection {
         frame: &mut mech_core::KernelMemoryFrame<'_>,
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
-        let Some(positions) = self.fixed_matrix_positions()? else {
-            return Err(MechError::new(
-                GenericError {
-                    msg: "aggregate selection assignment requires the managed canonical payload stage"
-                        .to_owned(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        };
-        if matches!(
-            self.sink.representation(),
-            FunctionValueRepresentation::Matrix {
-                element: FunctionMatrixElement::String | FunctionMatrixElement::Value,
-                ..
+        match self.fixed_matrix_positions()? {
+            Some(positions)
+                if !matches!(
+                    self.sink.representation(),
+                    FunctionValueRepresentation::Matrix {
+                        element: FunctionMatrixElement::String | FunctionMatrixElement::Value,
+                        ..
+                    }
+                ) =>
+            {
+                frame.assign_fixed_port_selection(
+                    &self.sink,
+                    &self.source,
+                    self.sink.representation(),
+                    &positions,
+                )?;
             }
-        ) {
-            self.stage_managed(frame)?;
-        } else {
-            frame.assign_fixed_port_selection(
-                &self.sink,
-                &self.source,
-                self.sink.representation(),
-                &positions,
-            )?;
+            // Canonical aggregates and variable-payload matrices are rebuilt
+            // as an admitted candidate so the same transactional publication
+            // path enforces their memory plan and preserves the old value on
+            // failure.
+            _ => self.stage_managed(frame)?,
         }
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
@@ -1430,9 +1428,8 @@ fn canonical_indexed_assignment(
         SchemaBody::Map { .. } | SchemaBody::Table { .. } => {
             CanonicalAssignmentSelectionKind::CollectionEntry
         }
-        SchemaBody::Tuple(_) | SchemaBody::Record(_) => {
-            CanonicalAssignmentSelectionKind::SingleElement
-        }
+        SchemaBody::Record(_) => CanonicalAssignmentSelectionKind::CollectionEntry,
+        SchemaBody::Tuple(_) => CanonicalAssignmentSelectionKind::SingleElement,
         SchemaBody::Matrix { .. } => match selectors.as_slice() {
             [CanonicalAccessSelector::All]
             | [CanonicalAccessSelector::All, CanonicalAccessSelector::All] => {
@@ -1862,6 +1859,65 @@ mod canonical_aggregate_assignment_tests {
         };
         assert!(matches!(
             entries[0].items[1],
+            ValueDataDraft::String(ref value) if value == "new"
+        ));
+    }
+
+    #[test]
+    fn record_field_assignment_executes_through_the_managed_canonical_stage() {
+        let sink = ValueCell::from_schema_data(
+            SchemaBody::Record(
+                vec![SchemaField {
+                    name: "value".to_owned(),
+                    schema: SchemaBody::String,
+                }]
+                .into_boxed_slice(),
+            ),
+            ValueDataDraft::Record(
+                vec![mech_core::snapshot::NamedValueDraft {
+                    name: "value".to_owned(),
+                    value: ValueDataDraft::String("old".to_owned()),
+                }]
+                .into_boxed_slice(),
+            ),
+        )
+        .unwrap();
+        let source = ValueCell::from_exact("new".to_owned()).unwrap();
+        let selector =
+            ValueCell::from_schema_data(SchemaBody::Id, ValueDataDraft::Id(hash_str("value")))
+                .unwrap();
+        let implementation = AssignCanonicalSelection {
+            sink: sink.clone(),
+            source: source.clone(),
+            selectors: vec![CanonicalAccessSelector::Cell(selector.clone())],
+            selection_kind: CanonicalAssignmentSelectionKind::CollectionEntry,
+        };
+        let invocation = FunctionInvocation::variadic(
+            sink.clone(),
+            vec![sink.clone(), source, selector].into_boxed_slice(),
+        );
+        let specialized = SpecializedFunction::syntax_directed(
+            (Box::new(implementation), invocation),
+            ResolvedOperationDescriptor::from_name(
+                "core/assign/collection-entry",
+                PURE_COLLECTION_ENTRY_STATE_REGISTER_CONTRACT.clone(),
+            )
+            .unwrap(),
+            RuntimeFunctionId::from_name("AssignCanonicalSelection"),
+            ExecutionTarget::DirectRuntime,
+            ImplementationMemoryClass::CanonicalFinalize,
+        )
+        .unwrap();
+
+        specialized.instance().solve_result().unwrap();
+
+        let ValueDataDraft::Record(fields) =
+            sink.snapshot().unwrap().canonical_data_draft().unwrap()
+        else {
+            panic!("record assignment must preserve the record schema");
+        };
+        assert!(matches!(
+            fields[0].value,
             ValueDataDraft::String(ref value) if value == "new"
         ));
     }

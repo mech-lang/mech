@@ -251,11 +251,26 @@ fn apply_logic_binary(
     broadcast: LogicBroadcast,
     operation: impl Fn(bool, bool) -> bool,
 ) -> MResult<()> {
+    let output_rows = out.rows();
+    let output_columns = out.columns();
     let same_shape = |view: &ManagedValueView<'_, bool>| {
-        view.rows() == out.rows() && view.columns() == out.columns()
+        view.rows() == output_rows && view.columns() == output_columns
+    };
+    // Dynamic matrix representations do not encode their live extents in the
+    // runtime function ID. A same-representation factory must therefore retain
+    // the broadcast selected by the source scheme when one operand happens to
+    // use the same storage family as the output (for example RowD 1x1 with
+    // RowD 1x5).
+    let can_broadcast = |view: &ManagedValueView<'_, bool>| {
+        same_shape(view)
+            || view.len() == 1
+            || (view.columns() == 1 && view.rows() == output_rows)
+            || (view.rows() == 1 && view.columns() == output_columns)
     };
     let geometry_valid = match broadcast {
-        LogicBroadcast::Exact => same_shape(&lhs) && same_shape(&rhs),
+        LogicBroadcast::Exact => {
+            (same_shape(&lhs) || same_shape(&rhs)) && can_broadcast(&lhs) && can_broadcast(&rhs)
+        }
         LogicBroadcast::LeftScalar => lhs.len() == 1 && same_shape(&rhs),
         LogicBroadcast::RightScalar => same_shape(&lhs) && rhs.len() == 1,
         LogicBroadcast::LeftColumn => {
@@ -279,7 +294,6 @@ fn apply_logic_binary(
             None,
         ));
     }
-    let output_rows = out.rows();
     out.try_fill_column_major(|index| {
         let row = if output_rows == 0 {
             0
@@ -291,8 +305,38 @@ fn apply_logic_binary(
         } else {
             index / output_rows
         };
+        let compatible_index = |view: &ManagedValueView<'_, bool>| {
+            if same_shape(view) {
+                Some(index)
+            } else if view.len() == 1 {
+                Some(0)
+            } else if view.columns() == 1 && view.rows() == output_rows {
+                Some(row)
+            } else if view.rows() == 1 && view.columns() == output_columns {
+                Some(column)
+            } else {
+                None
+            }
+        };
         let (lhs_index, rhs_index) = match broadcast {
-            LogicBroadcast::Exact => (index, index),
+            LogicBroadcast::Exact => (
+                compatible_index(&lhs).ok_or_else(|| {
+                    MechError::new(
+                        GenericError {
+                            msg: "logic lhs broadcast geometry is invalid".into(),
+                        },
+                        None,
+                    )
+                })?,
+                compatible_index(&rhs).ok_or_else(|| {
+                    MechError::new(
+                        GenericError {
+                            msg: "logic rhs broadcast geometry is invalid".into(),
+                        },
+                        None,
+                    )
+                })?,
+            ),
             LogicBroadcast::LeftScalar => (0, index),
             LogicBroadcast::RightScalar => (index, 0),
             LogicBroadcast::LeftColumn => (row, index),
@@ -715,6 +759,115 @@ mod invocation_port_tests {
             &[true, true, true, false, true, false],
         );
         check::<crate::xor::XorMDMD>(matrix(), matrix(), "logic/xor", &[false; 6]);
+
+        fn check_degenerate_row<F: MechFunctionFactory>(
+            operation: &'static str,
+            expected: &[bool],
+        ) {
+            let lhs = ValueCell::from_exact_matrix_ref(
+                Ref::new(nalgebra::RowDVector::from_vec(vec![
+                    true, false, true, false, true,
+                ])),
+                1,
+                5,
+            )
+            .unwrap();
+            let rhs = ValueCell::from_exact_matrix_ref(
+                Ref::new(nalgebra::RowDVector::from_vec(vec![false])),
+                1,
+                1,
+            )
+            .unwrap();
+            let output = ValueCell::from_exact_matrix_ref(
+                Ref::new(nalgebra::RowDVector::from_element(5, false)),
+                1,
+                5,
+            )
+            .unwrap();
+            let function = managed::<F>(
+                FunctionInvocation::binary(output.clone(), lhs, rhs),
+                operation,
+            );
+            function.instance().solve_result().unwrap();
+            assert_bool_matrix(&output, expected);
+        }
+        check_degenerate_row::<crate::and::AndRDRD>("logic/and", &[false; 5]);
+        check_degenerate_row::<crate::or::OrRDRD>("logic/or", &[true, false, true, false, true]);
+        check_degenerate_row::<crate::xor::XorRDRD>("logic/xor", &[true, false, true, false, true]);
+
+        fn check_degenerate_column<F: MechFunctionFactory>(
+            lhs: ValueCell,
+            rhs: ValueCell,
+            operation: &'static str,
+            expected: &[bool],
+        ) {
+            let output = ValueCell::from_exact_matrix_ref(
+                Ref::new(nalgebra::DVector::from_element(5, false)),
+                5,
+                1,
+            )
+            .unwrap();
+            let function = managed::<F>(
+                FunctionInvocation::binary(output.clone(), lhs, rhs),
+                operation,
+            );
+            function.instance().solve_result().unwrap();
+            assert_bool_matrix(&output, expected);
+        }
+        let column = || {
+            ValueCell::from_exact_matrix_ref(
+                Ref::new(nalgebra::DVector::from_vec(vec![
+                    true, false, true, false, true,
+                ])),
+                5,
+                1,
+            )
+            .unwrap()
+        };
+        let singleton = || {
+            ValueCell::from_exact_matrix_ref(
+                Ref::new(nalgebra::RowDVector::from_vec(vec![false])),
+                1,
+                1,
+            )
+            .unwrap()
+        };
+        check_degenerate_column::<crate::and::AndVDRD>(
+            column(),
+            singleton(),
+            "logic/and",
+            &[false; 5],
+        );
+        check_degenerate_column::<crate::and::AndRDVD>(
+            singleton(),
+            column(),
+            "logic/and",
+            &[false; 5],
+        );
+        check_degenerate_column::<crate::or::OrVDRD>(
+            column(),
+            singleton(),
+            "logic/or",
+            &[true, false, true, false, true],
+        );
+        check_degenerate_column::<crate::or::OrRDVD>(
+            singleton(),
+            column(),
+            "logic/or",
+            &[true, false, true, false, true],
+        );
+        check_degenerate_column::<crate::xor::XorVDRD>(
+            column(),
+            singleton(),
+            "logic/xor",
+            &[true, false, true, false, true],
+        );
+        check_degenerate_column::<crate::xor::XorRDVD>(
+            singleton(),
+            column(),
+            "logic/xor",
+            &[true, false, true, false, true],
+        );
     }
 
     #[test]

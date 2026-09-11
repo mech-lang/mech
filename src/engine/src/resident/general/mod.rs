@@ -11,7 +11,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use mech_core::{
     AccessMode, AliasPolicy, ApplicationRequirementId, BoundCall, BoundResidentKernel,
-    CallMemoryPlanningRequest, CellSlotId, ChangeDetectionPolicy, ConstantId,
+    CallMemoryPlanningRequest, CardinalitySpec, CellSlotId, ChangeDetectionPolicy, ConstantId,
     CurrentMemoryFootprint, DeliveryMode, DimensionExpr, DimensionLifetime, ExecutionTarget,
     ExecutionTargetSet, ExternalInteraction, FunctionCatalog, ImplementationMemoryClass, InputId,
     InstanceEpoch, IntegrityConstraintId, LayoutGeneration, MemoryFootprintWitness, MemoryLifetime,
@@ -1249,6 +1249,7 @@ pub enum ResidentActivationError {
     },
     TurnDimension {
         schema: SchemaId,
+        slot: Option<CellSlotId>,
     },
     UnresolvedShape {
         slot: CellSlotId,
@@ -1416,7 +1417,7 @@ pub fn preflight_resident_target(
     options: ResidentActivationOptions,
 ) -> Result<ResidentActivationPreflight, OperationUnavailableForTarget> {
     preflight_activation(artifact, catalog, facts, options).map_err(|error| {
-        let node = resident_activation_error_node(&error);
+        let node = resident_activation_error_node(artifact, &error);
         let operation = node.and_then(|node| {
             artifact
                 .nodes()
@@ -1432,7 +1433,10 @@ pub fn preflight_resident_target(
     })
 }
 
-fn resident_activation_error_node(error: &ResidentActivationError) -> Option<NodeId> {
+fn resident_activation_error_node(
+    artifact: &ProgramArtifact,
+    error: &ResidentActivationError,
+) -> Option<NodeId> {
     match error {
         ResidentActivationError::LegacyOpaque { node }
         | ResidentActivationError::UnsupportedInteraction { node }
@@ -1446,6 +1450,12 @@ fn resident_activation_error_node(error: &ResidentActivationError) -> Option<Nod
         | ResidentActivationError::KernelBind { node, .. }
         | ResidentActivationError::ActivationKernel { node }
         | ResidentActivationError::InvalidDependency { node } => Some(*node),
+        ResidentActivationError::TurnDimension {
+            slot: Some(slot), ..
+        } => match artifact.slots().get(slot.get() as usize)?.producer {
+            ProducerReference::NodeOutput { node, .. } => Some(node),
+            _ => None,
+        },
         _ => None,
     }
 }
@@ -2180,6 +2190,47 @@ fn complete_activation_shape_facts(
             continue;
         }
         let inputs = node_inputs(artifact, node.node)?;
+        if node.operation.module_path.as_ref() == ["access"]
+            && node.operation.operation_name == "column"
+        {
+            let [source, _selector] = inputs.as_slice() else {
+                return Err(ResidentActivationError::InvalidDependency { node: node.node });
+            };
+            let source_schema_id = match source {
+                ArtifactSource::Constant(constant) => artifact
+                    .constants()
+                    .get(*constant)
+                    .ok_or(ResidentActivationError::InvalidDependency { node: node.node })?
+                    .schema(),
+                ArtifactSource::Slot(slot) => {
+                    artifact
+                        .slots()
+                        .get(slot.get() as usize)
+                        .ok_or(ResidentActivationError::InvalidDependency { node: node.node })?
+                        .schema
+                }
+            };
+            let source_schema = artifact
+                .schemas()
+                .entry(source_schema_id)
+                .ok_or(ResidentActivationError::InvalidDependency { node: node.node })?
+                .schema();
+            if let SchemaBody::Table { rows, .. } = source_schema.body() {
+                // Bytecode intentionally omits non-wire slot-shape hints, so a
+                // dynamic matrix output starts from its valid [0, 0] lower-bound
+                // placeholder. An exact table declaration provides durable
+                // authority for the selected column's [rows, 1] shape before
+                // resident layout and binding. Dynamic or parameter-dependent
+                // row counts need live activation facts and stay closed here.
+                let CardinalitySpec::Exact(DimensionExpr::Constant(rows)) = rows else {
+                    return Err(ResidentActivationError::UnresolvedShape { slot: output });
+                };
+                let shape = matrix_shape_for_extents(output_schema, &[*rows, 1])
+                    .map_err(|_| ResidentActivationError::UnresolvedShape { slot: output })?;
+                facts.slot_shapes.insert(output, shape);
+                continue;
+            }
+        }
         if node.operation.module_path.as_ref() == ["matrix"]
             && matches!(
                 node.operation.operation_name.as_str(),
@@ -2629,8 +2680,13 @@ fn build_layout(
         let shape = slot_shape(artifact, declaration.slot, facts)?;
         let activation_fixed =
             slot_has_activation_fixed_shape(artifact, declaration.slot, facts, classes);
-        let (kind, resident_shape) =
-            schema_layout(artifact, declaration.schema, &shape, activation_fixed)?;
+        let (kind, resident_shape) = schema_layout(
+            artifact,
+            declaration.schema,
+            &shape,
+            activation_fixed,
+            Some(declaration.slot),
+        )?;
         let len = resident_shape
             .len()
             .ok_or(ResidentActivationError::RegionSizeOverflow)?;
@@ -2868,7 +2924,7 @@ fn value_layout(
 ) -> Result<(ResidentValueKind, ResidentShape), ResidentActivationError> {
     // A constant's concrete shape is immutable even when its semantic schema
     // originated from a turn-lifetime dynamic backing.
-    schema_layout(artifact, value.schema(), value.shape(), true)
+    schema_layout(artifact, value.schema(), value.shape(), true, None)
 }
 
 fn resident_value_footprint(
@@ -2917,6 +2973,7 @@ fn schema_layout(
     schema: SchemaId,
     shape: &ShapeInstance,
     has_activation_shape_fact: bool,
+    slot: Option<CellSlotId>,
 ) -> Result<(ResidentValueKind, ResidentShape), ResidentActivationError> {
     let schema_entry = artifact.schemas().entry(schema).unwrap();
     if schema_entry
@@ -2926,7 +2983,7 @@ fn schema_layout(
         .any(|parameter| parameter.lifetime() == DimensionLifetime::Turn)
         && !has_activation_shape_fact
     {
-        return Err(ResidentActivationError::TurnDimension { schema });
+        return Err(ResidentActivationError::TurnDimension { schema, slot });
     }
     match schema_entry.schema().body() {
         body @ (SchemaBody::Bool

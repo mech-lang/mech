@@ -20,6 +20,8 @@ FIXTURE_MANIFEST = ROOT / "tests/fixtures/native-linkage/Cargo.toml"
 FROZEN_SURFACE = ROOT / "tests/architecture/function-system/runtime-factory-surface.json"
 REPORT_PATH = ROOT / "tests/architecture/native-linkage/coverage.json"
 DETAIL_REPORT_PATH = ROOT / "target/native-linkage/coverage-full.json"
+STDLIB_PROFILE_CONTRACT = ROOT / "src/stdlib/tests/profile_contracts.rs"
+CATALOG_CLOSURE_PROFILES = ("standard", "full")
 EXACT_CLOSURE_DIRECTORY = ROOT / "target/native-linkage/exact-closures"
 EXACT_CLOSURE_SHARDS = 8
 NAMED_EXACT_CLOSURE_REGRESSIONS = {
@@ -33,9 +35,9 @@ PREFERRED_OWNER_REPRESENTATIVES = {
     "mech-engine": "VariableDefineF64",
     "mech-math": "AddSS<f64>",
 }
-EXPECTED_FULL_COUNT = 9_109
+EXPECTED_FULL_COUNT = 9_374
 EXPECTED_FULL_SURFACE_SHA256 = (
-    "bcd95a7278b912be6dbb6eb5132a0ef9818c7122a0975fe1811a80442a3fbcf9"
+    "8033a2cc8f62b0a18ee78e40593cf4c31c5740160494f6ae9fafe44de010b6b9"
 )
 OWNERS: dict[str, tuple[Path, str, str]] = {
     "mech-engine": (ROOT / "src/engine/Cargo.toml", "extended-engine", "stdlib"),
@@ -109,21 +111,50 @@ def digest(value: Any) -> str:
     return sha256(canonical_bytes(value)).hexdigest()
 
 
+def catalog_surface_digest(entries: list[dict[str, Any]]) -> str:
+    """Match the Rust catalog fingerprint without constructing all features."""
+    lines = sorted(
+        f"{entry['runtime_factory_id']}\t{entry['runtime_factory_name']}\n"
+        for entry in entries
+    )
+    return sha256("".join(lines).encode("utf-8")).hexdigest()
+
+
+def frozen_extended_runtime_contract() -> tuple[int, str]:
+    source = STDLIB_PROFILE_CONTRACT.read_text(encoding="utf-8")
+    count = re.search(
+        r"const EXPECTED_EXTENDED_RUNTIME_FACTORIES: usize = ([0-9_]+);",
+        source,
+    )
+    surface_digest = re.search(
+        r'const EXPECTED_EXTENDED_RUNTIME_SURFACE_DIGEST: &str =\s*"([0-9a-f]{64})";',
+        source,
+    )
+    if count is None or surface_digest is None:
+        raise ContractError("stdlib extended runtime contract is missing or malformed")
+    return int(count.group(1).replace("_", "")), surface_digest.group(1)
+
+
 def run(
     command: list[str],
     *,
     capture: bool = False,
     fixture: bool = False,
     target_directory: Path | None = None,
+    environment_overrides: dict[str, str] | None = None,
+    fixture_codegen_defaults: bool = True,
 ) -> str:
     environment = os.environ.copy()
+    if environment_overrides is not None:
+        environment.update(environment_overrides)
     environment.setdefault("CARGO_INCREMENTAL", "0")
     # The fixture executes catalog construction only; debug information does
     # not participate in its linkage contract.  Omitting it keeps the complete
     # all-shape engine profile below the command supervisor limit without
     # weakening feature, metadata, or runtime-set validation.
     environment.setdefault("CARGO_PROFILE_DEV_DEBUG", "0")
-    environment.setdefault("CARGO_PROFILE_DEV_CODEGEN_UNITS", "256")
+    if fixture_codegen_defaults:
+        environment.setdefault("CARGO_PROFILE_DEV_CODEGEN_UNITS", "256")
     target = Path(environment.get("CARGO_TARGET_DIR", ROOT / "target"))
     environment["CARGO_TARGET_DIR"] = str(
         target_directory
@@ -428,6 +459,14 @@ def assemble_report(
         "schema": "mech.native-linkage-coverage.v2",
         "full": surface_summary(full),
         "extended": surface_summary(extended),
+        # The exhaustive Cargo profile is too large to construct reliably on
+        # ordinary CI runners. Its factory set is the deterministic union of
+        # the shipping full profile and every scalar/subsystem linkage shard.
+        # Keep the Rust profile contract tied to that generated union.
+        "complete_catalog": {
+            "entry_count": len(all_entries),
+            "runtime_surface_digest": catalog_surface_digest(all_entries),
+        },
         "entries": grouped(all_entries),
         "signature_invariants": {
             "same_runtime_id_different_signature_count": 0,
@@ -524,6 +563,21 @@ def build_report_from_ci_surfaces() -> dict[str, Any]:
     full = surfaces.pop("full")
     verify_full_surface(full)
     return assemble_report(full, [surfaces[feature] for feature in CI_EXTENDED_SURFACES])
+
+
+def verify_extended_runtime_contract(report: dict[str, Any]) -> None:
+    expected_count, expected_digest = frozen_extended_runtime_contract()
+    complete = report.get("complete_catalog")
+    if not isinstance(complete, dict):
+        raise ContractError("native linkage report omits the complete catalog contract")
+    if complete.get("entry_count") != expected_count:
+        raise ContractError(
+            "stdlib extended runtime count diverges from the sharded catalog union"
+        )
+    if complete.get("runtime_surface_digest") != expected_digest:
+        raise ContractError(
+            "stdlib extended runtime digest diverges from the sharded catalog union"
+        )
 
 
 def inventory_entries(report: dict[str, Any]) -> list[dict[str, Any]]:
@@ -774,6 +828,7 @@ def report_summary(report: dict[str, Any]) -> dict[str, Any]:
         "detail_schema": report["schema"],
         "full": report["full"],
         "extended": report["extended"],
+        "complete_catalog": report["complete_catalog"],
         "signature_invariants": report["signature_invariants"],
         "coverage_digest": report["coverage_digest"],
         "detail_artifact": {
@@ -863,7 +918,66 @@ def verify_owner_contracts() -> None:
             raise ContractError(f"{package} does not expose __mech_native")
 
 
+def verify_catalog_closure(profile: str) -> None:
+    if profile not in CATALOG_CLOSURE_PROFILES:
+        raise ContractError(
+            f"unknown catalog closure profile {profile!r}; expected standard or full"
+        )
+    feature = f"distribution-{profile}"
+    report_path = ROOT / f"target/native-linkage/catalog-closure-{profile}.json"
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    # A successful test command must produce current evidence, even if Cargo
+    # accidentally discovers no enabled tests for the selected distribution.
+    report_path.unlink(missing_ok=True)
+    run(
+        [
+            "cargo", "+nightly-2026-03-03", "test", "--locked", "-p", "mech",
+            "--no-default-features", "--features", feature,
+            "--test", "catalog_closure", "--", "--nocapture",
+        ],
+        environment_overrides={
+            "MECH_CATALOG_CLOSURE_PROFILE": feature,
+            "MECH_CATALOG_CLOSURE_REPORT": str(report_path),
+        },
+        # Reuse the shipping-profile test artifacts; fixture-specific explicit
+        # codegen flags would rebuild the entire root dependency graph.
+        fixture_codegen_defaults=False,
+    )
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    if not isinstance(report, dict) or report.get("schema") != "mech.catalog-closure.v1":
+        raise ContractError("catalog closure report schema changed")
+    if report.get("profile") != feature:
+        raise ContractError(f"catalog closure report does not match {feature}")
+    witness_count = report.get("witness_count")
+    if type(witness_count) is not int or witness_count <= 0:
+        raise ContractError("catalog closure report has no generated witnesses")
+    generated_count = report.get("generated_witness_count")
+    if type(generated_count) is not int or generated_count != witness_count:
+        raise ContractError("catalog closure report does not account for every generated witness")
+    if report.get("compilation_failures") != []:
+        raise ContractError("catalog closure report contains compilation failures or lacks a failure list")
+    witnesses = report.get("witnesses")
+    if not isinstance(witnesses, list) or len(witnesses) != witness_count:
+        raise ContractError("catalog closure report witness list does not match witness_count")
+    print(f"validated {witness_count} generated catalog closure witnesses for {feature}")
+    print(f"generated catalog closure report at {report_path.relative_to(ROOT)}")
+
+
 def main() -> int:
+    if len(sys.argv) >= 2 and sys.argv[1] == "catalog-closure":
+        if len(sys.argv) != 3:
+            print(
+                "usage: scripts/check-native-linkage-coverage.py "
+                "catalog-closure {standard|full}",
+                file=sys.stderr,
+            )
+            return 2
+        try:
+            verify_catalog_closure(sys.argv[2])
+            return 0
+        except (ContractError, OSError, TypeError, ValueError, KeyError) as error:
+            print(f"catalog closure validation failed: {error}", file=sys.stderr)
+            return 1
     if len(sys.argv) == 3 and sys.argv[1] == "surface":
         try:
             write_ci_surface(sys.argv[2])
@@ -886,7 +1000,8 @@ def main() -> int:
     if mode not in {"coverage", "merge", "owners", "report", "strict"}:
         print(
             "usage: scripts/check-native-linkage-coverage.py "
-            "[closure SHARD|coverage|merge|owners [PACKAGE ...]|report|strict|surface FEATURE]",
+            "[catalog-closure {standard|full}|closure SHARD|coverage|merge|"
+            "owners [PACKAGE ...]|report|strict|surface FEATURE]",
             file=sys.stderr,
         )
         return 2
@@ -906,6 +1021,7 @@ def main() -> int:
             print(f"validated {len(requested_owners)} isolated native-link owners")
             return 0
         report = build_report_from_ci_surfaces() if mode == "merge" else build_report()
+        verify_extended_runtime_contract(report)
         require_named_closure_regressions(report)
         summary = report_summary(report)
         rendered = json.dumps(summary, indent=2) + "\n"

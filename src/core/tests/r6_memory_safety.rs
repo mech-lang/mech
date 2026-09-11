@@ -705,7 +705,7 @@ fn runtime_plan_view<'a>(
     limits: MemoryBudgetLimits,
     violations: &'a [MemoryBudgetViolation],
 ) -> RuntimePlanView<'a> {
-    RuntimePlanView::new(
+    RuntimePlanView::for_call(
         revision,
         allocations,
         arenas,

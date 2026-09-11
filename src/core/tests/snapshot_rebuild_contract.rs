@@ -323,6 +323,50 @@ fn exact_and_dynamic_set_schemas_are_explicitly_not_strictly_equal() {
 }
 
 #[test]
+fn dynamic_set_values_rebind_to_exact_cardinality_only_when_the_payload_matches() {
+    let (dynamic_schemas, dynamic) = finalize(
+        SchemaBody::Set {
+            element: Box::new(SchemaBody::Index),
+            cardinality: CardinalitySpec::Dynamic {
+                upper_bound: Some(DimensionExpr::Constant(3)),
+            },
+        },
+        ValueDataDraft::Set(vec![ValueDataDraft::Index(1)].into_boxed_slice()),
+    );
+    let dynamic = dynamic
+        .rebind(dynamic.schema(), dynamic.shape(), &dynamic_schemas)
+        .unwrap();
+
+    let (exact_one_schemas, exact_one_schema) = table_with(SchemaBody::Set {
+        element: Box::new(SchemaBody::Index),
+        cardinality: CardinalitySpec::Exact(DimensionExpr::Constant(1)),
+    });
+    let exact_one_shape = exact_one_schemas
+        .get(exact_one_schema)
+        .unwrap()
+        .instantiate_shape(Box::new([]))
+        .unwrap();
+    let rebound = dynamic
+        .rebind(exact_one_schema, &exact_one_shape, &exact_one_schemas)
+        .unwrap();
+    assert_eq!(rebound.set_view().unwrap().elements().len(), 1);
+
+    let (exact_two_schemas, exact_two_schema) = table_with(SchemaBody::Set {
+        element: Box::new(SchemaBody::Index),
+        cardinality: CardinalitySpec::Exact(DimensionExpr::Constant(2)),
+    });
+    let exact_two_shape = exact_two_schemas
+        .get(exact_two_schema)
+        .unwrap()
+        .instantiate_shape(Box::new([]))
+        .unwrap();
+    assert!(matches!(
+        dynamic.rebind(exact_two_schema, &exact_two_shape, &exact_two_schemas),
+        Err(SnapshotValueError::PayloadCardinalityMismatchV1 { .. })
+    ));
+}
+
+#[test]
 fn option_enum_and_heterogeneous_matrix_rebuilds_validate_children() {
     let (option_schemas, option) = finalize(
         SchemaBody::Option(Box::new(SchemaBody::Bool)),

@@ -525,6 +525,7 @@ macro_rules! __mech_for_each_exact_binop_runtime_factory_for_type {
         $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; feature = "vector3"; ["vector3"]; SV3, V3S, V3V3);
         $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; feature = "vector4"; ["vector4"]; SV4, V4S, V4V4);
         $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; feature = "vectord"; ["vectord"]; SVD, VDS, VDVD);
+        $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "vectord", feature = "row_vectord"); ["vectord", "row_vectord"]; VDRD, RDVD);
 
         $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "matrix2", feature = "vector2"); ["matrix2", "vector2"]; M2V2, V2M2);
         $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "matrix3", feature = "vector3"); ["matrix3", "vector3"]; M3V3, V3M3);
@@ -1002,6 +1003,27 @@ macro_rules! __mech_for_each_binop_runtime_factory_for_type {
             $lib,
             SVD,
             "vectord",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+
+        #[cfg(all(feature = "vectord", feature = "row_vectord"))]
+        $callback!(
+            $context,
+            $lib,
+            VDRD,
+            "vectord",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(all(feature = "vectord", feature = "row_vectord"))]
+        $callback!(
+            $context,
+            $lib,
+            RDVD,
+            "row_vectord",
             $scalar,
             $scalar_name,
             $scalar_token
@@ -1633,7 +1655,7 @@ macro_rules! __mech_elementwise_binop_contract {
         )
     };
     (RDRD) => {
-        $crate::RuntimeFunctionContract::same_shape(
+        $crate::RuntimeFunctionContract::elementwise_broadcast(
             $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
         )
     };
@@ -1653,7 +1675,17 @@ macro_rules! __mech_elementwise_binop_contract {
         )
     };
     (VDVD) => {
-        $crate::RuntimeFunctionContract::same_shape(
+        $crate::RuntimeFunctionContract::elementwise_broadcast(
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (VDRD) => {
+        $crate::RuntimeFunctionContract::elementwise_broadcast(
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (RDVD) => {
+        $crate::RuntimeFunctionContract::elementwise_broadcast(
             $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
         )
     };
@@ -2644,5 +2676,11 @@ macro_rules! impl_fxns {
       $op!([<$lib V4V4>], Vector4<$in>, Vector4<$in>, Vector4<$out>, [<$lib:lower _vec_op>]);
       #[cfg(feature = "vectord")]
       $op!([<$lib VDVD>], DVector<$in>, DVector<$in>, DVector<$out>, [<$lib:lower _vec_op>]);
+      // A source `1 x 1` matrix uses the dynamic row representation. These
+      // bridges keep column broadcasting closed across that physical boundary.
+      #[cfg(all(feature = "vectord", feature = "row_vectord"))]
+      $op!([<$lib VDRD>], DVector<$in>, RowDVector<$in>, DVector<$out>, [<$lib:lower _mat_row_op>]);
+      #[cfg(all(feature = "vectord", feature = "row_vectord"))]
+      $op!([<$lib RDVD>], RowDVector<$in>, DVector<$in>, DVector<$out>, [<$lib:lower _row_mat_op>]);
     }
   }}

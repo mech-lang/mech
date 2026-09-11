@@ -1422,9 +1422,13 @@ fn decode_set(
     Ok(DecodedDraft {
         body: SchemaBody::Set {
             element: Box::new(element_body.unwrap_or(runtime_schema_body(element_type)?)),
-            cardinality: match max_len {
-                Some(_) => CardinalitySpec::Exact(DimensionExpr::Constant(count as u64)),
-                None => CardinalitySpec::Dynamic { upper_bound: None },
+            // RuntimeType carries a capacity bound, not an assertion that
+            // every value of this type has the current payload cardinality.
+            // Retaining that distinction is required for nested collections
+            // such as a powerset, whose elements share one bounded Set type
+            // while containing different numbers of values.
+            cardinality: CardinalitySpec::Dynamic {
+                upper_bound: max_len.map(|limit| DimensionExpr::Constant(u64::from(limit))),
             },
         },
         data: ValueDataDraft::Set(values.into_boxed_slice()),
@@ -1719,10 +1723,9 @@ pub(crate) fn runtime_schema_body(ty: &RuntimeType) -> MResult<SchemaBody> {
         },
         RuntimeType::Set { element, max_len } => SchemaBody::Set {
             element: Box::new(runtime_schema_body(element)?),
-            cardinality: max_len
-                .map_or(CardinalitySpec::Dynamic { upper_bound: None }, |maximum| {
-                    CardinalitySpec::Exact(DimensionExpr::Constant(u64::from(maximum)))
-                }),
+            cardinality: CardinalitySpec::Dynamic {
+                upper_bound: max_len.map(|maximum| DimensionExpr::Constant(u64::from(maximum))),
+            },
         },
         RuntimeType::Table { columns, .. } => SchemaBody::Table {
             columns: columns

@@ -363,6 +363,17 @@ impl_solve!(MatrixSolveMDVD, DMatrix<T>, DVector<T>, DVector<T>);
 #[cfg(feature = "matrixd")]
 impl_solve!(MatrixSolveMDMD, DMatrix<T>, DMatrix<T>, DMatrix<T>);
 
+// Source matrices with one row use RowDVector storage, including a 1x1
+// coefficient matrix. Retain that exact representation for the valid
+// one-equation, multiple-right-hand-side solve.
+#[cfg(feature = "row_vectord")]
+impl_solve!(
+    MatrixSolveRDRD,
+    RowDVector<T>,
+    RowDVector<T>,
+    RowDVector<T>
+);
+
 // Keep fixed-shape source mathematical. The semantic compiler sees the
 // ordinary solve operation and compute backends can scalarize it without the
 // program spelling out an inverse or splitting a matrix right-hand side into
@@ -370,7 +381,13 @@ impl_solve!(MatrixSolveMDMD, DMatrix<T>, DMatrix<T>, DMatrix<T>);
 #[cfg(all(feature = "matrix2", feature = "matrix2x3"))]
 impl_solve!(MatrixSolveM2M2x3, Matrix2<T>, Matrix2x3<T>, Matrix2x3<T>);
 
-#[cfg(all(test, feature = "f64", feature = "matrixd", feature = "vectord"))]
+#[cfg(all(
+    test,
+    feature = "f64",
+    feature = "matrixd",
+    feature = "vectord",
+    feature = "row_vectord"
+))]
 mod canonical_port_tests {
     use super::*;
 
@@ -436,6 +453,20 @@ mod canonical_port_tests {
         let expected = coefficients.lu().solve(&rhs).unwrap();
         let actual = DMatrix::from_row_slice(2, 2, &values(&matrix_out));
         assert!((actual - expected).norm() < 1.0e-12);
+    }
+
+    #[test]
+    fn one_by_one_coefficients_support_a_row_of_right_hand_sides() {
+        let lhs = ValueCell::from_exact(RowDVector::from_vec(vec![2.0_f64])).unwrap();
+        let rhs = ValueCell::from_exact(RowDVector::from_vec(vec![2.0, 4.0, 8.0])).unwrap();
+        let out = ValueCell::from_exact(RowDVector::<f64>::zeros(3)).unwrap();
+        let function = managed::<MatrixSolveRDRD<f64>>(FunctionInvocation::binary(
+            out.clone(),
+            lhs,
+            rhs,
+        ));
+        function.instance().solve_result().unwrap();
+        assert_close(&values(&out), &[1.0, 2.0, 4.0]);
     }
 
     #[test]

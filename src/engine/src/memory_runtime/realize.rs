@@ -3,7 +3,7 @@ use mech_core::{
     TransactionRequirement,
 };
 
-use crate::memory_planner::{PlannedValueClass, ProgramMemoryPlan, TurnMemoryPlan};
+use crate::memory_planner::{ProgramMemoryPlan, TurnMemoryPlan};
 
 /// Owner-thread runtime state for one realized deterministic program plan.
 pub struct ManagedProgramMemory {
@@ -26,13 +26,11 @@ impl ManagedProgramMemory {
         let domain = MemoryDomain::new()?;
         let revision = domain.issue_plan_revision()?;
         let transactions = program_transactions(plan);
-        let output_bytes = program_output_bytes(plan)?;
-        let view = RuntimePlanView::new(
+        let view = RuntimePlanView::for_aggregate(
             revision,
             &plan.allocations,
             &plan.arenas,
             plan.peak,
-            output_bytes,
             plan.budget_limits,
             &transactions,
             program_max_concurrent_leases(plan)?,
@@ -66,7 +64,7 @@ pub fn realize_turn_memory(
 ) -> MemoryRuntimeResult<(MemoryDomain, RealizedMemoryPlan)> {
     let domain = MemoryDomain::new()?;
     let revision = domain.issue_plan_revision()?;
-    let view = RuntimePlanView::new(
+    let view = RuntimePlanView::for_call(
         revision,
         &plan.allocations,
         &plan.arenas,
@@ -105,30 +103,6 @@ fn program_transactions(plan: &ProgramMemoryPlan) -> Box<[TransactionRequirement
     transactions.sort();
     transactions.dedup();
     transactions.into_boxed_slice()
-}
-
-fn program_output_bytes(plan: &ProgramMemoryPlan) -> MemoryRuntimeResult<u64> {
-    plan.values
-        .iter()
-        .filter(|value| value.class == PlannedValueClass::PublishedOutput)
-        .try_fold(0_u64, |total, value| {
-            let bytes = value
-                .layout
-                .current_address_span_bytes
-                .checked_add(value.layout.payload.current_bytes)
-                .ok_or(MemoryRuntimeError::AccountingInvariantViolation {
-                    dimension: "published output bytes",
-                    current: value.layout.current_address_span_bytes,
-                    change: value.layout.payload.current_bytes,
-                })?;
-            total
-                .checked_add(bytes)
-                .ok_or(MemoryRuntimeError::AccountingInvariantViolation {
-                    dimension: "published output bytes",
-                    current: total,
-                    change: bytes,
-                })
-        })
 }
 
 fn program_max_concurrent_leases(plan: &ProgramMemoryPlan) -> MemoryRuntimeResult<u32> {

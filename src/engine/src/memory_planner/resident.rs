@@ -55,7 +55,6 @@ pub fn plan_resident_arenas(
     let mut allocations = Vec::new();
     let mut values = Vec::new();
     let mut offsets = BTreeMap::new();
-    let mut elements_by_owner = BTreeMap::new();
     let mut footprints_by_owner = BTreeMap::new();
     let mut demand = ResourceDemand::default();
     let mut next_id = 0_u32;
@@ -63,7 +62,6 @@ pub fn plan_resident_arenas(
         if input.footprint.logical_elements != input.elements {
             return Err(MemoryPlanError::DescriptorMismatch);
         }
-        elements_by_owner.insert(input.owner.clone(), input.elements);
         footprints_by_owner.insert(input.owner.clone(), input.footprint);
         let slot = resident_slot_layout(&target, input.kind);
         let bytes =
@@ -289,14 +287,8 @@ pub fn plan_resident_arenas(
         });
     }
     arenas.sort_by_key(|arena| arena.id);
-    let budget_violations = resident_budget_violations(
-        &allocations,
-        &arenas,
-        &footprints_by_owner,
-        &elements_by_owner,
-        demand,
-        target.limits,
-    )?;
+    let budget_violations =
+        resident_budget_violations(&allocations, &footprints_by_owner, demand, target.limits)?;
     Ok(ResidentArenaProjection {
         plan: ProgramMemoryPlan {
             values: values.into_boxed_slice(),
@@ -397,59 +389,23 @@ pub fn finalize_resident_current_footprints(
                 field: "resident finalized retained nodes",
             })?;
     }
-    let elements_by_owner = footprints
-        .iter()
-        .map(|(owner, footprint)| (owner.clone(), footprint.logical_elements))
-        .collect::<BTreeMap<_, _>>();
     plan.peak = demand;
-    plan.budget_violations = resident_budget_violations(
-        &plan.allocations,
-        &plan.arenas,
-        footprints,
-        &elements_by_owner,
-        demand,
-        plan.budget_limits,
-    )?;
+    plan.budget_violations =
+        resident_budget_violations(&plan.allocations, footprints, demand, plan.budget_limits)?;
     Ok(())
 }
 
 fn resident_budget_violations(
     allocations: &[AllocationPlan],
-    arenas: &[ArenaPlan],
     footprints_by_owner: &BTreeMap<MemoryObjectOwner, mech_core::CurrentMemoryFootprint>,
-    elements_by_owner: &BTreeMap<MemoryObjectOwner, u64>,
     demand: ResourceDemand,
     limits: mech_core::MemoryBudgetLimits,
 ) -> Result<Box<[mech_core::MemoryBudgetViolation]>, MemoryPlanError> {
     let mut violations = Vec::new();
     for allocation in allocations {
-        let mut allocation_demand = allocation_demand(allocation);
-        allocation_demand.output_elements = elements_by_owner
-            .get(&allocation.owner)
-            .copied()
-            .unwrap_or_default();
-        violations.extend(mech_core::evaluate_memory_budget(
+        violations.extend(mech_core::evaluate_aggregate_memory_budget(
             allocation.owner.clone(),
-            allocation_demand,
-            allocation.capacity_bytes,
-            0,
-            limits,
-        ));
-    }
-    for arena in arenas {
-        let owner = arena
-            .members
-            .first()
-            .and_then(|id| allocations.iter().find(|allocation| allocation.id == *id))
-            .map(|allocation| allocation.owner.clone())
-            .unwrap_or(MemoryObjectOwner::NodeScratch {
-                node: mech_core::NodeId::new(0),
-                ordinal: 0,
-            });
-        violations.extend(mech_core::evaluate_memory_budget(
-            owner,
-            ResourceDemand::default(),
-            arena.capacity_bytes,
+            allocation_demand(allocation),
             0,
             limits,
         ));
@@ -471,7 +427,7 @@ fn resident_budget_violations(
                     },
                 )
             })?;
-        violations.extend(mech_core::evaluate_memory_budget(
+        violations.extend(mech_core::evaluate_call_memory_budget(
             owner.clone(),
             ResourceDemand {
                 retained_nodes: footprint.retained_nodes,
@@ -483,7 +439,7 @@ fn resident_budget_violations(
             limits,
         ));
     }
-    violations.extend(mech_core::evaluate_memory_budget(
+    violations.extend(mech_core::evaluate_aggregate_memory_budget(
         allocations
             .first()
             .map(|allocation| allocation.owner.clone())
@@ -492,7 +448,6 @@ fn resident_budget_violations(
                 ordinal: 0,
             }),
         demand,
-        0,
         0,
         limits,
     ));
@@ -727,14 +682,13 @@ pub fn plan_resident_effect_payload(
         },
     )?;
     let mut violations = plan.budget_violations.to_vec();
-    violations.extend(mech_core::evaluate_memory_budget(
+    violations.extend(mech_core::evaluate_aggregate_memory_budget(
         MemoryObjectOwner::NodeInput { node, port: 0 },
         allocation_demand(
             plan.allocations
                 .last()
                 .ok_or(MemoryPlanError::DescriptorMismatch)?,
         ),
-        end,
         0,
         target.limits,
     ));

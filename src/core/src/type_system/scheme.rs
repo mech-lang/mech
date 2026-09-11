@@ -212,61 +212,112 @@ pub fn promoted_binary_elementwise() -> Result<Vec<KindScheme>, SemanticModelErr
             ],
         )?);
     }
-    schemes.push(make(
-        3,
-        4,
-        vec![
-            matrix(kind(0), dim(0), dim(1)),
-            matrix(kind(1), dim(2), dim(3)),
-        ],
-        vec![matrix(
-            kind(2),
-            DimensionExpr::Max(vec![dim(0), dim(2)].into_boxed_slice()),
-            DimensionExpr::Max(vec![dim(1), dim(3)].into_boxed_slice()),
-        )],
-        vec![
-            KindConstraint::Satisfies {
-                kind: kind(0),
-                predicate: BuiltinKindPredicate::Number,
-            },
-            KindConstraint::Satisfies {
-                kind: kind(1),
-                predicate: BuiltinKindPredicate::Number,
-            },
-            KindConstraint::Promotes {
-                left: kind(0),
-                right: kind(1),
-                output: kind(2),
-            },
-        ],
-    )?);
+    // Cross-representation matrix operations support one shaped operand and
+    // one row or column broadcast. Describe those relationships directly so
+    // source resolution cannot admit arbitrary incompatible matrix pairs and
+    // defer their rejection until operation specialization.
+    for reversed in [false, true] {
+        for column in [true, false] {
+            let shaped_element = if reversed { kind(1) } else { kind(0) };
+            let broadcast_element = if reversed { kind(0) } else { kind(1) };
+            let shaped = matrix(shaped_element, dim(0), dim(1));
+            let broadcast = if column {
+                matrix(broadcast_element, dim(2), DimensionExpr::Constant(1))
+            } else {
+                matrix(broadcast_element, DimensionExpr::Constant(1), dim(2))
+            };
+            let inputs = if reversed {
+                vec![broadcast, shaped]
+            } else {
+                vec![shaped, broadcast]
+            };
+            schemes.push(make(
+                3,
+                3,
+                inputs,
+                vec![matrix(kind(2), dim(0), dim(1))],
+                vec![
+                    KindConstraint::Satisfies {
+                        kind: kind(0),
+                        predicate: BuiltinKindPredicate::Number,
+                    },
+                    KindConstraint::Satisfies {
+                        kind: kind(1),
+                        predicate: BuiltinKindPredicate::Number,
+                    },
+                    KindConstraint::Promotes {
+                        left: kind(0),
+                        right: kind(1),
+                        output: kind(2),
+                    },
+                    KindConstraint::DimensionCompatible(dim(if column { 0 } else { 1 }), dim(2)),
+                ],
+            )?);
+        }
+    }
     Ok(schemes)
 }
 
 pub fn comparison_exact() -> Result<Vec<KindScheme>, SemanticModelError> {
-    let bool_kind = BuiltinScalarKind::Bool.kind_expr();
-    let scalar = make(
-        1,
-        0,
-        vec![kind(0), kind(0)],
-        vec![bool_kind.clone()],
-        vec![KindConstraint::Satisfies {
-            kind: kind(0),
-            predicate: BuiltinKindPredicate::Equatable,
-        }],
-    )?;
-    let shaped = matrix(kind(0), dim(0), dim(1));
-    let matrix = make(
-        1,
-        2,
-        vec![shaped.clone(), shaped],
-        vec![matrix(bool_kind, dim(0), dim(1))],
-        vec![KindConstraint::Satisfies {
-            kind: kind(0),
-            predicate: BuiltinKindPredicate::Equatable,
-        }],
-    )?;
-    Ok(vec![scalar, matrix])
+    let boolean = BuiltinScalarKind::Bool.kind_expr();
+    let equatable = || KindConstraint::Satisfies {
+        kind: kind(0),
+        predicate: BuiltinKindPredicate::Equatable,
+    };
+    let mut schemes = vec![
+        make(
+            1,
+            0,
+            vec![kind(0), kind(0)],
+            vec![boolean.clone()],
+            vec![equatable()],
+        )?,
+        make(
+            1,
+            2,
+            vec![
+                matrix(kind(0), dim(0), dim(1)),
+                matrix(kind(0), dim(0), dim(1)),
+            ],
+            vec![matrix(boolean.clone(), dim(0), dim(1))],
+            vec![equatable()],
+        )?,
+    ];
+    for reversed in [false, true] {
+        let shaped = matrix(kind(0), dim(0), dim(1));
+        let operands = |other: KindExpr| {
+            if reversed {
+                vec![other, shaped.clone()]
+            } else {
+                vec![shaped.clone(), other]
+            }
+        };
+        schemes.push(make(
+            1,
+            2,
+            operands(kind(0)),
+            vec![matrix(boolean.clone(), dim(0), dim(1))],
+            vec![equatable()],
+        )?);
+        for column in [true, false] {
+            let broadcast = if column {
+                matrix(kind(0), dim(2), DimensionExpr::Constant(1))
+            } else {
+                matrix(kind(0), DimensionExpr::Constant(1), dim(2))
+            };
+            schemes.push(make(
+                1,
+                3,
+                operands(broadcast),
+                vec![matrix(boolean.clone(), dim(0), dim(1))],
+                vec![
+                    equatable(),
+                    KindConstraint::DimensionCompatible(dim(if column { 0 } else { 1 }), dim(2)),
+                ],
+            )?);
+        }
+    }
+    Ok(schemes)
 }
 
 fn strict_comparison_exact() -> Result<Vec<KindScheme>, SemanticModelError> {
@@ -924,19 +975,15 @@ pub fn string_binary() -> Result<KindScheme, SemanticModelError> {
 
 fn absolute_value() -> Result<Vec<KindScheme>, SemanticModelError> {
     let mut schemes = predicate_unary_same(BuiltinKindPredicate::Real)?;
-    for (source, target) in [
-        (BuiltinScalarKind::C32, BuiltinScalarKind::F32),
-        (BuiltinScalarKind::C64, BuiltinScalarKind::F64),
-    ] {
-        schemes.push(exact_unary(source.kind_expr(), target.kind_expr())?);
-        schemes.push(make(
-            0,
-            2,
-            vec![matrix(source.kind_expr(), dim(0), dim(1))],
-            vec![matrix(target.kind_expr(), dim(0), dim(1))],
-            Vec::new(),
-        )?);
-    }
+    let complex = BuiltinScalarKind::C64.kind_expr();
+    schemes.push(exact_unary(complex.clone(), complex.clone())?);
+    schemes.push(make(
+        0,
+        2,
+        vec![matrix(complex.clone(), dim(0), dim(1))],
+        vec![matrix(complex, dim(0), dim(1))],
+        Vec::new(),
+    )?);
     Ok(schemes)
 }
 
@@ -974,6 +1021,16 @@ pub fn exact_assignment(arity: usize) -> Result<Vec<KindScheme>, SemanticModelEr
     broadcast_inputs.extend(selectors());
     let mut matrix_inputs = vec![sink.clone(), matrix(kind(0), dim(2), dim(3))];
     matrix_inputs.extend(selectors());
+    let matrix_constraints = || {
+        let mut result = constraints();
+        if arity == 2 {
+            result.extend([
+                KindConstraint::DimensionEqual(dim(0), dim(2)),
+                KindConstraint::DimensionEqual(dim(1), dim(3)),
+            ]);
+        }
+        result
+    };
     Ok(vec![
         make(
             1 + selector_count,
@@ -994,7 +1051,7 @@ pub fn exact_assignment(arity: usize) -> Result<Vec<KindScheme>, SemanticModelEr
             4,
             matrix_inputs,
             vec![sink],
-            constraints(),
+            matrix_constraints(),
         )?,
     ])
 }

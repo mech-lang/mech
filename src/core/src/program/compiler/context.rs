@@ -882,7 +882,16 @@ impl BytecodeCompilerContext for CompileCtx {
         if canonical_name.is_empty() {
             return invalid("runtime function name must not be empty");
         }
-        let id = hash_str(canonical_name);
+        // Source planning has already selected and certified the concrete
+        // implementation. Keep that immutable ID authoritative during
+        // emission so a legacy compiler cannot drift by reconstructing a
+        // factory name from its Rust type parameters.
+        let id = self
+            .current_node_type_binding
+            .as_ref()
+            .and_then(crate::BoundCall::runtime_function)
+            .map(crate::RuntimeFunctionId::raw)
+            .unwrap_or_else(|| hash_str(canonical_name));
         if let Some(existing) = self.runtime_function_names.get(&id)
             && existing != canonical_name
         {

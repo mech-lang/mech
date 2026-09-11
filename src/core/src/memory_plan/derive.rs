@@ -22,7 +22,7 @@ use super::{
     AliasDecision, AllocationPlan, AllocationRole, ArenaPlacement, CallMemoryPlan,
     ImplementationMemoryClass, MemoryArenaId, MemoryLifetime, MemoryObjectId, MemoryObjectOwner,
     MemorySpace, PortMemoryPlan, RegionAccessPlan, ResourceDemand, TransactionRequirement,
-    evaluate_memory_budget,
+    evaluate_call_memory_budget,
 };
 use super::{
     AxisCapacityPlan, CapacityAuthority, CapacityRequirement, CurrentMemoryFootprint,
@@ -230,7 +230,7 @@ pub fn plan_call_memory(
     } else {
         0
     };
-    if let Some(violation) = evaluate_memory_budget(
+    if let Some(violation) = evaluate_call_memory_budget(
         owner,
         demand,
         output_bytes,
@@ -539,7 +539,7 @@ pub fn plan_owned_value_memory(
         ..super::ResourceDemand::default()
     };
     let output_bytes = value_required_bytes(&value)?;
-    if let Some(violation) = super::evaluate_memory_budget(
+    if let Some(violation) = super::evaluate_call_memory_budget(
         owner,
         demand,
         output_bytes,
@@ -1350,9 +1350,16 @@ fn derive_transactions(
             transactions.push(TransactionRequirement::None);
             continue;
         }
+        let transaction_value = match requirement.alias {
+            Some(AliasPolicy::InPlaceRequired { input }) => inputs
+                .get(input as usize)
+                .map(|input| &input.value)
+                .ok_or(MemoryPlanError::RequiredInPlaceAliasUnavailable { input })?,
+            _ => &output.value,
+        };
         let staged = MemoryObjectId::new(*next_object);
         *next_object = checked_next_object(*next_object)?;
-        let staged_bytes = value_required_bytes(&output.value)?;
+        let staged_bytes = value_required_bytes(transaction_value)?;
         bytes = bytes
             .checked_add(staged_bytes)
             .ok_or(MemoryPlanError::ArithmeticOverflow {
@@ -1368,12 +1375,12 @@ fn derive_transactions(
             id: staged,
             owner: transaction_owner.clone(),
             role: AllocationRole::TransactionStage,
-            slot: Some(output.value.storage.planned_slot()),
+            slot: Some(transaction_value.storage.planned_slot()),
             space: storage.space,
-            current_bytes: output.value.current_address_span_bytes,
-            capacity_bytes: output.value.capacity_bytes,
+            current_bytes: transaction_value.current_address_span_bytes,
+            capacity_bytes: transaction_value.capacity_bytes,
             payload_block_capacity: 0,
-            alignment: output.value.slot.alignment,
+            alignment: transaction_value.slot.alignment,
             lifetime: MemoryLifetime::Transaction {
                 first: super::MemoryPlanPoint::new(0),
                 last: super::MemoryPlanPoint::new(0),
@@ -1381,12 +1388,13 @@ fn derive_transactions(
             placement: allocate_offset(
                 offsets,
                 arena,
-                output.value.capacity_bytes,
-                output.value.slot.alignment,
+                transaction_value.capacity_bytes,
+                transaction_value.slot.alignment,
             )?,
             reuse_group: None,
         });
-        if output.value.payload.required_bytes != 0 || output.value.payload.maximum_bytes.is_none()
+        if transaction_value.payload.required_bytes != 0
+            || transaction_value.payload.maximum_bytes.is_none()
         {
             let payload = MemoryObjectId::new(*next_object);
             *next_object = checked_next_object(*next_object)?;
@@ -1397,9 +1405,9 @@ fn derive_transactions(
                 role: AllocationRole::VariablePayload,
                 slot: None,
                 space: storage.space,
-                current_bytes: output.value.payload.current_bytes,
-                capacity_bytes: output.value.payload.required_bytes,
-                payload_block_capacity: output.value.payload.required_nodes.max(1),
+                current_bytes: transaction_value.payload.current_bytes,
+                capacity_bytes: transaction_value.payload.required_bytes,
+                payload_block_capacity: transaction_value.payload.required_nodes.max(1),
                 alignment: 1,
                 lifetime: MemoryLifetime::Transaction {
                     first: super::MemoryPlanPoint::new(0),
@@ -1408,7 +1416,7 @@ fn derive_transactions(
                 placement: allocate_offset(
                     offsets,
                     payload_arena,
-                    output.value.payload.required_bytes,
+                    transaction_value.payload.required_bytes,
                     1,
                 )?,
                 reuse_group: None,

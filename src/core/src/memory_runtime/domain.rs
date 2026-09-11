@@ -36,15 +36,21 @@ pub struct RuntimePlanView<'a> {
     allocations: &'a [AllocationPlan],
     arenas: &'a [ArenaPlan],
     admitted_demand: ResourceDemand,
-    output_bytes: u64,
+    budget_scope: RuntimeBudgetScope,
     limits: MemoryBudgetLimits,
     transactions: &'a [TransactionRequirement],
     max_concurrent_leases: u32,
     violations: &'a [MemoryBudgetViolation],
 }
 
+#[derive(Clone, Copy, Debug)]
+enum RuntimeBudgetScope {
+    Call { output_bytes: u64 },
+    Aggregate,
+}
+
 impl<'a> RuntimePlanView<'a> {
-    pub fn new(
+    pub fn for_call(
         revision: MemoryPlanRevision,
         allocations: &'a [AllocationPlan],
         arenas: &'a [ArenaPlan],
@@ -60,7 +66,30 @@ impl<'a> RuntimePlanView<'a> {
             allocations,
             arenas,
             admitted_demand,
-            output_bytes,
+            budget_scope: RuntimeBudgetScope::Call { output_bytes },
+            limits,
+            transactions,
+            max_concurrent_leases,
+            violations,
+        }
+    }
+
+    pub fn for_aggregate(
+        revision: MemoryPlanRevision,
+        allocations: &'a [AllocationPlan],
+        arenas: &'a [ArenaPlan],
+        admitted_demand: ResourceDemand,
+        limits: MemoryBudgetLimits,
+        transactions: &'a [TransactionRequirement],
+        max_concurrent_leases: u32,
+        violations: &'a [MemoryBudgetViolation],
+    ) -> Self {
+        Self {
+            revision,
+            allocations,
+            arenas,
+            admitted_demand,
+            budget_scope: RuntimeBudgetScope::Aggregate,
             limits,
             transactions,
             max_concurrent_leases,
@@ -1476,7 +1505,7 @@ impl MemoryDomain {
         plan: crate::OwnedValueMemoryPlan,
     ) -> MemoryRuntimeResult<RealizedMemoryPlan> {
         let revision = self.issue_plan_revision()?;
-        let reservation = self.prepare_realization(RuntimePlanView::new(
+        let reservation = self.prepare_realization(RuntimePlanView::for_call(
             revision,
             &plan.allocations,
             &plan.arenas,
@@ -1587,7 +1616,7 @@ impl MemoryDomain {
             }
         })?;
         let revision = self.issue_plan_revision()?;
-        let reservation = self.prepare_realization(RuntimePlanView::new(
+        let reservation = self.prepare_realization(RuntimePlanView::for_call(
             revision,
             &plan.allocations,
             &arenas,
@@ -1823,15 +1852,22 @@ impl MemoryDomain {
                 node: crate::NodeId::new(0),
                 ordinal: 0,
             });
-        if let Some(violation) = crate::evaluate_memory_budget(
-            budget_owner,
-            view.admitted_demand,
-            view.output_bytes,
-            storage_buffer_bytes,
-            view.limits,
-        )
-        .first()
-        {
+        let violations = match view.budget_scope {
+            RuntimeBudgetScope::Call { output_bytes } => crate::evaluate_call_memory_budget(
+                budget_owner,
+                view.admitted_demand,
+                output_bytes,
+                storage_buffer_bytes,
+                view.limits,
+            ),
+            RuntimeBudgetScope::Aggregate => crate::evaluate_aggregate_memory_budget(
+                budget_owner,
+                view.admitted_demand,
+                storage_buffer_bytes,
+                view.limits,
+            ),
+        };
+        if let Some(violation) = violations.first() {
             return Err(MemoryRuntimeError::BudgetExceeded {
                 operation: None,
                 requested: violation.required,

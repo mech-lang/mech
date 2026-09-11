@@ -5,9 +5,9 @@ use std::{cell::Cell, rc::Rc};
 
 use mech_core::snapshot::{Complex64Bits, F64Bits};
 use mech_core::{
-    AccessMode, AliasDecision, AliasPolicy, BoundCall, BytecodeCompilerContext, CallMemoryPlan,
-    CallMemoryPlanningRequest, CapacityAuthority, CardinalitySpec, ChangeDetectionPolicy,
-    CurrentMemoryFootprint, DeliveryMode, DimensionExpr, DimensionLifetime,
+    AccessMode, AliasDecision, AliasPolicy, AllocationRole, BoundCall, BytecodeCompilerContext,
+    CallMemoryPlan, CallMemoryPlanningRequest, CapacityAuthority, CardinalitySpec,
+    ChangeDetectionPolicy, CurrentMemoryFootprint, DeliveryMode, DimensionExpr, DimensionLifetime,
     DimensionParameterDeclaration, DimensionParameterId, DimensionParameterOrigin, EffectContract,
     EffectDeliveryPolicy, ExecutionTarget, ExtentEvolution, ExternalInteraction, FunctionInstance,
     FunctionInvocation, FunctionValueRepresentation, GrowthPolicy, IdempotencyRequirement,
@@ -20,7 +20,7 @@ use mech_core::{
     SchemaDraft, ShapeContractReference, ShapeRule, SlotLayout, TargetMemoryProfile,
     TransactionRequirement, ValueCell, ValueDataDraft, ValueLayoutPlan, ValueLayoutPlanningRequest,
     derive_dimension_capacity, physical_storage_descriptor, plan_call_memory, plan_value_layout,
-    replan_call_memory, resolve_deferred_call_demand,
+    replan_call_memory, resolve_deferred_call_demand, validate_declaration,
 };
 use nalgebra::{DMatrix, DVector, RowDVector};
 
@@ -634,6 +634,89 @@ fn alias_plans_choose_safe_reuse_staging_and_required_undo() {
         in_place.transactions[0],
         TransactionRequirement::UndoSnapshot { .. }
     ));
+}
+
+#[test]
+fn required_in_place_undo_uses_the_old_variable_payload_footprint() {
+    let input = ValueCell::from_exact("longer old value".to_owned()).unwrap();
+    let output = ValueCell::from_exact("x".to_owned()).unwrap();
+    let target = TargetMemoryProfile::current_direct_host().unwrap();
+    let operation = ResolvedOperationDescriptor::from_name(
+        "test/r5-in-place-string",
+        OperationContractDeclaration {
+            inputs: InputPortLayout::Fixed(
+                vec![InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                }]
+                .into_boxed_slice(),
+            ),
+            outputs: vec![OutputPortPolicy {
+                access: AccessMode::ReadWrite,
+                delivery: DeliveryMode::Signal,
+                construction: OutputConstruction::ReadModifyWrite {
+                    base_input: 0,
+                    regions: RegionPolicy::WholeValue,
+                },
+                alias: AliasPolicy::InPlaceRequired { input: 0 },
+                change_detection: ChangeDetectionPolicy::AlwaysChanged,
+            }]
+            .into_boxed_slice(),
+            interaction: ExternalInteraction::Pure,
+        },
+    )
+    .unwrap();
+    validate_declaration(&operation.contract).unwrap();
+    let bound = BoundCall::syntax_directed(
+        operation,
+        vec![input.resolved_descriptor().unwrap()].into_boxed_slice(),
+        vec![output.resolved_descriptor().unwrap()].into_boxed_slice(),
+        RuntimeFunctionId::from_name("R5InPlaceString"),
+        ExecutionTarget::DirectRuntime,
+    )
+    .unwrap();
+    let input_witness = MemoryFootprintWitness::Known(input.current_memory_footprint().unwrap());
+    let output_witness = MemoryFootprintWitness::Known(output.current_memory_footprint().unwrap());
+    let storage =
+        physical_storage_descriptor(input.representation(), &target, MemoryLifetime::Activation);
+    let call = plan_call_memory(CallMemoryPlanningRequest {
+        bound_call: &bound,
+        input_storage: &[storage.clone()],
+        output_storage: &[storage],
+        input_witnesses: &[input_witness],
+        output_witnesses: &[output_witness],
+        published_output_witnesses: &[input_witness],
+        implementation_memory: ImplementationMemoryClass::NoAdditionalScratch,
+        target: &target,
+        regions: &[RegionAccessPlan::WholeValue],
+    })
+    .unwrap();
+    let TransactionRequirement::UndoSnapshot { undo, .. } = call.transactions[0] else {
+        panic!("required in-place output did not produce an undo snapshot");
+    };
+    let undo_allocation = call
+        .allocations
+        .iter()
+        .find(|allocation| allocation.id == undo)
+        .unwrap();
+    let undo_payload = call
+        .allocations
+        .iter()
+        .find(|allocation| {
+            allocation.owner == undo_allocation.owner
+                && allocation.lifetime == undo_allocation.lifetime
+                && allocation.role == AllocationRole::VariablePayload
+        })
+        .unwrap();
+    assert_eq!(
+        undo_payload.capacity_bytes,
+        call.inputs[0].value.payload.required_bytes
+    );
+    assert_eq!(
+        undo_payload.payload_block_capacity,
+        call.inputs[0].value.payload.required_nodes.max(1)
+    );
+    assert!(undo_payload.capacity_bytes > call.outputs[0].value.payload.required_bytes);
 }
 
 #[test]

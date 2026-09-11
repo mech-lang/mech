@@ -627,6 +627,60 @@ jobs:
           python3 -B -m unittest scripts/tests/test_native_linkage_profiles.py
           python3 scripts/check-native-linkage-coverage.py owners
 
+  catalog-closure:
+    name: Generated catalog closure (${{ matrix.profile }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        profile:
+          - standard
+          - full
+    env:
+      CARGO_BUILD_JOBS: "1"
+      CARGO_INCREMENTAL: "0"
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
+      - name: Check catalog closure command and CI contracts
+        run: python3 -B -m unittest scripts/tests/test_catalog_closure.py
+      - name: Install Rust nightly-2026-03-03
+        run: rustup toolchain install nightly-2026-03-03 --profile minimal
+      - name: Fetch locked catalog closure dependencies
+        run: cargo +nightly-2026-03-03 fetch --locked
+      - name: Generate and execute catalog closure witnesses
+        run: python3 scripts/check-native-linkage-coverage.py catalog-closure "${{ matrix.profile }}"
+      - name: Validate frozen catalog profile
+        run: |
+          if test "${{ matrix.profile }}" = standard
+          then
+            cargo +nightly-2026-03-03 test --locked -p mech-stdlib \
+              --no-default-features --features standard_compiler \
+              --test profile_contracts
+          else
+            cargo +nightly-2026-03-03 test --locked -p mech-stdlib \
+              --no-default-features --features full_runtime \
+              --test profile_contracts
+            cargo +nightly-2026-03-03 test --locked -p mech-stdlib \
+              --no-default-features --features full_source \
+              --test profile_contracts
+            cargo +nightly-2026-03-03 test --locked -p mech-stdlib \
+              --no-default-features --features full_compiler \
+              --test profile_contracts
+          fi
+      - name: Upload catalog closure report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: catalog-closure-${{ matrix.profile }}
+          path: target/native-linkage/catalog-closure-${{ matrix.profile }}.json
+          if-no-files-found: error
+          retention-days: 14
+
   native-linkage-surfaces:
     name: Native linkage surface (${{ matrix.surface }})
     runs-on: ubuntu-latest
@@ -927,6 +981,7 @@ jobs:
       - native-linkage-owners
       - native-linkage
       - native-linkage-closures
+      - catalog-closure
       - native-plan
       - native-engine
       - native-hosted
@@ -953,6 +1008,7 @@ jobs:
           NATIVE_LINKAGE_OWNERS_RESULT: ${{ needs.native-linkage-owners.result }}
           NATIVE_LINKAGE_RESULT: ${{ needs.native-linkage.result }}
           NATIVE_LINKAGE_CLOSURES_RESULT: ${{ needs.native-linkage-closures.result }}
+          CATALOG_CLOSURE_RESULT: ${{ needs.catalog-closure.result }}
           NATIVE_PLAN_RESULT: ${{ needs.native-plan.result }}
           NATIVE_ENGINE_RESULT: ${{ needs.native-engine.result }}
           NATIVE_HOSTED_RESULT: ${{ needs.native-hosted.result }}
@@ -976,6 +1032,7 @@ jobs:
           test "$NATIVE_LINKAGE_OWNERS_RESULT" = success
           test "$NATIVE_LINKAGE_RESULT" = success
           test "$NATIVE_LINKAGE_CLOSURES_RESULT" = success
+          test "$CATALOG_CLOSURE_RESULT" = success
           test "$NATIVE_PLAN_RESULT" = success
           test "$NATIVE_ENGINE_RESULT" = success
           test "$NATIVE_HOSTED_RESULT" = success

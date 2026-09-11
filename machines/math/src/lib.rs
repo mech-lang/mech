@@ -95,6 +95,9 @@ pub(crate) fn arithmetic_overflow<T>(operation: &'static str) -> MechError {
     .with_compiler_loc()
 }
 
+/// Defines one binary floating-point factory from the shared physical-shape
+/// enumeration. The operation module supplies only the scalar kernel trait;
+/// broadcasting, ports, compilation, and memory behavior stay uniform.
 #[cfg(all(
     feature = "runtime",
     not(feature = "dynamic-module"),
@@ -108,53 +111,66 @@ pub(crate) fn arithmetic_overflow<T>(operation: &'static str) -> MechError {
         feature = "yn"
     )
 ))]
-macro_rules! impl_managed_math_binary_full_write {
-    ($struct_name:ident, $element:ty, $kind1:ty, $kind2:ty, $out_kind:ty, $op:ident, $semantic:literal) => {
+macro_rules! impl_managed_math_broadcast_binary_full_write {
+    ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $element_bound:path, $op:ident, $semantic:literal) => {
         #[derive(Debug)]
-        pub(crate) struct $struct_name {
-            arg1: ManagedPort<$element>,
-            arg2: ManagedPort<$element>,
-            out: ManagedPort<$element>,
-            marker: PhantomData<($kind1, $kind2, $out_kind)>,
+        pub(crate) struct $struct_name<T> {
+            arg1: ManagedPort<T>,
+            arg2: ManagedPort<T>,
+            out: ManagedPort<T>,
+            marker: PhantomData<($arg1_type, $arg2_type, $out_type)>,
         }
 
-        impl MechFunctionFactory for $struct_name
+        impl<T> MechFunctionFactory for $struct_name<T>
         where
-            $kind1: FunctionPortBacking,
-            $kind2: FunctionPortBacking,
-            $out_kind: FunctionStateBacking,
+            T: $element_bound
+                + ManagedElement
+                + FunctionPortBacking
+                + FunctionRuntimeType
+                + std::fmt::Debug,
+            #[cfg(feature = "semantic-compiler")]
+            T: CanonicalMatrixElementBacking + ConstElem + CompileConst,
+            $arg1_type: FunctionPortBacking,
+            $arg2_type: FunctionPortBacking,
+            $out_type: FunctionStateBacking,
         {
+            const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+                <$out_type as FunctionRuntimeType>::REPRESENTATION,
+                <$arg1_type as FunctionRuntimeType>::REPRESENTATION,
+                <$arg2_type as FunctionRuntimeType>::REPRESENTATION,
+            );
+
             fn implementation_memory_class() -> ImplementationMemoryClass {
                 ImplementationMemoryClass::NoAdditionalScratch
             }
 
-            const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
-                <$out_kind as FunctionRuntimeType>::REPRESENTATION,
-                <$kind1 as FunctionRuntimeType>::REPRESENTATION,
-                <$kind2 as FunctionRuntimeType>::REPRESENTATION,
-            );
-
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (out, arg1, arg2) = invocation.expect_binary()?;
-                let _ = arg1.try_managed::<$kind1>()?;
-                let _ = arg2.try_managed::<$kind2>()?;
-                let _ = out.try_managed::<$out_kind>()?;
+                let _ = arg1.try_managed::<$arg1_type>()?;
+                let _ = arg2.try_managed::<$arg2_type>()?;
+                let _ = out.try_managed::<$out_type>()?;
                 Ok(Box::new(Self {
-                    arg1: arg1.try_managed_element::<$element>()?,
-                    arg2: arg2.try_managed_element::<$element>()?,
-                    out: out.try_managed_element::<$element>()?,
+                    arg1: arg1.try_managed_element::<T>()?,
+                    arg2: arg2.try_managed_element::<T>()?,
+                    out: out.try_managed_element::<T>()?,
                     marker: PhantomData,
                 }))
             }
 
             fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
                 Some(crate::ops::arithmetic_full_write_contract(
-                    <$out_kind as FunctionRuntimeType>::REPRESENTATION,
+                    <$out_type as FunctionRuntimeType>::REPRESENTATION,
                 ))
             }
         }
 
-        impl MechFunctionImpl for $struct_name {
+        impl<T> MechFunctionImpl for $struct_name<T>
+        where
+            T: $element_bound + ManagedElement + FunctionPortBacking + std::fmt::Debug,
+            #[cfg(feature = "semantic-compiler")]
+            T: CanonicalMatrixElementBacking,
+            $out_type: FunctionStateBacking,
+        {
             fn solve_managed(
                 &self,
                 frame: &mut KernelMemoryFrame<'_>,
@@ -165,19 +181,17 @@ macro_rules! impl_managed_math_binary_full_write {
                     &self.arg2,
                     &self.out,
                     |arg1, arg2, out| {
-                        if arg1.len() != arg2.len() || arg1.len() != out.len() {
-                            return Err(function_shape_contract_violation(
-                                $semantic,
-                                "managed input and output geometry disagree",
-                            ));
-                        }
+                        let rows = out.rows();
+                        let columns = out.columns();
                         out.try_fill_column_major(|index| {
-                            let arg1 = arg1
-                                .get_column_major(index)
-                                .expect("validated binary input lane");
-                            let arg2 = arg2
-                                .get_column_major(index)
-                                .expect("validated binary input lane");
+                            let row = index % rows;
+                            let column = index / rows;
+                            let arg1 = crate::ops::managed_broadcast_element(
+                                &arg1, row, column, rows, columns,
+                            )?;
+                            let arg2 = crate::ops::managed_broadcast_element(
+                                &arg2, row, column, rows, columns,
+                            )?;
                             Ok($op!(arg1, arg2))
                         })
                     },
@@ -191,7 +205,7 @@ macro_rules! impl_managed_math_binary_full_write {
 
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
                 Some(crate::ops::arithmetic_full_write_contract(
-                    <$out_kind as FunctionRuntimeType>::REPRESENTATION,
+                    <$out_type as FunctionRuntimeType>::REPRESENTATION,
                 ))
             }
 
@@ -205,12 +219,28 @@ macro_rules! impl_managed_math_binary_full_write {
         }
 
         #[cfg(feature = "semantic-compiler")]
-        impl MechFunctionCompiler for $struct_name {
+        impl<T> MechFunctionCompiler for $struct_name<T>
+        where
+            T: $element_bound
+                + ManagedElement
+                + FunctionPortBacking
+                + FunctionRuntimeType
+                + CanonicalMatrixElementBacking
+                + ConstElem
+                + CompileConst
+                + std::fmt::Debug,
+        {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+                let name = format!(
+                    "{}<{}>",
+                    stringify!($struct_name),
+                    <T as FunctionRuntimeType>::REPRESENTATION
+                );
                 let output = compile_value_cell_register(self.out.cell(), ctx)?;
                 let first = compile_value_cell_register(self.arg1.cell(), ctx)?;
                 let second = compile_value_cell_register(self.arg2.cell(), ctx)?;
-                ctx.emit_binop(hash_str(stringify!($struct_name)), output, first, second);
+                let function = ctx.function_id(&name)?;
+                ctx.emit_binop(function, output, first, second);
                 Ok(output)
             }
         }

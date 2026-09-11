@@ -7,6 +7,8 @@ use mech_core::{
     DimensionExpr, SchemaBody, ValueCell, ValueData, function_shape_contract_violation,
 };
 use mech_core::{FunctionCatalogBuilder, MResult};
+#[cfg(feature = "atan2")]
+use crate::trig::atan2::*;
 #[cfg(any(
     all(feature = "pow", feature = "rational", feature = "i32"),
     feature = "abs",
@@ -932,45 +934,19 @@ mod managed_unary_family_tests {
     math_float_unop_families!(check_enabled_family);
 }
 
-macro_rules! declare_math_float_binop_factory {
-    (($operation:ident; $operation_feature:literal; $canonical:literal; $scalar:ident; $scalar_feature:literal), S, none) => {
-        mech_core::paste::paste! {
-            mech_core::declare_native_runtime_factory! {
-                cfg: all(feature = $operation_feature, feature = $scalar_feature),
-                registration: [<register_ $operation:snake _s_ $scalar:lower>],
-                installer: [<install_ $operation:snake _s_ $scalar:lower>],
-                name: stringify!([<$operation $scalar:camel>]),
-                factory_type: [<$operation $scalar:camel>],
-                contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
-                operations: [mech_core::OperationId::from_name($canonical)],
-                package: "mech-math", crate_name: "mech_math",
-                installer_path: concat!("mech_math::__mech_native::", stringify!([<install_ $operation:snake _s_ $scalar:lower>])),
-                extra_cargo_features: [$operation_feature],
-            }
-        }
-    };
-    (($operation:ident; $operation_feature:literal; $canonical:literal; $scalar:ident; $scalar_feature:literal), $suffix:ident, $shape_feature:literal) => {
-        mech_core::paste::paste! {
-            mech_core::declare_native_runtime_factory! {
-                cfg: all(feature = $operation_feature, feature = $scalar_feature),
-                registration: [<register_ $operation:snake _ $suffix:lower _ $scalar:lower>],
-                installer: [<install_ $operation:snake _ $suffix:lower _ $scalar:lower>],
-                name: stringify!([<$operation $suffix $scalar:camel>]),
-                factory_type: [<$operation $suffix $scalar:camel>],
-                contract: RuntimeFunctionContract::same_shape(RuntimeOutputAliasPolicy::DisallowInputAlias),
-                operations: [mech_core::OperationId::from_name($canonical)],
-                package: "mech-math", crate_name: "mech_math",
-                installer_path: concat!("mech_math::__mech_native::", stringify!([<install_ $operation:snake _ $suffix:lower _ $scalar:lower>])),
-                extra_cargo_features: [$operation_feature],
-            }
-        }
-    };
-}
-
 macro_rules! declare_math_float_binop {
     ($operation:ident, $operation_feature:literal, $canonical:literal) => {
-        for_each_math_unop_shape!(declare_math_float_binop_factory, ($operation; $operation_feature; $canonical; f32; "f32"));
-        for_each_math_unop_shape!(declare_math_float_binop_factory, ($operation; $operation_feature; $canonical; f64; "f64"));
+        mech_core::declare_native_binop_runtime_factories! {
+            package: "mech-math",
+            crate_name: "mech_math",
+            operation: $operation,
+            canonical_operation: $canonical,
+            operation_feature: $operation_feature,
+            additional_features: [],
+            scalars:
+                ("f32", f32, "f32", f32),
+                ("f64", f64, "f64", f64),
+        }
     };
 }
 
@@ -997,27 +973,14 @@ math_float_binop_families!(declare_math_float_binop);
     feature = "jn",
     feature = "yn"
 ))]
-macro_rules! register_math_float_binop_factory {
-    (($builder:ident; $operation:ident; $_operation_feature:literal; $_canonical:literal; $scalar:ident), $suffix:ident, $_shape_feature:tt) => {
-        mech_core::paste::paste! { [<register_ $operation:snake _ $suffix:lower _ $scalar:lower>]($builder)?; }
-    };
-}
-
-#[cfg(any(
-    feature = "copysign",
-    feature = "fdim",
-    feature = "fmod",
-    feature = "nextafter",
-    feature = "remainder",
-    feature = "jn",
-    feature = "yn"
-))]
 macro_rules! install_math_float_binop {
-    ($builder:ident, $operation:ident, $operation_feature:literal, $canonical:literal) => {
-        #[cfg(feature = "f32")]
-        for_each_math_unop_shape!(register_math_float_binop_factory, ($builder; $operation; $operation_feature; $canonical; f32));
-        #[cfg(feature = "f64")]
-        for_each_math_unop_shape!(register_math_float_binop_factory, ($builder; $operation; $operation_feature; $canonical; f64));
+    ($builder:ident, $operation:ident, $_operation_feature:literal, $_canonical:literal) => {
+        mech_core::install_native_binop_runtime_factories!(
+            $builder,
+            $operation;
+            ("f32", f32, "f32", f32),
+            ("f64", f64, "f64", f64),
+        )?;
     };
 }
 
@@ -1924,76 +1887,26 @@ fn install_sub_assign_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
     install_native_op_assign_runtime_factories!(builder, Sub; "sub_assign")
 }
 
-macro_rules! for_each_atan2_factory {
-    ($callback:ident, $context:tt) => {
-        $callback!($context; feature = "f32"; "f32"; Atan2F32; []);
-        $callback!($context; all(feature = "f32", feature = "matrix1"); "f32"; Atan2M1F32; ["matrix1"]);
-        $callback!($context; all(feature = "f32", feature = "matrix2"); "f32"; Atan2M2F32; ["matrix2"]);
-        $callback!($context; all(feature = "f32", feature = "matrix3"); "f32"; Atan2M3F32; ["matrix3"]);
-        $callback!($context; all(feature = "f32", feature = "matrix3x2"); "f32"; Atan2M3x2F32; ["matrix3x2"]);
-        $callback!($context; all(feature = "f32", feature = "matrix2x3"); "f32"; Atan2M2x3F32; ["matrix2x3"]);
-        $callback!($context; all(feature = "f32", feature = "matrix4"); "f32"; Atan2M4F32; ["matrix4"]);
-        $callback!($context; all(feature = "f32", feature = "vector2"); "f32"; Atan2V2F32; ["vector2"]);
-        $callback!($context; all(feature = "f32", feature = "vector3"); "f32"; Atan2V3F32; ["vector3"]);
-        $callback!($context; all(feature = "f32", feature = "vector4"); "f32"; Atan2V4F32; ["vector4"]);
-        $callback!($context; all(feature = "f32", feature = "row_vector2"); "f32"; Atan2R2F32; ["row_vector2"]);
-        $callback!($context; all(feature = "f32", feature = "row_vector3"); "f32"; Atan2R3F32; ["row_vector3"]);
-        $callback!($context; all(feature = "f32", feature = "row_vector4"); "f32"; Atan2R4F32; ["row_vector4"]);
-        $callback!($context; all(feature = "f32", feature = "row_vectord"); "f32"; Atan2RDF32; ["row_vectord"]);
-        $callback!($context; all(feature = "f32", feature = "vectord"); "f32"; Atan2VDF32; ["vectord"]);
-        $callback!($context; all(feature = "f32", feature = "matrixd"); "f32"; Atan2MDF32; ["matrixd"]);
-        $callback!($context; feature = "f64"; "f64"; Atan2F64; []);
-        $callback!($context; all(feature = "f64", feature = "matrix1"); "f64"; Atan2M1F64; ["matrix1"]);
-        $callback!($context; all(feature = "f64", feature = "matrix2"); "f64"; Atan2M2F64; ["matrix2"]);
-        $callback!($context; all(feature = "f64", feature = "matrix3"); "f64"; Atan2M3F64; ["matrix3"]);
-        $callback!($context; all(feature = "f64", feature = "matrix3x2"); "f64"; Atan2M3x2F64; ["matrix3x2"]);
-        $callback!($context; all(feature = "f64", feature = "matrix2x3"); "f64"; Atan2M2x3F64; ["matrix2x3"]);
-        $callback!($context; all(feature = "f64", feature = "matrix4"); "f64"; Atan2M4F64; ["matrix4"]);
-        $callback!($context; all(feature = "f64", feature = "vector2"); "f64"; Atan2V2F64; ["vector2"]);
-        $callback!($context; all(feature = "f64", feature = "vector3"); "f64"; Atan2V3F64; ["vector3"]);
-        $callback!($context; all(feature = "f64", feature = "vector4"); "f64"; Atan2V4F64; ["vector4"]);
-        $callback!($context; all(feature = "f64", feature = "row_vector2"); "f64"; Atan2R2F64; ["row_vector2"]);
-        $callback!($context; all(feature = "f64", feature = "row_vector3"); "f64"; Atan2R3F64; ["row_vector3"]);
-        $callback!($context; all(feature = "f64", feature = "row_vector4"); "f64"; Atan2R4F64; ["row_vector4"]);
-        $callback!($context; all(feature = "f64", feature = "row_vectord"); "f64"; Atan2RDF64; ["row_vectord"]);
-        $callback!($context; all(feature = "f64", feature = "vectord"); "f64"; Atan2VDF64; ["vectord"]);
-        $callback!($context; all(feature = "f64", feature = "matrixd"); "f64"; Atan2MDF64; ["matrixd"]);
-    };
+mech_core::declare_native_binop_runtime_factories! {
+    package: "mech-math",
+    crate_name: "mech_math",
+    operation: Atan2,
+    canonical_operation: "math/atan2",
+    operation_feature: "atan2",
+    additional_features: [],
+    scalars:
+        ("f32", f32, "f32", f32),
+        ("f64", f64, "f64", f64),
 }
-
-macro_rules! declare_atan2_factory {
-    ($_context:tt; $cfg:meta; $scalar_feature:literal; $factory:ident; [$($shape_feature:literal),* $(,)?]) => {
-        mech_core::paste::paste! { mech_core::declare_native_runtime_factory! {
-            cfg: all(feature = "atan2", $cfg), registration: [<register_ $factory:snake>], installer: [<install_ $factory:snake>],
-            name: stringify!($factory), factory_type: crate::trig::atan2::$factory,
-            contract: atan2_runtime_contract!([$($shape_feature),*]),
-            operations: [mech_core::OperationId::from_name("math/atan2")],
-            package: "mech-math", crate_name: "mech_math", installer_path: concat!("mech_math::__mech_native::", stringify!([<install_ $factory:snake>])),
-            extra_cargo_features: ["atan2"],
-        }}
-    };
-}
-
-#[cfg(feature = "atan2")]
-macro_rules! atan2_runtime_contract {
-    ([]) => {
-        RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias)
-    };
-    ([$first:literal $(, $rest:literal)*]) => {
-        RuntimeFunctionContract::same_shape(RuntimeOutputAliasPolicy::DisallowInputAlias)
-    };
-}
-for_each_atan2_factory!(declare_atan2_factory, ());
 
 #[cfg(feature = "atan2")]
 fn install_atan2_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    macro_rules! register_atan2_factory {
-        (($builder:ident); $cfg:meta; $_scalar_feature:literal; $factory:ident; [$($_shape_feature:literal),*]) => {
-            #[cfg(all(feature = "atan2", $cfg))]
-            mech_core::paste::paste! { [<register_ $factory:snake>]($builder)?; }
-        };
-    }
-    for_each_atan2_factory!(register_atan2_factory, (builder));
+    mech_core::install_native_binop_runtime_factories!(
+        builder,
+        Atan2;
+        ("f32", f32, "f32", f32),
+        ("f64", f64, "f64", f64),
+    )?;
     Ok(())
 }
 
@@ -2128,22 +2041,14 @@ pub mod __mech_native {
 
     math_float_unop_families!(export_math_float_unop);
 
-    #[allow(
-        unused_macros,
-        reason = "native factory helpers are selected by disjoint feature profiles"
-    )]
-    macro_rules! export_math_float_binop_factory {
-        (($operation:ident; $_operation_feature:literal; $_canonical:literal; $scalar:ident), $suffix:ident, $_shape_feature:tt) => {
-            mech_core::paste::paste! { pub use super::[<install_ $operation:snake _ $suffix:lower _ $scalar:lower>]; }
-        };
-    }
-
     macro_rules! export_math_float_binop {
-        ($operation:ident, $operation_feature:literal, $canonical:literal) => {
-            #[cfg(all(feature = $operation_feature, feature = "f32"))]
-            for_each_math_unop_shape!(export_math_float_binop_factory, ($operation; $operation_feature; $canonical; f32));
-            #[cfg(all(feature = $operation_feature, feature = "f64"))]
-            for_each_math_unop_shape!(export_math_float_binop_factory, ($operation; $operation_feature; $canonical; f64));
+        ($operation:ident, $operation_feature:literal, $_canonical:literal) => {
+            mech_core::export_native_binop_runtime_factories! {
+                operation_feature: $operation_feature,
+                operation: $operation;
+                ("f32", f32, "f32", f32),
+                ("f64", f64, "f64", f64),
+            }
         };
     }
 
@@ -2180,14 +2085,11 @@ pub mod __mech_native {
 
     for_each_math_neg_scalar!(export_math_neg_for_scalar, ());
 
-    macro_rules! export_atan2_factory {
-        ($_context:tt; $cfg:meta; $_scalar_feature:literal; $factory:ident; [$($_shape_feature:literal),* $(,)?]) => {
-            #[cfg(all(feature = "atan2", $cfg))]
-            mech_core::paste::paste! { pub use super::[<install_ $factory:snake>]; }
-        };
+    mech_core::export_native_binop_runtime_factories! {
+        operation_feature: "atan2", operation: Atan2;
+        ("f32", f32, "f32", f32),
+        ("f64", f64, "f64", f64),
     }
-
-    for_each_atan2_factory!(export_atan2_factory, ());
 
     mech_core::export_native_binop_runtime_factories! {
         operation_feature: "div", operation: Div;

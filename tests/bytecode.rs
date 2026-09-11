@@ -411,7 +411,7 @@ fn unsupported_resident_target_is_structured_before_instance_emission() -> MResu
 
 #[test]
 #[cfg(feature = "distribution-full")]
-fn reactive_range_shape_is_unavailable_before_resident_instance_emission() -> MResult<()> {
+fn reactive_range_shape_is_rejected_before_resident_instance_emission() -> MResult<()> {
     for (expression, expected_operation) in [
         ("1<u64>..to", "exclusive"),
         ("1<u64>..=to", "inclusive"),
@@ -432,7 +432,7 @@ fn reactive_range_shape_is_unavailable_before_resident_instance_emission() -> MR
         assert_eq!(operation.module_path.len(), 1);
         assert_eq!(operation.module_path[0], "range");
         assert_eq!(operation.operation_name, expected_operation);
-        assert!(error.reason.contains("UnsupportedLayout"));
+        assert!(error.reason.contains("TurnDimension"));
     }
     Ok(())
 }
@@ -1067,7 +1067,8 @@ fn complete_set_surface_activates_through_bytecode_v1() -> MResult<()> {
         ("{1, 2} Δ {2, 3}", 2),
         ("set/powerset({1, 2})", 4),
     ] {
-        let (_, value) = run_compiled_source(source)?;
+        let (_, value) = run_compiled_source(source)
+            .unwrap_or_else(|error| panic!("{source} failed: {error:?}"));
         assert_eq!(
             value
                 .set_view()
@@ -1492,5 +1493,35 @@ fn restored_source_overloads_survive_bytecode_and_resident_binding() -> MResult<
             }
         }
     }
+    for (matrix, others) in [
+        (
+            "[true false true; false true false]",
+            ["true", "[true; false]", "[false true false]"],
+        ),
+        (
+            "[\"a\" \"b\" \"c\"; \"c\" \"b\" \"a\"]",
+            ["\"b\"", "[\"a\"; \"c\"]", "[\"a\" \"b\" \"c\"]"],
+        ),
+    ] {
+        for other in others {
+            for operator in ["==", "!="] {
+                for (lhs, rhs) in [(matrix, other), (other, matrix)] {
+                    assert_source_and_bytecode_resident_parity(&format!("{lhs} {operator} {rhs}"))?;
+                }
+            }
+        }
+    }
+    for source in [
+        "+> math\nmath/abs(3+4i)",
+        "+> math\nmath/abs([3+4i 5+12i])",
+        "value := (3-2i); value<string>",
+        "value := (0+2i); value<string>",
+    ] {
+        assert_source_and_bytecode_resident_parity(source)?;
+    }
+    let (_, value) = run_compiled_source("[true false] == true")?;
+    assert_bool_matrix(&value, &[true, false]);
+    let (_, value) = run_compiled_source("\"a\" != [\"a\" \"b\"]")?;
+    assert_bool_matrix(&value, &[false, true]);
     Ok(())
 }

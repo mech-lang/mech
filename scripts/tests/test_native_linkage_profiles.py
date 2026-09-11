@@ -16,6 +16,42 @@ SPEC.loader.exec_module(LINKAGE)
 
 
 class NativeLinkageProfileTests(unittest.TestCase):
+    def test_sharded_catalog_union_is_the_extended_rust_contract(self):
+        entries = [
+            {"runtime_factory_id": "0000000000000002", "runtime_factory_name": "Two"},
+            {"runtime_factory_id": "0000000000000001", "runtime_factory_name": "One"},
+        ]
+        surface_digest = LINKAGE.catalog_surface_digest(entries)
+        report = {
+            "complete_catalog": {
+                "entry_count": 2,
+                "runtime_surface_digest": surface_digest,
+            }
+        }
+        contract = (
+            "const EXPECTED_EXTENDED_RUNTIME_FACTORIES: usize = 2;\n"
+            "const EXPECTED_EXTENDED_RUNTIME_SURFACE_DIGEST: &str =\n"
+            f'    "{surface_digest}";\n'
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "profile_contracts.rs"
+            path.write_text(contract)
+            with patch.object(LINKAGE, "STDLIB_PROFILE_CONTRACT", path):
+                LINKAGE.verify_extended_runtime_contract(report)
+                report["complete_catalog"]["runtime_surface_digest"] = "0" * 64
+                with self.assertRaisesRegex(
+                    LINKAGE.ContractError, "digest diverges"
+                ):
+                    LINKAGE.verify_extended_runtime_contract(report)
+
+    def test_malformed_extended_rust_contract_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "profile_contracts.rs"
+            path.write_text("const SOMETHING_ELSE: usize = 2;\n")
+            with patch.object(LINKAGE, "STDLIB_PROFILE_CONTRACT", path):
+                with self.assertRaisesRegex(LINKAGE.ContractError, "missing or malformed"):
+                    LINKAGE.frozen_extended_runtime_contract()
+
     def test_math_shards_preserve_all_value_features_without_planning(self):
         profiles = LINKAGE.owner_native_link_profiles("mech-math")
         self.assertEqual(len(profiles), len(LINKAGE.MATH_SURFACE_SHARDS))

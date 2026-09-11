@@ -1,6 +1,6 @@
 use super::*;
 use crate::{
-    AccessMode, AliasPolicy, ChangeDetectionPolicy, DeliveryMode, ExternalInteraction,
+    AccessMode, AliasPolicy, BoundCall, ChangeDetectionPolicy, DeliveryMode, ExternalInteraction,
     FunctionValueRepresentation, InputPortLayout, InputPortPolicy, KindExpr, MechFunctionImpl,
     OperationContractDeclaration, OutputConstruction, OutputPortPolicy,
     ResolvedOperationDescriptor, SchemaBody, ShapeRule, SpecializationContext,
@@ -35,6 +35,35 @@ static WRONG_ARITY_CONTRACT: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| OperationContractDeclaration {
         inputs: InputPortLayout::Fixed(Box::new([])),
         outputs: INDEX_COPY_CONTRACT.outputs.clone(),
+        interaction: ExternalInteraction::Pure,
+    });
+
+static READ_MODIFY_WRITE_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+            ]
+            .into_boxed_slice(),
+        ),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::ReadWrite,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::ReadModifyWrite {
+                base_input: 0,
+                regions: crate::RegionPolicy::WholeValue,
+            },
+            alias: AliasPolicy::MayAlias { input: 0 },
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
         interaction: ExternalInteraction::Pure,
     });
 
@@ -141,6 +170,28 @@ impl MechFunctionFactory for AnyUnaryFactory {
         FunctionValueRepresentation::AnyValue,
         FunctionValueRepresentation::AnyValue,
     );
+
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        invocation.expect_unary()?;
+        Ok(Box::new(CatalogTestFunction))
+    }
+}
+
+struct ReadModifyWriteUnaryFactory;
+
+impl MechFunctionFactory for ReadModifyWriteUnaryFactory {
+    fn implementation_memory_class() -> crate::ImplementationMemoryClass {
+        crate::ImplementationMemoryClass::NoAdditionalScratch
+    }
+
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
+        FunctionValueRepresentation::Index,
+        FunctionValueRepresentation::Index,
+    );
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&READ_MODIFY_WRITE_CONTRACT)
+    }
 
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
         invocation.expect_unary()?;
@@ -376,6 +427,45 @@ fn operation_memory_contract_is_checked_before_factory_construction() {
         .expect("the wrong operation-memory contract must fail");
     assert_eq!(error.kind_name(), "RuntimeFunctionContractViolation");
     assert_eq!(WRONG_CONTRACT_FACTORY_CALLS.load(Ordering::SeqCst), before);
+}
+
+#[test]
+fn bound_call_validation_maps_read_modify_write_base_to_the_output_port() {
+    let operation_name = "test/read-modify-write";
+    let operation = OperationId::from_name(operation_name);
+    let runtime_name = "ReadModifyWriteUnary";
+    let mut builder = FunctionCatalogBuilder::new();
+    builder
+        .insert_runtime_factory_for_operations::<ReadModifyWriteUnaryFactory>(
+            runtime_name,
+            contract(RuntimeOutputAliasPolicy::DisallowInputAlias),
+            [operation],
+        )
+        .unwrap();
+    let catalog = builder.build().unwrap();
+    let sink = ValueCell::from_exact(1usize)
+        .unwrap()
+        .resolved_descriptor()
+        .unwrap();
+    let source = ValueCell::from_exact(2usize)
+        .unwrap()
+        .resolved_descriptor()
+        .unwrap();
+    let binding = BoundCall::syntax_directed(
+        ResolvedOperationDescriptor::from_name(operation_name, READ_MODIFY_WRITE_CONTRACT.clone())
+            .unwrap(),
+        vec![sink.clone(), source].into_boxed_slice(),
+        vec![sink].into_boxed_slice(),
+        RuntimeFunctionId::from_name(runtime_name),
+        ExecutionTarget::DirectRuntime,
+    )
+    .unwrap();
+
+    assert!(
+        catalog
+            .validate_bound_call_for_target(&binding, ExecutionTarget::DirectRuntime)
+            .is_ok()
+    );
 }
 
 #[test]

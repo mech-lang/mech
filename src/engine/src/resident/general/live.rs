@@ -104,7 +104,7 @@ fn check_measurement(
         retained_nodes: f.retained_nodes,
         ..work
     };
-    if let Some(violation) = mech_core::evaluate_memory_budget(
+    if let Some(violation) = mech_core::evaluate_call_memory_budget(
         mech_core::MemoryObjectOwner::DirectCallPort {
             call: 0,
             direction: PortDirection::Input,

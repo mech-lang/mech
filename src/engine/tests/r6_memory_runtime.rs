@@ -1,12 +1,23 @@
 #![cfg(feature = "full_compiler")]
 
 use mech_core::{
-    AllocationPlan, AllocationRole, ArenaBackingKind, ArenaPlacement, ArenaPlan, MemoryArenaId,
-    MemoryBudgetLimits, MemoryLifetime, MemoryObjectId, MemoryObjectOwner, MemorySpace, NodeId,
-    ResourceDemand,
+    AccessMode, AliasPolicy, AllocationPlan, AllocationRole, ArenaBackingKind, ArenaPlacement,
+    ArenaPlan, BoundCall, CallMemoryPlanningRequest, CellSlotId, ChangeDetectionPolicy,
+    CurrentMemoryFootprint, DeliveryMode, ExecutionTarget, ExternalInteraction,
+    ImplementationMemoryClass, InputPortLayout, InputPortPolicy, MemoryArenaId, MemoryBudgetLimits,
+    MemoryFootprintWitness, MemoryLifetime, MemoryObjectId, MemoryObjectOwner, MemorySpace, NodeId,
+    OperationContractDeclaration, OutputConstruction, OutputPortPolicy, Ref, RegionAccessPlan,
+    ResolvedOperationDescriptor, ResourceDemand, RuntimeFunctionId, ShapeRule, TargetMemoryProfile,
+    ValueCell, physical_storage_descriptor, plan_call_memory,
 };
-use mech_engine::memory_planner::ProgramMemoryPlan;
+use mech_engine::ArtifactSource;
+use mech_engine::memory_planner::{
+    ActivationMemoryFacts, ActivationValueFact, CallSiteMemoryTemplate, PlannedValueClass,
+    ProgramMemoryPlan, ProgramMemoryPlanTemplate, ValueMemoryPlanTemplate,
+    instantiate_program_memory_plan,
+};
 use mech_engine::memory_runtime::{ManagedProgramMemory, realize_resident_memory};
+use nalgebra::DMatrix;
 
 fn plan() -> ProgramMemoryPlan {
     ProgramMemoryPlan {
@@ -79,6 +90,181 @@ fn repeated_activation_and_close_reclaims_all_instance_storage() {
         assert_eq!(memory.domain().ledger().committed_bytes, 24);
         memory.close().unwrap();
     }
+}
+
+fn solve_program(call_count: u32) -> ProgramMemoryPlan {
+    let mut target = TargetMemoryProfile::current_resident_cpu().unwrap();
+    target.limits.max_output_bytes = Some(2_000);
+    let dimension = 205;
+    let coefficients = ValueCell::from_exact_matrix_ref(
+        Ref::new(DMatrix::<f64>::identity(dimension, dimension)),
+        dimension,
+        dimension,
+    )
+    .unwrap();
+    let rhs = ValueCell::from_exact_matrix_ref(
+        Ref::new(DMatrix::<f64>::from_element(dimension, 1, 1.0)),
+        dimension,
+        1,
+    )
+    .unwrap();
+    let descriptors = [
+        coefficients.resolved_descriptor().unwrap(),
+        rhs.resolved_descriptor().unwrap(),
+    ];
+    let lifetime = MemoryLifetime::Turn {
+        first: mech_core::MemoryPlanPoint::new(0),
+        last: mech_core::MemoryPlanPoint::new(1),
+    };
+    let storages = [
+        physical_storage_descriptor(coefficients.representation(), &target, lifetime),
+        physical_storage_descriptor(rhs.representation(), &target, lifetime),
+    ];
+    let witnesses = [
+        MemoryFootprintWitness::Known(CurrentMemoryFootprint {
+            logical_elements: u64::try_from(dimension * dimension).unwrap(),
+            ..CurrentMemoryFootprint::default()
+        }),
+        MemoryFootprintWitness::Known(CurrentMemoryFootprint {
+            logical_elements: u64::try_from(dimension).unwrap(),
+            ..CurrentMemoryFootprint::default()
+        }),
+    ];
+    let operation = ResolvedOperationDescriptor::from_name(
+        "test/r6-program-budget-scope",
+        OperationContractDeclaration {
+            inputs: InputPortLayout::Fixed(
+                vec![
+                    InputPortPolicy {
+                        access: AccessMode::Read,
+                        delivery: DeliveryMode::Signal,
+                    };
+                    2
+                ]
+                .into_boxed_slice(),
+            ),
+            outputs: vec![OutputPortPolicy {
+                access: AccessMode::Write,
+                delivery: DeliveryMode::Signal,
+                construction: OutputConstruction::FullWrite {
+                    shape: ShapeRule::Declared,
+                },
+                alias: AliasPolicy::NoAlias,
+                change_detection: ChangeDetectionPolicy::AlwaysChanged,
+            }]
+            .into_boxed_slice(),
+            interaction: ExternalInteraction::Pure,
+        },
+    )
+    .unwrap();
+    let bound = BoundCall::syntax_directed(
+        operation,
+        descriptors.to_vec().into_boxed_slice(),
+        vec![descriptors[1].clone()].into_boxed_slice(),
+        RuntimeFunctionId::from_name("R6ProgramBudgetScope"),
+        ExecutionTarget::ResidentCpu,
+    )
+    .unwrap();
+    let call = plan_call_memory(CallMemoryPlanningRequest {
+        bound_call: &bound,
+        input_storage: &storages,
+        output_storage: &[storages[1].clone()],
+        input_witnesses: &witnesses,
+        output_witnesses: &[witnesses[1]],
+        published_output_witnesses: &[witnesses[1]],
+        implementation_memory: ImplementationMemoryClass::MatrixSolve,
+        target: &target,
+        regions: &[RegionAccessPlan::WholeValue],
+    })
+    .unwrap();
+    assert!(call.demand.work.compute < target.limits.max_compute_work.unwrap());
+    assert!(
+        call.outputs[0].value.current_address_span_bytes < target.limits.max_output_bytes.unwrap()
+    );
+
+    let mut template = ProgramMemoryPlanTemplate::default();
+    let mut facts = ActivationMemoryFacts::default();
+    for raw in 0..call_count {
+        let node = NodeId::new(raw);
+        let slot = CellSlotId::new(raw);
+        template.node_positions.insert(node, raw);
+        template.values = template
+            .values
+            .iter()
+            .cloned()
+            .chain([ValueMemoryPlanTemplate {
+                slot,
+                descriptor: Some(descriptors[1].clone()),
+                class: PlannedValueClass::PublishedOutput,
+                producer: Some(node),
+                last_consumer: None,
+                alias_source: None,
+            }])
+            .collect();
+        template.call_nodes = template.call_nodes.iter().copied().chain([node]).collect();
+        template.call_sites = template
+            .call_sites
+            .iter()
+            .cloned()
+            .chain([CallSiteMemoryTemplate {
+                node,
+                input_sources: vec![
+                    ArtifactSource::Constant(mech_core::ConstantId::new(0)),
+                    ArtifactSource::Constant(mech_core::ConstantId::new(1)),
+                ]
+                .into_boxed_slice(),
+                output_slots: vec![slot].into_boxed_slice(),
+            }])
+            .collect();
+        template.calls = template
+            .calls
+            .iter()
+            .cloned()
+            .chain([call.clone()])
+            .collect();
+        facts.values.insert(
+            slot,
+            ActivationValueFact {
+                descriptor: descriptors[1].clone(),
+                storage: storages[1].clone(),
+                witness: witnesses[1],
+            },
+        );
+    }
+    instantiate_program_memory_plan(&template, &target, &facts).unwrap()
+}
+
+#[test]
+fn realization_preserves_per_call_work_and_output_budget_scopes() {
+    let single = solve_program(1);
+    assert!(
+        single.budget_violations.is_empty(),
+        "single call exceeded a supposedly per-call limit: {:?}",
+        single.budget_violations
+    );
+    ManagedProgramMemory::realize(&single)
+        .unwrap()
+        .close()
+        .unwrap();
+
+    let multiple = solve_program(2);
+    assert!(
+        multiple.budget_violations.is_empty(),
+        "program planner changed a per-call limit into a program quota: {:?}",
+        multiple.budget_violations
+    );
+    assert!(multiple.peak.work.compute > multiple.budget_limits.max_compute_work.unwrap());
+    let output_bytes = multiple
+        .values
+        .iter()
+        .filter(|value| value.class == PlannedValueClass::PublishedOutput)
+        .map(|value| value.layout.current_address_span_bytes + value.layout.payload.current_bytes)
+        .sum::<u64>();
+    assert!(output_bytes > multiple.budget_limits.max_output_bytes.unwrap());
+    ManagedProgramMemory::realize(&multiple)
+        .unwrap()
+        .close()
+        .unwrap();
 }
 
 #[test]

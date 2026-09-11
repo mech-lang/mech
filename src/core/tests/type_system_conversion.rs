@@ -1,3 +1,4 @@
+use mech_core::snapshot::{Complex32Bits, Complex64Bits, F32Bits, F64Bits};
 use mech_core::*;
 
 fn resolved(kind: BuiltinScalarKind) -> ResolvedType {
@@ -215,6 +216,42 @@ fn explicit_cast_policy_is_separate_from_implicit_conversion() {
     assert!(plan_explicit_cast(&resolved(K::String), &resolved(K::F64)).is_err());
     assert!(plan_explicit_cast(&resolved(K::String), &resolved(K::Bool)).is_err());
     assert!(plan_explicit_cast(&resolved(K::F64), &resolved(K::R64)).is_err());
+}
+
+#[test]
+fn complex_string_casts_use_canonical_scalar_display() {
+    let cases = [
+        (
+            ValueDataDraft::Complex32(Complex32Bits::new(
+                F32Bits::from_f32(3.0),
+                F32Bits::from_f32(-2.0),
+            )),
+            BuiltinScalarKind::C32,
+            "3-2i",
+        ),
+        (
+            ValueDataDraft::Complex64(Complex64Bits::new(
+                F64Bits::from_f64(0.0),
+                F64Bits::from_f64(2.0),
+            )),
+            BuiltinScalarKind::C64,
+            "2i",
+        ),
+        (
+            ValueDataDraft::Complex64(Complex64Bits::new(
+                F64Bits::from_f64(3.0),
+                F64Bits::from_f64(-0.0),
+            )),
+            BuiltinScalarKind::C64,
+            "3-0i",
+        ),
+    ];
+    for (value, source, expected) in cases {
+        assert_eq!(
+            execute_scalar_conversion(value, source, BuiltinScalarKind::String).unwrap(),
+            ValueDataDraft::String(expected.into()),
+        );
+    }
 }
 
 #[test]

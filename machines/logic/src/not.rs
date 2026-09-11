@@ -3,6 +3,10 @@ use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::ops::Not;
 
+pub(crate) fn not_vector_runtime_name<MatA: FunctionRuntimeType>() -> String {
+    format!("NotV<bool{}>", MatA::REPRESENTATION)
+}
+
 #[derive(Debug)]
 pub(crate) struct NotS<T> {
     pub arg: ManagedPort<T>,
@@ -214,11 +218,7 @@ where
     MatA: CompileConst + ConstElem + FunctionRuntimeType,
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "NotV<{}{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION,
-            <MatA as FunctionRuntimeType>::REPRESENTATION,
-        );
+        let name = not_vector_runtime_name::<MatA>();
         let out = compile_value_cell_register(self.out.cell(), ctx)?;
         let arg = compile_value_cell_register(self.arg.cell(), ctx)?;
         let function = ctx.function_id(&name)?;

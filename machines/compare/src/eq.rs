@@ -3,7 +3,14 @@ use crate::*;
 
 macro_rules! eq_scalar_lhs_op {
     (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => {
-        apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::RightScalar, |lhs, rhs| lhs == rhs)
+        apply_canonical_string_comparison(
+            $frame,
+            $lhs,
+            $rhs,
+            $out,
+            ComparisonBroadcast::RightScalar,
+            |lhs, rhs| lhs == rhs,
+        )
     };
     (managed, $lhs:expr, $rhs:expr, $out:expr) => {
         apply_managed_comparison(
@@ -25,7 +32,14 @@ macro_rules! eq_scalar_lhs_op {
 
 macro_rules! eq_scalar_rhs_op {
     (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => {
-        apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::LeftScalar, |lhs, rhs| lhs == rhs)
+        apply_canonical_string_comparison(
+            $frame,
+            $lhs,
+            $rhs,
+            $out,
+            ComparisonBroadcast::LeftScalar,
+            |lhs, rhs| lhs == rhs,
+        )
     };
     (managed, $lhs:expr, $rhs:expr, $out:expr) => {
         apply_managed_comparison(
@@ -47,7 +61,14 @@ macro_rules! eq_scalar_rhs_op {
 
 macro_rules! eq_vec_op {
     (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => {
-        apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::Exact, |lhs, rhs| lhs == rhs)
+        apply_canonical_string_comparison(
+            $frame,
+            $lhs,
+            $rhs,
+            $out,
+            ComparisonBroadcast::Exact,
+            |lhs, rhs| lhs == rhs,
+        )
     };
     (managed, $lhs:expr, $rhs:expr, $out:expr) => {
         apply_managed_comparison($lhs, $rhs, $out, ComparisonBroadcast::Exact, |lhs, rhs| {
@@ -65,7 +86,14 @@ macro_rules! eq_vec_op {
 
 macro_rules! eq_op {
     (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => {
-        apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::Exact, |lhs, rhs| lhs == rhs)
+        apply_canonical_string_comparison(
+            $frame,
+            $lhs,
+            $rhs,
+            $out,
+            ComparisonBroadcast::Exact,
+            |lhs, rhs| lhs == rhs,
+        )
     };
     (managed, $lhs:expr, $rhs:expr, $out:expr) => {
         apply_managed_comparison($lhs, $rhs, $out, ComparisonBroadcast::Exact, |lhs, rhs| {
@@ -81,7 +109,14 @@ macro_rules! eq_op {
 
 macro_rules! eq_mat_vec_op {
     (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => {
-        apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::RightColumn, |lhs, rhs| lhs == rhs)
+        apply_canonical_string_comparison(
+            $frame,
+            $lhs,
+            $rhs,
+            $out,
+            ComparisonBroadcast::RightColumn,
+            |lhs, rhs| lhs == rhs,
+        )
     };
     (managed, $lhs:expr, $rhs:expr, $out:expr) => {
         apply_managed_comparison(
@@ -108,7 +143,14 @@ macro_rules! eq_mat_vec_op {
 
 macro_rules! eq_vec_mat_op {
     (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => {
-        apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::LeftColumn, |lhs, rhs| lhs == rhs)
+        apply_canonical_string_comparison(
+            $frame,
+            $lhs,
+            $rhs,
+            $out,
+            ComparisonBroadcast::LeftColumn,
+            |lhs, rhs| lhs == rhs,
+        )
     };
     (managed, $lhs:expr, $rhs:expr, $out:expr) => {
         apply_managed_comparison(
@@ -135,7 +177,14 @@ macro_rules! eq_vec_mat_op {
 
 macro_rules! eq_mat_row_op {
     (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => {
-        apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::RightRow, |lhs, rhs| lhs == rhs)
+        apply_canonical_string_comparison(
+            $frame,
+            $lhs,
+            $rhs,
+            $out,
+            ComparisonBroadcast::RightRow,
+            |lhs, rhs| lhs == rhs,
+        )
     };
     (managed, $lhs:expr, $rhs:expr, $out:expr) => {
         apply_managed_comparison(
@@ -162,7 +211,14 @@ macro_rules! eq_mat_row_op {
 
 macro_rules! eq_row_mat_op {
     (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => {
-        apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::LeftRow, |lhs, rhs| lhs == rhs)
+        apply_canonical_string_comparison(
+            $frame,
+            $lhs,
+            $rhs,
+            $out,
+            ComparisonBroadcast::LeftRow,
+            |lhs, rhs| lhs == rhs,
+        )
     };
     (managed, $lhs:expr, $rhs:expr, $out:expr) => {
         apply_managed_comparison(
@@ -228,9 +284,7 @@ impl MechFunctionImpl for AtomEq {
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
         let next = frame.function_value_inputs_equal(&self.lhs, &self.rhs)?;
-        frame.with_output_port_view(&self.out, |out| {
-            out.try_fill_column_major(|_| Ok(next))
-        })?;
+        frame.with_output_port_view(&self.out, |out| out.try_fill_column_major(|_| Ok(next)))?;
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
@@ -298,9 +352,7 @@ impl MechFunctionImpl for TableEq {
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
         let next = frame.function_value_inputs_equal(&self.lhs, &self.rhs)?;
-        frame.with_output_port_view(&self.out, |out| {
-            out.try_fill_column_major(|_| Ok(next))
-        })?;
+        frame.with_output_port_view(&self.out, |out| out.try_fill_column_major(|_| Ok(next)))?;
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
@@ -503,6 +555,23 @@ mod invocation_port_tests {
         assert_eq!(elements, expected);
     }
 
+    fn assert_f64_matrix(cell: &ValueCell, expected: &[f64]) {
+        let snapshot = cell.snapshot().unwrap();
+        let ValueData::Matrix(matrix) = snapshot.data() else {
+            panic!("expected managed matrix")
+        };
+        let SequenceView::F64(elements) = matrix.elements() else {
+            panic!("expected f64 elements")
+        };
+        assert_eq!(
+            elements
+                .iter()
+                .map(|element| element.to_f64())
+                .collect::<Vec<_>>(),
+            expected
+        );
+    }
+
     #[cfg(all(
         feature = "vectord",
         feature = "row_vectord",
@@ -584,6 +653,36 @@ mod invocation_port_tests {
             "compare/eq",
             &[true, false, false, false, true, true],
         );
+        let row_output = ValueCell::from_exact_matrix_ref(
+            Ref::new(nalgebra::RowDVector::from_element(5, false)),
+            1,
+            5,
+        )
+        .unwrap();
+        managed_test_function::<EQRDRD<f64>>(
+            FunctionInvocation::binary(
+                row_output.clone(),
+                ValueCell::from_exact_matrix_ref(
+                    Ref::new(nalgebra::RowDVector::from_vec(vec![
+                        1.0_f64, 2.0, 1.0, 3.0, 1.0,
+                    ])),
+                    1,
+                    5,
+                )
+                .unwrap(),
+                ValueCell::from_exact_matrix_ref(
+                    Ref::new(nalgebra::RowDVector::from_vec(vec![1.0_f64])),
+                    1,
+                    1,
+                )
+                .unwrap(),
+            ),
+            "compare/eq",
+        )
+        .instance()
+        .solve_result()
+        .unwrap();
+        assert_bool_matrix(&row_output, &[true, false, true, false, true]);
         check::<crate::lt::LTSMD<f64>>(
             ValueCell::from_exact(3.0_f64).unwrap(),
             matrix(),
@@ -629,6 +728,64 @@ mod invocation_port_tests {
         };
         assert!(min_value.to_f64().is_nan());
         assert_eq!(max_value.to_f64(), 2.0);
+
+        let max_column_output = ValueCell::from_exact_matrix_ref(
+            Ref::new(nalgebra::DVector::from_element(2, 0.0_f64)),
+            2,
+            1,
+        )
+        .unwrap();
+        managed_test_function::<crate::max::MaxVDRD<f64>>(
+            FunctionInvocation::binary(
+                max_column_output.clone(),
+                ValueCell::from_exact_matrix_ref(
+                    Ref::new(nalgebra::DVector::from_vec(vec![1.0_f64, 4.0])),
+                    2,
+                    1,
+                )
+                .unwrap(),
+                ValueCell::from_exact_matrix_ref(
+                    Ref::new(nalgebra::RowDVector::from_vec(vec![3.0_f64])),
+                    1,
+                    1,
+                )
+                .unwrap(),
+            ),
+            "compare/max",
+        )
+        .instance()
+        .solve_result()
+        .unwrap();
+        assert_f64_matrix(&max_column_output, &[3.0, 4.0]);
+
+        let min_column_output = ValueCell::from_exact_matrix_ref(
+            Ref::new(nalgebra::DVector::from_element(2, 0.0_f64)),
+            2,
+            1,
+        )
+        .unwrap();
+        managed_test_function::<crate::min::MinRDVD<f64>>(
+            FunctionInvocation::binary(
+                min_column_output.clone(),
+                ValueCell::from_exact_matrix_ref(
+                    Ref::new(nalgebra::RowDVector::from_vec(vec![3.0_f64])),
+                    1,
+                    1,
+                )
+                .unwrap(),
+                ValueCell::from_exact_matrix_ref(
+                    Ref::new(nalgebra::DVector::from_vec(vec![1.0_f64, 4.0])),
+                    2,
+                    1,
+                )
+                .unwrap(),
+            ),
+            "compare/min",
+        )
+        .instance()
+        .solve_result()
+        .unwrap();
+        assert_f64_matrix(&min_column_output, &[1.0, 3.0]);
     }
 
     #[test]

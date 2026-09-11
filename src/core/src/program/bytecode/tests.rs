@@ -1546,6 +1546,45 @@ fn every_composite_constant_codec_round_trips() {
 }
 
 #[test]
+fn bounded_nested_sets_decode_members_with_different_cardinalities() {
+    let empty_subset = 0_u32.to_le_bytes().to_vec();
+    let mut singleton_subset = 1_u32.to_le_bytes().to_vec();
+    append_child_payload(&mut singleton_subset, &[1]);
+
+    let mut powerset = 2_u32.to_le_bytes().to_vec();
+    append_child_payload(&mut powerset, &empty_subset);
+    append_child_payload(&mut powerset, &singleton_subset);
+    let inner = RuntimeType::Set {
+        element: Box::new(RuntimeType::U8),
+        max_len: Some(2),
+    };
+    let encoded = EncodedConstant {
+        runtime_type: RuntimeType::Set {
+            element: Box::new(inner),
+            max_len: Some(4),
+        },
+        alignment: 4,
+        bytes: powerset,
+    };
+
+    let parsed =
+        ParsedProgram::from_bytes(&write_bytecode(&program(vec![encoded])).unwrap()).unwrap();
+    let decoded = parsed.decode_constants().unwrap();
+    let subsets = decoded[0].set_view().unwrap().elements();
+    assert_eq!(subsets.len(), 2);
+    assert_eq!(
+        subsets
+            .iter()
+            .map(|subset| match subset.data() {
+                crate::ValueData::Set(values) => values.elements().len(),
+                other => panic!("expected nested set, got {other:?}"),
+            })
+            .collect::<Vec<_>>(),
+        [0, 1]
+    );
+}
+
+#[test]
 fn nominal_constants_require_authoritative_semantic_schemas() {
     let atom_name = "alpha";
     let atom = EncodedConstant {

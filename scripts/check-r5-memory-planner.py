@@ -442,6 +442,13 @@ def failures(root: Path) -> list[str]:
     # 19. Review-closure invariants remain centralized and fail closed.
     target = rust_code(sources.get("src/core/src/memory_plan/target.rs", ""))
     derive = rust_code(sources.get("src/core/src/memory_plan/derive.rs", ""))
+    core_budget = rust_code(sources.get("src/core/src/memory_plan/budget.rs", ""))
+    for required in (
+        "evaluate_call_memory_budget",
+        "evaluate_aggregate_memory_budget",
+    ):
+        if not re.search(rf"\bpub\s+fn\s+{required}\s*\(", core_budget):
+            found.append(f"memory budget scope is not checked by construction: {required}")
     if "c32_slot" not in target or "Complex64Bits" not in target or "Complex(FloatWidth::W64) => layouts.c64_slot" not in derive:
         found.append("target primitive layouts conflate C32 and C64 storage")
     program = rust_code(sources.get("src/engine/src/memory_planner/program.rs", ""))
@@ -489,14 +496,17 @@ def failures(root: Path) -> list[str]:
         "grow_transaction_family",
         "grow_transaction_stage_total",
         "arenas",
-        "evaluate_memory_budget",
+        "evaluate_call_memory_budget",
         "budget_limits",
     ):
         if required not in turn:
             found.append(f"turn planning omits deferred budget closure: {required}")
     for name in ("plan_turn_memory", "apply_observed_turn_demand", "check_turn_planning_progress", "try_admit_fixed_turn_memory"):
         body = dict(function_bodies(turn, name)).get(name, "")
-        if not re.search(r"evaluate_memory_budget\([\s\S]*?plan\.budget_limits,\s*\)", body):
+        if not re.search(
+            r"evaluate_call_memory_budget\([\s\S]*?plan\.budget_limits,\s*\)",
+            body,
+        ):
             found.append(f"turn planning omits deferred budget closure: {name} plan.budget_limits")
     if not re.search(
         r"let\s+call_transactions\b.*?\.chain\s*\(\s*&call_transactions\s*\)",

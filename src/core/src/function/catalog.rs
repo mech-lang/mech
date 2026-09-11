@@ -1019,7 +1019,35 @@ fn validate_bound_physical_signature(
         )
         .with_compiler_loc());
     }
-    if let Some(reason) = runtime_input_storage_mismatch(signature.inputs, binding.inputs()) {
+    let mut physical_inputs = binding.inputs().to_vec();
+    if let Some(base_input) = binding
+        .operation_descriptor()
+        .contract
+        .outputs
+        .iter()
+        .find_map(|output| match output.construction {
+            crate::OutputConstruction::ReadModifyWrite { base_input, .. } => {
+                Some(base_input as usize)
+            }
+            _ => None,
+        })
+    {
+        if base_input >= physical_inputs.len() {
+            return Err(MechError::new(
+                RuntimeOperationBindingMismatch {
+                    operation: Some(binding.operation()),
+                    reason: "read/modify/write base input is outside the bound inputs".into(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        // Existing-output kernels receive the read/modify/write base through
+        // the destination port. It remains a semantic input in BoundCall but
+        // is deliberately absent from the physical runtime input signature.
+        physical_inputs.remove(base_input);
+    }
+    if let Some(reason) = runtime_input_storage_mismatch(signature.inputs, &physical_inputs) {
         return Err(MechError::new(
             RuntimeOperationBindingMismatch {
                 operation: Some(binding.operation()),

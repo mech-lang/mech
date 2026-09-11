@@ -45547,6 +45547,1331 @@
       "name": "NextafterMDF64",
       "id_hex": "00ff0b1d015a8510",
       "owner": "mech-math"
+    },
+    {
+      "name": "AndRDVD<bool>",
+      "id_hex": "003c92233090d523",
+      "owner": "mech-logic"
+    },
+    {
+      "name": "AndVDRD<bool>",
+      "id_hex": "0029fdddf12c4bd8",
+      "owner": "mech-logic"
+    },
+    {
+      "name": "NotV<bool[bool]:0,0>",
+      "id_hex": "0012475f95b94250",
+      "owner": "mech-logic"
+    },
+    {
+      "name": "NotV<bool[bool]:0,1>",
+      "id_hex": "0078db63e73e3350",
+      "owner": "mech-logic"
+    },
+    {
+      "name": "NotV<bool[bool]:1,0>",
+      "id_hex": "0058f772e5800233",
+      "owner": "mech-logic"
+    },
+    {
+      "name": "OrRDVD<bool>",
+      "id_hex": "00d6881cdcab07e8",
+      "owner": "mech-logic"
+    },
+    {
+      "name": "OrVDRD<bool>",
+      "id_hex": "00f63a156961c62c",
+      "owner": "mech-logic"
+    },
+    {
+      "name": "XorRDVD<bool>",
+      "id_hex": "0004175d979c57bb",
+      "owner": "mech-logic"
+    },
+    {
+      "name": "XorVDRD<bool>",
+      "id_hex": "003a7ad5a0d11bf3",
+      "owner": "mech-logic"
+    },
+    {
+      "name": "EQRDVD<bool>",
+      "id_hex": "00adb49c33d201b4",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "EQRDVD<c64>",
+      "id_hex": "006ea27b14de21ac",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "EQRDVD<f32>",
+      "id_hex": "005b15f19c8efbbd",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "EQRDVD<f64>",
+      "id_hex": "00941d61aa8e5e6e",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "EQRDVD<i128>",
+      "id_hex": "00b615f3e94598f7",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "EQRDVD<i16>",
+      "id_hex": "0089b628e9859697",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "EQRDVD<i32>",
+      "id_hex": "0026739bb3b3e1a4",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "EQRDVD<i64>",
+      "id_hex": "00b5d2682365e4db",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "EQRDVD<i8>",
+      "id_hex": "003af3eb498f5d87",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "EQRDVD<r64>",
+      "id_hex": "00de01cf5f3351ee",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "EQRDVD<string>",
+      "id_hex": "006067a9a2e557c4",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "EQRDVD<u128>",
+      "id_hex": "001cc8ccfd5b5262",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "EQRDVD<u16>",
+      "id_hex": "00b678a10ba8ac69",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "EQRDVD<u32>",
+      "id_hex": "00a0c41ddfa7ffb5",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "EQRDVD<u64>",
+      "id_hex": "00cc37571a99ecd1",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "EQRDVD<u8>",
+      "id_hex": "0081f65f99d2534a",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "EQVDRD<bool>",
+      "id_hex": "009de175451f9a00",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "EQVDRD<c64>",
+      "id_hex": "0071b4781fe5a612",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "EQVDRD<f32>",
+      "id_hex": "00f6aed8ac9a414d",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "EQVDRD<f64>",
+      "id_hex": "0085367bc0315a1d",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "EQVDRD<i128>",
+      "id_hex": "00e034fa866ae986",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "EQVDRD<i16>",
+      "id_hex": "007b1ff7fe0c1e53",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "EQVDRD<i32>",
+      "id_hex": "00aa502888ad11ec",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "EQVDRD<i64>",
+      "id_hex": "00213e9d58e473f4",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "EQVDRD<i8>",
+      "id_hex": "0088ed0017aec9a7",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "EQVDRD<r64>",
+      "id_hex": "00e6f776cbdae4a5",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "EQVDRD<string>",
+      "id_hex": "002fece789ff1a5b",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "EQVDRD<u128>",
+      "id_hex": "00e0c391046f0c56",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "EQVDRD<u16>",
+      "id_hex": "0098346cfcbfaf11",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "EQVDRD<u32>",
+      "id_hex": "00e241faf9760ece",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "EQVDRD<u64>",
+      "id_hex": "00ee5a1b72351a5e",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "EQVDRD<u8>",
+      "id_hex": "00840122af0c3ca8",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "NEQRDVD<bool>",
+      "id_hex": "00255752fb4d5d09",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "NEQRDVD<c64>",
+      "id_hex": "008e626fb82a4b2d",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "NEQRDVD<f32>",
+      "id_hex": "00fceebbdc9ea852",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "NEQRDVD<f64>",
+      "id_hex": "003312f27edd0b6b",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "NEQRDVD<i128>",
+      "id_hex": "0061375ee9527611",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "NEQRDVD<i16>",
+      "id_hex": "00223cc87c0967df",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "NEQRDVD<i32>",
+      "id_hex": "00058e0f6d2b55e1",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "NEQRDVD<i64>",
+      "id_hex": "00c72c54a456d247",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "NEQRDVD<i8>",
+      "id_hex": "00956bde0937eb3c",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "NEQRDVD<r64>",
+      "id_hex": "00e92d6caee33557",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "NEQRDVD<string>",
+      "id_hex": "00a306c07ad7051c",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "NEQRDVD<u128>",
+      "id_hex": "00e79b42846e1139",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "NEQRDVD<u16>",
+      "id_hex": "00315ed04643138e",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "NEQRDVD<u32>",
+      "id_hex": "0052301ed0be52a0",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "NEQRDVD<u64>",
+      "id_hex": "00a2d2045a73cae6",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "NEQRDVD<u8>",
+      "id_hex": "00f53acf053d3282",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "NEQVDRD<bool>",
+      "id_hex": "009e39aaf6f91a87",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "NEQVDRD<c64>",
+      "id_hex": "0013eff4d730604b",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "NEQVDRD<f32>",
+      "id_hex": "001f5789d7a3e0d5",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "NEQVDRD<f64>",
+      "id_hex": "003326c564f2fd2e",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "NEQVDRD<i128>",
+      "id_hex": "005ccfa825e065d2",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "NEQVDRD<i16>",
+      "id_hex": "009cd7cd4d2e7865",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "NEQVDRD<i32>",
+      "id_hex": "00fcba6230a408b6",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "NEQVDRD<i64>",
+      "id_hex": "00967902a435c3a0",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "NEQVDRD<i8>",
+      "id_hex": "00894c076f36e354",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "NEQVDRD<r64>",
+      "id_hex": "006f3c7f28c14721",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "NEQVDRD<string>",
+      "id_hex": "00bd31db925c7120",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "NEQVDRD<u128>",
+      "id_hex": "001d83e87bdab459",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "NEQVDRD<u16>",
+      "id_hex": "004f228ff1d87585",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "NEQVDRD<u32>",
+      "id_hex": "00b88ce33af46c81",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "NEQVDRD<u64>",
+      "id_hex": "00920f097dd5c3d2",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "NEQVDRD<u8>",
+      "id_hex": "00027d16374102a3",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTERDVD<bool>",
+      "id_hex": "002b823f0e1b6b42",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTERDVD<c64>",
+      "id_hex": "001ff0a01b78d73d",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTERDVD<f32>",
+      "id_hex": "00e4841933b26f8a",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTERDVD<f64>",
+      "id_hex": "00459fccc2e766b6",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTERDVD<i128>",
+      "id_hex": "005f5ee23f5ca536",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTERDVD<i16>",
+      "id_hex": "008cd50a2b457ee9",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTERDVD<i32>",
+      "id_hex": "00ab65606be1bec3",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTERDVD<i64>",
+      "id_hex": "00d6b17e3e18b6e3",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTERDVD<i8>",
+      "id_hex": "0022e1ef1e6ee58e",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTERDVD<r64>",
+      "id_hex": "0096c751d9fd5209",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTERDVD<string>",
+      "id_hex": "00b57e693d82b3a1",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTERDVD<u128>",
+      "id_hex": "0050775b19dd5b63",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTERDVD<u16>",
+      "id_hex": "009c427cdb32d0c2",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTERDVD<u32>",
+      "id_hex": "00a5f5712aec7b55",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTERDVD<u64>",
+      "id_hex": "00f8923a5414f1e3",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTERDVD<u8>",
+      "id_hex": "002ff23ffcb48d77",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTEVDRD<bool>",
+      "id_hex": "0056bdd04a8f97d2",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTEVDRD<c64>",
+      "id_hex": "0001c0efaac17c74",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTEVDRD<f32>",
+      "id_hex": "002912a50c6bbfac",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTEVDRD<f64>",
+      "id_hex": "009c4a30e6ac5420",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTEVDRD<i128>",
+      "id_hex": "00da7c07f181f4b0",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTEVDRD<i16>",
+      "id_hex": "00d7b55a257e6f86",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTEVDRD<i32>",
+      "id_hex": "00ac439aac8f740b",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTEVDRD<i64>",
+      "id_hex": "009662f94c243074",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTEVDRD<i8>",
+      "id_hex": "001d3ca1d80c14c4",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTEVDRD<r64>",
+      "id_hex": "002abae64d696217",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTEVDRD<string>",
+      "id_hex": "00a96c324759d5db",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTEVDRD<u128>",
+      "id_hex": "0007dffd1400ca04",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTEVDRD<u16>",
+      "id_hex": "0082325f164d87b7",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTEVDRD<u32>",
+      "id_hex": "00b3c3d344738db6",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTEVDRD<u64>",
+      "id_hex": "00cea90691ee53c0",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTEVDRD<u8>",
+      "id_hex": "0099cef6e1c3d11f",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTRDVD<bool>",
+      "id_hex": "00bcbea18040630d",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTRDVD<c64>",
+      "id_hex": "00025f81fa0ad926",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTRDVD<f32>",
+      "id_hex": "00f8cc6712e0d8f2",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTRDVD<f64>",
+      "id_hex": "005ed3a841a34b11",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTRDVD<i128>",
+      "id_hex": "00c385fe795d5edf",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTRDVD<i16>",
+      "id_hex": "00e788ab70fc2f0b",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTRDVD<i32>",
+      "id_hex": "00c5cfa7522ae528",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTRDVD<i64>",
+      "id_hex": "0068fd8be8ae8db6",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTRDVD<i8>",
+      "id_hex": "008bab37f1579868",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTRDVD<r64>",
+      "id_hex": "00dcead1b39d0835",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTRDVD<string>",
+      "id_hex": "0069da3381618486",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTRDVD<u128>",
+      "id_hex": "0046c82210101748",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTRDVD<u16>",
+      "id_hex": "00a5abafb183bcb1",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTRDVD<u32>",
+      "id_hex": "0043336ee0f3b6ad",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTRDVD<u64>",
+      "id_hex": "00824ceb6f83f8cd",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTRDVD<u8>",
+      "id_hex": "0050653149ae929c",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTVDRD<bool>",
+      "id_hex": "001ea1d6fc50dbd0",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTVDRD<c64>",
+      "id_hex": "005dfd4804cacb91",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTVDRD<f32>",
+      "id_hex": "00a363d9f420676d",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTVDRD<f64>",
+      "id_hex": "005a7604608f9641",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTVDRD<i128>",
+      "id_hex": "0099e0d38cd37d41",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTVDRD<i16>",
+      "id_hex": "005d59b46f019913",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTVDRD<i32>",
+      "id_hex": "0007cac167b75386",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTVDRD<i64>",
+      "id_hex": "001e3cc751bbdff7",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTVDRD<i8>",
+      "id_hex": "003a5d53c1eed20f",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTVDRD<r64>",
+      "id_hex": "00123ef82f271c76",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTVDRD<string>",
+      "id_hex": "0009ce7b548550f2",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTVDRD<u128>",
+      "id_hex": "0073ab3e800ff15c",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTVDRD<u16>",
+      "id_hex": "00fe766e86baaf04",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTVDRD<u32>",
+      "id_hex": "00efa740c07cded6",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTVDRD<u64>",
+      "id_hex": "007c6b2cd036198e",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "GTVDRD<u8>",
+      "id_hex": "007d74f5f4ac23df",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTERDVD<bool>",
+      "id_hex": "00862fdc396b4c38",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTERDVD<c64>",
+      "id_hex": "001f5c5273e587ab",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTERDVD<f32>",
+      "id_hex": "00a5fcb0cd0e0044",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTERDVD<f64>",
+      "id_hex": "001e6ba8fc7f91a1",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTERDVD<i128>",
+      "id_hex": "006fc1627a0f14cf",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTERDVD<i16>",
+      "id_hex": "00c2e528a7124edd",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTERDVD<i32>",
+      "id_hex": "003e92fca629e24e",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTERDVD<i64>",
+      "id_hex": "009d6e6b6528a019",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTERDVD<i8>",
+      "id_hex": "0057fd191df5200c",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTERDVD<r64>",
+      "id_hex": "00c5ee83c076f9f4",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTERDVD<string>",
+      "id_hex": "00895c2c5e21ee2f",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTERDVD<u128>",
+      "id_hex": "002ca496d2a6ef82",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTERDVD<u16>",
+      "id_hex": "00651a784801773e",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTERDVD<u32>",
+      "id_hex": "008f55df4da10d23",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTERDVD<u64>",
+      "id_hex": "0091394bb085cc5a",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTERDVD<u8>",
+      "id_hex": "009287aa1ea6cfe9",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTEVDRD<bool>",
+      "id_hex": "00eed2c4aafb9c23",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTEVDRD<c64>",
+      "id_hex": "00e18a3d75f08095",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTEVDRD<f32>",
+      "id_hex": "005be95bc9155324",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTEVDRD<f64>",
+      "id_hex": "0097d1537487d2cd",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTEVDRD<i128>",
+      "id_hex": "00d38017ce873772",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTEVDRD<i16>",
+      "id_hex": "00a815a80a9f730f",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTEVDRD<i32>",
+      "id_hex": "00d737a7cb9203bf",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTEVDRD<i64>",
+      "id_hex": "00fd53108bd028cb",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTEVDRD<i8>",
+      "id_hex": "00c2c9418f3f83ed",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTEVDRD<r64>",
+      "id_hex": "00cc5eb1c0a112fe",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTEVDRD<string>",
+      "id_hex": "00989b1d5fbfa323",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTEVDRD<u128>",
+      "id_hex": "0090f08a5b4574a7",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTEVDRD<u16>",
+      "id_hex": "0074561b2d012a0c",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTEVDRD<u32>",
+      "id_hex": "00e63128abf7f873",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTEVDRD<u64>",
+      "id_hex": "007378e63472252c",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTEVDRD<u8>",
+      "id_hex": "00c840b2ce030b1a",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTRDVD<bool>",
+      "id_hex": "009534257963da8b",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTRDVD<c64>",
+      "id_hex": "0032d68ece315a10",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTRDVD<f32>",
+      "id_hex": "007f02d770508830",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTRDVD<f64>",
+      "id_hex": "00a9f126c3fb5820",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTRDVD<i128>",
+      "id_hex": "00f791ceb348fbd7",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTRDVD<i16>",
+      "id_hex": "00ffa7a9c100e449",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTRDVD<i32>",
+      "id_hex": "00858b3ad411a641",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTRDVD<i64>",
+      "id_hex": "00f1889b8445d251",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTRDVD<i8>",
+      "id_hex": "00130205082d5808",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTRDVD<r64>",
+      "id_hex": "00e1650a3686a9be",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTRDVD<string>",
+      "id_hex": "0058fc39c4599187",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTRDVD<u128>",
+      "id_hex": "00b38f06bb8415b1",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTRDVD<u16>",
+      "id_hex": "00590ec118ed2dd2",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTRDVD<u32>",
+      "id_hex": "0001cd76d842ee48",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTRDVD<u64>",
+      "id_hex": "0001c73d3f72b825",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTRDVD<u8>",
+      "id_hex": "00296b328b7a790e",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTVDRD<bool>",
+      "id_hex": "00907627240d6707",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTVDRD<c64>",
+      "id_hex": "00253185ee02fd12",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTVDRD<f32>",
+      "id_hex": "00fb018a3a863fef",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTVDRD<f64>",
+      "id_hex": "0045c5ca3bd3cbe7",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTVDRD<i128>",
+      "id_hex": "0072e25f7b89121c",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTVDRD<i16>",
+      "id_hex": "00395c6543535b9e",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTVDRD<i32>",
+      "id_hex": "00feff421643f0bc",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTVDRD<i64>",
+      "id_hex": "0020a22a624e33b2",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTVDRD<i8>",
+      "id_hex": "00d6030525eeb99c",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTVDRD<r64>",
+      "id_hex": "00fc003aa76cda20",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTVDRD<string>",
+      "id_hex": "004d9c2658e41c8c",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTVDRD<u128>",
+      "id_hex": "00a879fcc87e83b3",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTVDRD<u16>",
+      "id_hex": "00c43bfea9913b26",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTVDRD<u32>",
+      "id_hex": "00c40176e5264151",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTVDRD<u64>",
+      "id_hex": "004affe1d891bb3b",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "LTVDRD<u8>",
+      "id_hex": "0038c35363bdd11c",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MaxRDVD<bool>",
+      "id_hex": "00ec3aec7d9a8d7d",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MaxRDVD<c64>",
+      "id_hex": "0016d3a7893e85fe",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MaxRDVD<f32>",
+      "id_hex": "0042d9b3ccdcbebe",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MaxRDVD<f64>",
+      "id_hex": "00a65ce12b43a906",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MaxRDVD<i128>",
+      "id_hex": "00571d44b374b956",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MaxRDVD<i16>",
+      "id_hex": "00ca71dcdf49dc75",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MaxRDVD<i32>",
+      "id_hex": "0002d0cdaaa483b8",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MaxRDVD<i64>",
+      "id_hex": "006bd992a06ea01f",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MaxRDVD<i8>",
+      "id_hex": "00799669de83e04b",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MaxRDVD<r64>",
+      "id_hex": "00822cd37165b366",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MaxRDVD<string>",
+      "id_hex": "00fe378393f7ddad",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MaxRDVD<u128>",
+      "id_hex": "0034585b8bc52adf",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MaxRDVD<u16>",
+      "id_hex": "002f683abd0924b4",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MaxRDVD<u32>",
+      "id_hex": "0022debfa8546162",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MaxRDVD<u64>",
+      "id_hex": "00d851159c22e061",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MaxRDVD<u8>",
+      "id_hex": "00a683e5ba765db6",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MaxVDRD<bool>",
+      "id_hex": "00ca987bf981f0ce",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MaxVDRD<c64>",
+      "id_hex": "007d52a3fa6c6a2a",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MaxVDRD<f32>",
+      "id_hex": "00b593026e0ece0a",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MaxVDRD<f64>",
+      "id_hex": "00ac75c32a7f1688",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MaxVDRD<i128>",
+      "id_hex": "00a5744ba47c04d2",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MaxVDRD<i16>",
+      "id_hex": "00691cb750187d6c",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MaxVDRD<i32>",
+      "id_hex": "000f04b686597721",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MaxVDRD<i64>",
+      "id_hex": "00ca34473b120ff3",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MaxVDRD<i8>",
+      "id_hex": "00280adf4c2f7a5c",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MaxVDRD<r64>",
+      "id_hex": "0038bfefbce26988",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MaxVDRD<string>",
+      "id_hex": "00ccc8d082090561",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MaxVDRD<u128>",
+      "id_hex": "0093233eae5d83c6",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MaxVDRD<u16>",
+      "id_hex": "009951cefc76aa9b",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MaxVDRD<u32>",
+      "id_hex": "00f0a7334474b7d9",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MaxVDRD<u64>",
+      "id_hex": "00faff765c52a081",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MaxVDRD<u8>",
+      "id_hex": "00c92e995f632bde",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MinRDVD<bool>",
+      "id_hex": "0054b2410c31132e",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MinRDVD<c64>",
+      "id_hex": "00926f33ee0480f5",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MinRDVD<f32>",
+      "id_hex": "000e70c4f38908a8",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MinRDVD<f64>",
+      "id_hex": "0043ca6aac32cf04",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MinRDVD<i128>",
+      "id_hex": "00494c7020ffb61c",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MinRDVD<i16>",
+      "id_hex": "00a25a38db0031af",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MinRDVD<i32>",
+      "id_hex": "00b07aa99dee813f",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MinRDVD<i64>",
+      "id_hex": "005eb7e888042312",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MinRDVD<i8>",
+      "id_hex": "00185d6946bd4803",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MinRDVD<r64>",
+      "id_hex": "005a61582c7dd738",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MinRDVD<string>",
+      "id_hex": "009c5a6dc922ff01",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MinRDVD<u128>",
+      "id_hex": "0067704d5893311d",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MinRDVD<u16>",
+      "id_hex": "00d924c0c501e443",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MinRDVD<u32>",
+      "id_hex": "0017d9363ce341e5",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MinRDVD<u64>",
+      "id_hex": "0068dba22f1b440a",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MinRDVD<u8>",
+      "id_hex": "00e78327c353ec31",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MinVDRD<bool>",
+      "id_hex": "00b62e7e7a4b5d49",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MinVDRD<c64>",
+      "id_hex": "00b142785026e874",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MinVDRD<f32>",
+      "id_hex": "0080665c0adacece",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MinVDRD<f64>",
+      "id_hex": "003ee94c32ded90b",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MinVDRD<i128>",
+      "id_hex": "00a0b9e438cb867e",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MinVDRD<i16>",
+      "id_hex": "00439ae1001c3aa7",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MinVDRD<i32>",
+      "id_hex": "00cc20b50ef84569",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MinVDRD<i64>",
+      "id_hex": "0095f9a2e70a5cb7",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MinVDRD<i8>",
+      "id_hex": "0050065463f94cae",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MinVDRD<r64>",
+      "id_hex": "004ea8475f560f5d",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MinVDRD<string>",
+      "id_hex": "00a432ed3a102087",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MinVDRD<u128>",
+      "id_hex": "0058e882c35b5720",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MinVDRD<u16>",
+      "id_hex": "0006498c799166b1",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MinVDRD<u32>",
+      "id_hex": "00de7ba1e25146b5",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MinVDRD<u64>",
+      "id_hex": "00ee4bd0339fa4c4",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "MinVDRD<u8>",
+      "id_hex": "0075bb6aae2f7256",
+      "owner": "mech-compare"
     }
   ]
 }

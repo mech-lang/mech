@@ -1047,7 +1047,7 @@ macro_rules! table_join_specializer {
                         bound,
                     ),
                     mech_core::RuntimeFunctionId::from_name(concat!(
-                        "TableJoin",
+                        "TableJoinFxn::",
                         stringify!($mode)
                     )),
                     mech_core::ExecutionTarget::DirectRuntime,

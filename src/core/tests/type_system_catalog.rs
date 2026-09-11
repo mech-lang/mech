@@ -572,6 +572,106 @@ fn ordinary_matrix_equality_wins_over_whole_aggregate_equality() {
 }
 
 #[test]
+fn equality_broadcasts_preserve_equatable_kinds_and_axes() {
+    for name in ["compare/eq", "compare/neq"] {
+        for element in [BuiltinScalarKind::Bool, BuiltinScalarKind::String] {
+            let matrix = fixed_matrix(element, 2, 3);
+            for other in [
+                scalar(element),
+                fixed_matrix(element, 2, 1),
+                fixed_matrix(element, 1, 3),
+            ] {
+                for inputs in [
+                    [matrix.clone(), other.clone()],
+                    [other.clone(), matrix.clone()],
+                ] {
+                    let resolved = resolve_named_overload(name, &inputs).unwrap();
+                    assert_eq!(
+                        resolved.outputs.as_ref(),
+                        &[fixed_matrix(BuiltinScalarKind::Bool, 2, 3)]
+                    );
+                    assert!(resolved.conversions.iter().all(|plan| plan.cost == 0));
+                }
+            }
+            for other in [
+                fixed_matrix(element, 3, 1),
+                fixed_matrix(element, 1, 4),
+                fixed_matrix(element, 3, 2),
+            ] {
+                assert!(resolve_named_overload(name, &[matrix.clone(), other]).is_err());
+            }
+        }
+    }
+}
+
+#[test]
+fn promoted_elementwise_schemes_admit_only_supported_broadcast_axes() {
+    for (name, output_element) in [
+        ("math/add", BuiltinScalarKind::F64),
+        ("compare/gt", BuiltinScalarKind::Bool),
+        ("compare/max", BuiltinScalarKind::F64),
+    ] {
+        let matrix = fixed_matrix(BuiltinScalarKind::F32, 2, 3);
+        for other in [
+            scalar(BuiltinScalarKind::F64),
+            fixed_matrix(BuiltinScalarKind::F64, 2, 1),
+            fixed_matrix(BuiltinScalarKind::F64, 1, 3),
+        ] {
+            for inputs in [
+                [matrix.clone(), other.clone()],
+                [other.clone(), matrix.clone()],
+            ] {
+                let resolved = resolve_named_overload(name, &inputs).unwrap();
+                assert_eq!(
+                    resolved.outputs.as_ref(),
+                    &[fixed_matrix(output_element, 2, 3)],
+                    "{name} returned the wrong broadcast shape"
+                );
+            }
+        }
+        for other in [
+            fixed_matrix(BuiltinScalarKind::F64, 3, 1),
+            fixed_matrix(BuiltinScalarKind::F64, 1, 4),
+            fixed_matrix(BuiltinScalarKind::F64, 3, 2),
+        ] {
+            assert!(
+                resolve_named_overload(name, &[matrix.clone(), other]).is_err(),
+                "{name} admitted incompatible elementwise matrix dimensions"
+            );
+        }
+    }
+}
+
+#[test]
+fn whole_value_assignment_requires_exact_matrix_dimensions() {
+    let matrix = fixed_matrix(BuiltinScalarKind::F64, 2, 3);
+    let scalar = scalar(BuiltinScalarKind::F64);
+    for name in [
+        "math/add-assign",
+        "math/sub-assign",
+        "math/mul-assign",
+        "math/div-assign",
+    ] {
+        let scalar_assignment =
+            resolve_named_overload(name, &[matrix.clone(), scalar.clone()]).unwrap();
+        assert_eq!(scalar_assignment.outputs.as_ref(), &[matrix.clone()]);
+
+        let matrix_assignment =
+            resolve_named_overload(name, &[matrix.clone(), matrix.clone()]).unwrap();
+        assert_eq!(matrix_assignment.outputs.as_ref(), &[matrix.clone()]);
+
+        assert!(
+            resolve_named_overload(
+                name,
+                &[matrix.clone(), fixed_matrix(BuiltinScalarKind::F64, 3, 2)],
+            )
+            .is_err(),
+            "{name} admitted an incompatible whole-matrix source"
+        );
+    }
+}
+
+#[test]
 fn boolean_broadcast_overloads_preserve_axes_in_both_operand_orders() {
     for name in ["logic/and", "logic/or", "logic/xor"] {
         let matrix = fixed_matrix(BuiltinScalarKind::Bool, 2, 3);
@@ -606,6 +706,17 @@ fn boolean_broadcast_overloads_preserve_axes_in_both_operand_orders() {
             assert_eq!(resolved.outputs.as_ref(), &[changing_matrix.clone()]);
         }
     }
+}
+
+#[test]
+fn complex_absolute_value_matches_the_maintained_runtime_result_kind() {
+    let complex = scalar(BuiltinScalarKind::C64);
+    let resolved = resolve_named_overload("math/abs", core::slice::from_ref(&complex)).unwrap();
+    assert_eq!(resolved.outputs.as_ref(), core::slice::from_ref(&complex));
+
+    let matrix = fixed_matrix(BuiltinScalarKind::C64, 2, 3);
+    let resolved = resolve_named_overload("math/abs", core::slice::from_ref(&matrix)).unwrap();
+    assert_eq!(resolved.outputs.as_ref(), core::slice::from_ref(&matrix));
 }
 
 #[test]

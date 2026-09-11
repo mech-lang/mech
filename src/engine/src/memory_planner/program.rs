@@ -759,10 +759,9 @@ pub fn instantiate_program_memory_plan_with_target_overrides(
             .get(&allocation.space)
             .unwrap_or(default_target);
         let demand = demand_for_allocation(allocation)?;
-        budget_violations.extend(mech_core::evaluate_memory_budget(
+        budget_violations.extend(mech_core::evaluate_aggregate_memory_budget(
             allocation.owner.clone(),
             demand,
-            allocation.capacity_bytes,
             matches!(allocation.space, MemorySpace::Device { .. })
                 .then_some(allocation.capacity_bytes)
                 .unwrap_or(0),
@@ -1031,10 +1030,9 @@ pub(crate) fn attach_resident_call_memory_template(
                 | MemoryObjectOwner::TransactionStage { .. }
         )
     }) {
-        violations.extend(mech_core::evaluate_memory_budget(
+        violations.extend(mech_core::evaluate_aggregate_memory_budget(
             allocation.owner.clone(),
             demand_for_allocation(allocation)?,
-            allocation.capacity_bytes,
             matches!(allocation.space, MemorySpace::Device { .. })
                 .then_some(allocation.capacity_bytes)
                 .unwrap_or(0),
@@ -1633,8 +1631,8 @@ fn aggregate_budget_violations(
             .first()
             .map(|a| a.owner.clone())
             .unwrap_or(MemoryObjectOwner::Transfer { ordinal: 0 });
-        violations.extend(mech_core::evaluate_memory_budget(
-            owner, demand, 0, 0, limits,
+        violations.extend(mech_core::evaluate_aggregate_memory_budget(
+            owner, demand, 0, limits,
         ));
     }
     Ok(violations)

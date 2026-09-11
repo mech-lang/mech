@@ -972,7 +972,15 @@ fn closed_schema_rebind_compatible(source: &SchemaBody, target: &SchemaBody) -> 
                 cardinality: target_cardinality,
             },
         ) => {
-            (source_cardinality == target_cardinality || dynamic_target(target_cardinality))
+            // Canonical bytecode preserves a set RuntimeType's capacity as a
+            // dynamic bound. Source typing may still assign the particular
+            // literal an exact cardinality. Rebinding is value-level, and the
+            // target schema is validated after this compatibility check, so a
+            // dynamic source may safely close to an exact target only when
+            // the payload actually has that cardinality.
+            (source_cardinality == target_cardinality
+                || matches!(source_cardinality, crate::CardinalitySpec::Dynamic { .. })
+                || dynamic_target(target_cardinality))
                 && closed_schema_rebind_compatible(source_element, target_element)
         }
         (

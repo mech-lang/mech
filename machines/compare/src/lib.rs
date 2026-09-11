@@ -50,6 +50,12 @@ use std::sync::LazyLock;
 pub(crate) fn semantic_compare_extents(inputs: &[&SpecializationInput]) -> MResult<Box<[u64]>> {
     let mut result: Option<[u64; 2]> = None;
     for input in inputs {
+        if !matches!(
+            input.cell()?.closed_schema_body()?,
+            SchemaBody::Matrix { .. }
+        ) {
+            continue;
+        }
         let extents = input
             .cell()?
             .resolved_descriptor()?
@@ -363,11 +369,21 @@ fn apply_managed_comparison<T: ManagedElement, O: ManagedElement>(
     broadcast: ComparisonBroadcast,
     operation: impl Fn(T, T) -> O,
 ) -> MResult<()> {
+    let output_rows = out.rows();
+    let output_columns = out.columns();
     let same_shape = |view: &ManagedValueView<'_, T>| {
-        view.rows() == out.rows() && view.columns() == out.columns()
+        view.rows() == output_rows && view.columns() == output_columns
+    };
+    let can_broadcast = |view: &ManagedValueView<'_, T>| {
+        same_shape(view)
+            || view.len() == 1
+            || (view.columns() == 1 && view.rows() == output_rows)
+            || (view.rows() == 1 && view.columns() == output_columns)
     };
     let geometry_valid = match broadcast {
-        ComparisonBroadcast::Exact => same_shape(&lhs) && same_shape(&rhs),
+        ComparisonBroadcast::Exact => {
+            (same_shape(&lhs) || same_shape(&rhs)) && can_broadcast(&lhs) && can_broadcast(&rhs)
+        }
         ComparisonBroadcast::LeftScalar => lhs.len() == 1 && same_shape(&rhs),
         ComparisonBroadcast::RightScalar => same_shape(&lhs) && rhs.len() == 1,
         ComparisonBroadcast::LeftColumn => {
@@ -391,7 +407,6 @@ fn apply_managed_comparison<T: ManagedElement, O: ManagedElement>(
             None,
         ));
     }
-    let output_rows = out.rows();
     out.try_fill_column_major(|index| {
         let row = if output_rows == 0 {
             0
@@ -403,8 +418,38 @@ fn apply_managed_comparison<T: ManagedElement, O: ManagedElement>(
         } else {
             index / output_rows
         };
+        let compatible_index = |view: &ManagedValueView<'_, T>| {
+            if same_shape(view) {
+                Some(index)
+            } else if view.len() == 1 {
+                Some(0)
+            } else if view.columns() == 1 && view.rows() == output_rows {
+                Some(row)
+            } else if view.rows() == 1 && view.columns() == output_columns {
+                Some(column)
+            } else {
+                None
+            }
+        };
         let (lhs_index, rhs_index) = match broadcast {
-            ComparisonBroadcast::Exact => (index, index),
+            ComparisonBroadcast::Exact => (
+                compatible_index(&lhs).ok_or_else(|| {
+                    MechError::new(
+                        GenericError {
+                            msg: "comparison managed broadcast geometry is invalid".into(),
+                        },
+                        None,
+                    )
+                })?,
+                compatible_index(&rhs).ok_or_else(|| {
+                    MechError::new(
+                        GenericError {
+                            msg: "comparison managed broadcast geometry is invalid".into(),
+                        },
+                        None,
+                    )
+                })?,
+            ),
             ComparisonBroadcast::LeftScalar => (0, index),
             ComparisonBroadcast::RightScalar => (index, 0),
             ComparisonBroadcast::LeftColumn => (row, index),
@@ -462,10 +507,7 @@ fn canonical_string_extents(value: &Value, cell: &ValueCell) -> MResult<Option<(
                     function_shape_contract_violation("comparison", "row extent exceeds usize")
                 })?,
                 usize::try_from(*columns).map_err(|_| {
-                    function_shape_contract_violation(
-                        "comparison",
-                        "column extent exceeds usize",
-                    )
+                    function_shape_contract_violation("comparison", "column extent exceeds usize")
                 })?,
             )))
         }
@@ -519,7 +561,11 @@ fn canonical_string_comparison_geometry(
     rhs_cell: &ValueCell,
     output: &ValueCell,
     broadcast: ComparisonBroadcast,
-) -> MResult<(Option<(usize, usize)>, Option<(usize, usize)>, Option<(usize, usize)>)> {
+) -> MResult<(
+    Option<(usize, usize)>,
+    Option<(usize, usize)>,
+    Option<(usize, usize)>,
+)> {
     let lhs_extents = canonical_string_extents(lhs, lhs_cell)?;
     let rhs_extents = canonical_string_extents(rhs, rhs_cell)?;
     let output_shape = output
@@ -543,16 +589,23 @@ fn canonical_string_comparison_geometry(
             ));
         }
     };
+    let exact = |input| input == output_extents;
+    let can_broadcast = |input| match (input, output_extents) {
+        (None, None) => true,
+        (Some((input_rows, input_columns)), Some((rows, columns))) => {
+            (input_rows == rows || input_rows == 1)
+                && (input_columns == columns || input_columns == 1)
+        }
+        _ => false,
+    };
     let valid = match broadcast {
         ComparisonBroadcast::Exact => {
-            lhs_extents == output_extents && rhs_extents == output_extents
+            (exact(lhs_extents) || exact(rhs_extents))
+                && can_broadcast(lhs_extents)
+                && can_broadcast(rhs_extents)
         }
-        ComparisonBroadcast::LeftScalar => {
-            lhs_extents.is_none() && rhs_extents == output_extents
-        }
-        ComparisonBroadcast::RightScalar => {
-            lhs_extents == output_extents && rhs_extents.is_none()
-        }
+        ComparisonBroadcast::LeftScalar => lhs_extents.is_none() && rhs_extents == output_extents,
+        ComparisonBroadcast::RightScalar => lhs_extents == output_extents && rhs_extents.is_none(),
         ComparisonBroadcast::LeftColumn => {
             matches!((lhs_extents, output_extents), (Some((left_rows, 1)), Some((rows, _))) if left_rows == rows)
                 && rhs_extents == output_extents
@@ -689,9 +742,8 @@ fn canonical_string_selection_footprint(
     broadcast: ComparisonBroadcast,
     choose_left: impl Fn(&str, &str) -> bool,
 ) -> MResult<CurrentMemoryFootprint> {
-    let (lhs_extents, rhs_extents, output_extents) = canonical_string_comparison_geometry(
-        lhs, lhs_cell, rhs, rhs_cell, output, broadcast,
-    )?;
+    let (lhs_extents, rhs_extents, output_extents) =
+        canonical_string_comparison_geometry(lhs, lhs_cell, rhs, rhs_cell, output, broadcast)?;
     let (rows, columns, matrix) = output_extents
         .map(|(rows, columns)| (rows, columns, true))
         .unwrap_or((1, 1, false));
@@ -763,9 +815,8 @@ fn apply_canonical_string_selection(
                 let lhs = canonical_string_at(&lhs_value, lhs_extents, 0, 0)?;
                 let rhs = canonical_string_at(&rhs_value, rhs_extents, 0, 0)?;
                 let selected = if choose_left(lhs, rhs) { lhs } else { rhs };
-                let draft = ValueDataDraft::String(
-                    construction.try_concatenate_string(selected, "")?,
-                );
+                let draft =
+                    ValueDataDraft::String(construction.try_concatenate_string(selected, "")?);
                 construction.try_rebuild_data_draft(out.cell(), draft)?
             }
             Some((rows, columns)) => {
@@ -783,7 +834,11 @@ fn apply_canonical_string_selection(
                     ))
                 })?;
                 let dimensions = construction.try_boxed_slice_with(2, |_construction, index| {
-                    Ok(if index == 0 { rows as u64 } else { columns as u64 })
+                    Ok(if index == 0 {
+                        rows as u64
+                    } else {
+                        columns as u64
+                    })
                 })?;
                 construction.try_rebuild_matrix_drafts(out.cell(), dimensions, drafts)?
             }
@@ -907,9 +962,7 @@ macro_rules! impl_compare_typed_binop {
         }
         #[cfg(feature = "string")]
         impl MechFunctionImpl for $struct_name<String> {
-            fn planned_output_footprints(
-                &self,
-            ) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+            fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
                 if !matches!(
                     self.invocation.output_cell().representation(),
                     FunctionValueRepresentation::String

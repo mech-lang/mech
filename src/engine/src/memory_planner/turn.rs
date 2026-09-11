@@ -232,7 +232,7 @@ pub fn plan_turn_memory(
         .map(|allocation| allocation.capacity_bytes)
         .max()
         .unwrap_or(0);
-    budget_violations.extend(mech_core::evaluate_memory_budget(
+    budget_violations.extend(mech_core::evaluate_call_memory_budget(
         MemoryObjectOwner::NodeOutput { node, port: 0 },
         demand,
         output_bytes,
@@ -272,7 +272,7 @@ pub(crate) fn check_turn_planning_progress(
         plan.demand,
         checked_demand_add(progress, plan.facts.additional_demand)?,
     );
-    if let Some(violation) = mech_core::evaluate_memory_budget(
+    if let Some(violation) = mech_core::evaluate_call_memory_budget(
         MemoryObjectOwner::NodeOutput {
             node: plan.node,
             port: 0,
@@ -357,7 +357,7 @@ pub(crate) fn try_admit_fixed_turn_memory(
         return Ok(None);
     }
     let demand = demand_max(plan.demand, observed);
-    if let Some(violation) = mech_core::evaluate_memory_budget(
+    if let Some(violation) = mech_core::evaluate_call_memory_budget(
         MemoryObjectOwner::NodeOutput {
             node: plan.node,
             port: 0,
@@ -549,7 +549,7 @@ pub(crate) fn apply_observed_turn_demand(
         .map(|allocation| allocation.capacity_bytes)
         .max()
         .unwrap_or(0);
-    let mut violations = mech_core::evaluate_memory_budget(
+    let mut violations = mech_core::evaluate_call_memory_budget(
         MemoryObjectOwner::NodeOutput {
             node: plan.node,
             port: 0,

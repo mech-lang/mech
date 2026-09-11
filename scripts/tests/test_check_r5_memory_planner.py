@@ -297,6 +297,21 @@ class R5MemoryPlannerCheckerTests(unittest.TestCase):
         )
         self.assert_failure(root, "deferred budget closure")
 
+    def test_call_and_aggregate_budget_scopes_cannot_be_collapsed(self):
+        for helper in (
+            "evaluate_call_memory_budget",
+            "evaluate_aggregate_memory_budget",
+        ):
+            with self.subTest(helper=helper):
+                root = self.fixture()
+                self.replace(
+                    root,
+                    "src/core/src/memory_plan/budget.rs",
+                    helper,
+                    f"unchecked_{helper}",
+                )
+                self.assert_failure(root, f"checked by construction: {helper}")
+
     def test_incremental_progress_cannot_replace_target_limits(self):
         root = self.fixture()
         path = "src/engine/src/memory_planner/turn.rs"

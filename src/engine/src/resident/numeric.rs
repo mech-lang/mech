@@ -420,6 +420,9 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     // the resident implementation from the resolved contract and layouts.
     register_no_additional_scratch(builder, &["math"], "add", bind_add)?;
     register_no_additional_scratch(builder, &["math"], "add-assign", bind_semantic_add_assign)?;
+    register_no_additional_scratch(builder, &["math"], "div-assign", bind_div_assign)?;
+    register_no_additional_scratch(builder, &["math"], "mul-assign", bind_mul_assign)?;
+    register_no_additional_scratch(builder, &["math"], "sub-assign", bind_semantic_sub_assign)?;
     register_no_additional_scratch(
         builder,
         &["math", "add-assign"],
@@ -498,6 +501,7 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     register_no_additional_scratch(builder, &["compare"], "seq", bind_strict_equal)?;
     register_no_additional_scratch(builder, &["compare"], "sneq", bind_strict_not_equal)?;
     register_canonical_finalize(builder, &["access"], "scalar", bind_semantic_scalar_access)?;
+    register_canonical_finalize(builder, &["access"], "column", bind_snapshot_access)?;
     register_canonical_finalize(builder, &["access"], "rows", bind_semantic_rows_access)?;
     register_canonical_finalize(
         builder,
@@ -2568,8 +2572,9 @@ fn bind_pow(
         .or_else(|_| bind_snapshot_numeric_binary(request, SemanticArithmetic::Power))
 }
 
-fn bind_add_assign(
+fn bind_f64_assign(
     request: &ResidentKernelBindRequest<'_>,
+    executor: mech_core::ResidentKernelExecutor,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     validate_rmw(request, 2, RegionPolicy::WholeValue)?;
     require_kind(
@@ -2578,17 +2583,48 @@ fn bind_add_assign(
         ResidentValueKind::F64,
     )?;
     if request.inputs[0].shape != request.output.shape
-        || request.inputs[1].shape != request.output.shape
+        || (request.inputs[1].shape != request.output.shape
+            && request.inputs[1].shape.len() != Some(1))
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
-    bound(add_assign, Vec::<u64>::new().into_boxed_slice())
+    bound(executor, Vec::<u64>::new().into_boxed_slice())
+}
+
+fn bind_add_assign(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_f64_assign(request, add_assign)
+}
+
+fn bind_sub_assign(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_f64_assign(request, sub_assign)
+}
+
+fn bind_mul_assign(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_f64_assign(request, mul_assign)
+}
+
+fn bind_div_assign(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_f64_assign(request, div_assign)
 }
 
 fn bind_semantic_add_assign(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_add_assign(request).or_else(|_| bind_add_indexed_rows(request))
+}
+
+fn bind_semantic_sub_assign(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_sub_assign(request).or_else(|_| bind_sub_indexed_rows(request))
 }
 
 fn bind_transpose(
@@ -4333,7 +4369,6 @@ fn bind_semantic_columns_access(
         .or_else(|_| bind_snapshot_access_mode(request, Some(ResolvedSelectionMode::Columns)))
 }
 
-#[cfg(test)]
 fn bind_snapshot_access(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
@@ -8869,26 +8904,59 @@ fn multiply_rows(
     }))
 }
 
-fn add_assign(
-    _kernel: &BoundResidentKernel,
+fn f64_assign(
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
+    operation: impl Fn(f64, f64) -> f64,
 ) -> Result<bool, ResidentKernelError> {
     if inputs.len() != 1 {
         return Err(ResidentKernelError::InvalidInput);
     }
     let source = f64_input(inputs, 0)?;
     let output = f64_output(output)?;
-    if source.len() != output.len() {
+    if source.len() != 1 && source.len() != output.len() {
         return Err(ResidentKernelError::InvalidShape);
     }
     let mut changed = false;
-    for (target, source) in output.iter_mut().zip(source) {
-        let next = *target + *source;
+    for (index, target) in output.iter_mut().enumerate() {
+        let source = source[if source.len() == 1 { 0 } else { index }];
+        let next = operation(*target, source);
         changed |= next.to_bits() != target.to_bits();
         *target = next;
     }
     Ok(changed)
+}
+
+fn add_assign(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    f64_assign(inputs, output, |target, source| target + source)
+}
+
+fn sub_assign(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    f64_assign(inputs, output, |target, source| target - source)
+}
+
+fn mul_assign(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    f64_assign(inputs, output, |target, source| target * source)
+}
+
+fn div_assign(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    f64_assign(inputs, output, |target, source| target / source)
 }
 
 fn transpose_dense(
@@ -13815,6 +13883,77 @@ mod tests {
             .into_boxed_slice(),
             interaction: ExternalInteraction::Pure,
         })
+    }
+
+    #[test]
+    fn f64_assignment_families_support_scalar_broadcast() {
+        let f64_body = SchemaBody::FloatingPoint(mech_core::FloatWidth::W64);
+        let matrix_body = SchemaBody::Matrix {
+            element: Box::new(f64_body.clone()),
+            dimensions: vec![
+                mech_core::DimensionExpr::Constant(2),
+                mech_core::DimensionExpr::Constant(1),
+            ]
+            .into_boxed_slice(),
+        };
+        let (schemas, ids) = test_schema_table([f64_body, matrix_body]);
+        let [scalar_schema, matrix_schema] = ids.as_slice() else {
+            unreachable!()
+        };
+        let matrix_layout = test_layout(
+            &schemas,
+            *matrix_schema,
+            ResidentValueKind::F64,
+            ResidentShape {
+                rows: 2,
+                columns: 1,
+            },
+        );
+        let scalar_layout = test_layout(
+            &schemas,
+            *scalar_schema,
+            ResidentValueKind::F64,
+            ResidentShape::SCALAR,
+        );
+        let contract = test_contract(
+            &[*matrix_schema, *scalar_schema],
+            *matrix_schema,
+            OutputConstruction::ReadModifyWrite {
+                base_input: 0,
+                regions: RegionPolicy::WholeValue,
+            },
+            AccessMode::ReadWrite,
+            AliasPolicy::MayAlias { input: 0 },
+            ChangeDetectionPolicy::KernelReported,
+        );
+        let request = ResidentKernelBindRequest {
+            contract: &contract,
+            schemas: &schemas,
+            inputs: &[matrix_layout.clone(), scalar_layout],
+            output: matrix_layout,
+        };
+        let binders: [(
+            fn(
+                &ResidentKernelBindRequest<'_>,
+            ) -> Result<BoundResidentKernel, ResidentKernelBindError>,
+            [f64; 2],
+        ); 4] = [
+            (bind_add_assign, [15.0, 23.0]),
+            (bind_sub_assign, [9.0, 17.0]),
+            (bind_mul_assign, [36.0, 60.0]),
+            (bind_div_assign, [4.0, 20.0 / 3.0]),
+        ];
+        let source = [3.0];
+        let inputs = [ResidentValueRef::F64(&source)];
+        for (binder, expected) in binders {
+            let kernel = binder(&request).unwrap();
+            let mut output = [12.0, 20.0];
+            assert_eq!(
+                kernel.execute(&Inputs(&inputs), ResidentValueMut::F64(&mut output)),
+                Ok(true)
+            );
+            assert_eq!(output, expected);
+        }
     }
 
     fn test_value(

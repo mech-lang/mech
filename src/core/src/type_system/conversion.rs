@@ -833,8 +833,37 @@ fn number_display(number: RuntimeNumber) -> String {
         RuntimeNumber::Signed(value) => value.to_string(),
         RuntimeNumber::F32(value) => value.to_string(),
         RuntimeNumber::F64(value) => value.to_string(),
-        RuntimeNumber::C32(real, imaginary) => format!("{real}+{imaginary}i"),
-        RuntimeNumber::C64(real, imaginary) => format!("{real}+{imaginary}i"),
+        RuntimeNumber::C32(real, imaginary) => complex_display(real, imaginary),
+        RuntimeNumber::C64(real, imaginary) => complex_display(real, imaginary),
         RuntimeNumber::Rational(numerator, denominator) => format!("{numerator}/{denominator}"),
+    }
+}
+
+fn complex_display<T>(real: T, imaginary: T) -> String
+where
+    T: ComplexDisplayPart,
+{
+    if real == T::default() {
+        format!("{imaginary}i")
+    } else if imaginary.is_sign_negative() {
+        format!("{real}{imaginary}i")
+    } else {
+        format!("{real}+{imaginary}i")
+    }
+}
+
+trait ComplexDisplayPart: Copy + core::fmt::Display + Default + PartialEq {
+    fn is_sign_negative(self) -> bool;
+}
+
+impl ComplexDisplayPart for f32 {
+    fn is_sign_negative(self) -> bool {
+        self.is_sign_negative()
+    }
+}
+
+impl ComplexDisplayPart for f64 {
+    fn is_sign_negative(self) -> bool {
+        self.is_sign_negative()
     }
 }

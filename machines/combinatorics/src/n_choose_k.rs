@@ -421,18 +421,6 @@ pub(crate) fn validate_canonical_n_choose_k_matrix_contract(
             "output must be matrix-backed",
         ));
     };
-    if !matches!(
-        output.representation(),
-        FunctionValueRepresentation::Matrix {
-            storage: FunctionMatrixStoragePattern::Exact(FunctionMatrixRepresentation::MatrixD),
-            ..
-        }
-    ) {
-        return Err(function_shape_contract_violation(
-            contract,
-            "output must use MatrixD storage",
-        ));
-    }
     let dimensions = |dimensions: &[DimensionExpr]| -> MResult<(usize, usize)> {
         let [
             DimensionExpr::Constant(rows),
