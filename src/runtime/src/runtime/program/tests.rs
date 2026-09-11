@@ -4803,6 +4803,59 @@ points := [1.0 2.0]
 }
 
 #[test]
+fn initial_external_export_rejection_precedes_effect_and_epoch_publication() {
+    let source = format!(
+        r#"
+@scene := scene://orbit/frame{{:write(points)}}
+seed := {:?}
+result := seed + seed
+@scene/points <- [1.0 2.0]
+result
+"#,
+        "x".repeat(16 * 1024),
+    );
+    let configured = |limit| {
+        let (mut runtime, trace) = product_nbody_runtime();
+        runtime.config.limits.max_memory_bytes = Some(limit);
+        runtime.resident_memory_budget = Some(mech_core::ManagedMemoryBudget::new(limit));
+        (runtime, trace)
+    };
+
+    let (mut probe, _) = configured(u64::MAX);
+    let exported = probe
+        .load_source_program(&source, crate::ResidentDurabilityPolicy::Volatile)
+        .unwrap();
+    let budget = probe.resident_memory_budget.clone().unwrap();
+    let with_export = budget.used_bytes();
+    drop(exported);
+    let retained = budget.used_bytes();
+    assert!(with_export > retained);
+    probe.unload_active_program().unwrap();
+    assert_eq!(budget.used_bytes(), 0);
+
+    let (mut rejected, trace) = configured(with_export - 1);
+    let error = rejected
+        .load_source_program(&source, crate::ResidentDurabilityPolicy::Volatile)
+        .unwrap_err();
+    assert!(
+        error
+            .kind_message()
+            .contains("candidate output snapshot failed"),
+        "{error:?}"
+    );
+    assert_eq!(trace.lock().unwrap().deliveries, 0);
+    assert_eq!(rejected.program_route(), RuntimeProgramRoute::None);
+    assert_eq!(
+        rejected
+            .resident_memory_budget
+            .as_ref()
+            .unwrap()
+            .used_bytes(),
+        0
+    );
+}
+
+#[test]
 fn resident_turn_duration_rejects_before_scene_publication_and_surfaces_publicly() {
     let (mut runtime, scene) = configured_product_nbody_runtime_with_delay(
         ProductSceneContract::AtMostOnce,

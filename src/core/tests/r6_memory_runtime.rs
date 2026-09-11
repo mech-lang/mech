@@ -312,6 +312,56 @@ fn configured_memory_budget_follows_independent_payload_and_frozen_owners() {
     assert_eq!(budget.used_bytes(), 0);
 }
 
+#[test]
+fn resident_payload_transfer_moves_capacity_and_revokes_the_replaced_envelope() {
+    let budget = mech_core::ManagedMemoryBudget::new(1024 * 1024);
+    let domain = MemoryDomain::with_memory_budget(budget.clone()).unwrap();
+    let revision = domain.issue_plan_revision().unwrap();
+    let mut payload = allocation(0, 0, 0, 0, 4096, MemoryLifetime::Activation, None);
+    payload.role = AllocationRole::VariablePayload;
+    payload.slot = None;
+    payload.payload_block_capacity = 4;
+    payload.alignment = 8;
+    let realized = domain
+        .materialize(
+            domain
+                .prepare_realization(runtime_plan_view(
+                    revision,
+                    &[payload],
+                    &[arena(
+                        0,
+                        ArenaBackingKind::IndirectOwnedPayloads,
+                        4096,
+                        &[0],
+                    )],
+                    ResourceDemand::default(),
+                    MemoryBudgetLimits::default(),
+                    &[],
+                ))
+                .unwrap(),
+        )
+        .unwrap();
+    let key = domain
+        .plan_object_key(revision, MemoryObjectId::new(0))
+        .unwrap();
+    let before = budget.used_bytes();
+    let transferred = domain
+        .transfer_resident_payload_budget_capacity(&realized, key)
+        .unwrap();
+    assert_eq!(transferred.capacity_bytes(), 4096);
+    assert_eq!(budget.used_bytes(), before);
+    let revoked = domain.planned_allocator(&realized, key).unwrap();
+    assert!(matches!(
+        ManagedString::try_new(revoked, "cannot allocate twice"),
+        Err(MemoryRuntimeError::DomainClosed)
+    ));
+    drop(realized);
+    drop(domain);
+    assert_eq!(budget.used_bytes(), 4096);
+    drop(transferred);
+    assert_eq!(budget.used_bytes(), 0);
+}
+
 fn detached_budget_test_value(payload: &str) -> mech_core::Value {
     let schema = SchemaDraft {
         dimension_parameters: Box::new([]),

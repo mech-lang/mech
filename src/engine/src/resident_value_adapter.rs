@@ -14,13 +14,21 @@ use crate::resident::general::{
 
 impl ReactiveInstance {
     pub fn copied_output(&self, output: usize) -> Result<Value, ResidentActivationError> {
+        self.copied_output_at(output, self.published_epoch())
+    }
+
+    pub(crate) fn copied_output_at(
+        &self,
+        output: usize,
+        epoch: mech_core::InstanceEpoch,
+    ) -> Result<Value, ResidentActivationError> {
         let declaration = self
             .plan
             .outputs
             .get(output)
             .ok_or(ResidentActivationError::UnknownOutput { output })?;
         let borrowed = self
-            .output_borrow(output)
+            .output_borrow_at(output, epoch)
             .ok_or(ResidentActivationError::UnknownOutput { output })?;
         let scalar = !matches!(
             self.plan

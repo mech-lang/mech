@@ -1346,6 +1346,51 @@ pub struct MemoryDomain {
 }
 
 impl MemoryDomain {
+    /// Transfers one unused indirect envelope's payload capacity to the
+    /// resident typed-lane owner that replaces that envelope as the physical
+    /// payload authority. The envelope's registration metadata remains with
+    /// the realization and its allocator is revoked atomically with transfer.
+    #[doc(hidden)]
+    pub fn transfer_resident_payload_budget_capacity(
+        &self,
+        realized: &RealizedMemoryPlan,
+        object: PlanObjectKey,
+    ) -> MemoryRuntimeResult<super::ManagedMemoryReservation> {
+        if realized.domain() != self.id() || object.domain() != self.id() {
+            return Err(MemoryRuntimeError::WrongMemoryDomain {
+                expected: self.id(),
+                actual: realized.domain(),
+            });
+        }
+        let binding = realized.binding(object)?;
+        let RuntimeBinding::ManagedCanonicalPayload { handle, .. } = binding else {
+            return Err(MemoryRuntimeError::InvalidLayout {
+                object: Some(object.object()),
+                size: binding.capacity_bytes(),
+                alignment: 1,
+                reason: "resident payload transfer requires an indirect envelope",
+            });
+        };
+        let owner = {
+            let state = self.state.borrow();
+            if state.closed {
+                return Err(MemoryRuntimeError::DomainClosed);
+            }
+            state
+                .record(handle)?
+                .payload_owner
+                .as_ref()
+                .cloned()
+                .ok_or(MemoryRuntimeError::InvalidLayout {
+                    object: Some(object.object()),
+                    size: binding.capacity_bytes(),
+                    alignment: 1,
+                    reason: "indirect envelope has no payload owner",
+                })?
+        };
+        owner.transfer_payload_budget_capacity()
+    }
+
     /// Claims a complete contiguous arena and initializes its closed,
     /// type-safe resident lane projection.
     pub fn project_host_arena<T: PlannedArenaElement>(

@@ -14,8 +14,8 @@ use super::{
     ActivatedExternalNode, ActivatedNodeIndex, ActivatedTurnStep, F64_STATE_ARENA_BASE,
     F64_STATE_SLOT_BIT, F64ReadTapeEntry, ReactiveInstance, ResidentActivationError,
     ResidentEffectIntent, ResidentExternalPublicationAuthority, ResidentIntegrityMode,
-    ResidentReadLocation, ResidentRegion, ResidentStorageClass, SlotRole, StateArena, StateVersion,
-    TypedResidentArena,
+    ResidentReadLocation, ResidentRegion, ResidentStorageClass, ResidentValueBorrow, SlotRole,
+    StateArena, StateVersion, TypedResidentArena,
 };
 
 #[derive(Clone, Copy, Debug)]
@@ -193,6 +193,25 @@ impl PreparedResidentTurn<'_> {
             .materialize_effect_payload(ordinal)
     }
 
+    /// Creates an owning export from the prepared candidate before any
+    /// publication authority is exercised. Loaders use this to include their
+    /// initial return value in the same fail-closed transaction.
+    #[doc(hidden)]
+    pub fn copied_output(&self, output: usize) -> Result<Value, ResidentActivationError> {
+        self.instance
+            .as_deref()
+            .expect("live prepared resident turn")
+            .copied_output_at(output, self.working_epoch)
+    }
+
+    #[doc(hidden)]
+    pub fn output_borrow(&self, output: usize) -> Option<ResidentValueBorrow<'_>> {
+        self.instance
+            .as_deref()
+            .expect("live prepared resident turn")
+            .output_borrow_at(output, self.working_epoch)
+    }
+
     /// Publishes an ordinary pure resident turn.
     ///
     /// External plans fail closed: their state may be published only through
@@ -335,6 +354,55 @@ impl ReactiveInstance {
             OutputConstruction::ReadModifyWrite { base_input, .. } => Some(base_input as usize),
             _ => None,
         };
+        let region = node.write.region;
+        let storage = node.write.storage;
+        let candidate = if storage == ResidentStorageClass::State {
+            if matches!(
+                node.construction,
+                OutputConstruction::ReadModifyWrite { .. }
+            ) {
+                self.state
+                    .version(node.write.slot)
+                    .epochs
+                    .iter()
+                    .position(|epoch| *epoch == Some(working_epoch))
+                    .unwrap_or_else(|| self.state.candidate_buffer(node.write.slot, before_epoch))
+            } else {
+                self.state.candidate_buffer(node.write.slot, before_epoch)
+            }
+        } else {
+            0
+        };
+        let target = match storage {
+            ResidentStorageClass::State => &self.state.buffers[candidate],
+            ResidentStorageClass::Scratch => &self.workspace.scratch,
+            ResidentStorageClass::Input => &self.workspace.input,
+            ResidentStorageClass::Constant => &self.activation,
+        };
+        let scope = target
+            .prepare_payload_write(region)
+            .and_then(|scope| {
+                if scope.is_some() {
+                    Ok(scope)
+                } else {
+                    self.transient_budget
+                        .as_ref()
+                        .map(|owner| owner.begin(region))
+                        .transpose()
+                }
+            })
+            .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+        if let Some(scope) = &scope {
+            let container = u64::try_from(call.inputs.len())
+                .ok()
+                .and_then(|inputs| {
+                    inputs.checked_mul(core::mem::size_of::<ResidentValueRef<'_>>() as u64)
+                })
+                .ok_or_else(fail)?;
+            scope
+                .admit_auxiliary(container)
+                .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+        }
         let mut reads = self.plan.reads[node.reads.start as usize..node.reads.end as usize].iter();
         let inputs = (0..call.inputs.len())
             .map(|ordinal| {
@@ -377,44 +445,6 @@ impl ReactiveInstance {
             // no kernel and must not manufacture a transient payload scope.
             return super::super::budget::with_resident_turn_plan(turn_plan, || execute(self));
         }
-        let region = node.write.region;
-        let storage = node.write.storage;
-        let candidate = if storage == ResidentStorageClass::State {
-            if matches!(
-                node.construction,
-                OutputConstruction::ReadModifyWrite { .. }
-            ) {
-                self.state
-                    .version(node.write.slot)
-                    .epochs
-                    .iter()
-                    .position(|epoch| *epoch == Some(working_epoch))
-                    .unwrap_or_else(|| self.state.candidate_buffer(node.write.slot, before_epoch))
-            } else {
-                self.state.candidate_buffer(node.write.slot, before_epoch)
-            }
-        } else {
-            0
-        };
-        let target = match storage {
-            ResidentStorageClass::State => &self.state.buffers[candidate],
-            ResidentStorageClass::Scratch => &self.workspace.scratch,
-            ResidentStorageClass::Input => &self.workspace.input,
-            ResidentStorageClass::Constant => &self.activation,
-        };
-        let scope = target
-            .prepare_payload_write(region)
-            .and_then(|scope| {
-                if scope.is_some() {
-                    Ok(scope)
-                } else {
-                    self.transient_budget
-                        .as_ref()
-                        .map(|owner| owner.begin(region))
-                        .transpose()
-                }
-            })
-            .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
         if let Some(scope) = &scope {
             if region.kind == ResidentValueKind::Snapshot || has_canonical_input {
                 let bytes = self
@@ -439,9 +469,15 @@ impl ReactiveInstance {
             ResidentStorageClass::Input => &mut self.workspace.input,
             ResidentStorageClass::Constant => &mut self.activation,
         };
-        target
-            .finish_payload_write(region, scope)
-            .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+        if result.is_err() || admission_error.is_some() {
+            target
+                .abort_payload_write(region, scope)
+                .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+        } else {
+            target
+                .finish_payload_write(region, scope)
+                .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+        }
         if let Some(error) = admission_error {
             return Err(ResidentExecutionError::MemoryRuntime { error });
         }
@@ -792,6 +828,30 @@ impl ReactiveInstance {
     }
 
     fn abort_candidate(&mut self, working_epoch: InstanceEpoch) {
+        // Kernel-level payload admission becomes durable only with the whole
+        // turn. Drop every payload written by completed steps before erasing
+        // their epoch/execution evidence so a failed turn cannot consume the
+        // next turn's exact candidate headroom.
+        self.state.abort_payloads(working_epoch);
+        for index in 0..self.plan.steps.len() {
+            if !bit_is_set(&self.workspace.executed_bits, index) {
+                continue;
+            }
+            let (scratch, effect) = match &self.plan.steps[index] {
+                ActivatedTurnStep::Kernel(node) => (
+                    (node.write.storage == ResidentStorageClass::Scratch)
+                        .then_some(node.write.region),
+                    None,
+                ),
+                ActivatedTurnStep::External(node) => (None, Some(node.captured_payload)),
+            };
+            if let Some(region) = scratch {
+                self.workspace.scratch.discard_payload_write(region);
+            }
+            if let Some(region) = effect {
+                self.workspace.effect_payloads.discard_payload_write(region);
+            }
+        }
         self.state.abort(working_epoch);
         self.workspace.initialized_output_bits.fill(0);
         self.workspace.all_outputs_initialized = false;
@@ -975,6 +1035,7 @@ impl ReactiveInstance {
             return self.execute_candidate(before_epoch, working_epoch, &mut probe);
         }
         let mut dirty = self.workspace.dirty_bits[0];
+        let mut executed = 0_u64;
         for order in 0..self.plan.topology.single_word_schedule.len() {
             let entry = self.plan.topology.single_word_schedule[order];
             if dirty & entry.node_bit == 0 {
@@ -990,6 +1051,8 @@ impl ReactiveInstance {
                 working_epoch,
                 entry.downstream != 0,
             )?;
+            executed |= entry.node_bit;
+            self.workspace.executed_bits[0] = executed;
             if changed {
                 dirty |= entry.downstream;
             }
@@ -1024,6 +1087,7 @@ impl ReactiveInstance {
                 }
                 let changed = self.execute_step(entry.node, before_epoch, working_epoch, probe)?;
                 executed |= entry.node_bit;
+                self.workspace.executed_bits[0] = executed;
                 if changed {
                     dirty |= entry.downstream;
                 }
@@ -1081,6 +1145,7 @@ impl ReactiveInstance {
                 let changed =
                     self.execute_kernel(entry.node, before_epoch, working_epoch, probe)?;
                 executed |= entry.node_bit;
+                self.workspace.executed_bits[0] = executed;
                 if changed {
                     dirty |= entry.downstream;
                 }

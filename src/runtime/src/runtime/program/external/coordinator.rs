@@ -404,7 +404,7 @@ impl ResidentExternalCoordinator {
     pub fn execute_turn(&mut self) -> MResult<ResidentExternalTurnOutcome> {
         self.ensure_live_bindings()?;
         let admission = self.reserve_live_turn()?;
-        self.execute_live_turn(None, admission, || Ok(()))
+        self.execute_live_turn(None, admission, |_| Ok(()))
     }
 
     /// Executes one live turn while using owned ingress values for matching
@@ -418,7 +418,7 @@ impl ResidentExternalCoordinator {
         updates: &[crate::RuntimeHostInputUpdate],
     ) -> MResult<ResidentExternalTurnOutcome> {
         let admission = self.admit_host_turn(updates)?;
-        self.execute_live_turn(Some(updates), admission, || Ok(()))
+        self.execute_live_turn(Some(updates), admission, |_| Ok(()))
     }
 
     pub(crate) fn admit_host_turn(
@@ -438,7 +438,7 @@ impl ResidentExternalCoordinator {
         prepublication: F,
     ) -> MResult<ResidentExternalTurnOutcome>
     where
-        F: FnOnce() -> MResult<()>,
+        F: FnOnce(&PreparedResidentTurn<'_>) -> MResult<()>,
     {
         self.execute_live_turn(Some(updates), admission, prepublication)
     }
@@ -450,7 +450,7 @@ impl ResidentExternalCoordinator {
         prepublication: F,
     ) -> MResult<ResidentExternalTurnOutcome>
     where
-        F: FnOnce() -> MResult<()>,
+        F: FnOnce(&PreparedResidentTurn<'_>) -> MResult<()>,
     {
         self.execute_live_turn(None, admission, prepublication)
     }
@@ -541,7 +541,7 @@ impl ResidentExternalCoordinator {
         prepublication: F,
     ) -> MResult<ResidentExternalTurnOutcome>
     where
-        F: FnOnce() -> MResult<()>,
+        F: FnOnce(&PreparedResidentTurn<'_>) -> MResult<()>,
     {
         let ResidentExternalTurnAdmission {
             input_permit,
@@ -921,7 +921,7 @@ impl ResidentExternalCoordinator {
         prepublication: F,
     ) -> MResult<ResidentExternalTurnOutcome>
     where
-        F: FnOnce() -> MResult<()>,
+        F: FnOnce(&PreparedResidentTurn<'_>) -> MResult<()>,
     {
         let before_epoch = prepared_turn.summary().before_epoch;
         let materialized = match materialize_effects(
@@ -1025,7 +1025,7 @@ impl ResidentExternalCoordinator {
             );
         }
 
-        if let Err(error) = prepublication() {
+        if let Err(error) = prepublication(&prepared_turn) {
             let mut cleanup = journal.compensate_applied_reverse();
             cleanup.extend(journal.abort_all());
             prepared_turn.abort();

@@ -541,28 +541,78 @@ impl TypedResidentArena {
                             .map_err(|error| {
                                 ResidentActivationError::ResidentMemoryPlanRejected { error }
                             })?;
+                    let snapshot_arena =
+                        resident_arena_id((planned_class, ResidentValueKind::Snapshot, buffer))
+                            .map_err(|error| {
+                                ResidentActivationError::ResidentMemoryPlanRejected { error }
+                            })?;
                     let payload_arena =
                         crate::memory_planner::resident_payload_arena_id((planned_class, buffer))
                             .map_err(
                             |error| ResidentActivationError::ResidentMemoryPlanRejected { error },
                         )?;
-                    let mut prepaid = 0_u64;
+                    let mut string_prepaid = budget
+                        .reserve_capacity(0)
+                        .map_err(|error| ResidentActivationError::MemoryRuntime { error })?;
+                    let mut snapshot_prepaid = budget
+                        .reserve_capacity(0)
+                        .map_err(|error| ResidentActivationError::MemoryRuntime { error })?;
                     for allocation in plan
                         .allocations
                         .iter()
                         .filter(|allocation| allocation.placement.arena == payload_arena)
                     {
+                        if allocation.capacity_bytes == 0 {
+                            continue;
+                        }
                         if plan.allocations.iter().any(|fixed| {
                             fixed.placement.arena == string_arena && fixed.owner == allocation.owner
                         }) {
-                            prepaid = prepaid
-                                .checked_add(allocation.capacity_bytes)
-                                .ok_or(ResidentActivationError::RegionSizeOverflow)?;
+                            let key = memory
+                                .domain()
+                                .plan_object_key(memory.realized().revision(), allocation.id)
+                                .map_err(|error| ResidentActivationError::MemoryRuntime {
+                                    error,
+                                })?;
+                            let transferred = memory
+                                .domain()
+                                .transfer_resident_payload_budget_capacity(memory.realized(), key)
+                                .map_err(|error| ResidentActivationError::MemoryRuntime {
+                                    error,
+                                })?;
+                            string_prepaid
+                                .merge_capacity(transferred)
+                                .map_err(|error| ResidentActivationError::MemoryRuntime {
+                                    error,
+                                })?;
+                        }
+                        if plan.allocations.iter().any(|fixed| {
+                            fixed.placement.arena == snapshot_arena
+                                && fixed.owner == allocation.owner
+                        }) {
+                            let key = memory
+                                .domain()
+                                .plan_object_key(memory.realized().revision(), allocation.id)
+                                .map_err(|error| ResidentActivationError::MemoryRuntime {
+                                    error,
+                                })?;
+                            let transferred = memory
+                                .domain()
+                                .transfer_resident_payload_budget_capacity(memory.realized(), key)
+                                .map_err(|error| ResidentActivationError::MemoryRuntime {
+                                    error,
+                                })?;
+                            snapshot_prepaid
+                                .merge_capacity(transferred)
+                                .map_err(|error| ResidentActivationError::MemoryRuntime {
+                                    error,
+                                })?;
                         }
                     }
                     super::budget::payload::ResidentPayloadOwner::new(
                         budget,
-                        prepaid,
+                        string_prepaid,
+                        snapshot_prepaid,
                         sizes.strings,
                         sizes.snapshots,
                     )
@@ -702,6 +752,28 @@ impl TypedResidentArena {
             scope.finish(self.write(region))?;
         }
         Ok(())
+    }
+
+    pub(crate) fn abort_payload_write(
+        &mut self,
+        region: ResidentRegion,
+        scope: Option<super::budget::payload::ResidentPayloadScope>,
+    ) -> mech_core::MemoryRuntimeResult<()> {
+        if let Some(scope) = scope {
+            scope.abort(self.write(region))?;
+        }
+        Ok(())
+    }
+
+    pub(crate) fn discard_payload_write(&mut self, region: ResidentRegion) {
+        if !super::budget::payload::is_payload(region.kind) {
+            return;
+        }
+        if let Some(owner) = self.payload_budget.clone() {
+            owner
+                .discard(region, self.write(region))
+                .expect("resident payload ownership must balance during candidate abort");
+        }
     }
 
     pub(crate) fn read(&self, region: ResidentRegion) -> ResidentValueRef<'_> {
@@ -959,6 +1031,17 @@ impl StateArena {
         self.version_mut(slot).epochs = [Some(epoch), None];
         Ok(())
     }
+
+    fn abort_payloads(&mut self, working: InstanceEpoch) {
+        for version_index in 0..self.versions.len() {
+            let region = self.versions[version_index].region;
+            for buffer in 0..2 {
+                if self.versions[version_index].epochs[buffer] == Some(working) {
+                    self.buffers[buffer].discard_payload_write(region);
+                }
+            }
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -1125,11 +1208,17 @@ impl ReactiveInstance {
     }
 
     pub fn output_borrow(&self, output: usize) -> Option<ResidentValueBorrow<'_>> {
+        self.output_borrow_at(output, self.published_epoch())
+    }
+
+    pub(crate) fn output_borrow_at(
+        &self,
+        output: usize,
+        epoch: InstanceEpoch,
+    ) -> Option<ResidentValueBorrow<'_>> {
         let output = self.plan.outputs.get(output)?;
         let slot = self.plan.slots.get(output.slot.get() as usize)?;
-        let value = self
-            .state
-            .read_published(slot.artifact_id, self.published_epoch());
+        let value = self.state.read_published(slot.artifact_id, epoch);
         Some(match value {
             ResidentValueRef::Bool(values) => ResidentValueBorrow::Bool {
                 shape: output.region.shape,
@@ -1722,7 +1811,11 @@ fn activate_internal(
             .map_err(|error| ResidentActivationError::MemoryRuntime { error })?;
     let transient_budget = memory_budget
         .clone()
-        .map(|budget| super::budget::payload::ResidentPayloadOwner::new(budget, 0, 0, 0))
+        .map(|budget| {
+            let empty = budget.reserve_capacity(0)?;
+            let strings = budget.reserve_capacity(0)?;
+            super::budget::payload::ResidentPayloadOwner::new(budget, strings, empty, 0, 0)
+        })
         .transpose()
         .map_err(|error| ResidentActivationError::MemoryRuntime { error })?;
     let mut activation = TypedResidentArena::allocate_from_plan(
@@ -3866,6 +3959,35 @@ fn execute_activation_graph(
                 node: step.artifact_node,
             },
         )?;
+        let scope = arena
+            .prepare_payload_write(step.write)
+            .and_then(|scope| {
+                if scope.is_some() {
+                    Ok(scope)
+                } else {
+                    transient_budget
+                        .map(|owner| owner.begin(step.write))
+                        .transpose()
+                }
+            })
+            .map_err(|error| ResidentActivationError::MemoryRuntime { error })?;
+        if let Some(scope) = &scope {
+            let inputs = u64::try_from(step.sources.len())
+                .map_err(|_| ResidentActivationError::RegionSizeOverflow)?;
+            let borrowed = inputs
+                .checked_mul(core::mem::size_of::<ResidentValueRef<'_>>() as u64)
+                .ok_or(ResidentActivationError::RegionSizeOverflow)?;
+            let owned = inputs
+                .checked_mul(core::mem::size_of::<OwnedResidentValue>() as u64)
+                .ok_or(ResidentActivationError::RegionSizeOverflow)?;
+            scope
+                .admit_auxiliary(
+                    borrowed
+                        .checked_add(owned)
+                        .ok_or(ResidentActivationError::RegionSizeOverflow)?,
+                )
+                .map_err(|error| ResidentActivationError::MemoryRuntime { error })?;
+        }
         let borrowed = step
             .sources
             .iter()
@@ -3900,18 +4022,6 @@ fn execute_activation_graph(
                 node: step.artifact_node,
             });
         }
-        let scope = arena
-            .prepare_payload_write(step.write)
-            .and_then(|scope| {
-                if scope.is_some() {
-                    Ok(scope)
-                } else {
-                    transient_budget
-                        .map(|owner| owner.begin(step.write))
-                        .transpose()
-                }
-            })
-            .map_err(|error| ResidentActivationError::MemoryRuntime { error })?;
         if let Some(scope) = &scope {
             // The activation ABI owns its input vectors. Their copies precede
             // the kernel's own concrete admission, so reserve them explicitly.
@@ -3978,9 +4088,15 @@ fn execute_activation_graph(
             })
         });
         let admission_error = scope.as_ref().and_then(|scope| scope.last_error());
-        arena
-            .finish_payload_write(step.write, scope)
-            .map_err(|error| ResidentActivationError::MemoryRuntime { error })?;
+        if result.is_err() || admission_error.is_some() {
+            arena
+                .abort_payload_write(step.write, scope)
+                .map_err(|error| ResidentActivationError::MemoryRuntime { error })?;
+        } else {
+            arena
+                .finish_payload_write(step.write, scope)
+                .map_err(|error| ResidentActivationError::MemoryRuntime { error })?;
+        }
         if let Some(error) = admission_error {
             return Err(ResidentActivationError::MemoryRuntime { error });
         }
@@ -4651,11 +4767,96 @@ mod shape_fact_tests {
     use crate::{NodeDeclaration, ProgramArtifactDraft, SlotDeclaration};
     use mech_core::{
         BindingId, ConstantStoreBuilder, DeclaredOperationContract, DimensionParameterDeclaration,
-        DimensionParameterId, DimensionParameterOrigin, FloatWidth, OperationContractTableBuilder,
-        ResolvedInputPort, ResolvedOperationContract, ResolvedOutputPort, SchemaDraft,
-        SchemaTableBuilder, ValueDataDraft, ValueDraft,
+        DimensionParameterId, DimensionParameterOrigin, FloatWidth, ManagedMemoryBudget,
+        OperationContractTableBuilder, ResolvedInputPort, ResolvedOperationContract,
+        ResolvedOutputPort, SchemaDraft, SchemaTableBuilder, ValueDataDraft, ValueDraft,
         snapshot::{F64Bits, SnapshotValidationContext},
     };
+
+    #[test]
+    fn aborted_state_payload_is_discarded_before_epoch_evidence() {
+        fn string_arena(budget: &ManagedMemoryBudget) -> TypedResidentArena {
+            let mut arena = TypedResidentArena::allocate_projected_sizes(ResidentArenaSizes {
+                strings: 1,
+                ..ResidentArenaSizes::default()
+            });
+            let string_prepaid = budget.reserve_capacity(0).unwrap();
+            let snapshot_prepaid = budget.reserve_capacity(0).unwrap();
+            arena.payload_budget = Some(
+                super::super::budget::payload::ResidentPayloadOwner::new(
+                    budget.clone(),
+                    string_prepaid,
+                    snapshot_prepaid,
+                    1,
+                    0,
+                )
+                .unwrap(),
+            );
+            arena
+        }
+
+        let budget = ManagedMemoryBudget::new(1_000_000);
+        let region = ResidentRegion {
+            kind: ResidentValueKind::String,
+            offset: 0,
+            len: 1,
+            shape: ResidentShape::SCALAR,
+        };
+        let mut state = StateArena {
+            buffers: [string_arena(&budget), string_arena(&budget)],
+            versions: vec![StateVersion {
+                slot: CellSlotId::new(0),
+                region,
+                epochs: [Some(InstanceEpoch::ZERO), None],
+            }]
+            .into_boxed_slice(),
+            version_by_slot: vec![Some(0)].into_boxed_slice(),
+        };
+        let baseline = budget.used_bytes();
+        let working = InstanceEpoch::new(1);
+        let first_value = ["failed candidate".repeat(1024)];
+        let scope = state.buffers[1].prepare_payload_write(region).unwrap();
+        scope
+            .as_ref()
+            .unwrap()
+            .admit_copy(ResidentValueRef::String(&first_value), 0)
+            .unwrap();
+        scope.as_ref().unwrap().start();
+        let ResidentValueMut::String(candidate) = state.buffers[1].write(region) else {
+            unreachable!()
+        };
+        candidate[0] = first_value[0].clone();
+        state.buffers[1]
+            .finish_payload_write(region, scope)
+            .unwrap();
+        state.versions[0].epochs[1] = Some(working);
+        assert!(budget.used_bytes() > baseline);
+
+        state.abort_payloads(working);
+        state.versions[0].epochs[1] = None;
+        assert_eq!(budget.used_bytes(), baseline);
+        assert!(state.buffers[1].string_storage()[0].is_empty());
+        assert_eq!(
+            state.epochs(CellSlotId::new(0)),
+            [Some(InstanceEpoch::ZERO), None]
+        );
+
+        let retry_value = ["retry candidate".repeat(1024)];
+        let retry = state.buffers[1].prepare_payload_write(region).unwrap();
+        retry
+            .as_ref()
+            .unwrap()
+            .admit_copy(ResidentValueRef::String(&retry_value), 0)
+            .unwrap();
+        retry.as_ref().unwrap().start();
+        let ResidentValueMut::String(candidate) = state.buffers[1].write(region) else {
+            unreachable!()
+        };
+        candidate[0] = retry_value[0].clone();
+        state.buffers[1]
+            .finish_payload_write(region, retry)
+            .unwrap();
+    }
 
     fn copy_chain(output_upper_bound: u64) -> ProgramArtifact {
         let mut schemas = SchemaTableBuilder::new();

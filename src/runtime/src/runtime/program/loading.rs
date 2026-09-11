@@ -27,7 +27,7 @@ use crate::{
 use mech_engine::{CompilerPlanningConfig, CompilerPlanningLimits, ProgramCompilationProduct};
 
 use super::diagnostics::activation_failure_for_artifact;
-use super::value::initial_value;
+use super::value::{initial_prepared_value, initial_value};
 use super::{
     ActiveProgramExecution, ResidentExternalExecution, ResidentPureExecution,
     ResidentRouteFailureClass, RuntimeProgramExecutionInfo, RuntimeProgramLoadOutcome,
@@ -498,15 +498,19 @@ impl MechRuntime {
             )?;
             let trigger_sources = coordinator.trigger_sources()?;
             self.ensure_exact_resident_input_drivers(&trigger_sources)?;
+            let output_index = initial_output_index(&artifact, initial_value_projection);
+            let mut prepared_initial = None;
             if trigger_sources.is_empty() {
                 let max_turn_duration_ms = self.config.limits.max_turn_duration_ms;
                 let turn_started = Instant::now();
                 let admission = coordinator.admit_turn()?;
-                let outcome = coordinator.execute_admitted_turn(admission, move || {
+                let outcome = coordinator.execute_admitted_turn(admission, |prepared| {
                     super::super::limits::enforce_turn_duration_limit(
                         max_turn_duration_ms,
                         turn_started,
-                    )
+                    )?;
+                    prepared_initial = Some(initial_prepared_value(prepared, output_index)?);
+                    Ok(())
                 })?;
                 if let Some(error) = super::resident_host_turn_error(&outcome) {
                     return Err(route_failure(
@@ -518,10 +522,10 @@ impl MechRuntime {
                 }
                 info.resident_accepted_turns = 1;
             }
-            initial_snapshot = initial_value(
-                coordinator.instance(),
-                initial_output_index(&artifact, initial_value_projection),
-            )?;
+            initial_snapshot = match prepared_initial {
+                Some(snapshot) => snapshot,
+                None => initial_value(coordinator.instance(), output_index)?,
+            };
             ActiveProgramExecution::ResidentExternal(ResidentExternalExecution {
                 artifact,
                 coordinator,
@@ -544,6 +548,10 @@ impl MechRuntime {
                 prepared.abort();
                 return Err(error);
             }
+            initial_snapshot = initial_prepared_value(
+                &prepared,
+                initial_output_index(&artifact, initial_value_projection),
+            )?;
             prepared.publish().map_err(|error| {
                 route_failure(
                     ResidentRouteFailureClass::ActivationFailure,
@@ -551,10 +559,6 @@ impl MechRuntime {
                 )
             })?;
             info.resident_accepted_turns = 1;
-            initial_snapshot = initial_value(
-                &instance,
-                initial_output_index(&artifact, initial_value_projection),
-            )?;
             ActiveProgramExecution::ResidentPure(ResidentPureExecution { artifact, instance })
         };
         self.active_program = active;

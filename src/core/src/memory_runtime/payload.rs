@@ -52,7 +52,7 @@ pub(crate) struct PayloadEnvelopeOwner {
     memory_budget: Option<super::ManagedMemoryBudget>,
     // Independent mutable containers retain the whole admitted envelope even
     // after their creating domain closes. The charge follows this real owner.
-    _budget_charge: Option<super::ManagedMemoryCharge>,
+    budget_charge: RefCell<Option<super::ManagedMemoryCharge>>,
 }
 
 impl PayloadEnvelopeOwner {
@@ -85,12 +85,46 @@ impl PayloadEnvelopeOwner {
             accounting,
             accounted_bytes: capacity_bytes,
             memory_budget,
-            _budget_charge: budget_charge,
+            budget_charge: RefCell::new(budget_charge),
         }))
     }
 
     pub(crate) fn revoke(&self) {
         self.accepting_allocations.set(false);
+    }
+
+    /// Moves the already admitted payload capacity to the resident owner that
+    /// physically stores this object's payload. Registration metadata remains
+    /// owned by the envelope record. Once transferred, this allocator is
+    /// permanently revoked so the same capacity cannot authorize two backing
+    /// implementations.
+    pub(crate) fn transfer_payload_budget_capacity(
+        &self,
+    ) -> MemoryRuntimeResult<super::ManagedMemoryReservation> {
+        if !self.blocks.borrow().is_empty() {
+            return Err(MemoryRuntimeError::CandidateValidationFailed {
+                object: Some(self.object.object()),
+                reason: "cannot transfer an indirect envelope after payload allocation".into(),
+            });
+        }
+        if !self.accepting_allocations.get() {
+            return Err(MemoryRuntimeError::InvalidLifetimeTransition {
+                object: Some(self.object.object()),
+                from: "revoked payload envelope",
+                to: "resident payload ownership",
+            });
+        }
+        let transferred = self
+            .budget_charge
+            .borrow_mut()
+            .as_mut()
+            .ok_or(MemoryRuntimeError::CandidateValidationFailed {
+                object: Some(self.object.object()),
+                reason: "payload envelope has no configured-budget reservation".into(),
+            })?
+            .split_capacity(self.capacity_bytes)?;
+        self.accepting_allocations.set(false);
+        Ok(transferred)
     }
 
     pub(crate) fn allocated_bytes(&self) -> MemoryRuntimeResult<u64> {

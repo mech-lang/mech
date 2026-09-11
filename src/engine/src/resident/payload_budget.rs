@@ -26,8 +26,11 @@ fn add(left: u64, right: u64) -> MemoryRuntimeResult<u64> {
 #[derive(Debug)]
 pub(crate) struct ResidentPayloadOwner {
     budget: ManagedMemoryBudget,
-    // These are already reserved by the original realized String envelopes.
-    prepaid: u64,
+    // The typed arena replaces the generic indirect envelopes as physical
+    // authority, so both reservations transfer here and those allocators are
+    // revoked. Snapshot capacity then follows immutable roots when installed.
+    string_prepaid: ManagedMemoryReservation,
+    snapshot_prepaid: RefCell<ManagedMemoryReservation>,
     retained: Cell<u64>,
     strings: RefCell<Box<[u64]>>,
     extra: RefCell<ManagedMemoryReservation>,
@@ -38,10 +41,17 @@ pub(crate) struct ResidentPayloadOwner {
 impl ResidentPayloadOwner {
     pub(crate) fn new(
         budget: ManagedMemoryBudget,
-        prepaid: u64,
+        string_prepaid: ManagedMemoryReservation,
+        snapshot_prepaid: ManagedMemoryReservation,
         strings: usize,
         _snapshots: usize,
     ) -> MemoryRuntimeResult<Rc<Self>> {
+        if string_prepaid.budget() != budget || snapshot_prepaid.budget() != budget {
+            return Err(MemoryRuntimeError::CandidateValidationFailed {
+                object: None,
+                reason: "resident payload reservation belongs to another budget".into(),
+            });
+        }
         let tracked =
             (strings as u64)
                 .checked_mul(8)
@@ -55,7 +65,8 @@ impl ResidentPayloadOwner {
         Ok(Rc::new(Self {
             extra: RefCell::new(budget.reserve_capacity(0)?),
             budget,
-            prepaid,
+            string_prepaid,
+            snapshot_prepaid: RefCell::new(snapshot_prepaid),
             retained: Cell::new(0),
             strings: RefCell::new(vec![0; strings].into_boxed_slice()),
             poisoned: Cell::new(false),
@@ -81,6 +92,7 @@ impl ResidentPayloadOwner {
                 reservation: RefCell::new(self.budget.reserve_capacity(0)?),
                 auxiliary: Cell::new(0),
                 peak: Cell::new(0),
+                creditable_peak: Cell::new(0),
                 finished: Cell::new(false),
                 last_error: RefCell::new(None),
                 materializing: Cell::new(false),
@@ -89,9 +101,57 @@ impl ResidentPayloadOwner {
         })
     }
 
-    fn available(&self) -> MemoryRuntimeResult<u64> {
-        Ok(add(self.prepaid, self.extra.borrow().capacity_bytes())?
-            .saturating_sub(self.retained.get()))
+    fn string_available(&self) -> MemoryRuntimeResult<u64> {
+        Ok(add(
+            self.string_prepaid.capacity_bytes(),
+            self.extra.borrow().capacity_bytes(),
+        )?
+        .saturating_sub(self.retained.get()))
+    }
+
+    fn snapshot_available(&self) -> u64 {
+        self.snapshot_prepaid.borrow().capacity_bytes()
+    }
+
+    pub(crate) fn discard(
+        &self,
+        region: ResidentRegion,
+        value: ResidentValueMut<'_>,
+    ) -> MemoryRuntimeResult<()> {
+        let start = region.offset;
+        let end = start + region.len;
+        let tracked = match value {
+            ResidentValueMut::String(values) => {
+                for value in values {
+                    *value = String::new();
+                }
+                &self.strings
+            }
+            ResidentValueMut::Snapshot(values) => {
+                for value in values {
+                    *value = None;
+                }
+                return Ok(());
+            }
+            _ => return Ok(()),
+        };
+        let mut tracked = tracked.borrow_mut();
+        let mut total = self.retained.get();
+        for previous in &mut tracked[start..end] {
+            total = total.checked_sub(*previous).ok_or(
+                MemoryRuntimeError::AccountingInvariantViolation {
+                    dimension: "resident discarded candidate payload",
+                    current: total,
+                    change: *previous,
+                },
+            )?;
+            *previous = 0;
+        }
+        self.extra
+            .borrow_mut()
+            .resize_capacity(total.saturating_sub(self.string_prepaid.capacity_bytes()))?;
+        self.retained.set(total);
+        Ok(())
     }
 }
 
@@ -102,6 +162,7 @@ pub(crate) struct ResidentPayloadAdmission {
     reservation: RefCell<ManagedMemoryReservation>,
     auxiliary: Cell<u64>,
     peak: Cell<u64>,
+    creditable_peak: Cell<u64>,
     finished: Cell<bool>,
     last_error: RefCell<Option<MemoryRuntimeError>>,
     materializing: Cell<bool>,
@@ -126,27 +187,35 @@ impl ResidentPayloadAdmission {
         } else {
             0
         };
-        self.admit_peak(add(plan.demand.turn_peak_bytes.max(payload), metadata)?)?;
+        self.admit_peak(
+            add(plan.demand.turn_peak_bytes.max(payload), metadata)?,
+            payload,
+        )?;
         self.materializing.set(true);
         Ok(())
     }
 
-    fn admit_peak(&self, bytes: u64) -> MemoryRuntimeResult<()> {
+    fn admit_peak(&self, bytes: u64, creditable: u64) -> MemoryRuntimeResult<()> {
         if self.owner.poisoned.get() {
             return Err(MemoryRuntimeError::DomainClosed);
         }
         let peak = self.peak.get().max(bytes);
-        let credit = if self.region.kind == ResidentValueKind::String {
-            self.owner.available()?
-        } else {
-            0
+        let creditable_peak = self.creditable_peak.get().max(creditable);
+        let available = match self.region.kind {
+            ResidentValueKind::String => self.owner.string_available()?,
+            ResidentValueKind::Snapshot => self.owner.snapshot_available(),
+            _ => 0,
         };
+        // Planned payload capacity cannot pay for immutable wrapper/schema
+        // metadata or unrelated temporary work.
+        let credit = available.min(creditable_peak);
         let required = add(peak, self.auxiliary.get())?.saturating_sub(credit);
         if let Err(error) = self.reservation.borrow_mut().resize_capacity(required) {
             *self.last_error.borrow_mut() = Some(error.clone());
             return Err(error);
         }
         self.peak.set(peak);
+        self.creditable_peak.set(creditable_peak);
         Ok(())
     }
 }
@@ -170,13 +239,16 @@ impl ResidentPayloadScope {
         self.inner
             .auxiliary
             .set(add(self.inner.auxiliary.get(), bytes)?);
-        self.inner.admit_peak(self.inner.peak.get())
+        self.inner
+            .admit_peak(self.inner.peak.get(), self.inner.creditable_peak.get())
     }
 
     pub(crate) fn admit_value(&self, value: &mech_core::Value) -> MemoryRuntimeResult<()> {
         if self.inner.region.kind == ResidentValueKind::Snapshot {
-            let payload = value.memory_budget_admission_bytes(&self.inner.owner.budget)?;
-            self.inner.admit_peak(payload)?;
+            let admitted = value.memory_budget_admission_bytes(&self.inner.owner.budget)?;
+            let payload =
+                admitted.saturating_sub(mech_core::Value::memory_budget_claim_metadata_bytes());
+            self.inner.admit_peak(admitted, payload)?;
         } else if self.inner.region.kind == ResidentValueKind::String {
             let bytes = match value.data() {
                 mech_core::ValueData::String(value) => value.len() as u64,
@@ -199,7 +271,7 @@ impl ResidentPayloadScope {
                     });
                 }
             };
-            self.inner.admit_peak(bytes)?;
+            self.inner.admit_peak(bytes, bytes)?;
         }
         Ok(())
     }
@@ -210,23 +282,30 @@ impl ResidentPayloadScope {
         container_bytes: u64,
     ) -> MemoryRuntimeResult<()> {
         let mut bytes = container_bytes;
+        let mut payload = 0_u64;
         match value {
             ResidentValueRef::String(values) => {
                 for value in values {
-                    bytes = add(bytes, value.len() as u64)?;
+                    payload = add(payload, value.len() as u64)?;
                 }
             }
             ResidentValueRef::Snapshot(values) => {
                 for value in values.iter().flatten() {
-                    bytes = add(
-                        bytes,
-                        value.memory_budget_admission_bytes(&self.inner.owner.budget)?,
+                    let admitted = value.memory_budget_admission_bytes(&self.inner.owner.budget)?;
+                    bytes = add(bytes, admitted)?;
+                    payload = add(
+                        payload,
+                        admitted
+                            .saturating_sub(mech_core::Value::memory_budget_claim_metadata_bytes()),
                     )?;
                 }
             }
             _ => {}
         }
-        self.inner.admit_peak(bytes)?;
+        if self.inner.region.kind == ResidentValueKind::String {
+            bytes = add(bytes, payload)?;
+        }
+        self.inner.admit_peak(bytes, payload)?;
         Ok(())
     }
 
@@ -240,6 +319,10 @@ impl ResidentPayloadScope {
             self.discard_candidate(value)?;
         }
         result
+    }
+
+    pub(crate) fn abort(self, value: ResidentValueMut<'_>) -> MemoryRuntimeResult<()> {
+        self.discard_candidate(value)
     }
 
     fn finish_inner(&self, value: &mut ResidentValueMut<'_>) -> MemoryRuntimeResult<()> {
@@ -260,15 +343,69 @@ impl ResidentPayloadScope {
             ResidentValueMut::Snapshot(values) => {
                 for value in values.iter_mut() {
                     if let Some(owned) = value.take() {
-                        *value = Some(
-                            owned.into_memory_budget(&mut self.inner.reservation.borrow_mut())?,
-                        );
+                        let admitted =
+                            owned.memory_budget_admission_bytes(&self.inner.owner.budget)?;
+                        let payload = admitted
+                            .saturating_sub(mech_core::Value::memory_budget_claim_metadata_bytes());
+                        let existing = self.inner.reservation.borrow().capacity_bytes();
+                        let needed = admitted.saturating_sub(existing);
+                        if needed > payload {
+                            return Err(MemoryRuntimeError::AccountingInvariantViolation {
+                                dimension: "resident Snapshot metadata admission",
+                                current: existing,
+                                change: admitted,
+                            });
+                        }
+                        let borrowed = if needed == 0 {
+                            0
+                        } else {
+                            let capacity = self
+                                .inner
+                                .owner
+                                .snapshot_prepaid
+                                .borrow_mut()
+                                .split_capacity(needed)?;
+                            self.inner
+                                .reservation
+                                .borrow_mut()
+                                .merge_capacity(capacity)?;
+                            needed
+                        };
+                        let before = add(existing, borrowed)?;
+                        let converted =
+                            owned.into_memory_budget(&mut self.inner.reservation.borrow_mut());
+                        let after = self.inner.reservation.borrow().capacity_bytes();
+                        let consumed = before.checked_sub(after).ok_or(
+                            MemoryRuntimeError::AccountingInvariantViolation {
+                                dimension: "resident Snapshot ownership transfer",
+                                current: before,
+                                change: after,
+                            },
+                        )?;
+                        // Existing per-call admission pays first. Only the
+                        // portion actually consumed from the R5 envelope
+                        // leaves the resident owner with this immutable root.
+                        let return_to_prepaid =
+                            borrowed.saturating_sub(consumed.saturating_sub(existing));
+                        if return_to_prepaid != 0 {
+                            let returned = self
+                                .inner
+                                .reservation
+                                .borrow_mut()
+                                .split_capacity(return_to_prepaid)?;
+                            self.inner
+                                .owner
+                                .snapshot_prepaid
+                                .borrow_mut()
+                                .merge_capacity(returned)?;
+                        }
+                        *value = Some(converted?);
                     }
                 }
             }
             _ => {}
         }
-        let required = total.saturating_sub(self.inner.owner.prepaid);
+        let required = total.saturating_sub(self.inner.owner.string_prepaid.capacity_bytes());
         let mut extra = self.inner.owner.extra.borrow_mut();
         if required > extra.capacity_bytes() {
             let growth = self
@@ -296,45 +433,7 @@ impl ResidentPayloadScope {
     }
 
     fn discard_candidate(&self, value: ResidentValueMut<'_>) -> MemoryRuntimeResult<()> {
-        let start = self.inner.region.offset;
-        let end = start + self.inner.region.len;
-        let tracked = match value {
-            ResidentValueMut::String(values) => {
-                for value in values {
-                    *value = String::new();
-                }
-                &self.inner.owner.strings
-            }
-            ResidentValueMut::Snapshot(values) => {
-                for value in values {
-                    *value = None;
-                }
-                self.inner.finished.set(true);
-                return Ok(());
-            }
-            _ => {
-                self.inner.finished.set(true);
-                return Ok(());
-            }
-        };
-        let mut tracked = tracked.borrow_mut();
-        let mut total = self.inner.owner.retained.get();
-        for previous in &mut tracked[start..end] {
-            total = total.checked_sub(*previous).ok_or(
-                MemoryRuntimeError::AccountingInvariantViolation {
-                    dimension: "resident discarded candidate payload",
-                    current: total,
-                    change: *previous,
-                },
-            )?;
-            *previous = 0;
-        }
-        self.inner
-            .owner
-            .extra
-            .borrow_mut()
-            .resize_capacity(total.saturating_sub(self.inner.owner.prepaid))?;
-        self.inner.owner.retained.set(total);
+        self.inner.owner.discard(self.inner.region, value)?;
         self.inner.finished.set(true);
         Ok(())
     }
@@ -446,7 +545,9 @@ mod tests {
     fn string_owner_reuses_prepaid_capacity_and_releases_growth_after_shrink() {
         let budget = ManagedMemoryBudget::new(1_000_000);
         let prepaid = budget.reserve_capacity(8).unwrap();
-        let owner = ResidentPayloadOwner::new(budget.clone(), 8, 1, 0).unwrap();
+        let snapshot_prepaid = budget.reserve_capacity(0).unwrap();
+        let owner =
+            ResidentPayloadOwner::new(budget.clone(), prepaid, snapshot_prepaid, 1, 0).unwrap();
         let baseline = budget.used_bytes();
         let mut target = [String::new()];
         for (text, extra) in [("four", 0), ("twelve bytes", 4), ("ok", 0)] {
@@ -463,7 +564,6 @@ mod tests {
         }
         drop(target);
         drop(owner);
-        drop(prepaid);
         assert_eq!(budget.used_bytes(), 0);
     }
 
@@ -471,7 +571,11 @@ mod tests {
     fn snapshot_import_allocation_failure_discards_candidate_and_allows_retry() {
         for failure_after in [0, 1, 2, 3] {
             let budget = ManagedMemoryBudget::new(1_000_000);
-            let owner = ResidentPayloadOwner::new(budget.clone(), 0, 0, 2).unwrap();
+            let string_prepaid = budget.reserve_capacity(0).unwrap();
+            let snapshot_prepaid = budget.reserve_capacity(0).unwrap();
+            let owner =
+                ResidentPayloadOwner::new(budget.clone(), string_prepaid, snapshot_prepaid, 0, 2)
+                    .unwrap();
             let baseline = budget.used_bytes();
             let original = [
                 Some(snapshot("first caller root")),
@@ -515,5 +619,82 @@ mod tests {
             drop(exported);
             assert_eq!(budget.used_bytes(), 0);
         }
+    }
+
+    #[test]
+    fn snapshot_import_transfers_prepaid_payload_and_charges_metadata_once() {
+        let original = snapshot(&"payload".repeat(1024));
+        let budget = ManagedMemoryBudget::new(1_000_000);
+        let admitted = original.memory_budget_admission_bytes(&budget).unwrap();
+        let claim = Value::memory_budget_claim_metadata_bytes();
+        let payload = admitted.saturating_sub(claim);
+        assert!(payload > 0);
+        let prepaid = budget.reserve_capacity(payload).unwrap();
+        let string_prepaid = budget.reserve_capacity(0).unwrap();
+        let owner =
+            ResidentPayloadOwner::new(budget.clone(), string_prepaid, prepaid, 0, 1).unwrap();
+        let baseline = budget.used_bytes();
+        let mut candidate = [Some(original)];
+        let scope = owner.begin(region(ResidentValueKind::Snapshot, 1)).unwrap();
+        scope
+            .admit_copy(ResidentValueRef::Snapshot(&candidate), 0)
+            .unwrap();
+        scope.start();
+        scope
+            .finish(ResidentValueMut::Snapshot(&mut candidate))
+            .unwrap();
+        assert_eq!(
+            budget.used_bytes(),
+            baseline + claim,
+            "the R5 payload envelope is transferred; only immutable import metadata is new"
+        );
+        drop(owner);
+        assert_eq!(budget.used_bytes(), admitted);
+        drop(candidate);
+        assert_eq!(budget.used_bytes(), 0);
+    }
+
+    #[test]
+    fn aborted_string_candidate_releases_growth_before_retry() {
+        let budget = ManagedMemoryBudget::new(1_000_000);
+        let prepaid = budget.reserve_capacity(0).unwrap();
+        let snapshot_prepaid = budget.reserve_capacity(0).unwrap();
+        let owner =
+            ResidentPayloadOwner::new(budget.clone(), prepaid, snapshot_prepaid, 1, 0).unwrap();
+        let baseline = budget.used_bytes();
+        let source = ["candidate".repeat(1024)];
+        let mut candidate = [String::new()];
+
+        let first = owner.begin(region(ResidentValueKind::String, 1)).unwrap();
+        first
+            .admit_copy(ResidentValueRef::String(&source), 0)
+            .unwrap();
+        first.start();
+        candidate[0] = source[0].clone();
+        first
+            .finish(ResidentValueMut::String(&mut candidate))
+            .unwrap();
+        let admitted = budget.used_bytes();
+        assert!(admitted > baseline);
+
+        owner
+            .discard(
+                region(ResidentValueKind::String, 1),
+                ResidentValueMut::String(&mut candidate),
+            )
+            .unwrap();
+        assert_eq!(budget.used_bytes(), baseline);
+        assert!(candidate[0].is_empty());
+
+        let retry = owner.begin(region(ResidentValueKind::String, 1)).unwrap();
+        retry
+            .admit_copy(ResidentValueRef::String(&source), 0)
+            .unwrap();
+        retry.start();
+        candidate[0] = source[0].clone();
+        retry
+            .finish(ResidentValueMut::String(&mut candidate))
+            .unwrap();
+        assert_eq!(budget.used_bytes(), admitted);
     }
 }

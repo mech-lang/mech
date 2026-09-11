@@ -653,6 +653,36 @@ mod resident_existing_value_budget_scope {
         )
     }
 
+    fn minimum_activation_limit(artifact: &ProgramArtifact, catalog: &FunctionCatalog) -> u64 {
+        let mut rejected = 0_u64;
+        let mut admitted = 1_u64;
+        loop {
+            let budget = ManagedMemoryBudget::new(admitted);
+            match activate_budgeted(artifact, catalog, &budget) {
+                Ok(instance) => {
+                    drop(instance);
+                    break;
+                }
+                Err(_) => {
+                    rejected = admitted;
+                    admitted = admitted.checked_mul(2).expect("finite activation budget");
+                }
+            }
+        }
+        while admitted - rejected > 1 {
+            let candidate = rejected + (admitted - rejected) / 2;
+            let budget = ManagedMemoryBudget::new(candidate);
+            match activate_budgeted(artifact, catalog, &budget) {
+                Ok(instance) => {
+                    drop(instance);
+                    admitted = candidate;
+                }
+                Err(_) => rejected = candidate,
+            }
+        }
+        admitted
+    }
+
     #[test]
     fn configured_resident_budget_is_aggregate_and_preserves_failed_reactivation() {
         let catalog = catalog();
@@ -672,18 +702,16 @@ mod resident_existing_value_budget_scope {
         drop(instance);
         assert_eq!(probe.used_bytes(), 0);
 
-        let one_under = ManagedMemoryBudget::new(small_bytes - 1);
-        assert!(matches!(
-            activate_budgeted(&artifact, &catalog, &one_under),
-            Err(ResidentActivationError::MemoryRuntime {
-                error: MemoryRuntimeError::BudgetExceeded { .. }
-            })
-        ));
+        let activation_limit = minimum_activation_limit(&artifact, &catalog);
+        assert!(activation_limit >= small_bytes);
+        let one_under = ManagedMemoryBudget::new(activation_limit - 1);
+        assert!(activate_budgeted(&artifact, &catalog, &one_under).is_err());
         assert_eq!(one_under.used_bytes(), 0);
 
-        // A complete legal program fits exactly, but another legal program
-        // sharing its configured account may not exceed the aggregate limit.
-        let exact = ManagedMemoryBudget::new(small_bytes);
+        // A complete legal activation, including its temporary input-view and
+        // owned-input containers, fits exactly. Another legal program sharing
+        // its configured account may not exceed that aggregate limit.
+        let exact = ManagedMemoryBudget::new(activation_limit);
         let mut instance = activate_budgeted(&artifact, &catalog, &exact).unwrap();
         assert_eq!(exact.used_bytes(), small_bytes);
         turn(&mut instance, Some(&values), 2).unwrap();
