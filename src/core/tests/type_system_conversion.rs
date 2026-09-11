@@ -255,6 +255,80 @@ fn complex_string_casts_use_canonical_scalar_display() {
 }
 
 #[test]
+fn complex_string_casts_separate_nan_and_preserve_special_value_formatting() {
+    let cases = [
+        (3.0, 2.0, "3+2i"),
+        (3.0, -2.0, "3-2i"),
+        (3.0, 0.0, "3+0i"),
+        (3.0, -0.0, "3-0i"),
+        (3.0, f64::INFINITY, "3+infi"),
+        (3.0, f64::NEG_INFINITY, "3-infi"),
+        (0.0, 2.0, "2i"),
+        (-0.0, -2.0, "-2i"),
+        (0.0, 0.0, "0i"),
+        (0.0, -0.0, "-0i"),
+        (0.0, f64::INFINITY, "infi"),
+        (0.0, f64::NEG_INFINITY, "-infi"),
+    ];
+    for (real, imaginary, expected) in cases {
+        for (value, source) in [
+            (
+                ValueDataDraft::Complex32(Complex32Bits::new(
+                    F32Bits::from_f32(real as f32),
+                    F32Bits::from_f32(imaginary as f32),
+                )),
+                BuiltinScalarKind::C32,
+            ),
+            (
+                ValueDataDraft::Complex64(Complex64Bits::new(
+                    F64Bits::from_f64(real),
+                    F64Bits::from_f64(imaginary),
+                )),
+                BuiltinScalarKind::C64,
+            ),
+        ] {
+            assert_eq!(
+                execute_scalar_conversion(value, source, BuiltinScalarKind::String).unwrap(),
+                ValueDataDraft::String(expected.into()),
+                "{source:?}: real={real:?}, imaginary={imaginary:?}",
+            );
+        }
+    }
+
+    // Construct each width's NaN directly: a cross-width float cast need not
+    // preserve a NaN's sign or payload. Both signs display the same NaN token.
+    for (nan32, nan64) in [
+        (0x7fc0_0001, 0x7ff8_0000_0000_0001),
+        (0xffc0_0001, 0xfff8_0000_0000_0001),
+    ] {
+        for (real, expected) in [(3.0, "3+NaNi"), (0.0, "NaNi"), (-0.0, "NaNi")] {
+            for (value, source) in [
+                (
+                    ValueDataDraft::Complex32(Complex32Bits::new(
+                        F32Bits::from_f32(real as f32),
+                        F32Bits::from_f32(f32::from_bits(nan32)),
+                    )),
+                    BuiltinScalarKind::C32,
+                ),
+                (
+                    ValueDataDraft::Complex64(Complex64Bits::new(
+                        F64Bits::from_f64(real),
+                        F64Bits::from_f64(f64::from_bits(nan64)),
+                    )),
+                    BuiltinScalarKind::C64,
+                ),
+            ] {
+                assert_eq!(
+                    execute_scalar_conversion(value, source, BuiltinScalarKind::String).unwrap(),
+                    ValueDataDraft::String(expected.into()),
+                    "{source:?}: real={real:?}, NaN bits={nan64:#x}",
+                );
+            }
+        }
+    }
+}
+
+#[test]
 fn matrix_and_option_plans_preserve_structure() {
     let dimensions =
         vec![DimensionExpr::Constant(2), DimensionExpr::Constant(3)].into_boxed_slice();

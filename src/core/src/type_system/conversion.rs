@@ -845,25 +845,36 @@ where
 {
     if real == T::default() {
         format!("{imaginary}i")
-    } else if imaginary.is_sign_negative() {
+    } else if imaginary.is_sign_negative() && !imaginary.is_nan() {
         format!("{real}{imaginary}i")
     } else {
+        // Float Display omits the sign bit of NaN. Keep that canonical token,
+        // but never omit the separator between the real and imaginary parts.
         format!("{real}+{imaginary}i")
     }
 }
 
 trait ComplexDisplayPart: Copy + core::fmt::Display + Default + PartialEq {
     fn is_sign_negative(self) -> bool;
+    fn is_nan(self) -> bool;
 }
 
 impl ComplexDisplayPart for f32 {
     fn is_sign_negative(self) -> bool {
         self.is_sign_negative()
     }
+
+    fn is_nan(self) -> bool {
+        self.is_nan()
+    }
 }
 
 impl ComplexDisplayPart for f64 {
     fn is_sign_negative(self) -> bool {
         self.is_sign_negative()
+    }
+
+    fn is_nan(self) -> bool {
+        self.is_nan()
     }
 }

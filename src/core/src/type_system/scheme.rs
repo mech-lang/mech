@@ -182,6 +182,39 @@ pub fn promoted_binary_scalar() -> Result<KindScheme, SemanticModelError> {
     )
 }
 
+fn compatible_binary_matrices(
+    kinds: u32,
+    left: KindExpr,
+    right: KindExpr,
+    output: KindExpr,
+    mut constraints: Vec<KindConstraint>,
+) -> Result<Vec<KindScheme>, SemanticModelError> {
+    // Equal live shape does not imply identical symbolic dimension origins.
+    // Keep both inputs rigid and retain the two equal-extent obligations for
+    // execution. The exact symbolic schemes remain the more-specific match.
+    constraints.extend([
+        KindConstraint::DimensionCompatible(dim(0), dim(2)),
+        KindConstraint::DimensionCompatible(dim(1), dim(3)),
+    ]);
+    // Either input can supply an explicitly requested output shape. Without
+    // such a request the solver canonicalizes these equivalent results.
+    [0, 2]
+        .into_iter()
+        .map(|axis| {
+            make(
+                kinds,
+                4,
+                vec![
+                    matrix(left.clone(), dim(0), dim(1)),
+                    matrix(right.clone(), dim(2), dim(3)),
+                ],
+                vec![matrix(output.clone(), dim(axis), dim(axis + 1))],
+                constraints.clone(),
+            )
+        })
+        .collect()
+}
+
 pub fn promoted_binary_elementwise() -> Result<Vec<KindScheme>, SemanticModelError> {
     let mut schemes = vec![promoted_binary_scalar()?];
     for (left_matrix, right_matrix) in [(true, true), (true, false), (false, true)] {
@@ -255,67 +288,125 @@ pub fn promoted_binary_elementwise() -> Result<Vec<KindScheme>, SemanticModelErr
             )?);
         }
     }
+    schemes.extend(compatible_binary_matrices(
+        3,
+        kind(0),
+        kind(1),
+        kind(2),
+        vec![
+            KindConstraint::Satisfies {
+                kind: kind(0),
+                predicate: BuiltinKindPredicate::Number,
+            },
+            KindConstraint::Satisfies {
+                kind: kind(1),
+                predicate: BuiltinKindPredicate::Number,
+            },
+            KindConstraint::Promotes {
+                left: kind(0),
+                right: kind(1),
+                output: kind(2),
+            },
+        ],
+    )?);
     Ok(schemes)
 }
 
 pub fn comparison_exact() -> Result<Vec<KindScheme>, SemanticModelError> {
     let boolean = BuiltinScalarKind::Bool.kind_expr();
-    let equatable = || KindConstraint::Satisfies {
-        kind: kind(0),
-        predicate: BuiltinKindPredicate::Equatable,
-    };
-    let mut schemes = vec![
-        make(
-            1,
+    let mut schemes = vec![make(
+        1,
+        0,
+        vec![kind(0), kind(0)],
+        vec![boolean.clone()],
+        vec![KindConstraint::Satisfies {
+            kind: kind(0),
+            predicate: BuiltinKindPredicate::Equatable,
+        }],
+    )?];
+    // Equatable admits nominal and structural values, but does not promise
+    // elementwise comparison or broadcasting for matrices of those values.
+    // Keep exact numeric matrix equality ahead of whole-value equality; mixed
+    // numeric kinds use the promotion schemes added by the caller. Bool and
+    // String are the other maintained elementwise kinds.
+    schemes.push(make(
+        1,
+        2,
+        vec![
+            matrix(kind(0), dim(0), dim(1)),
+            matrix(kind(0), dim(0), dim(1)),
+        ],
+        vec![matrix(boolean.clone(), dim(0), dim(1))],
+        vec![KindConstraint::Satisfies {
+            kind: kind(0),
+            predicate: BuiltinKindPredicate::Number,
+        }],
+    )?);
+    for element in [BuiltinScalarKind::Bool, BuiltinScalarKind::String] {
+        let element = element.kind_expr();
+        schemes.push(make(
             0,
-            vec![kind(0), kind(0)],
-            vec![boolean.clone()],
-            vec![equatable()],
-        )?,
-        make(
-            1,
             2,
             vec![
-                matrix(kind(0), dim(0), dim(1)),
-                matrix(kind(0), dim(0), dim(1)),
+                matrix(element.clone(), dim(0), dim(1)),
+                matrix(element.clone(), dim(0), dim(1)),
             ],
             vec![matrix(boolean.clone(), dim(0), dim(1))],
-            vec![equatable()],
-        )?,
-    ];
-    for reversed in [false, true] {
-        let shaped = matrix(kind(0), dim(0), dim(1));
-        let operands = |other: KindExpr| {
-            if reversed {
-                vec![other, shaped.clone()]
-            } else {
-                vec![shaped.clone(), other]
-            }
-        };
-        schemes.push(make(
-            1,
-            2,
-            operands(kind(0)),
-            vec![matrix(boolean.clone(), dim(0), dim(1))],
-            vec![equatable()],
+            Vec::new(),
         )?);
-        for column in [true, false] {
-            let broadcast = if column {
-                matrix(kind(0), dim(2), DimensionExpr::Constant(1))
-            } else {
-                matrix(kind(0), DimensionExpr::Constant(1), dim(2))
+        for reversed in [false, true] {
+            let shaped = matrix(element.clone(), dim(0), dim(1));
+            let operands = |other: KindExpr| {
+                if reversed {
+                    vec![other, shaped.clone()]
+                } else {
+                    vec![shaped.clone(), other]
+                }
             };
             schemes.push(make(
-                1,
-                3,
-                operands(broadcast),
+                0,
+                2,
+                operands(element.clone()),
                 vec![matrix(boolean.clone(), dim(0), dim(1))],
-                vec![
-                    equatable(),
-                    KindConstraint::DimensionCompatible(dim(if column { 0 } else { 1 }), dim(2)),
-                ],
+                Vec::new(),
             )?);
+            for column in [true, false] {
+                let broadcast = if column {
+                    matrix(element.clone(), dim(2), DimensionExpr::Constant(1))
+                } else {
+                    matrix(element.clone(), DimensionExpr::Constant(1), dim(2))
+                };
+                schemes.push(make(
+                    0,
+                    3,
+                    operands(broadcast),
+                    vec![matrix(boolean.clone(), dim(0), dim(1))],
+                    vec![KindConstraint::DimensionCompatible(
+                        dim(if column { 0 } else { 1 }),
+                        dim(2),
+                    )],
+                )?);
+            }
         }
+    }
+    schemes.extend(compatible_binary_matrices(
+        1,
+        kind(0),
+        kind(0),
+        boolean.clone(),
+        vec![KindConstraint::Satisfies {
+            kind: kind(0),
+            predicate: BuiltinKindPredicate::Number,
+        }],
+    )?);
+    for element in [BuiltinScalarKind::Bool, BuiltinScalarKind::String] {
+        schemes.extend(compatible_binary_matrices(
+            0,
+            element.kind_expr(),
+            element.kind_expr(),
+            boolean.clone(),
+            Vec::new(),
+        )?);
     }
     Ok(schemes)
 }
@@ -461,6 +552,13 @@ pub fn bool_binary() -> Result<Vec<KindScheme>, SemanticModelError> {
             )?);
         }
     }
+    schemes.extend(compatible_binary_matrices(
+        0,
+        bool_kind.clone(),
+        bool_kind.clone(),
+        bool_kind,
+        Vec::new(),
+    )?);
     Ok(schemes)
 }
 

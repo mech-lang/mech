@@ -584,7 +584,10 @@ fn ordinary_matrix_equality_wins_over_whole_aggregate_equality() {
 #[test]
 fn equality_broadcasts_preserve_equatable_kinds_and_axes() {
     for name in ["compare/eq", "compare/neq"] {
-        for element in [BuiltinScalarKind::Bool, BuiltinScalarKind::String] {
+        for element in BuiltinScalarKind::ALL
+            .into_iter()
+            .filter(|element| *element != BuiltinScalarKind::C32)
+        {
             let matrix = fixed_matrix(element, 2, 3);
             for other in [
                 scalar(element),
@@ -611,6 +614,56 @@ fn equality_broadcasts_preserve_equatable_kinds_and_axes() {
                 assert!(resolve_named_overload(name, &[matrix.clone(), other]).is_err());
             }
         }
+    }
+}
+
+#[test]
+fn equality_broadcasts_reject_unsupported_nominal_and_structural_elements() {
+    let atom = KindExpr::Atom(mech_core::NominalKey::from_bytes([7; 32]));
+    let elements = [
+        atom.clone(),
+        KindExpr::Id,
+        KindExpr::Index,
+        KindExpr::Option(Box::new(BuiltinScalarKind::Bool.kind_expr())),
+        KindExpr::Tuple(vec![BuiltinScalarKind::F64.kind_expr()].into_boxed_slice()),
+    ];
+    for name in ["compare/eq", "compare/neq"] {
+        for element in &elements {
+            let matrix = |rows, columns| {
+                ResolvedType::new(
+                    KindExpr::Matrix {
+                        element: Box::new(element.clone()),
+                        dimensions: vec![
+                            DimensionExpr::Constant(rows),
+                            DimensionExpr::Constant(columns),
+                        ]
+                        .into_boxed_slice(),
+                    },
+                    Box::new([]),
+                )
+                .unwrap()
+            };
+            let shaped = matrix(2, 3);
+            let scalar = ResolvedType::new(element.clone(), Box::new([])).unwrap();
+            for other in [scalar, matrix(2, 1), matrix(1, 3)] {
+                for inputs in [
+                    [shaped.clone(), other.clone()],
+                    [other.clone(), shaped.clone()],
+                ] {
+                    assert!(
+                        resolve_named_overload(name, &inputs).is_err(),
+                        "{name} admitted an unsupported broadcast of {element:?}"
+                    );
+                }
+            }
+        }
+        // Scalar nominal equality is independent of matrix broadcasting.
+        let scalar_atom = ResolvedType::new(atom.clone(), Box::new([])).unwrap();
+        let resolved = resolve_named_overload(name, &[scalar_atom.clone(), scalar_atom]).unwrap();
+        assert_eq!(
+            resolved.outputs.as_ref(),
+            &[scalar(BuiltinScalarKind::Bool)]
+        );
     }
 }
 
@@ -752,6 +805,96 @@ fn live_broadcast_normalization_preserves_explicit_expected_output_authority() {
                 assert_eq!(resolved.outputs.as_ref(), core::slice::from_ref(&expected));
                 assert!(resolved.conversions.iter().all(|plan| plan.cost == 0));
             }
+        }
+    }
+}
+
+#[test]
+fn live_elementwise_shapes_do_not_require_identical_symbolic_expressions() {
+    for (name, input_element, output_element) in [
+        ("math/sub", BuiltinScalarKind::F64, BuiltinScalarKind::F64),
+        ("math/mul", BuiltinScalarKind::F64, BuiltinScalarKind::F64),
+        (
+            "compare/gt",
+            BuiltinScalarKind::F64,
+            BuiltinScalarKind::Bool,
+        ),
+        (
+            "compare/eq",
+            BuiltinScalarKind::String,
+            BuiltinScalarKind::Bool,
+        ),
+        (
+            "logic/and",
+            BuiltinScalarKind::Bool,
+            BuiltinScalarKind::Bool,
+        ),
+    ] {
+        for axis in 0..2 {
+            let live = turn_axis_matrix(input_element, axis, 2);
+            let advanced_type = |element: BuiltinScalarKind| {
+                let mut dimensions = vec![DimensionExpr::Constant(2); 2];
+                dimensions[axis] = DimensionExpr::Add(
+                    vec![
+                        DimensionExpr::Constant(1),
+                        DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                    ]
+                    .into_boxed_slice(),
+                );
+                ResolvedType::new(
+                    KindExpr::Matrix {
+                        element: Box::new(element.kind_expr()),
+                        dimensions: dimensions.into_boxed_slice(),
+                    },
+                    live.dimension_parameters().to_vec().into_boxed_slice(),
+                )
+                .unwrap()
+            };
+            let advanced = advanced_type(input_element);
+            assert_ne!(live, advanced);
+            let expected_live = turn_axis_matrix(output_element, axis, 2);
+            let expected_advanced = advanced_type(output_element);
+            for inputs in [
+                [advanced.clone(), live.clone()],
+                [live.clone(), advanced.clone()],
+            ] {
+                let resolved = resolve_named_overload(name, &inputs).unwrap();
+                assert_eq!(
+                    resolved.outputs.as_ref(),
+                    &[expected_live.clone()],
+                    "{name}"
+                );
+                for (conversion, original) in resolved.conversions.iter().zip(&inputs) {
+                    assert_eq!(&conversion.source, original);
+                    assert_eq!(&conversion.target, original);
+                    assert_eq!(conversion.cost, 0);
+                }
+                if input_element == output_element {
+                    // A same-kind expected type retains the corresponding
+                    // imported dimension identity. Constructing a different
+                    // element kind would introduce independent rigid axes,
+                    // not an expected-output witness for either input.
+                    for expected in [&expected_live, &expected_advanced] {
+                        let resolved = resolve_named_overload_with_expected(
+                            name,
+                            &inputs,
+                            Some(core::slice::from_ref(expected)),
+                        )
+                        .unwrap();
+                        assert_eq!(
+                            resolved.outputs.as_ref(),
+                            core::slice::from_ref(expected),
+                            "{name}"
+                        );
+                    }
+                }
+            }
+            // The other axis is statically two, so no runtime check may
+            // excuse a fixed mismatch there.
+            assert!(
+                resolve_named_overload(name, &[live, fixed_matrix(input_element, 3, 3)]).is_err(),
+                "{name}"
+            );
         }
     }
 }

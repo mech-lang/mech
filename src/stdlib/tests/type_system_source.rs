@@ -99,6 +99,78 @@ fn source_matrix_promotion_preserves_shape_and_element_order() {
 }
 
 #[test]
+fn transposed_live_linear_range_participates_in_row_broadcast() {
+    let selected = evaluate("truth := [2.0; 3.0; 0.5]; truth[1..=2]'").unwrap();
+    let descriptor = selected.resolved_descriptor().unwrap();
+    let mech_core::SchemaBody::Matrix { dimensions, .. } = descriptor.schema().body() else {
+        panic!("transposed selection must retain a matrix schema");
+    };
+    assert_eq!(dimensions[0], mech_core::DimensionExpr::Constant(1));
+    assert!(matches!(
+        dimensions[1],
+        mech_core::DimensionExpr::Parameter(_)
+    ));
+
+    let output = evaluate(
+        "cameras := [1.0 1.0; 5.0 1.0; 5.0 5.0; 1.0 5.0];
+         truth := [2.0; 3.0; 0.5]; cameras - truth[1..=2]'",
+    )
+    .unwrap();
+    assert_eq!(
+        output
+            .resolved_descriptor()
+            .unwrap()
+            .current_extents()
+            .unwrap()
+            .as_ref(),
+        &[4, 2]
+    );
+    let values = output
+        .matrix_elements()
+        .unwrap()
+        .unwrap()
+        .iter()
+        .map(|cell| match cell.snapshot().unwrap().data() {
+            ValueData::F64(value) => value.to_f64(),
+            _ => panic!("expected f64 camera offsets"),
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(values, [-1.0, -2.0, 3.0, -2.0, 3.0, 2.0, -1.0, 2.0]);
+}
+
+#[test]
+fn rolling_path_elementwise_update_preserves_live_shape_relations() {
+    let output = evaluate(
+        "samples := 1..=4;
+         path := (samples' * 0.0) ** [1.0 1.0] + [10.0 20.0];
+         advanced := [path[2..=4,:]; 30.0 40.0];
+         path + 1.0 * (advanced - path)",
+    )
+    .unwrap();
+    assert_eq!(
+        output
+            .resolved_descriptor()
+            .unwrap()
+            .current_extents()
+            .unwrap()
+            .as_ref(),
+        &[4, 2]
+    );
+    let values = output
+        .matrix_elements()
+        .unwrap()
+        .unwrap()
+        .iter()
+        .map(|cell| match cell.snapshot().unwrap().data() {
+            ValueData::F64(value) => value.to_f64(),
+            _ => panic!("expected f64 path points"),
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(values, [10.0, 20.0, 10.0, 20.0, 10.0, 20.0, 30.0, 40.0]);
+    assert!(evaluate("[1.0 2.0; 3.0 4.0] - [1.0 2.0 3.0; 4.0 5.0 6.0]").is_err());
+}
+
+#[test]
 fn source_matrix_dimensions_are_checked_and_preserved() {
     let transposed = evaluate("[1.0 2.0 3.0; 4.0 5.0 6.0]'").unwrap();
     assert_eq!(

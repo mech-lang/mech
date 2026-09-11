@@ -17,7 +17,8 @@ use mech_engine::ArtifactSource;
 use mech_engine::memory_planner::{
     ActivationMemoryFacts, ActivationValueFact, CallSiteMemoryTemplate, PlannedValueClass,
     ProgramMemoryPlan, ProgramMemoryPlanTemplate, TurnMemoryFacts, ValueMemoryPlanTemplate,
-    audit_memory_plan, instantiate_program_memory_plan, plan_turn_memory,
+    audit_memory_plan, instantiate_program_memory_plan,
+    instantiate_program_memory_plan_with_target_overrides, plan_turn_memory,
 };
 
 fn allocation(id: u32, current: u64, capacity: u64) -> AllocationPlan {
@@ -1046,4 +1047,225 @@ fn aggregate_transfer_limit_counts_every_boundary_in_its_memory_space() {
     assert!(plan.budget_violations.iter().any(|v| v.dimension
         == mech_core::MemoryBudgetDimension::TransferBytes
         && v.required == 120));
+}
+
+fn call_budget_template(
+    targets: &[TargetMemoryProfile],
+) -> (ProgramMemoryPlanTemplate, ActivationMemoryFacts) {
+    let cell = ValueCell::from_exact(1.0_f32).unwrap();
+    let descriptor = cell.resolved_descriptor().unwrap();
+    let mut template = ProgramMemoryPlanTemplate::default();
+    let mut facts = ActivationMemoryFacts::default();
+    let mut values = Vec::new();
+    let mut calls = Vec::new();
+    let mut sites = Vec::new();
+    let mut nodes = Vec::new();
+    for (ordinal, target) in targets.iter().enumerate() {
+        let node = NodeId::new(ordinal as u32);
+        let input = CellSlotId::new(ordinal as u32 * 2);
+        let output = CellSlotId::new(ordinal as u32 * 2 + 1);
+        let storage =
+            physical_storage_descriptor(cell.representation(), target, MemoryLifetime::Activation);
+        let witness = MemoryFootprintWitness::Known(CurrentMemoryFootprint {
+            logical_elements: 1,
+            fixed_bytes: 4,
+            retained_nodes: 1,
+            ..CurrentMemoryFootprint::default()
+        });
+        let operation = ResolvedOperationDescriptor::from_name(
+            "test/r5-instantiated-call-budget",
+            OperationContractDeclaration {
+                inputs: InputPortLayout::Fixed(
+                    vec![InputPortPolicy {
+                        access: AccessMode::Read,
+                        delivery: DeliveryMode::Signal,
+                    }]
+                    .into_boxed_slice(),
+                ),
+                outputs: vec![OutputPortPolicy {
+                    access: AccessMode::Write,
+                    delivery: DeliveryMode::Signal,
+                    construction: OutputConstruction::FullWrite {
+                        shape: ShapeRule::Declared,
+                    },
+                    alias: AliasPolicy::NoAlias,
+                    change_detection: ChangeDetectionPolicy::ExactScalar,
+                }]
+                .into_boxed_slice(),
+                interaction: ExternalInteraction::Pure,
+            },
+        )
+        .unwrap();
+        let bound = BoundCall::syntax_directed(
+            operation,
+            vec![descriptor.clone()].into_boxed_slice(),
+            vec![descriptor.clone()].into_boxed_slice(),
+            RuntimeFunctionId::from_name("R5InstantiatedCallBudget"),
+            if target.kind == mech_core::MemoryTargetKind::Gpu {
+                ExecutionTarget::GpuBatch
+            } else {
+                ExecutionTarget::DirectRuntime
+            },
+        )
+        .unwrap();
+        let mut call = plan_call_memory(CallMemoryPlanningRequest {
+            bound_call: &bound,
+            input_storage: &[storage.clone()],
+            output_storage: &[storage.clone()],
+            input_witnesses: &[witness],
+            output_witnesses: &[witness],
+            published_output_witnesses: &[witness],
+            implementation_memory: ImplementationMemoryClass::NoAdditionalScratch,
+            target,
+            regions: &[RegionAccessPlan::WholeValue],
+        })
+        .unwrap();
+        // A target lowering may contribute instruction/compute demand after
+        // shape planning. Certify that complete demand with its original target.
+        call.demand.work.comparison = 3;
+        call.demand.work.compute = 5;
+        call.demand.work.scalar_instructions = 7;
+        assert!(
+            mech_core::evaluate_call_memory_budget(
+                MemoryObjectOwner::NodeOutput { node, port: 0 },
+                call.demand,
+                4,
+                4,
+                target.limits,
+            )
+            .is_empty()
+        );
+        for (slot, class, producer) in [
+            (input, PlannedValueClass::Input, None),
+            (output, PlannedValueClass::Scratch, Some(node)),
+        ] {
+            values.push(ValueMemoryPlanTemplate {
+                slot,
+                descriptor: Some(descriptor.clone()),
+                class,
+                producer,
+                last_consumer: Some(node),
+                alias_source: None,
+            });
+            facts.values.insert(
+                slot,
+                ActivationValueFact {
+                    descriptor: descriptor.clone(),
+                    storage: storage.clone(),
+                    witness,
+                },
+            );
+        }
+        template.node_positions.insert(node, ordinal as u32);
+        nodes.push(node);
+        sites.push(CallSiteMemoryTemplate {
+            node,
+            input_sources: vec![ArtifactSource::Slot(input)].into_boxed_slice(),
+            output_slots: vec![output].into_boxed_slice(),
+        });
+        calls.push(call);
+    }
+    template.values = values.into_boxed_slice();
+    template.call_nodes = nodes.into_boxed_slice();
+    template.call_sites = sites.into_boxed_slice();
+    template.calls = calls.into_boxed_slice();
+    (template, facts)
+}
+
+fn call_budget_gpu_target() -> TargetMemoryProfile {
+    TargetMemoryProfile::gpu(mech_core::GpuMemoryLimits {
+        max_buffer_size: 1 << 20,
+        max_storage_buffer_binding_size: 1 << 20,
+        max_storage_buffers_per_shader_stage: 64,
+        max_bindings_per_bind_group: 64,
+        max_compute_workgroups_per_dimension: 65_535,
+        max_compute_invocations_per_workgroup: 256,
+        max_compute_workgroup_size_x: 256,
+        min_storage_buffer_offset_alignment: 4,
+    })
+    .unwrap()
+}
+
+#[test]
+fn instantiated_target_rechecks_every_call_output_and_work_limit() {
+    use mech_core::MemoryBudgetDimension;
+
+    let original = call_budget_gpu_target();
+    let (template, facts) = call_budget_template(&[original.clone()]);
+    let mut target = original;
+    target.limits.max_output_elements = Some(1);
+    target.limits.max_output_bytes = Some(4);
+    target.limits.max_comparison_work = Some(3);
+    target.limits.max_compute_work = Some(5);
+    target.limits.max_scalar_instructions = Some(7);
+    let exact = instantiate_program_memory_plan(&template, &target, &facts).unwrap();
+    assert!(exact.budget_violations.is_empty());
+
+    target.limits.max_output_elements = Some(0);
+    target.limits.max_output_bytes = Some(3);
+    target.limits.max_comparison_work = Some(2);
+    target.limits.max_compute_work = Some(4);
+    target.limits.max_scalar_instructions = Some(6);
+    let rejected = instantiate_program_memory_plan(&template, &target, &facts).unwrap();
+    assert_eq!(
+        rejected
+            .budget_violations
+            .iter()
+            .map(|violation| (violation.dimension, violation.required, violation.limit))
+            .collect::<Vec<_>>(),
+        [
+            (MemoryBudgetDimension::OutputElements, 1, 0),
+            (MemoryBudgetDimension::OutputBytes, 4, 3),
+            (MemoryBudgetDimension::ComparisonWork, 3, 2),
+            (MemoryBudgetDimension::ComputeWork, 5, 4),
+            (MemoryBudgetDimension::ScalarInstructions, 7, 6),
+        ]
+    );
+    assert!(matches!(
+        mech_engine::memory_runtime::ManagedProgramMemory::realize(&rejected),
+        Err(mech_core::MemoryRuntimeError::BudgetExceeded { .. })
+    ));
+}
+
+#[test]
+fn instantiated_call_limits_follow_host_overrides_in_a_mixed_program() {
+    let host = TargetMemoryProfile::current_direct_host().unwrap();
+    let device = call_budget_gpu_target();
+    let (template, facts) = call_budget_template(&[host.clone(), device.clone()]);
+    let overrides = BTreeMap::from([(MemorySpace::Host, host)]);
+    let mut target = device;
+    target.limits.max_scalar_instructions = Some(6);
+    let plan = instantiate_program_memory_plan_with_target_overrides(
+        &template, &target, &overrides, &facts,
+    )
+    .unwrap();
+    assert_eq!(plan.budget_violations.len(), 1);
+    assert_eq!(
+        plan.budget_violations[0].owner,
+        MemoryObjectOwner::NodeOutput {
+            node: NodeId::new(1),
+            port: 0,
+        }
+    );
+    assert_eq!(
+        plan.budget_violations[0].dimension,
+        mech_core::MemoryBudgetDimension::ScalarInstructions
+    );
+}
+
+#[test]
+fn instantiated_call_limits_do_not_become_a_program_work_quota() {
+    let original = call_budget_gpu_target();
+    let (template, facts) = call_budget_template(&[original.clone(), original.clone()]);
+    let mut target = original;
+    target.limits.max_output_elements = Some(1);
+    target.limits.max_output_bytes = Some(4);
+    target.limits.max_comparison_work = Some(3);
+    target.limits.max_compute_work = Some(5);
+    target.limits.max_scalar_instructions = Some(7);
+    let plan = instantiate_program_memory_plan(&template, &target, &facts).unwrap();
+    assert!(plan.budget_violations.is_empty());
+    assert_eq!(plan.peak.work.comparison, 6);
+    assert_eq!(plan.peak.work.compute, 10);
+    assert_eq!(plan.peak.work.scalar_instructions, 14);
 }

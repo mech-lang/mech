@@ -37,7 +37,8 @@ use crate::UndefinedRecordFieldError;
 use crate::UndefinedTableColumnError;
 #[cfg(feature = "semantic-compiler")]
 use crate::intrinsics::canonical_access::{
-    CanonicalAccessSelector, canonical_draft, canonical_indices,
+    CanonicalAccessSelector, canonical_draft, canonical_fixed_matrix_axes, canonical_indices,
+    canonical_matrix_result_with_fixed_axes,
 };
 #[cfg(feature = "semantic-compiler")]
 use crate::{
@@ -785,6 +786,7 @@ fn canonical_access_result(
                     return values[0].detached_clone();
                 }
                 return canonical_matrix_access_result(
+                    source,
                     element.as_ref().clone(),
                     values.len(),
                     1,
@@ -806,6 +808,7 @@ fn canonical_access_result(
                 })
                 .collect::<Vec<_>>();
             canonical_matrix_access_result(
+                source,
                 element.as_ref().clone(),
                 selected_rows.len(),
                 selected_columns.len(),
@@ -825,38 +828,53 @@ fn canonical_access_result(
 
 #[cfg(feature = "semantic-compiler")]
 fn canonical_matrix_access_result(
+    source: &ValueCell,
     element: SchemaBody,
     rows: usize,
     columns: usize,
     values: &[ValueCell],
     selectors: &[CanonicalAccessSelector],
 ) -> MResult<ValueCell> {
-    let fixed_extents = selectors.iter().all(|selector| match selector {
-        CanonicalAccessSelector::All => true,
-        CanonicalAccessSelector::Cell(cell) => matches!(
-            cell.extent_evolution(),
-            mech_core::ExtentEvolution::Fixed | mech_core::ExtentEvolution::ActivationFixed
-        ),
-    });
-    if !fixed_extents {
-        return ValueCell::dynamic_matrix_from_cells(rows, columns, values);
-    }
-    ValueCell::from_schema_data(
-        SchemaBody::Matrix {
-            element: Box::new(element),
-            dimensions: vec![
-                DimensionExpr::Constant(rows as u64),
-                DimensionExpr::Constant(columns as u64),
-            ]
+    let source_axes = canonical_fixed_matrix_axes(source)?;
+    let fixed_selection = |selector: &CanonicalAccessSelector, all_fixed: bool| -> MResult<bool> {
+        match selector {
+            CanonicalAccessSelector::All => Ok(all_fixed),
+            CanonicalAccessSelector::Cell(cell) => {
+                if matches!(cell.closed_schema_body()?, SchemaBody::Matrix { element, .. }
+                    if element.as_ref() == &SchemaBody::Bool)
+                {
+                    // Even a fixed-size mask can select a different count on
+                    // its next value update, including an empty selection.
+                    return Ok(false);
+                }
+                Ok(canonical_fixed_matrix_axes(cell)?
+                    .into_iter()
+                    .all(|fixed| fixed))
+            }
+        }
+    };
+    let fixed_axes = if selectors.len() == 1 {
+        [
+            fixed_selection(&selectors[0], source_axes.iter().all(|fixed| *fixed))?,
+            true,
+        ]
+    } else {
+        [
+            fixed_selection(&selectors[0], source_axes[0])?,
+            fixed_selection(&selectors[1], source_axes[1])?,
+        ]
+    };
+    canonical_matrix_result_with_fixed_axes(
+        source,
+        element,
+        rows,
+        columns,
+        fixed_axes,
+        values
+            .iter()
+            .map(canonical_draft)
+            .collect::<MResult<Vec<_>>>()?
             .into_boxed_slice(),
-        },
-        ValueDataDraft::Matrix(
-            values
-                .iter()
-                .map(canonical_draft)
-                .collect::<MResult<Vec<_>>>()?
-                .into_boxed_slice(),
-        ),
     )
 }
 

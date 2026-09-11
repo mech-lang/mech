@@ -2184,7 +2184,21 @@ fn complete_activation_shape_facts(
                 .entry(declaration.schema)
                 .ok_or(ResidentActivationError::InvalidNodeOutput { node: node.node })?
                 .schema();
-            let output_shape = matrix_shape_for_extents(output_schema, &extents)
+            // Canonical matrix index conversion flattens selector values into
+            // a column. The input may be a row range or any rectangular matrix;
+            // copying its axes loses the conversion's declared singleton axis.
+            let output_extents = match output_schema.body() {
+                SchemaBody::Matrix { .. } => {
+                    let cardinality = extents.iter().try_fold(1_u64, |count, extent| {
+                        count
+                            .checked_mul(*extent)
+                            .ok_or(ResidentActivationError::RegionSizeOverflow)
+                    })?;
+                    vec![cardinality, 1]
+                }
+                _ => Vec::new(),
+            };
+            let output_shape = matrix_shape_for_extents(output_schema, &output_extents)
                 .map_err(|_| ResidentActivationError::UnresolvedShape { slot: output })?;
             facts.slot_shapes.insert(output, output_shape);
             continue;
@@ -4616,5 +4630,193 @@ mod shape_fact_tests {
             ),
             Err(ResidentActivationError::UnresolvedShape { slot }) if slot == CellSlotId::new(1)
         ));
+    }
+
+    fn canonical_index_artifact(input_extents: Option<[u64; 2]>) -> ProgramArtifact {
+        let mut schemas = SchemaTableBuilder::new();
+        let input = schemas
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: input_extents.map_or(
+                        SchemaBody::FloatingPoint(FloatWidth::W64),
+                        |extents| SchemaBody::Matrix {
+                            element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+                            dimensions: extents.map(DimensionExpr::Constant).into(),
+                        },
+                    ),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let output = schemas
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: if input_extents.is_some() {
+                        vec![DimensionParameterDeclaration {
+                            id: DimensionParameterId::new(0),
+                            origin: DimensionParameterOrigin::Explicit,
+                            lifetime: DimensionLifetime::Turn,
+                            lower_bound: DimensionExpr::Constant(0),
+                            upper_bound: None,
+                        }]
+                        .into_boxed_slice()
+                    } else {
+                        Box::new([])
+                    },
+                    body: input_extents.map_or(SchemaBody::Index, |_| SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::Index),
+                        dimensions: vec![
+                            DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                            DimensionExpr::Constant(1),
+                        ]
+                        .into_boxed_slice(),
+                    }),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = schemas.finish().unwrap();
+        let input = build.resolve(input).unwrap();
+        let output = build.resolve(output).unwrap();
+        let (schemas, _) = build.into_parts();
+        let element = ValueDataDraft::F64(F64Bits::from_f64(1.0));
+        let value = ValueDraft {
+            schema: input,
+            shape_values: Box::new([]),
+            data: input_extents.map_or(element.clone(), |[rows, columns]| {
+                ValueDataDraft::Matrix(vec![element; (rows * columns) as usize].into_boxed_slice())
+            }),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        let mut constants = ConstantStoreBuilder::new(&schemas);
+        let value = constants.insert(value).unwrap();
+        let build = constants.finish().unwrap();
+        let value = build.resolve(value).unwrap();
+        let (constants, _) = build.into_parts();
+        let mut contracts = OperationContractTableBuilder::new();
+        let contract = contracts
+            .insert(ResolvedOperationContract::Declared(
+                DeclaredOperationContract {
+                    inputs: vec![ResolvedInputPort {
+                        schema: input,
+                        access: AccessMode::Read,
+                        delivery: DeliveryMode::Signal,
+                    }]
+                    .into_boxed_slice(),
+                    outputs: vec![ResolvedOutputPort {
+                        schema: output,
+                        access: AccessMode::Write,
+                        delivery: DeliveryMode::Signal,
+                        construction: OutputConstruction::FullWrite {
+                            shape: ShapeRule::Declared,
+                        },
+                        alias: AliasPolicy::NoAlias,
+                        change_detection: ChangeDetectionPolicy::KernelReported,
+                    }]
+                    .into_boxed_slice(),
+                    interaction: ExternalInteraction::Pure,
+                },
+            ))
+            .unwrap();
+        let build = contracts.finish().unwrap();
+        let contract = build.resolve(contract).unwrap();
+        let (contracts, _) = build.into_parts();
+        let node = NodeId::new(0);
+        let slot = CellSlotId::new(0);
+        ProgramArtifactDraft {
+            schemas,
+            constants,
+            contracts,
+            requirements: Default::default(),
+            inputs: Box::new([]),
+            slots: vec![SlotDeclaration {
+                slot,
+                schema: output,
+                role: SlotRole::Derived,
+                producer: ProducerReference::NodeOutput {
+                    node,
+                    output_ordinal: 0,
+                },
+                initializer: None,
+            }]
+            .into_boxed_slice(),
+            nodes: vec![NodeDeclaration {
+                node,
+                operation: OperationReference {
+                    module_path: vec!["access".to_owned()].into_boxed_slice(),
+                    operation_name: "index".to_owned(),
+                },
+                contract,
+                requirement: None,
+                input_bindings: 0..1,
+                output_bindings: 1..2,
+            }]
+            .into_boxed_slice(),
+            bindings: vec![
+                BindingDeclaration::Input {
+                    id: BindingId::new(0),
+                    node,
+                    port_ordinal: 0,
+                    source: ArtifactSource::Constant(value),
+                },
+                BindingDeclaration::Output {
+                    id: BindingId::new(1),
+                    node,
+                    port_ordinal: 0,
+                    target: slot,
+                },
+            ]
+            .into_boxed_slice(),
+            outputs: Box::new([]),
+            constraints: Box::new([]),
+            compute_regions: Box::new([]),
+        }
+        .finalize()
+        .unwrap()
+    }
+
+    #[test]
+    fn canonical_index_activation_flattens_matrix_axes_without_shape_hints() {
+        for input_extents in [
+            None,
+            Some([1, 3]),
+            Some([3, 1]),
+            Some([2, 3]),
+            Some([1, 0]),
+            Some([0, 3]),
+        ] {
+            let artifact = canonical_index_artifact(input_extents);
+            let classes = [NodeClass::Activation];
+            let schedule = build_activation_schedule(&artifact, &classes).unwrap();
+            let facts = complete_activation_shape_facts(
+                &artifact,
+                &ActivationFacts::default(),
+                &classes,
+                &schedule,
+            )
+            .unwrap();
+            let shape = slot_shape(&artifact, CellSlotId::new(0), &facts).unwrap();
+            let expected =
+                input_extents.map_or_else(Vec::new, |[rows, columns]| vec![rows * columns]);
+            assert_eq!(
+                shape.parameter_values(),
+                expected,
+                "input extents {input_extents:?}"
+            );
+            let extents =
+                source_extents(&artifact, ArtifactSource::Slot(CellSlotId::new(0)), &facts)
+                    .unwrap();
+            let expected =
+                input_extents.map_or_else(Vec::new, |[rows, columns]| vec![rows * columns, 1]);
+            assert_eq!(
+                extents.as_ref(),
+                expected,
+                "input extents {input_extents:?}"
+            );
+        }
     }
 }

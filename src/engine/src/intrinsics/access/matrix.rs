@@ -3717,9 +3717,16 @@ pub(crate) fn canonical_reactive_index_matrix(
         .map(canonical_portable_index)
         .map(|value| value.map(|value| ValueDataDraft::Index(value as u64)))
         .collect::<MResult<Vec<_>>>()?;
-    let output = ValueCell::dynamic_matrix(
+    let fixed_cardinality =
+        crate::intrinsics::canonical_access::canonical_fixed_matrix_axes(&value)?
+            .into_iter()
+            .all(|fixed| fixed);
+    let output = crate::intrinsics::canonical_access::canonical_matrix_result_with_fixed_axes(
+        &value,
         SchemaBody::Index,
-        vec![rows.saturating_mul(columns) as u64, 1].into_boxed_slice(),
+        rows.saturating_mul(columns),
+        1,
+        [fixed_cardinality, true],
         elements.into_boxed_slice(),
     )?;
     let invocation = FunctionInvocation::unary(output.clone(), value);

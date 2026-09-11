@@ -228,7 +228,7 @@ pending; no completed-green claim applies to this revision.
 
 ## Work remaining before merge
 
-1. Qualify the GPU admission and broadcast-resolution follow-up in draft PR #811.
+1. Qualify the review-note and EKF shape follow-up in draft PR #811.
 2. Validate the current full native shard set through the required Full CI
    workflow. Preserve failures as concrete correction work; do not substitute
    the inherited inventory or earlier green run for this result.
@@ -241,8 +241,10 @@ pending; no completed-green claim applies to this revision.
    status. This report does not authorize a merge or direct branch promotion.
 
 A read-only check during this continuation confirmed the R6 remote remained at
-the expected head with green existing checks. All review threads were resolved;
-the complete paginated result contained no open threads. No new review was requested.
+the expected head with green existing checks. All review threads on **#809**
+were resolved; the complete paginated result contained no open threads. The
+separate user-requested review of #811 is recorded below. No agent-requested
+follow-up review was launched.
 
 The reproduced integration defects and the additional identity, sparse-feature,
 and Resident budget-scope defects found during this continuation are corrected.
@@ -251,3 +253,60 @@ The combined architecture remains coherent under this bounded qualification;
 its documented witness limits are not an exhaustive language-closure proof.
 The candidate is ready for exact-head CI, not for a completed integration or
 merge claim before that CI and the fresh full native union are verified.
+
+## User-requested review and EKF follow-up
+
+The review of `89634ab570a31387f4a835332f51d9f9e93542ef` returned four notes.
+Its GPU API migration note was already corrected in `65163f2d0`; all six local
+GPU tests and the exact-head GPU owner job passed, and that thread was answered
+and resolved. The other three corrections are:
+
+- Re-evaluate each remapped call's output/work budget against its instantiated
+  execution target, including Host overrides in mixed programs and Resident
+  call attachment. Aggregate memory admission remains separate. Exact and
+  one-over limits reject during realization, while independent calls do not
+  acquire an accidental program-wide work quota.
+- Restrict elementwise equality schemes to the maintained numeric, Bool, and
+  String families. Recursive `Equatable` evidence does not authorize nominal
+  or structural matrix broadcasts. Scalar whole-value equality remains
+  independent. Positive tests span the 16 maintained element kinds; negative
+  tests cover Atom, Id, Index, Option, and tuple broadcasts in both orders.
+- Preserve an explicit separator before a NaN imaginary component, regardless
+  of its sign bit. Tests cover 36 C32/C64 finite, signed-zero, infinity, signed-
+  NaN, and pure-imaginary conversions without changing their canonical tokens.
+
+Normal run `34563553993` on `65163f2d02a36f5fe9dde3b7f76bef6ddb4d5656`
+passed 27 jobs, including Linux, Windows, every owner, all static gates, and
+the N-body reference. Browser compute failed during EKF source planning; its
+downstream aggregate failures are not separate defects. Full CI was correctly
+skipped. Linear indexing had discarded its fixed singleton column axis, so
+transpose could not prove the row-broadcast shape. Access results now preserve
+independent fixed-axis guarantees and explicit element schemas for empty masks.
+
+The maintained native WASM test loads the complete unchanged EKF document and
+configuration without requiring a browser build. It exposed the later trail
+update's independent live dimension expressions as an additional local
+reproduction before another CI run. Equal-live-shape candidates now retain
+checked compatibility obligations for independent axis expressions, rather
+than requiring identical symbolic names or aliasing imported dimensions. They
+remain subordinate to more-specific exact and broadcast schemes and preserve
+the supported comparison element families. Core regressions retain rigid input
+conversion identities, fixed-shape rejection, and same-kind explicit expected
+output authority. A real-catalog regression checks the rolling path expression.
+
+Resident activation also copied the input axes through canonical index
+conversion, despite that conversion producing a flattened column. It now
+derives checked cardinality × 1 for matrices and preserves scalar shape for
+scalar conversion. A no-shape-hint artifact regression covers both vector
+orientations, rectangular selectors, empty axes, and scalars. Final follow-up
+local evidence so far: 62 core tests (24 catalog, 30 solver, eight conversion),
+435 engine tests (402 library, 16 R5 planner, 17 R6 runtime), and all 840 accepted
+turns of the complete EKF scene test passed. The temporary slot diagnostic
+confirmed the failing conversion and was removed; the maintained WASM test
+itself is unchanged. R3/R5/R6 checkers, the unsafe-boundary audit, and all 233
+selected checker/catalog mutation tests passed. The exact full-profile catalog
+gate passed all three tests and 2,345 generated witnesses. All 17 stdlib source
+tests passed using that shipping-full feature graph, including both new real-
+catalog EKF expressions. The exact standard-profile catalog gate also passed all
+three tests and 1,592 generated witnesses. Exact-head normal and Full CI remain
+pending; earlier runs are not substituted for qualification of these corrections.

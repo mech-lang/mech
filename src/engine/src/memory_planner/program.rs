@@ -753,7 +753,18 @@ pub fn instantiate_program_memory_plan_with_target_overrides(
             .and_then(|allocation| allocation.reuse_group);
     }
     let peak = program_peak(&allocations, &calls, &template.transfers)?;
-    let mut budget_violations = Vec::new();
+    let limit_overrides = target_overrides
+        .iter()
+        .map(|(space, target)| (*space, target.limits))
+        .collect();
+    let mut budget_violations = instantiated_call_budget_violations(
+        &template.call_nodes,
+        &calls,
+        &values,
+        &allocations,
+        default_target.limits,
+        &limit_overrides,
+    )?;
     for allocation in &allocations {
         let allocation_target = target_overrides
             .get(&allocation.space)
@@ -773,10 +784,7 @@ pub fn instantiate_program_memory_plan_with_target_overrides(
         &calls,
         &template.transfers,
         default_target.limits,
-        &target_overrides
-            .iter()
-            .map(|(space, target)| (*space, target.limits))
-            .collect(),
+        &limit_overrides,
     )?);
     budget_violations.sort();
     budget_violations.dedup();
@@ -1021,6 +1029,14 @@ pub(crate) fn attach_resident_call_memory_template(
     plan.arenas = arenas.into_boxed_slice();
     plan.peak = program_peak(&plan.allocations, &plan.calls, &plan.transfers)?;
     let mut violations = plan.budget_violations.to_vec();
+    violations.extend(instantiated_call_budget_violations(
+        &plan.call_nodes,
+        &plan.calls,
+        &plan.values,
+        &plan.allocations,
+        plan.budget_limits,
+        &BTreeMap::new(),
+    )?);
     for allocation in plan.allocations.iter().filter(|allocation| {
         matches!(
             allocation.owner,
@@ -1575,6 +1591,95 @@ fn program_peak(
         )?;
     }
     Ok(demand)
+}
+
+/// A template's earlier call admission is not a certificate for the target
+/// chosen at activation. Recheck complete individual calls after their port
+/// objects have been mapped to the actual execution space. Program work totals
+/// remain diagnostic; independent calls never share one output/work allowance.
+fn instantiated_call_budget_violations(
+    call_nodes: &[mech_core::NodeId],
+    calls: &[CallMemoryPlan],
+    values: &[ValueMemoryPlan],
+    allocations: &[AllocationPlan],
+    default_limits: mech_core::MemoryBudgetLimits,
+    overrides: &BTreeMap<MemorySpace, mech_core::MemoryBudgetLimits>,
+) -> Result<Vec<MemoryBudgetViolation>, MemoryPlanError> {
+    if call_nodes.len() != calls.len() {
+        return Err(MemoryPlanError::DescriptorArityMismatch);
+    }
+    let by_object = allocations
+        .iter()
+        .map(|allocation| (allocation.id, allocation))
+        .collect::<BTreeMap<_, _>>();
+    let by_value = values
+        .iter()
+        .map(|value| (value.object, &value.layout))
+        .collect::<BTreeMap<_, _>>();
+    let mut violations = Vec::new();
+    for (&node, call) in call_nodes.iter().zip(calls) {
+        // Output placement identifies where the call executes, rather than a
+        // potentially remote input or the target used to certify the template.
+        // Outputless effects use their input placement; a portless call uses
+        // the selected default target.
+        let execution_ports = if call.outputs.is_empty() {
+            &call.inputs
+        } else {
+            &call.outputs
+        };
+        let mut execution_space = None;
+        for port in execution_ports {
+            let space = by_object
+                .get(&port.object)
+                .ok_or(MemoryPlanError::DescriptorMismatch)?
+                .space;
+            if execution_space.is_some_and(|previous| previous != space) {
+                return Err(MemoryPlanError::DescriptorMismatch);
+            }
+            execution_space = Some(space);
+        }
+        let limits = execution_space
+            .and_then(|space| overrides.get(&space).copied())
+            .unwrap_or(default_limits);
+        let output_bytes = call.outputs.iter().try_fold(0_u64, |total, output| {
+            let value = by_value
+                .get(&output.object)
+                .copied()
+                .ok_or(MemoryPlanError::DescriptorMismatch)?;
+            checked_add(
+                checked_add(
+                    total,
+                    value.capacity_bytes,
+                    "instantiated call output bytes",
+                )?,
+                value.payload.required_bytes,
+                "instantiated call output payload bytes",
+            )
+        })?;
+        let mut storage_buffer_bytes = 0;
+        for object in call
+            .inputs
+            .iter()
+            .chain(call.outputs.iter())
+            .map(|port| port.object)
+            .chain(call.allocations.iter().map(|allocation| allocation.id))
+        {
+            let allocation = by_object
+                .get(&object)
+                .ok_or(MemoryPlanError::DescriptorMismatch)?;
+            if matches!(allocation.space, MemorySpace::Device { .. }) {
+                storage_buffer_bytes = storage_buffer_bytes.max(allocation.capacity_bytes);
+            }
+        }
+        violations.extend(mech_core::evaluate_call_memory_budget(
+            MemoryObjectOwner::NodeOutput { node, port: 0 },
+            call.demand,
+            output_bytes,
+            storage_buffer_bytes,
+            limits,
+        ));
+    }
+    Ok(violations)
 }
 
 /// Memory caps constrain simultaneous allocations in a memory space, not each
