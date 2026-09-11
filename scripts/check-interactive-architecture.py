@@ -127,7 +127,7 @@ for builder in (
     if (ROOT / builder).exists():
         fail(f"obsolete WASM build wrapper `{builder}` reappeared")
 build_wasm = text("scripts/build-wasm.py")
-for profile in ("browser", "browser-compute"):
+for profile in ("browser", "browser-compute", "browser-compute-canary"):
     if f'"{profile}"' not in build_wasm:
         fail(f"unified WASM builder is missing the `{profile}` profile")
 print("interactive architecture contract passed")

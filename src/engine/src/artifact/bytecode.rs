@@ -3,7 +3,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use core::fmt;
-use mech_core::snapshot::SnapshotValidationContext;
+use mech_core::snapshot::{SnapshotCanonicalizationBudget, SnapshotValidationContext};
 use mech_core::{
     ApplicationRequirement, ApplicationRequirementId, BindingId, BytecodeArtifactSections,
     BytecodeProgram, CellSlotId, ComputePlacement, ConstantId, ConstantStore, ConstantStoreBuilder,
@@ -29,6 +29,7 @@ use super::{
 
 const DEFAULT_MAX_ARTIFACT_SECTION_BYTES: usize = 16_777_216;
 const DEFAULT_MAX_ARTIFACT_BYTES: usize = 67_108_864;
+const DEFAULT_MAX_CONSTANT_CANONICALIZATION_WORK: u64 = 65_536;
 
 #[derive(Clone, Copy, Debug)]
 pub struct ArtifactDecodeLimits {
@@ -46,6 +47,7 @@ pub struct ArtifactDecodeLimits {
     pub max_operations: usize,
     pub max_contracts: usize,
     pub max_compute_regions: usize,
+    pub max_constant_canonicalization_work: u64,
 }
 
 impl Default for ArtifactDecodeLimits {
@@ -65,6 +67,7 @@ impl Default for ArtifactDecodeLimits {
             max_operations: 1_000_000,
             max_contracts: 100_000,
             max_compute_regions: 100_000,
+            max_constant_canonicalization_work: DEFAULT_MAX_CONSTANT_CANONICALIZATION_WORK,
         }
     }
 }
@@ -467,7 +470,11 @@ fn decode_program_artifact_sections_owned(
     let schemas = finalize_schemas(schema_drafts)?;
     let value_drafts: Vec<ValueDraft> =
         decode_vec("constants", &sections.constants, limits.max_constants)?;
-    let constants = finalize_constants(value_drafts, &schemas)?;
+    let constants = finalize_constants(
+        value_drafts,
+        &schemas,
+        limits.max_constant_canonicalization_work,
+    )?;
     let contract_count = sections
         .operation_contracts
         .get(..4)
@@ -1122,8 +1129,14 @@ fn constant_drafts(
 fn finalize_constants(
     drafts: Vec<ValueDraft>,
     schemas: &SchemaTable,
+    canonicalization_work_limit: u64,
 ) -> Result<ConstantStore, ArtifactBytecodeError> {
-    let validation = SnapshotValidationContext::new(schemas);
+    // One shared allowance covers every recursively nested set/map constant
+    // in the artifact. Untrusted bytecode cannot restart the normalization
+    // budget for each constant or defer an insertion-shift failure until
+    // after an unbounded amount of decode-time work.
+    let budget = SnapshotCanonicalizationBudget::new(canonicalization_work_limit);
+    let validation = SnapshotValidationContext::new(schemas).with_canonicalization_budget(&budget);
     let mut builder = ConstantStoreBuilder::new(schemas);
     let mut handles = Vec::with_capacity(drafts.len());
     for draft in drafts {
@@ -1161,4 +1174,120 @@ fn value_draft(
             ArtifactBuildError::UnknownConstant { constant },
         ))?,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use mech_core::snapshot::{MapEntryDraft, ValueDataDraft};
+    use mech_core::{CardinalitySpec, IntegerWidth, SchemaBody};
+
+    fn schema_table(body: SchemaBody) -> (SchemaTable, SchemaId) {
+        let mut builder = SchemaTableBuilder::new();
+        let handle = builder
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body,
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let schema = build.resolve(handle).unwrap();
+        let (schemas, _) = build.into_parts();
+        (schemas, schema)
+    }
+
+    fn draft(schema: SchemaId, data: ValueDataDraft) -> ValueDraft {
+        ValueDraft {
+            schema,
+            shape_values: Box::new([]),
+            data,
+        }
+    }
+
+    fn assert_work_limit(error: ArtifactBytecodeError, limit: u64) {
+        assert!(matches!(
+            error,
+            ArtifactBytecodeError::Snapshot(
+                SnapshotValueError::CanonicalizationWorkLimitExceededV1 { limit: found }
+            ) if found == limit
+        ));
+    }
+
+    #[test]
+    fn artifact_constant_finalization_has_one_fail_closed_budget() {
+        let cardinality = CardinalitySpec::Dynamic { upper_bound: None };
+        let (set_schemas, set_schema) = schema_table(SchemaBody::Set {
+            element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W64)),
+            cardinality: cardinality.clone(),
+        });
+        let descending_set = ValueDataDraft::Set(
+            (0_u64..1_024)
+                .rev()
+                .map(ValueDataDraft::U64)
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+        );
+        assert_work_limit(
+            finalize_constants(
+                vec![draft(set_schema, descending_set)],
+                &set_schemas,
+                DEFAULT_MAX_CONSTANT_CANONICALIZATION_WORK,
+            )
+            .unwrap_err(),
+            DEFAULT_MAX_CONSTANT_CANONICALIZATION_WORK,
+        );
+
+        let (map_schemas, map_schema) = schema_table(SchemaBody::Map {
+            key: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W64)),
+            value: Box::new(SchemaBody::Bool),
+            cardinality,
+        });
+        let descending_map = ValueDataDraft::Map(
+            (0_u64..1_024)
+                .rev()
+                .map(|key| MapEntryDraft {
+                    items: vec![ValueDataDraft::U64(key), ValueDataDraft::Bool(true)]
+                        .into_boxed_slice(),
+                })
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+        );
+        assert_work_limit(
+            finalize_constants(
+                vec![draft(map_schema, descending_map)],
+                &map_schemas,
+                DEFAULT_MAX_CONSTANT_CANONICALIZATION_WORK,
+            )
+            .unwrap_err(),
+            DEFAULT_MAX_CONSTANT_CANONICALIZATION_WORK,
+        );
+
+        // The allowance belongs to the artifact, not to each constant. Four
+        // ascending keys consume three comparisons; two constants cannot each
+        // restart a five-unit decode allowance.
+        let ascending = |start| {
+            ValueDataDraft::Set(
+                (start..start + 4)
+                    .map(ValueDataDraft::U64)
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            )
+        };
+        assert_work_limit(
+            finalize_constants(
+                vec![
+                    draft(set_schema, ascending(0)),
+                    draft(set_schema, ascending(4)),
+                ],
+                &set_schemas,
+                5,
+            )
+            .unwrap_err(),
+            5,
+        );
+    }
 }

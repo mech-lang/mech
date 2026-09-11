@@ -4,38 +4,14 @@ use crate::*;
 
 use libm::{log2, log2f};
 macro_rules! log2_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = log2((*$arg));
-        }
-    };
-}
-
-macro_rules! log2_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = log2(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(log2(($arg)))
     };
 }
 
 macro_rules! log2f_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = log2f((*$arg));
-        }
-    };
-}
-
-macro_rules! log2f_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = log2f(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(log2f(($arg)))
     };
 }
 

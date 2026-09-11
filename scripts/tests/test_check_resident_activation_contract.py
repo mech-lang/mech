@@ -106,6 +106,18 @@ class ResidentActivationCheckerTests(unittest.TestCase):
             any("RuntimeExecutionTransaction" in failure for failure in failures)
         )
 
+    def test_owner_thread_memory_primitives_are_not_legacy_dependencies(self) -> None:
+        failures = CHECKER.validate_new_legacy_dependencies(
+            {
+                "src/engine/src/resident/owner.rs": (
+                    "use std::cell::RefCell; use std::rc::Rc;\n"
+                    "struct Owner(Rc<RefCell<u64>>);\n"
+                )
+            },
+            {"src/engine/src/resident/owner.rs": ""},
+        )
+        self.assertEqual(failures, [])
+
     def test_pointer_identity_fails(self) -> None:
         fixture = self.fixture("pointer-identity")
         sources = {

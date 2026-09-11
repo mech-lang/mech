@@ -305,6 +305,13 @@ impl RuntimeBuilder {
             .map(|value| usize::try_from(value).unwrap_or(usize::MAX));
         self.store.configure_event_retention(max_events)?;
 
+        #[cfg(feature = "resident-routing")]
+        let resident_memory_budget = self
+            .config
+            .limits
+            .max_memory_bytes
+            .map(mech_core::ManagedMemoryBudget::new);
+
         let mut runtime = MechRuntime {
             id: runtime_id,
             event_sequence: 0,
@@ -317,6 +324,8 @@ impl RuntimeBuilder {
             program_execution_info: Default::default(),
             #[cfg(feature = "resident-routing")]
             next_resident_instance: 1,
+            #[cfg(feature = "resident-routing")]
+            resident_memory_budget,
             #[cfg(feature = "resident-routing")]
             resident_production_probe: Default::default(),
             id_generator: self.id_generator,

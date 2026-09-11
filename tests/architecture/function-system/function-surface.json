@@ -199,6 +199,10 @@
       "id_hex": "00eeb913d4a6409c"
     },
     {
+      "name": "math/fdim",
+      "id_hex": "004d33351642e9c6"
+    },
+    {
       "name": "math/floor",
       "id_hex": "0038032b869e4443"
     },
@@ -851,6 +855,12 @@
       "item": "erfc",
       "canonical_name": "math/erfc",
       "id_hex": "00eeb913d4a6409c"
+    },
+    {
+      "module": "math",
+      "item": "fdim",
+      "canonical_name": "math/fdim",
+      "id_hex": "004d33351642e9c6"
     },
     {
       "module": "math",

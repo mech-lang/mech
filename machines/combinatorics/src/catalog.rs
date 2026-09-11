@@ -1,10 +1,10 @@
+#[cfg(all(feature = "source", feature = "n_choose_k"))]
+use crate::CombinatoricsNChooseK;
 use mech_core::{FunctionCatalogBuilder, MResult};
 #[cfg(feature = "source")]
 use mech_core::{FunctionExport, FunctionExposure};
 #[cfg(feature = "source")]
 use std::sync::Arc;
-#[cfg(all(feature = "source", feature = "n_choose_k"))]
-use crate::CombinatoricsNChooseK;
 
 macro_rules! for_each_combinatorics_scalar {
     ($callback:ident, $($context:tt)*) => {
@@ -39,6 +39,7 @@ macro_rules! declare_n_choose_k_scalar {
                     mech_core::RuntimeOutputAliasPolicy::DisallowInputAlias,
                     crate::n_choose_k::validate_canonical_n_choose_k_scalar_contract,
                 ),
+                operations: [mech_core::OperationId::from_name("combinatorics/n-choose-k")],
                 package: "mech-combinatorics",
                 crate_name: "mech_combinatorics",
                 installer_path: concat!("mech_combinatorics::__mech_native::", stringify!([<install_n_choose_k_ $scalar_token>])),
@@ -62,6 +63,7 @@ macro_rules! declare_n_choose_k_matrix {
                     mech_core::RuntimeOutputAliasPolicy::DisallowInputAlias,
                     crate::n_choose_k::validate_canonical_n_choose_k_matrix_contract,
                 ),
+                operations: [mech_core::OperationId::from_name("combinatorics/n-choose-k")],
                 package: "mech-combinatorics",
                 crate_name: "mech_combinatorics",
                 installer_path: concat!("mech_combinatorics::__mech_native::", stringify!([<install_n_choose_k_matrix_ $scalar_token>])),
@@ -80,8 +82,12 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "n_choose_k")]
     {
         let canonical_name = "combinatorics/n-choose-k";
-        let operation =
-            builder.insert_canonical_specializer(canonical_name, Arc::new(CombinatoricsNChooseK {}))?;
+        let declaration = mech_core::maintained_source_type_declaration(canonical_name)?;
+        let operation = builder.insert_canonical_specializer(
+            canonical_name,
+            declaration,
+            Arc::new(CombinatoricsNChooseK {}),
+        )?;
         builder.insert_export(FunctionExport {
             operation,
             canonical_name: canonical_name.to_string(),
@@ -113,12 +119,6 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     for_each_combinatorics_scalar!(register_n_choose_k_scalar,);
     #[cfg(all(feature = "n_choose_k", feature = "matrix", feature = "matrixd"))]
     for_each_combinatorics_scalar!(register_n_choose_k_matrix,);
-    #[cfg(all(feature = "n_choose_k", feature = "f64"))]
-    builder.insert_resident_factory(
-        ["runtime"],
-        "NChooseK<f64>",
-        crate::n_choose_k::bind_resident_n_choose_k_f64,
-    )?;
     Ok(())
 }
 

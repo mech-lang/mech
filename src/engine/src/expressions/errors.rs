@@ -1,4 +1,4 @@
-use crate::{FormulaOperator, FunctionValueRepresentation, MechErrorKind};
+use crate::{FormulaOperator, MechErrorKind, ResolvedType};
 
 #[derive(Debug, Clone)]
 pub struct UnhandledFormulaOperatorError {
@@ -29,7 +29,7 @@ impl MechErrorKind for UndefinedVariableError {
 }
 #[derive(Debug, Clone)]
 pub struct ComprehensionGeneratorError {
-    pub(super) found: FunctionValueRepresentation,
+    pub(super) found: ResolvedType,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -56,8 +56,8 @@ impl MechErrorKind for ComprehensionGeneratorError {
     }
     fn message(&self) -> String {
         format!(
-            "Comprehension generator must produce a set or matrix, found kind: {:?}",
-            self.found
+            "Comprehension generator must produce a set or matrix, found type: {}",
+            self.found.semantic_name()
         )
     }
 }
@@ -99,15 +99,19 @@ impl MechErrorKind for MatchNoArmMatchedError {
 
 #[derive(Debug, Clone)]
 pub struct MatchArmKindMismatchError {
-    pub(super) expected: FunctionValueRepresentation,
-    pub(super) found: FunctionValueRepresentation,
+    pub(super) expected: ResolvedType,
+    pub(super) found: ResolvedType,
 }
 impl MechErrorKind for MatchArmKindMismatchError {
     fn name(&self) -> &str {
         "MatchArmKindMismatch"
     }
     fn message(&self) -> String {
-        format!("Expected {:?}, found {:?}", self.expected, self.found)
+        format!(
+            "Expected type {}, found {}",
+            self.expected.semantic_name(),
+            self.found.semantic_name()
+        )
     }
 }
 
@@ -154,7 +158,7 @@ impl MechErrorKind for PatternMatchError {
 
 #[derive(Debug, Clone)]
 pub struct InvalidGuardExpressionError {
-    pub(super) found: FunctionValueRepresentation,
+    pub(super) found: ResolvedType,
 }
 
 impl MechErrorKind for InvalidGuardExpressionError {
@@ -163,15 +167,24 @@ impl MechErrorKind for InvalidGuardExpressionError {
     }
     fn message(&self) -> String {
         format!(
-            "Guard expressions must evaluate to a boolean value. Found kind: {:?}",
-            self.found
+            "Guard expressions must evaluate to a boolean value. Found type: {}",
+            self.found.semantic_name()
         )
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{CannotConvertToTypeError, MechError};
+    use super::{
+        ComprehensionGeneratorError, InvalidGuardExpressionError, MatchArmKindMismatchError,
+    };
+    use crate::{
+        BuiltinScalarKind, CannotConvertToTypeError, MechError, MechErrorKind, ResolvedType,
+    };
+
+    fn scalar(kind: BuiltinScalarKind) -> ResolvedType {
+        ResolvedType::new(kind.kind_expr(), Box::new([])).unwrap()
+    }
 
     #[test]
     fn conversion_errors_preserve_the_core_public_type_identity() {
@@ -186,6 +199,32 @@ mod tests {
             error
                 .kind_as::<mech_core::CannotConvertToTypeError>()
                 .is_some()
+        );
+    }
+
+    #[test]
+    fn source_expression_diagnostics_use_semantic_type_names() {
+        assert_eq!(
+            ComprehensionGeneratorError {
+                found: scalar(BuiltinScalarKind::String),
+            }
+            .message(),
+            "Comprehension generator must produce a set or matrix, found type: string",
+        );
+        assert_eq!(
+            MatchArmKindMismatchError {
+                expected: scalar(BuiltinScalarKind::String),
+                found: scalar(BuiltinScalarKind::Bool),
+            }
+            .message(),
+            "Expected type string, found bool",
+        );
+        assert_eq!(
+            InvalidGuardExpressionError {
+                found: scalar(BuiltinScalarKind::String),
+            }
+            .message(),
+            "Guard expressions must evaluate to a boolean value. Found type: string",
         );
     }
 }

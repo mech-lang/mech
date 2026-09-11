@@ -34,6 +34,22 @@ fn string_constant(value: &str) -> EncodedConstant {
     }
 }
 
+#[cfg(feature = "u8")]
+#[test]
+fn decoded_constant_cells_share_one_managed_session() {
+    let cells = constants::decode_encoded_constant_cells(&[u8_constant(1), u8_constant(2)])
+        .expect("canonical bytecode constants should decode");
+
+    let first = cells[0]
+        .memory_domain()
+        .expect("decoded owned constants use managed storage");
+    let second = cells[1]
+        .memory_domain()
+        .expect("decoded owned constants use managed storage");
+    assert_eq!(first.id(), second.id());
+    assert_ne!(cells[0].reactive_cell_id(), cells[1].reactive_cell_id());
+}
+
 #[cfg(all(feature = "semantic-compiler", feature = "matrix2", feature = "f64"))]
 #[test]
 fn canonical_exact_matrix_backings_preserve_bytecode_v1_element_alignment() {
@@ -1526,6 +1542,45 @@ fn every_composite_constant_codec_round_trips() {
         values[8..]
             .iter()
             .all(|value| matches!(value.data(), crate::ValueData::Type(_)))
+    );
+}
+
+#[test]
+fn bounded_nested_sets_decode_members_with_different_cardinalities() {
+    let empty_subset = 0_u32.to_le_bytes().to_vec();
+    let mut singleton_subset = 1_u32.to_le_bytes().to_vec();
+    append_child_payload(&mut singleton_subset, &[1]);
+
+    let mut powerset = 2_u32.to_le_bytes().to_vec();
+    append_child_payload(&mut powerset, &empty_subset);
+    append_child_payload(&mut powerset, &singleton_subset);
+    let inner = RuntimeType::Set {
+        element: Box::new(RuntimeType::U8),
+        max_len: Some(2),
+    };
+    let encoded = EncodedConstant {
+        runtime_type: RuntimeType::Set {
+            element: Box::new(inner),
+            max_len: Some(4),
+        },
+        alignment: 4,
+        bytes: powerset,
+    };
+
+    let parsed =
+        ParsedProgram::from_bytes(&write_bytecode(&program(vec![encoded])).unwrap()).unwrap();
+    let decoded = parsed.decode_constants().unwrap();
+    let subsets = decoded[0].set_view().unwrap().elements();
+    assert_eq!(subsets.len(), 2);
+    assert_eq!(
+        subsets
+            .iter()
+            .map(|subset| match subset.data() {
+                crate::ValueData::Set(values) => values.elements().len(),
+                other => panic!("expected nested set, got {other:?}"),
+            })
+            .collect::<Vec<_>>(),
+        [0, 1]
     );
 }
 

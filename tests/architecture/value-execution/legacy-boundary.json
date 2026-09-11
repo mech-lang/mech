@@ -130,7 +130,6 @@
         { "path": "machines/math/src/ops/negate.rs", "scope_contains": "<file>", "max_occurrences": 2 },
         { "path": "machines/math/src/ops/pow.rs", "scope_contains": "<file>", "max_occurrences": 2 },
         { "path": "machines/math/src/trig/atan2.rs", "scope_contains": "<file>", "max_occurrences": 1 },
-        { "path": "machines/math/src/trig/hypot.rs", "scope_contains": "<file>", "max_occurrences": 1 },
         { "path": "machines/matrix/src/lib.rs", "scope_contains": "<file>", "max_occurrences": 1 },
         { "path": "machines/matrix/src/solve.rs", "scope_contains": "<file>", "max_occurrences": 1 },
         { "path": "machines/matrix/src/transpose.rs", "scope_contains": "<file>", "max_occurrences": 1 },

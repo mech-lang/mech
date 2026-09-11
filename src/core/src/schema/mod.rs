@@ -8,6 +8,8 @@ mod validation;
 pub use self::shape::*;
 pub use self::table::*;
 
+pub(crate) use self::validation::is_body_keyable as is_schema_body_keyable;
+
 use crate::{
     DimensionExpr, DimensionParameter, DimensionParameterDeclaration, NominalKey,
     SemanticModelError,
@@ -54,6 +56,35 @@ impl From<DimensionExpr> for CardinalitySpec {
 impl SchemaDraft {
     pub fn finalize(self) -> Result<Schema, SemanticModelError> {
         validation::finalize_schema(self)
+    }
+}
+
+impl Schema {
+    /// Resolves every dimension expression in this schema against one
+    /// validated shape instance, producing the concrete schema body carried by
+    /// the current value without changing its durable schema identity.
+    pub fn closed_body(&self, shape: &crate::ShapeInstance) -> crate::MResult<SchemaBody> {
+        let shape = self
+            .instantiate_shape(shape.parameter_values().to_vec().into_boxed_slice())
+            .map_err(crate::MechError::from)?;
+        crate::cell_binding::close_schema_body(&self.body, &shape)
+    }
+
+    pub fn type_memory_contract(&self) -> Result<crate::TypeMemoryContract, SemanticModelError> {
+        crate::memory_contract::derive_type_memory_contract(&self.body, &self.dimension_parameters)
+    }
+
+    pub fn resolved_type_memory_contract(
+        &self,
+        shape: &crate::ShapeInstance,
+    ) -> Result<crate::ResolvedTypeMemoryContract, SemanticModelError> {
+        let validated_shape =
+            self.instantiate_shape(shape.parameter_values().to_vec().into_boxed_slice())?;
+        crate::memory_contract::resolve_type_memory_contract(
+            self.type_memory_contract()?,
+            &self.dimension_parameters,
+            &validated_shape,
+        )
     }
 }
 

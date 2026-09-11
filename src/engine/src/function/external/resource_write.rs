@@ -2,12 +2,11 @@ use mech_core::{
     AccessMode, DeliveryMode, EffectContract, EffectDeliveryPolicy, ExecutionResourceRequest,
     ExternalInteraction, IdempotencyRequirement, InitialSolvePolicy, InputPortLayout,
     InputPortPolicy, MResult, MechError, MechErrorKind, MechExecutionServices, MechFunctionImpl,
-    NoMechExecutionServices, OperationContractDeclaration, ReactiveDependencyScope,
-    ReactiveSolveStatus, ResourceIntent, ValueCell,
+    OperationContractDeclaration, ReactiveDependencyScope, ResourceIntent, ValueCell,
 };
 use std::sync::LazyLock;
 
-static RESOURCE_EFFECT_CONTRACT: LazyLock<OperationContractDeclaration> =
+pub(crate) static RESOURCE_EFFECT_CONTRACT: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| OperationContractDeclaration {
         inputs: InputPortLayout::Fixed(
             vec![InputPortPolicy {
@@ -72,25 +71,13 @@ impl ExternalResourceWriteFunction {
 }
 
 impl MechFunctionImpl for ExternalResourceWriteFunction {
-    fn solve_result(&self) -> MResult<()> {
-        self.solve_with_services(&mut NoMechExecutionServices)
-    }
-
-    fn solve_result_with(&self, services: &mut dyn MechExecutionServices) -> MResult<()> {
-        self.solve_with_services(services)
-    }
-
-    fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
-        self.solve_result()?;
-        Ok(ReactiveSolveStatus::Changed)
-    }
-
-    fn solve_reactive_with(
+    fn solve_managed(
         &self,
-        services: &mut dyn MechExecutionServices,
-    ) -> MResult<ReactiveSolveStatus> {
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
         self.solve_with_services(services)?;
-        Ok(ReactiveSolveStatus::Changed)
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn initial_solve_policy(&self) -> InitialSolvePolicy {
@@ -106,6 +93,7 @@ impl MechFunctionImpl for ExternalResourceWriteFunction {
 
     fn initialize_preserved_output_with(
         &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
         services: &mut dyn MechExecutionServices,
     ) -> MResult<()> {
         // Source specialization deterministically plans the Empty output, but
@@ -202,7 +190,7 @@ mod tests {
             semantic_contract: None,
         };
 
-        let error = function.solve_result().unwrap_err();
+        let error = function.validate().unwrap_err();
         assert_eq!(error.kind_name(), "ExternalResourceWriteOutputNotEmpty");
         assert_eq!(
             error

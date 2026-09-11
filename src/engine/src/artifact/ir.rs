@@ -1,7 +1,7 @@
 use mech_core::snapshot::{OptionDraft, SnapshotValidationContext};
 use mech_core::{
-    CellSlotId, ConstantId, ConstantStore, DimensionExpr, SchemaBody, SchemaDraft, SchemaId,
-    SchemaTable, SnapshotValueError, Value, ValueDataDraft, ValueDraft,
+    CellSlotId, ConstantId, ConstantStore, SchemaBody, SchemaDraft, SchemaId, SchemaTable,
+    SnapshotValueError, Value, ValueDataDraft, ValueDraft,
 };
 
 use super::snapshot::data_draft;
@@ -42,9 +42,6 @@ pub enum CompilerIrError {
         constant: ConstantId,
     },
     MatrixLiteralSchemaNotMatrix,
-    DynamicMatrixSchemaUnsupported {
-        schema: SchemaId,
-    },
     MatrixLiteralShapeMismatch {
         expected_rows: u64,
         expected_columns: u64,
@@ -99,12 +96,24 @@ impl MatrixLiteralIR {
         schemas: &SchemaTable,
         constants: &ConstantStore,
     ) -> Result<Value, CompilerIrError> {
+        self.resolve_constant_with_shape(schema, Box::new([]), schemas, constants)
+    }
+
+    /// Resolves a constant matrix using the already-certified current shape
+    /// for a schema whose permitted axes may remain dynamic.
+    pub fn resolve_constant_with_shape(
+        &self,
+        schema: SchemaId,
+        shape_values: Box<[u64]>,
+        schemas: &SchemaTable,
+        constants: &ConstantStore,
+    ) -> Result<Value, CompilerIrError> {
         let schema_definition = schemas
             .get(schema)
             .ok_or(CompilerIrError::UnknownSchema { schema })?;
-        if !schema_definition.dimension_parameters().is_empty() {
-            return Err(CompilerIrError::DynamicMatrixSchemaUnsupported { schema });
-        }
+        let shape = schema_definition
+            .instantiate_shape(shape_values.clone())
+            .map_err(|error| CompilerIrError::Snapshot(error.into()))?;
         let SchemaBody::Matrix {
             element,
             dimensions,
@@ -123,17 +132,19 @@ impl MatrixLiteralIR {
                 actual_elements: self.elements.len(),
             });
         }
-        let [
-            DimensionExpr::Constant(expected_rows),
-            DimensionExpr::Constant(expected_columns),
-        ] = dimensions.as_ref()
-        else {
+        let [expected_rows, expected_columns] = dimensions.as_ref() else {
             return Err(CompilerIrError::MatrixLiteralSchemaShapeMismatch {
                 ir_rows: self.rows,
                 ir_columns: self.columns,
             });
         };
-        if (*expected_rows, *expected_columns) != (self.rows, self.columns) {
+        let expected_rows = shape
+            .resolve_dimension(expected_rows)
+            .map_err(|error| CompilerIrError::Snapshot(error.into()))?;
+        let expected_columns = shape
+            .resolve_dimension(expected_columns)
+            .map_err(|error| CompilerIrError::Snapshot(error.into()))?;
+        if (expected_rows, expected_columns) != (self.rows, self.columns) {
             return Err(CompilerIrError::MatrixLiteralSchemaShapeMismatch {
                 ir_rows: self.rows,
                 ir_columns: self.columns,
@@ -211,7 +222,7 @@ impl MatrixLiteralIR {
 
         Ok(ValueDraft {
             schema,
-            shape_values: Box::new([]),
+            shape_values,
             data: ValueDataDraft::Matrix(values.into_boxed_slice()),
         }
         .finalize(&SnapshotValidationContext::new(schemas))?)

@@ -7,9 +7,10 @@
 use crate::{
     CardinalitySpec, DimensionExpr, FloatWidth, FunctionMatrixElement,
     FunctionMatrixRepresentation, FunctionMatrixStoragePattern, FunctionRuntimeType,
-    FunctionValueRepresentation, IntegerWidth, MResult, MechError, MechErrorKind, Ref, SchemaBody,
-    SchemaId, SchemaKey, SchemaTable, ShapeInstance, SnapshotValueError, Value, ValueData,
-    ValueDataDraft, ValueDraft,
+    FunctionValueRepresentation, IntegerWidth, MResult, MechError, MechErrorKind, MemoryDomain,
+    Ref, ResolvedType, Schema, SchemaBody, SchemaId, SchemaKey, SchemaTable, SchemaTableBuilder,
+    ShapeInstance, SnapshotValueError, TypeConstraintFailure, TypeResolutionError, Value,
+    ValueData, ValueDataDraft, ValueDraft,
 };
 use core::{any::Any, any::type_name, cell, fmt};
 
@@ -51,6 +52,17 @@ mod canonical_cell_sealed {
 
         fn replace_bound(&mut self, value: &Value) -> MResult<()>;
 
+        fn initialize_planned_fixed(
+            &self,
+            _frame: &mut crate::KernelMemoryFrame<'_>,
+            object: crate::PlanObjectKey,
+        ) -> MResult<()> {
+            Err(managed_host_shape_error(
+                object,
+                "indirect payload requires its admitted builder",
+            ))
+        }
+
         fn representation(schema: &SchemaBody) -> FunctionValueRepresentation {
             let _ = schema;
             Self::REPRESENTATION
@@ -76,17 +88,191 @@ impl<T> CanonicalCellBacking for T where
 {
 }
 
-#[derive(Clone)]
-pub(crate) struct CellBinding {
+pub(crate) struct CellRecord {
     pub(crate) identity: CanonicalCellId,
     pub(crate) schema: SchemaId,
     pub(crate) schema_key: SchemaKey,
-    pub(crate) shape: Rc<cell::RefCell<ShapeInstance>>,
     pub(crate) schemas: Rc<SchemaTable>,
-    pub(crate) storage: Rc<dyn ErasedCellStorage>,
+    publication_locked: cell::Cell<bool>,
+    publication_shape: cell::RefCell<Option<ShapeInstance>>,
+    published: cell::RefCell<PublishedCellState>,
+}
+
+struct PublishedCellState {
+    shape: ShapeInstance,
+    version: crate::PublishedValueVersion,
+    storage: CellStorageBinding,
+}
+
+/// Physical backing authority for one published logical cell value during the
+/// first stable-record cutover. Managed variants are added with the planned
+/// payload realization checkpoint, once their adapters can be constructed.
+#[derive(Clone)]
+enum CellStorageBinding {
+    ManagedHost {
+        owner: MemoryDomain,
+        storage: Rc<dyn ErasedCellStorage>,
+    },
+    ManagedCanonical {
+        owner: MemoryDomain,
+        storage: Rc<dyn ErasedCellStorage>,
+    },
+    #[expect(
+        dead_code,
+        reason = "backend binding construction is completed by the R6 backend cutover checkpoint"
+    )]
+    ManagedDevice {
+        owner: MemoryDomain,
+        storage: Rc<dyn ErasedCellStorage>,
+    },
+    PinnedExternal(Rc<dyn ErasedCellStorage>),
+}
+
+impl CellStorageBinding {
+    fn adapter(&self) -> &Rc<dyn ErasedCellStorage> {
+        match self {
+            Self::ManagedHost { storage, .. }
+            | Self::ManagedCanonical { storage, .. }
+            | Self::ManagedDevice { storage, .. } => storage,
+            Self::PinnedExternal(storage) => storage,
+        }
+    }
+
+    fn owner(&self) -> Option<&MemoryDomain> {
+        match self {
+            Self::ManagedHost { owner, .. }
+            | Self::ManagedCanonical { owner, .. }
+            | Self::ManagedDevice { owner, .. } => Some(owner),
+            Self::PinnedExternal(_) => None,
+        }
+    }
+}
+
+#[derive(Clone)]
+pub(crate) struct CellBinding {
+    record: Rc<CellRecord>,
     /// Planning-time topology for composites assembled from live canonical
     /// cells. The canonical snapshot remains the runtime value authority.
     pub(crate) compiler_children: Option<Rc<[ValueCell]>>,
+}
+
+impl core::ops::Deref for CellBinding {
+    type Target = CellRecord;
+
+    fn deref(&self) -> &Self::Target {
+        self.record.as_ref()
+    }
+}
+
+impl CellBinding {
+    fn managed(
+        identity: CanonicalCellId,
+        schema: SchemaId,
+        schema_key: SchemaKey,
+        shape: ShapeInstance,
+        schemas: Rc<SchemaTable>,
+        owner: MemoryDomain,
+        storage: CellStorageBinding,
+    ) -> Self {
+        debug_assert_eq!(storage.owner().map(MemoryDomain::id), Some(owner.id()));
+        Self {
+            record: Rc::new(CellRecord {
+                identity,
+                schema,
+                schema_key,
+                schemas,
+                publication_locked: cell::Cell::new(false),
+                publication_shape: cell::RefCell::new(None),
+                published: cell::RefCell::new(PublishedCellState {
+                    shape,
+                    version: crate::PublishedValueVersion::initial(),
+                    storage,
+                }),
+            }),
+            compiler_children: None,
+        }
+    }
+
+    fn pinned_external(
+        identity: CanonicalCellId,
+        schema: SchemaId,
+        schema_key: SchemaKey,
+        shape: ShapeInstance,
+        schemas: Rc<SchemaTable>,
+        storage: Rc<dyn ErasedCellStorage>,
+    ) -> Self {
+        Self {
+            record: Rc::new(CellRecord {
+                identity,
+                schema,
+                schema_key,
+                schemas,
+                publication_locked: cell::Cell::new(false),
+                publication_shape: cell::RefCell::new(None),
+                published: cell::RefCell::new(PublishedCellState {
+                    shape,
+                    version: crate::PublishedValueVersion::initial(),
+                    storage: CellStorageBinding::PinnedExternal(storage),
+                }),
+            }),
+            compiler_children: None,
+        }
+    }
+
+    fn shape(&self) -> cell::Ref<'_, ShapeInstance> {
+        if self.publication_locked.get() {
+            return cell::Ref::map(self.publication_shape.borrow(), |shape| {
+                shape
+                    .as_ref()
+                    .expect("ready publication retains its pre-commit shape")
+            });
+        }
+        cell::Ref::map(self.published.borrow(), |published| &published.shape)
+    }
+
+    fn try_shape(&self, access: CellAccess) -> MResult<cell::Ref<'_, ShapeInstance>> {
+        if self.publication_locked.get() {
+            return self
+                .publication_shape
+                .try_borrow()
+                .map(|shape| {
+                    cell::Ref::map(shape, |shape| {
+                        shape
+                            .as_ref()
+                            .expect("ready publication retains its pre-commit shape")
+                    })
+                })
+                .map_err(|_| borrow_conflict(access));
+        }
+        self.published
+            .try_borrow()
+            .map(|published| cell::Ref::map(published, |published| &published.shape))
+            .map_err(|_| borrow_conflict(access))
+    }
+
+    fn storage(&self) -> MResult<Rc<dyn ErasedCellStorage>> {
+        if self.publication_locked.get() {
+            return Err(MechError::from(
+                crate::MemoryRuntimeError::PublicationInProgress,
+            ));
+        }
+        let published = self
+            .published
+            .try_borrow()
+            .map_err(|_| borrow_conflict(CellAccess::Snapshot))?;
+        if let Some(owner) = published.storage.owner() {
+            owner.ensure_open().map_err(MechError::from)?;
+        }
+        Ok(published.storage.adapter().clone())
+    }
+
+    fn publication_version(&self) -> crate::PublishedValueVersion {
+        self.published.borrow().version
+    }
+
+    fn memory_domain(&self) -> Option<MemoryDomain> {
+        self.published.borrow().storage.owner().cloned()
+    }
 }
 
 pub(crate) trait ErasedCellStorage {
@@ -100,14 +286,276 @@ pub(crate) trait ErasedCellStorage {
     ) -> MResult<Value>;
     fn replace(&self, value: &Value) -> MResult<()>;
     fn preflight_replace(&self) -> MResult<()>;
-    fn detached_clone(&self) -> MResult<Rc<dyn ErasedCellStorage>>;
+    fn capabilities(&self) -> crate::StorageCapabilityDescriptor;
+    fn detached_clone(&self) -> MResult<DetachedCellStorage>;
     fn same_storage(&self, other: &dyn ErasedCellStorage) -> bool;
     fn borrow_state(&self) -> CellBorrowState;
-    fn logical_cell_id(&self) -> CanonicalCellId;
+    fn managed_host_binding(&self) -> Option<ManagedHostCellBinding> {
+        None
+    }
+}
+
+#[derive(Clone)]
+pub(crate) struct ManagedHostCellBinding {
+    pub(crate) realized: crate::RealizedMemoryPlan,
+    pub(crate) object: crate::PlanObjectKey,
+    pub(crate) region: crate::MemoryAccessRegion,
+}
+
+pub(crate) struct DetachedCellStorage {
+    pub identity: CanonicalCellId,
+    pub storage: Rc<dyn ErasedCellStorage>,
+}
+
+pub(crate) struct PreparedManagedCellBinding {
+    pub(crate) cell: ValueCell,
+    pub(crate) expected_version: crate::PublishedValueVersion,
+    expected_storage: Rc<dyn ErasedCellStorage>,
+    previous_shape: Option<ShapeInstance>,
+    pub(crate) next_shape: Option<ShapeInstance>,
+    next_storage: Option<CellStorageBinding>,
+    pub(crate) changed: bool,
+}
+
+pub(crate) struct StagedManagedCellUpdate {
+    pub domain: MemoryDomain,
+    pub realized: crate::RealizedMemoryPlan,
+    pub candidate: crate::CellPublicationCandidate,
 }
 
 struct ExactCellStorage<T> {
     reference: Ref<T>,
+}
+
+struct ManagedHostCellStorage {
+    owner: MemoryDomain,
+    realized: crate::RealizedMemoryPlan,
+    object: crate::PlanObjectKey,
+    region: crate::MemoryAccessRegion,
+    representation: FunctionValueRepresentation,
+}
+
+#[cfg(feature = "matrix")]
+fn managed_host_representation(
+    representation: FunctionValueRepresentation,
+) -> FunctionValueRepresentation {
+    match representation {
+        FunctionValueRepresentation::Matrix {
+            element,
+            storage: crate::FunctionMatrixStoragePattern::AnyStorage,
+        } => FunctionValueRepresentation::Matrix {
+            element,
+            storage: crate::FunctionMatrixStoragePattern::Exact(
+                crate::FunctionMatrixRepresentation::MatrixD,
+            ),
+        },
+        _ => representation,
+    }
+}
+
+#[cfg(not(feature = "matrix"))]
+fn managed_host_representation(
+    representation: FunctionValueRepresentation,
+) -> FunctionValueRepresentation {
+    representation
+}
+
+/// Immutable canonical payload published behind a stable logical cell. A
+/// replacement installs a new storage owner atomically; no mutable payload
+/// `Ref` survives publication and detached snapshots share the frozen root.
+struct ManagedCanonicalCellStorage {
+    owner: MemoryDomain,
+    realized: crate::RealizedMemoryPlan,
+    object: crate::PlanObjectKey,
+    payload: crate::PlanObjectKey,
+    value: Value,
+    representation: FunctionValueRepresentation,
+}
+
+fn planned_payload_object(
+    owner: &MemoryDomain,
+    realized: &crate::RealizedMemoryPlan,
+    header: crate::PlanObjectKey,
+) -> MResult<crate::PlanObjectKey> {
+    planned_payload_object_optional(owner, realized, header)?
+        .ok_or_else(|| managed_host_shape_error(header, "canonical header has no payload envelope"))
+}
+
+fn planned_payload_object_optional(
+    owner: &MemoryDomain,
+    realized: &crate::RealizedMemoryPlan,
+    header: crate::PlanObjectKey,
+) -> MResult<Option<crate::PlanObjectKey>> {
+    let allocations: &[crate::AllocationPlan] = if let Some(plan) = realized.owned_value_plan() {
+        &plan.allocations
+    } else {
+        #[cfg(feature = "functions")]
+        {
+            let Some(plan) = realized.call_plan() else {
+                return Ok(None);
+            };
+            &plan.allocations
+        }
+        #[cfg(not(feature = "functions"))]
+        {
+            return Ok(None);
+        }
+    };
+    let header_plan = allocations
+        .iter()
+        .find(|allocation| allocation.id == header.object())
+        .ok_or_else(|| {
+            managed_host_shape_error(header, "canonical header is absent from its plan")
+        })?;
+    let payload = allocations.iter().find(|allocation| {
+        allocation.role == crate::AllocationRole::VariablePayload
+            && allocation.owner == header_plan.owner
+            && allocation.lifetime == header_plan.lifetime
+    });
+    payload
+        .map(|payload| owner.plan_object_key(realized.revision(), payload.id))
+        .transpose()
+        .map_err(MechError::from)
+}
+
+fn realize_managed_canonical_value(
+    owner: &MemoryDomain,
+    value: Value,
+    schemas: &SchemaTable,
+) -> MResult<(
+    crate::RealizedMemoryPlan,
+    crate::PlanObjectKey,
+    crate::PlanObjectKey,
+    crate::MemoryAccessRegion,
+    Value,
+)> {
+    owner.ensure_open().map_err(MechError::from)?;
+    value.validate_against(schemas).map_err(snapshot_failure)?;
+    let schema = schemas.get(value.schema()).cloned().ok_or_else(|| {
+        snapshot_failure(SnapshotValueError::UnknownSnapshotSchema {
+            schema: value.schema(),
+        })
+    })?;
+    let descriptor = crate::ResolvedValueDescriptor::from_schema(schema, value.shape().clone())
+        .map_err(MechError::from)?;
+    let elements = descriptor
+        .current_extents()
+        .map_err(MechError::from)?
+        .iter()
+        .try_fold(1_u64, |total, extent| total.checked_mul(*extent))
+        .ok_or_else(|| {
+            MechError::new(
+                crate::MemoryPlanError::ArithmeticOverflow {
+                    field: "owned canonical element count",
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+    let footprint = value.retained_footprint(schemas).map_err(|_| {
+        MechError::from(crate::MemoryRuntimeError::CandidateValidationFailed {
+            object: None,
+            reason: "canonical value footprint is invalid for its declared schema".into(),
+        })
+    })?;
+    let target = crate::TargetMemoryProfile::current_direct_host()
+        .map_err(|error| MechError::new(error, None).with_compiler_loc())?;
+    let storage = crate::physical_storage_descriptor(
+        FunctionValueRepresentation::AnyValue,
+        &target,
+        crate::MemoryLifetime::Activation,
+    );
+    let plan = crate::plan_owned_value_memory(crate::ValueLayoutPlanningRequest {
+        descriptor: &descriptor,
+        storage: &storage,
+        witness: crate::MemoryFootprintWitness::Known(crate::CurrentMemoryFootprint {
+            logical_elements: elements,
+            payload_bytes: footprint.retained_bytes,
+            encoded_bytes: footprint.encoded_bytes,
+            retained_nodes: footprint.node_count,
+            shape_parameter_count: descriptor.shape().parameter_values().len() as u64,
+            ..crate::CurrentMemoryFootprint::default()
+        }),
+        target: &target,
+    })
+    .map_err(|error| MechError::new(error, None).with_compiler_loc())?;
+    let object_id = plan.allocations[0].id;
+    let region = crate::memory_runtime::planned_value_access_region(&plan.value)?;
+    let realized = owner.realize_owned_value_plan(plan)?;
+    let object = owner.plan_object_key(realized.revision(), object_id)?;
+    let payload = planned_payload_object(owner, &realized, object)?;
+    let value = if value.has_retained_payload_ticket() {
+        // This cell admits its own logical envelope through the R5 plan, but
+        // the shared immutable data already owns the one physical payload
+        // ticket. Importing it must not mint another full allocation charge.
+        realized.record_initialized(payload, footprint.retained_bytes)?;
+        value
+    } else {
+        let allocator = owner.planned_allocator(&realized, payload)?;
+        let ownership = allocator
+            .admit_frozen_snapshot(footprint.retained_bytes, footprint.node_count)
+            .map_err(MechError::from)?;
+        value.into_retained_payload_ticket(ownership)
+    };
+    let initialized = realized.binding(object)?.required_initialization_bytes();
+    realized.record_initialized(object, initialized)?;
+    Ok((realized, object, payload, region, value))
+}
+
+impl ManagedHostCellStorage {
+    fn snapshot_with_authority(
+        &self,
+        cell: Option<&ValueCell>,
+        schema: SchemaId,
+        shape: &ShapeInstance,
+        schemas: &SchemaTable,
+    ) -> MResult<Value> {
+        self.snapshot_with_authority_and_construction(cell, schema, shape, schemas, None)
+    }
+
+    fn snapshot_with_authority_and_construction(
+        &self,
+        cell: Option<&ValueCell>,
+        schema: SchemaId,
+        shape: &ShapeInstance,
+        schemas: &SchemaTable,
+        construction: Option<&dyn crate::snapshot::validation::SnapshotConstructionAuthority>,
+    ) -> MResult<Value> {
+        self.owner.ensure_open().map_err(MechError::from)?;
+        let _scope = self
+            .owner
+            .enter_cell_read_scope()
+            .map_err(MechError::from)?;
+        let request = crate::CallAccessRequest {
+            object: self.object,
+            mode: crate::MemoryAccessMode::Read,
+            region: self.region,
+        };
+        let prepared = if let Some(cell) = cell {
+            self.owner
+                .prepare_cell_access(&self.realized, cell, request, false)
+        } else {
+            self.owner.prepare_call(&self.realized, &[request])
+        }
+        .map_err(MechError::from)?;
+        let frame = self
+            .owner
+            .acquire_call(&self.realized, &prepared)
+            .map_err(MechError::from)?;
+        let data = snapshot_managed_host_data_with_construction(
+            &frame,
+            self.object,
+            self.representation,
+            construction,
+        )?;
+        drop(frame);
+        match construction {
+            Some(construction) => {
+                finalize_draft_with_construction(schema, shape, schemas, data, construction)
+            }
+            None => finalize_draft(schema, shape, schemas, data),
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -151,15 +599,22 @@ impl<T: CanonicalCellBacking> ErasedCellStorage for ExactCellStorage<T> {
             .map_err(|_| borrow_conflict(CellAccess::Replace))
     }
 
-    fn detached_clone(&self) -> MResult<Rc<dyn ErasedCellStorage>> {
+    fn capabilities(&self) -> crate::StorageCapabilityDescriptor {
+        crate::runtime_storage::actual_backing_capabilities(T::REPRESENTATION)
+    }
+
+    fn detached_clone(&self) -> MResult<DetachedCellStorage> {
         let value = self
             .reference
             .try_borrow()
             .map_err(|_| borrow_conflict(CellAccess::Snapshot))?
             .clone();
-        Ok(Rc::new(Self {
-            reference: Ref::new(value),
-        }))
+        let reference = Ref::new(value);
+        let identity = reference.reactive_cell_id();
+        Ok(DetachedCellStorage {
+            identity,
+            storage: Rc::new(Self { reference }),
+        })
     }
 
     fn same_storage(&self, other: &dyn ErasedCellStorage) -> bool {
@@ -176,10 +631,706 @@ impl<T: CanonicalCellBacking> ErasedCellStorage for ExactCellStorage<T> {
             CellBorrowState::Borrowed
         }
     }
+}
 
-    fn logical_cell_id(&self) -> CanonicalCellId {
-        self.reference.reactive_cell_id()
+impl ErasedCellStorage for ManagedHostCellStorage {
+    fn as_any(&self) -> &dyn Any {
+        self
     }
+
+    fn representation(&self, _: &SchemaBody) -> FunctionValueRepresentation {
+        self.representation
+    }
+
+    fn snapshot(
+        &self,
+        schema: SchemaId,
+        shape: &ShapeInstance,
+        schemas: &SchemaTable,
+    ) -> MResult<Value> {
+        self.snapshot_with_authority(None, schema, shape, schemas)
+    }
+
+    fn replace(&self, _: &Value) -> MResult<()> {
+        Err(MechError::from(
+            crate::MemoryRuntimeError::CandidateValidationFailed {
+                object: Some(self.object.object()),
+                reason: "managed host storage changes require a planned publication".into(),
+            },
+        ))
+    }
+
+    fn preflight_replace(&self) -> MResult<()> {
+        self.owner.ensure_open().map_err(MechError::from)
+    }
+
+    fn capabilities(&self) -> crate::StorageCapabilityDescriptor {
+        crate::runtime_storage::actual_backing_capabilities(self.representation)
+    }
+
+    fn detached_clone(&self) -> MResult<DetachedCellStorage> {
+        Err(MechError::from(
+            crate::MemoryRuntimeError::CandidateValidationFailed {
+                object: Some(self.object.object()),
+                reason: "managed storage is detached through its canonical snapshot".into(),
+            },
+        ))
+    }
+
+    fn same_storage(&self, other: &dyn ErasedCellStorage) -> bool {
+        other.as_any().downcast_ref::<Self>().is_some_and(|other| {
+            self.owner.id() == other.owner.id()
+                && self.realized.revision() == other.realized.revision()
+                && self.object == other.object
+        })
+    }
+
+    fn borrow_state(&self) -> CellBorrowState {
+        CellBorrowState::Available
+    }
+
+    fn managed_host_binding(&self) -> Option<ManagedHostCellBinding> {
+        Some(ManagedHostCellBinding {
+            realized: self.realized.clone(),
+            object: self.object,
+            region: self.region,
+        })
+    }
+}
+
+#[cfg(feature = "functions")]
+impl ManagedCanonicalCellStorage {
+    fn snapshot_for_external_marshalling(
+        &self,
+        schema: SchemaId,
+        shape: &ShapeInstance,
+        schemas: &SchemaTable,
+        construction: &dyn crate::snapshot::validation::SnapshotConstructionAuthority,
+    ) -> MResult<Value> {
+        if schema != self.value.schema()
+            || shape != self.value.shape()
+            || schemas.entry(schema).map(|entry| entry.key()) != Some(self.value.schema_key())
+        {
+            return Err(crate::MemoryRuntimeError::CandidateValidationFailed {
+                object: Some(self.object.object()),
+                reason: "external canonical input metadata differs from its published binding"
+                    .into(),
+            }
+            .into());
+        }
+        self.value
+            .try_clone_for_external_marshalling(construction)
+            .map_err(snapshot_failure)
+    }
+}
+
+impl ErasedCellStorage for ManagedCanonicalCellStorage {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn representation(&self, schema: &SchemaBody) -> FunctionValueRepresentation {
+        let _ = schema;
+        self.representation
+    }
+
+    fn snapshot(
+        &self,
+        schema: SchemaId,
+        shape: &ShapeInstance,
+        schemas: &SchemaTable,
+    ) -> MResult<Value> {
+        // An ordinary managed canonical cell already owns a validated frozen
+        // value. Its cell-local schema table is an equivalent Rc copy because
+        // Value retains its source table in an Arc, but that representation
+        // detail must not force dynamic payload reconstruction on every read.
+        // Exact metadata can return the immutable root directly; explicit
+        // cross-schema/table conversions still use Value::rebind below.
+        if schema == self.value.schema()
+            && shape == self.value.shape()
+            && schemas.entry(schema).map(|entry| entry.key()) == Some(self.value.schema_key())
+        {
+            return Ok(self.value.clone());
+        }
+        self.value
+            .rebind(schema, shape, schemas)
+            .map_err(snapshot_failure)
+    }
+
+    fn replace(&self, _: &Value) -> MResult<()> {
+        Err(MechError::from(
+            crate::MemoryRuntimeError::CandidateValidationFailed {
+                object: None,
+                reason: "managed canonical storage changes require atomic binding publication"
+                    .into(),
+            },
+        ))
+    }
+
+    fn preflight_replace(&self) -> MResult<()> {
+        Ok(())
+    }
+
+    fn capabilities(&self) -> crate::StorageCapabilityDescriptor {
+        // The published payload is one immutable, recursively canonical root
+        // regardless of the exact language representation retained for
+        // factory matching. In particular, an admitted dynamic matrix root is
+        // not the abstract `AnyStorage` physical representation.
+        crate::runtime_storage::actual_backing_capabilities(FunctionValueRepresentation::AnyValue)
+    }
+
+    fn detached_clone(&self) -> MResult<DetachedCellStorage> {
+        Err(MechError::from(
+            crate::MemoryRuntimeError::CandidateValidationFailed {
+                object: Some(self.object.object()),
+                reason: "managed canonical storage is detached through its owning session".into(),
+            },
+        ))
+    }
+
+    fn same_storage(&self, other: &dyn ErasedCellStorage) -> bool {
+        other.as_any().downcast_ref::<Self>().is_some_and(|other| {
+            self.owner.id() == other.owner.id()
+                && self.realized.revision() == other.realized.revision()
+                && self.object == other.object
+                && self.payload == other.payload
+        })
+    }
+
+    fn borrow_state(&self) -> CellBorrowState {
+        CellBorrowState::Available
+    }
+}
+
+fn snapshot_managed_host_data_with_construction(
+    frame: &crate::KernelMemoryFrame<'_>,
+    object: crate::PlanObjectKey,
+    representation: FunctionValueRepresentation,
+    construction: Option<&dyn crate::snapshot::validation::SnapshotConstructionAuthority>,
+) -> MResult<ValueDataDraft> {
+    // The construction authority is consumed by matrix draft allocation.
+    // Scalar-only feature profiles still compile this shared entrypoint.
+    let _ = construction;
+    #[cfg(feature = "matrix")]
+    fn values_with_capacity<T>(
+        count: usize,
+        object: crate::PlanObjectKey,
+        construction: Option<&dyn crate::snapshot::validation::SnapshotConstructionAuthority>,
+    ) -> MResult<Vec<T>> {
+        let bytes = core::mem::size_of::<T>()
+            .checked_mul(count)
+            .and_then(|bytes| u64::try_from(bytes).ok())
+            .ok_or_else(|| {
+                MechError::from(crate::MemoryRuntimeError::InvalidLayout {
+                    object: Some(object.object()),
+                    size: u64::MAX,
+                    alignment: u32::try_from(core::mem::align_of::<T>()).unwrap_or(u32::MAX),
+                    reason: "managed snapshot draft vector layout overflows",
+                })
+            })?;
+        let alignment = u32::try_from(core::mem::align_of::<T>()).unwrap_or(u32::MAX);
+        if let Some(construction) = construction {
+            construction.admit_snapshot_allocation(bytes, alignment)?;
+        }
+        let mut values = Vec::new();
+        values.try_reserve_exact(count).map_err(|_| {
+            MechError::from(crate::MemoryRuntimeError::AllocationFailed {
+                object: Some(object.object()),
+                requested: bytes,
+                alignment,
+                space: crate::MemorySpace::Host,
+            })
+        })?;
+        Ok(values)
+    }
+
+    macro_rules! scalar {
+        ($type:ty, $variant:ident, $map:expr) => {
+            frame
+                .with_object_value_view::<$type, _>(object, |view| {
+                    view.get_column_major(0)
+                        .map(|value| ValueDataDraft::$variant(($map)(value)))
+                })
+                .map_err(MechError::from)?
+                .ok_or_else(|| managed_host_shape_error(object, "scalar storage is empty"))
+        };
+    }
+    #[cfg(feature = "matrix")]
+    macro_rules! matrix {
+        ($type:ty, $variant:ident, $map:expr) => {
+            frame
+                .with_object_value_view::<$type, _>(object, |view| {
+                    let mut values = values_with_capacity(view.len(), object, construction)?;
+                    for row in 0..view.rows() {
+                        for column in 0..view.columns() {
+                            let value = view.get(row, column).ok_or_else(|| {
+                                managed_host_shape_error(
+                                    object,
+                                    "matrix coordinate is out of bounds",
+                                )
+                            })?;
+                            values.push(ValueDataDraft::$variant(($map)(value)));
+                        }
+                    }
+                    Ok::<_, MechError>(ValueDataDraft::Matrix(values.into_boxed_slice()))
+                })
+                .map_err(MechError::from)?
+        };
+    }
+    match representation {
+        #[cfg(feature = "u8")]
+        FunctionValueRepresentation::U8 => scalar!(u8, U8, |value| value),
+        #[cfg(feature = "u16")]
+        FunctionValueRepresentation::U16 => scalar!(u16, U16, |value| value),
+        #[cfg(feature = "u32")]
+        FunctionValueRepresentation::U32 => scalar!(u32, U32, |value| value),
+        #[cfg(feature = "u64")]
+        FunctionValueRepresentation::U64 => scalar!(u64, U64, |value| value),
+        #[cfg(feature = "u128")]
+        FunctionValueRepresentation::U128 => scalar!(u128, U128, |value| value),
+        #[cfg(feature = "i8")]
+        FunctionValueRepresentation::I8 => scalar!(i8, I8, |value| value),
+        #[cfg(feature = "i16")]
+        FunctionValueRepresentation::I16 => scalar!(i16, I16, |value| value),
+        #[cfg(feature = "i32")]
+        FunctionValueRepresentation::I32 => scalar!(i32, I32, |value| value),
+        #[cfg(feature = "i64")]
+        FunctionValueRepresentation::I64 => scalar!(i64, I64, |value| value),
+        #[cfg(feature = "i128")]
+        FunctionValueRepresentation::I128 => scalar!(i128, I128, |value| value),
+        #[cfg(feature = "f32")]
+        FunctionValueRepresentation::F32 => scalar!(f32, F32, |value| {
+            crate::snapshot::F32Bits::from_f32(value)
+        }),
+        #[cfg(feature = "f64")]
+        FunctionValueRepresentation::F64 => scalar!(f64, F64, |value| {
+            crate::snapshot::F64Bits::from_f64(value)
+        }),
+        #[cfg(feature = "bool")]
+        FunctionValueRepresentation::Bool => scalar!(bool, Bool, |value| value),
+        FunctionValueRepresentation::Id => {
+            scalar!(
+                crate::memory_runtime::ManagedId,
+                Id,
+                |value: crate::memory_runtime::ManagedId| value.0
+            )
+        }
+        #[cfg(feature = "complex")]
+        FunctionValueRepresentation::C64 => scalar!(crate::C64, Complex64, |value: crate::C64| {
+            crate::snapshot::Complex64Bits::new(
+                crate::snapshot::F64Bits::from_f64(value.0.re),
+                crate::snapshot::F64Bits::from_f64(value.0.im),
+            )
+        }),
+        #[cfg(feature = "rational")]
+        FunctionValueRepresentation::R64 => frame
+            .with_object_value_view::<crate::R64, _>(object, |view| {
+                view.get_column_major(0)
+                    .map(|value| ValueDataDraft::Rational64 {
+                        numerator: *value.numer(),
+                        denominator: value.denom().unsigned_abs(),
+                    })
+            })
+            .map_err(MechError::from)?
+            .ok_or_else(|| managed_host_shape_error(object, "scalar storage is empty")),
+        FunctionValueRepresentation::Index => scalar!(usize, Index, |value| value as u64),
+        #[cfg(feature = "matrix")]
+        FunctionValueRepresentation::Matrix { element, .. } => match element {
+            FunctionMatrixElement::Index => matrix!(usize, Index, |value| value as u64),
+            #[cfg(feature = "u8")]
+            FunctionMatrixElement::U8 => matrix!(u8, U8, |value| value),
+            #[cfg(feature = "u16")]
+            FunctionMatrixElement::U16 => matrix!(u16, U16, |value| value),
+            #[cfg(feature = "u32")]
+            FunctionMatrixElement::U32 => matrix!(u32, U32, |value| value),
+            #[cfg(feature = "u64")]
+            FunctionMatrixElement::U64 => matrix!(u64, U64, |value| value),
+            #[cfg(feature = "u128")]
+            FunctionMatrixElement::U128 => matrix!(u128, U128, |value| value),
+            #[cfg(feature = "i8")]
+            FunctionMatrixElement::I8 => matrix!(i8, I8, |value| value),
+            #[cfg(feature = "i16")]
+            FunctionMatrixElement::I16 => matrix!(i16, I16, |value| value),
+            #[cfg(feature = "i32")]
+            FunctionMatrixElement::I32 => matrix!(i32, I32, |value| value),
+            #[cfg(feature = "i64")]
+            FunctionMatrixElement::I64 => matrix!(i64, I64, |value| value),
+            #[cfg(feature = "i128")]
+            FunctionMatrixElement::I128 => matrix!(i128, I128, |value| value),
+            #[cfg(feature = "f32")]
+            FunctionMatrixElement::F32 => matrix!(f32, F32, |value| {
+                crate::snapshot::F32Bits::from_f32(value)
+            }),
+            #[cfg(feature = "f64")]
+            FunctionMatrixElement::F64 => matrix!(f64, F64, |value| {
+                crate::snapshot::F64Bits::from_f64(value)
+            }),
+            #[cfg(feature = "bool")]
+            FunctionMatrixElement::Bool => matrix!(bool, Bool, |value| value),
+            #[cfg(feature = "complex")]
+            FunctionMatrixElement::C64 => {
+                matrix!(crate::C64, Complex64, |value: crate::C64| {
+                    crate::snapshot::Complex64Bits::new(
+                        crate::snapshot::F64Bits::from_f64(value.0.re),
+                        crate::snapshot::F64Bits::from_f64(value.0.im),
+                    )
+                })
+            }
+            #[cfg(feature = "rational")]
+            FunctionMatrixElement::R64 => frame
+                .with_object_value_view::<crate::R64, _>(object, |view| {
+                    let mut values = values_with_capacity(view.len(), object, construction)?;
+                    for row in 0..view.rows() {
+                        for column in 0..view.columns() {
+                            let value = view.get(row, column).ok_or_else(|| {
+                                managed_host_shape_error(
+                                    object,
+                                    "matrix coordinate is out of bounds",
+                                )
+                            })?;
+                            values.push(ValueDataDraft::Rational64 {
+                                numerator: *value.numer(),
+                                denominator: value.denom().unsigned_abs(),
+                            });
+                        }
+                    }
+                    Ok::<_, MechError>(ValueDataDraft::Matrix(values.into_boxed_slice()))
+                })
+                .map_err(MechError::from)?,
+            _ => Err(managed_host_shape_error(
+                object,
+                "the fixed-width managed matrix codec is not installed for this element",
+            )),
+        },
+        _ => Err(managed_host_shape_error(
+            object,
+            "the fixed-width managed codec is not installed for this representation",
+        )),
+    }
+}
+
+fn managed_host_shape_error(object: crate::PlanObjectKey, reason: &'static str) -> MechError {
+    MechError::from(crate::MemoryRuntimeError::InvalidLayout {
+        object: Some(object.object()),
+        size: 0,
+        alignment: 1,
+        reason,
+    })
+}
+
+pub(crate) fn initialize_managed_object_from_value(
+    frame: &mut crate::KernelMemoryFrame<'_>,
+    object: crate::PlanObjectKey,
+    representation: FunctionValueRepresentation,
+    value: &Value,
+) -> MResult<()> {
+    macro_rules! scalar {
+        ($type:ty, $variant:ident, $map:expr) => {
+            scalar!(@checked $type, $variant, |value| Ok::<$type, MechError>(($map)(value)))
+        };
+        (@checked $type:ty, $variant:ident, $map:expr) => {{
+            let ValueData::$variant(value) = value.data() else {
+                return Err(managed_host_shape_error(
+                    object,
+                    "canonical scalar data disagrees with its physical representation",
+                ));
+            };
+            let value: $type = ($map)(*value)?;
+            frame.with_object_init_view::<$type, _>(object, |output| {
+                if output.len() != 1 {
+                    return Err(managed_host_shape_error(
+                        object,
+                        "scalar object does not contain exactly one logical element",
+                    ));
+                }
+                output.try_fill_column_major(|_| Ok(value))
+            })
+        }};
+    }
+    #[cfg(feature = "matrix")]
+    macro_rules! matrix {
+        ($type:ty, $variant:ident, $map:expr) => {
+            matrix!(@checked $type, $variant, |value| Ok::<$type, MechError>(($map)(value)))
+        };
+        (@checked $type:ty, $variant:ident, $map:expr) => {{
+            let ValueData::Matrix(matrix) = value.data() else {
+                return Err(managed_host_shape_error(
+                    object,
+                    "canonical matrix data disagrees with its physical representation",
+                ));
+            };
+            let SequenceView::$variant(values) = matrix.elements() else {
+                return Err(managed_host_shape_error(
+                    object,
+                    "canonical matrix element storage disagrees with its physical representation",
+                ));
+            };
+            frame.with_object_init_view::<$type, _>(object, |output| {
+                if output.len() != values.len() {
+                    return Err(managed_host_shape_error(
+                        object,
+                        "canonical matrix length disagrees with its planned geometry",
+                    ));
+                }
+                let rows = output.rows();
+                let columns = output.columns();
+                output.try_fill_column_major(|index| {
+                    let row = index % rows;
+                    let column = index / rows;
+                    ($map)(values[row * columns + column])
+                })
+            })
+        }};
+    }
+
+    match representation {
+        #[cfg(feature = "u8")]
+        FunctionValueRepresentation::U8 => scalar!(u8, U8, |value| value),
+        #[cfg(feature = "u16")]
+        FunctionValueRepresentation::U16 => scalar!(u16, U16, |value| value),
+        #[cfg(feature = "u32")]
+        FunctionValueRepresentation::U32 => scalar!(u32, U32, |value| value),
+        #[cfg(feature = "u64")]
+        FunctionValueRepresentation::U64 => scalar!(u64, U64, |value| value),
+        #[cfg(feature = "u128")]
+        FunctionValueRepresentation::U128 => scalar!(u128, U128, |value| value),
+        #[cfg(feature = "i8")]
+        FunctionValueRepresentation::I8 => scalar!(i8, I8, |value| value),
+        #[cfg(feature = "i16")]
+        FunctionValueRepresentation::I16 => scalar!(i16, I16, |value| value),
+        #[cfg(feature = "i32")]
+        FunctionValueRepresentation::I32 => scalar!(i32, I32, |value| value),
+        #[cfg(feature = "i64")]
+        FunctionValueRepresentation::I64 => scalar!(i64, I64, |value| value),
+        #[cfg(feature = "i128")]
+        FunctionValueRepresentation::I128 => scalar!(i128, I128, |value| value),
+        #[cfg(feature = "f32")]
+        FunctionValueRepresentation::F32 => scalar!(f32, F32, |value: crate::snapshot::F32Bits| {
+            value.to_f32()
+        }),
+        #[cfg(feature = "f64")]
+        FunctionValueRepresentation::F64 => scalar!(f64, F64, |value: crate::snapshot::F64Bits| {
+            value.to_f64()
+        }),
+        #[cfg(feature = "bool")]
+        FunctionValueRepresentation::Bool => scalar!(bool, Bool, |value| value),
+        FunctionValueRepresentation::Id => {
+            scalar!(crate::memory_runtime::ManagedId, Id, |value: u64| {
+                crate::memory_runtime::ManagedId(value)
+            })
+        }
+        FunctionValueRepresentation::Index => scalar!(@checked usize, Index, |value| {
+            usize::try_from(value).map_err(|_| managed_host_shape_error(object, "canonical index exceeds the host index range"))
+        }),
+        #[cfg(feature = "complex")]
+        FunctionValueRepresentation::C64 => {
+            let ValueData::Complex64(value) = value.data() else {
+                return Err(managed_host_shape_error(
+                    object,
+                    "canonical C64 data is invalid",
+                ));
+            };
+            let value = crate::C64::new(value.real().to_f64(), value.imaginary().to_f64());
+            frame.with_object_init_view::<crate::C64, _>(object, |output| {
+                output.try_fill_column_major(|_| Ok(value))
+            })
+        }
+        #[cfg(feature = "rational")]
+        FunctionValueRepresentation::R64 => {
+            let ValueData::Rational64(value) = value.data() else {
+                return Err(managed_host_shape_error(
+                    object,
+                    "canonical R64 data is invalid",
+                ));
+            };
+            let denominator = i64::try_from(value.denominator()).map_err(|_| {
+                managed_host_shape_error(object, "rational denominator exceeds i64")
+            })?;
+            let value = crate::R64::new(value.numerator(), denominator);
+            frame.with_object_init_view::<crate::R64, _>(object, |output| {
+                output.try_fill_column_major(|_| Ok(value))
+            })
+        }
+        #[cfg(feature = "matrix")]
+        FunctionValueRepresentation::Matrix { element, .. } => match element {
+            FunctionMatrixElement::Index => matrix!(@checked usize, Index, |value| {
+                usize::try_from(value).map_err(|_| managed_host_shape_error(object, "canonical index exceeds the host index range"))
+            }),
+            #[cfg(feature = "u8")]
+            FunctionMatrixElement::U8 => matrix!(u8, U8, |value| value),
+            #[cfg(feature = "u16")]
+            FunctionMatrixElement::U16 => matrix!(u16, U16, |value| value),
+            #[cfg(feature = "u32")]
+            FunctionMatrixElement::U32 => matrix!(u32, U32, |value| value),
+            #[cfg(feature = "u64")]
+            FunctionMatrixElement::U64 => matrix!(u64, U64, |value| value),
+            #[cfg(feature = "u128")]
+            FunctionMatrixElement::U128 => matrix!(u128, U128, |value| value),
+            #[cfg(feature = "i8")]
+            FunctionMatrixElement::I8 => matrix!(i8, I8, |value| value),
+            #[cfg(feature = "i16")]
+            FunctionMatrixElement::I16 => matrix!(i16, I16, |value| value),
+            #[cfg(feature = "i32")]
+            FunctionMatrixElement::I32 => matrix!(i32, I32, |value| value),
+            #[cfg(feature = "i64")]
+            FunctionMatrixElement::I64 => matrix!(i64, I64, |value| value),
+            #[cfg(feature = "i128")]
+            FunctionMatrixElement::I128 => matrix!(i128, I128, |value| value),
+            #[cfg(feature = "f32")]
+            FunctionMatrixElement::F32 => {
+                matrix!(f32, F32, |value: crate::snapshot::F32Bits| value.to_f32())
+            }
+            #[cfg(feature = "f64")]
+            FunctionMatrixElement::F64 => {
+                matrix!(f64, F64, |value: crate::snapshot::F64Bits| value.to_f64())
+            }
+            #[cfg(feature = "bool")]
+            FunctionMatrixElement::Bool => matrix!(bool, Bool, |value| value),
+            #[cfg(feature = "complex")]
+            FunctionMatrixElement::C64 => matrix!(
+                crate::C64,
+                Complex64,
+                |value: crate::snapshot::Complex64Bits| {
+                    crate::C64::new(value.real().to_f64(), value.imaginary().to_f64())
+                }
+            ),
+            #[cfg(feature = "rational")]
+            FunctionMatrixElement::R64 => {
+                let ValueData::Matrix(matrix) = value.data() else {
+                    return Err(managed_host_shape_error(
+                        object,
+                        "canonical matrix is invalid",
+                    ));
+                };
+                let SequenceView::Rational64(values) = matrix.elements() else {
+                    return Err(managed_host_shape_error(
+                        object,
+                        "canonical rational matrix element storage is invalid",
+                    ));
+                };
+                frame.with_object_init_view::<crate::R64, _>(object, |output| {
+                    if output.len() != values.len() {
+                        return Err(managed_host_shape_error(
+                            object,
+                            "canonical matrix length disagrees with its planned geometry",
+                        ));
+                    }
+                    let rows = output.rows();
+                    let columns = output.columns();
+                    output.try_fill_column_major(|index| {
+                        let value = &values[(index % rows) * columns + index / rows];
+                        let denominator = i64::try_from(value.denominator()).map_err(|_| {
+                            managed_host_shape_error(object, "rational denominator exceeds i64")
+                        })?;
+                        Ok(crate::R64::new(value.numerator(), denominator))
+                    })
+                })
+            }
+            _ => Err(managed_host_shape_error(
+                object,
+                "the managed input codec is not installed for this matrix element",
+            )),
+        },
+        _ => Err(managed_host_shape_error(
+            object,
+            "the managed input codec is not installed for this representation",
+        )),
+    }
+}
+
+/// Initializes only the logical elements of an admitted fixed-width output.
+/// Spare capacity and stride gaps remain uninitialized.
+#[cfg(feature = "functions")]
+fn initialize_planned_default(
+    frame: &mut crate::KernelMemoryFrame<'_>,
+    object: crate::PlanObjectKey,
+    slot: crate::PlannedSlotKind,
+) -> MResult<()> {
+    use crate::{FloatWidth, IntegerWidth, PlannedSlotKind, ScalarMemoryKind};
+    macro_rules! fill {
+        ($type:ty, $value:expr) => {
+            frame.with_object_init_view::<$type, _>(object, |output| {
+                output.try_fill_column_major(|_| Ok($value))
+            })
+        };
+    }
+    match slot {
+        PlannedSlotKind::FixedScalar(kind) => match kind {
+            #[cfg(feature = "bool")]
+            ScalarMemoryKind::Bool => fill!(bool, false),
+            ScalarMemoryKind::Unsigned(IntegerWidth::W8) => fill!(u8, 0),
+            ScalarMemoryKind::Unsigned(IntegerWidth::W16) => fill!(u16, 0),
+            ScalarMemoryKind::Unsigned(IntegerWidth::W32) => fill!(u32, 0),
+            ScalarMemoryKind::Unsigned(IntegerWidth::W64) => fill!(u64, 0),
+            ScalarMemoryKind::Unsigned(IntegerWidth::W128) => fill!(u128, 0),
+            ScalarMemoryKind::Signed(IntegerWidth::W8) => fill!(i8, 0),
+            ScalarMemoryKind::Signed(IntegerWidth::W16) => fill!(i16, 0),
+            ScalarMemoryKind::Signed(IntegerWidth::W32) => fill!(i32, 0),
+            ScalarMemoryKind::Signed(IntegerWidth::W64) => fill!(i64, 0),
+            ScalarMemoryKind::Signed(IntegerWidth::W128) => fill!(i128, 0),
+            ScalarMemoryKind::Floating(FloatWidth::W32) => fill!(f32, 0.0),
+            ScalarMemoryKind::Floating(FloatWidth::W64) => fill!(f64, 0.0),
+            ScalarMemoryKind::Id => fill!(
+                crate::memory_runtime::ManagedId,
+                crate::memory_runtime::ManagedId(0)
+            ),
+            ScalarMemoryKind::Index => fill!(usize, 1),
+            #[cfg(feature = "complex")]
+            ScalarMemoryKind::Complex(FloatWidth::W64) => {
+                fill!(crate::C64, crate::C64::new(0.0, 0.0))
+            }
+            #[cfg(feature = "rational")]
+            ScalarMemoryKind::Rational64 => fill!(crate::R64, crate::R64::new(0, 1)),
+            _ => Err(managed_host_shape_error(
+                object,
+                "fixed output requires a supported sealed initialization codec",
+            )),
+        },
+        _ => Err(managed_host_shape_error(
+            object,
+            "indirect output requires its admitted canonical builder",
+        )),
+    }
+}
+
+#[cfg(feature = "functions")]
+pub(crate) fn value_from_managed_object(
+    owner: &MemoryDomain,
+    realized: &crate::RealizedMemoryPlan,
+    object: crate::PlanObjectKey,
+    region: crate::MemoryAccessRegion,
+    representation: FunctionValueRepresentation,
+    schema: SchemaId,
+    shape: &ShapeInstance,
+    schemas: &SchemaTable,
+) -> MResult<Value> {
+    ManagedHostCellStorage {
+        owner: owner.clone(),
+        realized: realized.clone(),
+        object,
+        region,
+        representation: managed_host_representation(representation),
+    }
+    .snapshot(schema, shape, schemas)
+}
+
+#[cfg(feature = "functions")]
+pub(crate) fn value_from_kernel_frame_object_with_construction(
+    frame: &crate::KernelMemoryFrame<'_>,
+    object: crate::PlanObjectKey,
+    representation: FunctionValueRepresentation,
+    schema: SchemaId,
+    shape: &ShapeInstance,
+    schemas: &SchemaTable,
+    construction: &dyn crate::snapshot::validation::SnapshotConstructionAuthority,
+) -> MResult<Value> {
+    let data = snapshot_managed_host_data_with_construction(
+        frame,
+        object,
+        managed_host_representation(representation),
+        Some(construction),
+    )?;
+    finalize_draft_with_construction(schema, shape, schemas, data, construction)
 }
 
 /// An opaque, schema-aware mutable program location.
@@ -199,6 +1350,919 @@ pub struct ValueCell {
 }
 
 impl ValueCell {
+    #[cfg(feature = "functions")]
+    pub(crate) fn has_managed_canonical_storage(&self) -> MResult<bool> {
+        let published = self
+            .binding
+            .published
+            .try_borrow()
+            .map_err(|_| borrow_conflict(CellAccess::Snapshot))?;
+        Ok(matches!(
+            published.storage,
+            CellStorageBinding::ManagedCanonical { .. }
+        ))
+    }
+
+    /// Reports whether a maintained runtime output must be constructed
+    /// through the admitted canonical payload builder. This is physical
+    /// planning information used only after semantic specialization has
+    /// already fixed the operation and output type.
+    #[cfg(feature = "functions")]
+    pub fn requires_canonical_output_builder(&self) -> MResult<bool> {
+        self.has_managed_canonical_storage()
+    }
+
+    #[cfg(feature = "functions")]
+    pub(crate) fn allocate_call_output_in(
+        owner: &MemoryDomain,
+        plan: Rc<crate::CallMemoryPlan>,
+        representation: FunctionValueRepresentation,
+    ) -> MResult<Self> {
+        if plan.outputs.len() != 1 {
+            return Err(
+                MechError::new(crate::MemoryPlanError::DescriptorMismatch, None)
+                    .with_compiler_loc(),
+            );
+        }
+        let realized = owner.prepare_call_memory_realization(plan.clone())?;
+        let output = &plan.outputs[0];
+        let object = owner.plan_object_key(realized.revision(), output.object)?;
+        let prepared = owner.prepare_owned_initialization(
+            &realized,
+            crate::CallAccessRequest {
+                object,
+                mode: crate::MemoryAccessMode::Write,
+                region: crate::memory_runtime::planned_value_access_region(&output.value)?,
+            },
+        )?;
+        {
+            let _scope =
+                owner.enter_realized_plan_point(&realized, crate::MemoryPlanPoint::new(0))?;
+            let mut frame = owner.acquire_call(&realized, &prepared)?;
+            initialize_planned_default(&mut frame, object, output.value.storage.planned_slot())?;
+        }
+        Self::allocate_planned(
+            owner,
+            &output.descriptor,
+            representation,
+            &realized,
+            object,
+            &output.value,
+        )
+    }
+
+    /// Constructs one owned logical cell over an initialized R5 plan object.
+    /// This boundary installs storage ownership; it never allocates backing
+    /// from a runtime representation alone.
+    pub fn allocate_planned(
+        owner: &MemoryDomain,
+        descriptor: &crate::ResolvedValueDescriptor,
+        representation: FunctionValueRepresentation,
+        realized: &crate::RealizedMemoryPlan,
+        object: crate::PlanObjectKey,
+        layout: &crate::ValueLayoutPlan,
+    ) -> MResult<Self> {
+        owner.ensure_open()?;
+        if realized.domain() != owner.id() {
+            return Err(crate::MemoryRuntimeError::WrongMemoryDomain {
+                expected: owner.id(),
+                actual: realized.domain(),
+            }
+            .into());
+        }
+        realized.binding(object)?;
+        let region = crate::memory_runtime::planned_value_access_region(layout)?;
+        let mut builder = SchemaTableBuilder::new();
+        let handle = builder
+            .insert(descriptor.schema().clone())
+            .map_err(MechError::from)?;
+        let build = builder.finish().map_err(MechError::from)?;
+        let schema = build.resolve(handle).map_err(MechError::from)?;
+        let cell = Self {
+            binding: CellBinding::managed(
+                crate::types::next_canonical_cell_id()?,
+                schema,
+                descriptor.schema().key(),
+                descriptor.shape().clone(),
+                Rc::new(build.table),
+                owner.clone(),
+                CellStorageBinding::ManagedHost {
+                    owner: owner.clone(),
+                    storage: Rc::new(ManagedHostCellStorage {
+                        owner: owner.clone(),
+                        realized: realized.clone(),
+                        object,
+                        region,
+                        representation: managed_host_representation(representation),
+                    }),
+                },
+            ),
+        };
+        cell.validate_storage_contract()?;
+        cell.snapshot()?;
+        Ok(cell)
+    }
+
+    pub fn resolved_descriptor(&self) -> MResult<crate::ResolvedValueDescriptor> {
+        let schemas = self.schema_table();
+        let schema = schemas
+            .find_by_key(self.schema_key())
+            .and_then(|id| schemas.get(id))
+            .cloned()
+            .ok_or_else(|| {
+                MechError::from(TypeResolutionError::incompatible(
+                    "value cell descriptor",
+                    TypeConstraintFailure::InvalidScheme {
+                        reason: "the cell schema is absent from its canonical schema table".into(),
+                    },
+                ))
+            })?;
+        let shape = self.binding.try_shape(CellAccess::Snapshot)?.clone();
+        crate::ResolvedValueDescriptor::from_schema(schema, shape).map_err(MechError::from)
+    }
+
+    /// Measures the currently published semantic value for R5/R6 live
+    /// footprint resolution. This walks an immutable snapshot without
+    /// rebuilding its canonical tree.
+    #[cfg(feature = "functions")]
+    pub fn current_memory_footprint(&self) -> MResult<crate::CurrentMemoryFootprint> {
+        let descriptor = self.resolved_descriptor()?;
+        let logical_elements = descriptor
+            .current_extents()
+            .map_err(MechError::from)?
+            .iter()
+            .try_fold(1_u64, |product, extent| product.checked_mul(*extent))
+            .ok_or_else(|| {
+                MechError::new(
+                    crate::MemoryPlanError::ArithmeticOverflow {
+                        field: "live value logical elements",
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+        let shape_parameter_count = descriptor.shape().parameter_values().len() as u64;
+        let schema_bytes = self
+            .binding
+            .schemas
+            .clone_allocation_bound_bytes()
+            .ok_or_else(|| {
+                MechError::new(
+                    crate::MemoryPlanError::ArithmeticOverflow {
+                        field: "schema context clone bytes",
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+        let storage = self.binding.storage()?;
+        if let Some(managed) = storage.as_any().downcast_ref::<ManagedHostCellStorage>() {
+            // Fixed-width managed storage is already described by its live
+            // realized binding. Measuring it must not first allocate and copy
+            // a complete semantic Value snapshot—the admission witness is
+            // needed precisely before such materialization is allowed.
+            let fixed_bytes = match managed.region {
+                crate::MemoryAccessRegion::WholeInitialized => managed
+                    .realized
+                    .binding(managed.object)
+                    .map_err(MechError::from)?
+                    .required_initialization_bytes(),
+                crate::MemoryAccessRegion::Contiguous { length_bytes, .. } => length_bytes,
+                crate::MemoryAccessRegion::Strided {
+                    count,
+                    element_bytes,
+                    ..
+                } => count.checked_mul(element_bytes).ok_or_else(|| {
+                    MechError::new(
+                        crate::MemoryPlanError::ArithmeticOverflow {
+                            field: "live strided value bytes",
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                })?,
+                crate::MemoryAccessRegion::Rectangle {
+                    rows,
+                    columns,
+                    element_bytes,
+                    ..
+                } => rows
+                    .checked_mul(columns)
+                    .and_then(|elements| elements.checked_mul(element_bytes))
+                    .ok_or_else(|| {
+                        MechError::new(
+                            crate::MemoryPlanError::ArithmeticOverflow {
+                                field: "live matrix value bytes",
+                            },
+                            None,
+                        )
+                        .with_compiler_loc()
+                    })?,
+            };
+            return Ok(crate::CurrentMemoryFootprint {
+                logical_elements,
+                fixed_bytes,
+                schema_bytes,
+                shape_parameter_count,
+                ..crate::CurrentMemoryFootprint::default()
+            });
+        }
+        let snapshot = self.snapshot()?;
+        let retained = snapshot
+            .retained_footprint(self.schema_table().as_ref())
+            .map_err(|error| {
+                MechError::new(
+                    crate::GenericError {
+                        msg: format!("unable to measure live value: {error:?}"),
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+        Ok(crate::CurrentMemoryFootprint {
+            logical_elements,
+            payload_bytes: retained.retained_bytes,
+            encoded_bytes: retained.encoded_bytes,
+            retained_nodes: retained.node_count,
+            schema_bytes,
+            shape_parameter_count,
+            ..crate::CurrentMemoryFootprint::default()
+        })
+    }
+
+    /// Computes a conservative complete candidate witness for a canonical
+    /// aggregate assembled from borrowed logical inputs.
+    ///
+    /// The previous published output is deliberately not part of this
+    /// witness: coexistence with that value is accounted by the turn planner.
+    /// Each source can carry an amplification factor (for example, the
+    /// opposite row count of a table join). Fixed-width source bytes are
+    /// charged as candidate payload as well because packing them into a
+    /// canonical aggregate materializes owned sequence or value storage.
+    #[cfg(feature = "functions")]
+    pub fn prospective_aggregate_memory_footprint<'a>(
+        &self,
+        sources: impl IntoIterator<Item = (&'a Self, u64)>,
+    ) -> MResult<crate::CurrentMemoryFootprint> {
+        let overflow = |field| {
+            MechError::new(crate::MemoryPlanError::ArithmeticOverflow { field }, None)
+                .with_compiler_loc()
+        };
+        let schema_bytes = self.schema_clone_allocation_bound_bytes()?;
+        let shape_parameter_count = self.shape().parameter_values().len() as u64;
+        let shape_bytes = shape_parameter_count
+            .checked_mul(core::mem::size_of::<u64>() as u64)
+            .ok_or_else(|| overflow("aggregate candidate shape bytes"))?;
+        let root_bytes = (core::mem::size_of::<Value>() as u64)
+            .checked_mul(4)
+            .and_then(|bytes| bytes.checked_add(core::mem::size_of::<ValueData>() as u64))
+            .and_then(|bytes| bytes.checked_add(shape_bytes))
+            .and_then(|bytes| bytes.checked_add(schema_bytes))
+            .ok_or_else(|| overflow("aggregate candidate root bytes"))?;
+        let mut candidate = crate::CurrentMemoryFootprint {
+            payload_bytes: root_bytes,
+            encoded_bytes: schema_bytes,
+            // Schema bytes also conservatively bound empty aggregate
+            // containers in the independent retained-node dimension.
+            retained_nodes: schema_bytes.max(3),
+            schema_bytes,
+            shape_parameter_count,
+            ..crate::CurrentMemoryFootprint::default()
+        };
+        let inline_width = core::mem::size_of::<ValueData>() as u64;
+        for (source, multiplicity) in sources {
+            let source = source.current_memory_footprint()?;
+            let logical = source
+                .logical_elements
+                .checked_mul(multiplicity)
+                .ok_or_else(|| overflow("aggregate candidate logical elements"))?;
+            let retained = source
+                .payload_bytes
+                .checked_add(source.fixed_bytes)
+                .and_then(|bytes| {
+                    source
+                        .logical_elements
+                        .checked_mul(inline_width)
+                        .and_then(|inline| bytes.checked_add(inline))
+                })
+                .and_then(|bytes| bytes.checked_mul(multiplicity))
+                .ok_or_else(|| overflow("aggregate candidate retained bytes"))?;
+            let encoded = source
+                .encoded_bytes
+                .checked_add(source.fixed_bytes)
+                .and_then(|bytes| {
+                    source
+                        .logical_elements
+                        .checked_mul(8)
+                        .and_then(|prefixes| bytes.checked_add(prefixes))
+                })
+                .and_then(|bytes| bytes.checked_mul(multiplicity))
+                .ok_or_else(|| overflow("aggregate candidate encoded bytes"))?;
+            let nodes = source
+                .retained_nodes
+                .checked_add(source.logical_elements)
+                .and_then(|nodes| nodes.checked_add(1))
+                .and_then(|nodes| nodes.checked_mul(multiplicity))
+                .ok_or_else(|| overflow("aggregate candidate retained nodes"))?;
+            candidate.logical_elements = candidate
+                .logical_elements
+                .checked_add(logical)
+                .ok_or_else(|| overflow("aggregate candidate logical elements"))?;
+            candidate.payload_bytes = candidate
+                .payload_bytes
+                .checked_add(retained)
+                .ok_or_else(|| overflow("aggregate candidate retained bytes"))?;
+            candidate.encoded_bytes = candidate
+                .encoded_bytes
+                .checked_add(encoded)
+                .ok_or_else(|| overflow("aggregate candidate encoded bytes"))?;
+            candidate.retained_nodes = candidate
+                .retained_nodes
+                .checked_add(nodes)
+                .ok_or_else(|| overflow("aggregate candidate retained nodes"))?;
+        }
+        Ok(candidate)
+    }
+
+    /// Measures an existing immutable value for prospective adoption without
+    /// cloning or rebinding its canonical tree.
+    #[cfg(feature = "functions")]
+    pub fn prospective_snapshot_memory_footprint(
+        value: &Value,
+    ) -> MResult<crate::CurrentMemoryFootprint> {
+        let schemas = value.schemas().ok_or_else(|| {
+            MechError::new(ValueSchemaContextUnavailable, None).with_compiler_loc()
+        })?;
+        let schema = schemas.get(value.schema()).cloned().ok_or_else(|| {
+            snapshot_failure(SnapshotValueError::UnknownSnapshotSchema {
+                schema: value.schema(),
+            })
+        })?;
+        let descriptor = crate::ResolvedValueDescriptor::from_schema(schema, value.shape().clone())
+            .map_err(MechError::from)?;
+        let logical_elements = descriptor
+            .current_extents()
+            .map_err(MechError::from)?
+            .iter()
+            .try_fold(1_u64, |product, extent| product.checked_mul(*extent))
+            .ok_or_else(|| {
+                MechError::new(
+                    crate::MemoryPlanError::ArithmeticOverflow {
+                        field: "prospective value logical elements",
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+        let retained = value.retained_footprint(&schemas).map_err(|error| {
+            MechError::new(
+                crate::GenericError {
+                    msg: format!("unable to measure prospective value: {error:?}"),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+        let schema_bytes = schemas.clone_allocation_bound_bytes().ok_or_else(|| {
+            MechError::new(
+                crate::MemoryPlanError::ArithmeticOverflow {
+                    field: "prospective schema context bytes",
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+        Ok(crate::CurrentMemoryFootprint {
+            logical_elements,
+            payload_bytes: retained.retained_bytes,
+            encoded_bytes: retained.encoded_bytes,
+            retained_nodes: retained.node_count,
+            schema_bytes,
+            shape_parameter_count: value.shape().parameter_values().len() as u64,
+            ..crate::CurrentMemoryFootprint::default()
+        })
+    }
+
+    /// Computes the exact output witness for one borrowed element of a
+    /// canonical packed sequence without expanding that element into an owned
+    /// `ValueData` first.
+    #[cfg(feature = "functions")]
+    pub fn prospective_sequence_element_memory_footprint(
+        &self,
+        element_schema: &SchemaBody,
+        values: crate::snapshot::SequenceView<'_>,
+        index: usize,
+    ) -> MResult<crate::CurrentMemoryFootprint> {
+        let data = crate::snapshot::canonical_sequence_element_retained_footprint(
+            element_schema,
+            values,
+            index,
+        )
+        .map_err(|error| {
+            MechError::new(
+                crate::GenericError {
+                    msg: format!("unable to measure selected canonical element: {error:?}"),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+        let shape_parameter_count = self.shape().parameter_values().len() as u64;
+        let shape_bytes = shape_parameter_count
+            .checked_mul(core::mem::size_of::<u64>() as u64)
+            .ok_or_else(|| {
+                MechError::new(
+                    crate::MemoryPlanError::ArithmeticOverflow {
+                        field: "selected value shape bytes",
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+        let payload_bytes = (core::mem::size_of::<Value>() as u64)
+            .checked_add(shape_bytes)
+            .and_then(|bytes| bytes.checked_add(data.retained_bytes))
+            .ok_or_else(|| {
+                MechError::new(
+                    crate::MemoryPlanError::ArithmeticOverflow {
+                        field: "selected value retained bytes",
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+        Ok(crate::CurrentMemoryFootprint {
+            logical_elements: 1,
+            payload_bytes,
+            encoded_bytes: data.encoded_bytes,
+            retained_nodes: data.node_count.checked_add(1).ok_or_else(|| {
+                MechError::new(
+                    crate::MemoryPlanError::ArithmeticOverflow {
+                        field: "selected value retained nodes",
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?,
+            shape_parameter_count,
+            ..crate::CurrentMemoryFootprint::default()
+        })
+    }
+
+    /// Computes a conservative complete-value witness for a scalar or matrix
+    /// selection from a borrowed packed canonical sequence. Selector order
+    /// and duplicates are retained in the accounting multiplicity.
+    #[cfg(feature = "functions")]
+    pub fn prospective_sequence_selection_memory_footprint(
+        &self,
+        element_schema: &SchemaBody,
+        values: crate::snapshot::SequenceView<'_>,
+        indices: impl IntoIterator<Item = usize>,
+    ) -> MResult<crate::CurrentMemoryFootprint> {
+        let shape_parameter_count = self.shape().parameter_values().len() as u64;
+        let shape_bytes = shape_parameter_count
+            .checked_mul(core::mem::size_of::<u64>() as u64)
+            .ok_or_else(|| {
+                MechError::new(
+                    crate::MemoryPlanError::ArithmeticOverflow {
+                        field: "selected value shape bytes",
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+        let mut footprint = crate::CurrentMemoryFootprint {
+            payload_bytes: (core::mem::size_of::<Value>() as u64)
+                .checked_add(shape_bytes)
+                .and_then(|bytes| bytes.checked_add(core::mem::size_of::<ValueData>() as u64))
+                .ok_or_else(|| {
+                    MechError::new(
+                        crate::MemoryPlanError::ArithmeticOverflow {
+                            field: "selected value retained bytes",
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                })?,
+            // Root + aggregate/sequence container. Scalar selections are
+            // conservatively one node over; matrix selections need both.
+            retained_nodes: 3,
+            shape_parameter_count,
+            ..crate::CurrentMemoryFootprint::default()
+        };
+        for index in indices {
+            let element = crate::snapshot::canonical_sequence_element_retained_footprint(
+                element_schema,
+                values,
+                index,
+            )
+            .map_err(|error| {
+                MechError::new(
+                    crate::GenericError {
+                        msg: format!("unable to measure selected canonical element: {error:?}"),
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+            footprint.logical_elements =
+                footprint.logical_elements.checked_add(1).ok_or_else(|| {
+                    MechError::new(
+                        crate::MemoryPlanError::ArithmeticOverflow {
+                            field: "selected value elements",
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                })?;
+            footprint.payload_bytes = footprint
+                .payload_bytes
+                .checked_add(element.retained_bytes)
+                .ok_or_else(|| {
+                    MechError::new(
+                        crate::MemoryPlanError::ArithmeticOverflow {
+                            field: "selected value retained bytes",
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                })?;
+            footprint.encoded_bytes = footprint
+                .encoded_bytes
+                .checked_add(element.encoded_bytes)
+                .ok_or_else(|| {
+                    MechError::new(
+                        crate::MemoryPlanError::ArithmeticOverflow {
+                            field: "selected value encoded bytes",
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                })?;
+            footprint.retained_nodes = footprint
+                .retained_nodes
+                .checked_add(element.node_count)
+                .ok_or_else(|| {
+                    MechError::new(
+                        crate::MemoryPlanError::ArithmeticOverflow {
+                            field: "selected value retained nodes",
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                })?;
+        }
+        Ok(footprint)
+    }
+
+    /// Computes a fail-closed selection witness without materializing the
+    /// selector result. The largest borrowed source element is charged for
+    /// every possible selected position, preserving duplicate amplification
+    /// while keeping planning allocation-free with respect to result size.
+    #[cfg(feature = "functions")]
+    pub fn prospective_repeated_sequence_memory_footprint(
+        &self,
+        element_schema: &SchemaBody,
+        values: crate::snapshot::SequenceView<'_>,
+        selected_count: u64,
+    ) -> MResult<crate::CurrentMemoryFootprint> {
+        let shape_parameter_count = self.shape().parameter_values().len() as u64;
+        let shape_bytes = shape_parameter_count
+            .checked_mul(core::mem::size_of::<u64>() as u64)
+            .ok_or_else(|| {
+                MechError::new(
+                    crate::MemoryPlanError::ArithmeticOverflow {
+                        field: "selected value shape bytes",
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+        let mut largest = crate::snapshot::ValueFootprint::default();
+        for index in 0..values.len() {
+            let element = crate::snapshot::canonical_sequence_element_retained_footprint(
+                element_schema,
+                values,
+                index,
+            )
+            .map_err(|error| {
+                MechError::new(
+                    crate::GenericError {
+                        msg: format!("unable to measure canonical source element: {error:?}"),
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+            largest.retained_bytes = largest.retained_bytes.max(element.retained_bytes);
+            largest.encoded_bytes = largest.encoded_bytes.max(element.encoded_bytes);
+            largest.node_count = largest.node_count.max(element.node_count);
+        }
+        let selected_bytes = largest
+            .retained_bytes
+            .checked_mul(selected_count)
+            .ok_or_else(|| {
+                MechError::new(
+                    crate::MemoryPlanError::ArithmeticOverflow {
+                        field: "selected value retained bytes",
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+        let selected_encoded = largest
+            .encoded_bytes
+            .checked_mul(selected_count)
+            .ok_or_else(|| {
+                MechError::new(
+                    crate::MemoryPlanError::ArithmeticOverflow {
+                        field: "selected value encoded bytes",
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+        let selected_nodes = largest
+            .node_count
+            .checked_mul(selected_count)
+            .ok_or_else(|| {
+                MechError::new(
+                    crate::MemoryPlanError::ArithmeticOverflow {
+                        field: "selected value retained nodes",
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+        let payload_bytes = (core::mem::size_of::<Value>() as u64)
+            .checked_add(shape_bytes)
+            .and_then(|bytes| bytes.checked_add(core::mem::size_of::<ValueData>() as u64))
+            .and_then(|bytes| bytes.checked_add(selected_bytes))
+            .ok_or_else(|| {
+                MechError::new(
+                    crate::MemoryPlanError::ArithmeticOverflow {
+                        field: "selected value retained bytes",
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+        Ok(crate::CurrentMemoryFootprint {
+            logical_elements: selected_count,
+            payload_bytes,
+            encoded_bytes: selected_encoded,
+            retained_nodes: 3_u64.checked_add(selected_nodes).ok_or_else(|| {
+                MechError::new(
+                    crate::MemoryPlanError::ArithmeticOverflow {
+                        field: "selected value retained nodes",
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?,
+            shape_parameter_count,
+            ..crate::CurrentMemoryFootprint::default()
+        })
+    }
+
+    /// Computes a conservative prospective footprint for a set assembled
+    /// from borrowed immutable values. Duplicate canonical keys may make the
+    /// finalized set smaller; no candidate payload is cloned or allocated by
+    /// this planning traversal.
+    #[cfg(feature = "functions")]
+    pub fn prospective_set_memory_footprint(
+        &self,
+        values: impl IntoIterator<Item = MResult<Value>>,
+    ) -> MResult<crate::CurrentMemoryFootprint> {
+        let schemas = self.schema_table();
+        let SchemaBody::Set { element, .. } = schemas
+            .get(self.schema())
+            .ok_or_else(|| {
+                snapshot_failure(SnapshotValueError::UnknownSnapshotSchema {
+                    schema: self.schema(),
+                })
+            })?
+            .body()
+        else {
+            return Err(backing_mismatch::<Value>(self.representation()));
+        };
+        let element = element.as_ref().clone();
+        self.prospective_set_footprints(values.into_iter().map(move |value| {
+            let value = value?;
+            let value_schemas = value.schemas().ok_or_else(|| {
+                MechError::new(crate::ValueSchemaContextUnavailable, None).with_compiler_loc()
+            })?;
+            let value_schema = value_schemas.get(value.schema()).ok_or_else(|| {
+                snapshot_failure(SnapshotValueError::UnknownSnapshotSchema {
+                    schema: value.schema(),
+                })
+            })?;
+            if value_schema.body() != &element {
+                return Err(backing_mismatch::<Value>(self.representation()));
+            }
+            crate::snapshot::canonical_data_retained_footprint(&element, value.data()).map_err(
+                |error| {
+                    MechError::new(
+                        crate::GenericError {
+                            msg: format!("unable to measure prospective set element: {error:?}"),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                },
+            )
+        }))
+    }
+
+    /// Computes a conservative set-output witness from borrowed canonical
+    /// elements. This is the allocation-free planning form used by maintained
+    /// set kernels before they clone or normalize any candidate data.
+    #[cfg(feature = "functions")]
+    pub fn prospective_set_data_memory_footprint<'a>(
+        &self,
+        values: impl IntoIterator<Item = &'a ValueData>,
+    ) -> MResult<crate::CurrentMemoryFootprint> {
+        let schemas = self.schema_table();
+        let schema = schemas.get(self.schema()).ok_or_else(|| {
+            snapshot_failure(SnapshotValueError::UnknownSnapshotSchema {
+                schema: self.schema(),
+            })
+        })?;
+        let SchemaBody::Set { element, .. } = schema.body() else {
+            return Err(backing_mismatch::<Value>(self.representation()));
+        };
+        self.prospective_set_footprints(values.into_iter().map(|value| {
+            crate::snapshot::canonical_data_retained_footprint(element, value).map_err(|error| {
+                MechError::new(
+                    crate::GenericError {
+                        msg: format!("unable to measure prospective set element: {error:?}"),
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })
+        }))
+    }
+
+    #[cfg(feature = "functions")]
+    fn prospective_set_footprints(
+        &self,
+        footprints: impl IntoIterator<Item = MResult<crate::snapshot::ValueFootprint>>,
+    ) -> MResult<crate::CurrentMemoryFootprint> {
+        let mut elements = 0_u64;
+        let mut encoded = 8_u64;
+        let mut retained = u64::try_from(core::mem::size_of::<Value>())
+            .ok()
+            .and_then(|bytes| {
+                (self.shape().parameter_values().len() as u64)
+                    .checked_mul(core::mem::size_of::<u64>() as u64)
+                    .and_then(|shape| bytes.checked_add(shape))
+            })
+            .and_then(|bytes| bytes.checked_add(core::mem::size_of::<ValueData>() as u64))
+            .ok_or_else(|| {
+                MechError::new(
+                    crate::MemoryPlanError::ArithmeticOverflow {
+                        field: "prospective set root bytes",
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+        let mut nodes = 2_u64;
+        for footprint in footprints {
+            let footprint = footprint?;
+            elements = elements.checked_add(1).ok_or_else(|| {
+                MechError::new(
+                    crate::MemoryPlanError::ArithmeticOverflow {
+                        field: "prospective set elements",
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+            encoded = encoded
+                .checked_add(footprint.encoded_bytes)
+                .ok_or_else(|| {
+                    MechError::new(
+                        crate::MemoryPlanError::ArithmeticOverflow {
+                            field: "prospective set encoded bytes",
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                })?;
+            retained = retained
+                .checked_add(core::mem::size_of::<crate::snapshot::CanonicalKeyValue>() as u64)
+                .and_then(|bytes| bytes.checked_add(footprint.retained_bytes))
+                .ok_or_else(|| {
+                    MechError::new(
+                        crate::MemoryPlanError::ArithmeticOverflow {
+                            field: "prospective set retained bytes",
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                })?;
+            nodes = nodes.checked_add(footprint.node_count).ok_or_else(|| {
+                MechError::new(
+                    crate::MemoryPlanError::ArithmeticOverflow {
+                        field: "prospective set retained nodes",
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+        }
+        Ok(crate::CurrentMemoryFootprint {
+            logical_elements: elements,
+            payload_bytes: retained,
+            encoded_bytes: encoded,
+            retained_nodes: nodes,
+            shape_parameter_count: self.shape().parameter_values().len() as u64,
+            ..crate::CurrentMemoryFootprint::default()
+        })
+    }
+
+    pub fn validate_descriptor(&self, expected: &crate::ResolvedValueDescriptor) -> MResult<()> {
+        let actual = self.resolved_descriptor()?;
+        if actual != *expected {
+            return Err(MechError::new(
+                ExternalCellDescriptorMismatch {
+                    expected: expected.resolved_type().semantic_name(),
+                    actual: actual.resolved_type().semantic_name(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        self.validate_storage_contract()
+    }
+
+    /// Resolves this cell through its own canonical schema and current shape.
+    /// The pure type system never imports physical cell or storage types.
+    pub fn resolved_type(&self) -> MResult<ResolvedType> {
+        let schemas = self.schema_table();
+        let schema = schemas
+            .find_by_key(self.schema_key())
+            .and_then(|id| schemas.get(id))
+            .ok_or_else(|| {
+                MechError::from(TypeResolutionError::incompatible(
+                    "source expression",
+                    TypeConstraintFailure::InvalidScheme {
+                        reason: "the cell schema is absent from its canonical schema table".into(),
+                    },
+                ))
+            })?;
+        ResolvedType::from_schema(schema, &self.shape()).map_err(MechError::from)
+    }
+
+    /// Resolves the extents owned by the cell's top-level aggregate schema.
+    ///
+    /// This is a boundary adapter for validating a semantically resolved
+    /// result against a physical cell whose backing uses a less precise
+    /// dynamic schema. Pure type-system modules remain independent of cells
+    /// and storage representations.
+    pub fn current_top_level_extents(&self) -> MResult<Box<[u64]>> {
+        let schemas = self.schema_table();
+        let schema = schemas
+            .find_by_key(self.schema_key())
+            .and_then(|id| schemas.get(id))
+            .ok_or_else(|| {
+                MechError::from(TypeResolutionError::incompatible(
+                    "source expression",
+                    TypeConstraintFailure::InvalidScheme {
+                        reason: "the cell schema is absent from its canonical schema table".into(),
+                    },
+                ))
+            })?;
+        let shape = self.shape();
+        let mut dimensions: Vec<&crate::DimensionExpr> = Vec::new();
+        match schema.body() {
+            SchemaBody::Matrix {
+                dimensions: matrix_dimensions,
+                ..
+            } => dimensions.extend(matrix_dimensions.iter()),
+            SchemaBody::Table {
+                rows: CardinalitySpec::Exact(rows),
+                ..
+            } => dimensions.push(rows),
+            SchemaBody::Set {
+                cardinality: CardinalitySpec::Exact(cardinality),
+                ..
+            }
+            | SchemaBody::Map {
+                cardinality: CardinalitySpec::Exact(cardinality),
+                ..
+            } => dimensions.push(cardinality),
+            _ => {}
+        }
+        dimensions
+            .into_iter()
+            .map(|dimension| shape.resolve_dimension(dimension).map_err(MechError::from))
+            .collect::<MResult<Vec<_>>>()
+            .map(Vec::into_boxed_slice)
+    }
+
     /// Constructs the canonical empty-tuple value used as the output of an
     /// effect that does not otherwise return a value.
     pub fn unit() -> Self {
@@ -214,8 +2278,16 @@ impl ValueCell {
     where
         T: CanonicalCellBacking,
     {
+        Self::from_exact_in(&MemoryDomain::new().map_err(MechError::from)?, value)
+    }
+
+    /// Constructs an owned exact cell in an existing execution session.
+    pub fn from_exact_in<T>(owner: &MemoryDomain, value: T) -> MResult<Self>
+    where
+        T: CanonicalCellBacking,
+    {
         let matrix_extents = canonical_cell_sealed::Sealed::matrix_extents(&value);
-        Self::from_inferred_ref(Ref::new(value), matrix_extents)
+        Self::from_inferred_ref_in(owner, Ref::new(value), matrix_extents)
     }
 
     /// Constructs a standalone canonical matrix cell from an exact backing.
@@ -227,7 +2299,11 @@ impl ValueCell {
     where
         T: CanonicalCellBacking,
     {
-        Self::from_inferred_ref(reference, Some((rows, columns)))
+        Self::from_inferred_ref_in(
+            &MemoryDomain::new().map_err(MechError::from)?,
+            reference,
+            Some((rows, columns)),
+        )
     }
 
     /// Constructs a fresh exact backing for a declared runtime output.
@@ -236,13 +2312,14 @@ impl ValueCell {
     /// authority for storage representation while the operation supplies the
     /// resolved logical matrix dimensions. No erased universal value or
     /// mutable universal handle is involved in output construction.
-    pub fn default_for_representation(
+    fn allocate_backing_for_representation_in(
+        owner: &MemoryDomain,
         representation: FunctionValueRepresentation,
         _matrix_dimensions: Option<(usize, usize)>,
     ) -> MResult<Self> {
         macro_rules! scalar {
             ($value:expr) => {
-                return Self::from_exact($value)
+                return Self::from_exact_in(owner, $value)
             };
         }
         match representation {
@@ -293,7 +2370,7 @@ impl ValueCell {
                 })?;
                 macro_rules! matrix_element {
                     ($type:ty, $default:expr) => {
-                        return default_matrix_cell::<$type>(storage, dimensions, $default)
+                        return default_matrix_cell_in::<$type>(owner, storage, dimensions, $default)
                     };
                 }
                 match element {
@@ -349,6 +2426,130 @@ impl ValueCell {
         .with_compiler_loc())
     }
 
+    #[cfg(all(test, feature = "f64", feature = "matrixd"))]
+    fn test_backing_for_representation(
+        representation: FunctionValueRepresentation,
+        matrix_dimensions: Option<(usize, usize)>,
+    ) -> MResult<Self> {
+        let owner = MemoryDomain::new().map_err(MechError::from)?;
+        Self::allocate_backing_for_representation_in(&owner, representation, matrix_dimensions)
+    }
+
+    pub fn allocate_for_descriptor(
+        descriptor: &crate::ResolvedValueDescriptor,
+        representation: FunctionValueRepresentation,
+    ) -> MResult<Self> {
+        let owner = MemoryDomain::new().map_err(MechError::from)?;
+        Self::allocate_for_descriptor_in(&owner, descriptor, representation)
+    }
+
+    pub(crate) fn allocate_for_descriptor_in(
+        owner: &MemoryDomain,
+        descriptor: &crate::ResolvedValueDescriptor,
+        representation: FunctionValueRepresentation,
+    ) -> MResult<Self> {
+        let capabilities = crate::runtime_storage::actual_backing_capabilities(representation);
+        validate_storage_compatibility(descriptor.schema(), descriptor.shape(), &capabilities)?;
+        if capabilities.topology == crate::StorageTopology::CanonicalValue {
+            let data = initial_data_for_descriptor(descriptor)?;
+            return Self::from_resolved_descriptor_data_in(owner, descriptor, data);
+        }
+        let extents = descriptor.current_extents().map_err(MechError::from)?;
+        let dimensions = if matches!(representation, FunctionValueRepresentation::Matrix { .. }) {
+            let [rows, columns] = extents.as_ref() else {
+                return Err(MechError::new(
+                    ValueCellOutputConstructionUnsupported {
+                        representation,
+                        reason: format!(
+                            "matrix output descriptor has {} current extents",
+                            extents.len()
+                        ),
+                    },
+                    None,
+                )
+                .with_compiler_loc());
+            };
+            Some((
+                usize::try_from(*rows).map_err(|_| {
+                    MechError::new(
+                        ValueCellOutputConstructionUnsupported {
+                            representation,
+                            reason: format!("row extent {rows} exceeds the host index range"),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                })?,
+                usize::try_from(*columns).map_err(|_| {
+                    MechError::new(
+                        ValueCellOutputConstructionUnsupported {
+                            representation,
+                            reason: format!("column extent {columns} exceeds the host index range"),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                })?,
+            ))
+        } else {
+            None
+        };
+        let allocated =
+            Self::allocate_backing_for_representation_in(owner, representation, dimensions)?;
+        let mut builder = SchemaTableBuilder::new();
+        let handle = builder
+            .insert(descriptor.schema().clone())
+            .map_err(MechError::from)?;
+        let build = builder.finish().map_err(MechError::from)?;
+        let schema = build.resolve(handle).map_err(MechError::from)?;
+        let identity = allocated.binding.identity;
+        let owner = allocated.memory_domain().ok_or_else(|| {
+            MechError::from(crate::MemoryRuntimeError::CandidateValidationFailed {
+                object: None,
+                reason: "owned output allocation has no memory session".into(),
+            })
+        })?;
+        let storage = allocated
+            .binding
+            .published
+            .try_borrow()
+            .map_err(|_| borrow_conflict(CellAccess::Snapshot))?
+            .storage
+            .clone();
+        if matches!(storage, CellStorageBinding::PinnedExternal(_)) {
+            return Err(MechError::from(
+                crate::MemoryRuntimeError::CandidateValidationFailed {
+                    object: None,
+                    reason: "owned output allocation resolved to pinned external storage".into(),
+                },
+            ));
+        }
+        let cell = Self {
+            binding: CellBinding::managed(
+                identity,
+                schema,
+                descriptor.schema().key(),
+                descriptor.shape().clone(),
+                Rc::new(build.table),
+                owner,
+                storage,
+            ),
+        };
+        cell.validate_storage_contract()?;
+        cell.snapshot()?;
+        if cell.resolved_descriptor()? != *descriptor {
+            return Err(MechError::new(
+                ExternalCellDescriptorMismatch {
+                    expected: descriptor.resolved_type().semantic_name(),
+                    actual: cell.resolved_type()?.semantic_name(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        Ok(cell)
+    }
+
     pub fn from_ref<T>(
         reference: Ref<T>,
         schema: SchemaId,
@@ -364,28 +2565,88 @@ impl ValueCell {
             .ok_or_else(|| {
                 snapshot_failure(SnapshotValueError::UnknownSnapshotSchema { schema })
             })?;
+        let mut registration = reference
+            .cell_registration()
+            .try_borrow_mut()
+            .map_err(|_| borrow_conflict(CellAccess::Replace))?;
+        if let Some(record) = registration.upgrade() {
+            if record.schema_key != schema_key {
+                return Err(MechError::new(
+                    ValueCellSchemaMismatch {
+                        expected: record.schema_key,
+                        actual: schema_key,
+                    },
+                    None,
+                )
+                .with_compiler_loc());
+            }
+            let cell = Self {
+                binding: CellBinding {
+                    record,
+                    compiler_children: None,
+                },
+            };
+            if *cell.shape() != shape {
+                return Err(MechError::new(
+                    ValueCellShapeMismatch {
+                        expected: cell.shape().parameter_values().to_vec().into_boxed_slice(),
+                        actual: shape.parameter_values().to_vec().into_boxed_slice(),
+                    },
+                    None,
+                )
+                .with_compiler_loc());
+            }
+            cell.snapshot()?;
+            return Ok(cell);
+        }
         let identity = reference.reactive_cell_id();
         let cell = Self {
-            binding: CellBinding {
+            binding: CellBinding::pinned_external(
                 identity,
                 schema,
                 schema_key,
-                shape: Rc::new(cell::RefCell::new(shape)),
+                shape,
                 schemas,
-                storage: Rc::new(ExactCellStorage { reference }),
-                compiler_children: None,
-            },
+                Rc::new(ExactCellStorage {
+                    reference: reference.clone(),
+                }),
+            ),
         };
+        cell.validate_storage_contract()?;
         cell.snapshot()?;
+        *registration = Rc::downgrade(&cell.binding.record);
         Ok(cell)
     }
 
     pub fn from_value(value: Value, schemas: Rc<SchemaTable>) -> MResult<Self> {
         let value = rebind_value(value, schemas.as_ref())?;
-        Ok(Self::from_bound_value(value, schemas))
+        Self::from_bound_value_in(
+            &MemoryDomain::new().map_err(MechError::from)?,
+            value,
+            schemas,
+        )
     }
 
-    fn from_bound_value(value: Value, schemas: Rc<SchemaTable>) -> Self {
+    fn from_bound_value_in(
+        owner: &MemoryDomain,
+        value: Value,
+        schemas: Rc<SchemaTable>,
+    ) -> MResult<Self> {
+        let representation = representation_for_schema(
+            schemas
+                .get(value.schema())
+                .expect("canonical schema remains present")
+                .body(),
+        );
+        Self::from_bound_value_with_representation_in(owner, value, schemas, representation)
+    }
+
+    fn from_bound_value_with_representation_in(
+        owner: &MemoryDomain,
+        value: Value,
+        schemas: Rc<SchemaTable>,
+        representation: FunctionValueRepresentation,
+    ) -> MResult<Self> {
         let schema = value.schema();
         let schema_key = value.schema_key();
         let shape = value.shape().clone();
@@ -394,29 +2655,63 @@ impl ValueCell {
             Some(schema_key),
             "canonical value must retain its originating schema table"
         );
-        let reference = Ref::new(value);
-        let identity = reference.reactive_cell_id();
-        Self {
-            binding: CellBinding {
+        let (realized, object, payload, _, value) =
+            realize_managed_canonical_value(owner, value, &schemas)?;
+        let identity = crate::types::next_canonical_cell_id()?;
+        let cell = Self {
+            binding: CellBinding::managed(
                 identity,
                 schema,
                 schema_key,
-                shape: Rc::new(cell::RefCell::new(shape)),
+                shape,
                 schemas,
-                storage: Rc::new(ExactCellStorage { reference }),
-                compiler_children: None,
-            },
-        }
+                owner.clone(),
+                CellStorageBinding::ManagedCanonical {
+                    owner: owner.clone(),
+                    storage: Rc::new(ManagedCanonicalCellStorage {
+                        owner: owner.clone(),
+                        realized,
+                        object,
+                        payload,
+                        representation,
+                        value,
+                    }),
+                },
+            ),
+        };
+        cell.validate_storage_contract()?;
+        cell.snapshot()?;
+        Ok(cell)
     }
 
     /// Creates a mutable cell from a detached canonical value and the schema
     /// context retained by that value.
     pub fn from_snapshot(value: Value) -> MResult<Self> {
+        Self::from_snapshot_in(&MemoryDomain::new().map_err(MechError::from)?, value)
+    }
+
+    pub fn from_snapshot_in(owner: &MemoryDomain, value: Value) -> MResult<Self> {
         let schemas = value.schemas().ok_or_else(|| {
             MechError::new(ValueSchemaContextUnavailable, None).with_compiler_loc()
         })?;
         value.validate_against(&schemas).map_err(snapshot_failure)?;
-        Self::from_runtime_value(value, Rc::new((*schemas).clone()))
+        Self::from_bound_value_in(owner, value, Rc::new((*schemas).clone()))
+    }
+
+    /// Imports an owned value into an explicit execution session.
+    ///
+    /// This is a copy boundary, not mutable cross-domain sharing. Values that
+    /// already belong to the requested session retain their logical identity;
+    /// other values are snapshotted and reconstructed under the destination
+    /// owner before they enter an executable program.
+    pub fn import_owned_in(&self, owner: &MemoryDomain) -> MResult<Self> {
+        if self
+            .memory_domain()
+            .is_some_and(|current| current.id() == owner.id())
+        {
+            return Ok(self.clone());
+        }
+        Self::from_runtime_value_in(owner, self.snapshot()?, self.schema_table())
     }
 
     /// Constructs an empty standalone set whose element schema is closed and
@@ -472,6 +2767,17 @@ impl ValueCell {
         dimensions: Box<[u64]>,
         elements: Box<[ValueDataDraft]>,
     ) -> MResult<Self> {
+        let owner = MemoryDomain::new().map_err(MechError::from)?;
+        Self::dynamic_matrix_in(&owner, element, dimensions, elements)
+    }
+
+    /// Constructs a dynamic matrix inside an existing execution session.
+    pub fn dynamic_matrix_in(
+        owner: &MemoryDomain,
+        element: SchemaBody,
+        dimensions: Box<[u64]>,
+        elements: Box<[ValueDataDraft]>,
+    ) -> MResult<Self> {
         let (schema, shape, schemas) = dynamic_matrix_schema(element, dimensions)?;
         let value = finalize_draft(
             schema,
@@ -479,7 +2785,7 @@ impl ValueCell {
             schemas.as_ref(),
             ValueDataDraft::Matrix(elements),
         )?;
-        Self::from_runtime_value(value, schemas)
+        Self::from_runtime_value_in(owner, value, schemas)
     }
 
     /// Constructs a turn-varying rank-two matrix with a resizable matrix
@@ -498,20 +2804,58 @@ impl ValueCell {
             schemas.as_ref(),
             ValueDataDraft::Matrix(elements),
         )?;
+        let owner = MemoryDomain::new().map_err(MechError::from)?;
         #[cfg(all(feature = "matrix", feature = "matrixd"))]
         if let ValueData::Matrix(matrix) = value.data()
-            && let Some(cell) =
-                dynamic_matrix_cell(matrix.elements(), schema, &shape, schemas.clone(), true)?
+            && let Some(cell) = dynamic_matrix_cell(
+                &owner,
+                matrix.elements(),
+                schema,
+                &shape,
+                schemas.clone(),
+                true,
+            )?
         {
             return Ok(cell);
         }
-        Ok(Self::from_bound_value(value, schemas))
+        Self::from_bound_value_in(&owner, value, schemas)
     }
 
     /// Constructs a standalone canonical cell from a closed schema body and
     /// matching canonical data draft.
     pub fn from_schema_data(body: SchemaBody, data: ValueDataDraft) -> MResult<Self> {
         Self::from_inferred_value_data(body, data)
+    }
+
+    /// Constructs canonical storage from an already validated semantic
+    /// descriptor. The descriptor is checked again after finalization so
+    /// callers cannot attach resolved type metadata to incompatible data.
+    pub fn from_resolved_descriptor_data(
+        descriptor: &crate::ResolvedValueDescriptor,
+        data: ValueDataDraft,
+    ) -> MResult<Self> {
+        let owner = MemoryDomain::new().map_err(MechError::from)?;
+        Self::from_resolved_descriptor_data_in(&owner, descriptor, data)
+    }
+
+    /// Constructs canonical storage for a resolved descriptor inside an
+    /// existing execution session. Runtime specialization uses this path so
+    /// indirect outputs do not quietly create a second per-cell domain.
+    pub(crate) fn from_resolved_descriptor_data_in(
+        owner: &MemoryDomain,
+        descriptor: &crate::ResolvedValueDescriptor,
+        data: ValueDataDraft,
+    ) -> MResult<Self> {
+        let mut builder = SchemaTableBuilder::new();
+        let handle = builder
+            .insert(descriptor.schema().clone())
+            .map_err(MechError::from)?;
+        let build = builder.finish().map_err(MechError::from)?;
+        let schema = build.resolve(handle).map_err(MechError::from)?;
+        let value = finalize_draft(schema, descriptor.shape(), &build.table, data)?;
+        let cell = Self::from_runtime_value_in(owner, value, Rc::new(build.table))?;
+        cell.validate_descriptor(descriptor)?;
+        Ok(cell)
     }
 
     /// Constructs a detached heterogeneous tuple from canonical child cells.
@@ -566,6 +2910,43 @@ impl ValueCell {
         self.rebuild_data_draft(ValueDataDraft::Tuple(values.into_boxed_slice()))
     }
 
+    #[cfg(all(feature = "functions", feature = "tuple"))]
+    pub(crate) fn rebuild_tuple_values_with_construction(
+        &self,
+        cells: &[Self],
+        values: &[Value],
+        construction: &dyn crate::snapshot::validation::SnapshotConstructionAuthority,
+    ) -> MResult<Value> {
+        let SchemaBody::Tuple(elements) = self.closed_schema_body()? else {
+            return Err(aggregate_rebuild_unsupported(self, "tuple"));
+        };
+        if elements.len() != cells.len() || cells.len() != values.len() {
+            return Err(aggregate_rebuild_arity(
+                self,
+                "tuple",
+                elements.len(),
+                values.len(),
+            ));
+        }
+        let drafts = cells
+            .iter()
+            .zip(values)
+            .zip(&elements)
+            .map(|((cell, value), expected)| {
+                canonical_value_draft_for_schema(
+                    cell,
+                    value,
+                    expected,
+                    self.binding.schemas.as_ref(),
+                )
+            })
+            .collect::<MResult<Vec<_>>>()?;
+        self.rebuild_data_draft_with_construction(
+            ValueDataDraft::Tuple(drafts.into_boxed_slice()),
+            construction,
+        )
+    }
+
     /// Constructs a canonical record from named child cells in one schema
     /// arena, including concrete schemas retained below dynamic children.
     pub fn record_from_cells(fields: &[(String, Self)]) -> MResult<Self> {
@@ -601,6 +2982,59 @@ impl ValueCell {
         }
         let data = record_cell_fields_draft(fields, &schema_fields, self.binding.schemas.as_ref())?;
         self.rebuild_data_draft(data)
+    }
+
+    #[cfg(all(feature = "functions", feature = "record"))]
+    pub(crate) fn rebuild_record_values_with_construction(
+        &self,
+        fields: &[(String, Self)],
+        values: &[Value],
+        construction: &dyn crate::snapshot::validation::SnapshotConstructionAuthority,
+    ) -> MResult<Value> {
+        let SchemaBody::Record(schema_fields) = self.closed_schema_body()? else {
+            return Err(aggregate_rebuild_unsupported(self, "record"));
+        };
+        if schema_fields.len() != fields.len() || fields.len() != values.len() {
+            return Err(aggregate_rebuild_arity(
+                self,
+                "record",
+                schema_fields.len(),
+                values.len(),
+            ));
+        }
+        let drafts = fields
+            .iter()
+            .zip(values)
+            .zip(&schema_fields)
+            .map(|(((name, cell), value), field)| {
+                if *name != field.name {
+                    return Err(MechError::new(
+                        ValueCellOutputConstructionUnsupported {
+                            representation: FunctionValueRepresentation::Record,
+                            reason: format!(
+                                "record schema field {} does not match supplied field {name}",
+                                field.name,
+                            ),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc());
+                }
+                Ok(crate::snapshot::NamedValueDraft {
+                    name: name.clone(),
+                    value: canonical_value_draft_for_schema(
+                        cell,
+                        value,
+                        &field.schema,
+                        self.binding.schemas.as_ref(),
+                    )?,
+                })
+            })
+            .collect::<MResult<Vec<_>>>()?;
+        self.rebuild_data_draft_with_construction(
+            ValueDataDraft::Record(drafts.into_boxed_slice()),
+            construction,
+        )
     }
 
     /// Constructs a canonical table from source cells while retaining every
@@ -683,6 +3117,74 @@ impl ValueCell {
         self.rebuild_data_draft(data)
     }
 
+    #[cfg(all(feature = "functions", feature = "table"))]
+    pub(crate) fn rebuild_table_values_with_construction(
+        &self,
+        columns: &[(String, Box<[Self]>)],
+        values: &[Value],
+        construction: &dyn crate::snapshot::validation::SnapshotConstructionAuthority,
+    ) -> MResult<Value> {
+        let SchemaBody::Table {
+            columns: schema_columns,
+            ..
+        } = self.closed_schema_body()?
+        else {
+            return Err(aggregate_rebuild_unsupported(self, "table"));
+        };
+        let supplied = columns.iter().map(|(_, cells)| cells.len()).sum::<usize>();
+        if schema_columns.len() != columns.len() || supplied != values.len() {
+            return Err(aggregate_rebuild_arity(
+                self,
+                "table",
+                supplied,
+                values.len(),
+            ));
+        }
+        let mut cursor = 0;
+        let drafts = columns
+            .iter()
+            .zip(&schema_columns)
+            .map(|((name, cells), field)| {
+                if *name != field.name {
+                    return Err(MechError::new(
+                        ValueCellOutputConstructionUnsupported {
+                            representation: self.representation(),
+                            reason: format!(
+                                "table schema column {} does not match supplied column {name}",
+                                field.name,
+                            ),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc());
+                }
+                let column_values = cells
+                    .iter()
+                    .map(|cell| {
+                        let value = values.get(cursor).ok_or_else(|| {
+                            aggregate_rebuild_arity(self, "table", supplied, cursor)
+                        })?;
+                        cursor += 1;
+                        canonical_value_draft_for_schema(
+                            cell,
+                            value,
+                            &field.schema,
+                            self.binding.schemas.as_ref(),
+                        )
+                    })
+                    .collect::<MResult<Vec<_>>>()?;
+                Ok(crate::snapshot::TableColumnDraft {
+                    name: name.clone(),
+                    values: column_values.into_boxed_slice(),
+                })
+            })
+            .collect::<MResult<Vec<_>>>()?;
+        self.rebuild_data_draft_with_construction(
+            ValueDataDraft::Table(drafts.into_boxed_slice()),
+            construction,
+        )
+    }
+
     /// Constructs a row-major dynamic matrix from homogeneous canonical child
     /// cells. The output keeps one cell identity while later turns may change
     /// its dimensions through [`ValueCell::replace`].
@@ -727,11 +3229,176 @@ impl ValueCell {
             }
             values.push(canonical_cell_draft(cell)?);
         }
-        Self::dynamic_matrix(
+        let owner = first.memory_domain().ok_or_else(|| {
+            MechError::from(crate::MemoryRuntimeError::CandidateValidationFailed {
+                object: None,
+                reason: "owned matrix element has no memory session".into(),
+            })
+        })?;
+        Self::dynamic_matrix_in(
+            &owner,
             element,
             vec![rows as u64, columns as u64].into_boxed_slice(),
             values.into_boxed_slice(),
         )
+    }
+
+    /// Constructs a matrix whose schema is the already-resolved semantic
+    /// output type. Direct source specializers use this boundary adapter when
+    /// the result retains a compound dimension relation such as a sum of
+    /// concatenated axes. Runtime storage remains selected independently.
+    #[doc(hidden)]
+    pub fn matrix_from_resolved_type_cells(
+        resolved: &ResolvedType,
+        rows: usize,
+        columns: usize,
+        cells: &[Self],
+        schema_sources: &[Self],
+    ) -> MResult<Self> {
+        if rows.saturating_mul(columns) != cells.len() {
+            return Err(MechError::new(
+                ValueCellOutputConstructionUnsupported {
+                    representation: FunctionValueRepresentation::AnyValue,
+                    reason: format!(
+                        "matrix dimensions require {} elements but {} were supplied",
+                        rows.saturating_mul(columns),
+                        cells.len()
+                    ),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        let crate::KindExpr::Matrix { dimensions, .. } = resolved.kind() else {
+            return Err(MechError::from(TypeResolutionError::incompatible(
+                "resolved matrix output",
+                TypeConstraintFailure::StructuralMismatch {
+                    expected: "matrix".into(),
+                    actual: resolved.semantic_name(),
+                },
+            )));
+        };
+        let element = if let Some(first) = cells.first() {
+            first.closed_schema_body()?
+        } else if let Some(element) = schema_sources.iter().find_map(|source| {
+            let SchemaBody::Matrix { element, .. } = source.closed_schema_body().ok()? else {
+                return None;
+            };
+            Some(*element)
+        }) {
+            element
+        } else {
+            return Err(MechError::new(
+                ValueCellOutputConstructionUnsupported {
+                    representation: FunctionValueRepresentation::AnyValue,
+                    reason: "an empty resolved matrix requires an element schema template".into(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        };
+        let mut values = Vec::with_capacity(cells.len());
+        for cell in cells {
+            if cell.closed_schema_body()? != element {
+                return Err(MechError::new(
+                    ValueCellOutputConstructionUnsupported {
+                        representation: cell.representation(),
+                        reason: "matrix elements must share one canonical schema".into(),
+                    },
+                    None,
+                )
+                .with_compiler_loc());
+            }
+            values.push(canonical_cell_draft(cell)?);
+        }
+        let draft = crate::SchemaDraft {
+            dimension_parameters: resolved.dimension_parameters().to_vec().into_boxed_slice(),
+            body: SchemaBody::Matrix {
+                element: Box::new(element),
+                dimensions: dimensions.clone(),
+            },
+        };
+        let (schema, shape, schemas) = merged_resolved_matrix_schema(
+            draft,
+            vec![rows as u64, columns as u64].into_boxed_slice(),
+            schema_sources,
+        )?;
+        let value = finalize_draft(
+            schema,
+            &shape,
+            schemas.as_ref(),
+            ValueDataDraft::Matrix(values.into_boxed_slice()),
+        )?;
+        let owner = cells
+            .first()
+            .or_else(|| schema_sources.first())
+            .and_then(ValueCell::memory_domain)
+            .ok_or_else(|| {
+                MechError::from(crate::MemoryRuntimeError::CandidateValidationFailed {
+                    object: None,
+                    reason: "resolved matrix output has no owning memory session".into(),
+                })
+            })?;
+        Self::from_runtime_value_in(&owner, value, schemas)
+    }
+
+    /// Constructs one homogeneous matrix directly from canonical drafts while
+    /// retaining the solver's resolved dimension expressions. Source matrix
+    /// constructors use this path so a dense input is never expanded into one
+    /// independently managed `ValueCell` per element merely to concatenate or
+    /// reshape it.
+    #[doc(hidden)]
+    pub fn matrix_from_resolved_type_drafts_in(
+        owner: &MemoryDomain,
+        resolved: &ResolvedType,
+        rows: usize,
+        columns: usize,
+        element: SchemaBody,
+        elements: Box<[ValueDataDraft]>,
+        schema_sources: &[Self],
+    ) -> MResult<Self> {
+        if rows.saturating_mul(columns) != elements.len() {
+            return Err(MechError::new(
+                ValueCellOutputConstructionUnsupported {
+                    representation: FunctionValueRepresentation::AnyValue,
+                    reason: format!(
+                        "matrix dimensions require {} elements but {} were supplied",
+                        rows.saturating_mul(columns),
+                        elements.len()
+                    ),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        let crate::KindExpr::Matrix { dimensions, .. } = resolved.kind() else {
+            return Err(MechError::from(TypeResolutionError::incompatible(
+                "resolved matrix output",
+                TypeConstraintFailure::StructuralMismatch {
+                    expected: "matrix".into(),
+                    actual: resolved.semantic_name(),
+                },
+            )));
+        };
+        let draft = crate::SchemaDraft {
+            dimension_parameters: resolved.dimension_parameters().to_vec().into_boxed_slice(),
+            body: SchemaBody::Matrix {
+                element: Box::new(element),
+                dimensions: dimensions.clone(),
+            },
+        };
+        let (schema, shape, schemas) = merged_resolved_matrix_schema(
+            draft,
+            vec![rows as u64, columns as u64].into_boxed_slice(),
+            schema_sources,
+        )?;
+        let value = finalize_draft(
+            schema,
+            &shape,
+            schemas.as_ref(),
+            ValueDataDraft::Matrix(elements),
+        )?;
+        Self::from_runtime_value_in(owner, value, schemas)
     }
 
     /// Returns this cell's schema with every shape parameter resolved to its
@@ -743,7 +3410,7 @@ impl ValueCell {
             .schemas
             .get(self.binding.schema)
             .expect("value-cell schema remains present");
-        close_schema_body(schema.body(), &self.binding.shape.borrow())
+        close_schema_body(schema.body(), &self.binding.shape())
     }
 
     /// Returns detached canonical tuple element cells, or `None` when this is
@@ -828,12 +3495,24 @@ impl ValueCell {
     /// while retaining canonical schema and shape metadata. Aggregate values
     /// remain backed by immutable [`Value`] data.
     pub(crate) fn from_runtime_value(value: Value, schemas: Rc<SchemaTable>) -> MResult<Self> {
+        let owner = MemoryDomain::new().map_err(MechError::from)?;
+        Self::from_runtime_value_in(&owner, value, schemas)
+    }
+
+    /// Reconstructs runtime storage inside an existing execution session.
+    /// Standalone convenience constructors delegate here with a fresh owner;
+    /// program specialization supplies its shared owner explicitly.
+    pub(crate) fn from_runtime_value_in(
+        owner: &MemoryDomain,
+        value: Value,
+        schemas: Rc<SchemaTable>,
+    ) -> MResult<Self> {
         let value = rebind_value(value, schemas.as_ref())?;
         let schema = value.schema();
         let shape = value.shape().clone();
         macro_rules! scalar {
             ($value:expr) => {
-                return Self::from_ref(Ref::new($value), schema, shape, schemas)
+                return Self::from_owned_ref_in(owner, Ref::new($value), schema, shape, schemas)
             };
         }
         match value.data() {
@@ -883,17 +3562,67 @@ impl ValueCell {
             }
             #[cfg(all(feature = "matrix", feature = "matrixd"))]
             ValueData::Matrix(matrix) => {
-                if let Some(cell) =
-                    dynamic_matrix_cell(matrix.elements(), schema, &shape, schemas.clone(), false)?
-                {
+                if let Some(cell) = dynamic_matrix_cell(
+                    owner,
+                    matrix.elements(),
+                    schema,
+                    &shape,
+                    schemas.clone(),
+                    false,
+                )? {
                     return Ok(cell);
                 }
             }
             _ => {}
         }
-        Ok(Self::from_bound_value(value, schemas))
+        Self::from_bound_value_in(owner, value, schemas)
     }
 
+    /// Registers an explicitly caller-owned compatibility value without
+    /// transferring its storage into the managed session. Ordinary owned
+    /// constructors never use this path; it exists for embedding boundaries
+    /// whose borrow behavior is itself part of the public contract.
+    pub fn from_external_ref<T>(
+        reference: Ref<T>,
+        matrix_extents: Option<(usize, usize)>,
+    ) -> MResult<Self>
+    where
+        T: CanonicalCellBacking,
+    {
+        if let (FunctionValueRepresentation::Matrix { element, storage }, Some((rows, columns))) =
+            (T::REPRESENTATION, matrix_extents)
+            && let FunctionMatrixStoragePattern::Exact(storage) = storage
+            && matches!(
+                storage,
+                FunctionMatrixRepresentation::RowVectorD
+                    | FunctionMatrixRepresentation::VectorD
+                    | FunctionMatrixRepresentation::MatrixD
+            )
+        {
+            let element = schema_body_for_matrix_element(element)
+                .ok_or_else(|| backing_mismatch::<T>(T::REPRESENTATION))?;
+            let (schema, shape, schemas) = match storage {
+                FunctionMatrixRepresentation::RowVectorD => {
+                    dynamic_row_vector_schema(element, rows as u64, columns as u64)?
+                }
+                FunctionMatrixRepresentation::VectorD => {
+                    dynamic_column_vector_schema(element, rows as u64, columns as u64)?
+                }
+                FunctionMatrixRepresentation::MatrixD => dynamic_matrix_schema(
+                    element,
+                    vec![rows as u64, columns as u64].into_boxed_slice(),
+                )?,
+                _ => unreachable!("dynamic matrix representations were matched above"),
+            };
+            return Self::from_ref(reference, schema, shape, schemas);
+        }
+        let body = schema_body_for_representation(T::REPRESENTATION, matrix_extents)
+            .ok_or_else(|| backing_mismatch::<T>(T::REPRESENTATION))?;
+        let (schema, shape, schemas) = standalone_schema(body)?;
+        Self::from_ref(reference, schema, shape, schemas)
+    }
+
+    #[cfg(all(test, feature = "f64", feature = "matrixd"))]
     pub(crate) fn from_inferred_ref<T>(
         reference: Ref<T>,
         matrix_extents: Option<(usize, usize)>,
@@ -901,31 +3630,152 @@ impl ValueCell {
     where
         T: CanonicalCellBacking,
     {
-        if let (
-            FunctionValueRepresentation::Matrix {
-                element,
-                storage:
-                    FunctionMatrixStoragePattern::Exact(
-                        FunctionMatrixRepresentation::RowVectorD
-                        | FunctionMatrixRepresentation::VectorD
-                        | FunctionMatrixRepresentation::MatrixD,
-                    ),
-            },
-            Some((rows, columns)),
-        ) = (T::REPRESENTATION, matrix_extents)
+        Self::from_external_ref(reference, matrix_extents)
+    }
+
+    pub(crate) fn from_inferred_ref_in<T>(
+        owner: &MemoryDomain,
+        reference: Ref<T>,
+        matrix_extents: Option<(usize, usize)>,
+    ) -> MResult<Self>
+    where
+        T: CanonicalCellBacking,
+    {
+        if let (FunctionValueRepresentation::Matrix { element, storage }, Some((rows, columns))) =
+            (T::REPRESENTATION, matrix_extents)
+            && let FunctionMatrixStoragePattern::Exact(storage) = storage
+            && matches!(
+                storage,
+                FunctionMatrixRepresentation::RowVectorD
+                    | FunctionMatrixRepresentation::VectorD
+                    | FunctionMatrixRepresentation::MatrixD
+            )
         {
             let element = schema_body_for_matrix_element(element)
                 .ok_or_else(|| backing_mismatch::<T>(T::REPRESENTATION))?;
-            let (schema, shape, schemas) = dynamic_matrix_schema(
-                element,
-                vec![rows as u64, columns as u64].into_boxed_slice(),
-            )?;
-            return Self::from_ref(reference, schema, shape, schemas);
+            let (schema, shape, schemas) = match storage {
+                FunctionMatrixRepresentation::RowVectorD => {
+                    dynamic_row_vector_schema(element, rows as u64, columns as u64)?
+                }
+                FunctionMatrixRepresentation::VectorD => {
+                    dynamic_column_vector_schema(element, rows as u64, columns as u64)?
+                }
+                FunctionMatrixRepresentation::MatrixD => dynamic_matrix_schema(
+                    element,
+                    vec![rows as u64, columns as u64].into_boxed_slice(),
+                )?,
+                _ => unreachable!("dynamic matrix representations were matched above"),
+            };
+            return Self::from_owned_ref_in(owner, reference, schema, shape, schemas);
         }
         let body = schema_body_for_representation(T::REPRESENTATION, matrix_extents)
             .ok_or_else(|| backing_mismatch::<T>(T::REPRESENTATION))?;
         let (schema, shape, schemas) = standalone_schema(body)?;
-        Self::from_ref(reference, schema, shape, schemas)
+        Self::from_owned_ref_in(owner, reference, schema, shape, schemas)
+    }
+
+    /// Imports an exact decoded backing into an existing managed session while
+    /// retaining the schema and shape declared by the artifact. The temporary
+    /// `Ref<T>` is consumed during construction; it is never installed as a
+    /// pinned-external cell binding.
+    #[cfg(all(feature = "matrix", feature = "program"))]
+    pub(crate) fn from_decoded_exact_backing_in<T>(
+        owner: &MemoryDomain,
+        reference: Ref<T>,
+        schema: SchemaId,
+        shape: ShapeInstance,
+        schemas: Rc<SchemaTable>,
+    ) -> MResult<Self>
+    where
+        T: CanonicalCellBacking,
+    {
+        Self::from_owned_ref_in(owner, reference, schema, shape, schemas)
+    }
+
+    fn from_owned_ref_in<T>(
+        owner: &MemoryDomain,
+        reference: Ref<T>,
+        schema: SchemaId,
+        shape: ShapeInstance,
+        schemas: Rc<SchemaTable>,
+    ) -> MResult<Self>
+    where
+        T: CanonicalCellBacking,
+    {
+        let target = crate::TargetMemoryProfile::current_direct_host()
+            .map_err(|error| MechError::new(error, None).with_compiler_loc())?;
+        let physical = crate::physical_storage_descriptor(
+            T::REPRESENTATION,
+            &target,
+            crate::MemoryLifetime::Activation,
+        );
+        if matches!(physical.slot, crate::PlannedSlotKind::FixedScalar(_)) {
+            let descriptor = crate::ResolvedValueDescriptor::from_schema(
+                schemas.get(schema).cloned().ok_or_else(|| {
+                    snapshot_failure(SnapshotValueError::UnknownSnapshotSchema { schema })
+                })?,
+                shape,
+            )
+            .map_err(MechError::from)?;
+            let elements = descriptor
+                .current_extents()
+                .map_err(MechError::from)?
+                .iter()
+                .try_fold(1_u64, |size, extent| size.checked_mul(*extent))
+                .ok_or_else(|| {
+                    MechError::from(crate::MemoryRuntimeError::IdentityExhausted {
+                        identity: "owned value element count",
+                    })
+                })?;
+            let witness = crate::MemoryFootprintWitness::Known(crate::CurrentMemoryFootprint {
+                logical_elements: elements,
+                shape_parameter_count: descriptor.shape().parameter_values().len() as u64,
+                ..crate::CurrentMemoryFootprint::default()
+            });
+            let plan = crate::plan_owned_value_memory(crate::ValueLayoutPlanningRequest {
+                descriptor: &descriptor,
+                storage: &physical,
+                witness,
+                target: &target,
+            })
+            .map_err(|error| MechError::new(error, None).with_compiler_loc())?;
+            let object_id = plan.allocations[0].id;
+            let realized = owner.realize_owned_value_plan(plan)?;
+            let plan = realized
+                .owned_value_plan()
+                .expect("owned realization retains its R5 plan");
+            let object = owner.plan_object_key(realized.revision(), object_id)?;
+            let prepared = owner.prepare_owned_initialization(
+                &realized,
+                crate::CallAccessRequest {
+                    object,
+                    mode: crate::MemoryAccessMode::Write,
+                    region: crate::memory_runtime::planned_value_access_region(&plan.value)?,
+                },
+            )?;
+            {
+                let value = reference
+                    .try_borrow()
+                    .map_err(|_| borrow_conflict(CellAccess::Snapshot))?;
+                let mut frame = owner.acquire_call(&realized, &prepared)?;
+                value.initialize_planned_fixed(&mut frame, object)?;
+            }
+            return Self::allocate_planned(
+                owner,
+                &descriptor,
+                T::REPRESENTATION,
+                &realized,
+                object,
+                &plan.value,
+            );
+        }
+        // Indirect owned values are finalized before they enter the stable
+        // logical cell. Keeping the constructor's temporary `Ref<T>` here
+        // would make ordinary String and canonical matrix cells a disguised
+        // pinned-external path. Snapshot once, then publish the immutable
+        // canonical root behind the managed binding.
+        let value = ExactCellStorage { reference }.snapshot(schema, &shape, &schemas)?;
+        Self::from_bound_value_with_representation_in(owner, value, schemas, T::REPRESENTATION)
     }
 
     pub(crate) fn from_inferred_value_data(
@@ -937,21 +3787,44 @@ impl ValueCell {
         Self::from_runtime_value(value, schemas)
     }
 
-    pub const fn schema(&self) -> SchemaId {
+    pub fn schema(&self) -> SchemaId {
         self.binding.schema
     }
 
-    pub const fn schema_key(&self) -> SchemaKey {
+    pub fn schema_key(&self) -> SchemaKey {
         self.binding.schema_key
     }
 
     pub fn shape(&self) -> cell::Ref<'_, ShapeInstance> {
-        self.binding.shape.borrow()
+        self.binding.shape()
     }
 
     #[cfg(feature = "functions")]
+    pub(crate) fn accepts_published_shape(&self, next: &ShapeInstance) -> bool {
+        let Some(schema) = self.binding.schemas.get(self.binding.schema) else {
+            return false;
+        };
+        shape_change_allowed(schema, &self.binding.shape(), next)
+    }
+
     pub(crate) fn schema_table(&self) -> Rc<SchemaTable> {
         self.binding.schemas.clone()
+    }
+
+    #[cfg(feature = "functions")]
+    pub(crate) fn schema_clone_allocation_bound_bytes(&self) -> MResult<u64> {
+        self.binding
+            .schemas
+            .clone_allocation_bound_bytes()
+            .ok_or_else(|| {
+                MechError::new(
+                    crate::MemoryPlanError::ArithmeticOverflow {
+                        field: "schema context clone bytes",
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })
     }
 
     pub fn representation(&self) -> FunctionValueRepresentation {
@@ -960,7 +3833,59 @@ impl ValueCell {
             .schemas
             .get(self.binding.schema)
             .expect("value-cell schema remains present");
-        self.binding.storage.representation(schema.body())
+        self.binding
+            .storage()
+            .expect("value-cell published storage remains borrowable")
+            .representation(schema.body())
+    }
+
+    pub fn type_memory_contract(&self) -> MResult<crate::TypeMemoryContract> {
+        let schema = self
+            .binding
+            .schemas
+            .get(self.binding.schema)
+            .ok_or_else(|| {
+                snapshot_failure(SnapshotValueError::UnknownSnapshotSchema {
+                    schema: self.binding.schema,
+                })
+            })?;
+        Ok(schema.type_memory_contract()?)
+    }
+
+    pub fn resolved_type_memory_contract(&self) -> MResult<crate::ResolvedTypeMemoryContract> {
+        let schema = self
+            .binding
+            .schemas
+            .get(self.binding.schema)
+            .ok_or_else(|| {
+                snapshot_failure(SnapshotValueError::UnknownSnapshotSchema {
+                    schema: self.binding.schema,
+                })
+            })?;
+        let shape = self.binding.try_shape(CellAccess::Snapshot)?.clone();
+        Ok(schema.resolved_type_memory_contract(&shape)?)
+    }
+
+    pub fn storage_capabilities(&self) -> crate::StorageCapabilityDescriptor {
+        self.binding
+            .storage()
+            .expect("value-cell published storage remains borrowable")
+            .capabilities()
+    }
+
+    /// Rechecks the mandatory schema/storage compatibility invariant.
+    pub fn validate_storage_contract(&self) -> MResult<()> {
+        let schema = self
+            .binding
+            .schemas
+            .get(self.binding.schema)
+            .ok_or_else(|| {
+                snapshot_failure(SnapshotValueError::UnknownSnapshotSchema {
+                    schema: self.binding.schema,
+                })
+            })?;
+        let shape = self.binding.try_shape(CellAccess::Snapshot)?.clone();
+        validate_storage_compatibility(schema, &shape, &self.binding.storage()?.capabilities())
     }
 
     /// Describes whether this cell's schema permits its resolved extents to
@@ -974,10 +3899,90 @@ impl ValueCell {
     }
 
     pub fn snapshot(&self) -> MResult<Value> {
-        let shape = self.binding.shape.borrow().clone();
-        self.binding
-            .storage
-            .snapshot(self.binding.schema, &shape, &self.binding.schemas)
+        let shape = self.binding.shape().clone();
+        let storage = self.binding.storage()?;
+        if let Some(managed) = storage.as_any().downcast_ref::<ManagedHostCellStorage>() {
+            managed.snapshot_with_authority(
+                Some(self),
+                self.binding.schema,
+                &shape,
+                &self.binding.schemas,
+            )
+        } else {
+            storage.snapshot(self.binding.schema, &shape, &self.binding.schemas)
+        }
+    }
+
+    /// Constructs an external-call argument snapshot through the R5
+    /// marshalling authority. Existing immutable canonical roots are shared;
+    /// fixed managed storage debits draft and finalization allocations from
+    /// the call's prepared scratch before materializing them.
+    #[cfg(feature = "functions")]
+    pub(crate) fn snapshot_for_external_marshalling(
+        &self,
+        construction: &dyn crate::snapshot::validation::SnapshotConstructionAuthority,
+    ) -> MResult<Value> {
+        let shape = self.binding.shape();
+        let storage = self.binding.storage()?;
+        if let Some(managed) = storage.as_any().downcast_ref::<ManagedHostCellStorage>() {
+            managed.snapshot_with_authority_and_construction(
+                Some(self),
+                self.binding.schema,
+                &shape,
+                &self.binding.schemas,
+                Some(construction),
+            )
+        } else if let Some(managed) = storage
+            .as_any()
+            .downcast_ref::<ManagedCanonicalCellStorage>()
+        {
+            managed.snapshot_for_external_marshalling(
+                self.binding.schema,
+                &shape,
+                &self.binding.schemas,
+                construction,
+            )
+        } else {
+            storage.snapshot(self.binding.schema, &shape, &self.binding.schemas)
+        }
+    }
+
+    /// Revalidates an immutable candidate against this logical cell's schema
+    /// context without publishing it. Managed builders use this inside their
+    /// admitted construction closure so footprint validation observes the
+    /// same schema table that owns the output binding.
+    #[cfg(feature = "functions")]
+    pub fn rebind_snapshot_candidate(&self, value: &Value) -> MResult<Value> {
+        let source_schemas = value.schemas().ok_or_else(|| {
+            MechError::new(ValueSchemaContextUnavailable, None).with_compiler_loc()
+        })?;
+        let source_schema = source_schemas.get(value.schema()).cloned().ok_or_else(|| {
+            snapshot_failure(SnapshotValueError::UnknownSnapshotSchema {
+                schema: value.schema(),
+            })
+        })?;
+        let extents =
+            crate::ResolvedValueDescriptor::from_schema(source_schema, value.shape().clone())
+                .map_err(MechError::from)?
+                .current_extents()
+                .map_err(MechError::from)?;
+        let target_schema = self
+            .binding
+            .schemas
+            .get(self.binding.schema)
+            .ok_or_else(|| {
+                snapshot_failure(SnapshotValueError::UnknownSnapshotSchema {
+                    schema: self.binding.schema,
+                })
+            })?;
+        let target_shape = crate::shape_for_resolved_extents(target_schema, &extents)?;
+        value
+            .rebind(
+                self.binding.schema,
+                &target_shape,
+                self.binding.schemas.as_ref(),
+            )
+            .map_err(snapshot_failure)
     }
 
     /// Clones this cell's exact backing into a new, independent mutable cell.
@@ -986,27 +3991,79 @@ impl ValueCell {
     /// cell identity is deliberately fresh. Source specialization uses this
     /// for full-write outputs whose representation mirrors an input.
     pub fn detached_clone(&self) -> MResult<Self> {
-        let storage = self.binding.storage.detached_clone()?;
-        let shape = self
-            .binding
-            .shape
-            .try_borrow()
-            .map_err(|_| borrow_conflict(CellAccess::Snapshot))?
-            .clone();
-        Ok(Self {
-            binding: CellBinding {
-                identity: storage.logical_cell_id(),
-                schema: self.binding.schema,
-                schema_key: self.binding.schema_key,
-                shape: Rc::new(cell::RefCell::new(shape)),
-                schemas: self.binding.schemas.clone(),
-                storage,
-                compiler_children: None,
-            },
-        })
+        let storage = self.binding.storage()?;
+        if let Some(managed) = storage
+            .as_any()
+            .downcast_ref::<ManagedCanonicalCellStorage>()
+        {
+            let cell = Self {
+                binding: CellBinding::managed(
+                    crate::types::next_canonical_cell_id()?,
+                    self.binding.schema,
+                    self.binding.schema_key,
+                    self.binding.try_shape(CellAccess::Snapshot)?.clone(),
+                    self.binding.schemas.clone(),
+                    managed.owner.clone(),
+                    CellStorageBinding::ManagedCanonical {
+                        owner: managed.owner.clone(),
+                        storage: storage.clone(),
+                    },
+                ),
+            };
+            cell.validate_storage_contract()?;
+            return Ok(cell);
+        }
+        if let Some(owner) = self.memory_domain() {
+            return Self::from_snapshot_in(&owner, self.snapshot()?);
+        }
+        let detached = storage.detached_clone()?;
+        let shape = self.binding.try_shape(CellAccess::Snapshot)?.clone();
+        let cell = Self {
+            binding: CellBinding::pinned_external(
+                detached.identity,
+                self.binding.schema,
+                self.binding.schema_key,
+                shape,
+                self.binding.schemas.clone(),
+                detached.storage,
+            ),
+        };
+        cell.validate_storage_contract()?;
+        cell.snapshot()?;
+        Ok(cell)
     }
 
     pub fn replace(&self, value: &Value) -> MResult<()> {
+        let staged = match self.stage_managed_replacement(value) {
+            Ok(staged) => staged,
+            Err(error) => {
+                if let Some(domain) = self.memory_domain() {
+                    // Replacement failure is a cold safe point: any candidate
+                    // owner created by staging has already unwound.
+                    domain.collect_retired().map_err(MechError::from)?;
+                }
+                return Err(error);
+            }
+        };
+        if let Some(staged) = staged {
+            let StagedManagedCellUpdate {
+                domain,
+                realized,
+                candidate,
+            } = staged;
+            let publication = domain
+                .prepare_cell_publication(&realized, vec![candidate])
+                .and_then(|prepared| domain.ready_cell_publication(prepared));
+            let result = publication.map(|ready| ready.commit());
+            drop(realized);
+            // On success the newly published binding retains its realization;
+            // on failure the candidate has unwound. In either case dropping
+            // the staging owner above makes obsolete storage collectible
+            // without burdening ordinary fixed-width turns.
+            domain.collect_retired().map_err(MechError::from)?;
+            result.map_err(MechError::from)?;
+            return Ok(());
+        }
         if value.schema_key() != self.binding.schema_key {
             return Err(MechError::new(
                 ValueCellSchemaMismatch {
@@ -1019,12 +4076,15 @@ impl ValueCell {
         }
         let value = rebind_value(value.clone(), self.binding.schemas.as_ref())?;
         debug_assert_eq!(value.schema(), self.binding.schema);
-        let mut shape = self
+        let mut published = self
             .binding
-            .shape
+            .published
             .try_borrow_mut()
             .map_err(|_| borrow_conflict(CellAccess::Replace))?;
-        let current_shape = shape.clone();
+        if let Some(owner) = published.storage.owner() {
+            owner.ensure_open().map_err(MechError::from)?;
+        }
+        let current_shape = published.shape.clone();
         let schema = self
             .binding
             .schemas
@@ -1043,39 +4103,645 @@ impl ValueCell {
         value
             .validate_against(&self.binding.schemas)
             .map_err(snapshot_failure)?;
-        self.binding.storage.replace(&value)?;
-        *shape = value.shape().clone();
+        let next_version = published
+            .version
+            .checked_successor("published value version")
+            .map_err(|error| MechError::new(error, None).with_compiler_loc())?;
+        published.storage.adapter().replace(&value)?;
+        published.shape = value.shape().clone();
+        published.version = next_version;
         Ok(())
+    }
+
+    /// Materializes a replacement only in the unpublished region selected
+    /// by this value's R5 transaction. Callers can collect several candidates
+    /// before obtaining a single publication gate.
+    pub(crate) fn stage_managed_replacement(
+        &self,
+        value: &Value,
+    ) -> MResult<Option<StagedManagedCellUpdate>> {
+        let storage = self.binding.storage()?;
+        if value.schema_key() != self.schema_key() {
+            return Err(MechError::new(
+                ValueCellSchemaMismatch {
+                    expected: self.schema_key(),
+                    actual: value.schema_key(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        let value = if value.schema() == self.schema() {
+            value
+                .validate_against(self.binding.schemas.as_ref())
+                .map_err(snapshot_failure)?;
+            value.clone()
+        } else {
+            rebind_value(value.clone(), self.binding.schemas.as_ref())?
+        };
+        let current = self.binding.try_shape(CellAccess::Replace)?;
+        let schema = self
+            .binding
+            .schemas
+            .get(self.schema())
+            .expect("cell schema remains present");
+        if !shape_change_allowed(schema, &current, value.shape()) {
+            return Err(MechError::new(
+                ValueCellShapeMismatch {
+                    expected: current.parameter_values().to_vec().into_boxed_slice(),
+                    actual: value.shape().parameter_values().to_vec().into_boxed_slice(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        drop(current);
+        value
+            .validate_against(&self.binding.schemas)
+            .map_err(snapshot_failure)?;
+        if let Some(managed) = storage
+            .as_any()
+            .downcast_ref::<ManagedCanonicalCellStorage>()
+        {
+            let (realized, object, _, region, value) =
+                realize_managed_canonical_value(&managed.owner, value, &self.binding.schemas)?;
+            let binding = realized.binding(object)?;
+            return Ok(Some(StagedManagedCellUpdate {
+                domain: managed.owner.clone(),
+                realized,
+                candidate: crate::CellPublicationCandidate {
+                    cell: self.clone(),
+                    object,
+                    binding,
+                    region,
+                    evidence: crate::CellPublicationEvidence::frozen(value),
+                    changed: true,
+                },
+            }));
+        }
+        let Some(managed) = storage.as_any().downcast_ref::<ManagedHostCellStorage>() else {
+            return Ok(None);
+        };
+        let target = managed
+            .realized
+            .transactions()
+            .iter()
+            .find_map(|transaction| {
+                let (current, staged) = match transaction {
+                    crate::TransactionRequirement::StageAndSwap { current, staged } => {
+                        (*current, *staged)
+                    }
+                    crate::TransactionRequirement::DoubleBuffer { current, next } => {
+                        (*current, *next)
+                    }
+                    _ => return None,
+                };
+                if managed.object.object() == current {
+                    Some(staged)
+                } else if managed.object.object() == staged {
+                    Some(current)
+                } else {
+                    None
+                }
+            })
+            .ok_or_else(|| {
+                managed_host_shape_error(
+                    managed.object,
+                    "cell update has no admitted transaction stage",
+                )
+            })?;
+        let object = managed
+            .owner
+            .plan_object_key(managed.realized.revision(), target)?;
+        let region = match managed.region {
+            crate::MemoryAccessRegion::Rectangle {
+                offset_bytes,
+                row_stride_bytes,
+                column_stride_bytes,
+                element_bytes,
+                ..
+            } => {
+                let descriptor = crate::ResolvedValueDescriptor::from_schema(
+                    schema.clone(),
+                    value.shape().clone(),
+                )
+                .map_err(MechError::from)?;
+                let extents = descriptor.current_extents().map_err(MechError::from)?;
+                let [rows, columns] = extents.as_ref() else {
+                    return Err(managed_host_shape_error(
+                        object,
+                        "matrix replacement must have rank two",
+                    ));
+                };
+                let capacity = managed.realized.binding(object)?.capacity_bytes();
+                if (*rows != 0 && *columns != 0)
+                    && (row_stride_bytes == 0
+                        || column_stride_bytes == 0
+                        || *rows > column_stride_bytes / row_stride_bytes
+                        || *columns > capacity / column_stride_bytes)
+                {
+                    if managed.realized.owned_value_plan().is_some()
+                        || managed.realized.has_call_plan()
+                    {
+                        return self
+                            .stage_owned_relocation(managed, descriptor, value)
+                            .map(Some);
+                    }
+                    return Err(MechError::from(
+                        crate::MemoryRuntimeError::CapacityExceeded {
+                            object: object.object(),
+                            requested: rows
+                                .checked_mul(*columns)
+                                .and_then(|elements| elements.checked_mul(element_bytes))
+                                .unwrap_or(u64::MAX),
+                            capacity,
+                        },
+                    ));
+                }
+                crate::MemoryAccessRegion::Rectangle {
+                    offset_bytes,
+                    rows: *rows,
+                    columns: *columns,
+                    row_stride_bytes,
+                    column_stride_bytes,
+                    element_bytes,
+                }
+            }
+            region => region,
+        };
+        let candidate_shape = value.shape().clone();
+        {
+            let _scope = managed
+                .owner
+                .enter_plan_point(crate::MemoryPlanPoint::new(0))?;
+            let prepared = managed.owner.prepare_cell_access(
+                &managed.realized,
+                self,
+                crate::CallAccessRequest {
+                    object,
+                    mode: crate::MemoryAccessMode::Write,
+                    region,
+                },
+                true,
+            )?;
+            let mut frame = managed.owner.acquire_call(&managed.realized, &prepared)?;
+            initialize_managed_object_from_value(
+                &mut frame,
+                object,
+                managed.representation,
+                &value,
+            )?;
+        }
+        Ok(Some(StagedManagedCellUpdate {
+            domain: managed.owner.clone(),
+            realized: managed.realized.clone(),
+            candidate: crate::CellPublicationCandidate {
+                cell: self.clone(),
+                object,
+                binding: managed.realized.binding(object)?,
+                region,
+                evidence: crate::CellPublicationEvidence::initialized_region(candidate_shape),
+                changed: true,
+            },
+        }))
+    }
+
+    fn stage_owned_relocation(
+        &self,
+        managed: &ManagedHostCellStorage,
+        descriptor: crate::ResolvedValueDescriptor,
+        value: Value,
+    ) -> MResult<StagedManagedCellUpdate> {
+        #[cfg(feature = "functions")]
+        let call_relocation = if let Some(call) = managed.realized.call_plan() {
+            // A published call output can subsequently be changed through the
+            // ordinary ValueCell API before the same FunctionInstance runs
+            // again. Detach that logical value into a newly admitted
+            // single-value realization; the bound instance will observe the
+            // changed shape and replan its call on the next acquisition.
+            let published = managed.object.object();
+            let current = call
+                .transactions
+                .iter()
+                .find_map(|transaction| match transaction {
+                    crate::TransactionRequirement::StageAndSwap { current, staged }
+                    | crate::TransactionRequirement::DoubleBuffer {
+                        current,
+                        next: staged,
+                    } if *staged == published => Some(*current),
+                    _ => None,
+                })
+                .unwrap_or(published);
+            let output = call
+                .outputs
+                .iter()
+                .position(|output| output.object == current)
+                .ok_or_else(|| {
+                    managed_host_shape_error(
+                        managed.object,
+                        "published call output has no retained R5 storage authority",
+                    )
+                })?;
+            Some((call.output_storage[output].clone(), call.target.clone()))
+        } else {
+            None
+        };
+        #[cfg(not(feature = "functions"))]
+        let call_relocation: Option<(
+            crate::PhysicalStorageDescriptor,
+            crate::TargetMemoryProfile,
+        )> = None;
+
+        let (storage, target) = if let Some(previous) = managed.realized.owned_value_plan() {
+            (previous.storage.clone(), previous.target.clone())
+        } else if let Some(authority) = call_relocation {
+            authority
+        } else {
+            return Err(managed_host_shape_error(
+                managed.object,
+                "whole-cell growth requires retained R5 storage authority",
+            ));
+        };
+        let elements = descriptor
+            .current_extents()
+            .map_err(MechError::from)?
+            .iter()
+            .try_fold(1_u64, |total, extent| total.checked_mul(*extent))
+            .ok_or_else(|| {
+                MechError::new(
+                    crate::MemoryPlanError::ArithmeticOverflow {
+                        field: "owned replacement elements",
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+        let witness = crate::MemoryFootprintWitness::Known(crate::CurrentMemoryFootprint {
+            logical_elements: elements,
+            shape_parameter_count: descriptor.shape().parameter_values().len() as u64,
+            ..crate::CurrentMemoryFootprint::default()
+        });
+        let plan = crate::plan_owned_value_memory(crate::ValueLayoutPlanningRequest {
+            descriptor: &descriptor,
+            storage: &storage,
+            witness,
+            target: &target,
+        })
+        .map_err(|error| MechError::new(error, None).with_compiler_loc())?;
+        let object_id = plan.allocations[0].id;
+        let region = crate::memory_runtime::planned_value_access_region(&plan.value)?;
+        let realized = managed.owner.realize_owned_value_plan(plan)?;
+        let object = managed
+            .owner
+            .plan_object_key(realized.revision(), object_id)?;
+        let prepared = managed.owner.prepare_owned_initialization(
+            &realized,
+            crate::CallAccessRequest {
+                object,
+                mode: crate::MemoryAccessMode::Write,
+                region,
+            },
+        )?;
+        {
+            let mut frame = managed.owner.acquire_call(&realized, &prepared)?;
+            initialize_managed_object_from_value(
+                &mut frame,
+                object,
+                managed.representation,
+                &value,
+            )?;
+        }
+        let candidate_shape = value.shape().clone();
+        let binding = realized.binding(object)?;
+        Ok(StagedManagedCellUpdate {
+            domain: managed.owner.clone(),
+            realized,
+            candidate: crate::CellPublicationCandidate {
+                cell: self.clone(),
+                object,
+                binding,
+                region,
+                evidence: crate::CellPublicationEvidence::initialized_region(candidate_shape),
+                changed: true,
+            },
+        })
+    }
+
+    pub(crate) fn prepare_managed_binding(
+        &self,
+        owner: &MemoryDomain,
+        realized: &crate::RealizedMemoryPlan,
+        object: crate::PlanObjectKey,
+        region: crate::MemoryAccessRegion,
+        evidence: &crate::CellPublicationEvidence,
+        changed: bool,
+    ) -> MResult<PreparedManagedCellBinding> {
+        let cell_owner = self.binding.memory_domain().ok_or_else(|| {
+            MechError::from(crate::MemoryRuntimeError::CandidateValidationFailed {
+                object: None,
+                reason: "pinned external cells require an explicit fixed-copy publication adapter"
+                    .into(),
+            })
+        })?;
+        if cell_owner.id() != owner.id() {
+            return Err(MechError::from(
+                crate::MemoryRuntimeError::WrongMemoryDomain {
+                    expected: cell_owner.id(),
+                    actual: owner.id(),
+                },
+            ));
+        }
+        owner.ensure_open().map_err(MechError::from)?;
+        let published = self
+            .binding
+            .published
+            .try_borrow()
+            .map_err(|_| borrow_conflict(CellAccess::Replace))?;
+        let schema = self
+            .binding
+            .schemas
+            .get(self.binding.schema)
+            .expect("value-cell schema remains present");
+        let next_shape = evidence.shape().clone();
+        if !shape_change_allowed(schema, &published.shape, &next_shape) {
+            return Err(MechError::new(
+                ValueCellShapeMismatch {
+                    expected: published
+                        .shape
+                        .parameter_values()
+                        .to_vec()
+                        .into_boxed_slice(),
+                    actual: next_shape.parameter_values().to_vec().into_boxed_slice(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        let representation = self.representation();
+        realized.binding(object).map_err(MechError::from)?;
+        let payload = planned_payload_object_optional(owner, realized, object)?;
+        let next_storage = match evidence {
+            crate::CellPublicationEvidence::FrozenValue(value) => {
+                if value.schema_key() != self.binding.schema_key {
+                    return Err(MechError::new(
+                        ValueCellSchemaMismatch {
+                            expected: self.binding.schema_key,
+                            actual: value.schema_key(),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc());
+                }
+                let next = if value.schema() == self.binding.schema {
+                    value
+                        .validate_against(self.binding.schemas.as_ref())
+                        .map_err(snapshot_failure)?;
+                    value.clone()
+                } else {
+                    rebind_value(value.clone(), self.binding.schemas.as_ref())?
+                };
+                next.validate_against(&self.binding.schemas)
+                    .map_err(snapshot_failure)?;
+                let payload = payload.ok_or_else(|| {
+                    managed_host_shape_error(
+                        object,
+                        "a frozen publication candidate has no admitted payload envelope",
+                    )
+                })?;
+                CellStorageBinding::ManagedCanonical {
+                    owner: owner.clone(),
+                    storage: Rc::new(ManagedCanonicalCellStorage {
+                        owner: owner.clone(),
+                        realized: realized.clone(),
+                        object,
+                        payload,
+                        value: next,
+                        representation,
+                    }),
+                }
+            }
+            crate::CellPublicationEvidence::InitializedManagedRegion { shape } => {
+                if payload.is_some() {
+                    return Err(managed_host_shape_error(
+                        object,
+                        "a canonical payload candidate requires a finalized frozen value",
+                    ));
+                }
+                crate::ResolvedValueDescriptor::from_schema(schema.clone(), shape.clone())
+                    .map_err(MechError::from)?
+                    .current_extents()
+                    .map_err(MechError::from)?;
+                CellStorageBinding::ManagedHost {
+                    owner: owner.clone(),
+                    storage: Rc::new(ManagedHostCellStorage {
+                        owner: owner.clone(),
+                        realized: realized.clone(),
+                        object,
+                        region,
+                        representation: managed_host_representation(representation),
+                    }),
+                }
+            }
+        };
+        Ok(PreparedManagedCellBinding {
+            cell: self.clone(),
+            expected_version: published.version,
+            expected_storage: published.storage.adapter().clone(),
+            previous_shape: Some(published.shape.clone()),
+            next_shape: Some(next_shape),
+            next_storage: Some(next_storage),
+            changed,
+        })
+    }
+
+    pub(crate) fn lock_publication(
+        &self,
+        prepared: &mut PreparedManagedCellBinding,
+    ) -> MResult<()> {
+        if self.binding.publication_locked.get() {
+            return Err(MechError::from(
+                crate::MemoryRuntimeError::PublicationInProgress,
+            ));
+        }
+        let mut publication_shape = self
+            .binding
+            .publication_shape
+            .try_borrow_mut()
+            .map_err(|_| borrow_conflict(CellAccess::Replace))?;
+        let valid = match self.binding.published.try_borrow_mut() {
+            Ok(published) => {
+                let valid = published.version == prepared.expected_version
+                    && Rc::ptr_eq(published.storage.adapter(), &prepared.expected_storage);
+                if valid {
+                    *publication_shape = prepared.previous_shape.take();
+                }
+                valid
+            }
+            Err(_) => return Err(borrow_conflict(CellAccess::Replace)),
+        };
+        if !valid {
+            return Err(MechError::from(
+                crate::MemoryRuntimeError::CandidateValidationFailed {
+                    object: None,
+                    reason: "cell publication version changed after preparation".into(),
+                },
+            ));
+        }
+        self.binding.publication_locked.set(true);
+        Ok(())
+    }
+
+    pub(crate) fn unlock_publication(&self) {
+        self.binding.publication_locked.set(false);
+        if let Ok(mut shape) = self.binding.publication_shape.try_borrow_mut() {
+            *shape = None;
+        }
+    }
+
+    pub(crate) fn install_managed_binding(
+        &self,
+        prepared: &mut PreparedManagedCellBinding,
+        version: crate::PublishedValueVersion,
+    ) {
+        debug_assert!(self.same_logical_cell(&prepared.cell));
+        let mut published = self.binding.published.borrow_mut();
+        core::mem::swap(
+            &mut published.storage,
+            prepared
+                .next_storage
+                .as_mut()
+                .expect("ready publication owns one candidate storage"),
+        );
+        core::mem::swap(
+            &mut published.shape,
+            prepared
+                .next_shape
+                .as_mut()
+                .expect("ready publication owns one candidate shape"),
+        );
+        published.version = version;
     }
 
     /// Verifies that the cell can be mutably borrowed for a later atomic
     /// replacement without changing its identity.
     pub fn preflight_replace(&self) -> MResult<()> {
-        let _shape = self
+        let published = self
             .binding
-            .shape
+            .published
             .try_borrow_mut()
             .map_err(|_| borrow_conflict(CellAccess::Replace))?;
-        self.binding.storage.preflight_replace()
+        if let Some(owner) = published.storage.owner() {
+            owner.ensure_open().map_err(MechError::from)?;
+        }
+        published.storage.adapter().preflight_replace()
     }
 
+    pub fn memory_domain(&self) -> Option<MemoryDomain> {
+        self.binding.memory_domain()
+    }
+
+    pub(crate) fn managed_host_binding(&self) -> MResult<Option<ManagedHostCellBinding>> {
+        Ok(self.binding.storage()?.managed_host_binding())
+    }
+
+    #[cfg(feature = "functions")]
+    pub(crate) fn requires_planned_import(
+        &self,
+        realized: &crate::RealizedMemoryPlan,
+    ) -> MResult<bool> {
+        Ok(self.managed_host_binding()?.is_none_or(|live| {
+            live.realized.domain() != realized.domain()
+                || live.realized.revision() != realized.revision()
+        }))
+    }
+
+    pub fn same_logical_cell(&self, other: &Self) -> bool {
+        self.binding.identity == other.binding.identity
+    }
+
+    pub fn same_storage(&self, other: &Self) -> bool {
+        let Ok(storage) = self.binding.storage() else {
+            return false;
+        };
+        let Ok(other_storage) = other.binding.storage() else {
+            return false;
+        };
+        storage.same_storage(other_storage.as_ref())
+    }
+
+    /// Reports whether publishing through one cell can mutate storage observed
+    /// through the other cell.
+    ///
+    /// Independently published managed-canonical cells may share one immutable
+    /// snapshot root until either cell is replaced. That sharing is physical
+    /// deduplication, not a writable output alias. Clones of the same cell
+    /// record remain aliases because publication changes their shared binding.
+    #[cfg(feature = "functions")]
+    pub(crate) fn same_writable_storage(&self, other: &Self) -> bool {
+        if Rc::ptr_eq(&self.binding.record, &other.binding.record) {
+            return true;
+        }
+        let Ok(storage) = self.binding.storage() else {
+            return false;
+        };
+        let Ok(other_storage) = other.binding.storage() else {
+            return false;
+        };
+        if storage.as_any().is::<ManagedCanonicalCellStorage>()
+            && other_storage.as_any().is::<ManagedCanonicalCellStorage>()
+        {
+            return false;
+        }
+        storage.same_storage(other_storage.as_ref())
+    }
+
+    /// Compatibility spelling for physical storage identity.
+    ///
+    /// New code should choose `same_logical_cell` or `same_storage`
+    /// explicitly. This method retains its existing physical-storage meaning.
     pub fn same_cell(&self, other: &Self) -> bool {
-        self.binding
-            .storage
-            .same_storage(other.binding.storage.as_ref())
+        self.same_storage(other)
     }
 
     pub fn reactive_cell_id(&self) -> CanonicalCellId {
         self.binding.identity
     }
 
+    /// Monotonic semantic publication version shared by every clone of this
+    /// logical cell. Physical relocation alone does not advance it.
+    pub fn published_version(&self) -> crate::PublishedValueVersion {
+        self.binding.publication_version()
+    }
+
+    #[cfg(all(test, feature = "f64"))]
+    pub(crate) fn test_with_identity_and_payload(
+        identity_source: &Self,
+        storage_source: &Self,
+    ) -> MResult<Self> {
+        let mut binding = CellBinding::pinned_external(
+            identity_source.binding.identity,
+            storage_source.binding.schema,
+            storage_source.binding.schema_key,
+            storage_source.binding.shape().clone(),
+            storage_source.binding.schemas.clone(),
+            storage_source.binding.storage()?,
+        );
+        binding.compiler_children = storage_source.binding.compiler_children.clone();
+        Ok(Self { binding })
+    }
+
     #[cfg(feature = "functions")]
     pub(crate) fn same_exact_ref<T: 'static>(&self, reference: &Ref<T>) -> bool {
         self.binding
-            .storage
-            .as_any()
-            .downcast_ref::<ExactCellStorage<T>>()
-            .is_some_and(|storage| storage.reference.same_handle(reference))
+            .storage()
+            .ok()
+            .and_then(|storage| {
+                storage
+                    .as_any()
+                    .downcast_ref::<ExactCellStorage<T>>()
+                    .map(|storage| storage.reference.same_handle(reference))
+            })
+            .unwrap_or(false)
     }
 
     #[cfg(feature = "semantic-compiler")]
@@ -1093,6 +4759,20 @@ impl ValueCell {
             &right,
             other.binding.schemas.as_ref(),
         )
+        .map_err(snapshot_failure)
+    }
+
+    /// Compares two canonical key values using the schema-directed ordering
+    /// rules used by sets and maps.
+    pub fn key_eq(&self, other: &Self) -> MResult<bool> {
+        let left = self.snapshot()?;
+        let right = other.snapshot()?;
+        left.key_cmp(
+            self.binding.schemas.as_ref(),
+            &right,
+            other.binding.schemas.as_ref(),
+        )
+        .map(|ordering| ordering == core::cmp::Ordering::Equal)
         .map_err(snapshot_failure)
     }
 
@@ -1217,24 +4897,92 @@ impl ValueCell {
 
     #[cfg(feature = "functions")]
     pub(crate) fn rebuild_set(&self, elements: Box<[ValueData]>) -> MResult<Value> {
-        let template = self.snapshot()?;
-        template
-            .rebuild_set(
-                elements,
-                &SnapshotValidationContext::new(self.binding.schemas.as_ref()),
-            )
-            .map_err(snapshot_failure)
+        let schema = self
+            .binding
+            .schemas
+            .get(self.binding.schema)
+            .expect("value-cell schema remains present");
+        let SchemaBody::Set { element, .. } = schema.body() else {
+            return Err(backing_mismatch::<Value>(self.representation()));
+        };
+        let drafts = elements
+            .iter()
+            .map(|value| crate::snapshot::canonical_snapshot_data_draft(element, value))
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(snapshot_failure)?
+            .into_boxed_slice();
+        self.rebuild_set_drafts(drafts)
+    }
+
+    #[cfg(feature = "functions")]
+    pub(crate) fn rebuild_set_with_construction(
+        &self,
+        elements: Box<[ValueData]>,
+        construction: &dyn crate::snapshot::validation::SnapshotConstructionAuthority,
+    ) -> MResult<Value> {
+        let schema = self
+            .binding
+            .schemas
+            .get(self.binding.schema)
+            .expect("value-cell schema remains present");
+        let SchemaBody::Set { element, .. } = schema.body() else {
+            return Err(backing_mismatch::<Value>(self.representation()));
+        };
+        let drafts = elements
+            .iter()
+            .map(|value| crate::snapshot::canonical_snapshot_data_draft(element, value))
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(snapshot_failure)?
+            .into_boxed_slice();
+        self.rebuild_set_drafts_with_construction(drafts, construction)
     }
 
     #[cfg(feature = "functions")]
     pub(crate) fn rebuild_set_drafts(&self, elements: Box<[ValueDataDraft]>) -> MResult<Value> {
-        let template = self.snapshot()?;
-        template
-            .rebuild_set_drafts(
-                elements,
-                &SnapshotValidationContext::new(self.binding.schemas.as_ref()),
-            )
-            .map_err(snapshot_failure)
+        let data = ValueDataDraft::Set(elements);
+        let schema = self
+            .binding
+            .schemas
+            .get(self.binding.schema)
+            .expect("value-cell schema remains present");
+        let current_shape = self.binding.try_shape(CellAccess::Snapshot)?.clone();
+        let shape = output_shape_for_data(schema, &data, &[], Some(&current_shape))?;
+        ValueDraft {
+            schema: self.binding.schema,
+            shape_values: shape.parameter_values().to_vec().into_boxed_slice(),
+            data,
+        }
+        .finalize(&SnapshotValidationContext::new(
+            self.binding.schemas.as_ref(),
+        ))
+        .map_err(snapshot_failure)
+    }
+
+    #[cfg(feature = "functions")]
+    pub(crate) fn rebuild_set_drafts_with_construction(
+        &self,
+        elements: Box<[ValueDataDraft]>,
+        construction: &dyn crate::snapshot::validation::SnapshotConstructionAuthority,
+    ) -> MResult<Value> {
+        let data = ValueDataDraft::Set(elements);
+        let schema = self
+            .binding
+            .schemas
+            .get(self.binding.schema)
+            .expect("value-cell schema remains present");
+        let current_shape = self.binding.try_shape(CellAccess::Snapshot)?.clone();
+        let shape = output_shape_for_data(schema, &data, &[], Some(&current_shape))?;
+        let shape_values = admitted_copy_slice(shape.parameter_values(), construction)?;
+        ValueDraft {
+            schema: self.binding.schema,
+            shape_values,
+            data,
+        }
+        .finalize(
+            &SnapshotValidationContext::new(self.binding.schemas.as_ref())
+                .with_construction_authority(construction),
+        )
+        .map_err(snapshot_failure)
     }
 
     /// Rebuilds this matrix's canonical value for new resolved dimensions.
@@ -1262,11 +5010,7 @@ impl ValueCell {
                     expected: declared_dimensions
                         .iter()
                         .filter_map(|dimension| {
-                            self.binding
-                                .shape
-                                .borrow()
-                                .resolve_dimension(dimension)
-                                .ok()
+                            self.binding.shape().resolve_dimension(dimension).ok()
                         })
                         .collect::<Vec<_>>()
                         .into_boxed_slice(),
@@ -1277,60 +5021,63 @@ impl ValueCell {
             .with_compiler_loc());
         }
 
-        let mut shape_values = self.binding.shape.borrow().parameter_values().to_vec();
-        for (declared, actual) in declared_dimensions.iter().zip(dimensions.iter().copied()) {
-            match declared {
-                DimensionExpr::Constant(expected) if *expected == actual => {}
-                DimensionExpr::Parameter(parameter) => {
-                    let Some(value) = shape_values.get_mut(parameter.get() as usize) else {
-                        return Err(MechError::new(
-                            ValueCellShapeMismatch {
-                                expected: self
-                                    .binding
-                                    .shape
-                                    .borrow()
-                                    .parameter_values()
-                                    .to_vec()
-                                    .into_boxed_slice(),
-                                actual: dimensions.clone(),
-                            },
-                            None,
-                        )
-                        .with_compiler_loc());
-                    };
-                    *value = actual;
-                }
-                _ => {
-                    let expected = declared_dimensions
-                        .iter()
-                        .map(|dimension| {
-                            self.binding
-                                .shape
-                                .borrow()
-                                .resolve_dimension(dimension)
-                                .unwrap_or(u64::MAX)
-                        })
-                        .collect::<Vec<_>>()
-                        .into_boxed_slice();
-                    return Err(MechError::new(
-                        ValueCellShapeMismatch {
-                            expected,
-                            actual: dimensions,
-                        },
-                        None,
-                    )
-                    .with_compiler_loc());
-                }
-            }
-        }
+        let shape = matrix_shape_for_extents(schema, &dimensions, None)?;
         ValueDraft {
             schema: self.binding.schema,
-            shape_values: shape_values.into_boxed_slice(),
+            shape_values: shape.parameter_values().to_vec().into_boxed_slice(),
             data: ValueDataDraft::Matrix(elements),
         }
         .finalize(&SnapshotValidationContext::new(
             self.binding.schemas.as_ref(),
         ))
+        .map_err(snapshot_failure)
+    }
+
+    pub(crate) fn rebuild_matrix_drafts_with_construction(
+        &self,
+        dimensions: Box<[u64]>,
+        elements: Box<[ValueDataDraft]>,
+        construction: &dyn crate::snapshot::validation::SnapshotConstructionAuthority,
+    ) -> MResult<Value> {
+        let schema = self
+            .binding
+            .schemas
+            .get(self.binding.schema)
+            .expect("value-cell schema remains present");
+        let SchemaBody::Matrix {
+            dimensions: declared_dimensions,
+            ..
+        } = schema.body()
+        else {
+            return Err(backing_mismatch::<Value>(self.representation()));
+        };
+        if declared_dimensions.len() != dimensions.len() {
+            return Err(MechError::new(
+                ValueCellShapeMismatch {
+                    expected: declared_dimensions
+                        .iter()
+                        .filter_map(|dimension| {
+                            self.binding.shape().resolve_dimension(dimension).ok()
+                        })
+                        .collect::<Vec<_>>()
+                        .into_boxed_slice(),
+                    actual: dimensions,
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        let shape = matrix_shape_for_extents(schema, &dimensions, None)?;
+        let shape_values = admitted_copy_slice(shape.parameter_values(), construction)?;
+        ValueDraft {
+            schema: self.binding.schema,
+            shape_values,
+            data: ValueDataDraft::Matrix(elements),
+        }
+        .finalize(
+            &SnapshotValidationContext::new(self.binding.schemas.as_ref())
+                .with_construction_authority(construction),
+        )
         .map_err(snapshot_failure)
     }
 
@@ -1340,17 +5087,30 @@ impl ValueCell {
     pub fn rebuild_data_draft(&self, data: ValueDataDraft) -> MResult<Value> {
         finalize_draft(
             self.binding.schema,
-            &self.binding.shape.borrow(),
+            &self.binding.shape(),
             self.binding.schemas.as_ref(),
             data,
         )
     }
 
+    pub(crate) fn rebuild_data_draft_with_construction(
+        &self,
+        data: ValueDataDraft,
+        construction: &dyn crate::snapshot::validation::SnapshotConstructionAuthority,
+    ) -> MResult<Value> {
+        finalize_draft_with_construction(
+            self.binding.schema,
+            &self.binding.shape(),
+            self.binding.schemas.as_ref(),
+            data,
+            construction,
+        )
+    }
+
     #[cfg(feature = "functions")]
     pub(crate) fn try_ref<T: 'static>(&self) -> MResult<Ref<T>> {
-        let exact = self
-            .binding
-            .storage
+        let storage = self.binding.storage()?;
+        let exact = storage
             .as_any()
             .downcast_ref::<ExactCellStorage<T>>()
             .map(|storage| storage.reference.clone());
@@ -1364,6 +5124,176 @@ impl ValueCell {
             )
             .with_compiler_loc()
         })
+    }
+}
+
+fn initial_data_for_descriptor(
+    descriptor: &crate::ResolvedValueDescriptor,
+) -> MResult<ValueDataDraft> {
+    initial_data_for_schema(descriptor.schema().body(), descriptor.shape())
+}
+
+fn initial_data_for_schema(schema: &SchemaBody, shape: &ShapeInstance) -> MResult<ValueDataDraft> {
+    use crate::snapshot::{Complex32Bits, Complex64Bits, F32Bits, F64Bits};
+    Ok(match schema {
+        SchemaBody::Dynamic => ValueDataDraft::Dynamic(None),
+        SchemaBody::Bool => ValueDataDraft::Bool(false),
+        SchemaBody::UnsignedInteger(crate::IntegerWidth::W8) => ValueDataDraft::U8(0),
+        SchemaBody::UnsignedInteger(crate::IntegerWidth::W16) => ValueDataDraft::U16(0),
+        SchemaBody::UnsignedInteger(crate::IntegerWidth::W32) => ValueDataDraft::U32(0),
+        SchemaBody::UnsignedInteger(crate::IntegerWidth::W64) => ValueDataDraft::U64(0),
+        SchemaBody::UnsignedInteger(crate::IntegerWidth::W128) => ValueDataDraft::U128(0),
+        SchemaBody::SignedInteger(crate::IntegerWidth::W8) => ValueDataDraft::I8(0),
+        SchemaBody::SignedInteger(crate::IntegerWidth::W16) => ValueDataDraft::I16(0),
+        SchemaBody::SignedInteger(crate::IntegerWidth::W32) => ValueDataDraft::I32(0),
+        SchemaBody::SignedInteger(crate::IntegerWidth::W64) => ValueDataDraft::I64(0),
+        SchemaBody::SignedInteger(crate::IntegerWidth::W128) => ValueDataDraft::I128(0),
+        SchemaBody::FloatingPoint(crate::FloatWidth::W32) => {
+            ValueDataDraft::F32(F32Bits::from_f32(0.0))
+        }
+        SchemaBody::FloatingPoint(crate::FloatWidth::W64) => {
+            ValueDataDraft::F64(F64Bits::from_f64(0.0))
+        }
+        SchemaBody::Complex(crate::FloatWidth::W32) => ValueDataDraft::Complex32(
+            Complex32Bits::new(F32Bits::from_f32(0.0), F32Bits::from_f32(0.0)),
+        ),
+        SchemaBody::Complex(crate::FloatWidth::W64) => ValueDataDraft::Complex64(
+            Complex64Bits::new(F64Bits::from_f64(0.0), F64Bits::from_f64(0.0)),
+        ),
+        SchemaBody::Rational64 => ValueDataDraft::Rational64 {
+            numerator: 0,
+            denominator: 1,
+        },
+        SchemaBody::String => ValueDataDraft::String(String::new()),
+        SchemaBody::Id => ValueDataDraft::Id(0),
+        SchemaBody::Index => ValueDataDraft::Index(1),
+        SchemaBody::Atom(_) => ValueDataDraft::Atom,
+        SchemaBody::Enum { variants, .. } => {
+            let variant = variants.first().ok_or_else(|| {
+                MechError::new(
+                    ValueCellOutputConstructionUnsupported {
+                        representation: FunctionValueRepresentation::Enum,
+                        reason: "an enum output has no variant".into(),
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+            ValueDataDraft::Enum(crate::snapshot::EnumDraft {
+                ordinal: 0,
+                payload: variant
+                    .payload
+                    .as_ref()
+                    .map(|payload| initial_data_for_schema(payload, shape).map(Box::new))
+                    .transpose()?,
+            })
+        }
+        SchemaBody::Option(_) => ValueDataDraft::Option(crate::snapshot::OptionDraft {
+            present: false,
+            value: None,
+        }),
+        SchemaBody::Tuple(elements) => ValueDataDraft::Tuple(
+            elements
+                .iter()
+                .map(|element| initial_data_for_schema(element, shape))
+                .collect::<MResult<Vec<_>>>()?
+                .into_boxed_slice(),
+        ),
+        SchemaBody::Record(fields) => ValueDataDraft::Record(
+            fields
+                .iter()
+                .map(|field| {
+                    Ok(crate::snapshot::NamedValueDraft {
+                        name: field.name.clone(),
+                        value: initial_data_for_schema(&field.schema, shape)?,
+                    })
+                })
+                .collect::<MResult<Vec<_>>>()?
+                .into_boxed_slice(),
+        ),
+        SchemaBody::Matrix {
+            element,
+            dimensions,
+        } => {
+            let element_count = dimensions.iter().try_fold(1_u64, |count, dimension| {
+                count
+                    .checked_mul(
+                        shape
+                            .resolve_dimension(dimension)
+                            .map_err(MechError::from)?,
+                    )
+                    .ok_or_else(|| MechError::from(crate::SemanticModelError::DimensionOverflowV1))
+            })?;
+            let element_count = usize::try_from(element_count)
+                .map_err(|_| MechError::from(crate::SemanticModelError::DimensionOverflowV1))?;
+            let initial = initial_data_for_schema(element, shape)?;
+            ValueDataDraft::Matrix(vec![initial; element_count].into_boxed_slice())
+        }
+        SchemaBody::Table { columns, rows } => {
+            let row_count = exact_or_empty_extent(rows, shape)?;
+            ValueDataDraft::Table(
+                columns
+                    .iter()
+                    .map(|column| {
+                        Ok(crate::snapshot::TableColumnDraft {
+                            name: column.name.clone(),
+                            values: vec![
+                                initial_data_for_schema(&column.schema, shape)?;
+                                row_count
+                            ]
+                            .into_boxed_slice(),
+                        })
+                    })
+                    .collect::<MResult<Vec<_>>>()?
+                    .into_boxed_slice(),
+            )
+        }
+        SchemaBody::Set { cardinality, .. } => {
+            require_empty_collection_extent(cardinality, shape, "set")?;
+            ValueDataDraft::Set(Box::new([]))
+        }
+        SchemaBody::Map { cardinality, .. } => {
+            require_empty_collection_extent(cardinality, shape, "map")?;
+            ValueDataDraft::Map(Box::new([]))
+        }
+        SchemaBody::ReifiedType => ValueDataDraft::Type(crate::snapshot::ReifiedTypeDraft::Kind {
+            kind: crate::KindExpr::Hole,
+            dimension_parameters: Box::new([]),
+        }),
+    })
+}
+
+fn exact_or_empty_extent(extent: &CardinalitySpec, shape: &ShapeInstance) -> MResult<usize> {
+    match extent {
+        CardinalitySpec::Exact(expression) => usize::try_from(
+            shape
+                .resolve_dimension(expression)
+                .map_err(MechError::from)?,
+        )
+        .map_err(|_| MechError::from(crate::SemanticModelError::DimensionOverflowV1)),
+        CardinalitySpec::Dynamic { .. } => Ok(0),
+    }
+}
+
+fn require_empty_collection_extent(
+    extent: &CardinalitySpec,
+    shape: &ShapeInstance,
+    family: &'static str,
+) -> MResult<()> {
+    let count = exact_or_empty_extent(extent, shape)?;
+    if count == 0 {
+        Ok(())
+    } else {
+        Err(MechError::new(
+            ValueCellOutputConstructionUnsupported {
+                representation: FunctionValueRepresentation::AnyValue,
+                reason: format!(
+                    "an exact {family} output with {count} entries requires operation-provided data"
+                ),
+            },
+            None,
+        )
+        .with_compiler_loc())
     }
 }
 
@@ -1427,6 +5357,373 @@ fn merged_schema<'a>(
     Ok((schema, shape, Rc::new(build.table)))
 }
 
+#[cfg(feature = "functions")]
+fn output_shape_for_data(
+    schema: &crate::Schema,
+    data: &ValueDataDraft,
+    current_extents: &[u64],
+    seed: Option<&ShapeInstance>,
+) -> MResult<ShapeInstance> {
+    if matches!(schema.body(), SchemaBody::Matrix { .. }) {
+        return matrix_shape_for_extents(schema, current_extents, seed);
+    }
+    let mut values = if let Some(seed) = seed {
+        schema
+            .instantiate_shape(seed.parameter_values().to_vec().into_boxed_slice())
+            .map_err(MechError::from)?
+            .parameter_values()
+            .to_vec()
+    } else {
+        let mut values = vec![0; schema.dimension_parameters().len()];
+        for (index, parameter) in schema.dimension_parameters().iter().enumerate() {
+            values[index] = crate::evaluate_dimension(parameter.lower_bound(), &values[..index])
+                .map_err(MechError::from)?;
+        }
+        values
+    };
+    assign_data_extent_witness(schema.body(), data, &mut values)?;
+    schema
+        .instantiate_shape(values.into_boxed_slice())
+        .map_err(MechError::from)
+}
+
+#[cfg(feature = "functions")]
+fn assign_data_extent_witness(
+    schema: &SchemaBody,
+    data: &ValueDataDraft,
+    values: &mut [u64],
+) -> MResult<()> {
+    match (schema, data) {
+        (
+            SchemaBody::Set {
+                element,
+                cardinality,
+            },
+            ValueDataDraft::Set(elements),
+        ) => {
+            assign_extent_witness(cardinality, elements.len() as u64, values)?;
+            for element_data in elements {
+                assign_data_extent_witness(element, element_data, values)?;
+            }
+        }
+        (
+            SchemaBody::Map {
+                key,
+                value,
+                cardinality,
+            },
+            ValueDataDraft::Map(entries),
+        ) => {
+            assign_extent_witness(cardinality, entries.len() as u64, values)?;
+            for entry in entries {
+                if let [key_data, value_data] = entry.items.as_ref() {
+                    assign_data_extent_witness(key, key_data, values)?;
+                    assign_data_extent_witness(value, value_data, values)?;
+                }
+            }
+        }
+        (
+            SchemaBody::Table {
+                columns,
+                rows: row_extent,
+            },
+            ValueDataDraft::Table(column_data),
+        ) => {
+            let row_count = column_data
+                .first()
+                .map(|column| column.values.len() as u64)
+                .unwrap_or(0);
+            assign_extent_witness(row_extent, row_count, values)?;
+            for (column, data) in columns.iter().zip(column_data) {
+                for value in &data.values {
+                    assign_data_extent_witness(&column.schema, value, values)?;
+                }
+            }
+        }
+        (SchemaBody::Option(element), ValueDataDraft::Option(option)) => {
+            if let Some(data) = option.value.as_deref() {
+                assign_data_extent_witness(element, data, values)?;
+            }
+        }
+        (SchemaBody::Tuple(elements), ValueDataDraft::Tuple(data)) => {
+            for (element, data) in elements.iter().zip(data) {
+                assign_data_extent_witness(element, data, values)?;
+            }
+        }
+        (SchemaBody::Record(fields), ValueDataDraft::Record(data)) => {
+            for (field, data) in fields.iter().zip(data) {
+                assign_data_extent_witness(&field.schema, &data.value, values)?;
+            }
+        }
+        _ => {}
+    }
+    Ok(())
+}
+
+#[cfg(feature = "functions")]
+fn assign_extent_witness(
+    extent: &CardinalitySpec,
+    cardinality: u64,
+    values: &mut [u64],
+) -> MResult<()> {
+    match extent {
+        CardinalitySpec::Exact(expression) => {
+            assign_dimension_witness(expression, cardinality, values)
+        }
+        CardinalitySpec::Dynamic {
+            upper_bound: Some(upper),
+        } if crate::evaluate_dimension(upper, values).map_err(MechError::from)? < cardinality => {
+            assign_dimension_witness(upper, cardinality, values)
+        }
+        CardinalitySpec::Dynamic { .. } => Ok(()),
+    }
+}
+
+fn merged_resolved_matrix_schema(
+    draft: crate::SchemaDraft,
+    dimensions: Box<[u64]>,
+    cells: &[ValueCell],
+) -> MResult<(SchemaId, ShapeInstance, Rc<SchemaTable>)> {
+    let schema = draft
+        .finalize()
+        .map_err(|error| snapshot_failure(error.into()))?;
+    let shape = matrix_shape_for_extents(&schema, &dimensions, None)?;
+    let mut builder = crate::SchemaTableBuilder::new();
+    let handle = builder.insert(schema)?;
+    for cell in cells {
+        for entry in cell.binding.schemas.entries() {
+            builder.insert(entry.schema().clone())?;
+        }
+    }
+    let build = builder.finish()?;
+    let schema = build.resolve(handle)?;
+    Ok((schema, shape, Rc::new(build.table)))
+}
+
+fn matrix_shape_for_extents(
+    schema: &crate::Schema,
+    dimensions: &[u64],
+    seed: Option<&ShapeInstance>,
+) -> MResult<ShapeInstance> {
+    let SchemaBody::Matrix {
+        dimensions: declared,
+        ..
+    } = schema.body()
+    else {
+        unreachable!("matrix shape resolution requires a matrix schema")
+    };
+    if declared.len() != dimensions.len() {
+        return Err(MechError::new(
+            ValueCellShapeMismatch {
+                expected: declared
+                    .iter()
+                    .map(|_| u64::MAX)
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+                actual: dimensions.to_vec().into_boxed_slice(),
+            },
+            None,
+        )
+        .with_compiler_loc());
+    }
+
+    let mut values = seed
+        .filter(|shape| shape.parameter_values().len() == schema.dimension_parameters().len())
+        .map(|shape| shape.parameter_values().to_vec())
+        .unwrap_or_else(|| vec![0; schema.dimension_parameters().len()]);
+    for (index, parameter) in schema.dimension_parameters().iter().enumerate() {
+        let lower = crate::evaluate_dimension(parameter.lower_bound(), &values[..index])
+            .map_err(MechError::from)?;
+        if values[index] < lower {
+            values[index] = lower;
+        }
+    }
+    for (expression, target) in declared.iter().zip(dimensions.iter().copied()) {
+        assign_dimension_witness(expression, target, &mut values)?;
+    }
+    let shape = schema
+        .instantiate_shape(values.into_boxed_slice())
+        .map_err(MechError::from)?;
+    let matches = declared
+        .iter()
+        .zip(dimensions)
+        .all(|(expression, expected)| shape.resolve_dimension(expression) == Ok(*expected));
+    if matches {
+        Ok(shape)
+    } else {
+        Err(MechError::new(
+            ValueCellShapeMismatch {
+                expected: declared
+                    .iter()
+                    .map(|expression| shape.resolve_dimension(expression).unwrap_or(u64::MAX))
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+                actual: dimensions.to_vec().into_boxed_slice(),
+            },
+            None,
+        )
+        .with_compiler_loc())
+    }
+}
+
+fn assign_dimension_witness(
+    expression: &DimensionExpr,
+    target: u64,
+    values: &mut [u64],
+) -> MResult<()> {
+    match expression {
+        DimensionExpr::Constant(expected) if *expected == target => Ok(()),
+        DimensionExpr::Parameter(parameter) => {
+            let Some(value) = values.get_mut(parameter.get() as usize) else {
+                return Err(MechError::from(
+                    crate::SemanticModelError::UnknownDimensionParameterV1 { id: *parameter },
+                ));
+            };
+            *value = target;
+            Ok(())
+        }
+        DimensionExpr::Add(operands) => {
+            let Some((selected_index, selected)) = operands
+                .iter()
+                .enumerate()
+                .find(|(_, operand)| dimension_has_parameter(operand))
+            else {
+                let actual =
+                    crate::evaluate_dimension(expression, values).map_err(MechError::from)?;
+                return (actual == target).then_some(()).ok_or_else(|| {
+                    MechError::new(
+                        ValueCellShapeMismatch {
+                            expected: vec![actual].into_boxed_slice(),
+                            actual: vec![target].into_boxed_slice(),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                });
+            };
+            if operands.is_empty() {
+                return (target == 0).then_some(()).ok_or_else(|| {
+                    MechError::from(crate::SemanticModelError::DimensionOverflowV1)
+                });
+            }
+            let rest = operands
+                .iter()
+                .enumerate()
+                .filter(|(index, _)| *index != selected_index)
+                .try_fold(0_u64, |sum, (_, operand)| {
+                    crate::evaluate_dimension(operand, values)
+                        .map_err(MechError::from)
+                        .and_then(|value| {
+                            sum.checked_add(value).ok_or_else(|| {
+                                MechError::from(crate::SemanticModelError::DimensionOverflowV1)
+                            })
+                        })
+                })?;
+            let selected_target = target
+                .checked_sub(rest)
+                .ok_or_else(|| MechError::from(crate::SemanticModelError::DimensionOverflowV1))?;
+            assign_dimension_witness(selected, selected_target, values)
+        }
+        DimensionExpr::Multiply(operands) => {
+            if target == 0 {
+                let actual =
+                    crate::evaluate_dimension(expression, values).map_err(MechError::from)?;
+                if actual == 0 {
+                    return Ok(());
+                }
+            }
+            let adjustable = operands
+                .iter()
+                .enumerate()
+                .filter(|(_, operand)| dimension_has_parameter(operand))
+                .map(|(index, _)| index)
+                .collect::<Vec<_>>();
+            let Some(selected_index) = adjustable.first().copied() else {
+                return dimension_witness_mismatch(expression, target, values);
+            };
+            for index in adjustable.into_iter().skip(1) {
+                if crate::evaluate_dimension(&operands[index], values).map_err(MechError::from)?
+                    == 0
+                {
+                    assign_dimension_witness(&operands[index], 1, values)?;
+                }
+            }
+            let rest = operands
+                .iter()
+                .enumerate()
+                .filter(|(index, _)| *index != selected_index)
+                .try_fold(1_u64, |product, (_, operand)| {
+                    crate::evaluate_dimension(operand, values)
+                        .map_err(MechError::from)
+                        .and_then(|value| {
+                            product.checked_mul(value).ok_or_else(|| {
+                                MechError::from(crate::SemanticModelError::DimensionOverflowV1)
+                            })
+                        })
+                })?;
+            if rest == 0 || target % rest != 0 {
+                return dimension_witness_mismatch(expression, target, values);
+            }
+            assign_dimension_witness(&operands[selected_index], target / rest, values)
+        }
+        DimensionExpr::Min(operands) => {
+            for operand in operands {
+                let actual = crate::evaluate_dimension(operand, values).map_err(MechError::from)?;
+                if actual < target {
+                    assign_dimension_witness(operand, target, values)?;
+                }
+            }
+            dimension_witness_mismatch(expression, target, values)
+        }
+        DimensionExpr::Max(operands) => {
+            if operands.iter().any(|operand| {
+                crate::evaluate_dimension(operand, values).is_ok_and(|actual| actual > target)
+            }) {
+                return dimension_witness_mismatch(expression, target, values);
+            }
+            let Some(selected) = operands
+                .iter()
+                .find(|operand| dimension_has_parameter(operand))
+            else {
+                return dimension_witness_mismatch(expression, target, values);
+            };
+            assign_dimension_witness(selected, target, values)
+        }
+        _ => dimension_witness_mismatch(expression, target, values),
+    }
+}
+
+fn dimension_witness_mismatch(
+    expression: &DimensionExpr,
+    target: u64,
+    values: &[u64],
+) -> MResult<()> {
+    let actual = crate::evaluate_dimension(expression, values).map_err(MechError::from)?;
+    if actual == target {
+        Ok(())
+    } else {
+        Err(MechError::new(
+            ValueCellShapeMismatch {
+                expected: vec![actual].into_boxed_slice(),
+                actual: vec![target].into_boxed_slice(),
+            },
+            None,
+        )
+        .with_compiler_loc())
+    }
+}
+
+fn dimension_has_parameter(expression: &DimensionExpr) -> bool {
+    match expression {
+        DimensionExpr::Parameter(_) => true,
+        DimensionExpr::Add(operands)
+        | DimensionExpr::Multiply(operands)
+        | DimensionExpr::Min(operands)
+        | DimensionExpr::Max(operands) => operands.iter().any(dimension_has_parameter),
+        DimensionExpr::Hole | DimensionExpr::Constant(_) => false,
+    }
+}
+
 fn table_cell_columns_draft(
     columns: &[(crate::SchemaField, Box<[ValueCell]>)],
     schemas: &SchemaTable,
@@ -1483,9 +5780,18 @@ fn canonical_cell_draft_for_schema(
     expected: &SchemaBody,
     schemas: &SchemaTable,
 ) -> MResult<ValueDataDraft> {
+    let snapshot = cell.snapshot()?;
+    canonical_value_draft_for_schema(cell, &snapshot, expected, schemas)
+}
+
+fn canonical_value_draft_for_schema(
+    cell: &ValueCell,
+    snapshot: &Value,
+    expected: &SchemaBody,
+    schemas: &SchemaTable,
+) -> MResult<ValueDataDraft> {
     let actual = cell.closed_schema_body()?;
     if matches!(expected, SchemaBody::Dynamic) {
-        let snapshot = cell.snapshot()?;
         let concrete = match snapshot.data() {
             ValueData::Dynamic(value) => {
                 let Some(value) = value.value() else {
@@ -1529,7 +5835,6 @@ fn canonical_cell_draft_for_schema(
         )
         .with_compiler_loc());
     }
-    let snapshot = cell.snapshot()?;
     let schema = schemas.find_by_key(snapshot.schema_key()).ok_or_else(|| {
         MechError::new(
             ValueCellOutputConstructionUnsupported {
@@ -1560,7 +5865,8 @@ fn child_cells(schemas: Vec<SchemaBody>, values: Vec<ValueDataDraft>) -> MResult
 }
 
 #[cfg(feature = "matrix")]
-fn default_matrix_cell<T>(
+fn default_matrix_cell_in<T>(
+    owner: &MemoryDomain,
     storage: FunctionMatrixStoragePattern,
     dimensions: (usize, usize),
     default: T,
@@ -1591,7 +5897,11 @@ where
                 )
                 .with_compiler_loc());
             }
-            return ValueCell::from_exact_matrix_ref(Ref::new($matrix), rows, columns);
+            return ValueCell::from_inferred_ref_in(
+                owner,
+                Ref::new($matrix),
+                Some((rows, columns)),
+            );
         }};
     }
     match storage {
@@ -1658,10 +5968,10 @@ where
                 )
                 .with_compiler_loc());
             }
-            ValueCell::from_exact_matrix_ref(
+            ValueCell::from_inferred_ref_in(
+                owner,
                 Ref::new(crate::RowDVector::from_element(columns, default)),
-                rows,
-                columns,
+                Some((rows, columns)),
             )
         }
         #[cfg(feature = "vectord")]
@@ -1681,18 +5991,18 @@ where
                 )
                 .with_compiler_loc());
             }
-            ValueCell::from_exact_matrix_ref(
+            ValueCell::from_inferred_ref_in(
+                owner,
                 Ref::new(crate::DVector::from_element(rows, default)),
-                rows,
-                columns,
+                Some((rows, columns)),
             )
         }
         #[cfg(feature = "matrixd")]
         FunctionMatrixStoragePattern::Exact(FunctionMatrixRepresentation::MatrixD) => {
-            ValueCell::from_exact_matrix_ref(
+            ValueCell::from_inferred_ref_in(
+                owner,
                 Ref::new(crate::DMatrix::from_element(rows, columns, default)),
-                rows,
-                columns,
+                Some((rows, columns)),
             )
         }
         _ => Err(MechError::new(
@@ -1747,12 +6057,15 @@ fn shape_change_allowed(
 
 #[cfg(all(feature = "matrix", feature = "matrixd"))]
 fn dynamic_matrix_cell(
+    owner: &MemoryDomain,
     elements: SequenceView<'_>,
     schema: SchemaId,
     shape: &ShapeInstance,
     schemas: Rc<SchemaTable>,
     preserve_dynamic_rank: bool,
 ) -> MResult<Option<ValueCell>> {
+    // Dynamic vector specializations are optional; the rank-preservation
+    // decision remains part of this shared constructor in matrix-only builds.
     let _ = preserve_dynamic_rank;
     let Some(entry) = schemas.entry(schema) else {
         return Ok(None);
@@ -1763,6 +6076,10 @@ fn dynamic_matrix_cell(
     let [rows, columns] = dimensions.as_ref() else {
         return Ok(None);
     };
+    #[cfg(feature = "row_vectord")]
+    let row_axis_is_invariant_one = matches!(rows, DimensionExpr::Constant(1));
+    #[cfg(feature = "vectord")]
+    let column_axis_is_invariant_one = matches!(columns, DimensionExpr::Constant(1));
     let (Ok(rows), Ok(columns)) = (
         shape
             .resolve_dimension(rows)
@@ -1780,20 +6097,38 @@ fn dynamic_matrix_cell(
     macro_rules! matrix {
         ($values:expr) => {{
             #[cfg(feature = "row_vectord")]
-            if !preserve_dynamic_rank && rows == 1 {
+            if !preserve_dynamic_rank && row_axis_is_invariant_one {
                 let backing = crate::RowDVector::from_row_slice($values);
-                return ValueCell::from_ref(Ref::new(backing), schema, shape.clone(), schemas)
-                    .map(Some);
+                return ValueCell::from_owned_ref_in(
+                    owner,
+                    Ref::new(backing),
+                    schema,
+                    shape.clone(),
+                    schemas,
+                )
+                .map(Some);
             }
             #[cfg(feature = "vectord")]
-            if !preserve_dynamic_rank && columns == 1 {
+            if !preserve_dynamic_rank && column_axis_is_invariant_one {
                 let backing = crate::DVector::from_column_slice($values);
-                return ValueCell::from_ref(Ref::new(backing), schema, shape.clone(), schemas)
-                    .map(Some);
+                return ValueCell::from_owned_ref_in(
+                    owner,
+                    Ref::new(backing),
+                    schema,
+                    shape.clone(),
+                    schemas,
+                )
+                .map(Some);
             }
             let backing = crate::DMatrix::from_row_slice(rows, columns, $values);
-            return ValueCell::from_ref(Ref::new(backing), schema, shape.clone(), schemas)
-                .map(Some);
+            return ValueCell::from_owned_ref_in(
+                owner,
+                Ref::new(backing),
+                schema,
+                shape.clone(),
+                schemas,
+            )
+            .map(Some);
         }};
     }
     match elements {
@@ -1833,6 +6168,29 @@ fn dynamic_matrix_cell(
                 .collect::<Vec<_>>();
             matrix!(&values)
         }
+        #[cfg(feature = "complex")]
+        SequenceView::Complex64(values) => {
+            let values = values
+                .iter()
+                .map(|value| crate::C64::new(value.real().to_f64(), value.imaginary().to_f64()))
+                .collect::<Vec<_>>();
+            matrix!(&values)
+        }
+        #[cfg(feature = "rational")]
+        SequenceView::Rational64(values) => {
+            let Some(values) = values
+                .iter()
+                .map(|value| {
+                    i64::try_from(value.denominator())
+                        .ok()
+                        .map(|denominator| crate::R64::new(value.numerator(), denominator))
+                })
+                .collect::<Option<Vec<_>>>()
+            else {
+                return Ok(None);
+            };
+            matrix!(&values)
+        }
         #[cfg(feature = "bool")]
         SequenceView::Bool(values) => matrix!(values),
         #[cfg(feature = "string")]
@@ -1859,12 +6217,16 @@ fn dynamic_matrix_cell(
 
 impl fmt::Debug for ValueCell {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let storage = self.binding.storage();
         formatter
             .debug_struct("ValueCell")
             .field("schema_key", &self.binding.schema_key)
-            .field("shape", &self.binding.shape)
+            .field("shape", &self.binding.shape())
             .field("representation", &self.representation())
-            .field("borrow_state", &self.binding.storage.borrow_state())
+            .field(
+                "borrow_state",
+                &storage.as_ref().map(|storage| storage.borrow_state()),
+            )
             .finish()
     }
 }
@@ -1953,6 +6315,44 @@ pub struct ValueCellSnapshotFailure {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ValueCellStorageContractViolation {
+    pub schema: SchemaKey,
+    pub reason: crate::StorageCompatibilityError,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ExternalCellDescriptorMismatch {
+    pub expected: String,
+    pub actual: String,
+}
+
+impl MechErrorKind for ExternalCellDescriptorMismatch {
+    fn name(&self) -> &str {
+        "ExternalCellDescriptorMismatch"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "external cell descriptor expected {}, received {}",
+            self.expected, self.actual
+        )
+    }
+}
+
+impl MechErrorKind for ValueCellStorageContractViolation {
+    fn name(&self) -> &str {
+        "ValueCellStorageContractViolation"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "value-cell storage does not satisfy schema {:?}: {}",
+            self.schema, self.reason
+        )
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ValueSchemaContextUnavailable;
 
 impl MechErrorKind for ValueSchemaContextUnavailable {
@@ -1973,6 +6373,26 @@ impl MechErrorKind for ValueCellSnapshotFailure {
     fn message(&self) -> String {
         format!("canonical value cell snapshot failed: {:?}", self.error)
     }
+}
+
+fn validate_storage_compatibility(
+    schema: &Schema,
+    shape: &ShapeInstance,
+    capabilities: &crate::StorageCapabilityDescriptor,
+) -> MResult<()> {
+    crate::check_schema_storage_compatibility(schema, shape, capabilities).map_err(|error| {
+        match error {
+            crate::SchemaStorageCompatibilityError::Semantic(error) => error.into(),
+            crate::SchemaStorageCompatibilityError::Storage(reason) => MechError::new(
+                ValueCellStorageContractViolation {
+                    schema: schema.key(),
+                    reason,
+                },
+                None,
+            )
+            .with_compiler_loc(),
+        }
+    })
 }
 
 pub(crate) fn borrow_conflict(access: CellAccess) -> MechError {
@@ -1998,6 +6418,52 @@ pub(crate) fn finalize_draft(
     .map_err(snapshot_failure)
 }
 
+fn admitted_copy_slice<T: Copy>(
+    values: &[T],
+    construction: &dyn crate::snapshot::validation::SnapshotConstructionAuthority,
+) -> MResult<Box<[T]>> {
+    let bytes = core::mem::size_of::<T>()
+        .checked_mul(values.len())
+        .and_then(|bytes| u64::try_from(bytes).ok())
+        .ok_or_else(|| {
+            MechError::from(crate::MemoryRuntimeError::InvalidLayout {
+                object: construction.allocation_object(),
+                size: u64::MAX,
+                alignment: u32::try_from(core::mem::align_of::<T>()).unwrap_or(u32::MAX),
+                reason: "snapshot shape allocation overflows",
+            })
+        })?;
+    let alignment = u32::try_from(core::mem::align_of::<T>()).unwrap_or(u32::MAX);
+    construction.admit_snapshot_allocation(bytes, alignment)?;
+    let mut copied = Vec::new();
+    copied.try_reserve_exact(values.len()).map_err(|_| {
+        MechError::from(crate::MemoryRuntimeError::AllocationFailed {
+            object: construction.allocation_object(),
+            requested: bytes,
+            alignment,
+            space: crate::MemorySpace::Host,
+        })
+    })?;
+    copied.extend_from_slice(values);
+    Ok(copied.into_boxed_slice())
+}
+
+pub(crate) fn finalize_draft_with_construction(
+    schema: SchemaId,
+    shape: &ShapeInstance,
+    schemas: &SchemaTable,
+    data: ValueDataDraft,
+    construction: &dyn crate::snapshot::validation::SnapshotConstructionAuthority,
+) -> MResult<Value> {
+    ValueDraft {
+        schema,
+        shape_values: admitted_copy_slice(shape.parameter_values(), construction)?,
+        data,
+    }
+    .finalize(&SnapshotValidationContext::new(schemas).with_construction_authority(construction))
+    .map_err(snapshot_failure)
+}
+
 #[doc(hidden)]
 pub trait CanonicalMatrixElementBacking:
     canonical_matrix_element_sealed::Sealed
@@ -2015,7 +6481,64 @@ pub trait CanonicalMatrixElementBacking:
 }
 
 mod canonical_matrix_element_sealed {
-    pub trait Sealed: Sized {}
+    pub trait Sealed: Sized {
+        fn initialize_dense(
+            _frame: &mut crate::KernelMemoryFrame<'_>,
+            object: crate::PlanObjectKey,
+            _rows: usize,
+            _columns: usize,
+            _element: impl FnMut(usize, usize) -> Self,
+        ) -> crate::MResult<()> {
+            Err(super::managed_host_shape_error(
+                object,
+                "indirect matrix elements require their admitted builder",
+            ))
+        }
+    }
+}
+
+fn initialize_fixed_dense<T: crate::ManagedElement>(
+    frame: &mut crate::KernelMemoryFrame<'_>,
+    object: crate::PlanObjectKey,
+    rows: usize,
+    columns: usize,
+    mut element: impl FnMut(usize, usize) -> T,
+) -> MResult<()> {
+    frame.with_object_init_view::<T, _>(object, |output| {
+        if output.rows() != rows || output.columns() != columns {
+            return Err(managed_host_shape_error(
+                object,
+                "owned ingress shape differs from its planned view",
+            ));
+        }
+        output.try_fill_column_major(|index| Ok(element(index % rows, index / rows)))
+    })
+}
+
+macro_rules! fixed_element_ingress {
+    () => {
+        fn initialize_dense(
+            frame: &mut crate::KernelMemoryFrame<'_>,
+            object: crate::PlanObjectKey,
+            rows: usize,
+            columns: usize,
+            element: impl FnMut(usize, usize) -> Self,
+        ) -> MResult<()> {
+            initialize_fixed_dense(frame, object, rows, columns, element)
+        }
+    };
+}
+
+macro_rules! fixed_scalar_ingress {
+    () => {
+        fn initialize_planned_fixed(
+            &self,
+            frame: &mut crate::KernelMemoryFrame<'_>,
+            object: crate::PlanObjectKey,
+        ) -> MResult<()> {
+            initialize_fixed_dense(frame, object, 1, 1, |_, _| *self)
+        }
+    };
 }
 
 macro_rules! scalar_backing {
@@ -2043,10 +6566,13 @@ macro_rules! scalar_backing {
         }
 
         #[cfg(feature = $feature)]
-        impl canonical_matrix_element_sealed::Sealed for $type {}
+        impl canonical_matrix_element_sealed::Sealed for $type {
+            fixed_element_ingress!();
+        }
 
         #[cfg(feature = $feature)]
         impl canonical_cell_sealed::Sealed for $type {
+            fixed_scalar_ingress!();
             fn snapshot_bound(
                 &self,
                 schema: SchemaId,
@@ -2103,10 +6629,13 @@ macro_rules! float_backing {
         }
 
         #[cfg(feature = $feature)]
-        impl canonical_matrix_element_sealed::Sealed for $type {}
+        impl canonical_matrix_element_sealed::Sealed for $type {
+            fixed_element_ingress!();
+        }
 
         #[cfg(feature = $feature)]
         impl canonical_cell_sealed::Sealed for $type {
+            fixed_scalar_ingress!();
             fn snapshot_bound(
                 &self,
                 schema: SchemaId,
@@ -2174,9 +6703,12 @@ impl CanonicalMatrixElementBacking for usize {
     }
 }
 
-impl canonical_matrix_element_sealed::Sealed for usize {}
+impl canonical_matrix_element_sealed::Sealed for usize {
+    fixed_element_ingress!();
+}
 
 impl canonical_cell_sealed::Sealed for usize {
+    fixed_scalar_ingress!();
     fn snapshot_bound(
         &self,
         schema: SchemaId,
@@ -2267,10 +6799,13 @@ impl CanonicalMatrixElementBacking for crate::C64 {
 }
 
 #[cfg(feature = "complex")]
-impl canonical_matrix_element_sealed::Sealed for crate::C64 {}
+impl canonical_matrix_element_sealed::Sealed for crate::C64 {
+    fixed_element_ingress!();
+}
 
 #[cfg(feature = "complex")]
 impl canonical_cell_sealed::Sealed for crate::C64 {
+    fixed_scalar_ingress!();
     fn snapshot_bound(
         &self,
         schema: SchemaId,
@@ -2319,10 +6854,13 @@ impl CanonicalMatrixElementBacking for crate::R64 {
 }
 
 #[cfg(feature = "rational")]
-impl canonical_matrix_element_sealed::Sealed for crate::R64 {}
+impl canonical_matrix_element_sealed::Sealed for crate::R64 {
+    fixed_element_ingress!();
+}
 
 #[cfg(feature = "rational")]
 impl canonical_cell_sealed::Sealed for crate::R64 {
+    fixed_scalar_ingress!();
     fn snapshot_bound(
         &self,
         schema: SchemaId,
@@ -2500,6 +7038,15 @@ macro_rules! matrix_backing {
             T: CanonicalMatrixElementBacking,
             crate::$type<T>: FunctionRuntimeType,
         {
+            fn initialize_planned_fixed(
+                &self,
+                frame: &mut crate::KernelMemoryFrame<'_>,
+                object: crate::PlanObjectKey,
+            ) -> MResult<()> {
+                T::initialize_dense(frame, object, self.nrows(), self.ncols(), |row, column| {
+                    self[(row, column)].clone()
+                })
+            }
             fn snapshot_bound(
                 &self,
                 schema: SchemaId,
@@ -2553,6 +7100,15 @@ macro_rules! dynamic_matrix_storage {
             T: CanonicalMatrixElementBacking,
             crate::$type<T>: FunctionRuntimeType,
         {
+            fn initialize_planned_fixed(
+                &self,
+                frame: &mut crate::KernelMemoryFrame<'_>,
+                object: crate::PlanObjectKey,
+            ) -> MResult<()> {
+                T::initialize_dense(frame, object, self.nrows(), self.ncols(), |row, column| {
+                    self[(row, column)].clone()
+                })
+            }
             fn snapshot_bound(
                 &self,
                 schema: SchemaId,
@@ -2984,6 +7540,89 @@ fn dynamic_matrix_schema(
     Ok((schema, shape, Rc::new(build.table)))
 }
 
+fn dynamic_row_vector_schema(
+    element: SchemaBody,
+    rows: u64,
+    columns: u64,
+) -> MResult<(SchemaId, ShapeInstance, Rc<SchemaTable>)> {
+    if rows != 1 {
+        return Err(MechError::new(
+            ValueCellShapeMismatch {
+                expected: vec![1, columns].into_boxed_slice(),
+                actual: vec![rows, columns].into_boxed_slice(),
+            },
+            None,
+        )
+        .with_compiler_loc());
+    }
+    dynamic_vector_schema(
+        element,
+        vec![
+            DimensionExpr::Constant(1),
+            DimensionExpr::Parameter(crate::DimensionParameterId::new(0)),
+        ]
+        .into_boxed_slice(),
+        columns,
+    )
+}
+
+fn dynamic_column_vector_schema(
+    element: SchemaBody,
+    rows: u64,
+    columns: u64,
+) -> MResult<(SchemaId, ShapeInstance, Rc<SchemaTable>)> {
+    if columns != 1 {
+        return Err(MechError::new(
+            ValueCellShapeMismatch {
+                expected: vec![rows, 1].into_boxed_slice(),
+                actual: vec![rows, columns].into_boxed_slice(),
+            },
+            None,
+        )
+        .with_compiler_loc());
+    }
+    dynamic_vector_schema(
+        element,
+        vec![
+            DimensionExpr::Parameter(crate::DimensionParameterId::new(0)),
+            DimensionExpr::Constant(1),
+        ]
+        .into_boxed_slice(),
+        rows,
+    )
+}
+
+fn dynamic_vector_schema(
+    element: SchemaBody,
+    dimensions: Box<[DimensionExpr]>,
+    current: u64,
+) -> MResult<(SchemaId, ShapeInstance, Rc<SchemaTable>)> {
+    let schema = crate::SchemaDraft {
+        dimension_parameters: vec![crate::DimensionParameterDeclaration {
+            id: crate::DimensionParameterId::new(0),
+            origin: crate::DimensionParameterOrigin::Inferred,
+            lifetime: crate::DimensionLifetime::Turn,
+            lower_bound: DimensionExpr::Constant(0),
+            upper_bound: None,
+        }]
+        .into_boxed_slice(),
+        body: SchemaBody::Matrix {
+            element: Box::new(element),
+            dimensions,
+        },
+    }
+    .finalize()
+    .map_err(|error| snapshot_failure(error.into()))?;
+    let shape = schema
+        .instantiate_shape(vec![current].into_boxed_slice())
+        .map_err(|error| snapshot_failure(error.into()))?;
+    let mut builder = SchemaTableBuilder::new();
+    let handle = builder.insert(schema).map_err(MechError::from)?;
+    let build = builder.finish().map_err(MechError::from)?;
+    let schema = build.resolve(handle).map_err(MechError::from)?;
+    Ok((schema, shape, Rc::new(build.table)))
+}
+
 fn standalone_schema(body: SchemaBody) -> MResult<(SchemaId, ShapeInstance, Rc<SchemaTable>)> {
     let schema = crate::SchemaDraft {
         dimension_parameters: Vec::new().into_boxed_slice(),
@@ -3114,10 +7753,93 @@ mod tests {
         let separate =
             ValueCell::from_ref(Ref::new(7.0_f64), schema.id, schema.shape, schema.schemas)
                 .unwrap();
+        let detached = first.detached_clone().unwrap();
 
+        assert!(first.same_logical_cell(&clone));
+        assert!(first.same_storage(&clone));
         assert!(first.same_cell(&clone));
+        assert!(!first.same_logical_cell(&separate));
+        assert!(!first.same_storage(&separate));
         assert!(!first.same_cell(&separate));
         assert!(first.snapshot_eq(&separate).unwrap());
+        assert!(!first.same_logical_cell(&detached));
+        assert!(!first.same_storage(&detached));
+        assert!(first.snapshot_eq(&detached).unwrap());
+
+        let same_identity_detached_storage =
+            ValueCell::test_with_identity_and_payload(&first, &detached).unwrap();
+        assert!(first.same_logical_cell(&same_identity_detached_storage));
+        assert!(!first.same_storage(&same_identity_detached_storage));
+
+        let different_identity_shared_storage =
+            ValueCell::test_with_identity_and_payload(&detached, &first).unwrap();
+        assert!(!first.same_logical_cell(&different_identity_shared_storage));
+        assert!(first.same_storage(&different_identity_shared_storage));
+
+        for other in [
+            &clone,
+            &separate,
+            &detached,
+            &same_identity_detached_storage,
+            &different_identity_shared_storage,
+        ] {
+            assert_eq!(first.same_cell(other), first.same_storage(other));
+        }
+    }
+
+    fn assert_replace_borrow_conflict_preserves_value<T>(reference: Ref<T>, schema: TestSchema)
+    where
+        T: CanonicalCellBacking,
+    {
+        let cell = ValueCell::from_ref(
+            reference.clone(),
+            schema.id,
+            schema.shape.clone(),
+            schema.schemas.clone(),
+        )
+        .unwrap();
+        let before = cell.detached_clone().unwrap();
+        let replacement = before.snapshot().unwrap();
+        let held = reference.borrow_mut();
+        assert!(cell.replace(&replacement).is_err());
+        drop(held);
+        assert!(cell.snapshot_eq(&before).unwrap());
+        assert!(
+            cell.storage_capabilities()
+                .publication
+                .preserves_previous_on_failure
+        );
+    }
+
+    #[test]
+    fn declared_atomic_publication_preserves_representative_backings_on_borrow_conflict() {
+        #[cfg(feature = "f64")]
+        {
+            let scalar_schema = f64_schema();
+            assert_replace_borrow_conflict_preserves_value(Ref::new(1.25_f64), scalar_schema);
+
+            let canonical_schema = f64_schema();
+            let canonical = f64_value(&canonical_schema, 1.25);
+            assert_replace_borrow_conflict_preserves_value(Ref::new(canonical), canonical_schema);
+        }
+
+        #[cfg(feature = "string")]
+        assert_replace_borrow_conflict_preserves_value(
+            Ref::new("before".to_owned()),
+            test_schema(SchemaBody::String, Box::new([]), &[]),
+        );
+
+        #[cfg(all(feature = "f64", feature = "matrixd"))]
+        assert_replace_borrow_conflict_preserves_value(
+            Ref::new(crate::DMatrix::<f64>::zeros(2, 3)),
+            matrix_schema(2, 3),
+        );
+
+        #[cfg(all(feature = "f64", feature = "matrix2"))]
+        assert_replace_borrow_conflict_preserves_value(
+            Ref::new(crate::Matrix2::<f64>::zeros()),
+            matrix_schema(2, 2),
+        );
     }
 
     #[cfg(feature = "f64")]
@@ -3197,43 +7919,171 @@ mod tests {
         );
     }
 
+    #[cfg(all(feature = "complex", feature = "rational", feature = "matrixd"))]
+    #[test]
+    fn canonical_complex_and_rational_matrices_retain_typed_managed_storage() {
+        let complex = ValueCell::dynamic_matrix(
+            SchemaBody::Complex(crate::FloatWidth::W64),
+            vec![2, 2].into_boxed_slice(),
+            (1..=4)
+                .map(|value| {
+                    ValueDataDraft::Complex64(crate::snapshot::Complex64Bits::new(
+                        crate::snapshot::F64Bits::from_f64(f64::from(value)),
+                        crate::snapshot::F64Bits::from_f64(0.0),
+                    ))
+                })
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+        )
+        .unwrap();
+        assert_eq!(
+            complex.representation(),
+            <crate::DMatrix<crate::C64> as FunctionRuntimeType>::REPRESENTATION,
+        );
+        assert!(matches!(
+            complex.snapshot().unwrap().data(),
+            ValueData::Matrix(matrix)
+                if matches!(matrix.elements(), SequenceView::Complex64(values) if values.len() == 4)
+        ));
+
+        let rational = ValueCell::dynamic_matrix(
+            SchemaBody::Rational64,
+            vec![2, 2].into_boxed_slice(),
+            (1..=4)
+                .map(|numerator| ValueDataDraft::Rational64 {
+                    numerator,
+                    denominator: 1,
+                })
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+        )
+        .unwrap();
+        assert_eq!(
+            rational.representation(),
+            <crate::DMatrix<crate::R64> as FunctionRuntimeType>::REPRESENTATION,
+        );
+        assert!(matches!(
+            rational.snapshot().unwrap().data(),
+            ValueData::Matrix(matrix)
+                if matches!(matrix.elements(), SequenceView::Rational64(values) if values.len() == 4)
+        ));
+    }
+
     #[cfg(all(feature = "f64", feature = "matrix2", feature = "matrixd"))]
     #[test]
-    fn declared_output_representations_construct_exact_canonical_backings() {
+    fn declared_output_representations_construct_exact_managed_backings() {
         let scalar =
-            ValueCell::default_for_representation(FunctionValueRepresentation::F64, None).unwrap();
-        assert_eq!(*scalar.try_ref::<f64>().unwrap().borrow(), 0.0);
+            ValueCell::test_backing_for_representation(FunctionValueRepresentation::F64, None)
+                .unwrap();
+        assert_eq!(scalar.representation(), FunctionValueRepresentation::F64);
+        assert!(matches!(
+            scalar.snapshot().unwrap().data(),
+            ValueData::F64(value) if value.to_f64() == 0.0
+        ));
 
-        let fixed = ValueCell::default_for_representation(
+        let fixed = ValueCell::test_backing_for_representation(
             <crate::Matrix2<f64> as FunctionRuntimeType>::REPRESENTATION,
             Some((2, 2)),
         )
         .unwrap();
         assert_eq!(
-            *fixed.try_ref::<crate::Matrix2<f64>>().unwrap().borrow(),
-            crate::Matrix2::zeros(),
+            fixed.representation(),
+            <crate::Matrix2<f64> as FunctionRuntimeType>::REPRESENTATION,
         );
+        assert_eq!(fixed.current_top_level_extents().unwrap().as_ref(), &[2, 2]);
+        assert!(matches!(
+            fixed.snapshot().unwrap().data(),
+            ValueData::Matrix(matrix)
+                if matches!(matrix.elements(), SequenceView::F64(values)
+                    if values.len() == 4 && values.iter().all(|value| value.to_f64() == 0.0))
+        ));
 
-        let dynamic = ValueCell::default_for_representation(
+        let dynamic = ValueCell::test_backing_for_representation(
             <crate::DMatrix<f64> as FunctionRuntimeType>::REPRESENTATION,
             Some((2, 3)),
         )
         .unwrap();
         assert_eq!(
-            dynamic
-                .try_ref::<crate::DMatrix<f64>>()
-                .unwrap()
-                .borrow()
-                .shape(),
-            (2, 3),
+            dynamic.representation(),
+            <crate::DMatrix<f64> as FunctionRuntimeType>::REPRESENTATION,
         );
+        assert_eq!(
+            dynamic.current_top_level_extents().unwrap().as_ref(),
+            &[2, 3]
+        );
+        assert!(matches!(
+            dynamic.snapshot().unwrap().data(),
+            ValueData::Matrix(matrix)
+                if matches!(matrix.elements(), SequenceView::F64(values)
+                    if values.len() == 6 && values.iter().all(|value| value.to_f64() == 0.0))
+        ));
 
-        let error = ValueCell::default_for_representation(
+        let error = ValueCell::test_backing_for_representation(
             <crate::Matrix2<f64> as FunctionRuntimeType>::REPRESENTATION,
             Some((2, 3)),
         )
         .unwrap_err();
         assert_eq!(error.kind_name(), "ValueCellOutputConstructionUnsupported");
+    }
+
+    #[cfg(all(
+        feature = "f64",
+        feature = "functions",
+        feature = "matrix",
+        feature = "matrixd",
+        feature = "string"
+    ))]
+    #[test]
+    fn descriptor_outputs_keep_the_requested_session_across_storage_topologies() {
+        let owner = MemoryDomain::new().unwrap();
+        let scalar_schema = f64_schema();
+        let scalar_descriptor = crate::ResolvedValueDescriptor::from_schema(
+            scalar_schema.schemas.get(scalar_schema.id).unwrap().clone(),
+            scalar_schema.shape,
+        )
+        .unwrap();
+        let scalar = ValueCell::allocate_for_descriptor_in(
+            &owner,
+            &scalar_descriptor,
+            FunctionValueRepresentation::F64,
+        )
+        .unwrap();
+
+        let string_schema = test_schema(SchemaBody::String, Box::new([]), &[]);
+        let string_descriptor = crate::ResolvedValueDescriptor::from_schema(
+            string_schema.schemas.get(string_schema.id).unwrap().clone(),
+            string_schema.shape,
+        )
+        .unwrap();
+        let string = ValueCell::allocate_for_descriptor_in(
+            &owner,
+            &string_descriptor,
+            FunctionValueRepresentation::String,
+        )
+        .unwrap();
+
+        let matrix_schema = matrix_schema(2, 3);
+        let matrix_descriptor = crate::ResolvedValueDescriptor::from_schema(
+            matrix_schema.schemas.get(matrix_schema.id).unwrap().clone(),
+            matrix_schema.shape,
+        )
+        .unwrap();
+        let matrix = ValueCell::allocate_for_descriptor_in(
+            &owner,
+            &matrix_descriptor,
+            <crate::DMatrix<f64> as FunctionRuntimeType>::REPRESENTATION,
+        )
+        .unwrap();
+
+        for output in [&scalar, &string, &matrix] {
+            assert_eq!(output.memory_domain().unwrap().id(), owner.id());
+        }
+        let string_value = string.snapshot().unwrap();
+        assert!(matches!(string_value.data(), ValueData::String(value) if value.is_empty()));
+        assert_eq!(
+            matrix.current_top_level_extents().unwrap().as_ref(),
+            &[2, 3]
+        );
     }
 
     #[cfg(all(feature = "f64", feature = "functions", feature = "vectord"))]
@@ -3246,14 +8096,13 @@ mod tests {
             cell.representation(),
             <crate::DVector<f64> as FunctionRuntimeType>::REPRESENTATION,
         );
-        assert_eq!(
-            cell.try_ref::<crate::DVector<f64>>()
-                .unwrap()
-                .borrow()
-                .as_slice(),
-            &[1.0, 2.0, 3.0],
-        );
-        assert_eq!(cell.snapshot().unwrap().shape().parameter_values(), &[3, 1]);
+        assert!(matches!(
+            cell.snapshot().unwrap().data(),
+            ValueData::Matrix(matrix)
+                if matches!(matrix.elements(), SequenceView::F64(values)
+                    if values.iter().map(|value| value.to_f64()).collect::<Vec<_>>() == [1.0, 2.0, 3.0])
+        ));
+        assert_eq!(cell.current_top_level_extents().unwrap().as_ref(), &[3, 1]);
     }
 
     #[cfg(feature = "f64")]
@@ -3272,6 +8121,35 @@ mod tests {
             alias.snapshot().unwrap().data(),
             ValueData::F64(value) if value.to_f64() == 3.0
         ));
+    }
+
+    #[cfg(feature = "f64")]
+    #[test]
+    fn value_cell_key_equality_uses_canonical_float_keys() {
+        let left = ValueCell::from_schema_data(
+            SchemaBody::FloatingPoint(FloatWidth::W64),
+            ValueDataDraft::F64(crate::snapshot::F64Bits::from_bits(0x7ff0_0000_0000_0001)),
+        )
+        .unwrap();
+        let right = ValueCell::from_schema_data(
+            SchemaBody::FloatingPoint(FloatWidth::W64),
+            ValueDataDraft::F64(crate::snapshot::F64Bits::from_bits(0xfff8_0000_0000_0042)),
+        )
+        .unwrap();
+        assert!(!left.snapshot_eq(&right).unwrap());
+        assert!(left.key_eq(&right).unwrap());
+
+        let negative_zero = ValueCell::from_schema_data(
+            SchemaBody::FloatingPoint(FloatWidth::W64),
+            ValueDataDraft::F64(crate::snapshot::F64Bits::from_f64(-0.0)),
+        )
+        .unwrap();
+        let positive_zero = ValueCell::from_schema_data(
+            SchemaBody::FloatingPoint(FloatWidth::W64),
+            ValueDataDraft::F64(crate::snapshot::F64Bits::from_f64(0.0)),
+        )
+        .unwrap();
+        assert!(negative_zero.key_eq(&positive_zero).unwrap());
     }
 
     #[cfg(feature = "string")]
@@ -3376,7 +8254,13 @@ mod tests {
                 if matches!(value.value().unwrap().data(), ValueData::F64(number) if number.to_f64() == 4.0)
         ));
 
-        *text.try_ref::<String>().unwrap().borrow_mut() = "changed".into();
+        text.replace(
+            &ValueCell::from_exact("changed".to_owned())
+                .unwrap()
+                .snapshot()
+                .unwrap(),
+        )
+        .unwrap();
         let replacement = table
             .rebuild_table_cell_columns(&[("value".into(), vec![text, number].into_boxed_slice())])
             .unwrap();
@@ -3413,7 +8297,7 @@ mod tests {
     #[cfg(all(feature = "f64", feature = "matrixd"))]
     #[test]
     fn concrete_matrix_shapes_rebind_between_dynamic_and_fixed_schema_definitions() {
-        let source = ValueCell::default_for_representation(
+        let source = ValueCell::test_backing_for_representation(
             <crate::DMatrix<f64> as FunctionRuntimeType>::REPRESENTATION,
             Some((4, 1)),
         )
@@ -3573,11 +8457,47 @@ mod tests {
         assert!(!source.same_cell(&detached));
     }
 
+    #[cfg(feature = "string")]
+    #[test]
+    fn detached_canonical_cells_keep_managed_ownership_and_mutate_independently() {
+        let source = ValueCell::from_exact("source".to_owned()).unwrap();
+        let detached = source.detached_clone().unwrap();
+        assert!(source.has_managed_canonical_storage().unwrap());
+        assert!(detached.has_managed_canonical_storage().unwrap());
+        assert!(source.memory_domain().is_some());
+        assert!(detached.memory_domain().is_some());
+        assert!(!source.same_logical_cell(&detached));
+        assert!(source.same_storage(&detached));
+
+        let replacement = detached
+            .rebuild_data_draft(ValueDataDraft::String("a much larger replacement".into()))
+            .unwrap();
+        detached.replace(&replacement).unwrap();
+        assert!(!source.same_storage(&detached));
+        assert!(matches!(
+            detached.snapshot().unwrap().data(),
+            ValueData::String(value) if value.as_ref() == "a much larger replacement"
+        ));
+        assert!(matches!(
+            source.snapshot().unwrap().data(),
+            ValueData::String(value) if value.as_ref() == "source"
+        ));
+
+        let tuple = ValueCell::tuple_from_cells(&[source.clone(), detached.clone()]).unwrap();
+        let tuple_clone = tuple.detached_clone().unwrap();
+        assert!(tuple_clone.has_managed_canonical_storage().unwrap());
+        assert!(tuple_clone.memory_domain().is_some());
+        let tuple_replacement = tuple_clone
+            .rebuild_tuple_cells(&[detached.clone(), source.clone()])
+            .unwrap();
+        tuple_clone.replace(&tuple_replacement).unwrap();
+        assert!(!tuple.same_logical_cell(&tuple_clone));
+        assert!(!tuple.snapshot_eq(&tuple_clone).unwrap());
+    }
+
     #[cfg(feature = "f64")]
     #[test]
     fn staged_dynamic_replacement_changes_shape_only_when_committed() {
-        use crate::ReactiveRegisterCommit;
-
         let sink = ValueCell::dynamic_matrix(
             SchemaBody::FloatingPoint(FloatWidth::W64),
             vec![1, 1].into_boxed_slice(),
@@ -3599,19 +8519,31 @@ mod tests {
         let expected = sink.detached_clone().unwrap();
         expected.replace(&replacement).unwrap();
 
-        let abandoned =
-            crate::ReactiveValueCellWrite::new(sink.clone(), replacement.clone()).unwrap();
+        let abandoned = sink
+            .stage_managed_replacement(&replacement)
+            .unwrap()
+            .unwrap();
         assert_eq!(sink.shape().parameter_values(), &[1, 1]);
         assert!(sink.snapshot_eq(&before).unwrap());
         drop(abandoned);
         assert_eq!(sink.shape().parameter_values(), &[1, 1]);
         assert!(sink.snapshot_eq(&before).unwrap());
 
-        let committed =
-            crate::ReactiveValueCellWrite::new(sink.clone(), replacement.clone()).unwrap();
+        let committed = sink
+            .stage_managed_replacement(&replacement)
+            .unwrap()
+            .unwrap();
         assert_eq!(sink.shape().parameter_values(), &[1, 1]);
         assert!(sink.snapshot_eq(&before).unwrap());
-        Box::new(committed).commit();
+        let prepared = committed
+            .domain
+            .prepare_cell_publication(&committed.realized, vec![committed.candidate])
+            .unwrap();
+        crate::PreparedCellPublicationBatch::new(vec![prepared])
+            .unwrap()
+            .ready()
+            .unwrap()
+            .commit();
 
         assert!(sink.same_cell(&alias));
         assert_eq!(sink.shape().parameter_values(), &[1, 2]);
@@ -3641,17 +8573,29 @@ mod tests {
 
         let shape = cell.shape();
         let direct = cell.replace(&replacement).unwrap_err();
-        assert_eq!(direct.kind_name(), "ValueCellBorrowConflict");
+        assert_eq!(
+            direct.kind_name(),
+            "ValueCellBorrowConflict",
+            "unexpected direct replacement error: {direct:?}"
+        );
         assert_eq!(shape.parameter_values(), &[1, 1]);
         assert!(cell.snapshot_eq(&before).unwrap());
         drop(shape);
 
         let shape = cell.shape();
-        let staged = match crate::ReactiveValueCellWrite::new(cell.clone(), replacement) {
-            Ok(_) => panic!("staging must reject a held shape borrow"),
+        let staged = cell
+            .stage_managed_replacement(&replacement)
+            .unwrap()
+            .expect("managed replacement stages outside published storage");
+        let prepared = staged
+            .domain
+            .prepare_cell_publication(&staged.realized, vec![staged.candidate])
+            .unwrap();
+        let ready = match staged.domain.ready_cell_publication(prepared) {
+            Ok(_) => panic!("the final publication gate must reject a held shape borrow"),
             Err(error) => error,
         };
-        assert_eq!(staged.kind_name(), "ValueCellBorrowConflict");
+        assert_eq!(ready.kind_name(), "ValueCellBorrowConflict");
         assert_eq!(shape.parameter_values(), &[1, 1]);
         assert!(cell.snapshot_eq(&before).unwrap());
     }
@@ -3733,6 +8677,69 @@ mod tests {
             bounded.kind_message().contains("Cardinality"),
             "{bounded:?}"
         );
+    }
+
+    #[cfg(feature = "u8")]
+    #[test]
+    fn rebuilding_a_dynamic_collection_preserves_its_bound_shape_witnesses() {
+        let dimensions = [
+            DimensionParameterDeclaration {
+                id: crate::DimensionParameterId::new(0),
+                origin: crate::DimensionParameterOrigin::Inferred,
+                lifetime: crate::DimensionLifetime::Turn,
+                lower_bound: DimensionExpr::Constant(0),
+                upper_bound: None,
+            },
+            DimensionParameterDeclaration {
+                id: crate::DimensionParameterId::new(1),
+                origin: crate::DimensionParameterOrigin::Inferred,
+                lifetime: crate::DimensionLifetime::Turn,
+                lower_bound: DimensionExpr::Constant(0),
+                upper_bound: None,
+            },
+        ];
+        let schema = test_schema(
+            SchemaBody::Set {
+                element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
+                cardinality: CardinalitySpec::Dynamic {
+                    upper_bound: Some(DimensionExpr::Add(
+                        vec![
+                            DimensionExpr::Parameter(crate::DimensionParameterId::new(0)),
+                            DimensionExpr::Parameter(crate::DimensionParameterId::new(1)),
+                        ]
+                        .into_boxed_slice(),
+                    )),
+                },
+            },
+            dimensions.into(),
+            &[2, 2],
+        );
+        let value = finalize_draft(
+            schema.id,
+            &schema.shape,
+            &schema.schemas,
+            ValueDataDraft::Set(
+                vec![ValueDataDraft::U8(1), ValueDataDraft::U8(2)].into_boxed_slice(),
+            ),
+        )
+        .unwrap();
+        let cell = ValueCell::from_runtime_value(value, schema.schemas).unwrap();
+        let descriptor = cell.resolved_descriptor().unwrap();
+
+        let next = cell
+            .rebuild_set_drafts(
+                vec![
+                    ValueDataDraft::U8(1),
+                    ValueDataDraft::U8(2),
+                    ValueDataDraft::U8(3),
+                ]
+                .into_boxed_slice(),
+            )
+            .unwrap();
+        cell.replace(&next).unwrap();
+
+        assert_eq!(cell.shape().parameter_values(), &[2, 2]);
+        assert_eq!(cell.resolved_descriptor().unwrap(), descriptor);
     }
 
     #[cfg(feature = "u8")]

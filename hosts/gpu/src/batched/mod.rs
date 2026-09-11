@@ -1,4 +1,5 @@
 use std::{
+    cell::{Cell, RefCell},
     collections::{BTreeMap, BTreeSet},
     sync::Arc,
 };
@@ -7,15 +8,15 @@ use mech_compute::{
     ComparisonOperation, ComputeKernel, ComputeProgram, FixedShape, FixedShapeConstraint,
     FixedShapeInputStorage, FixedShapeIr, FixedShapeStateStorage, FixedShapeStoragePlan,
     LogicOperation, ScalarComputation, ScalarInstruction, ScalarOperand, ScalarPredicate,
-    build_compute_region_interface, plan_compute_artifact,
+    build_compute_region_interface, plan_compute_artifact, resolve_compute_slot_dimensions,
 };
 use mech_core::{
-    CellSlotId, DimensionExpr, FloatWidth, IntegrityConstraintId, NodeId, SchemaBody, ValueData,
-    snapshot::SequenceView,
+    CellSlotId, DimensionExpr, ExecutionTargetSet, FloatWidth, IntegrityConstraintId, NodeId,
+    ResolvedSelectionMode, SchemaBody, SchemaId, ValueData, snapshot::SequenceView,
 };
 use mech_engine::{
-    ArtifactSource, BindingDeclaration, ComputeRegionDeclaration, ProducerReference,
-    ProgramArtifact, SlotRole,
+    ArtifactSource, BindingDeclaration, ComputeRegionDeclaration, OperationReference,
+    ProducerReference, ProgramArtifact, SlotRole,
 };
 use wide::{CmpEq, CmpGe, CmpGt, CmpLe, CmpLt, CmpNe, f32x4};
 
@@ -31,6 +32,85 @@ pub use jit::*;
 
 const SIMD_LANES: usize = 4;
 const FIXED_SHAPE_INTEGRITY_WORDS: usize = 2;
+const MAX_STATIC_SELECTOR_ELEMENTS: usize = 65_536;
+const MAX_STATIC_SELECTOR_SOURCE_STEPS: usize = 65_536;
+const MAX_SCALAR_INSTRUCTIONS: u64 = 16_777_216;
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ScalarInstructionExpansion {
+    pub existing: u64,
+    pub selected_rows: u64,
+    pub selected_columns: u64,
+    pub instructions_per_element: u64,
+    pub additional: u64,
+    pub total: u64,
+}
+
+pub fn plan_scalar_instruction_expansion(
+    existing: usize,
+    selected_rows: usize,
+    selected_columns: usize,
+    instructions_per_element: usize,
+) -> Result<ScalarInstructionExpansion, mech_core::MemoryPlanError> {
+    let existing =
+        u64::try_from(existing).map_err(|_| mech_core::MemoryPlanError::ArithmeticOverflow {
+            field: "existing scalar instructions",
+        })?;
+    let selected_rows = u64::try_from(selected_rows).map_err(|_| {
+        mech_core::MemoryPlanError::ArithmeticOverflow {
+            field: "selected rows",
+        }
+    })?;
+    let selected_columns = u64::try_from(selected_columns).map_err(|_| {
+        mech_core::MemoryPlanError::ArithmeticOverflow {
+            field: "selected columns",
+        }
+    })?;
+    let instructions_per_element = u64::try_from(instructions_per_element).map_err(|_| {
+        mech_core::MemoryPlanError::ArithmeticOverflow {
+            field: "instructions per element",
+        }
+    })?;
+    let additional = selected_rows
+        .checked_mul(selected_columns)
+        .and_then(|value| value.checked_mul(instructions_per_element))
+        .ok_or(mech_core::MemoryPlanError::ArithmeticOverflow {
+            field: "scalar instruction expansion",
+        })?;
+    let total =
+        existing
+            .checked_add(additional)
+            .ok_or(mech_core::MemoryPlanError::ArithmeticOverflow {
+                field: "scalar instruction total",
+            })?;
+    if total > MAX_SCALAR_INSTRUCTIONS {
+        return Err(mech_core::MemoryPlanError::TargetLimitExceeded {
+            violation: mech_core::MemoryBudgetViolation {
+                owner: mech_core::MemoryObjectOwner::NodeScratch {
+                    node: NodeId::new(0),
+                    ordinal: 0,
+                },
+                dimension: mech_core::MemoryBudgetDimension::ScalarInstructions,
+                required: total,
+                limit: MAX_SCALAR_INSTRUCTIONS,
+            },
+        });
+    }
+    Ok(ScalarInstructionExpansion {
+        existing,
+        selected_rows,
+        selected_columns,
+        instructions_per_element,
+        additional,
+        total,
+    })
+}
+
+fn sum_products_work(product_terms: usize) -> Result<usize, String> {
+    product_terms
+        .checked_add(1)
+        .ok_or_else(|| "sum-products scalar instruction work overflow".to_owned())
+}
 
 fn evaluate_operand_simd(operand: ScalarOperand, registers: &[f32x4]) -> f32x4 {
     match operand {
@@ -264,6 +344,7 @@ fn scalar_computation_wgsl(computation: &ScalarComputation) -> String {
                 .collect::<Vec<_>>();
             super::wgsl_elementwise_expression(*operation, &inputs)
         }
+        ScalarComputation::SumProducts(terms) if terms.is_empty() => "0.0".to_owned(),
         ScalarComputation::SumProducts(terms) => terms
             .iter()
             .map(|(left, right)| {
@@ -419,7 +500,19 @@ pub struct FixedShapeKernel {
     inputs: Vec<BatchedInput>,
     states: Vec<BatchedState>,
     constraints: Vec<BatchedConstraint>,
+    concrete_cases: Box<[ConcreteGpuExecutionCase]>,
     wgsl: String,
+}
+
+/// One concrete operation specialization that completed GPU binding and
+/// lowering. Cases appear only after the full batch compiler succeeds.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ConcreteGpuExecutionCase {
+    pub node: NodeId,
+    pub operation: OperationReference,
+    pub input_schemas: Box<[SchemaId]>,
+    pub output_schema: SchemaId,
+    pub targets: ExecutionTargetSet,
 }
 
 /// One immutable browser/native storage binding for a fixed-shape input after
@@ -664,12 +757,17 @@ impl FixedShapeKernel {
             inputs,
             states,
             constraints,
+            concrete_cases: Box::new([]),
             wgsl,
         })
     }
 
     pub fn compute_program(&self) -> &ComputeProgram {
         &self.compute
+    }
+
+    pub fn concrete_execution_cases(&self) -> &[ConcreteGpuExecutionCase] {
+        &self.concrete_cases
     }
 
     fn fixed_ir(&self) -> &FixedShapeIr {
@@ -1135,6 +1233,7 @@ fn infer_broadcast_instances(
     artifact: &ProgramArtifact,
     inputs: &BTreeMap<String, Vec<f32>>,
 ) -> Result<u32, GpuAdmissionError> {
+    let resolved_dimensions = resolve_compute_slot_dimensions(artifact);
     let required = turn_required_nodes(artifact);
     let required_slots = required
         .iter()
@@ -1181,7 +1280,11 @@ fn infer_broadcast_instances(
             });
             continue;
         };
-        let elements = match fixed_shape(artifact, *schema) {
+        let elements = match resolved_dimensions
+            .get(&input.slot)
+            .map(|dimensions| fixed_shape_with_dimensions(artifact, *schema, dimensions))
+            .unwrap_or_else(|| fixed_shape(artifact, *schema))
+        {
             Ok(shape) => shape.elements(),
             Err(detail) => {
                 diagnostics.push(GpuDiagnostic {
@@ -1258,13 +1361,91 @@ struct PendingState {
 struct BatchCompiler<'a> {
     artifact: &'a ProgramArtifact,
     instances: u32,
+    resolved_dimensions: BTreeMap<CellSlotId, Box<[u64]>>,
     shapes: BTreeMap<CellSlotId, FixedShape>,
     register_offsets: BTreeMap<CellSlotId, usize>,
     register_count: usize,
     instructions: Vec<ScalarInstruction>,
+    scalar_instruction_work: u64,
     inputs: Vec<(CellSlotId, String, FixedShape)>,
     states: BTreeMap<CellSlotId, PendingState>,
+    concrete_cases: Vec<ConcreteGpuExecutionCase>,
+    internal_constraints: Vec<BatchedConstraint>,
+    next_internal_constraint_id: Option<u32>,
     diagnostics: Vec<GpuDiagnostic>,
+    static_selector_cache:
+        RefCell<BTreeMap<(ArtifactSource, usize), Result<Option<Arc<[u64]>>, String>>>,
+    static_range_endpoint_cache:
+        RefCell<BTreeMap<ArtifactSource, Result<Option<ValueData>, String>>>,
+    static_selector_source_steps_remaining: Cell<usize>,
+}
+
+fn matrix_solve_validity_predicate(
+    denominator: ScalarOperand,
+    finite_results: impl IntoIterator<Item = ScalarOperand>,
+) -> ScalarPredicate {
+    let finite_results = finite_results.into_iter();
+    let mut predicates = Vec::with_capacity(finite_results.size_hint().0 + 2);
+    predicates.push(ScalarPredicate::IsFinite(denominator));
+    predicates.push(ScalarPredicate::Compare {
+        operation: ComparisonOperation::NotEqual,
+        left: denominator,
+        right: ScalarOperand::Constant(0.0),
+    });
+    predicates.extend(finite_results.map(ScalarPredicate::IsFinite));
+    ScalarPredicate::All(predicates)
+}
+
+fn linear_access_components(
+    mode: ResolvedSelectionMode,
+    source: FixedShape,
+    result: FixedShape,
+    selector: Vec<usize>,
+) -> Result<Vec<usize>, String> {
+    match mode {
+        ResolvedSelectionMode::LinearScalar if selector.len() == 1 && result.elements() == 1 => {}
+        ResolvedSelectionMode::LinearGather => {}
+        ResolvedSelectionMode::LinearScalar => {
+            return Err(format!(
+                "scalar linear access requires one selector and one output, found {} and {}",
+                selector.len(),
+                result.elements(),
+            ));
+        }
+        _ => return Err(format!("{mode:?} is not a linear access mode")),
+    }
+    if selector
+        .iter()
+        .any(|component| *component >= source.elements())
+    {
+        return Err(format!(
+            "linear matrix selector exceeds {} source elements",
+            source.elements(),
+        ));
+    }
+    if result.elements() != selector.len() {
+        return Err(format!(
+            "linear matrix access selected {} elements but output contains {}",
+            selector.len(),
+            result.elements(),
+        ));
+    }
+    Ok(selector)
+}
+
+fn matrix_selector_access_axes(
+    mode: ResolvedSelectionMode,
+    source: FixedShape,
+    first: Vec<usize>,
+    second: Option<Vec<usize>>,
+) -> Result<(Vec<usize>, Vec<usize>), String> {
+    match (mode, second) {
+        (ResolvedSelectionMode::Rows, None) => Ok((first, (0..source.columns).collect())),
+        (ResolvedSelectionMode::Columns, None) => Ok(((0..source.rows).collect(), first)),
+        (ResolvedSelectionMode::Rectangle, Some(columns)) => Ok((first, columns)),
+        (_, Some(_)) => Err(format!("{mode:?} does not declare a rectangle selection")),
+        (_, None) => Err(format!("{mode:?} does not declare a single matrix axis")),
+    }
 }
 
 impl<'a> BatchCompiler<'a> {
@@ -1272,13 +1453,26 @@ impl<'a> BatchCompiler<'a> {
         Self {
             artifact,
             instances,
+            resolved_dimensions: resolve_compute_slot_dimensions(artifact),
             shapes: BTreeMap::new(),
             register_offsets: BTreeMap::new(),
             register_count: 0,
             instructions: Vec::new(),
+            scalar_instruction_work: 0,
             inputs: Vec::new(),
             states: BTreeMap::new(),
+            concrete_cases: Vec::new(),
+            internal_constraints: Vec::new(),
+            next_internal_constraint_id: artifact
+                .constraints()
+                .iter()
+                .map(|constraint| constraint.constraint.get())
+                .max()
+                .map_or(Some(0), |id| id.checked_add(1)),
             diagnostics: Vec::new(),
+            static_selector_cache: RefCell::new(BTreeMap::new()),
+            static_range_endpoint_cache: RefCell::new(BTreeMap::new()),
+            static_selector_source_steps_remaining: Cell::new(MAX_STATIC_SELECTOR_SOURCE_STEPS),
         }
     }
 
@@ -1340,17 +1534,21 @@ impl<'a> BatchCompiler<'a> {
             .collect::<Result<Vec<_>, String>>();
         drop(predicate_producers);
         let constraints = match constraints {
-            Ok(constraints) if constraints.len() < 256 => constraints,
-            Ok(constraints) => {
-                self.reject(
-                    None,
-                    None,
-                    format!(
-                        "checked batch kernels support at most 255 integrity constraints, found {}",
-                        constraints.len()
-                    ),
-                );
-                Vec::new()
+            Ok(mut constraints) => {
+                constraints.append(&mut self.internal_constraints);
+                if constraints.len() < 256 {
+                    constraints
+                } else {
+                    self.reject(
+                        None,
+                        None,
+                        format!(
+                            "checked batch kernels support at most 255 integrity constraints, found {}",
+                            constraints.len()
+                        ),
+                    );
+                    Vec::new()
+                }
             }
             Err(detail) => {
                 self.reject(None, None, detail);
@@ -1438,7 +1636,9 @@ impl<'a> BatchCompiler<'a> {
         };
         let program =
             ComputeProgram::new(interface, plan, kernel).with_fixed_shape_storage(storage);
-        FixedShapeKernel::from_compute_program(&program)
+        let mut kernel = FixedShapeKernel::from_compute_program(&program)?;
+        kernel.concrete_cases = self.concrete_cases.into_boxed_slice();
+        Ok(kernel)
     }
 
     fn collect_slots(&mut self) {
@@ -1492,7 +1692,14 @@ impl<'a> BatchCompiler<'a> {
             if self.static_selector_slot(slot.slot) {
                 continue;
             }
-            let shape = match fixed_shape(self.artifact, slot.schema) {
+            let shape = match self
+                .resolved_dimensions
+                .get(&slot.slot)
+                .map(|dimensions| {
+                    fixed_shape_with_dimensions(self.artifact, slot.schema, dimensions)
+                })
+                .unwrap_or_else(|| fixed_shape(self.artifact, slot.schema))
+            {
                 Ok(shape) => shape,
                 Err(detail) => {
                     self.reject(None, None, format!("slot {}: {detail}", slot.slot.get()));
@@ -1587,7 +1794,21 @@ impl<'a> BatchCompiler<'a> {
                 continue;
             }
             if outputs.iter().any(|slot| self.states.contains_key(slot)) {
-                self.lower_state(node.node, &operation, &inputs, &outputs);
+                match self.lower_state(&operation, &inputs, &outputs) {
+                    Ok(output) => match self.concrete_execution_case(node, &inputs, output) {
+                        Ok(case) => self.concrete_cases.push(case),
+                        Err(detail) => self.reject(
+                            Some(node.node),
+                            Some(display_operation(&node.operation)),
+                            detail,
+                        ),
+                    },
+                    Err(detail) => self.reject(
+                        Some(node.node),
+                        Some(display_operation(&node.operation)),
+                        detail,
+                    ),
+                }
                 continue;
             }
             if outputs.len() != 1 {
@@ -1599,8 +1820,11 @@ impl<'a> BatchCompiler<'a> {
                 continue;
             }
             let output = outputs[0];
-            let result = if operation == "access/scalar" || operation == "access/range" {
-                self.lower_access(output, &inputs)
+            let result = if matches!(
+                operation.as_str(),
+                "access/scalar" | "access/range" | "access/rows" | "access/columns"
+            ) {
+                self.lower_access(output, &inputs, &node.operation)
             } else if operation == "matrix/horzcat" {
                 self.lower_concatenate(output, &inputs, true)
             } else if operation == "matrix/vertcat" {
@@ -1628,40 +1852,79 @@ impl<'a> BatchCompiler<'a> {
                     "generic fixed-shape lowering does not support {operation}"
                 ))
             };
-            if let Err(detail) = result {
-                self.reject(
+            match result {
+                Ok(()) => match self.concrete_execution_case(node, &inputs, output) {
+                    Ok(case) => self.concrete_cases.push(case),
+                    Err(detail) => self.reject(
+                        Some(node.node),
+                        Some(display_operation(&node.operation)),
+                        detail,
+                    ),
+                },
+                Err(detail) => self.reject(
                     Some(node.node),
                     Some(display_operation(&node.operation)),
                     detail,
-                );
+                ),
             }
         }
     }
 
+    fn concrete_execution_case(
+        &self,
+        node: &mech_engine::NodeDeclaration,
+        inputs: &[ArtifactSource],
+        output: CellSlotId,
+    ) -> Result<ConcreteGpuExecutionCase, String> {
+        let input_schemas = inputs
+            .iter()
+            .map(|source| match source {
+                ArtifactSource::Constant(constant) => self
+                    .artifact
+                    .constants()
+                    .get(*constant)
+                    .map(mech_core::Value::schema)
+                    .ok_or_else(|| format!("constant {} does not exist", constant.get())),
+                ArtifactSource::Slot(slot) => self
+                    .artifact
+                    .slots()
+                    .get(slot.get() as usize)
+                    .map(|slot| slot.schema)
+                    .ok_or_else(|| format!("slot {} does not exist", slot.get())),
+            })
+            .collect::<Result<Vec<_>, _>>()?
+            .into_boxed_slice();
+        let output_schema = self
+            .artifact
+            .slots()
+            .get(output.get() as usize)
+            .map(|slot| slot.schema)
+            .ok_or_else(|| format!("output slot {} does not exist", output.get()))?;
+        Ok(ConcreteGpuExecutionCase {
+            node: node.node,
+            operation: node.operation.clone(),
+            input_schemas,
+            output_schema,
+            targets: ExecutionTargetSet::GPU_BATCH,
+        })
+    }
+
     fn lower_state(
         &mut self,
-        node: NodeId,
         name: &str,
         inputs: &[ArtifactSource],
         outputs: &[CellSlotId],
-    ) {
+    ) -> Result<CellSlotId, String> {
         if name != "core/assign" || inputs.len() != 1 || outputs.len() != 1 {
-            self.reject(
-                Some(node),
-                Some(name.to_owned()),
-                "batch state requires one whole-value Assign",
-            );
-            return;
+            return Err("batch state requires one whole-value Assign".to_owned());
         }
         let target = outputs[0];
         let shape = self.states[&target].shape;
         let update = (0..shape.elements())
             .map(|component| self.operand(inputs[0], component))
-            .collect::<Result<Vec<_>, _>>();
-        match update {
-            Ok(update) => self.states.get_mut(&target).unwrap().update = Some(update),
-            Err(detail) => self.reject(Some(node), Some(name.to_owned()), detail),
-        }
+            .collect::<Result<Vec<_>, _>>()?;
+        self.states.get_mut(&target).unwrap().update = Some(update);
+        Ok(target)
     }
 
     fn lower_elementwise(
@@ -1678,6 +1941,7 @@ impl<'a> BatchCompiler<'a> {
             ));
         }
         let shape = self.shape(output)?;
+        self.reserve_scalar_instructions(shape.elements(), 1, 1)?;
         for component in 0..shape.elements() {
             let operands = inputs
                 .iter()
@@ -1707,6 +1971,7 @@ impl<'a> BatchCompiler<'a> {
         &mut self,
         output: CellSlotId,
         inputs: &[ArtifactSource],
+        operation: &OperationReference,
     ) -> Result<(), String> {
         if inputs.len() != 2 && inputs.len() != 3 {
             return Err(format!(
@@ -1716,39 +1981,49 @@ impl<'a> BatchCompiler<'a> {
         }
         let source = self.source_shape(inputs[0])?;
         let result = self.shape(output)?;
-        let (rows, columns) = if inputs.len() == 3 {
-            (
-                self.constant_indices(inputs[1], source.rows, "row")?,
-                self.constant_indices(inputs[2], source.columns, "column")?,
+        let operation_name = display_operation(operation);
+        let mode = operation
+            .resolved_selection_mode(inputs.len() - 1)
+            .ok_or_else(|| format!("{operation_name} has no canonical selection mode"))?;
+        if inputs.len() == 2
+            && matches!(
+                mode,
+                ResolvedSelectionMode::LinearScalar | ResolvedSelectionMode::LinearGather
             )
-        } else {
-            let selector =
-                self.constant_indices(inputs[1], source.rows.max(source.columns), "matrix")?;
-            let selects_columns = result.rows == source.rows && result.columns == selector.len();
-            let selects_rows = result.rows == selector.len() && result.columns == source.columns;
-            match (selects_rows, selects_columns) {
-                (false, true) => ((0..source.rows).collect(), selector),
-                (true, false) => (selector, (0..source.columns).collect()),
-                (true, true) if source.rows == 1 || source.columns == 1 => {
-                    if result.rows == source.rows {
-                        ((0..source.rows).collect(), selector)
-                    } else {
-                        (selector, (0..source.columns).collect())
-                    }
-                }
-                (true, true) => {
-                    return Err(format!(
-                        "matrix access selector is ambiguous for {}x{} -> {}x{}",
-                        source.rows, source.columns, result.rows, result.columns
-                    ));
-                }
-                (false, false) => {
-                    return Err(format!(
-                        "matrix access selector cannot produce {}x{} from {}x{}",
-                        result.rows, result.columns, source.rows, source.columns
-                    ));
-                }
+        {
+            let selector = linear_access_components(
+                mode,
+                source,
+                result,
+                self.constant_indices(inputs[1], source.elements(), "linear")?,
+            )?;
+            self.reserve_scalar_instructions(selector.len(), 1, 1)?;
+            for (canonical_output, source_component) in selector.into_iter().enumerate() {
+                let result_row = canonical_output / result.columns;
+                let result_column = canonical_output % result.columns;
+                self.emit(
+                    output,
+                    result.index(result_row, result_column),
+                    ScalarComputation::Copy(self.operand(inputs[0], source_component)?),
+                );
             }
+            return Ok(());
+        }
+        let (rows, columns) = if inputs.len() == 3 {
+            matrix_selector_access_axes(
+                mode,
+                source,
+                self.constant_indices(inputs[1], source.rows, "row")?,
+                Some(self.constant_indices(inputs[2], source.columns, "column")?),
+            )?
+        } else {
+            let upper = match mode {
+                ResolvedSelectionMode::Rows => source.rows,
+                ResolvedSelectionMode::Columns => source.columns,
+                _ => return Err(format!("{operation_name} does not declare a matrix axis")),
+            };
+            let selector = self.constant_indices(inputs[1], upper, "matrix")?;
+            matrix_selector_access_axes(mode, source, selector, None)?
         };
         if result.rows != rows.len() || result.columns != columns.len() {
             return Err(format!(
@@ -1759,6 +2034,7 @@ impl<'a> BatchCompiler<'a> {
                 result.columns
             ));
         }
+        self.reserve_scalar_instructions(rows.len(), columns.len(), 1)?;
         for (result_column, source_column) in columns.into_iter().enumerate() {
             for (result_row, source_row) in rows.iter().copied().enumerate() {
                 self.emit(
@@ -1782,6 +2058,7 @@ impl<'a> BatchCompiler<'a> {
             return Err("negate requires one input".to_owned());
         }
         let shape = self.shape(output)?;
+        self.reserve_scalar_instructions(shape.elements(), 1, 1)?;
         for component in 0..shape.elements() {
             let input = self.operand(inputs[0], component)?;
             self.emit(output, component, ScalarComputation::Negate(input));
@@ -1797,6 +2074,7 @@ impl<'a> BatchCompiler<'a> {
         if inputs.len() != 1 || self.shape(output)?.elements() != 1 {
             return Err("absolute value requires one scalar input and output".to_owned());
         }
+        self.reserve_scalar_instructions(1, 1, 1)?;
         self.emit(
             output,
             0,
@@ -1814,6 +2092,7 @@ impl<'a> BatchCompiler<'a> {
         if inputs.len() != 2 || self.shape(output)?.elements() != 1 {
             return Err("comparison requires two scalar inputs and one scalar output".to_owned());
         }
+        self.reserve_scalar_instructions(1, 1, 1)?;
         let right = self.operand(inputs[1], 0)?;
         if operation == ComparisonOperation::LessEqual
             && matches!(right, ScalarOperand::Constant(value) if value == f32::MAX)
@@ -1878,6 +2157,7 @@ impl<'a> BatchCompiler<'a> {
             .iter()
             .map(|source| self.operand(*source, 0))
             .collect::<Result<Vec<_>, _>>()?;
+        self.reserve_scalar_instructions(1, 1, 1)?;
         self.emit(output, 0, ScalarComputation::Logic { operation, inputs });
         Ok(())
     }
@@ -1891,6 +2171,7 @@ impl<'a> BatchCompiler<'a> {
         if left.elements() != right.elements() {
             return Err("dot input element counts differ".to_owned());
         }
+        self.reserve_scalar_instructions(1, 1, sum_products_work(left.elements())?)?;
         let terms = (0..left.elements())
             .map(|component| {
                 Ok((
@@ -1921,6 +2202,11 @@ impl<'a> BatchCompiler<'a> {
                 left.rows, left.columns, right.rows, right.columns, result.rows, result.columns
             ));
         }
+        self.reserve_scalar_instructions(
+            result.rows,
+            result.columns,
+            sum_products_work(left.columns)?,
+        )?;
         for column in 0..result.columns {
             for row in 0..result.rows {
                 let terms = (0..left.columns)
@@ -1965,9 +2251,26 @@ impl<'a> BatchCompiler<'a> {
             ));
         }
 
+        let instructions_per_column = match coefficients.rows {
+            1 => coefficients.rows,
+            2 => 8,
+            rows => {
+                return Err(format!(
+                    "fixed-shape matrix solve currently supports 1x1 and 2x2 coefficient matrices, found {rows}x{rows}"
+                ));
+            }
+        };
+        let fixed_instructions = usize::from(coefficients.rows == 2) * 3;
+        let solve_instructions = rhs
+            .columns
+            .checked_mul(instructions_per_column)
+            .and_then(|instructions| instructions.checked_add(fixed_instructions))
+            .ok_or_else(|| "matrix solve instruction count overflow".to_owned())?;
+        self.reserve_scalar_instructions(solve_instructions, 1, 1)?;
         match coefficients.rows {
             1 => {
                 let denominator = self.operand(inputs[0], 0)?;
+                let mut finite_results = Vec::with_capacity(rhs.elements());
                 for component in 0..rhs.elements() {
                     let numerator = self.operand(inputs[1], component)?;
                     self.emit(
@@ -1978,7 +2281,11 @@ impl<'a> BatchCompiler<'a> {
                             inputs: vec![numerator, denominator],
                         },
                     );
+                    finite_results.push(ScalarOperand::Register(
+                        self.register_offsets[&output] + component,
+                    ));
                 }
+                self.emit_solve_constraint(denominator, finite_results)?;
             }
             2 => {
                 // A fixed 2x2 solve is scalarized once at compile time. The
@@ -1993,6 +2300,7 @@ impl<'a> BatchCompiler<'a> {
                 let off_diagonal = self.emit_temporary_binary(BinaryOperation::Multiply, a01, a10);
                 let determinant =
                     self.emit_temporary_binary(BinaryOperation::Subtract, diagonal, off_diagonal);
+                let mut finite_results = Vec::with_capacity(rhs.elements());
 
                 for column in 0..rhs.columns {
                     let b0 = self.operand(inputs[1], rhs.index(0, column))?;
@@ -2023,6 +2331,9 @@ impl<'a> BatchCompiler<'a> {
                             inputs: vec![numerator0, determinant],
                         },
                     );
+                    finite_results.push(ScalarOperand::Register(
+                        self.register_offsets[&output] + result.index(0, column),
+                    ));
                     self.emit(
                         output,
                         result.index(1, column),
@@ -2031,14 +2342,31 @@ impl<'a> BatchCompiler<'a> {
                             inputs: vec![numerator1, determinant],
                         },
                     );
+                    finite_results.push(ScalarOperand::Register(
+                        self.register_offsets[&output] + result.index(1, column),
+                    ));
                 }
+                self.emit_solve_constraint(determinant, finite_results)?;
             }
-            rows => {
-                return Err(format!(
-                    "fixed-shape matrix solve currently supports 1x1 and 2x2 coefficient matrices, found {rows}x{rows}"
-                ));
-            }
+            _ => unreachable!("supported solve dimensions were admitted above"),
         }
+        Ok(())
+    }
+
+    fn emit_solve_constraint(
+        &mut self,
+        denominator: ScalarOperand,
+        finite_results: Vec<ScalarOperand>,
+    ) -> Result<(), String> {
+        let id = self
+            .next_internal_constraint_id
+            .ok_or_else(|| "GPU integrity-constraint identifiers are exhausted".to_owned())?;
+        self.next_internal_constraint_id = id.checked_add(1);
+        self.internal_constraints.push(BatchedConstraint {
+            id: IntegrityConstraintId::new(id),
+            name: "matrix solve requires a finite nonsingular coefficient matrix".into(),
+            predicate: matrix_solve_validity_predicate(denominator, finite_results),
+        });
         Ok(())
     }
 
@@ -2055,6 +2383,7 @@ impl<'a> BatchCompiler<'a> {
         if result.rows != input.columns || result.columns != input.rows {
             return Err("transpose output shape is inconsistent".to_owned());
         }
+        self.reserve_scalar_instructions(result.rows, result.columns, 1)?;
         for column in 0..result.columns {
             for row in 0..result.rows {
                 let source = self.operand(inputs[0], input.index(column, row))?;
@@ -2075,8 +2404,8 @@ impl<'a> BatchCompiler<'a> {
         horizontal: bool,
     ) -> Result<(), String> {
         let result = self.shape(output)?;
-        let mut row_offset = 0;
-        let mut column_offset = 0;
+        let mut row_offset = 0usize;
+        let mut column_offset = 0usize;
         for source in inputs {
             let shape = self.source_shape(*source)?;
             if horizontal && shape.rows != result.rows {
@@ -2085,6 +2414,27 @@ impl<'a> BatchCompiler<'a> {
             if !horizontal && shape.columns != result.columns {
                 return Err("vertical concatenation column count differs".to_owned());
             }
+            if horizontal {
+                column_offset = column_offset
+                    .checked_add(shape.columns)
+                    .ok_or_else(|| "concatenation column count overflow".to_owned())?;
+            } else {
+                row_offset = row_offset
+                    .checked_add(shape.rows)
+                    .ok_or_else(|| "concatenation row count overflow".to_owned())?;
+            }
+        }
+        if (horizontal && column_offset != result.columns)
+            || (!horizontal && row_offset != result.rows)
+        {
+            return Err("concatenation inputs do not fill the output shape".to_owned());
+        }
+        self.reserve_scalar_instructions(result.rows, result.columns, 1)?;
+
+        row_offset = 0;
+        column_offset = 0;
+        for source in inputs {
+            let shape = self.source_shape(*source)?;
             for column in 0..shape.columns {
                 for row in 0..shape.rows {
                     let destination = result.index(row + row_offset, column + column_offset);
@@ -2098,15 +2448,35 @@ impl<'a> BatchCompiler<'a> {
                 row_offset += shape.rows;
             }
         }
-        if (horizontal && column_offset != result.columns)
-            || (!horizontal && row_offset != result.rows)
-        {
-            return Err("concatenation inputs do not fill the output shape".to_owned());
-        }
         Ok(())
     }
 
+    fn reserve_scalar_instructions(
+        &mut self,
+        selected_rows: usize,
+        selected_columns: usize,
+        instructions_per_element: usize,
+    ) -> Result<ScalarInstructionExpansion, String> {
+        let expansion = plan_scalar_instruction_expansion(
+            usize::try_from(self.scalar_instruction_work)
+                .map_err(|_| "scalar instruction work does not fit usize".to_owned())?,
+            selected_rows,
+            selected_columns,
+            instructions_per_element,
+        )
+        .map_err(|error| format!("scalar instruction expansion rejected: {error:?}"))?;
+        self.scalar_instruction_work = expansion.total;
+        let additional = selected_rows
+            .checked_mul(selected_columns)
+            .ok_or_else(|| "emitted scalar instruction count overflow".to_owned())?;
+        self.instructions
+            .try_reserve_exact(additional)
+            .map_err(|_| "unable to reserve scalar instruction expansion".to_owned())?;
+        Ok(expansion)
+    }
+
     fn emit(&mut self, slot: CellSlotId, component: usize, computation: ScalarComputation) {
+        debug_assert!(self.instructions.len() < MAX_SCALAR_INSTRUCTIONS as usize);
         self.instructions.push(ScalarInstruction {
             output: self.register_offsets[&slot] + component,
             computation,
@@ -2119,6 +2489,7 @@ impl<'a> BatchCompiler<'a> {
         left: ScalarOperand,
         right: ScalarOperand,
     ) -> ScalarOperand {
+        debug_assert!(self.instructions.len() < MAX_SCALAR_INSTRUCTIONS as usize);
         let output = self.register_count;
         self.register_count += 1;
         self.instructions.push(ScalarInstruction {
@@ -2162,13 +2533,18 @@ impl<'a> BatchCompiler<'a> {
         upper: usize,
         role: &str,
     ) -> Result<Vec<usize>, String> {
-        let Some(one_based) = self.static_selector_indices(source)? else {
+        // Selector cardinality is independent of the indexed axis: repeated
+        // positions can legitimately produce more outputs than `upper`.
+        // Bound planning by the target-wide static-selector limit instead.
+        let Some(one_based) = self.static_selector_indices(source, MAX_STATIC_SELECTOR_ELEMENTS)?
+        else {
             return Err(format!(
                 "matrix {role} selector must be compile-time constant"
             ));
         };
         one_based
-            .into_iter()
+            .iter()
+            .copied()
             .map(|index| {
                 let zero_based = index
                     .checked_sub(1)
@@ -2186,77 +2562,256 @@ impl<'a> BatchCompiler<'a> {
             .collect()
     }
 
-    fn static_selector_indices(&self, source: ArtifactSource) -> Result<Option<Vec<u64>>, String> {
-        self.static_numeric_source(source)
+    fn static_selector_indices(
+        &self,
+        source: ArtifactSource,
+        maximum_elements: usize,
+    ) -> Result<Option<Arc<[u64]>>, String> {
+        let key = (source, maximum_elements);
+        if let Some(cached) = self.static_selector_cache.borrow().get(&key) {
+            return cached.clone();
+        }
+        let resolved = self.static_numeric_source(source, maximum_elements);
+        self.static_selector_cache
+            .borrow_mut()
+            .insert(key, resolved.clone());
+        resolved
     }
 
-    fn static_numeric_source(&self, source: ArtifactSource) -> Result<Option<Vec<u64>>, String> {
-        match source {
-            ArtifactSource::Constant(constant) => {
-                let value = self
-                    .artifact
-                    .constants()
-                    .get(constant)
-                    .ok_or_else(|| format!("constant {} does not exist", constant.get()))?;
-                static_numeric_indices(value.data()).map(Some)
+    fn charge_static_selector_source_step(&self, role: &str) -> Result<(), String> {
+        let remaining = self.static_selector_source_steps_remaining.get();
+        let Some(remaining) = remaining.checked_sub(1) else {
+            return Err(format!(
+                "static {role} traversal exceeds the compilation-wide planning limit {MAX_STATIC_SELECTOR_SOURCE_STEPS}"
+            ));
+        };
+        self.static_selector_source_steps_remaining.set(remaining);
+        Ok(())
+    }
+
+    fn cache_static_selector_sources(
+        &self,
+        sources: &[ArtifactSource],
+        maximum_elements: usize,
+        resolved: &Result<Option<Arc<[u64]>>, String>,
+    ) {
+        let mut cache = self.static_selector_cache.borrow_mut();
+        for source in sources {
+            cache.insert((*source, maximum_elements), resolved.clone());
+        }
+    }
+
+    fn static_numeric_source(
+        &self,
+        source: ArtifactSource,
+        maximum_elements: usize,
+    ) -> Result<Option<Arc<[u64]>>, String> {
+        let mut source = source;
+        let mut traversed = Vec::new();
+        loop {
+            let cached = self
+                .static_selector_cache
+                .borrow()
+                .get(&(source, maximum_elements))
+                .cloned();
+            if let Some(cached) = cached {
+                self.cache_static_selector_sources(&traversed, maximum_elements, &cached);
+                return cached;
             }
-            ArtifactSource::Slot(slot) => {
-                let Some(declaration) = self.artifact.slots().get(slot.get() as usize) else {
-                    return Err(format!("selector slot {} does not exist", slot.get()));
-                };
-                let ProducerReference::NodeOutput { node, .. } = declaration.producer else {
-                    return Ok(None);
-                };
-                let Some(node) = self.artifact.nodes().get(node.get() as usize) else {
-                    return Err(format!(
-                        "selector producer node {} does not exist",
-                        node.get()
-                    ));
-                };
-                let inputs = node
-                    .input_bindings
-                    .clone()
-                    .filter_map(
-                        |binding| match self.artifact.bindings().get(binding as usize) {
-                            Some(BindingDeclaration::Input { source, .. }) => Some(*source),
-                            _ => None,
-                        },
-                    )
-                    .collect::<Vec<_>>();
-                match display_operation(&node.operation).as_str() {
-                    "access/index" => {
-                        let [input] = inputs.as_slice() else {
-                            return Err(
-                                "static index conversion must have exactly one input".to_owned()
-                            );
-                        };
-                        self.static_numeric_source(*input)
-                    }
-                    "range/inclusive" => {
-                        let [from, to] = inputs.as_slice() else {
-                            return Err("static inclusive range must have two inputs".to_owned());
-                        };
-                        let Some(from) = self.static_numeric_source(*from)? else {
-                            return Ok(None);
-                        };
-                        let Some(to) = self.static_numeric_source(*to)? else {
-                            return Ok(None);
-                        };
-                        let ([from], [to]) = (from.as_slice(), to.as_slice()) else {
-                            return Err("static inclusive range bounds must be scalar".to_owned());
-                        };
-                        if from > to {
-                            return Ok(Some(Vec::new()));
+            match source {
+                ArtifactSource::Constant(constant) => {
+                    let value = self
+                        .artifact
+                        .constants()
+                        .get(constant)
+                        .ok_or_else(|| format!("constant {} does not exist", constant.get()))?;
+                    let resolved = static_numeric_indices(value.data(), maximum_elements)
+                        .map(|indices| Some(Arc::from(indices)));
+                    self.cache_static_selector_sources(&traversed, maximum_elements, &resolved);
+                    return resolved;
+                }
+                ArtifactSource::Slot(slot) => {
+                    self.charge_static_selector_source_step("selector source")?;
+                    traversed.push(source);
+                    let Some(declaration) = self.artifact.slots().get(slot.get() as usize) else {
+                        return Err(format!("selector slot {} does not exist", slot.get()));
+                    };
+                    let ProducerReference::NodeOutput { node, .. } = declaration.producer else {
+                        let resolved = Ok(None);
+                        self.cache_static_selector_sources(&traversed, maximum_elements, &resolved);
+                        return resolved;
+                    };
+                    let Some(node) = self.artifact.nodes().get(node.get() as usize) else {
+                        return Err(format!(
+                            "selector producer node {} does not exist",
+                            node.get()
+                        ));
+                    };
+                    let inputs = node
+                        .input_bindings
+                        .clone()
+                        .filter_map(|binding| {
+                            match self.artifact.bindings().get(binding as usize) {
+                                Some(BindingDeclaration::Input { source, .. }) => Some(*source),
+                                _ => None,
+                            }
+                        })
+                        .collect::<Vec<_>>();
+                    match display_operation(&node.operation).as_str() {
+                        "access/index" => {
+                            let [input] = inputs.as_slice() else {
+                                return Err("static index conversion must have exactly one input"
+                                    .to_owned());
+                            };
+                            source = *input;
                         }
-                        let count = to
-                            .checked_sub(*from)
-                            .and_then(|difference| difference.checked_add(1))
-                            .ok_or_else(|| "static inclusive range is too large".to_owned())?;
-                        let count = usize::try_from(count)
-                            .map_err(|_| "static inclusive range is too large".to_owned())?;
-                        Ok(Some((*from..=*to).take(count).collect()))
+                        operation @ ("range/exclusive"
+                        | "range/exclusive-increment"
+                        | "range/inclusive"
+                        | "range/inclusive-increment") => {
+                            let (inclusive, incremented, expected) = match operation {
+                                "range/exclusive" => (false, false, 2),
+                                "range/exclusive-increment" => (false, true, 3),
+                                "range/inclusive" => (true, false, 2),
+                                "range/inclusive-increment" => (true, true, 3),
+                                _ => unreachable!(),
+                            };
+                            if inputs.len() != expected {
+                                return Err(format!(
+                                    "static {operation} must have {expected} inputs"
+                                ));
+                            }
+                            let mut endpoints = Vec::with_capacity(expected);
+                            for source in inputs {
+                                let Some(endpoint) = self.static_range_endpoint(source)? else {
+                                    return Ok(None);
+                                };
+                                endpoints.push(endpoint);
+                            }
+                            let mut indices = Vec::new();
+                            mech_core::visit_canonical_value_range(
+                                &endpoints,
+                                inclusive,
+                                incremented,
+                                maximum_elements.min(MAX_STATIC_SELECTOR_ELEMENTS),
+                                |value| {
+                                    indices.push(mech_core::canonical_positional_ordinal(&value)?);
+                                    Ok::<(), mech_core::CanonicalSelectorError>(())
+                                },
+                            )
+                            .map_err(|error| format!("invalid static {operation}: {error:?}"))?;
+                            let resolved = Ok(Some(Arc::from(indices)));
+                            self.cache_static_selector_sources(
+                                &traversed,
+                                maximum_elements,
+                                &resolved,
+                            );
+                            return resolved;
+                        }
+                        _ => {
+                            let resolved = Ok(None);
+                            self.cache_static_selector_sources(
+                                &traversed,
+                                maximum_elements,
+                                &resolved,
+                            );
+                            return resolved;
+                        }
                     }
-                    _ => Ok(None),
+                }
+            }
+        }
+    }
+
+    fn static_range_endpoint(&self, source: ArtifactSource) -> Result<Option<ValueData>, String> {
+        if let Some(cached) = self.static_range_endpoint_cache.borrow().get(&source) {
+            return cached.clone();
+        }
+        let resolved = self.resolve_static_range_endpoint(source);
+        self.static_range_endpoint_cache
+            .borrow_mut()
+            .insert(source, resolved.clone());
+        resolved
+    }
+
+    fn resolve_static_range_endpoint(
+        &self,
+        source: ArtifactSource,
+    ) -> Result<Option<ValueData>, String> {
+        let mut source = source;
+        let mut converted_to_index = false;
+        let mut traversed = Vec::new();
+        loop {
+            let cached = self
+                .static_range_endpoint_cache
+                .borrow()
+                .get(&source)
+                .cloned();
+            if let Some(cached) = cached {
+                let resolved = if converted_to_index {
+                    match cached? {
+                        Some(value) => canonical_static_range_endpoint(&value, true),
+                        None => Ok(None),
+                    }
+                } else {
+                    cached
+                };
+                let mut cache = self.static_range_endpoint_cache.borrow_mut();
+                for source in traversed {
+                    cache.insert(source, resolved.clone());
+                }
+                return resolved;
+            }
+            match source {
+                ArtifactSource::Constant(constant) => {
+                    let value = self
+                        .artifact
+                        .constants()
+                        .get(constant)
+                        .ok_or_else(|| format!("constant {} does not exist", constant.get()))?;
+                    let resolved =
+                        canonical_static_range_endpoint(value.data(), converted_to_index);
+                    let mut cache = self.static_range_endpoint_cache.borrow_mut();
+                    for source in traversed {
+                        cache.insert(source, resolved.clone());
+                    }
+                    return resolved;
+                }
+                ArtifactSource::Slot(slot) => {
+                    self.charge_static_selector_source_step("range endpoint")?;
+                    traversed.push(source);
+                    let Some(declaration) = self.artifact.slots().get(slot.get() as usize) else {
+                        return Err(format!("range endpoint slot {} does not exist", slot.get()));
+                    };
+                    let ProducerReference::NodeOutput { node, .. } = declaration.producer else {
+                        return Ok(None);
+                    };
+                    let Some(node) = self.artifact.nodes().get(node.get() as usize) else {
+                        return Err(format!(
+                            "range endpoint producer node {} does not exist",
+                            node.get()
+                        ));
+                    };
+                    if display_operation(&node.operation) != "access/index" {
+                        return Ok(None);
+                    }
+                    let inputs = node
+                        .input_bindings
+                        .clone()
+                        .filter_map(|binding| {
+                            match self.artifact.bindings().get(binding as usize) {
+                                Some(BindingDeclaration::Input { source, .. }) => Some(*source),
+                                _ => None,
+                            }
+                        })
+                        .collect::<Vec<_>>();
+                    let [input] = inputs.as_slice() else {
+                        return Err(
+                            "static index conversion must have exactly one input".to_owned()
+                        );
+                    };
+                    converted_to_index = true;
+                    source = *input;
                 }
             }
         }
@@ -2264,7 +2819,7 @@ impl<'a> BatchCompiler<'a> {
 
     fn static_selector_slot(&self, slot: CellSlotId) -> bool {
         if !self
-            .static_selector_indices(ArtifactSource::Slot(slot))
+            .static_selector_indices(ArtifactSource::Slot(slot), MAX_STATIC_SELECTOR_ELEMENTS)
             .is_ok_and(|indices| indices.is_some())
         {
             return false;
@@ -2395,25 +2950,55 @@ fn logic_operation(name: &str) -> Option<LogicOperation> {
 
 fn fixed_shape(
     artifact: &ProgramArtifact,
+    schema_id: mech_core::SchemaId,
+) -> Result<FixedShape, String> {
+    let schema = artifact
+        .schemas()
+        .get(schema_id)
+        .ok_or_else(|| "schema does not exist".to_owned())?;
+    let dimensions = match schema.body() {
+        SchemaBody::FloatingPoint(FloatWidth::W32) | SchemaBody::Bool => Box::new([]),
+        SchemaBody::Matrix {
+            element,
+            dimensions,
+        } if matches!(element.as_ref(), SchemaBody::FloatingPoint(FloatWidth::W32)) => dimensions
+            .iter()
+            .map(|dimension| match dimension {
+                DimensionExpr::Constant(value) => Ok(*value),
+                _ => Err("matrix dimension is not compile-time constant".to_owned()),
+            })
+            .collect::<Result<Vec<_>, _>>()?
+            .into_boxed_slice(),
+        body => {
+            return Err(format!(
+                "schema {body:?} is not fixed-shape f32 numeric data"
+            ));
+        }
+    };
+    fixed_shape_with_dimensions(artifact, schema_id, &dimensions)
+}
+
+fn fixed_shape_with_dimensions(
+    artifact: &ProgramArtifact,
     schema: mech_core::SchemaId,
+    dimensions: &[u64],
 ) -> Result<FixedShape, String> {
     let schema = artifact
         .schemas()
         .get(schema)
         .ok_or_else(|| "schema does not exist".to_owned())?;
     match schema.body() {
-        SchemaBody::FloatingPoint(FloatWidth::W32) => Ok(FixedShape::scalar()),
-        SchemaBody::Bool => Ok(FixedShape::scalar()),
-        SchemaBody::Matrix {
-            element,
-            dimensions,
-        } if matches!(element.as_ref(), SchemaBody::FloatingPoint(FloatWidth::W32)) => {
+        SchemaBody::FloatingPoint(FloatWidth::W32) | SchemaBody::Bool if dimensions.is_empty() => {
+            Ok(FixedShape::scalar())
+        }
+        SchemaBody::Matrix { element, .. }
+            if matches!(element.as_ref(), SchemaBody::FloatingPoint(FloatWidth::W32)) =>
+        {
             let dimensions = dimensions
                 .iter()
-                .map(|dimension| match dimension {
-                    DimensionExpr::Constant(value) => usize::try_from(*value)
-                        .map_err(|_| "matrix dimension does not fit usize".to_owned()),
-                    _ => Err("matrix dimension is not compile-time constant".to_owned()),
+                .map(|dimension| {
+                    usize::try_from(*dimension)
+                        .map_err(|_| "matrix dimension does not fit usize".to_owned())
                 })
                 .collect::<Result<Vec<_>, _>>()?;
             if dimensions.is_empty() || dimensions.len() > 2 {
@@ -2430,86 +3015,62 @@ fn fixed_shape(
     }
 }
 
-fn static_numeric_indices(data: &ValueData) -> Result<Vec<u64>, String> {
-    macro_rules! unsigned_scalar {
-        ($value:expr) => {
-            u64::try_from(*$value)
-                .map(|value| vec![value])
-                .map_err(|_| "static selector exceeds the portable index range".to_owned())
-        };
-    }
-    macro_rules! signed_scalar {
-        ($value:expr) => {
-            u64::try_from(*$value)
-                .map(|value| vec![value])
-                .map_err(|_| "static selector must be a nonnegative integer".to_owned())
-        };
-    }
+fn static_numeric_indices(data: &ValueData, maximum_elements: usize) -> Result<Vec<u64>, String> {
     match data {
-        ValueData::Index(value) | ValueData::U64(value) => Ok(vec![*value]),
-        ValueData::U8(value) => Ok(vec![u64::from(*value)]),
-        ValueData::U16(value) => Ok(vec![u64::from(*value)]),
-        ValueData::U32(value) => Ok(vec![u64::from(*value)]),
-        ValueData::U128(value) => unsigned_scalar!(value),
-        ValueData::I8(value) => signed_scalar!(value),
-        ValueData::I16(value) => signed_scalar!(value),
-        ValueData::I32(value) => signed_scalar!(value),
-        ValueData::I64(value) => signed_scalar!(value),
-        ValueData::I128(value) => signed_scalar!(value),
-        ValueData::F32(value) => {
-            exact_float_index(f64::from(value.to_f32())).map(|value| vec![value])
+        ValueData::Matrix(matrix) => {
+            let elements = matrix.elements();
+            if elements.len() > maximum_elements || elements.len() > MAX_STATIC_SELECTOR_ELEMENTS {
+                return Err(format!(
+                    "static selector cardinality {} exceeds the GPU planning limit {}",
+                    elements.len(),
+                    maximum_elements.min(MAX_STATIC_SELECTOR_ELEMENTS),
+                ));
+            }
+            let mut indices = Vec::with_capacity(elements.len());
+            mech_core::visit_canonical_positional_sequence(elements, u32::MAX as usize, |index| {
+                indices.push(index as u64 + 1);
+                Ok::<(), core::convert::Infallible>(())
+            })
+            .map_err(|error| format!("invalid static selector: {error:?}"))?;
+            Ok(indices)
         }
-        ValueData::F64(value) => exact_float_index(value.to_f64()).map(|value| vec![value]),
-        ValueData::Matrix(matrix) => match matrix.elements() {
-            SequenceView::Index(values) | SequenceView::U64(values) => Ok(values.to_vec()),
-            SequenceView::U8(values) => Ok(values.iter().copied().map(u64::from).collect()),
-            SequenceView::U16(values) => Ok(values.iter().copied().map(u64::from).collect()),
-            SequenceView::U32(values) => Ok(values.iter().copied().map(u64::from).collect()),
-            SequenceView::U128(values) => values
-                .iter()
-                .map(|value| {
-                    u64::try_from(*value)
-                        .map_err(|_| "static selector exceeds the portable index range".to_owned())
-                })
-                .collect(),
-            SequenceView::I8(values) => signed_indices(values),
-            SequenceView::I16(values) => signed_indices(values),
-            SequenceView::I32(values) => signed_indices(values),
-            SequenceView::I64(values) => signed_indices(values),
-            SequenceView::I128(values) => signed_indices(values),
-            SequenceView::F32(values) => values
-                .iter()
-                .map(|value| exact_float_index(f64::from(value.to_f32())))
-                .collect(),
-            SequenceView::F64(values) => values
-                .iter()
-                .map(|value| exact_float_index(value.to_f64()))
-                .collect(),
-            _ => Err("static matrix selector must contain real integers".to_owned()),
-        },
-        _ => Err("static selector must be a real integer or index".to_owned()),
+        value => {
+            if maximum_elements == 0 {
+                return Err("static selector cardinality exceeds the GPU planning limit".to_owned());
+            }
+            mech_core::canonical_positional_ordinal(value)
+                .map(|value| vec![value])
+                .map_err(|error| format!("invalid static selector: {error:?}"))
+        }
     }
 }
 
-fn signed_indices<T>(values: &[T]) -> Result<Vec<u64>, String>
-where
-    T: Copy,
-    u64: TryFrom<T>,
-{
-    values
-        .iter()
-        .map(|value| {
-            u64::try_from(*value)
-                .map_err(|_| "static selector must contain nonnegative integers".to_owned())
-        })
-        .collect()
-}
-
-fn exact_float_index(value: f64) -> Result<u64, String> {
-    if !value.is_finite() || value < 0.0 || value.fract() != 0.0 || value >= u64::MAX as f64 {
-        return Err("static selector must be a finite nonnegative integer".to_owned());
+fn canonical_static_range_endpoint(
+    value: &ValueData,
+    converted_to_index: bool,
+) -> Result<Option<ValueData>, String> {
+    let value = match value {
+        value @ (ValueData::Index(_)
+        | ValueData::U8(_)
+        | ValueData::U16(_)
+        | ValueData::U32(_)
+        | ValueData::U64(_)
+        | ValueData::U128(_)
+        | ValueData::I8(_)
+        | ValueData::I16(_)
+        | ValueData::I32(_)
+        | ValueData::I64(_)
+        | ValueData::I128(_)
+        | ValueData::F32(_)
+        | ValueData::F64(_)) => value,
+        _ => return Ok(None),
+    };
+    if converted_to_index {
+        let ordinal = mech_core::canonical_positional_ordinal(value)
+            .map_err(|error| format!("invalid static access/index conversion: {error:?}"))?;
+        return Ok(Some(ValueData::Index(ordinal)));
     }
-    Ok(value as u64)
+    Ok(Some(value.clone()))
 }
 
 fn artifact_constant_values(
@@ -2666,15 +3227,557 @@ fn generate_wgsl(
     shader
 }
 
+#[cfg(test)]
+mod axis_tests {
+    use super::*;
+
+    fn typed_selector(kind: &str, value: u8) -> String {
+        match kind {
+            "f32" => format!("{value}.9<f32>"),
+            "f64" => format!("{value}.9"),
+            _ => format!("{value}<{kind}>"),
+        }
+    }
+
+    #[test]
+    fn scalar_instruction_expansion_is_admitted_before_cartesian_emission() {
+        let exact =
+            plan_scalar_instruction_expansion(MAX_SCALAR_INSTRUCTIONS as usize - 6, 2, 3, 1)
+                .unwrap();
+        assert_eq!(exact.additional, 6);
+        assert_eq!(exact.total, MAX_SCALAR_INSTRUCTIONS);
+        assert!(matches!(
+            plan_scalar_instruction_expansion(
+                MAX_SCALAR_INSTRUCTIONS as usize - 5,
+                2,
+                3,
+                1,
+            ),
+            Err(mech_core::MemoryPlanError::TargetLimitExceeded {
+                violation: mech_core::MemoryBudgetViolation {
+                    dimension: mech_core::MemoryBudgetDimension::ScalarInstructions,
+                    required,
+                    limit: MAX_SCALAR_INSTRUCTIONS,
+                    ..
+                },
+            }) if required == MAX_SCALAR_INSTRUCTIONS + 1
+        ));
+        assert!(matches!(
+            plan_scalar_instruction_expansion(0, usize::MAX, usize::MAX, usize::MAX),
+            Err(mech_core::MemoryPlanError::ArithmeticOverflow {
+                field: "scalar instruction expansion",
+            })
+        ));
+        assert_eq!(
+            plan_scalar_instruction_expansion(0, 1_024, 1_024, 16)
+                .unwrap()
+                .total,
+            MAX_SCALAR_INSTRUCTIONS
+        );
+        assert!(matches!(
+            plan_scalar_instruction_expansion(0, 1_024, 1_024, 17),
+            Err(mech_core::MemoryPlanError::TargetLimitExceeded { .. })
+        ));
+        assert_eq!(sum_products_work(0), Ok(1));
+        assert_eq!(
+            scalar_computation_wgsl(&ScalarComputation::SumProducts(Vec::new())),
+            "0.0"
+        );
+        assert_eq!(sum_products_work(16), Ok(17));
+        assert!(sum_products_work(usize::MAX).is_err());
+        assert!(matches!(
+            plan_scalar_instruction_expansion(
+                MAX_SCALAR_INSTRUCTIONS as usize,
+                1,
+                1,
+                sum_products_work(0).unwrap(),
+            ),
+            Err(mech_core::MemoryPlanError::TargetLimitExceeded { .. })
+        ));
+    }
+
+    #[test]
+    fn declared_access_axis_disambiguates_square_matrix_selection() {
+        let square = FixedShape {
+            rows: 3,
+            columns: 3,
+        };
+        let selector = vec![2, 0, 1];
+        assert_eq!(
+            matrix_selector_access_axes(
+                ResolvedSelectionMode::Rows,
+                square,
+                selector.clone(),
+                None,
+            ),
+            Ok((selector.clone(), vec![0, 1, 2]))
+        );
+        assert_eq!(
+            matrix_selector_access_axes(
+                ResolvedSelectionMode::Columns,
+                square,
+                selector.clone(),
+                None,
+            ),
+            Ok((vec![0, 1, 2], selector.clone()))
+        );
+        assert!(
+            matrix_selector_access_axes(
+                ResolvedSelectionMode::LinearGather,
+                square,
+                selector,
+                None,
+            )
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn rectangular_linear_selection_uses_cardinality_and_preserves_duplicates() {
+        let source = FixedShape {
+            rows: 2,
+            columns: 3,
+        };
+        assert_eq!(
+            linear_access_components(
+                ResolvedSelectionMode::LinearScalar,
+                source,
+                FixedShape::scalar(),
+                vec![5],
+            ),
+            Ok(vec![5]),
+        );
+        let result = FixedShape {
+            rows: 1,
+            columns: 3,
+        };
+        assert_eq!(
+            linear_access_components(
+                ResolvedSelectionMode::LinearGather,
+                source,
+                result,
+                vec![5, 0, 5],
+            ),
+            Ok(vec![5, 0, 5]),
+        );
+        assert!(
+            linear_access_components(
+                ResolvedSelectionMode::LinearGather,
+                source,
+                result,
+                vec![6, 0, 5],
+            )
+            .is_err()
+        );
+        assert!(
+            linear_access_components(
+                ResolvedSelectionMode::LinearScalar,
+                source,
+                result,
+                vec![5, 0, 5],
+            )
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn rectangular_axis_and_rectangle_modes_preserve_selector_order() {
+        let source = FixedShape {
+            rows: 2,
+            columns: 3,
+        };
+        assert_eq!(
+            matrix_selector_access_axes(ResolvedSelectionMode::Rows, source, vec![1, 0, 1], None,),
+            Ok((vec![1, 0, 1], vec![0, 1, 2])),
+        );
+        assert_eq!(
+            matrix_selector_access_axes(
+                ResolvedSelectionMode::Columns,
+                source,
+                vec![2, 0, 2],
+                None,
+            ),
+            Ok((vec![0, 1], vec![2, 0, 2])),
+        );
+        assert_eq!(
+            matrix_selector_access_axes(
+                ResolvedSelectionMode::Rectangle,
+                source,
+                vec![1, 0, 1],
+                Some(vec![2, 0, 2]),
+            ),
+            Ok((vec![1, 0, 1], vec![2, 0, 2])),
+        );
+        assert!(
+            matrix_selector_access_axes(
+                ResolvedSelectionMode::Rows,
+                source,
+                vec![1],
+                Some(vec![2]),
+            )
+            .is_err(),
+        );
+    }
+
+    #[test]
+    fn static_float_selectors_use_source_truncation_semantics() {
+        for value in [
+            ValueData::Index(1),
+            ValueData::U8(1),
+            ValueData::U16(1),
+            ValueData::U32(1),
+            ValueData::U64(1),
+            ValueData::U128(1),
+            ValueData::I8(1),
+            ValueData::I16(1),
+            ValueData::I32(1),
+            ValueData::I64(1),
+            ValueData::I128(1),
+        ] {
+            assert_eq!(
+                static_numeric_indices(&value, MAX_STATIC_SELECTOR_ELEMENTS),
+                Ok(vec![1]),
+                "{value:?}",
+            );
+        }
+        assert_eq!(
+            static_numeric_indices(
+                &ValueData::F64(mech_core::snapshot::F64Bits::from_f64(2.75,)),
+                MAX_STATIC_SELECTOR_ELEMENTS
+            ),
+            Ok(vec![2]),
+        );
+        assert_eq!(
+            static_numeric_indices(
+                &ValueData::F32(mech_core::snapshot::F32Bits::from_f32(1.99,)),
+                MAX_STATIC_SELECTOR_ELEMENTS
+            ),
+            Ok(vec![1]),
+        );
+        assert!(
+            static_numeric_indices(
+                &ValueData::F64(mech_core::snapshot::F64Bits::from_f64(f64::INFINITY,)),
+                MAX_STATIC_SELECTOR_ELEMENTS
+            )
+            .is_err()
+        );
+        assert!(
+            static_numeric_indices(
+                &ValueData::F64(mech_core::snapshot::F64Bits::from_f64(-1.0,)),
+                MAX_STATIC_SELECTOR_ELEMENTS
+            )
+            .is_err()
+        );
+        assert!(
+            static_numeric_indices(
+                &ValueData::F64(mech_core::snapshot::F64Bits::from_f64(0.5,)),
+                MAX_STATIC_SELECTOR_ELEMENTS
+            )
+            .is_err()
+        );
+        assert!(
+            static_numeric_indices(
+                &ValueData::F64(mech_core::snapshot::F64Bits::from_f64(
+                    f64::from(u32::MAX) + 1.0,
+                )),
+                MAX_STATIC_SELECTOR_ELEMENTS
+            )
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn static_range_endpoints_preserve_declared_index_conversion() {
+        let fractional = ValueData::F64(mech_core::snapshot::F64Bits::from_f64(1.9));
+        let raw = canonical_static_range_endpoint(&fractional, false)
+            .unwrap()
+            .unwrap();
+        assert!(matches!(raw, ValueData::F64(value) if value.to_f64() == 1.9));
+        let converted = canonical_static_range_endpoint(&fractional, true)
+            .unwrap()
+            .unwrap();
+        assert!(matches!(converted, ValueData::Index(1)));
+        assert!(
+            canonical_static_range_endpoint(
+                &ValueData::F64(mech_core::snapshot::F64Bits::from_f64(-1.0)),
+                true,
+            )
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn range_produced_gpu_selectors_use_bounded_source_typed_semantics() {
+        let mut compiler = mech_runtime::RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_native_plan_catalog())
+            .build_compiler()
+            .unwrap();
+        for selector in [
+            "1<u64>..3<u64>",
+            "1<u64>..1<u64>..3<u64>",
+            "1<u64>..=2<u64>",
+            "1<u64>..1<u64>..=2<u64>",
+        ] {
+            let source = format!(
+                "~result := [0f32; 0f32]\nmatrix := [7f32 9f32]\nselector := {selector}\nresult = matrix[selector]\nresult"
+            );
+            let artifact = compiler
+                .compile_source_artifact(&source)
+                .unwrap_or_else(|error| panic!("{selector} did not compile: {error:?}"))
+                .into_artifact();
+            let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact)
+                .unwrap_or_else(|error| panic!("{selector} did not encode: {error:?}"));
+            let artifact = mech_engine::decode_program_artifact_bytecode_v1(&bytes)
+                .unwrap_or_else(|error| panic!("{selector} did not decode: {error:?}"));
+            let kernel = crate::ComputeLowerer
+                .compile_batched(&artifact, 1)
+                .unwrap_or_else(|error| panic!("{selector} did not lower: {error:?}"));
+            let mut session = kernel.prepare_cpu(&BTreeMap::new()).unwrap();
+            session.dispatch_turns(1).unwrap();
+            assert!(
+                session
+                    .state()
+                    .values()
+                    .any(|values| values.as_slice() == [7.0, 9.0]),
+                "{selector} did not preserve the canonical selector values"
+            );
+        }
+
+        let fractional = "~result := [0f32]\nmatrix := [7f32 9f32]\nselector := 1.9..=2.1\nresult = matrix[selector]\nresult";
+        let artifact = compiler
+            .compile_source_artifact(fractional)
+            .unwrap()
+            .into_artifact();
+        crate::ComputeLowerer.compile_batched(&artifact, 1).unwrap();
+    }
+
+    #[test]
+    fn generated_selector_family_survives_bytecode_and_gpu_static_lowering() {
+        let mut compiler = mech_runtime::RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_native_plan_catalog())
+            .build_compiler()
+            .unwrap();
+        for kind in [
+            "u8", "u16", "u32", "u64", "u128", "i8", "i16", "i32", "i64", "i128", "f32", "f64",
+        ] {
+            let first = typed_selector(kind, 1);
+            let second = typed_selector(kind, 2);
+            let fourth = typed_selector(kind, 4);
+            let cases = [
+                (
+                    format!(
+                        "~result := 0f32\nmatrix := [1f32 2f32; 3f32 4f32]\nselector := {first}\nresult = matrix[selector]\nresult"
+                    ),
+                    ResolvedSelectionMode::LinearScalar,
+                    vec![1.0],
+                ),
+                (
+                    format!(
+                        "~result := [0f32; 0f32; 0f32]\nmatrix := [1f32 2f32; 3f32 4f32]\nselectors := [{fourth} {first} {fourth}]\nresult = matrix[selectors]\nresult"
+                    ),
+                    ResolvedSelectionMode::LinearGather,
+                    vec![4.0, 1.0, 4.0],
+                ),
+                (
+                    format!(
+                        "~result := [0f32 0f32]\nmatrix := [1f32 2f32; 3f32 4f32]\nselector := {second}\nresult = matrix[selector,:]\nresult"
+                    ),
+                    ResolvedSelectionMode::Rows,
+                    vec![3.0, 4.0],
+                ),
+                (
+                    format!(
+                        "~result := [0f32; 0f32]\nmatrix := [1f32 2f32; 3f32 4f32]\nselector := {second}\nresult = matrix[:,selector]\nresult"
+                    ),
+                    ResolvedSelectionMode::Columns,
+                    vec![2.0, 4.0],
+                ),
+                (
+                    format!(
+                        "~result := 0f32\nmatrix := [1f32 2f32; 3f32 4f32]\nrow := {second}\ncolumn := {first}\nresult = matrix[row,column]\nresult"
+                    ),
+                    ResolvedSelectionMode::Rectangle,
+                    vec![3.0],
+                ),
+            ];
+            for (source, expected_mode, expected) in cases {
+                let artifact = compiler
+                    .compile_source_artifact(&source)
+                    .unwrap_or_else(|error| panic!("{kind} GPU source did not compile: {error:?}"))
+                    .into_artifact();
+                let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact)
+                    .unwrap_or_else(|error| {
+                        panic!("{kind} GPU artifact did not encode: {error:?}")
+                    });
+                let artifact = mech_engine::decode_program_artifact_bytecode_v1(&bytes)
+                    .unwrap_or_else(|error| {
+                        panic!("{kind} GPU artifact did not decode: {error:?}")
+                    });
+                let kernel = crate::ComputeLowerer
+                    .compile_batched(&artifact, 1)
+                    .unwrap_or_else(|error| {
+                        panic!("{kind} GPU lowering failed for {source:?}: {error:?}")
+                    });
+                let access = kernel
+                    .concrete_execution_cases()
+                    .iter()
+                    .find(|case| case.operation.module_path.as_ref() == ["access"])
+                    .unwrap_or_else(|| panic!("{kind} produced no GPU access witness: {source:?}"));
+                assert_eq!(
+                    access.operation.resolved_selection_mode(
+                        usize::from(expected_mode == ResolvedSelectionMode::Rectangle) + 1
+                    ),
+                    Some(expected_mode),
+                    "{kind}: {source}",
+                );
+                let mut session = kernel.prepare_cpu(&BTreeMap::new()).unwrap();
+                session.dispatch_turns(1).unwrap();
+                let actual =
+                    session.state().values().next().unwrap_or_else(|| {
+                        panic!("{kind} produced no GPU-backed state: {source:?}")
+                    });
+                assert_eq!(actual, &expected, "{kind}: {source}");
+            }
+
+            for source in [
+                format!(
+                    "~matrix := [1f32 2f32; 3f32 4f32]\nselector := {first}\nmatrix[selector] = 9f32\nmatrix"
+                ),
+                format!(
+                    "~matrix := [1f32 2f32; 3f32 4f32]\nselector := {second}\nmatrix[selector,:] = [9f32 10f32]\nmatrix"
+                ),
+                format!(
+                    "~matrix := [1f32 2f32; 3f32 4f32]\nselector := {second}\nmatrix[:,selector] = [9f32; 10f32]\nmatrix"
+                ),
+                format!(
+                    "~matrix := [1f32 2f32; 3f32 4f32]\nrow := {second}\ncolumn := {first}\nmatrix[row,column] = 9f32\nmatrix"
+                ),
+            ] {
+                let artifact = compiler
+                    .compile_source_artifact(&source)
+                    .unwrap_or_else(|error| {
+                        panic!("{kind} GPU-unavailable source did not compile: {error:?}")
+                    })
+                    .into_artifact();
+                let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact)
+                    .unwrap_or_else(|error| panic!("{kind} assignment did not encode: {error:?}"));
+                let artifact = mech_engine::decode_program_artifact_bytecode_v1(&bytes)
+                    .unwrap_or_else(|error| panic!("{kind} assignment did not decode: {error:?}"));
+                let error = crate::ComputeLowerer
+                    .compile_batched(&artifact, 1)
+                    .unwrap_err();
+                assert!(
+                    error.diagnostics().iter().all(
+                        |diagnostic| diagnostic.code == GpuDiagnosticCode::OperationUnsupported
+                    ),
+                    "{kind} assignment must fail at GPU target admission: {error:?}",
+                );
+                assert!(
+                    error.diagnostics().iter().any(|diagnostic| {
+                        diagnostic
+                            .operation
+                            .as_deref()
+                            .is_some_and(|operation| operation.starts_with("core/assign"))
+                    }),
+                    "{kind} assignment must name the unavailable target operation: {error:?}",
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn gpu_matrix_solve_rejects_singular_inputs_without_publishing() {
+        let source = "portable singular solve @compute\n\
+                      -------------------------------------------------------------------------------\n\
+                      coefficients := source-coefficients\n\
+                      rhs := source-rhs\n\
+                      ~result := [7f32; 8f32]\n\
+                      result = coefficients \\ rhs\n\
+                      result\n";
+        let tree = mech_syntax::parse(source).unwrap();
+        let planning_inputs = BTreeMap::from([
+            (
+                "source-coefficients".to_owned(),
+                mech_runtime::RuntimeHostInputValue::F32Matrix {
+                    rows: 2,
+                    columns: 2,
+                    values: vec![4.0, 2.0, 1.0, 3.0],
+                },
+            ),
+            (
+                "source-rhs".to_owned(),
+                mech_runtime::RuntimeHostInputValue::F32Matrix {
+                    rows: 2,
+                    columns: 1,
+                    values: vec![1.0, 2.0],
+                },
+            ),
+        ]);
+        let artifact = mech_runtime::RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_native_plan_catalog())
+            .build_compiler()
+            .unwrap()
+            .compile_tree_artifact_with_inputs(
+                &tree,
+                &planning_inputs,
+                &BTreeSet::from(["coefficients".to_owned(), "rhs".to_owned()]),
+            )
+            .unwrap()
+            .into_artifact();
+        let activation_inputs = BTreeMap::from([
+            ("coefficients".to_owned(), vec![1.0, 2.0, 2.0, 4.0]),
+            ("rhs".to_owned(), vec![1.0, 2.0]),
+        ]);
+        let kernel = crate::ComputeLowerer
+            .compile_broadcast(&artifact, &activation_inputs)
+            .unwrap();
+        let mut session = kernel.prepare_cpu(&activation_inputs).unwrap();
+        let before = session.state().clone();
+        let error = session.dispatch_turns(1).unwrap_err();
+        assert!(
+            matches!(error, BatchedExecutionError::Integrity(_)),
+            "singular solve returned {error:?}"
+        );
+        assert_eq!(session.state(), &before);
+        assert!(
+            session
+                .last_fault()
+                .is_some_and(|fault| fault.constraint_name.contains("nonsingular"))
+        );
+        assert!(before.values().any(|values| values == &[7.0, 8.0]));
+    }
+
+    #[test]
+    fn gpu_matrix_solve_guard_rejects_zero_and_nonfinite_results() {
+        let valid = |denominator, result| {
+            matrix_solve_validity_predicate(
+                ScalarOperand::Constant(denominator),
+                [ScalarOperand::Constant(result)],
+            )
+            .evaluate(&[])
+        };
+        assert!(valid(2.0, 3.0));
+        assert!(!valid(0.0, 3.0));
+        assert!(!valid(f32::NAN, 3.0));
+        assert!(!valid(f32::INFINITY, 3.0));
+        assert!(!valid(2.0, f32::INFINITY));
+        assert!(!valid(2.0, f32::NAN));
+    }
+}
+
 #[cfg(feature = "native")]
 mod native {
     use std::{
         collections::{BTreeMap, BTreeSet},
-        sync::{Arc, mpsc},
+        rc::Rc,
+        sync::mpsc,
         time::{Duration, Instant},
     };
 
-    use mech_core::{CellSlotId, IntegrityConstraintId};
+    use mech_core::{
+        CellSlotId, DeviceSubmissionHold, IntegrityConstraintId, MemoryObjectId,
+        PreparedDeviceSubmission,
+    };
     use wgpu::util::DeviceExt;
 
     use super::{
@@ -2686,24 +3789,42 @@ mod native {
 
     const GPU_FAULT_WORDS: usize = 2;
 
-    #[derive(Debug)]
+    struct BufferMapCleanup<'a>(&'a wgpu::Buffer);
+
+    impl Drop for BufferMapCleanup<'_> {
+        fn drop(&mut self) {
+            self.0.unmap();
+        }
+    }
+
     pub struct BatchedResidentGpuSession {
         adapter: String,
-        device: wgpu::Device,
-        queue: wgpu::Queue,
         pipeline: wgpu::ComputePipeline,
         bind_groups: [wgpu::BindGroup; 2],
-        input_buffers: BTreeMap<CellSlotId, Arc<wgpu::Buffer>>,
-        output_buffers: [BTreeMap<CellSlotId, Arc<wgpu::Buffer>>; 2],
+        _registered_buffers: Vec<Rc<crate::RegisteredDeviceBuffer>>,
+        input_buffers: BTreeMap<CellSlotId, Rc<crate::RegisteredDeviceBuffer>>,
+        output_buffers: [BTreeMap<CellSlotId, Rc<crate::RegisteredDeviceBuffer>>; 2],
         output_elements: BTreeMap<CellSlotId, usize>,
         output_elements_per_instance: BTreeMap<CellSlotId, usize>,
+        output_readbacks: BTreeMap<CellSlotId, crate::RegisteredDeviceBuffer>,
         constraints: Box<[GpuPlanConstraint]>,
-        integrity_fault: Option<Arc<wgpu::Buffer>>,
-        integrity_readback: Option<wgpu::Buffer>,
+        integrity_fault: Option<Rc<crate::RegisteredDeviceBuffer>>,
+        integrity_readback: Option<crate::RegisteredDeviceBuffer>,
         workgroups: u32,
         next_group: usize,
         last_output_group: Option<usize>,
         faults: BatchedFaultRecorder,
+        memory_plan: crate::PlannedGpuExecution,
+        input_objects: BTreeMap<CellSlotId, MemoryObjectId>,
+        input_submissions: BTreeMap<CellSlotId, PreparedDeviceSubmission>,
+        dispatch_submission: PreparedDeviceSubmission,
+        checked_dispatch_submission: PreparedDeviceSubmission,
+        readback_submission: PreparedDeviceSubmission,
+        submission_tracker: crate::DeviceSubmissionTracker,
+        queued_uploads: Vec<(MemoryObjectId, DeviceSubmissionHold)>,
+        managed_memory: crate::ManagedGpuMemory,
+        queue: wgpu::Queue,
+        device: wgpu::Device,
     }
 
     #[derive(Clone, Debug)]
@@ -2747,6 +3868,12 @@ mod native {
             let adapter_name = format!("{} ({:?})", adapter_info.name, adapter_info.backend);
             let required_storage_buffers = execution_plan.bindings.len() as u32;
             let limits = adapter.limits();
+            let planned_execution = crate::PlannedGpuExecution::from_execution(
+                execution_plan,
+                crate::gpu_memory_limits(&limits),
+            )
+            .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
+            let execution_plan = &planned_execution.execution;
             if required_storage_buffers > limits.max_storage_buffers_per_shader_stage {
                 return Err(BatchedExecutionError::Native(format!(
                     "kernel requires {required_storage_buffers} storage buffers; adapter supports {}",
@@ -2778,47 +3905,95 @@ mod native {
                 )
                 .await
                 .map_err(|error| BatchedExecutionError::Native(error.to_string()))?;
+            let mut managed_memory = planned_execution
+                .managed_memory()
+                .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
 
             let mut input_buffers = BTreeMap::new();
+            let mut input_objects = BTreeMap::new();
+            let mut registered_buffers =
+                Vec::with_capacity(planned_execution.device_objects().len());
             for binding in execution_plan
                 .bindings
                 .iter()
                 .filter(|binding| binding.role == GpuExecutionBindingRole::Input)
             {
+                let planned_bytes = binding.elements.checked_mul(4).ok_or_else(|| {
+                    BatchedExecutionError::Native("GPU input byte count overflow".to_owned())
+                })?;
+                planned_execution
+                    .assert_binding_bytes(binding.binding, planned_bytes)
+                    .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
                 let Some(GpuPlanInitialValues::F32(values)) = &binding.initial_values else {
                     return Err(BatchedExecutionError::Native(format!(
                         "GPU input `{}` has no f32 initializer",
                         binding.name
                     )));
                 };
-                input_buffers.insert(
-                    CellSlotId::new(binding.slot),
-                    Arc::new(
-                        device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                            label: Some(&binding.name),
-                            contents: bytemuck::cast_slice(values),
-                            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
-                        }),
-                    ),
+                let slot = CellSlotId::new(binding.slot);
+                let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                    label: Some(&binding.name),
+                    contents: bytemuck::cast_slice(values),
+                    usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
+                });
+                let object = planned_execution
+                    .binding_object(binding.binding)
+                    .ok_or_else(|| {
+                        BatchedExecutionError::Native(format!(
+                            "GPU input binding {} has no planned object",
+                            binding.binding
+                        ))
+                    })?;
+                let buffer = Rc::new(
+                    managed_memory
+                        .register_device_buffer(object, buffer, planned_bytes)
+                        .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?,
                 );
+                registered_buffers.push(buffer.clone());
+                input_objects.insert(slot, object);
+                input_buffers.insert(slot, buffer);
             }
 
             let mut state_buffers = BTreeMap::new();
             for state in &execution_plan.states {
                 let slot = CellSlotId::new(state.slot);
-                let initial = Arc::new(device.create_buffer_init(
-                    &wgpu::util::BufferInitDescriptor {
-                        label: Some("Mech fixed-shape initial state"),
-                        contents: bytemuck::cast_slice(&state.initial_values),
-                        usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
-                    },
-                ));
-                let alternate = Arc::new(device.create_buffer(&wgpu::BufferDescriptor {
+                let state_bytes = state.elements.checked_mul(4).ok_or_else(|| {
+                    BatchedExecutionError::Native("GPU state byte count overflow".to_owned())
+                })?;
+                if planned_execution.state_bytes(slot) != Some(state_bytes) {
+                    return Err(BatchedExecutionError::Native(
+                        "GPU state backing differs from the admitted memory plan".to_owned(),
+                    ));
+                }
+                let initial = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                    label: Some("Mech fixed-shape initial state"),
+                    contents: bytemuck::cast_slice(&state.initial_values),
+                    usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
+                });
+                let alternate = device.create_buffer(&wgpu::BufferDescriptor {
                     label: Some("Mech fixed-shape alternate state"),
                     size: state.elements * std::mem::size_of::<f32>() as u64,
                     usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
                     mapped_at_creation: false,
-                }));
+                });
+                let [current, next] = planned_execution.state_objects(slot).ok_or_else(|| {
+                    BatchedExecutionError::Native(format!(
+                        "GPU state slot {} has no planned double buffer",
+                        slot.get()
+                    ))
+                })?;
+                let initial = Rc::new(
+                    managed_memory
+                        .register_device_buffer(current, initial, state_bytes)
+                        .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?,
+                );
+                let alternate = Rc::new(
+                    managed_memory
+                        .register_device_buffer(next, alternate, 0)
+                        .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?,
+                );
+                registered_buffers.push(initial.clone());
+                registered_buffers.push(alternate.clone());
                 state_buffers.insert(slot, [initial, alternate]);
             }
 
@@ -2826,24 +4001,64 @@ mod native {
                 .bindings
                 .iter()
                 .find(|binding| binding.role == GpuExecutionBindingRole::IntegrityFault);
-            let integrity_fault = integrity_binding.map(|binding| {
-                Arc::new(device.create_buffer(&wgpu::BufferDescriptor {
+            if let Some(binding) = integrity_binding {
+                let planned_bytes = binding.elements.checked_mul(4).ok_or_else(|| {
+                    BatchedExecutionError::Native("GPU integrity byte count overflow".to_owned())
+                })?;
+                planned_execution
+                    .assert_binding_bytes(binding.binding, planned_bytes)
+                    .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
+            }
+            let integrity_fault = if let Some(binding) = integrity_binding {
+                let buffer = device.create_buffer(&wgpu::BufferDescriptor {
                     label: Some("Mech integrity-constraint fault"),
                     size: binding.elements * std::mem::size_of::<u32>() as u64,
                     usage: wgpu::BufferUsages::STORAGE
                         | wgpu::BufferUsages::COPY_SRC
                         | wgpu::BufferUsages::COPY_DST,
                     mapped_at_creation: false,
-                }))
-            });
-            let integrity_readback = integrity_binding.map(|binding| {
-                device.create_buffer(&wgpu::BufferDescriptor {
+                });
+                let object = planned_execution
+                    .binding_object(binding.binding)
+                    .ok_or_else(|| {
+                        BatchedExecutionError::Native(format!(
+                            "GPU integrity binding {} has no planned object",
+                            binding.binding
+                        ))
+                    })?;
+                let buffer = Rc::new(
+                    managed_memory
+                        .register_device_buffer(object, buffer, 0)
+                        .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?,
+                );
+                registered_buffers.push(buffer.clone());
+                Some(buffer)
+            } else {
+                None
+            };
+            let integrity_readback = if let Some(binding) = integrity_binding {
+                let buffer = device.create_buffer(&wgpu::BufferDescriptor {
                     label: Some("Mech integrity-constraint readback"),
                     size: binding.elements * std::mem::size_of::<u32>() as u64,
                     usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
                     mapped_at_creation: false,
-                })
-            });
+                });
+                let [device_stage, _] =
+                    planned_execution
+                        .integrity_readback_objects()
+                        .ok_or_else(|| {
+                            BatchedExecutionError::Native(
+                                "integrity readback has no planned transfer objects".to_owned(),
+                            )
+                        })?;
+                Some(
+                    managed_memory
+                        .register_device_buffer(device_stage, buffer, 0)
+                        .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?,
+                )
+            } else {
+                None
+            };
 
             let layout_entries = execution_plan
                 .bindings
@@ -2872,18 +4087,22 @@ mod native {
                     .iter()
                     .map(|binding| {
                         let resource = match binding.role {
-                            GpuExecutionBindingRole::Input => {
-                                input_buffers[&CellSlotId::new(binding.slot)].as_entire_binding()
-                            }
+                            GpuExecutionBindingRole::Input => input_buffers
+                                [&CellSlotId::new(binding.slot)]
+                                .buffer()
+                                .as_entire_binding(),
                             GpuExecutionBindingRole::StateRead => state_buffers
                                 [&CellSlotId::new(binding.slot)][group]
+                                .buffer()
                                 .as_entire_binding(),
                             GpuExecutionBindingRole::StateWrite => state_buffers
                                 [&CellSlotId::new(binding.slot)][1 - group]
+                                .buffer()
                                 .as_entire_binding(),
                             GpuExecutionBindingRole::IntegrityFault => integrity_fault
                                 .as_ref()
                                 .expect("integrity plan has a fault buffer")
+                                .buffer()
                                 .as_entire_binding(),
                             GpuExecutionBindingRole::Output => {
                                 unreachable!("fixed-shape outputs alias resident state buffers")
@@ -2943,23 +4162,106 @@ mod native {
                     )
                 })
                 .collect();
+            let mut output_readbacks = BTreeMap::new();
+            for output in &execution_plan.physical_outputs {
+                let slot = CellSlotId::new(output.slot);
+                if output_readbacks.contains_key(&slot) {
+                    continue;
+                }
+                let capacity = planned_execution.readback_bytes(slot).ok_or_else(|| {
+                    BatchedExecutionError::Native(format!(
+                        "GPU output slot {} has no planned readback capacity",
+                        slot.get()
+                    ))
+                })?;
+                let buffer = device.create_buffer(&wgpu::BufferDescriptor {
+                    label: Some("Mech fixed-shape batch readback"),
+                    size: capacity,
+                    usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+                    mapped_at_creation: false,
+                });
+                let object = planned_execution
+                    .readback_device_object(slot)
+                    .ok_or_else(|| {
+                        BatchedExecutionError::Native(format!(
+                            "GPU output slot {} has no planned readback object",
+                            slot.get()
+                        ))
+                    })?;
+                let buffer = managed_memory
+                    .register_device_buffer(object, buffer, 0)
+                    .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
+                output_readbacks.insert(slot, buffer);
+            }
+            let mut queued_uploads = Vec::new();
+            queued_uploads
+                .try_reserve_exact(input_objects.len())
+                .map_err(|_| {
+                    BatchedExecutionError::Native(
+                        "GPU upload hold reservation was not available".to_owned(),
+                    )
+                })?;
+            let submission_capacity = input_objects.len().checked_add(2).ok_or_else(|| {
+                BatchedExecutionError::Native("GPU submission capacity overflowed".to_owned())
+            })?;
+            let submission_tracker = crate::DeviceSubmissionTracker::new(submission_capacity)
+                .map_err(BatchedExecutionError::Native)?;
+            submission_tracker.observe_device_loss(&device);
+            let input_submissions =
+                input_objects
+                    .iter()
+                    .map(|(slot, object)| {
+                        Ok((
+                            *slot,
+                            managed_memory.prepare_submission(&[*object], &[]).map_err(
+                                |failure| BatchedExecutionError::Native(failure.to_string()),
+                            )?,
+                        ))
+                    })
+                    .collect::<Result<BTreeMap<_, _>, BatchedExecutionError>>()?;
+            let dispatch_submission = managed_memory
+                .prepare_submission(planned_execution.device_objects(), &[])
+                .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
+            let checked_dispatch_submission = managed_memory
+                .prepare_submission(
+                    planned_execution.device_objects(),
+                    planned_execution.transfer_objects(),
+                )
+                .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
+            let readback_submission = managed_memory
+                .prepare_submission(
+                    planned_execution.device_objects(),
+                    planned_execution.transfer_objects(),
+                )
+                .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
             Ok(BatchedResidentGpuSession {
                 adapter: adapter_name,
-                device,
-                queue,
                 pipeline,
                 bind_groups,
+                _registered_buffers: registered_buffers,
                 input_buffers,
                 output_buffers,
                 output_elements,
                 output_elements_per_instance,
-                constraints: execution_plan.constraints.into_boxed_slice(),
+                output_readbacks,
+                constraints: execution_plan.constraints.clone().into_boxed_slice(),
                 integrity_fault,
                 integrity_readback,
                 workgroups: workgroup_count,
                 next_group: 0,
                 last_output_group: None,
                 faults: BatchedFaultRecorder::default(),
+                memory_plan: planned_execution,
+                input_objects,
+                input_submissions,
+                dispatch_submission,
+                checked_dispatch_submission,
+                readback_submission,
+                submission_tracker,
+                queued_uploads,
+                managed_memory,
+                queue,
+                device,
             })
         }
     }
@@ -2981,11 +4283,45 @@ mod native {
                     .find(|input| input.name == *name)
                     .ok_or_else(|| BatchedExecutionError::MissingInput(name.clone()))?;
                 let values = program.expand_input(input, values)?;
+                let object = *self.input_objects.get(&input.slot).ok_or_else(|| {
+                    BatchedExecutionError::Native(format!(
+                        "GPU input slot {} has no managed allocation object",
+                        input.slot.get()
+                    ))
+                })?;
+                if self
+                    .queued_uploads
+                    .iter()
+                    .any(|(pending, _)| *pending == object)
+                {
+                    return Err(BatchedExecutionError::Native(format!(
+                        "GPU input `{name}` already has an unpublished upload"
+                    )));
+                }
+                let next_batch_holds =
+                    self.queued_uploads.len().checked_add(2).ok_or_else(|| {
+                        BatchedExecutionError::Native("GPU upload hold count overflowed".to_owned())
+                    })?;
+                self.submission_tracker
+                    .preflight_batch(next_batch_holds)
+                    .map_err(BatchedExecutionError::Native)?;
+                let hold = self
+                    .managed_memory
+                    .begin_prepared_submission(self.input_submissions.get(&input.slot).ok_or_else(
+                        || {
+                            BatchedExecutionError::Native(format!(
+                                "GPU input slot {} has no prepared submission authority",
+                                input.slot.get()
+                            ))
+                        },
+                    )?)
+                    .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
                 self.queue.write_buffer(
-                    &self.input_buffers[&input.slot],
+                    self.input_buffers[&input.slot].buffer(),
                     0,
                     bytemuck::cast_slice(&values),
                 );
+                self.queued_uploads.push((object, hold));
             }
             Ok(())
         }
@@ -2998,11 +4334,18 @@ mod native {
                 return self.dispatch_checked_turns(turns);
             }
             let started = Instant::now();
+            let dispatch_hold = self
+                .managed_memory
+                .begin_prepared_submission(&self.dispatch_submission)
+                .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
             let mut encoder = self
                 .device
                 .create_command_encoder(&wgpu::CommandEncoderDescriptor {
                     label: Some("Mech fixed-shape batch command encoder"),
                 });
+            let mut next_group = self.next_group;
+            let mut last_output_group = self.last_output_group;
+            let mut written_state_groups = [false; 2];
             {
                 let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
                     label: Some("Mech fixed-shape batch compute pass"),
@@ -3010,16 +4353,88 @@ mod native {
                 });
                 pass.set_pipeline(&self.pipeline);
                 for _ in 0..turns {
-                    let group = self.next_group;
+                    let group = next_group;
+                    written_state_groups[group] = true;
                     pass.set_bind_group(0, &self.bind_groups[group], &[]);
                     pass.dispatch_workgroups(self.workgroups, 1, 1);
-                    self.last_output_group = Some(group);
-                    self.next_group = 1 - group;
+                    last_output_group = Some(group);
+                    next_group = 1 - group;
                 }
             }
-            self.queue.submit(Some(encoder.finish()));
-            self.device.poll(wgpu::Maintain::Wait);
+            let mut uploaded_objects = Vec::new();
+            uploaded_objects
+                .try_reserve_exact(self.queued_uploads.len())
+                .map_err(|_| {
+                    BatchedExecutionError::Native(
+                        "GPU upload publication reservation was not available".to_owned(),
+                    )
+                })?;
+            let upload_holds = self.queued_uploads.drain(..).map(|(object, hold)| {
+                uploaded_objects.push(object);
+                hold
+            });
+            let unsubmitted = self
+                .submission_tracker
+                .reserve_batch(core::iter::once(dispatch_hold).chain(upload_holds))
+                .map_err(BatchedExecutionError::Native)?;
+            let submission = self.queue.submit(Some(encoder.finish()));
+            unsubmitted.record_submitted(submission);
+            crate::settle_submissions(
+                &self.device,
+                &mut self.submission_tracker,
+                &self.managed_memory,
+            )
+            .map_err(|error| BatchedExecutionError::Native(error.to_string()))?;
+            self.record_completed_writes(&uploaded_objects, written_state_groups)?;
+            self.last_output_group = last_output_group;
+            self.next_group = next_group;
             Ok(started.elapsed())
+        }
+
+        fn record_completed_writes(
+            &mut self,
+            uploaded_objects: &[MemoryObjectId],
+            written_state_groups: [bool; 2],
+        ) -> Result<(), BatchedExecutionError> {
+            for object in uploaded_objects {
+                let bytes = self
+                    .memory_plan
+                    .memory
+                    .allocations
+                    .iter()
+                    .find(|allocation| allocation.id == *object)
+                    .map(|allocation| allocation.capacity_bytes)
+                    .ok_or_else(|| {
+                        BatchedExecutionError::Native(
+                            "completed GPU upload has no planned allocation".to_owned(),
+                        )
+                    })?;
+                self.managed_memory
+                    .record_device_write(*object, bytes)
+                    .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
+            }
+            for (object, bytes) in self.memory_plan.writable_device_objects().iter().copied() {
+                self.managed_memory
+                    .record_device_write(object, bytes)
+                    .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
+            }
+            for (group, written) in written_state_groups.into_iter().enumerate() {
+                if !written {
+                    continue;
+                }
+                for (object, bytes) in self
+                    .memory_plan
+                    .writable_state_objects(group)
+                    .expect("fixed-shape bind-group index is validated")
+                    .iter()
+                    .copied()
+                {
+                    self.managed_memory
+                        .record_device_write(object, bytes)
+                        .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
+                }
+            }
+            Ok(())
         }
 
         fn dispatch_checked_turns(
@@ -3029,13 +4444,20 @@ mod native {
             let started = Instant::now();
             for _ in 0..turns {
                 let attempted_turn = self.faults.next_turn();
+                let dispatch_hold = self
+                    .managed_memory
+                    .begin_prepared_submission(&self.checked_dispatch_submission)
+                    .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
                 let fault_buffer = self
                     .integrity_fault
                     .as_ref()
                     .expect("checked GPU session has a fault buffer");
                 let cleared_fault = [0_u32, u32::MAX];
-                self.queue
-                    .write_buffer(fault_buffer, 0, bytemuck::cast_slice(&cleared_fault));
+                self.queue.write_buffer(
+                    fault_buffer.buffer(),
+                    0,
+                    bytemuck::cast_slice(&cleared_fault),
+                );
                 let group = self.next_group;
                 let mut encoder =
                     self.device
@@ -3052,16 +4474,40 @@ mod native {
                     pass.dispatch_workgroups(self.workgroups, 1, 1);
                 }
                 encoder.copy_buffer_to_buffer(
-                    fault_buffer,
+                    fault_buffer.buffer(),
                     0,
                     self.integrity_readback
                         .as_ref()
-                        .expect("checked GPU session has a fault readback"),
+                        .expect("checked GPU session has a fault readback")
+                        .buffer(),
                     0,
                     (GPU_FAULT_WORDS * std::mem::size_of::<u32>()) as u64,
                 );
-                self.queue.submit(Some(encoder.finish()));
-                self.device.poll(wgpu::Maintain::Wait);
+                let mut uploaded_objects = Vec::new();
+                uploaded_objects
+                    .try_reserve_exact(self.queued_uploads.len())
+                    .map_err(|_| {
+                        BatchedExecutionError::Native(
+                            "GPU upload publication reservation was not available".to_owned(),
+                        )
+                    })?;
+                let upload_holds = self.queued_uploads.drain(..).map(|(object, hold)| {
+                    uploaded_objects.push(object);
+                    hold
+                });
+                let unsubmitted = self
+                    .submission_tracker
+                    .reserve_batch(core::iter::once(dispatch_hold).chain(upload_holds))
+                    .map_err(BatchedExecutionError::Native)?;
+                let submission = self.queue.submit(Some(encoder.finish()));
+                unsubmitted.record_submitted(submission);
+                crate::settle_submissions(
+                    &self.device,
+                    &mut self.submission_tracker,
+                    &self.managed_memory,
+                )
+                .map_err(|error| BatchedExecutionError::Native(error.to_string()))?;
+                self.record_completed_writes(&uploaded_objects, [group == 0, group == 1])?;
                 let words = self.read_integrity_fault()?;
                 if words[0] != 0 {
                     let packed = words[1];
@@ -3091,12 +4537,14 @@ mod native {
             Ok(started.elapsed())
         }
 
-        fn read_integrity_fault(&self) -> Result<[u32; GPU_FAULT_WORDS], BatchedExecutionError> {
+        fn read_integrity_fault(
+            &mut self,
+        ) -> Result<[u32; GPU_FAULT_WORDS], BatchedExecutionError> {
             let readback = self
                 .integrity_readback
                 .as_ref()
                 .expect("checked GPU session has a fault readback");
-            let slice = readback.slice(..);
+            let slice = readback.buffer().slice(..);
             let (sender, receiver) = mpsc::channel();
             slice.map_async(wgpu::MapMode::Read, move |result| {
                 drop(sender.send(result));
@@ -3106,11 +4554,32 @@ mod native {
                 .recv()
                 .map_err(|_| BatchedExecutionError::Native("map channel closed".to_owned()))?
                 .map_err(|error| BatchedExecutionError::Native(error.to_string()))?;
+            let cleanup = BufferMapCleanup(readback.buffer());
             let mapped = slice.get_mapped_range();
-            let mut words = [0_u32; GPU_FAULT_WORDS];
-            words.copy_from_slice(bytemuck::cast_slice::<u8, u32>(&mapped));
+            let [device_object, host_object] = self
+                .memory_plan
+                .integrity_readback_objects()
+                .ok_or_else(|| {
+                    BatchedExecutionError::Native(
+                        "checked GPU session has no planned integrity transfer".to_owned(),
+                    )
+                })?;
+            let words = self
+                .managed_memory
+                .with_staged_host_transfer(host_object, &mapped, |bytes| {
+                    let mut words = [0_u32; GPU_FAULT_WORDS];
+                    words.copy_from_slice(bytemuck::cast_slice::<u8, u32>(bytes));
+                    words
+                })
+                .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
             drop(mapped);
-            readback.unmap();
+            drop(cleanup);
+            self.managed_memory
+                .record_device_write(
+                    device_object,
+                    (GPU_FAULT_WORDS * std::mem::size_of::<u32>()) as u64,
+                )
+                .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
             Ok(words)
         }
 
@@ -3127,7 +4596,7 @@ mod native {
         }
 
         pub fn read_state(
-            &self,
+            &mut self,
         ) -> Result<(Duration, BTreeMap<CellSlotId, Vec<f32>>), BatchedExecutionError> {
             let group = self.last_output_group.ok_or_else(|| {
                 BatchedExecutionError::Native("no batch turns have run".to_owned())
@@ -3138,7 +4607,7 @@ mod native {
         /// Reads the currently published state, including the initial state or
         /// the estimate retained after a rejected candidate.
         pub fn read_published_state(
-            &self,
+            &mut self,
         ) -> Result<(Duration, BTreeMap<CellSlotId, Vec<f32>>), BatchedExecutionError> {
             self.read_state_group(1 - self.next_group, None, None)
         }
@@ -3147,7 +4616,7 @@ mod native {
         /// This is the physical sampling boundary used by resident hosts: the
         /// full outer batch never crosses from device memory to the CPU.
         pub fn read_published_sample(
-            &self,
+            &mut self,
             slots: &BTreeSet<CellSlotId>,
             instance: u32,
         ) -> Result<BTreeMap<CellSlotId, Vec<f32>>, BatchedExecutionError> {
@@ -3156,12 +4625,16 @@ mod native {
         }
 
         fn read_state_group(
-            &self,
+            &mut self,
             group: usize,
             selected: Option<&BTreeSet<CellSlotId>>,
             sample_instance: Option<u32>,
         ) -> Result<(Duration, BTreeMap<CellSlotId, Vec<f32>>), BatchedExecutionError> {
             let started = Instant::now();
+            let readback_hold = self
+                .managed_memory
+                .begin_prepared_submission(&self.readback_submission)
+                .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
             let mut encoder = self
                 .device
                 .create_command_encoder(&wgpu::CommandEncoderDescriptor {
@@ -3178,41 +4651,102 @@ mod native {
                     self.output_elements[slot]
                 };
                 let size = (elements * std::mem::size_of::<f32>()) as u64;
+                self.memory_plan
+                    .assert_readback_bytes(*slot, size)
+                    .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
                 let source_offset =
                     sample_instance.map_or(0, |instance| u64::from(instance) * size);
-                if source_offset.saturating_add(size) > buffer.size() {
+                if source_offset.saturating_add(size) > buffer.buffer().size() {
                     return Err(BatchedExecutionError::Native(format!(
                         "sample instance {} exceeds the resident batch for slot {slot:?}",
                         sample_instance.expect("sample instance is present"),
                     )));
                 }
-                let readback = self.device.create_buffer(&wgpu::BufferDescriptor {
-                    label: Some("Mech fixed-shape batch readback"),
+                let readback = self.output_readbacks.get(slot).ok_or_else(|| {
+                    BatchedExecutionError::Native(format!(
+                        "GPU output slot {} has no realized readback buffer",
+                        slot.get()
+                    ))
+                })?;
+                encoder.copy_buffer_to_buffer(
+                    buffer.buffer(),
+                    source_offset,
+                    readback.buffer(),
+                    0,
                     size,
-                    usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-                    mapped_at_creation: false,
-                });
-                encoder.copy_buffer_to_buffer(buffer, source_offset, &readback, 0, size);
-                readbacks.push((*slot, readback));
+                );
+                readbacks.push((*slot, size));
             }
-            self.queue.submit(Some(encoder.finish()));
+            let unsubmitted = self
+                .submission_tracker
+                .reserve_batch(core::iter::once(readback_hold))
+                .map_err(BatchedExecutionError::Native)?;
+            let submission = self.queue.submit(Some(encoder.finish()));
+            unsubmitted.record_submitted(submission);
 
-            let mut state = BTreeMap::new();
-            for (slot, readback) in readbacks {
-                let slice = readback.slice(..);
-                let (sender, receiver) = mpsc::channel();
-                slice.map_async(wgpu::MapMode::Read, move |result| {
-                    drop(sender.send(result));
-                });
-                self.device.poll(wgpu::Maintain::Wait);
-                receiver
-                    .recv()
-                    .map_err(|_| BatchedExecutionError::Native("map channel closed".to_owned()))?
-                    .map_err(|error| BatchedExecutionError::Native(error.to_string()))?;
-                let mapped = slice.get_mapped_range();
-                state.insert(slot, bytemuck::cast_slice::<u8, f32>(&mapped).to_vec());
-                drop(mapped);
-                readback.unmap();
+            let readback_result = (|| {
+                let mut state = BTreeMap::new();
+                for (slot, size) in &readbacks {
+                    let readback = &self.output_readbacks[slot];
+                    let slice = readback.buffer().slice(..*size);
+                    let (sender, receiver) = mpsc::channel();
+                    slice.map_async(wgpu::MapMode::Read, move |result| {
+                        drop(sender.send(result));
+                    });
+                    self.device.poll(wgpu::Maintain::Wait);
+                    receiver
+                        .recv()
+                        .map_err(|_| {
+                            BatchedExecutionError::Native("map channel closed".to_owned())
+                        })?
+                        .map_err(|error| BatchedExecutionError::Native(error.to_string()))?;
+                    let cleanup = BufferMapCleanup(readback.buffer());
+                    let mapped = slice.get_mapped_range();
+                    let host_object = self.memory_plan.readback_object(*slot).ok_or_else(|| {
+                        BatchedExecutionError::Native(format!(
+                            "GPU output slot {} has no planned host readback storage",
+                            slot.get()
+                        ))
+                    })?;
+                    let values = self
+                        .managed_memory
+                        .with_staged_host_transfer(host_object, &mapped, |bytes| {
+                            bytemuck::cast_slice::<u8, f32>(bytes).to_vec()
+                        })
+                        .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
+                    state.insert(*slot, values);
+                    drop(mapped);
+                    drop(cleanup);
+                }
+                Ok::<_, BatchedExecutionError>(state)
+            })();
+            let completion_result = crate::settle_submissions(
+                &self.device,
+                &mut self.submission_tracker,
+                &self.managed_memory,
+            )
+            .map_err(|error| BatchedExecutionError::Native(error.to_string()));
+            let state = readback_result?;
+            completion_result?;
+            for slot in state.keys().copied() {
+                let object = self
+                    .memory_plan
+                    .readback_device_object(slot)
+                    .ok_or_else(|| {
+                        BatchedExecutionError::Native(format!(
+                            "GPU output slot {} has no planned device readback storage",
+                            slot.get()
+                        ))
+                    })?;
+                let bytes = self.memory_plan.readback_bytes(slot).ok_or_else(|| {
+                    BatchedExecutionError::Native(format!(
+                        "GPU output slot {} has no planned readback capacity",
+                        slot.get()
+                    ))
+                })?;
+                self.managed_memory
+                    .record_device_write(object, bytes)
+                    .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
             }
             Ok((started.elapsed(), state))
         }
@@ -3230,6 +4764,25 @@ mod native {
                 readback,
                 state,
             })
+        }
+    }
+
+    impl Drop for BatchedResidentGpuSession {
+        fn drop(&mut self) {
+            if !self.queued_uploads.is_empty() {
+                if let Ok(unsubmitted) = self
+                    .submission_tracker
+                    .reserve_batch(self.queued_uploads.drain(..).map(|(_, hold)| hold))
+                {
+                    let submission = self.queue.submit(core::iter::empty());
+                    unsubmitted.record_submitted(submission);
+                }
+            }
+            let _ = crate::settle_submissions(
+                &self.device,
+                &mut self.submission_tracker,
+                &self.managed_memory,
+            );
         }
     }
 }

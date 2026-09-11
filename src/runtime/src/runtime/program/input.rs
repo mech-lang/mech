@@ -250,7 +250,7 @@ impl crate::runtime::MechRuntime {
             let turn = execution.coordinator.execute_admitted_host_turn(
                 &latest_updates,
                 admission,
-                move || {
+                move |_| {
                     super::super::limits::enforce_turn_duration_limit(
                         max_turn_duration_ms,
                         turn_started,

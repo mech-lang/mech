@@ -8,41 +8,15 @@ use libm::cos;
 use libm::cosf;
 #[cfg(feature = "f64")]
 macro_rules! sec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = 1.0 / cos((*$arg));
-        }
-    };
-}
-
-#[cfg(feature = "f64")]
-macro_rules! sec_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = 1.0 / cos(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(1.0 / cos(($arg)))
     };
 }
 
 #[cfg(feature = "f32")]
 macro_rules! secf_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = 1.0 / cosf((*$arg));
-        }
-    };
-}
-
-#[cfg(feature = "f32")]
-macro_rules! secf_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = 1.0 / cosf(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(1.0 / cosf(($arg)))
     };
 }
 

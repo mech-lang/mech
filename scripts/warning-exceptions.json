@@ -30,24 +30,6 @@
     },
     {
       "directive": "allow",
-      "expiry_condition": "Remove when every supported profile enables at least one fixed matrix constructor.",
-      "lint": "unused_macros",
-      "occurrences": 1,
-      "owner": "Canonical comparison outputs",
-      "path": "machines/compare/src/lib.rs",
-      "reason": "fixed matrix constructors are feature-selected below"
-    },
-    {
-      "directive": "allow",
-      "expiry_condition": "Remove when comparison no longer supports profiles without a concrete matrix storage feature.",
-      "lint": "unreachable_patterns",
-      "occurrences": 1,
-      "owner": "Canonical comparison outputs",
-      "path": "machines/compare/src/lib.rs",
-      "reason": "the fallback is reachable only in narrow matrix feature profiles"
-    },
-    {
-      "directive": "allow",
       "expiry_condition": "Remove when every supported profile enables at least one exact matrix constructor.",
       "lint": "unused_macros",
       "occurrences": 1,
@@ -57,12 +39,93 @@
     },
     {
       "directive": "allow",
-      "expiry_condition": "Remove when function matrix ports no longer support profiles without a concrete matrix storage feature.",
-      "lint": "unreachable_patterns",
+      "expiry_condition": "Remove when the public function macros no longer require cfg attributes on generated where clauses.",
+      "lint": "unused_features",
       "occurrences": 1,
-      "owner": "Canonical function ports",
-      "path": "src/core/src/function/argument.rs",
-      "reason": "the fallback is reachable only in narrow matrix feature profiles"
+      "owner": "Core function macro surface",
+      "path": "src/core/src/lib.rs",
+      "reason": "the public macro surface expands cfg attributes on where clauses in downstream crates"
+    },
+    {
+      "directive": "allow",
+      "expiry_condition": "Remove when undo lease ownership is compiled independently of the functions feature.",
+      "lint": "dead_code",
+      "occurrences": 1,
+      "owner": "Managed transaction access",
+      "path": "src/core/src/memory_runtime/access.rs",
+      "reason": "undo lease ownership is exercised only by function-enabled transaction plans"
+    },
+    {
+      "directive": "allow",
+      "expiry_condition": "Remove when undo snapshot authority is compiled independently of the functions feature.",
+      "lint": "dead_code",
+      "occurrences": 1,
+      "owner": "Managed transaction access",
+      "path": "src/core/src/memory_runtime/access.rs",
+      "reason": "undo snapshot authority is exercised only by function-enabled transaction plans"
+    },
+    {
+      "directive": "expect",
+      "expiry_condition": "Remove when the GPU backend installs managed device bindings during its R6 cutover.",
+      "lint": "dead_code",
+      "occurrences": 1,
+      "owner": "Managed device cell bindings",
+      "path": "src/core/src/cell_binding.rs",
+      "reason": "backend binding construction is completed by the R6 backend cutover checkpoint"
+    },
+    {
+      "directive": "allow",
+      "expiry_condition": "Remove when feature-specific factory generation no longer leaves helper macros unused in reduced and native-link profiles.",
+      "lint": "unused_macros",
+      "occurrences": 2,
+      "owner": "Math runtime catalog",
+      "path": "machines/math/src/catalog.rs",
+      "reason": "native factory helpers are selected by disjoint feature profiles"
+    },
+    {
+      "directive": "allow",
+      "expiry_condition": "Remove when every isolated fixed-shape feature selects at least one closed matrix-product triple.",
+      "lint": "unused_macros",
+      "occurrences": 1,
+      "owner": "Matrix runtime catalog",
+      "path": "machines/matrix/src/catalog.rs",
+      "reason": "an isolated fixed-shape forwarding profile can contain no closed matmul triple"
+    },
+    {
+      "directive": "allow",
+      "expiry_condition": "Remove when every comparison profile constructs every supported broadcast mode.",
+      "lint": "dead_code",
+      "occurrences": 1,
+      "owner": "Comparison managed kernels",
+      "path": "machines/compare/src/lib.rs",
+      "reason": "feature profiles enable only a subset of comparison broadcast modes"
+    },
+    {
+      "directive": "allow",
+      "expiry_condition": "Remove when every logic profile constructs every supported broadcast mode.",
+      "lint": "dead_code",
+      "occurrences": 1,
+      "owner": "Logic managed kernels",
+      "path": "machines/logic/src/lib.rs",
+      "reason": "feature profiles enable only a subset of logic broadcast modes"
+    },
+    {
+      "directive": "allow",
+      "expiry_condition": "Remove when minimal math profiles always generate at least one paste-backed factory.",
+      "lint": "unused_imports",
+      "occurrences": 1,
+      "owner": "Math runtime catalog",
+      "path": "machines/math/src/lib.rs",
+      "reason": "minimal math feature profiles can compile without generated paste factories"
+    },
+    {
+      "directive": "allow",
+      "expiry_condition": "Remove when minimal math profiles always instantiate generic operation markers.",
+      "lint": "unused_imports",
+      "occurrences": 1,
+      "owner": "Math managed kernels",
+      "path": "machines/math/src/lib.rs",
+      "reason": "minimal operation profiles can omit the generic marker and operator traits"
     },
     {
       "directive": "allow",
@@ -77,7 +140,7 @@
       "directive": "allow",
       "expiry_condition": "Remove with the frozen variadic bytecode factory or when the standard linked runtime catalog selects it.",
       "lint": "dead_code",
-      "occurrences": 2,
+      "occurrences": 1,
       "owner": "Matrix concatenation compatibility",
       "path": "src/engine/src/intrinsics/horzcat.rs",
       "reason": "retained as a frozen bytecode factory outside the standard linked runtime catalog"
@@ -90,6 +153,24 @@
       "owner": "Canonical structure dispatch",
       "path": "src/engine/src/structures.rs",
       "reason": "the fallback is reachable only in narrow structure feature profiles"
+    },
+    {
+      "directive": "allow",
+      "expiry_condition": "Remove when every assignment-enabled host profile also selects a typed matrix backing.",
+      "lint": "dead_code",
+      "occurrences": 1,
+      "owner": "Managed assignment kernels",
+      "path": "src/engine/src/intrinsics/assign/mod.rs",
+      "reason": "reduced host profiles can enable assignment without any typed matrix backing"
+    },
+    {
+      "directive": "allow",
+      "expiry_condition": "Remove when statement variants can no longer be unified independently across runtime dependencies.",
+      "lint": "unreachable_patterns",
+      "occurrences": 1,
+      "owner": "Runtime config profile",
+      "path": "src/runtime/src/config/profile/compile.rs",
+      "reason": "dependency feature unification can expose statement variants disabled in this runtime profile"
     },
     {
       "directive": "allow",

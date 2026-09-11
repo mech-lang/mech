@@ -3,9 +3,17 @@ use mech_core::{
     EffectContract, EffectDeliveryPolicy, ExternalInteraction, IdempotencyRequirement,
 };
 use mech_runtime::{
-    PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeHostFactory, RuntimeHostInputValue,
-    RuntimeResourceProvider, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest,
+    PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeEffectId, RuntimeHostFactory,
+    RuntimeHostInputValue, RuntimeResourceProvider, RuntimeResourceWriteIntent,
+    RuntimeResourceWriteRequest, TransactionId,
 };
+
+fn effect_id() -> RuntimeEffectId {
+    RuntimeEffectId {
+        transaction: TransactionId::new(1),
+        sequence: 0,
+    }
+}
 
 fn deliver(
     provider: &mut ConsoleResourceProvider<RecordingConsoleBackend>,
@@ -33,6 +41,8 @@ fn provider_writes_line_to_backend() {
                 .into_value()
                 .unwrap(),
             intent: RuntimeResourceWriteIntent::Send,
+            effect_id: effect_id(),
+            idempotency_key: "console-test:0".to_owned(),
         },
     );
     assert_eq!(observed.lines(), vec!["hello".to_string()]);
@@ -52,6 +62,8 @@ fn provider_rejects_unknown_path() {
                 .into_value()
                 .unwrap(),
             intent: RuntimeResourceWriteIntent::Send,
+            effect_id: effect_id(),
+            idempotency_key: "console-test:0".to_owned(),
         })
         .unwrap_err();
     assert!(format!("{err:?}").contains("line"));

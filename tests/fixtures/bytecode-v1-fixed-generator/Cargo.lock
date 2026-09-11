@@ -645,6 +645,7 @@ version = "0.3.5"
 dependencies = [
  "byteorder",
  "grapheme",
+ "libm",
  "mech-bytecode",
  "mech-core",
  "mech-syntax",
@@ -653,6 +654,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2 0.10.9",
+ "tinyvec",
  "web-time",
 ]
 

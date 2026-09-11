@@ -41,12 +41,10 @@ static PURE_VERTICAL_VARIADIC_BUILD_CONTRACT: LazyLock<OperationContractDeclarat
     all(feature = "matrixd", feature = "matrix4")
 ))]
 macro_rules! vertcat_two_args {
-    ($fxn:ident, $e0:ident, $e1:ident, $out:ident, $opt:ident) => {
+    ($fxn:ident, $e0:ident, $e1:ident, $out:ident) => {
         #[derive(Debug)]
         struct $fxn<T> {
-            e0: Ref<$e0<T>>,
-            e1: Ref<$e1<T>>,
-            out: Ref<$out<T>>,
+            _marker: PhantomData<T>,
         }
         impl<T> MechFunctionFactory for $fxn<T>
         where
@@ -72,50 +70,15 @@ macro_rules! vertcat_two_args {
                 <$e1<T> as FunctionRuntimeType>::REPRESENTATION,
             );
 
-            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-                let (out, arg0, arg1) = invocation.expect_binary()?;
-                let e0: Ref<$e0<T>> = arg0.try_ref()?;
-                let e1: Ref<$e1<T>> = arg1.try_ref()?;
-                let out: Ref<$out<T>> = out.try_ref()?;
-                Ok(Box::new(Self { e0, e1, out }))
-            }
-        }
-        impl<T> MechFunctionImpl for $fxn<T>
-        where
-            T: Debug + Clone + Sync + Send + PartialEq + 'static,
-        {
-            fn solve_result(&self) -> MResult<()> {
-                unsafe {
-                    let e0_ptr = (*(self.e0.as_ptr())).clone();
-                    let e1_ptr = (*(self.e1.as_ptr())).clone();
-                    let out_ptr = (&mut *(self.out.as_mut_ptr()));
-                    $opt!(out_ptr, e0_ptr, e1_ptr);
-                };
-                Ok(())
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::CanonicalFinalize
             }
 
-            fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
-                Some(&PURE_VERTICAL_VARIADIC_BUILD_CONTRACT)
-            }
-            fn to_string(&self) -> String {
-                format!("{:#?}", self)
-            }
-        }
-        #[cfg(feature = "semantic-compiler")]
-        impl<T> MechFunctionCompiler for $fxn<T>
-        where
-            T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-        {
-            fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-                let name = format!(
-                    "{}<{}{}{}{}>",
-                    stringify!($fxn),
-                    <T as FunctionRuntimeType>::REPRESENTATION,
-                    stringify!($out),
-                    stringify!($e0),
-                    stringify!($e1)
-                );
-                compile_binop!(name, self.out, self.e0, self.e1, ctx);
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+                invocation.expect_binary()?;
+                crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<true>(
+                    invocation,
+                )
             }
         }
     };
@@ -129,13 +92,10 @@ macro_rules! vertcat_two_args {
     all(feature = "row_vector4", feature = "matrixd", feature = "matrix4")
 ))]
 macro_rules! vertcat_three_args {
-    ($fxn:ident, $e0:ident, $e1:ident, $e2:ident, $out:ident, $opt:ident) => {
+    ($fxn:ident, $e0:ident, $e1:ident, $e2:ident, $out:ident) => {
         #[derive(Debug)]
         struct $fxn<T> {
-            e0: Ref<$e0<T>>,
-            e1: Ref<$e1<T>>,
-            e2: Ref<$e2<T>>,
-            out: Ref<$out<T>>,
+            _marker: PhantomData<T>,
         }
         impl<T> MechFunctionFactory for $fxn<T>
         where
@@ -163,49 +123,15 @@ macro_rules! vertcat_three_args {
                 <$e2<T> as FunctionRuntimeType>::REPRESENTATION,
             );
 
-            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-                let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
-                let e0: Ref<$e0<T>> = arg0.try_ref()?;
-                let e1: Ref<$e1<T>> = arg1.try_ref()?;
-                let e2: Ref<$e2<T>> = arg2.try_ref()?;
-                let out: Ref<$out<T>> = out.try_ref()?;
-                Ok(Box::new(Self { e0, e1, e2, out }))
-            }
-        }
-        impl<T> MechFunctionImpl for $fxn<T>
-        where
-            T: Debug + Clone + Sync + Send + PartialEq + 'static,
-        {
-            fn solve_result(&self) -> MResult<()> {
-                unsafe {
-                    let e0_ptr = (*(self.e0.as_ptr())).clone();
-                    let e1_ptr = (*(self.e1.as_ptr())).clone();
-                    let e2_ptr = (*(self.e2.as_ptr())).clone();
-                    let out_ptr = (&mut *(self.out.as_mut_ptr()));
-                    $opt!(out_ptr, e0_ptr, e1_ptr, e2_ptr);
-                };
-                Ok(())
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::CanonicalFinalize
             }
 
-            fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
-                Some(&PURE_VERTICAL_VARIADIC_BUILD_CONTRACT)
-            }
-            fn to_string(&self) -> String {
-                format!("{:#?}", self)
-            }
-        }
-        #[cfg(feature = "semantic-compiler")]
-        impl<T> MechFunctionCompiler for $fxn<T>
-        where
-            T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-        {
-            fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-                let name = format!(
-                    "{}<{}>",
-                    stringify!($fxn),
-                    <T as FunctionRuntimeType>::REPRESENTATION
-                );
-                compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx);
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+                invocation.expect_ternary()?;
+                crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<true>(
+                    invocation,
+                )
             }
         }
     };
@@ -213,14 +139,10 @@ macro_rules! vertcat_three_args {
 
 #[cfg(all(feature = "matrix4", feature = "row_vector4"))]
 macro_rules! vertcat_four_args {
-    ($fxn:ident, $e0:ident, $e1:ident, $e2:ident, $e3:ident, $out:ident, $opt:ident) => {
+    ($fxn:ident, $e0:ident, $e1:ident, $e2:ident, $e3:ident, $out:ident) => {
         #[derive(Debug)]
         struct $fxn<T> {
-            e0: Ref<$e0<T>>,
-            e1: Ref<$e1<T>>,
-            e2: Ref<$e2<T>>,
-            e3: Ref<$e3<T>>,
-            out: Ref<$out<T>>,
+            _marker: PhantomData<T>,
         }
         impl<T> MechFunctionFactory for $fxn<T>
         where
@@ -250,57 +172,15 @@ macro_rules! vertcat_four_args {
                 <$e3<T> as FunctionRuntimeType>::REPRESENTATION,
             );
 
-            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-                let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
-                let e0: Ref<$e0<T>> = arg0.try_ref()?;
-                let e1: Ref<$e1<T>> = arg1.try_ref()?;
-                let e2: Ref<$e2<T>> = arg2.try_ref()?;
-                let e3: Ref<$e3<T>> = arg3.try_ref()?;
-                let out: Ref<$out<T>> = out.try_ref()?;
-                Ok(Box::new(Self {
-                    e0,
-                    e1,
-                    e2,
-                    e3,
-                    out,
-                }))
-            }
-        }
-        impl<T> MechFunctionImpl for $fxn<T>
-        where
-            T: Debug + Clone + Sync + Send + PartialEq + 'static,
-        {
-            fn solve_result(&self) -> MResult<()> {
-                unsafe {
-                    let e0_ptr = (*(self.e0.as_ptr())).clone();
-                    let e1_ptr = (*(self.e1.as_ptr())).clone();
-                    let e2_ptr = (*(self.e2.as_ptr())).clone();
-                    let e3_ptr = (*(self.e3.as_ptr())).clone();
-                    let out_ptr = (&mut *(self.out.as_mut_ptr()));
-                    $opt!(out_ptr, e0_ptr, e1_ptr, e2_ptr, e3_ptr);
-                };
-                Ok(())
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::CanonicalFinalize
             }
 
-            fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
-                Some(&PURE_VERTICAL_VARIADIC_BUILD_CONTRACT)
-            }
-            fn to_string(&self) -> String {
-                format!("{:#?}", self)
-            }
-        }
-        #[cfg(feature = "semantic-compiler")]
-        impl<T> MechFunctionCompiler for $fxn<T>
-        where
-            T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-        {
-            fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-                let name = format!(
-                    "{}<{}>",
-                    stringify!($fxn),
-                    <T as FunctionRuntimeType>::REPRESENTATION
-                );
-                compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx);
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+                invocation.expect_quaternary()?;
+                crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<true>(
+                    invocation,
+                )
             }
         }
     };
@@ -310,9 +190,7 @@ macro_rules! vertcat_four_args {
 
 #[cfg(feature = "matrixd")]
 struct VerticalConcatenateTwoArgs<T> {
-    e0: Box<dyn CopyMat<T>>,
-    e1: Box<dyn CopyMat<T>>,
-    out: Ref<DMatrix<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(feature = "matrixd")]
 impl<T> MechFunctionFactory for VerticalConcatenateTwoArgs<T>
@@ -336,56 +214,17 @@ where
         <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
+    }
+
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1) = invocation.expect_binary()?;
-        let e0: Box<dyn CopyMat<T>> = arg0.try_copyable_matrix()?;
-        let e1: Box<dyn CopyMat<T>> = arg1.try_copyable_matrix()?;
-        let out: Ref<DMatrix<T>> = out.try_ref()?;
-        Ok(Box::new(Self { e0, e1, out }))
-    }
-}
-#[cfg(feature = "matrixd")]
-impl<T> MechFunctionImpl for VerticalConcatenateTwoArgs<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        let offset = self.e0.copy_into_row_major(&self.out, 0);
-        self.e1.copy_into_row_major(&self.out, offset);
-        Ok(())
+        invocation.expect_binary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<true>(invocation)
     }
 
-    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_VERTICAL_VARIADIC_BUILD_CONTRACT)
-    }
-    fn to_string(&self) -> String {
-        format!("VerticalConcatenateTwoArgs\n{:#?}", self.out)
-    }
-}
-#[cfg(feature = "matrixd")]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for VerticalConcatenateTwoArgs<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let mut registers = [0, 0, 0];
-
-        registers[0] = compile_register!(self.out, ctx);
-        registers[1] = compile_register_mat!(self.e0, ctx);
-        registers[2] = compile_register_mat!(self.e1, ctx);
-
-        ctx.emit_binop(
-            hash_str(&format!(
-                "VerticalConcatenateTwoArgs<{}>",
-                <T as FunctionRuntimeType>::REPRESENTATION
-            )),
-            registers[0],
-            registers[1],
-            registers[2],
-        );
-
-        Ok(registers[0])
     }
 }
 
@@ -393,10 +232,7 @@ where
 
 #[cfg(feature = "matrixd")]
 struct VerticalConcatenateThreeArgs<T> {
-    e0: Box<dyn CopyMat<T>>,
-    e1: Box<dyn CopyMat<T>>,
-    e2: Box<dyn CopyMat<T>>,
-    out: Ref<DMatrix<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(feature = "matrixd")]
 impl<T> MechFunctionFactory for VerticalConcatenateThreeArgs<T>
@@ -421,59 +257,17 @@ where
         <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
+    }
+
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
-        let e0: Box<dyn CopyMat<T>> = arg0.try_copyable_matrix()?;
-        let e1: Box<dyn CopyMat<T>> = arg1.try_copyable_matrix()?;
-        let e2: Box<dyn CopyMat<T>> = arg2.try_copyable_matrix()?;
-        let out: Ref<DMatrix<T>> = out.try_ref()?;
-        Ok(Box::new(Self { e0, e1, e2, out }))
-    }
-}
-#[cfg(feature = "matrixd")]
-impl<T> MechFunctionImpl for VerticalConcatenateThreeArgs<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        let mut offset = self.e0.copy_into_row_major(&self.out, 0);
-        offset += self.e1.copy_into_row_major(&self.out, offset);
-        self.e2.copy_into_row_major(&self.out, offset);
-        Ok(())
+        invocation.expect_ternary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<true>(invocation)
     }
 
-    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_VERTICAL_VARIADIC_BUILD_CONTRACT)
-    }
-    fn to_string(&self) -> String {
-        format!("VerticalConcatenateThreeArgs\n{:#?}", self.out)
-    }
-}
-#[cfg(feature = "matrixd")]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for VerticalConcatenateThreeArgs<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let mut registers = [0, 0, 0, 0];
-
-        registers[0] = compile_register!(self.out, ctx);
-        registers[1] = compile_register_mat!(self.e0, ctx);
-        registers[2] = compile_register_mat!(self.e1, ctx);
-        registers[3] = compile_register_mat!(self.e2, ctx);
-
-        ctx.emit_ternop(
-            hash_str(&format!(
-                "VerticalConcatenateThreeArgs<{}>",
-                <T as FunctionRuntimeType>::REPRESENTATION
-            )),
-            registers[0],
-            registers[1],
-            registers[2],
-            registers[3],
-        );
-        Ok(registers[0])
     }
 }
 
@@ -481,11 +275,7 @@ where
 
 #[cfg(feature = "matrixd")]
 struct VerticalConcatenateFourArgs<T> {
-    e0: Box<dyn CopyMat<T>>,
-    e1: Box<dyn CopyMat<T>>,
-    e2: Box<dyn CopyMat<T>>,
-    e3: Box<dyn CopyMat<T>>,
-    out: Ref<DMatrix<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(feature = "matrixd")]
 impl<T> MechFunctionFactory for VerticalConcatenateFourArgs<T>
@@ -511,69 +301,17 @@ where
         <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
+    }
+
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
-        let e0: Box<dyn CopyMat<T>> = arg0.try_copyable_matrix()?;
-        let e1: Box<dyn CopyMat<T>> = arg1.try_copyable_matrix()?;
-        let e2: Box<dyn CopyMat<T>> = arg2.try_copyable_matrix()?;
-        let e3: Box<dyn CopyMat<T>> = arg3.try_copyable_matrix()?;
-        let out: Ref<DMatrix<T>> = out.try_ref()?;
-        Ok(Box::new(Self {
-            e0,
-            e1,
-            e2,
-            e3,
-            out,
-        }))
-    }
-}
-#[cfg(feature = "matrixd")]
-impl<T> MechFunctionImpl for VerticalConcatenateFourArgs<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        let mut offset = self.e0.copy_into_row_major(&self.out, 0);
-        offset += self.e1.copy_into_row_major(&self.out, offset);
-        offset += self.e2.copy_into_row_major(&self.out, offset);
-        self.e3.copy_into_row_major(&self.out, offset);
-        Ok(())
+        invocation.expect_quaternary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<true>(invocation)
     }
 
-    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_VERTICAL_VARIADIC_BUILD_CONTRACT)
-    }
-    fn to_string(&self) -> String {
-        format!("VerticalConcatenateFourArgs\n{:#?}", self.out)
-    }
-}
-#[cfg(feature = "matrixd")]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for VerticalConcatenateFourArgs<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let mut registers = [0, 0, 0, 0, 0];
-
-        registers[0] = compile_register!(self.out, ctx);
-        registers[1] = compile_register_mat!(self.e0, ctx);
-        registers[2] = compile_register_mat!(self.e1, ctx);
-        registers[3] = compile_register_mat!(self.e2, ctx);
-        registers[4] = compile_register_mat!(self.e3, ctx);
-
-        ctx.emit_quadop(
-            hash_str(&format!(
-                "VerticalConcatenateFourArgs<{}>",
-                <T as FunctionRuntimeType>::REPRESENTATION
-            )),
-            registers[0],
-            registers[1],
-            registers[2],
-            registers[3],
-            registers[4],
-        );
-        Ok(registers[0])
     }
 }
 
@@ -581,8 +319,7 @@ where
 
 #[cfg(feature = "matrixd")]
 struct VerticalConcatenateNArgs<T> {
-    e0: Vec<Box<dyn CopyMat<T>>>,
-    out: Ref<DMatrix<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(feature = "matrixd")]
 impl<T> MechFunctionFactory for VerticalConcatenateNArgs<T>
@@ -605,60 +342,17 @@ where
         <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
+    }
+
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, inputs) = invocation.expect_variadic()?;
-        let mut e0: Vec<Box<dyn CopyMat<T>>> = Vec::with_capacity(inputs.len());
-        for arg in inputs {
-            e0.push(arg.try_copyable_matrix()?);
-        }
-        let out: Ref<DMatrix<T>> = out.try_ref()?;
-        Ok(Box::new(Self { e0, out }))
-    }
-}
-#[cfg(feature = "matrixd")]
-impl<T> MechFunctionImpl for VerticalConcatenateNArgs<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        let mut offset = 0;
-        for e in &self.e0 {
-            offset += e.copy_into_row_major(&self.out, offset);
-        }
-        Ok(())
+        invocation.expect_variadic()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<true>(invocation)
     }
 
-    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_VERTICAL_VARIADIC_BUILD_CONTRACT)
-    }
-    fn to_string(&self) -> String {
-        format!("VerticalConcatenateNArgs\n{:#?}", self.out)
-    }
-}
-#[cfg(feature = "matrixd")]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for VerticalConcatenateNArgs<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let mut registers = [0, 0];
-
-        registers[0] = compile_register!(self.out, ctx);
-
-        let mut mat_regs = Vec::new();
-        for e in &self.e0 {
-            mat_regs.push(compile_register_mat!(e, ctx));
-        }
-        ctx.emit_varop(
-            hash_str(&format!(
-                "VerticalConcatenateNArgs<{}>",
-                <T as FunctionRuntimeType>::REPRESENTATION
-            )),
-            registers[0],
-            mat_regs,
-        );
-        Ok(registers[0])
     }
 }
 
@@ -675,6 +369,7 @@ mech_core::declare_native_runtime_factory! {
     name: "VerticalConcatenateNArgs<f64>",
     factory_type: VerticalConcatenateNArgs<f64>,
     contract: RuntimeFunctionContract::vertical_concatenation(RuntimeOutputAliasPolicy::DisallowInputAlias),
+    compiler_family: mech_core::RuntimeFamilyId::from_name("VerticalConcatenateNArgs<f64>"),
 
     package: "mech-engine",
     crate_name: "mech_engine",
@@ -689,12 +384,15 @@ mod compiler_tests {
     use crate::test_support::bytecode_compiler::RecordingBytecodeCompilerContext;
 
     #[test]
-    fn vertical_concatenate_n_args_reuses_repeated_matrix_register() {
-        let matrix = Ref::new(DMatrix::from_vec(1, 1, vec![7.0]));
-        let function = VerticalConcatenateNArgs {
-            e0: vec![Box::new(matrix.clone()), Box::new(matrix.clone())],
-            out: Ref::new(DMatrix::from_element(2, 1, 0.0)),
-        };
+    fn managed_vertical_concatenation_reuses_repeated_matrix_register() {
+        let matrix = ValueCell::from_exact(DMatrix::from_vec(1, 1, vec![7.0])).unwrap();
+        let output = ValueCell::from_exact(DMatrix::from_element(2, 1, 0.0)).unwrap();
+        let function =
+            ValueMatrixConcatenation::<true>::new_invocation(FunctionInvocation::variadic(
+                output,
+                vec![matrix.clone(), matrix.clone()].into_boxed_slice(),
+            ))
+            .unwrap();
         let mut context = RecordingBytecodeCompilerContext::default();
 
         function.compile(&mut context).unwrap();
@@ -728,10 +426,7 @@ macro_rules! vertical_concatenate {
         paste! {
           #[derive(Debug)]
           struct $name<T> {
-            output: FunctionValueOutput,
-            _marker: PhantomData<T>,
-            #[cfg(feature = "semantic-compiler")]
-            out: Ref<[<$vec_size>]<T>>,
+              _marker: PhantomData<T>,
           }
           impl<T> MechFunctionFactory for $name<T>
           where
@@ -747,50 +442,18 @@ macro_rules! vertical_concatenate {
               FunctionValueRepresentation::AnyValue,
             );
 
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::CanonicalFinalize
+            }
+
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-                let (out, _arg0) = invocation.expect_unary()?;
-                let output = out.value();
-                let out: Ref<[<$vec_size>]<T>> = out.try_ref()?;
-                #[cfg(not(feature = "semantic-compiler"))]
-                drop(out);
-                Ok(Box::new(Self {
-                    output,
-                    _marker: PhantomData,
-                    #[cfg(feature = "semantic-compiler")]
-                    out,
-                }))
-
+                invocation.expect_unary()?;
+                crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<true>(invocation)
             }
 
           }
-          impl<T> MechFunctionImpl for $name<T>
-          where
-            T: Debug + Clone + Sync + Send + PartialEq + 'static,
-          {
-            fn solve_result(&self) -> MResult<()> {
-                Ok(())
-            }
 
-            fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
-              Some(&PURE_VERTICAL_VARIADIC_BUILD_CONTRACT)
-            }
-            fn to_string(&self) -> String { format!("{:#?}", self) }
 
-            fn reactive_output_value_cells(&self) -> Vec<ValueCell> {
-                vec![self.output.cell().clone()]
-            }
-
-          }
-          #[cfg(feature = "semantic-compiler")]
-          impl<T> MechFunctionCompiler for $name<T>
-          where
-            T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking
-          {
-            fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-              let name = format!("{}<{}>", stringify!($name), <T as FunctionRuntimeType>::REPRESENTATION);
-              compile_unop!(name, self.out, self.out, ctx);
-            }
-          }
         }
     };
 }
@@ -799,9 +462,7 @@ macro_rules! vertical_concatenate {
 
 #[cfg(feature = "vectord")]
 struct VerticalConcatenateVD2<T> {
-    e0: Box<dyn CopyMat<T>>,
-    e1: Box<dyn CopyMat<T>>,
-    out: Ref<DVector<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(feature = "vectord")]
 impl<T> MechFunctionFactory for VerticalConcatenateVD2<T>
@@ -825,57 +486,17 @@ where
         <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
+    }
+
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1) = invocation.expect_binary()?;
-        let e0: Box<dyn CopyMat<T>> = arg0.try_copyable_matrix()?;
-        let e1: Box<dyn CopyMat<T>> = arg1.try_copyable_matrix()?;
-        let out: Ref<DVector<T>> = out.try_ref()?;
-        Ok(Box::new(Self { e0, e1, out }))
-    }
-}
-#[cfg(feature = "vectord")]
-impl<T> MechFunctionImpl for VerticalConcatenateVD2<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        let offset = self.e0.copy_into_v(&self.out, 0);
-        self.e1.copy_into_v(&self.out, offset);
-        Ok(())
+        invocation.expect_binary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<true>(invocation)
     }
 
-    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_VERTICAL_VARIADIC_BUILD_CONTRACT)
-    }
-    fn to_string(&self) -> String {
-        format!("VerticalConcatenateVD2\n{:#?}", self.out)
-    }
-}
-#[cfg(feature = "vectord")]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for VerticalConcatenateVD2<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let mut registers = [0, 0, 0];
-
-        registers[0] = compile_register!(self.out, ctx);
-
-        registers[1] = compile_register_mat!(self.e0, ctx);
-        registers[2] = compile_register_mat!(self.e1, ctx);
-
-        ctx.emit_binop(
-            hash_str(&format!(
-                "VerticalConcatenateVD2<{}>",
-                <T as FunctionRuntimeType>::REPRESENTATION
-            )),
-            registers[0],
-            registers[1],
-            registers[2],
-        );
-
-        Ok(registers[0])
     }
 }
 
@@ -883,10 +504,7 @@ where
 
 #[cfg(feature = "vectord")]
 struct VerticalConcatenateVD3<T> {
-    e0: Box<dyn CopyMat<T>>,
-    e1: Box<dyn CopyMat<T>>,
-    e2: Box<dyn CopyMat<T>>,
-    out: Ref<DVector<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(feature = "vectord")]
 impl<T> MechFunctionFactory for VerticalConcatenateVD3<T>
@@ -911,59 +529,17 @@ where
         <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
+    }
+
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
-        let e0: Box<dyn CopyMat<T>> = arg0.try_copyable_matrix()?;
-        let e1: Box<dyn CopyMat<T>> = arg1.try_copyable_matrix()?;
-        let e2: Box<dyn CopyMat<T>> = arg2.try_copyable_matrix()?;
-        let out: Ref<DVector<T>> = out.try_ref()?;
-        Ok(Box::new(Self { e0, e1, e2, out }))
-    }
-}
-#[cfg(feature = "vectord")]
-impl<T> MechFunctionImpl for VerticalConcatenateVD3<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        let mut offset = self.e0.copy_into_v(&self.out, 0);
-        offset += self.e1.copy_into_v(&self.out, offset);
-        self.e2.copy_into_v(&self.out, offset);
-        Ok(())
+        invocation.expect_ternary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<true>(invocation)
     }
 
-    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_VERTICAL_VARIADIC_BUILD_CONTRACT)
-    }
-    fn to_string(&self) -> String {
-        format!("VerticalConcatenateVD3\n{:#?}", self.out)
-    }
-}
-#[cfg(feature = "vectord")]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for VerticalConcatenateVD3<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let mut registers = [0, 0, 0, 0];
-
-        registers[0] = compile_register!(self.out, ctx);
-        registers[1] = compile_register_mat!(self.e0, ctx);
-        registers[2] = compile_register_mat!(self.e1, ctx);
-        registers[3] = compile_register_mat!(self.e2, ctx);
-
-        ctx.emit_ternop(
-            hash_str(&format!(
-                "VerticalConcatenateVD3<{}>",
-                <T as FunctionRuntimeType>::REPRESENTATION
-            )),
-            registers[0],
-            registers[1],
-            registers[2],
-            registers[3],
-        );
-        Ok(registers[0])
     }
 }
 
@@ -971,11 +547,7 @@ where
 
 #[cfg(feature = "vectord")]
 struct VerticalConcatenateVD4<T> {
-    e0: Box<dyn CopyMat<T>>,
-    e1: Box<dyn CopyMat<T>>,
-    e2: Box<dyn CopyMat<T>>,
-    e3: Box<dyn CopyMat<T>>,
-    out: Ref<DVector<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(feature = "vectord")]
 impl<T> MechFunctionFactory for VerticalConcatenateVD4<T>
@@ -1001,69 +573,17 @@ where
         <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
+    }
+
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
-        let e0: Box<dyn CopyMat<T>> = arg0.try_copyable_matrix()?;
-        let e1: Box<dyn CopyMat<T>> = arg1.try_copyable_matrix()?;
-        let e2: Box<dyn CopyMat<T>> = arg2.try_copyable_matrix()?;
-        let e3: Box<dyn CopyMat<T>> = arg3.try_copyable_matrix()?;
-        let out: Ref<DVector<T>> = out.try_ref()?;
-        Ok(Box::new(Self {
-            e0,
-            e1,
-            e2,
-            e3,
-            out,
-        }))
-    }
-}
-#[cfg(feature = "vectord")]
-impl<T> MechFunctionImpl for VerticalConcatenateVD4<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        let mut offset = self.e0.copy_into_v(&self.out, 0);
-        offset += self.e1.copy_into_v(&self.out, offset);
-        offset += self.e2.copy_into_v(&self.out, offset);
-        self.e3.copy_into_v(&self.out, offset);
-        Ok(())
+        invocation.expect_quaternary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<true>(invocation)
     }
 
-    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_VERTICAL_VARIADIC_BUILD_CONTRACT)
-    }
-    fn to_string(&self) -> String {
-        format!("VerticalConcatenateVD3\n{:#?}", self.out)
-    }
-}
-#[cfg(feature = "vectord")]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for VerticalConcatenateVD4<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let mut registers = [0, 0, 0, 0, 0];
-
-        registers[0] = compile_register!(self.out, ctx);
-        registers[1] = compile_register_mat!(self.e0, ctx);
-        registers[2] = compile_register_mat!(self.e1, ctx);
-        registers[3] = compile_register_mat!(self.e2, ctx);
-        registers[4] = compile_register_mat!(self.e3, ctx);
-
-        ctx.emit_quadop(
-            hash_str(&format!(
-                "VerticalConcatenateVD4<{}>",
-                <T as FunctionRuntimeType>::REPRESENTATION
-            )),
-            registers[0],
-            registers[1],
-            registers[2],
-            registers[3],
-            registers[4],
-        );
-        Ok(registers[0])
     }
 }
 
@@ -1071,9 +591,7 @@ where
 
 #[cfg(feature = "vectord")]
 struct VerticalConcatenateVDN<T> {
-    scalar: Vec<(Ref<T>, usize)>,
-    matrix: Vec<(Box<dyn CopyMat<T>>, usize)>,
-    out: Ref<DVector<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(feature = "vectord")]
 impl<T> MechFunctionFactory for VerticalConcatenateVDN<T>
@@ -1096,77 +614,17 @@ where
         FunctionValueRepresentation::AnyValue,
     );
 
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
+    }
+
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, inputs) = invocation.expect_variadic()?;
-        let mut scalar: Vec<(Ref<T>, usize)> = Vec::new();
-        let mut matrix: Vec<(Box<dyn CopyMat<T>>, usize)> = Vec::new();
-        for (i, arg) in inputs.enumerate() {
-            if matches!(
-                arg.value().representation(),
-                FunctionValueRepresentation::Matrix { .. }
-            ) {
-                matrix.push((arg.try_copyable_matrix()?, i));
-            } else {
-                scalar.push((arg.try_ref()?, i));
-            }
-        }
-        let out: Ref<DVector<T>> = out.try_ref()?;
-        Ok(Box::new(Self {
-            scalar,
-            matrix,
-            out,
-        }))
-    }
-}
-#[cfg(feature = "vectord")]
-impl<T> MechFunctionImpl for VerticalConcatenateVDN<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            for (e, i) in &self.matrix {
-                e.copy_into_v(&self.out, *i);
-            }
-            for (e, i) in &self.scalar {
-                out_ptr[*i] = e.borrow().clone();
-            }
-        };
-        Ok(())
+        invocation.expect_variadic()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<true>(invocation)
     }
 
-    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_VERTICAL_VARIADIC_BUILD_CONTRACT)
-    }
-    fn to_string(&self) -> String {
-        format!("VerticalConcatenateVDN\n{:#?}", self.out)
-    }
-}
-#[cfg(feature = "vectord")]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for VerticalConcatenateVDN<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let mut registers = [0, 0];
-
-        registers[0] = compile_register!(self.out, ctx);
-
-        let mut mat_regs = Vec::new();
-        for (e, _) in &self.matrix {
-            mat_regs.push(compile_register_mat!(e, ctx));
-        }
-        ctx.emit_varop(
-            hash_str(&format!(
-                "VerticalConcatenateVDN<{}>",
-                <T as FunctionRuntimeType>::REPRESENTATION
-            )),
-            registers[0],
-            mat_regs,
-        );
-        Ok(registers[0])
     }
 }
 
@@ -1175,10 +633,7 @@ where
 #[cfg(feature = "matrix1")]
 #[derive(Debug)]
 struct VerticalConcatenateS1<T> {
-    output: FunctionValueOutput,
     _marker: PhantomData<T>,
-    #[cfg(feature = "semantic-compiler")]
-    out: Ref<Matrix1<T>>,
 }
 #[cfg(feature = "matrix1")]
 impl<T> MechFunctionFactory for VerticalConcatenateS1<T>
@@ -1199,53 +654,17 @@ where
     const SIGNATURE: RuntimeFunctionSignature =
         RuntimeFunctionSignature::nullary(<Matrix1<T> as FunctionRuntimeType>::REPRESENTATION);
 
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
+    }
+
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let out = invocation.expect_nullary()?;
-        let output = out.value();
-        let out: Ref<Matrix1<T>> = out.try_ref()?;
-        #[cfg(not(feature = "semantic-compiler"))]
-        drop(out);
-        Ok(Box::new(Self {
-            output,
-            _marker: PhantomData,
-            #[cfg(feature = "semantic-compiler")]
-            out,
-        }))
-    }
-}
-#[cfg(feature = "matrix1")]
-impl<T> MechFunctionImpl for VerticalConcatenateS1<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        Ok(())
+        invocation.expect_nullary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<true>(invocation)
     }
 
-    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_VERTICAL_VARIADIC_BUILD_CONTRACT)
-    }
-
-    fn reactive_output_value_cells(&self) -> Vec<ValueCell> {
-        vec![self.output.cell().clone()]
-    }
-
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
-
-#[cfg(all(feature = "matrix1", feature = "semantic-compiler"))]
-impl<T> MechFunctionCompiler for VerticalConcatenateS1<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "VerticalConcatenateS1<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_nullop!(name, self.out, ctx);
     }
 }
 
@@ -1264,10 +683,7 @@ vertical_concatenate!(VerticalConcatenateVD, DVector);
 #[cfg(feature = "vectord")]
 #[derive(Debug)]
 struct VerticalConcatenateSD<T> {
-    output: FunctionValueOutput,
     _marker: PhantomData<T>,
-    #[cfg(feature = "semantic-compiler")]
-    out: Ref<DVector<T>>,
 }
 #[cfg(feature = "vectord")]
 impl<T> MechFunctionFactory for VerticalConcatenateSD<T>
@@ -1288,248 +704,88 @@ where
     const SIGNATURE: RuntimeFunctionSignature =
         RuntimeFunctionSignature::nullary(<DVector<T> as FunctionRuntimeType>::REPRESENTATION);
 
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
+    }
+
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let out = invocation.expect_nullary()?;
-        let output = out.value();
-        let out: Ref<DVector<T>> = out.try_ref()?;
-        #[cfg(not(feature = "semantic-compiler"))]
-        drop(out);
-        Ok(Box::new(Self {
-            output,
-            _marker: PhantomData,
-            #[cfg(feature = "semantic-compiler")]
-            out,
-        }))
-    }
-}
-#[cfg(feature = "vectord")]
-impl<T> MechFunctionImpl for VerticalConcatenateSD<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        Ok(())
-    }
-
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-
-    fn reactive_output_value_cells(&self) -> Vec<ValueCell> {
-        vec![self.output.cell().clone()]
-    }
-}
-#[cfg(all(feature = "vectord", feature = "semantic-compiler"))]
-impl<T> MechFunctionCompiler for VerticalConcatenateSD<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "VerticalConcatenateSD<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_nullop!(name, self.out, ctx);
+        invocation.expect_nullary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<true>(invocation)
     }
 }
 
 // VerticalConcatenateM1M1 ----------------------------------------------------
 
 #[cfg(all(feature = "matrix1", feature = "vector2"))]
-macro_rules! vertcat_m1m1 {
-    ($out:expr, $e0:expr, $e1:expr) => {
-        $out[0] = $e0[0].clone();
-        $out[1] = $e1[0].clone();
-    };
-}
-#[cfg(all(feature = "matrix1", feature = "vector2"))]
-vertcat_two_args!(
-    VerticalConcatenateM1M1,
-    Matrix1,
-    Matrix1,
-    Vector2,
-    vertcat_m1m1
-);
+vertcat_two_args!(VerticalConcatenateM1M1, Matrix1, Matrix1, Vector2);
 
 // VerticalConcatenateV2V2 ----------------------------------------------------
 
 #[cfg(all(feature = "vector2", feature = "vector4"))]
-macro_rules! vertcat_r2r2 {
-    ($out:expr, $e0:expr, $e1:expr) => {
-        $out[0] = $e0[0].clone();
-        $out[1] = $e0[1].clone();
-        $out[2] = $e1[0].clone();
-        $out[3] = $e1[1].clone();
-    };
-}
-#[cfg(all(feature = "vector2", feature = "vector4"))]
-vertcat_two_args!(
-    VerticalConcatenateV2V2,
-    Vector2,
-    Vector2,
-    Vector4,
-    vertcat_r2r2
-);
+vertcat_two_args!(VerticalConcatenateV2V2, Vector2, Vector2, Vector4);
 
 // VerticalConcatenateM1V3 ----------------------------------------------------
 
 #[cfg(all(feature = "matrix1", feature = "vector3", feature = "vector4"))]
-macro_rules! vertcat_m1r3 {
-    ($out:expr, $e0:expr, $e1:expr) => {
-        $out[0] = $e0[0].clone();
-        $out[1] = $e1[0].clone();
-        $out[2] = $e1[1].clone();
-        $out[3] = $e1[2].clone();
-    };
-}
-#[cfg(all(feature = "matrix1", feature = "vector3", feature = "vector4"))]
-vertcat_two_args!(
-    VerticalConcatenateM1V3,
-    Matrix1,
-    Vector3,
-    Vector4,
-    vertcat_m1r3
-);
+vertcat_two_args!(VerticalConcatenateM1V3, Matrix1, Vector3, Vector4);
 
 // VerticalConcatenateV3M1 ----------------------------------------------------
 
-#[cfg(all(feature = "matrix1", feature = "vector3", feature = "vector4"))]
-macro_rules! vertcat_r3m1 {
-    ($out:expr, $e0:expr, $e1:expr) => {
-        $out[0] = $e0[0].clone();
-        $out[1] = $e0[1].clone();
-        $out[2] = $e0[2].clone();
-        $out[3] = $e1[0].clone();
-    };
-}
 #[cfg(all(feature = "vector3", feature = "matrix1", feature = "vector4"))]
-vertcat_two_args!(
-    VerticalConcatenateV3M1,
-    Vector3,
-    Matrix1,
-    Vector4,
-    vertcat_r3m1
-);
+vertcat_two_args!(VerticalConcatenateV3M1, Vector3, Matrix1, Vector4);
 
 // VerticalConcatenateM1V2 ----------------------------------------------------
 
 #[cfg(all(feature = "matrix1", feature = "vector2", feature = "vector3"))]
-macro_rules! vertcat_m1r2 {
-    ($out:expr, $e0:expr, $e1:expr) => {
-        $out[0] = $e0[0].clone();
-        $out[1] = $e1[0].clone();
-        $out[2] = $e1[1].clone();
-    };
-}
-#[cfg(all(feature = "matrix1", feature = "vector2", feature = "vector3"))]
-vertcat_two_args!(
-    VerticalConcatenateM1V2,
-    Matrix1,
-    Vector2,
-    Vector3,
-    vertcat_m1r2
-);
+vertcat_two_args!(VerticalConcatenateM1V2, Matrix1, Vector2, Vector3);
 
 // VerticalConcatenateV2M1 ----------------------------------------------------
 
-#[cfg(all(feature = "matrix1", feature = "vector2", feature = "vector3"))]
-macro_rules! vertcat_r2m1 {
-    ($out:expr, $e0:expr, $e1:expr) => {
-        $out[0] = $e0[0].clone();
-        $out[1] = $e0[1].clone();
-        $out[2] = $e1[0].clone();
-    };
-}
 #[cfg(all(feature = "vector2", feature = "matrix1", feature = "vector3"))]
-vertcat_two_args!(
-    VerticalConcatenateV2M1,
-    Vector2,
-    Matrix1,
-    Vector3,
-    vertcat_r2m1
-);
+vertcat_two_args!(VerticalConcatenateV2M1, Vector2, Matrix1, Vector3);
 
 // VerticalConcatenateM1M1M1 --------------------------------------------------
 
-#[cfg(all(feature = "matrix1", feature = "vector3"))]
-macro_rules! vertcat_m1m1m1 {
-    ($out:expr, $e0:expr,$e1:expr,$e2:expr) => {
-        $out[0] = $e0[0].clone();
-        $out[1] = $e1[0].clone();
-        $out[2] = $e2[0].clone();
-    };
-}
 #[cfg(all(feature = "matrix1", feature = "vector3"))]
 vertcat_three_args!(
     VerticalConcatenateM1M1M1,
     Matrix1,
     Matrix1,
     Matrix1,
-    Vector3,
-    vertcat_m1m1m1
+    Vector3
 );
 
 // VerticalConcatenateM1M1V2 --------------------------------------------------
 
-#[cfg(all(feature = "matrix1", feature = "vector2", feature = "vector4"))]
-macro_rules! vertcat_m1m1v2 {
-    ($out:expr, $e0:expr, $e1:expr, $e2:expr) => {
-        $out[0] = $e0[0].clone();
-        $out[1] = $e1[0].clone();
-        $out[2] = $e2[0].clone();
-        $out[3] = $e2[1].clone();
-    };
-}
 #[cfg(all(feature = "matrix1", feature = "vector2", feature = "vector4"))]
 vertcat_three_args!(
     VerticalConcatenateM1M1V2,
     Matrix1,
     Matrix1,
     Vector2,
-    Vector4,
-    vertcat_m1m1v2
+    Vector4
 );
 
 // VerticalConcatenateM1V2M1 --------------------------------------------------
 
-#[cfg(all(feature = "matrix1", feature = "vector2", feature = "vector4"))]
-macro_rules! vertcat_m1r2m1 {
-    ($out:expr, $e0:expr, $e1:expr, $e2:expr) => {
-        $out[0] = $e0[0].clone();
-        $out[1] = $e1[0].clone();
-        $out[2] = $e1[1].clone();
-        $out[3] = $e2[0].clone();
-    };
-}
 #[cfg(all(feature = "matrix1", feature = "vector2", feature = "vector4"))]
 vertcat_three_args!(
     VerticalConcatenateM1V2M1,
     Matrix1,
     Vector2,
     Matrix1,
-    Vector4,
-    vertcat_m1r2m1
+    Vector4
 );
 
 // VerticalConcatenateV2M1M1 --------------------------------------------------
 
-#[cfg(all(feature = "matrix1", feature = "vector2", feature = "vector4"))]
-macro_rules! vertcat_r2m1m1 {
-    ($out:expr, $e0:expr, $e1:expr, $e2:expr) => {
-        $out[0] = $e0[0].clone();
-        $out[1] = $e0[1].clone();
-        $out[2] = $e1[0].clone();
-        $out[3] = $e2[0].clone();
-    };
-}
 #[cfg(all(feature = "vector2", feature = "matrix1", feature = "vector4"))]
 vertcat_three_args!(
     VerticalConcatenateV2M1M1,
     Vector2,
     Matrix1,
     Matrix1,
-    Vector4,
-    vertcat_r2m1m1
+    Vector4
 );
 
 // VerticalConcatenateM1M1M1M1 ------------------------------------------------
@@ -1537,11 +793,7 @@ vertcat_three_args!(
 #[cfg(all(feature = "matrix1", feature = "vector4"))]
 #[derive(Debug)]
 struct VerticalConcatenateM1M1M1M1<T> {
-    e0: Ref<Matrix1<T>>,
-    e1: Ref<Matrix1<T>>,
-    e2: Ref<Matrix1<T>>,
-    e3: Ref<Matrix1<T>>,
-    out: Ref<Vector4<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(all(feature = "matrix1", feature = "vector4"))]
 impl<T> MechFunctionFactory for VerticalConcatenateM1M1M1M1<T>
@@ -1567,83 +819,20 @@ where
         <Matrix1<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
-    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
-        let e0: Ref<Matrix1<T>> = arg0.try_ref()?;
-        let e1: Ref<Matrix1<T>> = arg1.try_ref()?;
-        let e2: Ref<Matrix1<T>> = arg2.try_ref()?;
-        let e3: Ref<Matrix1<T>> = arg3.try_ref()?;
-        let out: Ref<Vector4<T>> = out.try_ref()?;
-        Ok(Box::new(Self {
-            e0,
-            e1,
-            e2,
-            e3,
-            out,
-        }))
-    }
-}
-#[cfg(all(feature = "matrix1", feature = "vector4"))]
-impl<T> MechFunctionImpl for VerticalConcatenateM1M1M1M1<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let e2_ptr = (*(self.e2.as_ptr())).clone();
-            let e3_ptr = (*(self.e3.as_ptr())).clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr[0].clone();
-            out_ptr[1] = e1_ptr[0].clone();
-            out_ptr[2] = e2_ptr[0].clone();
-            out_ptr[3] = e3_ptr[0].clone();
-        };
-        Ok(())
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
     }
 
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
-#[cfg(all(
-    feature = "matrix1",
-    feature = "vector4",
-    feature = "semantic-compiler"
-))]
-impl<T> MechFunctionCompiler for VerticalConcatenateM1M1M1M1<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "VerticalConcatenateM1M1M1M1<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx);
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        invocation.expect_quaternary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<true>(invocation)
     }
 }
 
 // Mixed Type Vertical Concatenations -----------------------------------------
 
 #[cfg(all(feature = "row_vector2", feature = "matrix2"))]
-macro_rules! vertcat_r2r2 {
-    ($out:expr, $e0:expr, $e1:expr) => {
-        $out[0] = $e0[0].clone();
-        $out[2] = $e0[1].clone();
-        $out[1] = $e1[0].clone();
-        $out[3] = $e1[1].clone();
-    };
-}
-#[cfg(all(feature = "row_vector2", feature = "matrix2"))]
-vertcat_two_args!(
-    VerticalConcatenateR2R2,
-    RowVector2,
-    RowVector2,
-    Matrix2,
-    vertcat_r2r2
-);
+vertcat_two_args!(VerticalConcatenateR2R2, RowVector2, RowVector2, Matrix2);
 
 mech_core::declare_native_runtime_factory! {
     cfg: all(
@@ -1659,6 +848,7 @@ mech_core::declare_native_runtime_factory! {
     name: "VerticalConcatenateR2R2<f64Matrix2RowVector2RowVector2>",
     factory_type: VerticalConcatenateR2R2<f64>,
     contract: RuntimeFunctionContract::vertical_concatenation(RuntimeOutputAliasPolicy::DisallowInputAlias),
+    compiler_family: mech_core::RuntimeFamilyId::from_name("VerticalConcatenateR2R2<f64Matrix2RowVector2RowVector2>"),
 
     package: "mech-engine",
     crate_name: "mech_engine",
@@ -1670,229 +860,44 @@ mech_core::declare_native_runtime_factory! {
 // VerticalConcatenateR3R3 ----------------------------------------------------
 
 #[cfg(all(feature = "row_vector3", feature = "matrix2x3"))]
-macro_rules! vertcat_r3r3 {
-    ($out:expr, $e0:expr, $e1:expr) => {
-        $out[0] = $e0[0].clone();
-        $out[2] = $e0[1].clone();
-        $out[4] = $e0[2].clone();
-        $out[1] = $e1[0].clone();
-        $out[3] = $e1[1].clone();
-        $out[5] = $e1[2].clone();
-    };
-}
-#[cfg(all(feature = "row_vector3", feature = "matrix2x3"))]
-vertcat_two_args!(
-    VerticalConcatenateR3R3,
-    RowVector3,
-    RowVector3,
-    Matrix2x3,
-    vertcat_r3r3
-);
+vertcat_two_args!(VerticalConcatenateR3R3, RowVector3, RowVector3, Matrix2x3);
 
 // VerticalConcatenateR2M2 ----------------------------------------------------
 
 #[cfg(all(feature = "row_vector2", feature = "matrix2", feature = "matrix3x2"))]
-macro_rules! vertcat_r2m2 {
-    ($out:expr, $e0:expr, $e1:expr) => {
-        $out[0] = $e0[0].clone();
-        $out[3] = $e0[1].clone();
-        $out[1] = $e1[0].clone();
-        $out[2] = $e1[1].clone();
-        $out[4] = $e1[2].clone();
-        $out[5] = $e1[3].clone();
-    };
-}
-#[cfg(all(feature = "row_vector2", feature = "matrix2", feature = "matrix3x2"))]
-vertcat_two_args!(
-    VerticalConcatenateR2M2,
-    RowVector2,
-    Matrix2,
-    Matrix3x2,
-    vertcat_r2m2
-);
+vertcat_two_args!(VerticalConcatenateR2M2, RowVector2, Matrix2, Matrix3x2);
 
 // VerticalConcatenateM2R2 ----------------------------------------------------
 
-#[cfg(all(feature = "row_vector2", feature = "matrix2", feature = "matrix3x2"))]
-macro_rules! vertcat_m2r2 {
-    ($out:expr, $e0:expr, $e1:expr) => {
-        $out[0] = $e0[0].clone();
-        $out[1] = $e0[1].clone();
-        $out[3] = $e0[2].clone();
-        $out[4] = $e0[3].clone();
-        $out[2] = $e1[0].clone();
-        $out[5] = $e1[1].clone();
-    };
-}
 #[cfg(all(feature = "matrix2", feature = "row_vector2", feature = "matrix3x2"))]
-vertcat_two_args!(
-    VerticalConcatenateM2R2,
-    Matrix2,
-    RowVector2,
-    Matrix3x2,
-    vertcat_m2r2
-);
+vertcat_two_args!(VerticalConcatenateM2R2, Matrix2, RowVector2, Matrix3x2);
 
 // VerticalConcatenateM2x3R3 --------------------------------------------------
 
 #[cfg(all(feature = "matrix2x3", feature = "row_vector3", feature = "matrix3"))]
-macro_rules! vertcat_m2x3r3 {
-    ($out:expr, $e0:expr, $e1:expr) => {
-        $out[0] = $e0[0].clone();
-        $out[1] = $e0[1].clone();
-        $out[3] = $e0[2].clone();
-        $out[4] = $e0[3].clone();
-        $out[6] = $e0[4].clone();
-        $out[7] = $e0[5].clone();
-        $out[2] = $e1[0].clone();
-        $out[5] = $e1[1].clone();
-        $out[8] = $e1[2].clone();
-    };
-}
-#[cfg(all(feature = "matrix2x3", feature = "row_vector3", feature = "matrix3"))]
-vertcat_two_args!(
-    VerticalConcatenateM2x3R3,
-    Matrix2x3,
-    RowVector3,
-    Matrix3,
-    vertcat_m2x3r3
-);
+vertcat_two_args!(VerticalConcatenateM2x3R3, Matrix2x3, RowVector3, Matrix3);
 
 // VerticalConcatenateR3M2x3 --------------------------------------------------
 
-#[cfg(all(feature = "matrix2x3", feature = "row_vector3", feature = "matrix3"))]
-macro_rules! vertcat_r3m2x3 {
-    ($out:expr, $e0:expr, $e1:expr) => {
-        $out[0] = $e0[0].clone();
-        $out[3] = $e0[1].clone();
-        $out[6] = $e0[2].clone();
-        $out[1] = $e1[0].clone();
-        $out[2] = $e1[1].clone();
-        $out[4] = $e1[2].clone();
-        $out[5] = $e1[3].clone();
-        $out[7] = $e1[4].clone();
-        $out[8] = $e1[5].clone();
-    };
-}
 #[cfg(all(feature = "row_vector3", feature = "matrix2x3", feature = "matrix3"))]
-vertcat_two_args!(
-    VerticalConcatenateR3M2x3,
-    RowVector3,
-    Matrix2x3,
-    Matrix3,
-    vertcat_r3m2x3
-);
+vertcat_two_args!(VerticalConcatenateR3M2x3, RowVector3, Matrix2x3, Matrix3);
 
 // VerticalConcatenateMDR4 ----------------------------------------------------
 
 #[cfg(all(feature = "matrixd", feature = "row_vector4", feature = "matrix4"))]
-macro_rules! vertcat_mdr4 {
-    ($out:expr, $e0:expr, $e1:expr) => {
-        let e0_len = $e0.len();
-        for i in 0..e0_len {
-            $out[i] = $e0[i].clone();
-        }
-        let offset = e0_len;
-        $out[offset] = $e1[0].clone();
-        $out[offset + 1] = $e1[1].clone();
-        $out[offset + 2] = $e1[2].clone();
-        $out[offset + 3] = $e1[3].clone();
-    };
-}
-#[cfg(all(feature = "matrixd", feature = "row_vector4", feature = "matrix4"))]
-vertcat_two_args!(
-    VerticalConcatenateMDR4,
-    DMatrix,
-    RowVector4,
-    Matrix4,
-    vertcat_mdr4
-);
+vertcat_two_args!(VerticalConcatenateMDR4, DMatrix, RowVector4, Matrix4);
 
 // VerticalConcatenateMDMD ----------------------------------------------------
 
 #[cfg(all(feature = "matrixd", feature = "matrix4"))]
-macro_rules! vertcat_mdmd {
-    ($out:expr, $e0:expr, $e1:expr) => {
-        let dest_rows = $out.nrows();
-        let mut offset = 0;
-        let mut dest_ix = offset;
-
-        let src_rows = $e0.nrows();
-        let stride = dest_rows - src_rows;
-        for ix in 0..$e0.len() {
-            $out[dest_ix] = $e0[ix].clone();
-            dest_ix += ((ix + 1) % src_rows == 0) as usize * stride + 1;
-        }
-        offset += src_rows;
-
-        let src_rows = $e1.nrows();
-        let stride = dest_rows - src_rows;
-        dest_ix = offset;
-        for ix in 0..$e1.len() {
-            $out[dest_ix] = $e1[ix].clone();
-            dest_ix += ((ix + 1) % src_rows == 0) as usize * stride + 1;
-        }
-    };
-}
-#[cfg(all(feature = "matrixd", feature = "matrix4"))]
-vertcat_two_args!(
-    VerticalConcatenateMDMD,
-    DMatrix,
-    DMatrix,
-    Matrix4,
-    vertcat_mdmd
-);
+vertcat_two_args!(VerticalConcatenateMDMD, DMatrix, DMatrix, Matrix4);
 
 // VerticalConcatenateR4MD ----------------------------------------------------
 
 #[cfg(all(feature = "matrixd", feature = "matrix4", feature = "row_vector4"))]
-vertcat_two_args!(
-    VerticalConcatenateR4MD,
-    RowVector4,
-    DMatrix,
-    Matrix4,
-    vertcat_mdmd
-);
+vertcat_two_args!(VerticalConcatenateR4MD, RowVector4, DMatrix, Matrix4);
 
 // VerticalConcatenateR2R2R2 ----------------------------------------------------
-
-#[cfg(any(
-    all(feature = "row_vector2", feature = "matrix3x2"),
-    all(feature = "row_vector3", feature = "matrix3"),
-    all(feature = "row_vector4", feature = "matrixd", feature = "matrix4")
-))]
-macro_rules! vertcat_mdmdmd {
-    ($out:expr, $e0:expr, $e1:expr, $e2:expr) => {
-        let dest_rows = $out.nrows();
-        let mut offset = 0;
-        let mut dest_ix = offset;
-
-        let src_rows = $e0.nrows();
-        let stride = dest_rows - src_rows;
-        for ix in 0..$e0.len() {
-            $out[dest_ix] = $e0[ix].clone();
-            dest_ix += ((ix + 1) % src_rows == 0) as usize * stride + 1;
-        }
-        offset += src_rows;
-
-        let src_rows = $e1.nrows();
-        let stride = dest_rows - src_rows;
-        dest_ix = offset;
-        for ix in 0..$e1.len() {
-            $out[dest_ix] = $e1[ix].clone();
-            dest_ix += ((ix + 1) % src_rows == 0) as usize * stride + 1;
-        }
-        offset += src_rows;
-
-        let src_rows = $e2.nrows();
-        let stride = dest_rows - src_rows;
-        dest_ix = offset;
-        for ix in 0..$e2.len() {
-            $out[dest_ix] = $e2[ix].clone();
-            dest_ix += ((ix + 1) % src_rows == 0) as usize * stride + 1;
-        }
-    };
-}
 
 #[cfg(all(feature = "row_vector2", feature = "matrix3x2"))]
 vertcat_three_args!(
@@ -1900,8 +905,7 @@ vertcat_three_args!(
     RowVector2,
     RowVector2,
     RowVector2,
-    Matrix3x2,
-    vertcat_mdmdmd
+    Matrix3x2
 );
 
 // VerticalConcatenateR3R3R3 --------------------------------------------------
@@ -1912,8 +916,7 @@ vertcat_three_args!(
     RowVector3,
     RowVector3,
     RowVector3,
-    Matrix3,
-    vertcat_mdmdmd
+    Matrix3
 );
 
 // VerticalConcatenateR4R4MD --------------------------------------------------
@@ -1924,8 +927,7 @@ vertcat_three_args!(
     RowVector4,
     RowVector4,
     DMatrix,
-    Matrix4,
-    vertcat_mdmdmd
+    Matrix4
 );
 
 // VerticalConcatenateR4MDR4 --------------------------------------------------
@@ -1941,8 +943,7 @@ vertcat_three_args!(
     RowVector4,
     DMatrix,
     RowVector4,
-    Matrix4,
-    vertcat_mdmdmd
+    Matrix4
 );
 
 // VerticalConcatenateMDR4R4 --------------------------------------------------
@@ -1958,54 +959,10 @@ vertcat_three_args!(
     DMatrix,
     RowVector4,
     RowVector4,
-    Matrix4,
-    vertcat_mdmdmd
+    Matrix4
 );
 
 // VerticalConcatenateR4R4R4R4 ------------------------------------------------
-
-#[cfg(all(feature = "matrix4", feature = "row_vector4"))]
-macro_rules! vertcat_mdmdmdmd {
-    ($out:expr, $e0:expr, $e1:expr, $e2:expr, $e3:expr) => {
-        let dest_rows = $out.nrows();
-        let mut offset = 0;
-        let mut dest_ix = offset;
-
-        let src_rows = $e0.nrows();
-        let stride = dest_rows - src_rows;
-        for ix in 0..$e0.len() {
-            $out[dest_ix] = $e0[ix].clone();
-            dest_ix += ((ix + 1) % src_rows == 0) as usize * stride + 1;
-        }
-        offset += src_rows;
-
-        let src_rows = $e1.nrows();
-        let stride = dest_rows - src_rows;
-        dest_ix = offset;
-        for ix in 0..$e1.len() {
-            $out[dest_ix] = $e1[ix].clone();
-            dest_ix += ((ix + 1) % src_rows == 0) as usize * stride + 1;
-        }
-        offset += src_rows;
-
-        let src_rows = $e2.nrows();
-        let stride = dest_rows - src_rows;
-        dest_ix = offset;
-        for ix in 0..$e2.len() {
-            $out[dest_ix] = $e2[ix].clone();
-            dest_ix += ((ix + 1) % src_rows == 0) as usize * stride + 1;
-        }
-        offset += src_rows;
-
-        let src_rows = $e3.nrows();
-        let stride = dest_rows - src_rows;
-        dest_ix = offset;
-        for ix in 0..$e3.len() {
-            $out[dest_ix] = $e3[ix].clone();
-            dest_ix += ((ix + 1) % src_rows == 0) as usize * stride + 1;
-        }
-    };
-}
 
 #[cfg(all(feature = "matrix4", feature = "row_vector4"))]
 vertcat_four_args!(
@@ -2014,8 +971,7 @@ vertcat_four_args!(
     RowVector4,
     RowVector4,
     RowVector4,
-    Matrix4,
-    vertcat_mdmdmdmd
+    Matrix4
 );
 
 macro_rules! for_each_vertcat_scalar {
@@ -2048,6 +1004,7 @@ macro_rules! declare_vertcat_scalar {
             name: concat!(stringify!($factory), "<", $name, ">"),
             factory_type: $factory<$scalar>,
             contract: RuntimeFunctionContract::vertical_concatenation(RuntimeOutputAliasPolicy::DisallowInputAlias),
+            compiler_family: mech_core::RuntimeFamilyId::from_name(concat!(stringify!($factory), "<", $name, ">")),
             package: "mech-engine", crate_name: "mech_engine",
             installer_path: concat!("mech_engine::__mech_native::install_", stringify!([<$factory:snake _ $token>])),
             extra_cargo_features: ["matrix_vertcat"],
@@ -2184,6 +1141,7 @@ macro_rules! declare_vertcat_binary_scalar {
             name: concat!(stringify!($factory), "<", $name, stringify!($out), stringify!($e0), stringify!($e1), ">"),
             factory_type: $factory<$scalar>,
             contract: RuntimeFunctionContract::vertical_concatenation(RuntimeOutputAliasPolicy::DisallowInputAlias),
+            compiler_family: mech_core::RuntimeFamilyId::from_name(concat!(stringify!($factory), "<", $name, stringify!($out), stringify!($e0), stringify!($e1), ">")),
             package: "mech-engine", crate_name: "mech_engine",
             installer_path: concat!("mech_engine::__mech_native::install_", stringify!([<$factory:snake _ $token _ $out:lower _ $e0:lower _ $e1:lower>])),
             extra_cargo_features: ["matrix_vertcat"],
@@ -2445,9 +1403,9 @@ impl CanonicalFunctionSpecializer for MatrixVertCat {
     fn specialize_invocation(
         &self,
         invocation: &SpecializationInvocation,
-        _: &mut SpecializationContext<'_>,
+        context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
-        ValueMatrixConcatenation::<true>::specialize(invocation)
+        ValueMatrixConcatenation::<true>::specialize(invocation, context)
     }
 }
 

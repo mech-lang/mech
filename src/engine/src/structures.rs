@@ -9,12 +9,9 @@ use mech_core::snapshot::MapEntryDraft;
 use mech_core::snapshot::OptionDraft;
 
 #[cfg(any(
-    feature = "tuple",
+    all(feature = "tuple", feature = "atom"),
     feature = "map",
-    feature = "record",
-    feature = "set",
-    feature = "table",
-    feature = "matrix"
+    feature = "set"
 ))]
 fn snapshot_draft(cell: &ValueCell) -> MResult<ValueDataDraft> {
     cell.snapshot()?.canonical_data_draft().map_err(|error| {
@@ -53,6 +50,108 @@ fn expression_value(
     required_cell(expression(expression_node, env, p)?, context)
 }
 
+#[cfg(any(
+    feature = "tuple",
+    feature = "record",
+    feature = "table",
+    feature = "matrix"
+))]
+fn composite_pack_contract() -> OperationContractDeclaration {
+    OperationContractDeclaration {
+        inputs: InputPortLayout::Variadic {
+            prefix: Box::new([]),
+            repeated: InputPortPolicy {
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            },
+            min_repetitions: 0,
+        },
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    }
+}
+
+#[cfg(any(
+    feature = "tuple",
+    feature = "record",
+    feature = "table",
+    feature = "matrix"
+))]
+fn register_composite_pack(
+    plan: &Plan,
+    implementation: Box<dyn MechFunction>,
+    output: ValueCell,
+    inputs: Vec<ValueCell>,
+) -> MResult<()> {
+    let instance = (
+        implementation,
+        FunctionInvocation::variadic(output, inputs.into_boxed_slice()),
+    );
+    plan.register_specialized(SpecializedFunction::syntax_directed(
+        instance,
+        ResolvedOperationDescriptor::from_name("core/composite-pack", composite_pack_contract())?,
+        RuntimeFunctionId::from_name("core/composite-pack"),
+        ExecutionTarget::DirectRuntime,
+        mech_core::ImplementationMemoryClass::CanonicalFinalize,
+    )?)?;
+    Ok(())
+}
+
+#[cfg(any(
+    feature = "tuple",
+    feature = "record",
+    feature = "table",
+    feature = "matrix"
+))]
+fn prospective_composite_pack_footprint<'a>(
+    output: &ValueCell,
+    inputs: impl IntoIterator<Item = &'a ValueCell>,
+) -> MResult<Option<CurrentMemoryFootprint>> {
+    if !output.requires_canonical_output_builder()? {
+        return Ok(None);
+    }
+    Ok(Some(output.prospective_aggregate_memory_footprint(
+        inputs.into_iter().map(|input| (input, 1)),
+    )?))
+}
+
+#[cfg(any(
+    feature = "tuple",
+    feature = "record",
+    feature = "table",
+    feature = "matrix"
+))]
+fn stage_composite_pack(
+    frame: &mut mech_core::KernelMemoryFrame<'_>,
+    output: &ValueCell,
+    footprint: Option<CurrentMemoryFootprint>,
+    build: impl FnOnce(
+        &mut mech_core::KernelMemoryFrame<'_>,
+        Option<&mut mech_core::FrozenSnapshotConstruction>,
+    ) -> MResult<mech_core::Value>,
+) -> MResult<()> {
+    if let Some(footprint) = footprint {
+        frame.with_admitted_canonical_output(output, footprint, |frame, construction| {
+            let next = construction.try_build_canonical_candidate_with(|construction| {
+                build(frame, Some(construction))
+            })?;
+            Ok(((), next))
+        })
+    } else {
+        let next = build(frame, None)?;
+        frame.stage_output_value(output, next)
+    }
+}
+
 #[cfg(feature = "tuple")]
 struct CanonicalTuplePack {
     output: ValueCell,
@@ -68,8 +167,34 @@ impl CanonicalTuplePack {
 
 #[cfg(feature = "tuple")]
 impl MechFunctionImpl for CanonicalTuplePack {
-    fn solve_result(&self) -> MResult<()> {
-        self.output.replace(&self.next_value()?)
+    fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+        Ok(
+            prospective_composite_pack_footprint(&self.output, self.elements.iter())?
+                .map(|footprint| vec![footprint].into_boxed_slice()),
+        )
+    }
+
+    fn solve_managed(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        let footprint = prospective_composite_pack_footprint(&self.output, self.elements.iter())?;
+        stage_composite_pack(frame, &self.output, footprint, |frame, construction| {
+            let Some(construction) = construction else {
+                return self.next_value();
+            };
+            let values = self
+                .elements
+                .iter()
+                .enumerate()
+                .map(|(index, input)| {
+                    frame.snapshot_input_cell_with_construction(input, index, construction)
+                })
+                .collect::<MResult<Vec<_>>>()?;
+            construction.try_rebuild_tuple_values(&self.output, &self.elements, &values)
+        })?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn reactive_output_value_cells(&self) -> Vec<ValueCell> {
@@ -114,8 +239,38 @@ impl CanonicalRecordPack {
 
 #[cfg(feature = "record")]
 impl MechFunctionImpl for CanonicalRecordPack {
-    fn solve_result(&self) -> MResult<()> {
-        self.output.replace(&self.next_value()?)
+    fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+        Ok(prospective_composite_pack_footprint(
+            &self.output,
+            self.fields.iter().map(|(_, input)| input),
+        )?
+        .map(|footprint| vec![footprint].into_boxed_slice()))
+    }
+
+    fn solve_managed(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        let footprint = prospective_composite_pack_footprint(
+            &self.output,
+            self.fields.iter().map(|(_, input)| input),
+        )?;
+        stage_composite_pack(frame, &self.output, footprint, |frame, construction| {
+            let Some(construction) = construction else {
+                return self.next_value();
+            };
+            let values = self
+                .fields
+                .iter()
+                .enumerate()
+                .map(|(index, (_, input))| {
+                    frame.snapshot_input_cell_with_construction(input, index, construction)
+                })
+                .collect::<MResult<Vec<_>>>()?;
+            construction.try_rebuild_record_values(&self.output, &self.fields, &values)
+        })?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn reactive_output_value_cells(&self) -> Vec<ValueCell> {
@@ -165,8 +320,39 @@ impl CanonicalTablePack {
 
 #[cfg(feature = "table")]
 impl MechFunctionImpl for CanonicalTablePack {
-    fn solve_result(&self) -> MResult<()> {
-        self.output.replace(&self.next_value()?)
+    fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+        Ok(prospective_composite_pack_footprint(
+            &self.output,
+            self.columns.iter().flat_map(|(_, values)| values.iter()),
+        )?
+        .map(|footprint| vec![footprint].into_boxed_slice()))
+    }
+
+    fn solve_managed(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        let footprint = prospective_composite_pack_footprint(
+            &self.output,
+            self.columns.iter().flat_map(|(_, values)| values.iter()),
+        )?;
+        stage_composite_pack(frame, &self.output, footprint, |frame, construction| {
+            let Some(construction) = construction else {
+                return self.next_value();
+            };
+            let values = self
+                .columns
+                .iter()
+                .flat_map(|(_, values)| values.iter())
+                .enumerate()
+                .map(|(index, input)| {
+                    frame.snapshot_input_cell_with_construction(input, index, construction)
+                })
+                .collect::<MResult<Vec<_>>>()?;
+            construction.try_rebuild_table_values(&self.output, &self.columns, &values)
+        })?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn reactive_output_value_cells(&self) -> Vec<ValueCell> {
@@ -268,13 +454,15 @@ pub fn tuple(
         elements.push(value);
     }
     let output = ValueCell::tuple_from_cells(&elements)?;
-    p.plan().register_instance(FunctionInstance::new(
+    register_composite_pack(
+        &p.plan(),
         Box::new(CanonicalTuplePack {
             output: output.clone(),
             elements: elements.clone().into_boxed_slice(),
         }),
-        FunctionInvocation::variadic(output.clone(), elements.into_boxed_slice()),
-    ))?;
+        output.clone(),
+        elements,
+    )?;
     Ok(output)
 }
 
@@ -398,20 +586,15 @@ pub fn record(
         cells.push((name, value));
     }
     let output = ValueCell::record_from_cells(&cells)?;
-    p.plan().register_instance(FunctionInstance::new(
+    register_composite_pack(
+        &p.plan(),
         Box::new(CanonicalRecordPack {
             output: output.clone(),
             fields: cells.clone().into_boxed_slice(),
         }),
-        FunctionInvocation::variadic(
-            output.clone(),
-            cells
-                .into_iter()
-                .map(|(_, cell)| cell)
-                .collect::<Vec<_>>()
-                .into_boxed_slice(),
-        ),
-    ))?;
+        output.clone(),
+        cells.into_iter().map(|(_, cell)| cell).collect(),
+    )?;
     Ok(output)
 }
 
@@ -571,13 +754,15 @@ pub fn table(
         .iter()
         .flat_map(|(_, values)| values.iter().cloned())
         .collect::<Vec<_>>();
-    p.plan().register_instance(FunctionInstance::new(
+    register_composite_pack(
+        &p.plan(),
         Box::new(CanonicalTablePack {
             output: output.clone(),
             columns: cell_columns.into_boxed_slice(),
         }),
-        FunctionInvocation::variadic(output.clone(), dependencies.into_boxed_slice()),
-    ))?;
+        output.clone(),
+        dependencies,
+    )?;
     Ok(output)
 }
 
@@ -617,8 +802,45 @@ impl CanonicalMatrixPack {
 
 #[cfg(feature = "matrix")]
 impl MechFunctionImpl for CanonicalMatrixPack {
-    fn solve_result(&self) -> MResult<()> {
-        self.output.replace(&self.next_value()?)
+    fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+        Ok(prospective_composite_pack_footprint(
+            &self.output,
+            self.rows.iter().flatten().filter_map(Option::as_ref),
+        )?
+        .map(|footprint| vec![footprint].into_boxed_slice()))
+    }
+
+    fn solve_managed(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        let footprint = prospective_composite_pack_footprint(
+            &self.output,
+            self.rows.iter().flatten().filter_map(Option::as_ref),
+        )?;
+        stage_composite_pack(frame, &self.output, footprint, |frame, construction| {
+            let Some(construction) = construction else {
+                return self.next_value();
+            };
+            let mut semantic_input = 0;
+            let matrix = matrix_from_source_rows_with(&self.rows, self.optional, |input| {
+                let value = frame.snapshot_input_cell_with_construction(
+                    input,
+                    semantic_input,
+                    construction,
+                )?;
+                semantic_input += 1;
+                matrix_block_from_value(input, &value)
+            })?;
+            construction.try_rebuild_matrix_drafts_with(&self.output, || {
+                Ok((
+                    vec![matrix.rows as u64, matrix.columns as u64].into_boxed_slice(),
+                    matrix.values.into_boxed_slice(),
+                ))
+            })
+        })?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn reactive_output_value_cells(&self) -> Vec<ValueCell> {
@@ -673,8 +895,16 @@ impl MechFunctionCompiler for CanonicalMatrixPack {
 
 #[cfg(feature = "matrix")]
 fn matrix_block(cell: &ValueCell) -> MResult<MatrixBlock> {
+    let value = cell.snapshot()?;
+    matrix_block_from_value(cell, &value)
+}
+
+#[cfg(feature = "matrix")]
+fn matrix_block_from_value(cell: &ValueCell, value: &mech_core::Value) -> MResult<MatrixBlock> {
     let schema = cell.closed_schema_body()?;
-    let draft = snapshot_draft(cell)?;
+    let draft = value.canonical_data_draft().map_err(|error| {
+        MechError::new(ValueCellSnapshotFailure { error }, None).with_compiler_loc()
+    })?;
     match (schema, draft) {
         (
             SchemaBody::Matrix {
@@ -916,11 +1146,20 @@ fn matrix_from_source_rows(
     inputs: &[Box<[Option<ValueCell>]>],
     optional: bool,
 ) -> MResult<MatrixBlock> {
+    matrix_from_source_rows_with(inputs, optional, matrix_block)
+}
+
+#[cfg(feature = "matrix")]
+fn matrix_from_source_rows_with(
+    inputs: &[Box<[Option<ValueCell>]>],
+    optional: bool,
+    mut resolve: impl FnMut(&ValueCell) -> MResult<MatrixBlock>,
+) -> MResult<MatrixBlock> {
     let element = inputs
         .iter()
         .flatten()
         .find_map(|input| input.as_ref())
-        .map(matrix_block)
+        .map(&mut resolve)
         .transpose()?
         .map(|block| block.element)
         .unwrap_or_else(|| SchemaBody::Tuple(Box::new([])));
@@ -931,7 +1170,7 @@ fn matrix_from_source_rows(
                 .iter()
                 .map(|input| match input {
                     Some(value) => {
-                        let mut block = matrix_block(value)?;
+                        let mut block = resolve(value)?;
                         if optional {
                             if block.element != element {
                                 return Err(schema_mismatch(
@@ -1063,14 +1302,16 @@ pub fn matrix(
         .flatten()
         .filter_map(|cell| cell.as_ref().cloned())
         .collect::<Vec<_>>();
-    p.plan().register_instance(FunctionInstance::new(
+    register_composite_pack(
+        &p.plan(),
         Box::new(CanonicalMatrixPack {
             output: output.clone(),
             rows,
             optional,
         }),
-        FunctionInvocation::variadic(output.clone(), dependencies.into_boxed_slice()),
-    ))?;
+        output.clone(),
+        dependencies,
+    )?;
     Ok(output)
 }
 
@@ -1166,6 +1407,56 @@ pub(crate) fn schema_body_from_kind(
             None,
         )
         .with_compiler_loc()),
+    }
+}
+
+#[cfg(all(test, feature = "tuple", feature = "string"))]
+mod managed_composite_tests {
+    use super::*;
+
+    #[test]
+    fn reactive_tuple_pack_stages_the_complete_canonical_candidate() {
+        let source = ValueCell::from_exact("old".to_owned()).unwrap();
+        let output = ValueCell::tuple_from_cells(&[source.clone()]).unwrap();
+        let implementation = CanonicalTuplePack {
+            output: output.clone(),
+            elements: vec![source.clone()].into_boxed_slice(),
+        };
+        let specialized = SpecializedFunction::syntax_directed(
+            (
+                Box::new(implementation),
+                FunctionInvocation::unary(output.clone(), source.clone()),
+            ),
+            ResolvedOperationDescriptor::from_name(
+                "core/composite-pack",
+                composite_pack_contract(),
+            )
+            .unwrap(),
+            RuntimeFunctionId::from_name("core/composite-pack"),
+            ExecutionTarget::DirectRuntime,
+            ImplementationMemoryClass::CanonicalFinalize,
+        )
+        .unwrap();
+
+        let replacement = "a substantially larger reactive tuple payload".to_owned();
+        source
+            .replace(
+                &ValueCell::from_exact(replacement.clone())
+                    .unwrap()
+                    .snapshot()
+                    .unwrap(),
+            )
+            .unwrap();
+        specialized.instance().solve_result().unwrap();
+
+        let value = output.snapshot().unwrap();
+        let ValueData::Tuple(values) = value.data() else {
+            panic!("composite output must remain a tuple")
+        };
+        assert!(matches!(
+            values.as_ref(),
+            [ValueData::String(value)] if value.as_ref() == replacement
+        ));
     }
 }
 

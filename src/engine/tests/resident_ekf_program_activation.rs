@@ -1,6 +1,10 @@
 #![cfg(all(feature = "resident-artifact", feature = "compiler"))]
 
-use mech_core::{InstanceEpoch, MResult, ReactiveInstanceId};
+use std::collections::BTreeSet;
+
+use mech_core::{
+    InstanceEpoch, MResult, MemoryObjectOwner, ReactiveInstanceId, TransactionRequirement,
+};
 use mech_engine::__resident::{
     ActivationFacts, FrozenEkfCompilationServices, ResidentStorageClass, ResidentValueBorrow,
     activate, compile_frozen_ekf_source, frozen_ekf_compiler_catalog,
@@ -50,6 +54,54 @@ fn public_ekf_artifact_activates_into_generic_storage_without_a_turn() -> MResul
     assert_eq!(instance.state.dual_payload_bytes(), 192);
     assert_eq!(instance.published_epoch(), InstanceEpoch::ZERO);
     assert_eq!(instance.next_epoch(), Some(InstanceEpoch::new(1)));
+
+    let objects = instance
+        .plan
+        .memory_plan
+        .allocations
+        .iter()
+        .map(|allocation| allocation.id)
+        .collect::<BTreeSet<_>>();
+    assert_eq!(
+        instance.plan.memory_plan.call_nodes.len(),
+        instance.plan.memory_plan.calls.len()
+    );
+    for call in &instance.plan.memory_plan.calls {
+        for port in call.inputs.iter().chain(&call.outputs) {
+            assert!(objects.contains(&port.object));
+        }
+        for transaction in &call.transactions {
+            let referenced = match *transaction {
+                TransactionRequirement::None => continue,
+                TransactionRequirement::StageAndSwap { current, staged } => [current, staged],
+                TransactionRequirement::UndoSnapshot { target, undo } => [target, undo],
+                TransactionRequirement::DoubleBuffer { current, next } => [current, next],
+            };
+            assert!(referenced.iter().all(|object| objects.contains(object)));
+        }
+    }
+    for allocation in &instance.plan.memory_plan.allocations {
+        let arena = allocation.placement.arena.get();
+        match allocation.owner {
+            MemoryObjectOwner::NodeInput { .. }
+            | MemoryObjectOwner::NodeOutput { .. }
+            | MemoryObjectOwner::NodeScratch { .. }
+            | MemoryObjectOwner::TransactionStage { .. }
+            | MemoryObjectOwner::DirectCallPort { .. } => {
+                assert!(
+                    arena >= 64,
+                    "call-local arena {arena} overlaps resident storage"
+                )
+            }
+            MemoryObjectOwner::Constant(_) | MemoryObjectOwner::Slot(_) => {
+                assert!(
+                    arena < 64,
+                    "resident value arena {arena} escaped its namespace"
+                )
+            }
+            MemoryObjectOwner::Transfer { .. } => {}
+        }
+    }
 
     let state = f64_state(&instance);
     assert_eq!(state.len(), 2);

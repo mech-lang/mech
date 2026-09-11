@@ -145,7 +145,9 @@ fn enabled_standard_profile_is_fully_catalog_owned() {
             catalog
                 .specializer(OperationId::from_name(canonical_name))
                 .unwrap()
-                .canonical_name,
+                .operation
+                .canonical_name
+                .as_ref(),
             canonical_name,
         );
     }

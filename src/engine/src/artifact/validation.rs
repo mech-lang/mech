@@ -185,9 +185,7 @@ fn contract_input_schema(contract: &ResolvedOperationContract, ordinal: usize) -
         ResolvedOperationContract::Declared(contract) => {
             contract.inputs.get(ordinal).map(|port| port.schema)
         }
-        ResolvedOperationContract::LegacyOpaque(contract) => {
-            contract.input_schemas.get(ordinal).copied()
-        }
+        _ => None,
     }
 }
 
@@ -199,9 +197,7 @@ fn contract_output_schema(
         ResolvedOperationContract::Declared(contract) => {
             contract.outputs.get(ordinal).map(|port| port.schema)
         }
-        ResolvedOperationContract::LegacyOpaque(contract) => {
-            contract.output_schemas.get(ordinal).copied()
-        }
+        _ => None,
     }
 }
 
@@ -210,9 +206,7 @@ fn contract_port_counts(contract: &ResolvedOperationContract) -> (usize, usize) 
         ResolvedOperationContract::Declared(contract) => {
             (contract.inputs.len(), contract.outputs.len())
         }
-        ResolvedOperationContract::LegacyOpaque(contract) => {
-            (contract.input_schemas.len(), contract.output_schemas.len())
-        }
+        _ => (0, 0),
     }
 }
 
@@ -597,15 +591,12 @@ fn validate_state_writer_chain(
     let mut form = None;
     for &(node_id, output_ordinal) in writers {
         let node = require_node(draft, node_id)?;
-        let contract = match require_contract(draft, node.contract)? {
-            ResolvedOperationContract::Declared(contract) => contract,
-            ResolvedOperationContract::LegacyOpaque(_) if writers.len() == 1 => return Ok(()),
-            ResolvedOperationContract::LegacyOpaque(_) => {
-                return Err(ArtifactBuildError::InvalidStateWriterChain {
-                    slot: slot_id,
-                    reason: "multi-writer state chains require declared operation contracts",
-                });
-            }
+        let ResolvedOperationContract::Declared(contract) = require_contract(draft, node.contract)?
+        else {
+            return Err(ArtifactBuildError::InvalidStateWriterChain {
+                slot: slot_id,
+                reason: "state writers require declared operation contracts",
+            });
         };
         let output = contract.outputs.get(output_ordinal as usize).ok_or(
             ArtifactBuildError::InvalidStateWriterChain {

@@ -12,9 +12,9 @@ use std::{boxed::Box, vec, vec::Vec};
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[non_exhaustive]
 pub enum ResolvedOperationContract {
     Declared(DeclaredOperationContract),
-    LegacyOpaque(LegacyOpaqueOperationContract),
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -42,13 +42,6 @@ pub struct ResolvedOutputPort {
     pub construction: OutputConstruction,
     pub alias: AliasPolicy,
     pub change_detection: ChangeDetectionPolicy,
-}
-
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-pub struct LegacyOpaqueOperationContract {
-    pub input_schemas: Box<[SchemaId]>,
-    pub output_schemas: Box<[SchemaId]>,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

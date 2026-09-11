@@ -3,9 +3,9 @@ use std::sync::Arc;
 #[cfg(feature = "semantic-compiler")]
 use mech_core::{BytecodeCompilerContext, MechError, MechFunctionCompiler, Register};
 use mech_core::{
-    CanonicalFunctionSpecializer, FunctionInstance, FunctionInvocation, GuardFunctionSafety,
-    MResult, MechErrorKind, MechFunctionImpl, SpecializationContext, SpecializationInput,
-    SpecializationInvocation, SpecializedFunction, Value, ValueCell,
+    CanonicalFunctionSpecializer, FunctionInvocation, GuardFunctionSafety, MResult, MechErrorKind,
+    MechFunctionImpl, SpecializationContext, SpecializationInput, SpecializationInvocation,
+    SpecializedFunction, Value, ValueCell,
 };
 
 pub type NativeClosure = dyn Fn(Vec<Value>) -> MResult<Value> + Send + Sync + 'static;
@@ -32,7 +32,7 @@ impl CanonicalFunctionSpecializer for ClosureFunctionSpecializer {
     fn specialize_invocation(
         &self,
         invocation: &SpecializationInvocation,
-        _context: &mut SpecializationContext<'_>,
+        context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
         let arguments = invocation
             .inputs()
@@ -48,12 +48,17 @@ impl CanonicalFunctionSpecializer for ClosureFunctionSpecializer {
             .collect::<MResult<Vec<_>>>()?
             .into_boxed_slice();
         let bound = FunctionInvocation::variadic(output, inputs);
-        Ok(SpecializedFunction::new(FunctionInstance::new(
-            Box::new(ClosureNativeFunction {
-                name: self.name.clone(),
-            }),
-            bound,
-        )))
+        context.certify_instance(
+            (
+                Box::new(ClosureNativeFunction {
+                    name: self.name.clone(),
+                }),
+                bound,
+            ),
+            mech_core::RuntimeFunctionId::from_name(&self.name),
+            mech_core::ExecutionTarget::DirectRuntime,
+            mech_core::ImplementationMemoryClass::CanonicalFinalize,
+        )
     }
 
     fn guard_safety(&self) -> GuardFunctionSafety {
@@ -67,9 +72,16 @@ pub struct ClosureNativeFunction {
 }
 
 impl MechFunctionImpl for ClosureNativeFunction {
-    fn solve_result(&self) -> MResult<()> {
-        // Pure closure functions are executed once during native function specialization.
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> {
+            // Pure closure functions are executed once during native function specialization.
+            Ok(())
+        })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {

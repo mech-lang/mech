@@ -1,5 +1,8 @@
-use super::Schema;
-use crate::{SchemaId, SchemaKey, SemanticIdentityKind, SemanticModelError};
+use super::{CardinalitySpec, Schema, SchemaBody, SchemaField};
+use crate::{
+    DimensionExpr, DimensionParameter, SchemaId, SchemaKey, SemanticIdentityKind,
+    SemanticModelError,
+};
 
 #[cfg(feature = "no_std")]
 use alloc::{boxed::Box, collections::BTreeMap, vec, vec::Vec};
@@ -220,6 +223,185 @@ mod tests {
             Err(SemanticModelError::InvalidSchemaHandleV1)
         ));
     }
+
+    #[test]
+    fn clone_allocation_witness_counts_wide_tuple_nodes_not_encoding_multipliers() {
+        const CHILDREN: usize = 2_048;
+        let mut builder = SchemaTableBuilder::new();
+        builder
+            .insert(schema(SchemaBody::Tuple(
+                vec![SchemaBody::Bool; CHILDREN].into_boxed_slice(),
+            )))
+            .unwrap();
+        let table = builder.finish().unwrap().table;
+        let entry = &table.entries[0];
+        let expected = (core::mem::size_of::<SchemaTable>()
+            + core::mem::size_of::<SchemaEntry>()
+            + CHILDREN * core::mem::size_of::<SchemaBody>()
+            + entry.canonical_bytes.len()) as u64;
+        assert_eq!(table.clone_allocation_bound_bytes(), Some(expected));
+        let encoding_multiplier = (core::mem::size_of::<SchemaTable>()
+            + core::mem::size_of::<SchemaEntry>()
+            + entry.canonical_bytes.len() * 4) as u64;
+        assert!(
+            expected > encoding_multiplier,
+            "compact Bool tags do not bound the cloned SchemaBody slice"
+        );
+        assert_eq!(table.clone().clone_allocation_bound_bytes(), Some(expected));
+    }
+
+    #[test]
+    fn clone_allocation_witness_counts_names_and_boxed_aggregate_children() {
+        let record = SchemaBody::Record(
+            vec![
+                SchemaField {
+                    name: "first".into(),
+                    schema: SchemaBody::Option(Box::new(SchemaBody::Bool)),
+                },
+                SchemaField {
+                    name: "second".into(),
+                    schema: SchemaBody::Tuple(
+                        vec![SchemaBody::String, SchemaBody::Bool].into_boxed_slice(),
+                    ),
+                },
+            ]
+            .into_boxed_slice(),
+        );
+        let record_bytes = (2 * core::mem::size_of::<SchemaField>()
+            + "first".len()
+            + "second".len()
+            + 3 * core::mem::size_of::<SchemaBody>()) as u64;
+        assert_eq!(body_clone_heap_bytes(&record), Some(record_bytes));
+        let variants = SchemaBody::Enum {
+            key: crate::NominalKey::from_bytes([7; 32]),
+            variants: vec![
+                super::super::EnumVariantSchema {
+                    name: "Empty".into(),
+                    payload: None,
+                },
+                super::super::EnumVariantSchema {
+                    name: "Record".into(),
+                    payload: Some(record.clone()),
+                },
+            ]
+            .into_boxed_slice(),
+        };
+        assert_eq!(
+            body_clone_heap_bytes(&variants),
+            Some(
+                record_bytes
+                    + (2 * core::mem::size_of::<super::super::EnumVariantSchema>()
+                        + "Empty".len()
+                        + "Record".len()) as u64
+            )
+        );
+
+        let dimension = DimensionExpr::Add(
+            vec![
+                DimensionExpr::Constant(2),
+                DimensionExpr::Parameter(crate::DimensionParameterId::new(0)),
+            ]
+            .into_boxed_slice(),
+        );
+        let extent_bytes = (2 * core::mem::size_of::<DimensionExpr>()) as u64;
+        let table = SchemaBody::Table {
+            columns: vec![SchemaField {
+                name: "column".into(),
+                schema: SchemaBody::Bool,
+            }]
+            .into_boxed_slice(),
+            rows: CardinalitySpec::Dynamic {
+                upper_bound: Some(dimension.clone()),
+            },
+        };
+        assert_eq!(
+            body_clone_heap_bytes(&table),
+            Some((core::mem::size_of::<SchemaField>() + "column".len()) as u64 + extent_bytes)
+        );
+        let set = SchemaBody::Set {
+            element: Box::new(SchemaBody::Bool),
+            cardinality: CardinalitySpec::Exact(dimension.clone()),
+        };
+        assert_eq!(
+            body_clone_heap_bytes(&set),
+            Some(core::mem::size_of::<SchemaBody>() as u64 + extent_bytes)
+        );
+        let map = SchemaBody::Map {
+            key: Box::new(SchemaBody::Bool),
+            value: Box::new(record),
+            cardinality: CardinalitySpec::Exact(dimension.clone()),
+        };
+        assert_eq!(
+            body_clone_heap_bytes(&map),
+            Some(2 * core::mem::size_of::<SchemaBody>() as u64 + record_bytes + extent_bytes)
+        );
+        let matrix = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Bool),
+            dimensions: vec![dimension, DimensionExpr::Constant(3)].into_boxed_slice(),
+        };
+        assert_eq!(
+            body_clone_heap_bytes(&matrix),
+            Some(core::mem::size_of::<SchemaBody>() as u64 + 2 * extent_bytes)
+        );
+    }
+
+    #[test]
+    fn clone_allocation_witness_counts_recursive_dimension_storage_and_parameters() {
+        use crate::{
+            DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+            DimensionParameterOrigin,
+        };
+        let parameter = DimensionExpr::Parameter(DimensionParameterId::new(0));
+        let expression = DimensionExpr::Max(
+            vec![
+                DimensionExpr::Min(
+                    vec![DimensionExpr::Constant(1), parameter.clone()].into_boxed_slice(),
+                ),
+                DimensionExpr::Multiply(
+                    vec![
+                        parameter.clone(),
+                        DimensionExpr::Add(
+                            vec![parameter.clone(), DimensionExpr::Constant(2)].into_boxed_slice(),
+                        ),
+                    ]
+                    .into_boxed_slice(),
+                ),
+            ]
+            .into_boxed_slice(),
+        );
+        assert_eq!(
+            dimension_clone_heap_bytes(&expression),
+            Some((8 * core::mem::size_of::<DimensionExpr>()) as u64)
+        );
+        let value = SchemaDraft {
+            dimension_parameters: vec![DimensionParameterDeclaration {
+                id: DimensionParameterId::new(0),
+                origin: DimensionParameterOrigin::Explicit,
+                lifetime: DimensionLifetime::Turn,
+                lower_bound: DimensionExpr::Constant(1),
+                upper_bound: Some(DimensionExpr::Constant(10)),
+            }]
+            .into_boxed_slice(),
+            body: SchemaBody::Matrix {
+                element: Box::new(SchemaBody::Bool),
+                dimensions: vec![parameter, DimensionExpr::Constant(2)].into_boxed_slice(),
+            },
+        }
+        .finalize()
+        .unwrap();
+        assert_eq!(
+            schema_clone_heap_bytes(&value),
+            Some(
+                (core::mem::size_of::<DimensionParameter>()
+                    + core::mem::size_of::<SchemaBody>()
+                    + 2 * core::mem::size_of::<DimensionExpr>()) as u64
+            )
+        );
+        let overflowing_count = u64::MAX / core::mem::size_of::<SchemaBody>() as u64 + 1;
+        if let Ok(count) = usize::try_from(overflowing_count) {
+            assert_eq!(clone_slice_bytes::<SchemaBody>(count), None);
+        }
+    }
 }
 
 impl SchemaTableBuild {
@@ -265,6 +447,143 @@ impl SchemaTable {
 
     pub fn entries(&self) -> impl ExactSizeIterator<Item = &SchemaEntry> {
         self.entries.iter()
+    }
+
+    /// Checked allocation witness for an independently owned clone of this
+    /// canonical schema context. It includes the table header, entry slice,
+    /// each concrete cloned schema allocation and the retained canonical byte
+    /// buffer. Compact encodings are not a bound on Rust enum/node layouts.
+    pub fn clone_allocation_bound_bytes(&self) -> Option<u64> {
+        let initial =
+            (core::mem::size_of::<Self>() as u64)
+                .checked_add(clone_slice_bytes::<SchemaEntry>(self.entries.len())?)?;
+        self.entries.iter().try_fold(initial, |total, entry| {
+            total
+                .checked_add(u64::try_from(entry.canonical_bytes.len()).ok()?)?
+                .checked_add(schema_clone_heap_bytes(&entry.schema)?)
+        })
+    }
+}
+
+fn clone_slice_bytes<T>(len: usize) -> Option<u64> {
+    u64::try_from(len)
+        .ok()?
+        .checked_mul(core::mem::size_of::<T>() as u64)
+}
+
+fn schema_clone_heap_bytes(schema: &Schema) -> Option<u64> {
+    let parameters = clone_slice_bytes::<DimensionParameter>(schema.dimension_parameters.len())?;
+    let parameters =
+        schema
+            .dimension_parameters
+            .iter()
+            .try_fold(parameters, |total, parameter| {
+                total
+                    .checked_add(dimension_clone_heap_bytes(parameter.lower_bound())?)?
+                    .checked_add(match parameter.upper_bound() {
+                        Some(bound) => dimension_clone_heap_bytes(bound)?,
+                        None => 0,
+                    })
+            })?;
+    parameters.checked_add(body_clone_heap_bytes(&schema.body)?)
+}
+
+fn dimension_clone_heap_bytes(dimension: &DimensionExpr) -> Option<u64> {
+    match dimension {
+        DimensionExpr::Hole | DimensionExpr::Constant(_) | DimensionExpr::Parameter(_) => Some(0),
+        DimensionExpr::Add(children)
+        | DimensionExpr::Multiply(children)
+        | DimensionExpr::Min(children)
+        | DimensionExpr::Max(children) => {
+            let initial = clone_slice_bytes::<DimensionExpr>(children.len())?;
+            children.iter().try_fold(initial, |total, child| {
+                total.checked_add(dimension_clone_heap_bytes(child)?)
+            })
+        }
+    }
+}
+
+fn extent_clone_heap_bytes(extent: &CardinalitySpec) -> Option<u64> {
+    match extent {
+        CardinalitySpec::Exact(value)
+        | CardinalitySpec::Dynamic {
+            upper_bound: Some(value),
+        } => dimension_clone_heap_bytes(value),
+        CardinalitySpec::Dynamic { upper_bound: None } => Some(0),
+    }
+}
+
+fn fields_clone_heap_bytes(fields: &[SchemaField]) -> Option<u64> {
+    fields.iter().try_fold(
+        clone_slice_bytes::<SchemaField>(fields.len())?,
+        |total, field| {
+            total
+                .checked_add(u64::try_from(field.name.len()).ok()?)?
+                .checked_add(body_clone_heap_bytes(&field.schema)?)
+        },
+    )
+}
+
+fn boxed_body_clone_bytes(body: &SchemaBody) -> Option<u64> {
+    (core::mem::size_of::<SchemaBody>() as u64).checked_add(body_clone_heap_bytes(body)?)
+}
+
+fn body_clone_heap_bytes(body: &SchemaBody) -> Option<u64> {
+    match body {
+        SchemaBody::Dynamic
+        | SchemaBody::Bool
+        | SchemaBody::UnsignedInteger(_)
+        | SchemaBody::SignedInteger(_)
+        | SchemaBody::FloatingPoint(_)
+        | SchemaBody::Complex(_)
+        | SchemaBody::Rational64
+        | SchemaBody::String
+        | SchemaBody::Id
+        | SchemaBody::Index
+        | SchemaBody::Atom(_)
+        | SchemaBody::ReifiedType => Some(0),
+        SchemaBody::Enum { variants, .. } => {
+            let initial = clone_slice_bytes::<super::EnumVariantSchema>(variants.len())?;
+            variants.iter().try_fold(initial, |total, variant| {
+                total
+                    .checked_add(u64::try_from(variant.name.len()).ok()?)?
+                    .checked_add(match &variant.payload {
+                        Some(payload) => body_clone_heap_bytes(payload)?,
+                        None => 0,
+                    })
+            })
+        }
+        SchemaBody::Option(element) => boxed_body_clone_bytes(element),
+        SchemaBody::Tuple(elements) => elements.iter().try_fold(
+            clone_slice_bytes::<SchemaBody>(elements.len())?,
+            |total, element| total.checked_add(body_clone_heap_bytes(element)?),
+        ),
+        SchemaBody::Record(fields) => fields_clone_heap_bytes(fields),
+        SchemaBody::Matrix {
+            element,
+            dimensions,
+        } => {
+            let initial =
+                boxed_body_clone_bytes(element)?
+                    .checked_add(clone_slice_bytes::<DimensionExpr>(dimensions.len())?)?;
+            dimensions.iter().try_fold(initial, |total, dimension| {
+                total.checked_add(dimension_clone_heap_bytes(dimension)?)
+            })
+        }
+        SchemaBody::Table { columns, rows } => {
+            fields_clone_heap_bytes(columns)?.checked_add(extent_clone_heap_bytes(rows)?)
+        }
+        SchemaBody::Set {
+            element,
+            cardinality,
+        } => boxed_body_clone_bytes(element)?.checked_add(extent_clone_heap_bytes(cardinality)?),
+        SchemaBody::Map {
+            key,
+            value,
+            cardinality,
+        } => boxed_body_clone_bytes(key)?
+            .checked_add(boxed_body_clone_bytes(value)?)?
+            .checked_add(extent_clone_heap_bytes(cardinality)?),
     }
 }
 

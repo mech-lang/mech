@@ -1,7 +1,10 @@
 use super::ActivationPatternCaptureKindUnsupported;
 use crate::{
-    DimensionExpr, FloatWidth, FunctionInstance, FunctionInvocation, IntegerWidth, MResult,
-    MechError, MechFunction, PatternBindingSink, PatternMatch, Plan, ReactiveNodeId, SchemaBody,
+    AccessMode, AliasPolicy, ChangeDetectionPolicy, DeliveryMode, DimensionExpr, ExecutionTarget,
+    ExternalInteraction, FloatWidth, FunctionInvocation, InputPortLayout, InputPortPolicy,
+    IntegerWidth, MResult, MechError, MechFunction, OperationContractDeclaration,
+    OutputConstruction, OutputPortPolicy, PatternBindingSink, PatternMatch, Plan, ReactiveNodeId,
+    ResolvedOperationDescriptor, RuntimeFunctionId, SchemaBody, ShapeRule, SpecializedFunction,
     ValueCell, ValueCellSnapshotFailure, ValueDataDraft,
 };
 use mech_core::snapshot::{
@@ -81,8 +84,17 @@ fn encode_selected_arm(arm: usize) -> usize {
     }
 }
 
+#[cfg(test)]
 pub(super) fn increment(cell: &ValueCell) -> MResult<()> {
     write_index(cell, read_index(cell)?.saturating_add(1))
+}
+
+pub(super) fn stage_increment(
+    frame: &mut mech_core::KernelMemoryFrame<'_>,
+    cell: &ValueCell,
+) -> MResult<()> {
+    let next = ValueCell::from_exact(read_index(cell)?.saturating_add(1))?;
+    frame.stage_output_value(cell, next.snapshot()?)
 }
 
 pub(super) fn register_node(
@@ -91,10 +103,40 @@ pub(super) fn register_node(
     output: ValueCell,
     inputs: Vec<ValueCell>,
 ) -> MResult<ReactiveNodeId> {
-    plan.register_instance(FunctionInstance::new(
+    let contract = OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                };
+                inputs.len()
+            ]
+            .into_boxed_slice(),
+        ),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    };
+    let instance = (
         implementation,
         FunctionInvocation::variadic(output, inputs.into_boxed_slice()),
-    ))
+    );
+    plan.register_specialized(SpecializedFunction::syntax_directed(
+        instance,
+        ResolvedOperationDescriptor::from_name("activation/pattern-node", contract)?,
+        RuntimeFunctionId::from_name("ActivationPatternNode"),
+        ExecutionTarget::DirectRuntime,
+        mech_core::ImplementationMemoryClass::CanonicalFinalize,
+    )?)
 }
 
 #[derive(Clone)]
@@ -390,7 +432,7 @@ pub(super) fn commit_proposed_captures(captures: &[ActivationPatternCapture]) ->
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{CardinalitySpec, ExtentSpec, MechFunctionImpl, SchemaField};
+    use crate::{CardinalitySpec, ExtentSpec, SchemaField};
     use mech_core::snapshot::{F64Bits, MapEntryDraft, NamedValueDraft, TableColumnDraft};
 
     fn f64_draft(value: f64) -> ValueDataDraft {
@@ -601,7 +643,7 @@ mod tests {
             captures: vec![valid.clone(), invalid],
             out: pulse.clone(),
         };
-        let error = selected_gate.solve_reactive().unwrap_err();
+        let error = selected_gate.solve_gate().unwrap_err();
         assert_eq!(error.kind_name(), "ActivationPatternCaptureKindUnsupported");
         assert!(
             valid
@@ -630,7 +672,7 @@ mod tests {
             out: pulse.clone(),
         };
         assert_eq!(
-            unselected_gate.solve_reactive().unwrap(),
+            unselected_gate.solve_gate().unwrap(),
             crate::ReactiveSolveStatus::Unchanged
         );
         assert!(

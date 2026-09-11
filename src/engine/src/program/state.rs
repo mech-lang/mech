@@ -1,5 +1,13 @@
 use crate::*;
+#[cfg(all(feature = "no_std", not(feature = "std")))]
+use alloc::string::String;
+#[cfg(all(feature = "functions", feature = "no_std", not(feature = "std")))]
+use alloc::vec::Vec;
 use core::ops::Range;
+#[cfg(any(not(feature = "no_std"), feature = "std"))]
+use std::string::String;
+#[cfg(all(feature = "functions", any(not(feature = "no_std"), feature = "std")))]
+use std::vec::Vec;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ProgramComputeRegion {
@@ -192,9 +200,8 @@ impl ProgramState {
     }
 
     #[cfg(feature = "functions")]
-    pub fn add_plan_step(&self, step: Box<dyn MechFunction>) {
-        let mut plan_brrw = self.plan.borrow_mut();
-        plan_brrw.push(step);
+    pub fn add_plan_step(&self, step: FunctionInstance) -> MResult<ReactiveNodeId> {
+        self.plan.register_instance(step)
     }
 
     #[cfg(feature = "symbol_table")]

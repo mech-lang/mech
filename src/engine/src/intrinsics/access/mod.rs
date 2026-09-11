@@ -37,18 +37,19 @@ use crate::UndefinedRecordFieldError;
 use crate::UndefinedTableColumnError;
 #[cfg(feature = "semantic-compiler")]
 use crate::intrinsics::canonical_access::{
-    CanonicalAccessSelector, canonical_draft, canonical_indices,
+    CanonicalAccessSelector, canonical_draft, canonical_fixed_matrix_axes, canonical_indices,
+    canonical_matrix_result_with_fixed_axes,
 };
 #[cfg(feature = "semantic-compiler")]
 use crate::{
     AccessMode, AliasPolicy, BytecodeCompilerContext, CanonicalFunctionSpecializer,
-    ChangeDetectionPolicy, DeliveryMode, DimensionExpr, ExternalInteraction, FunctionInstance,
-    FunctionInvocation, FunctionStatePort, FunctionValueRepresentation, GenericError,
-    InputPortLayout, InputPortPolicy, MechFunctionCompiler, MechFunctionImpl,
-    OperationContractDeclaration, OutputConstruction, OutputPortPolicy, ReactiveNodeKind, Register,
-    SchemaBody, ShapeRule, SpecializationContext, SpecializationInput, SpecializationInvocation,
-    SpecializedFunction, ValueCell, ValueData, ValueDataDraft, compile_value_cell_register,
-    hash_str,
+    ChangeDetectionPolicy, CurrentMemoryFootprint, DeliveryMode, DimensionExpr,
+    ExternalInteraction, FunctionInvocation, FunctionMatrixElement, FunctionStatePort,
+    FunctionValueRepresentation, GenericError, InputPortLayout, InputPortPolicy,
+    MechFunctionCompiler, MechFunctionImpl, OperationContractDeclaration, OutputConstruction,
+    OutputPortPolicy, ReactiveNodeKind, Register, SchemaBody, ShapeRule, SpecializationContext,
+    SpecializationInput, SpecializationInvocation, SpecializedFunction, ValueCell, ValueData,
+    ValueDataDraft, compile_value_cell_register, hash_str,
 };
 use crate::{FunctionCatalogBuilder, MResult};
 #[cfg(all(feature = "native-plan", not(feature = "semantic-compiler")))]
@@ -90,11 +91,13 @@ fn canonical_access_contract(input_count: usize, shape: ShapeRule) -> OperationC
 static PURE_CANONICAL_ACCESS_COPY_CONTRACT: std::sync::LazyLock<OperationContractDeclaration> =
     std::sync::LazyLock::new(|| canonical_access_contract(1, ShapeRule::SameAsInput { input: 0 }));
 #[cfg(feature = "semantic-compiler")]
-static PURE_CANONICAL_ACCESS_BINARY_CONTRACT: std::sync::LazyLock<OperationContractDeclaration> =
-    std::sync::LazyLock::new(|| canonical_access_contract(2, ShapeRule::Declared));
+pub(crate) static PURE_CANONICAL_ACCESS_BINARY_CONTRACT: std::sync::LazyLock<
+    OperationContractDeclaration,
+> = std::sync::LazyLock::new(|| canonical_access_contract(2, ShapeRule::Declared));
 #[cfg(feature = "semantic-compiler")]
-static PURE_CANONICAL_ACCESS_TERNARY_CONTRACT: std::sync::LazyLock<OperationContractDeclaration> =
-    std::sync::LazyLock::new(|| canonical_access_contract(3, ShapeRule::Declared));
+pub(crate) static PURE_CANONICAL_ACCESS_TERNARY_CONTRACT: std::sync::LazyLock<
+    OperationContractDeclaration,
+> = std::sync::LazyLock::new(|| canonical_access_contract(3, ShapeRule::Declared));
 #[cfg(feature = "native-plan")]
 use crate::{
     MechFunctionFactory, RuntimeFunctionContract, RuntimeFunctionSignature,
@@ -116,6 +119,10 @@ macro_rules! declare_structural_access_alias {
         }
 
         impl MechFunctionFactory for $factory {
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::CanonicalFinalize
+            }
+
             const SIGNATURE: RuntimeFunctionSignature =
                 RuntimeFunctionSignature::nullary(FunctionValueRepresentation::AnyValue);
 
@@ -127,8 +134,13 @@ macro_rules! declare_structural_access_alias {
         }
 
         impl MechFunctionImpl for $factory {
-            fn solve_result(&self) -> MResult<()> {
-                Ok(())
+            fn solve_managed(
+                &self,
+                _frame: &mut mech_core::KernelMemoryFrame<'_>,
+                _services: &mut dyn mech_core::MechExecutionServices,
+            ) -> MResult<mech_core::ReactiveSolveStatus> {
+                (|| -> MResult<()> { Ok(()) })()?;
+                Ok(mech_core::ReactiveSolveStatus::Changed)
             }
 
             fn reactive_output_value_cells(&self) -> Vec<ValueCell> {
@@ -162,6 +174,7 @@ macro_rules! declare_structural_access_alias {
             contract: RuntimeFunctionContract::same_shape(
                 RuntimeOutputAliasPolicy::DisallowInputAlias,
             ),
+            compiler_family: mech_core::RuntimeFamilyId::from_name($name),
             package: "mech-engine", crate_name: "mech_engine",
             installer_path: $path,
             extra_cargo_features: ["access"],
@@ -233,7 +246,34 @@ fn canonical_matrix_dimensions(value: &ValueCell) -> MResult<(usize, usize)> {
     else {
         unreachable!("closed matrix schemas have constant dimensions")
     };
-    Ok((*rows as usize, *columns as usize))
+    let rows = usize::try_from(*rows).map_err(|_| {
+        MechError::new(
+            crate::GenericError {
+                msg: "matrix row extent exceeds the target index width".to_owned(),
+            },
+            None,
+        )
+        .with_compiler_loc()
+    })?;
+    let columns = usize::try_from(*columns).map_err(|_| {
+        MechError::new(
+            crate::GenericError {
+                msg: "matrix column extent exceeds the target index width".to_owned(),
+            },
+            None,
+        )
+        .with_compiler_loc()
+    })?;
+    rows.checked_mul(columns).ok_or_else(|| {
+        MechError::new(
+            crate::GenericError {
+                msg: "matrix element count exceeds the target index width".to_owned(),
+            },
+            None,
+        )
+        .with_compiler_loc()
+    })?;
+    Ok((rows, columns))
 }
 
 #[cfg(feature = "semantic-compiler")]
@@ -247,9 +287,127 @@ struct CanonicalAccess {
 
 #[cfg(feature = "semantic-compiler")]
 impl MechFunctionImpl for CanonicalAccess {
-    fn solve_result(&self) -> MResult<()> {
-        let next = canonical_access_result(&self.source, &self.selectors)?;
-        self.output.replace(&next.snapshot()?)
+    fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+        if !self.output_requires_canonical_builder() {
+            return Ok(None);
+        }
+        let SchemaBody::Matrix { element, .. } = self.source.closed_schema_body()? else {
+            // Selecting one member, column, or grapheme cannot retain more
+            // canonical data than the already-borrowed aggregate/String that
+            // contains it. This complete-source upper bound avoids building a
+            // candidate or selector result before admission.
+            let mut footprint = self.source.current_memory_footprint()?;
+            let output_shape_parameters = self.output.shape().parameter_values().len() as u64;
+            if output_shape_parameters > footprint.shape_parameter_count {
+                let additional_shape_bytes = output_shape_parameters
+                    .checked_sub(footprint.shape_parameter_count)
+                    .and_then(|count| count.checked_mul(core::mem::size_of::<u64>() as u64))
+                    .ok_or_else(|| {
+                        MechError::new(
+                            GenericError {
+                                msg: "canonical access shape footprint exceeds u64".to_owned(),
+                            },
+                            None,
+                        )
+                        .with_compiler_loc()
+                    })?;
+                footprint.payload_bytes = footprint
+                    .payload_bytes
+                    .checked_add(additional_shape_bytes)
+                    .ok_or_else(|| {
+                        MechError::new(
+                            GenericError {
+                                msg: "canonical access retained footprint exceeds u64".to_owned(),
+                            },
+                            None,
+                        )
+                        .with_compiler_loc()
+                    })?;
+            }
+            footprint.shape_parameter_count = output_shape_parameters;
+            footprint.logical_elements = self
+                .output
+                .resolved_descriptor()?
+                .current_extents()
+                .map_err(MechError::from)?
+                .iter()
+                .try_fold(1_u64, |product, extent| product.checked_mul(*extent))
+                .ok_or_else(|| {
+                    MechError::new(
+                        GenericError {
+                            msg: "canonical access output cardinality exceeds u64".to_owned(),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                })?;
+            return Ok(Some(vec![footprint].into_boxed_slice()));
+        };
+        let (rows, columns) = canonical_matrix_dimensions(&self.source)?;
+        let selected_count = if self.selectors.len() == 1 {
+            canonical_selector_cardinality_bound(
+                &self.selectors[0],
+                rows.checked_mul(columns).ok_or_else(|| {
+                    MechError::new(
+                        GenericError {
+                            msg: "matrix element count exceeds the target index width".to_owned(),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                })?,
+            )?
+        } else if self.selectors.len() == 2 {
+            canonical_selector_cardinality_bound(&self.selectors[0], rows)?
+                .checked_mul(canonical_selector_cardinality_bound(
+                    &self.selectors[1],
+                    columns,
+                )?)
+                .ok_or_else(|| {
+                    MechError::new(
+                        GenericError {
+                            msg: "matrix access result cardinality exceeds u64".to_owned(),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                })?
+        } else {
+            return Ok(None);
+        };
+        let source = self.source.snapshot()?;
+        let values = source
+            .matrix_view()
+            .ok_or_else(|| {
+                MechError::new(
+                    GenericError {
+                        msg: "matrix access source has no canonical matrix data".to_owned(),
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?
+            .elements();
+        let footprint = self.output.prospective_repeated_sequence_memory_footprint(
+            element.as_ref(),
+            values,
+            selected_count,
+        )?;
+        Ok(Some(vec![footprint].into_boxed_slice()))
+    }
+
+    fn solve_managed(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        if self.output_requires_canonical_builder() {
+            self.stage_managed(frame)?;
+        } else {
+            let next = self.next_value()?;
+            frame.stage_output_value(&self.output, next.snapshot()?)?;
+        }
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
@@ -283,7 +441,126 @@ impl MechFunctionImpl for CanonicalAccess {
 }
 
 #[cfg(feature = "semantic-compiler")]
+fn canonical_selector_cardinality_bound(
+    selector: &CanonicalAccessSelector,
+    upper: usize,
+) -> MResult<u64> {
+    let overflow = || {
+        MechError::new(
+            GenericError {
+                msg: "matrix selector cardinality exceeds u64".to_owned(),
+            },
+            None,
+        )
+        .with_compiler_loc()
+    };
+    match selector {
+        CanonicalAccessSelector::All => u64::try_from(upper).map_err(|_| overflow()),
+        CanonicalAccessSelector::Cell(cell)
+            if matches!(
+                cell.representation(),
+                FunctionValueRepresentation::Matrix { .. }
+            ) =>
+        {
+            cell.resolved_descriptor()?
+                .current_extents()
+                .map_err(MechError::from)?
+                .iter()
+                .try_fold(1_u64, |product, extent| product.checked_mul(*extent))
+                .ok_or_else(overflow)
+        }
+        CanonicalAccessSelector::Cell(_) => Ok(1),
+    }
+}
+
+#[cfg(feature = "semantic-compiler")]
 impl CanonicalAccess {
+    fn typed_matrix(
+        source: ValueCell,
+        selectors: Vec<CanonicalAccessSelector>,
+        output: ValueCell,
+    ) -> Self {
+        Self {
+            source,
+            selectors,
+            output,
+            name: "matrix/access",
+        }
+    }
+
+    fn output_requires_canonical_builder(&self) -> bool {
+        matches!(
+            self.output.representation(),
+            FunctionValueRepresentation::String
+                | FunctionValueRepresentation::Atom
+                | FunctionValueRepresentation::Enum
+                | FunctionValueRepresentation::Record
+                | FunctionValueRepresentation::Map
+                | FunctionValueRepresentation::Set
+                | FunctionValueRepresentation::Table
+                | FunctionValueRepresentation::Tuple
+                | FunctionValueRepresentation::Kind
+                | FunctionValueRepresentation::AnyValue
+                | FunctionValueRepresentation::Matrix {
+                    element: FunctionMatrixElement::String | FunctionMatrixElement::Value,
+                    ..
+                }
+        )
+    }
+
+    fn prospective_output_footprint(&self) -> MResult<CurrentMemoryFootprint> {
+        let footprints = self.planned_output_footprints()?.ok_or_else(|| {
+            MechError::new(
+                GenericError {
+                    msg: format!(
+                        "{} has no prospective canonical output footprint",
+                        self.semantic_name()
+                    ),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+        footprints.first().copied().ok_or_else(|| {
+            MechError::new(
+                GenericError {
+                    msg: format!("{} has no output footprint", self.semantic_name()),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })
+    }
+
+    fn stage_managed(&self, frame: &mut mech_core::KernelMemoryFrame<'_>) -> MResult<()> {
+        let footprint = self.prospective_output_footprint()?;
+        frame.with_admitted_canonical_output(&self.output, footprint, |_, construction| {
+            let next = construction.try_rebind_snapshot_candidate_with(&self.output, || {
+                self.next_value()?.snapshot()
+            })?;
+            Ok(((), next))
+        })?;
+        Ok(())
+    }
+
+    fn next_value(&self) -> MResult<ValueCell> {
+        let next = canonical_access_result(&self.source, &self.selectors)?;
+        let expected = self.output.closed_schema_body()?;
+        let found = next.closed_schema_body()?;
+        if found != expected {
+            return Err(MechError::new(
+                GenericError {
+                    msg: format!(
+                        "reactive aggregate selector resolved output schema {found:?}, expected {expected:?}"
+                    ),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        Ok(next)
+    }
+
     fn selector_cells(&self) -> Vec<ValueCell> {
         self.selectors
             .iter()
@@ -295,15 +572,24 @@ impl CanonicalAccess {
     }
 
     fn semantic_name(&self) -> &'static str {
-        if self.selector_cells().is_empty() {
-            "core/assign"
-        } else if matches!(
-            self.output.representation(),
-            FunctionValueRepresentation::Matrix { .. }
-        ) {
-            "access/range"
-        } else {
-            "access/scalar"
+        match self.selectors.as_slice() {
+            [
+                CanonicalAccessSelector::Cell(_),
+                CanonicalAccessSelector::All,
+            ] => "access/rows",
+            [
+                CanonicalAccessSelector::All,
+                CanonicalAccessSelector::Cell(_),
+            ] => "access/columns",
+            _ if self.selector_cells().is_empty() => "core/assign",
+            _ if matches!(
+                self.output.representation(),
+                FunctionValueRepresentation::Matrix { .. }
+            ) =>
+            {
+                "access/range"
+            }
+            _ => "access/scalar",
         }
     }
 }
@@ -326,7 +612,7 @@ impl MechFunctionCompiler for CanonicalAccess {
                 .map(|selector| compile_value_cell_register(selector, context))
                 .collect::<MResult<Vec<_>>>()?,
         );
-        context.emit_varop(hash_str(self.semantic_name()), output, arguments);
+        context.emit_varop(hash_str(self.name), output, arguments);
         Ok(output)
     }
 }
@@ -336,6 +622,16 @@ fn canonical_access_result(
     source: &ValueCell,
     selectors: &[CanonicalAccessSelector],
 ) -> MResult<ValueCell> {
+    if selectors.len() == 2
+        && selectors
+            .iter()
+            .all(|selector| matches!(selector, CanonicalAccessSelector::All))
+    {
+        // Whole-value assignment preserves the source's canonical semantic
+        // schema and current shape. Reconstructing it through a DMatrix would
+        // replace fixed source dimensions with turn-lifetime physical ones.
+        return source.detached_clone();
+    }
     match source.closed_schema_body()? {
         SchemaBody::Tuple(_) if selectors.len() == 1 => {
             let values = source
@@ -399,7 +695,7 @@ fn canonical_access_result(
                     .with_compiler_loc()
                 })?;
                 let candidate = ValueCell::from_schema_data((*key).clone(), key_draft)?;
-                if candidate.snapshot_eq(selector)? {
+                if candidate.key_eq(selector)? {
                     return ValueCell::from_schema_data((*value).clone(), value_draft);
                 }
             }
@@ -468,7 +764,16 @@ fn canonical_access_result(
                 .matrix_elements()?
                 .expect("matrix schema retains matrix values");
             if selectors.len() == 1 {
-                let selected = canonical_indices(&selectors[0], rows.saturating_mul(columns))?;
+                let element_count = rows.checked_mul(columns).ok_or_else(|| {
+                    MechError::new(
+                        crate::GenericError {
+                            msg: "matrix element count exceeds the target index width".to_owned(),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                })?;
+                let selected = canonical_indices(&selectors[0], element_count)?;
                 let values = selected
                     .iter()
                     .map(|linear| {
@@ -480,7 +785,14 @@ fn canonical_access_result(
                 if selectors[0].is_scalar() {
                     return values[0].detached_clone();
                 }
-                return ValueCell::dynamic_matrix_from_cells(values.len(), 1, &values);
+                return canonical_matrix_access_result(
+                    source,
+                    element.as_ref().clone(),
+                    values.len(),
+                    1,
+                    &values,
+                    selectors,
+                );
             }
             let selected_rows = canonical_indices(&selectors[0], rows)?;
             let selected_columns = canonical_indices(&selectors[1], columns)?;
@@ -495,11 +807,13 @@ fn canonical_access_result(
                         .map(|column| elements[*row * columns + *column].clone())
                 })
                 .collect::<Vec<_>>();
-            let _ = element;
-            ValueCell::dynamic_matrix_from_cells(
+            canonical_matrix_access_result(
+                source,
+                element.as_ref().clone(),
                 selected_rows.len(),
                 selected_columns.len(),
                 &values,
+                selectors,
             )
         }
         schema => Err(MechError::new(
@@ -513,8 +827,61 @@ fn canonical_access_result(
 }
 
 #[cfg(feature = "semantic-compiler")]
+fn canonical_matrix_access_result(
+    source: &ValueCell,
+    element: SchemaBody,
+    rows: usize,
+    columns: usize,
+    values: &[ValueCell],
+    selectors: &[CanonicalAccessSelector],
+) -> MResult<ValueCell> {
+    let source_axes = canonical_fixed_matrix_axes(source)?;
+    let fixed_selection = |selector: &CanonicalAccessSelector, all_fixed: bool| -> MResult<bool> {
+        match selector {
+            CanonicalAccessSelector::All => Ok(all_fixed),
+            CanonicalAccessSelector::Cell(cell) => {
+                if matches!(cell.closed_schema_body()?, SchemaBody::Matrix { element, .. }
+                    if element.as_ref() == &SchemaBody::Bool)
+                {
+                    // Even a fixed-size mask can select a different count on
+                    // its next value update, including an empty selection.
+                    return Ok(false);
+                }
+                Ok(canonical_fixed_matrix_axes(cell)?
+                    .into_iter()
+                    .all(|fixed| fixed))
+            }
+        }
+    };
+    let fixed_axes = if selectors.len() == 1 {
+        [
+            fixed_selection(&selectors[0], source_axes.iter().all(|fixed| *fixed))?,
+            true,
+        ]
+    } else {
+        [
+            fixed_selection(&selectors[0], source_axes[0])?,
+            fixed_selection(&selectors[1], source_axes[1])?,
+        ]
+    };
+    canonical_matrix_result_with_fixed_axes(
+        source,
+        element,
+        rows,
+        columns,
+        fixed_axes,
+        values
+            .iter()
+            .map(canonical_draft)
+            .collect::<MResult<Vec<_>>>()?
+            .into_boxed_slice(),
+    )
+}
+
+#[cfg(feature = "semantic-compiler")]
 fn canonical_access(
     invocation: &SpecializationInvocation,
+    context: &SpecializationContext<'_>,
     fallback_name: &'static str,
 ) -> MResult<SpecializedFunction> {
     if !(2..=3).contains(&invocation.len()) {
@@ -553,15 +920,27 @@ fn canonical_access(
         }))
         .collect::<Vec<_>>()
         .into_boxed_slice();
-    Ok(SpecializedFunction::new(FunctionInstance::new(
-        Box::new(CanonicalAccess {
-            source,
-            selectors,
-            output: output.clone(),
-            name,
-        }),
-        FunctionInvocation::variadic(output, inputs),
-    )))
+    let contract = match inputs.len() {
+        1 => &*PURE_CANONICAL_ACCESS_COPY_CONTRACT,
+        2 => &*PURE_CANONICAL_ACCESS_BINARY_CONTRACT,
+        3 => &*PURE_CANONICAL_ACCESS_TERNARY_CONTRACT,
+        _ => unreachable!("canonical access supports at most two concrete selectors"),
+    };
+    context.resolve_syntax_operation_contract(contract)?;
+    context.certify_instance(
+        (
+            Box::new(CanonicalAccess {
+                source,
+                selectors,
+                output: output.clone(),
+                name,
+            }),
+            FunctionInvocation::variadic(output, inputs),
+        ),
+        mech_core::RuntimeFunctionId::from_name(name),
+        mech_core::ExecutionTarget::DirectRuntime,
+        mech_core::ImplementationMemoryClass::CanonicalFinalize,
+    )
 }
 
 #[cfg(feature = "semantic-compiler")]
@@ -586,8 +965,14 @@ impl CanonicalSwizzle {
 
 #[cfg(feature = "semantic-compiler")]
 impl MechFunctionImpl for CanonicalSwizzle {
-    fn solve_result(&self) -> MResult<()> {
-        self.output.replace(&self.result()?.snapshot()?)
+    fn solve_managed(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        let result = self.result()?;
+        frame.stage_output_value(&self.output, result.snapshot()?)?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
@@ -625,7 +1010,10 @@ impl MechFunctionCompiler for CanonicalSwizzle {
 }
 
 #[cfg(feature = "semantic-compiler")]
-fn canonical_swizzle(invocation: &SpecializationInvocation) -> MResult<SpecializedFunction> {
+fn canonical_swizzle(
+    invocation: &SpecializationInvocation,
+    context: &SpecializationContext<'_>,
+) -> MResult<SpecializedFunction> {
     if invocation.len() < 2 {
         return Err(MechError::new(
             IncorrectNumberOfArguments {
@@ -660,13 +1048,19 @@ fn canonical_swizzle(invocation: &SpecializationInvocation) -> MResult<Specializ
         .cloned()
         .collect::<Vec<_>>()
         .into_boxed_slice();
-    Ok(SpecializedFunction::new(FunctionInstance::new(
-        Box::new(CanonicalSwizzle {
-            output: output.clone(),
-            ..implementation
-        }),
-        FunctionInvocation::variadic(output, inputs),
-    )))
+    context.resolve_syntax_operation_contract(&PURE_CANONICAL_ACCESS_BINARY_CONTRACT)?;
+    context.certify_instance(
+        (
+            Box::new(CanonicalSwizzle {
+                output: output.clone(),
+                ..implementation
+            }),
+            FunctionInvocation::variadic(output, inputs),
+        ),
+        mech_core::RuntimeFunctionId::from_name("CanonicalSwizzle"),
+        mech_core::ExecutionTarget::DirectRuntime,
+        mech_core::ImplementationMemoryClass::CanonicalFinalize,
+    )
 }
 
 #[cfg(all(feature = "matrix", feature = "semantic-compiler"))]
@@ -674,7 +1068,7 @@ fn canonical_matrix_access(
     invocation: &SpecializationInvocation,
     _context: &mut SpecializationContext<'_>,
 ) -> MResult<SpecializedFunction> {
-    canonical_access(invocation, "MatrixAccessCanonical")
+    canonical_access(invocation, _context, "MatrixAccessCanonical")
 }
 
 #[cfg(feature = "semantic-compiler")]
@@ -693,7 +1087,7 @@ impl CanonicalFunctionSpecializer for AccessScalar {
         }) {
             return canonical_matrix_access(invocation, context);
         }
-        canonical_access(invocation, "CanonicalScalarAccess")
+        canonical_access(invocation, context, "CanonicalScalarAccess")
     }
 }
 pub struct AccessRange {}
@@ -713,7 +1107,7 @@ impl CanonicalFunctionSpecializer for AccessRange {
         }) {
             return canonical_matrix_access(invocation, context);
         }
-        canonical_access(invocation, "CanonicalRangeAccess")
+        canonical_access(invocation, context, "CanonicalRangeAccess")
     }
 }
 pub struct AccessSwizzle {}
@@ -722,9 +1116,9 @@ impl CanonicalFunctionSpecializer for AccessSwizzle {
     fn specialize_invocation(
         &self,
         invocation: &SpecializationInvocation,
-        _: &mut SpecializationContext<'_>,
+        context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
-        canonical_swizzle(invocation)
+        canonical_swizzle(invocation, context)
     }
 }
 
@@ -738,8 +1132,193 @@ impl CanonicalFunctionSpecializer for AccessColumn {
     fn specialize_invocation(
         &self,
         invocation: &SpecializationInvocation,
-        _: &mut SpecializationContext<'_>,
+        context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
-        canonical_access(invocation, "CanonicalColumnAccess")
+        canonical_access(invocation, context, "CanonicalColumnAccess")
+    }
+}
+
+#[cfg(all(test, feature = "semantic-compiler"))]
+mod canonical_aggregate_access_tests {
+    use super::*;
+
+    fn managed_scalar_access(source: ValueCell, selector: ValueCell) -> SpecializedFunction {
+        let output =
+            canonical_access_result(&source, &[CanonicalAccessSelector::Cell(selector.clone())])
+                .unwrap();
+        let invocation =
+            FunctionInvocation::binary(output.clone(), source.clone(), selector.clone());
+        crate::test_support::managed_implementation_instance(
+            Box::new(CanonicalAccess {
+                source,
+                selectors: vec![CanonicalAccessSelector::Cell(selector)],
+                output,
+                name: "CanonicalScalarAccess",
+            }),
+            invocation,
+            "test/canonical-scalar-access",
+            PURE_CANONICAL_ACCESS_BINARY_CONTRACT.clone(),
+            mech_core::ImplementationMemoryClass::CanonicalFinalize,
+        )
+        .unwrap()
+    }
+
+    fn assert_string(value: &ValueCell, expected: &str) {
+        assert!(matches!(
+            value.snapshot().unwrap().data(),
+            ValueData::String(value) if value.as_ref() == expected
+        ));
+    }
+
+    #[test]
+    fn map_access_uses_canonical_key_equality() {
+        let map = ValueCell::from_schema_data(
+            SchemaBody::Map {
+                key: Box::new(SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)),
+                value: Box::new(SchemaBody::String),
+                cardinality: mech_core::CardinalitySpec::Dynamic { upper_bound: None },
+            },
+            ValueDataDraft::Map(
+                vec![mech_core::snapshot::MapEntryDraft {
+                    items: vec![
+                        ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(-0.0)),
+                        ValueDataDraft::String("zero".to_owned()),
+                    ]
+                    .into_boxed_slice(),
+                }]
+                .into_boxed_slice(),
+            ),
+        )
+        .unwrap();
+        let selector = ValueCell::from_schema_data(
+            SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+            ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(0.0)),
+        )
+        .unwrap();
+
+        let function = managed_scalar_access(map, selector);
+        function.instance().solve_result().unwrap();
+        assert_string(function.instance().output(), "zero");
+    }
+
+    #[test]
+    fn tuple_and_record_payload_access_execute_through_managed_admission() {
+        let tuple = ValueCell::tuple_from_cells(&[
+            ValueCell::from_exact(7_u64).unwrap(),
+            ValueCell::from_exact("tuple payload".to_owned()).unwrap(),
+        ])
+        .unwrap();
+        let tuple_access = managed_scalar_access(tuple, ValueCell::from_exact(2_usize).unwrap());
+        tuple_access.instance().solve_result().unwrap();
+        assert_string(tuple_access.instance().output(), "tuple payload");
+
+        let record = ValueCell::record_from_cells(&[
+            ("number".to_owned(), ValueCell::from_exact(7_u64).unwrap()),
+            (
+                "text".to_owned(),
+                ValueCell::from_exact("record payload".to_owned()).unwrap(),
+            ),
+        ])
+        .unwrap();
+        let selector =
+            ValueCell::from_schema_data(SchemaBody::Id, ValueDataDraft::Id(hash_str("text")))
+                .unwrap();
+        let record_access = managed_scalar_access(record, selector);
+        record_access.instance().solve_result().unwrap();
+        assert_string(record_access.instance().output(), "record payload");
+
+        let table = ValueCell::table_from_cell_columns(
+            vec![(
+                mech_core::SchemaField {
+                    name: "text".to_owned(),
+                    schema: SchemaBody::String,
+                },
+                vec![
+                    ValueCell::from_exact("first row".to_owned()).unwrap(),
+                    ValueCell::from_exact("second row".to_owned()).unwrap(),
+                ]
+                .into_boxed_slice(),
+            )]
+            .into_boxed_slice(),
+            mech_core::CardinalitySpec::Exact(DimensionExpr::Constant(2)),
+        )
+        .unwrap();
+        let selector =
+            ValueCell::from_schema_data(SchemaBody::Id, ValueDataDraft::Id(hash_str("text")))
+                .unwrap();
+        let table_access = managed_scalar_access(table, selector);
+        table_access.instance().solve_result().unwrap();
+        let value = table_access.instance().output().snapshot().unwrap();
+        let mech_core::snapshot::SequenceView::String(values) =
+            value.matrix_view().unwrap().elements()
+        else {
+            panic!("expected String table column")
+        };
+        assert_eq!(
+            values
+                .iter()
+                .map(|value| value.as_ref())
+                .collect::<Vec<_>>(),
+            ["first row", "second row"]
+        );
+    }
+
+    #[test]
+    fn reactive_record_selector_schema_change_rejects_without_output_mutation() {
+        let record = ValueCell::from_schema_data(
+            SchemaBody::Record(
+                vec![
+                    mech_core::SchemaField {
+                        name: "number".to_owned(),
+                        schema: SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64),
+                    },
+                    mech_core::SchemaField {
+                        name: "text".to_owned(),
+                        schema: SchemaBody::String,
+                    },
+                ]
+                .into_boxed_slice(),
+            ),
+            ValueDataDraft::Record(
+                vec![
+                    mech_core::snapshot::NamedValueDraft {
+                        name: "number".to_owned(),
+                        value: ValueDataDraft::U64(7),
+                    },
+                    mech_core::snapshot::NamedValueDraft {
+                        name: "text".to_owned(),
+                        value: ValueDataDraft::String("seven".to_owned()),
+                    },
+                ]
+                .into_boxed_slice(),
+            ),
+        )
+        .unwrap();
+        let selector =
+            ValueCell::from_schema_data(SchemaBody::Id, ValueDataDraft::Id(hash_str("number")))
+                .unwrap();
+        let output =
+            canonical_access_result(&record, &[CanonicalAccessSelector::Cell(selector.clone())])
+                .unwrap();
+        let access = CanonicalAccess {
+            source: record,
+            selectors: vec![CanonicalAccessSelector::Cell(selector.clone())],
+            output: output.clone(),
+            name: "RecordAccessField",
+        };
+
+        selector
+            .replace(
+                &ValueCell::from_schema_data(SchemaBody::Id, ValueDataDraft::Id(hash_str("text")))
+                    .unwrap()
+                    .snapshot()
+                    .unwrap(),
+            )
+            .unwrap();
+        assert!(access.next_value().is_err());
+        assert!(matches!(
+            output.snapshot().unwrap().data(),
+            ValueData::U64(7)
+        ));
     }
 }

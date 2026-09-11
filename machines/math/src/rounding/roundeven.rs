@@ -4,38 +4,14 @@ use crate::*;
 
 use libm::{roundeven, roundevenf};
 macro_rules! roundeven_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = roundeven((*$arg));
-        }
-    };
-}
-
-macro_rules! roundeven_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = roundeven(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(roundeven(($arg)))
     };
 }
 
 macro_rules! roundevenf_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = roundevenf((*$arg));
-        }
-    };
-}
-
-macro_rules! roundevenf_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = roundevenf(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(roundevenf(($arg)))
     };
 }
 

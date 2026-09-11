@@ -186,24 +186,13 @@ fn main() {
     }
     assert!(!activation_nodes.is_empty());
     assert!(activation_nodes.len() < artifact.nodes().len());
-    let opaque = artifact
-        .nodes()
-        .iter()
-        .filter(|node| {
-            matches!(
-                artifact.contracts().get(node.contract),
-                Some(ResolvedOperationContract::LegacyOpaque(_))
-            )
-        })
-        .map(|node| {
-            format!(
-                "{}/{}",
-                node.operation.module_path.join("/"),
-                node.operation.operation_name
-            )
-        })
-        .collect::<BTreeSet<_>>();
-    assert!(opaque.is_empty(), "opaque n-body operations: {opaque:#?}");
+    assert!(
+        artifact
+            .contracts()
+            .iter()
+            .all(|contract| matches!(contract, ResolvedOperationContract::Declared(_))),
+        "every n-body operation must carry a declared contract",
+    );
 
     let mut source_instance = activate(
         mech_core::ReactiveInstanceId::new(0, 0),
@@ -509,6 +498,9 @@ fn assert_reordered_artifact_execution(
         &ActivationFacts::default(),
     )
     .expect("activate physically reordered decoded artifact");
+    assert_scheduled_memory(&expected, artifact);
+    assert_scheduled_memory(&source, &reordered);
+    assert_scheduled_memory(&bytecode, &decoded);
     expected.turn(&[]).expect("canonical turn");
     source.turn(&[]).expect("reordered source turn");
     bytecode.turn(&[]).expect("reordered bytecode turn");
@@ -863,8 +855,8 @@ fn assert_activation_fact_reconfiguration(
         nodes: vec![NodeDeclaration {
             node: NodeId::new(0),
             operation: OperationReference {
-                module_path: vec!["runtime".to_owned()].into_boxed_slice(),
-                operation_name: "Assign<f64DMatrix>".to_owned(),
+                module_path: vec!["core".to_owned()].into_boxed_slice(),
+                operation_name: "assign".to_owned(),
             },
             contract,
             requirement: None,
@@ -1049,12 +1041,23 @@ fn assert_activation_fact_reconfiguration(
         &facts(3),
         ResidentKernelBindError::UnsupportedLayout,
     );
-    assert_bind_rejected(
-        &wrong_kind_artifact(&artifact, bool_),
-        catalog,
-        &ActivationFacts::default(),
-        ResidentKernelBindError::UnsupportedLayout,
-    );
+    let bool_assignment = canonical_bool_assign_artifact(&artifact, bool_);
+    let decoded_bool_assignment = decode_program_artifact_bytecode_v1(
+        &encode_program_artifact_bytecode_v1(&bool_assignment).unwrap(),
+    )
+    .unwrap();
+    for (id, candidate) in [&bool_assignment, &decoded_bool_assignment]
+        .into_iter()
+        .enumerate()
+    {
+        activate(
+            mech_core::ReactiveInstanceId::new(96 + id as u32, 0),
+            candidate,
+            catalog,
+            &ActivationFacts::default(),
+        )
+        .expect("canonical core/assign supports the declared Bool schema");
+    }
     let observation_bytes = encode_program_artifact_bytecode_v1(&observation_state).unwrap();
     let observation_decoded =
         decode_program_artifact_bytecode_v1(&observation_bytes).unwrap();
@@ -1071,8 +1074,8 @@ fn assert_activation_fact_reconfiguration(
     let zero_input = zero_input_state_artifact(&artifact);
     let mut wrong_arity_node = zero_input.nodes()[0].clone();
     wrong_arity_node.operation = OperationReference {
-        module_path: vec!["runtime".to_owned()].into_boxed_slice(),
-        operation_name: "Assign<f64DMatrix>".to_owned(),
+        module_path: vec!["core".to_owned()].into_boxed_slice(),
+        operation_name: "assign".to_owned(),
     };
     let wrong_arity = ProgramArtifactDraft {
         schemas: zero_input.schemas().clone(),
@@ -1097,7 +1100,12 @@ fn assert_activation_fact_reconfiguration(
     );
     let mut builder = mech_core::FunctionCatalogBuilder::new();
     builder
-        .insert_resident_factory(["test"], "zero-input-state", bind_zero_input_state)
+        .insert_resident_factory(
+            ["test"],
+            "zero-input-state",
+            mech_core::ImplementationMemoryClass::NoAdditionalScratch,
+            bind_zero_input_state,
+        )
         .unwrap();
     let zero_catalog = builder.build().unwrap();
     for (id, candidate) in [
@@ -1295,8 +1303,8 @@ fn wrong_dimension_artifact(
         nodes: vec![NodeDeclaration {
             node: NodeId::new(0),
             operation: OperationReference {
-                module_path: vec!["runtime".to_owned()].into_boxed_slice(),
-                operation_name: "SubMDMD<f64>".to_owned(),
+                module_path: vec!["math".to_owned()].into_boxed_slice(),
+                operation_name: "sub".to_owned(),
             },
             contract,
             requirement: None,
@@ -1340,7 +1348,7 @@ fn wrong_dimension_artifact(
     .expect("mismatched activation shapes remain structurally valid")
 }
 
-fn wrong_kind_artifact(
+fn canonical_bool_assign_artifact(
     template: &ProgramArtifact,
     bool_: mech_core::SchemaId,
 ) -> ProgramArtifact {
@@ -1403,8 +1411,8 @@ fn wrong_kind_artifact(
         nodes: vec![NodeDeclaration {
             node: NodeId::new(0),
             operation: OperationReference {
-                module_path: vec!["runtime".to_owned()].into_boxed_slice(),
-                operation_name: "Assign<f64DMatrix>".to_owned(),
+                module_path: vec!["core".to_owned()].into_boxed_slice(),
+                operation_name: "assign".to_owned(),
             },
             contract,
             requirement: None,
@@ -1546,13 +1554,28 @@ fn execute_zero_input_state(
 fn assert_production_dirty_propagation(template: &ProgramArtifact) {
     let mut builder = mech_core::FunctionCatalogBuilder::new();
     builder
-        .insert_resident_factory(["test"], "reported-copy", bind_reported_copy)
+        .insert_resident_factory(
+            ["test"],
+            "reported-copy",
+            mech_core::ImplementationMemoryClass::NoAdditionalScratch,
+            bind_reported_copy,
+        )
         .unwrap();
     builder
-        .insert_resident_factory(["test"], "always-copy", bind_always_copy)
+        .insert_resident_factory(
+            ["test"],
+            "always-copy",
+            mech_core::ImplementationMemoryClass::NoAdditionalScratch,
+            bind_always_copy,
+        )
         .unwrap();
     builder
-        .insert_resident_factory(["test"], "state-copy", bind_reported_copy)
+        .insert_resident_factory(
+            ["test"],
+            "state-copy",
+            mech_core::ImplementationMemoryClass::NoAdditionalScratch,
+            bind_reported_copy,
+        )
         .unwrap();
     let catalog = builder.build().unwrap();
 
@@ -1802,6 +1825,119 @@ fn state_slot_with_initial(artifact: &ProgramArtifact, first: f64) -> mech_core:
             .then_some(slot.slot)
         })
         .expect("logical state is identified by its frozen initializer")
+}
+
+fn assert_scheduled_memory(
+    instance: &mech_engine::__resident::ReactiveInstance,
+    artifact: &ProgramArtifact,
+) {
+    use mech_core::{MemoryLifetime, MemoryPlanPoint};
+    use mech_engine::memory_planner::{PlannedValueClass, plan_program_memory_template};
+    use std::collections::BTreeMap;
+
+    let executed = instance
+        .plan
+        .activation_nodes
+        .iter()
+        .copied()
+        .chain(
+            instance
+                .plan
+                .topology
+                .linear_node_order
+                .iter()
+                .map(|index| instance.plan.steps[index.get() as usize].artifact_node()),
+        )
+        .collect::<Vec<_>>();
+    let executed_set = executed.iter().copied().collect::<BTreeSet<_>>();
+    let order = artifact
+        .nodes()
+        .iter()
+        .map(|node| node.node)
+        .filter(|node| !executed_set.contains(node))
+        .chain(executed)
+        .collect::<Vec<_>>();
+    let positions = order
+        .iter()
+        .copied()
+        .enumerate()
+        .map(|(position, node)| (node, position as u32))
+        .collect::<BTreeMap<_, _>>();
+    let mut last_consumers = BTreeMap::new();
+    for binding in artifact.bindings() {
+        if let BindingDeclaration::Input {
+            node,
+            source: ArtifactSource::Slot(slot),
+            ..
+        } = binding
+        {
+            last_consumers
+                .entry(*slot)
+                .and_modify(|last| {
+                    if positions[last] < positions[node] {
+                        *last = *node;
+                    }
+                })
+                .or_insert(*node);
+        }
+    }
+    for value in &instance.plan.memory_plan.values {
+        if value.class == PlannedValueClass::Scratch {
+            let producer = value.producer.expect("scratch producer");
+            let last = last_consumers.get(&value.slot).copied().unwrap_or(producer);
+            assert_eq!(
+                value.lifetime,
+                MemoryLifetime::Turn {
+                    first: MemoryPlanPoint::new(positions[&producer] * 2),
+                    last: MemoryPlanPoint::new(positions[&last] * 2 + 1),
+                }
+            );
+        }
+    }
+    let plans = order
+        .iter()
+        .map(|node| instance.plan.memory_plan.call_for_node(*node).cloned())
+        .collect::<Vec<_>>();
+    assert_eq!(
+        plans.iter().filter(|plan| plan.is_some()).count(),
+        instance.plan.memory_plan.calls.len()
+    );
+    let bindings = plans
+        .iter()
+        .map(|plan| plan.as_ref().map(|plan| plan.bound_call.clone()))
+        .collect::<Vec<_>>();
+    let template = plan_program_memory_template(artifact, &order, &bindings, &plans)
+        .expect("program template uses explicit execution order");
+    assert_eq!(template.node_positions, positions);
+    assert!(template.call_nodes.windows(2).all(|pair| pair[0] < pair[1]));
+    for value in &template.values {
+        assert_eq!(
+            value.last_consumer,
+            last_consumers.get(&value.slot).copied()
+        );
+    }
+    for (&node, call) in instance
+        .plan
+        .memory_plan
+        .call_nodes
+        .iter()
+        .zip(&instance.plan.memory_plan.calls)
+    {
+        for allocation in &call.allocations {
+            let (first, last) = match allocation.lifetime {
+                MemoryLifetime::Turn { first, last }
+                | MemoryLifetime::Transaction { first, last } => (first, last),
+                lifetime => panic!("unexpected call-local lifetime: {lifetime:?}"),
+            };
+            assert_eq!(
+                (first, last),
+                (
+                    MemoryPlanPoint::new(positions[&node] * 2),
+                    MemoryPlanPoint::new(positions[&node] * 2 + 1)
+                )
+            );
+        }
+    }
 }
 
 fn reorder_artifact(artifact: &ProgramArtifact, order: &[usize]) -> ProgramArtifact {

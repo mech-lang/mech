@@ -42,12 +42,13 @@ fn matrix_comprehension_factory_reconstructs_variadic_inputs() {
     let second = ValueCell::from_exact(2.0_f64).unwrap();
     let output = matrix_output(&[first.clone(), second.clone()], 1, 2);
     let alias = output.clone();
-    let function = ValueMatrixComprehension::new_invocation(FunctionInvocation::variadic(
-        output,
-        vec![first, second].into_boxed_slice(),
-    ))
+    let invocation = FunctionInvocation::variadic(output, vec![first, second].into_boxed_slice());
+    let function = crate::test_support::managed_factory_instance::<ValueMatrixComprehension>(
+        invocation,
+        "test/matrix-comprehension",
+    )
     .unwrap();
-    function.solve_result().unwrap();
+    function.instance().solve_result().unwrap();
     assert!(alias.same_cell(&alias.clone()));
     assert_eq!(f64_matrix_contents(&alias), vec![1.0, 2.0]);
 }
@@ -56,17 +57,23 @@ fn matrix_comprehension_factory_reconstructs_variadic_inputs() {
 #[test]
 fn matrix_comprehension_factory_accepts_empty_variadic_encoding() {
     let output = matrix_output(&[], 0, 0);
-    let function = ValueMatrixComprehension::new_invocation(FunctionInvocation::variadic(
-        output.clone(),
-        Box::new([]),
-    ))
+    let invocation = FunctionInvocation::variadic(output.clone(), Box::new([]));
+    let function = crate::test_support::managed_factory_instance::<ValueMatrixComprehension>(
+        invocation,
+        "test/matrix-comprehension-empty",
+    )
     .unwrap();
 
-    function.solve_result().unwrap();
+    function.instance().solve_result().unwrap();
     assert_eq!(output.shape().parameter_values(), &[0, 0]);
     assert!(output.matrix_elements().unwrap().unwrap().is_empty());
     assert_eq!(
-        function.semantic_operation_contract().unwrap().inputs,
+        function
+            .instance()
+            .implementation()
+            .semantic_operation_contract()
+            .unwrap()
+            .inputs,
         crate::InputPortLayout::Variadic {
             prefix: Box::new([]),
             repeated: crate::InputPortPolicy {
@@ -84,12 +91,16 @@ fn set_comprehension_factory_preserves_checked_set_output() {
     let output =
         ValueCell::empty_dynamic_set(SchemaBody::UnsignedInteger(crate::IntegerWidth::W8)).unwrap();
     let alias = output.clone();
-    let function = ValueSetComprehension::new_invocation(FunctionInvocation::variadic(
+    let invocation = FunctionInvocation::variadic(
         output,
         vec![ValueCell::from_exact(7_u8).unwrap()].into_boxed_slice(),
-    ))
+    );
+    let function = crate::test_support::managed_factory_instance::<ValueSetComprehension>(
+        invocation,
+        "test/set-comprehension",
+    )
     .unwrap();
-    function.solve_result().unwrap();
+    function.instance().solve_result().unwrap();
     assert!(alias.same_cell(&alias.clone()));
     assert_eq!(alias.set_element_cells().unwrap().unwrap().len(), 1);
 }
@@ -99,12 +110,13 @@ fn set_comprehension_factory_preserves_checked_set_output() {
 fn set_comprehension_factory_accepts_empty_variadic_encoding() {
     let output =
         ValueCell::empty_dynamic_set(SchemaBody::FloatingPoint(crate::FloatWidth::W64)).unwrap();
-    let function = ValueSetComprehension::new_invocation(FunctionInvocation::variadic(
-        output.clone(),
-        Box::new([]),
-    ))
+    let invocation = FunctionInvocation::variadic(output.clone(), Box::new([]));
+    let function = crate::test_support::managed_factory_instance::<ValueSetComprehension>(
+        invocation,
+        "test/set-comprehension-empty",
+    )
     .unwrap();
-    function.solve_result().unwrap();
+    function.instance().solve_result().unwrap();
     assert!(output.set_element_cells().unwrap().unwrap().is_empty());
 }
 
@@ -170,7 +182,7 @@ fn matrix_comprehension_bytecode_reuses_repeated_child_registers() {
 
 #[cfg(all(feature = "matrix_comprehensions", feature = "semantic-compiler"))]
 #[test]
-fn empty_matrix_comprehension_uses_canonical_composite_seed() {
+fn empty_matrix_comprehension_uses_nullary_semantic_construction() {
     let output_cell = matrix_output(&[], 0, 0);
     let function = ValueMatrixComprehension::new_invocation(FunctionInvocation::variadic(
         output_cell,
@@ -189,11 +201,9 @@ fn empty_matrix_comprehension_uses_canonical_composite_seed() {
             .iter()
             .any(|instruction| matches!(
                 instruction,
-                BytecodeInstruction::RuntimeVariadic { function, dst, arguments }
+                BytecodeInstruction::RuntimeNullary { function, dst }
                     if *function == hash_str("matrix/comprehension")
                         && *dst == output
-                        && arguments.len() == 1
-                        && arguments[0] != output
             ))
     );
 }

@@ -1,5 +1,5 @@
 use mech_core::{GenericError, MResult};
-use mech_engine::resident::{ReactiveInstance, ResidentValueBorrow};
+use mech_engine::resident::{PreparedResidentTurn, ReactiveInstance, ResidentValueBorrow};
 
 use crate::RuntimeValueSnapshot;
 
@@ -12,6 +12,31 @@ pub(crate) fn initial_value(
     };
     output_value(instance, output_index)
         .map(|value| value.unwrap_or_else(RuntimeValueSnapshot::empty))
+}
+
+pub(crate) fn initial_prepared_value(
+    prepared: &PreparedResidentTurn<'_>,
+    output_index: Option<usize>,
+) -> MResult<RuntimeValueSnapshot> {
+    let Some(output_index) = output_index else {
+        return Ok(RuntimeValueSnapshot::empty());
+    };
+    let Some(output) = prepared.output_borrow(output_index) else {
+        return Ok(RuntimeValueSnapshot::empty());
+    };
+    if matches!(output, ResidentValueBorrow::Snapshot { values: [None], .. }) {
+        return Ok(RuntimeValueSnapshot::empty());
+    }
+    let value = prepared.copied_output(output_index).map_err(|error| {
+        mech_core::MechError::new(
+            GenericError {
+                msg: format!("resident candidate output snapshot failed: {error:?}"),
+            },
+            None,
+        )
+        .with_compiler_loc()
+    })?;
+    RuntimeValueSnapshot::from_value(value)
 }
 
 pub(crate) fn output_value(

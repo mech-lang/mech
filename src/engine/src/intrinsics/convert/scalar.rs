@@ -9,6 +9,10 @@ struct ConvertSEnum {
 }
 #[cfg(feature = "enum")]
 impl MechFunctionFactory for ConvertSEnum {
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch
+    }
+
     const SIGNATURE: RuntimeFunctionSignature =
         RuntimeFunctionSignature::nullary(FunctionValueRepresentation::Enum);
 
@@ -19,8 +23,13 @@ impl MechFunctionFactory for ConvertSEnum {
 }
 #[cfg(feature = "enum")]
 impl MechFunctionImpl for ConvertSEnum {
-    fn solve_result(&self) -> MResult<()> {
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> { Ok(()) })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
         Some(self.out.state_port())
@@ -44,6 +53,10 @@ struct ConvertSEmpty {
 }
 
 impl MechFunctionFactory for ConvertSEmpty {
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch
+    }
+
     const SIGNATURE: RuntimeFunctionSignature =
         RuntimeFunctionSignature::nullary(FunctionValueRepresentation::MutableValueCell);
 
@@ -60,6 +73,7 @@ mech_core::declare_native_runtime_factory! {
     name: "ConvertSEmpty<empty>",
     factory_type: ConvertSEmpty,
     contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
+    compiler_family: mech_core::RuntimeFamilyId::from_name("ConvertSEmpty<empty>"),
     package: "mech-engine", crate_name: "mech_engine",
     installer_path: "mech_engine::__mech_native::install_convert_empty",
     extra_cargo_features: ["convert"],
@@ -72,14 +86,20 @@ mech_core::declare_native_runtime_factory! {
     name: "ConvertSEnum<enum>",
     factory_type: ConvertSEnum,
     contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
+    compiler_family: mech_core::RuntimeFamilyId::from_name("ConvertSEnum<enum>"),
     package: "mech-engine", crate_name: "mech_engine",
     installer_path: "mech_engine::__mech_native::install_convert_enum",
     extra_cargo_features: ["convert"],
 }
 
 impl MechFunctionImpl for ConvertSEmpty {
-    fn solve_result(&self) -> MResult<()> {
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> { Ok(()) })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
         Some(self.out.state_port())

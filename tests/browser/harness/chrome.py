@@ -244,6 +244,13 @@ class DevTools:
             if response_id != request_id:
                 if isinstance(response_id, int):
                     self.pending[response_id] = response
+                elif response.get("method") == "Runtime.consoleAPICalled":
+                    for argument in response.get("params", {}).get("args", ()):
+                        value = argument.get("value")
+                        if isinstance(value, str) and value.startswith(
+                            "[mech-gpu-smoke-phase]"
+                        ):
+                            print(value, file=sys.stderr, flush=True)
                 continue
             break
         else:
@@ -340,10 +347,16 @@ class ChromeSession:
         self.call("Runtime.enable")
         return self
 
-    def call(self, method: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
+    def call(
+        self,
+        method: str,
+        params: dict[str, Any] | None = None,
+        *,
+        timeout: float = 30,
+    ) -> dict[str, Any]:
         if self.devtools is None or self.session_id is None:
             raise BrowserFailure("browser session is not running")
-        return self.devtools.call(method, params, self.session_id)
+        return self.devtools.call(method, params, self.session_id, timeout=timeout)
 
     def navigate(self, url: str) -> None:
         self.call("Page.navigate", {"url": url})
@@ -351,13 +364,19 @@ class ChromeSession:
     def add_script(self, source: str) -> None:
         self.call("Page.addScriptToEvaluateOnNewDocument", {"source": source})
 
-    def evaluate(self, expression: str, *, user_gesture: bool = True) -> Any:
+    def evaluate(
+        self,
+        expression: str,
+        *,
+        user_gesture: bool = True,
+        timeout: float = 30,
+    ) -> Any:
         result = self.call("Runtime.evaluate", {
             "expression": expression,
             "returnByValue": True,
             "awaitPromise": True,
             "userGesture": user_gesture,
-        })
+        }, timeout=timeout)
         if "exceptionDetails" in result:
             raise BrowserFailure(f"browser expression failed: {result['exceptionDetails']!r}")
         remote = result.get("result", {})

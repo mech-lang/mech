@@ -3,7 +3,7 @@
 use crate::{MResult, MechError, MechErrorKind, Value, ValueCell};
 
 #[cfg(feature = "no_std")]
-use alloc::{borrow::ToOwned, format, string::String, vec::Vec};
+use alloc::{borrow::ToOwned, boxed::Box, format, string::String, vec::Vec};
 #[cfg(not(feature = "no_std"))]
 use std::{string::String, vec::Vec};
 
@@ -68,6 +68,52 @@ pub enum ApplicationRequirement {
     Resource(ExecutionResourceRequest),
 }
 
+/// A live-resource registration whose fallible validation and capacity
+/// reservation have completed. Dropping the token abandons the registration;
+/// `commit` performs only the prevalidated, nonallocating installation.
+pub struct PreparedLiveResourceBinding<'a> {
+    commit: Option<Box<dyn FnOnce() + 'a>>,
+}
+
+impl core::fmt::Debug for PreparedLiveResourceBinding<'_> {
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        formatter
+            .debug_struct("PreparedLiveResourceBinding")
+            .field("prepared", &self.commit.is_some())
+            .finish()
+    }
+}
+
+impl<'a> PreparedLiveResourceBinding<'a> {
+    #[doc(hidden)]
+    pub fn try_new(commit: impl FnOnce() + 'a) -> MResult<Self> {
+        let requested = core::mem::size_of_val(&commit) as u64;
+        let alignment = u32::try_from(core::mem::align_of_val(&commit)).unwrap_or(u32::MAX);
+        let commit: Box<dyn FnOnce() + 'a> =
+            Box::try_new(commit).map_err(|_| crate::MemoryRuntimeError::AllocationFailed {
+                object: None,
+                requested,
+                alignment,
+                space: crate::MemorySpace::Host,
+            })?;
+        Ok(Self {
+            commit: Some(commit),
+        })
+    }
+
+    #[doc(hidden)]
+    pub fn no_op() -> Self {
+        Self { commit: None }
+    }
+
+    #[doc(hidden)]
+    pub fn commit(mut self) {
+        if let Some(commit) = self.commit.take() {
+            commit();
+        }
+    }
+}
+
 pub trait MechExecutionServices {
     fn invoke_host_function(
         &mut self,
@@ -99,14 +145,16 @@ pub trait MechExecutionServices {
 
     fn write_resource(&mut self, request: &ExecutionResourceRequest, value: &Value) -> MResult<()>;
 
-    /// Retains a live delivery target. Repeating the same interpreter, request,
-    /// and target binding must be idempotent.
-    fn bind_live_resource(
-        &mut self,
+    /// Prepares a live delivery target without making it observable. Repeating
+    /// the same interpreter, request, and target binding must be idempotent.
+    /// Implementations reserve every fallible container slot here and return
+    /// an installation token whose commit cannot fail or allocate.
+    fn prepare_live_resource_binding<'a>(
+        &'a mut self,
         interpreter_id: u64,
         request: &ExecutionResourceRequest,
         target: ValueCell,
-    ) -> MResult<()>;
+    ) -> MResult<PreparedLiveResourceBinding<'a>>;
 }
 
 #[derive(Debug, Default)]
@@ -148,12 +196,12 @@ impl MechExecutionServices for NoMechExecutionServices {
         ))
     }
 
-    fn bind_live_resource(
-        &mut self,
+    fn prepare_live_resource_binding<'a>(
+        &'a mut self,
         interpreter_id: u64,
         request: &ExecutionResourceRequest,
         _target: ValueCell,
-    ) -> MResult<()> {
+    ) -> MResult<PreparedLiveResourceBinding<'a>> {
         Err(MechError::new(
             LiveResourceBindingUnsupported {
                 interpreter_id,
@@ -386,7 +434,7 @@ mod tests {
         );
 
         let bind_error = services
-            .bind_live_resource(17, &resource_request, ValueCell::unit())
+            .prepare_live_resource_binding(17, &resource_request, ValueCell::unit())
             .unwrap_err();
         assert_eq!(bind_error.kind_name(), "LiveResourceBindingUnsupported");
         let binding = bind_error

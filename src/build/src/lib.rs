@@ -66,8 +66,12 @@ impl NativeApplicationBuilder {
             &self.environment.function_catalog,
             &mut native_resolver,
         )?;
-        let runtime_functions =
-            analysis::analyze_runtime_functions(&program, &self.environment.function_catalog)?;
+        let runtime_functions = analysis::analyze_runtime_functions(
+            &program,
+            &self.environment.function_catalog,
+            request.instruction_type_bindings.as_deref(),
+            request.instruction_type_binding_requirements.as_deref(),
+        )?;
         for function in &runtime_functions {
             plan::validate_installer_path(&function.installer_path)?;
         }

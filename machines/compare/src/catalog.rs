@@ -1,23 +1,23 @@
-#[cfg(any(feature = "eq", feature = "gt", feature = "gte", feature = "lt", feature = "lte", feature = "max", feature = "min", feature = "neq"))]
+#[cfg(any(
+    feature = "eq",
+    feature = "gt",
+    feature = "gte",
+    feature = "lt",
+    feature = "lte",
+    feature = "max",
+    feature = "min",
+    feature = "neq"
+))]
 use crate::*;
 #[cfg(feature = "complex")]
 use mech_core::C64;
 #[cfg(feature = "rational")]
 use mech_core::R64;
-use mech_core::{FunctionCatalogBuilder, MResult};
 #[cfg(any(feature = "seq", feature = "sneq"))]
 use mech_core::ValueCell;
-#[cfg(any(
-    feature = "seq",
-    feature = "sneq",
-    all(feature = "eq", feature = "atom"),
-    all(feature = "eq", feature = "table"),
-    all(feature = "neq", feature = "atom"),
-    all(feature = "neq", feature = "table")
-))]
-use mech_core::{RuntimeFunctionContract, RuntimeOutputAliasPolicy};
 #[cfg(feature = "source")]
 use mech_core::{CanonicalFunctionSpecializer, FunctionExport, FunctionExposure};
+use mech_core::{FunctionCatalogBuilder, MResult};
 #[cfg(feature = "source")]
 use std::sync::Arc;
 
@@ -31,7 +31,9 @@ fn install_canonical_operation<T>(
 where
     T: CanonicalFunctionSpecializer + 'static,
 {
-    let operation = builder.insert_canonical_specializer(canonical_name, Arc::new(compiler))?;
+    let declaration = mech_core::maintained_source_type_declaration(canonical_name)?;
+    let operation =
+        builder.insert_canonical_specializer(canonical_name, declaration, Arc::new(compiler))?;
     builder.insert_export(FunctionExport {
         operation,
         canonical_name: canonical_name.to_string(),
@@ -116,9 +118,18 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     Ok(())
 }
 
-#[cfg(any(feature = "eq", feature = "gt", feature = "gte", feature = "lt", feature = "lte", feature = "max", feature = "min", feature = "neq"))]
+#[cfg(any(
+    feature = "eq",
+    feature = "gt",
+    feature = "gte",
+    feature = "lt",
+    feature = "lte",
+    feature = "max",
+    feature = "min",
+    feature = "neq"
+))]
 macro_rules! install_compare_binop_runtime {
-    ($builder:expr, $operation:ident) => {
+    ($builder:ident, $operation:ident, $operation_feature:literal) => {
         mech_core::install_native_binop_runtime_factories!(
             $builder,
             $operation;
@@ -135,23 +146,58 @@ macro_rules! install_compare_binop_runtime {
     };
 }
 
-macro_rules! declare_compare_binop_native_factories {
-    ($operation:ident, $operation_feature:literal) => {
-        mech_core::declare_native_binop_runtime_factories! {
-            package: "mech-compare",
-            crate_name: "mech_compare",
-            operation: $operation,
-            operation_feature: $operation_feature,
-            additional_features: [],
-            scalars: ("bool", bool, "bool", bool),
+macro_rules! declare_compare_native_factory {
+    (
+        ($operation_feature:literal; $canonical_operation:literal; $scalar_feature:literal),
+        $operation:ident, $suffix:ident, $_shape_feature:tt,
+        $scalar:ty, $scalar_name:literal, $scalar_token:ident
+    ) => {
+        paste::paste! {
+            mech_core::declare_native_runtime_factory! {
+                cfg: all(feature = $operation_feature, feature = $scalar_feature),
+                registration: [<register_ $operation:snake _ $suffix:lower _ $scalar_token>],
+                installer: [<install_ $operation:snake _ $suffix:lower _ $scalar_token>],
+                name: concat!(stringify!($operation), stringify!($suffix), "<", $scalar_name, ">"),
+                factory_type: [<$operation $suffix>]<$scalar>,
+                contract: mech_core::__mech_elementwise_binop_contract!($suffix),
+                operations: [mech_core::OperationId::from_name($canonical_operation)],
+                package: "mech-compare",
+                crate_name: "mech_compare",
+                installer_path: concat!(
+                    "mech_compare::__mech_native::",
+                    stringify!([<install_ $operation:snake _ $suffix:lower _ $scalar_token>])
+                ),
+                extra_cargo_features: [$operation_feature],
+            }
         }
-        mech_core::declare_native_binop_runtime_factories! {
-            package: "mech-compare",
-            crate_name: "mech_compare",
-            operation: $operation,
-            operation_feature: $operation_feature,
-            additional_features: ["bool"],
-            scalars:
+    };
+}
+
+macro_rules! declare_compare_binop_native_factories {
+    (
+        $operation:ident, $operation_feature:literal, $canonical_operation:literal;
+        $(
+            ($scalar_feature:literal, $scalar:ty, $scalar_name:literal, $scalar_token:ident)
+        ),+ $(,)?
+    ) => {
+        $(
+            mech_core::__mech_for_each_binop_runtime_factory_for_type!(
+                declare_compare_native_factory,
+                ($operation_feature; $canonical_operation; $scalar_feature),
+                $operation,
+                $scalar,
+                $scalar_name,
+                $scalar_token
+            );
+        )+
+    };
+}
+
+macro_rules! declare_compare_binop_native_factories_for_all_scalars {
+    ($operation:ident, $operation_feature:literal, $canonical_operation:literal) => {
+        declare_compare_binop_native_factories! {
+            $operation, $operation_feature, $canonical_operation;
+                ("bool", bool, "bool", bool),
                 ("string", String, "string", string),
                 ("u8", u8, "u8", u8), ("i8", i8, "i8", i8),
                 ("u16", u16, "u16", u16), ("i16", i16, "i16", i16),
@@ -159,19 +205,29 @@ macro_rules! declare_compare_binop_native_factories {
                 ("u64", u64, "u64", u64), ("i64", i64, "i64", i64),
                 ("u128", u128, "u128", u128), ("i128", i128, "i128", i128),
                 ("f32", f32, "f32", f32), ("f64", f64, "f64", f64),
-                ("r64", R64, "r64", r64), ("c64", C64, "c64", c64),
+                ("r64", R64, "r64", r64), ("c64", C64, "c64", c64)
         }
     };
 }
 
-declare_compare_binop_native_factories!(EQ, "eq");
-declare_compare_binop_native_factories!(GT, "gt");
-declare_compare_binop_native_factories!(GTE, "gte");
-declare_compare_binop_native_factories!(LT, "lt");
-declare_compare_binop_native_factories!(LTE, "lte");
-declare_compare_binop_native_factories!(Max, "max");
-declare_compare_binop_native_factories!(Min, "min");
-declare_compare_binop_native_factories!(NEQ, "neq");
+macro_rules! declare_compare_operation_native_factories {
+    ($operation:ident, $operation_feature:literal, $canonical_operation:literal) => {
+        declare_compare_binop_native_factories_for_all_scalars!(
+            $operation,
+            $operation_feature,
+            $canonical_operation
+        );
+    };
+}
+
+declare_compare_operation_native_factories!(EQ, "eq", "compare/eq");
+declare_compare_operation_native_factories!(GT, "gt", "compare/gt");
+declare_compare_operation_native_factories!(GTE, "gte", "compare/gte");
+declare_compare_operation_native_factories!(LT, "lt", "compare/lt");
+declare_compare_operation_native_factories!(LTE, "lte", "compare/lte");
+declare_compare_operation_native_factories!(Max, "max", "compare/max");
+declare_compare_operation_native_factories!(Min, "min", "compare/min");
+declare_compare_operation_native_factories!(NEQ, "neq", "compare/neq");
 
 #[cfg(any(feature = "seq", feature = "sneq"))]
 fn validate_strict_comparison_canonical(_: &ValueCell, _: &[ValueCell]) -> MResult<()> {
@@ -184,11 +240,12 @@ mech_core::declare_native_runtime_factory! {
     installer: install_strict_eq,
     name: "compare/seq",
     factory_type: crate::StrictEqValue,
-    contract: RuntimeFunctionContract::canonical_custom(
+    contract: mech_core::RuntimeFunctionContract::canonical_custom(
         "strict_comparison",
-        RuntimeOutputAliasPolicy::DisallowInputAlias,
+        mech_core::RuntimeOutputAliasPolicy::DisallowInputAlias,
         validate_strict_comparison_canonical,
     ),
+    operations: [mech_core::OperationId::from_name("compare/seq")],
     package: "mech-compare",
     crate_name: "mech_compare",
     installer_path: "mech_compare::__mech_native::install_strict_eq",
@@ -201,11 +258,12 @@ mech_core::declare_native_runtime_factory! {
     installer: install_strict_not_eq,
     name: "compare/sneq",
     factory_type: crate::StrictNotEqValue,
-    contract: RuntimeFunctionContract::canonical_custom(
+    contract: mech_core::RuntimeFunctionContract::canonical_custom(
         "strict_comparison",
-        RuntimeOutputAliasPolicy::DisallowInputAlias,
+        mech_core::RuntimeOutputAliasPolicy::DisallowInputAlias,
         validate_strict_comparison_canonical,
     ),
+    operations: [mech_core::OperationId::from_name("compare/sneq")],
     package: "mech-compare",
     crate_name: "mech_compare",
     installer_path: "mech_compare::__mech_native::install_strict_not_eq",
@@ -218,7 +276,10 @@ mech_core::declare_native_runtime_factory! {
     installer: install_atom_eq,
     name: "AtomEq",
     factory_type: AtomEq,
-    contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
+    contract: mech_core::RuntimeFunctionContract::no_matrix(
+        mech_core::RuntimeOutputAliasPolicy::DisallowInputAlias,
+    ),
+    operations: [mech_core::OperationId::from_name("compare/eq")],
     package: "mech-compare",
     crate_name: "mech_compare",
     installer_path: "mech_compare::__mech_native::install_atom_eq",
@@ -231,7 +292,10 @@ mech_core::declare_native_runtime_factory! {
     installer: install_table_eq,
     name: "TableEq",
     factory_type: TableEq,
-    contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
+    contract: mech_core::RuntimeFunctionContract::no_matrix(
+        mech_core::RuntimeOutputAliasPolicy::DisallowInputAlias,
+    ),
+    operations: [mech_core::OperationId::from_name("compare/eq")],
     package: "mech-compare",
     crate_name: "mech_compare",
     installer_path: "mech_compare::__mech_native::install_table_eq",
@@ -244,7 +308,10 @@ mech_core::declare_native_runtime_factory! {
     installer: install_atom_neq,
     name: "AtomNeq",
     factory_type: AtomNeq,
-    contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
+    contract: mech_core::RuntimeFunctionContract::no_matrix(
+        mech_core::RuntimeOutputAliasPolicy::DisallowInputAlias,
+    ),
+    operations: [mech_core::OperationId::from_name("compare/neq")],
     package: "mech-compare",
     crate_name: "mech_compare",
     installer_path: "mech_compare::__mech_native::install_atom_neq",
@@ -257,7 +324,10 @@ mech_core::declare_native_runtime_factory! {
     installer: install_table_neq,
     name: "TableNeq",
     factory_type: TableNeq,
-    contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
+    contract: mech_core::RuntimeFunctionContract::no_matrix(
+        mech_core::RuntimeOutputAliasPolicy::DisallowInputAlias,
+    ),
+    operations: [mech_core::OperationId::from_name("compare/neq")],
     package: "mech-compare",
     crate_name: "mech_compare",
     installer_path: "mech_compare::__mech_native::install_table_neq",
@@ -292,14 +362,14 @@ pub mod __mech_native {
     export_compare_binop_native_factories!(Max, "max");
     export_compare_binop_native_factories!(Min, "min");
     export_compare_binop_native_factories!(NEQ, "neq");
-    #[cfg(feature = "seq")]
-    pub use super::install_strict_eq;
-    #[cfg(feature = "sneq")]
-    pub use super::install_strict_not_eq;
     #[cfg(all(feature = "eq", feature = "atom"))]
     pub use super::install_atom_eq;
     #[cfg(all(feature = "neq", feature = "atom"))]
     pub use super::install_atom_neq;
+    #[cfg(feature = "seq")]
+    pub use super::install_strict_eq;
+    #[cfg(feature = "sneq")]
+    pub use super::install_strict_not_eq;
     #[cfg(all(feature = "eq", feature = "table"))]
     pub use super::install_table_eq;
     #[cfg(all(feature = "neq", feature = "table"))]
@@ -308,49 +378,49 @@ pub mod __mech_native {
 
 #[cfg(feature = "eq")]
 fn install_eq_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    install_compare_binop_runtime!(builder, EQ);
+    install_compare_binop_runtime!(builder, EQ, "eq");
     Ok(())
 }
 
 #[cfg(feature = "gt")]
 fn install_gt_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    install_compare_binop_runtime!(builder, GT);
+    install_compare_binop_runtime!(builder, GT, "gt");
     Ok(())
 }
 
 #[cfg(feature = "gte")]
 fn install_gte_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    install_compare_binop_runtime!(builder, GTE);
+    install_compare_binop_runtime!(builder, GTE, "gte");
     Ok(())
 }
 
 #[cfg(feature = "lt")]
 fn install_lt_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    install_compare_binop_runtime!(builder, LT);
+    install_compare_binop_runtime!(builder, LT, "lt");
     Ok(())
 }
 
 #[cfg(feature = "lte")]
 fn install_lte_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    install_compare_binop_runtime!(builder, LTE);
+    install_compare_binop_runtime!(builder, LTE, "lte");
     Ok(())
 }
 
 #[cfg(feature = "max")]
 fn install_max_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    install_compare_binop_runtime!(builder, Max);
+    install_compare_binop_runtime!(builder, Max, "max");
     Ok(())
 }
 
 #[cfg(feature = "min")]
 fn install_min_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    install_compare_binop_runtime!(builder, Min);
+    install_compare_binop_runtime!(builder, Min, "min");
     Ok(())
 }
 
 #[cfg(feature = "neq")]
 fn install_neq_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    install_compare_binop_runtime!(builder, NEQ);
+    install_compare_binop_runtime!(builder, NEQ, "neq");
     Ok(())
 }
 
@@ -421,7 +491,11 @@ mod tests {
 
     #[test]
     fn source_catalog_matches_the_frozen_compare_surface() {
+        let mut runtime_builder = FunctionCatalogBuilder::new();
+        install_runtime(&mut runtime_builder).unwrap();
+        let runtime_count = runtime_builder.build().unwrap().runtime_factory_count();
         let mut builder = FunctionCatalogBuilder::new();
+        install_runtime(&mut builder).unwrap();
         install_source(&mut builder).unwrap();
         let catalog = builder.build().unwrap();
         let expected = expected_operations();
@@ -440,10 +514,18 @@ mod tests {
         ))]
         assert_eq!(expected.len(), 10);
         assert_eq!(catalog.specializer_count(), expected.len());
-        assert_eq!(catalog.runtime_factory_count(), 0);
+        assert_eq!(catalog.runtime_factory_count(), runtime_count);
         for (name, exposure) in expected {
             let operation = OperationId::from_name(name);
-            assert_eq!(catalog.specializer(operation).unwrap().canonical_name, name);
+            assert_eq!(
+                catalog
+                    .specializer(operation)
+                    .unwrap()
+                    .operation
+                    .canonical_name
+                    .as_ref(),
+                name
+            );
             assert_eq!(
                 catalog.exports_for_operation(operation),
                 &[FunctionExport {

@@ -58,7 +58,7 @@ macro_rules! horizontal_concatenate {
     paste!{
       #[derive(Debug)]
       struct $name<T> {
-        out: Ref<[<RowVector $vec_size>]<T>>,
+          _marker: PhantomData<T>,
       }
       impl<T> MechFunctionFactory for $name<T>
       where
@@ -72,40 +72,19 @@ macro_rules! horizontal_concatenate {
           <[<RowVector $vec_size>]<T> as FunctionRuntimeType>::REPRESENTATION,
         );
 
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::CanonicalFinalize
+            }
+
         fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-          let out: Ref<[<RowVector $vec_size>]<T>> = invocation.expect_nullary()?.try_ref()?;
-          Ok(Box::new(Self { out }))
+            invocation.expect_nullary()?;
+            crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
         }
 
       }
-      impl<T> MechFunctionImpl for $name<T>
-      where
-        T: Debug + Clone + Sync + Send + PartialEq + 'static,
-        [<RowVector $vec_size>]<T>: FunctionStateBacking,
-      {
-        fn solve_result(&self) -> MResult<()> {
-            Ok(())
-        }
-        fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-          Some(FunctionStatePort::from_ref(&self.out))
-        }
-        fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
-          Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
-        }
-        fn to_string(&self) -> String { format!("{:#?}", self) }
 
-      }
 
-      #[cfg(feature = "semantic-compiler")]
-      impl<T> MechFunctionCompiler for $name<T>
-      where
-        T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking
-      {
-        fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-          let name = format!("{}<{}{}>", stringify!($name), <T as FunctionRuntimeType>::REPRESENTATION, stringify!([<RowVector $vec_size>]));
-          compile_nullop!(name, self.out, ctx);
-        }
-      }
+
     }
   };
 }
@@ -119,12 +98,10 @@ macro_rules! horizontal_concatenate {
     all(feature = "matrixd", feature = "matrix4")
 ))]
 macro_rules! horzcat_two_args {
-    ($fxn:ident, $e0:ident, $e1:ident, $out:ident, $opt:ident) => {
+    ($fxn:ident, $e0:ident, $e1:ident, $out:ident) => {
         #[derive(Debug)]
         struct $fxn<T> {
-            e0: Ref<$e0<T>>,
-            e1: Ref<$e1<T>>,
-            out: Ref<$out<T>>,
+            _marker: PhantomData<T>,
         }
         impl<T> MechFunctionFactory for $fxn<T>
         where
@@ -150,53 +127,15 @@ macro_rules! horzcat_two_args {
                 <$e1<T> as FunctionRuntimeType>::REPRESENTATION,
             );
 
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::CanonicalFinalize
+            }
+
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-                let (out, e0, e1) = invocation.expect_binary()?;
-                let e0: Ref<$e0<T>> = e0.try_ref()?;
-                let e1: Ref<$e1<T>> = e1.try_ref()?;
-                let out: Ref<$out<T>> = out.try_ref()?;
-                Ok(Box::new(Self { e0, e1, out }))
-            }
-        }
-        impl<T> MechFunctionImpl for $fxn<T>
-        where
-            T: Debug + Clone + Sync + Send + PartialEq + 'static,
-            $out<T>: FunctionStateBacking,
-        {
-            fn solve_result(&self) -> MResult<()> {
-                unsafe {
-                    let e0_ptr = (*(self.e0.as_ptr())).clone();
-                    let e1_ptr = (*(self.e1.as_ptr())).clone();
-                    let out_ptr = (&mut *(self.out.as_mut_ptr()));
-                    $opt!(out_ptr, e0_ptr, e1_ptr);
-                };
-                Ok(())
-            }
-            fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-                Some(FunctionStatePort::from_ref(&self.out))
-            }
-            fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
-                Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
-            }
-            fn to_string(&self) -> String {
-                format!("{:#?}", self)
-            }
-        }
-        #[cfg(feature = "semantic-compiler")]
-        impl<T> MechFunctionCompiler for $fxn<T>
-        where
-            T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-        {
-            fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-                let name = format!(
-                    "{}<{}{}{}{}>",
-                    stringify!($fxn),
-                    <T as FunctionRuntimeType>::REPRESENTATION,
-                    stringify!($out),
-                    stringify!($e0),
-                    stringify!($e1)
-                );
-                compile_binop!(name, self.out, self.e0, self.e1, ctx);
+                invocation.expect_binary()?;
+                crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(
+                    invocation,
+                )
             }
         }
     };
@@ -210,13 +149,10 @@ macro_rules! horzcat_two_args {
     all(feature = "matrixd", feature = "vector4", feature = "matrix4")
 ))]
 macro_rules! horzcat_three_args {
-    ($fxn:ident, $e0:ident, $e1:ident, $e2:ident, $out:ident, $opt:ident) => {
+    ($fxn:ident, $e0:ident, $e1:ident, $e2:ident, $out:ident) => {
         #[derive(Debug)]
         struct $fxn<T> {
-            e0: Ref<$e0<T>>,
-            e1: Ref<$e1<T>>,
-            e2: Ref<$e2<T>>,
-            out: Ref<$out<T>>,
+            _marker: PhantomData<T>,
         }
         impl<T> MechFunctionFactory for $fxn<T>
         where
@@ -244,56 +180,15 @@ macro_rules! horzcat_three_args {
                 <$e2<T> as FunctionRuntimeType>::REPRESENTATION,
             );
 
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::CanonicalFinalize
+            }
+
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-                let (out, e0, e1, e2) = invocation.expect_ternary()?;
-                let e0: Ref<$e0<T>> = e0.try_ref()?;
-                let e1: Ref<$e1<T>> = e1.try_ref()?;
-                let e2: Ref<$e2<T>> = e2.try_ref()?;
-                let out: Ref<$out<T>> = out.try_ref()?;
-                Ok(Box::new(Self { e0, e1, e2, out }))
-            }
-        }
-        impl<T> MechFunctionImpl for $fxn<T>
-        where
-            T: Debug + Clone + Sync + Send + PartialEq + 'static,
-            $out<T>: FunctionStateBacking,
-        {
-            fn solve_result(&self) -> MResult<()> {
-                unsafe {
-                    let e0_ptr = (*(self.e0.as_ptr())).clone();
-                    let e1_ptr = (*(self.e1.as_ptr())).clone();
-                    let e2_ptr = (*(self.e2.as_ptr())).clone();
-                    let out_ptr = (&mut *(self.out.as_mut_ptr()));
-                    $opt!(out_ptr, e0_ptr, e1_ptr, e2_ptr);
-                };
-                Ok(())
-            }
-            fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-                Some(FunctionStatePort::from_ref(&self.out))
-            }
-            fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
-                Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
-            }
-            fn to_string(&self) -> String {
-                format!("{:#?}", self)
-            }
-        }
-        #[cfg(feature = "semantic-compiler")]
-        impl<T> MechFunctionCompiler for $fxn<T>
-        where
-            T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-        {
-            fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-                let name = format!(
-                    "{}<{}{}{}{}{}>",
-                    stringify!($fxn),
-                    <T as FunctionRuntimeType>::REPRESENTATION,
-                    stringify!($out),
-                    stringify!($e0),
-                    stringify!($e1),
-                    stringify!($e2)
-                );
-                compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx);
+                invocation.expect_ternary()?;
+                crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(
+                    invocation,
+                )
             }
         }
     };
@@ -301,14 +196,10 @@ macro_rules! horzcat_three_args {
 
 #[cfg(all(feature = "matrix4", feature = "vector4"))]
 macro_rules! horzcat_four_args {
-    ($fxn:ident, $e0:ident, $e1:ident, $e2:ident, $e3:ident, $out:ident, $opt:ident) => {
+    ($fxn:ident, $e0:ident, $e1:ident, $e2:ident, $e3:ident, $out:ident) => {
         #[derive(Debug)]
         struct $fxn<T> {
-            e0: Ref<$e0<T>>,
-            e1: Ref<$e1<T>>,
-            e2: Ref<$e2<T>>,
-            e3: Ref<$e3<T>>,
-            out: Ref<$out<T>>,
+            _marker: PhantomData<T>,
         }
         impl<T> MechFunctionFactory for $fxn<T>
         where
@@ -338,65 +229,15 @@ macro_rules! horzcat_four_args {
                 <$e3<T> as FunctionRuntimeType>::REPRESENTATION,
             );
 
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::CanonicalFinalize
+            }
+
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-                let (out, e0, e1, e2, e3) = invocation.expect_quaternary()?;
-                let e0: Ref<$e0<T>> = e0.try_ref()?;
-                let e1: Ref<$e1<T>> = e1.try_ref()?;
-                let e2: Ref<$e2<T>> = e2.try_ref()?;
-                let e3: Ref<$e3<T>> = e3.try_ref()?;
-                let out: Ref<$out<T>> = out.try_ref()?;
-                Ok(Box::new(Self {
-                    e0,
-                    e1,
-                    e2,
-                    e3,
-                    out,
-                }))
-            }
-        }
-        impl<T> MechFunctionImpl for $fxn<T>
-        where
-            T: Debug + Clone + Sync + Send + PartialEq + 'static,
-            $out<T>: FunctionStateBacking,
-        {
-            fn solve_result(&self) -> MResult<()> {
-                unsafe {
-                    let e0_ptr = (*(self.e0.as_ptr())).clone();
-                    let e1_ptr = (*(self.e1.as_ptr())).clone();
-                    let e2_ptr = (*(self.e2.as_ptr())).clone();
-                    let e3_ptr = (*(self.e3.as_ptr())).clone();
-                    let out_ptr = (&mut *(self.out.as_mut_ptr()));
-                    $opt!(out_ptr, e0_ptr, e1_ptr, e2_ptr, e3_ptr);
-                };
-                Ok(())
-            }
-            fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-                Some(FunctionStatePort::from_ref(&self.out))
-            }
-            fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
-                Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
-            }
-            fn to_string(&self) -> String {
-                format!("{:#?}", self)
-            }
-        }
-        #[cfg(feature = "semantic-compiler")]
-        impl<T> MechFunctionCompiler for $fxn<T>
-        where
-            T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-        {
-            fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-                let name = format!(
-                    "{}<{}{}{}{}{}{}>",
-                    stringify!($fxn),
-                    <T as FunctionRuntimeType>::REPRESENTATION,
-                    stringify!($out),
-                    stringify!($e0),
-                    stringify!($e1),
-                    stringify!($e2),
-                    stringify!($e3)
-                );
-                compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx);
+                invocation.expect_quaternary()?;
+                crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(
+                    invocation,
+                )
             }
         }
     };
@@ -406,9 +247,7 @@ macro_rules! horzcat_four_args {
 
 #[cfg(feature = "matrixd")]
 struct HorizontalConcatenateTwoArgs<T> {
-    e0: Box<dyn CopyMat<T>>,
-    e1: Box<dyn CopyMat<T>>,
-    out: Ref<DMatrix<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(feature = "matrixd")]
 impl<T> MechFunctionFactory for HorizontalConcatenateTwoArgs<T>
@@ -432,56 +271,17 @@ where
         <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
+    }
+
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1) = invocation.expect_binary()?;
-        let e0: Box<dyn CopyMat<T>> = arg0.try_copyable_matrix()?;
-        let e1: Box<dyn CopyMat<T>> = arg1.try_copyable_matrix()?;
-        let out: Ref<DMatrix<T>> = out.try_ref()?;
-        Ok(Box::new(Self { e0, e1, out }))
-    }
-}
-#[cfg(feature = "matrixd")]
-impl<T> MechFunctionImpl for HorizontalConcatenateTwoArgs<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        let offset = self.e0.copy_into(&self.out, 0);
-        self.e1.copy_into(&self.out, offset);
-        Ok(())
+        invocation.expect_binary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 
-    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_HORIZONTAL_VARIADIC_BUILD_CONTRACT)
-    }
-    fn to_string(&self) -> String {
-        format!("HorizontalConcatenateTwoArgs\n{:#?}", self.out)
-    }
-}
-#[cfg(feature = "matrixd")]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateTwoArgs<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let mut registers = [0, 0, 0];
-
-        registers[0] = compile_register!(self.out, ctx);
-        registers[1] = compile_register_mat!(self.e0, ctx);
-        registers[2] = compile_register_mat!(self.e1, ctx);
-
-        ctx.emit_binop(
-            hash_str(&format!(
-                "HorizontalConcatenateTwoArgs<{}>",
-                <T as FunctionRuntimeType>::REPRESENTATION
-            )),
-            registers[0],
-            registers[1],
-            registers[2],
-        );
-
-        Ok(registers[0])
     }
 }
 
@@ -489,10 +289,7 @@ where
 
 #[cfg(feature = "matrixd")]
 struct HorizontalConcatenateThreeArgs<T> {
-    e0: Box<dyn CopyMat<T>>,
-    e1: Box<dyn CopyMat<T>>,
-    e2: Box<dyn CopyMat<T>>,
-    out: Ref<DMatrix<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(feature = "matrixd")]
 impl<T> MechFunctionFactory for HorizontalConcatenateThreeArgs<T>
@@ -517,59 +314,17 @@ where
         <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
+    }
+
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
-        let e0: Box<dyn CopyMat<T>> = arg0.try_copyable_matrix()?;
-        let e1: Box<dyn CopyMat<T>> = arg1.try_copyable_matrix()?;
-        let e2: Box<dyn CopyMat<T>> = arg2.try_copyable_matrix()?;
-        let out: Ref<DMatrix<T>> = out.try_ref()?;
-        Ok(Box::new(Self { e0, e1, e2, out }))
-    }
-}
-#[cfg(feature = "matrixd")]
-impl<T> MechFunctionImpl for HorizontalConcatenateThreeArgs<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        let mut offset = self.e0.copy_into(&self.out, 0);
-        offset += self.e1.copy_into(&self.out, offset);
-        self.e2.copy_into(&self.out, offset);
-        Ok(())
+        invocation.expect_ternary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 
-    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_HORIZONTAL_VARIADIC_BUILD_CONTRACT)
-    }
-    fn to_string(&self) -> String {
-        format!("HorizontalConcatenateThreeArgs\n{:#?}", self.out)
-    }
-}
-#[cfg(feature = "matrixd")]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateThreeArgs<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let mut registers = [0, 0, 0, 0];
-
-        registers[0] = compile_register!(self.out, ctx);
-        registers[1] = compile_register_mat!(self.e0, ctx);
-        registers[2] = compile_register_mat!(self.e1, ctx);
-        registers[3] = compile_register_mat!(self.e2, ctx);
-
-        ctx.emit_ternop(
-            hash_str(&format!(
-                "HorizontalConcatenateThreeArgs<{}>",
-                <T as FunctionRuntimeType>::REPRESENTATION
-            )),
-            registers[0],
-            registers[1],
-            registers[2],
-            registers[3],
-        );
-        Ok(registers[0])
     }
 }
 
@@ -581,11 +336,7 @@ where
     reason = "the four-input compatibility factory is selected only by native-plan and focused tests"
 )]
 struct HorizontalConcatenateFourArgs<T> {
-    e0: Box<dyn CopyMat<T>>,
-    e1: Box<dyn CopyMat<T>>,
-    e2: Box<dyn CopyMat<T>>,
-    e3: Box<dyn CopyMat<T>>,
-    out: Ref<DMatrix<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(feature = "matrixd")]
 impl<T> MechFunctionFactory for HorizontalConcatenateFourArgs<T>
@@ -611,69 +362,17 @@ where
         <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
+    }
+
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
-        let e0: Box<dyn CopyMat<T>> = arg0.try_copyable_matrix()?;
-        let e1: Box<dyn CopyMat<T>> = arg1.try_copyable_matrix()?;
-        let e2: Box<dyn CopyMat<T>> = arg2.try_copyable_matrix()?;
-        let e3: Box<dyn CopyMat<T>> = arg3.try_copyable_matrix()?;
-        let out: Ref<DMatrix<T>> = out.try_ref()?;
-        Ok(Box::new(Self {
-            e0,
-            e1,
-            e2,
-            e3,
-            out,
-        }))
-    }
-}
-#[cfg(feature = "matrixd")]
-impl<T> MechFunctionImpl for HorizontalConcatenateFourArgs<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        let mut offset = self.e0.copy_into(&self.out, 0);
-        offset += self.e1.copy_into(&self.out, offset);
-        offset += self.e2.copy_into(&self.out, offset);
-        self.e3.copy_into(&self.out, offset);
-        Ok(())
+        invocation.expect_quaternary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 
-    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_HORIZONTAL_VARIADIC_BUILD_CONTRACT)
-    }
-    fn to_string(&self) -> String {
-        format!("HorizontalConcatenateFourArgs\n{:#?}", self.out)
-    }
-}
-#[cfg(feature = "matrixd")]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateFourArgs<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let registers = [
-            compile_register!(self.out, ctx),
-            compile_register_mat!(self.e0, ctx),
-            compile_register_mat!(self.e1, ctx),
-            compile_register_mat!(self.e2, ctx),
-            compile_register_mat!(self.e3, ctx),
-        ];
-
-        ctx.emit_quadop(
-            hash_str(&format!(
-                "HorizontalConcatenateFourArgs<{}>",
-                <T as FunctionRuntimeType>::REPRESENTATION
-            )),
-            registers[0],
-            registers[1],
-            registers[2],
-            registers[3],
-            registers[4],
-        );
-        Ok(registers[0])
     }
 }
 
@@ -684,19 +383,8 @@ where
     dead_code,
     reason = "retained as a frozen bytecode factory outside the standard linked runtime catalog"
 )]
-enum HorizontalConcatenateInput<T> {
-    Scalar(Ref<T>),
-    Matrix(Box<dyn CopyMat<T>>),
-}
-
-#[cfg(feature = "matrixd")]
-#[allow(
-    dead_code,
-    reason = "retained as a frozen bytecode factory outside the standard linked runtime catalog"
-)]
 struct HorizontalConcatenateNArgs<T> {
-    e0: Vec<HorizontalConcatenateInput<T>>,
-    out: Ref<DMatrix<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(feature = "matrixd")]
 impl<T> MechFunctionFactory for HorizontalConcatenateNArgs<T>
@@ -719,87 +407,17 @@ where
         FunctionValueRepresentation::AnyValue,
     );
 
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
+    }
+
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, inputs) = invocation.expect_variadic()?;
-        let mut e0 = Vec::with_capacity(inputs.len());
-        for arg in inputs {
-            if matches!(
-                arg.value().representation(),
-                FunctionValueRepresentation::Matrix { .. }
-            ) {
-                e0.push(HorizontalConcatenateInput::Matrix(
-                    arg.try_copyable_matrix()?,
-                ));
-            } else {
-                e0.push(HorizontalConcatenateInput::Scalar(arg.try_ref()?));
-            }
-        }
-        let out: Ref<DMatrix<T>> = out.try_ref()?;
-        Ok(Box::new(Self { e0, out }))
-    }
-}
-#[cfg(feature = "matrixd")]
-impl<T> MechFunctionImpl for HorizontalConcatenateNArgs<T>
-where
-    T: Debug + Clone + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        let mut offset = 0;
-        for e in &self.e0 {
-            match e {
-                HorizontalConcatenateInput::Scalar(value) => unsafe {
-                    (&mut *self.out.as_mut_ptr())[offset] = value.borrow().clone();
-                    offset += 1;
-                },
-                HorizontalConcatenateInput::Matrix(matrix) => {
-                    offset += matrix.copy_into(&self.out, offset);
-                }
-            }
-        }
-        Ok(())
+        invocation.expect_variadic()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 
-    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_HORIZONTAL_VARIADIC_BUILD_CONTRACT)
-    }
-    fn to_string(&self) -> String {
-        format!("HorizontalConcatenateNArgs\n{:#?}", self.out)
-    }
-}
-#[cfg(feature = "matrixd")]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateNArgs<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn reserve_bytecode_registers(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<()> {
-        Ok(())
-    }
-
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let mut registers = [0, 0];
-        registers[0] = compile_register!(self.out, ctx);
-
-        let mut input_registers = Vec::new();
-        for e in &self.e0 {
-            input_registers.push(match e {
-                HorizontalConcatenateInput::Scalar(value) => {
-                    compile_register_brrw!(value, ctx)
-                }
-                HorizontalConcatenateInput::Matrix(matrix) => {
-                    compile_register_mat!(matrix, ctx)
-                }
-            });
-        }
-        ctx.emit_varop(
-            hash_str(&format!(
-                "HorizontalConcatenateNArgs<{}>",
-                <T as FunctionRuntimeType>::REPRESENTATION
-            )),
-            registers[0],
-            input_registers,
-        );
-        Ok(registers[0])
     }
 }
 
@@ -808,10 +426,7 @@ where
 #[cfg(feature = "row_vectord")]
 #[derive(Debug)]
 struct HorizontalConcatenateRD<T> {
-    output: FunctionValueOutput,
     _marker: PhantomData<T>,
-    #[cfg(feature = "semantic-compiler")]
-    out: Ref<RowDVector<T>>,
 }
 #[cfg(feature = "row_vectord")]
 impl<T> MechFunctionFactory for HorizontalConcatenateRD<T>
@@ -832,49 +447,13 @@ where
     const SIGNATURE: RuntimeFunctionSignature =
         RuntimeFunctionSignature::nullary(<RowDVector<T> as FunctionRuntimeType>::REPRESENTATION);
 
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
+    }
+
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let out = invocation.expect_nullary()?;
-        let output = out.value();
-        let out: Ref<RowDVector<T>> = out.try_ref()?;
-        #[cfg(not(feature = "semantic-compiler"))]
-        drop(out);
-        Ok(Box::new(Self {
-            output,
-            _marker: PhantomData,
-            #[cfg(feature = "semantic-compiler")]
-            out,
-        }))
-    }
-}
-#[cfg(feature = "row_vectord")]
-impl<T> MechFunctionImpl for HorizontalConcatenateRD<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        Ok(())
-    }
-
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-
-    fn reactive_output_value_cells(&self) -> Vec<ValueCell> {
-        vec![self.output.cell().clone()]
-    }
-}
-#[cfg(feature = "row_vectord")]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateRD<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateRD<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_nullop!(name, self.out, ctx);
+        invocation.expect_nullary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 }
 
@@ -882,9 +461,7 @@ where
 
 #[cfg(feature = "row_vectord")]
 struct HorizontalConcatenateRDN<T> {
-    scalar: Vec<(Ref<T>, usize)>,
-    matrix: Vec<(Box<dyn CopyMat<T>>, usize)>,
-    out: Ref<RowDVector<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(feature = "row_vectord")]
 impl<T> MechFunctionFactory for HorizontalConcatenateRDN<T>
@@ -907,88 +484,17 @@ where
         FunctionValueRepresentation::AnyValue,
     );
 
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
+    }
+
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, inputs) = invocation.expect_variadic()?;
-        let mut scalar: Vec<(Ref<T>, usize)> = Vec::new();
-        let mut matrix: Vec<(Box<dyn CopyMat<T>>, usize)> = Vec::new();
-        for (i, arg) in inputs.enumerate() {
-            if matches!(
-                arg.value().representation(),
-                FunctionValueRepresentation::Matrix { .. }
-            ) {
-                matrix.push((arg.try_copyable_matrix()?, i));
-            } else {
-                scalar.push((arg.try_ref()?, i));
-            }
-        }
-        let out: Ref<RowDVector<T>> = out.try_ref()?;
-        Ok(Box::new(Self {
-            scalar,
-            matrix,
-            out,
-        }))
-    }
-}
-#[cfg(feature = "row_vectord")]
-impl<T> MechFunctionImpl for HorizontalConcatenateRDN<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            for (e, i) in &self.matrix {
-                e.copy_into_r(&self.out, *i);
-            }
-            for (e, i) in &self.scalar {
-                out_ptr[*i] = e.borrow().clone();
-            }
-        };
-        Ok(())
+        invocation.expect_variadic()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 
-    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_HORIZONTAL_VARIADIC_BUILD_CONTRACT)
-    }
-    fn to_string(&self) -> String {
-        format!("HorizontalConcatenateRDN\n{:#?}", self.out)
-    }
-}
-#[cfg(feature = "row_vectord")]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateRDN<T>
-where
-    T: CompileConst + ConstElem + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let mut registers = [0, 0];
-
-        registers[0] = compile_register!(self.out, ctx);
-
-        let mut mat_regs = Vec::new();
-        for (e, _) in &self.matrix {
-            mat_regs.push(compile_register_mat!(e, ctx));
-        }
-        let mut scalar_regs = Vec::new();
-        for (e, _) in &self.scalar {
-            let e_reg = compile_register_brrw!(e, ctx);
-            scalar_regs.push(e_reg);
-        }
-        let mut all_regs = vec![];
-        all_regs.push(registers[0]);
-        all_regs.extend(mat_regs);
-        all_regs.extend(scalar_regs);
-
-        ctx.emit_varop(
-            hash_str(&format!(
-                "HorizontalConcatenateRDN<{}>",
-                <T as FunctionRuntimeType>::REPRESENTATION
-            )),
-            registers[0],
-            all_regs[1..].to_vec(),
-        );
-
-        Ok(registers[0])
     }
 }
 
@@ -1005,6 +511,7 @@ mech_core::declare_native_runtime_factory! {
     name: "HorizontalConcatenateRDN<f64>",
     factory_type: HorizontalConcatenateRDN<f64>,
     contract: RuntimeFunctionContract::horizontal_concatenation(RuntimeOutputAliasPolicy::DisallowInputAlias),
+    compiler_family: mech_core::RuntimeFamilyId::from_name("HorizontalConcatenateRDN<f64>"),
 
     package: "mech-engine",
     crate_name: "mech_engine",
@@ -1024,13 +531,13 @@ mod compiler_tests {
     use super::*;
     use crate::test_support::bytecode_compiler::RecordingBytecodeCompilerContext;
 
-    fn matrix() -> Ref<DMatrix<f64>> {
-        Ref::new(DMatrix::from_vec(1, 1, vec![7.0]))
+    fn matrix() -> ValueCell {
+        ValueCell::from_exact(DMatrix::from_vec(1, 1, vec![7.0])).unwrap()
     }
 
     fn assert_single_matrix_load(
         context: &RecordingBytecodeCompilerContext,
-        matrix: &Ref<DMatrix<f64>>,
+        matrix: &ValueCell,
     ) -> Register {
         let matrix_register = context.reg_map[&(matrix.reactive_cell_id().get() as usize)];
         assert_eq!(
@@ -1049,74 +556,19 @@ mod compiler_tests {
         matrix_register
     }
 
-    #[test]
-    fn pointer_register_matrix_initializes_once() -> MResult<()> {
-        let mut context = RecordingBytecodeCompilerContext::default();
-        let context = &mut context;
-        let matrix_a = matrix();
-        let matrix_b = matrix();
-
-        let register_a = compile_register_mat!(matrix_a, context);
-        let register_a_again = compile_register_mat!(matrix_a, context);
-        let register_b = compile_register_mat!(matrix_b, context);
-
-        assert_eq!(register_a_again, register_a);
-        assert_ne!(register_b, register_a);
-        assert_eq!(context.const_count, 2);
-        assert_eq!(
-            context
-                .instructions
-                .iter()
-                .filter(|instruction| {
-                    matches!(instruction, BytecodeInstruction::ConstLoad { dst, .. } if *dst == register_a)
-                })
-                .count(),
-            1,
-        );
-        assert_eq!(
-            context
-                .instructions
-                .iter()
-                .filter(|instruction| {
-                    matches!(instruction, BytecodeInstruction::ConstLoad { dst, .. } if *dst == register_b)
-                })
-                .count(),
-            1,
-        );
-        Ok(())
+    fn function(inputs: Vec<ValueCell>, columns: usize) -> Box<dyn MechFunction> {
+        let output = ValueCell::from_exact(DMatrix::from_element(1, columns, 0.0)).unwrap();
+        ValueMatrixConcatenation::<false>::new_invocation(FunctionInvocation::variadic(
+            output,
+            inputs.into_boxed_slice(),
+        ))
+        .unwrap()
     }
 
     #[test]
-    fn horizontal_concatenate_four_args_reuses_repeated_matrix_register() {
+    fn managed_horizontal_concatenation_reuses_repeated_matrix_register() {
         let matrix = matrix();
-        let function = HorizontalConcatenateFourArgs {
-            e0: Box::new(matrix.clone()),
-            e1: Box::new(matrix.clone()),
-            e2: Box::new(matrix.clone()),
-            e3: Box::new(matrix.clone()),
-            out: Ref::new(DMatrix::from_element(1, 4, 0.0)),
-        };
-        let mut context = RecordingBytecodeCompilerContext::default();
-        function.compile(&mut context).unwrap();
-
-        let matrix_register = assert_single_matrix_load(&context, &matrix);
-        assert!(matches!(
-          context.instructions.last(),
-          Some(BytecodeInstruction::RuntimeQuaternary { a, b, c, d, .. })
-            if [*a, *b, *c, *d] == [matrix_register; 4]
-        ));
-    }
-
-    #[test]
-    fn horizontal_concatenate_n_args_reuses_repeated_matrix_register() {
-        let matrix = matrix();
-        let function = HorizontalConcatenateNArgs {
-            e0: vec![
-                HorizontalConcatenateInput::Matrix(Box::new(matrix.clone())),
-                HorizontalConcatenateInput::Matrix(Box::new(matrix.clone())),
-            ],
-            out: Ref::new(DMatrix::from_element(1, 2, 0.0)),
-        };
+        let function = function(vec![matrix.clone(); 4], 4);
         let mut context = RecordingBytecodeCompilerContext::default();
         function.compile(&mut context).unwrap();
 
@@ -1124,22 +576,16 @@ mod compiler_tests {
         assert!(matches!(
           context.instructions.last(),
           Some(BytecodeInstruction::RuntimeVariadic { arguments, .. })
-            if arguments == &vec![matrix_register, matrix_register]
+            if arguments == &vec![matrix_register; 4]
         ));
     }
 
     #[test]
-    fn horizontal_concatenate_n_args_preserves_scalar_and_matrix_order() {
-        let scalar = Ref::new(9.0);
-        let scalar_cell = scalar.reactive_cell_id().get() as usize;
+    fn managed_horizontal_concatenation_preserves_scalar_and_matrix_order() {
         let matrix = matrix();
-        let function = HorizontalConcatenateNArgs {
-            e0: vec![
-                HorizontalConcatenateInput::Scalar(scalar),
-                HorizontalConcatenateInput::Matrix(Box::new(matrix.clone())),
-            ],
-            out: Ref::new(DMatrix::from_element(1, 2, 0.0)),
-        };
+        let scalar = ValueCell::from_exact(9.0).unwrap();
+        let scalar_cell = scalar.reactive_cell_id().get() as usize;
+        let function = function(vec![scalar, matrix.clone(), matrix.clone()], 3);
         let mut context = RecordingBytecodeCompilerContext::default();
         function.compile(&mut context).unwrap();
 
@@ -1148,32 +594,7 @@ mod compiler_tests {
         assert!(matches!(
           context.instructions.last(),
           Some(BytecodeInstruction::RuntimeVariadic { arguments, .. })
-            if arguments == &vec![scalar_register, matrix_register]
-        ));
-
-        function.solve_result().unwrap();
-        assert_eq!(function.out.borrow().as_slice(), &[9.0, 7.0]);
-    }
-
-    #[test]
-    fn horizontal_concatenate_rdn_reuses_repeated_matrix_register() {
-        let matrix = matrix();
-        let scalar = Ref::new(9.0);
-        let scalar_cell = scalar.reactive_cell_id().get() as usize;
-        let function = HorizontalConcatenateRDN {
-            matrix: vec![(Box::new(matrix.clone()), 0), (Box::new(matrix.clone()), 1)],
-            scalar: vec![(scalar, 2)],
-            out: Ref::new(RowDVector::from_element(3, 0.0)),
-        };
-        let mut context = RecordingBytecodeCompilerContext::default();
-        function.compile(&mut context).unwrap();
-
-        let matrix_register = assert_single_matrix_load(&context, &matrix);
-        let scalar_register = context.reg_map[&scalar_cell];
-        assert!(matches!(
-          context.instructions.last(),
-          Some(BytecodeInstruction::RuntimeVariadic { arguments, .. })
-            if arguments == &vec![matrix_register, matrix_register, scalar_register]
+            if arguments == &vec![scalar_register, matrix_register, matrix_register]
         ));
     }
 }
@@ -1183,8 +604,7 @@ mod compiler_tests {
 #[cfg(feature = "matrixd")]
 #[derive(Debug)]
 struct HorizontalConcatenateS1D<T> {
-    arg: Ref<T>,
-    out: Ref<DMatrix<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(feature = "matrixd")]
 impl<T> MechFunctionFactory for HorizontalConcatenateS1D<T>
@@ -1207,45 +627,17 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
-    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0) = invocation.expect_unary()?;
-        let arg: Ref<T> = arg0.try_ref()?;
-        let out: Ref<DMatrix<T>> = out.try_ref()?;
-        Ok(Box::new(Self { arg, out }))
-    }
-}
-#[cfg(feature = "matrixd")]
-impl<T> MechFunctionImpl for HorizontalConcatenateS1D<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = self.arg.borrow().clone();
-        };
-        Ok(())
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
     }
 
-    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        invocation.expect_unary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
+    }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_HORIZONTAL_UNARY_BUILD_CONTRACT)
-    }
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
-#[cfg(feature = "matrixd")]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateS1D<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateS1D<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_unop!(name, self.out, self.arg, ctx);
     }
 }
 
@@ -1254,8 +646,7 @@ where
 #[cfg(feature = "matrix1")]
 #[derive(Debug)]
 struct HorizontalConcatenateS1<T> {
-    arg: Ref<T>,
-    out: Ref<Matrix1<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(feature = "matrix1")]
 impl<T> MechFunctionFactory for HorizontalConcatenateS1<T>
@@ -1278,46 +669,17 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
+    }
+
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0) = invocation.expect_unary()?;
-        let arg: Ref<T> = arg0.try_ref()?;
-        let out: Ref<Matrix1<T>> = out.try_ref()?;
-        Ok(Box::new(Self { arg, out }))
-    }
-}
-#[cfg(feature = "matrix1")]
-impl<T> MechFunctionImpl for HorizontalConcatenateS1<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = self.arg.borrow().clone();
-        };
-        Ok(())
+        invocation.expect_unary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-
-    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_HORIZONTAL_UNARY_BUILD_CONTRACT)
-    }
-}
-#[cfg(feature = "matrix1")]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateS1<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateS1<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_unop!(name, self.out, self.arg, ctx);
     }
 }
 
@@ -1326,9 +688,7 @@ where
 #[cfg(feature = "row_vector2")]
 #[derive(Debug)]
 struct HorizontalConcatenateS2<T> {
-    e0: Ref<T>,
-    e1: Ref<T>,
-    out: Ref<RowVector2<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(feature = "row_vector2")]
 impl<T> MechFunctionFactory for HorizontalConcatenateS2<T>
@@ -1352,48 +712,17 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
+    }
+
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1) = invocation.expect_binary()?;
-        let e0: Ref<T> = arg0.try_ref()?;
-        let e1: Ref<T> = arg1.try_ref()?;
-        let out: Ref<RowVector2<T>> = out.try_ref()?;
-        Ok(Box::new(Self { e0, e1, out }))
-    }
-}
-#[cfg(feature = "row_vector2")]
-impl<T> MechFunctionImpl for HorizontalConcatenateS2<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = self.e0.borrow().clone();
-            out_ptr[1] = self.e1.borrow().clone();
-        };
-        Ok(())
+        invocation.expect_binary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-
-    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_HORIZONTAL_VARIADIC_BUILD_CONTRACT)
-    }
-}
-#[cfg(feature = "row_vector2")]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateS2<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateS2<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_binop!(name, self.out, self.e0, self.e1, ctx);
     }
 }
 
@@ -1410,6 +739,7 @@ mech_core::declare_native_runtime_factory! {
     name: "HorizontalConcatenateS2<f64>",
     factory_type: HorizontalConcatenateS2<f64>,
     contract: RuntimeFunctionContract::horizontal_concatenation(RuntimeOutputAliasPolicy::DisallowInputAlias),
+    compiler_family: mech_core::RuntimeFamilyId::from_name("HorizontalConcatenateS2<f64>"),
 
     package: "mech-engine",
     crate_name: "mech_engine",
@@ -1423,10 +753,7 @@ mech_core::declare_native_runtime_factory! {
 #[cfg(feature = "row_vector3")]
 #[derive(Debug)]
 struct HorizontalConcatenateS3<T> {
-    e0: Ref<T>,
-    e1: Ref<T>,
-    e2: Ref<T>,
-    out: Ref<RowVector3<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(feature = "row_vector3")]
 impl<T> MechFunctionFactory for HorizontalConcatenateS3<T>
@@ -1451,50 +778,17 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
+    }
+
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
-        let e0: Ref<T> = arg0.try_ref()?;
-        let e1: Ref<T> = arg1.try_ref()?;
-        let e2: Ref<T> = arg2.try_ref()?;
-        let out: Ref<RowVector3<T>> = out.try_ref()?;
-        Ok(Box::new(Self { e0, e1, e2, out }))
-    }
-}
-#[cfg(feature = "row_vector3")]
-impl<T> MechFunctionImpl for HorizontalConcatenateS3<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = self.e0.borrow().clone();
-            out_ptr[1] = self.e1.borrow().clone();
-            out_ptr[2] = self.e2.borrow().clone();
-        };
-        Ok(())
+        invocation.expect_ternary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-
-    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_HORIZONTAL_VARIADIC_BUILD_CONTRACT)
-    }
-}
-#[cfg(feature = "row_vector3")]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateS3<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateS3<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx);
     }
 }
 
@@ -1503,11 +797,7 @@ where
 #[cfg(feature = "row_vector4")]
 #[derive(Debug)]
 struct HorizontalConcatenateS4<T> {
-    e0: Ref<T>,
-    e1: Ref<T>,
-    e2: Ref<T>,
-    e3: Ref<T>,
-    out: Ref<RowVector4<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(feature = "row_vector4")]
 impl<T> MechFunctionFactory for HorizontalConcatenateS4<T>
@@ -1533,58 +823,17 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
+    }
+
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
-        let e0: Ref<T> = arg0.try_ref()?;
-        let e1: Ref<T> = arg1.try_ref()?;
-        let e2: Ref<T> = arg2.try_ref()?;
-        let e3: Ref<T> = arg3.try_ref()?;
-        let out: Ref<RowVector4<T>> = out.try_ref()?;
-        Ok(Box::new(Self {
-            e0,
-            e1,
-            e2,
-            e3,
-            out,
-        }))
-    }
-}
-#[cfg(feature = "row_vector4")]
-impl<T> MechFunctionImpl for HorizontalConcatenateS4<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = self.e0.borrow().clone();
-            out_ptr[1] = self.e1.borrow().clone();
-            out_ptr[2] = self.e2.borrow().clone();
-            out_ptr[3] = self.e3.borrow().clone();
-        };
-        Ok(())
+        invocation.expect_quaternary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-
-    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_HORIZONTAL_VARIADIC_BUILD_CONTRACT)
-    }
-}
-#[cfg(feature = "row_vector4")]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateS4<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateS4<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx);
     }
 }
 
@@ -1608,10 +857,7 @@ horizontal_concatenate!(HorizontalConcatenateR4, 4);
 #[cfg(feature = "row_vectord")]
 #[derive(Debug)]
 struct HorizontalConcatenateSD<T> {
-    output: FunctionValueOutput,
     _marker: PhantomData<T>,
-    #[cfg(feature = "semantic-compiler")]
-    out: Ref<RowDVector<T>>,
 }
 #[cfg(feature = "row_vectord")]
 impl<T> MechFunctionFactory for HorizontalConcatenateSD<T>
@@ -1632,49 +878,13 @@ where
     const SIGNATURE: RuntimeFunctionSignature =
         RuntimeFunctionSignature::nullary(<RowDVector<T> as FunctionRuntimeType>::REPRESENTATION);
 
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
+    }
+
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let out = invocation.expect_nullary()?;
-        let output = out.value();
-        let out: Ref<RowDVector<T>> = out.try_ref()?;
-        #[cfg(not(feature = "semantic-compiler"))]
-        drop(out);
-        Ok(Box::new(Self {
-            output,
-            _marker: PhantomData,
-            #[cfg(feature = "semantic-compiler")]
-            out,
-        }))
-    }
-}
-#[cfg(feature = "row_vectord")]
-impl<T> MechFunctionImpl for HorizontalConcatenateSD<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        Ok(())
-    }
-
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-
-    fn reactive_output_value_cells(&self) -> Vec<ValueCell> {
-        vec![self.output.cell().clone()]
-    }
-}
-#[cfg(feature = "row_vectord")]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateSD<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateSD<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_nullop!(name, self.out, ctx);
+        invocation.expect_nullary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 }
 
@@ -1684,10 +894,7 @@ macro_rules! horzcat_single {
     ($name:ident,$shape:ident) => {
         #[derive(Debug)]
         struct $name<T> {
-            output: FunctionValueOutput,
             _marker: PhantomData<T>,
-            #[cfg(feature = "semantic-compiler")]
-            out: Ref<$shape<T>>,
         }
         impl<T> MechFunctionFactory for $name<T>
         where
@@ -1709,48 +916,15 @@ macro_rules! horzcat_single {
                 <$shape<T> as FunctionRuntimeType>::REPRESENTATION,
             );
 
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::CanonicalFinalize
+            }
+
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-                let out = invocation.expect_nullary()?;
-                let output = out.value();
-                let out: Ref<$shape<T>> = out.try_ref()?;
-                #[cfg(not(feature = "semantic-compiler"))]
-                drop(out);
-                Ok(Box::new(Self {
-                    output,
-                    _marker: PhantomData,
-                    #[cfg(feature = "semantic-compiler")]
-                    out,
-                }))
-            }
-        }
-        impl<T> MechFunctionImpl for $name<T>
-        where
-            T: Debug + Clone + Sync + Send + PartialEq + 'static,
-        {
-            fn solve_result(&self) -> MResult<()> {
-                Ok(())
-            }
-
-            fn to_string(&self) -> String {
-                format!("{:#?}", self)
-            }
-
-            fn reactive_output_value_cells(&self) -> Vec<ValueCell> {
-                vec![self.output.cell().clone()]
-            }
-        }
-        #[cfg(feature = "semantic-compiler")]
-        impl<T> MechFunctionCompiler for $name<T>
-        where
-            T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-        {
-            fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-                let name = format!(
-                    "{}<{}>",
-                    stringify!($name),
-                    <T as FunctionRuntimeType>::REPRESENTATION
-                );
-                compile_nullop!(name, self.out, ctx);
+                invocation.expect_nullary()?;
+                crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(
+                    invocation,
+                )
             }
         }
     };
@@ -1784,9 +958,7 @@ horzcat_single!(HorizontalConcatenateVD, DVector);
 #[cfg(all(feature = "row_vector2", feature = "row_vector3"))]
 #[derive(Debug)]
 struct HorizontalConcatenateSR2<T> {
-    e0: Ref<T>,
-    e1: Ref<RowVector2<T>>,
-    out: Ref<RowVector3<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(all(feature = "row_vector2", feature = "row_vector3"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateSR2<T>
@@ -1810,47 +982,13 @@ where
         <RowVector2<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
-    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1) = invocation.expect_binary()?;
-        let e0: Ref<T> = arg0.try_ref()?;
-        let e1: Ref<RowVector2<T>> = arg1.try_ref()?;
-        let out: Ref<RowVector3<T>> = out.try_ref()?;
-        Ok(Box::new(Self { e0, e1, out }))
-    }
-}
-#[cfg(all(feature = "row_vector2", feature = "row_vector3"))]
-impl<T> MechFunctionImpl for HorizontalConcatenateSR2<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr.clone();
-            out_ptr[1] = e1_ptr[0].clone();
-            out_ptr[2] = e1_ptr[1].clone();
-        };
-        Ok(())
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
     }
 
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
-#[cfg(all(feature = "row_vector2", feature = "row_vector3"))]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateSR2<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateSR2<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_binop!(name, self.out, self.e0, self.e1, ctx);
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        invocation.expect_binary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 }
 
@@ -1859,9 +997,7 @@ where
 #[cfg(all(feature = "row_vector2", feature = "row_vector3"))]
 #[derive(Debug)]
 struct HorizontalConcatenateR2S<T> {
-    e0: Ref<RowVector2<T>>,
-    e1: Ref<T>,
-    out: Ref<RowVector3<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(all(feature = "row_vector2", feature = "row_vector3"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateR2S<T>
@@ -1885,56 +1021,22 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
-    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1) = invocation.expect_binary()?;
-        let e0: Ref<RowVector2<T>> = arg0.try_ref()?;
-        let e1: Ref<T> = arg1.try_ref()?;
-        let out: Ref<RowVector3<T>> = out.try_ref()?;
-        Ok(Box::new(Self { e0, e1, out }))
-    }
-}
-#[cfg(all(feature = "row_vector2", feature = "row_vector3"))]
-impl<T> MechFunctionImpl for HorizontalConcatenateR2S<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr[0].clone();
-            out_ptr[1] = e0_ptr[1].clone();
-            out_ptr[2] = self.e1.borrow().clone();
-        };
-        Ok(())
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
     }
 
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        invocation.expect_binary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 }
-#[cfg(all(feature = "row_vector2", feature = "row_vector3"))]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateR2S<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateR2S<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_binop!(name, self.out, self.e0, self.e1, ctx);
-    }
-}
+
 // HorizontalConcatenateSM1 ---------------------------------------------------
 
 #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
 #[derive(Debug)]
 struct HorizontalConcatenateSM1<T> {
-    e0: Ref<T>,
-    e1: Ref<Matrix1<T>>,
-    out: Ref<RowVector2<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateSM1<T>
@@ -1958,46 +1060,13 @@ where
         <Matrix1<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
-    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1) = invocation.expect_binary()?;
-        let e0: Ref<T> = arg0.try_ref()?;
-        let e1: Ref<Matrix1<T>> = arg1.try_ref()?;
-        let out: Ref<RowVector2<T>> = out.try_ref()?;
-        Ok(Box::new(Self { e0, e1, out }))
-    }
-}
-#[cfg(all(feature = "matrix1", feature = "row_vector2"))]
-impl<T> MechFunctionImpl for HorizontalConcatenateSM1<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_val = self.e0.borrow().clone();
-            let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_val;
-            out_ptr[1] = e1_ptr[0].clone();
-        };
-        Ok(())
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
     }
 
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
-#[cfg(all(feature = "matrix1", feature = "row_vector2"))]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateSM1<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateSM1<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_binop!(name, self.out, self.e0, self.e1, ctx);
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        invocation.expect_binary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 }
 
@@ -2006,9 +1075,7 @@ where
 #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
 #[derive(Debug)]
 struct HorizontalConcatenateM1S<T> {
-    e0: Ref<Matrix1<T>>, // Matrix1
-    e1: Ref<T>,          // scalar
-    out: Ref<RowVector2<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateM1S<T>
@@ -2032,46 +1099,13 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
-    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1) = invocation.expect_binary()?;
-        let e0: Ref<Matrix1<T>> = arg0.try_ref()?;
-        let e1: Ref<T> = arg1.try_ref()?;
-        let out: Ref<RowVector2<T>> = out.try_ref()?;
-        Ok(Box::new(Self { e0, e1, out }))
-    }
-}
-#[cfg(all(feature = "matrix1", feature = "row_vector2"))]
-impl<T> MechFunctionImpl for HorizontalConcatenateM1S<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let e1_val = self.e1.borrow().clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr[0].clone();
-            out_ptr[1] = e1_val;
-        };
-        Ok(())
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
     }
 
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
-#[cfg(all(feature = "matrix1", feature = "row_vector2"))]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateM1S<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateM1S<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_binop!(name, self.out, self.e0, self.e1, ctx);
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        invocation.expect_binary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 }
 
@@ -2080,11 +1114,7 @@ where
 #[cfg(all(feature = "matrix1", feature = "row_vector4"))]
 #[derive(Debug)]
 struct HorizontalConcatenateSSSM1<T> {
-    e0: Ref<T>,
-    e1: Ref<T>,
-    e2: Ref<T>,
-    e3: Ref<Matrix1<T>>,
-    out: Ref<RowVector4<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector4"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateSSSM1<T>
@@ -2110,58 +1140,13 @@ where
         <Matrix1<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
-    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
-        let e0: Ref<T> = arg0.try_ref()?;
-        let e1: Ref<T> = arg1.try_ref()?;
-        let e2: Ref<T> = arg2.try_ref()?;
-        let e3: Ref<Matrix1<T>> = arg3.try_ref()?;
-        let out: Ref<RowVector4<T>> = out.try_ref()?;
-        Ok(Box::new(Self {
-            e0,
-            e1,
-            e2,
-            e3,
-            out,
-        }))
-    }
-}
-#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
-impl<T> MechFunctionImpl for HorizontalConcatenateSSSM1<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_val = self.e0.borrow().clone();
-            let e1_val = self.e1.borrow().clone();
-            let e2_val = self.e2.borrow().clone();
-            let e3_ptr = (*(self.e3.as_ptr())).clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_val;
-            out_ptr[1] = e1_val;
-            out_ptr[2] = e2_val;
-            out_ptr[3] = e3_ptr[0].clone();
-        };
-        Ok(())
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
     }
 
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
-#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateSSSM1<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateSSSM1<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx);
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        invocation.expect_quaternary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 }
 
@@ -2170,11 +1155,7 @@ where
 #[cfg(all(feature = "matrix1", feature = "row_vector4"))]
 #[derive(Debug)]
 struct HorizontalConcatenateSSM1S<T> {
-    e0: Ref<T>,
-    e1: Ref<T>,
-    e2: Ref<Matrix1<T>>,
-    e3: Ref<T>,
-    out: Ref<RowVector4<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector4"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateSSM1S<T>
@@ -2200,58 +1181,13 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
-    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
-        let e0: Ref<T> = arg0.try_ref()?;
-        let e1: Ref<T> = arg1.try_ref()?;
-        let e2: Ref<Matrix1<T>> = arg2.try_ref()?;
-        let e3: Ref<T> = arg3.try_ref()?;
-        let out: Ref<RowVector4<T>> = out.try_ref()?;
-        Ok(Box::new(Self {
-            e0,
-            e1,
-            e2,
-            e3,
-            out,
-        }))
-    }
-}
-#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
-impl<T> MechFunctionImpl for HorizontalConcatenateSSM1S<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_val = self.e0.borrow().clone();
-            let e1_val = self.e1.borrow().clone();
-            let e2_ptr = (*(self.e2.as_ptr())).clone();
-            let e3_val = self.e3.borrow().clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_val;
-            out_ptr[1] = e1_val;
-            out_ptr[2] = e2_ptr[0].clone();
-            out_ptr[3] = e3_val;
-        };
-        Ok(())
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
     }
 
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
-#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateSSM1S<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateSSM1S<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx);
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        invocation.expect_quaternary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 }
 
@@ -2260,11 +1196,7 @@ where
 #[cfg(all(feature = "matrix1", feature = "row_vector4"))]
 #[derive(Debug)]
 struct HorizontalConcatenateSM1SS<T> {
-    e0: Ref<T>,
-    e1: Ref<Matrix1<T>>,
-    e2: Ref<T>,
-    e3: Ref<T>,
-    out: Ref<RowVector4<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector4"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateSM1SS<T>
@@ -2290,58 +1222,13 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
-    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
-        let e0: Ref<T> = arg0.try_ref()?;
-        let e1: Ref<Matrix1<T>> = arg1.try_ref()?;
-        let e2: Ref<T> = arg2.try_ref()?;
-        let e3: Ref<T> = arg3.try_ref()?;
-        let out: Ref<RowVector4<T>> = out.try_ref()?;
-        Ok(Box::new(Self {
-            e0,
-            e1,
-            e2,
-            e3,
-            out,
-        }))
-    }
-}
-#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
-impl<T> MechFunctionImpl for HorizontalConcatenateSM1SS<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_val = self.e0.borrow().clone();
-            let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let e2_val = self.e2.borrow().clone();
-            let e3_val = self.e3.borrow().clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_val;
-            out_ptr[1] = e1_ptr[0].clone();
-            out_ptr[2] = e2_val;
-            out_ptr[3] = e3_val;
-        };
-        Ok(())
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
     }
 
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
-#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateSM1SS<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateSM1SS<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx);
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        invocation.expect_quaternary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 }
 
@@ -2350,11 +1237,7 @@ where
 #[cfg(all(feature = "matrix1", feature = "row_vector4"))]
 #[derive(Debug)]
 struct HorizontalConcatenateM1SSS<T> {
-    e0: Ref<Matrix1<T>>,
-    e1: Ref<T>,
-    e2: Ref<T>,
-    e3: Ref<T>,
-    out: Ref<RowVector4<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector4"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateM1SSS<T>
@@ -2380,58 +1263,13 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
-    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
-        let e0: Ref<Matrix1<T>> = arg0.try_ref()?;
-        let e1: Ref<T> = arg1.try_ref()?;
-        let e2: Ref<T> = arg2.try_ref()?;
-        let e3: Ref<T> = arg3.try_ref()?;
-        let out: Ref<RowVector4<T>> = out.try_ref()?;
-        Ok(Box::new(Self {
-            e0,
-            e1,
-            e2,
-            e3,
-            out,
-        }))
-    }
-}
-#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
-impl<T> MechFunctionImpl for HorizontalConcatenateM1SSS<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let e1_val = self.e1.borrow().clone();
-            let e2_val = self.e2.borrow().clone();
-            let e3_val = self.e3.borrow().clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr[0].clone();
-            out_ptr[1] = e1_val;
-            out_ptr[2] = e2_val;
-            out_ptr[3] = e3_val;
-        };
-        Ok(())
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
     }
 
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
-#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateM1SSS<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateM1SSS<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx);
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        invocation.expect_quaternary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 }
 
@@ -2440,9 +1278,7 @@ where
 #[cfg(all(feature = "row_vector3", feature = "row_vector4"))]
 #[derive(Debug)]
 struct HorizontalConcatenateSR3<T> {
-    e0: Ref<T>,
-    e1: Ref<RowVector3<T>>,
-    out: Ref<RowVector4<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(all(feature = "row_vector3", feature = "row_vector4"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateSR3<T>
@@ -2466,48 +1302,13 @@ where
         <RowVector3<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
-    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1) = invocation.expect_binary()?;
-        let e0: Ref<T> = arg0.try_ref()?;
-        let e1: Ref<RowVector3<T>> = arg1.try_ref()?;
-        let out: Ref<RowVector4<T>> = out.try_ref()?;
-        Ok(Box::new(Self { e0, e1, out }))
-    }
-}
-#[cfg(all(feature = "row_vector3", feature = "row_vector4"))]
-impl<T> MechFunctionImpl for HorizontalConcatenateSR3<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr.clone();
-            out_ptr[1] = e1_ptr[0].clone();
-            out_ptr[2] = e1_ptr[1].clone();
-            out_ptr[3] = e1_ptr[2].clone();
-        };
-        Ok(())
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
     }
 
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
-#[cfg(all(feature = "row_vector3", feature = "row_vector4"))]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateSR3<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateSR3<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_binop!(name, self.out, self.e0, self.e1, ctx);
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        invocation.expect_binary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 }
 
@@ -2516,9 +1317,7 @@ where
 #[cfg(all(feature = "row_vector3", feature = "row_vector4"))]
 #[derive(Debug)]
 struct HorizontalConcatenateR3S<T> {
-    e0: Ref<RowVector3<T>>,
-    e1: Ref<T>,
-    out: Ref<RowVector4<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(all(feature = "row_vector3", feature = "row_vector4"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateR3S<T>
@@ -2542,48 +1341,13 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
-    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1) = invocation.expect_binary()?;
-        let e0: Ref<RowVector3<T>> = arg0.try_ref()?;
-        let e1: Ref<T> = arg1.try_ref()?;
-        let out: Ref<RowVector4<T>> = out.try_ref()?;
-        Ok(Box::new(Self { e0, e1, out }))
-    }
-}
-#[cfg(all(feature = "row_vector3", feature = "row_vector4"))]
-impl<T> MechFunctionImpl for HorizontalConcatenateR3S<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let e1_ptr = self.e1.borrow().clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr[0].clone();
-            out_ptr[1] = e0_ptr[1].clone();
-            out_ptr[2] = e0_ptr[2].clone();
-            out_ptr[3] = e1_ptr.clone();
-        };
-        Ok(())
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
     }
 
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
-#[cfg(all(feature = "row_vector3", feature = "row_vector4"))]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateR3S<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateR3S<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_binop!(name, self.out, self.e0, self.e1, ctx);
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        invocation.expect_binary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 }
 
@@ -2592,10 +1356,7 @@ where
 #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 #[derive(Debug)]
 struct HorizontalConcatenateSSM1<T> {
-    e0: Ref<T>,          // scalar
-    e1: Ref<T>,          // scalar
-    e2: Ref<Matrix1<T>>, // Matrix1
-    out: Ref<RowVector3<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateSSM1<T>
@@ -2620,49 +1381,13 @@ where
         <Matrix1<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
-    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
-        let e0: Ref<T> = arg0.try_ref()?;
-        let e1: Ref<T> = arg1.try_ref()?;
-        let e2: Ref<Matrix1<T>> = arg2.try_ref()?;
-        let out: Ref<RowVector3<T>> = out.try_ref()?;
-        Ok(Box::new(Self { e0, e1, e2, out }))
-    }
-}
-#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
-impl<T> MechFunctionImpl for HorizontalConcatenateSSM1<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_val = self.e0.borrow().clone();
-            let e1_val = self.e1.borrow().clone();
-            let e2_ptr = (*(self.e2.as_ptr())).clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_val;
-            out_ptr[1] = e1_val;
-            out_ptr[2] = e2_ptr[0].clone();
-        };
-        Ok(())
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
     }
 
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
-#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateSSM1<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateSSM1<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx);
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        invocation.expect_ternary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 }
 
@@ -2671,10 +1396,7 @@ where
 #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 #[derive(Debug)]
 struct HorizontalConcatenateSM1S<T> {
-    e0: Ref<T>,          // scalar
-    e1: Ref<Matrix1<T>>, // Matrix1
-    e2: Ref<T>,          // scalar
-    out: Ref<RowVector3<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateSM1S<T>
@@ -2699,49 +1421,13 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
-    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
-        let e0: Ref<T> = arg0.try_ref()?;
-        let e1: Ref<Matrix1<T>> = arg1.try_ref()?;
-        let e2: Ref<T> = arg2.try_ref()?;
-        let out: Ref<RowVector3<T>> = out.try_ref()?;
-        Ok(Box::new(Self { e0, e1, e2, out }))
-    }
-}
-#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
-impl<T> MechFunctionImpl for HorizontalConcatenateSM1S<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_val = self.e0.borrow().clone();
-            let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let e2_val = self.e2.borrow().clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_val;
-            out_ptr[1] = e1_ptr[0].clone();
-            out_ptr[2] = e2_val;
-        };
-        Ok(())
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
     }
 
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
-#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateSM1S<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateSM1S<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx);
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        invocation.expect_ternary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 }
 
@@ -2750,10 +1436,7 @@ where
 #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 #[derive(Debug)]
 struct HorizontalConcatenateM1SS<T> {
-    e0: Ref<Matrix1<T>>, // Matrix1
-    e1: Ref<T>,          // scalar
-    e2: Ref<T>,          // scalar
-    out: Ref<RowVector3<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateM1SS<T>
@@ -2778,49 +1461,13 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
-    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
-        let e0: Ref<Matrix1<T>> = arg0.try_ref()?;
-        let e1: Ref<T> = arg1.try_ref()?;
-        let e2: Ref<T> = arg2.try_ref()?;
-        let out: Ref<RowVector3<T>> = out.try_ref()?;
-        Ok(Box::new(Self { e0, e1, e2, out }))
-    }
-}
-#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
-impl<T> MechFunctionImpl for HorizontalConcatenateM1SS<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let e1_val = self.e1.borrow().clone();
-            let e2_val = self.e2.borrow().clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr[0].clone();
-            out_ptr[1] = e1_val;
-            out_ptr[2] = e2_val;
-        };
-        Ok(())
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
     }
 
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
-#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateM1SS<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateM1SS<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx);
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        invocation.expect_ternary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 }
 
@@ -2829,10 +1476,7 @@ where
 #[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
 #[derive(Debug)]
 struct HorizontalConcatenateSSR2<T> {
-    e0: Ref<T>,
-    e1: Ref<T>,
-    e2: Ref<RowVector2<T>>,
-    out: Ref<RowVector4<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateSSR2<T>
@@ -2857,50 +1501,13 @@ where
         <RowVector2<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
-    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
-        let e0: Ref<T> = arg0.try_ref()?;
-        let e1: Ref<T> = arg1.try_ref()?;
-        let e2: Ref<RowVector2<T>> = arg2.try_ref()?;
-        let out: Ref<RowVector4<T>> = out.try_ref()?;
-        Ok(Box::new(Self { e0, e1, e2, out }))
-    }
-}
-#[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
-impl<T> MechFunctionImpl for HorizontalConcatenateSSR2<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_val = self.e0.borrow().clone();
-            let e1_val = self.e1.borrow().clone();
-            let e2_ptr = (*(self.e2.as_ptr())).clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_val;
-            out_ptr[1] = e1_val;
-            out_ptr[2] = e2_ptr[0].clone();
-            out_ptr[3] = e2_ptr[1].clone();
-        };
-        Ok(())
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
     }
 
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
-#[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateSSR2<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateSSR2<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx);
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        invocation.expect_ternary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 }
 
@@ -2909,10 +1516,7 @@ where
 #[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
 #[derive(Debug)]
 struct HorizontalConcatenateSR2S<T> {
-    e0: Ref<T>,
-    e1: Ref<RowVector2<T>>,
-    e2: Ref<T>,
-    out: Ref<RowVector4<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateSR2S<T>
@@ -2937,50 +1541,13 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
-    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
-        let e0: Ref<T> = arg0.try_ref()?;
-        let e1: Ref<RowVector2<T>> = arg1.try_ref()?;
-        let e2: Ref<T> = arg2.try_ref()?;
-        let out: Ref<RowVector4<T>> = out.try_ref()?;
-        Ok(Box::new(Self { e0, e1, e2, out }))
-    }
-}
-#[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
-impl<T> MechFunctionImpl for HorizontalConcatenateSR2S<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_val = self.e0.borrow().clone();
-            let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let e2_val = self.e2.borrow().clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_val;
-            out_ptr[1] = e1_ptr[0].clone();
-            out_ptr[2] = e1_ptr[1].clone();
-            out_ptr[3] = e2_val;
-        };
-        Ok(())
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
     }
 
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
-#[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateSR2S<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateSR2S<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx);
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        invocation.expect_ternary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 }
 
@@ -2989,10 +1556,7 @@ where
 #[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
 #[derive(Debug)]
 struct HorizontalConcatenateR2SS<T> {
-    e0: Ref<RowVector2<T>>,
-    e1: Ref<T>,
-    e2: Ref<T>,
-    out: Ref<RowVector4<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateR2SS<T>
@@ -3017,50 +1581,13 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
-    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
-        let e0: Ref<RowVector2<T>> = arg0.try_ref()?;
-        let e1: Ref<T> = arg1.try_ref()?;
-        let e2: Ref<T> = arg2.try_ref()?;
-        let out: Ref<RowVector4<T>> = out.try_ref()?;
-        Ok(Box::new(Self { e0, e1, e2, out }))
-    }
-}
-#[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
-impl<T> MechFunctionImpl for HorizontalConcatenateR2SS<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let e1_val = self.e1.borrow().clone();
-            let e2_val = self.e2.borrow().clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr[0].clone();
-            out_ptr[1] = e0_ptr[1].clone();
-            out_ptr[2] = e1_val;
-            out_ptr[3] = e2_val;
-        };
-        Ok(())
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
     }
 
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
-#[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateR2SS<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateR2SS<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx);
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        invocation.expect_ternary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 }
 
@@ -3069,10 +1596,7 @@ where
 #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 #[derive(Debug)]
 struct HorizontalConcatenateM1M1S<T> {
-    e0: Ref<Matrix1<T>>,
-    e1: Ref<Matrix1<T>>,
-    e2: Ref<T>,
-    out: Ref<RowVector3<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateM1M1S<T>
@@ -3097,79 +1621,27 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
-    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
-        let e0: Ref<Matrix1<T>> = arg0.try_ref()?;
-        let e1: Ref<Matrix1<T>> = arg1.try_ref()?;
-        let e2: Ref<T> = arg2.try_ref()?;
-        let out: Ref<RowVector3<T>> = out.try_ref()?;
-        Ok(Box::new(Self { e0, e1, e2, out }))
-    }
-}
-#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
-impl<T> MechFunctionImpl for HorizontalConcatenateM1M1S<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let e2_val = self.e2.borrow().clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr[0].clone();
-            out_ptr[1] = e1_ptr[0].clone();
-            out_ptr[2] = e2_val;
-        };
-        Ok(())
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
     }
 
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
-#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateM1M1S<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateM1M1S<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx);
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        invocation.expect_ternary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 }
 
 // HorizontalConcatenateM1M1 -------------------------------------------------
 
 #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
-macro_rules! horzcat_m1m1 {
-    ($out:expr, $e0:expr, $e1:expr) => {
-        $out[0] = $e0[0].clone();
-        $out[1] = $e1[0].clone();
-    };
-}
-#[cfg(all(feature = "matrix1", feature = "row_vector2"))]
-horzcat_two_args!(
-    HorizontalConcatenateM1M1,
-    Matrix1,
-    Matrix1,
-    RowVector2,
-    horzcat_m1m1
-);
+horzcat_two_args!(HorizontalConcatenateM1M1, Matrix1, Matrix1, RowVector2);
 
 // HorizontalConcatenateM1SM1 -------------------------------------------------
 
 #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 #[derive(Debug)]
 struct HorizontalConcatenateM1SM1<T> {
-    e0: Ref<Matrix1<T>>,
-    e1: Ref<T>,
-    e2: Ref<Matrix1<T>>,
-    out: Ref<RowVector3<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateM1SM1<T>
@@ -3194,49 +1666,13 @@ where
         <Matrix1<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
-    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
-        let e0: Ref<Matrix1<T>> = arg0.try_ref()?;
-        let e1: Ref<T> = arg1.try_ref()?;
-        let e2: Ref<Matrix1<T>> = arg2.try_ref()?;
-        let out: Ref<RowVector3<T>> = out.try_ref()?;
-        Ok(Box::new(Self { e0, e1, e2, out }))
-    }
-}
-#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
-impl<T> MechFunctionImpl for HorizontalConcatenateM1SM1<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let e1_val = self.e1.borrow().clone();
-            let e2_ptr = (*(self.e2.as_ptr())).clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr[0].clone();
-            out_ptr[1] = e1_val;
-            out_ptr[2] = e2_ptr[0].clone();
-        };
-        Ok(())
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
     }
 
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
-#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateM1SM1<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateM1SM1<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx);
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        invocation.expect_ternary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 }
 
@@ -3245,10 +1681,7 @@ where
 #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 #[derive(Debug)]
 struct HorizontalConcatenateSM1M1<T> {
-    e0: Ref<T>,
-    e1: Ref<Matrix1<T>>,
-    e2: Ref<Matrix1<T>>,
-    out: Ref<RowVector3<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateSM1M1<T>
@@ -3273,121 +1706,42 @@ where
         <Matrix1<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
-    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
-        let e0: Ref<T> = arg0.try_ref()?;
-        let e1: Ref<Matrix1<T>> = arg1.try_ref()?;
-        let e2: Ref<Matrix1<T>> = arg2.try_ref()?;
-        let out: Ref<RowVector3<T>> = out.try_ref()?;
-        Ok(Box::new(Self { e0, e1, e2, out }))
-    }
-}
-#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
-impl<T> MechFunctionImpl for HorizontalConcatenateSM1M1<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_val = self.e0.borrow().clone();
-            let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let e2_ptr = (*(self.e2.as_ptr())).clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_val;
-            out_ptr[1] = e1_ptr[0].clone();
-            out_ptr[2] = e2_ptr[0].clone();
-        };
-        Ok(())
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
     }
 
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
-#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateSM1M1<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateSM1M1<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx);
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        invocation.expect_ternary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 }
 
 // HorizontalConcatenateR2R2 -------------------------------------------------
 
 #[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
-macro_rules! horzcat_r2r2 {
-    ($out:expr, $e0:expr, $e1:expr) => {
-        $out[0] = $e0[0].clone();
-        $out[1] = $e0[1].clone();
-        $out[2] = $e1[0].clone();
-        $out[3] = $e1[1].clone();
-    };
-}
-#[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
 horzcat_two_args!(
     HorizontalConcatenateR2R2,
     RowVector2,
     RowVector2,
-    RowVector4,
-    horzcat_r2r2
+    RowVector4
 );
 
 // HorizontalConcatenateM1R3 -------------------------------------------------
 
 #[cfg(all(feature = "matrix1", feature = "row_vector3", feature = "row_vector4"))]
-macro_rules! horzcat_m1r3 {
-    ($out:expr, $e0:expr, $e1:expr) => {
-        $out[0] = $e0[0].clone();
-        $out[1] = $e1[0].clone();
-        $out[2] = $e1[1].clone();
-        $out[3] = $e1[2].clone();
-    };
-}
-#[cfg(all(feature = "matrix1", feature = "row_vector3", feature = "row_vector4"))]
-horzcat_two_args!(
-    HorizontalConcatenateM1R3,
-    Matrix1,
-    RowVector3,
-    RowVector4,
-    horzcat_m1r3
-);
+horzcat_two_args!(HorizontalConcatenateM1R3, Matrix1, RowVector3, RowVector4);
 
 // HorizontalConcatenateR3M1 -------------------------------------------------
 
 #[cfg(all(feature = "matrix1", feature = "row_vector3", feature = "row_vector4"))]
-macro_rules! horzcat_r3m1 {
-    ($out:expr, $e0:expr, $e1:expr) => {
-        $out[0] = $e0[0].clone();
-        $out[1] = $e0[1].clone();
-        $out[2] = $e0[2].clone();
-        $out[3] = $e1[0].clone();
-    };
-}
-#[cfg(all(feature = "matrix1", feature = "row_vector3", feature = "row_vector4"))]
-horzcat_two_args!(
-    HorizontalConcatenateR3M1,
-    RowVector3,
-    Matrix1,
-    RowVector4,
-    horzcat_r3m1
-);
+horzcat_two_args!(HorizontalConcatenateR3M1, RowVector3, Matrix1, RowVector4);
 
 // HorizontalConcatenateSM1R2 -------------------------------------------------
 
 #[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))]
 #[derive(Debug)]
 struct HorizontalConcatenateSM1R2<T> {
-    e0: Ref<T>,
-    e1: Ref<Matrix1<T>>,
-    e2: Ref<RowVector2<T>>,
-    out: Ref<RowVector4<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateSM1R2<T>
@@ -3412,50 +1766,13 @@ where
         <RowVector2<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
-    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
-        let e0: Ref<T> = arg0.try_ref()?;
-        let e1: Ref<Matrix1<T>> = arg1.try_ref()?;
-        let e2: Ref<RowVector2<T>> = arg2.try_ref()?;
-        let out: Ref<RowVector4<T>> = out.try_ref()?;
-        Ok(Box::new(Self { e0, e1, e2, out }))
-    }
-}
-#[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))]
-impl<T> MechFunctionImpl for HorizontalConcatenateSM1R2<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_val = self.e0.borrow().clone();
-            let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let e2_ptr = (*(self.e2.as_ptr())).clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_val;
-            out_ptr[1] = e1_ptr[0].clone();
-            out_ptr[2] = e2_ptr[0].clone();
-            out_ptr[3] = e2_ptr[1].clone();
-        };
-        Ok(())
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
     }
 
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
-#[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateSM1R2<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateSM1R2<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx);
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        invocation.expect_ternary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 }
 
@@ -3464,10 +1781,7 @@ where
 #[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))]
 #[derive(Debug)]
 struct HorizontalConcatenateM1SR2<T> {
-    e0: Ref<Matrix1<T>>,
-    e1: Ref<T>,
-    e2: Ref<RowVector2<T>>,
-    out: Ref<RowVector4<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateM1SR2<T>
@@ -3492,50 +1806,13 @@ where
         <RowVector2<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
-    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
-        let e0: Ref<Matrix1<T>> = arg0.try_ref()?;
-        let e1: Ref<T> = arg1.try_ref()?;
-        let e2: Ref<RowVector2<T>> = arg2.try_ref()?;
-        let out: Ref<RowVector4<T>> = out.try_ref()?;
-        Ok(Box::new(Self { e0, e1, e2, out }))
-    }
-}
-#[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))]
-impl<T> MechFunctionImpl for HorizontalConcatenateM1SR2<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let e1_val = self.e1.borrow().clone();
-            let e2_ptr = (*(self.e2.as_ptr())).clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr[0].clone();
-            out_ptr[1] = e1_val;
-            out_ptr[2] = e2_ptr[0].clone();
-            out_ptr[3] = e2_ptr[1].clone();
-        };
-        Ok(())
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
     }
 
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
-#[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateM1SR2<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateM1SR2<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx);
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        invocation.expect_ternary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 }
 
@@ -3544,11 +1821,7 @@ where
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 #[derive(Debug)]
 struct HorizontalConcatenateSM1SM1<T> {
-    e0: Ref<T>,
-    e1: Ref<Matrix1<T>>,
-    e2: Ref<T>,
-    e3: Ref<Matrix1<T>>,
-    out: Ref<RowVector4<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateSM1SM1<T>
@@ -3574,58 +1847,13 @@ where
         <Matrix1<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
-    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
-        let e0: Ref<T> = arg0.try_ref()?;
-        let e1: Ref<Matrix1<T>> = arg1.try_ref()?;
-        let e2: Ref<T> = arg2.try_ref()?;
-        let e3: Ref<Matrix1<T>> = arg3.try_ref()?;
-        let out: Ref<RowVector4<T>> = out.try_ref()?;
-        Ok(Box::new(Self {
-            e0,
-            e1,
-            e2,
-            e3,
-            out,
-        }))
-    }
-}
-#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
-impl<T> MechFunctionImpl for HorizontalConcatenateSM1SM1<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_val = self.e0.borrow().clone();
-            let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let e2_val = self.e2.borrow().clone();
-            let e3_ptr = (*(self.e3.as_ptr())).clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_val;
-            out_ptr[1] = e1_ptr[0].clone();
-            out_ptr[2] = e2_val;
-            out_ptr[3] = e3_ptr[0].clone();
-        };
-        Ok(())
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
     }
 
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
-#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateSM1SM1<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateSM1SM1<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx);
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        invocation.expect_quaternary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 }
 
@@ -3634,10 +1862,7 @@ where
 #[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
 #[derive(Debug)]
 struct HorizontalConcatenateM1R2S<T> {
-    e0: Ref<Matrix1<T>>,
-    e1: Ref<RowVector2<T>>,
-    e2: Ref<T>,
-    out: Ref<RowVector4<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateM1R2S<T>
@@ -3662,50 +1887,13 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
-    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
-        let e0: Ref<Matrix1<T>> = arg0.try_ref()?;
-        let e1: Ref<RowVector2<T>> = arg1.try_ref()?;
-        let e2: Ref<T> = arg2.try_ref()?;
-        let out: Ref<RowVector4<T>> = out.try_ref()?;
-        Ok(Box::new(Self { e0, e1, e2, out }))
-    }
-}
-#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
-impl<T> MechFunctionImpl for HorizontalConcatenateM1R2S<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let e2_val = self.e2.borrow().clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr[0].clone();
-            out_ptr[1] = e1_ptr[0].clone();
-            out_ptr[2] = e1_ptr[1].clone();
-            out_ptr[3] = e2_val;
-        };
-        Ok(())
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
     }
 
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
-#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateM1R2S<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateM1R2S<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx);
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        invocation.expect_ternary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 }
 
@@ -3714,10 +1902,7 @@ where
 #[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
 #[derive(Debug)]
 struct HorizontalConcatenateR2M1S<T> {
-    e0: Ref<RowVector2<T>>,
-    e1: Ref<Matrix1<T>>,
-    e2: Ref<T>,
-    out: Ref<RowVector4<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateR2M1S<T>
@@ -3742,50 +1927,13 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
-    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
-        let e0: Ref<RowVector2<T>> = arg0.try_ref()?;
-        let e1: Ref<Matrix1<T>> = arg1.try_ref()?;
-        let e2: Ref<T> = arg2.try_ref()?;
-        let out: Ref<RowVector4<T>> = out.try_ref()?;
-        Ok(Box::new(Self { e0, e1, e2, out }))
-    }
-}
-#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
-impl<T> MechFunctionImpl for HorizontalConcatenateR2M1S<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let e2_val = self.e2.borrow().clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr[0].clone();
-            out_ptr[1] = e0_ptr[1].clone();
-            out_ptr[2] = e1_ptr[0].clone();
-            out_ptr[3] = e2_val;
-        };
-        Ok(())
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
     }
 
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
-#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateR2M1S<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateR2M1S<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx);
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        invocation.expect_ternary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 }
 
@@ -3794,10 +1942,7 @@ where
 #[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
 #[derive(Debug)]
 struct HorizontalConcatenateR2SM1<T> {
-    e0: Ref<RowVector2<T>>,
-    e1: Ref<T>,
-    e2: Ref<Matrix1<T>>,
-    out: Ref<RowVector4<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateR2SM1<T>
@@ -3822,50 +1967,13 @@ where
         <Matrix1<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
-    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
-        let e0: Ref<RowVector2<T>> = arg0.try_ref()?;
-        let e1: Ref<T> = arg1.try_ref()?;
-        let e2: Ref<Matrix1<T>> = arg2.try_ref()?;
-        let out: Ref<RowVector4<T>> = out.try_ref()?;
-        Ok(Box::new(Self { e0, e1, e2, out }))
-    }
-}
-#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
-impl<T> MechFunctionImpl for HorizontalConcatenateR2SM1<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let e1_val = self.e1.borrow().clone();
-            let e2_ptr = (*(self.e2.as_ptr())).clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr[0].clone();
-            out_ptr[1] = e0_ptr[1].clone();
-            out_ptr[2] = e1_val;
-            out_ptr[3] = e2_ptr[0].clone();
-        };
-        Ok(())
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
     }
 
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
-#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateR2SM1<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateR2SM1<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx);
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        invocation.expect_ternary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 }
 
@@ -3874,10 +1982,7 @@ where
 #[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
 #[derive(Debug)]
 struct HorizontalConcatenateSR2M1<T> {
-    e0: Ref<T>,
-    e1: Ref<RowVector2<T>>,
-    e2: Ref<Matrix1<T>>,
-    out: Ref<RowVector4<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateSR2M1<T>
@@ -3902,50 +2007,13 @@ where
         <Matrix1<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
-    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1, arg2) = invocation.expect_ternary()?;
-        let e0: Ref<T> = arg0.try_ref()?;
-        let e1: Ref<RowVector2<T>> = arg1.try_ref()?;
-        let e2: Ref<Matrix1<T>> = arg2.try_ref()?;
-        let out: Ref<RowVector4<T>> = out.try_ref()?;
-        Ok(Box::new(Self { e0, e1, e2, out }))
-    }
-}
-#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
-impl<T> MechFunctionImpl for HorizontalConcatenateSR2M1<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_val = self.e0.borrow().clone();
-            let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let e2_ptr = (*(self.e2.as_ptr())).clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_val;
-            out_ptr[1] = e1_ptr[0].clone();
-            out_ptr[2] = e1_ptr[1].clone();
-            out_ptr[3] = e2_ptr[0].clone();
-        };
-        Ok(())
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
     }
 
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
-#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateSR2M1<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateSR2M1<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx);
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        invocation.expect_ternary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 }
 
@@ -3954,11 +2022,7 @@ where
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 #[derive(Debug)]
 struct HorizontalConcatenateSSM1M1<T> {
-    e0: Ref<T>,
-    e1: Ref<T>,
-    e2: Ref<Matrix1<T>>,
-    e3: Ref<Matrix1<T>>,
-    out: Ref<RowVector4<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateSSM1M1<T>
@@ -3984,58 +2048,13 @@ where
         <Matrix1<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
-    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
-        let e0: Ref<T> = arg0.try_ref()?;
-        let e1: Ref<T> = arg1.try_ref()?;
-        let e2: Ref<Matrix1<T>> = arg2.try_ref()?;
-        let e3: Ref<Matrix1<T>> = arg3.try_ref()?;
-        let out: Ref<RowVector4<T>> = out.try_ref()?;
-        Ok(Box::new(Self {
-            e0,
-            e1,
-            e2,
-            e3,
-            out,
-        }))
-    }
-}
-#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
-impl<T> MechFunctionImpl for HorizontalConcatenateSSM1M1<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_val = self.e0.borrow().clone();
-            let e1_val = self.e1.borrow().clone();
-            let e2_ptr = (*(self.e2.as_ptr())).clone();
-            let e3_ptr = (*(self.e3.as_ptr())).clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_val;
-            out_ptr[1] = e1_val;
-            out_ptr[2] = e2_ptr[0].clone();
-            out_ptr[3] = e3_ptr[0].clone();
-        };
-        Ok(())
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
     }
 
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
-#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateSSM1M1<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateSSM1M1<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx);
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        invocation.expect_quaternary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 }
 
@@ -4044,11 +2063,7 @@ where
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 #[derive(Debug)]
 struct HorizontalConcatenateM1M1SS<T> {
-    e0: Ref<Matrix1<T>>,
-    e1: Ref<Matrix1<T>>,
-    e2: Ref<T>,
-    e3: Ref<T>,
-    out: Ref<RowVector4<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateM1M1SS<T>
@@ -4074,58 +2089,13 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
-    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
-        let e0: Ref<Matrix1<T>> = arg0.try_ref()?;
-        let e1: Ref<Matrix1<T>> = arg1.try_ref()?;
-        let e2: Ref<T> = arg2.try_ref()?;
-        let e3: Ref<T> = arg3.try_ref()?;
-        let out: Ref<RowVector4<T>> = out.try_ref()?;
-        Ok(Box::new(Self {
-            e0,
-            e1,
-            e2,
-            e3,
-            out,
-        }))
-    }
-}
-#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
-impl<T> MechFunctionImpl for HorizontalConcatenateM1M1SS<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let e2_val = self.e2.borrow().clone();
-            let e3_val = self.e3.borrow().clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr[0].clone();
-            out_ptr[1] = e1_ptr[0].clone();
-            out_ptr[2] = e2_val;
-            out_ptr[3] = e3_val;
-        };
-        Ok(())
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
     }
 
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
-#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateM1M1SS<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateM1M1SS<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx);
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        invocation.expect_quaternary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 }
 
@@ -4134,11 +2104,7 @@ where
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 #[derive(Debug)]
 struct HorizontalConcatenateSM1M1S<T> {
-    e0: Ref<T>,
-    e1: Ref<Matrix1<T>>,
-    e2: Ref<Matrix1<T>>,
-    e3: Ref<T>,
-    out: Ref<RowVector4<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateSM1M1S<T>
@@ -4164,58 +2130,13 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
-    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
-        let e0: Ref<T> = arg0.try_ref()?;
-        let e1: Ref<Matrix1<T>> = arg1.try_ref()?;
-        let e2: Ref<Matrix1<T>> = arg2.try_ref()?;
-        let e3: Ref<T> = arg3.try_ref()?;
-        let out: Ref<RowVector4<T>> = out.try_ref()?;
-        Ok(Box::new(Self {
-            e0,
-            e1,
-            e2,
-            e3,
-            out,
-        }))
-    }
-}
-#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
-impl<T> MechFunctionImpl for HorizontalConcatenateSM1M1S<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_val = self.e0.borrow().clone();
-            let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let e2_ptr = (*(self.e2.as_ptr())).clone();
-            let e3_val = self.e3.borrow().clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_val;
-            out_ptr[1] = e1_ptr[0].clone();
-            out_ptr[2] = e2_ptr[0].clone();
-            out_ptr[3] = e3_val;
-        };
-        Ok(())
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
     }
 
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
-#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateSM1M1S<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateSM1M1S<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx);
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        invocation.expect_quaternary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 }
 
@@ -4224,11 +2145,7 @@ where
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 #[derive(Debug)]
 struct HorizontalConcatenateM1SSM1<T> {
-    e0: Ref<Matrix1<T>>,
-    e1: Ref<T>,
-    e2: Ref<T>,
-    e3: Ref<Matrix1<T>>,
-    out: Ref<RowVector4<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateM1SSM1<T>
@@ -4254,58 +2171,13 @@ where
         <Matrix1<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
-    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
-        let e0: Ref<Matrix1<T>> = arg0.try_ref()?;
-        let e1: Ref<T> = arg1.try_ref()?;
-        let e2: Ref<T> = arg2.try_ref()?;
-        let e3: Ref<Matrix1<T>> = arg3.try_ref()?;
-        let out: Ref<RowVector4<T>> = out.try_ref()?;
-        Ok(Box::new(Self {
-            e0,
-            e1,
-            e2,
-            e3,
-            out,
-        }))
-    }
-}
-#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
-impl<T> MechFunctionImpl for HorizontalConcatenateM1SSM1<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let e1_val = self.e1.borrow().clone();
-            let e2_val = self.e2.borrow().clone();
-            let e3_ptr = (*(self.e3.as_ptr())).clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr[0].clone();
-            out_ptr[1] = e1_val;
-            out_ptr[2] = e2_val;
-            out_ptr[3] = e3_ptr[0].clone();
-        };
-        Ok(())
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
     }
 
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
-#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateM1SSM1<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateM1SSM1<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx);
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        invocation.expect_quaternary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 }
 
@@ -4314,11 +2186,7 @@ where
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 #[derive(Debug)]
 struct HorizontalConcatenateM1SM1S<T> {
-    e0: Ref<Matrix1<T>>,
-    e1: Ref<T>,
-    e2: Ref<Matrix1<T>>,
-    e3: Ref<T>,
-    out: Ref<RowVector4<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateM1SM1S<T>
@@ -4344,178 +2212,66 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
-    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
-        let e0: Ref<Matrix1<T>> = arg0.try_ref()?;
-        let e1: Ref<T> = arg1.try_ref()?;
-        let e2: Ref<Matrix1<T>> = arg2.try_ref()?;
-        let e3: Ref<T> = arg3.try_ref()?;
-        let out: Ref<RowVector4<T>> = out.try_ref()?;
-        Ok(Box::new(Self {
-            e0,
-            e1,
-            e2,
-            e3,
-            out,
-        }))
-    }
-}
-#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
-impl<T> MechFunctionImpl for HorizontalConcatenateM1SM1S<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let e1_val = self.e1.borrow().clone();
-            let e2_ptr = (*(self.e2.as_ptr())).clone();
-            let e3_val = self.e3.borrow().clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr[0].clone();
-            out_ptr[1] = e1_val;
-            out_ptr[2] = e2_ptr[0].clone();
-            out_ptr[3] = e3_val;
-        };
-        Ok(())
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
     }
 
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
-#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateM1SM1S<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateM1SM1S<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx);
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        invocation.expect_quaternary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 }
 
 // HorizontalConcatenateM1R2 --------------------------------------------------
 
 #[cfg(all(feature = "row_vector3", feature = "matrix1", feature = "row_vector2"))]
-macro_rules! horzcat_m1r2 {
-    ($out:expr, $e0:expr, $e1:expr) => {
-        $out[0] = $e0[0].clone();
-        $out[1] = $e1[0].clone();
-        $out[2] = $e1[1].clone();
-    };
-}
-#[cfg(all(feature = "row_vector3", feature = "matrix1", feature = "row_vector2"))]
-horzcat_two_args!(
-    HorizontalConcatenateM1R2,
-    Matrix1,
-    RowVector2,
-    RowVector3,
-    horzcat_m1r2
-);
+horzcat_two_args!(HorizontalConcatenateM1R2, Matrix1, RowVector2, RowVector3);
 
 // HorizontalConcatenateR2M1 --------------------------------------------------
 
 #[cfg(all(feature = "row_vector3", feature = "matrix1", feature = "row_vector2"))]
-macro_rules! horzcat_r2m1 {
-    ($out:expr, $e0:expr, $e1:expr) => {
-        $out[0] = $e0[0].clone();
-        $out[1] = $e0[1].clone();
-        $out[2] = $e1[0].clone();
-    };
-}
-#[cfg(all(feature = "row_vector3", feature = "matrix1", feature = "row_vector2"))]
-horzcat_two_args!(
-    HorizontalConcatenateR2M1,
-    RowVector2,
-    Matrix1,
-    RowVector3,
-    horzcat_r2m1
-);
+horzcat_two_args!(HorizontalConcatenateR2M1, RowVector2, Matrix1, RowVector3);
 
 // HorizontalConcatenateM1M1M1 ------------------------------------------------
 
-#[cfg(all(feature = "row_vector3", feature = "matrix1"))]
-macro_rules! horzcat_m1m1m1 {
-    ($out:expr, $e0:expr,$e1:expr,$e2:expr) => {
-        $out[0] = $e0[0].clone();
-        $out[1] = $e1[0].clone();
-        $out[2] = $e2[0].clone();
-    };
-}
 #[cfg(all(feature = "row_vector3", feature = "matrix1"))]
 horzcat_three_args!(
     HorizontalConcatenateM1M1M1,
     Matrix1,
     Matrix1,
     Matrix1,
-    RowVector3,
-    horzcat_m1m1m1
+    RowVector3
 );
 
 // HorizontalConcatenateM1M1R2 ------------------------------------------------
 
-#[cfg(all(feature = "row_vector4", feature = "matrix1", feature = "row_vector2"))]
-macro_rules! horzcat_m1m1r2 {
-    ($out:expr, $e0:expr, $e1:expr, $e2:expr) => {
-        $out[0] = $e0[0].clone();
-        $out[1] = $e1[0].clone();
-        $out[2] = $e2[0].clone();
-        $out[3] = $e2[1].clone();
-    };
-}
 #[cfg(all(feature = "row_vector4", feature = "matrix1", feature = "row_vector2"))]
 horzcat_three_args!(
     HorizontalConcatenateM1M1R2,
     Matrix1,
     Matrix1,
     RowVector2,
-    RowVector4,
-    horzcat_m1m1r2
+    RowVector4
 );
 
 // HorizontalConcatenateM1R2M1 ------------------------------------------------
 
-#[cfg(all(feature = "row_vector4", feature = "matrix1", feature = "row_vector2"))]
-macro_rules! horzcat_m1r2m1 {
-    ($out:expr, $e0:expr, $e1:expr, $e2:expr) => {
-        $out[0] = $e0[0].clone();
-        $out[1] = $e1[0].clone();
-        $out[2] = $e1[1].clone();
-        $out[3] = $e2[0].clone();
-    };
-}
 #[cfg(all(feature = "row_vector4", feature = "matrix1", feature = "row_vector2"))]
 horzcat_three_args!(
     HorizontalConcatenateM1R2M1,
     Matrix1,
     RowVector2,
     Matrix1,
-    RowVector4,
-    horzcat_m1r2m1
+    RowVector4
 );
 
-#[cfg(all(feature = "row_vector4", feature = "matrix1", feature = "row_vector2"))]
-macro_rules! horzcat_r2m1m1 {
-    ($out:expr, $e0:expr, $e1:expr, $e2:expr) => {
-        $out[0] = $e0[0].clone();
-        $out[1] = $e0[1].clone();
-        $out[2] = $e1[0].clone();
-        $out[3] = $e2[0].clone();
-    };
-}
 #[cfg(all(feature = "row_vector4", feature = "matrix1", feature = "row_vector2"))]
 horzcat_three_args!(
     HorizontalConcatenateR2M1M1,
     RowVector2,
     Matrix1,
     Matrix1,
-    RowVector4,
-    horzcat_r2m1m1
+    RowVector4
 );
 
 // HorizontalConcatenateSM1M1M1 -----------------------------------------------
@@ -4523,11 +2279,7 @@ horzcat_three_args!(
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 #[derive(Debug)]
 struct HorizontalConcatenateSM1M1M1<T> {
-    e0: Ref<T>,
-    e1: Ref<Matrix1<T>>,
-    e2: Ref<Matrix1<T>>,
-    e3: Ref<Matrix1<T>>,
-    out: Ref<RowVector4<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateSM1M1M1<T>
@@ -4553,58 +2305,13 @@ where
         <Matrix1<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
-    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
-        let e0: Ref<T> = arg0.try_ref()?;
-        let e1: Ref<Matrix1<T>> = arg1.try_ref()?;
-        let e2: Ref<Matrix1<T>> = arg2.try_ref()?;
-        let e3: Ref<Matrix1<T>> = arg3.try_ref()?;
-        let out: Ref<RowVector4<T>> = out.try_ref()?;
-        Ok(Box::new(Self {
-            e0,
-            e1,
-            e2,
-            e3,
-            out,
-        }))
-    }
-}
-#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
-impl<T> MechFunctionImpl for HorizontalConcatenateSM1M1M1<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_val = self.e0.borrow().clone();
-            let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let e2_ptr = (*(self.e2.as_ptr())).clone();
-            let e3_ptr = (*(self.e3.as_ptr())).clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_val;
-            out_ptr[1] = e1_ptr[0].clone();
-            out_ptr[2] = e2_ptr[0].clone();
-            out_ptr[3] = e3_ptr[0].clone();
-        };
-        Ok(())
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
     }
 
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
-#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateSM1M1M1<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateSM1M1M1<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx);
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        invocation.expect_quaternary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 }
 
@@ -4613,11 +2320,7 @@ where
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 #[derive(Debug)]
 struct HorizontalConcatenateM1SM1M1<T> {
-    e0: Ref<Matrix1<T>>,
-    e1: Ref<T>,
-    e2: Ref<Matrix1<T>>,
-    e3: Ref<Matrix1<T>>,
-    out: Ref<RowVector4<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateM1SM1M1<T>
@@ -4643,58 +2346,13 @@ where
         <Matrix1<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
-    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
-        let e0: Ref<Matrix1<T>> = arg0.try_ref()?;
-        let e1: Ref<T> = arg1.try_ref()?;
-        let e2: Ref<Matrix1<T>> = arg2.try_ref()?;
-        let e3: Ref<Matrix1<T>> = arg3.try_ref()?;
-        let out: Ref<RowVector4<T>> = out.try_ref()?;
-        Ok(Box::new(Self {
-            e0,
-            e1,
-            e2,
-            e3,
-            out,
-        }))
-    }
-}
-#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
-impl<T> MechFunctionImpl for HorizontalConcatenateM1SM1M1<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let e1_val = self.e1.borrow().clone();
-            let e2_ptr = (*(self.e2.as_ptr())).clone();
-            let e3_ptr = (*(self.e3.as_ptr())).clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr[0].clone();
-            out_ptr[1] = e1_val;
-            out_ptr[2] = e2_ptr[0].clone();
-            out_ptr[3] = e3_ptr[0].clone();
-        };
-        Ok(())
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
     }
 
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
-#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateM1SM1M1<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateM1SM1M1<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx);
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        invocation.expect_quaternary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 }
 
@@ -4703,11 +2361,7 @@ where
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 #[derive(Debug)]
 struct HorizontalConcatenateM1M1SM1<T> {
-    e0: Ref<Matrix1<T>>,
-    e1: Ref<Matrix1<T>>,
-    e2: Ref<T>,
-    e3: Ref<Matrix1<T>>,
-    out: Ref<RowVector4<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateM1M1SM1<T>
@@ -4733,61 +2387,13 @@ where
         <Matrix1<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
-    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
-        let e0: Ref<Matrix1<T>> = arg0.try_ref()?;
-        let e1: Ref<Matrix1<T>> = arg1.try_ref()?;
-        let e2: Ref<T> = arg2.try_ref()?;
-        let e3: Ref<Matrix1<T>> = arg3.try_ref()?;
-        let out: Ref<RowVector4<T>> = out.try_ref()?;
-        Ok(Box::new(Self {
-            e0,
-            e1,
-            e2,
-            e3,
-            out,
-        }))
-    }
-}
-#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
-impl<T> MechFunctionImpl for HorizontalConcatenateM1M1SM1<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let e2_val = self.e2.borrow().clone();
-            let e3_ptr = (*(self.e3.as_ptr())).clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr[0].clone();
-            out_ptr[1] = e1_ptr[0].clone();
-            out_ptr[2] = e2_val;
-            out_ptr[3] = e3_ptr[0].clone();
-        };
-        Ok(())
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
     }
 
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
-#[cfg(all(
-    feature = "row_vector4",
-    feature = "matrix1",
-    feature = "semantic-compiler"
-))]
-impl<T> MechFunctionCompiler for HorizontalConcatenateM1M1SM1<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateM1M1SM1<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx);
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        invocation.expect_quaternary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 }
 
@@ -4796,11 +2402,7 @@ where
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 #[derive(Debug)]
 struct HorizontalConcatenateM1M1M1S<T> {
-    e0: Ref<Matrix1<T>>,
-    e1: Ref<Matrix1<T>>,
-    e2: Ref<Matrix1<T>>,
-    e3: Ref<T>,
-    out: Ref<RowVector4<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateM1M1M1S<T>
@@ -4826,61 +2428,13 @@ where
         <T as FunctionRuntimeType>::REPRESENTATION,
     );
 
-    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
-        let e0: Ref<Matrix1<T>> = arg0.try_ref()?;
-        let e1: Ref<Matrix1<T>> = arg1.try_ref()?;
-        let e2: Ref<Matrix1<T>> = arg2.try_ref()?;
-        let e3: Ref<T> = arg3.try_ref()?;
-        let out: Ref<RowVector4<T>> = out.try_ref()?;
-        Ok(Box::new(Self {
-            e0,
-            e1,
-            e2,
-            e3,
-            out,
-        }))
-    }
-}
-#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
-impl<T> MechFunctionImpl for HorizontalConcatenateM1M1M1S<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let e2_ptr = (*(self.e2.as_ptr())).clone();
-            let e3_val = self.e3.borrow().clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr[0].clone();
-            out_ptr[1] = e1_ptr[0].clone();
-            out_ptr[2] = e2_ptr[0].clone();
-            out_ptr[3] = e3_val;
-        };
-        Ok(())
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
     }
 
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
-#[cfg(all(
-    feature = "row_vector4",
-    feature = "matrix1",
-    feature = "semantic-compiler"
-))]
-impl<T> MechFunctionCompiler for HorizontalConcatenateM1M1M1S<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateM1M1M1S<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx);
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        invocation.expect_quaternary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 }
 
@@ -4889,11 +2443,7 @@ where
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 #[derive(Debug)]
 struct HorizontalConcatenateM1M1M1M1<T> {
-    e0: Ref<Matrix1<T>>,
-    e1: Ref<Matrix1<T>>,
-    e2: Ref<Matrix1<T>>,
-    e3: Ref<Matrix1<T>>,
-    out: Ref<RowVector4<T>>,
+    _marker: PhantomData<T>,
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateM1M1M1M1<T>
@@ -4919,294 +2469,60 @@ where
         <Matrix1<T> as FunctionRuntimeType>::REPRESENTATION,
     );
 
-    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg0, arg1, arg2, arg3) = invocation.expect_quaternary()?;
-        let e0: Ref<Matrix1<T>> = arg0.try_ref()?;
-        let e1: Ref<Matrix1<T>> = arg1.try_ref()?;
-        let e2: Ref<Matrix1<T>> = arg2.try_ref()?;
-        let e3: Ref<Matrix1<T>> = arg3.try_ref()?;
-        let out: Ref<RowVector4<T>> = out.try_ref()?;
-        Ok(Box::new(Self {
-            e0,
-            e1,
-            e2,
-            e3,
-            out,
-        }))
-    }
-}
-#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
-impl<T> MechFunctionImpl for HorizontalConcatenateM1M1M1M1<T>
-where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static,
-{
-    fn solve_result(&self) -> MResult<()> {
-        unsafe {
-            let e0_ptr = (*(self.e0.as_ptr())).clone();
-            let e1_ptr = (*(self.e1.as_ptr())).clone();
-            let e2_ptr = (*(self.e2.as_ptr())).clone();
-            let e3_ptr = (*(self.e3.as_ptr())).clone();
-            let out_ptr = &mut *(self.out.as_mut_ptr());
-            out_ptr[0] = e0_ptr[0].clone();
-            out_ptr[1] = e1_ptr[0].clone();
-            out_ptr[2] = e2_ptr[0].clone();
-            out_ptr[3] = e3_ptr[0].clone();
-        };
-        Ok(())
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
     }
 
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
-#[cfg(all(
-    feature = "row_vector4",
-    feature = "matrix1",
-    feature = "semantic-compiler"
-))]
-impl<T> MechFunctionCompiler for HorizontalConcatenateM1M1M1M1<T>
-where
-    T: ConstElem + CompileConst + FunctionRuntimeType + CanonicalMatrixElementBacking,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!(
-            "HorizontalConcatenateM1M1M1M1<{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION
-        );
-        compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx);
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        invocation.expect_quaternary()?;
+        crate::intrinsics::constructors::managed_legacy_matrix_concatenation::<false>(invocation)
     }
 }
 
 // HorizontalConcatenateV2V2 -------------------------------------------------
 
 #[cfg(all(feature = "vector2", feature = "matrix2"))]
-macro_rules! horzcat_v2v2 {
-    ($out:expr, $e0:expr, $e1:expr) => {
-        $out[0] = $e0[0].clone();
-        $out[1] = $e0[1].clone();
-        $out[2] = $e1[0].clone();
-        $out[3] = $e1[1].clone();
-    };
-}
-#[cfg(all(feature = "vector2", feature = "matrix2"))]
-horzcat_two_args!(
-    HorizontalConcatenateV2V2,
-    Vector2,
-    Vector2,
-    Matrix2,
-    horzcat_v2v2
-);
+horzcat_two_args!(HorizontalConcatenateV2V2, Vector2, Vector2, Matrix2);
 
 #[cfg(all(feature = "vector3", feature = "matrix3x2"))]
-macro_rules! horzcat_v3v3 {
-    ($out:expr, $e0:expr, $e1:expr) => {
-        $out[0] = $e0[0].clone();
-        $out[1] = $e0[1].clone();
-        $out[2] = $e0[2].clone();
-        $out[3] = $e1[0].clone();
-        $out[4] = $e1[1].clone();
-        $out[5] = $e1[2].clone();
-    };
-}
-#[cfg(all(feature = "vector3", feature = "matrix3x2"))]
-horzcat_two_args!(
-    HorizontalConcatenateV3V3,
-    Vector3,
-    Vector3,
-    Matrix3x2,
-    horzcat_v3v3
-);
+horzcat_two_args!(HorizontalConcatenateV3V3, Vector3, Vector3, Matrix3x2);
 
 // HorizontalConcatenateV2M2 --------------------------------------------------
 
 #[cfg(all(feature = "vector2", feature = "matrix2", feature = "matrix2x3"))]
-macro_rules! horzcat_v2m2 {
-    ($out:expr, $e0:expr, $e1:expr) => {
-        $out[0] = $e0[0].clone();
-        $out[1] = $e0[1].clone();
-        $out[2] = $e1[0].clone();
-        $out[3] = $e1[1].clone();
-        $out[4] = $e1[2].clone();
-        $out[5] = $e1[3].clone();
-    };
-}
-#[cfg(all(feature = "vector2", feature = "matrix2", feature = "matrix2x3"))]
-horzcat_two_args!(
-    HorizontalConcatenateV2M2,
-    Vector2,
-    Matrix2,
-    Matrix2x3,
-    horzcat_v2m2
-);
+horzcat_two_args!(HorizontalConcatenateV2M2, Vector2, Matrix2, Matrix2x3);
 
 // HorizontalConcatenateM2V2 --------------------------------------------------
 
 #[cfg(all(feature = "vector2", feature = "matrix2", feature = "matrix2x3"))]
-macro_rules! horzcat_m2v2 {
-    ($out:expr, $e0:expr, $e1:expr) => {
-        $out[0] = $e0[0].clone();
-        $out[1] = $e0[1].clone();
-        $out[2] = $e0[2].clone();
-        $out[3] = $e0[3].clone();
-        $out[4] = $e1[0].clone();
-        $out[5] = $e1[1].clone();
-    };
-}
-#[cfg(all(feature = "vector2", feature = "matrix2", feature = "matrix2x3"))]
-horzcat_two_args!(
-    HorizontalConcatenateM2V2,
-    Matrix2,
-    Vector2,
-    Matrix2x3,
-    horzcat_m2v2
-);
+horzcat_two_args!(HorizontalConcatenateM2V2, Matrix2, Vector2, Matrix2x3);
 
 // HorizontalConcatenateM3x2V3 ------------------------------------------------
 
 #[cfg(all(feature = "vector3", feature = "matrix3x2", feature = "matrix3"))]
-macro_rules! horzcat_m3x2v3 {
-    ($out:expr, $e0:expr, $e1:expr) => {
-        $out[0] = $e0[0].clone();
-        $out[1] = $e0[1].clone();
-        $out[2] = $e0[2].clone();
-        $out[3] = $e0[3].clone();
-        $out[4] = $e0[4].clone();
-        $out[5] = $e0[5].clone();
-        $out[6] = $e1[0].clone();
-        $out[7] = $e1[1].clone();
-        $out[8] = $e1[2].clone();
-    };
-}
-#[cfg(all(feature = "vector3", feature = "matrix3x2", feature = "matrix3"))]
-horzcat_two_args!(
-    HorizontalConcatenateM3x2V3,
-    Matrix3x2,
-    Vector3,
-    Matrix3,
-    horzcat_m3x2v3
-);
+horzcat_two_args!(HorizontalConcatenateM3x2V3, Matrix3x2, Vector3, Matrix3);
 
 // HorizontalConcatenateV3M3x2 ------------------------------------------------
 
 #[cfg(all(feature = "vector3", feature = "matrix3x2", feature = "matrix3"))]
-macro_rules! horzcat_v3m3x2 {
-    ($out:expr, $e0:expr, $e1:expr) => {
-        $out[0] = $e0[0].clone();
-        $out[1] = $e0[1].clone();
-        $out[2] = $e0[2].clone();
-        $out[3] = $e1[0].clone();
-        $out[4] = $e1[1].clone();
-        $out[5] = $e1[2].clone();
-        $out[6] = $e1[3].clone();
-        $out[7] = $e1[4].clone();
-        $out[8] = $e1[5].clone();
-    };
-}
-#[cfg(all(feature = "vector3", feature = "matrix3x2", feature = "matrix3"))]
-horzcat_two_args!(
-    HorizontalConcatenateV3M3x2,
-    Vector3,
-    Matrix3x2,
-    Matrix3,
-    horzcat_v3m3x2
-);
+horzcat_two_args!(HorizontalConcatenateV3M3x2, Vector3, Matrix3x2, Matrix3);
 
 // HorizontalConcatenateV4V4 --------------------------------------------------
 
 #[cfg(all(feature = "matrixd", feature = "matrix4", feature = "vector4"))]
-macro_rules! horzcat_v4md {
-    ($out:expr, $e0:expr, $e1:expr) => {
-        $out[0] = $e0[0].clone();
-        $out[1] = $e0[1].clone();
-        $out[2] = $e0[2].clone();
-        $out[3] = $e0[3].clone();
-        let offset = 4;
-        for i in 0..$e1.len() {
-            $out[i + offset] = $e1[i].clone();
-        }
-    };
-}
-#[cfg(all(feature = "matrixd", feature = "matrix4", feature = "vector4"))]
-horzcat_two_args!(
-    HorizontalConcatenateV4MD,
-    Vector4,
-    DMatrix,
-    Matrix4,
-    horzcat_v4md
-);
+horzcat_two_args!(HorizontalConcatenateV4MD, Vector4, DMatrix, Matrix4);
 
 // HorizontalConcatenateMDV4 --------------------------------------------------
 
 #[cfg(all(feature = "matrixd", feature = "matrix4", feature = "vector4"))]
-macro_rules! horzcat_mdv4 {
-    ($out:expr, $e0:expr, $e1:expr) => {
-        let e0_len = $e0.len();
-        for i in 0..e0_len {
-            $out[i] = $e0[i].clone();
-        }
-        let offset = e0_len;
-        $out[offset] = $e1[0].clone();
-        $out[offset + 1] = $e1[1].clone();
-        $out[offset + 2] = $e1[2].clone();
-        $out[offset + 3] = $e1[3].clone();
-    };
-}
-#[cfg(all(feature = "matrixd", feature = "matrix4", feature = "vector4"))]
-horzcat_two_args!(
-    HorizontalConcatenateMDV4,
-    DMatrix,
-    Vector4,
-    Matrix4,
-    horzcat_mdv4
-);
+horzcat_two_args!(HorizontalConcatenateMDV4, DMatrix, Vector4, Matrix4);
 
 // HorizontalConcatenateMDV4 --------------------------------------------------
 
 #[cfg(all(feature = "matrixd", feature = "matrix4"))]
-macro_rules! horzcat_mdmd {
-    ($out:expr, $e0:expr, $e1:expr) => {
-        let e0_len = $e0.len();
-        for i in 0..e0_len {
-            $out[i] = $e0[i].clone();
-        }
-        let offset = e0_len;
-        for i in 0..$e1.len() {
-            $out[i + offset] = $e1[i].clone();
-        }
-    };
-}
-#[cfg(all(feature = "matrixd", feature = "matrix4"))]
-horzcat_two_args!(
-    HorizontalConcatenateMDMD,
-    DMatrix,
-    DMatrix,
-    Matrix4,
-    horzcat_mdmd
-);
+horzcat_two_args!(HorizontalConcatenateMDMD, DMatrix, DMatrix, Matrix4);
 
 // HorizontalConcatenateMDMDMD ------------------------------------------------
-
-#[cfg(any(
-    all(feature = "vector2", feature = "matrix2x3"),
-    all(feature = "vector3", feature = "matrix3"),
-    all(feature = "matrixd", feature = "vector4", feature = "matrix4")
-))]
-macro_rules! horzcat_mdmdmd {
-    ($out:expr, $e0:expr, $e1:expr, $e2:expr) => {
-        let e0_len = $e0.len();
-        for i in 0..e0_len {
-            $out[i] = $e0[i].clone();
-        }
-        let offset = e0_len;
-        for i in 0..$e1.len() {
-            $out[i + offset] = $e1[i].clone();
-        }
-        let offset = offset + $e1.len();
-        for i in 0..$e2.len() {
-            $out[i + offset] = $e2[i].clone();
-        }
-    };
-}
 
 // HorizontalConcatenateV2V2V2 ------------------------------------------------
 
@@ -5216,8 +2532,7 @@ horzcat_three_args!(
     Vector2,
     Vector2,
     Vector2,
-    Matrix2x3,
-    horzcat_mdmdmd
+    Matrix2x3
 );
 
 // HorizontalConcatenateV3V3V3 ------------------------------------------------
@@ -5228,8 +2543,7 @@ horzcat_three_args!(
     Vector3,
     Vector3,
     Vector3,
-    Matrix3,
-    horzcat_mdmdmd
+    Matrix3
 );
 
 // HorizontalConcatenateV2V2MD ------------------------------------------------
@@ -5240,8 +2554,7 @@ horzcat_three_args!(
     Vector4,
     Vector4,
     DMatrix,
-    Matrix4,
-    horzcat_mdmdmd
+    Matrix4
 );
 
 // HorizontalConcatenateV2MDV2 ------------------------------------------------
@@ -5252,8 +2565,7 @@ horzcat_three_args!(
     Vector4,
     DMatrix,
     Vector4,
-    Matrix4,
-    horzcat_mdmdmd
+    Matrix4
 );
 
 // HorizontalConcatenateMDV2V2 ------------------------------------------------
@@ -5264,33 +2576,10 @@ horzcat_three_args!(
     DMatrix,
     Vector4,
     Vector4,
-    Matrix4,
-    horzcat_mdmdmd
+    Matrix4
 );
 
 // HorizontalConcatenateV4V4V4V4 ------------------------------------------------
-
-#[cfg(all(feature = "matrix4", feature = "vector4"))]
-macro_rules! horzcat_mdmdmdmd {
-    ($out:expr, $e0:expr, $e1:expr, $e2:expr, $e3:expr) => {
-        let e0_len = $e0.len();
-        for i in 0..e0_len {
-            $out[i] = $e0[i].clone();
-        }
-        let offset = e0_len;
-        for i in 0..$e1.len() {
-            $out[i + offset] = $e1[i].clone();
-        }
-        let offset = offset + $e1.len();
-        for i in 0..$e2.len() {
-            $out[i + offset] = $e2[i].clone();
-        }
-        let offset = offset + $e2.len();
-        for i in 0..$e3.len() {
-            $out[i + offset] = $e3[i].clone();
-        }
-    };
-}
 
 #[cfg(all(feature = "matrix4", feature = "vector4"))]
 horzcat_four_args!(
@@ -5299,8 +2588,7 @@ horzcat_four_args!(
     Vector4,
     Vector4,
     Vector4,
-    Matrix4,
-    horzcat_mdmdmdmd
+    Matrix4
 );
 
 #[cfg(any(
@@ -5379,6 +2667,7 @@ macro_rules! declare_horzcat_scalar {
                     RuntimeOutputAliasPolicy::DisallowInputAlias,
                     validate_nullary_horizontal_concatenation_canonical,
                 ),
+                compiler_family: mech_core::RuntimeFamilyId::from_name(concat!("HorizontalConcatenateRD<", $name, ">")),
                 package: "mech-engine", crate_name: "mech_engine",
                 installer_path: concat!("mech_engine::__mech_native::install_horizontal_concatenate_r_d_", stringify!($token)),
                 extra_cargo_features: ["matrix_horzcat"],
@@ -5394,6 +2683,7 @@ macro_rules! declare_horzcat_scalar {
                 name: concat!(stringify!($factory), "<", $name, ">"),
                 factory_type: $factory<$scalar>,
                 contract: RuntimeFunctionContract::horizontal_concatenation(RuntimeOutputAliasPolicy::DisallowInputAlias),
+                compiler_family: mech_core::RuntimeFamilyId::from_name(concat!(stringify!($factory), "<", $name, ">")),
                 package: "mech-engine", crate_name: "mech_engine",
                 installer_path: concat!("mech_engine::__mech_native::install_", stringify!([<$factory:snake _ $token>])),
                 extra_cargo_features: ["matrix_horzcat"],
@@ -5853,9 +3143,9 @@ impl CanonicalFunctionSpecializer for MatrixHorzCat {
     fn specialize_invocation(
         &self,
         invocation: &SpecializationInvocation,
-        _: &mut SpecializationContext<'_>,
+        context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
-        ValueMatrixConcatenation::<false>::specialize(invocation)
+        ValueMatrixConcatenation::<false>::specialize(invocation, context)
     }
 }
 

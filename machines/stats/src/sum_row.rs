@@ -4,32 +4,26 @@ use num_traits::*;
 // Stats Sum Row -----------------------------------------------------------
 
 macro_rules! sum_row_op {
-    ($arg:expr, $out:expr) => {
-        {
-            for column in 0..($arg).ncols() {
-                let mut sum = T::zero();
-                for row in 0..($arg).nrows() {
-                    sum = checked_sum_add(sum, ($arg)[(row, column)])?;
-                }
-                ($out)[column] = sum;
-            }
-            Ok::<(), MechError>(())
+    ($arg:expr, $out:expr) => {{
+        if ($out).len() != ($arg).columns() {
+            return Err(function_shape_contract_violation(
+                "stats/sum/row",
+                "row reduction output cardinality disagrees with the input columns",
+            ));
         }
-    };
-}
-
-#[cfg(all(feature = "vectord", feature = "matrixd", not(feature = "matrix1")))]
-macro_rules! sum_row_op2 {
-    ($arg:expr, $out:expr) => {
-        {
+        ($out).try_fill_column_major(|column| {
             let mut sum = T::zero();
-            for value in ($arg).iter().copied() {
-                sum = checked_sum_add(sum, value)?;
+            for row in 0..($arg).rows() {
+                sum = checked_sum_add(
+                    sum,
+                    ($arg)
+                        .get(row, column)
+                        .expect("validated row-reduction input lane"),
+                )?;
             }
-            ($out)[(0, 0)] = sum;
-            Ok::<(), MechError>(())
-        }
-    };
+            Ok(sum)
+        })
+    }};
 }
 
 #[cfg(all(feature = "matrix1", feature = "matrix1"))]
@@ -55,7 +49,7 @@ impls_stas!(StatsSumRowV4, Vector4<T>, Matrix1<T>, sum_row_op);
 #[cfg(all(feature = "vectord", feature = "matrix1"))]
 impls_stas!(StatsSumRowVD, DVector<T>, Matrix1<T>, sum_row_op);
 #[cfg(all(feature = "vectord", feature = "matrixd", not(feature = "matrix1")))]
-impls_stas!(StatsSumRowVDMD, DVector<T>, DMatrix<T>, sum_row_op2);
+impls_stas!(StatsSumRowVDMD, DVector<T>, DMatrix<T>, sum_row_op);
 #[cfg(all(feature = "row_vector2", feature = "row_vector2"))]
 impls_stas!(StatsSumRowR2, RowVector2<T>, RowVector2<T>, sum_row_op);
 #[cfg(all(feature = "row_vector3", feature = "row_vector3"))]
@@ -97,9 +91,10 @@ impl CanonicalFunctionSpecializer for StatsSumRow {
             )
             .with_compiler_loc()
         })?;
-        context.bind_runtime_factory_derived_output(
-            "StatsSumRow",
-            Some((1, shape.cols)),
+        context.bind_resolved_runtime(
+            mech_core::RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
+            mech_core::ExecutionTarget::DirectRuntime,
+            vec![vec![1_u64, shape.cols as u64].into_boxed_slice()].into_boxed_slice(),
             &[input],
         )
     }
@@ -112,27 +107,38 @@ mod checked_sum_tests {
     #[cfg(feature = "u8")]
     #[test]
     fn integer_row_sum_rejects_reactive_overflow_and_retains_output() {
-        let arg = Ref::new(DMatrix::from_row_slice(2, 1, &[1u8, 2]));
-        let out = Ref::new(RowDVector::from_vec(vec![99u8]));
-        let function = StatsSumRowMD::<u8> {
-            arg: arg.clone(),
-            out: out.clone(),
-        };
-        function.solve_result().unwrap();
-        assert_eq!(out.borrow().as_slice(), &[3]);
+        let arg = ValueCell::from_exact(DMatrix::from_row_slice(2, 1, &[1u8, 2])).unwrap();
+        let out = ValueCell::from_exact(RowDVector::from_vec(vec![99u8])).unwrap();
+        let function = crate::test_managed_factory::<StatsSumRowMD<u8>>(
+            FunctionInvocation::unary(out.clone(), arg.clone()),
+            "test/stats-sum-row",
+        );
+        function.instance().solve_result().unwrap();
+        crate::assert_test_value(
+            &out,
+            ValueCell::from_exact(RowDVector::from_vec(vec![3u8])).unwrap(),
+        );
         with_reactive_journal_participant(|mut participant| {
-            participant.capture_function_state(&function)?;
-            *arg.borrow_mut() = DMatrix::from_row_slice(2, 1, &[u8::MAX, 1]);
-            let error = function.solve_result().unwrap_err();
+            participant.capture_function_instance(function.instance())?;
+            arg.replace(
+                &ValueCell::from_exact(DMatrix::from_row_slice(2, 1, &[u8::MAX, 1]))?.snapshot()?,
+            )?;
+            let error = function.instance().solve_result().unwrap_err();
             assert_eq!(error.kind_name(), "StatsArithmeticOverflow");
-            assert_eq!(out.borrow().as_slice(), &[3]);
-            *out.borrow_mut() = RowDVector::from_vec(vec![17, 18]);
+            crate::assert_test_value(
+                &out,
+                ValueCell::from_exact(RowDVector::from_vec(vec![3u8])).unwrap(),
+            );
+            out.replace(&ValueCell::from_exact(RowDVector::from_vec(vec![17u8, 18]))?.snapshot()?)?;
             participant.preflight_restore_before()?;
             participant.apply_restore_before();
             Ok(())
         })
         .unwrap();
-        assert_eq!(out.borrow().as_slice(), &[3]);
+        crate::assert_test_value(
+            &out,
+            ValueCell::from_exact(RowDVector::from_vec(vec![3u8])).unwrap(),
+        );
     }
 }
 
@@ -150,47 +156,50 @@ mod canonical_port_tests {
 
     #[test]
     fn row_sum_preserves_exact_storage_identity_and_dynamic_state() {
-        let fixed_arg = Ref::new(Matrix2::new(1.0_f64, 2.0, 3.0, 4.0));
-        let fixed_out = Ref::new(RowVector2::zeros());
+        let fixed_arg = ValueCell::from_exact(Matrix2::new(1.0_f64, 2.0, 3.0, 4.0)).unwrap();
+        let fixed_out = ValueCell::from_exact(RowVector2::<f64>::zeros()).unwrap();
         let fixed_alias = fixed_out.clone();
-        StatsSumRowM2::<f64>::new_invocation(FunctionInvocation::unary(
-            ValueCell::from_exact_matrix_ref(fixed_out.clone(), 1, 2).unwrap(),
-            ValueCell::from_exact_matrix_ref(fixed_arg, 2, 2).unwrap(),
-        ))
-        .unwrap()
+        crate::test_managed_factory::<StatsSumRowM2<f64>>(
+            FunctionInvocation::unary(fixed_out.clone(), fixed_arg),
+            "test/stats-sum-row",
+        )
+        .instance()
         .solve_result()
         .unwrap();
-        assert!(fixed_out.same_handle(&fixed_alias));
-        assert_eq!(*fixed_out.borrow(), RowVector2::new(4.0, 6.0));
+        assert!(fixed_out.same_cell(&fixed_alias));
+        crate::assert_test_value(
+            &fixed_out,
+            ValueCell::from_exact(RowVector2::new(4.0, 6.0)).unwrap(),
+        );
 
-        let dynamic_arg = Ref::new(DMatrix::from_row_slice(
+        let dynamic_arg = ValueCell::from_exact(DMatrix::from_row_slice(
             2,
             3,
             &[1.0_f64, 2.0, 3.0, 4.0, 5.0, 6.0],
-        ));
-        let dynamic_out = Ref::new(RowDVector::zeros(3));
-        let output = ValueCell::from_exact_matrix_ref(dynamic_out.clone(), 1, 3).unwrap();
-        let function = StatsSumRowMD::<f64>::new_invocation(FunctionInvocation::unary(
-            output.clone(),
-            ValueCell::from_exact_matrix_ref(dynamic_arg, 2, 3).unwrap(),
         ))
         .unwrap();
-        function.solve_result().unwrap();
+        let output = ValueCell::from_exact(RowDVector::<f64>::zeros(3)).unwrap();
+        let function = crate::test_managed_factory::<StatsSumRowMD<f64>>(
+            FunctionInvocation::unary(output.clone(), dynamic_arg),
+            "test/stats-sum-row",
+        );
+        function.instance().solve_result().unwrap();
         assert_eq!(
-            function.reactive_output_cell_ids(),
+            function.instance().reactive_output_cell_ids(),
             vec![output.reactive_cell_id()]
         );
         with_reactive_journal_participant(|mut participant| -> MResult<()> {
-            participant.capture_function_state(function.as_ref())?;
-            *dynamic_out.borrow_mut() = RowDVector::from_vec(vec![-1.0]);
+            participant.capture_function_instance(function.instance())?;
+            output
+                .replace(&ValueCell::from_exact(RowDVector::from_vec(vec![-1.0]))?.snapshot()?)?;
             participant.preflight_restore_before()?;
             participant.apply_restore_before();
             Ok(())
         })
         .unwrap();
-        assert_eq!(
-            *dynamic_out.borrow(),
-            RowDVector::from_vec(vec![5.0, 7.0, 9.0])
+        crate::assert_test_value(
+            &output,
+            ValueCell::from_exact(RowDVector::from_vec(vec![5.0, 7.0, 9.0])).unwrap(),
         );
     }
 }

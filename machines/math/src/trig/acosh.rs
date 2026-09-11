@@ -7,41 +7,15 @@ use libm::acoshf;
 // Acosh Macros
 #[cfg(feature = "f64")]
 macro_rules! acosh_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = acosh((*$arg));
-        }
-    };
-}
-
-#[cfg(feature = "f64")]
-macro_rules! acosh_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = acosh(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(acosh(($arg)))
     };
 }
 
 #[cfg(feature = "f32")]
 macro_rules! acoshf_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = acoshf((*$arg));
-        }
-    };
-}
-
-#[cfg(feature = "f32")]
-macro_rules! acoshf_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = acoshf(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(acoshf(($arg)))
     };
 }
 

@@ -13,9 +13,9 @@ use std::sync::Arc;
 
 use crate::{
     PreparedRuntimeEffect, ResidentDurabilityPolicy, RuntimeCapabilityOperation,
-    RuntimeEffectFailure, RuntimeEffectId, RuntimeEffectProtocol,
-    RuntimeResidentResourceWriteRequest, RuntimeResourceReadRequest, RuntimeResourceRegistry,
-    RuntimeResourceWriteIntent, TransactionId,
+    RuntimeEffectFailure, RuntimeEffectId, RuntimeEffectProtocol, RuntimeResourceReadRequest,
+    RuntimeResourceRegistry, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest,
+    TransactionId,
     ledger::{LedgerPermit, PreparedLedgerAppend, RecordEstimate, RetainedTurnLedger, TurnLedger},
     outbox::{
         OutboxDeliveryPolicy, OutboxEffectId, OutboxPermit, OwnedEffectIntent, PreparedOutboxBatch,
@@ -404,7 +404,7 @@ impl ResidentExternalCoordinator {
     pub fn execute_turn(&mut self) -> MResult<ResidentExternalTurnOutcome> {
         self.ensure_live_bindings()?;
         let admission = self.reserve_live_turn()?;
-        self.execute_live_turn(None, admission, || Ok(()))
+        self.execute_live_turn(None, admission, |_| Ok(()))
     }
 
     /// Executes one live turn while using owned ingress values for matching
@@ -418,7 +418,7 @@ impl ResidentExternalCoordinator {
         updates: &[crate::RuntimeHostInputUpdate],
     ) -> MResult<ResidentExternalTurnOutcome> {
         let admission = self.admit_host_turn(updates)?;
-        self.execute_live_turn(Some(updates), admission, || Ok(()))
+        self.execute_live_turn(Some(updates), admission, |_| Ok(()))
     }
 
     pub(crate) fn admit_host_turn(
@@ -438,7 +438,7 @@ impl ResidentExternalCoordinator {
         prepublication: F,
     ) -> MResult<ResidentExternalTurnOutcome>
     where
-        F: FnOnce() -> MResult<()>,
+        F: FnOnce(&PreparedResidentTurn<'_>) -> MResult<()>,
     {
         self.execute_live_turn(Some(updates), admission, prepublication)
     }
@@ -450,7 +450,7 @@ impl ResidentExternalCoordinator {
         prepublication: F,
     ) -> MResult<ResidentExternalTurnOutcome>
     where
-        F: FnOnce() -> MResult<()>,
+        F: FnOnce(&PreparedResidentTurn<'_>) -> MResult<()>,
     {
         self.execute_live_turn(None, admission, prepublication)
     }
@@ -541,7 +541,7 @@ impl ResidentExternalCoordinator {
         prepublication: F,
     ) -> MResult<ResidentExternalTurnOutcome>
     where
-        F: FnOnce() -> MResult<()>,
+        F: FnOnce(&PreparedResidentTurn<'_>) -> MResult<()>,
     {
         let ResidentExternalTurnAdmission {
             input_permit,
@@ -921,7 +921,7 @@ impl ResidentExternalCoordinator {
         prepublication: F,
     ) -> MResult<ResidentExternalTurnOutcome>
     where
-        F: FnOnce() -> MResult<()>,
+        F: FnOnce(&PreparedResidentTurn<'_>) -> MResult<()>,
     {
         let before_epoch = prepared_turn.summary().before_epoch;
         let materialized = match materialize_effects(
@@ -1025,7 +1025,7 @@ impl ResidentExternalCoordinator {
             );
         }
 
-        if let Err(error) = prepublication() {
+        if let Err(error) = prepublication(&prepared_turn) {
             let mut cleanup = journal.compensate_applied_reverse();
             cleanup.extend(journal.abort_all());
             prepared_turn.abort();
@@ -1278,7 +1278,7 @@ impl ResidentExternalCoordinator {
                 let provider_binding = effect.bound.provider_binding.as_ref().ok_or_else(|| {
                     invalid_value("live effect has no provider binding".to_owned())
                 })?;
-                provider_binding.prepare_write(RuntimeResidentResourceWriteRequest {
+                provider_binding.prepare_write(RuntimeResourceWriteRequest {
                     base_uri: effect.bound.request.base_uri.clone(),
                     path: effect.bound.request.path.clone(),
                     context_name: effect.bound.request.context_name.clone(),
@@ -1479,7 +1479,7 @@ impl ResidentExternalCoordinator {
             let provider_binding = bound.provider_binding.as_ref().ok_or_else(|| {
                 invalid_value("live retained effect has no provider binding".to_owned())
             })?;
-            provider_binding.prepare_write(RuntimeResidentResourceWriteRequest {
+            provider_binding.prepare_write(RuntimeResourceWriteRequest {
                 base_uri: bound.request.base_uri.clone(),
                 path: bound.request.path.clone(),
                 context_name: bound.request.context_name.clone(),
@@ -2022,11 +2022,14 @@ fn materialize_effects(
                 )
             })?;
         let value = prepared.materialize_effect_payload(intent.ordinal)?;
+        let value_schemas = value
+            .schemas()
+            .ok_or_else(|| invalid_value("effect payload lost its schema table".to_owned()))?;
         let payload_hash = value
-            .value_hash(artifact.schemas())
+            .value_hash(&value_schemas)
             .map_err(|error| invalid_value(format!("effect payload hash failed: {error:?}")))?;
         let retained_bytes = value
-            .canonical_payload_bytes(artifact.schemas())
+            .canonical_payload_bytes(&value_schemas)
             .map_err(|error| invalid_value(format!("effect payload encoding failed: {error:?}")))?
             .len()
             + core::mem::size_of::<ResidentOutboxPayload>();

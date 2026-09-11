@@ -3,59 +3,64 @@ use crate::*;
 // MatMul ---------------------------------------------------------------------
 
 macro_rules! checked_mul_op {
-    ($lhs:expr, $rhs:expr, $out:expr) => {
-        unsafe {
-            let next = checked_matrix_mul(*$lhs, *$rhs, "scalar matrix product")?;
-            *$out = next;
+    ($lhs:expr, $rhs:expr, $out:expr) => {{
+        if $lhs.len() != 1 || $rhs.len() != 1 || $out.len() != 1 {
+            return Err(function_shape_contract_violation(
+                "matrix/multiply",
+                "scalar product requires three scalar ports",
+            ));
         }
-    };
+        let next = checked_matrix_mul(
+            $lhs.get(0, 0).expect("validated scalar lhs"),
+            $rhs.get(0, 0).expect("validated scalar rhs"),
+            "scalar matrix product",
+        )?;
+        $out.try_fill_column_major(|_| Ok(next))
+    }};
 }
 
 #[cfg(feature = "matrix")]
 macro_rules! checked_matmul_op {
-    ($lhs:expr, $rhs:expr, $out:expr) => {
-        unsafe {
-            let lhs = &*$lhs;
-            let rhs = &*$rhs;
-            let current = &*$out;
-            if lhs.ncols() != rhs.nrows()
-                || current.nrows() != lhs.nrows()
-                || current.ncols() != rhs.ncols()
-            {
-                return Err(MechError::new(
-                    DimensionMismatch {
-                        dims: vec![
-                            lhs.nrows(),
-                            lhs.ncols(),
-                            rhs.nrows(),
-                            rhs.ncols(),
-                            current.nrows(),
-                            current.ncols(),
-                        ],
-                    },
-                    None,
-                )
-                .with_compiler_loc());
-            }
-
-            let mut next = current.clone();
-            for row in 0..lhs.nrows() {
-                for column in 0..rhs.ncols() {
-                    let mut sum = Zero::zero();
-                    for inner in 0..lhs.ncols() {
-                        let product = checked_matrix_mul(
-                            lhs[(row, inner)],
-                            rhs[(inner, column)],
-                            "matrix-product multiplication",
-                        )?;
-                        sum = checked_matrix_add(sum, product, "matrix-product accumulation")?;
-                    }
-                    next[(row, column)] = sum;
-                }
-            }
-            *$out = next;
+    ($lhs:expr, $rhs:expr, $out:expr) => {{
+        if $lhs.columns() != $rhs.rows()
+            || $out.rows() != $lhs.rows()
+            || $out.columns() != $rhs.columns()
+        {
+            return Err(MechError::new(
+                DimensionMismatch {
+                    dims: vec![
+                        $lhs.rows(),
+                        $lhs.columns(),
+                        $rhs.rows(),
+                        $rhs.columns(),
+                        $out.rows(),
+                        $out.columns(),
+                    ],
+                },
+                None,
+            )
+            .with_compiler_loc());
         }
-    };
+
+        let rows = $out.rows();
+        let inner = $lhs.columns();
+        $out.try_fill_column_major(|index| {
+            let row = index % rows;
+            let column = index / rows;
+            let mut sum = Zero::zero();
+            for inner_index in 0..inner {
+                let product = checked_matrix_mul(
+                    $lhs.get(row, inner_index)
+                        .expect("validated matrix-product lhs"),
+                    $rhs.get(inner_index, column)
+                        .expect("validated matrix-product rhs"),
+                    "matrix-product multiplication",
+                )?;
+                sum = checked_matrix_add(sum, product, "matrix-product accumulation")?;
+            }
+            Ok(sum)
+        })
+    }};
 }
 
 #[cfg(feature = "matrix")]
@@ -113,11 +118,7 @@ impl_matmul!(MatMulR2M2x3, RowVector2<T>, Matrix2x3<T>, RowVector3<T>);
 #[cfg(all(feature = "row_vector2", feature = "matrixd", feature = "row_vectord"))]
 impl_matmul!(MatMulR2MD, RowVector2<T>, DMatrix<T>, RowDVector<T>);
 
-#[cfg(all(
-    feature = "row_vectord",
-    feature = "vectord",
-    feature = "matrix1"
-))]
+#[cfg(all(feature = "row_vectord", feature = "vectord", feature = "matrix1"))]
 impl_matmul!(MatMulRDVD, RowDVector<T>, DVector<T>, Matrix1<T>);
 #[cfg(all(
     feature = "row_vectord",
@@ -242,7 +243,16 @@ impl CanonicalFunctionSpecializer for MatrixMatMul {
                 .with_compiler_loc());
             }
         };
-        context.bind_runtime_factory_derived_output("MatMul", dimensions, &[lhs, rhs])
+        let output_extents: Box<[u64]> = dimensions.map_or_else(
+            || Vec::<u64>::new().into_boxed_slice(),
+            |(rows, columns)| vec![rows as u64, columns as u64].into_boxed_slice(),
+        );
+        context.bind_resolved_runtime(
+            mech_core::RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
+            mech_core::ExecutionTarget::DirectRuntime,
+            vec![output_extents].into_boxed_slice(),
+            &[lhs, rhs],
+        )
     }
 }
 
@@ -252,32 +262,42 @@ mod checked_matmul_tests {
 
     #[test]
     fn integer_matrix_product_rejects_overflow_and_retains_output() {
-        let lhs = Ref::new(DMatrix::from_row_slice(1, 2, &[200_u8, 200]));
-        let rhs = Ref::new(DMatrix::from_column_slice(2, 1, &[1_u8, 0]));
-        let out = Ref::new(DMatrix::from_element(1, 1, 17_u8));
-        let function = MatMulMDMD {
-            lhs: lhs.clone(),
-            rhs: rhs.clone(),
-            out: out.clone(),
-        };
+        let lhs = ValueCell::from_exact(DMatrix::from_row_slice(1, 2, &[200_u8, 200])).unwrap();
+        let rhs = ValueCell::from_exact(DMatrix::from_column_slice(2, 1, &[1_u8, 0])).unwrap();
+        let out = ValueCell::from_exact(DMatrix::from_element(1, 1, 17_u8)).unwrap();
+        let function = crate::test_managed_factory::<MatMulMDMD<u8>>(
+            FunctionInvocation::binary(out.clone(), lhs, rhs.clone()),
+            "test/matrix-multiply-u8",
+        );
 
-        function.solve_result().unwrap();
-        assert_eq!(out.borrow()[(0, 0)], 200);
+        function.instance().solve_result().unwrap();
+        crate::assert_test_value(
+            &out,
+            ValueCell::from_exact(DMatrix::from_element(1, 1, 200_u8)).unwrap(),
+        );
         with_reactive_journal_participant(|mut participant| {
-            participant.capture_function_state(&function)?;
-            *rhs.borrow_mut() = DMatrix::from_column_slice(2, 1, &[2, 2]);
+            participant.capture_function_instance(function.instance())?;
+            rhs.replace(
+                &ValueCell::from_exact(DMatrix::from_column_slice(2, 1, &[2_u8, 2]))?
+                    .snapshot()?,
+            )?;
 
-            let error = function.solve_result().unwrap_err();
+            let error = function.instance().solve_result().unwrap_err();
             assert_eq!(error.kind_name(), "MatrixArithmeticOverflow");
-            assert_eq!(out.borrow()[(0, 0)], 200);
-            *out.borrow_mut() = DMatrix::from_element(2, 2, 19);
+            crate::assert_test_value(
+                &out,
+                ValueCell::from_exact(DMatrix::from_element(1, 1, 200_u8)).unwrap(),
+            );
+            out.replace(&ValueCell::from_exact(DMatrix::from_element(1, 1, 19_u8))?.snapshot()?)?;
             participant.preflight_restore_before()?;
             participant.apply_restore_before();
             Ok(())
         })
         .unwrap();
-        assert_eq!(out.borrow().shape(), (1, 1));
-        assert_eq!(out.borrow()[(0, 0)], 200);
+        crate::assert_test_value(
+            &out,
+            ValueCell::from_exact(DMatrix::from_element(1, 1, 200_u8)).unwrap(),
+        );
     }
 }
 
@@ -293,81 +313,92 @@ mod canonical_port_tests {
 
     #[test]
     fn fixed_and_dynamic_products_preserve_identity_shape_and_state() {
-        let fixed_lhs = Ref::new(Matrix2::new(1.0_f64, 2.0, 3.0, 4.0));
-        let fixed_rhs = Ref::new(Matrix2::new(5.0_f64, 6.0, 7.0, 8.0));
-        let fixed_out = Ref::new(Matrix2::zeros());
-        MatMulM2M2::<f64>::new_invocation(FunctionInvocation::binary(
-            ValueCell::from_exact_matrix_ref(fixed_out.clone(), 2, 2).unwrap(),
-            ValueCell::from_exact_matrix_ref(fixed_lhs, 2, 2).unwrap(),
-            ValueCell::from_exact_matrix_ref(fixed_rhs, 2, 2).unwrap(),
-        ))
-        .unwrap()
+        let fixed_out = ValueCell::from_exact(Matrix2::<f64>::zeros()).unwrap();
+        crate::test_managed_factory::<MatMulM2M2<f64>>(
+            FunctionInvocation::binary(
+                fixed_out.clone(),
+                ValueCell::from_exact(Matrix2::new(1.0_f64, 2.0, 3.0, 4.0)).unwrap(),
+                ValueCell::from_exact(Matrix2::new(5.0_f64, 6.0, 7.0, 8.0)).unwrap(),
+            ),
+            "test/matrix-multiply-fixed",
+        )
+        .instance()
         .solve_result()
         .unwrap();
-        assert_eq!(*fixed_out.borrow(), Matrix2::new(19.0, 22.0, 43.0, 50.0));
+        crate::assert_test_value(
+            &fixed_out,
+            ValueCell::from_exact(Matrix2::new(19.0, 22.0, 43.0, 50.0)).unwrap(),
+        );
 
-        let lhs = Ref::new(DMatrix::from_row_slice(
+        let lhs = ValueCell::from_exact(DMatrix::from_row_slice(
             2,
             3,
             &[1.0_f64, 2.0, 3.0, 4.0, 5.0, 6.0],
-        ));
-        let rhs = Ref::new(DMatrix::from_row_slice(
+        ))
+        .unwrap();
+        let rhs = ValueCell::from_exact(DMatrix::from_row_slice(
             3,
             2,
             &[7.0_f64, 8.0, 9.0, 10.0, 11.0, 12.0],
-        ));
-        let out = Ref::new(DMatrix::zeros(2, 2));
-        let alias = out.clone();
-        let output = ValueCell::from_exact_matrix_ref(out.clone(), 2, 2).unwrap();
-        let function = MatMulMDMD::<f64>::new_invocation(FunctionInvocation::binary(
-            output.clone(),
-            ValueCell::from_exact_matrix_ref(lhs, 2, 3).unwrap(),
-            ValueCell::from_exact_matrix_ref(rhs, 3, 2).unwrap(),
         ))
         .unwrap();
-        function.solve_result().unwrap();
-        assert_eq!(
-            *out.borrow(),
-            DMatrix::from_row_slice(2, 2, &[58.0, 64.0, 139.0, 154.0])
+        let output = ValueCell::from_exact(DMatrix::<f64>::zeros(2, 2)).unwrap();
+        let alias = output.clone();
+        let function = crate::test_managed_factory::<MatMulMDMD<f64>>(
+            FunctionInvocation::binary(output.clone(), lhs, rhs),
+            "test/matrix-multiply-dynamic",
+        );
+        function.instance().solve_result().unwrap();
+        crate::assert_test_value(
+            &output,
+            ValueCell::from_exact(DMatrix::from_row_slice(
+                2,
+                2,
+                &[58.0, 64.0, 139.0, 154.0],
+            ))
+            .unwrap(),
         );
         assert_eq!(
-            function.reactive_output_cell_ids(),
+            function.instance().reactive_output_cell_ids(),
             vec![output.reactive_cell_id()]
         );
 
         with_reactive_journal_participant(|mut participant| -> MResult<()> {
-            participant.capture_function_state(function.as_ref())?;
-            *out.borrow_mut() = DMatrix::from_element(1, 3, -1.0);
+            participant.capture_function_instance(function.instance())?;
+            output.replace(&ValueCell::from_exact(DMatrix::from_element(2, 2, -1.0))?.snapshot()?)?;
             participant.preflight_restore_before()?;
             participant.apply_restore_before();
             Ok(())
         })
         .unwrap();
-        assert!(out.same_handle(&alias));
-        assert_eq!(out.borrow().shape(), (2, 2));
+        assert!(output.same_cell(&alias));
+        crate::assert_test_value(
+            &output,
+            ValueCell::from_exact(DMatrix::from_row_slice(
+                2,
+                2,
+                &[58.0, 64.0, 139.0, 154.0],
+            ))
+            .unwrap(),
+        );
     }
 
     #[test]
     fn dimension_failure_is_atomic() {
         let original = DMatrix::from_element(2, 2, 17.0_f64);
-        let out = Ref::new(original.clone());
-        let function = MatMulMDMD::<f64>::new_invocation(FunctionInvocation::binary(
-            ValueCell::from_exact_matrix_ref(out.clone(), 2, 2).unwrap(),
-            ValueCell::from_exact_matrix_ref(
-                Ref::new(DMatrix::from_element(2, 3, 2.0_f64)),
-                2,
-                3,
-            )
-            .unwrap(),
-            ValueCell::from_exact_matrix_ref(
-                Ref::new(DMatrix::from_element(2, 2, 3.0_f64)),
-                2,
-                2,
-            )
-            .unwrap(),
-        ))
-        .unwrap();
-        assert_eq!(function.solve_result().unwrap_err().kind_name(), "DimensionMismatch");
-        assert_eq!(*out.borrow(), original);
+        let out = ValueCell::from_exact(original.clone()).unwrap();
+        let function = crate::test_managed_factory::<MatMulMDMD<f64>>(
+            FunctionInvocation::binary(
+                out.clone(),
+                ValueCell::from_exact(DMatrix::from_element(2, 3, 2.0_f64)).unwrap(),
+                ValueCell::from_exact(DMatrix::from_element(2, 2, 3.0_f64)).unwrap(),
+            ),
+            "test/matrix-multiply-dimension-failure",
+        );
+        assert_eq!(
+            function.instance().solve_result().unwrap_err().kind_name(),
+            "DimensionMismatch"
+        );
+        crate::assert_test_value(&out, ValueCell::from_exact(original).unwrap());
     }
 }

@@ -1,6 +1,6 @@
-use crate::canonical::{SetInput, SetOutput};
 #[cfg(feature = "source")]
 use crate::canonical::specialize_dynamic_set;
+use crate::canonical::{SetInput, SetOutput};
 use crate::*;
 
 #[derive(Debug)]
@@ -11,13 +11,15 @@ pub(crate) struct SetIntersectionFxn {
 }
 
 impl MechFunctionFactory for SetIntersectionFxn {
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalSortUnique
+    }
+
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
         FunctionValueRepresentation::Set,
         FunctionValueRepresentation::Set,
         FunctionValueRepresentation::Set,
     );
-    const OUTPUT_SCHEMA_RULE: FunctionOutputSchemaRule =
-        FunctionOutputSchemaRule::DynamicSetLikeInput(0);
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
         let (out, lhs, rhs) = invocation.expect_binary()?;
         Ok(Box::new(Self {
@@ -26,21 +28,43 @@ impl MechFunctionFactory for SetIntersectionFxn {
             out: SetOutput::canonical(out)?,
         }))
     }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_SET_BINARY_CONTRACT)
+    }
 }
 
 impl MechFunctionImpl for SetIntersectionFxn {
+    fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+        Ok(Some(
+            vec![self
+                .lhs
+                .prospective_intersection_footprint(&self.rhs, &self.out)?]
+                .into_boxed_slice(),
+        ))
+    }
+
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
         self.out.primary_state_port()
     }
     fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
         self.out.transaction_state_ports()
     }
-    fn solve_result(&self) -> MResult<()> {
-        self.out.canonical_value().replace_set(
-            self.lhs
-                .canonical_value()
-                .set_intersection_elements(self.rhs.canonical_value())?,
-        )
+    fn solve_managed(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        let footprint = self
+            .lhs
+            .prospective_intersection_footprint(&self.rhs, &self.out)?;
+        self.out.with_admitted_set(frame, footprint, |frame| {
+            self.lhs.intersection_elements(frame, &self.rhs)
+        })?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
+    }
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_SET_BINARY_CONTRACT)
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
@@ -66,8 +90,8 @@ impl CanonicalFunctionSpecializer for SetIntersection {
     fn specialize_invocation(
         &self,
         invocation: &SpecializationInvocation,
-        _context: &mut SpecializationContext<'_>,
+        context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
-        specialize_dynamic_set::<SetIntersectionFxn>(invocation)
+        specialize_dynamic_set::<SetIntersectionFxn>(invocation, context)
     }
 }

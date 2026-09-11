@@ -7,41 +7,15 @@ use libm::sinhf;
 // Sinh ------------------------------------------------------------------------
 #[cfg(feature = "f64")]
 macro_rules! sinh_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = sinh((*$arg));
-        }
-    };
-}
-
-#[cfg(feature = "f64")]
-macro_rules! sinh_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = sinh(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(sinh(($arg)))
     };
 }
 
 #[cfg(feature = "f32")]
 macro_rules! sinhf_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = sinhf((*$arg));
-        }
-    };
-}
-
-#[cfg(feature = "f32")]
-macro_rules! sinhf_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = sinhf(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(sinhf(($arg)))
     };
 }
 

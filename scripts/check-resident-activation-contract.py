@@ -55,6 +55,9 @@ EXPECTED_PUBLICATION_CONTRACT = {
     "append_after_publish": "infallible",
 }
 
+# This gate rejects retired semantic/runtime authorities, not Rust ownership
+# primitives. R6 intentionally uses owner-thread Rc/RefCell state; its own
+# architecture checker enforces the managed-memory boundary around those uses.
 LEGACY_TOKENS = (
     "LegacyValue",
     "ValRef",
@@ -66,8 +69,6 @@ LEGACY_TOKENS = (
     "RuntimeTransaction",
     "transaction_state_values",
     "commit_runtime",
-    "RefCell",
-    "Rc",
 )
 POINTER_PATTERNS = {
     "as_ptr": re.compile(r"\.as_ptr\s*\("),

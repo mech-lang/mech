@@ -1,9 +1,10 @@
 use std::collections::BTreeMap;
 
 use js_sys::{Array, Float32Array, Object, Reflect, Uint32Array};
+use mech_core::{GpuMemoryLimits, MemoryLifetime, MemorySpace};
 use mech_gpu::{
     GpuExecutionPlan, GpuKernelPlanSource, GpuPlanInitialValues, GpuPlanKernelKind, GpuPlanLayout,
-    GpuPlanScalar,
+    GpuPlanScalar, PlannedGpuExecution,
 };
 use wasm_bindgen::JsValue;
 use web_time::Instant;
@@ -27,29 +28,45 @@ pub(crate) fn gpu_program_manifest(
     let manifest_started = Instant::now();
 
     let manifest = Object::new();
-    let plan = GpuExecutionPlan::build(program, input_values)
+    let execution = GpuExecutionPlan::build(program, input_values)
         .map_err(|failure| error(failure.to_string()))?;
+    let plan = PlannedGpuExecution::from_execution(
+        execution,
+        GpuMemoryLimits {
+            max_buffer_size: u64::MAX,
+            max_storage_buffer_binding_size: u64::MAX,
+            max_storage_buffers_per_shader_stage: u32::MAX,
+            max_bindings_per_bind_group: u32::MAX,
+            max_compute_workgroups_per_dimension: u32::MAX,
+            max_compute_invocations_per_workgroup: u32::MAX,
+            max_compute_workgroup_size_x: u32::MAX,
+            min_storage_buffer_offset_alignment: 256,
+        },
+    )
+    .map_err(|failure| error(failure.to_string()))?;
+    let execution = &plan.execution;
     set(
         &manifest,
         "physicalRevision",
-        plan.physical_revision_with_retained_outputs(backend, retained_outputs)
+        execution
+            .physical_revision_with_retained_outputs(backend, retained_outputs)
             .map_err(|failure| error(failure.to_string()))?,
     )?;
-    set(&manifest, "planVersion", plan.version)?;
+    set(&manifest, "planVersion", execution.version)?;
     set(
         &manifest,
         "kernelKind",
-        match plan.kernel_kind {
+        match execution.kernel_kind {
             GpuPlanKernelKind::Elementwise => "elementwise",
             GpuPlanKernelKind::FixedShape => "fixed-shape",
         },
     )?;
-    set(&manifest, "wgsl", plan.wgsl.as_str())?;
-    set(&manifest, "workgroupSize", plan.workgroup_size)?;
-    set(&manifest, "dispatchElements", plan.dispatch_elements)?;
+    set(&manifest, "wgsl", execution.wgsl.as_str())?;
+    set(&manifest, "workgroupSize", execution.workgroup_size)?;
+    set(&manifest, "dispatchElements", execution.dispatch_elements)?;
 
     let bindings = Array::new();
-    for binding in &plan.bindings {
+    for binding in &execution.bindings {
         let encoded = binding_value(
             binding.binding,
             &binding.name,
@@ -72,6 +89,13 @@ pub(crate) fn gpu_program_manifest(
                 GpuPlanScalar::U32 => "u32",
             },
         )?;
+        set(
+            &encoded,
+            "memoryObject",
+            plan.binding_object(binding.binding)
+                .ok_or_else(|| error("GPU binding has no managed memory object"))?
+                .get(),
+        )?;
         match &binding.initial_values {
             Some(GpuPlanInitialValues::F32(values)) => set(
                 &encoded,
@@ -90,7 +114,7 @@ pub(crate) fn gpu_program_manifest(
     set(&manifest, "bindings", bindings)?;
 
     let constraints = Array::new();
-    for constraint in &plan.constraints {
+    for constraint in &execution.constraints {
         let value = Object::new();
         set(&value, "code", constraint.code)?;
         set(&value, "id", constraint.id.to_string())?;
@@ -100,7 +124,7 @@ pub(crate) fn gpu_program_manifest(
     set(&manifest, "constraints", constraints)?;
 
     let states = Array::new();
-    for state in &plan.states {
+    for state in &execution.states {
         let value = Object::new();
         set(&value, "slot", state.slot)?;
         set(
@@ -120,12 +144,19 @@ pub(crate) fn gpu_program_manifest(
             "initialValues",
             Float32Array::from(state.initial_values.as_slice()),
         )?;
+        let objects = plan
+            .state_objects(mech_core::CellSlotId::new(state.slot))
+            .ok_or_else(|| error("GPU state has no managed double buffer"))?;
+        let memory_objects = Array::new();
+        memory_objects.push(&JsValue::from_f64(objects[0].get() as f64));
+        memory_objects.push(&JsValue::from_f64(objects[1].get() as f64));
+        set(&value, "memoryObjects", memory_objects)?;
         states.push(&value);
     }
     set(&manifest, "states", states)?;
 
     let outputs = Array::new();
-    for output in &plan.outputs {
+    for output in &execution.outputs {
         let value = Object::new();
         set(&value, "name", output.name.as_str())?;
         set(&value, "slot", output.slot)?;
@@ -165,7 +196,7 @@ pub(crate) fn gpu_program_manifest(
     set(&manifest, "outputs", outputs)?;
 
     let physical_outputs = Array::new();
-    for output in &plan.physical_outputs {
+    for output in &execution.physical_outputs {
         let value = Object::new();
         set(&value, "id", output.id)?;
         set(&value, "slot", output.slot)?;
@@ -178,6 +209,21 @@ pub(crate) fn gpu_program_manifest(
             u32::try_from(output.sample_elements)
                 .map_err(|_| error("GPU sampled output size exceeds the browser limit"))?,
         )?;
+        let slot = mech_core::CellSlotId::new(output.slot);
+        set(
+            &value,
+            "readbackDeviceObject",
+            plan.readback_device_object(slot)
+                .ok_or_else(|| error("GPU output has no managed device readback object"))?
+                .get(),
+        )?;
+        set(
+            &value,
+            "readbackHostObject",
+            plan.readback_object(slot)
+                .ok_or_else(|| error("GPU output has no managed host readback object"))?
+                .get(),
+        )?;
         let aliases = Array::new();
         for alias in &output.aliases {
             aliases.push(&JsValue::from_str(alias));
@@ -186,6 +232,45 @@ pub(crate) fn gpu_program_manifest(
         physical_outputs.push(&value);
     }
     set(&manifest, "physicalOutputs", physical_outputs)?;
+
+    let memory_allocations = Array::new();
+    for allocation in plan.memory.allocations.iter() {
+        let value = Object::new();
+        set(&value, "object", allocation.id.get())?;
+        set(
+            &value,
+            "capacityBytes",
+            allocation.capacity_bytes.to_string(),
+        )?;
+        set(
+            &value,
+            "space",
+            match allocation.space {
+                MemorySpace::Device { .. } => "device",
+                MemorySpace::Host => "host",
+                MemorySpace::ResidentCpu => "resident",
+            },
+        )?;
+        set(
+            &value,
+            "lifetime",
+            match allocation.lifetime {
+                MemoryLifetime::Program => "program",
+                MemoryLifetime::Activation => "activation",
+                MemoryLifetime::Turn { .. } => "turn",
+                MemoryLifetime::Transaction { .. } => "transaction",
+                MemoryLifetime::Transfer { .. } => "transfer",
+            },
+        )?;
+        memory_allocations.push(&value);
+    }
+    set(&manifest, "memoryAllocations", memory_allocations)?;
+    if let Some([device, host]) = plan.integrity_readback_objects() {
+        let objects = Array::new();
+        objects.push(&JsValue::from_f64(device.get() as f64));
+        objects.push(&JsValue::from_f64(host.get() as f64));
+        set(&manifest, "integrityReadbackObjects", objects)?;
+    }
 
     let compile_timings = Object::new();
     set(&compile_timings, "catalogSetup", timings.catalog_setup)?;

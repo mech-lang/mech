@@ -660,6 +660,31 @@ impl From<GpuBindingRole> for GpuExecutionBindingRole {
 }
 
 #[cfg(test)]
+pub(crate) fn test_execution_plan(elements: u64) -> GpuExecutionPlan {
+    GpuExecutionPlan {
+        version: GPU_EXECUTION_PLAN_VERSION,
+        kernel_kind: GpuPlanKernelKind::Elementwise,
+        wgsl: "@compute @workgroup_size(64) fn main() {}".to_owned(),
+        workgroup_size: 64,
+        dispatch_elements: 1,
+        bindings: vec![GpuPlanBinding {
+            binding: 0,
+            name: "input".to_owned(),
+            access: GpuBindingAccess::Read,
+            role: GpuExecutionBindingRole::Input,
+            slot: 1,
+            elements,
+            scalar: GpuPlanScalar::F32,
+            initial_values: Some(GpuPlanInitialValues::F32(vec![1.0; elements as usize])),
+        }],
+        states: Vec::new(),
+        outputs: Vec::new(),
+        physical_outputs: Vec::new(),
+        constraints: Vec::new(),
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
 

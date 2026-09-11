@@ -245,6 +245,8 @@ fn integrity_constraints_are_explicit_native_linkage_requirements() {
 
     let request = NativeBuildRequest {
         bytecode,
+        instruction_type_bindings: None,
+        instruction_type_binding_requirements: None,
         runtime_config: Some(NativeRuntimeConfig {
             runtime: RuntimeConfig::default(),
             hosts: Vec::new(),
@@ -339,6 +341,8 @@ fn computed_resource_send_reuses_its_runtime_producer_in_native_planning() {
             .compile_source(case.source)
             .map(|product| product.into_parts().1)
             .unwrap(),
+        instruction_type_bindings: None,
+        instruction_type_binding_requirements: None,
         runtime_config: Some(NativeRuntimeConfig {
             runtime: RuntimeConfig::default(),
             actor_bootstrap: None,

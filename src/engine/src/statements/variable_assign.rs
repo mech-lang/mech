@@ -146,6 +146,28 @@ pub(super) fn assignment_selector(
     }
 }
 
+#[cfg(any(
+    all(feature = "access", feature = "subscript", feature = "math_add_assign"),
+    all(feature = "access", feature = "subscript", feature = "math_sub_assign"),
+    all(feature = "access", feature = "subscript", feature = "math_div_assign"),
+    all(feature = "access", feature = "subscript", feature = "math_mul_assign"),
+    all(feature = "access", feature = "subscript", feature = "assign")
+))]
+fn assignment_selector_for_sink(
+    selector: &Subscript,
+    sink: &ValueCell,
+    environment: Option<&Environment>,
+    interpreter: &InterpreterExecution<'_>,
+) -> MResult<SpecializationInput> {
+    #[cfg(feature = "subscript_formula")]
+    if matches!(sink.closed_schema_body()?, SchemaBody::Map { .. }) {
+        if let Subscript::Formula(formula) = selector {
+            return factor(formula, environment, interpreter).map(SpecializationInput::Cell);
+        }
+    }
+    assignment_selector(selector, environment, interpreter)
+}
+
 #[cfg(all(feature = "subscript", feature = "assign", feature = "access"))]
 pub fn subscript_ref(
     subscript: &Subscript,
@@ -182,7 +204,12 @@ pub fn subscript_ref(
                 SpecializationInput::Cell(source.clone()),
             ];
             for selector in selectors {
-                inputs.push(assignment_selector(selector, environment, interpreter)?);
+                inputs.push(assignment_selector_for_sink(
+                    selector,
+                    sink,
+                    environment,
+                    interpreter,
+                )?);
             }
             execute_assignment_invocation("assign", inputs, interpreter)
         }

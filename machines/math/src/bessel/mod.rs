@@ -3,13 +3,13 @@ pub use crate::*;
 pub mod j0;
 #[cfg(feature = "j1")]
 pub mod j1;
-#[cfg(all(feature = "jn", feature = "source"))]
+#[cfg(feature = "jn")]
 pub mod jn;
 #[cfg(feature = "y0")]
 pub mod y0;
 #[cfg(feature = "y1")]
 pub mod y1;
-#[cfg(all(feature = "yn", feature = "source"))]
+#[cfg(feature = "yn")]
 pub mod yn;
 
 #[cfg(all(feature = "j0", feature = "source"))]

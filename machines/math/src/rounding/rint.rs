@@ -4,38 +4,14 @@ use crate::*;
 
 use libm::{rint, rintf};
 macro_rules! rint_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = rint((*$arg));
-        }
-    };
-}
-
-macro_rules! rint_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = rint(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(rint(($arg)))
     };
 }
 
 macro_rules! rintf_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = rintf((*$arg));
-        }
-    };
-}
-
-macro_rules! rintf_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = rintf(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(rintf(($arg)))
     };
 }
 

@@ -12,7 +12,7 @@ use alloc::string::String;
 use std::string::String;
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum PortDirection {
     Input,
     Output,
@@ -132,7 +132,6 @@ pub fn validate_resolved_contract(
     contract: &ResolvedOperationContract,
 ) -> Result<(), OperationContractError> {
     match contract {
-        ResolvedOperationContract::LegacyOpaque(_) => Ok(()),
         ResolvedOperationContract::Declared(contract) => validate_declared(contract),
     }
 }
@@ -189,37 +188,28 @@ pub fn validate_contract_schemas(
     schemas: &SchemaTable,
 ) -> Result<(), OperationContractError> {
     validate_resolved_contract(contract)?;
-    let (inputs, outputs) = match contract {
-        ResolvedOperationContract::Declared(contract) => (
-            contract
-                .inputs
-                .iter()
-                .map(|port| port.schema)
-                .collect::<Vec<_>>(),
-            contract
-                .outputs
-                .iter()
-                .map(|port| port.schema)
-                .collect::<Vec<_>>(),
-        ),
-        ResolvedOperationContract::LegacyOpaque(contract) => (
-            contract.input_schemas.to_vec(),
-            contract.output_schemas.to_vec(),
-        ),
-    };
+    let ResolvedOperationContract::Declared(contract) = contract;
+    let inputs = contract
+        .inputs
+        .iter()
+        .map(|port| port.schema)
+        .collect::<Vec<_>>();
+    let outputs = contract
+        .outputs
+        .iter()
+        .map(|port| port.schema)
+        .collect::<Vec<_>>();
     for schema in inputs.iter().chain(outputs.iter()).copied() {
         if schemas.get(schema).is_none() {
             return Err(OperationContractError::UnknownSchema { schema });
         }
     }
-    if let ResolvedOperationContract::Declared(contract) = contract {
-        for (output_ordinal, output) in contract.outputs.iter().enumerate() {
-            match output.construction {
-                OutputConstruction::FullWrite { shape } | OutputConstruction::Replace { shape } => {
-                    validate_shape_rule(shape, output_ordinal as u32, contract, schemas)?
-                }
-                OutputConstruction::ReadModifyWrite { .. } | OutputConstruction::Build { .. } => {}
+    for (output_ordinal, output) in contract.outputs.iter().enumerate() {
+        match output.construction {
+            OutputConstruction::FullWrite { shape } | OutputConstruction::Replace { shape } => {
+                validate_shape_rule(shape, output_ordinal as u32, contract, schemas)?
             }
+            OutputConstruction::ReadModifyWrite { .. } | OutputConstruction::Build { .. } => {}
         }
     }
     Ok(())
@@ -228,24 +218,23 @@ pub fn validate_contract_schemas(
 pub fn validate_signal_bindings(
     contract: &ResolvedOperationContract,
 ) -> Result<(), OperationContractError> {
-    if let ResolvedOperationContract::Declared(contract) = contract {
-        for (ordinal, input) in contract.inputs.iter().enumerate() {
-            if input.delivery != DeliveryMode::Signal {
-                return Err(OperationContractError::UnsupportedSignalBinding {
-                    direction: PortDirection::Input,
-                    ordinal: ordinal as u32,
-                    delivery: input.delivery,
-                });
-            }
+    let ResolvedOperationContract::Declared(contract) = contract;
+    for (ordinal, input) in contract.inputs.iter().enumerate() {
+        if input.delivery != DeliveryMode::Signal {
+            return Err(OperationContractError::UnsupportedSignalBinding {
+                direction: PortDirection::Input,
+                ordinal: ordinal as u32,
+                delivery: input.delivery,
+            });
         }
-        for (ordinal, output) in contract.outputs.iter().enumerate() {
-            if output.delivery != DeliveryMode::Signal {
-                return Err(OperationContractError::UnsupportedSignalBinding {
-                    direction: PortDirection::Output,
-                    ordinal: ordinal as u32,
-                    delivery: output.delivery,
-                });
-            }
+    }
+    for (ordinal, output) in contract.outputs.iter().enumerate() {
+        if output.delivery != DeliveryMode::Signal {
+            return Err(OperationContractError::UnsupportedSignalBinding {
+                direction: PortDirection::Output,
+                ordinal: ordinal as u32,
+                delivery: output.delivery,
+            });
         }
     }
     Ok(())
@@ -402,7 +391,10 @@ fn validate_shape_rule(
                 .ok_or(OperationContractError::UnknownSchema {
                     schema: contract.outputs[output as usize].schema,
                 })?;
-            if !schema_bodies_have_same_shape(input_schema.body(), output_schema.body()) {
+            if !schema_bodies_have_same_shape(input_schema.body(), output_schema.body())
+                && input_schema.dimension_parameters().is_empty()
+                && output_schema.dimension_parameters().is_empty()
+            {
                 return Err(OperationContractError::SameShapeSchemaMismatch { input, output });
             }
             Ok(())
@@ -428,8 +420,8 @@ fn validate_shape_rule(
             if input_dimensions.len() != 2
                 || output_dimensions.len() != 2
                 || input_element != output_element
-                || output_dimensions[0] != input_dimensions[1]
-                || output_dimensions[1] != input_dimensions[0]
+                || !schema_local_dimensions_can_match(&output_dimensions[0], &input_dimensions[1])
+                || !schema_local_dimensions_can_match(&output_dimensions[1], &input_dimensions[0])
             {
                 return Err(OperationContractError::TransposeSchemaMismatch { input, output });
             }
@@ -473,9 +465,9 @@ fn validate_shape_rule(
                 || output_dimensions.len() != 2
                 || lhs_element != rhs_element
                 || lhs_element != output_element
-                || lhs_dimensions[1] != rhs_dimensions[0]
-                || output_dimensions[0] != lhs_dimensions[0]
-                || output_dimensions[1] != rhs_dimensions[1]
+                || !schema_local_dimensions_can_match(&lhs_dimensions[1], &rhs_dimensions[0])
+                || !schema_local_dimensions_can_match(&output_dimensions[0], &lhs_dimensions[0])
+                || !schema_local_dimensions_can_match(&output_dimensions[1], &rhs_dimensions[1])
             {
                 return Err(OperationContractError::MatrixProductSchemaMismatch {
                     lhs,
@@ -485,6 +477,24 @@ fn validate_shape_rule(
             }
             Ok(())
         }
+    }
+}
+
+/// Dimension-parameter identities are local to one canonical schema. A
+/// parameter in an input schema therefore cannot be compared directly with a
+/// parameter in an independently canonicalized output schema, even when the
+/// operation shape rule relates their current extents. Closed dimensions must
+/// still agree here; parameterized relations are checked against the concrete
+/// `ShapeInstance`s when the operation is bound for execution.
+fn schema_local_dimensions_can_match(
+    left: &crate::DimensionExpr,
+    right: &crate::DimensionExpr,
+) -> bool {
+    match (left, right) {
+        (crate::DimensionExpr::Constant(left), crate::DimensionExpr::Constant(right)) => {
+            left == right
+        }
+        _ => true,
     }
 }
 

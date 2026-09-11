@@ -1,15 +1,14 @@
 //! Semantic admission and normalization for the frozen EKF artifact.
 
-use mech_core::snapshot::SequenceView;
+use mech_core::snapshot::{F64Bits, SequenceView};
 use mech_core::{
     AccessMode, AliasPolicy, CellSlotId, ChangeDetectionPolicy, ConstantId, DeliveryMode,
     DimensionExpr, ExecutionHostFunctionRequest, ExecutionResourceRequest, ExternalInteraction,
     FloatWidth, MResult, MechError, MechErrorKind, MechExecutionServices, NodeId,
     ObservationReplayPolicy, OperationContractId, OutputConstruction, OutputId, ProgramRevision,
-    ResolvedOperationContract, ResourceDelivery, ResourceIntent, SchemaBody, SchemaId, ShapeRule,
-    ValueCell, ValueData,
+    ResolvedOperationContract, ResolvedValueDescriptor, ResourceDelivery, ResourceIntent,
+    SchemaBody, SchemaDraft, SchemaId, ShapeRule, ValueCell, ValueData, ValueDataDraft,
 };
-use nalgebra::DVector;
 
 use crate::{
     ArtifactSource, CompilerPlanningConfig, CompilerPlanningProgram, ProgramArtifact,
@@ -96,9 +95,6 @@ pub struct FrozenEkfArtifactClosure {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum FrozenEkfArtifactClosureError {
-    LegacyOpaqueContract {
-        contract: OperationContractId,
-    },
     UnexpectedExecutableNode {
         node: NodeId,
         operation: crate::OperationReference,
@@ -155,14 +151,6 @@ impl FrozenEkfArtifactClosure {
         {
             return Err(FrozenEkfArtifactClosureError::InvalidStateUpdate);
         }
-        for (index, contract) in artifact.contracts().iter().enumerate() {
-            if matches!(contract, ResolvedOperationContract::LegacyOpaque(_)) {
-                return Err(FrozenEkfArtifactClosureError::LegacyOpaqueContract {
-                    contract: OperationContractId::new(index as u32),
-                });
-            }
-        }
-
         let mut observation = None;
         let mut kernels = Vec::with_capacity(15);
         let mut predicates = Vec::with_capacity(3);
@@ -325,10 +313,7 @@ fn declared_contract<'a>(
 ) -> Result<&'a mech_core::DeclaredOperationContract, FrozenEkfArtifactClosureError> {
     match artifact.contracts().get(contract) {
         Some(ResolvedOperationContract::Declared(contract)) => Ok(contract),
-        Some(ResolvedOperationContract::LegacyOpaque(_)) => {
-            Err(FrozenEkfArtifactClosureError::LegacyOpaqueContract { contract })
-        }
-        None => Err(FrozenEkfArtifactClosureError::UnsupportedNodeContract { node, contract }),
+        _ => Err(FrozenEkfArtifactClosureError::UnsupportedNodeContract { node, contract }),
     }
 }
 
@@ -947,12 +932,32 @@ impl FrozenEkfCompilationServices {
 
     pub fn from_frames(frame: [f64; 4], planning_frame: [f64; 4]) -> Self {
         let frame_value = |values: [f64; 4]| {
-            ValueCell::from_exact_matrix_ref(
-                mech_core::Ref::new(DVector::from_vec(values.to_vec())),
-                4,
-                1,
+            let schema = SchemaDraft {
+                dimension_parameters: Box::new([]),
+                body: SchemaBody::Matrix {
+                    element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+                    dimensions: vec![DimensionExpr::Constant(4), DimensionExpr::Constant(1)]
+                        .into_boxed_slice(),
+                },
+            }
+            .finalize()
+            .expect("the frozen EKF frame schema is valid");
+            let shape = schema
+                .instantiate_shape(Box::new([]))
+                .expect("the frozen EKF frame has no dynamic shape parameters");
+            let descriptor = ResolvedValueDescriptor::from_schema(schema, shape)
+                .expect("the frozen EKF frame descriptor is closed");
+            ValueCell::from_resolved_descriptor_data(
+                &descriptor,
+                ValueDataDraft::Matrix(
+                    values
+                        .into_iter()
+                        .map(|value| ValueDataDraft::F64(F64Bits::from_f64(value)))
+                        .collect::<Vec<_>>()
+                        .into_boxed_slice(),
+                ),
             )
-            .expect("the frozen EKF frame is a canonical four-element vector")
+            .expect("the frozen EKF frame has canonical descriptor-backed data")
         };
         Self {
             frame: frame_value(frame),
@@ -1024,12 +1029,12 @@ impl MechExecutionServices for FrozenEkfCompilationServices {
         )))
     }
 
-    fn bind_live_resource(
-        &mut self,
+    fn prepare_live_resource_binding<'a>(
+        &'a mut self,
         interpreter_id: u64,
         request: &ExecutionResourceRequest,
         target: ValueCell,
-    ) -> MResult<()> {
+    ) -> MResult<mech_core::PreparedLiveResourceBinding<'a>> {
         Self::validate_request(request)?;
         if let Some(existing) = self
             .live_bindings
@@ -1037,18 +1042,23 @@ impl MechExecutionServices for FrozenEkfCompilationServices {
             .find(|binding| binding.interpreter_id == interpreter_id && binding.request == *request)
         {
             if existing.target.same_cell(&target) {
-                return Ok(());
+                return Ok(mech_core::PreparedLiveResourceBinding::no_op());
             }
             return Err(frozen_service_error(
                 "live EKF observation rebound to a different target",
             ));
         }
-        self.live_bindings.push(FrozenLiveBinding {
+        self.live_bindings
+            .try_reserve(1)
+            .map_err(|_| frozen_service_error("live EKF binding capacity allocation failed"))?;
+        let binding = FrozenLiveBinding {
             interpreter_id,
             request: request.clone(),
             target,
-        });
-        Ok(())
+        };
+        mech_core::PreparedLiveResourceBinding::try_new(move || {
+            self.live_bindings.push(binding);
+        })
     }
 }
 

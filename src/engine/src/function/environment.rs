@@ -1,9 +1,17 @@
 use crate::function::extensions::ExtensionFunctionId;
+#[cfg(all(feature = "no_std", not(feature = "std")))]
+use alloc::{
+    collections::{BTreeMap, BTreeSet},
+    string::String,
+};
 use mech_core::{
     FunctionCatalog, FunctionExport, FunctionExposure, FunctionOperationNotVisible, MResult,
     MechError, MechErrorKind, OperationId, hash_str,
 };
+#[cfg(any(not(feature = "no_std"), feature = "std"))]
 use std::collections::{BTreeMap, BTreeSet};
+#[cfg(any(not(feature = "no_std"), feature = "std"))]
+use std::string::String;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum FunctionBinding {
@@ -23,7 +31,7 @@ impl FunctionEnvironment {
         let mut environment = Self::default();
 
         for entry in catalog.intrinsic_specializer_entries() {
-            environment.enabled_operations.insert(entry.operation);
+            environment.enabled_operations.insert(entry.operation.id);
         }
 
         for export in catalog.all_exports() {
@@ -247,8 +255,10 @@ impl MechErrorKind for FunctionEnvironmentNameCollision {
 mod tests {
     use super::*;
     use mech_core::{
-        CanonicalFunctionSpecializer, FunctionCatalogBuilder, SpecializationContext,
-        SpecializationInvocation, SpecializedFunction,
+        AccessMode, AliasPolicy, CanonicalFunctionSpecializer, ChangeDetectionPolicy, DeliveryMode,
+        ExternalInteraction, FunctionCatalogBuilder, InputPortLayout, InputPortPolicy,
+        OperationContractDeclaration, OutputConstruction, OutputPortPolicy, ShapeRule,
+        SpecializationContext, SpecializationInvocation, SpecializedFunction,
     };
     use std::sync::Arc;
 
@@ -281,12 +291,52 @@ mod tests {
 
     fn catalog_with_all_exposures() -> FunctionCatalog {
         let mut builder = FunctionCatalogBuilder::new();
+        let syntax_contract = OperationContractDeclaration {
+            inputs: InputPortLayout::Variadic {
+                prefix: Box::new([]),
+                repeated: InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+                min_repetitions: 0,
+            },
+            outputs: vec![OutputPortPolicy {
+                access: AccessMode::Write,
+                delivery: DeliveryMode::Signal,
+                construction: OutputConstruction::FullWrite {
+                    shape: ShapeRule::Declared,
+                },
+                alias: AliasPolicy::NoAlias,
+                change_detection: ChangeDetectionPolicy::KernelReported,
+            }]
+            .into_boxed_slice(),
+            interaction: ExternalInteraction::Pure,
+        };
         builder
-            .insert_canonical_intrinsic_specializer("assign", Arc::new(TestSpecializer))
+            .insert_canonical_intrinsic_specializer(
+                "assign",
+                syntax_contract.clone(),
+                Arc::new(TestSpecializer),
+            )
             .unwrap();
         for name in ["syntax/internal", "math/add", "stats/mean"] {
+            let declaration =
+                mech_core::maintained_source_type_declaration(name).unwrap_or_else(|_| {
+                    mech_core::FunctionTypeDeclaration::from_schemes(vec![
+                        mech_core::exact_unary(
+                            mech_core::KindExpr::Index,
+                            mech_core::KindExpr::Index,
+                        )
+                        .unwrap(),
+                    ])
+                });
             builder
-                .insert_canonical_specializer(name, Arc::new(TestSpecializer))
+                .insert_canonical_specializer_with_contract(
+                    name,
+                    declaration,
+                    syntax_contract.clone(),
+                    Arc::new(TestSpecializer),
+                )
                 .unwrap();
         }
         builder

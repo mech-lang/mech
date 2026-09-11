@@ -196,9 +196,9 @@ macro_rules! impl_binop {
     ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident) => {
         #[derive(Debug)]
         pub struct $struct_name<T> {
-            pub lhs: Ref<$arg1_type>,
-            pub rhs: Ref<$arg2_type>,
-            pub out: Ref<$out_type>,
+            pub lhs: $crate::ManagedPort<T>,
+            pub rhs: $crate::ManagedPort<T>,
+            pub out: $crate::ManagedPort<T>,
         }
         impl<T> MechFunctionFactory for $struct_name<T>
         where
@@ -215,6 +215,8 @@ macro_rules! impl_binop {
                 + ConstElem
                 + CompileConst
                 + FunctionRuntimeType
+                + FunctionPortBacking
+                + $crate::ManagedElement
                 + Add<Output = T>
                 + AddAssign
                 + Sub<Output = T>
@@ -236,6 +238,8 @@ macro_rules! impl_binop {
                 + PartialEq
                 + PartialOrd
                 + FunctionRuntimeType
+                + FunctionPortBacking
+                + $crate::ManagedElement
                 + Add<Output = T>
                 + AddAssign
                 + Sub<Output = T>
@@ -250,6 +254,10 @@ macro_rules! impl_binop {
             $arg2_type: FunctionRuntimeType + FunctionPortBacking,
             $out_type: FunctionStateBacking,
         {
+            fn implementation_memory_class() -> $crate::ImplementationMemoryClass {
+                $crate::ImplementationMemoryClass::NoAdditionalScratch
+            }
+
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
                 <$out_type as FunctionRuntimeType>::REPRESENTATION,
                 <$arg1_type as FunctionRuntimeType>::REPRESENTATION,
@@ -258,9 +266,9 @@ macro_rules! impl_binop {
 
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (out, lhs, rhs) = invocation.expect_binary()?;
-                let lhs: Ref<$arg1_type> = lhs.try_ref()?;
-                let rhs: Ref<$arg2_type> = rhs.try_ref()?;
-                let out: Ref<$out_type> = out.try_ref()?;
+                let lhs = lhs.try_managed_element::<T>()?;
+                let rhs = rhs.try_managed_element::<T>()?;
+                let out = out.try_managed_element::<T>()?;
                 Ok(Box::new(Self { lhs, rhs, out }))
             }
         }
@@ -275,6 +283,8 @@ macro_rules! impl_binop {
                 + 'static
                 + PartialEq
                 + PartialOrd
+                + FunctionPortBacking
+                + $crate::ManagedElement
                 + Add<Output = T>
                 + AddAssign
                 + Sub<Output = T>
@@ -287,22 +297,55 @@ macro_rules! impl_binop {
                 + One,
             $out_type: FunctionStateBacking,
         {
-            fn solve_result(&self) -> MResult<()> {
-                let lhs_ptr = self.lhs.as_ptr();
-                let rhs_ptr = self.rhs.as_ptr();
-                let out_ptr = self.out.as_mut_ptr();
-                $op!(lhs_ptr, rhs_ptr, out_ptr);
-                Ok(())
+            fn solve_managed(
+                &self,
+                frame: &mut KernelMemoryFrame<'_>,
+                _services: &mut dyn MechExecutionServices,
+            ) -> MResult<ReactiveSolveStatus> {
+                frame.with_binary_port_views(&self.lhs, &self.rhs, &self.out, |lhs, rhs, out| {
+                    let rows = out.rows();
+                    let columns = out.columns();
+                    let output_len = out.len();
+                    let geometry_error = || $crate::MemoryRuntimeError::InvalidLayout {
+                        object: None,
+                        size: output_len as u64,
+                        alignment: ::core::mem::align_of::<T>() as u32,
+                        reason: "binary input and output geometry disagree",
+                    };
+                    out.try_fill_column_major(|index| {
+                        let row = index % rows;
+                        let column = index / rows;
+                        let element = |value: &$crate::ManagedValueView<'_, T>| {
+                            match (value.rows(), value.columns()) {
+                                (input_rows, input_columns)
+                                    if (input_rows, input_columns) == (rows, columns) =>
+                                {
+                                    value.get(row, column)
+                                }
+                                (1, 1) => value.get(0, 0),
+                                (1, input_columns) if input_columns == columns => {
+                                    value.get(0, column)
+                                }
+                                (input_rows, 1) if input_rows == rows => value.get(row, 0),
+                                _ => None,
+                            }
+                        };
+                        let lhs = element(&lhs).ok_or_else(geometry_error)?;
+                        let rhs = element(&rhs).ok_or_else(geometry_error)?;
+                        $op!(@managed lhs, rhs)
+                    })
+                })?;
+                Ok(ReactiveSolveStatus::Changed)
             }
             fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-                Some(FunctionStatePort::from_ref(&self.out))
+                Some(FunctionStatePort::from_cell(self.out.cell()))
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
 
             fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
-                Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
+                Ok(Some(vec![FunctionStatePort::from_cell(self.out.cell())]))
             }
         }
         #[cfg(feature = "semantic-compiler")]
@@ -316,7 +359,12 @@ macro_rules! impl_binop {
                     stringify!($struct_name),
                     <T as FunctionRuntimeType>::REPRESENTATION
                 );
-                compile_binop!(name, self.out, self.lhs, self.rhs, ctx);
+                let out = $crate::compile_value_cell_register(self.out.cell(), ctx)?;
+                let lhs = $crate::compile_value_cell_register(self.lhs.cell(), ctx)?;
+                let rhs = $crate::compile_value_cell_register(self.rhs.cell(), ctx)?;
+                let function = ctx.function_id(&name)?;
+                ctx.emit_binop(function, out, lhs, rhs);
+                Ok(out)
             }
         }
     };
@@ -324,28 +372,40 @@ macro_rules! impl_binop {
 
 #[macro_export]
 macro_rules! impl_unop {
-    ($struct_name:ident, $arg_type:ty, $out_type:ty, $op:ident $(, $semantic_contract:path)?) => {
+    ($struct_name:ident, $element:ty, $arg_type:ty, $out_type:ty, $op:ident $(, $semantic_contract:path)?) => {
         #[derive(Debug)]
         pub(crate) struct $struct_name {
-            arg: Ref<$arg_type>,
-            out: Ref<$out_type>,
+            arg: $crate::ManagedPort<$element>,
+            out: $crate::ManagedPort<$element>,
         }
         impl MechFunctionFactory for $struct_name
         where
             $arg_type: FunctionPortBacking,
             $out_type: FunctionStateBacking,
         {
+            fn implementation_memory_class() -> $crate::ImplementationMemoryClass {
+                $crate::ImplementationMemoryClass::NoAdditionalScratch
+            }
+
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
                 <$out_type as FunctionRuntimeType>::REPRESENTATION,
                 <$arg_type as FunctionRuntimeType>::REPRESENTATION,
             );
 
+            fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+                let contract: Option<&'static OperationContractDeclaration> = None;
+                $(let contract = Some($semantic_contract(
+                    <$out_type as FunctionRuntimeType>::REPRESENTATION,
+                ));)?
+                contract
+            }
+
             fn new_invocation(
                 invocation: FunctionInvocation,
             ) -> MResult<Box<dyn MechFunction>> {
                 let (out, arg) = invocation.expect_unary()?;
-                let arg: Ref<$arg_type> = arg.try_ref()?;
-                let out: Ref<$out_type> = out.try_ref()?;
+                let arg = arg.try_managed_element::<$element>()?;
+                let out = out.try_managed_element::<$element>()?;
                 Ok(Box::new(Self { arg, out }))
             }
 
@@ -354,14 +414,32 @@ macro_rules! impl_unop {
         where
             $out_type: FunctionStateBacking,
         {
-            fn solve_result(&self) -> MResult<()> {
-                let arg_ptr = self.arg.as_ptr();
-                let out_ptr = self.out.as_mut_ptr();
-                $op!(arg_ptr, out_ptr);
-                Ok(())
+            fn solve_managed(
+                &self,
+                frame: &mut KernelMemoryFrame<'_>,
+                _services: &mut dyn MechExecutionServices,
+            ) -> MResult<ReactiveSolveStatus> {
+                frame.with_unary_port_views(&self.arg, &self.out, |arg, out| {
+                    let rows = out.rows();
+                    let geometry_error = || $crate::MemoryRuntimeError::InvalidLayout {
+                        object: None,
+                        size: arg.len() as u64,
+                        alignment: core::mem::align_of::<$element>() as u32,
+                        reason: "elementwise input and output geometry disagree",
+                    };
+                    if (arg.rows(), arg.columns()) != (rows, out.columns()) {
+                        return Err(geometry_error().into());
+                    }
+                    out.try_fill_column_major(|index| {
+                        let value = arg.get(index % rows, index / rows)
+                            .ok_or_else(geometry_error)?;
+                        $op!(@managed value)
+                    })
+                })?;
+                Ok(ReactiveSolveStatus::Changed)
             }
             fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-                Some(FunctionStatePort::from_ref(&self.out))
+                Some(FunctionStatePort::from_cell(self.out.cell()))
             }
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
                 let contract: Option<&'static OperationContractDeclaration> = None;
@@ -375,14 +453,18 @@ macro_rules! impl_unop {
             }
 
             fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
-                Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
+                Ok(Some(vec![FunctionStatePort::from_cell(self.out.cell())]))
             }
         }
         #[cfg(feature = "semantic-compiler")]
         impl MechFunctionCompiler for $struct_name {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 let name = format!("{}", stringify!($struct_name));
-                compile_unop!(name, self.out, self.arg, ctx);
+                let out = $crate::compile_value_cell_register(self.out.cell(), ctx)?;
+                let arg = $crate::compile_value_cell_register(self.arg.cell(), ctx)?;
+                let function = ctx.function_id(&name)?;
+                ctx.emit_unop(function, out, arg);
+                Ok(out)
             }
         }
     };
@@ -443,6 +525,7 @@ macro_rules! __mech_for_each_exact_binop_runtime_factory_for_type {
         $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; feature = "vector3"; ["vector3"]; SV3, V3S, V3V3);
         $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; feature = "vector4"; ["vector4"]; SV4, V4S, V4V4);
         $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; feature = "vectord"; ["vectord"]; SVD, VDS, VDVD);
+        $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "vectord", feature = "row_vectord"); ["vectord", "row_vectord"]; VDRD, RDVD);
 
         $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "matrix2", feature = "vector2"); ["matrix2", "vector2"]; M2V2, V2M2);
         $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "matrix3", feature = "vector3"); ["matrix3", "vector3"]; M3V3, V3M3);
@@ -920,6 +1003,27 @@ macro_rules! __mech_for_each_binop_runtime_factory_for_type {
             $lib,
             SVD,
             "vectord",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+
+        #[cfg(all(feature = "vectord", feature = "row_vectord"))]
+        $callback!(
+            $context,
+            $lib,
+            VDRD,
+            "vectord",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(all(feature = "vectord", feature = "row_vectord"))]
+        $callback!(
+            $context,
+            $lib,
+            RDVD,
+            "row_vectord",
             $scalar,
             $scalar_name,
             $scalar_token
@@ -1531,7 +1635,7 @@ macro_rules! __mech_elementwise_binop_contract {
         )
     };
     (MDMD) => {
-        $crate::RuntimeFunctionContract::same_shape(
+        $crate::RuntimeFunctionContract::elementwise_broadcast(
             $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
         )
     };
@@ -1551,7 +1655,7 @@ macro_rules! __mech_elementwise_binop_contract {
         )
     };
     (RDRD) => {
-        $crate::RuntimeFunctionContract::same_shape(
+        $crate::RuntimeFunctionContract::elementwise_broadcast(
             $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
         )
     };
@@ -1571,7 +1675,17 @@ macro_rules! __mech_elementwise_binop_contract {
         )
     };
     (VDVD) => {
-        $crate::RuntimeFunctionContract::same_shape(
+        $crate::RuntimeFunctionContract::elementwise_broadcast(
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (VDRD) => {
+        $crate::RuntimeFunctionContract::elementwise_broadcast(
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (RDVD) => {
+        $crate::RuntimeFunctionContract::elementwise_broadcast(
             $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
         )
     };
@@ -1799,7 +1913,7 @@ macro_rules! __mech_elementwise_binop_contract {
 #[macro_export]
 macro_rules! __mech_declare_native_binop_runtime_factory {
     (
-        ($cfg:meta; $package:literal; $crate_name:literal; [$($base_feature:literal),* $(,)?]),
+        ($cfg:meta; $package:literal; $crate_name:literal; $canonical_operation:literal; [$($base_feature:literal),* $(,)?]),
         $lib:ident,
         $suffix:ident,
         [$($_shape_feature:literal),* $(,)?],
@@ -1815,6 +1929,7 @@ macro_rules! __mech_declare_native_binop_runtime_factory {
                 name: concat!(stringify!($lib), stringify!($suffix), "<", $scalar_name, ">"),
                 factory_type: [<$lib $suffix>]<$scalar>,
                 contract: $crate::__mech_elementwise_binop_contract!($suffix),
+                operations: [$crate::OperationId::from_name($canonical_operation)],
                 package: $package,
                 crate_name: $crate_name,
                 installer_path: concat!(
@@ -1838,6 +1953,7 @@ macro_rules! __mech_declare_native_binop_runtime_factories_for_scalar {
         package: $package:literal,
         crate_name: $crate_name:literal,
         operation: $operation:ident,
+        canonical_operation: $canonical_operation:literal,
         operation_feature: $operation_feature:literal,
         additional_features: [$($additional_feature:literal),* $(,)?],
         scalar: ($scalar_feature:literal, $scalar:ty, $scalar_name:literal, $scalar_token:ident),
@@ -1848,6 +1964,7 @@ macro_rules! __mech_declare_native_binop_runtime_factories_for_scalar {
                 all(feature = $operation_feature, feature = $scalar_feature);
                 $package;
                 $crate_name;
+                $canonical_operation;
                 [
                     $operation_feature,
                 ]
@@ -1870,6 +1987,7 @@ macro_rules! __mech_declare_native_binop_runtime_factories_each {
         package: $package:literal,
         crate_name: $crate_name:literal,
         operation: $operation:ident,
+        canonical_operation: $canonical_operation:literal,
         operation_feature: $operation_feature:literal,
         additional_features: [$($additional_feature:literal),* $(,)?],
         scalars:
@@ -1881,6 +1999,7 @@ macro_rules! __mech_declare_native_binop_runtime_factories_each {
             package: $package,
             crate_name: $crate_name,
             operation: $operation,
+            canonical_operation: $canonical_operation,
             operation_feature: $operation_feature,
             additional_features: [$($additional_feature),*],
             scalar: ($scalar_feature, $scalar, $scalar_name, $scalar_token),
@@ -1889,6 +2008,7 @@ macro_rules! __mech_declare_native_binop_runtime_factories_each {
             package: $package,
             crate_name: $crate_name,
             operation: $operation,
+            canonical_operation: $canonical_operation,
             operation_feature: $operation_feature,
             additional_features: [$($additional_feature),*],
             scalars: $(( $remaining_feature, $remaining_scalar, $remaining_name, $remaining_token )),*,
@@ -1898,6 +2018,7 @@ macro_rules! __mech_declare_native_binop_runtime_factories_each {
         package: $package:literal,
         crate_name: $crate_name:literal,
         operation: $operation:ident,
+        canonical_operation: $canonical_operation:literal,
         operation_feature: $operation_feature:literal,
         additional_features: [$($additional_feature:literal),* $(,)?],
         scalars:,
@@ -1911,6 +2032,7 @@ macro_rules! declare_native_binop_runtime_factories {
         package: $package:literal,
         crate_name: $crate_name:literal,
         operation: $operation:ident,
+        canonical_operation: $canonical_operation:literal,
         operation_feature: $operation_feature:literal,
         additional_features: [$($additional_feature:literal),* $(,)?],
         scalars: $(
@@ -1921,6 +2043,7 @@ macro_rules! declare_native_binop_runtime_factories {
             package: $package,
             crate_name: $crate_name,
             operation: $operation,
+            canonical_operation: $canonical_operation,
             operation_feature: $operation_feature,
             additional_features: [$($additional_feature),*],
             scalars: $(($scalar_feature, $scalar, $scalar_name, $scalar_token)),+,
@@ -2029,6 +2152,13 @@ macro_rules! __mech_install_binop_runtime_factory {
                     ">"
                 ),
                 $crate::__mech_elementwise_binop_contract!($suffix),
+                $crate::RuntimeFamilyId::from_name(concat!(
+                    stringify!($lib),
+                    stringify!($suffix),
+                    "<",
+                    $scalar_name,
+                    ">"
+                )),
             )?;
         }
     };
@@ -2251,6 +2381,7 @@ macro_rules! __mech_install_unop_runtime_factory {
             $builder.insert_runtime_factory::<[<$lib $scalar:camel $suffix>]>(
                 stringify!([<$lib $scalar:camel $suffix>]),
                 $crate::__mech_elementwise_unop_contract!($suffix),
+                $crate::RuntimeFamilyId::from_name(stringify!([<$lib $scalar:camel $suffix>])),
             )?;
         }
     };
@@ -2333,6 +2464,12 @@ macro_rules! __mech_install_typed_runtime_factory {
         $builder.insert_runtime_factory::<$factory<$scalar>>(
             concat!(stringify!($factory), "<", $scalar_name, ">"),
             $contract,
+            $crate::RuntimeFamilyId::from_name(concat!(
+                stringify!($factory),
+                "<",
+                $scalar_name,
+                ">"
+            )),
         )?;
     };
 }
@@ -2539,5 +2676,11 @@ macro_rules! impl_fxns {
       $op!([<$lib V4V4>], Vector4<$in>, Vector4<$in>, Vector4<$out>, [<$lib:lower _vec_op>]);
       #[cfg(feature = "vectord")]
       $op!([<$lib VDVD>], DVector<$in>, DVector<$in>, DVector<$out>, [<$lib:lower _vec_op>]);
+      // A source `1 x 1` matrix uses the dynamic row representation. These
+      // bridges keep column broadcasting closed across that physical boundary.
+      #[cfg(all(feature = "vectord", feature = "row_vectord"))]
+      $op!([<$lib VDRD>], DVector<$in>, RowDVector<$in>, DVector<$out>, [<$lib:lower _mat_row_op>]);
+      #[cfg(all(feature = "vectord", feature = "row_vectord"))]
+      $op!([<$lib RDVD>], RowDVector<$in>, DVector<$in>, DVector<$out>, [<$lib:lower _row_mat_op>]);
     }
   }}

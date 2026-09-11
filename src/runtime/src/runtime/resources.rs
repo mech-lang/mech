@@ -4,7 +4,7 @@ use crate::{
     CapabilityId, CapabilityRequest, ResourcePathCapability, RunResourceGrantConfig,
     RuntimeCapabilityGrantSpec, RuntimeCapabilityOperation, RuntimeContext, RuntimeEffectId,
     RuntimeResourceKey, RuntimeResourceProvider, RuntimeResourceReadRequest,
-    RuntimeResourceWriteIntent, RuntimeResourceWriteRequest, RuntimeValueSnapshot, TransactionId,
+    RuntimeResourceWriteCommand, RuntimeResourceWriteIntent, RuntimeValueSnapshot, TransactionId,
 };
 use mech_core::{MResult, MechError, Value};
 use std::sync::Arc;
@@ -92,7 +92,7 @@ impl MechRuntime {
         self.resources.has_provider(scheme)
     }
 
-    pub fn write_resource(&mut self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+    pub fn write_resource(&mut self, request: RuntimeResourceWriteCommand) -> MResult<()> {
         let mut context = self.runtime_context()?;
         self.write_resource_with_context(&mut context, request)
             .map(|_| ())
@@ -101,7 +101,7 @@ impl MechRuntime {
     pub fn write_resource_with_context(
         &mut self,
         context: &mut RuntimeContext,
-        mut request: RuntimeResourceWriteRequest,
+        mut request: RuntimeResourceWriteCommand,
     ) -> MResult<RuntimeEffectId> {
         self.ensure_runtime_mutation_allowed("write_resource_with_context")?;
         self.validate_context_for_runtime(context)?;
@@ -151,12 +151,37 @@ impl MechRuntime {
         } else {
             None
         };
-        let effect = self.resources.prepare_write(request)?;
-        match staged_resource {
+        let transaction_id = Self::context_transaction_id(context)?;
+        let expected_effect_id = self
+            .active_runtime_transaction(transaction_id)?
+            .effects
+            .next_id(transaction_id);
+        let effect = self.resources.prepare_write(
+            RuntimeResourceWriteCommand {
+                base_uri: request.base_uri,
+                path: request.path,
+                context_name: request.context_name,
+                operation: request.operation,
+                value: request.value,
+                intent: request.intent,
+            }
+            .bind_effect(expected_effect_id, expected_effect_id.to_string()),
+        )?;
+        let staged_effect_id = match staged_resource {
             Some((base_uri, path, value)) => self
                 .stage_runtime_resource_effect_with_context(context, effect, base_uri, path, value),
             None => self.stage_runtime_effect_with_context(context, effect),
+        }?;
+        if staged_effect_id != expected_effect_id {
+            return Err(MechError::new(
+                RuntimeInvalidOperationError {
+                    operation: "write_resource_with_context",
+                    reason: "resource provider effect identity changed before staging".to_owned(),
+                },
+                None,
+            ));
         }
+        Ok(staged_effect_id)
     }
 
     fn cleanup_failed_implicit_resource_operation(

@@ -1,11 +1,14 @@
 #![cfg(all(feature = "functions", feature = "f64"))]
+#![feature(where_clause_attrs)]
 
 use mech_core::*;
-use nalgebra::{
-    DMatrix, DVector, Matrix1, Matrix2, Matrix2x3, Matrix3, Matrix3x2, Matrix4, RowDVector,
-    RowVector2, RowVector3, RowVector4, Vector2, Vector3, Vector4,
+use nalgebra::*;
+use num_traits::{One, Zero};
+use std::{
+    fmt::{Debug, Display},
+    marker::PhantomData,
+    ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign},
 };
-use std::marker::PhantomData;
 
 macro_rules! define_probe_family {
     ($name:ident, $lhs:ty, $rhs:ty, $out:ty, $operation:ident) => {
@@ -18,11 +21,24 @@ macro_rules! define_probe_family {
 // macros must resolve their proc-macro dependency at the definition crate.
 mech_core::impl_fxns!(HygieneProbe, T, T, define_probe_family);
 
+macro_rules! managed_add_probe {
+    (@managed $lhs:expr, $rhs:expr) => {
+        Ok($lhs + $rhs)
+    };
+}
+
+mech_core::impl_binop!(ManagedBinopProbeSS, f64, f64, f64, managed_add_probe);
+
 struct NativeProbe;
 
 impl MechFunctionImpl for NativeProbe {
-    fn solve_result(&self) -> MResult<()> {
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut KernelMemoryFrame<'_>,
+        _services: &mut dyn MechExecutionServices,
+    ) -> MResult<ReactiveSolveStatus> {
+        (|| -> MResult<()> { Ok(()) })()?;
+        Ok(ReactiveSolveStatus::Changed)
     }
 
     fn to_string(&self) -> String {
@@ -40,6 +56,10 @@ impl MechFunctionCompiler for NativeProbe {
 struct BinopProbeSS<T>(PhantomData<T>);
 
 impl MechFunctionFactory for BinopProbeSS<f64> {
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch
+    }
+
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
         FunctionValueRepresentation::F64,
         FunctionValueRepresentation::F64,
@@ -54,6 +74,10 @@ impl MechFunctionFactory for BinopProbeSS<f64> {
 struct UnopProbeF64S;
 
 impl MechFunctionFactory for UnopProbeF64S {
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch
+    }
+
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
         FunctionValueRepresentation::F64,
         FunctionValueRepresentation::F64,
@@ -68,8 +92,9 @@ impl MechFunctionFactory for UnopProbeF64S {
 fn exported_stdlib_macros_are_hygienic_without_consumer_paste_imports() -> MResult<()> {
     let mut builder = FunctionCatalogBuilder::new();
     mech_core::__mech_install_binop_runtime_factory!(builder, BinopProbe, SS, f64, "f64");
+    mech_core::__mech_install_binop_runtime_factory!(builder, ManagedBinopProbe, SS, f64, "f64");
     mech_core::__mech_install_unop_runtime_factory!(builder, UnopProbe, F64, S);
     let catalog = builder.build()?;
-    assert_eq!(catalog.runtime_factory_count(), 2);
+    assert_eq!(catalog.runtime_factory_count(), 3);
     Ok(())
 }

@@ -14,5 +14,5 @@ rust-version = "1.92"
 default = []
 
 [dependencies]
-mech-core = { version = "0.3.5", path = "../core", default-features = false, features = ["f32", "matrixd"] }
+mech-core = { version = "0.3.5", path = "../core", default-features = false, features = ["f32", "matrixd", "range"] }
 mech-engine = { version = "0.3.5", path = "../engine", default-features = false, features = ["resident-artifact"] }

@@ -3,19 +3,23 @@
 use mech_engine::*;
 
 use mech_core::{
-    AccessMode, AliasPolicy, ApplicationRequirement, ApplicationRequirementId, BytecodeInstruction,
-    BytecodeProgram, CanonicalNominalPath, ChangeDetectionPolicy, ConstantHandle,
-    ConstantStoreBuilder, DeliveryMode, DimensionExpr, DimensionLifetime,
-    DimensionParameterDeclaration, DimensionParameterId, DimensionParameterOrigin, EffectContract,
-    EffectDeliveryPolicy, EncodedConstant, ExecutionResourceRequest, ExternalInteraction,
-    FloatWidth, IdempotencyRequirement, InputPortLayout, InputPortPolicy, IntegerWidth, KindExpr,
-    LegacyOpaqueOperationContract, NominalKey, NominalKind, ObservationContract,
-    ObservationReplayPolicy, OperationContractDeclaration, OperationContractId,
+    AccessMode, AliasPolicy, ApplicationRequirement, ApplicationRequirementId, BoundCall,
+    BytecodeCompilerContext, BytecodeInstruction, BytecodeProgram, CanonicalNominalPath,
+    ChangeDetectionPolicy, ConstantHandle, ConstantStoreBuilder, DeliveryMode, DimensionExpr,
+    DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+    DimensionParameterOrigin, EffectContract, EffectDeliveryPolicy, EncodedConstant,
+    ExecutionResourceRequest, ExecutionTarget, ExternalInteraction, FloatWidth, FunctionInvocation,
+    FunctionValueRepresentation, IdempotencyRequirement, InputPortLayout, InputPortPolicy,
+    IntegerWidth, KindExpr, MResult, MechFunction, MechFunctionCompiler, MechFunctionFactory,
+    MechFunctionImpl, NominalKey, NominalKind, ObservationContract, ObservationReplayPolicy,
+    OperationContractDeclaration, OperationContractError, OperationContractId,
     OperationContractTable, OperationContractTableBuilder, OutputConstruction, OutputPortPolicy,
-    RegionPolicy, ResolvedInputPort, ResolvedOperationContract, ResolvedOutputPort,
-    ResourceDelivery, ResourceIntent, RuntimeType, SchemaBody, SchemaDraft, SchemaField,
-    SchemaHandle, SchemaTableBuilder, ShapeContractReference, ShapeRule, Value, ValueCell,
-    ValueData, ValueDataDraft, ValueDraft, compile_value_cell_matrix_literal_register,
+    RegionPolicy, Register, ResolvedInputPort, ResolvedOperationContract,
+    ResolvedOperationDescriptor, ResolvedOutputPort, ResourceDelivery, ResourceIntent,
+    RuntimeFunctionContract, RuntimeFunctionId, RuntimeFunctionSignature, RuntimeOutputAliasPolicy,
+    RuntimeType, SchemaBody, SchemaDraft, SchemaField, SchemaHandle, SchemaTableBuilder,
+    ShapeContractReference, ShapeRule, Value, ValueCell, ValueData, ValueDataDraft, ValueDraft,
+    compile_value_cell_matrix_literal_register,
     snapshot::{
         Complex32Bits, Complex64Bits, ConstantStoreBuild, EnumDraft, F32Bits, F64Bits,
         MapEntryDraft, NamedValueDraft, OptionDraft, ReifiedTypeDraft, SequenceView,
@@ -24,6 +28,75 @@ use mech_core::{
     write_bytecode_with_artifact,
 };
 use std::collections::{BTreeMap, BTreeSet};
+
+struct ArtifactFixtureUnary;
+struct ArtifactFixtureFunction;
+
+impl MechFunctionFactory for ArtifactFixtureUnary {
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch
+    }
+
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
+        FunctionValueRepresentation::F64,
+        FunctionValueRepresentation::F64,
+    );
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&ARTIFACT_FIXTURE_CONTRACT)
+    }
+
+    fn new_invocation(_invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        Ok(Box::new(ArtifactFixtureFunction))
+    }
+}
+
+impl MechFunctionImpl for ArtifactFixtureFunction {
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> { Ok(()) })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
+    }
+
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&ARTIFACT_FIXTURE_CONTRACT)
+    }
+
+    fn to_string(&self) -> String {
+        "ArtifactFixtureFunction".to_owned()
+    }
+}
+
+impl MechFunctionCompiler for ArtifactFixtureFunction {
+    fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        Ok(0)
+    }
+}
+
+static ARTIFACT_FIXTURE_CONTRACT: std::sync::LazyLock<OperationContractDeclaration> =
+    std::sync::LazyLock::new(|| OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![InputPortPolicy {
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            }]
+            .into_boxed_slice(),
+        ),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::FullWrite {
+                shape: ShapeRule::SameAsInput { input: 0 },
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection: ChangeDetectionPolicy::AlwaysChanged,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    });
 
 #[derive(Clone, Copy)]
 struct Schemas {
@@ -457,7 +530,7 @@ fn ekf(data: &FixtureData) -> SourceProgram {
 
 fn build_both(data: &FixtureData, graph: SourceProgram) -> (ProgramArtifact, ProgramArtifact) {
     let mut source_context = ArtifactBuildContext::new(&data.schemas, &data.constants);
-    let source = compile_source_program(&graph, &mut source_context).unwrap();
+    let source = compile_with_pure_contracts(&graph, &mut source_context).unwrap();
     let bytes = encode_program_artifact_bytecode_v1(&source).unwrap();
     let parsed = ParsedProgram::from_bytes(&bytes).unwrap();
     assert!(!parsed.artifact.is_empty());
@@ -600,6 +673,19 @@ fn pure_full_write_contract(
     }
 }
 
+fn compile_with_pure_contracts(
+    graph: &SourceProgram,
+    context: &mut ArtifactBuildContext<'_>,
+) -> Result<ProgramArtifact, ArtifactBuildError> {
+    let declarations = graph
+        .nodes
+        .iter()
+        .map(|node| pure_full_write_contract(node.inputs.len(), node.outputs.len()))
+        .collect::<Vec<_>>();
+    let declaration_refs = declarations.iter().collect::<Vec<_>>();
+    compile_source_program_with_contracts(graph, context, &declaration_refs)
+}
+
 fn pure_state_rmw_contract(base_input: u16) -> OperationContractDeclaration {
     OperationContractDeclaration {
         inputs: InputPortLayout::Fixed(
@@ -630,7 +716,7 @@ fn pure_state_rmw_contract(base_input: u16) -> OperationContractDeclaration {
 fn build_both_with_contracts(
     data: &FixtureData,
     graph: SourceProgram,
-    declarations: &[Option<&OperationContractDeclaration>],
+    declarations: &[&OperationContractDeclaration],
 ) -> (ProgramArtifact, ProgramArtifact) {
     let mut source_context = ArtifactBuildContext::new(&data.schemas, &data.constants);
     let source =
@@ -696,7 +782,7 @@ fn synthetic_ekf_contract_fixture_is_fully_declared_and_round_trips_contract_ids
         .iter()
         .map(|node| pure_full_write_contract(node.inputs.len(), node.outputs.len()))
         .collect::<Vec<_>>();
-    let declaration_refs = declarations.iter().map(Some).collect::<Vec<_>>();
+    let declaration_refs = declarations.iter().collect::<Vec<_>>();
     let (source, bytecode) = build_both_with_contracts(&data, graph, &declaration_refs);
 
     assert!(
@@ -704,14 +790,6 @@ fn synthetic_ekf_contract_fixture_is_fully_declared_and_round_trips_contract_ids
             .contracts()
             .iter()
             .all(|contract| matches!(contract, ResolvedOperationContract::Declared(_)))
-    );
-    assert_eq!(
-        source
-            .contracts()
-            .iter()
-            .filter(|contract| matches!(contract, ResolvedOperationContract::LegacyOpaque(_)))
-            .count(),
-        0
     );
     assert_eq!(source.revision(), bytecode.revision());
     assert_eq!(source.contracts(), bytecode.contracts());
@@ -819,7 +897,7 @@ fn combinational_cycles_are_rejected_but_state_feedback_is_valid() {
     };
     let mut context = ArtifactBuildContext::new(&data.schemas, &data.constants);
     assert!(matches!(
-        compile_source_program(&graph, &mut context),
+        compile_with_pure_contracts(&graph, &mut context),
         Err(ArtifactBuildError::CombinationalCycle)
     ));
     assert!(build_both(&data, stateful_register(&data)).0.nodes().len() == 1);
@@ -863,7 +941,7 @@ fn state_reads_depend_on_the_latest_preceding_writer() {
     let read = pure_full_write_contract(1, 1);
     let mut context = ArtifactBuildContext::new(&data.schemas, &data.constants);
     assert!(matches!(
-        compile_source_program_with_contracts(&graph, &mut context, &[Some(&write), Some(&read)],),
+        compile_source_program_with_contracts(&graph, &mut context, &[&write, &read]),
         Err(ArtifactBuildError::CombinationalCycle)
     ));
 }
@@ -1084,6 +1162,7 @@ fn compiled_scalar_artifact_fixture(
     first_type: RuntimeType,
     first_schema: Option<SchemaBody>,
 ) -> CompiledBytecode {
+    let first_is_f64 = matches!(&first_type, RuntimeType::F64);
     let first = match first_type {
         RuntimeType::Empty => EncodedConstant {
             runtime_type: RuntimeType::Empty,
@@ -1101,6 +1180,10 @@ fn compiled_scalar_artifact_fixture(
     if matches!(first.runtime_type, RuntimeType::Empty) {
         absent_registers.insert(0);
     }
+    let f64_descriptor = ValueCell::from_exact(0.0_f64)
+        .unwrap()
+        .resolved_descriptor()
+        .unwrap();
     CompiledBytecode {
         program: BytecodeProgram {
             register_count: 2,
@@ -1133,9 +1216,15 @@ fn compiled_scalar_artifact_fixture(
         instruction_contracts: vec![None, None, None],
         instruction_operations: vec![None, None, None],
         instruction_source_nodes: vec![None, None, None],
+        instruction_type_bindings: vec![None, None, None],
+        instruction_memory_plans: vec![None, None, None],
         register_schemas: vec![
             first_schema,
             Some(SchemaBody::FloatingPoint(FloatWidth::W64)),
+        ],
+        register_type_descriptors: vec![
+            first_is_f64.then_some(f64_descriptor.clone()),
+            Some(f64_descriptor),
         ],
         absent_registers,
         register_collection_cardinalities: vec![None, None],
@@ -1156,13 +1245,23 @@ fn compiled_assign_artifact_fixture(
         RuntimeType::F64 => Some(SchemaBody::FloatingPoint(FloatWidth::W64)),
         ref other => panic!("unsupported assignment fixture type {other:?}"),
     };
+    let operation =
+        ResolvedOperationDescriptor::from_name("assign/value", ARTIFACT_FIXTURE_CONTRACT.clone())
+            .unwrap();
     let mut builder = FunctionCatalogBuilder::new();
-    install_intrinsic_runtime(&mut builder).unwrap();
+    builder
+        .insert_runtime_factory_with_semantic_contract::<ArtifactFixtureUnary>(
+            "ArtifactFixtureUnary",
+            RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
+            operation.id,
+            &ARTIFACT_FIXTURE_CONTRACT,
+        )
+        .unwrap();
     let catalog = builder.build().unwrap();
     let function = catalog
         .runtime_entries()
-        .find(|entry| entry.name == "Assign<f64>")
-        .expect("the full compiler profile installs scalar assignment")
+        .find(|entry| entry.name == "ArtifactFixtureUnary")
+        .expect("the fixture installs its typed unary runtime")
         .id
         .raw();
     let mut compiled = compiled_scalar_artifact_fixture(first_type, first_schema);
@@ -1180,23 +1279,200 @@ fn compiled_assign_artifact_fixture(
             CompiledNodeKind::Combinational,
         )),
     );
-    compiled.instruction_contracts.insert(2, None);
+    compiled
+        .instruction_contracts
+        .insert(2, Some(ARTIFACT_FIXTURE_CONTRACT.clone()));
     compiled
         .instruction_operations
         .insert(2, Some("assign/value".to_owned()));
     compiled.instruction_source_nodes.insert(2, Some(0));
+    let f64_descriptor = ValueCell::from_exact(0.0_f64)
+        .unwrap()
+        .resolved_descriptor()
+        .unwrap();
+    let runtime_function = RuntimeFunctionId::from_raw(function);
+    let binding = BoundCall::syntax_directed(
+        operation,
+        vec![f64_descriptor.clone()].into_boxed_slice(),
+        vec![f64_descriptor].into_boxed_slice(),
+        runtime_function,
+        ExecutionTarget::DirectRuntime,
+    )
+    .unwrap();
+    compiled.instruction_memory_plans.insert(
+        2,
+        Some(mech_core::CallMemoryPlan {
+            bound_call: binding.clone(),
+            inputs: Box::new([]),
+            outputs: Box::new([]),
+            input_storage: Box::new([]),
+            output_storage: Box::new([]),
+            input_witnesses: Box::new([]),
+            output_witnesses: Box::new([]),
+            output_regions: Box::new([]),
+            input_lifetimes: Box::new([]),
+            output_lifetimes: Box::new([]),
+            allocations: Box::new([]),
+            aliases: Box::new([]),
+            transactions: Box::new([]),
+            implementation_memory: mech_core::ImplementationMemoryClass::NoAdditionalScratch,
+            target: mech_core::TargetMemoryProfile::current_direct_host().unwrap(),
+            demand: mech_core::ResourceDemand::default(),
+            deferred_witnesses: Box::new([]),
+        }),
+    );
+    compiled.instruction_type_bindings.insert(2, Some(binding));
     (compiled, catalog)
+}
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn compiler_state_hold_uses_the_complete_execution_schedule() {
+    use mech_engine::__resident::{ActivationFacts, activate};
+
+    let mut catalog = FunctionCatalogBuilder::new();
+    install_intrinsic_runtime(&mut catalog).unwrap();
+    install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let variable_define = catalog
+        .runtime_entries()
+        .find(|entry| entry.name == "VariableDefineF64")
+        .expect("the full compiler profile installs scalar variable definition")
+        .id
+        .raw();
+    let mut compiled = compiled_scalar_artifact_fixture(
+        RuntimeType::F64,
+        Some(SchemaBody::FloatingPoint(FloatWidth::W64)),
+    );
+    let symbol = mech_core::hash_str("state");
+    compiled.program.symbols.insert(symbol, 0);
+    compiled.program.mutable_symbols.insert(symbol);
+    compiled.program.register_count = 3;
+    compiled.program.constants[1] = EncodedConstant {
+        runtime_type: RuntimeType::String,
+        alignment: 1,
+        bytes: b"state".to_vec(),
+    };
+    compiled.program.constants.push(EncodedConstant {
+        runtime_type: RuntimeType::Bool,
+        alignment: 1,
+        bytes: vec![1],
+    });
+    compiled.program.instructions = vec![
+        BytecodeInstruction::ConstLoad {
+            dst: 0,
+            constant: 0,
+        },
+        BytecodeInstruction::ConstLoad {
+            dst: 1,
+            constant: 1,
+        },
+        BytecodeInstruction::ConstLoad {
+            dst: 2,
+            constant: 2,
+        },
+        BytecodeInstruction::RuntimeBinary {
+            function: variable_define,
+            dst: 0,
+            lhs: 1,
+            rhs: 2,
+        },
+        BytecodeInstruction::Return { src: 0 },
+    ];
+    compiled.instruction_roles = vec![
+        None,
+        None,
+        None,
+        Some(CompiledInstructionRole::DeclarationMarker),
+        None,
+    ];
+    compiled.instruction_contracts = vec![None; 5];
+    compiled.instruction_operations = vec![None; 5];
+    compiled.instruction_source_nodes = vec![None; 5];
+    compiled.instruction_type_bindings = vec![None; 5];
+    compiled.instruction_memory_plans = vec![None; 5];
+    compiled.register_schemas = vec![
+        Some(SchemaBody::FloatingPoint(FloatWidth::W64)),
+        Some(SchemaBody::String),
+        Some(SchemaBody::Bool),
+    ];
+    compiled.register_type_descriptors = vec![
+        Some(
+            ValueCell::from_exact(0.0_f64)
+                .unwrap()
+                .resolved_descriptor()
+                .unwrap(),
+        ),
+        Some(
+            ValueCell::from_exact("state".to_owned())
+                .unwrap()
+                .resolved_descriptor()
+                .unwrap(),
+        ),
+        Some(
+            ValueCell::from_exact(true)
+                .unwrap()
+                .resolved_descriptor()
+                .unwrap(),
+        ),
+    ];
+    compiled.register_collection_cardinalities = vec![None; 3];
+    compiled.register_state_initializers = vec![Some(0), None, None];
+    compiled.symbol_definitions.push(CompiledSymbolDefinition {
+        id: symbol,
+        name: "state".to_owned(),
+        register: 0,
+        mutable: true,
+        root_visible: true,
+        ordinal: 0,
+    });
+    compiled.return_register = 0;
+
+    let artifact = compile_executable_program_artifact(&compiled, &catalog)
+        .expect("a state without a source writer receives a synthetic hold node");
+    let [hold] = artifact.nodes() else {
+        panic!("the mutable declaration must produce exactly one state-hold node");
+    };
+    assert_eq!(hold.operation.module_path.as_ref(), ["core"]);
+    assert_eq!(hold.operation.operation_name, "assign");
+    assert!(
+        compiled
+            .instruction_source_nodes
+            .iter()
+            .all(Option::is_none)
+    );
+    assert!(matches!(
+        mech_engine::memory_planner::plan_program_memory_template(&artifact, &[], &[], &[]),
+        Err(mech_core::MemoryPlanError::DescriptorArityMismatch)
+    ));
+
+    let instance = activate(
+        ReactiveInstanceId::new(1, 0),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .expect("artifact-only nodes must participate in Resident planning");
+    assert!(
+        instance
+            .plan
+            .steps
+            .iter()
+            .any(|step| step.artifact_node() == hold.node)
+    );
+    assert!(instance.plan.memory_plan.call_for_node(hold.node).is_some());
 }
 
 #[test]
 fn malformed_compiled_scalar_metadata_fails_closed() {
     let (mut missing_kind, catalog) = compiled_assign_artifact_fixture(RuntimeType::F64);
     missing_kind.register_schemas[1] = None;
+    missing_kind.register_type_descriptors[1] = None;
     let missing_kind = compile_executable_program_artifact(&missing_kind, &catalog);
     assert!(
         matches!(
             &missing_kind,
-            Err(ArtifactBuildError::MissingRegisterKind { register: 1, .. })
+            Err(ArtifactBuildError::CompiledTypeBindingMismatch { instruction: 2, .. })
         ),
         "unexpected missing-kind result: {missing_kind:?}"
     );
@@ -1206,11 +1482,7 @@ fn malformed_compiled_scalar_metadata_fails_closed() {
     assert!(
         matches!(
             &missing_source,
-            Err(ArtifactBuildError::MissingRegisterSource {
-                register: 0,
-                role: "input",
-                ..
-            })
+            Err(ArtifactBuildError::CompiledTypeBindingMismatch { instruction: 2, .. })
         ),
         "unexpected missing-source result: {missing_source:?}"
     );
@@ -1236,6 +1508,12 @@ fn malformed_compiled_scalar_metadata_fails_closed() {
         .instruction_source_nodes
         .insert(2, None);
     wrong_integrity_kind
+        .instruction_type_bindings
+        .insert(2, None);
+    wrong_integrity_kind
+        .instruction_memory_plans
+        .insert(2, None);
+    wrong_integrity_kind
         .integrity_constraints
         .push(CompiledIntegrityConstraint {
             name: "constraint-0".to_owned(),
@@ -1250,6 +1528,59 @@ fn malformed_compiled_scalar_metadata_fails_closed() {
         ),
         "unexpected integrity-kind result: {wrong_integrity_kind:?}"
     );
+}
+
+#[test]
+fn executable_nodes_require_complete_semantic_type_certificates() {
+    let (compiled, catalog) = compiled_assign_artifact_fixture(RuntimeType::F64);
+
+    let mut missing = compiled.clone();
+    missing.instruction_type_bindings[2] = None;
+    assert!(matches!(
+        compile_executable_program_artifact(&missing, &catalog),
+        Err(ArtifactBuildError::CompiledTypeBindingMismatch { instruction: 2, .. })
+    ));
+
+    let original = compiled.instruction_type_bindings[2]
+        .as_ref()
+        .expect("fixture runtime has a semantic binding");
+    let runtime = original
+        .runtime_function()
+        .expect("fixture is bound to a runtime implementation");
+    let operation = original.operation_descriptor().clone();
+    let descriptor = original.outputs()[0].clone();
+
+    let mut wrong_inputs = compiled.clone();
+    wrong_inputs.instruction_type_bindings[2] = Some(
+        BoundCall::syntax_directed(
+            operation.clone(),
+            Box::new([]),
+            vec![descriptor.clone()].into_boxed_slice(),
+            runtime,
+            ExecutionTarget::DirectRuntime,
+        )
+        .unwrap(),
+    );
+    assert!(matches!(
+        compile_executable_program_artifact(&wrong_inputs, &catalog),
+        Err(ArtifactBuildError::CompiledTypeBindingMismatch { instruction: 2, .. })
+    ));
+
+    let mut wrong_outputs = compiled;
+    wrong_outputs.instruction_type_bindings[2] = Some(
+        BoundCall::syntax_directed(
+            operation,
+            vec![descriptor].into_boxed_slice(),
+            Box::new([]),
+            runtime,
+            ExecutionTarget::DirectRuntime,
+        )
+        .unwrap(),
+    );
+    assert!(matches!(
+        compile_executable_program_artifact(&wrong_outputs, &catalog),
+        Err(ArtifactBuildError::CompiledTypeBindingMismatch { instruction: 2, .. })
+    ));
 }
 
 #[test]
@@ -1531,7 +1862,7 @@ fn malformed_artifacts_reject_reviewed_validation_gaps() {
         ..SourceProgram::default()
     };
     assert!(matches!(
-        compile_source_program(
+        compile_with_pure_contracts(
             &mismatched_initializer,
             &mut ArtifactBuildContext::new(&data.schemas, &data.constants)
         ),
@@ -1540,10 +1871,11 @@ fn malformed_artifacts_reject_reviewed_validation_gaps() {
 
     let mut contract_builder = OperationContractTableBuilder::new();
     contract_builder
-        .insert(ResolvedOperationContract::LegacyOpaque(
-            LegacyOpaqueOperationContract {
-                input_schemas: Box::new([]),
-                output_schemas: Box::new([]),
+        .insert(ResolvedOperationContract::Declared(
+            mech_core::DeclaredOperationContract {
+                inputs: Box::new([]),
+                outputs: Box::new([]),
+                interaction: ExternalInteraction::Pure,
             },
         ))
         .unwrap();
@@ -1599,7 +1931,7 @@ fn malformed_artifacts_reject_reviewed_validation_gaps() {
         ..SourceProgram::default()
     };
     assert!(matches!(
-        compile_source_program(
+        compile_with_pure_contracts(
             &empty_module,
             &mut ArtifactBuildContext::new(&data.schemas, &data.constants)
         ),
@@ -1618,7 +1950,7 @@ fn malformed_artifacts_reject_reviewed_validation_gaps() {
         ..SourceProgram::default()
     };
     assert!(matches!(
-        compile_source_program(
+        compile_with_pure_contracts(
             &too_many_ports,
             &mut ArtifactBuildContext::new(&data.schemas, &data.constants)
         ),
@@ -1662,6 +1994,52 @@ fn one_entry_operation_contract_table(contract: &[u8]) -> Vec<u8> {
     table.extend_from_slice(&u32::try_from(contract.len()).unwrap().to_le_bytes());
     table.extend_from_slice(contract);
     table
+}
+
+#[test]
+fn bytecode_v1_rejects_pre_r1_experimental_schema_only_contracts() {
+    let data = fixture_data();
+    let artifact = build_both(&data, scalar_add(&data)).0;
+    let node = &artifact.nodes()[0];
+    let ResolvedOperationContract::Declared(contract) = artifact
+        .contracts()
+        .get(node.contract)
+        .expect("scalar-add contract")
+    else {
+        unreachable!()
+    };
+    let input_schemas = contract
+        .inputs
+        .iter()
+        .map(|input| input.schema)
+        .collect::<Vec<_>>();
+    let output_schemas = contract
+        .outputs
+        .iter()
+        .map(|output| output.schema)
+        .collect::<Vec<_>>();
+    let mut experimental = vec![1, 1];
+    experimental.extend_from_slice(&(input_schemas.len() as u32).to_le_bytes());
+    for schema in &input_schemas {
+        experimental.extend_from_slice(&schema.get().to_le_bytes());
+    }
+    experimental.extend_from_slice(&(output_schemas.len() as u32).to_le_bytes());
+    for schema in &output_schemas {
+        experimental.extend_from_slice(&schema.get().to_le_bytes());
+    }
+    let mut sections = encode_program_artifact_sections(&artifact).unwrap();
+    sections.operation_contracts = one_entry_operation_contract_table(&experimental);
+
+    assert!(matches!(
+        decode_program_artifact_sections(&sections),
+        Err(ArtifactBytecodeError::Artifact(
+            ArtifactBuildError::OperationContract(
+                OperationContractError::InvalidCanonicalEncoding {
+                    reason: "unknown operation-contract tag"
+                }
+            )
+        ))
+    ));
 }
 
 fn decode_with_mutated_operation_contract(
@@ -1764,7 +2142,7 @@ fn artifact_bytecode_rejects_malformed_operation_contract_semantics_first() {
 fn decoded_artifact_sections_revalidate_structure_and_limits() {
     let data = fixture_data();
     let mut context = ArtifactBuildContext::new(&data.schemas, &data.constants);
-    let artifact = compile_source_program(&stateful_register(&data), &mut context).unwrap();
+    let artifact = compile_with_pure_contracts(&stateful_register(&data), &mut context).unwrap();
     let sections = encode_program_artifact_sections(&artifact).unwrap();
 
     let mut missing_binding = sections.clone();
@@ -2065,7 +2443,7 @@ fn external_requirements_are_artifact_authority_and_round_trip_in_bytecode_v1() 
     let artifact = compile_source_program_with_contracts(
         &graph,
         &mut ArtifactBuildContext::new(&data.schemas, &data.constants),
-        &[Some(observation), Some(effect)],
+        &[&*observation, &*effect],
     )
     .unwrap();
     assert_eq!(artifact.requirements(), &graph.requirements);
@@ -2154,7 +2532,7 @@ fn artifact_with_declaration(
     compile_source_program_with_contracts(
         &graph,
         &mut ArtifactBuildContext::new(&data.schemas, &data.constants),
-        &[Some(declaration)],
+        &[&*declaration],
     )
     .unwrap()
 }
@@ -2249,7 +2627,7 @@ fn program_revision_commits_to_every_operation_contract_semantic() {
     let provider_defined = compile_source_program_with_contracts(
         &effect_source,
         &mut ArtifactBuildContext::new(&data.schemas, &data.constants),
-        &[Some(provider_defined)],
+        &[&*provider_defined],
     )
     .unwrap()
     .revision();
@@ -2257,7 +2635,7 @@ fn program_revision_commits_to_every_operation_contract_semantic() {
     let at_most_once = compile_source_program_with_contracts(
         &effect_source,
         &mut ArtifactBuildContext::new(&data.schemas, &data.constants),
-        &[Some(at_most_once)],
+        &[&*at_most_once],
     )
     .unwrap()
     .revision();

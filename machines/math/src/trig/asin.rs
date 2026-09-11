@@ -8,41 +8,15 @@ use libm::asin;
 use libm::asinf;
 #[cfg(feature = "f64")]
 macro_rules! asin_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = asin((*$arg));
-        }
-    };
-}
-
-#[cfg(feature = "f64")]
-macro_rules! asin_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = asin(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(asin(($arg)))
     };
 }
 
 #[cfg(feature = "f32")]
 macro_rules! asinf_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = asinf((*$arg));
-        }
-    };
-}
-
-#[cfg(feature = "f32")]
-macro_rules! asinf_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = asinf(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(asinf(($arg)))
     };
 }
 

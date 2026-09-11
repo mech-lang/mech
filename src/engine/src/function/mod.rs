@@ -63,8 +63,7 @@ mod source_only {
         p: &InterpreterExecution<'_>,
     ) -> MResult<ValueCell> {
         let plan = p.plan();
-        let instance = specialized.into_instance();
-        let implementation = instance.implementation();
+        let instance = specialized.instance();
         trace_println!(
             p,
             "{}",
@@ -72,7 +71,8 @@ mod source_only {
                 "arm",
                 format!(
                     "selected {} args=[{}]",
-                    implementation
+                    instance
+                        .implementation()
                         .to_string()
                         .lines()
                         .next()
@@ -85,10 +85,10 @@ mod source_only {
                 ),
             )
         );
-        solve_specialized_initial_output(implementation, &plan, p)?;
+        solve_specialized_initial_output(instance, &plan, p)?;
         let result = instance.output().clone();
         trace_println!(p, "{}", format_trace("arm", format!("result {result:?}")));
-        plan.register_instance(instance)?;
+        plan.register_specialized(specialized)?;
         Ok(result)
     }
 
@@ -103,17 +103,18 @@ mod source_only {
         let invocation = SpecializationInvocation::from_cells(compile_arguments.into_boxed_slice());
         let specialized =
             p.specialize_visible_invocation_named(operation, Some(canonical_name), &invocation)?;
-        execute_function_instance(p, plan, specialized.into_instance())
+        execute_function_instance(p, plan, specialized)
     }
 
     pub(crate) fn execute_function_instance(
         p: &InterpreterExecution<'_>,
         plan: &Plan,
-        instance: FunctionInstance,
+        specialized: SpecializedFunction,
     ) -> MResult<ValueCell> {
-        solve_specialized_initial_output(instance.implementation(), plan, p)?;
+        let instance = specialized.instance();
+        solve_specialized_initial_output(instance, plan, p)?;
         let output = instance.output().clone();
-        plan.register_instance(instance)?;
+        plan.register_specialized(specialized)?;
         Ok(output)
     }
 
@@ -135,12 +136,12 @@ mod source_only {
     }
 
     fn solve_specialized_initial_output(
-        function: &dyn MechFunction,
+        function: &FunctionInstance,
         plan: &Plan,
         p: &InterpreterExecution<'_>,
     ) -> MResult<()> {
         if !plan.activation_registration_active() {
-            match function.initial_solve_policy() {
+            match function.implementation().initial_solve_policy() {
                 InitialSolvePolicy::Solve => {
                     p.with_services(|services| function.solve_result_with(services))?;
                 }
@@ -481,18 +482,25 @@ mod source_only {
         fxn_def: &FunctionDefinition,
         p: &InterpreterExecution<'_>,
     ) -> MResult<ValueCell> {
-        if fxn_def.output.is_empty() {
-            return Ok(value);
-        }
-        let Some((_, output_kind_annotation)) = fxn_def.output.get_index(0) else {
+        let Some(output_arg) = fxn_def.code.output.first() else {
             return Ok(value);
         };
+        coerce_value_to_declared_kind(value, &output_arg.kind, p)
+            .map_err(|error| error.with_tokens(output_arg.tokens()))
+    }
+
+    #[cfg(feature = "kind_annotation")]
+    fn coerce_value_to_declared_kind(
+        value: ValueCell,
+        output_kind_annotation: &KindAnnotation,
+        p: &InterpreterExecution<'_>,
+    ) -> MResult<ValueCell> {
         let target_schema =
             crate::structures::schema_body_from_kind(&output_kind_annotation.kind, p)?;
         if value.closed_schema_body()? == target_schema {
             return Ok(value);
         }
-        crate::literals::convert_cell_reactively(value, target_schema, p)
+        crate::literals::convert_cell_implicitly_reactively(value, target_schema, p)
     }
 
     // RAII guard that swaps in a fresh symbol table and plan for the duration of a
@@ -598,8 +606,12 @@ mod source_only {
                 if input_value.closed_schema_body()? == target_schema {
                     input_value.clone()
                 } else {
-                    crate::literals::convert_cell_reactively(input_value.clone(), target_schema, p)
-                        .map_err(|error| error.with_tokens(input_kind_annotation.tokens()))?
+                    crate::literals::convert_cell_implicitly_reactively(
+                        input_value.clone(),
+                        target_schema,
+                        p,
+                    )
+                    .map_err(|error| error.with_tokens(input_kind_annotation.tokens()))?
                 }
             };
             #[cfg(not(feature = "kind_annotation"))]
@@ -640,6 +652,13 @@ mod source_only {
                     );
                 }
             }
+        }
+        drop(symbols_brrw);
+
+        #[cfg(feature = "kind_annotation")]
+        for (output, output_arg) in outputs.iter_mut().zip(&fxn_def.code.output) {
+            *output = coerce_value_to_declared_kind(output.clone(), &output_arg.kind, p)
+                .map_err(|error| error.with_tokens(output_arg.tokens()))?;
         }
 
         match outputs.len() {

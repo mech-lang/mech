@@ -16,11 +16,53 @@ extern crate nalgebra as na;
 extern crate paste;
 
 use mech_core::*;
+use std::marker::PhantomData;
 
 #[cfg(feature = "runtime")]
 pub mod catalog;
 #[cfg(feature = "runtime")]
 pub use self::catalog::*;
+
+#[cfg(feature = "source")]
+fn semantic_logic_extents(inputs: &[&SpecializationInput]) -> MResult<Box<[u64]>> {
+    let mut extents = Vec::<u64>::new().into_boxed_slice();
+    for input in inputs {
+        let current = input
+            .cell()?
+            .resolved_descriptor()?
+            .current_extents()
+            .map_err(MechError::from)?;
+        if !current.is_empty() {
+            if extents.is_empty() {
+                extents = current;
+            } else if extents.len() == current.len()
+                && extents
+                    .iter()
+                    .zip(current.iter())
+                    .all(|(left, right)| left == right || *left == 1 || *right == 1)
+            {
+                for (extent, current) in extents.iter_mut().zip(current.iter()) {
+                    if *extent == 1 {
+                        *extent = *current;
+                    }
+                }
+            } else {
+                return Err(MechError::new(
+                    DimensionMismatch {
+                        dims: extents
+                            .iter()
+                            .chain(current.iter())
+                            .map(|extent| *extent as usize)
+                            .collect(),
+                    },
+                    None,
+                )
+                .with_compiler_loc());
+            }
+        }
+    }
+    Ok(extents)
+}
 
 #[cfg(all(
     any(feature = "and", feature = "or", feature = "xor"),
@@ -98,12 +140,7 @@ use nalgebra::Vector3;
 ))]
 use nalgebra::Vector4;
 
-#[cfg(any(
-    feature = "and",
-    feature = "not",
-    feature = "or",
-    feature = "xor"
-))]
+#[cfg(any(feature = "and", feature = "not", feature = "or", feature = "xor"))]
 use std::sync::LazyLock;
 
 #[cfg(any(feature = "and", feature = "or", feature = "xor"))]
@@ -189,43 +226,203 @@ pub use self::xor::*;
 // Logic Library
 // ----------------------------------------------------------------------------
 
+#[cfg(any(feature = "and", feature = "or", feature = "xor"))]
+#[derive(Clone, Copy)]
+// The shared factory traversal enables only the modes present in a profile.
+#[allow(
+    dead_code,
+    reason = "feature profiles enable only a subset of logic broadcast modes"
+)]
+enum LogicBroadcast {
+    Exact,
+    LeftScalar,
+    RightScalar,
+    LeftColumn,
+    RightColumn,
+    LeftRow,
+    RightRow,
+}
+
+#[cfg(any(feature = "and", feature = "or", feature = "xor"))]
+fn apply_logic_binary(
+    lhs: ManagedValueView<'_, bool>,
+    rhs: ManagedValueView<'_, bool>,
+    out: &mut ManagedValueViewMut<'_, bool>,
+    broadcast: LogicBroadcast,
+    operation: impl Fn(bool, bool) -> bool,
+) -> MResult<()> {
+    let output_rows = out.rows();
+    let output_columns = out.columns();
+    let same_shape = |view: &ManagedValueView<'_, bool>| {
+        view.rows() == output_rows && view.columns() == output_columns
+    };
+    // Dynamic matrix representations do not encode their live extents in the
+    // runtime function ID. A same-representation factory must therefore retain
+    // the broadcast selected by the source scheme when one operand happens to
+    // use the same storage family as the output (for example RowD 1x1 with
+    // RowD 1x5).
+    let can_broadcast = |view: &ManagedValueView<'_, bool>| {
+        same_shape(view)
+            || view.len() == 1
+            || (view.columns() == 1 && view.rows() == output_rows)
+            || (view.rows() == 1 && view.columns() == output_columns)
+    };
+    let geometry_valid = match broadcast {
+        LogicBroadcast::Exact => {
+            (same_shape(&lhs) || same_shape(&rhs)) && can_broadcast(&lhs) && can_broadcast(&rhs)
+        }
+        LogicBroadcast::LeftScalar => lhs.len() == 1 && same_shape(&rhs),
+        LogicBroadcast::RightScalar => same_shape(&lhs) && rhs.len() == 1,
+        LogicBroadcast::LeftColumn => {
+            lhs.columns() == 1 && lhs.rows() == out.rows() && same_shape(&rhs)
+        }
+        LogicBroadcast::RightColumn => {
+            same_shape(&lhs) && rhs.columns() == 1 && rhs.rows() == out.rows()
+        }
+        LogicBroadcast::LeftRow => {
+            lhs.rows() == 1 && lhs.columns() == out.columns() && same_shape(&rhs)
+        }
+        LogicBroadcast::RightRow => {
+            same_shape(&lhs) && rhs.rows() == 1 && rhs.columns() == out.columns()
+        }
+    };
+    if !geometry_valid {
+        return Err(MechError::new(
+            GenericError {
+                msg: "logic managed broadcast geometry is invalid".into(),
+            },
+            None,
+        ));
+    }
+    out.try_fill_column_major(|index| {
+        let row = if output_rows == 0 {
+            0
+        } else {
+            index % output_rows
+        };
+        let column = if output_rows == 0 {
+            0
+        } else {
+            index / output_rows
+        };
+        let compatible_index = |view: &ManagedValueView<'_, bool>| {
+            if same_shape(view) {
+                Some(index)
+            } else if view.len() == 1 {
+                Some(0)
+            } else if view.columns() == 1 && view.rows() == output_rows {
+                Some(row)
+            } else if view.rows() == 1 && view.columns() == output_columns {
+                Some(column)
+            } else {
+                None
+            }
+        };
+        let (lhs_index, rhs_index) = match broadcast {
+            LogicBroadcast::Exact => (
+                compatible_index(&lhs).ok_or_else(|| {
+                    MechError::new(
+                        GenericError {
+                            msg: "logic lhs broadcast geometry is invalid".into(),
+                        },
+                        None,
+                    )
+                })?,
+                compatible_index(&rhs).ok_or_else(|| {
+                    MechError::new(
+                        GenericError {
+                            msg: "logic rhs broadcast geometry is invalid".into(),
+                        },
+                        None,
+                    )
+                })?,
+            ),
+            LogicBroadcast::LeftScalar => (0, index),
+            LogicBroadcast::RightScalar => (index, 0),
+            LogicBroadcast::LeftColumn => (row, index),
+            LogicBroadcast::RightColumn => (index, row),
+            LogicBroadcast::LeftRow => (column, index),
+            LogicBroadcast::RightRow => (index, column),
+        };
+        let lhs = lhs.get_column_major(lhs_index).ok_or_else(|| {
+            MechError::new(
+                GenericError {
+                    msg: "logic lhs broadcast geometry is invalid".into(),
+                },
+                None,
+            )
+        })?;
+        let rhs = rhs.get_column_major(rhs_index).ok_or_else(|| {
+            MechError::new(
+                GenericError {
+                    msg: "logic rhs broadcast geometry is invalid".into(),
+                },
+                None,
+            )
+        })?;
+        Ok(operation(lhs, rhs))
+    })
+}
+
 #[macro_export]
 macro_rules! impl_logic_binop {
     ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident) => {
         #[derive(Debug)]
         pub(crate) struct $struct_name {
-            lhs: Ref<$arg1_type>,
-            rhs: Ref<$arg2_type>,
-            out: Ref<$out_type>,
+            lhs: ManagedPort<bool>,
+            rhs: ManagedPort<bool>,
+            out: ManagedPort<bool>,
+            marker: PhantomData<($arg1_type, $arg2_type, $out_type)>,
         }
         impl MechFunctionFactory for $struct_name {
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
+
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
                 <$out_type as FunctionRuntimeType>::REPRESENTATION,
                 <$arg1_type as FunctionRuntimeType>::REPRESENTATION,
                 <$arg2_type as FunctionRuntimeType>::REPRESENTATION,
             );
 
-            fn new_invocation(
-                invocation: FunctionInvocation,
-            ) -> MResult<Box<dyn MechFunction>> {
+            fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (out, lhs, rhs) = invocation.expect_binary()?;
-                let lhs: Ref<$arg1_type> = lhs.try_ref()?;
-                let rhs: Ref<$arg2_type> = rhs.try_ref()?;
-                let out: Ref<$out_type> = out.try_ref()?;
-                Ok(Box::new(Self { lhs, rhs, out }))
+                let _ = lhs.try_managed::<$arg1_type>()?;
+                let _ = rhs.try_managed::<$arg2_type>()?;
+                let _ = out.try_managed::<$out_type>()?;
+                let lhs = lhs.try_managed_element::<bool>()?;
+                let rhs = rhs.try_managed_element::<bool>()?;
+                let out = out.try_managed_element::<bool>()?;
+                Ok(Box::new(Self {
+                    lhs,
+                    rhs,
+                    out,
+                    marker: PhantomData,
+                }))
             }
 
+            fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+                Some($crate::logic_binary_full_write_contract(
+                    <$out_type as FunctionRuntimeType>::REPRESENTATION,
+                ))
+            }
         }
         impl MechFunctionImpl for $struct_name {
-            fn solve_result(&self) -> MResult<()> {
-                let lhs_ptr = self.lhs.as_ptr();
-                let rhs_ptr = self.rhs.as_ptr();
-                let out_ptr = self.out.as_mut_ptr();
-                $op!(lhs_ptr, rhs_ptr, out_ptr);
-                Ok(())
+            fn solve_managed(
+                &self,
+                frame: &mut mech_core::KernelMemoryFrame<'_>,
+                _services: &mut dyn mech_core::MechExecutionServices,
+            ) -> MResult<mech_core::ReactiveSolveStatus> {
+                frame.with_binary_port_views(
+                    &self.lhs,
+                    &self.rhs,
+                    &self.out,
+                    |lhs, rhs, out| $op!(lhs, rhs, out),
+                )?;
+                Ok(mech_core::ReactiveSolveStatus::Changed)
             }
             fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-                Some(FunctionStatePort::from_ref(&self.out))
+                Some(FunctionStatePort::from_cell(self.out.cell()))
             }
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
                 Some($crate::logic_binary_full_write_contract(
@@ -236,14 +433,19 @@ macro_rules! impl_logic_binop {
                 format!("{:#?}", self)
             }
             fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
-                Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
+                Ok(Some(vec![FunctionStatePort::from_cell(self.out.cell())]))
             }
         }
         #[cfg(feature = "semantic-compiler")]
         impl MechFunctionCompiler for $struct_name {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 let name = format!("{}<bool>", stringify!($struct_name));
-                compile_binop!(name, self.out, self.lhs, self.rhs, ctx);
+                let out = compile_value_cell_register(self.out.cell(), ctx)?;
+                let lhs = compile_value_cell_register(self.lhs.cell(), ctx)?;
+                let rhs = compile_value_cell_register(self.rhs.cell(), ctx)?;
+                let function = ctx.function_id(&name)?;
+                ctx.emit_binop(function, out, lhs, rhs);
+                Ok(out)
             }
         }
     };
@@ -253,64 +455,6 @@ macro_rules! impl_logic_binop {
 macro_rules! impl_logic_fxns {
     ($lib:ident) => {
         impl_fxns!($lib, bool, bool, impl_logic_binop);
-    };
-}
-
-#[cfg(feature = "source")]
-fn specialize_logic_binary_factory<F>(
-    first: &SpecializationInput,
-    second: &SpecializationInput,
-) -> MResult<SpecializedFunction>
-where
-    F: MechFunctionFactory,
-{
-    let output_representation = F::SIGNATURE.output;
-    let template = if first.representation() == Some(output_representation) {
-        first
-    } else if second.representation() == Some(output_representation) {
-        second
-    } else {
-        return Err(MechError::new(
-            FunctionArgumentTypeMismatch {
-                role: FunctionArgumentRole::Output,
-                expected: format!("{output_representation:?}"),
-                found: format!(
-                    "inputs {:?} and {:?}",
-                    first.representation(),
-                    second.representation(),
-                ),
-            },
-            None,
-        )
-        .with_compiler_loc());
-    };
-    let invocation = FunctionInvocation::binary(
-        template.cell()?.detached_clone()?,
-        first.cell()?.clone(),
-        second.cell()?.clone(),
-    );
-    let implementation = F::new_invocation(invocation.clone())?;
-    Ok(SpecializedFunction::new(FunctionInstance::new(
-        implementation,
-        invocation,
-    )))
-}
-
-#[doc(hidden)]
-#[macro_export]
-macro_rules! __try_logic_binary_factory {
-    (($module:ident, $first:ident, $second:ident), $lib:ident, $suffix:ident, $shape_features:tt, $scalar:ty, $scalar_name:literal, $scalar_token:ident) => {
-        mech_core::paste::paste! {
-            if let RuntimeFunctionInputs::Binary(expected_first, expected_second) =
-                <$crate::$module::[<$lib $suffix>] as MechFunctionFactory>::SIGNATURE.inputs
-                && $first.representation() == Some(expected_first)
-                && $second.representation() == Some(expected_second)
-            {
-                return $crate::specialize_logic_binary_factory::<
-                    $crate::$module::[<$lib $suffix>]
-                >($first, $second);
-            }
-        }
     };
 }
 
@@ -325,7 +469,7 @@ macro_rules! impl_canonical_logic_binop_specializer {
             fn specialize_invocation(
                 &self,
                 specialization: &SpecializationInvocation,
-                _context: &mut SpecializationContext<'_>,
+                context: &mut SpecializationContext<'_>,
             ) -> MResult<SpecializedFunction> {
                 if specialization.len() != 2 {
                     return Err(MechError::new(
@@ -339,27 +483,13 @@ macro_rules! impl_canonical_logic_binop_specializer {
                 }
                 let first = specialization.input(0).expect("validated first input");
                 let second = specialization.input(1).expect("validated second input");
-                mech_core::__mech_for_each_exact_binop_runtime_factory_for_type!(
-                    $crate::__try_logic_binary_factory,
-                    ($module, first, second),
-                    $lib,
-                    bool,
-                    "bool",
-                    bool
-                );
-                Err(MechError::new(
-                    FunctionArgumentTypeMismatch {
-                        role: FunctionArgumentRole::Input(0),
-                        expected: concat!("supported Bool inputs for ", $operation).into(),
-                        found: format!(
-                            "{:?} and {:?}",
-                            first.representation(),
-                            second.representation(),
-                        ),
-                    },
-                    None,
+                let extents = $crate::semantic_logic_extents(&[first, second])?;
+                context.bind_resolved_runtime(
+                    RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
+                    ExecutionTarget::DirectRuntime,
+                    vec![extents].into_boxed_slice(),
+                    &[first, second],
                 )
-                .with_compiler_loc())
             }
         }
     };
@@ -376,38 +506,56 @@ macro_rules! impl_canonical_logic_binop_specializer {
 ))]
 mod invocation_port_tests {
     use super::*;
+    use mech_core::snapshot::SequenceView;
     use nalgebra::{DMatrix, Matrix2};
+
+    fn managed<F: MechFunctionFactory>(
+        invocation: FunctionInvocation,
+        operation: &'static str,
+    ) -> SpecializedFunction {
+        let implementation = F::new_invocation(invocation.clone()).unwrap();
+        let contract = F::declared_operation_contract().unwrap().clone();
+        SpecializedFunction::syntax_directed(
+            (implementation, invocation),
+            ResolvedOperationDescriptor::from_name(operation, contract).unwrap(),
+            RuntimeFunctionId::from_name(operation),
+            ExecutionTarget::DirectRuntime,
+            F::implementation_memory_class(),
+        )
+        .unwrap()
+    }
 
     #[test]
     fn scalar_binary_and_unary_factories_use_canonical_ports() {
         let binary_out = ValueCell::from_exact(true).unwrap();
-        let binary = crate::and::AndSS::new_invocation(FunctionInvocation::binary(
-            binary_out.clone(),
-            ValueCell::from_exact(true).unwrap(),
-            ValueCell::from_exact(false).unwrap(),
-        ))
-        .unwrap();
-        binary.solve_result().unwrap();
+        let binary = managed::<crate::and::AndSS>(
+            FunctionInvocation::binary(
+                binary_out.clone(),
+                ValueCell::from_exact(true).unwrap(),
+                ValueCell::from_exact(false).unwrap(),
+            ),
+            "logic/and",
+        );
+        binary.instance().solve_result().unwrap();
         assert!(matches!(
             binary_out.snapshot().unwrap().data(),
             ValueData::Bool(false)
         ));
         assert_eq!(
-            binary.reactive_output_cell_ids(),
+            binary.instance().reactive_output_cell_ids(),
             vec![binary_out.reactive_cell_id()]
         );
 
         let unary_out = ValueCell::from_exact(false).unwrap();
-        let unary = crate::not::NotS::<bool>::new_invocation(FunctionInvocation::unary(
-            unary_out.clone(),
-            ValueCell::from_exact(true).unwrap(),
-        ))
-        .unwrap();
-        unary.solve_result().unwrap();
+        let unary = managed::<crate::not::NotS<bool>>(
+            FunctionInvocation::unary(unary_out.clone(), ValueCell::from_exact(true).unwrap()),
+            "logic/not",
+        );
+        unary.instance().solve_result().unwrap();
 
         with_reactive_journal_participant(|mut participant| -> MResult<()> {
-            participant.capture_function_state(binary.as_ref())?;
-            participant.capture_function_state(unary.as_ref())?;
+            participant.capture_function_instance(binary.instance())?;
+            participant.capture_function_instance(unary.instance())?;
             binary_out.replace(&ValueCell::from_exact(true)?.snapshot()?)?;
             unary_out.replace(&ValueCell::from_exact(true)?.snapshot()?)?;
             participant.preflight_restore_before()?;
@@ -426,67 +574,318 @@ mod invocation_port_tests {
     }
 
     #[test]
-    fn fixed_and_dynamic_logic_factories_preserve_exact_storage() {
+    fn fixed_and_dynamic_logic_factories_publish_managed_cells() {
         let fixed_lhs = Ref::new(Matrix2::new(true, true, false, false));
         let fixed_rhs = Ref::new(Matrix2::new(true, false, true, false));
-        let fixed_out = Ref::new(Matrix2::from_element(false));
-        crate::and::AndM2M2::new_invocation(FunctionInvocation::binary(
-            ValueCell::from_exact_matrix_ref(fixed_out.clone(), 2, 2).unwrap(),
-            ValueCell::from_exact_matrix_ref(fixed_lhs, 2, 2).unwrap(),
-            ValueCell::from_exact_matrix_ref(fixed_rhs, 2, 2).unwrap(),
-        ))
-        .unwrap()
+        let fixed_out =
+            ValueCell::from_exact_matrix_ref(Ref::new(Matrix2::from_element(false)), 2, 2).unwrap();
+        managed::<crate::and::AndM2M2>(
+            FunctionInvocation::binary(
+                fixed_out.clone(),
+                ValueCell::from_exact_matrix_ref(fixed_lhs, 2, 2).unwrap(),
+                ValueCell::from_exact_matrix_ref(fixed_rhs, 2, 2).unwrap(),
+            ),
+            "logic/and",
+        )
+        .instance()
         .solve_result()
         .unwrap();
-        assert_eq!(
-            *fixed_out.borrow(),
-            Matrix2::new(true, false, false, false)
-        );
-
-        let dynamic_lhs = Ref::new(DMatrix::from_row_slice(
-            2,
-            2,
-            &[true, true, false, false],
-        ));
-        let dynamic_rhs = Ref::new(DMatrix::from_row_slice(
-            2,
-            2,
-            &[true, false, true, false],
-        ));
-        let dynamic_out = Ref::new(DMatrix::from_element(2, 2, false));
-        let function = crate::and::AndMDMD::new_invocation(FunctionInvocation::binary(
-            ValueCell::from_exact_matrix_ref(dynamic_out.clone(), 2, 2).unwrap(),
-            ValueCell::from_exact_matrix_ref(dynamic_lhs, 2, 2).unwrap(),
-            ValueCell::from_exact_matrix_ref(dynamic_rhs, 2, 2).unwrap(),
-        ))
+        assert_bool_matrix(&fixed_out, &[true, false, false, false]);
+        let fixed_not_input = Ref::new(Matrix2::new(true, false, false, true));
+        let fixed_not_output =
+            ValueCell::from_exact_matrix_ref(Ref::new(Matrix2::from_element(false)), 2, 2).unwrap();
+        managed::<crate::not::NotV<bool, Matrix2<bool>>>(
+            FunctionInvocation::unary(
+                fixed_not_output.clone(),
+                ValueCell::from_exact_matrix_ref(fixed_not_input, 2, 2).unwrap(),
+            ),
+            "logic/not",
+        )
+        .instance()
+        .solve_result()
         .unwrap();
-        function.solve_result().unwrap();
+        assert_bool_matrix(&fixed_not_output, &[false, true, true, false]);
+
+        let dynamic_lhs = Ref::new(DMatrix::from_row_slice(2, 2, &[true, true, false, false]));
+        let dynamic_rhs = Ref::new(DMatrix::from_row_slice(2, 2, &[true, false, true, false]));
+        let dynamic_out =
+            ValueCell::from_exact_matrix_ref(Ref::new(DMatrix::from_element(2, 2, false)), 2, 2)
+                .unwrap();
+        let function = managed::<crate::and::AndMDMD>(
+            FunctionInvocation::binary(
+                dynamic_out.clone(),
+                ValueCell::from_exact_matrix_ref(dynamic_lhs, 2, 2).unwrap(),
+                ValueCell::from_exact_matrix_ref(dynamic_rhs, 2, 2).unwrap(),
+            ),
+            "logic/and",
+        );
+        function.instance().solve_result().unwrap();
         with_reactive_journal_participant(|mut participant| -> MResult<()> {
-            participant.capture_function_state(function.as_ref())?;
-            *dynamic_out.borrow_mut() = DMatrix::from_element(1, 1, true);
+            participant.capture_function_instance(function.instance())?;
+            dynamic_out.replace(
+                &ValueCell::from_exact_matrix_ref(
+                    Ref::new(DMatrix::from_element(1, 1, true)),
+                    1,
+                    1,
+                )?
+                .snapshot()?,
+            )?;
             participant.preflight_restore_before()?;
             participant.apply_restore_before();
             Ok(())
         })
         .unwrap();
-        assert_eq!(
-            *dynamic_out.borrow(),
-            DMatrix::from_row_slice(2, 2, &[true, false, false, false])
+        assert_bool_matrix(&dynamic_out, &[true, false, false, false]);
+        let dynamic_not_input =
+            Ref::new(DMatrix::from_row_slice(2, 2, &[true, false, false, true]));
+        let dynamic_not_output =
+            ValueCell::from_exact_matrix_ref(Ref::new(DMatrix::from_element(2, 2, false)), 2, 2)
+                .unwrap();
+        managed::<crate::not::NotV<bool, DMatrix<bool>>>(
+            FunctionInvocation::unary(
+                dynamic_not_output.clone(),
+                ValueCell::from_exact_matrix_ref(dynamic_not_input, 2, 2).unwrap(),
+            ),
+            "logic/not",
+        )
+        .instance()
+        .solve_result()
+        .unwrap();
+        assert_bool_matrix(&dynamic_not_output, &[false, true, true, false]);
+    }
+
+    fn assert_bool_matrix(cell: &ValueCell, expected: &[bool]) {
+        let snapshot = cell.snapshot().unwrap();
+        let ValueData::Matrix(matrix) = snapshot.data() else {
+            panic!("expected managed matrix")
+        };
+        let SequenceView::Bool(elements) = matrix.elements() else {
+            panic!("expected Boolean elements")
+        };
+        assert_eq!(elements, expected);
+    }
+
+    #[cfg(all(
+        feature = "vectord",
+        feature = "row_vectord",
+        feature = "or",
+        feature = "xor"
+    ))]
+    #[test]
+    fn managed_logic_preserves_scalar_row_and_column_broadcasts() {
+        let matrix = || {
+            ValueCell::from_exact_matrix_ref(
+                Ref::new(DMatrix::from_row_slice(
+                    2,
+                    3,
+                    &[true, false, true, false, true, false],
+                )),
+                2,
+                3,
+            )
+            .unwrap()
+        };
+        let column = || {
+            ValueCell::from_exact_matrix_ref(
+                Ref::new(nalgebra::DVector::from_vec(vec![true, false])),
+                2,
+                1,
+            )
+            .unwrap()
+        };
+        let row = || {
+            ValueCell::from_exact_matrix_ref(
+                Ref::new(nalgebra::RowDVector::from_vec(vec![false, true, false])),
+                1,
+                3,
+            )
+            .unwrap()
+        };
+        fn check<F: MechFunctionFactory>(
+            lhs: ValueCell,
+            rhs: ValueCell,
+            operation: &'static str,
+            expected: &[bool],
+        ) {
+            let output = ValueCell::from_exact_matrix_ref(
+                Ref::new(DMatrix::from_element(2, 3, false)),
+                2,
+                3,
+            )
+            .unwrap();
+            let alias = output.clone();
+            let function = managed::<F>(
+                FunctionInvocation::binary(output.clone(), lhs, rhs),
+                operation,
+            );
+            function.instance().solve_result().unwrap();
+            assert_bool_matrix(&alias, expected);
+            assert!(alias.same_cell(&output));
+        }
+        check::<crate::and::AndSMD>(
+            ValueCell::from_exact(true).unwrap(),
+            matrix(),
+            "logic/and",
+            &[true, false, true, false, true, false],
+        );
+        check::<crate::and::AndMDS>(
+            matrix(),
+            ValueCell::from_exact(false).unwrap(),
+            "logic/and",
+            &[false; 6],
+        );
+        check::<crate::and::AndMDVD>(
+            matrix(),
+            column(),
+            "logic/and",
+            &[true, false, true, false, false, false],
+        );
+        check::<crate::and::AndVDMD>(
+            column(),
+            matrix(),
+            "logic/and",
+            &[true, false, true, false, false, false],
+        );
+        check::<crate::or::OrMDRD>(
+            matrix(),
+            row(),
+            "logic/or",
+            &[true, true, true, false, true, false],
+        );
+        check::<crate::or::OrRDMD>(
+            row(),
+            matrix(),
+            "logic/or",
+            &[true, true, true, false, true, false],
+        );
+        check::<crate::xor::XorMDMD>(matrix(), matrix(), "logic/xor", &[false; 6]);
+
+        fn check_degenerate_row<F: MechFunctionFactory>(
+            operation: &'static str,
+            expected: &[bool],
+        ) {
+            let lhs = ValueCell::from_exact_matrix_ref(
+                Ref::new(nalgebra::RowDVector::from_vec(vec![
+                    true, false, true, false, true,
+                ])),
+                1,
+                5,
+            )
+            .unwrap();
+            let rhs = ValueCell::from_exact_matrix_ref(
+                Ref::new(nalgebra::RowDVector::from_vec(vec![false])),
+                1,
+                1,
+            )
+            .unwrap();
+            let output = ValueCell::from_exact_matrix_ref(
+                Ref::new(nalgebra::RowDVector::from_element(5, false)),
+                1,
+                5,
+            )
+            .unwrap();
+            let function = managed::<F>(
+                FunctionInvocation::binary(output.clone(), lhs, rhs),
+                operation,
+            );
+            function.instance().solve_result().unwrap();
+            assert_bool_matrix(&output, expected);
+        }
+        check_degenerate_row::<crate::and::AndRDRD>("logic/and", &[false; 5]);
+        check_degenerate_row::<crate::or::OrRDRD>("logic/or", &[true, false, true, false, true]);
+        check_degenerate_row::<crate::xor::XorRDRD>("logic/xor", &[true, false, true, false, true]);
+
+        fn check_degenerate_column<F: MechFunctionFactory>(
+            lhs: ValueCell,
+            rhs: ValueCell,
+            operation: &'static str,
+            expected: &[bool],
+        ) {
+            let output = ValueCell::from_exact_matrix_ref(
+                Ref::new(nalgebra::DVector::from_element(5, false)),
+                5,
+                1,
+            )
+            .unwrap();
+            let function = managed::<F>(
+                FunctionInvocation::binary(output.clone(), lhs, rhs),
+                operation,
+            );
+            function.instance().solve_result().unwrap();
+            assert_bool_matrix(&output, expected);
+        }
+        let column = || {
+            ValueCell::from_exact_matrix_ref(
+                Ref::new(nalgebra::DVector::from_vec(vec![
+                    true, false, true, false, true,
+                ])),
+                5,
+                1,
+            )
+            .unwrap()
+        };
+        let singleton = || {
+            ValueCell::from_exact_matrix_ref(
+                Ref::new(nalgebra::RowDVector::from_vec(vec![false])),
+                1,
+                1,
+            )
+            .unwrap()
+        };
+        check_degenerate_column::<crate::and::AndVDRD>(
+            column(),
+            singleton(),
+            "logic/and",
+            &[false; 5],
+        );
+        check_degenerate_column::<crate::and::AndRDVD>(
+            singleton(),
+            column(),
+            "logic/and",
+            &[false; 5],
+        );
+        check_degenerate_column::<crate::or::OrVDRD>(
+            column(),
+            singleton(),
+            "logic/or",
+            &[true, false, true, false, true],
+        );
+        check_degenerate_column::<crate::or::OrRDVD>(
+            singleton(),
+            column(),
+            "logic/or",
+            &[true, false, true, false, true],
+        );
+        check_degenerate_column::<crate::xor::XorVDRD>(
+            column(),
+            singleton(),
+            "logic/xor",
+            &[true, false, true, false, true],
+        );
+        check_degenerate_column::<crate::xor::XorRDVD>(
+            singleton(),
+            column(),
+            "logic/xor",
+            &[true, false, true, false, true],
         );
     }
 
     #[test]
     fn logic_ports_reject_wrong_types_and_layouts() {
-        assert!(crate::and::AndSS::new_invocation(FunctionInvocation::binary(
-            ValueCell::from_exact(false).unwrap(),
-            ValueCell::from_exact(1_usize).unwrap(),
-            ValueCell::from_exact(true).unwrap(),
-        ))
-        .is_err());
-        assert!(crate::and::AndSS::new_invocation(FunctionInvocation::unary(
-            ValueCell::from_exact(false).unwrap(),
-            ValueCell::from_exact(true).unwrap(),
-        ))
-        .is_err());
+        assert!(
+            crate::and::AndSS::new_invocation(FunctionInvocation::binary(
+                ValueCell::from_exact(false).unwrap(),
+                ValueCell::from_exact(1_usize).unwrap(),
+                ValueCell::from_exact(true).unwrap(),
+            ))
+            .is_err()
+        );
+        assert!(
+            crate::and::AndSS::new_invocation(FunctionInvocation::unary(
+                ValueCell::from_exact(false).unwrap(),
+                ValueCell::from_exact(true).unwrap(),
+            ))
+            .is_err()
+        );
     }
 }

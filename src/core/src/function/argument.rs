@@ -11,16 +11,15 @@ use std::string::{String, ToString};
 use core::{any::type_name, fmt};
 
 use crate::FunctionMatrixStoragePattern;
-#[cfg(feature = "matrix")]
-use crate::structures::{CopyMat, Matrix};
 #[cfg(feature = "semantic-compiler")]
 use crate::{BytecodeCompilerContext, Register};
 use crate::{
     CanonicalCellId, FunctionArgumentRole, FunctionMatrixRepresentation, FunctionRuntimeType,
     FunctionSignatureViolation, FunctionValueRepresentation, IncorrectNumberOfArguments, MResult,
-    MechError, MechErrorKind, Ref, RuntimeFunctionContract, RuntimeFunctionInputs,
-    RuntimeFunctionSignature, RuntimeOutputAliasPolicy, SchemaBody, SchemaId, ShapeInstance, Value,
-    ValueCell, ValueData, ValueDataDraft,
+    ManagedPort, MechError, MechErrorKind, OperationContractDeclaration, OperationContractError,
+    PortMemoryRequirement, PortStorageCompatibilityError, Ref, RuntimeFunctionContract,
+    RuntimeFunctionInputs, RuntimeFunctionSignature, RuntimeOutputAliasPolicy, SchemaBody,
+    SchemaId, ShapeInstance, StorageTopology, Value, ValueCell, ValueData, ValueDataDraft,
 };
 
 mod function_port_backing {
@@ -236,6 +235,53 @@ impl FunctionInvocation {
         self.inputs.len()
     }
 
+    /// Resolves the semantic input ordinal used by a call-memory plan. A
+    /// read-modify-write output may be coalesced out of the physical runtime
+    /// invocation while remaining an explicit semantic input to planning.
+    pub(crate) fn planned_input_cell<'a>(
+        &'a self,
+        plan: &crate::CallMemoryPlan,
+        input: usize,
+    ) -> MResult<&'a ValueCell> {
+        if plan.inputs.len() == self.inputs.len() {
+            return self
+                .inputs
+                .get(input)
+                .ok_or_else(|| self.layout_error(input + 1));
+        }
+        if plan.inputs.len() != self.inputs.len().saturating_add(1) {
+            return Err(function_memory_contract_error(
+                FunctionMemoryContractViolationReason::OperationContractDerivation {
+                    error: crate::OperationContractError::PortCountMismatch {
+                        direction: crate::PortDirection::Input,
+                        expected: plan.inputs.len() as u64,
+                        actual: self.inputs.len() as u64,
+                    },
+                },
+            ));
+        }
+        let base = plan
+            .bound_call
+            .operation_descriptor()
+            .contract
+            .outputs
+            .iter()
+            .find_map(|output| match output.construction {
+                crate::OutputConstruction::ReadModifyWrite { base_input, .. } => {
+                    Some(base_input as usize)
+                }
+                _ => None,
+            })
+            .ok_or_else(|| self.layout_error(plan.inputs.len()))?;
+        if input == base {
+            return Ok(&self.output);
+        }
+        let physical = input - usize::from(input > base);
+        self.inputs
+            .get(physical)
+            .ok_or_else(|| self.layout_error(plan.inputs.len()))
+    }
+
     pub fn output(&self) -> FunctionOutputPort<'_> {
         FunctionOutputPort { invocation: self }
     }
@@ -404,7 +450,7 @@ impl FunctionInvocation {
     pub fn validate_contract(&self, contract: RuntimeFunctionContract) -> MResult<()> {
         if contract.output_alias == RuntimeOutputAliasPolicy::DisallowInputAlias {
             for (index, input) in self.inputs.iter().enumerate() {
-                if self.output.same_cell(input) {
+                if self.output.same_writable_storage(input) {
                     return Err(
                         MechError::new(FunctionCellAliasViolation { input: index }, None)
                             .with_compiler_loc(),
@@ -428,6 +474,166 @@ impl FunctionInvocation {
         Ok(())
     }
 
+    /// Performs the opt-in operation-memory check without changing production validation.
+    pub fn check_operation_memory_contract(
+        &self,
+        declaration: &OperationContractDeclaration,
+    ) -> MResult<()> {
+        let direct = declaration.memory_requirements(self.input_count());
+        let (requirements, coalesced_input) = match direct {
+            Ok(requirements) => (requirements, None),
+            Err(direct_error) => {
+                let Some(base_input) = coalesced_read_modify_write_input(declaration) else {
+                    return Err(function_memory_contract_error(
+                        FunctionMemoryContractViolationReason::OperationContractDerivation {
+                            error: direct_error,
+                        },
+                    ));
+                };
+                let semantic_input_count = self.input_count().checked_add(1).ok_or_else(|| {
+                    function_memory_contract_error(
+                        FunctionMemoryContractViolationReason::OperationContractDerivation {
+                            error: direct_error.clone(),
+                        },
+                    )
+                })?;
+                let requirements = declaration
+                    .memory_requirements(semantic_input_count)
+                    .map_err(|_| {
+                        function_memory_contract_error(
+                            FunctionMemoryContractViolationReason::OperationContractDerivation {
+                                error: direct_error,
+                            },
+                        )
+                    })?;
+                (requirements, Some(base_input))
+            }
+        };
+
+        for (index, requirement) in requirements.inputs.iter().enumerate() {
+            let cell = self.semantic_input_cell(index, coalesced_input)?;
+            check_invocation_cell_requirement(cell, requirement).map_err(|error| {
+                function_memory_contract_error(FunctionMemoryContractViolationReason::InputPort {
+                    index,
+                    error,
+                })
+            })?;
+        }
+
+        match requirements.outputs.as_ref() {
+            [] => {
+                let schemas = self.output.schema_table();
+                let schema = schemas
+                    .get(self.output.schema())
+                    .expect("function output schema remains present");
+                let is_unit = matches!(schema.body(), SchemaBody::Tuple(elements) if elements.is_empty())
+                    && self.output.storage_capabilities().topology
+                        == StorageTopology::CanonicalValue;
+                if !is_unit {
+                    return Err(function_memory_contract_error(
+                        FunctionMemoryContractViolationReason::ZeroOutputBridgeIsNotUnit,
+                    ));
+                }
+            }
+            [requirement] => {
+                check_invocation_cell_requirement(&self.output, requirement).map_err(|error| {
+                    function_memory_contract_error(
+                        FunctionMemoryContractViolationReason::OutputPort { error },
+                    )
+                })?;
+                self.check_operation_output_alias(requirement, coalesced_input)?;
+            }
+            outputs => {
+                return Err(function_memory_contract_error(
+                    FunctionMemoryContractViolationReason::MultipleSemanticOutputsUnsupported {
+                        outputs: outputs.len(),
+                    },
+                ));
+            }
+        }
+        Ok(())
+    }
+
+    fn semantic_input_cell(
+        &self,
+        input: usize,
+        coalesced_input: Option<usize>,
+    ) -> MResult<&ValueCell> {
+        if coalesced_input == Some(input) {
+            return Ok(&self.output);
+        }
+        let physical_input = match coalesced_input {
+            Some(base) if input > base => input - 1,
+            _ => input,
+        };
+        self.inputs.get(physical_input).ok_or_else(|| {
+            function_memory_contract_error(
+                FunctionMemoryContractViolationReason::InvalidDeclaredAliasInput {
+                    input: u16::try_from(input).unwrap_or(u16::MAX),
+                    inputs: self.input_count() + usize::from(coalesced_input.is_some()),
+                },
+            )
+        })
+    }
+
+    fn declared_alias_input(
+        &self,
+        input: u16,
+        coalesced_input: Option<usize>,
+    ) -> MResult<&ValueCell> {
+        self.semantic_input_cell(usize::from(input), coalesced_input)
+    }
+
+    fn check_operation_output_alias(
+        &self,
+        requirement: &PortMemoryRequirement,
+        coalesced_input: Option<usize>,
+    ) -> MResult<()> {
+        let Some(alias) = requirement.alias else {
+            return Ok(());
+        };
+        match alias {
+            crate::AliasPolicy::NoAlias => {
+                for (index, input) in self.inputs.iter().enumerate() {
+                    if self.output.same_writable_storage(input) {
+                        return Err(function_memory_contract_error(
+                            FunctionMemoryContractViolationReason::NoAliasViolation {
+                                input: index,
+                            },
+                        ));
+                    }
+                }
+            }
+            crate::AliasPolicy::MayAlias { input } => {
+                let designated = self.declared_alias_input(input, coalesced_input)?;
+                let semantic_input_count =
+                    self.input_count() + usize::from(coalesced_input.is_some());
+                for index in 0..semantic_input_count {
+                    let candidate = self.semantic_input_cell(index, coalesced_input)?;
+                    if self.output.same_writable_storage(candidate)
+                        && !designated.same_writable_storage(candidate)
+                    {
+                        return Err(function_memory_contract_error(
+                            FunctionMemoryContractViolationReason::MayAliasViolation {
+                                declared_input: input,
+                                unrelated_input: index,
+                            },
+                        ));
+                    }
+                }
+            }
+            crate::AliasPolicy::InPlaceRequired { input } => {
+                let designated = self.declared_alias_input(input, coalesced_input)?;
+                if !self.output.same_writable_storage(designated) {
+                    return Err(function_memory_contract_error(
+                        FunctionMemoryContractViolationReason::InPlaceRequiredViolation { input },
+                    ));
+                }
+            }
+        }
+        Ok(())
+    }
+
     pub fn output_cell(&self) -> &ValueCell {
         &self.output
     }
@@ -435,6 +641,45 @@ impl FunctionInvocation {
     pub fn input_cells(&self) -> &[ValueCell] {
         &self.inputs
     }
+}
+
+fn check_invocation_cell_requirement(
+    cell: &ValueCell,
+    requirement: &PortMemoryRequirement,
+) -> Result<(), PortStorageCompatibilityError> {
+    let schemas = cell.schema_table();
+    let schema = schemas
+        .get(cell.schema())
+        .expect("function invocation schema remains present");
+    let shape = cell.shape().clone();
+    crate::check_port_storage_compatibility(
+        schema,
+        &shape,
+        requirement,
+        &cell.storage_capabilities(),
+    )
+}
+
+pub(crate) fn coalesced_read_modify_write_input(
+    declaration: &OperationContractDeclaration,
+) -> Option<usize> {
+    let [output] = declaration.outputs.as_ref() else {
+        return None;
+    };
+    let crate::OutputConstruction::ReadModifyWrite { base_input, .. } = &output.construction else {
+        return None;
+    };
+    let alias_input = match output.alias {
+        crate::AliasPolicy::MayAlias { input } | crate::AliasPolicy::InPlaceRequired { input } => {
+            input
+        }
+        crate::AliasPolicy::NoAlias => return None,
+    };
+    (alias_input == *base_input).then_some(usize::from(*base_input))
+}
+
+fn function_memory_contract_error(reason: FunctionMemoryContractViolationReason) -> MechError {
+    MechError::new(FunctionMemoryContractViolation { reason }, None).with_compiler_loc()
 }
 
 pub(crate) fn canonical_matrix_descriptor(
@@ -533,119 +778,6 @@ fn function_argument_type_mismatch<T>(cell: &ValueCell, role: FunctionArgumentRo
     .with_compiler_loc()
 }
 
-#[cfg(feature = "matrix")]
-pub(crate) fn matrix_from_cell<T>(
-    cell: &ValueCell,
-    role: FunctionArgumentRole,
-) -> MResult<Matrix<T>>
-where
-    T: FunctionPortBacking + Clone,
-{
-    let FunctionValueRepresentation::Matrix {
-        storage: FunctionMatrixStoragePattern::Exact(storage),
-        ..
-    } = cell.representation()
-    else {
-        return Err(function_matrix_type_mismatch::<T>(cell, role));
-    };
-    #[allow(
-        unreachable_patterns,
-        reason = "the fallback is reachable only in narrow matrix feature profiles"
-    )]
-    let matrix = match storage {
-        #[cfg(feature = "matrix1")]
-        FunctionMatrixRepresentation::Matrix1 => Matrix::Matrix1(
-            cell.try_ref::<crate::Matrix1<T>>()
-                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
-        ),
-        #[cfg(feature = "matrix2")]
-        FunctionMatrixRepresentation::Matrix2 => Matrix::Matrix2(
-            cell.try_ref::<crate::Matrix2<T>>()
-                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
-        ),
-        #[cfg(feature = "matrix3")]
-        FunctionMatrixRepresentation::Matrix3 => Matrix::Matrix3(
-            cell.try_ref::<crate::Matrix3<T>>()
-                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
-        ),
-        #[cfg(feature = "matrix4")]
-        FunctionMatrixRepresentation::Matrix4 => Matrix::Matrix4(
-            cell.try_ref::<crate::Matrix4<T>>()
-                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
-        ),
-        #[cfg(feature = "matrix2x3")]
-        FunctionMatrixRepresentation::Matrix2x3 => Matrix::Matrix2x3(
-            cell.try_ref::<crate::Matrix2x3<T>>()
-                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
-        ),
-        #[cfg(feature = "matrix3x2")]
-        FunctionMatrixRepresentation::Matrix3x2 => Matrix::Matrix3x2(
-            cell.try_ref::<crate::Matrix3x2<T>>()
-                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
-        ),
-        #[cfg(feature = "row_vector2")]
-        FunctionMatrixRepresentation::RowVector2 => Matrix::RowVector2(
-            cell.try_ref::<crate::RowVector2<T>>()
-                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
-        ),
-        #[cfg(feature = "row_vector3")]
-        FunctionMatrixRepresentation::RowVector3 => Matrix::RowVector3(
-            cell.try_ref::<crate::RowVector3<T>>()
-                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
-        ),
-        #[cfg(feature = "row_vector4")]
-        FunctionMatrixRepresentation::RowVector4 => Matrix::RowVector4(
-            cell.try_ref::<crate::RowVector4<T>>()
-                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
-        ),
-        #[cfg(feature = "vector2")]
-        FunctionMatrixRepresentation::Vector2 => Matrix::Vector2(
-            cell.try_ref::<crate::Vector2<T>>()
-                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
-        ),
-        #[cfg(feature = "vector3")]
-        FunctionMatrixRepresentation::Vector3 => Matrix::Vector3(
-            cell.try_ref::<crate::Vector3<T>>()
-                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
-        ),
-        #[cfg(feature = "vector4")]
-        FunctionMatrixRepresentation::Vector4 => Matrix::Vector4(
-            cell.try_ref::<crate::Vector4<T>>()
-                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
-        ),
-        #[cfg(feature = "row_vectord")]
-        FunctionMatrixRepresentation::RowVectorD => Matrix::RowDVector(
-            cell.try_ref::<crate::RowDVector<T>>()
-                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
-        ),
-        #[cfg(feature = "vectord")]
-        FunctionMatrixRepresentation::VectorD => Matrix::DVector(
-            cell.try_ref::<crate::DVector<T>>()
-                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
-        ),
-        #[cfg(feature = "matrixd")]
-        FunctionMatrixRepresentation::MatrixD => Matrix::DMatrix(
-            cell.try_ref::<crate::DMatrix<T>>()
-                .map_err(|_| function_matrix_type_mismatch::<T>(cell, role))?,
-        ),
-        _ => return Err(function_matrix_type_mismatch::<T>(cell, role)),
-    };
-    Ok(matrix)
-}
-
-#[cfg(feature = "matrix")]
-fn function_matrix_type_mismatch<T>(cell: &ValueCell, role: FunctionArgumentRole) -> MechError {
-    MechError::new(
-        FunctionArgumentTypeMismatch {
-            role,
-            expected: type_name::<Matrix<T>>().to_string(),
-            found: format!("{:?}", cell.representation()),
-        },
-        None,
-    )
-    .with_compiler_loc()
-}
-
 impl fmt::Debug for FunctionInvocation {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter
@@ -661,7 +793,7 @@ impl FunctionInputPort<'_> {
         self.index
     }
 
-    /// Extracts the exact typed input backing without exposing erased values.
+    /// Borrows an explicitly pinned external input.
     ///
     /// ```compile_fail
     /// use mech_core::FunctionPortBacking;
@@ -669,7 +801,7 @@ impl FunctionInputPort<'_> {
     /// fn require<T: FunctionPortBacking>() {}
     /// require::<Unsupported>();
     /// ```
-    pub fn try_ref<T: FunctionPortBacking>(self) -> MResult<Ref<T>> {
+    pub fn try_external_ref<T: FunctionPortBacking>(self) -> MResult<Ref<T>> {
         self.invocation.inputs[self.index]
             .try_ref::<T>()
             .map_err(|_| {
@@ -680,47 +812,98 @@ impl FunctionInputPort<'_> {
             })
     }
 
-    /// Extracts the exact typed matrix input wrapper without exposing erased values.
-    ///
-    /// ```compile_fail
-    /// use mech_core::FunctionPortBacking;
-    /// struct Unsupported;
-    /// fn require<T: FunctionPortBacking>() {}
-    /// require::<Unsupported>();
-    /// ```
-    #[cfg(feature = "matrix")]
-    pub fn try_matrix<T>(self) -> MResult<Matrix<T>>
-    where
-        T: FunctionPortBacking + Clone,
-    {
-        matrix_from_cell(
-            &self.invocation.inputs[self.index],
+    /// Binds a scalar logical input without retaining its physical backing.
+    /// The active managed frame resolves the cell's current allocation at
+    /// every invocation.
+    pub fn try_managed<T: FunctionPortBacking>(self) -> MResult<ManagedPort<T>> {
+        let cell = &self.invocation.inputs[self.index];
+        validate_cell_representation(
+            cell,
+            T::REPRESENTATION,
             FunctionArgumentRole::Input(self.index),
-        )
+        )?;
+        Ok(ManagedPort::input(cell.clone(), self.index))
     }
 
-    /// Extracts an exact typed matrix as the private copy-kernel interface.
-    ///
-    /// This retains the original typed matrix handles and never exposes a
-    /// universal value or performs an erased-value conversion.
+    /// Binds this physical input at its semantic ordinal when a coalesced
+    /// read-modify-write base output precedes it in the operation contract.
+    pub fn try_managed_at<T: FunctionPortBacking>(
+        self,
+        semantic_input: usize,
+    ) -> MResult<ManagedPort<T>> {
+        let cell = &self.invocation.inputs[self.index];
+        validate_cell_representation(
+            cell,
+            T::REPRESENTATION,
+            FunctionArgumentRole::Input(self.index),
+        )?;
+        Ok(ManagedPort::input(cell.clone(), semantic_input))
+    }
+
+    /// Binds either a scalar value or a dense matrix by its fixed-width
+    /// element kind. This is the canonical constructor used by shared kernel
+    /// families: storage shape is supplied by the call plan, not retained in
+    /// the port capability.
+    pub fn try_managed_element<T: FunctionPortBacking>(self) -> MResult<ManagedPort<T>> {
+        let cell = &self.invocation.inputs[self.index];
+        let representation = cell.representation();
+        if representation == T::REPRESENTATION {
+            return Ok(ManagedPort::input(cell.clone(), self.index));
+        }
+        #[cfg(feature = "matrix")]
+        if let FunctionValueRepresentation::Matrix { element, .. } = representation
+            && element == crate::matrix_element_for_representation(T::REPRESENTATION)
+        {
+            return Ok(ManagedPort::input(cell.clone(), self.index));
+        }
+        Err(function_argument_type_mismatch::<T>(
+            cell,
+            FunctionArgumentRole::Input(self.index),
+        ))
+    }
+
+    pub fn try_managed_element_at<T: FunctionPortBacking>(
+        self,
+        semantic_input: usize,
+    ) -> MResult<ManagedPort<T>> {
+        let cell = &self.invocation.inputs[self.index];
+        let representation = cell.representation();
+        if representation == T::REPRESENTATION {
+            return Ok(ManagedPort::input(cell.clone(), semantic_input));
+        }
+        #[cfg(feature = "matrix")]
+        if let FunctionValueRepresentation::Matrix { element, .. } = representation
+            && element == crate::matrix_element_for_representation(T::REPRESENTATION)
+        {
+            return Ok(ManagedPort::input(cell.clone(), semantic_input));
+        }
+        Err(function_argument_type_mismatch::<T>(
+            cell,
+            FunctionArgumentRole::Input(self.index),
+        ))
+    }
+
+    /// Binds a matrix logical input by element capability rather than by an
+    /// owning matrix representation.
     #[cfg(feature = "matrix")]
-    pub fn try_copyable_matrix<T>(self) -> MResult<Box<dyn CopyMat<T>>>
-    where
-        T: FunctionPortBacking + Clone,
-        #[cfg(feature = "semantic-compiler")]
-        T: crate::CompileConst
-            + crate::ConstElem
-            + crate::FunctionRuntimeType
-            + crate::CanonicalMatrixElementBacking
-            + core::fmt::Debug
-            + PartialEq,
-    {
-        Ok(self.try_matrix::<T>()?.get_copyable_matrix())
+    pub fn try_managed_matrix<T: FunctionPortBacking>(self) -> MResult<ManagedPort<T>> {
+        let cell = &self.invocation.inputs[self.index];
+        let expected = crate::matrix_element_for_representation(T::REPRESENTATION);
+        match cell.representation() {
+            FunctionValueRepresentation::Matrix { element, .. } if element == expected => {
+                Ok(ManagedPort::input(cell.clone(), self.index))
+            }
+            _ => Err(function_argument_type_mismatch::<T>(
+                cell,
+                FunctionArgumentRole::Input(self.index),
+            )),
+        }
     }
 
     pub fn value(self) -> FunctionValueInput {
         FunctionValueInput {
             cell: self.invocation.inputs[self.index].clone(),
+            index: self.index,
         }
     }
 }
@@ -735,7 +918,7 @@ impl fmt::Debug for FunctionInputPort<'_> {
 }
 
 impl FunctionOutputPort<'_> {
-    /// Extracts the exact typed output backing without exposing erased values.
+    /// Borrows an explicitly pinned external output.
     ///
     /// ```compile_fail
     /// use mech_core::FunctionPortBacking;
@@ -743,13 +926,91 @@ impl FunctionOutputPort<'_> {
     /// fn require<T: FunctionPortBacking>() {}
     /// require::<Unsupported>();
     /// ```
-    pub fn try_ref<T: FunctionPortBacking>(self) -> MResult<Ref<T>> {
+    pub fn try_external_ref<T: FunctionPortBacking>(self) -> MResult<Ref<T>> {
         self.invocation.output.try_ref::<T>().map_err(|_| {
             function_argument_type_mismatch::<T>(
                 &self.invocation.output,
                 FunctionArgumentRole::Output,
             )
         })
+    }
+
+    /// Binds a scalar logical output without retaining its physical backing.
+    pub fn try_managed<T: FunctionPortBacking>(self) -> MResult<ManagedPort<T>> {
+        let cell = &self.invocation.output;
+        validate_cell_representation(cell, T::REPRESENTATION, FunctionArgumentRole::Output)?;
+        Ok(ManagedPort::output(cell.clone()))
+    }
+
+    /// Binds a read view of an output that is also the declared base input of
+    /// a read-modify-write operation. The operation contract remains the
+    /// authority for whether this semantic input ordinal is valid.
+    pub fn try_managed_base_input<T: FunctionPortBacking>(
+        self,
+        semantic_input: usize,
+    ) -> MResult<ManagedPort<T>> {
+        let cell = &self.invocation.output;
+        validate_cell_representation(cell, T::REPRESENTATION, FunctionArgumentRole::Output)?;
+        Ok(ManagedPort::input(cell.clone(), semantic_input))
+    }
+
+    /// Element-kind form of [`Self::try_managed_base_input`] for dense values.
+    pub fn try_managed_element_base_input<T: FunctionPortBacking>(
+        self,
+        semantic_input: usize,
+    ) -> MResult<ManagedPort<T>> {
+        let cell = &self.invocation.output;
+        let representation = cell.representation();
+        if representation == T::REPRESENTATION {
+            return Ok(ManagedPort::input(cell.clone(), semantic_input));
+        }
+        #[cfg(feature = "matrix")]
+        if let FunctionValueRepresentation::Matrix { element, .. } = representation
+            && element == crate::matrix_element_for_representation(T::REPRESENTATION)
+        {
+            return Ok(ManagedPort::input(cell.clone(), semantic_input));
+        }
+        Err(function_argument_type_mismatch::<T>(
+            cell,
+            FunctionArgumentRole::Output,
+        ))
+    }
+
+    /// Binds either a scalar output or a dense matrix by its fixed-width
+    /// element kind; the call plan remains the geometry authority.
+    pub fn try_managed_element<T: FunctionPortBacking>(self) -> MResult<ManagedPort<T>> {
+        let cell = &self.invocation.output;
+        let representation = cell.representation();
+        if representation == T::REPRESENTATION {
+            return Ok(ManagedPort::output(cell.clone()));
+        }
+        #[cfg(feature = "matrix")]
+        if let FunctionValueRepresentation::Matrix { element, .. } = representation
+            && element == crate::matrix_element_for_representation(T::REPRESENTATION)
+        {
+            return Ok(ManagedPort::output(cell.clone()));
+        }
+        Err(function_argument_type_mismatch::<T>(
+            cell,
+            FunctionArgumentRole::Output,
+        ))
+    }
+
+    /// Binds a matrix logical output by element capability rather than by an
+    /// owning matrix representation.
+    #[cfg(feature = "matrix")]
+    pub fn try_managed_matrix<T: FunctionPortBacking>(self) -> MResult<ManagedPort<T>> {
+        let cell = &self.invocation.output;
+        let expected = crate::matrix_element_for_representation(T::REPRESENTATION);
+        match cell.representation() {
+            FunctionValueRepresentation::Matrix { element, .. } if element == expected => {
+                Ok(ManagedPort::output(cell.clone()))
+            }
+            _ => Err(function_argument_type_mismatch::<T>(
+                cell,
+                FunctionArgumentRole::Output,
+            )),
+        }
     }
 
     pub fn value(self) -> FunctionValueOutput {
@@ -762,6 +1023,7 @@ impl FunctionOutputPort<'_> {
 #[derive(Clone)]
 pub struct FunctionValueInput {
     cell: ValueCell,
+    index: usize,
 }
 
 #[derive(Clone)]
@@ -775,15 +1037,19 @@ impl FunctionValueInput {
         &self.cell
     }
 
+    pub(crate) const fn managed_role(&self) -> crate::ManagedPortRole {
+        crate::ManagedPortRole::Input(self.index)
+    }
+
     pub fn snapshot(&self) -> MResult<Value> {
         self.cell.snapshot()
     }
 
-    pub const fn schema(&self) -> SchemaId {
+    pub fn schema(&self) -> SchemaId {
         self.cell.schema()
     }
 
-    pub const fn schema_key(&self) -> crate::SchemaKey {
+    pub fn schema_key(&self) -> crate::SchemaKey {
         self.cell.schema_key()
     }
 
@@ -866,13 +1132,21 @@ impl FunctionValueOutput {
     }
 
     pub fn replace_set(&self, elements: Box<[ValueData]>) -> MResult<()> {
-        let next = self.cell.rebuild_set(elements)?;
+        let next = self.build_set(elements)?;
         self.cell.replace(&next)
     }
 
+    pub fn build_set(&self, elements: Box<[ValueData]>) -> MResult<Value> {
+        self.cell.rebuild_set(elements)
+    }
+
     pub fn replace_set_drafts(&self, elements: Box<[ValueDataDraft]>) -> MResult<()> {
-        let next = self.cell.rebuild_set_drafts(elements)?;
+        let next = self.build_set_drafts(elements)?;
         self.cell.replace(&next)
+    }
+
+    pub fn build_set_drafts(&self, elements: Box<[ValueDataDraft]>) -> MResult<Value> {
+        self.cell.rebuild_set_drafts(elements)
     }
 
     pub fn replace_matrix_drafts(
@@ -884,11 +1158,11 @@ impl FunctionValueOutput {
         self.cell.replace(&next)
     }
 
-    pub const fn schema(&self) -> SchemaId {
+    pub fn schema(&self) -> SchemaId {
         self.cell.schema()
     }
 
-    pub const fn schema_key(&self) -> crate::SchemaKey {
+    pub fn schema_key(&self) -> crate::SchemaKey {
         self.cell.schema_key()
     }
 
@@ -994,6 +1268,88 @@ pub struct FunctionCellAliasViolation {
     pub input: usize,
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct FunctionMemoryContractViolation {
+    pub reason: FunctionMemoryContractViolationReason,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum FunctionMemoryContractViolationReason {
+    OperationContractDerivation {
+        error: OperationContractError,
+    },
+    InputPort {
+        index: usize,
+        error: PortStorageCompatibilityError,
+    },
+    OutputPort {
+        error: PortStorageCompatibilityError,
+    },
+    ZeroOutputBridgeIsNotUnit,
+    MultipleSemanticOutputsUnsupported {
+        outputs: usize,
+    },
+    InvalidDeclaredAliasInput {
+        input: u16,
+        inputs: usize,
+    },
+    NoAliasViolation {
+        input: usize,
+    },
+    MayAliasViolation {
+        declared_input: u16,
+        unrelated_input: usize,
+    },
+    InPlaceRequiredViolation {
+        input: u16,
+    },
+}
+
+impl MechErrorKind for FunctionMemoryContractViolation {
+    fn name(&self) -> &str {
+        "FunctionMemoryContractViolation"
+    }
+
+    fn message(&self) -> String {
+        match &self.reason {
+            FunctionMemoryContractViolationReason::OperationContractDerivation { error } => {
+                format!("operation memory requirement derivation failed: {error:?}")
+            }
+            FunctionMemoryContractViolationReason::InputPort { index, error } => {
+                format!("input port {index} does not satisfy its memory requirement: {error}")
+            }
+            FunctionMemoryContractViolationReason::OutputPort { error } => {
+                format!("output port does not satisfy its memory requirement: {error}")
+            }
+            FunctionMemoryContractViolationReason::ZeroOutputBridgeIsNotUnit => {
+                "zero-output operation requires a canonical unit compatibility output".to_string()
+            }
+            FunctionMemoryContractViolationReason::MultipleSemanticOutputsUnsupported {
+                outputs,
+            } => {
+                format!("the current invocation bridge cannot represent {outputs} semantic outputs")
+            }
+            FunctionMemoryContractViolationReason::InvalidDeclaredAliasInput { input, inputs } => {
+                format!(
+                    "declared alias input {input} is outside the invocation input count {inputs}"
+                )
+            }
+            FunctionMemoryContractViolationReason::NoAliasViolation { input } => {
+                format!("output shares physical storage with forbidden input {input}")
+            }
+            FunctionMemoryContractViolationReason::MayAliasViolation {
+                declared_input,
+                unrelated_input,
+            } => format!(
+                "output may alias input {declared_input}, but shares unrelated input {unrelated_input} storage"
+            ),
+            FunctionMemoryContractViolationReason::InPlaceRequiredViolation { input } => {
+                format!("output does not share the physical storage required by input {input}")
+            }
+        }
+    }
+}
+
 impl MechErrorKind for FunctionCellAliasViolation {
     fn name(&self) -> &str {
         "FunctionCellAliasViolation"
@@ -1031,5 +1387,139 @@ impl MechErrorKind for FunctionArgumentTypeMismatch {
             "function argument {:?} requires exact runtime representation {}, found {}",
             self.role, self.expected, self.found,
         )
+    }
+}
+
+#[cfg(all(test, feature = "f64"))]
+mod operation_memory_tests {
+    use super::*;
+    use crate::{
+        AliasPolicy, ChangeDetectionPolicy, DeliveryMode, ExternalInteraction, InputPortLayout,
+        InputPortPolicy, OutputConstruction, OutputPortPolicy, RegionPolicy, ShapeRule,
+    };
+
+    fn declaration(alias: AliasPolicy) -> OperationContractDeclaration {
+        OperationContractDeclaration {
+            inputs: InputPortLayout::Fixed(
+                vec![InputPortPolicy {
+                    access: crate::AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                }]
+                .into_boxed_slice(),
+            ),
+            outputs: vec![OutputPortPolicy {
+                access: crate::AccessMode::Write,
+                delivery: DeliveryMode::Signal,
+                construction: OutputConstruction::FullWrite {
+                    shape: ShapeRule::Declared,
+                },
+                alias,
+                change_detection: ChangeDetectionPolicy::KernelReported,
+            }]
+            .into_boxed_slice(),
+            interaction: ExternalInteraction::Pure,
+        }
+    }
+
+    fn reason(error: MechError) -> FunctionMemoryContractViolationReason {
+        error
+            .kind_as::<FunctionMemoryContractViolation>()
+            .expect("operation memory check returns its structured error")
+            .reason
+            .clone()
+    }
+
+    #[test]
+    fn operation_aliases_follow_storage_when_logical_identity_disagrees() {
+        let first = ValueCell::from_exact(1_f64).unwrap();
+        let detached = first.detached_clone().unwrap();
+        let same_logical_different_storage =
+            ValueCell::test_with_identity_and_payload(&first, &detached).unwrap();
+        let different_logical_same_storage =
+            ValueCell::test_with_identity_and_payload(&detached, &first).unwrap();
+
+        assert!(first.same_logical_cell(&same_logical_different_storage));
+        assert!(!first.same_storage(&same_logical_different_storage));
+        FunctionInvocation::unary(same_logical_different_storage.clone(), first.clone())
+            .check_operation_memory_contract(&declaration(AliasPolicy::NoAlias))
+            .unwrap();
+        assert_eq!(
+            reason(
+                FunctionInvocation::unary(same_logical_different_storage, first.clone())
+                    .check_operation_memory_contract(&declaration(AliasPolicy::InPlaceRequired {
+                        input: 0
+                    },))
+                    .unwrap_err(),
+            ),
+            FunctionMemoryContractViolationReason::InPlaceRequiredViolation { input: 0 }
+        );
+
+        assert!(!first.same_logical_cell(&different_logical_same_storage));
+        assert!(first.same_storage(&different_logical_same_storage));
+        assert_eq!(
+            reason(
+                FunctionInvocation::unary(different_logical_same_storage.clone(), first.clone())
+                    .check_operation_memory_contract(&declaration(AliasPolicy::NoAlias))
+                    .unwrap_err(),
+            ),
+            FunctionMemoryContractViolationReason::NoAliasViolation { input: 0 }
+        );
+        FunctionInvocation::unary(different_logical_same_storage, first)
+            .check_operation_memory_contract(&declaration(AliasPolicy::InPlaceRequired {
+                input: 0,
+            }))
+            .unwrap();
+    }
+
+    #[cfg(feature = "string")]
+    #[test]
+    fn shared_immutable_roots_are_not_writable_output_aliases() {
+        let output = ValueCell::from_exact("seed".to_owned()).unwrap();
+        let input = output.detached_clone().unwrap();
+
+        assert!(output.same_storage(&input));
+        assert!(!output.same_writable_storage(&input));
+        FunctionInvocation::unary(output, input)
+            .validate_contract(RuntimeFunctionContract::no_matrix(
+                RuntimeOutputAliasPolicy::DisallowInputAlias,
+            ))
+            .unwrap();
+    }
+
+    #[test]
+    fn coalesced_read_modify_write_output_satisfies_its_semantic_base_input() {
+        let declaration = OperationContractDeclaration {
+            inputs: InputPortLayout::Fixed(
+                vec![
+                    InputPortPolicy {
+                        access: crate::AccessMode::Read,
+                        delivery: DeliveryMode::Signal,
+                    },
+                    InputPortPolicy {
+                        access: crate::AccessMode::Read,
+                        delivery: DeliveryMode::Signal,
+                    },
+                ]
+                .into_boxed_slice(),
+            ),
+            outputs: vec![OutputPortPolicy {
+                access: crate::AccessMode::ReadWrite,
+                delivery: DeliveryMode::Signal,
+                construction: OutputConstruction::ReadModifyWrite {
+                    base_input: 0,
+                    regions: RegionPolicy::WholeValue,
+                },
+                alias: AliasPolicy::InPlaceRequired { input: 0 },
+                change_detection: ChangeDetectionPolicy::KernelReported,
+            }]
+            .into_boxed_slice(),
+            interaction: ExternalInteraction::Pure,
+        };
+        let destination = ValueCell::from_exact(1_f64).unwrap();
+        let source = ValueCell::from_exact(2_f64).unwrap();
+
+        FunctionInvocation::unary(destination, source)
+            .check_operation_memory_contract(&declaration)
+            .unwrap();
     }
 }

@@ -8,41 +8,15 @@ use libm::tan;
 use libm::tanf;
 #[cfg(feature = "f64")]
 macro_rules! cot_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = 1.0 / tan((*$arg));
-        }
-    };
-}
-
-#[cfg(feature = "f64")]
-macro_rules! cot_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = 1.0 / tan(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(1.0 / tan(($arg)))
     };
 }
 
 #[cfg(feature = "f32")]
 macro_rules! cotf_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = 1.0 / tanf((*$arg));
-        }
-    };
-}
-
-#[cfg(feature = "f32")]
-macro_rules! cotf_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = 1.0 / tanf(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(1.0 / tanf(($arg)))
     };
 }
 

@@ -181,9 +181,21 @@ pub struct RuntimeLimits {
     /// None means no explicit wall-clock limit.
     pub max_turn_duration_ms: Option<u64>,
 
-    /// Default memory budget for runtime-managed allocations, in bytes.
+    /// Memory budget for runtime-managed allocations, in bytes.
     ///
-    /// This is advisory until the runtime has allocator integration.
+    /// Resident activation, replacement, and turns share one aggregate account
+    /// for admitted backing and payload capacity. It includes String growth,
+    /// canonical ownership, captured input/state/effect copies, and temporary
+    /// staging before materialization. Old and candidate owners coexist under
+    /// the same ceiling; exported canonical values retain their charge until
+    /// their last owning clone is dropped. Operation output/work limits remain
+    /// separate and unchanged.
+    ///
+    /// The same value remains the default context byte budget. Independently
+    /// constructed runtimes have independent accounts. This is not a process
+    /// RSS limit or a ceiling on compiler or caller-owned allocations. None
+    /// leaves the aggregate ceiling unconfigured; no default host quota is
+    /// installed.
     pub max_memory_bytes: Option<u64>,
 
     /// Maximum number of tasks allowed to exist at once.

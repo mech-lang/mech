@@ -12,9 +12,10 @@ use mech_core::{
 
 use super::{
     ActivatedExternalNode, ActivatedNodeIndex, ActivatedTurnStep, F64_STATE_ARENA_BASE,
-    F64_STATE_SLOT_BIT, F64ReadTapeEntry, ReactiveInstance, ResidentEffectIntent,
-    ResidentExternalPublicationAuthority, ResidentIntegrityMode, ResidentReadLocation,
-    ResidentRegion, ResidentStorageClass, SlotRole, StateArena, StateVersion, TypedResidentArena,
+    F64_STATE_SLOT_BIT, F64ReadTapeEntry, ReactiveInstance, ResidentActivationError,
+    ResidentEffectIntent, ResidentExternalPublicationAuthority, ResidentIntegrityMode,
+    ResidentReadLocation, ResidentRegion, ResidentStorageClass, ResidentValueBorrow, SlotRole,
+    StateArena, StateVersion, TypedResidentArena,
 };
 
 #[derive(Clone, Copy, Debug)]
@@ -103,6 +104,9 @@ pub struct ResidentStructuralProbe {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ResidentExecutionError {
+    MemoryRuntime {
+        error: mech_core::MemoryRuntimeError,
+    },
     ActiveCandidate,
     EpochExhausted,
     InputCount {
@@ -189,6 +193,25 @@ impl PreparedResidentTurn<'_> {
             .materialize_effect_payload(ordinal)
     }
 
+    /// Creates an owning export from the prepared candidate before any
+    /// publication authority is exercised. Loaders use this to include their
+    /// initial return value in the same fail-closed transaction.
+    #[doc(hidden)]
+    pub fn copied_output(&self, output: usize) -> Result<Value, ResidentActivationError> {
+        self.instance
+            .as_deref()
+            .expect("live prepared resident turn")
+            .copied_output_at(output, self.working_epoch)
+    }
+
+    #[doc(hidden)]
+    pub fn output_borrow(&self, output: usize) -> Option<ResidentValueBorrow<'_>> {
+        self.instance
+            .as_deref()
+            .expect("live prepared resident turn")
+            .output_borrow_at(output, self.working_epoch)
+    }
+
     /// Publishes an ordinary pure resident turn.
     ///
     /// External plans fail closed: their state may be published only through
@@ -256,6 +279,211 @@ impl Drop for PreparedResidentTurn<'_> {
 }
 
 impl ReactiveInstance {
+    /// Resolve invariant lane footprints during activation, before the first
+    /// turn. No kernel executes and no state transition is warmed up here.
+    pub(super) fn prepare_fixed_turn_plans(&mut self) -> Result<(), ResidentActivationError> {
+        for index in 0..self.plan.steps.len() {
+            let ActivatedTurnStep::Kernel(node) = &self.plan.steps[index] else {
+                continue;
+            };
+            let artifact_node = node.artifact_node;
+            let call = self.plan.memory_plan.call_for_node(artifact_node).ok_or(
+                ResidentActivationError::InvalidDependency {
+                    node: artifact_node,
+                },
+            )?;
+            if super::live::has_invariant_memory_facts(call) {
+                self.with_kernel_turn_plan(
+                    ActivatedNodeIndex(index as u32),
+                    InstanceEpoch::ZERO,
+                    InstanceEpoch::ZERO,
+                    |_| Ok(()),
+                )
+                .map_err(|_| ResidentActivationError::ActivationKernel {
+                    node: artifact_node,
+                })?;
+            }
+        }
+        Ok(())
+    }
+
+    fn with_kernel_turn_plan<T>(
+        &mut self,
+        node_index: ActivatedNodeIndex,
+        before_epoch: InstanceEpoch,
+        working_epoch: InstanceEpoch,
+        execute: impl FnOnce(&mut Self) -> Result<T, ResidentExecutionError>,
+    ) -> Result<T, ResidentExecutionError> {
+        let index = node_index.get() as usize;
+        if let Some(cached) = self.workspace.fixed_turn_plans[index].clone() {
+            // Reuse the certified base plan, not a materialization permit.
+            // The kernel still admits its concrete work and scratch demand.
+            return super::super::budget::with_resident_turn_plan(cached, || execute(self));
+        }
+        let node = if let Some(nodes) = &self.plan.pure_kernel_steps {
+            &nodes[index]
+        } else {
+            let ActivatedTurnStep::Kernel(node) = &self.plan.steps[index] else {
+                unreachable!("external steps are staged by the dispatcher")
+            };
+            node
+        };
+        let artifact_node = node.artifact_node;
+        let fail = || ResidentExecutionError::Kernel {
+            node: artifact_node,
+            error: ResidentKernelError::InvalidShape,
+        };
+        let output_location = match node.write.storage {
+            ResidentStorageClass::State => ResidentReadLocation::State {
+                slot: node.write.slot,
+                region: node.write.region,
+            },
+            ResidentStorageClass::Scratch => ResidentReadLocation::Scratch(node.write.region),
+            ResidentStorageClass::Input => ResidentReadLocation::Input(node.write.region),
+            ResidentStorageClass::Constant => ResidentReadLocation::Constant(node.write.region),
+        };
+        let current = self
+            .read_location(output_location, before_epoch)
+            .ok_or_else(fail)?;
+        let call = self
+            .plan
+            .memory_plan
+            .call_for_node(artifact_node)
+            .ok_or_else(fail)?;
+        let base = match node.construction {
+            OutputConstruction::ReadModifyWrite { base_input, .. } => Some(base_input as usize),
+            _ => None,
+        };
+        let region = node.write.region;
+        let storage = node.write.storage;
+        let candidate = if storage == ResidentStorageClass::State {
+            if matches!(
+                node.construction,
+                OutputConstruction::ReadModifyWrite { .. }
+            ) {
+                self.state
+                    .version(node.write.slot)
+                    .epochs
+                    .iter()
+                    .position(|epoch| *epoch == Some(working_epoch))
+                    .unwrap_or_else(|| self.state.candidate_buffer(node.write.slot, before_epoch))
+            } else {
+                self.state.candidate_buffer(node.write.slot, before_epoch)
+            }
+        } else {
+            0
+        };
+        let target = match storage {
+            ResidentStorageClass::State => &self.state.buffers[candidate],
+            ResidentStorageClass::Scratch => &self.workspace.scratch,
+            ResidentStorageClass::Input => &self.workspace.input,
+            ResidentStorageClass::Constant => &self.activation,
+        };
+        let scope = target
+            .prepare_payload_write(region)
+            .and_then(|scope| {
+                if scope.is_some() {
+                    Ok(scope)
+                } else {
+                    self.transient_budget
+                        .as_ref()
+                        .map(|owner| owner.begin(region))
+                        .transpose()
+                }
+            })
+            .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+        if let Some(scope) = &scope {
+            let container = u64::try_from(call.inputs.len())
+                .ok()
+                .and_then(|inputs| {
+                    inputs.checked_mul(core::mem::size_of::<ResidentValueRef<'_>>() as u64)
+                })
+                .ok_or_else(fail)?;
+            scope
+                .admit_auxiliary(container)
+                .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+        }
+        let mut reads = self.plan.reads[node.reads.start as usize..node.reads.end as usize].iter();
+        let inputs = (0..call.inputs.len())
+            .map(|ordinal| {
+                let location = if Some(ordinal) == base {
+                    output_location
+                } else {
+                    *reads.next().ok_or_else(fail)?
+                };
+                self.read_location(location, working_epoch).ok_or_else(fail)
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        let facts = super::live::facts(call, artifact_node, &inputs, current, &self.plan.schemas)
+            .map_err(|_| fail())?;
+        let turn_plan = crate::memory_planner::plan_current_resident_turn(
+            &self.plan.memory_plan,
+            artifact_node,
+            &facts,
+        )
+        .map_err(|_| ResidentExecutionError::Kernel {
+            node: artifact_node,
+            error: ResidentKernelError::InvalidShape,
+        })?;
+        if !turn_plan.budget_violations.is_empty() {
+            return Err(ResidentExecutionError::Kernel {
+                node: artifact_node,
+                error: ResidentKernelError::InvalidShape,
+            });
+        }
+        let cacheable = super::live::has_invariant_memory_facts(call);
+        let has_canonical_input = inputs
+            .iter()
+            .any(|input| input.kind() == ResidentValueKind::Snapshot);
+        drop(inputs);
+        let turn_plan = std::sync::Arc::new(turn_plan);
+        if cacheable {
+            self.workspace.fixed_turn_plans[index] = Some(turn_plan.clone());
+            // The same invariant proof that permits steady-state reuse also
+            // proves there is no indirect payload to admit on this first
+            // call. In particular, activation's cache preparation executes
+            // no kernel and must not manufacture a transient payload scope.
+            return super::super::budget::with_resident_turn_plan(turn_plan, || execute(self));
+        }
+        if let Some(scope) = &scope {
+            if region.kind == ResidentValueKind::Snapshot || has_canonical_input {
+                let bytes = self
+                    .plan
+                    .schemas
+                    .clone_allocation_bound_bytes()
+                    .and_then(|bytes| bytes.checked_mul(2))
+                    .ok_or_else(fail)?;
+                scope
+                    .admit_auxiliary(bytes)
+                    .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+            }
+        }
+        let admission = scope.as_ref().map(|scope| scope.admission());
+        let result = super::super::budget::with_payload_admission(admission, || {
+            super::super::budget::with_resident_turn_plan(turn_plan, || execute(self))
+        });
+        let admission_error = scope.as_ref().and_then(|scope| scope.last_error());
+        let target = match storage {
+            ResidentStorageClass::State => &mut self.state.buffers[candidate],
+            ResidentStorageClass::Scratch => &mut self.workspace.scratch,
+            ResidentStorageClass::Input => &mut self.workspace.input,
+            ResidentStorageClass::Constant => &mut self.activation,
+        };
+        if result.is_err() || admission_error.is_some() {
+            target
+                .abort_payload_write(region, scope)
+                .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+        } else {
+            target
+                .finish_payload_write(region, scope)
+                .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+        }
+        if let Some(error) = admission_error {
+            return Err(ResidentExecutionError::MemoryRuntime { error });
+        }
+        result
+    }
+
     /// Hash the currently published resident state without beginning a candidate.
     pub fn published_state_hash(&self) -> u64 {
         state_hash(self, self.published_epoch())
@@ -307,49 +535,65 @@ impl ReactiveInstance {
         }
 
         let materializations = self.plan.output_materializations.to_vec();
-        for materialization in materializations {
-            if !targets.contains(&materialization.target) {
-                continue;
-            }
-            let target = materialization.target;
-            let target_region = self.plan.slots[target.get() as usize].region;
-            match materialization.source {
-                ResidentReadLocation::Constant(source) => {
-                    self.state.overwrite_published_from_arena(
+        let staged = (|| {
+            for materialization in &materializations {
+                if !targets.contains(&materialization.target) {
+                    continue;
+                }
+                let target = materialization.target;
+                let target_region = self.plan.slots[target.get() as usize].region;
+                match materialization.source {
+                    ResidentReadLocation::Constant(source) => {
+                        self.state.stage_projection_from_arena(
+                            target,
+                            target_region,
+                            epoch,
+                            &self.activation,
+                            source,
+                        )
+                    }
+                    ResidentReadLocation::Input(source) => self.state.stage_projection_from_arena(
                         target,
                         target_region,
                         epoch,
-                        &self.activation,
+                        &self.workspace.input,
                         source,
-                    )
+                    ),
+                    ResidentReadLocation::Scratch(source) => {
+                        self.state.stage_projection_from_arena(
+                            target,
+                            target_region,
+                            epoch,
+                            &self.workspace.scratch,
+                            source,
+                        )
+                    }
+                    ResidentReadLocation::State {
+                        slot: source_slot,
+                        region: source_region,
+                    } => self.state.stage_projection_from_state_slot(
+                        target,
+                        target_region,
+                        source_slot,
+                        source_region,
+                        epoch,
+                    ),
                 }
-                ResidentReadLocation::Input(source) => self.state.overwrite_published_from_arena(
-                    target,
-                    target_region,
-                    epoch,
-                    &self.workspace.input,
-                    source,
-                ),
-                ResidentReadLocation::Scratch(source) => self.state.overwrite_published_from_arena(
-                    target,
-                    target_region,
-                    epoch,
-                    &self.workspace.scratch,
-                    source,
-                ),
-                ResidentReadLocation::State {
-                    slot: source_slot,
-                    region: source_region,
-                } => self.state.overwrite_published_from_state_slot(
-                    target,
-                    target_region,
-                    source_slot,
-                    source_region,
-                    epoch,
-                ),
+                .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+            }
+            self.validate_constraints_with_projection_candidates(epoch, Some(targets))
+        })();
+        staged?;
+        for materialization in &materializations {
+            let target = materialization.target;
+            if targets.contains(&target) {
+                let candidate = self.state.candidate_buffer(target, epoch);
+                let mut epochs = [None, None];
+                epochs[candidate] = Some(epoch);
+                self.state.version_mut(target).epochs = epochs;
             }
         }
-        self.validate_constraints(epoch)
+        Ok(())
     }
 
     fn external_node(&self, ordinal: u32) -> Option<&ActivatedExternalNode> {
@@ -384,6 +628,7 @@ impl ReactiveInstance {
             &external.payload_shape,
             external.payload.region(),
             payload,
+            self.memory_budget().as_ref(),
         )
     }
 
@@ -583,6 +828,30 @@ impl ReactiveInstance {
     }
 
     fn abort_candidate(&mut self, working_epoch: InstanceEpoch) {
+        // Kernel-level payload admission becomes durable only with the whole
+        // turn. Drop every payload written by completed steps before erasing
+        // their epoch/execution evidence so a failed turn cannot consume the
+        // next turn's exact candidate headroom.
+        self.state.abort_payloads(working_epoch);
+        for index in 0..self.plan.steps.len() {
+            if !bit_is_set(&self.workspace.executed_bits, index) {
+                continue;
+            }
+            let (scratch, effect) = match &self.plan.steps[index] {
+                ActivatedTurnStep::Kernel(node) => (
+                    (node.write.storage == ResidentStorageClass::Scratch)
+                        .then_some(node.write.region),
+                    None,
+                ),
+                ActivatedTurnStep::External(node) => (None, Some(node.captured_payload)),
+            };
+            if let Some(region) = scratch {
+                self.workspace.scratch.discard_payload_write(region);
+            }
+            if let Some(region) = effect {
+                self.workspace.effect_payloads.discard_payload_write(region);
+            }
+        }
         self.state.abort(working_epoch);
         self.workspace.initialized_output_bits.fill(0);
         self.workspace.all_outputs_initialized = false;
@@ -655,8 +924,9 @@ impl ReactiveInstance {
             .all(|(input, declared)| input.slot == declared.slot)
         {
             for (input, declared) in inputs.iter().zip(&self.plan.inputs) {
-                copy_input(&mut self.workspace.input, declared.region, input.value)
-                    .map_err(|_| ResidentExecutionError::InputLayout { slot: input.slot })?;
+                copy_input(&mut self.workspace.input, declared.region, input.value).map_err(
+                    |error| error.at(ResidentExecutionError::InputLayout { slot: input.slot }),
+                )?;
             }
         } else {
             for (ordinal, input) in inputs.iter().enumerate() {
@@ -678,8 +948,9 @@ impl ReactiveInstance {
                         slot: declared.slot,
                     });
                 };
-                copy_input(&mut self.workspace.input, declared.region, input.value)
-                    .map_err(|_| ResidentExecutionError::InputLayout { slot: input.slot })?;
+                copy_input(&mut self.workspace.input, declared.region, input.value).map_err(
+                    |error| error.at(ResidentExecutionError::InputLayout { slot: input.slot }),
+                )?;
             }
         }
         Ok(())
@@ -718,7 +989,12 @@ impl ReactiveInstance {
                 declared.region,
                 input.value,
             )
-            .map_err(|_| ResidentExecutionError::InputLayout { slot: input.slot })?;
+            .map_err(|error| match error {
+                ResidentActivationError::MemoryRuntime { error } => {
+                    ResidentExecutionError::MemoryRuntime { error }
+                }
+                _ => ResidentExecutionError::InputLayout { slot: input.slot },
+            })?;
         }
         Ok(())
     }
@@ -759,6 +1035,7 @@ impl ReactiveInstance {
             return self.execute_candidate(before_epoch, working_epoch, &mut probe);
         }
         let mut dirty = self.workspace.dirty_bits[0];
+        let mut executed = 0_u64;
         for order in 0..self.plan.topology.single_word_schedule.len() {
             let entry = self.plan.topology.single_word_schedule[order];
             if dirty & entry.node_bit == 0 {
@@ -774,6 +1051,8 @@ impl ReactiveInstance {
                 working_epoch,
                 entry.downstream != 0,
             )?;
+            executed |= entry.node_bit;
+            self.workspace.executed_bits[0] = executed;
             if changed {
                 dirty |= entry.downstream;
             }
@@ -808,6 +1087,7 @@ impl ReactiveInstance {
                 }
                 let changed = self.execute_step(entry.node, before_epoch, working_epoch, probe)?;
                 executed |= entry.node_bit;
+                self.workspace.executed_bits[0] = executed;
                 if changed {
                     dirty |= entry.downstream;
                 }
@@ -865,6 +1145,7 @@ impl ReactiveInstance {
                 let changed =
                     self.execute_kernel(entry.node, before_epoch, working_epoch, probe)?;
                 executed |= entry.node_bit;
+                self.workspace.executed_bits[0] = executed;
                 if changed {
                     dirty |= entry.downstream;
                 }
@@ -921,8 +1202,10 @@ impl ReactiveInstance {
                         target_region,
                         self.activation.read(source),
                     )
-                    .map_err(|_| {
-                        ResidentExecutionError::InvalidOutputMaterialization { slot: target }
+                    .map_err(|error| {
+                        error.at(ResidentExecutionError::InvalidOutputMaterialization {
+                            slot: target,
+                        })
                     })?;
                     self.state.tag(target, candidate, working_epoch);
                 }
@@ -933,8 +1216,10 @@ impl ReactiveInstance {
                         target_region,
                         self.workspace.input.read(source),
                     )
-                    .map_err(|_| {
-                        ResidentExecutionError::InvalidOutputMaterialization { slot: target }
+                    .map_err(|error| {
+                        error.at(ResidentExecutionError::InvalidOutputMaterialization {
+                            slot: target,
+                        })
                     })?;
                     self.state.tag(target, candidate, working_epoch);
                 }
@@ -945,22 +1230,27 @@ impl ReactiveInstance {
                         target_region,
                         self.workspace.scratch.read(source),
                     )
-                    .map_err(|_| {
-                        ResidentExecutionError::InvalidOutputMaterialization { slot: target }
+                    .map_err(|error| {
+                        error.at(ResidentExecutionError::InvalidOutputMaterialization {
+                            slot: target,
+                        })
                     })?;
                     self.state.tag(target, candidate, working_epoch);
                 }
                 ResidentReadLocation::State {
                     slot: source_slot,
                     region: source_region,
-                } => self.state.materialize_state_slot(
-                    target,
-                    target_region,
-                    source_slot,
-                    source_region,
-                    before_epoch,
-                    working_epoch,
-                ),
+                } => self
+                    .state
+                    .materialize_state_slot(
+                        target,
+                        target_region,
+                        source_slot,
+                        source_region,
+                        before_epoch,
+                        working_epoch,
+                    )
+                    .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?,
             }
             if record_summary {
                 let slot = SlotIndex::new(target.get());
@@ -978,13 +1268,28 @@ impl ReactiveInstance {
         &self,
         working_epoch: InstanceEpoch,
     ) -> Result<(), ResidentExecutionError> {
+        self.validate_constraints_with_projection_candidates(working_epoch, None)
+    }
+
+    fn validate_constraints_with_projection_candidates(
+        &self,
+        working_epoch: InstanceEpoch,
+        staged_outputs: Option<&std::collections::BTreeSet<CellSlotId>>,
+    ) -> Result<(), ResidentExecutionError> {
         if self.plan.integrity_mode == ResidentIntegrityMode::Unchecked {
             return Ok(());
         }
         for constraint in &self.plan.constraints {
-            let Some(ResidentValueRef::Bool(predicate)) =
-                self.read_location(constraint.predicate, working_epoch)
-            else {
+            let predicate = match constraint.predicate {
+                ResidentReadLocation::State { slot, region }
+                    if staged_outputs.is_some_and(|outputs| outputs.contains(&slot)) =>
+                {
+                    let buffer = self.state.candidate_buffer(slot, working_epoch);
+                    Some(self.state.buffers[buffer].read(region))
+                }
+                location => self.read_location(location, working_epoch),
+            };
+            let Some(ResidentValueRef::Bool(predicate)) = predicate else {
                 return Err(ResidentExecutionError::Integrity {
                     constraint: constraint.artifact_id,
                 });
@@ -1006,6 +1311,24 @@ impl ReactiveInstance {
         working_epoch: InstanceEpoch,
         change_is_observed: bool,
     ) -> Result<bool, ResidentExecutionError> {
+        self.with_kernel_turn_plan(node_index, before_epoch, working_epoch, |this| {
+            this.execute_kernel_without_summary_planned(
+                node_index,
+                before_epoch,
+                working_epoch,
+                change_is_observed,
+            )
+        })
+    }
+
+    #[inline(always)]
+    fn execute_kernel_without_summary_planned(
+        &mut self,
+        node_index: ActivatedNodeIndex,
+        before_epoch: InstanceEpoch,
+        working_epoch: InstanceEpoch,
+        change_is_observed: bool,
+    ) -> Result<bool, ResidentExecutionError> {
         let index = node_index.get() as usize;
         let node = if let Some(nodes) = &self.plan.pure_kernel_steps {
             &nodes[index]
@@ -1017,7 +1340,7 @@ impl ReactiveInstance {
         };
         if node.write.storage == ResidentStorageClass::Scratch {
             let mut ignored_probe = ResidentStructuralProbe::default();
-            return self.execute_kernel(
+            return self.execute_kernel_planned(
                 node_index,
                 before_epoch,
                 working_epoch,
@@ -1033,7 +1356,11 @@ impl ReactiveInstance {
         let candidate = match node.construction {
             OutputConstruction::FullWrite { .. } => self.state.candidate_buffer(slot, before_epoch),
             OutputConstruction::ReadModifyWrite { .. } => {
-                let candidate = self.state.begin_rmw(slot, before_epoch, working_epoch).0;
+                let candidate = self
+                    .state
+                    .begin_rmw(slot, before_epoch, working_epoch)
+                    .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?
+                    .0;
                 if self.plan.f64_read_tape.is_some() {
                     self.workspace.state_f64_arena_by_slot[slot.get() as usize] =
                         F64_STATE_ARENA_BASE + candidate as u8;
@@ -1136,8 +1463,10 @@ impl ReactiveInstance {
             return Err(ResidentExecutionError::EffectIntentCapacity);
         }
         self.capture_effect_payload(source, captured, working_epoch)
-            .map_err(|_| ResidentExecutionError::InvalidWrite {
-                node: artifact_node,
+            .map_err(|error| {
+                error.at(ResidentExecutionError::InvalidWrite {
+                    node: artifact_node,
+                })
             })?;
         self.workspace.effect_intents.push(ResidentEffectIntent {
             artifact_node,
@@ -1152,7 +1481,7 @@ impl ReactiveInstance {
         source: ResidentReadLocation,
         captured: ResidentRegion,
         working_epoch: InstanceEpoch,
-    ) -> Result<(), ()> {
+    ) -> Result<(), ResidentCopyError> {
         match source {
             ResidentReadLocation::Constant(region) => copy_input(
                 &mut self.workspace.effect_payloads,
@@ -1182,6 +1511,19 @@ impl ReactiveInstance {
 
     #[inline(always)]
     fn execute_kernel(
+        &mut self,
+        node_index: ActivatedNodeIndex,
+        before_epoch: InstanceEpoch,
+        working_epoch: InstanceEpoch,
+        probe: &mut ResidentStructuralProbe,
+    ) -> Result<bool, ResidentExecutionError> {
+        self.with_kernel_turn_plan(node_index, before_epoch, working_epoch, |this| {
+            this.execute_kernel_planned(node_index, before_epoch, working_epoch, probe)
+        })
+    }
+
+    #[inline(always)]
+    fn execute_kernel_planned(
         &mut self,
         node_index: ActivatedNodeIndex,
         before_epoch: InstanceEpoch,
@@ -1309,8 +1651,10 @@ impl ReactiveInstance {
                         self.state.candidate_buffer(slot, before_epoch)
                     }
                     OutputConstruction::ReadModifyWrite { .. } => {
-                        let (candidate, seeded) =
-                            self.state.begin_rmw(slot, before_epoch, working_epoch);
+                        let (candidate, seeded) = self
+                            .state
+                            .begin_rmw(slot, before_epoch, working_epoch)
+                            .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
                         if self.plan.f64_read_tape.is_some() {
                             self.workspace.state_f64_arena_by_slot[slot.get() as usize] =
                                 F64_STATE_ARENA_BASE + candidate as u8;
@@ -1470,37 +1814,38 @@ impl StateArena {
         select_version(self.version(slot), epoch)
     }
 
-    fn overwrite_published_from_arena(
+    fn stage_projection_from_arena(
         &mut self,
         target_slot: CellSlotId,
         target_region: ResidentRegion,
         epoch: InstanceEpoch,
         source: &TypedResidentArena,
         source_region: ResidentRegion,
-    ) {
-        let target_buffer = self.published_buffer(target_slot, epoch);
-        self.buffers[target_buffer].copy_region_from(target_region, source, source_region);
+    ) -> mech_core::MemoryRuntimeResult<()> {
+        let target_buffer = self.candidate_buffer(target_slot, epoch);
+        self.buffers[target_buffer].copy_region_from(target_region, source, source_region)
     }
 
-    fn overwrite_published_from_state_slot(
+    fn stage_projection_from_state_slot(
         &mut self,
         target_slot: CellSlotId,
         target_region: ResidentRegion,
         source_slot: CellSlotId,
         source_region: ResidentRegion,
         epoch: InstanceEpoch,
-    ) {
-        let target_buffer = self.published_buffer(target_slot, epoch);
+    ) -> mech_core::MemoryRuntimeResult<()> {
+        let target_buffer = self.candidate_buffer(target_slot, epoch);
         let source_buffer = self.published_buffer(source_slot, epoch);
         if source_buffer == target_buffer {
-            self.buffers[target_buffer].copy_region_within(target_region, source_region);
+            self.buffers[target_buffer].copy_region_within(target_region, source_region)?;
         } else if target_buffer == 0 {
             let [target, source] = &mut self.buffers;
-            target.copy_region_from(target_region, source, source_region);
+            target.copy_region_from(target_region, source, source_region)?;
         } else {
             let [source, target] = &mut self.buffers;
-            target.copy_region_from(target_region, source, source_region);
+            target.copy_region_from(target_region, source, source_region)?;
         }
+        Ok(())
     }
 
     fn candidate_buffer(&self, slot: CellSlotId, before: InstanceEpoch) -> usize {
@@ -1512,26 +1857,26 @@ impl StateArena {
         slot: CellSlotId,
         before: InstanceEpoch,
         working: InstanceEpoch,
-    ) -> (usize, bool) {
+    ) -> mech_core::MemoryRuntimeResult<(usize, bool)> {
         if let Some(candidate) = self
             .version(slot)
             .epochs
             .iter()
             .position(|tag| *tag == Some(working))
         {
-            return (candidate, false);
+            return Ok((candidate, false));
         }
         let published = self.select_buffer(slot, before);
         let candidate = 1 - published;
         let region = self.version(slot).region;
         let [left, right] = &mut self.buffers;
         if candidate == 0 {
-            left.copy_region_from(region, right, region);
+            left.copy_region_from(region, right, region)?;
         } else {
-            right.copy_region_from(region, left, region);
+            right.copy_region_from(region, left, region)?;
         }
         self.version_mut(slot).epochs[candidate] = Some(working);
-        (candidate, true)
+        Ok((candidate, true))
     }
 
     fn materialize_state_slot(
@@ -1542,19 +1887,20 @@ impl StateArena {
         source_region: ResidentRegion,
         before: InstanceEpoch,
         working: InstanceEpoch,
-    ) {
+    ) -> mech_core::MemoryRuntimeResult<()> {
         let source_buffer = self.select_buffer(source_slot, working);
         let target_buffer = self.candidate_buffer(target_slot, before);
         if source_buffer == target_buffer {
-            self.buffers[target_buffer].copy_region_within(target_region, source_region);
+            self.buffers[target_buffer].copy_region_within(target_region, source_region)?;
         } else if target_buffer == 0 {
             let [target, source] = &mut self.buffers;
-            target.copy_region_from(target_region, source, source_region);
+            target.copy_region_from(target_region, source, source_region)?;
         } else {
             let [source, target] = &mut self.buffers;
-            target.copy_region_from(target_region, source, source_region);
+            target.copy_region_from(target_region, source, source_region)?;
         }
         self.tag(target_slot, target_buffer, working);
+        Ok(())
     }
 
     fn tag(&mut self, slot: CellSlotId, buffer: usize, epoch: InstanceEpoch) {
@@ -2232,7 +2578,42 @@ fn select_version(version: &StateVersion, epoch: InstanceEpoch) -> usize {
     }
 }
 
+enum ResidentCopyError {
+    Layout,
+    Memory(mech_core::MemoryRuntimeError),
+}
+
+impl ResidentCopyError {
+    fn at(self, fallback: ResidentExecutionError) -> ResidentExecutionError {
+        match self {
+            Self::Layout => fallback,
+            Self::Memory(error) => ResidentExecutionError::MemoryRuntime { error },
+        }
+    }
+}
+
 fn copy_input(
+    arena: &mut TypedResidentArena,
+    region: ResidentRegion,
+    value: ResidentValueRef<'_>,
+) -> Result<(), ResidentCopyError> {
+    let scope = arena
+        .prepare_payload_write(region)
+        .map_err(ResidentCopyError::Memory)?;
+    if let Some(scope) = &scope {
+        scope
+            .admit_copy(value, 0)
+            .map_err(ResidentCopyError::Memory)?;
+        scope.start();
+    }
+    let result = copy_input_unchecked(arena, region, value);
+    arena
+        .finish_payload_write(region, scope)
+        .map_err(ResidentCopyError::Memory)?;
+    result.map_err(|_| ResidentCopyError::Layout)
+}
+
+fn copy_input_unchecked(
     arena: &mut TypedResidentArena,
     region: ResidentRegion,
     value: ResidentValueRef<'_>,
@@ -2259,7 +2640,9 @@ fn copy_input(
         (ResidentValueMut::String(target), ResidentValueRef::String(source))
             if target.len() == source.len() =>
         {
-            target.clone_from_slice(source);
+            for (target, source) in target.iter_mut().zip(source) {
+                *target = source.clone();
+            }
         }
         (ResidentValueMut::Snapshot(target), ResidentValueRef::Snapshot(source))
             if target.len() == source.len() =>
@@ -2406,8 +2789,8 @@ mod tests {
         };
         let mut state = StateArena {
             buffers: [
-                TypedResidentArena::allocate(sizes),
-                TypedResidentArena::allocate(sizes),
+                TypedResidentArena::allocate_projected_sizes(sizes),
+                TypedResidentArena::allocate_projected_sizes(sizes),
             ],
             versions: vec![
                 StateVersion {
@@ -2440,11 +2823,13 @@ mod tests {
     #[test]
     fn sparse_epoch_selection_retains_untouched_state() {
         let mut state = state_arena();
-        let (candidate, seeded) = state.begin_rmw(
-            CellSlotId::new(0),
-            InstanceEpoch::ZERO,
-            InstanceEpoch::new(1),
-        );
+        let (candidate, seeded) = state
+            .begin_rmw(
+                CellSlotId::new(0),
+                InstanceEpoch::ZERO,
+                InstanceEpoch::new(1),
+            )
+            .unwrap();
         assert!(seeded);
         state.buffers[candidate].f64s[0] = 11.0;
 
@@ -2460,11 +2845,13 @@ mod tests {
     fn repeated_rmw_reuses_one_seeded_candidate() {
         let mut state = state_arena();
         let working = InstanceEpoch::new(1);
-        let (first, seeded_first) =
-            state.begin_rmw(CellSlotId::new(0), InstanceEpoch::ZERO, working);
+        let (first, seeded_first) = state
+            .begin_rmw(CellSlotId::new(0), InstanceEpoch::ZERO, working)
+            .unwrap();
         state.buffers[first].f64s[0] += 2.0;
-        let (second, seeded_second) =
-            state.begin_rmw(CellSlotId::new(0), InstanceEpoch::ZERO, working);
+        let (second, seeded_second) = state
+            .begin_rmw(CellSlotId::new(0), InstanceEpoch::ZERO, working)
+            .unwrap();
         state.buffers[second].f64s[0] += 3.0;
 
         assert!(seeded_first);
@@ -2495,7 +2882,7 @@ mod tests {
             .unwrap();
         assert!(matches!(before, ResidentValueRef::F64(values) if values == [10.0]));
 
-        let (candidate, _) = state.begin_rmw(slot, InstanceEpoch::ZERO, working);
+        let (candidate, _) = state.begin_rmw(slot, InstanceEpoch::ZERO, working).unwrap();
         state.buffers[candidate].f64s[0] = 42.0;
         let after = StateReadAccess::whole(&state)
             .read(slot, region, working)
@@ -2508,9 +2895,13 @@ mod tests {
         let mut state = state_arena();
         let slot0 = CellSlotId::new(0);
         let slot1 = CellSlotId::new(1);
-        let (first, _) = state.begin_rmw(slot0, InstanceEpoch::ZERO, InstanceEpoch::new(1));
+        let (first, _) = state
+            .begin_rmw(slot0, InstanceEpoch::ZERO, InstanceEpoch::new(1))
+            .unwrap();
         state.buffers[first].f64s[0] = 11.0;
-        let (second, _) = state.begin_rmw(slot1, InstanceEpoch::new(1), InstanceEpoch::new(2));
+        let (second, _) = state
+            .begin_rmw(slot1, InstanceEpoch::new(1), InstanceEpoch::new(2))
+            .unwrap();
         state.buffers[second].f64s[1] = 21.0;
 
         state.abort(InstanceEpoch::new(2));
@@ -2526,7 +2917,7 @@ mod tests {
         let mut state = state_arena();
         let slot = CellSlotId::new(0);
         let working = InstanceEpoch::new(1);
-        let (candidate, _) = state.begin_rmw(slot, InstanceEpoch::ZERO, working);
+        let (candidate, _) = state.begin_rmw(slot, InstanceEpoch::ZERO, working).unwrap();
         assert!(state.same_at(slot, candidate, InstanceEpoch::ZERO));
         state.abort(working);
         assert_eq!(scalar(&state, 0, 0), 10.0);

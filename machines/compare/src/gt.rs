@@ -3,6 +3,16 @@ use crate::*;
 // Greater Than ---------------------------------------------------------------
 
 macro_rules! gt_scalar_lhs_op {
+    (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => { apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::RightScalar, |lhs, rhs| lhs > rhs) };
+    (managed, $lhs:expr, $rhs:expr, $out:expr) => {
+        apply_managed_comparison(
+            $lhs,
+            $rhs,
+            $out,
+            ComparisonBroadcast::RightScalar,
+            |lhs, rhs| lhs > rhs,
+        )
+    };
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
             for i in 0..(*$lhs).len() {
@@ -13,6 +23,16 @@ macro_rules! gt_scalar_lhs_op {
 }
 
 macro_rules! gt_scalar_rhs_op {
+    (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => { apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::LeftScalar, |lhs, rhs| lhs > rhs) };
+    (managed, $lhs:expr, $rhs:expr, $out:expr) => {
+        apply_managed_comparison(
+            $lhs,
+            $rhs,
+            $out,
+            ComparisonBroadcast::LeftScalar,
+            |lhs, rhs| lhs > rhs,
+        )
+    };
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
             for i in 0..(*$rhs).len() {
@@ -23,6 +43,12 @@ macro_rules! gt_scalar_rhs_op {
 }
 
 macro_rules! gt_vec_op {
+    (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => { apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::Exact, |lhs, rhs| lhs > rhs) };
+    (managed, $lhs:expr, $rhs:expr, $out:expr) => {
+        apply_managed_comparison($lhs, $rhs, $out, ComparisonBroadcast::Exact, |lhs, rhs| {
+            lhs > rhs
+        })
+    };
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
             for i in 0..(*$lhs).len() {
@@ -33,6 +59,12 @@ macro_rules! gt_vec_op {
 }
 
 macro_rules! gt_op {
+    (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => { apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::Exact, |lhs, rhs| lhs > rhs) };
+    (managed, $lhs:expr, $rhs:expr, $out:expr) => {
+        apply_managed_comparison($lhs, $rhs, $out, ComparisonBroadcast::Exact, |lhs, rhs| {
+            lhs > rhs
+        })
+    };
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
             (*$out) = (*$lhs) > (*$rhs);
@@ -41,6 +73,16 @@ macro_rules! gt_op {
 }
 
 macro_rules! gt_mat_vec_op {
+    (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => { apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::RightColumn, |lhs, rhs| lhs > rhs) };
+    (managed, $lhs:expr, $rhs:expr, $out:expr) => {
+        apply_managed_comparison(
+            $lhs,
+            $rhs,
+            $out,
+            ComparisonBroadcast::RightColumn,
+            |lhs, rhs| lhs > rhs,
+        )
+    };
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
             let out_deref = &mut (*$out);
@@ -56,6 +98,16 @@ macro_rules! gt_mat_vec_op {
 }
 
 macro_rules! gt_vec_mat_op {
+    (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => { apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::LeftColumn, |lhs, rhs| lhs > rhs) };
+    (managed, $lhs:expr, $rhs:expr, $out:expr) => {
+        apply_managed_comparison(
+            $lhs,
+            $rhs,
+            $out,
+            ComparisonBroadcast::LeftColumn,
+            |lhs, rhs| lhs > rhs,
+        )
+    };
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
             let out_deref = &mut (*$out);
@@ -71,6 +123,16 @@ macro_rules! gt_vec_mat_op {
 }
 
 macro_rules! gt_mat_row_op {
+    (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => { apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::RightRow, |lhs, rhs| lhs > rhs) };
+    (managed, $lhs:expr, $rhs:expr, $out:expr) => {
+        apply_managed_comparison(
+            $lhs,
+            $rhs,
+            $out,
+            ComparisonBroadcast::RightRow,
+            |lhs, rhs| lhs > rhs,
+        )
+    };
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
             let out_deref = &mut (*$out);
@@ -86,6 +148,16 @@ macro_rules! gt_mat_row_op {
 }
 
 macro_rules! gt_row_mat_op {
+    (canonical, $frame:expr, $lhs:expr, $rhs:expr, $out:expr) => { apply_canonical_string_comparison($frame, $lhs, $rhs, $out, ComparisonBroadcast::LeftRow, |lhs, rhs| lhs > rhs) };
+    (managed, $lhs:expr, $rhs:expr, $out:expr) => {
+        apply_managed_comparison(
+            $lhs,
+            $rhs,
+            $out,
+            ComparisonBroadcast::LeftRow,
+            |lhs, rhs| lhs > rhs,
+        )
+    };
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
             let out_deref = &mut (*$out);

@@ -1,3 +1,37 @@
+use mech_core::{
+    ExecutionTarget, FunctionInvocation, MResult, MechFunctionFactory, ResolvedOperationDescriptor,
+    RuntimeFunctionId, SpecializedFunction,
+};
+
+fn managed_factory_instance<F: MechFunctionFactory>(
+    invocation: FunctionInvocation,
+    operation: &'static str,
+) -> MResult<SpecializedFunction> {
+    let implementation = F::new_invocation(invocation.clone())?;
+    let contract = F::declared_operation_contract()
+        .or_else(|| implementation.semantic_operation_contract())
+        .expect("managed assignment fixture requires an operation contract");
+    SpecializedFunction::syntax_directed(
+        (implementation, invocation),
+        ResolvedOperationDescriptor::from_name(operation, contract.clone())?,
+        RuntimeFunctionId::from_name(operation),
+        ExecutionTarget::DirectRuntime,
+        F::implementation_memory_class(),
+    )
+}
+
+fn assert_value_eq(actual: &mech_core::ValueCell, expected: mech_core::ValueCell) {
+    let actual = actual.snapshot().unwrap();
+    let expected = expected.snapshot().unwrap();
+    let actual_schemas = actual.schemas().unwrap();
+    let expected_schemas = expected.schemas().unwrap();
+    assert!(
+        actual
+            .language_eq(&actual_schemas, &expected, &expected_schemas)
+            .unwrap()
+    );
+}
+
 #[cfg(all(
     feature = "f64",
     feature = "add_assign",
@@ -35,15 +69,18 @@ mod scalar {
         ($factory:ident, $expected:expr) => {{
             let sink = ValueCell::from_exact(12.0_f64).unwrap();
             let alias = sink.clone();
-            let function = $factory::<f64>::new_invocation(FunctionInvocation::unary(
-                sink.clone(),
-                ValueCell::from_exact(3.0_f64).unwrap(),
-            ))
+            let function = super::managed_factory_instance::<$factory<f64>>(
+                FunctionInvocation::unary(sink.clone(), ValueCell::from_exact(3.0_f64).unwrap()),
+                "test/math-assignment",
+            )
             .unwrap();
-            function.solve_result().unwrap();
+            function.instance().solve_result().unwrap();
             assert_eq!(value(&sink), $expected);
             assert!(sink.same_cell(&alias));
-            assert_eq!(function.reactive_output_cell_ids(), vec![sink.reactive_cell_id()]);
+            assert_eq!(
+                function.instance().reactive_output_cell_ids(),
+                vec![sink.reactive_cell_id()]
+            );
         }};
     }
 
@@ -80,22 +117,32 @@ mod scalar {
     fn scalar_assignment_staging_and_rollback_preserve_identity() {
         let sink = ValueCell::from_exact(2.0_f64).unwrap();
         let alias = sink.clone();
-        let function = AddAssignSS::<f64>::new_invocation(FunctionInvocation::unary(
-            sink.clone(),
-            ValueCell::from_exact(3.0_f64).unwrap(),
-        ))
+        let function = super::managed_factory_instance::<AddAssignSS<f64>>(
+            FunctionInvocation::unary(sink.clone(), ValueCell::from_exact(3.0_f64).unwrap()),
+            "test/math-add-assignment",
+        )
         .unwrap();
-        assert_eq!(function.reactive_node_kind(), ReactiveNodeKind::Register);
-        assert_eq!(function.transaction_state_ports().unwrap().unwrap().len(), 1);
+        assert_eq!(
+            function.instance().implementation().reactive_node_kind(),
+            ReactiveNodeKind::Register
+        );
+        assert_eq!(
+            function
+                .instance()
+                .implementation()
+                .transaction_state_ports()
+                .unwrap()
+                .unwrap()
+                .len(),
+            1
+        );
 
-        let commit = function.stage_register().unwrap();
-        assert_eq!(commit.output_cells(), &[sink.reactive_cell_id()]);
         assert_eq!(value(&sink), 2.0);
-        commit.commit();
+        function.instance().solve_result().unwrap();
         assert_eq!(value(&sink), 5.0);
 
         with_reactive_journal_participant(|mut participant| -> MResult<()> {
-            participant.capture_function_state(function.as_ref())?;
+            participant.capture_function_instance(function.instance())?;
             sink.replace(&ValueCell::from_exact(99.0)?.snapshot()?)?;
             participant.preflight_restore_before()?;
             participant.apply_restore_before();
@@ -111,24 +158,26 @@ mod scalar {
 #[cfg(all(feature = "f64", feature = "matrix2", feature = "add_assign"))]
 mod fixed_matrix {
     use super::super::add_assign::AddAssignVV;
-    use mech_core::{FunctionInvocation, MechFunctionFactory, Ref, ValueCell};
+    use mech_core::{FunctionInvocation, ValueCell};
     use nalgebra::Matrix2;
 
     #[test]
     fn fixed_matrix_assignment_preserves_exact_backing() {
-        let source = Ref::new(Matrix2::new(1.0_f64, 2.0, 3.0, 4.0));
-        let sink = Ref::new(Matrix2::from_element(10.0_f64));
+        let source = ValueCell::from_exact(Matrix2::new(1.0_f64, 2.0, 3.0, 4.0)).unwrap();
+        let sink = ValueCell::from_exact(Matrix2::from_element(10.0_f64)).unwrap();
         let alias = sink.clone();
-        let function = AddAssignVV::<f64, Matrix2<f64>, Matrix2<f64>>::new_invocation(
-            FunctionInvocation::unary(
-                ValueCell::from_exact_matrix_ref(sink.clone(), 2, 2).unwrap(),
-                ValueCell::from_exact_matrix_ref(source, 2, 2).unwrap(),
-            ),
-        )
-        .unwrap();
-        function.solve_result().unwrap();
-        assert!(sink.same_handle(&alias));
-        assert_eq!(*sink.borrow(), Matrix2::new(11.0, 12.0, 13.0, 14.0));
+        let function =
+            super::managed_factory_instance::<AddAssignVV<f64, Matrix2<f64>, Matrix2<f64>>>(
+                FunctionInvocation::unary(sink.clone(), source),
+                "test/math-add-assignment",
+            )
+            .unwrap();
+        function.instance().solve_result().unwrap();
+        assert!(sink.same_cell(&alias));
+        super::assert_value_eq(
+            &sink,
+            ValueCell::from_exact(Matrix2::new(11.0, 12.0, 13.0, 14.0)).unwrap(),
+        );
     }
 }
 
@@ -140,45 +189,55 @@ mod fixed_matrix {
 ))]
 mod indexed {
     use super::super::add_assign::AddAssign1DRS;
-    use mech_core::{
-        FunctionInvocation, MResult, MechFunctionFactory, Ref, ValueCell,
-        with_reactive_journal_participant,
-    };
+    use mech_core::{FunctionInvocation, MResult, ValueCell, with_reactive_journal_participant};
     use nalgebra::DVector;
 
     #[test]
     fn indexed_assignment_is_atomic_and_checkpointed() {
-        let sink = Ref::new(DVector::from_vec(vec![1.0_f64, 2.0, 3.0]));
-        let alias = sink.clone();
-        let output = ValueCell::from_exact_matrix_ref(sink.clone(), 3, 1).unwrap();
-        let indexes = Ref::new(DVector::from_vec(vec![1_usize, 3]));
+        let output = ValueCell::from_exact(DVector::from_vec(vec![1.0_f64, 2.0, 3.0])).unwrap();
+        let alias = output.clone();
+        let indexes = ValueCell::from_exact(DVector::from_vec(vec![1_usize, 3])).unwrap();
         let function =
-            AddAssign1DRS::<f64, DVector<f64>, DVector<usize>>::new_invocation(
+            super::managed_factory_instance::<AddAssign1DRS<f64, DVector<f64>, DVector<usize>>>(
                 FunctionInvocation::binary(
                     output.clone(),
                     ValueCell::from_exact(10.0_f64).unwrap(),
-                    ValueCell::from_exact_matrix_ref(indexes.clone(), 2, 1).unwrap(),
+                    indexes.clone(),
                 ),
+                "test/math-add-indexed-assignment",
             )
             .unwrap();
-        function.solve_result().unwrap();
-        assert_eq!(sink.borrow().as_slice(), &[11.0, 2.0, 13.0]);
+        function.instance().solve_result().unwrap();
+        super::assert_value_eq(
+            &output,
+            ValueCell::from_exact(DVector::from_vec(vec![11.0, 2.0, 13.0])).unwrap(),
+        );
 
         with_reactive_journal_participant(|mut participant| -> MResult<()> {
-            participant.capture_function_state(function.as_ref())?;
-            *indexes.borrow_mut() = DVector::from_vec(vec![0, 2]);
-            assert!(function.solve_result().is_err());
-            assert_eq!(sink.borrow().as_slice(), &[11.0, 2.0, 13.0]);
-            *sink.borrow_mut() = DVector::from_vec(vec![99.0, 98.0]);
+            participant.capture_function_instance(function.instance())?;
+            indexes.replace(
+                &ValueCell::from_exact(DVector::from_vec(vec![4_usize, 2]))?.snapshot()?,
+            )?;
+            assert!(function.instance().solve_result().is_err());
+            super::assert_value_eq(
+                &output,
+                ValueCell::from_exact(DVector::from_vec(vec![11.0, 2.0, 13.0])).unwrap(),
+            );
+            output.replace(
+                &ValueCell::from_exact(DVector::from_vec(vec![99.0, 98.0]))?.snapshot()?,
+            )?;
             participant.preflight_restore_before()?;
             participant.apply_restore_before();
             Ok(())
         })
         .unwrap();
 
-        assert!(sink.same_handle(&alias));
-        assert_eq!(sink.borrow().as_slice(), &[11.0, 2.0, 13.0]);
-        assert_eq!(output.shape().parameter_values(), &[3, 1]);
+        assert!(output.same_cell(&alias));
+        super::assert_value_eq(
+            &output,
+            ValueCell::from_exact(DVector::from_vec(vec![11.0, 2.0, 13.0])).unwrap(),
+        );
+        assert_eq!(output.shape().parameter_values(), &[3]);
     }
 }
 
@@ -193,31 +252,32 @@ mod indexed {
 ))]
 mod indexed_all_ops {
     use super::super::{
-        add_assign::AddAssign1DRS, div_assign::DivAssign1DRS,
-        mul_assign::MulAssign1DRS, sub_assign::SubAssign1DRS,
+        add_assign::AddAssign1DRS, div_assign::DivAssign1DRS, mul_assign::MulAssign1DRS,
+        sub_assign::SubAssign1DRS,
     };
-    use mech_core::{FunctionInvocation, MechFunctionFactory, Ref, ValueCell};
+    use mech_core::{FunctionInvocation, ValueCell};
     use nalgebra::DVector;
 
     macro_rules! assert_indexed {
         ($factory:ident, $expected:expr) => {{
-            let sink = Ref::new(DVector::from_vec(vec![12.0_f64, 12.0, 12.0]));
-            $factory::<f64, DVector<f64>, DVector<usize>>::new_invocation(
+            let output =
+                ValueCell::from_exact(DVector::from_vec(vec![12.0_f64, 12.0, 12.0])).unwrap();
+            super::managed_factory_instance::<$factory<f64, DVector<f64>, DVector<usize>>>(
                 FunctionInvocation::binary(
-                    ValueCell::from_exact_matrix_ref(sink.clone(), 3, 1).unwrap(),
+                    output.clone(),
                     ValueCell::from_exact(3.0_f64).unwrap(),
-                    ValueCell::from_exact_matrix_ref(
-                        Ref::new(DVector::from_vec(vec![1_usize, 3])),
-                        2,
-                        1,
-                    )
-                    .unwrap(),
+                    ValueCell::from_exact(DVector::from_vec(vec![1_usize, 3])).unwrap(),
                 ),
+                "test/math-indexed-assignment",
             )
             .unwrap()
+            .instance()
             .solve_result()
             .unwrap();
-            assert_eq!(sink.borrow().as_slice(), $expected);
+            super::assert_value_eq(
+                &output,
+                ValueCell::from_exact(DVector::from_vec($expected.to_vec())).unwrap(),
+            );
         }};
     }
 
@@ -238,63 +298,74 @@ mod indexed_all_ops {
 ))]
 mod dynamic_whole_matrix {
     use super::super::add_assign::{AddAssignVS, AddAssignVV};
-    use mech_core::{
-        FunctionInvocation, MResult, MechFunctionFactory, Ref, ValueCell,
-        with_reactive_journal_participant,
-    };
+    use mech_core::{FunctionInvocation, MResult, ValueCell, with_reactive_journal_participant};
     use nalgebra::DMatrix;
 
     #[test]
     fn vector_and_scalar_forms_preserve_binary_base_layout_and_shape_state() {
-        let sink = Ref::new(DMatrix::from_element(2, 2, 10.0_f64));
-        let alias = sink.clone();
-        let output = ValueCell::from_exact_matrix_ref(sink.clone(), 2, 2).unwrap();
-        let source = Ref::new(DMatrix::from_row_slice(2, 2, &[1.0, 2.0, 3.0, 4.0]));
-        let function = AddAssignVV::<f64, DMatrix<f64>, DMatrix<f64>>::new_invocation(
-            FunctionInvocation::unary(
-                output.clone(),
-                ValueCell::from_exact_matrix_ref(source, 2, 2).unwrap(),
-            ),
-        )
-        .unwrap();
-        function.solve_result().unwrap();
-        assert_eq!(*sink.borrow(), DMatrix::from_row_slice(2, 2, &[11.0, 12.0, 13.0, 14.0]));
+        let output = ValueCell::from_exact(DMatrix::from_element(2, 2, 10.0_f64)).unwrap();
+        let alias = output.clone();
+        let source =
+            ValueCell::from_exact(DMatrix::from_row_slice(2, 2, &[1.0, 2.0, 3.0, 4.0])).unwrap();
+        let function =
+            super::managed_factory_instance::<AddAssignVV<f64, DMatrix<f64>, DMatrix<f64>>>(
+                FunctionInvocation::unary(output.clone(), source),
+                "test/math-add-assignment",
+            )
+            .unwrap();
+        function.instance().solve_result().unwrap();
+        super::assert_value_eq(
+            &output,
+            ValueCell::from_exact(DMatrix::from_row_slice(2, 2, &[11.0, 12.0, 13.0, 14.0]))
+                .unwrap(),
+        );
 
         with_reactive_journal_participant(|mut participant| -> MResult<()> {
-            participant.capture_function_state(function.as_ref())?;
-            *sink.borrow_mut() = DMatrix::from_element(1, 3, 99.0);
+            participant.capture_function_instance(function.instance())?;
+            output
+                .replace(&ValueCell::from_exact(DMatrix::from_element(1, 3, 99.0))?.snapshot()?)?;
             participant.preflight_restore_before()?;
             participant.apply_restore_before();
             Ok(())
         })
         .unwrap();
-        assert!(sink.same_handle(&alias));
-        assert_eq!(sink.borrow().shape(), (2, 2));
+        assert!(output.same_cell(&alias));
+        assert_eq!(output.shape().parameter_values(), &[2, 2]);
 
-        let scalar_sink = Ref::new(DMatrix::from_element(2, 2, 1.0_f64));
-        let scalar_output = ValueCell::from_exact_matrix_ref(scalar_sink.clone(), 2, 2).unwrap();
-        AddAssignVS::<f64, DMatrix<f64>>::new_invocation(FunctionInvocation::binary(
-            scalar_output.clone(),
-            scalar_output,
-            ValueCell::from_exact(2.0_f64).unwrap(),
-        ))
+        let scalar_output = ValueCell::from_exact(DMatrix::from_element(2, 2, 1.0_f64)).unwrap();
+        super::managed_factory_instance::<AddAssignVS<f64, DMatrix<f64>>>(
+            FunctionInvocation::binary(
+                scalar_output.clone(),
+                scalar_output.clone(),
+                ValueCell::from_exact(2.0_f64).unwrap(),
+            ),
+            "test/math-add-assignment",
+        )
         .unwrap()
+        .instance()
         .solve_result()
         .unwrap();
-        assert_eq!(*scalar_sink.borrow(), DMatrix::from_element(2, 2, 3.0));
+        super::assert_value_eq(
+            &scalar_output,
+            ValueCell::from_exact(DMatrix::from_element(2, 2, 3.0)).unwrap(),
+        );
     }
 
     #[test]
     fn whole_matrix_assignment_allows_source_output_alias_without_partial_reads() {
-        let sink = Ref::new(DMatrix::from_row_slice(1, 2, &[2.0_f64, 3.0]));
-        let cell = ValueCell::from_exact_matrix_ref(sink.clone(), 1, 2).unwrap();
-        AddAssignVV::<f64, DMatrix<f64>, DMatrix<f64>>::new_invocation(
-            FunctionInvocation::unary(cell.clone(), cell),
+        let cell = ValueCell::from_exact(DMatrix::from_row_slice(1, 2, &[2.0_f64, 3.0])).unwrap();
+        super::managed_factory_instance::<AddAssignVV<f64, DMatrix<f64>, DMatrix<f64>>>(
+            FunctionInvocation::unary(cell.clone(), cell.clone()),
+            "test/math-add-assignment",
         )
         .unwrap()
+        .instance()
         .solve_result()
         .unwrap();
-        assert_eq!(*sink.borrow(), DMatrix::from_row_slice(1, 2, &[4.0, 6.0]));
+        super::assert_value_eq(
+            &cell,
+            ValueCell::from_exact(DMatrix::from_row_slice(1, 2, &[4.0, 6.0])).unwrap(),
+        );
     }
 }
 
@@ -309,77 +380,101 @@ mod dynamic_whole_matrix {
 ))]
 mod indexed_matrix_forms {
     use super::super::add_assign::{AddAssign1DRB, AddAssign1DRVB, AddAssign2DRAVB};
-    use mech_core::{FunctionInvocation, MechFunctionFactory, Ref, ValueCell};
+    use mech_core::{FunctionInvocation, ValueCell};
     use nalgebra::{DMatrix, DVector, RowDVector};
 
     #[test]
     fn boolean_scalar_and_matrix_selection_preserve_layouts() {
-        let mask = Ref::new(DVector::from_vec(vec![true, false, true, false]));
-        let scalar_sink = Ref::new(DVector::from_vec(vec![1.0_f64, 2.0, 3.0, 4.0]));
-        AddAssign1DRB::<f64, DVector<f64>, DVector<bool>>::new_invocation(
+        let mask =
+            ValueCell::from_exact(DVector::from_vec(vec![true, false, true, false])).unwrap();
+        let scalar_sink =
+            ValueCell::from_exact(DVector::from_vec(vec![1.0_f64, 2.0, 3.0, 4.0])).unwrap();
+        super::managed_factory_instance::<AddAssign1DRB<f64, DVector<f64>, DVector<bool>>>(
             FunctionInvocation::binary(
-                ValueCell::from_exact_matrix_ref(scalar_sink.clone(), 4, 1).unwrap(),
+                scalar_sink.clone(),
                 ValueCell::from_exact(10.0_f64).unwrap(),
-                ValueCell::from_exact_matrix_ref(mask.clone(), 4, 1).unwrap(),
+                mask.clone(),
             ),
+            "test/math-add-indexed-assignment",
         )
         .unwrap()
+        .instance()
         .solve_result()
         .unwrap();
-        assert_eq!(scalar_sink.borrow().as_slice(), &[11.0, 2.0, 13.0, 4.0]);
+        super::assert_value_eq(
+            &scalar_sink,
+            ValueCell::from_exact(DVector::from_vec(vec![11.0, 2.0, 13.0, 4.0])).unwrap(),
+        );
 
-        let matrix_sink = Ref::new(DVector::from_vec(vec![1.0_f64, 2.0, 3.0, 4.0]));
-        let source = Ref::new(DVector::from_vec(vec![10.0_f64, 20.0, 30.0, 40.0]));
-        AddAssign1DRVB::<f64, DVector<f64>, DVector<f64>, DVector<bool>>::new_invocation(
-            FunctionInvocation::binary(
-                ValueCell::from_exact_matrix_ref(matrix_sink.clone(), 4, 1).unwrap(),
-                ValueCell::from_exact_matrix_ref(source, 4, 1).unwrap(),
-                ValueCell::from_exact_matrix_ref(mask, 4, 1).unwrap(),
-            ),
+        let matrix_sink =
+            ValueCell::from_exact(DVector::from_vec(vec![1.0_f64, 2.0, 3.0, 4.0])).unwrap();
+        let source =
+            ValueCell::from_exact(DVector::from_vec(vec![10.0_f64, 20.0, 30.0, 40.0])).unwrap();
+        super::managed_factory_instance::<
+            AddAssign1DRVB<f64, DVector<f64>, DVector<f64>, DVector<bool>>,
+        >(
+            FunctionInvocation::binary(matrix_sink.clone(), source, mask),
+            "test/math-add-indexed-assignment",
         )
         .unwrap()
+        .instance()
         .solve_result()
         .unwrap();
-        assert_eq!(matrix_sink.borrow().as_slice(), &[11.0, 2.0, 33.0, 4.0]);
+        super::assert_value_eq(
+            &matrix_sink,
+            ValueCell::from_exact(DVector::from_vec(vec![11.0, 2.0, 33.0, 4.0])).unwrap(),
+        );
     }
 
     #[test]
     fn row_all_selection_and_oversized_masks_are_atomic() {
-        let sink = Ref::new(DMatrix::from_row_slice(
+        let sink = ValueCell::from_exact(DMatrix::from_row_slice(
             3,
             2,
             &[1.0_f64, 2.0, 3.0, 4.0, 5.0, 6.0],
-        ));
-        let source = Ref::new(DMatrix::from_row_slice(2, 2, &[10.0_f64, 20.0, 30.0, 40.0]));
-        let mask = Ref::new(RowDVector::from_vec(vec![true, false, true]));
-        AddAssign2DRAVB::<f64, DMatrix<f64>, DMatrix<f64>, RowDVector<bool>>::new_invocation(
-            FunctionInvocation::binary(
-                ValueCell::from_exact_matrix_ref(sink.clone(), 3, 2).unwrap(),
-                ValueCell::from_exact_matrix_ref(source, 2, 2).unwrap(),
-                ValueCell::from_exact_matrix_ref(mask, 1, 3).unwrap(),
-            ),
+        ))
+        .unwrap();
+        let source =
+            ValueCell::from_exact(DMatrix::from_row_slice(2, 2, &[10.0, 20.0, 30.0, 40.0]))
+                .unwrap();
+        let mask = ValueCell::from_exact(RowDVector::from_vec(vec![true, false, true])).unwrap();
+        super::managed_factory_instance::<
+            AddAssign2DRAVB<f64, DMatrix<f64>, DMatrix<f64>, RowDVector<bool>>,
+        >(
+            FunctionInvocation::binary(sink.clone(), source, mask),
+            "test/math-add-row-assignment",
         )
         .unwrap()
+        .instance()
         .solve_result()
         .unwrap();
-        assert_eq!(
-            *sink.borrow(),
-            DMatrix::from_row_slice(3, 2, &[11.0, 22.0, 3.0, 4.0, 35.0, 46.0])
+        super::assert_value_eq(
+            &sink,
+            ValueCell::from_exact(DMatrix::from_row_slice(
+                3,
+                2,
+                &[11.0, 22.0, 3.0, 4.0, 35.0, 46.0],
+            ))
+            .unwrap(),
         );
 
-        let atomic = Ref::new(DVector::from_vec(vec![1.0_f64, 2.0, 3.0]));
-        let original = atomic.borrow().clone();
-        let oversized = Ref::new(DVector::from_vec(vec![true, false, true, false]));
-        let function = AddAssign1DRB::<f64, DVector<f64>, DVector<bool>>::new_invocation(
-            FunctionInvocation::binary(
-                ValueCell::from_exact_matrix_ref(atomic.clone(), 3, 1).unwrap(),
-                ValueCell::from_exact(10.0_f64).unwrap(),
-                ValueCell::from_exact_matrix_ref(oversized, 4, 1).unwrap(),
-            ),
-        )
-        .unwrap();
-        assert!(function.solve_result().is_err());
-        assert_eq!(*atomic.borrow(), original);
+        let atomic = ValueCell::from_exact(DVector::from_vec(vec![1.0_f64, 2.0, 3.0])).unwrap();
+        let original = atomic.snapshot().unwrap();
+        let oversized =
+            ValueCell::from_exact(DVector::from_vec(vec![true, false, true, false])).unwrap();
+        let function =
+            super::managed_factory_instance::<AddAssign1DRB<f64, DVector<f64>, DVector<bool>>>(
+                FunctionInvocation::binary(
+                    atomic.clone(),
+                    ValueCell::from_exact(10.0_f64).unwrap(),
+                    oversized,
+                ),
+                "test/math-add-indexed-assignment",
+            )
+            .unwrap();
+        assert!(function.instance().solve_result().is_err());
+        let expected = ValueCell::from_snapshot(original).unwrap();
+        super::assert_value_eq(&atomic, expected);
     }
 }
 
@@ -392,35 +487,42 @@ mod indexed_matrix_forms {
 ))]
 mod checked_indexed_integer {
     use super::super::{add_assign::AddAssign1DRV, div_assign::DivAssign1DRS};
-    use mech_core::{FunctionInvocation, MechFunctionFactory, Ref, ValueCell};
+    use mech_core::{FunctionInvocation, ValueCell};
     use nalgebra::DVector;
 
     #[test]
     fn indexed_overflow_and_division_failure_are_atomic() {
-        let sink = Ref::new(DVector::from_vec(vec![1_u8, u8::MAX]));
-        let source = Ref::new(DVector::from_vec(vec![1_u8, 1]));
-        let indexes = Ref::new(DVector::from_vec(vec![1_usize, 2]));
-        let function = AddAssign1DRV::<u8, DVector<u8>, DVector<u8>, DVector<usize>>::new_invocation(
-            FunctionInvocation::binary(
-                ValueCell::from_exact_matrix_ref(sink.clone(), 2, 1).unwrap(),
-                ValueCell::from_exact_matrix_ref(source, 2, 1).unwrap(),
-                ValueCell::from_exact_matrix_ref(indexes.clone(), 2, 1).unwrap(),
-            ),
+        let sink = ValueCell::from_exact(DVector::from_vec(vec![1_u8, u8::MAX])).unwrap();
+        let source = ValueCell::from_exact(DVector::from_vec(vec![1_u8, 1])).unwrap();
+        let indexes = ValueCell::from_exact(DVector::from_vec(vec![1_usize, 2])).unwrap();
+        let function = super::managed_factory_instance::<
+            AddAssign1DRV<u8, DVector<u8>, DVector<u8>, DVector<usize>>,
+        >(
+            FunctionInvocation::binary(sink.clone(), source, indexes.clone()),
+            "test/math-add-indexed-assignment",
         )
         .unwrap();
-        assert!(function.solve_result().is_err());
-        assert_eq!(sink.borrow().as_slice(), &[1, u8::MAX]);
+        assert!(function.instance().solve_result().is_err());
+        super::assert_value_eq(
+            &sink,
+            ValueCell::from_exact(DVector::from_vec(vec![1_u8, u8::MAX])).unwrap(),
+        );
 
-        let div_sink = Ref::new(DVector::from_vec(vec![8_u8, 7]));
-        let div = DivAssign1DRS::<u8, DVector<u8>, DVector<usize>>::new_invocation(
-            FunctionInvocation::binary(
-                ValueCell::from_exact_matrix_ref(div_sink.clone(), 2, 1).unwrap(),
-                ValueCell::from_exact(0_u8).unwrap(),
-                ValueCell::from_exact_matrix_ref(indexes, 2, 1).unwrap(),
-            ),
-        )
-        .unwrap();
-        assert!(div.solve_result().is_err());
-        assert_eq!(div_sink.borrow().as_slice(), &[8, 7]);
+        let div_sink = ValueCell::from_exact(DVector::from_vec(vec![8_u8, 7])).unwrap();
+        let div =
+            super::managed_factory_instance::<DivAssign1DRS<u8, DVector<u8>, DVector<usize>>>(
+                FunctionInvocation::binary(
+                    div_sink.clone(),
+                    ValueCell::from_exact(0_u8).unwrap(),
+                    indexes,
+                ),
+                "test/math-div-indexed-assignment",
+            )
+            .unwrap();
+        assert!(div.instance().solve_result().is_err());
+        super::assert_value_eq(
+            &div_sink,
+            ValueCell::from_exact(DVector::from_vec(vec![8_u8, 7])).unwrap(),
+        );
     }
 }

@@ -28,7 +28,7 @@ MACHINE_OPERATION_FEATURES = {
         "abs", "acos", "acosh", "acot", "acsc", "add", "add_assign", "asec",
         "asin", "asinh", "atan", "atan2", "atanh", "cbrt", "ceil", "copysign",
         "cos", "cosh", "cot", "csc", "div", "div_assign", "erf", "erfc", "exp",
-        "exp10", "exp2", "expm1", "fdim", "floor", "fmod", "hypot", "j0", "j1",
+        "exp10", "exp2", "expm1", "fdim", "floor", "fmod", "j0", "j1",
         "jn", "lgamma", "log", "log10", "log1p", "log2", "mod", "mul",
         "mul_assign", "neg", "nextafter", "pow", "remainder", "rint", "round",
         "roundeven", "sec", "sin", "sinh", "sqrt", "sub", "sub_assign", "tan",

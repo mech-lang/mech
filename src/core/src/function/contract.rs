@@ -10,6 +10,7 @@ pub type RuntimeFunctionCanonicalValidator = fn(&ValueCell, &[ValueCell]) -> MRe
 enum CanonicalContractValidator {
     NoMatrix,
     SameShape,
+    ElementwiseBroadcast,
     OutputMatchesInput(usize),
     MatrixProduct,
     Transpose,
@@ -46,6 +47,14 @@ impl RuntimeFunctionContract {
             "same_shape",
             output_alias,
             CanonicalContractValidator::SameShape,
+        )
+    }
+
+    pub const fn elementwise_broadcast(output_alias: RuntimeOutputAliasPolicy) -> Self {
+        Self::built_in(
+            "elementwise_broadcast",
+            output_alias,
+            CanonicalContractValidator::ElementwiseBroadcast,
         )
     }
 
@@ -213,6 +222,73 @@ pub(crate) fn validate_canonical_shapes(
                     "same_shape",
                     "matrix-backed inputs require a matrix-backed output",
                 ));
+            }
+        }
+        CanonicalContractValidator::ElementwiseBroadcast => {
+            let mut expected = None::<FunctionMatrixDescriptor>;
+            for found in inputs.iter().copied().flatten() {
+                expected = Some(match expected {
+                    None => found,
+                    Some(current) => {
+                        let axis = |left: usize, right: usize| {
+                            if left == right {
+                                Some(left)
+                            } else if left == 1 {
+                                Some(right)
+                            } else if right == 1 {
+                                Some(left)
+                            } else {
+                                None
+                            }
+                        };
+                        FunctionMatrixDescriptor {
+                            representation: current.representation,
+                            rows: axis(current.rows, found.rows).ok_or_else(|| {
+                                invalid(
+                                    "elementwise_broadcast",
+                                    format!(
+                                        "row extents {} and {} cannot broadcast",
+                                        current.rows, found.rows,
+                                    ),
+                                )
+                            })?,
+                            cols: axis(current.cols, found.cols).ok_or_else(|| {
+                                invalid(
+                                    "elementwise_broadcast",
+                                    format!(
+                                        "column extents {} and {} cannot broadcast",
+                                        current.cols, found.cols,
+                                    ),
+                                )
+                            })?,
+                        }
+                    }
+                });
+            }
+            match (output, expected) {
+                (Some(output), Some(expected)) if same_dimensions(output, expected) => {}
+                (Some(output), Some(expected)) => {
+                    return Err(invalid(
+                        "elementwise_broadcast",
+                        format!(
+                            "output is {}x{}, expected {}x{}",
+                            output.rows, output.cols, expected.rows, expected.cols,
+                        ),
+                    ));
+                }
+                (None, Some(_)) => {
+                    return Err(invalid(
+                        "elementwise_broadcast",
+                        "matrix-backed inputs require a matrix-backed output",
+                    ));
+                }
+                (Some(_), None) => {
+                    return Err(invalid(
+                        "elementwise_broadcast",
+                        "scalar inputs require a scalar output",
+                    ));
+                }
+                (None, None) => {}
             }
         }
         CanonicalContractValidator::OutputMatchesInput(index) => {

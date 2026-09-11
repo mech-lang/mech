@@ -83,11 +83,13 @@ fn main() -> MResult<()> {
     let revision = hex(compilation.source_artifact.revision().as_bytes());
     let closure = &compilation.source_closure;
     let artifact = &compilation.source_artifact;
-    let legacy_opaque = artifact
+    let declared_contracts = artifact
         .contracts()
         .iter()
-        .filter(|contract| matches!(contract, ResolvedOperationContract::LegacyOpaque(_)))
+        .filter(|contract| matches!(contract, ResolvedOperationContract::Declared(_)))
         .count();
+    assert_eq!(declared_contracts, artifact.contracts().len());
+    let legacy_opaque = 0;
     let classified_nodes = 1
         + closure.resident_kernels.len()
         + closure.integrity_predicates.len()

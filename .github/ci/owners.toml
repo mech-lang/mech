@@ -2,7 +2,7 @@ version = 1
 
 [owners.mech-core]
 paths = ["src/core/**"]
-command = ["cargo", "test", "--locked", "--offline", "-p", "mech-core", "--lib", "--all-features"]
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-core", "--lib", "--test", "type_memory_contract", "--test", "storage_capability", "--test", "operation_memory_requirement", "--test", "type_memory_boundary", "--test", "r6_memory_runtime", "--test", "r6_memory_safety", "--all-features"]
 standard = true
 cross_cutting = true
 
@@ -20,9 +20,22 @@ cross_cutting = true
 
 [owners.mech-engine]
 paths = ["src/engine/**"]
-command = ["cargo", "test", "--locked", "--offline", "-p", "mech-engine", "--lib", "--no-default-features", "--features", "full_compiler"]
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-engine", "--lib", "--test", "r6_memory_runtime", "--no-default-features", "--features", "full_compiler"]
 standard = true
 cross_cutting = true
+
+[owners.mech-compute]
+paths = ["src/compute/**"]
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-compute"]
+standard = true
+cross_cutting = true
+
+[owners.mech-gpu]
+paths = ["hosts/gpu/**"]
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-gpu", "--test", "r5_memory_plan", "--test", "r6_memory_runtime"]
+standard = true
+cross_cutting = true
+browser = true
 
 [owners.mech-runtime]
 paths = ["src/runtime/**"]
@@ -38,69 +51,69 @@ cross_cutting = true
 
 [owners.mech-stdlib]
 paths = ["src/stdlib/**"]
-command = ["cargo", "test", "--locked", "--offline", "-p", "mech-stdlib", "--test", "profile_contracts", "--no-default-features", "--features", "standard_compiler"]
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-stdlib", "--test", "profile_contracts", "--test", "r6_managed_functions", "--no-default-features", "--features", "standard_compiler"]
 standard = true
 cross_cutting = true
 
 [owners.mech-math]
 paths = ["machines/math/**"]
-command = []
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-stdlib", "--test", "r6_managed_functions", "--no-default-features", "--features", "standard_compiler", "catalog_inventory_is_classified_into_r6_implementation_families", "--", "--exact"]
 standard = false
 cross_cutting = false
 browser = true
 
 [owners.mech-compare]
 paths = ["machines/compare/**"]
-command = []
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-stdlib", "--test", "r6_managed_functions", "--no-default-features", "--features", "standard_compiler", "catalog_inventory_is_classified_into_r6_implementation_families", "--", "--exact"]
 standard = false
 cross_cutting = false
 browser = true
 
 [owners.mech-logic]
 paths = ["machines/logic/**"]
-command = []
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-stdlib", "--test", "r6_managed_functions", "--no-default-features", "--features", "standard_compiler", "catalog_inventory_is_classified_into_r6_implementation_families", "--", "--exact"]
 standard = false
 cross_cutting = false
 browser = true
 
 [owners.mech-range]
 paths = ["machines/range/**"]
-command = []
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-stdlib", "--test", "r6_managed_functions", "--no-default-features", "--features", "standard_compiler", "catalog_inventory_is_classified_into_r6_implementation_families", "--", "--exact"]
 standard = false
 cross_cutting = false
 browser = true
 
 [owners.mech-matrix]
 paths = ["machines/matrix/**"]
-command = []
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-stdlib", "--test", "r6_managed_functions", "--no-default-features", "--features", "standard_compiler", "catalog_inventory_is_classified_into_r6_implementation_families", "--", "--exact"]
 standard = false
 cross_cutting = false
 browser = true
 
 [owners.mech-set]
 paths = ["machines/set/**"]
-command = []
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-stdlib", "--test", "r6_managed_functions", "--no-default-features", "--features", "standard_compiler", "catalog_inventory_is_classified_into_r6_implementation_families", "--", "--exact"]
 standard = false
 cross_cutting = false
 browser = true
 
 [owners.mech-string]
 paths = ["machines/string/**"]
-command = []
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-stdlib", "--test", "r6_managed_functions", "--no-default-features", "--features", "standard_compiler", "catalog_inventory_is_classified_into_r6_implementation_families", "--", "--exact"]
 standard = false
 cross_cutting = false
 browser = true
 
 [owners.mech-stats]
 paths = ["machines/stats/**"]
-command = []
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-stdlib", "--test", "r6_managed_functions", "--no-default-features", "--features", "standard_compiler", "catalog_inventory_is_classified_into_r6_implementation_families", "--", "--exact"]
 standard = false
 cross_cutting = false
 browser = true
 
 [owners.mech-combinatorics]
 paths = ["machines/combinatorics/**"]
-command = []
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-stdlib", "--test", "r6_managed_functions", "--no-default-features", "--features", "standard_compiler", "catalog_inventory_is_classified_into_r6_implementation_families", "--", "--exact"]
 standard = false
 cross_cutting = false
 browser = true
@@ -193,7 +206,7 @@ cross_cutting = false
 browser = true
 
 [owners.architecture-contracts]
-paths = [".github/workflows/ci-full.yml", ".github/ci/owners.toml", "scripts/ci-impact.py", "tests/ci/test_ci_impact.py", "scripts/check-*-contract.py", "scripts/generate-*-contract.py", "scripts/check-production-resident-routing.py", "scripts/check-bytecode-v1-format.py", "scripts/check-native-host-catalog.py", "scripts/tests/test_check_*_contract.py", "scripts/tests/test_generate_*_contract.py", "tests/architecture/**"]
+paths = [".github/workflows/ci-full.yml", ".github/workflows/ci-native-plan.yml", ".github/ci/owners.toml", "scripts/ci-impact.py", "tests/ci/test_ci_impact.py", "scripts/check-*-contract.py", "scripts/generate-*-contract.py", "scripts/check-production-resident-routing.py", "scripts/check-bytecode-v1-format.py", "scripts/check-native-host-catalog.py", "scripts/check-r2-type-memory-boundary.py", "scripts/check-r3-type-system.py", "scripts/check-r4-type-cutover.py", "scripts/check-r5-memory-planner.py", "scripts/check-r6-memory-runtime.py", "scripts/run-python-unittest-shards.py", "scripts/tests/test_check_*_contract.py", "scripts/tests/test_generate_*_contract.py", "scripts/tests/test_check_r2_type_memory_boundary.py", "scripts/tests/test_check_r3_type_system.py", "scripts/tests/test_check_r4_type_cutover.py", "scripts/tests/test_check_r5_memory_planner.py", "scripts/tests/test_check_r6_memory_runtime.py", "scripts/tests/test_run_python_unittest_shards.py", "README.md", "docs/design/type-memory-boundary.md", "docs/design/type-system-v1.md", "docs/design/r4-type-system-cutover.md", "docs/design/r5-memory-planner.md", "docs/design/r6-memory-runtime-cutover.md", "docs/design/r6-completion-status.md", "docs/design/ROADMAP.mec", "docs/design/v0.4-endgame.md", "tests/architecture/**"]
 command = []
 standard = false
 cross_cutting = true

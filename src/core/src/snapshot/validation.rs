@@ -9,15 +9,89 @@ use crate::{
     FloatWidth, IntegerWidth, NamedKindPathResolver, Schema, SchemaBody, SchemaId, SchemaKey,
     SchemaTable, ShapeInstance,
 };
+use core::cell::{Cell, OnceCell};
 
 #[cfg(feature = "no_std")]
-use alloc::{boxed::Box, string::String, sync::Arc, vec::Vec};
+use alloc::{
+    boxed::Box,
+    string::String,
+    sync::{Arc, Weak},
+    vec::Vec,
+};
 #[cfg(not(feature = "no_std"))]
-use std::{boxed::Box, string::String, sync::Arc, vec::Vec};
+use std::{
+    boxed::Box,
+    string::String,
+    sync::{Arc, Weak},
+    vec::Vec,
+};
+
+#[cfg(all(feature = "no_std", not(feature = "std")))]
+type SharedOwnershipCell<T> = core::cell::OnceCell<T>;
+#[cfg(any(not(feature = "no_std"), feature = "std"))]
+type SharedOwnershipCell<T> = std::sync::OnceLock<T>;
+
+#[cfg(all(feature = "no_std", not(feature = "std")))]
+type SnapshotBudgetRegistry = core::cell::RefCell<Option<Box<SnapshotBudgetRegistration>>>;
+#[cfg(any(not(feature = "no_std"), feature = "std"))]
+type SnapshotBudgetRegistry = std::sync::Mutex<Option<Box<SnapshotBudgetRegistration>>>;
 
 pub struct SnapshotValidationContext<'a> {
     schemas: &'a SchemaTable,
     named_kinds: Option<&'a dyn NamedKindPathResolver>,
+    canonicalization_budget: Option<&'a SnapshotCanonicalizationBudget>,
+    construction_authority: Option<&'a dyn SnapshotConstructionAuthority>,
+    shared_schemas: OnceCell<Arc<SchemaTable>>,
+}
+
+/// Sealed allocation authority used by managed canonical construction. The
+/// ordinary detached-value API has no authority and retains its historical
+/// behavior; R6 builders install this capability so every allocation made by
+/// the common finalizer is checked before it is attempted.
+pub(crate) trait SnapshotConstructionAuthority {
+    fn admit_snapshot_allocation(
+        &self,
+        bytes: u64,
+        alignment: u32,
+    ) -> Result<(), crate::MemoryRuntimeError>;
+
+    fn allocation_object(&self) -> Option<crate::MemoryObjectId>;
+}
+
+/// An incremental fail-closed limit for ordered set/map normalization during
+/// snapshot finalization. The budget is shared by recursive finalization, so
+/// nested collections cannot each restart the same allowance.
+#[derive(Debug)]
+pub struct SnapshotCanonicalizationBudget {
+    limit: u64,
+    consumed: Cell<u64>,
+}
+
+impl SnapshotCanonicalizationBudget {
+    pub const fn new(limit: u64) -> Self {
+        Self {
+            limit,
+            consumed: Cell::new(0),
+        }
+    }
+
+    pub fn consumed(&self) -> u64 {
+        self.consumed.get()
+    }
+
+    pub(crate) fn charge(&self, amount: u64) -> Result<(), SnapshotValueError> {
+        let consumed =
+            self.consumed.get().checked_add(amount).ok_or(
+                SnapshotValueError::CanonicalizationWorkLimitExceededV1 { limit: self.limit },
+            )?;
+        if consumed > self.limit {
+            return Err(SnapshotValueError::CanonicalizationWorkLimitExceededV1 {
+                limit: self.limit,
+            });
+        }
+        self.consumed.set(consumed);
+        Ok(())
+    }
 }
 
 impl<'a> SnapshotValidationContext<'a> {
@@ -25,6 +99,9 @@ impl<'a> SnapshotValidationContext<'a> {
         Self {
             schemas,
             named_kinds: None,
+            canonicalization_budget: None,
+            construction_authority: None,
+            shared_schemas: OnceCell::new(),
         }
     }
 
@@ -35,7 +112,26 @@ impl<'a> SnapshotValidationContext<'a> {
         Self {
             schemas,
             named_kinds: Some(named_kinds),
+            canonicalization_budget: None,
+            construction_authority: None,
+            shared_schemas: OnceCell::new(),
         }
+    }
+
+    pub const fn with_canonicalization_budget(
+        mut self,
+        budget: &'a SnapshotCanonicalizationBudget,
+    ) -> Self {
+        self.canonicalization_budget = Some(budget);
+        self
+    }
+
+    pub(crate) const fn with_construction_authority(
+        mut self,
+        authority: &'a dyn SnapshotConstructionAuthority,
+    ) -> Self {
+        self.construction_authority = Some(authority);
+        self
     }
 
     pub const fn schemas(&self) -> &'a SchemaTable {
@@ -45,16 +141,243 @@ impl<'a> SnapshotValidationContext<'a> {
     pub const fn named_kinds(&self) -> Option<&'a dyn NamedKindPathResolver> {
         self.named_kinds
     }
+
+    fn try_vec_with_capacity<T>(&self, count: usize) -> Result<Vec<T>, SnapshotValueError> {
+        let bytes = core::mem::size_of::<T>()
+            .checked_mul(count)
+            .and_then(|bytes| u64::try_from(bytes).ok())
+            .ok_or(crate::MemoryRuntimeError::InvalidLayout {
+                object: self
+                    .construction_authority
+                    .and_then(SnapshotConstructionAuthority::allocation_object),
+                size: u64::MAX,
+                alignment: u32::try_from(core::mem::align_of::<T>()).unwrap_or(u32::MAX),
+                reason: "snapshot finalization vector layout overflows",
+            })?;
+        let alignment = u32::try_from(core::mem::align_of::<T>()).unwrap_or(u32::MAX);
+        if let Some(authority) = self.construction_authority {
+            authority.admit_snapshot_allocation(bytes, alignment)?;
+        }
+        let mut values = Vec::new();
+        values.try_reserve_exact(count).map_err(|_| {
+            crate::MemoryRuntimeError::AllocationFailed {
+                object: self
+                    .construction_authority
+                    .and_then(SnapshotConstructionAuthority::allocation_object),
+                requested: bytes,
+                alignment,
+                space: crate::MemorySpace::Host,
+            }
+        })?;
+        Ok(values)
+    }
+
+    fn try_box<T>(&self, value: T) -> Result<Box<T>, SnapshotValueError> {
+        let bytes = core::mem::size_of::<T>() as u64;
+        let alignment = u32::try_from(core::mem::align_of::<T>()).unwrap_or(u32::MAX);
+        if let Some(authority) = self.construction_authority {
+            authority.admit_snapshot_allocation(bytes, alignment)?;
+        }
+        Box::try_new(value).map_err(|_| {
+            crate::MemoryRuntimeError::AllocationFailed {
+                object: self
+                    .construction_authority
+                    .and_then(SnapshotConstructionAuthority::allocation_object),
+                requested: bytes,
+                alignment,
+                space: crate::MemorySpace::Host,
+            }
+            .into()
+        })
+    }
+
+    fn try_arc<T>(&self, value: T) -> Result<Arc<T>, SnapshotValueError> {
+        let bytes = core::mem::size_of::<T>()
+            .checked_add(core::mem::size_of::<usize>().saturating_mul(2))
+            .and_then(|bytes| u64::try_from(bytes).ok())
+            .unwrap_or(u64::MAX);
+        let alignment = u32::try_from(core::mem::align_of::<T>()).unwrap_or(u32::MAX);
+        if let Some(authority) = self.construction_authority {
+            authority.admit_snapshot_allocation(bytes, alignment)?;
+        }
+        Arc::try_new(value).map_err(|_| {
+            crate::MemoryRuntimeError::AllocationFailed {
+                object: self
+                    .construction_authority
+                    .and_then(SnapshotConstructionAuthority::allocation_object),
+                requested: bytes,
+                alignment,
+                space: crate::MemorySpace::Host,
+            }
+            .into()
+        })
+    }
+
+    fn try_boxed_str(&self, value: String) -> Result<Box<str>, SnapshotValueError> {
+        let bytes = u64::try_from(value.len()).unwrap_or(u64::MAX);
+        if let Some(authority) = self.construction_authority {
+            authority.admit_snapshot_allocation(bytes, 1)?;
+        }
+        Ok(value.into_boxed_str())
+    }
+
+    fn try_clone_schemas(&self) -> Result<Arc<SchemaTable>, SnapshotValueError> {
+        if let Some(schemas) = self.shared_schemas.get() {
+            return Ok(schemas.clone());
+        }
+        let bytes = self.schemas.clone_allocation_bound_bytes().ok_or(
+            crate::MemoryRuntimeError::InvalidLayout {
+                object: self
+                    .construction_authority
+                    .and_then(SnapshotConstructionAuthority::allocation_object),
+                size: u64::MAX,
+                alignment: u32::try_from(core::mem::align_of::<SchemaTable>()).unwrap_or(u32::MAX),
+                reason: "snapshot schema context clone layout overflows",
+            },
+        )?;
+        let alignment = u32::try_from(core::mem::align_of::<SchemaTable>()).unwrap_or(u32::MAX);
+        if let Some(authority) = self.construction_authority {
+            authority.admit_snapshot_allocation(bytes, alignment)?;
+        }
+        let schemas = Arc::try_new(self.schemas.clone()).map_err(|_| {
+            SnapshotValueError::from(crate::MemoryRuntimeError::AllocationFailed {
+                object: self
+                    .construction_authority
+                    .and_then(SnapshotConstructionAuthority::allocation_object),
+                requested: bytes,
+                alignment,
+                space: crate::MemorySpace::Host,
+            })
+        })?;
+        // Recursive Dynamic values use the same immutable schema owner. The
+        // complete schema-table allocation is therefore admitted exactly once
+        // per finalization tree rather than once per nested Value node.
+        let _ = self.shared_schemas.set(schemas.clone());
+        Ok(schemas)
+    }
 }
 
 #[derive(Clone)]
 pub struct Value {
     schema: SchemaId,
     schema_key: SchemaKey,
-    shape: ShapeInstance,
-    data: ValueData,
+    shape: Arc<ShapeInstance>,
+    root: Arc<FrozenSnapshotStorage>,
     resident_token: u64,
     schemas: Option<Arc<SchemaTable>>,
+}
+
+/// Detached immutable canonical ownership. Cloning a [`Value`] retains this
+/// root instead of recursively cloning its payload tree. The root contains no
+/// mutable memory domain, cell, or executor authority.
+#[derive(Debug)]
+pub struct FrozenSnapshotStorage {
+    data: Arc<FrozenSnapshotData>,
+    memory_budget: Option<SnapshotBudgetOwnership>,
+}
+
+#[derive(Debug)]
+struct SnapshotBudgetOwnership {
+    schemas: Arc<SchemaTable>,
+    required_bytes: u64,
+    reservation: crate::ManagedMemoryReservation,
+    identity: SharedOwnershipCell<Weak<FrozenSnapshotStorage>>,
+}
+
+#[derive(Debug)]
+struct SnapshotBudgetRegistration {
+    budget: crate::ManagedMemoryBudget,
+    schemas: Weak<SchemaTable>,
+    owner: Weak<FrozenSnapshotStorage>,
+    next: Option<Box<SnapshotBudgetRegistration>>,
+}
+
+/// The immutable canonical tree and its one physical accounting ticket share
+/// the same lifetime. Outer [`FrozenSnapshotStorage`] wrappers may be replaced
+/// or imported across domains without duplicating that physical charge.
+#[derive(Debug)]
+struct FrozenSnapshotData {
+    data: ValueData,
+    // The same immutable shape owner is shared by every ordinary Value clone.
+    // Physical and imported-root tickets retain its real allocation as part
+    // of this data owner, rather than charging a detached metadata copy.
+    shape: Arc<ShapeInstance>,
+    // Physical accounting follows the one shared immutable data lifetime,
+    // not each cell/import wrapper. Standard builds use a thread-safe once
+    // cell so detached Values retain their Send/Sync behavior. no_std has no
+    // cross-thread execution surface and uses the core equivalent.
+    ownership: SharedOwnershipCell<crate::RetainedPayloadTicket>,
+    budget_imports: SnapshotBudgetRegistry,
+}
+
+impl FrozenSnapshotData {
+    fn with_budget_imports<T>(
+        &self,
+        apply: impl FnOnce(&mut Option<Box<SnapshotBudgetRegistration>>) -> T,
+    ) -> T {
+        #[cfg(all(feature = "no_std", not(feature = "std")))]
+        let mut imports = self.budget_imports.borrow_mut();
+        #[cfg(any(not(feature = "no_std"), feature = "std"))]
+        let mut imports = self
+            .budget_imports
+            .lock()
+            .unwrap_or_else(|error| error.into_inner());
+        apply(&mut imports)
+    }
+
+    fn budget_import(
+        &self,
+        budget: &crate::ManagedMemoryBudget,
+        schemas: &Arc<SchemaTable>,
+    ) -> Option<Arc<FrozenSnapshotStorage>> {
+        self.with_budget_imports(|imports| Self::find_budget_import(imports, budget, schemas))
+    }
+
+    fn find_budget_import(
+        imports: &Option<Box<SnapshotBudgetRegistration>>,
+        budget: &crate::ManagedMemoryBudget,
+        schemas: &Arc<SchemaTable>,
+    ) -> Option<Arc<FrozenSnapshotStorage>> {
+        let mut current = imports.as_deref();
+        while let Some(import) = current {
+            if import.budget == *budget && Weak::ptr_eq(&import.schemas, &Arc::downgrade(schemas)) {
+                if let Some(owner) = import.owner.upgrade() {
+                    return Some(owner);
+                }
+            }
+            current = import.next.as_deref();
+        }
+        None
+    }
+}
+
+impl Drop for FrozenSnapshotStorage {
+    fn drop(&mut self) {
+        let Some(owner) = self
+            .memory_budget
+            .as_ref()
+            .and_then(|ownership| ownership.identity.get())
+        else {
+            return;
+        };
+        let removed = self.data.with_budget_imports(|imports| {
+            let mut position = imports;
+            loop {
+                match position {
+                    Some(entry) if Weak::ptr_eq(&entry.owner, owner) => {
+                        let mut removed = position.take().expect("located immutable import");
+                        *position = removed.next.take();
+                        break Some(removed);
+                    }
+                    Some(entry) => position = &mut entry.next,
+                    None => break None,
+                }
+            }
+        });
+        // Free the exact admitted registration outside its registry lock,
+        // before field destruction releases this wrapper's reservation.
+        drop(removed);
+    }
 }
 
 impl core::fmt::Debug for Value {
@@ -64,12 +387,342 @@ impl core::fmt::Debug for Value {
             .field("schema", &self.schema)
             .field("schema_key", &self.schema_key)
             .field("shape", &self.shape)
-            .field("data", &self.data)
+            .field("data", &self.root.data.data)
             .finish()
     }
 }
 
 impl Value {
+    #[doc(hidden)]
+    pub fn shares_frozen_storage(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.root.data, &other.root.data)
+    }
+
+    #[doc(hidden)]
+    pub fn shares_retained_payload_ticket(&self, other: &Self) -> bool {
+        match (
+            self.root.data.ownership.get(),
+            other.root.data.ownership.get(),
+        ) {
+            (Some(left), Some(right)) => left.shares_charge_with(right),
+            _ => false,
+        }
+    }
+
+    /// Shares immutable data, shape, and schema owners without allocating.
+    #[cfg(feature = "functions")]
+    pub(crate) fn try_clone_for_external_marshalling(
+        &self,
+        _construction: &dyn SnapshotConstructionAuthority,
+    ) -> Result<Self, SnapshotValueError> {
+        Ok(self.clone())
+    }
+
+    /// Sealed handoff from an admitted mutable payload envelope into a
+    /// detached immutable root. The root owns the concrete canonical tree;
+    /// the pointer-free ticket owns its retained allocation charge.
+    pub(crate) fn into_retained_payload_ticket(
+        self,
+        ownership: crate::RetainedPayloadTicket,
+    ) -> Self {
+        // Losing this race only drops the redundant newly admitted ticket;
+        // the winning ticket remains inseparable from the shared data Arc.
+        let _ = self.root.data.ownership.set(ownership);
+        self
+    }
+
+    pub(crate) fn has_retained_payload_ticket(&self) -> bool {
+        self.root.data.ownership.get().is_some()
+    }
+
+    /// Imports this value into an admitted, independently owned budget
+    /// wrapper. The caller's other clones remain unchanged. Failed candidates
+    /// release their own import claim even when the original data stays alive.
+    pub fn into_memory_budget(
+        mut self,
+        reservation: &mut crate::ManagedMemoryReservation,
+    ) -> crate::MemoryRuntimeResult<Self> {
+        let budget = reservation.budget();
+        let schemas = self.schemas.clone().ok_or_else(|| {
+            crate::MemoryRuntimeError::CandidateValidationFailed {
+                object: None,
+                reason: "immutable snapshot has no retained schema context".into(),
+            }
+        })?;
+        if let Some(owner) = self.root.data.budget_import(&budget, &schemas) {
+            self.root = owner;
+            return Ok(self);
+        }
+        let retained_bytes = self.memory_budget_required_bytes()?;
+        let admitted_bytes = self.unshared_memory_budget_admission_bytes(&budget)?;
+        if admitted_bytes > reservation.capacity_bytes() {
+            return Err(crate::MemoryRuntimeError::BudgetExceeded {
+                operation: None,
+                requested: admitted_bytes,
+                limit: reservation.capacity_bytes(),
+            });
+        }
+        budget.check_snapshot_import_allocation(
+            core::mem::size_of::<SnapshotBudgetRegistration>() as u64,
+            core::mem::align_of::<SnapshotBudgetRegistration>() as u32,
+        )?;
+        let mut registration = Box::try_new(SnapshotBudgetRegistration {
+            budget: budget.clone(),
+            schemas: Arc::downgrade(&schemas),
+            owner: Weak::new(),
+            next: None,
+        })
+        .map_err(|_| crate::MemoryRuntimeError::AllocationFailed {
+            object: None,
+            requested: core::mem::size_of::<SnapshotBudgetRegistration>() as u64,
+            alignment: core::mem::align_of::<SnapshotBudgetRegistration>() as u32,
+            space: crate::MemorySpace::Host,
+        })?;
+        let data = self.root.data.clone();
+        budget.check_snapshot_import_allocation(
+            core::mem::size_of::<FrozenSnapshotStorage>() as u64,
+            core::mem::align_of::<FrozenSnapshotStorage>() as u32,
+        )?;
+        let mut prepared = Arc::try_new(FrozenSnapshotStorage {
+            data: data.clone(),
+            memory_budget: None,
+        })
+        .map_err(|_| crate::MemoryRuntimeError::AllocationFailed {
+            object: None,
+            requested: core::mem::size_of::<FrozenSnapshotStorage>() as u64,
+            alignment: core::mem::align_of::<FrozenSnapshotStorage>() as u32,
+            space: crate::MemorySpace::Host,
+        })?;
+        let owner = data.with_budget_imports(|imports| {
+            if let Some(existing) =
+                FrozenSnapshotData::find_budget_import(imports, &budget, &schemas)
+            {
+                return Ok(existing);
+            }
+            // All physical construction has succeeded under the reservation.
+            // No user code runs under this short metadata gate.
+            let charge = reservation.split_capacity(admitted_bytes)?;
+            Arc::get_mut(&mut prepared)
+                .expect("unpublished import has no shared or weak wrapper owner")
+                .memory_budget = Some(SnapshotBudgetOwnership {
+                schemas,
+                required_bytes: retained_bytes,
+                reservation: charge,
+                identity: SharedOwnershipCell::new(),
+            });
+            registration.owner = Arc::downgrade(&prepared);
+            let _ = prepared
+                .memory_budget
+                .as_ref()
+                .expect("prepared immutable ownership")
+                .identity
+                .set(registration.owner.clone());
+            registration.next = imports.take();
+            *imports = Some(registration);
+            Ok::<_, crate::MemoryRuntimeError>(prepared.clone())
+        })?;
+        self.root = owner;
+        Ok(self)
+    }
+
+    /// Exact extra wrapper/registration metadata for an independently owned
+    /// budget import. Candidate planners include this before materialization.
+    pub const fn memory_budget_claim_metadata_bytes() -> u64 {
+        Self::shared_owner_allocation_bytes(
+            core::mem::size_of::<FrozenSnapshotStorage>(),
+            core::mem::align_of::<FrozenSnapshotStorage>(),
+        ) + core::mem::size_of::<SnapshotBudgetRegistration>() as u64
+    }
+
+    /// Concrete shared-owner allocations retained by one finalized root.
+    /// Shape elements and cloned schema contents are supplied separately by
+    /// the checked footprint; only their owner headers appear here.
+    pub(crate) const fn canonical_owner_allocation_bytes() -> u64 {
+        Self::shared_owner_allocation_bytes(
+            core::mem::size_of::<FrozenSnapshotStorage>(),
+            core::mem::align_of::<FrozenSnapshotStorage>(),
+        ) + Self::shared_owner_allocation_bytes(
+            core::mem::size_of::<FrozenSnapshotData>(),
+            core::mem::align_of::<FrozenSnapshotData>(),
+        ) + Self::shared_owner_allocation_bytes(
+            core::mem::size_of::<ShapeInstance>(),
+            core::mem::align_of::<ShapeInstance>(),
+        ) + Self::shared_owner_allocation_bytes(
+            crate::RetainedPayloadTicket::ownership_header_bytes() as usize,
+            crate::RetainedPayloadTicket::ownership_header_alignment(),
+        ) + Self::shared_owner_allocation_bytes(
+            core::mem::size_of::<SchemaTable>(),
+            core::mem::align_of::<SchemaTable>(),
+        ) - core::mem::size_of::<SchemaTable>() as u64
+    }
+
+    const fn shared_owner_allocation_bytes(size: usize, alignment: usize) -> u64 {
+        // Pinned Arc layout: two pointer-width counters followed by its
+        // aligned concrete value, rounded to the complete allocation's
+        // alignment. This includes target-specific prefix/tail padding.
+        let counters = 2 * core::mem::size_of::<usize>();
+        let prefix = counters.div_ceil(alignment) * alignment;
+        let allocation_alignment = if alignment > core::mem::align_of::<usize>() {
+            alignment
+        } else {
+            core::mem::align_of::<usize>()
+        };
+        (prefix + size).div_ceil(allocation_alignment) as u64 * allocation_alignment as u64
+    }
+
+    /// Additional capacity needed to retain this actual data and schema owner
+    /// in `budget`. Existing same-account import wrappers share ownership;
+    /// existing physical accounting stays with its original ticket.
+    pub fn memory_budget_admission_bytes(
+        &self,
+        budget: &crate::ManagedMemoryBudget,
+    ) -> crate::MemoryRuntimeResult<u64> {
+        if let Some(schemas) = &self.schemas {
+            if self.root.data.budget_import(budget, schemas).is_some() {
+                return Ok(0);
+            }
+        }
+        self.unshared_memory_budget_admission_bytes(budget)
+    }
+
+    fn unshared_memory_budget_admission_bytes(
+        &self,
+        budget: &crate::ManagedMemoryBudget,
+    ) -> crate::MemoryRuntimeResult<u64> {
+        let required = self.memory_budget_required_bytes()?;
+        let physical = self
+            .root
+            .data
+            .ownership
+            .get()
+            .and_then(|owner| owner.memory_budget_retained_bytes(budget))
+            .unwrap_or(0);
+        (required - required.min(physical))
+            .checked_add(core::mem::size_of::<SnapshotBudgetRegistration>() as u64)
+            .ok_or_else(|| crate::MemoryRuntimeError::CandidateValidationFailed {
+                object: None,
+                reason: "immutable snapshot import witness overflows".into(),
+            })
+    }
+
+    /// Checked retained-allocation witness used by `into_memory_budget`.
+    /// It covers canonical payload, shared-owner headers and the retained
+    /// schema context. Only actual nested dynamic roots add shared-owner
+    /// headers; primitive sequence elements do not each count as a root.
+    /// This is admitted capacity, not a report of observed physical bytes.
+    pub fn memory_budget_required_bytes(&self) -> crate::MemoryRuntimeResult<u64> {
+        let schemas = self.schemas.as_deref().ok_or_else(|| {
+            crate::MemoryRuntimeError::CandidateValidationFailed {
+                object: None,
+                reason: "immutable snapshot has no retained schema context".into(),
+            }
+        })?;
+        let footprint = self.retained_footprint(schemas).map_err(|_| {
+            crate::MemoryRuntimeError::CandidateValidationFailed {
+                object: None,
+                reason: "immutable snapshot retained footprint is invalid or overflows".into(),
+            }
+        })?;
+        let arithmetic_error = || crate::MemoryRuntimeError::CandidateValidationFailed {
+            object: None,
+            reason: "immutable snapshot ownership witness overflows".into(),
+        };
+        let owner_bytes = self
+            .memory_budget_owner_bytes(None)
+            .ok_or_else(arithmetic_error)?;
+        footprint
+            .retained_bytes
+            .checked_add(owner_bytes)
+            .ok_or_else(arithmetic_error)
+    }
+
+    fn memory_budget_owner_bytes(&self, shared_schemas: Option<&Arc<SchemaTable>>) -> Option<u64> {
+        let schemas = self.schemas.as_ref()?;
+        let schema_bytes = if shared_schemas.is_some_and(|shared| Arc::ptr_eq(shared, schemas)) {
+            0
+        } else {
+            schemas.clone_allocation_bound_bytes()?.checked_add(
+                Self::shared_owner_allocation_bytes(
+                    core::mem::size_of::<SchemaTable>(),
+                    core::mem::align_of::<SchemaTable>(),
+                ) - core::mem::size_of::<SchemaTable>() as u64,
+            )?
+        };
+        let owner_bytes = Self::shared_owner_allocation_bytes(
+            core::mem::size_of::<FrozenSnapshotStorage>(),
+            core::mem::align_of::<FrozenSnapshotStorage>(),
+        )
+        .checked_add(Self::shared_owner_allocation_bytes(
+            core::mem::size_of::<FrozenSnapshotData>(),
+            core::mem::align_of::<FrozenSnapshotData>(),
+        ))?
+        .checked_add(Self::shared_owner_allocation_bytes(
+            crate::RetainedPayloadTicket::ownership_header_bytes() as usize,
+            crate::RetainedPayloadTicket::ownership_header_alignment(),
+        ))?
+        .checked_add(Self::shared_owner_allocation_bytes(
+            core::mem::size_of::<ShapeInstance>(),
+            core::mem::align_of::<ShapeInstance>(),
+        ))?;
+        owner_bytes
+            .checked_add(schema_bytes)?
+            .checked_add(Self::nested_budget_owner_bytes(self.data(), schemas)?)
+    }
+
+    fn nested_budget_owner_bytes(data: &ValueData, schemas: &Arc<SchemaTable>) -> Option<u64> {
+        fn children<'a>(
+            mut values: impl Iterator<Item = &'a ValueData>,
+            schemas: &Arc<SchemaTable>,
+        ) -> Option<u64> {
+            values.try_fold(0_u64, |total, value| {
+                total.checked_add(Value::nested_budget_owner_bytes(value, schemas)?)
+            })
+        }
+        fn sequence(values: &SequenceStorage, schemas: &Arc<SchemaTable>) -> Option<u64> {
+            match values {
+                SequenceStorage::Values(values) => children(values.iter(), schemas),
+                _ => Some(0),
+            }
+        }
+        match data {
+            ValueData::Dynamic(value) => match value.value.as_deref() {
+                Some(value) => value.memory_budget_owner_bytes(Some(schemas)),
+                None => Some(0),
+            },
+            ValueData::Enum(value) => children(value.payload().into_iter(), schemas),
+            ValueData::Option(value) => children(value.as_deref().into_iter(), schemas),
+            ValueData::Tuple(values) => children(values.iter(), schemas),
+            ValueData::Record(value) => children(value.fields().iter(), schemas),
+            ValueData::Matrix(value) => sequence(&value.elements, schemas),
+            ValueData::Table(value) => value.columns.iter().try_fold(0_u64, |total, values| {
+                total.checked_add(sequence(values, schemas)?)
+            }),
+            ValueData::Set(value) => children(
+                value.elements().iter().map(CanonicalKeyValue::data),
+                schemas,
+            ),
+            ValueData::Map(value) => children(
+                value
+                    .entries()
+                    .iter()
+                    .flat_map(|entry| [entry.key().data(), entry.value()]),
+                schemas,
+            ),
+            _ => Some(0),
+        }
+    }
+
+    /// Reports this shared root's already transferred capacity in `budget`.
+    /// An uncharged or only partially covered root returns None. In particular,
+    /// an older payload-only physical ticket is not complete budget clearance
+    /// for its retained headers and schema; handoff supplements it first.
+    pub fn memory_budget_retained_bytes(&self, budget: &crate::ManagedMemoryBudget) -> Option<u64> {
+        let ownership = self.root.memory_budget.as_ref()?;
+        let schemas = self.schemas.as_ref()?;
+        (ownership.reservation.budget() == *budget && Arc::ptr_eq(schemas, &ownership.schemas))
+            .then_some(ownership.required_bytes)
+    }
+
     pub const fn schema(&self) -> SchemaId {
         self.schema
     }
@@ -78,12 +731,13 @@ impl Value {
         self.schema_key
     }
 
-    pub const fn shape(&self) -> &ShapeInstance {
+    pub fn shape(&self) -> &ShapeInstance {
+        debug_assert!(Arc::ptr_eq(&self.shape, &self.root.data.shape));
         &self.shape
     }
 
-    pub const fn data(&self) -> &ValueData {
-        &self.data
+    pub fn data(&self) -> &ValueData {
+        &self.root.data.data
     }
 
     /// Returns the immutable schema table that validates this detached value.
@@ -130,9 +784,29 @@ impl Value {
                 key: self.schema_key,
             });
         }
+        // Exact metadata in the same table is a true clone. Equivalent closed
+        // metadata in another table may share the immutable tree, but the
+        // returned value must retain that target table. Dynamic children carry
+        // nested schema identities, so they must take the rebuilding path.
+        if target_entry.key() == self.schema_key && shape == self.shape.as_ref() && exact_definition
+        {
+            if core::ptr::eq(source_schemas, schemas) && schema == self.schema {
+                return Ok(self.clone());
+            }
+            if !schema_body_contains_dynamic(target_schema.body()) {
+                return Ok(Self {
+                    schema,
+                    schema_key: target_entry.key(),
+                    shape: self.shape.clone(),
+                    root: self.root.clone(),
+                    resident_token: self.resident_token,
+                    schemas: Some(Arc::new(schemas.clone())),
+                });
+            }
+        }
         let data = canonical_data_to_rebound_draft(
             source_schema.body(),
-            &self.data,
+            &self.root.data.data,
             &SnapshotPath::root(),
             schemas,
         )?;
@@ -165,7 +839,7 @@ impl Value {
             .ok_or(SnapshotValueError::UnknownSnapshotSchema {
                 schema: self.schema,
             })?;
-        canonical_data_to_draft(schema.body(), &self.data, &SnapshotPath::root())
+        canonical_data_to_draft(schema.body(), &self.root.data.data, &SnapshotPath::root())
     }
 
     /// Compact deterministic token computed when the finalized value is
@@ -265,6 +939,35 @@ impl Value {
                 canonical_data_to_draft(
                     element,
                     value.data(),
+                    &SnapshotPath::root().child(SnapshotPathSegment::SetElement(index as u64)),
+                )
+            })
+            .collect::<Result<Vec<_>, _>>()
+            .map(Vec::into_boxed_slice)
+    }
+
+    /// Converts canonical set element data back into drafts using this set's
+    /// declared element schema without imposing this set's container
+    /// cardinality on a derived result.
+    pub fn set_element_data_drafts(
+        &self,
+        schemas: &SchemaTable,
+        elements: &[ValueData],
+    ) -> Result<Box<[ValueDataDraft]>, SnapshotValueError> {
+        let schema = self.validate_against(schemas)?;
+        let SchemaBody::Set { element, .. } = schema.body() else {
+            return Err(rebuild_kind_mismatch(
+                schema.body(),
+                super::ValueDataKind::Set,
+            ));
+        };
+        elements
+            .iter()
+            .enumerate()
+            .map(|(index, value)| {
+                canonical_data_to_draft(
+                    element,
+                    value,
                     &SnapshotPath::root().child(SnapshotPathSegment::SetElement(index as u64)),
                 )
             })
@@ -511,6 +1214,42 @@ impl Value {
     }
 }
 
+fn schema_body_contains_dynamic(schema: &SchemaBody) -> bool {
+    match schema {
+        SchemaBody::Dynamic => true,
+        SchemaBody::Enum { variants, .. } => variants.iter().any(|variant| {
+            variant
+                .payload
+                .as_ref()
+                .is_some_and(schema_body_contains_dynamic)
+        }),
+        SchemaBody::Option(value)
+        | SchemaBody::Matrix { element: value, .. }
+        | SchemaBody::Set { element: value, .. } => schema_body_contains_dynamic(value),
+        SchemaBody::Tuple(values) => values.iter().any(schema_body_contains_dynamic),
+        SchemaBody::Record(fields)
+        | SchemaBody::Table {
+            columns: fields, ..
+        } => fields
+            .iter()
+            .any(|field| schema_body_contains_dynamic(&field.schema)),
+        SchemaBody::Map { key, value, .. } => {
+            schema_body_contains_dynamic(key) || schema_body_contains_dynamic(value)
+        }
+        SchemaBody::Bool
+        | SchemaBody::UnsignedInteger(_)
+        | SchemaBody::SignedInteger(_)
+        | SchemaBody::FloatingPoint(_)
+        | SchemaBody::Complex(_)
+        | SchemaBody::Rational64
+        | SchemaBody::String
+        | SchemaBody::Id
+        | SchemaBody::Index
+        | SchemaBody::Atom(_)
+        | SchemaBody::ReifiedType => false,
+    }
+}
+
 fn dynamic_extent_rebind_compatible(
     source: &SchemaBody,
     source_shape: &ShapeInstance,
@@ -583,7 +1322,15 @@ fn closed_schema_rebind_compatible(source: &SchemaBody, target: &SchemaBody) -> 
                 cardinality: target_cardinality,
             },
         ) => {
-            (source_cardinality == target_cardinality || dynamic_target(target_cardinality))
+            // Canonical bytecode preserves a set RuntimeType's capacity as a
+            // dynamic bound. Source typing may still assign the particular
+            // literal an exact cardinality. Rebinding is value-level, and the
+            // target schema is validated after this compatibility check, so a
+            // dynamic source may safely close to an exact target only when
+            // the payload actually has that cardinality.
+            (source_cardinality == target_cardinality
+                || matches!(source_cardinality, crate::CardinalitySpec::Dynamic { .. })
+                || dynamic_target(target_cardinality))
                 && closed_schema_rebind_compatible(source_element, target_element)
         }
         (
@@ -846,6 +1593,15 @@ fn canonical_data_to_draft(
     canonical_data_to_draft_with_target(schema, data, path, None)
 }
 
+/// Materializes a canonical draft for schema-directed data that has already
+/// been validated as part of a finalized snapshot value.
+pub fn canonical_snapshot_data_draft(
+    schema: &SchemaBody,
+    data: &ValueData,
+) -> Result<ValueDataDraft, SnapshotValueError> {
+    canonical_data_to_draft(schema, data, &SnapshotPath::root())
+}
+
 fn canonical_data_to_rebound_draft(
     schema: &SchemaBody,
     data: &ValueData,
@@ -1027,6 +1783,9 @@ fn canonical_data_to_draft_with_target(
             ValueDataDraft::Record(values.into_boxed_slice())
         }
         (SchemaBody::Matrix { element, .. }, ValueData::Matrix(value)) => {
+            if let Some(values) = value.elements.scalar_drafts(element) {
+                return Ok(ValueDataDraft::Matrix(values));
+            }
             let values = value
                 .elements
                 .to_values()
@@ -1363,14 +2122,61 @@ fn finalized_value(
         resident_token = token_word(resident_token, *value);
     }
     resident_token = token_data(resident_token, &data);
+    let shape = Arc::new(shape);
     Value {
         schema,
         schema_key,
-        shape,
-        data,
+        shape: shape.clone(),
+        root: Arc::new(FrozenSnapshotStorage {
+            data: Arc::new(FrozenSnapshotData {
+                data,
+                shape,
+                ownership: SharedOwnershipCell::new(),
+                budget_imports: SnapshotBudgetRegistry::default(),
+            }),
+            memory_budget: None,
+        }),
         resident_token,
         schemas,
     }
+}
+
+fn finalized_value_with_construction(
+    schema: SchemaId,
+    schema_key: SchemaKey,
+    shape: ShapeInstance,
+    data: ValueData,
+    schemas: Option<Arc<SchemaTable>>,
+    context: &SnapshotValidationContext<'_>,
+) -> Result<Value, SnapshotValueError> {
+    let mut resident_token = token_bytes(RESIDENT_TOKEN_SEED, schema_key.as_bytes());
+    resident_token = token_word(resident_token, shape.parameter_values().len() as u64);
+    for value in shape.parameter_values() {
+        resident_token = token_word(resident_token, *value);
+    }
+    resident_token = token_data(resident_token, &data);
+    // Final Arc allocations are directly owned by the immutable tree. They
+    // consume the admitted finalization byte allowance, not mutable-envelope
+    // block registrations, and cannot grow that registry during construction.
+    let shape = context.try_arc(shape)?;
+    let data = context.try_arc(FrozenSnapshotData {
+        data,
+        shape: shape.clone(),
+        ownership: SharedOwnershipCell::new(),
+        budget_imports: SnapshotBudgetRegistry::default(),
+    })?;
+    let root = context.try_arc(FrozenSnapshotStorage {
+        data,
+        memory_budget: None,
+    })?;
+    Ok(Value {
+        schema,
+        schema_key,
+        shape,
+        root,
+        resident_token,
+        schemas,
+    })
 }
 
 fn dynamic_canonical(value: Option<&Value>, schema: Option<&SchemaBody>) -> Box<[u8]> {
@@ -1390,6 +2196,48 @@ fn dynamic_canonical(value: Option<&Value>, schema: Option<&SchemaBody>) -> Box<
     bytes.extend_from_slice(&(payload.len() as u64).to_le_bytes());
     bytes.extend_from_slice(&payload);
     bytes.into_boxed_slice()
+}
+
+fn dynamic_canonical_with_construction(
+    value: Option<&Value>,
+    schema: Option<&SchemaBody>,
+    context: &SnapshotValidationContext<'_>,
+) -> Result<Box<[u8]>, SnapshotValueError> {
+    let bytes = match value {
+        Some(value) => {
+            let footprint = value.retained_footprint(context.schemas()).map_err(|_| {
+                crate::MemoryRuntimeError::InvalidLayout {
+                    object: context
+                        .construction_authority
+                        .and_then(SnapshotConstructionAuthority::allocation_object),
+                    size: u64::MAX,
+                    alignment: 1,
+                    reason: "dynamic canonical material footprint is invalid",
+                }
+            })?;
+            footprint
+                .encoded_bytes
+                .checked_mul(2)
+                .and_then(|bytes| {
+                    bytes.checked_add(5_u64.checked_add(
+                        (value.shape().parameter_values().len() as u64).checked_mul(8)?,
+                    )?)
+                })
+                .ok_or(crate::MemoryRuntimeError::InvalidLayout {
+                    object: context
+                        .construction_authority
+                        .and_then(SnapshotConstructionAuthority::allocation_object),
+                    size: u64::MAX,
+                    alignment: 1,
+                    reason: "dynamic canonical material bound overflows",
+                })?
+        }
+        None => 1,
+    };
+    if let Some(authority) = context.construction_authority {
+        authority.admit_snapshot_allocation(bytes, 1)?;
+    }
+    Ok(dynamic_canonical(value, schema))
 }
 
 /// Wraps canonical resident data in a self-describing dynamic snapshot cell.
@@ -1474,7 +2322,7 @@ pub fn rebuild_composite_snapshot(template: &Value, children: Box<[ValueData]>) 
     Some(finalized_value(
         template.schema,
         template.schema_key,
-        template.shape.clone(),
+        template.shape.as_ref().clone(),
         data,
         template.schemas.clone(),
     ))
@@ -1499,7 +2347,7 @@ pub fn rebuild_f64_set_snapshot(template: &Value, candidates: &[f64]) -> Option<
     build_f64_set_snapshot(
         template.schema,
         template.schema_key,
-        template.shape.clone(),
+        template.shape.as_ref().clone(),
         template.schemas.as_deref()?,
         Some(expected.elements().len()),
         Some(expected.elements().len()),
@@ -1537,6 +2385,7 @@ pub fn build_f64_set_snapshot(
                 &mut elements,
                 data,
                 &SnapshotPath::root().child(SnapshotPathSegment::SetElement(index as u64)),
+                None,
             )
             .ok()?;
         }
@@ -1664,13 +2513,15 @@ pub(super) fn finalize_value(
     let shape = entry.schema().instantiate_shape(draft.shape_values)?;
     let path = SnapshotPath::root();
     let data = finalize_data(entry.schema().body(), draft.data, &shape, context, &path)?;
-    Ok(finalized_value(
+    let schemas = context.try_clone_schemas()?;
+    finalized_value_with_construction(
         draft.schema,
         entry.key(),
         shape,
         data,
-        Some(Arc::new(context.schemas.clone())),
-    ))
+        Some(schemas),
+        context,
+    )
 }
 
 pub(super) fn finalize_data(
@@ -1707,7 +2558,12 @@ pub(super) fn finalize_data(
     exact!(SchemaBody::FloatingPoint(FloatWidth::W64), ValueDataDraft::F64(value) => ValueData::F64(value));
     exact!(SchemaBody::Complex(FloatWidth::W32), ValueDataDraft::Complex32(value) => ValueData::Complex32(value));
     exact!(SchemaBody::Complex(FloatWidth::W64), ValueDataDraft::Complex64(value) => ValueData::Complex64(value));
-    exact!(SchemaBody::String, ValueDataDraft::String(value) => ValueData::String(value.into_boxed_str()));
+    if matches!(schema, SchemaBody::String) {
+        if let ValueDataDraft::String(value) = draft {
+            return Ok(ValueData::String(context.try_boxed_str(value)?));
+        }
+        return Err(data_mismatch_kind(schema, actual_kind, path));
+    }
     exact!(SchemaBody::Id, ValueDataDraft::Id(value) => ValueData::Id(value));
     if matches!(schema, SchemaBody::Index) {
         if let ValueDataDraft::Index(value) = draft {
@@ -1725,14 +2581,19 @@ pub(super) fn finalize_data(
 
     match (schema, draft) {
         (SchemaBody::Dynamic, ValueDataDraft::Dynamic(draft)) => {
-            let value = draft
-                .map(|draft| finalize_value(*draft, context).map(Box::new))
-                .transpose()?;
+            let value = match draft {
+                Some(draft) => Some(context.try_box(finalize_value(*draft, context)?)?),
+                None => None,
+            };
             let concrete = value
                 .as_deref()
                 .map(|value| value.validate_against(context.schemas))
                 .transpose()?;
-            let canonical = dynamic_canonical(value.as_deref(), concrete.map(Schema::body));
+            let canonical = dynamic_canonical_with_construction(
+                value.as_deref(),
+                concrete.map(Schema::body),
+                context,
+            )?;
             Ok(ValueData::Dynamic(DynamicValue { value, canonical }))
         }
         (
@@ -1756,13 +2617,13 @@ pub(super) fn finalize_data(
             let payload_path = path.child(SnapshotPathSegment::EnumPayload(draft.ordinal));
             let payload = match (&variant.payload, draft.payload) {
                 (None, None) => None,
-                (Some(schema), Some(payload)) => Some(Box::new(finalize_data(
+                (Some(schema), Some(payload)) => Some(context.try_box(finalize_data(
                     schema,
                     *payload,
                     shape,
                     context,
                     &payload_path,
-                )?)),
+                )?)?),
                 _ => {
                     return Err(SnapshotValueError::EnumPayloadMismatchV1 { path: path.clone() });
                 }
@@ -1775,13 +2636,13 @@ pub(super) fn finalize_data(
         (SchemaBody::Option(element), ValueDataDraft::Option(draft)) => {
             let value = match (draft.present, draft.value) {
                 (false, None) => None,
-                (true, Some(value)) => Some(Box::new(finalize_data(
+                (true, Some(value)) => Some(context.try_box(finalize_data(
                     element,
                     *value,
                     shape,
                     context,
                     &path.child(SnapshotPathSegment::OptionValue),
-                )?)),
+                )?)?),
                 (present, value) => {
                     return Err(SnapshotValueError::PayloadCardinalityMismatchV1 {
                         path: path.clone(),
@@ -1794,7 +2655,7 @@ pub(super) fn finalize_data(
         }
         (SchemaBody::Tuple(elements), ValueDataDraft::Tuple(values)) => {
             ensure_arity(path, elements.len(), values.len())?;
-            let mut finalized = Vec::with_capacity(values.len());
+            let mut finalized = context.try_vec_with_capacity(values.len())?;
             for (index, (schema, draft)) in elements.iter().zip(values.into_vec()).enumerate() {
                 finalized.push(finalize_data(
                     schema,
@@ -1807,8 +2668,8 @@ pub(super) fn finalize_data(
             Ok(ValueData::Tuple(finalized.into_boxed_slice()))
         }
         (SchemaBody::Record(fields), ValueDataDraft::Record(values)) => {
-            let values = order_named_values(fields, values, path)?;
-            let mut finalized = Vec::with_capacity(values.len());
+            let values = order_named_values(fields, values, path, context)?;
+            let mut finalized = context.try_vec_with_capacity(values.len())?;
             for (index, (field, draft)) in fields.iter().zip(values).enumerate() {
                 finalized.push(finalize_data(
                     &field.schema,
@@ -1831,7 +2692,18 @@ pub(super) fn finalize_data(
         ) => {
             let expected = resolved_product(dimensions, shape)?;
             ensure_cardinality(path, expected, values.len())?;
-            let mut finalized = Vec::with_capacity(values.len());
+            if scalar_sequence_schema(element) {
+                return Ok(ValueData::Matrix(MatrixValue {
+                    elements: finalize_scalar_sequence(
+                        element,
+                        values,
+                        path,
+                        ScalarSequenceElement::Matrix,
+                        context,
+                    )?,
+                }));
+            }
+            let mut finalized = context.try_vec_with_capacity(values.len())?;
             for (index, draft) in values.into_vec().into_iter().enumerate() {
                 finalized.push(finalize_data(
                     element,
@@ -1846,10 +2718,10 @@ pub(super) fn finalize_data(
             }))
         }
         (SchemaBody::Table { columns, rows }, ValueDataDraft::Table(values)) => {
-            let values = order_table_columns(columns, values, path)?;
+            let values = order_table_columns(columns, values, path, context)?;
             let actual_rows = values.first().map_or(0, |values| values.len());
             ensure_collection_cardinality(path, rows, shape, actual_rows)?;
-            let mut finalized_columns = Vec::with_capacity(values.len());
+            let mut finalized_columns = context.try_vec_with_capacity(values.len())?;
             for (column_index, (column, drafts)) in columns.iter().zip(values).enumerate() {
                 if drafts.len() != actual_rows {
                     return Err(SnapshotValueError::PayloadCardinalityMismatchV1 {
@@ -1858,7 +2730,17 @@ pub(super) fn finalize_data(
                         actual: drafts.len() as u64,
                     });
                 }
-                let mut finalized = Vec::with_capacity(drafts.len());
+                if scalar_sequence_schema(&column.schema) {
+                    finalized_columns.push(finalize_scalar_sequence(
+                        &column.schema,
+                        drafts,
+                        path,
+                        ScalarSequenceElement::TableColumn(column_index as u32),
+                        context,
+                    )?);
+                    continue;
+                }
+                let mut finalized = context.try_vec_with_capacity(drafts.len())?;
                 for (row, draft) in drafts.into_vec().into_iter().enumerate() {
                     let column_path = path
                         .child(SnapshotPathSegment::TableColumn(column_index as u32))
@@ -1885,11 +2767,17 @@ pub(super) fn finalize_data(
             ValueDataDraft::Set(values),
         ) => {
             ensure_collection_cardinality(path, cardinality, shape, values.len())?;
-            let mut finalized = Vec::with_capacity(values.len());
+            let mut finalized = context.try_vec_with_capacity(values.len())?;
             for (index, draft) in values.into_vec().into_iter().enumerate() {
                 let element_path = path.child(SnapshotPathSegment::SetElement(index as u64));
                 let data = finalize_data(element, draft, shape, context, &element_path)?;
-                super::relations::insert_set_key(element, &mut finalized, data, &element_path)?;
+                super::relations::insert_set_key(
+                    element,
+                    &mut finalized,
+                    data,
+                    &element_path,
+                    context.canonicalization_budget,
+                )?;
             }
             Ok(ValueData::Set(SetValue {
                 elements: finalized.into_boxed_slice(),
@@ -1904,7 +2792,7 @@ pub(super) fn finalize_data(
             ValueDataDraft::Map(entries),
         ) => {
             ensure_collection_cardinality(path, cardinality, shape, entries.len())?;
-            let mut finalized = Vec::with_capacity(entries.len());
+            let mut finalized = context.try_vec_with_capacity(entries.len())?;
             for (index, entry) in entries.into_vec().into_iter().enumerate() {
                 if entry.items.len() != 2 {
                     return Err(SnapshotValueError::MapEntryArityMismatchV1 {
@@ -1933,6 +2821,7 @@ pub(super) fn finalize_data(
                     key_data,
                     value_data,
                     &path.child(SnapshotPathSegment::MapKey(index as u64)),
+                    context.canonicalization_budget,
                 )?;
             }
             Ok(ValueData::Map(MapValue {
@@ -1957,6 +2846,158 @@ pub(super) fn finalize_data(
             Ok(ValueData::Type(reified))
         }
         (_, draft) => Err(data_mismatch(schema, &draft, path)),
+    }
+}
+
+fn scalar_sequence_schema(schema: &SchemaBody) -> bool {
+    matches!(
+        schema,
+        SchemaBody::UnsignedInteger(_)
+            | SchemaBody::SignedInteger(_)
+            | SchemaBody::FloatingPoint(_)
+            | SchemaBody::Complex(_)
+            | SchemaBody::Rational64
+            | SchemaBody::Bool
+            | SchemaBody::String
+            | SchemaBody::Id
+            | SchemaBody::Index
+            | SchemaBody::Atom(_)
+    )
+}
+
+/// Finalizes a homogeneous scalar sequence directly into its schema-directed
+/// packed storage. The generic recursive path first expands every scalar into
+/// `ValueData`, allocates one diagnostic path per element, and then allocates
+/// a second packed vector. Besides being unnecessary, that makes ordinary
+/// large numeric ingress prohibitively expensive in WASM. A path is now
+/// materialized only for the element that actually fails validation.
+fn finalize_scalar_sequence(
+    schema: &SchemaBody,
+    values: Box<[ValueDataDraft]>,
+    path: &SnapshotPath,
+    element: ScalarSequenceElement,
+    context: &SnapshotValidationContext<'_>,
+) -> Result<SequenceStorage, SnapshotValueError> {
+    macro_rules! pack {
+        ($draft:ident, $storage:ident) => {{
+            let mut packed = context.try_vec_with_capacity(values.len())?;
+            for (index, draft) in values.into_vec().into_iter().enumerate() {
+                let actual = draft.kind();
+                let ValueDataDraft::$draft(value) = draft else {
+                    return Err(data_mismatch_kind(
+                        schema,
+                        actual,
+                        &element.path(path, index),
+                    ));
+                };
+                packed.push(value);
+            }
+            Ok(SequenceStorage::$storage(packed.into_boxed_slice()))
+        }};
+    }
+
+    match schema {
+        SchemaBody::UnsignedInteger(IntegerWidth::W8) => pack!(U8, U8),
+        SchemaBody::UnsignedInteger(IntegerWidth::W16) => pack!(U16, U16),
+        SchemaBody::UnsignedInteger(IntegerWidth::W32) => pack!(U32, U32),
+        SchemaBody::UnsignedInteger(IntegerWidth::W64) => pack!(U64, U64),
+        SchemaBody::UnsignedInteger(IntegerWidth::W128) => pack!(U128, U128),
+        SchemaBody::SignedInteger(IntegerWidth::W8) => pack!(I8, I8),
+        SchemaBody::SignedInteger(IntegerWidth::W16) => pack!(I16, I16),
+        SchemaBody::SignedInteger(IntegerWidth::W32) => pack!(I32, I32),
+        SchemaBody::SignedInteger(IntegerWidth::W64) => pack!(I64, I64),
+        SchemaBody::SignedInteger(IntegerWidth::W128) => pack!(I128, I128),
+        SchemaBody::FloatingPoint(FloatWidth::W32) => pack!(F32, F32),
+        SchemaBody::FloatingPoint(FloatWidth::W64) => pack!(F64, F64),
+        SchemaBody::Complex(FloatWidth::W32) => pack!(Complex32, Complex32),
+        SchemaBody::Complex(FloatWidth::W64) => pack!(Complex64, Complex64),
+        SchemaBody::Bool => pack!(Bool, Bool),
+        SchemaBody::Id => pack!(Id, Id),
+        SchemaBody::String => {
+            let mut packed = context.try_vec_with_capacity(values.len())?;
+            for (index, draft) in values.into_vec().into_iter().enumerate() {
+                let actual = draft.kind();
+                let ValueDataDraft::String(value) = draft else {
+                    return Err(data_mismatch_kind(
+                        schema,
+                        actual,
+                        &element.path(path, index),
+                    ));
+                };
+                packed.push(context.try_boxed_str(value)?);
+            }
+            Ok(SequenceStorage::String(packed.into_boxed_slice()))
+        }
+        SchemaBody::Rational64 => {
+            let mut packed = context.try_vec_with_capacity(values.len())?;
+            for (index, draft) in values.into_vec().into_iter().enumerate() {
+                let actual = draft.kind();
+                let ValueDataDraft::Rational64 {
+                    numerator,
+                    denominator,
+                } = draft
+                else {
+                    return Err(data_mismatch_kind(
+                        schema,
+                        actual,
+                        &element.path(path, index),
+                    ));
+                };
+                packed.push(super::Rational64Value::new(numerator, denominator)?);
+            }
+            Ok(SequenceStorage::Rational64(packed.into_boxed_slice()))
+        }
+        SchemaBody::Index => {
+            let mut packed = context.try_vec_with_capacity(values.len())?;
+            for (index, draft) in values.into_vec().into_iter().enumerate() {
+                let actual = draft.kind();
+                let ValueDataDraft::Index(value) = draft else {
+                    return Err(data_mismatch_kind(
+                        schema,
+                        actual,
+                        &element.path(path, index),
+                    ));
+                };
+                if value == 0 {
+                    return Err(SnapshotValueError::InvalidIndexV1 {
+                        path: element.path(path, index),
+                        value,
+                    });
+                }
+                packed.push(value);
+            }
+            Ok(SequenceStorage::Index(packed.into_boxed_slice()))
+        }
+        SchemaBody::Atom(_) => {
+            for (index, draft) in values.iter().enumerate() {
+                if !matches!(draft, ValueDataDraft::Atom) {
+                    return Err(data_mismatch_kind(
+                        schema,
+                        draft.kind(),
+                        &element.path(path, index),
+                    ));
+                }
+            }
+            Ok(SequenceStorage::Unit(values.len() as u64))
+        }
+        _ => unreachable!("scalar sequence fast path is selected by its closed schema"),
+    }
+}
+
+#[derive(Clone, Copy)]
+enum ScalarSequenceElement {
+    Matrix,
+    TableColumn(u32),
+}
+
+impl ScalarSequenceElement {
+    fn path(self, root: &SnapshotPath, index: usize) -> SnapshotPath {
+        match self {
+            Self::Matrix => root.child(SnapshotPathSegment::MatrixElement(index as u64)),
+            Self::TableColumn(column) => root
+                .child(SnapshotPathSegment::TableColumn(column))
+                .child(SnapshotPathSegment::TableRow(index as u64)),
+        }
     }
 }
 
@@ -2039,12 +3080,14 @@ fn order_named_values(
     fields: &[crate::SchemaField],
     values: Box<[super::NamedValueDraft]>,
     path: &SnapshotPath,
+    context: &SnapshotValidationContext<'_>,
 ) -> Result<Vec<ValueDataDraft>, SnapshotValueError> {
     if fields.len() != values.len() {
         return Err(SnapshotValueError::AggregateFieldMismatchV1 { path: path.clone() });
     }
-    let mut pending = values.into_vec().into_iter().map(Some).collect::<Vec<_>>();
-    let mut ordered = Vec::with_capacity(fields.len());
+    let mut pending = context.try_vec_with_capacity(values.len())?;
+    pending.extend(values.into_vec().into_iter().map(Some));
+    let mut ordered = context.try_vec_with_capacity(fields.len())?;
     for field in fields {
         let mut matched = None;
         for (index, value) in pending.iter().enumerate() {
@@ -2072,12 +3115,14 @@ fn order_table_columns(
     columns: &[crate::SchemaField],
     values: Box<[super::TableColumnDraft]>,
     path: &SnapshotPath,
+    context: &SnapshotValidationContext<'_>,
 ) -> Result<Vec<Box<[ValueDataDraft]>>, SnapshotValueError> {
     if columns.len() != values.len() {
         return Err(SnapshotValueError::AggregateFieldMismatchV1 { path: path.clone() });
     }
-    let mut pending = values.into_vec().into_iter().map(Some).collect::<Vec<_>>();
-    let mut ordered = Vec::with_capacity(columns.len());
+    let mut pending = context.try_vec_with_capacity(values.len())?;
+    pending.extend(values.into_vec().into_iter().map(Some));
+    let mut ordered = context.try_vec_with_capacity(columns.len())?;
     for column in columns {
         let mut matched = None;
         for (index, value) in pending.iter().enumerate() {
@@ -2156,8 +3201,537 @@ pub(super) const fn schema_kind(schema: &SchemaBody) -> SchemaDataKind {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::snapshot::{F64Bits, TableColumnDraft};
-    use crate::{SchemaDraft, SchemaField, SchemaTableBuilder};
+    use crate::snapshot::{
+        Complex32Bits, Complex64Bits, F32Bits, F64Bits, SequenceView, TableColumnDraft,
+    };
+    use crate::{
+        DimensionExpr, DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+        DimensionParameterOrigin, NominalKey, SchemaDraft, SchemaField, SchemaTableBuilder,
+    };
+    use core::cell::{Cell, RefCell};
+
+    #[derive(Default)]
+    struct RecordingConstructionAuthority {
+        allocations: RefCell<Vec<(u64, u32)>>,
+    }
+
+    impl SnapshotConstructionAuthority for RecordingConstructionAuthority {
+        fn admit_snapshot_allocation(
+            &self,
+            bytes: u64,
+            alignment: u32,
+        ) -> Result<(), crate::MemoryRuntimeError> {
+            self.allocations.borrow_mut().push((bytes, alignment));
+            Ok(())
+        }
+
+        fn allocation_object(&self) -> Option<crate::MemoryObjectId> {
+            None
+        }
+    }
+
+    struct FailAfterConstructionAuthority {
+        remaining: Cell<usize>,
+    }
+
+    impl SnapshotConstructionAuthority for FailAfterConstructionAuthority {
+        fn admit_snapshot_allocation(
+            &self,
+            bytes: u64,
+            _alignment: u32,
+        ) -> Result<(), crate::MemoryRuntimeError> {
+            let remaining = self.remaining.get();
+            if remaining == 0 {
+                return Err(crate::MemoryRuntimeError::CapacityExceeded {
+                    object: crate::MemoryObjectId::new(0),
+                    requested: bytes,
+                    capacity: 0,
+                });
+            }
+            self.remaining.set(remaining - 1);
+            Ok(())
+        }
+
+        fn allocation_object(&self) -> Option<crate::MemoryObjectId> {
+            Some(crate::MemoryObjectId::new(0))
+        }
+    }
+
+    #[test]
+    fn scalar_sequence_fast_path_is_total_for_every_accepted_schema() {
+        let cases = vec![
+            (
+                SchemaBody::UnsignedInteger(IntegerWidth::W8),
+                ValueDataDraft::U8(1),
+            ),
+            (
+                SchemaBody::UnsignedInteger(IntegerWidth::W16),
+                ValueDataDraft::U16(1),
+            ),
+            (
+                SchemaBody::UnsignedInteger(IntegerWidth::W32),
+                ValueDataDraft::U32(1),
+            ),
+            (
+                SchemaBody::UnsignedInteger(IntegerWidth::W64),
+                ValueDataDraft::U64(1),
+            ),
+            (
+                SchemaBody::UnsignedInteger(IntegerWidth::W128),
+                ValueDataDraft::U128(1),
+            ),
+            (
+                SchemaBody::SignedInteger(IntegerWidth::W8),
+                ValueDataDraft::I8(-1),
+            ),
+            (
+                SchemaBody::SignedInteger(IntegerWidth::W16),
+                ValueDataDraft::I16(-1),
+            ),
+            (
+                SchemaBody::SignedInteger(IntegerWidth::W32),
+                ValueDataDraft::I32(-1),
+            ),
+            (
+                SchemaBody::SignedInteger(IntegerWidth::W64),
+                ValueDataDraft::I64(-1),
+            ),
+            (
+                SchemaBody::SignedInteger(IntegerWidth::W128),
+                ValueDataDraft::I128(-1),
+            ),
+            (
+                SchemaBody::FloatingPoint(FloatWidth::W32),
+                ValueDataDraft::F32(F32Bits::from_f32(1.25)),
+            ),
+            (
+                SchemaBody::FloatingPoint(FloatWidth::W64),
+                ValueDataDraft::F64(F64Bits::from_f64(1.25)),
+            ),
+            (
+                SchemaBody::Complex(FloatWidth::W32),
+                ValueDataDraft::Complex32(Complex32Bits::new(
+                    F32Bits::from_f32(1.0),
+                    F32Bits::from_f32(-1.0),
+                )),
+            ),
+            (
+                SchemaBody::Complex(FloatWidth::W64),
+                ValueDataDraft::Complex64(Complex64Bits::new(
+                    F64Bits::from_f64(1.0),
+                    F64Bits::from_f64(-1.0),
+                )),
+            ),
+            (
+                SchemaBody::Rational64,
+                ValueDataDraft::Rational64 {
+                    numerator: 1,
+                    denominator: 2,
+                },
+            ),
+            (SchemaBody::Bool, ValueDataDraft::Bool(true)),
+            (
+                SchemaBody::String,
+                ValueDataDraft::String("packed".to_owned()),
+            ),
+            (SchemaBody::Id, ValueDataDraft::Id(7)),
+            (SchemaBody::Index, ValueDataDraft::Index(1)),
+            (
+                SchemaBody::Atom(NominalKey::from_bytes([7; 32])),
+                ValueDataDraft::Atom,
+            ),
+        ];
+        let (schemas, _) = SchemaTableBuilder::new().finish().unwrap().into_parts();
+        let context = SnapshotValidationContext::new(&schemas);
+        let path = SnapshotPath::root();
+
+        for (schema, valid) in cases {
+            assert!(scalar_sequence_schema(&schema));
+            finalize_scalar_sequence(
+                &schema,
+                vec![valid].into_boxed_slice(),
+                &path,
+                ScalarSequenceElement::Matrix,
+                &context,
+            )
+            .unwrap_or_else(|error| panic!("valid {schema:?} scalar sequence failed: {error:?}"));
+            finalize_scalar_sequence(
+                &schema,
+                Box::new([]),
+                &path,
+                ScalarSequenceElement::Matrix,
+                &context,
+            )
+            .unwrap_or_else(|error| panic!("empty {schema:?} scalar sequence failed: {error:?}"));
+            let invalid = if matches!(schema, SchemaBody::Bool) {
+                ValueDataDraft::U8(1)
+            } else {
+                ValueDataDraft::Bool(true)
+            };
+            assert!(
+                finalize_scalar_sequence(
+                    &schema,
+                    vec![invalid].into_boxed_slice(),
+                    &path,
+                    ScalarSequenceElement::Matrix,
+                    &context,
+                )
+                .is_err(),
+                "mismatched {schema:?} scalar sequence was accepted"
+            );
+        }
+
+        assert!(matches!(
+            finalize_scalar_sequence(
+                &SchemaBody::Index,
+                vec![ValueDataDraft::Index(0)].into_boxed_slice(),
+                &path,
+                ScalarSequenceElement::Matrix,
+                &context,
+            ),
+            Err(SnapshotValueError::InvalidIndexV1 { .. })
+        ));
+        assert!(
+            finalize_scalar_sequence(
+                &SchemaBody::Rational64,
+                vec![ValueDataDraft::Rational64 {
+                    numerator: 1,
+                    denominator: 0,
+                }]
+                .into_boxed_slice(),
+                &path,
+                ScalarSequenceElement::Matrix,
+                &context,
+            )
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn packed_scalar_matrices_cover_id_values() {
+        let schema = SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body: SchemaBody::Matrix {
+                element: Box::new(SchemaBody::Id),
+                dimensions: vec![DimensionExpr::Constant(2)].into_boxed_slice(),
+            },
+        }
+        .finalize()
+        .unwrap();
+        let mut builder = SchemaTableBuilder::new();
+        let handle = builder.insert(schema).unwrap();
+        let build = builder.finish().unwrap();
+        let schema = build.resolve(handle).unwrap();
+        let (schemas, _) = build.into_parts();
+        let value = ValueDraft {
+            schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Matrix(
+                vec![ValueDataDraft::Id(7), ValueDataDraft::Id(11)].into_boxed_slice(),
+            ),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        let ValueData::Matrix(matrix) = value.data() else {
+            panic!("expected Id matrix")
+        };
+        assert!(matches!(matrix.elements(), SequenceView::Id(&[7, 11])));
+    }
+
+    #[test]
+    fn scalar_table_columns_pack_without_intermediate_value_data() {
+        let row_count = 64_usize;
+        let schema = SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body: SchemaBody::Table {
+                columns: vec![
+                    SchemaField {
+                        name: "byte".to_owned(),
+                        schema: SchemaBody::UnsignedInteger(IntegerWidth::W8),
+                    },
+                    SchemaField {
+                        name: "flag".to_owned(),
+                        schema: SchemaBody::Bool,
+                    },
+                    SchemaField {
+                        name: "text".to_owned(),
+                        schema: SchemaBody::String,
+                    },
+                ]
+                .into_boxed_slice(),
+                rows: crate::CardinalitySpec::Exact(DimensionExpr::Constant(row_count as u64)),
+            },
+        }
+        .finalize()
+        .unwrap();
+        let mut builder = SchemaTableBuilder::new();
+        let handle = builder.insert(schema).unwrap();
+        let build = builder.finish().unwrap();
+        let schema = build.resolve(handle).unwrap();
+        let (schemas, _) = build.into_parts();
+        let authority = RecordingConstructionAuthority::default();
+        let draft = ValueDraft {
+            schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Table(
+                vec![
+                    TableColumnDraft {
+                        name: "byte".to_owned(),
+                        values: (0..row_count)
+                            .map(|value| ValueDataDraft::U8(value as u8))
+                            .collect::<Vec<_>>()
+                            .into_boxed_slice(),
+                    },
+                    TableColumnDraft {
+                        name: "flag".to_owned(),
+                        values: (0..row_count)
+                            .map(|value| ValueDataDraft::Bool(value % 2 == 0))
+                            .collect::<Vec<_>>()
+                            .into_boxed_slice(),
+                    },
+                    TableColumnDraft {
+                        name: "text".to_owned(),
+                        values: (0..row_count)
+                            .map(|value| ValueDataDraft::String(format!("row-{value}")))
+                            .collect::<Vec<_>>()
+                            .into_boxed_slice(),
+                    },
+                ]
+                .into_boxed_slice(),
+            ),
+        };
+        let failing = FailAfterConstructionAuthority {
+            remaining: Cell::new(1),
+        };
+        assert!(
+            draft
+                .clone()
+                .finalize(
+                    &SnapshotValidationContext::new(&schemas).with_construction_authority(&failing),
+                )
+                .is_err(),
+            "a partial packed-table build must fail through construction authority"
+        );
+        let value = draft
+            .finalize(
+                &SnapshotValidationContext::new(&schemas).with_construction_authority(&authority),
+            )
+            .unwrap();
+        let ValueData::Table(table) = value.data() else {
+            panic!("expected table")
+        };
+        assert!(
+            matches!(table.column(0), Some(SequenceView::U8(values)) if values.len() == row_count)
+        );
+        assert!(
+            matches!(table.column(1), Some(SequenceView::Bool(values)) if values.len() == row_count)
+        );
+        assert!(
+            matches!(table.column(2), Some(SequenceView::String(values)) if values.len() == row_count)
+        );
+        let expanded = (
+            (row_count * core::mem::size_of::<ValueData>()) as u64,
+            core::mem::align_of::<ValueData>() as u32,
+        );
+        assert!(!authority.allocations.borrow().contains(&expanded));
+        assert!(
+            authority
+                .allocations
+                .borrow()
+                .contains(&(row_count as u64, core::mem::align_of::<u8>() as u32,))
+        );
+    }
+
+    #[test]
+    fn recursive_dynamic_values_share_one_admitted_schema_owner() {
+        let scalar = SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body: SchemaBody::UnsignedInteger(IntegerWidth::W64),
+        }
+        .finalize()
+        .unwrap();
+        let dynamic_matrix = SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body: SchemaBody::Matrix {
+                element: Box::new(SchemaBody::Dynamic),
+                dimensions: vec![DimensionExpr::Constant(2)].into_boxed_slice(),
+            },
+        }
+        .finalize()
+        .unwrap();
+        let mut builder = SchemaTableBuilder::new();
+        let scalar_handle = builder.insert(scalar).unwrap();
+        let matrix_handle = builder.insert(dynamic_matrix).unwrap();
+        let build = builder.finish().unwrap();
+        let scalar = build.resolve(scalar_handle).unwrap();
+        let matrix = build.resolve(matrix_handle).unwrap();
+        let (schemas, _) = build.into_parts();
+        let nested = |value| {
+            ValueDataDraft::Dynamic(Some(Box::new(ValueDraft {
+                schema: scalar,
+                shape_values: Box::new([]),
+                data: ValueDataDraft::U64(value),
+            })))
+        };
+        let authority = RecordingConstructionAuthority::default();
+        let value = ValueDraft {
+            schema: matrix,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Matrix(vec![nested(1), nested(2)].into_boxed_slice()),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas).with_construction_authority(&authority))
+        .unwrap();
+        let ValueData::Matrix(dynamic) = value.data() else {
+            panic!("expected Dynamic matrix")
+        };
+        let SequenceView::Values(values) = dynamic.elements() else {
+            panic!("expected recursively stored Dynamic values")
+        };
+        let owners = values
+            .iter()
+            .map(|value| {
+                let ValueData::Dynamic(value) = value else {
+                    panic!("expected Dynamic element")
+                };
+                value.value().unwrap().schemas().unwrap()
+            })
+            .collect::<Vec<_>>();
+        assert!(Arc::ptr_eq(&owners[0], &owners[1]));
+        let schema_clone = (
+            schemas.clone_allocation_bound_bytes().unwrap(),
+            core::mem::align_of::<SchemaTable>() as u32,
+        );
+        assert_eq!(
+            authority
+                .allocations
+                .borrow()
+                .iter()
+                .filter(|allocation| **allocation == schema_clone)
+                .count(),
+            1,
+        );
+    }
+
+    #[test]
+    fn metadata_only_rebind_shares_storage_but_schema_transform_rebuilds() {
+        let fixed = SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body: SchemaBody::Matrix {
+                element: Box::new(SchemaBody::String),
+                dimensions: vec![DimensionExpr::Constant(1)].into_boxed_slice(),
+            },
+        }
+        .finalize()
+        .unwrap();
+        let dynamic = SchemaDraft {
+            dimension_parameters: vec![DimensionParameterDeclaration {
+                id: DimensionParameterId::new(0),
+                origin: DimensionParameterOrigin::Explicit,
+                lifetime: DimensionLifetime::Turn,
+                lower_bound: DimensionExpr::Constant(0),
+                upper_bound: None,
+            }]
+            .into_boxed_slice(),
+            body: SchemaBody::Matrix {
+                element: Box::new(SchemaBody::String),
+                dimensions: vec![DimensionExpr::Parameter(DimensionParameterId::new(0))]
+                    .into_boxed_slice(),
+            },
+        }
+        .finalize()
+        .unwrap();
+        let mut builder = SchemaTableBuilder::new();
+        let fixed_handle = builder.insert(fixed).unwrap();
+        let dynamic_handle = builder.insert(dynamic).unwrap();
+        let build = builder.finish().unwrap();
+        let fixed = build.resolve(fixed_handle).unwrap();
+        let dynamic = build.resolve(dynamic_handle).unwrap();
+        let (schemas, _) = build.into_parts();
+        let value = ValueDraft {
+            schema: fixed,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Matrix(
+                vec![ValueDataDraft::String("owned".to_owned())].into_boxed_slice(),
+            ),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+
+        let same = value.rebind(fixed, value.shape(), &schemas).unwrap();
+        assert!(value.shares_frozen_storage(&same));
+
+        let mut equivalent_builder = SchemaTableBuilder::new();
+        let equivalent_handle = equivalent_builder
+            .insert(schemas.get(fixed).unwrap().clone())
+            .unwrap();
+        let equivalent_build = equivalent_builder.finish().unwrap();
+        let equivalent = equivalent_build.resolve(equivalent_handle).unwrap();
+        let (equivalent_schemas, _) = equivalent_build.into_parts();
+        let rebound = value
+            .rebind(equivalent, value.shape(), &equivalent_schemas)
+            .unwrap();
+        assert!(value.shares_frozen_storage(&rebound));
+        assert!(rebound.validate_against(&equivalent_schemas).is_ok());
+
+        let dynamic_shape = schemas
+            .get(dynamic)
+            .unwrap()
+            .instantiate_shape(vec![1].into_boxed_slice())
+            .unwrap();
+        let transformed = value.rebind(dynamic, &dynamic_shape, &schemas).unwrap();
+        assert!(!value.shares_frozen_storage(&transformed));
+
+        let dynamic_value = ValueDraft {
+            schema: dynamic,
+            shape_values: vec![1].into_boxed_slice(),
+            data: ValueDataDraft::Matrix(
+                vec![ValueDataDraft::String("dynamic".to_owned())].into_boxed_slice(),
+            ),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        let mut dynamic_table_builder = SchemaTableBuilder::new();
+        let dynamic_table_handle = dynamic_table_builder
+            .insert(schemas.get(dynamic).unwrap().clone())
+            .unwrap();
+        let dynamic_table_build = dynamic_table_builder.finish().unwrap();
+        let dynamic_table_schema = dynamic_table_build.resolve(dynamic_table_handle).unwrap();
+        let (dynamic_table, _) = dynamic_table_build.into_parts();
+        let dynamic_rebound = dynamic_value
+            .rebind(dynamic_table_schema, &dynamic_shape, &dynamic_table)
+            .unwrap();
+        assert!(dynamic_value.shares_frozen_storage(&dynamic_rebound));
+
+        let dynamic_schema = SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body: SchemaBody::Dynamic,
+        }
+        .finalize()
+        .unwrap();
+        let mut source_dynamic_builder = SchemaTableBuilder::new();
+        let source_dynamic_handle = source_dynamic_builder
+            .insert(dynamic_schema.clone())
+            .unwrap();
+        let source_dynamic_build = source_dynamic_builder.finish().unwrap();
+        let source_dynamic = source_dynamic_build.resolve(source_dynamic_handle).unwrap();
+        let (source_dynamic_table, _) = source_dynamic_build.into_parts();
+        let dynamic_value = ValueDraft {
+            schema: source_dynamic,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Dynamic(None),
+        }
+        .finalize(&SnapshotValidationContext::new(&source_dynamic_table))
+        .unwrap();
+        let mut target_dynamic_builder = SchemaTableBuilder::new();
+        let target_dynamic_handle = target_dynamic_builder.insert(dynamic_schema).unwrap();
+        let target_dynamic_build = target_dynamic_builder.finish().unwrap();
+        let target_dynamic = target_dynamic_build.resolve(target_dynamic_handle).unwrap();
+        let (target_dynamic_table, _) = target_dynamic_build.into_parts();
+        let dynamic_rebound = dynamic_value
+            .rebind(target_dynamic, dynamic_value.shape(), &target_dynamic_table)
+            .unwrap();
+        assert!(!dynamic_value.shares_frozen_storage(&dynamic_rebound));
+    }
 
     #[test]
     fn index_snapshots_are_one_based() {
@@ -2185,6 +3759,128 @@ mod tests {
         ));
         assert!(draft(1).finalize(&context).is_ok());
         assert!(draft(u64::MAX).finalize(&context).is_ok());
+    }
+
+    #[test]
+    fn snapshot_finalization_shares_one_fail_closed_canonicalization_budget() {
+        let schema = SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body: SchemaBody::Set {
+                element: Box::new(SchemaBody::Bool),
+                cardinality: crate::CardinalitySpec::Dynamic { upper_bound: None },
+            },
+        }
+        .finalize()
+        .unwrap();
+        let mut builder = SchemaTableBuilder::new();
+        let handle = builder.insert(schema).unwrap();
+        let build = builder.finish().unwrap();
+        let schema = build.resolve(handle).unwrap();
+        let (schemas, _) = build.into_parts();
+        let draft = || ValueDraft {
+            schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Set(
+                vec![ValueDataDraft::Bool(false), ValueDataDraft::Bool(true)].into_boxed_slice(),
+            ),
+        };
+
+        assert!(
+            draft()
+                .finalize(&SnapshotValidationContext::new(&schemas))
+                .is_ok()
+        );
+        let budget = SnapshotCanonicalizationBudget::new(0);
+        assert!(matches!(
+            draft().finalize(
+                &SnapshotValidationContext::new(&schemas).with_canonicalization_budget(&budget),
+            ),
+            Err(SnapshotValueError::CanonicalizationWorkLimitExceededV1 { limit: 0 })
+        ));
+        assert_eq!(budget.consumed(), 0);
+    }
+
+    #[test]
+    fn snapshot_finalization_charges_ordered_insertion_shifts() {
+        let integer = SchemaBody::UnsignedInteger(crate::IntegerWidth::W64);
+        let set = SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body: SchemaBody::Set {
+                element: Box::new(integer.clone()),
+                cardinality: crate::CardinalitySpec::Dynamic { upper_bound: None },
+            },
+        }
+        .finalize()
+        .unwrap();
+        let map = SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body: SchemaBody::Map {
+                key: Box::new(integer.clone()),
+                value: Box::new(integer),
+                cardinality: crate::CardinalitySpec::Dynamic { upper_bound: None },
+            },
+        }
+        .finalize()
+        .unwrap();
+        let mut builder = SchemaTableBuilder::new();
+        let set_handle = builder.insert(set).unwrap();
+        let map_handle = builder.insert(map).unwrap();
+        let build = builder.finish().unwrap();
+        let set_schema = build.resolve(set_handle).unwrap();
+        let map_schema = build.resolve(map_handle).unwrap();
+        let (schemas, _) = build.into_parts();
+        let set_draft = |values: &[u64]| ValueDraft {
+            schema: set_schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Set(
+                values
+                    .iter()
+                    .copied()
+                    .map(ValueDataDraft::U64)
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            ),
+        };
+        let map_draft = |values: &[u64]| ValueDraft {
+            schema: map_schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Map(
+                values
+                    .iter()
+                    .copied()
+                    .map(|value| super::super::MapEntryDraft {
+                        items: vec![ValueDataDraft::U64(value), ValueDataDraft::U64(value)]
+                            .into_boxed_slice(),
+                    })
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            ),
+        };
+
+        for draft in [set_draft(&[4, 3, 2, 1, 0]), map_draft(&[4, 3, 2, 1, 0])] {
+            let budget = SnapshotCanonicalizationBudget::new(10);
+            assert!(matches!(
+                draft.finalize(
+                    &SnapshotValidationContext::new(&schemas).with_canonicalization_budget(&budget),
+                ),
+                Err(SnapshotValueError::CanonicalizationWorkLimitExceededV1 { limit: 10 })
+            ));
+            // The failed shift charge is rejected atomically and therefore
+            // does not advance the shared meter past its last admitted value.
+            assert_eq!(budget.consumed(), 9);
+        }
+        for draft in [set_draft(&[0, 1, 2, 3, 4]), map_draft(&[0, 1, 2, 3, 4])] {
+            let budget = SnapshotCanonicalizationBudget::new(4);
+            assert!(
+                draft
+                    .finalize(
+                        &SnapshotValidationContext::new(&schemas)
+                            .with_canonicalization_budget(&budget),
+                    )
+                    .is_ok()
+            );
+            assert_eq!(budget.consumed(), 4);
+        }
     }
 
     #[test]

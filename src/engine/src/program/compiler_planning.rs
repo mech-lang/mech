@@ -50,6 +50,9 @@ impl Default for CompilerPlanningConfig {
 pub struct ProgramCompilationProduct {
     artifact: ProgramArtifact,
     bytecode: Vec<u8>,
+    instruction_type_bindings: Vec<Option<mech_core::BoundCall>>,
+    instruction_type_binding_requirements: Vec<bool>,
+    instruction_memory_plans: Vec<Option<mech_core::CallMemoryPlan>>,
 }
 
 /// Immutable source-compilation product for hosts that immediately activate
@@ -95,19 +98,42 @@ impl ProgramCompilationProduct {
     pub fn into_parts(self) -> (ProgramArtifact, Vec<u8>) {
         (self.artifact, self.bytecode)
     }
+
+    pub fn instruction_type_bindings(&self) -> &[Option<mech_core::BoundCall>] {
+        &self.instruction_type_bindings
+    }
+
+    pub fn instruction_type_binding_requirements(&self) -> &[bool] {
+        &self.instruction_type_binding_requirements
+    }
+
+    pub fn instruction_memory_plans(&self) -> &[Option<mech_core::CallMemoryPlan>] {
+        &self.instruction_memory_plans
+    }
+
+    pub fn into_native_parts(
+        self,
+    ) -> (
+        ProgramArtifact,
+        Vec<u8>,
+        Vec<Option<mech_core::BoundCall>>,
+        Vec<bool>,
+        Vec<Option<mech_core::CallMemoryPlan>>,
+    ) {
+        (
+            self.artifact,
+            self.bytecode,
+            self.instruction_type_bindings,
+            self.instruction_type_binding_requirements,
+            self.instruction_memory_plans,
+        )
+    }
 }
 
 #[cfg(feature = "semantic-compiler")]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProgramArtifactCompilationError {
     pub reason: String,
-}
-
-#[cfg(feature = "semantic-compiler")]
-#[derive(Clone, Copy)]
-enum ProgramBytecodeEncoding {
-    Semantic,
-    FrozenV1ImplementationIdentities,
 }
 
 #[cfg(feature = "semantic-compiler")]
@@ -515,20 +541,7 @@ impl CompilerPlanningProgram {
     #[cfg(feature = "semantic-compiler")]
     pub fn compile_program_product(&mut self) -> MResult<ProgramCompilationProduct> {
         let compiled = compile_bytecode(self)?;
-        self.finalize_program_product(compiled, ProgramBytecodeEncoding::Semantic)
-    }
-
-    /// Reproduces the pre-semantic-operation bytecode-v1 encoding for the
-    /// checked-in compatibility corpus. Product compilation must otherwise
-    /// use [`Self::compile_program_product`].
-    #[doc(hidden)]
-    #[cfg(feature = "semantic-compiler")]
-    pub fn compile_frozen_v1_program_product(&mut self) -> MResult<ProgramCompilationProduct> {
-        let compiled = compile_bytecode(self)?;
-        self.finalize_program_product(
-            compiled,
-            ProgramBytecodeEncoding::FrozenV1ImplementationIdentities,
-        )
+        self.finalize_program_product(compiled)
     }
 
     #[cfg(feature = "semantic-compiler")]
@@ -538,7 +551,7 @@ impl CompilerPlanningProgram {
     ) -> MResult<ProgramCompilationProduct> {
         let mut compiled = compile_bytecode(self)?;
         resolve_compiled_external_contracts(&mut compiled.bytecode, resolver)?;
-        self.finalize_program_product(compiled, ProgramBytecodeEncoding::Semantic)
+        self.finalize_program_product(compiled)
     }
 
     /// Finalizes a source compiler product after replacing generic send names
@@ -554,33 +567,22 @@ impl CompilerPlanningProgram {
         let mut compiled = compile_bytecode(self)?;
         preserve_compiled_resource_send_operations(&mut compiled.bytecode, operations)?;
         resolve_compiled_external_contracts(&mut compiled.bytecode, resolver)?;
-        self.finalize_program_product(compiled, ProgramBytecodeEncoding::Semantic)
-    }
-
-    /// Compatibility-corpus counterpart to
-    /// [`Self::compile_program_product_with_resource_send_operations`].
-    #[doc(hidden)]
-    #[cfg(feature = "semantic-compiler")]
-    pub fn compile_frozen_v1_program_product_with_resource_send_operations(
-        &mut self,
-        resolver: &dyn ExternalRequirementContractResolver,
-        operations: &[CompiledResourceSendOperation],
-    ) -> MResult<ProgramCompilationProduct> {
-        let mut compiled = compile_bytecode(self)?;
-        preserve_compiled_resource_send_operations(&mut compiled.bytecode, operations)?;
-        resolve_compiled_external_contracts(&mut compiled.bytecode, resolver)?;
-        self.finalize_program_product(
-            compiled,
-            ProgramBytecodeEncoding::FrozenV1ImplementationIdentities,
-        )
+        self.finalize_program_product(compiled)
     }
 
     #[cfg(feature = "semantic-compiler")]
     fn finalize_program_product(
         &self,
         compiled: CompilerPlanningBytecode,
-        bytecode_encoding: ProgramBytecodeEncoding,
     ) -> MResult<ProgramCompilationProduct> {
+        let instruction_type_bindings = compiled.bytecode.instruction_type_bindings.clone();
+        let instruction_type_binding_requirements = compiled
+            .bytecode
+            .instruction_roles
+            .iter()
+            .map(|role| matches!(role, Some(mech_core::CompiledInstructionRole::Node(_))))
+            .collect();
+        let instruction_memory_plans = compiled.bytecode.instruction_memory_plans.clone();
         let artifact = compile_executable_program_artifact_with_named_outputs_and_external_inputs(
             &compiled.bytecode,
             &compiled.published_outputs,
@@ -597,55 +599,23 @@ impl CompilerPlanningProgram {
             )
             .with_compiler_loc()
         })?;
-        if matches!(
-            bytecode_encoding,
-            ProgramBytecodeEncoding::FrozenV1ImplementationIdentities
-        ) && !artifact.compute_regions().is_empty()
-        {
-            return Err(MechError::new(
+        let sections = encode_program_artifact_sections(&artifact).map_err(|error| {
+            MechError::new(
                 ProgramArtifactCompilationError {
-                    reason:
-                        "frozen bytecode-v1 compatibility encoding does not support compute regions"
-                            .to_owned(),
+                    reason: format!("unable to encode source ProgramArtifact: {error:?}"),
                 },
                 None,
             )
-            .with_compiler_loc());
-        }
-        let bytecode_artifact = match bytecode_encoding {
-            ProgramBytecodeEncoding::Semantic => None,
-            ProgramBytecodeEncoding::FrozenV1ImplementationIdentities => Some(
-                compile_legacy_bytecode_program_artifact_with_outputs(
-                    &compiled.bytecode,
-                    &compiled.published_outputs,
-                    self.interpreter.function_catalog().as_ref(),
-                )
-                .map_err(|error| {
-                    MechError::new(
-                        ProgramArtifactCompilationError {
-                            reason: format!(
-                                "unable to finalize frozen v1 bytecode projection: {error:?}"
-                            ),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()
-                })?,
-            ),
-        };
-        let sections =
-            encode_program_artifact_sections(bytecode_artifact.as_ref().unwrap_or(&artifact))
-                .map_err(|error| {
-                    MechError::new(
-                        ProgramArtifactCompilationError {
-                            reason: format!("unable to encode source ProgramArtifact: {error:?}"),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()
-                })?;
+            .with_compiler_loc()
+        })?;
         let bytecode = write_bytecode_with_artifact(&compiled.bytecode.program, &sections)?;
-        Ok(ProgramCompilationProduct { artifact, bytecode })
+        Ok(ProgramCompilationProduct {
+            artifact,
+            bytecode,
+            instruction_type_bindings,
+            instruction_type_binding_requirements,
+            instruction_memory_plans,
+        })
     }
 }
 
@@ -805,13 +775,30 @@ fn compile_bytecode(program: &mut CompilerPlanningProgram) -> MResult<CompilerPl
     }
 
     for step in plan.iter() {
-        context.begin_plan_node_with_semantics(
+        context.begin_plan_node_with_type_binding(
             match step.reactive_node_kind() {
                 ReactiveNodeKind::Combinational => CompiledNodeKind::Combinational,
                 ReactiveNodeKind::Register => CompiledNodeKind::Register,
             },
-            step.semantic_operation_name(),
-            step.semantic_operation_contract(),
+            step.bound_call().ok_or_else(|| {
+                MechError::new(
+                    BytecodeValidationError {
+                        reason: "executable source plan node has no bound semantic certificate"
+                            .to_owned(),
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?,
+            step.memory_plan().ok_or_else(|| {
+                MechError::new(
+                    BytecodeValidationError {
+                        reason: "executable source plan node has no R5 memory plan".to_owned(),
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?,
         )?;
         let compile_result = step.compile(&mut context);
         context.end_plan_node();
@@ -1103,6 +1090,7 @@ mod tests {
     ))]
     #[test]
     fn ordinary_mech_sources_emit_equivalent_program_artifacts_in_bytecode_v1() -> MResult<()> {
+        let mut executable_node_count = 0;
         for source in [
             include_str!("../../tests/fixtures/program-artifact/scalar-alias.mec"),
             include_str!("../../tests/fixtures/program-artifact/state-register.mec"),
@@ -1120,7 +1108,13 @@ mod tests {
 
             assert_ordinary_source_artifact_parity(artifact_a, &artifact_b);
             assert!(!artifact_a.schemas().is_empty());
+            executable_node_count += artifact_a.nodes().len();
+            assert!(artifact_a.nodes().iter().all(|node| matches!(
+                artifact_a.contracts().get(node.contract),
+                Some(mech_core::ResolvedOperationContract::Declared(_))
+            )));
         }
+        assert!(executable_node_count > 0);
         Ok(())
     }
 

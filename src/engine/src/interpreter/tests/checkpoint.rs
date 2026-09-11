@@ -52,8 +52,8 @@ mod checkpoint_tests {
     }
 
     fn install_scalar(interpreter: &Interpreter, name: &str, value: f64) -> (ValueCell, Ref<f64>) {
-        let cell = ValueCell::from_exact(value).unwrap();
-        let backing = exact_f64(&cell);
+        let backing = Ref::new(value);
+        let cell = ValueCell::from_external_ref(backing.clone(), None).unwrap();
         let id = hash_str(name);
         let symbols = interpreter.symbols();
         let cell = symbols.borrow_mut().insert_cell(id, cell, true);
@@ -69,7 +69,7 @@ mod checkpoint_tests {
         FunctionInvocation::unary(ValueCell::unit(), cell.clone())
             .input(0)
             .unwrap()
-            .try_ref::<f64>()
+            .try_external_ref::<f64>()
             .unwrap()
     }
 
@@ -78,7 +78,7 @@ mod checkpoint_tests {
         FunctionInvocation::unary(ValueCell::unit(), cell.clone())
             .input(0)
             .unwrap()
-            .try_ref::<bool>()
+            .try_external_ref::<bool>()
             .unwrap()
     }
 
@@ -87,7 +87,12 @@ mod checkpoint_tests {
     fn catalog_identity_and_function_environment_survive_children_clear_and_restore() {
         let mut builder = FunctionCatalogBuilder::new();
         builder
-            .insert_canonical_specializer("math/add", Arc::new(CheckpointSpecializer(1)))
+            .insert_canonical_specializer_with_contract(
+                "math/add",
+                mech_core::maintained_source_type_declaration("math/add").unwrap(),
+                crate::test_support::catalog::pure_test_operation_contract(2),
+                Arc::new(CheckpointSpecializer(1)),
+            )
             .unwrap();
         let operation = OperationId::from_name("math/add");
         builder
@@ -523,9 +528,9 @@ mod checkpoint_tests {
             );
         }
         #[cfg(feature = "invariant_define")]
-        let invariant_result = ValueCell::from_exact(true).unwrap();
+        let invariant_result = ValueCell::from_external_ref(Ref::new(true), None).unwrap();
         #[cfg(feature = "invariant_define")]
-        let invariant_rhs = ValueCell::from_exact(2.0).unwrap();
+        let invariant_rhs = ValueCell::from_external_ref(Ref::new(2.0), None).unwrap();
         #[cfg(feature = "invariant_define")]
         {
             let invariant_id = hash_str("checkpoint-invariant");

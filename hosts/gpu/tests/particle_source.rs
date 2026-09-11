@@ -16,8 +16,9 @@ use mech_gpu::{
 };
 use mech_runtime::{
     ConfigValue, PreparedRuntimeEffect, ProgramCompiler, RuntimeBuilder,
-    RuntimeCapabilityOperation, RuntimeHostFactory, RuntimeHostInputValue,
+    RuntimeCapabilityOperation, RuntimeEffectId, RuntimeHostFactory, RuntimeHostInputValue,
     RuntimeResourceReadRequest, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest,
+    TransactionId,
 };
 use std::num::NonZeroU32;
 
@@ -322,6 +323,11 @@ fn ordinary_compute_host_dispatches_the_compiler_product_after_commit() {
             operation: RuntimeCapabilityOperation::Write,
             value: RuntimeHostInputValue::F32(1.0).into_value().unwrap(),
             intent: RuntimeResourceWriteIntent::Send,
+            effect_id: RuntimeEffectId {
+                transaction: TransactionId::new(1),
+                sequence: 0,
+            },
+            idempotency_key: "compute-particle-test:0".to_owned(),
         })
         .unwrap();
     let PreparedRuntimeEffect::AfterCommit(mut effect) = effect else {

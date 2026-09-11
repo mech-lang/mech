@@ -1,5 +1,10 @@
 #![cfg_attr(all(feature = "no_std", not(feature = "std")), no_std)]
+#![feature(allocator_api)]
 #![feature(where_clause_attrs)]
+#![allow(
+    unused_features,
+    reason = "the public macro surface expands cfg attributes on where clauses in downstream crates"
+)]
 
 //extern crate core as rust_core;
 extern crate seahash;
@@ -115,16 +120,23 @@ pub mod execution;
 pub mod function;
 #[path = "function/signature.rs"]
 mod function_signature;
+pub mod memory_contract;
+pub mod memory_plan;
+pub mod memory_runtime;
 #[cfg(feature = "mika")]
 pub mod mika;
 pub mod nodes;
 pub mod program;
+#[cfg(feature = "range")]
+pub mod range;
 #[cfg(feature = "functions")]
 pub mod reactive_transaction;
 pub mod read_source;
 #[cfg(feature = "resident-execution")]
 #[doc(hidden)]
 pub mod resident_execution;
+pub(crate) mod runtime_storage;
+pub mod selector;
 pub mod snapshot;
 pub mod state_journal;
 pub mod stdlib;
@@ -139,14 +151,20 @@ pub use self::execution::*;
 pub use self::function::*;
 #[cfg(not(feature = "functions"))]
 pub use self::function_signature::*;
+pub use self::memory_contract::*;
+pub use self::memory_plan::*;
+pub use self::memory_runtime::*;
 #[cfg(feature = "mika")]
 pub use self::mika::*;
 pub use self::nodes::*;
 pub use self::program::*;
+#[cfg(feature = "range")]
+pub use self::range::*;
 #[cfg(feature = "functions")]
 pub use self::reactive_transaction::*;
 pub use self::read_source::ReadSource;
 pub use self::schema::*;
+pub use self::selector::*;
 pub use self::semantic_error::*;
 pub use self::semantic_identity::*;
 pub use self::snapshot::{
@@ -171,12 +189,14 @@ pub mod operation_contract;
 pub mod schema;
 pub mod semantic_error;
 pub mod semantic_identity;
+pub mod type_system;
 
 pub use self::dimension::*;
 pub use self::kind_expr::*;
 pub use self::kind_scheme::*;
 pub use self::nominal::*;
 pub use self::operation_contract::*;
+pub use self::type_system::*;
 
 // Mech Source Code
 // ---------------------------------------------------------------------------

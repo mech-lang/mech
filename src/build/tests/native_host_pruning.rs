@@ -75,6 +75,8 @@ fn configured_standard_hosts_are_pruned_to_exact_bytecode_owners() {
             workspace_root().join("tests/architecture/bytecode-v1/console.mecb"),
         )
         .unwrap(),
+        instruction_type_bindings: None,
+        instruction_type_binding_requirements: None,
         runtime_config: Some(runtime_config),
         target: None,
         profile: NativeBuildProfile::Debug,

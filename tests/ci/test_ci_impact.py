@@ -21,7 +21,7 @@ class ImpactClassifierTests(unittest.TestCase):
         return CI_IMPACT.classify(paths, labels, OWNERS)
 
     def test_documentation_only_changes_compile_nothing(self):
-        result = self.classify(["README.md", "docs/distributions.md"])
+        result = self.classify(["docs/distributions.md", "LICENSE"])
         self.assertTrue(result["docs_only"])
         self.assertFalse(result["standard_canaries_required"])
         self.assertFalse(result["windows_canary_required"])
@@ -36,9 +36,12 @@ class ImpactClassifierTests(unittest.TestCase):
                 self.assertEqual(result["owner_shards"], [])
                 self.assertFalse(result["browser_canary_required"])
 
-    def test_machine_change_runs_mech_integration_not_machine_private_tests(self):
+    def test_machine_change_runs_r6_catalog_integration_not_machine_private_tests(self):
         result = self.classify(["machines/math/src/add.rs"])
-        self.assertEqual(result["changed_owners"], [])
+        self.assertEqual(result["changed_owners"], ["mech-math"])
+        command = OWNERS["mech-math"]["command"]
+        self.assertIn("mech-stdlib", command)
+        self.assertNotIn("mech-math", command)
         self.assertTrue(result["standard_canaries_required"])
         self.assertTrue(result["browser_canary_required"])
         self.assertFalse(result["cross_cutting_standard_suite_required"])
@@ -106,10 +109,40 @@ class ImpactClassifierTests(unittest.TestCase):
         self.assertFalse(ordinary["full_validation_required"])
         self.assertTrue(requested["full_validation_required"])
 
+    def test_machine_changes_select_the_r6_catalog_owner_suite(self):
+        for owner in (
+            "mech-math",
+            "mech-compare",
+            "mech-logic",
+            "mech-range",
+            "mech-matrix",
+            "mech-set",
+            "mech-string",
+            "mech-stats",
+            "mech-combinatorics",
+        ):
+            package = owner.removeprefix("mech-")
+            with self.subTest(owner=owner):
+                result = self.classify([f"machines/{package}/src/lib.rs"])
+                self.assertEqual(result["changed_owners"], [owner])
+                command = OWNERS[owner]["command"]
+                self.assertIn("r6_managed_functions", command)
+                self.assertIn(
+                    "catalog_inventory_is_classified_into_r6_implementation_families",
+                    command,
+                )
+
     def test_architecture_contract_changes_require_full_validation(self):
         for path in (
             ".github/workflows/ci-full.yml",
+            ".github/workflows/ci-native-plan.yml",
             "scripts/check-operation-contract.py",
+            "scripts/check-r2-type-memory-boundary.py",
+            "scripts/tests/test_check_r2_type_memory_boundary.py",
+            "scripts/check-r3-type-system.py",
+            "scripts/tests/test_check_r3_type_system.py",
+            "scripts/check-r4-type-cutover.py",
+            "scripts/tests/test_check_r4_type_cutover.py",
             "tests/architecture/program-artifact/v1.json",
         ):
             with self.subTest(path=path):
@@ -118,9 +151,20 @@ class ImpactClassifierTests(unittest.TestCase):
                 self.assertTrue(result["full_validation_required"])
                 self.assertTrue(result["cross_cutting_standard_suite_required"])
                 self.assertTrue(result["browser_canary_required"])
+        for path in (
+            "README.md",
+            "docs/design/type-memory-boundary.md",
+            "docs/design/type-system-v1.md",
+            "docs/design/ROADMAP.mec",
+            "docs/design/v0.4-endgame.md",
+        ):
+            with self.subTest(path=path):
+                result = self.classify([path])
+                self.assertIn("architecture-contracts", result["matched_owners"])
+                self.assertTrue(result["full_validation_required"])
 
     def test_docs_only_change_can_still_request_full_validation(self):
-        result = self.classify(["README.md"], ["ci:full"])
+        result = self.classify(["docs/distributions.md"], ["ci:full"])
         self.assertTrue(result["docs_only"])
         self.assertTrue(result["full_validation_required"])
         self.assertFalse(result["static_contracts_required"])

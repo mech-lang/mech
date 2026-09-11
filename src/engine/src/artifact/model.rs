@@ -1,13 +1,18 @@
+#[cfg(all(feature = "no_std", not(feature = "std")))]
+use alloc::collections::BTreeMap;
 use core::ops::Range;
+#[cfg(not(all(feature = "no_std", not(feature = "std"))))]
+use std::collections::BTreeMap;
 
 use mech_core::{
     AccessMode, ApplicationRequirementId, BindingId, CellSlotId, ComputePlacement, ComputeRegionId,
     ConstantId, ConstantStore, DeclaredOperationContract, DeliveryMode, ExternalInteraction,
-    InputId, IntegrityConstraintId, LegacyOpaqueOperationContract, MechError, NodeId,
-    OperationContractDeclaration, OperationContractError, OperationContractId,
-    OperationContractTable, OperationContractTableBuilder, OutputId, PortDirection,
-    ProgramRevision, ResolvedInputPort, ResolvedOperationContract, ResolvedOutputPort, SchemaId,
-    SchemaTable, SemanticModelError, SnapshotValueError, validate_declaration,
+    InputId, IntegrityConstraintId, MechError, NodeId, OperationContractDeclaration,
+    OperationContractError, OperationContractId, OperationContractTable,
+    OperationContractTableBuilder, OutputId, PortDirection, ProgramRevision, ResolvedInputPort,
+    ResolvedOperationContract, ResolvedOutputPort, ResolvedRangeMode, ResolvedReductionMode,
+    ResolvedSelectionMode, SchemaId, SchemaTable, SemanticModelError, ShapeInstance,
+    SnapshotValueError, validate_declaration,
 };
 
 use super::CompilerIrError;
@@ -24,6 +29,126 @@ pub struct ComputeRegionDeclaration {
 pub struct OperationReference {
     pub module_path: Box<[String]>,
     pub operation_name: String,
+}
+
+impl OperationReference {
+    pub fn canonical_name(&self) -> String {
+        if self.module_path.is_empty() {
+            return self.operation_name.clone();
+        }
+        format!("{}/{}", self.module_path.join("/"), self.operation_name)
+    }
+
+    fn module_is(&self, expected: &[&str]) -> bool {
+        self.module_path.len() == expected.len()
+            && self
+                .module_path
+                .iter()
+                .zip(expected)
+                .all(|(actual, expected)| actual == expected)
+    }
+
+    /// Returns the semantic selection encoded by this canonical operation
+    /// identity. The result depends only on artifact data, never on shapes.
+    pub fn resolved_selection_mode(&self, selector_count: usize) -> Option<ResolvedSelectionMode> {
+        match self.operation_name.as_str() {
+            "scalar" if self.module_is(&["access"]) && selector_count == 1 => {
+                Some(ResolvedSelectionMode::LinearScalar)
+            }
+            "range" if self.module_is(&["access"]) && selector_count == 1 => {
+                Some(ResolvedSelectionMode::LinearGather)
+            }
+            "scalar" | "range" if self.module_is(&["access"]) && selector_count == 2 => {
+                Some(ResolvedSelectionMode::Rectangle)
+            }
+            "index" if self.module_is(&["access"]) && selector_count == 0 => {
+                Some(ResolvedSelectionMode::LinearScalar)
+            }
+            "rows" if self.module_is(&["access"]) => Some(ResolvedSelectionMode::Rows),
+            "columns" if self.module_is(&["access"]) => Some(ResolvedSelectionMode::Columns),
+            "rectangle" if self.module_is(&["access"]) => Some(ResolvedSelectionMode::Rectangle),
+            "assign" if self.module_is(&["core"]) => Some(ResolvedSelectionMode::Whole),
+            "range-all"
+                if self.module_is(&["math", "add-assign"])
+                    || self.module_is(&["math", "sub-assign"]) =>
+            {
+                Some(ResolvedSelectionMode::Rows)
+            }
+            _ => None,
+        }
+    }
+
+    pub fn resolved_range_mode(&self) -> Option<ResolvedRangeMode> {
+        if !self.module_is(&["range"]) {
+            return None;
+        }
+        match self.operation_name.as_str() {
+            "exclusive" => Some(ResolvedRangeMode::Exclusive),
+            "exclusive-increment" => Some(ResolvedRangeMode::ExclusiveIncrement),
+            "inclusive" => Some(ResolvedRangeMode::Inclusive),
+            "inclusive-increment" => Some(ResolvedRangeMode::InclusiveIncrement),
+            _ => None,
+        }
+    }
+
+    pub fn resolved_reduction_mode(&self) -> Option<ResolvedReductionMode> {
+        if !self.module_is(&["stats", "sum"]) {
+            return None;
+        }
+        match self.operation_name.as_str() {
+            "row" => Some(ResolvedReductionMode::Rows),
+            "column" => Some(ResolvedReductionMode::Columns),
+            _ => None,
+        }
+    }
+}
+
+#[cfg(test)]
+mod operation_mode_tests {
+    use super::*;
+
+    fn operation(module_path: &[&str], operation_name: &str) -> OperationReference {
+        OperationReference {
+            module_path: module_path
+                .iter()
+                .map(|segment| (*segment).to_owned())
+                .collect(),
+            operation_name: operation_name.to_owned(),
+        }
+    }
+
+    #[test]
+    fn semantic_modes_are_resolved_from_artifact_identity_and_selector_arity() {
+        let scalar = operation(&["access"], "scalar");
+        assert_eq!(
+            scalar.resolved_selection_mode(1),
+            Some(ResolvedSelectionMode::LinearScalar)
+        );
+        assert_eq!(
+            operation(&["access"], "range").resolved_selection_mode(1),
+            Some(ResolvedSelectionMode::LinearGather)
+        );
+        assert_eq!(
+            scalar.resolved_selection_mode(2),
+            Some(ResolvedSelectionMode::Rectangle)
+        );
+        assert_eq!(
+            operation(&["access"], "rows").resolved_selection_mode(1),
+            Some(ResolvedSelectionMode::Rows)
+        );
+        assert_eq!(
+            operation(&["access"], "columns").resolved_selection_mode(1),
+            Some(ResolvedSelectionMode::Columns)
+        );
+        assert_eq!(
+            operation(&["range"], "inclusive-increment").resolved_range_mode(),
+            Some(ResolvedRangeMode::InclusiveIncrement)
+        );
+        assert_eq!(
+            operation(&["stats", "sum"], "row").resolved_reduction_mode(),
+            Some(ResolvedReductionMode::Rows)
+        );
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -170,6 +295,9 @@ pub struct ProgramArtifact {
     outputs: Box<[OutputDeclaration]>,
     constraints: Box<[IntegrityConstraintDeclaration]>,
     compute_regions: Box<[ComputeRegionDeclaration]>,
+    // Current-process compiler planning evidence. This is intentionally not
+    // part of ProgramArtifactDraft, ProgramRevision, or bytecode-v1 encoding.
+    slot_shape_hints: BTreeMap<CellSlotId, ShapeInstance>,
 }
 
 impl ProgramArtifact {
@@ -227,11 +355,44 @@ impl ProgramArtifact {
         &self.compute_regions
     }
 
+    /// Returns the compiler-proven current shape for a parameterized slot.
+    ///
+    /// These hints are non-wire planning sidecars. Durable artifacts recover
+    /// state shapes from their initializers and receive live input shapes at
+    /// activation instead of serializing one compilation instance as schema.
+    pub fn slot_shape_hint(&self, slot: CellSlotId) -> Option<&ShapeInstance> {
+        self.slot_shape_hints.get(&slot)
+    }
+
+    #[cfg(feature = "semantic-compiler")]
+    pub(crate) fn with_slot_shape_hints(
+        mut self,
+        hints: BTreeMap<CellSlotId, ShapeInstance>,
+    ) -> Result<Self, ArtifactBuildError> {
+        for (slot, shape) in &hints {
+            let declaration = self
+                .slots
+                .get(slot.get() as usize)
+                .filter(|declaration| declaration.slot == *slot)
+                .ok_or(ArtifactBuildError::UnknownSlot { slot: *slot })?;
+            let schema =
+                self.schemas
+                    .get(declaration.schema)
+                    .ok_or(ArtifactBuildError::UnknownSchema {
+                        schema: declaration.schema,
+                    })?;
+            schema.instantiate_shape(shape.parameter_values().to_vec().into_boxed_slice())?;
+        }
+        self.slot_shape_hints = hints;
+        Ok(self)
+    }
+
     #[cfg(feature = "semantic-compiler")]
     pub(crate) fn with_compute_regions(
         self,
         compute_regions: Box<[ComputeRegionDeclaration]>,
     ) -> Result<Self, ArtifactBuildError> {
+        let shape_hints = self.slot_shape_hints;
         ProgramArtifactDraft {
             schemas: self.schemas,
             constants: self.constants,
@@ -245,7 +406,8 @@ impl ProgramArtifact {
             constraints: self.constraints,
             compute_regions,
         }
-        .finalize()
+        .finalize()?
+        .with_slot_shape_hints(shape_hints)
     }
 }
 
@@ -281,19 +443,15 @@ impl ProgramArtifactDraft {
             outputs: self.outputs,
             constraints: self.constraints,
             compute_regions: self.compute_regions,
+            slot_shape_hints: BTreeMap::new(),
         })
     }
 }
 
 impl ProgramArtifactDraft {
-    pub(super) fn attach_legacy_contracts(self) -> Result<Self, ArtifactBuildError> {
-        let declarations = vec![None; self.nodes.len()];
-        self.attach_contracts(&declarations)
-    }
-
     pub(super) fn attach_contracts(
         mut self,
-        declarations: &[Option<&OperationContractDeclaration>],
+        declarations: &[&OperationContractDeclaration],
     ) -> Result<Self, ArtifactBuildError> {
         if declarations.len() != self.nodes.len() {
             return Err(ArtifactBuildError::CompiledMetadataLengthMismatch {
@@ -328,50 +486,42 @@ impl ProgramArtifactDraft {
                     }
                 })
                 .collect::<Result<Vec<_>, _>>()?;
-            let contract = match declaration {
-                None => ResolvedOperationContract::LegacyOpaque(LegacyOpaqueOperationContract {
-                    input_schemas: inputs.into_boxed_slice(),
-                    output_schemas: outputs.into_boxed_slice(),
-                }),
-                Some(declaration) => {
-                    validate_declaration(declaration)?;
-                    let policies = declaration.inputs.resolve(inputs.len())?;
-                    if declaration.outputs.len() != outputs.len() {
-                        return Err(OperationContractError::PortCountMismatch {
-                            direction: PortDirection::Output,
-                            expected: declaration.outputs.len() as u64,
-                            actual: outputs.len() as u64,
-                        }
-                        .into());
-                    }
-                    ResolvedOperationContract::Declared(DeclaredOperationContract {
-                        inputs: inputs
-                            .into_iter()
-                            .zip(policies)
-                            .map(|(schema, policy)| ResolvedInputPort {
-                                schema,
-                                access: policy.access,
-                                delivery: policy.delivery,
-                            })
-                            .collect::<Vec<_>>()
-                            .into_boxed_slice(),
-                        outputs: outputs
-                            .into_iter()
-                            .zip(declaration.outputs.iter())
-                            .map(|(schema, policy)| ResolvedOutputPort {
-                                schema,
-                                access: policy.access,
-                                delivery: policy.delivery,
-                                construction: policy.construction.clone(),
-                                alias: policy.alias,
-                                change_detection: policy.change_detection,
-                            })
-                            .collect::<Vec<_>>()
-                            .into_boxed_slice(),
-                        interaction: declaration.interaction.clone(),
-                    })
+            validate_declaration(declaration)?;
+            let policies = declaration.inputs.resolve(inputs.len())?;
+            if declaration.outputs.len() != outputs.len() {
+                return Err(OperationContractError::PortCountMismatch {
+                    direction: PortDirection::Output,
+                    expected: declaration.outputs.len() as u64,
+                    actual: outputs.len() as u64,
                 }
-            };
+                .into());
+            }
+            let contract = ResolvedOperationContract::Declared(DeclaredOperationContract {
+                inputs: inputs
+                    .into_iter()
+                    .zip(policies)
+                    .map(|(schema, policy)| ResolvedInputPort {
+                        schema,
+                        access: policy.access,
+                        delivery: policy.delivery,
+                    })
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+                outputs: outputs
+                    .into_iter()
+                    .zip(declaration.outputs.iter())
+                    .map(|(schema, policy)| ResolvedOutputPort {
+                        schema,
+                        access: policy.access,
+                        delivery: policy.delivery,
+                        construction: policy.construction.clone(),
+                        alias: policy.alias,
+                        change_detection: policy.change_detection,
+                    })
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+                interaction: declaration.interaction.clone(),
+            });
             node_handles.push(builder.insert(contract)?);
         }
 
@@ -445,6 +595,18 @@ pub enum ArtifactBuildError {
         table: &'static str,
         expected: usize,
         actual: usize,
+    },
+    CompiledTypeBindingMismatch {
+        instruction: u32,
+        reason: String,
+    },
+    CompiledRegisterDescriptorMismatch {
+        register: u32,
+        reason: String,
+    },
+    MissingOperationContract {
+        node: NodeId,
+        operation: OperationReference,
     },
     MatrixLiteralMetadataMismatch {
         output: u32,

@@ -2,15 +2,18 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use mech_core::snapshot::SequenceView;
 use mech_core::{
-    AccessMode, CellSlotId, ComputePlacement, DeliveryMode, DimensionExpr, ExternalInteraction,
-    FloatWidth, NodeId, OutputConstruction, ResolvedOperationContract, SchemaBody,
+    AccessMode, CellSlotId, ComputePlacement, DeliveryMode, ExternalInteraction, FloatWidth,
+    NodeId, OutputConstruction, ResolvedOperationContract, SchemaBody,
 };
 use mech_engine::{
     ArtifactSource, BindingDeclaration, ComputeRegionDeclaration, ProducerReference,
     ProgramArtifact, SlotRole,
 };
 
-use crate::{ElementwiseLowering, display_operation, elementwise_lowering, turn_required_nodes};
+use crate::{
+    ElementwiseLowering, display_operation, elementwise_lowering, resolve_compute_slot_dimensions,
+    turn_required_nodes,
+};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ComputeExecutionTarget {
@@ -89,13 +92,14 @@ pub fn plan_compute_artifact(
     explicit_regions: &[ComputeRegionDeclaration],
 ) -> ComputePhysicalPlan {
     let turn_nodes = turn_required_nodes(artifact);
+    let slot_dimensions = resolve_compute_slot_dimensions(artifact);
     let mut nodes = artifact
         .nodes()
         .iter()
         .map(|node| {
             let operation = display_operation(&node.operation);
             let (target, reason) = if turn_nodes.contains(&node.node) {
-                classify_node(artifact, node)
+                classify_node(artifact, node, &slot_dimensions)
             } else {
                 (
                     ComputeExecutionTarget::Structural,
@@ -367,7 +371,11 @@ pub fn plan_compute_artifact(
                 slot: slot.slot,
                 role: slot.role,
                 residence,
-                elements: schema_elements(artifact, slot.schema),
+                elements: schema_elements(
+                    artifact,
+                    slot.schema,
+                    slot_dimensions.get(&slot.slot).map(Box::as_ref),
+                ),
             }
         })
         .collect::<Vec<_>>();
@@ -390,6 +398,7 @@ pub fn plan_compute_artifact(
 fn classify_node(
     artifact: &ProgramArtifact,
     node: &mech_engine::NodeDeclaration,
+    slot_dimensions: &BTreeMap<CellSlotId, Box<[u64]>>,
 ) -> (ComputeExecutionTarget, String) {
     if node.operation.module_path.as_ref() == ["core"]
         && node.operation.operation_name == "composite-pack"
@@ -445,7 +454,12 @@ fn classify_node(
             BindingDeclaration::Input {
                 source: ArtifactSource::Slot(slot),
                 ..
-            } => schema_elements(artifact, artifact.slots()[slot.get() as usize].schema).is_some(),
+            } => schema_elements(
+                artifact,
+                artifact.slots()[slot.get() as usize].schema,
+                slot_dimensions.get(slot).map(Box::as_ref),
+            )
+            .is_some(),
             BindingDeclaration::Input {
                 source: ArtifactSource::Constant(constant),
                 ..
@@ -460,9 +474,12 @@ fn classify_node(
                 }
                 _ => false,
             },
-            BindingDeclaration::Output { target, .. } => {
-                schema_elements(artifact, artifact.slots()[target.get() as usize].schema).is_some()
-            }
+            BindingDeclaration::Output { target, .. } => schema_elements(
+                artifact,
+                artifact.slots()[target.get() as usize].schema,
+                slot_dimensions.get(target).map(Box::as_ref),
+            )
+            .is_some(),
         });
     if !schemas_supported {
         return (
@@ -508,18 +525,20 @@ fn contract_supported(
     })
 }
 
-fn schema_elements(artifact: &ProgramArtifact, schema: mech_core::SchemaId) -> Option<u64> {
+fn schema_elements(
+    artifact: &ProgramArtifact,
+    schema: mech_core::SchemaId,
+    resolved_dimensions: Option<&[u64]>,
+) -> Option<u64> {
     match artifact.schemas().get(schema)?.body() {
         SchemaBody::FloatingPoint(FloatWidth::W32) => Some(1),
-        SchemaBody::Matrix {
-            element,
-            dimensions,
-        } if matches!(element.as_ref(), SchemaBody::FloatingPoint(FloatWidth::W32)) => dimensions
-            .iter()
-            .try_fold(1_u64, |elements, dimension| match dimension {
-                DimensionExpr::Constant(extent) => elements.checked_mul(*extent),
-                _ => None,
-            }),
+        SchemaBody::Matrix { element, .. }
+            if matches!(element.as_ref(), SchemaBody::FloatingPoint(FloatWidth::W32)) =>
+        {
+            resolved_dimensions?
+                .iter()
+                .try_fold(1_u64, |elements, extent| elements.checked_mul(*extent))
+        }
         _ => None,
     }
 }

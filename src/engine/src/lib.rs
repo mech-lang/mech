@@ -1,6 +1,10 @@
 #![cfg_attr(all(feature = "no_std", not(feature = "std")), no_std)]
 #![feature(where_clause_attrs)]
 
+#[cfg(all(feature = "no_std", not(feature = "std")))]
+#[macro_use]
+extern crate alloc;
+
 #[cfg(feature = "matrix")]
 extern crate nalgebra as na;
 
@@ -55,13 +59,12 @@ pub mod intrinsics;
 pub mod literals;
 #[cfg(feature = "semantic-compiler")]
 pub mod mechdown;
+#[cfg(any(feature = "semantic-compiler", feature = "resident-artifact"))]
+pub mod memory_planner;
+#[cfg(any(feature = "semantic-compiler", feature = "resident-artifact"))]
+pub mod memory_runtime;
 #[cfg(feature = "semantic-compiler")]
 pub mod patterns;
-#[cfg(any(
-    all(feature = "subscript_formula", feature = "semantic-compiler"),
-    feature = "resident-artifact"
-))]
-mod portable_index;
 pub mod program;
 #[cfg(all(feature = "resident-ekf", not(feature = "resident-artifact")))]
 mod resident;
@@ -157,6 +160,8 @@ pub mod __mech_native {
     pub use crate::intrinsics::table_ops::__mech_native::*;
     #[cfg(feature = "matrix_vertcat")]
     pub use crate::intrinsics::vertcat::__mech_native::*;
+    #[cfg(all(feature = "convert", feature = "semantic-compiler"))]
+    pub use crate::literals::install_runtime_kind_conversion;
 }
 
 pub use mech_core::*;

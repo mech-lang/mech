@@ -8,42 +8,47 @@ use serde::Deserialize;
 use sha2::{Digest, Sha256};
 
 #[cfg(feature = "full_runtime")]
-const EXPECTED_RUNTIME_FACTORIES: usize = 9_033;
+const EXPECTED_RUNTIME_FACTORIES: usize = 9_716;
+#[cfg(feature = "full_source")]
+const EXPECTED_SOURCE_ENABLED_RUNTIME_FACTORIES: usize = 9_717;
+#[cfg(feature = "full_source")]
+const EXPECTED_SOURCE_ENABLED_RUNTIME_SURFACE_DIGEST: &str =
+    "7350ad9aa1623cea1c45b323d9be82f1f31dc7d9da818023a5072e0326ded4ab";
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
-const EXPECTED_STANDARD_COMPILER_RUNTIME_FACTORIES: usize = 1_326;
+const EXPECTED_STANDARD_COMPILER_RUNTIME_FACTORIES: usize = 1_414;
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
 const EXPECTED_STANDARD_SOURCE_SPECIALIZERS: usize = 64;
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
 const EXPECTED_STANDARD_COMPILER_RUNTIME_SURFACE_DIGEST: &str =
-    "4cdec3ae41f29816d064635f13241b4fedea3e4d1a51d95bb2197cf65460924a";
+    "39ec1ccca399c64bc33b10ec9eb1b4542131d10ce4e775c1e5e91f683f6a2fda";
 #[cfg(all(feature = "full_source", not(feature = "full_compiler")))]
-const EXPECTED_FULL_SOURCE_RUNTIME_FACTORIES: usize = 12_778;
+const EXPECTED_FULL_SOURCE_RUNTIME_FACTORIES: usize = 15_694;
 #[cfg(all(feature = "full_source", not(feature = "full_compiler")))]
 const EXPECTED_FULL_SOURCE_RUNTIME_SURFACE_DIGEST: &str =
-    "452fe30375fb1f279d023ed514eca00b6448ba98f8eed560e7b717a0cc55c81b";
+    "eaa1ce4cbfb9b493a5df7f52729157faf7382be957c738e8611dd9cddfc978ca";
 #[cfg(feature = "full_compiler")]
-const EXPECTED_FULL_COMPILER_RUNTIME_FACTORIES: usize = 12_830;
+const EXPECTED_FULL_COMPILER_RUNTIME_FACTORIES: usize = 15_698;
 #[cfg(feature = "full_compiler")]
 const EXPECTED_FULL_COMPILER_RUNTIME_SURFACE_DIGEST: &str =
-    "5a50d1b3c1ed51b8286f46a95ef331be871b9abdfdc69c053b19aa2042bea286";
+    "b003f902cf7ff4ba285cdf9a2ebb0310b8d97fef63c27f198aa8342b073acf99";
 #[cfg(feature = "full_runtime")]
-const EXPECTED_EXTENDED_RUNTIME_FACTORIES: usize = 120_019;
+const EXPECTED_EXTENDED_RUNTIME_FACTORIES: usize = 122_083;
 #[cfg(feature = "full_source")]
-const EXPECTED_NAMED_SPECIALIZERS: usize = 119;
+const EXPECTED_NAMED_SPECIALIZERS: usize = 120;
 #[cfg(feature = "full_source")]
-const EXPECTED_INTRINSIC_SPECIALIZERS: usize = 10;
+const EXPECTED_INTRINSIC_SPECIALIZERS: usize = 13;
 #[cfg(feature = "full_source")]
 const EXPECTED_PRELUDE_EXPORTS: usize = 52;
 #[cfg(feature = "full_source")]
-const EXPECTED_MODULE_EXPORTS: usize = 50;
+const EXPECTED_MODULE_EXPORTS: usize = 51;
 #[cfg(feature = "full_source")]
-const EXPECTED_ALL_EXPORTS: usize = 120;
+const EXPECTED_ALL_EXPORTS: usize = 121;
 #[cfg(feature = "full_runtime")]
 const EXPECTED_RUNTIME_SURFACE_FILE_SHA256: &str =
-    "031accdaa26458a494f5331b0e1db1b54b138a3ff2df4ac4c03351e5bf8eb306";
+    "cccc5a0bc5b06689e202504d226fe9ce02f12061e2af89ec6f3bdd36720cc397";
 #[cfg(feature = "full_runtime")]
 const EXPECTED_EXTENDED_RUNTIME_SURFACE_DIGEST: &str =
-    "4bf16c1523cdc584d4e0479c3210903f0000679ba180601804388e94938b9c07";
+    "34db793ac637b3b1bc532978c6e8a6e0be1b8be63c33ec5f3043045f765616f5";
 
 static CATALOG_TEST_LOCK: Mutex<()> = Mutex::new(());
 
@@ -238,6 +243,15 @@ fn frozen_runtime_surface() -> BTreeMap<String, String> {
 #[cfg(feature = "full_runtime")]
 fn assert_runtime_surface(catalog: &FunctionCatalog) {
     let count = catalog.runtime_factory_count();
+    #[cfg(feature = "full_source")]
+    if count == EXPECTED_SOURCE_ENABLED_RUNTIME_FACTORIES {
+        assert_eq!(
+            canonical_runtime_surface_digest(catalog),
+            EXPECTED_SOURCE_ENABLED_RUNTIME_SURFACE_DIGEST,
+            "source-enabled runtime catalog diverged from its frozen contract",
+        );
+        return;
+    }
     if count == EXPECTED_EXTENDED_RUNTIME_FACTORIES {
         assert_eq!(
             canonical_runtime_surface_digest(catalog),
@@ -310,8 +324,8 @@ fn assert_source_surface(catalog: &FunctionCatalog) {
     let mut actual_specializers = catalog
         .all_specializers()
         .map(|entry| FrozenSpecializer {
-            name: entry.canonical_name.clone(),
-            id_hex: id_hex(entry.operation.raw()),
+            name: entry.operation.canonical_name.to_string(),
+            id_hex: id_hex(entry.operation.id.raw()),
         })
         .collect::<Vec<_>>();
     actual_specializers
@@ -322,13 +336,13 @@ fn assert_source_surface(catalog: &FunctionCatalog) {
         .all_specializers()
         .filter(|entry| {
             catalog
-                .exports_for_operation(entry.operation)
+                .exports_for_operation(entry.operation.id)
                 .iter()
                 .any(|export| export.exposure == FunctionExposure::Prelude)
         })
         .map(|entry| FrozenSpecializer {
-            name: entry.canonical_name.clone(),
-            id_hex: id_hex(entry.operation.raw()),
+            name: entry.operation.canonical_name.to_string(),
+            id_hex: id_hex(entry.operation.id.raw()),
         })
         .collect::<Vec<_>>();
     actual_prelude

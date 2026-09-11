@@ -3,10 +3,10 @@ use crate::SchemaId;
 use super::{
     AccessMode, AliasPolicy, ChangeDetectionPolicy, DeclaredOperationContract, DeliveryMode,
     EffectContract, EffectDeliveryPolicy, ExternalInteraction, IdempotencyRequirement,
-    LegacyOpaqueOperationContract, ObservationContract, ObservationReplayPolicy,
-    OperationContractError, OperationContractTable, OutputConstruction, RegionPolicy,
-    ResolvedInputPort, ResolvedOperationContract, ResolvedOutputPort, ShapeContractReference,
-    ShapeRule, TransactionalEffectProtocol, TransactionalExternalContract,
+    ObservationContract, ObservationReplayPolicy, OperationContractError, OperationContractTable,
+    OutputConstruction, RegionPolicy, ResolvedInputPort, ResolvedOperationContract,
+    ResolvedOutputPort, ShapeContractReference, ShapeRule, TransactionalEffectProtocol,
+    TransactionalExternalContract,
 };
 
 #[cfg(feature = "no_std")]
@@ -26,11 +26,6 @@ impl ResolvedOperationContract {
                 bytes.push(0);
                 encode_declared(contract, &mut bytes)?;
             }
-            Self::LegacyOpaque(contract) => {
-                bytes.push(1);
-                encode_schema_ids(&contract.input_schemas, &mut bytes)?;
-                encode_schema_ids(&contract.output_schemas, &mut bytes)?;
-            }
         }
         Ok(bytes.into_boxed_slice())
     }
@@ -44,10 +39,6 @@ impl ResolvedOperationContract {
         }
         let contract = match reader.u8()? {
             0 => Self::Declared(decode_declared(&mut reader)?),
-            1 => Self::LegacyOpaque(LegacyOpaqueOperationContract {
-                input_schemas: decode_schema_ids(&mut reader)?,
-                output_schemas: decode_schema_ids(&mut reader)?,
-            }),
             _ => {
                 return Err(OperationContractError::InvalidCanonicalEncoding {
                     reason: "unknown operation-contract tag",
@@ -157,29 +148,6 @@ fn decode_declared(
         outputs: outputs.into_boxed_slice(),
         interaction: decode_interaction(reader)?,
     })
-}
-
-fn encode_schema_ids(
-    schemas: &[SchemaId],
-    bytes: &mut Vec<u8>,
-) -> Result<(), OperationContractError> {
-    write_len(schemas.len(), bytes)?;
-    for schema in schemas {
-        bytes.extend_from_slice(&schema.get().to_le_bytes());
-    }
-    Ok(())
-}
-
-fn decode_schema_ids(reader: &mut Reader<'_>) -> Result<Box<[SchemaId]>, OperationContractError> {
-    let count = reader.bounded_len(
-        4,
-        "operation-contract schema count exceeds the remaining bytes",
-    )?;
-    let mut schemas = Vec::with_capacity(count);
-    for _ in 0..count {
-        schemas.push(SchemaId::new(reader.u32()?));
-    }
-    Ok(schemas.into_boxed_slice())
 }
 
 fn encode_construction(

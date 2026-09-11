@@ -8,41 +8,15 @@ use libm::tan;
 use libm::tanf;
 #[cfg(feature = "f64")]
 macro_rules! tan_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = tan((*$arg));
-        }
-    };
-}
-
-#[cfg(feature = "f64")]
-macro_rules! tan_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = tan(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(tan(($arg)))
     };
 }
 
 #[cfg(feature = "f32")]
 macro_rules! tanf_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = tanf((*$arg));
-        }
-    };
-}
-
-#[cfg(feature = "f32")]
-macro_rules! tanf_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = tanf(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(tanf(($arg)))
     };
 }
 

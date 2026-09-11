@@ -28,18 +28,26 @@ use num_traits::*;
     all(feature = "matrixd", feature = "row_vectord")
 ))]
 macro_rules! sum_column_op {
-    ($arg:expr, $out:expr) => {
-        {
-            for row in 0..($arg).nrows() {
-                let mut sum = T::zero();
-                for column in 0..($arg).ncols() {
-                    sum = checked_sum_add(sum, ($arg)[(row, column)])?;
-                }
-                ($out)[row] = sum;
-            }
-            Ok::<(), MechError>(())
+    ($arg:expr, $out:expr) => {{
+        if ($out).len() != ($arg).rows() {
+            return Err(function_shape_contract_violation(
+                "stats/sum/column",
+                "column reduction output cardinality disagrees with the input rows",
+            ));
         }
-    };
+        ($out).try_fill_column_major(|row| {
+            let mut sum = T::zero();
+            for column in 0..($arg).columns() {
+                sum = checked_sum_add(
+                    sum,
+                    ($arg)
+                        .get(row, column)
+                        .expect("validated column-reduction input lane"),
+                )?;
+            }
+            Ok(sum)
+        })
+    }};
 }
 
 #[cfg(all(feature = "matrix1", feature = "matrix1"))]
@@ -74,98 +82,7 @@ impls_stas!(StatsSumColumnR4, RowVector4<T>, Matrix1<T>, sum_column_op);
 impls_stas!(StatsSumColumnRD, RowDVector<T>, Matrix1<T>, sum_column_op);
 
 #[cfg(all(feature = "row_vectord", feature = "matrixd", not(feature = "matrix1")))]
-#[derive(Debug)]
-pub(crate) struct StatsSumColumnRD2<T> {
-    arg: Ref<RowDVector<T>>,
-    out: Ref<DMatrix<T>>,
-}
-
-#[cfg(all(feature = "row_vectord", feature = "matrixd", not(feature = "matrix1")))]
-impl<T> MechFunctionFactory for StatsSumColumnRD2<T>
-where
-    T: Copy
-        + Debug
-        + Clone
-        + Sync
-        + Send
-        + 'static
-        + Add<Output = T>
-        + AddAssign
-        + FunctionRuntimeType
-        + Zero
-        + One
-        + PartialEq
-        + PartialOrd,
-    T: StatsCheckedAdd,
-    #[cfg(feature = "semantic-compiler")]
-    T: CanonicalMatrixElementBacking + CompileConst + ConstElem,
-    RowDVector<T>: FunctionPortBacking,
-    DMatrix<T>: FunctionStateBacking,
-{
-    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
-        <DMatrix<T> as FunctionRuntimeType>::REPRESENTATION,
-        <RowDVector<T> as FunctionRuntimeType>::REPRESENTATION,
-    );
-
-    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, arg) = invocation.expect_unary()?;
-        let arg: Ref<RowDVector<T>> = arg.try_ref()?;
-        let out: Ref<DMatrix<T>> = out.try_ref()?;
-        Ok(Box::new(StatsSumColumnRD2 { arg, out }))
-    }
-
-}
-#[cfg(all(feature = "row_vectord", feature = "matrixd", not(feature = "matrix1")))]
-impl<T> MechFunctionImpl for StatsSumColumnRD2<T>
-where
-    T: Copy
-        + Debug
-        + Clone
-        + Sync
-        + Send
-        + 'static
-        + Add<Output = T>
-        + AddAssign
-        + Zero
-        + One
-        + PartialEq
-        + PartialOrd,
-    T: StatsCheckedAdd,
-    #[cfg(feature = "semantic-compiler")]
-    T: CanonicalMatrixElementBacking,
-    DMatrix<T>: FunctionStateBacking,
-{
-    fn solve_result(&self) -> MResult<()> {
-        let mut next = self.out.borrow().clone();
-        {
-            let arg = self.arg.borrow();
-            sum_column_op!(&*arg, &mut next)?;
-        }
-        *self.out.borrow_mut() = next;
-        Ok(())
-    }
-    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-        Some(FunctionStatePort::from_ref(&self.out))
-    }
-    fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
-        Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
-    }
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
-
-#[cfg(all(feature = "row_vectord", feature = "matrixd", not(feature = "matrix1")))]
-#[cfg(feature = "semantic-compiler")]
-impl<T> MechFunctionCompiler for StatsSumColumnRD2<T>
-where
-    T: CanonicalMatrixElementBacking + CompileConst + ConstElem + FunctionRuntimeType,
-{
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!("{}<{}>", stringify!(StatsSumColumnRD2), <T as FunctionRuntimeType>::REPRESENTATION);
-        compile_unop!(name, self.out, self.arg, ctx);
-    }
-}
+impls_stas!(StatsSumColumnRD2, RowDVector<T>, DMatrix<T>, sum_column_op);
 #[cfg(feature = "source")]
 pub struct StatsSumColumn;
 
@@ -198,9 +115,10 @@ impl CanonicalFunctionSpecializer for StatsSumColumn {
             )
             .with_compiler_loc()
         })?;
-        context.bind_runtime_factory_derived_output(
-            "StatsSumColumn",
-            Some((shape.rows, 1)),
+        context.bind_resolved_runtime(
+            mech_core::RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
+            mech_core::ExecutionTarget::DirectRuntime,
+            vec![vec![shape.rows as u64, 1_u64].into_boxed_slice()].into_boxed_slice(),
             &[input],
         )
     }
@@ -213,45 +131,60 @@ mod checked_sum_tests {
     #[cfg(feature = "u8")]
     #[test]
     fn integer_column_sum_rejects_reactive_overflow_and_retains_output() {
-        let arg = Ref::new(DMatrix::from_row_slice(1, 2, &[1u8, 2]));
-        let out = Ref::new(DVector::from_vec(vec![99u8]));
-        let function = StatsSumColumnMD::<u8> {
-            arg: arg.clone(),
-            out: out.clone(),
-        };
-        function.solve_result().unwrap();
-        assert_eq!(out.borrow().as_slice(), &[3]);
+        let arg = ValueCell::from_exact(DMatrix::from_row_slice(1, 2, &[1u8, 2])).unwrap();
+        let out = ValueCell::from_exact(DVector::from_vec(vec![99u8])).unwrap();
+        let function = crate::test_managed_factory::<StatsSumColumnMD<u8>>(
+            FunctionInvocation::unary(out.clone(), arg.clone()),
+            "test/stats-sum-column",
+        );
+        function.instance().solve_result().unwrap();
+        crate::assert_test_value(
+            &out,
+            ValueCell::from_exact(DVector::from_vec(vec![3u8])).unwrap(),
+        );
         with_reactive_journal_participant(|mut participant| {
-            participant.capture_function_state(&function)?;
-            *arg.borrow_mut() = DMatrix::from_row_slice(1, 2, &[u8::MAX, 1]);
-            let error = function.solve_result().unwrap_err();
+            participant.capture_function_instance(function.instance())?;
+            arg.replace(
+                &ValueCell::from_exact(DMatrix::from_row_slice(1, 2, &[u8::MAX, 1]))?.snapshot()?,
+            )?;
+            let error = function.instance().solve_result().unwrap_err();
             assert_eq!(error.kind_name(), "StatsArithmeticOverflow");
-            assert_eq!(out.borrow().as_slice(), &[3]);
-            *out.borrow_mut() = DVector::from_vec(vec![17, 18]);
+            crate::assert_test_value(
+                &out,
+                ValueCell::from_exact(DVector::from_vec(vec![3u8])).unwrap(),
+            );
+            out.replace(&ValueCell::from_exact(DVector::from_vec(vec![17u8, 18]))?.snapshot()?)?;
             participant.preflight_restore_before()?;
             participant.apply_restore_before();
             Ok(())
         })
         .unwrap();
-        assert_eq!(out.borrow().as_slice(), &[3]);
+        crate::assert_test_value(
+            &out,
+            ValueCell::from_exact(DVector::from_vec(vec![3u8])).unwrap(),
+        );
     }
 
     #[cfg(feature = "rational")]
     #[test]
     fn bounded_rational_column_sum_is_checked() {
-        let arg = Ref::new(DMatrix::from_row_slice(
+        let arg = ValueCell::from_exact(DMatrix::from_row_slice(
             1,
             2,
             &[R64::new(i64::MAX, 1), R64::new(1, 1)],
-        ));
-        let out = Ref::new(DVector::from_vec(vec![R64::new(7, 1)]));
-        let function = StatsSumColumnMD::<R64> {
-            arg,
-            out: out.clone(),
-        };
-        let error = function.solve_result().unwrap_err();
+        ))
+        .unwrap();
+        let out = ValueCell::from_exact(DVector::from_vec(vec![R64::new(7, 1)])).unwrap();
+        let function = crate::test_managed_factory::<StatsSumColumnMD<R64>>(
+            FunctionInvocation::unary(out.clone(), arg),
+            "test/stats-sum-column",
+        );
+        let error = function.instance().solve_result().unwrap_err();
         assert_eq!(error.kind_name(), "StatsArithmeticOverflow");
-        assert_eq!(out.borrow().as_slice(), &[R64::new(7, 1)]);
+        crate::assert_test_value(
+            &out,
+            ValueCell::from_exact(DVector::from_vec(vec![R64::new(7, 1)])).unwrap(),
+        );
     }
 }
 
@@ -269,61 +202,69 @@ mod canonical_port_tests {
 
     #[test]
     fn column_sum_preserves_exact_storage_identity_and_dynamic_state() {
-        let fixed_arg = Ref::new(Matrix2::new(1.0_f64, 2.0, 3.0, 4.0));
-        let fixed_out = Ref::new(Vector2::zeros());
+        let fixed_arg = ValueCell::from_exact(Matrix2::new(1.0_f64, 2.0, 3.0, 4.0)).unwrap();
+        let fixed_out = ValueCell::from_exact(Vector2::<f64>::zeros()).unwrap();
         let fixed_alias = fixed_out.clone();
-        StatsSumColumnM2::<f64>::new_invocation(FunctionInvocation::unary(
-            ValueCell::from_exact_matrix_ref(fixed_out.clone(), 2, 1).unwrap(),
-            ValueCell::from_exact_matrix_ref(fixed_arg, 2, 2).unwrap(),
-        ))
-        .unwrap()
+        crate::test_managed_factory::<StatsSumColumnM2<f64>>(
+            FunctionInvocation::unary(fixed_out.clone(), fixed_arg),
+            "test/stats-sum-column",
+        )
+        .instance()
         .solve_result()
         .unwrap();
-        assert!(fixed_out.same_handle(&fixed_alias));
-        assert_eq!(*fixed_out.borrow(), Vector2::new(3.0, 7.0));
+        assert!(fixed_out.same_cell(&fixed_alias));
+        crate::assert_test_value(
+            &fixed_out,
+            ValueCell::from_exact(Vector2::new(3.0, 7.0)).unwrap(),
+        );
 
-        let dynamic_arg = Ref::new(DMatrix::from_row_slice(
+        let dynamic_arg = ValueCell::from_exact(DMatrix::from_row_slice(
             2,
             3,
             &[1.0_f64, 2.0, 3.0, 4.0, 5.0, 6.0],
-        ));
-        let dynamic_out = Ref::new(DVector::zeros(2));
-        let output = ValueCell::from_exact_matrix_ref(dynamic_out.clone(), 2, 1).unwrap();
-        let function = StatsSumColumnMD::<f64>::new_invocation(FunctionInvocation::unary(
-            output.clone(),
-            ValueCell::from_exact_matrix_ref(dynamic_arg, 2, 3).unwrap(),
         ))
         .unwrap();
-        function.solve_result().unwrap();
+        let output = ValueCell::from_exact(DVector::<f64>::zeros(2)).unwrap();
+        let function = crate::test_managed_factory::<StatsSumColumnMD<f64>>(
+            FunctionInvocation::unary(output.clone(), dynamic_arg),
+            "test/stats-sum-column",
+        );
+        function.instance().solve_result().unwrap();
         assert_eq!(
-            function.reactive_output_cell_ids(),
+            function.instance().reactive_output_cell_ids(),
             vec![output.reactive_cell_id()]
         );
         with_reactive_journal_participant(|mut participant| -> MResult<()> {
-            participant.capture_function_state(function.as_ref())?;
-            *dynamic_out.borrow_mut() = DVector::from_vec(vec![-1.0, -2.0, -3.0]);
+            participant.capture_function_instance(function.instance())?;
+            output.replace(
+                &ValueCell::from_exact(DVector::from_vec(vec![-1.0, -2.0, -3.0]))?.snapshot()?,
+            )?;
             participant.preflight_restore_before()?;
             participant.apply_restore_before();
             Ok(())
         })
         .unwrap();
-        assert_eq!(*dynamic_out.borrow(), DVector::from_vec(vec![6.0, 15.0]));
+        crate::assert_test_value(
+            &output,
+            ValueCell::from_exact(DVector::from_vec(vec![6.0, 15.0])).unwrap(),
+        );
     }
 
     #[test]
     fn column_sum_rejects_wrong_exact_storage_and_binary_layout() {
-        let out = Ref::new(Vector2::<f64>::zeros());
-        let wrong_arg = Ref::new(DMatrix::<f64>::zeros(2, 2));
-        assert!(StatsSumColumnM2::<f64>::new_invocation(FunctionInvocation::unary(
-            ValueCell::from_exact_matrix_ref(out.clone(), 2, 1).unwrap(),
-            ValueCell::from_exact_matrix_ref(wrong_arg, 2, 2).unwrap(),
-        ))
-        .is_err());
+        let out = ValueCell::from_exact(Vector2::<f64>::zeros()).unwrap();
+        let wrong_arg = ValueCell::from_exact(DMatrix::<f64>::zeros(2, 2)).unwrap();
+        assert!(
+            StatsSumColumnM2::<f64>::new_invocation(FunctionInvocation::unary(
+                out.clone(),
+                wrong_arg,
+            ))
+            .is_err()
+        );
 
-        let fixed_arg = Ref::new(Matrix2::<f64>::zeros());
-        let input = ValueCell::from_exact_matrix_ref(fixed_arg, 2, 2).unwrap();
+        let input = ValueCell::from_exact(Matrix2::<f64>::zeros()).unwrap();
         let error = StatsSumColumnM2::<f64>::new_invocation(FunctionInvocation::binary(
-            ValueCell::from_exact_matrix_ref(out, 2, 1).unwrap(),
+            out,
             input.clone(),
             input,
         ))

@@ -49,9 +49,7 @@ pub fn invariant_define(
         Some("var/define"),
         &invocation,
     )?;
-    interpreter
-        .plan()
-        .register_instance(specialized.into_instance())?;
+    interpreter.plan().register_specialized(specialized)?;
 
     let (lhs, operator, rhs) = integrity_constraint_operands(definition, interpreter);
     interpreter.state.borrow_mut().integrity_constraints.insert(

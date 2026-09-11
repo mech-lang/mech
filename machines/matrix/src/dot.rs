@@ -3,47 +3,64 @@ use crate::*;
 // MatMul ---------------------------------------------------------------------
 
 macro_rules! checked_mul_op {
-    ($lhs:expr, $rhs:expr, $out:expr) => {
-        unsafe {
-            let next = checked_matrix_mul(*$lhs, *$rhs, "scalar product")?;
-            *$out = next;
+    ($lhs:expr, $rhs:expr, $out:expr) => {{
+        if $lhs.len() != 1 || $rhs.len() != 1 || $out.len() != 1 {
+            return Err(function_shape_contract_violation(
+                "matrix/dot",
+                "scalar dot product requires scalar ports",
+            ));
         }
-    };
+        let next = checked_matrix_mul(
+            $lhs.get(0, 0).expect("validated scalar lhs"),
+            $rhs.get(0, 0).expect("validated scalar rhs"),
+            "scalar product",
+        )?;
+        $out.try_fill_column_major(|_| Ok(next))
+    }};
 }
 
 #[cfg(feature = "matrix")]
 macro_rules! checked_dot_op {
-    ($lhs:expr, $rhs:expr, $out:expr) => {
-        unsafe {
-            let lhs = &*$lhs;
-            let rhs = &*$rhs;
-            if lhs.nrows() != rhs.nrows() || lhs.ncols() != rhs.ncols() {
-                return Err(MechError::new(
-                    DimensionMismatch {
-                        dims: vec![lhs.nrows(), lhs.ncols(), rhs.nrows(), rhs.ncols()],
-                    },
-                    None,
-                )
-                .with_compiler_loc());
-            }
-            let mut next = Zero::zero();
-            for (lhs, rhs) in lhs.iter().zip(rhs.iter()) {
-                let product = checked_matrix_mul(*lhs, *rhs, "dot-product multiplication")?;
+    ($lhs:expr, $rhs:expr, $out:expr) => {{
+        if $lhs.rows() != $rhs.rows() || $lhs.columns() != $rhs.columns() || $out.len() != 1 {
+            return Err(MechError::new(
+                DimensionMismatch {
+                    dims: vec![$lhs.rows(), $lhs.columns(), $rhs.rows(), $rhs.columns()],
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        let mut next = Zero::zero();
+        for column in 0..$lhs.columns() {
+            for row in 0..$lhs.rows() {
+                let product = checked_matrix_mul(
+                    $lhs.get(row, column).expect("validated dot lhs"),
+                    $rhs.get(row, column).expect("validated dot rhs"),
+                    "dot-product multiplication",
+                )?;
                 next = checked_matrix_add(next, product, "dot-product accumulation")?;
             }
-            *$out = next;
         }
-    };
+        $out.try_fill_column_major(|_| Ok(next))
+    }};
 }
 
 #[cfg(feature = "matrix")]
 macro_rules! impl_dot {
     ($name:ident, $type1:ty, $type2:ty, $out_type:ty) => {
-        impl_checked_matrix_binop!($name, $type1, $type2, $out_type, checked_dot_op);
+        impl_checked_matrix_binop!(
+            $name,
+            $type1,
+            $type2,
+            $out_type,
+            checked_dot_op,
+            product_contract
+        );
     };
 }
 
-impl_checked_matrix_binop!(DotScalar, T, T, T, checked_mul_op);
+impl_checked_matrix_binop!(DotScalar, T, T, T, checked_mul_op, product_contract);
 #[cfg(all(feature = "row_vector2", feature = "row_vector2"))]
 impl_dot!(DotR2R2, RowVector2<T>, RowVector2<T>, T);
 #[cfg(all(feature = "vector2", feature = "vector2"))]
@@ -97,7 +114,12 @@ impl CanonicalFunctionSpecializer for MatrixDot {
         }
         let lhs = invocation.input(0).expect("validated dot lhs");
         let rhs = invocation.input(1).expect("validated dot rhs");
-        context.bind_runtime_factory_derived_output("Dot", None, &[lhs, rhs])
+        context.bind_resolved_runtime(
+            mech_core::RuntimeBindingSelector::Operation(context.resolved_call()?.operation.id),
+            mech_core::ExecutionTarget::DirectRuntime,
+            vec![Vec::<u64>::new().into_boxed_slice()].into_boxed_slice(),
+            &[lhs, rhs],
+        )
     }
 }
 
@@ -107,31 +129,30 @@ mod checked_dot_tests {
 
     #[test]
     fn integer_dot_rejects_overflow_and_retains_output() {
-        let lhs = Ref::new(Vector2::new(200_u8, 200));
-        let rhs = Ref::new(Vector2::new(1_u8, 0));
-        let out = Ref::new(17_u8);
-        let function = DotV2V2 {
-            lhs: lhs.clone(),
-            rhs: rhs.clone(),
-            out: out.clone(),
-        };
+        let lhs = ValueCell::from_exact(Vector2::new(200_u8, 200)).unwrap();
+        let rhs = ValueCell::from_exact(Vector2::new(1_u8, 0)).unwrap();
+        let out = ValueCell::from_exact(17_u8).unwrap();
+        let function = crate::test_managed_factory::<DotV2V2<u8>>(
+            FunctionInvocation::binary(out.clone(), lhs, rhs.clone()),
+            "test/matrix-dot-u8",
+        );
 
-        function.solve_result().unwrap();
-        assert_eq!(*out.borrow(), 200);
+        function.instance().solve_result().unwrap();
+        crate::assert_test_value(&out, ValueCell::from_exact(200_u8).unwrap());
         with_reactive_journal_participant(|mut participant| {
-            participant.capture_function_state(&function)?;
-            *rhs.borrow_mut() = Vector2::new(2, 2);
+            participant.capture_function_instance(function.instance())?;
+            rhs.replace(&ValueCell::from_exact(Vector2::new(2_u8, 2))?.snapshot()?)?;
 
-            let error = function.solve_result().unwrap_err();
+            let error = function.instance().solve_result().unwrap_err();
             assert_eq!(error.kind_name(), "MatrixArithmeticOverflow");
-            assert_eq!(*out.borrow(), 200);
-            *out.borrow_mut() = 19;
+            crate::assert_test_value(&out, ValueCell::from_exact(200_u8).unwrap());
+            out.replace(&ValueCell::from_exact(19_u8)?.snapshot()?)?;
             participant.preflight_restore_before()?;
             participant.apply_restore_before();
             Ok(())
         })
         .unwrap();
-        assert_eq!(*out.borrow(), 200);
+        crate::assert_test_value(&out, ValueCell::from_exact(200_u8).unwrap());
     }
 }
 
@@ -157,50 +178,58 @@ mod canonical_port_tests {
     fn scalar_fixed_and_dynamic_dot_products_use_exact_ports() {
         let scalar_out = ValueCell::from_exact(0.0_f64).unwrap();
         let scalar_alias = scalar_out.clone();
-        let scalar = DotScalar::<f64>::new_invocation(FunctionInvocation::binary(
-            scalar_out.clone(),
-            ValueCell::from_exact(2.5_f64).unwrap(),
-            ValueCell::from_exact(4.0_f64).unwrap(),
-        ))
-        .unwrap();
-        scalar.solve_result().unwrap();
+        let scalar = crate::test_managed_factory::<DotScalar<f64>>(
+            FunctionInvocation::binary(
+                scalar_out.clone(),
+                ValueCell::from_exact(2.5_f64).unwrap(),
+                ValueCell::from_exact(4.0_f64).unwrap(),
+            ),
+            "test/matrix-dot-scalar",
+        );
+        scalar.instance().solve_result().unwrap();
         assert_eq!(f64_value(&scalar_out), 10.0);
         assert!(scalar_out.same_cell(&scalar_alias));
 
         let fixed_out = ValueCell::from_exact(0.0_f64).unwrap();
-        DotV2V2::<f64>::new_invocation(FunctionInvocation::binary(
-            fixed_out.clone(),
-            ValueCell::from_exact_matrix_ref(Ref::new(Vector2::new(1.0, 2.0)), 2, 1).unwrap(),
-            ValueCell::from_exact_matrix_ref(Ref::new(Vector2::new(3.0, 4.0)), 2, 1).unwrap(),
-        ))
-        .unwrap()
+        crate::test_managed_factory::<DotV2V2<f64>>(
+            FunctionInvocation::binary(
+                fixed_out.clone(),
+                ValueCell::from_exact(Vector2::new(1.0, 2.0)).unwrap(),
+                ValueCell::from_exact(Vector2::new(3.0, 4.0)).unwrap(),
+            ),
+            "test/matrix-dot-fixed",
+        )
+        .instance()
         .solve_result()
         .unwrap();
         assert_eq!(f64_value(&fixed_out), 11.0);
 
         let dynamic_out = ValueCell::from_exact(0.0_f64).unwrap();
-        DotMDMD::<f64>::new_invocation(FunctionInvocation::binary(
-            dynamic_out.clone(),
-            ValueCell::from_exact_matrix_ref(
-                Ref::new(DMatrix::from_row_slice(2, 2, &[1.0, 2.0, 3.0, 4.0])),
-                2,
-                2,
-            )
-            .unwrap(),
-            ValueCell::from_exact_matrix_ref(
-                Ref::new(DMatrix::from_row_slice(2, 2, &[2.0, 0.0, 1.0, 2.0])),
-                2,
-                2,
-            )
-            .unwrap(),
-        ))
-        .unwrap()
+        crate::test_managed_factory::<DotMDMD<f64>>(
+            FunctionInvocation::binary(
+                dynamic_out.clone(),
+                ValueCell::from_exact(DMatrix::from_row_slice(
+                    2,
+                    2,
+                    &[1.0, 2.0, 3.0, 4.0],
+                ))
+                .unwrap(),
+                ValueCell::from_exact(DMatrix::from_row_slice(
+                    2,
+                    2,
+                    &[2.0, 0.0, 1.0, 2.0],
+                ))
+                .unwrap(),
+            ),
+            "test/matrix-dot-dynamic",
+        )
+        .instance()
         .solve_result()
         .unwrap();
         assert_eq!(f64_value(&dynamic_out), 13.0);
 
         with_reactive_journal_participant(|mut participant| -> MResult<()> {
-            participant.capture_function_state(scalar.as_ref())?;
+            participant.capture_function_instance(scalar.instance())?;
             scalar_out.replace(&ValueCell::from_exact(-1.0_f64)?.snapshot()?)?;
             participant.preflight_restore_before()?;
             participant.apply_restore_before();
@@ -212,18 +241,21 @@ mod canonical_port_tests {
 
     #[test]
     fn dot_rejects_wrong_exact_type_and_layout() {
-        let rhs = ValueCell::from_exact_matrix_ref(Ref::new(Vector2::new(1.0, 2.0)), 2, 1)
-            .unwrap();
-        assert!(DotV2V2::<f64>::new_invocation(FunctionInvocation::binary(
-            ValueCell::from_exact(0.0_f64).unwrap(),
-            ValueCell::from_exact(1.0_f64).unwrap(),
-            rhs.clone(),
-        ))
-        .is_err());
-        assert!(DotV2V2::<f64>::new_invocation(FunctionInvocation::unary(
-            ValueCell::from_exact(0.0_f64).unwrap(),
-            rhs,
-        ))
-        .is_err());
+        let rhs = ValueCell::from_exact(Vector2::new(1.0, 2.0)).unwrap();
+        assert!(
+            DotV2V2::<f64>::new_invocation(FunctionInvocation::binary(
+                ValueCell::from_exact(0.0_f64).unwrap(),
+                ValueCell::from_exact(1.0_f64).unwrap(),
+                rhs.clone(),
+            ))
+            .is_err()
+        );
+        assert!(
+            DotV2V2::<f64>::new_invocation(FunctionInvocation::unary(
+                ValueCell::from_exact(0.0_f64).unwrap(),
+                rhs,
+            ))
+            .is_err()
+        );
     }
 }

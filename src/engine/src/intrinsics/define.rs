@@ -3,17 +3,26 @@ use std::marker::PhantomData;
 
 #[cfg(all(
     feature = "variable_define",
-    any(
-        feature = "semantic-compiler",
-        feature = "table",
-        feature = "set",
-        feature = "tuple",
-        feature = "record",
-        feature = "map",
-        feature = "atom",
-        feature = "enum"
-    )
+    any(feature = "semantic-compiler", feature = "source")
 ))]
+pub(crate) static PURE_VARIABLE_DEFINITION_CONTRACT: std::sync::LazyLock<
+    OperationContractDeclaration,
+> = std::sync::LazyLock::new(|| OperationContractDeclaration {
+    inputs: InputPortLayout::Fixed(Box::new([])),
+    outputs: vec![OutputPortPolicy {
+        access: AccessMode::Write,
+        delivery: DeliveryMode::Signal,
+        construction: OutputConstruction::FullWrite {
+            shape: ShapeRule::Declared,
+        },
+        alias: AliasPolicy::NoAlias,
+        change_detection: ChangeDetectionPolicy::KernelReported,
+    }]
+    .into_boxed_slice(),
+    interaction: ExternalInteraction::Pure,
+});
+
+#[cfg(feature = "variable_define")]
 pub(crate) struct CanonicalVariableDefinition {
     pub(crate) value: ValueCell,
     #[cfg(feature = "semantic-compiler")]
@@ -26,22 +35,18 @@ pub(crate) struct CanonicalVariableDefinition {
     pub(crate) root_visible: bool,
 }
 
-#[cfg(all(
-    feature = "variable_define",
-    any(
-        feature = "semantic-compiler",
-        feature = "table",
-        feature = "set",
-        feature = "tuple",
-        feature = "record",
-        feature = "map",
-        feature = "atom",
-        feature = "enum"
-    )
-))]
+#[cfg(feature = "variable_define")]
 impl MechFunctionImpl for CanonicalVariableDefinition {
-    fn solve_result(&self) -> MResult<()> {
-        Ok(())
+    fn payload_output_plan_policy(&self) -> mech_core::PayloadOutputPlanPolicy {
+        mech_core::PayloadOutputPlanPolicy::PublishedInvariant
+    }
+
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        Ok(mech_core::ReactiveSolveStatus::Unchanged)
     }
 
     fn reactive_node_kind(&self) -> ReactiveNodeKind {
@@ -59,6 +64,52 @@ impl MechFunctionImpl for CanonicalVariableDefinition {
     fn to_string(&self) -> String {
         "VariableDefineCanonical".to_owned()
     }
+}
+
+#[cfg(feature = "variable_define")]
+fn managed_legacy_variable_definition(
+    invocation: FunctionInvocation,
+) -> MResult<Box<dyn MechFunction>> {
+    let (value, name, mutable) = invocation.expect_binary()?;
+    let value = value.value().cell().clone();
+    #[cfg(feature = "semantic-compiler")]
+    let (initial, name, mutable) = {
+        let initial = value.snapshot()?;
+        let name = name.value().snapshot()?;
+        let mutable = mutable.value().snapshot()?;
+        let ValueData::String(name) = name.data() else {
+            return Err(MechError::new(
+                GenericError {
+                    msg: "variable definition name must be a string".to_owned(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        };
+        let ValueData::Bool(mutable) = mutable.data() else {
+            return Err(MechError::new(
+                GenericError {
+                    msg: "variable definition mutability must be boolean".to_owned(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        };
+        (initial, name.to_string(), *mutable)
+    };
+    #[cfg(not(feature = "semantic-compiler"))]
+    let _ = (name, mutable);
+    Ok(Box::new(CanonicalVariableDefinition {
+        value,
+        #[cfg(feature = "semantic-compiler")]
+        initial,
+        #[cfg(feature = "semantic-compiler")]
+        name,
+        #[cfg(feature = "semantic-compiler")]
+        mutable,
+        #[cfg(feature = "semantic-compiler")]
+        root_visible: true,
+    }))
 }
 
 #[cfg(all(feature = "variable_define", feature = "semantic-compiler"))]
@@ -98,8 +149,11 @@ impl MechFunctionCompiler for CanonicalVariableDefinition {
     }
 }
 
-#[cfg(all(feature = "variable_define", feature = "semantic-compiler"))]
-fn canonical_variable_definition_runtime_name(
+#[cfg(all(
+    feature = "variable_define",
+    any(feature = "semantic-compiler", feature = "source")
+))]
+pub(crate) fn canonical_variable_definition_runtime_name(
     representation: FunctionValueRepresentation,
 ) -> MResult<String> {
     use crate::{
@@ -213,22 +267,6 @@ fn canonical_variable_definition_runtime_name(
         })
 }
 
-#[cfg(feature = "semantic-compiler")]
-fn define_compiler_symbol(
-    ctx: &mut dyn BytecodeCompilerContext,
-    pointer: usize,
-    register: Register,
-    name: &str,
-    mutable: bool,
-    root_visible: bool,
-) -> MResult<()> {
-    if root_visible {
-        ctx.define_symbol(pointer, register, name, mutable)
-    } else {
-        ctx.define_local_symbol(pointer, register, name, mutable)
-    }
-}
-
 /// Bytecode-visible marker that keeps integrity-constraint support in the
 /// exact native dependency closure. Constraint identity and its live result
 /// cell remain encoded by the immutable `!` symbol bound to the input
@@ -244,6 +282,10 @@ pub struct BytecodeIntegrityConstraintMarker {
 
 #[cfg(feature = "invariant_define")]
 impl MechFunctionFactory for BytecodeIntegrityConstraintMarker {
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch
+    }
+
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::variadic(
         FunctionValueRepresentation::Bool,
         FunctionValueRepresentation::AnyValue,
@@ -271,8 +313,13 @@ impl MechFunctionFactory for BytecodeIntegrityConstraintMarker {
 
 #[cfg(feature = "invariant_define")]
 impl MechFunctionImpl for BytecodeIntegrityConstraintMarker {
-    fn solve_result(&self) -> MResult<()> {
-        Ok(())
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        (|| -> MResult<()> { Ok(()) })()?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
 
     fn reactive_dependency_scopes(
@@ -307,12 +354,7 @@ impl MechFunctionCompiler for BytecodeIntegrityConstraintMarker {
 
 #[derive(Debug)]
 pub struct VariableDefineMatrix<T, MatA> {
-    pub name: Ref<String>,
-    pub mutable: Ref<bool>,
-    pub var: Ref<MatA>,
-    pub initial: MatA,
-    pub root_visible: bool,
-    pub _marker: PhantomData<T>,
+    _marker: PhantomData<fn() -> (T, MatA)>,
 }
 impl<T, MatA> MechFunctionFactory for VariableDefineMatrix<T, MatA>
 where
@@ -332,6 +374,10 @@ where
     #[cfg(feature = "semantic-compiler")]
     MatA: CompileConst,
 {
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
+    }
+
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
         MatA::REPRESENTATION,
         FunctionValueRepresentation::String,
@@ -339,83 +385,7 @@ where
     );
 
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (var, name, mutable) = invocation.expect_binary()?;
-        let var: Ref<MatA> = var.try_ref()?;
-        let name: Ref<String> = name.try_ref()?;
-        let mutable: Ref<bool> = mutable.try_ref()?;
-        let initial = var.borrow().clone();
-        Ok(Box::new(Self {
-            name,
-            mutable,
-            var,
-            initial,
-            root_visible: true,
-            _marker: PhantomData::default(),
-        }))
-    }
-}
-impl<T, MatA> MechFunctionImpl for VariableDefineMatrix<T, MatA>
-where
-    T: Debug
-        + Clone
-        + Sync
-        + Send
-        + 'static
-        + ConstElem
-        + FunctionRuntimeType
-        + CanonicalMatrixElementBacking,
-    MatA: Debug,
-{
-    fn solve_result(&self) -> MResult<()> {
-        Ok(())
-    }
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
-#[cfg(feature = "semantic-compiler")]
-impl<T, MatA> MechFunctionCompiler for VariableDefineMatrix<T, MatA>
-where
-    T: CompileConst + ConstElem + FunctionRuntimeType + CanonicalMatrixElementBacking,
-    MatA: CompileConst + ConstElem,
-{
-    fn reserve_bytecode_registers(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<()> {
-        if *self.mutable.borrow() {
-            compile_register_initial!(self.var, self.initial, ctx);
-        }
-        Ok(())
-    }
-
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let variable_register = compile_register_initial!(self.var, self.initial, ctx);
-        let variable_name = self.name.borrow().clone();
-        let variable_mutable = *self.mutable.borrow();
-        if variable_mutable {
-            let initializer = self.initial.compile_const(ctx)?;
-            ctx.record_state_initializer(variable_register, initializer)?;
-        }
-        define_compiler_symbol(
-            ctx,
-            self.var.addr(),
-            variable_register,
-            &variable_name,
-            variable_mutable,
-            self.root_visible,
-        )?;
-        let name = format!(
-            "VariableDefineMatrix<{}{}>",
-            <T as FunctionRuntimeType>::REPRESENTATION,
-            function_matrix_storage_name::<MatA>()
-        );
-        let name_register = compile_register_brrw!(self.name, ctx);
-        let mutable_register = compile_register_brrw!(self.mutable, ctx);
-        ctx.emit_declaration_binary(
-            hash_str(&name),
-            variable_register,
-            name_register,
-            mutable_register,
-        );
-        Ok(variable_register)
+        managed_legacy_variable_definition(invocation)
     }
 }
 
@@ -424,20 +394,12 @@ macro_rules! impl_variable_define_fxn {
     ($kind:tt) => {
         paste! {
           #[derive(Debug, Clone)]
-          pub struct [<VariableDefine $kind:camel>] {
-            #[cfg(feature = "semantic-compiler")]
-            name: Ref<String>,
-            #[cfg(feature = "semantic-compiler")]
-            mutable: Ref<bool>,
-            output: FunctionValueOutput,
-            #[cfg(feature = "semantic-compiler")]
-            var: Ref<$kind>,
-            #[cfg(feature = "semantic-compiler")]
-            initial: $kind,
-            #[cfg(feature = "semantic-compiler")]
-            root_visible: bool,
-          }
+          pub struct [<VariableDefine $kind:camel>];
           impl MechFunctionFactory for [<VariableDefine $kind:camel>] {
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::CanonicalFinalize
+            }
+
           const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
               <$kind as FunctionRuntimeType>::REPRESENTATION,
               FunctionValueRepresentation::String,
@@ -445,86 +407,12 @@ macro_rules! impl_variable_define_fxn {
             );
 
           fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-              let (out, name, mutable) = invocation.expect_binary()?;
-              let output = out.value();
-              let var: Ref<$kind> = out.try_ref()?;
-              let name: Ref<String> = name.try_ref()?;
-              let mutable: Ref<bool> = mutable.try_ref()?;
-              #[cfg(feature = "semantic-compiler")]
-              let initial = var.borrow().clone();
-              #[cfg(not(feature = "semantic-compiler"))]
-              {
-                drop(var);
-                drop(name);
-                drop(mutable);
-              }
-              Ok(Box::new(Self {
-                output,
-                #[cfg(feature = "semantic-compiler")]
-                name,
-                #[cfg(feature = "semantic-compiler")]
-                mutable,
-                #[cfg(feature = "semantic-compiler")]
-                var,
-                #[cfg(feature = "semantic-compiler")]
-                initial,
-                #[cfg(feature = "semantic-compiler")]
-                root_visible: true,
-              }))
+              managed_legacy_variable_definition(invocation)
             }
 
           }
-          impl MechFunctionImpl for [<VariableDefine $kind:camel>] {
-            fn solve_result(&self) -> MResult<()> {
-                Ok(())
-            }
-            fn to_string(&self) -> String { format!("{:#?}", self) }
 
-            fn reactive_output_value_cells(&self) -> Vec<ValueCell> {
-                vec![self.output.cell().clone()]
-            }
 
-          }
-          #[cfg(feature = "semantic-compiler")]
-          impl MechFunctionCompiler for [<VariableDefine $kind:camel>] {
-          fn reserve_bytecode_registers(
-              &self,
-              ctx: &mut dyn BytecodeCompilerContext,
-          ) -> MResult<()> {
-              if *self.mutable.borrow() {
-                compile_register_initial!(self.var, self.initial, ctx);
-              }
-              Ok(())
-            }
-
-          fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-              let variable_register = compile_register_initial!(self.var, self.initial, ctx);
-              let variable_name = self.name.borrow().clone();
-              let variable_mutable = *self.mutable.borrow();
-              if variable_mutable {
-                let initializer = self.initial.compile_const(ctx)?;
-                ctx.record_state_initializer(variable_register, initializer)?;
-              }
-              define_compiler_symbol(
-                ctx,
-                self.var.addr(),
-                variable_register,
-                &variable_name,
-                variable_mutable,
-                self.root_visible,
-              )?;
-              let name = format!(stringify!([<VariableDefine $kind:camel>]));
-              let name_register = compile_register_brrw!(self.name, ctx);
-              let mutable_register = compile_register_brrw!(self.mutable, ctx);
-              ctx.emit_declaration_binary(
-                hash_str(&name),
-                variable_register,
-                name_register,
-                mutable_register,
-              );
-              Ok(variable_register)
-            }
-          }
         }
     };
 }
@@ -544,6 +432,10 @@ macro_rules! impl_canonical_variable_define_fxn {
         pub struct $factory;
 
         impl MechFunctionFactory for $factory {
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
+
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
                 $representation,
                 FunctionValueRepresentation::String,
@@ -607,6 +499,7 @@ mech_core::declare_native_runtime_factory! {
     name: "VariableDefineF64",
     factory_type: VariableDefineF64,
     contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::AllowInputAlias),
+    compiler_family: mech_core::RuntimeFamilyId::from_name("VariableDefineF64"),
 
     package: "mech-engine",
     crate_name: "mech_engine",
@@ -670,6 +563,7 @@ macro_rules! declare_variable_define_scalar_native {
                 name: stringify!([<VariableDefine $kind:camel>]),
                 factory_type: [<VariableDefine $kind:camel>],
                 contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::AllowInputAlias),
+                compiler_family: mech_core::RuntimeFamilyId::from_name(stringify!([<VariableDefine $kind:camel>])),
                 package: "mech-engine",
                 crate_name: "mech_engine",
                 installer_path: concat!(
@@ -715,6 +609,7 @@ macro_rules! declare_canonical_variable_define_native {
                 name: $runtime_name,
                 factory_type: $factory,
                 contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::AllowInputAlias),
+                compiler_family: mech_core::RuntimeFamilyId::from_name($runtime_name),
                 package: "mech-engine",
                 crate_name: "mech_engine",
                 installer_path: concat!(
@@ -871,6 +766,7 @@ macro_rules! declare_variable_define_matrix_native {
                 name: concat!("VariableDefineMatrix<", $kind_name, stringify!($shape), ">"),
                 factory_type: VariableDefineMatrix<$kind, $shape<$kind>>,
                 contract: RuntimeFunctionContract::same_shape(RuntimeOutputAliasPolicy::AllowInputAlias),
+                compiler_family: mech_core::RuntimeFamilyId::from_name(concat!("VariableDefineMatrix<", $kind_name, stringify!($shape), ">")),
                 package: "mech-engine",
                 crate_name: "mech_engine",
                 installer_path: concat!(
@@ -975,20 +871,14 @@ pub mod __mech_native_matrix {
     export_variable_define_matrix_for_type!("string", String);
 }
 
-#[derive(Debug, Clone)]
-pub struct VariableDefineEmpty {
-    #[cfg(feature = "semantic-compiler")]
-    name: Ref<String>,
-    #[cfg(feature = "semantic-compiler")]
-    mutable: Ref<bool>,
-    var: FunctionValueOutput,
-    #[cfg(feature = "semantic-compiler")]
-    initial: Value,
-    #[cfg(feature = "semantic-compiler")]
-    root_visible: bool,
-}
+#[derive(Debug, Clone, Copy)]
+pub struct VariableDefineEmpty;
 
 impl MechFunctionFactory for VariableDefineEmpty {
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
+    }
+
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
         FunctionValueRepresentation::MutableValueCell,
         FunctionValueRepresentation::String,
@@ -996,28 +886,7 @@ impl MechFunctionFactory for VariableDefineEmpty {
     );
 
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (var, name, mutable) = invocation.expect_binary()?;
-        let var = var.value();
-        let name: Ref<String> = name.try_ref()?;
-        let mutable: Ref<bool> = mutable.try_ref()?;
-        #[cfg(feature = "semantic-compiler")]
-        let initial = var.snapshot()?;
-        #[cfg(not(feature = "semantic-compiler"))]
-        {
-            drop(name);
-            drop(mutable);
-        }
-        Ok(Box::new(Self {
-            #[cfg(feature = "semantic-compiler")]
-            name,
-            #[cfg(feature = "semantic-compiler")]
-            mutable,
-            var,
-            #[cfg(feature = "semantic-compiler")]
-            initial,
-            #[cfg(feature = "semantic-compiler")]
-            root_visible: true,
-        }))
+        managed_legacy_variable_definition(invocation)
     }
 }
 
@@ -1028,54 +897,11 @@ mech_core::declare_native_runtime_factory! {
     name: "VariableDefineEmpty",
     factory_type: VariableDefineEmpty,
     contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::AllowInputAlias),
+    compiler_family: mech_core::RuntimeFamilyId::from_name("VariableDefineEmpty"),
     package: "mech-engine",
     crate_name: "mech_engine",
     installer_path: "mech_engine::__mech_native::install_variable_define_empty",
     extra_cargo_features: ["variable_define"],
-}
-impl MechFunctionImpl for VariableDefineEmpty {
-    fn solve_result(&self) -> MResult<()> {
-        Ok(())
-    }
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-    fn reactive_output_value_cells(&self) -> Vec<ValueCell> {
-        vec![self.var.cell().clone()]
-    }
-}
-#[cfg(feature = "semantic-compiler")]
-impl MechFunctionCompiler for VariableDefineEmpty {
-    fn reserve_bytecode_registers(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<()> {
-        if *self.mutable.borrow() {
-            compile_value_cell_initializer_register(self.var.cell(), &self.initial, ctx)?;
-        }
-        Ok(())
-    }
-
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let variable_register = self.var.compile_register(ctx)?;
-        let variable_name = self.name.borrow().clone();
-        let variable_mutable = *self.mutable.borrow();
-        define_compiler_symbol(
-            ctx,
-            self.var.cell().reactive_cell_id().get() as usize,
-            variable_register,
-            &variable_name,
-            variable_mutable,
-            self.root_visible,
-        )?;
-        let name = "VariableDefineEmpty".to_string();
-        let name_register = compile_register_brrw!(self.name, ctx);
-        let mutable_register = compile_register_brrw!(self.mutable, ctx);
-        ctx.emit_declaration_binary(
-            hash_str(&name),
-            variable_register,
-            name_register,
-            mutable_register,
-        );
-        Ok(variable_register)
-    }
 }
 
 #[cfg(any(
@@ -1224,7 +1050,7 @@ impl CanonicalFunctionSpecializer for VarDefine {
     fn specialize_invocation(
         &self,
         invocation: &SpecializationInvocation,
-        _: &mut SpecializationContext<'_>,
+        context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
         if invocation.len() != 4 {
             return Err(MechError::new(
@@ -1291,9 +1117,13 @@ impl CanonicalFunctionSpecializer for VarDefine {
             mutable: *mutable,
             root_visible: *root_visible,
         };
-        Ok(SpecializedFunction::new(FunctionInstance::new(
-            Box::new(implementation),
-            FunctionInvocation::nullary(value),
-        )))
+        context.resolve_syntax_operation_contract(&PURE_VARIABLE_DEFINITION_CONTRACT)?;
+        let runtime_name = canonical_variable_definition_runtime_name(value.representation())?;
+        context.certify_instance(
+            (Box::new(implementation), FunctionInvocation::nullary(value)),
+            mech_core::RuntimeFunctionId::from_name(&runtime_name),
+            mech_core::ExecutionTarget::DirectRuntime,
+            mech_core::ImplementationMemoryClass::CanonicalFinalize,
+        )
     }
 }

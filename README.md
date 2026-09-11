@@ -95,15 +95,16 @@ Feel free to stop by and introduce yourself -- we're happy to meet new users and
 ## Project Roadmap
 
 The current published package is `v0.3.6`; the active development target is
-`v0.4.0`. The canonical value-system cutover is complete, and the remaining
-v0.4 work is organized into the following endgame phases:
+`v0.4.0`. The canonical value-system cutover, R1 contract closure, and R2 type-memory
+boundary are complete. R3 Type System v1 and the R4 authority cutover are also
+complete. Semantic inference, built-in predicates, conversion planning, overload
+resolution, semantic descriptors, and deterministic physical memory plans are
+authoritative. The active v0.4 phase is R6:
 
-- R1 Canonical contract and compatibility closure
-- R2 Type–memory boundary
-- R3 Type inference, classes, and conversions
-- R4 Type-system cutover
-- R5 Memory planner
-- R6 Memory runtime cutover
+- R3 Type inference, predicates, and conversions — complete
+- R4 Type-system storage cutover — complete
+- R5 Memory planner — complete
+- R6 Memory runtime cutover — in progress
 - R7 Release qualification
 
 The package version remains `v0.3.6` until R7 qualifies the release.

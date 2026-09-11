@@ -8,41 +8,15 @@ use libm::atan;
 use libm::atanf;
 #[cfg(feature = "f64")]
 macro_rules! acot_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = atan(1.0 / (*$arg));
-        }
-    };
-}
-
-#[cfg(feature = "f64")]
-macro_rules! acot_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = atan(1.0 / ((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(atan(1.0 / ($arg)))
     };
 }
 
 #[cfg(feature = "f32")]
 macro_rules! acotf_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = atanf(1.0 / (*$arg));
-        }
-    };
-}
-
-#[cfg(feature = "f32")]
-macro_rules! acotf_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = atanf(1.0 / ((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(atanf(1.0 / ($arg)))
     };
 }
 

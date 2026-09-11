@@ -30,6 +30,7 @@ fn canonical_context_name_from_base_uri(base_uri: &str) -> String {
 pub struct Interpreter {
     pub id: u64,
     checkpoint_owner: Rc<()>,
+    memory_domain: MemoryDomain,
     #[cfg(feature = "functions")]
     function_catalog: Arc<FunctionCatalog>,
     pub max_steps: usize,
@@ -995,6 +996,7 @@ impl Clone for Interpreter {
         Self {
             id: self.id,
             checkpoint_owner: Rc::new(()),
+            memory_domain: self.memory_domain.clone(),
             #[cfg(feature = "functions")]
             function_catalog: Arc::clone(&self.function_catalog),
             max_steps: self.max_steps,
@@ -1255,6 +1257,8 @@ impl Interpreter {
         Self {
             id,
             checkpoint_owner: Rc::new(()),
+            memory_domain: MemoryDomain::new()
+                .expect("an interpreter must be able to create its owner memory session"),
             #[cfg(feature = "functions")]
             function_catalog,
             max_steps, // Default maximum steps
@@ -1700,6 +1704,13 @@ impl<'a> InterpreterExecution<'a> {
         self.presentation_namespace
     }
 
+    /// Owner session shared by ordinary cells created while planning and
+    /// executing this interpreter. Child interpreters deliberately receive a
+    /// distinct session and cross-session inputs pass through explicit import.
+    pub(crate) fn memory_domain(&self) -> &MemoryDomain {
+        &self.interpreter.memory_domain
+    }
+
     #[cfg(feature = "functions")]
     pub(crate) fn plan_len(&self) -> usize {
         self.interpreter.state.borrow().plan.len()
@@ -1750,13 +1761,48 @@ impl<'a> InterpreterExecution<'a> {
         invocation: &SpecializationInvocation,
     ) -> MResult<SpecializedFunction> {
         let state = self.state.borrow();
+        let resolver = FunctionResolver::new(
+            self.function_catalog(),
+            &state.function_environment,
+            &state.function_extensions,
+            &state.user_functions,
+        );
+        #[cfg(feature = "convert")]
+        {
+            resolver.specialize_operation_named_with(
+                operation,
+                canonical_name,
+                invocation,
+                |cell, conversion| {
+                    crate::literals::convert_cell_with_plan_reactively(
+                        cell.clone(),
+                        conversion,
+                        self,
+                    )
+                },
+            )
+        }
+        #[cfg(not(feature = "convert"))]
+        {
+            resolver.specialize_operation_named(operation, canonical_name, invocation)
+        }
+    }
+
+    #[cfg(all(feature = "functions", feature = "string_concat", feature = "math_add"))]
+    pub(crate) fn operation_semantically_accepts(
+        &self,
+        operation: OperationId,
+        canonical_name: &str,
+        invocation: &SpecializationInvocation,
+    ) -> MResult<bool> {
+        let state = self.state.borrow();
         FunctionResolver::new(
             self.function_catalog(),
             &state.function_environment,
             &state.function_extensions,
             &state.user_functions,
         )
-        .specialize_operation_named(operation, canonical_name, invocation)
+        .operation_semantically_accepts(operation, canonical_name, invocation)
     }
 
     pub fn with_services<T>(

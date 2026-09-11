@@ -6,8 +6,8 @@ use mech_core::{
     ResourceIntent, Value, ValueData, validate_stable_value_update,
 };
 use mech_runtime::{
-    RuntimeCapabilityOperation, RuntimeConfig, RuntimeResourceWriteIntent,
-    RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
+    RuntimeCapabilityOperation, RuntimeConfig, RuntimeResourceWriteCommand,
+    RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest,
 };
 
 use crate::{
@@ -331,7 +331,7 @@ impl BytecodeExternalContractResolver for NativeBytecodeContractResolver<'_> {
                 })?;
             owner
                 .provider
-                .plan_write(RuntimeResourceWriteRequest {
+                .plan_write(RuntimeResourceWriteCommand {
                     base_uri: contract.request.base_uri.clone(),
                     path: contract.request.path.clone(),
                     context_name: owner.context.name.clone(),

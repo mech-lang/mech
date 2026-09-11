@@ -35,13 +35,20 @@ jobs:
           --head "${{ github.event.pull_request.head.sha }}"
           --labels "$PR_LABELS"
 
-  static-contracts:
-    name: Static contracts
+  early-native-plan:
+    name: Early native plan
+    needs: impact
+    if: needs.impact.outputs.full_validation_required == 'true'
+    uses: ./.github/workflows/ci-native-plan.yml
+    with:
+      validation_ref: ${{ github.event.pull_request.head.sha }}
+
+  static-architecture:
+    name: Static architecture contracts
     needs: impact
     if: needs.impact.outputs.static_contracts_required == 'true'
     runs-on: ubuntu-latest
-    # Temporary headroom while the resident-architecture projection suite is stabilized.
-    timeout-minutes: 30
+    timeout-minutes: 8
     env:
       CARGO_INCREMENTAL: 0
       CARGO_PROFILE_TEST_DEBUG: "0"
@@ -56,10 +63,14 @@ jobs:
           rustup toolchain install nightly-2026-03-03 --profile minimal --component rustfmt
           if ! command -v rg >/dev/null 2>&1
           then
-            sudo apt-get update
+            # Only Ubuntu provides ripgrep. Do not let an unrelated preinstalled
+            # third-party repository make the architecture gate unavailable.
+            sudo apt-get update \
+              -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources \
+              -o Dir::Etc::sourceparts=-
             sudo apt-get install --yes ripgrep
           fi
-      - name: Check formatting and cheap global contracts
+      - name: Check formatting and global contracts
         run: |
           cargo +nightly-2026-03-03 fmt --all -- --check
           python3 -B -m unittest \
@@ -74,18 +85,109 @@ jobs:
           python3 scripts/check-value-execution-boundary.py
           python3 scripts/check-value-system-contract.py
           python3 scripts/check-no-retired-value-system.py
-          python3 -B -m unittest \
+          python3 scripts/check-r1-compatibility-closure.py
+          python3 scripts/check-r2-type-memory-boundary.py
+          python3 scripts/check-r3-type-system.py
+          python3 scripts/check-r4-type-cutover.py
+          python3 scripts/check-r5-memory-planner.py
+          python3 scripts/check-r6-memory-runtime.py
+          python3 scripts/check-bytecode-v1-format.py
+
+  static-mutations:
+    name: Static mutation contracts (${{ matrix.shard }})
+    needs: impact
+    if: needs.impact.outputs.static_contracts_required == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - name: Install mutation contract tools
+        run: |
+          if ! command -v rg >/dev/null 2>&1
+          then
+            sudo apt-get update \
+              -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources \
+              -o Dir::Etc::sourceparts=-
+            sudo apt-get install --yes ripgrep
+          fi
+      - name: Execute one balanced mutation shard
+        run: |
+          python3 -B scripts/run-python-unittest-shards.py \
+            --jobs 2 \
+            --shard-count 4 \
+            --shard-index ${{ matrix.shard }} \
             scripts/tests/test_check_obsolete_program_reachability.py \
             scripts/tests/test_check_compiler_planning_quarantine.py \
             scripts/tests/test_check_no_retired_value_system.py \
+            scripts/tests/test_check_r1_compatibility_closure.py \
+            scripts/tests/test_check_r2_type_memory_boundary.py \
+            scripts/tests/test_check_r3_type_system.py \
+            scripts/tests/test_check_r4_type_cutover.py \
+            scripts/tests/test_check_r5_memory_planner.py \
+            scripts/tests/test_check_r6_memory_runtime.py \
+            scripts/tests/test_run_python_unittest_shards.py \
             scripts/tests/test_check_value_execution_boundary.py \
             scripts/tests/test_warning_policy.py
-          python3 scripts/check-bytecode-v1-format.py
+
+  static-distribution:
+    name: Static distribution contracts
+    needs: impact
+    if: needs.impact.outputs.static_contracts_required == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_TEST_DEBUG: "0"
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - name: Install distribution contract tools
+        run: |
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          if ! command -v rg >/dev/null 2>&1
+          then
+            sudo apt-get update \
+              -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources \
+              -o Dir::Etc::sourceparts=-
+            sudo apt-get install --yes ripgrep
+          fi
+      - name: Check static distribution contracts
+        run: |
           cargo +nightly-2026-03-03 fetch --locked
           python3 -B scripts/check-distribution-contracts.py --profile standard
           python3 -B scripts/check-distribution-packaging.py
           python3 scripts/check-native-host-catalog.py
           bash scripts/check-static-distribution-profiles.sh static
+
+  static-contracts:
+    name: Static contracts
+    needs:
+      - impact
+      - static-architecture
+      - static-mutations
+      - static-distribution
+    if: always() && needs.impact.outputs.static_contracts_required == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - name: Require every static contract family
+        env:
+          ARCHITECTURE_RESULT: ${{ needs.static-architecture.result }}
+          MUTATIONS_RESULT: ${{ needs.static-mutations.result }}
+          DISTRIBUTION_RESULT: ${{ needs.static-distribution.result }}
+        run: |
+          test "$ARCHITECTURE_RESULT" = success
+          test "$MUTATIONS_RESULT" = success
+          test "$DISTRIBUTION_RESULT" = success
 
   standard-linux:
     name: Standard Linux
@@ -178,12 +280,12 @@ jobs:
           target/debug/mech.exe run tests/fixtures/standard-resident-scalar.mec
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-  browser-canary:
-    name: Browser canary
+  browser-standard-canary:
+    name: Browser standard canary
     needs: impact
     if: needs.impact.outputs.browser_canary_required == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     env:
       CARGO_TERM_COLOR: always
       CARGO_INCREMENTAL: 0
@@ -209,19 +311,65 @@ jobs:
           grep -q '^export class WasmDocument' src/wasm/pkg/mech_wasm.js
           ! grep -q '^[[:space:]]*evaluate(source)' src/wasm/pkg/mech_wasm.js
           cargo build --locked --bin mech
+      - name: Verify resident rendering without browser errors
+        run: MECH_BIN=target/debug/mech bash scripts/smoke-served-resident-nbody-browser.sh
+
+      - name: Remove generated browser package
+        if: always()
+        run: rm -rf src/wasm/pkg
+
+  browser-nbody-reference:
+    name: Browser N-body reference
+    needs: impact
+    if: needs.impact.outputs.browser_canary_required == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CARGO_TERM_COLOR: always
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install Rust nightly-2026-03-03
+        run: rustup toolchain install nightly-2026-03-03 --profile minimal
       - name: Verify N-body physics against independent references
         run: |
           python3 scripts/check-nbody-physics-reference.py
-          cargo test --locked -p mech-runtime \
+          cargo +nightly-2026-03-03 test --locked -p mech-runtime \
             --features full_compiler,resident-routing-source \
             public_nbody_viewer_integrates_mutual_gravity_residently \
             --lib
-      - name: Verify resident rendering without browser errors
-        run: MECH_BIN=target/debug/mech bash scripts/smoke-served-resident-nbody-browser.sh
+
+  browser-compute-canary:
+    name: Browser compute canary
+    needs: impact
+    if: needs.impact.outputs.browser_canary_required == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CARGO_TERM_COLOR: always
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install Rust, WASM, and wasm-pack
+        env:
+          WASM_PACK_VERSION: v0.15.0
+        run: |
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          rustup default nightly-2026-03-03
+          rustup target add wasm32-unknown-unknown
+          curl -fsSL \
+            "https://github.com/wasm-bindgen/wasm-pack/releases/download/$WASM_PACK_VERSION/wasm-pack-$WASM_PACK_VERSION-x86_64-unknown-linux-musl.tar.gz" \
+            -o /tmp/wasm-pack.tar.gz
+          tar -xzf /tmp/wasm-pack.tar.gz -C /tmp
+          sudo install "/tmp/wasm-pack-$WASM_PACK_VERSION-x86_64-unknown-linux-musl/wasm-pack" /usr/local/bin/wasm-pack
       - name: Build mixed compute WASM and refresh the server
         run: |
           node scripts/test-browser-compute-lifecycle.mjs
-          python3 scripts/build-wasm.py --profile browser-compute
+          python3 scripts/build-wasm.py --profile browser-compute-canary
           grep -q '^export class WasmDocument' src/wasm/pkg/mech_wasm.js
           grep -q '^export class WasmMixedComputeProject' src/wasm/pkg/mech_wasm.js
           cargo build --locked --bin mech --features compute_backends_native
@@ -345,6 +493,35 @@ jobs:
         if: always()
         run: rm -rf src/wasm/pkg
 
+  browser-canary:
+    name: Browser canary
+    needs:
+      - impact
+      - browser-standard-canary
+      - browser-nbody-reference
+      - browser-compute-canary
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require every selected browser suite
+        env:
+          REQUIRED: ${{ needs.impact.outputs.browser_canary_required }}
+          STANDARD_RESULT: ${{ needs.browser-standard-canary.result }}
+          NBODY_RESULT: ${{ needs.browser-nbody-reference.result }}
+          COMPUTE_RESULT: ${{ needs.browser-compute-canary.result }}
+        run: |
+          if test "$REQUIRED" = true
+          then
+            test "$STANDARD_RESULT" = success
+            test "$NBODY_RESULT" = success
+            test "$COMPUTE_RESULT" = success
+          else
+            test "$STANDARD_RESULT" = skipped
+            test "$NBODY_RESULT" = skipped
+            test "$COMPUTE_RESULT" = skipped
+          fi
+
   full-validation:
     name: Requested full validation
     needs:
@@ -371,6 +548,7 @@ jobs:
     with:
       release_channel: stable
       validation_ref: ${{ github.event.pull_request.head.sha }}
+      native_plan_in_caller: true
 
   pr-gate:
     name: PR gate
@@ -382,6 +560,7 @@ jobs:
       - changed-owner-tests
       - standard-windows
       - browser-canary
+      - early-native-plan
       - full-validation
     runs-on: ubuntu-latest
     timeout-minutes: 12
@@ -397,6 +576,7 @@ jobs:
           WINDOWS_RESULT: ${{ needs.standard-windows.result }}
           BROWSER_RESULT: ${{ needs.browser-canary.result }}
           FULL_RESULT: ${{ needs.full-validation.result }}
+          NATIVE_PLAN_RESULT: ${{ needs.early-native-plan.result }}
         run: |
           test "$IMPACT_RESULT" = success
           if test "$DOCS_ONLY" = true
@@ -416,6 +596,8 @@ jobs:
           if test "$FULL_REQUIRED" = true
           then
             test "$FULL_RESULT" = success
+            test "$NATIVE_PLAN_RESULT" = success
           else
             test "$FULL_RESULT" = skipped
+            test "$NATIVE_PLAN_RESULT" = skipped
           fi

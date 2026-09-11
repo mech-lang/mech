@@ -4,38 +4,14 @@ use crate::*;
 
 use libm::{cbrt, cbrtf};
 macro_rules! cbrt_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = cbrt((*$arg));
-        }
-    };
-}
-
-macro_rules! cbrt_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = cbrt(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(cbrt(($arg)))
     };
 }
 
 macro_rules! cbrtf_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            (*$out) = cbrtf((*$arg));
-        }
-    };
-}
-
-macro_rules! cbrtf_vec_op {
-    ($arg:expr, $out:expr) => {
-        unsafe {
-            for i in 0..(*$arg).len() {
-                ((&mut (*$out))[i]) = cbrtf(((&(*$arg))[i]));
-            }
-        }
+    (@managed $arg:expr) => {
+        Ok(cbrtf(($arg)))
     };
 }
 

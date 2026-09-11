@@ -1,9 +1,19 @@
+#[cfg(feature = "atan2")]
+use crate::trig::atan2::*;
+#[cfg(all(feature = "op_assign", feature = "matrix"))]
+use mech_core::snapshot::SequenceView;
+#[cfg(feature = "source")]
+use mech_core::{CanonicalFunctionSpecializer, FunctionExport, FunctionExposure};
+#[cfg(all(feature = "op_assign", feature = "matrix"))]
+use mech_core::{
+    DimensionExpr, SchemaBody, ValueCell, ValueData, function_shape_contract_violation,
+};
 use mech_core::{FunctionCatalogBuilder, MResult};
 #[cfg(any(
+    all(feature = "pow", feature = "rational", feature = "i32"),
     feature = "abs",
     feature = "neg",
     feature = "op_assign",
-    feature = "atan2",
     feature = "j0",
     feature = "j1",
     feature = "y0",
@@ -44,14 +54,6 @@ use mech_core::{FunctionCatalogBuilder, MResult};
     feature = "tanh"
 ))]
 use mech_core::{RuntimeFunctionContract, RuntimeOutputAliasPolicy};
-#[cfg(all(feature = "op_assign", feature = "matrix"))]
-use mech_core::{
-    DimensionExpr, SchemaBody, ValueCell, ValueData, function_shape_contract_violation,
-};
-#[cfg(all(feature = "op_assign", feature = "matrix"))]
-use mech_core::snapshot::SequenceView;
-#[cfg(feature = "source")]
-use mech_core::{CanonicalFunctionSpecializer, FunctionExport, FunctionExposure};
 #[cfg(all(feature = "op_assign", feature = "matrixd"))]
 use nalgebra::DMatrix;
 #[cfg(all(feature = "op_assign", feature = "vectord"))]
@@ -87,14 +89,28 @@ use std::sync::Arc;
 
 #[cfg(feature = "abs")]
 use crate::arithmetic::abs::*;
+#[cfg(feature = "copysign")]
+use crate::arithmetic::copysign::*;
+#[cfg(feature = "fdim")]
+use crate::arithmetic::fdim::*;
+#[cfg(feature = "fmod")]
+use crate::arithmetic::fmod::*;
+#[cfg(feature = "nextafter")]
+use crate::arithmetic::nextafter::*;
+#[cfg(feature = "remainder")]
+use crate::arithmetic::remainder::*;
 #[cfg(feature = "j0")]
 use crate::bessel::j0::*;
 #[cfg(feature = "j1")]
 use crate::bessel::j1::*;
+#[cfg(feature = "jn")]
+use crate::bessel::jn::*;
 #[cfg(feature = "y0")]
 use crate::bessel::y0::*;
 #[cfg(feature = "y1")]
 use crate::bessel::y1::*;
+#[cfg(feature = "yn")]
+use crate::bessel::yn::*;
 #[cfg(feature = "lgamma")]
 use crate::gamma::lgamma::*;
 #[cfg(feature = "tgamma")]
@@ -119,7 +135,10 @@ fn validate_canonical_op_assign_slice(output: &ValueCell, inputs: &[ValueCell]) 
             "output must be matrix-backed",
         ));
     };
-    let [DimensionExpr::Constant(rows), DimensionExpr::Constant(columns)] = dimensions.as_ref()
+    let [
+        DimensionExpr::Constant(rows),
+        DimensionExpr::Constant(columns),
+    ] = dimensions.as_ref()
     else {
         return Err(function_shape_contract_violation(
             contract,
@@ -243,7 +262,9 @@ pub(crate) fn install_canonical_source_specializer<T>(
 where
     T: CanonicalFunctionSpecializer + 'static,
 {
-    let operation = builder.insert_canonical_specializer(canonical_name, Arc::new(specializer))?;
+    let declaration = mech_core::maintained_source_type_declaration(canonical_name)?;
+    let operation =
+        builder.insert_canonical_specializer(canonical_name, declaration, Arc::new(specializer))?;
     builder.insert_export(FunctionExport {
         operation,
         canonical_name: canonical_name.to_string(),
@@ -310,6 +331,7 @@ macro_rules! install_canonical_prelude {
         feature = "csc",
         feature = "erf",
         feature = "erfc",
+        feature = "fdim",
         feature = "floor",
         feature = "fmod",
         feature = "lgamma",
@@ -345,12 +367,11 @@ macro_rules! install_math_module {
     };
 }
 
-/// Installs the frozen source-specializer surface owned by `mech-math`.
+/// Installs the supported source-specializer surface owned by `mech-math`.
 ///
 /// Each entry follows the feature gate of its concrete implementation. The
 /// source surface intentionally excludes legacy descriptors that were not in
-/// the compatibility baseline (`exp`, `exp2`, `exp10`, `expm1`, `fdim`,
-/// `hypot`, `ilogb`, and `sincos`).
+/// the compatibility baseline (`exp`, `exp2`, `exp10`, and `expm1`).
 #[cfg(feature = "source")]
 pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "abs")]
@@ -437,6 +458,8 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     install_math_module!(builder, "math/erf", "erf", crate::MathErf {});
     #[cfg(feature = "erfc")]
     install_math_module!(builder, "math/erfc", "erfc", crate::MathErfc {});
+    #[cfg(feature = "fdim")]
+    install_math_module!(builder, "math/fdim", "fdim", crate::MathFdim {});
     #[cfg(feature = "floor")]
     install_math_module!(builder, "math/floor", "floor", crate::MathFloor {});
     #[cfg(feature = "fmod")]
@@ -461,11 +484,11 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         install_mul_assign_source_runtime(builder)?;
         // The baseline contains these two range forms, but no named
         // `math/mul-assign` source specializer.
-        builder
-            .insert_canonical_intrinsic_specializer(
-                "math/mul-assign",
-                Arc::new(crate::MulAssignValue {}),
-            )?;
+        builder.insert_canonical_intrinsic_specializer(
+            "math/mul-assign",
+            crate::op_assign::PURE_WHOLE_VALUE_RMW_CONTRACT.clone(),
+            Arc::new(crate::MulAssignValue {}),
+        )?;
         install_canonical_prelude!(builder, "math/mul-assign/range", crate::MulAssignRange {});
         install_canonical_prelude!(
             builder,
@@ -574,6 +597,30 @@ macro_rules! for_each_math_unop_shape {
     };
 }
 
+#[allow(
+    unused_macros,
+    reason = "native factory helpers are selected by disjoint feature profiles"
+)]
+macro_rules! math_float_unop_operation_ids {
+    (MathJ0, $feature:literal) => {
+        [mech_core::OperationId::from_name("math/bessel/j0")]
+    };
+    (MathJ1, $feature:literal) => {
+        [mech_core::OperationId::from_name("math/bessel/j1")]
+    };
+    (MathY0, $feature:literal) => {
+        [mech_core::OperationId::from_name("math/bessel/y0")]
+    };
+    (MathY1, $feature:literal) => {
+        [mech_core::OperationId::from_name("math/bessel/y1")]
+    };
+    ($operation:ident, $feature:literal) => {
+        [mech_core::OperationId::from_name(concat!(
+            "math/", $feature
+        ))]
+    };
+}
+
 macro_rules! declare_math_float_unop_factory {
     (($operation:ident; $operation_feature:literal; $scalar:ident; $scalar_feature:literal), $suffix:ident, none) => {
         mech_core::paste::paste! {
@@ -584,6 +631,7 @@ macro_rules! declare_math_float_unop_factory {
                 name: stringify!([<$operation $scalar:camel $suffix>]),
                 factory_type: [<$operation $scalar:camel $suffix>],
                 contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
+                operations: math_float_unop_operation_ids!($operation, $operation_feature),
                 package: "mech-math", crate_name: "mech_math",
                 installer_path: concat!("mech_math::__mech_native::", stringify!([<install_ $operation:snake _ $suffix:lower _ $scalar:lower>])),
                 extra_cargo_features: [$operation_feature],
@@ -602,6 +650,7 @@ macro_rules! declare_math_float_unop_factory {
                     0,
                     RuntimeOutputAliasPolicy::DisallowInputAlias,
                 ),
+                operations: math_float_unop_operation_ids!($operation, $operation_feature),
                 package: "mech-math", crate_name: "mech_math",
                 installer_path: concat!("mech_math::__mech_native::", stringify!([<install_ $operation:snake _ $suffix:lower _ $scalar:lower>])),
                 extra_cargo_features: [$operation_feature],
@@ -611,18 +660,44 @@ macro_rules! declare_math_float_unop_factory {
 }
 
 #[cfg(any(
-    feature = "j0", feature = "j1", feature = "y0", feature = "y1",
-    feature = "lgamma", feature = "tgamma",
-    feature = "log", feature = "log10", feature = "log1p", feature = "log2",
-    feature = "cbrt", feature = "sqrt",
-    feature = "ceil", feature = "floor", feature = "rint", feature = "round",
-    feature = "roundeven", feature = "trunc",
-    feature = "erf", feature = "erfc",
-    feature = "acos", feature = "acosh", feature = "acot", feature = "acsc",
-    feature = "asec", feature = "asin", feature = "asinh", feature = "atan",
-    feature = "atanh", feature = "cos", feature = "cosh", feature = "cot",
-    feature = "csc", feature = "sec", feature = "sin", feature = "sinh",
-    feature = "tan", feature = "tanh"
+    feature = "j0",
+    feature = "j1",
+    feature = "y0",
+    feature = "y1",
+    feature = "lgamma",
+    feature = "tgamma",
+    feature = "log",
+    feature = "log10",
+    feature = "log1p",
+    feature = "log2",
+    feature = "cbrt",
+    feature = "sqrt",
+    feature = "ceil",
+    feature = "floor",
+    feature = "rint",
+    feature = "round",
+    feature = "roundeven",
+    feature = "trunc",
+    feature = "erf",
+    feature = "erfc",
+    feature = "acos",
+    feature = "acosh",
+    feature = "acot",
+    feature = "acsc",
+    feature = "asec",
+    feature = "asin",
+    feature = "asinh",
+    feature = "atan",
+    feature = "atanh",
+    feature = "cos",
+    feature = "cosh",
+    feature = "cot",
+    feature = "csc",
+    feature = "sec",
+    feature = "sin",
+    feature = "sinh",
+    feature = "tan",
+    feature = "tanh"
 ))]
 macro_rules! register_math_float_unop_factory {
     (($builder:ident; $operation:ident; $_operation_feature:literal; $scalar:ident; $_scalar_feature:literal), $suffix:ident, $_shape_feature:tt) => {
@@ -634,18 +709,44 @@ macro_rules! register_math_float_unop_factory {
     feature = "native-link",
     any(feature = "f32", feature = "f64"),
     any(
-        feature = "j0", feature = "j1", feature = "y0", feature = "y1",
-        feature = "lgamma", feature = "tgamma",
-        feature = "log", feature = "log10", feature = "log1p", feature = "log2",
-        feature = "cbrt", feature = "sqrt",
-        feature = "ceil", feature = "floor", feature = "rint", feature = "round",
-        feature = "roundeven", feature = "trunc",
-        feature = "erf", feature = "erfc",
-        feature = "acos", feature = "acosh", feature = "acot", feature = "acsc",
-        feature = "asec", feature = "asin", feature = "asinh", feature = "atan",
-        feature = "atanh", feature = "cos", feature = "cosh", feature = "cot",
-        feature = "csc", feature = "sec", feature = "sin", feature = "sinh",
-        feature = "tan", feature = "tanh"
+        feature = "j0",
+        feature = "j1",
+        feature = "y0",
+        feature = "y1",
+        feature = "lgamma",
+        feature = "tgamma",
+        feature = "log",
+        feature = "log10",
+        feature = "log1p",
+        feature = "log2",
+        feature = "cbrt",
+        feature = "sqrt",
+        feature = "ceil",
+        feature = "floor",
+        feature = "rint",
+        feature = "round",
+        feature = "roundeven",
+        feature = "trunc",
+        feature = "erf",
+        feature = "erfc",
+        feature = "acos",
+        feature = "acosh",
+        feature = "acot",
+        feature = "acsc",
+        feature = "asec",
+        feature = "asin",
+        feature = "asinh",
+        feature = "atan",
+        feature = "atanh",
+        feature = "cos",
+        feature = "cosh",
+        feature = "cot",
+        feature = "csc",
+        feature = "sec",
+        feature = "sin",
+        feature = "sinh",
+        feature = "tan",
+        feature = "tanh"
     )
 ))]
 macro_rules! export_math_float_unop_factory {
@@ -662,18 +763,44 @@ macro_rules! declare_math_float_unop {
 }
 
 #[cfg(any(
-    feature = "j0", feature = "j1", feature = "y0", feature = "y1",
-    feature = "lgamma", feature = "tgamma",
-    feature = "log", feature = "log10", feature = "log1p", feature = "log2",
-    feature = "cbrt", feature = "sqrt",
-    feature = "ceil", feature = "floor", feature = "rint", feature = "round",
-    feature = "roundeven", feature = "trunc",
-    feature = "erf", feature = "erfc",
-    feature = "acos", feature = "acosh", feature = "acot", feature = "acsc",
-    feature = "asec", feature = "asin", feature = "asinh", feature = "atan",
-    feature = "atanh", feature = "cos", feature = "cosh", feature = "cot",
-    feature = "csc", feature = "sec", feature = "sin", feature = "sinh",
-    feature = "tan", feature = "tanh"
+    feature = "j0",
+    feature = "j1",
+    feature = "y0",
+    feature = "y1",
+    feature = "lgamma",
+    feature = "tgamma",
+    feature = "log",
+    feature = "log10",
+    feature = "log1p",
+    feature = "log2",
+    feature = "cbrt",
+    feature = "sqrt",
+    feature = "ceil",
+    feature = "floor",
+    feature = "rint",
+    feature = "round",
+    feature = "roundeven",
+    feature = "trunc",
+    feature = "erf",
+    feature = "erfc",
+    feature = "acos",
+    feature = "acosh",
+    feature = "acot",
+    feature = "acsc",
+    feature = "asec",
+    feature = "asin",
+    feature = "asinh",
+    feature = "atan",
+    feature = "atanh",
+    feature = "cos",
+    feature = "cosh",
+    feature = "cot",
+    feature = "csc",
+    feature = "sec",
+    feature = "sin",
+    feature = "sinh",
+    feature = "tan",
+    feature = "tanh"
 ))]
 macro_rules! install_math_float_unop {
     ($builder:ident, $operation:ident, $operation_feature:literal) => {
@@ -729,6 +856,248 @@ macro_rules! math_float_unop_families {
 
 math_float_unop_families!(declare_math_float_unop);
 
+// Exercise the same family inventory that registers maintained implementations.
+// These are transport/ownership tests: element results come from the maintained
+// scalar operation, while matrices must preserve shape, order and live rebinding.
+#[cfg(all(
+    test,
+    feature = "source",
+    feature = "matrixd",
+    any(feature = "f32", feature = "f64")
+))]
+mod managed_unary_family_tests {
+    use mech_core::*;
+
+    macro_rules! check_family {
+        ($family:ident, $feature:literal, $scalar:ident, $data:ident, $convert:ident) => {
+            mech_core::paste::paste! {
+                #[cfg(all(feature = $feature, feature = "source"))]
+                #[test]
+                fn [<managed_ $family:snake _ $scalar _follows_live_matrix_geometry>]() {
+                    let mut builder = FunctionCatalogBuilder::new();
+                    super::install_runtime(&mut builder).unwrap();
+                    super::install_source(&mut builder).unwrap();
+                    let catalog = builder.build().unwrap();
+                    let id = math_float_unop_operation_ids!($family, $feature)[0];
+                    let name = &catalog.specializer(id).unwrap().operation.canonical_name;
+                    let values = [-1.25 as $scalar, -0.0, 0.5, 1.0, 2.0, 3.0];
+                    let expected = values.iter().map(|&value| {
+                        let scalar = super::specialize_test_operation(
+                            &catalog, name, vec![ValueCell::from_exact(value).unwrap()],
+                        );
+                        scalar.instance().solve_result().unwrap();
+                        let output = scalar.output().snapshot().unwrap();
+                        let ValueData::$data(value) = output.data() else { panic!("expected scalar") };
+                        value.$convert()
+                    }).collect::<Vec<$scalar>>();
+                    let session = MemoryDomain::new().unwrap();
+                    let input = ValueCell::from_exact_in(
+                        &session, nalgebra::DMatrix::from_row_slice(2, 3, &values),
+                    ).unwrap();
+                    let input_alias = input.clone();
+                    let function = super::specialize_test_operation(&catalog, name, vec![input.clone()]);
+                    let output_alias = function.output().clone();
+                    // The consumer is bound once. Equal-cardinality stride changes,
+                    // shrink-to-empty and growth all use ordinary cell publication.
+                    for (rows, columns) in [(2, 3), (3, 2), (1, 6), (6, 1), (1, 1), (0, 3), (3, 0), (2, 3)] {
+                        let count = rows * columns;
+                        let replacement = ValueCell::from_exact(
+                            nalgebra::DMatrix::from_row_slice(rows, columns, &values[..count]),
+                        ).unwrap().snapshot().unwrap();
+                        input.replace(&replacement).unwrap_or_else(|error| panic!("{name}: replacing with {rows}x{columns}: {error:?}"));
+                        function.instance().solve_result().unwrap_or_else(|error| panic!("{name}: executing {rows}x{columns}: {error:?}"));
+                        assert!(input.same_logical_cell(&input_alias));
+                        let output = output_alias.snapshot().unwrap();
+                        let ValueData::Matrix(matrix) = output.data() else { panic!("expected matrix") };
+                        let snapshot::SequenceView::$data(actual) = matrix.elements() else { panic!("expected typed matrix") };
+                        assert_eq!(actual.len(), count, "{name}: {rows}x{columns}");
+                        for (actual, expected) in actual.iter().zip(&expected[..count]) {
+                            let actual = actual.$convert();
+                            assert!(actual.to_bits() == expected.to_bits() || (actual.is_nan() && expected.is_nan()), "{name}: {actual:?} != {expected:?}");
+                        }
+                        assert_eq!(output_alias.current_top_level_extents().unwrap().as_ref(), &[rows as u64, columns as u64]);
+                    }
+                }
+            }
+        };
+    }
+
+    macro_rules! check_enabled_family {
+        ($family:ident, $feature:literal) => {
+            #[cfg(feature = "f32")]
+            check_family!($family, $feature, f32, F32, to_f32);
+            #[cfg(feature = "f64")]
+            check_family!($family, $feature, f64, F64, to_f64);
+        };
+    }
+    math_float_unop_families!(check_enabled_family);
+}
+
+#[cfg(all(
+    any(feature = "f32", feature = "f64"),
+    any(
+        feature = "atan2",
+        feature = "copysign",
+        feature = "fdim",
+        feature = "fmod",
+        feature = "nextafter",
+        feature = "remainder",
+        feature = "jn",
+        feature = "yn"
+    )
+))]
+macro_rules! declare_math_float_binop_with_installer {
+    (
+        ($operation:ident; $operation_feature:literal; $canonical:literal;
+         $suffix:ident; $scalar:ty; $scalar_feature:literal; $scalar_token:ident),
+        $installer:ident
+    ) => {
+        mech_core::paste::paste! {
+            mech_core::declare_native_runtime_factory! {
+                cfg: all(feature = $operation_feature, feature = $scalar_feature),
+                registration: [<register_ $operation:snake _ $suffix:lower _ $scalar_token>],
+                installer: $installer,
+                name: crate::float_binary_runtime_name(
+                    stringify!($operation),
+                    concat!(stringify!($operation), stringify!($suffix)),
+                    <$scalar as mech_core::FunctionRuntimeType>::REPRESENTATION,
+                ),
+                factory_type: [<$operation $suffix>]<$scalar>,
+                contract: mech_core::__mech_elementwise_binop_contract!($suffix),
+                operations: [mech_core::OperationId::from_name($canonical)],
+                package: "mech-math",
+                crate_name: "mech_math",
+                installer_path: concat!("mech_math::__mech_native::", stringify!($installer)),
+                extra_cargo_features: [$operation_feature],
+            }
+        }
+    };
+}
+
+#[cfg(all(
+    any(feature = "f32", feature = "f64"),
+    any(
+        feature = "atan2",
+        feature = "copysign",
+        feature = "fdim",
+        feature = "fmod",
+        feature = "nextafter",
+        feature = "remainder",
+        feature = "jn",
+        feature = "yn"
+    )
+))]
+macro_rules! declare_math_float_binop_factory {
+    (
+        ($operation_feature:literal; $canonical:literal; $scalar_feature:literal),
+        $operation:ident, $suffix:ident, $_shape_features:tt,
+        $scalar:ty, $_scalar_name:literal, $scalar_token:ident
+    ) => {
+        with_float_binary_installer!(
+            $operation, $suffix, $scalar_token, declare_math_float_binop_with_installer,
+            ($operation; $operation_feature; $canonical; $suffix; $scalar; $scalar_feature; $scalar_token)
+        );
+    };
+}
+
+macro_rules! declare_math_float_binop {
+    ($operation:ident, $operation_feature:literal, $canonical:literal) => {
+        #[cfg(all(feature = $operation_feature, feature = "f32"))]
+        mech_core::__mech_for_each_exact_binop_runtime_factory_for_type!(
+            declare_math_float_binop_factory, ($operation_feature; $canonical; "f32"),
+            $operation, f32, "f32", f32
+        );
+        #[cfg(all(feature = $operation_feature, feature = "f64"))]
+        mech_core::__mech_for_each_exact_binop_runtime_factory_for_type!(
+            declare_math_float_binop_factory, ($operation_feature; $canonical; "f64"),
+            $operation, f64, "f64", f64
+        );
+    };
+}
+
+macro_rules! math_float_binop_families {
+    ($callback:ident) => {
+        $callback!(Copysign, "copysign", "math/copysign");
+        $callback!(Fdim, "fdim", "math/fdim");
+        $callback!(Fmod, "fmod", "math/fmod");
+        $callback!(Nextafter, "nextafter", "math/nextafter");
+        $callback!(Remainder, "remainder", "math/remainder");
+        $callback!(Jn, "jn", "math/bessel/jn");
+        $callback!(Yn, "yn", "math/bessel/yn");
+    };
+}
+
+math_float_binop_families!(declare_math_float_binop);
+
+#[cfg(all(
+    feature = "native-link",
+    any(feature = "f32", feature = "f64"),
+    any(
+        feature = "atan2",
+        feature = "copysign",
+        feature = "fdim",
+        feature = "fmod",
+        feature = "nextafter",
+        feature = "remainder",
+        feature = "jn",
+        feature = "yn"
+    )
+))]
+macro_rules! export_math_float_binop_with_installer {
+    ((), $installer:ident) => {
+        pub use super::$installer;
+    };
+}
+
+#[cfg(all(
+    feature = "native-link",
+    any(feature = "f32", feature = "f64"),
+    any(
+        feature = "atan2",
+        feature = "copysign",
+        feature = "fdim",
+        feature = "fmod",
+        feature = "nextafter",
+        feature = "remainder",
+        feature = "jn",
+        feature = "yn"
+    )
+))]
+macro_rules! export_math_float_binop_factory {
+    (
+        (), $operation:ident, $suffix:ident, $_shape_features:tt,
+        $_scalar:ty, $_scalar_name:literal, $scalar_token:ident
+    ) => {
+        with_float_binary_installer!(
+            $operation,
+            $suffix,
+            $scalar_token,
+            export_math_float_binop_with_installer,
+            ()
+        );
+    };
+}
+
+#[cfg(any(
+    feature = "copysign",
+    feature = "fdim",
+    feature = "fmod",
+    feature = "nextafter",
+    feature = "remainder",
+    feature = "jn",
+    feature = "yn"
+))]
+macro_rules! install_math_float_binop {
+    ($builder:ident, $operation:ident, $_operation_feature:literal, $_canonical:literal) => {
+        mech_core::install_native_binop_runtime_factories!(
+            $builder,
+            $operation;
+            ("f32", f32, "f32", f32),
+            ("f64", f64, "f64", f64),
+        )?;
+    };
+}
+
 macro_rules! for_each_math_abs_scalar {
     ($callback:ident, $($context:tt)*) => {
         $callback!($($context)*; u8; u8; "u8"; "u8");
@@ -758,6 +1127,7 @@ macro_rules! declare_math_abs_factory {
                 name: stringify!([<MathAbs $scalar_token:camel $suffix>]),
                 factory_type: [<MathAbs $scalar_token:camel $suffix>],
                 contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
+                operations: [mech_core::OperationId::from_name("math/abs")],
                 package: "mech-math", crate_name: "mech_math",
                 installer_path: concat!("mech_math::__mech_native::", stringify!([<install_math_abs_ $scalar_token _ $suffix:lower>])),
                 extra_cargo_features: ["abs"],
@@ -776,6 +1146,7 @@ macro_rules! declare_math_abs_factory {
                     0,
                     RuntimeOutputAliasPolicy::DisallowInputAlias,
                 ),
+                operations: [mech_core::OperationId::from_name("math/abs")],
                 package: "mech-math", crate_name: "mech_math",
                 installer_path: concat!("mech_math::__mech_native::", stringify!([<install_math_abs_ $scalar_token _ $suffix:lower>])),
                 extra_cargo_features: ["abs"],
@@ -803,10 +1174,20 @@ macro_rules! register_math_abs_factory {
     feature = "native-link",
     feature = "abs",
     any(
-        feature = "u8", feature = "u16", feature = "u32", feature = "u64",
-        feature = "u128", feature = "i8", feature = "i16", feature = "i32",
-        feature = "i64", feature = "i128", feature = "f32", feature = "f64",
-        feature = "complex", feature = "rational"
+        feature = "u8",
+        feature = "u16",
+        feature = "u32",
+        feature = "u64",
+        feature = "u128",
+        feature = "i8",
+        feature = "i16",
+        feature = "i32",
+        feature = "i64",
+        feature = "i128",
+        feature = "f32",
+        feature = "f64",
+        feature = "complex",
+        feature = "rational"
     )
 ))]
 macro_rules! export_math_abs_factory {
@@ -844,18 +1225,26 @@ macro_rules! for_each_math_neg_scalar {
     };
 }
 
+#[allow(
+    unused_macros,
+    reason = "native factory helpers are selected by disjoint feature profiles"
+)]
 macro_rules! declare_math_neg_factory {
-    ($_context:tt; $factory:ident; $scalar_token:ident; $scalar:ty; $scalar_cfg:literal; $scalar_feature:literal) => {
+    ($factory:ident; $factory_type:ty; $registration:ident; $installer:ident; $name:expr; $scalar_cfg:literal; $shape_feature:tt) => {
         mech_core::paste::paste! {
             mech_core::declare_native_runtime_factory! {
-                cfg: all(feature = "neg", feature = $scalar_cfg),
-                registration: [<register_ $factory:snake _ $scalar_token>],
-                installer: [<install_ $factory:snake _ $scalar_token>],
-                name: concat!(stringify!($factory), "<", stringify!($scalar_token), ">"),
-                factory_type: crate::ops::negate::$factory<$scalar>,
-                contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
+                cfg: all(feature = "neg", feature = $scalar_cfg, feature = $shape_feature),
+                registration: $registration,
+                installer: $installer,
+                name: $name,
+                factory_type: crate::ops::negate::$factory<$factory_type>,
+                contract: RuntimeFunctionContract::output_matches_input(
+                    0,
+                    RuntimeOutputAliasPolicy::DisallowInputAlias,
+                ),
+                operations: [mech_core::OperationId::from_name("math/neg")],
                 package: "mech-math", crate_name: "mech_math",
-                installer_path: concat!("mech_math::__mech_native::", stringify!([<install_ $factory:snake _ $scalar_token>])),
+                installer_path: concat!("mech_math::__mech_native::", stringify!($installer)),
                 extra_cargo_features: ["neg"],
             }
         }
@@ -864,10 +1253,71 @@ macro_rules! declare_math_neg_factory {
 
 macro_rules! declare_math_neg_families_for_scalar {
     (; $scalar_token:ident; $scalar:ty; $scalar_cfg:literal; $scalar_feature:literal) => {
-        declare_math_neg_factory!((); NegateS; $scalar_token; $scalar; $scalar_cfg; $scalar_feature);
-        declare_math_neg_factory!((); NegateV; $scalar_token; $scalar; $scalar_cfg; $scalar_feature);
+        mech_core::paste::paste! {
+            mech_core::declare_native_runtime_factory! {
+                cfg: all(feature = "neg", feature = $scalar_cfg),
+                registration: [<register_negate_s_ $scalar_token>],
+                installer: [<install_negate_s_ $scalar_token>],
+                name: concat!("NegateS<", stringify!($scalar_token), ">"),
+                factory_type: crate::ops::negate::NegateS<$scalar>,
+                contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
+                operations: [mech_core::OperationId::from_name("math/neg")],
+                package: "mech-math", crate_name: "mech_math",
+                installer_path: concat!("mech_math::__mech_native::", stringify!([<install_negate_s_ $scalar_token>])),
+                extra_cargo_features: ["neg"],
+            }
+        }
+        for_each_math_unop_shape!(declare_math_neg_vector_factory, ($scalar_token; $scalar; $scalar_cfg));
     };
 }
+
+macro_rules! declare_math_neg_vector_factory {
+    (($scalar_token:ident; $scalar:ty; $scalar_cfg:literal), S, none) => {};
+    (($scalar_token:ident; $scalar:ty; $scalar_cfg:literal), $suffix:ident, $shape_feature:literal) => {
+        mech_core::paste::paste! {
+            declare_math_neg_factory!(
+                NegateV;
+                [<MathNegShape $suffix>]<$scalar>;
+                [<register_negate_v_ $scalar_token _ $suffix:lower>];
+                [<install_negate_v_ $scalar_token _ $suffix:lower>];
+                concat!("NegateV<", stringify!($scalar_token), stringify!($suffix), ">");
+                $scalar_cfg;
+                $shape_feature
+            );
+        }
+    };
+}
+
+#[cfg(all(feature = "neg", feature = "matrix1"))]
+type MathNegShapeM1<T> = nalgebra::Matrix1<T>;
+#[cfg(all(feature = "neg", feature = "matrix2"))]
+type MathNegShapeM2<T> = nalgebra::Matrix2<T>;
+#[cfg(all(feature = "neg", feature = "matrix3"))]
+type MathNegShapeM3<T> = nalgebra::Matrix3<T>;
+#[cfg(all(feature = "neg", feature = "matrix4"))]
+type MathNegShapeM4<T> = nalgebra::Matrix4<T>;
+#[cfg(all(feature = "neg", feature = "matrix2x3"))]
+type MathNegShapeM2x3<T> = nalgebra::Matrix2x3<T>;
+#[cfg(all(feature = "neg", feature = "matrix3x2"))]
+type MathNegShapeM3x2<T> = nalgebra::Matrix3x2<T>;
+#[cfg(all(feature = "neg", feature = "matrixd"))]
+type MathNegShapeMD<T> = nalgebra::DMatrix<T>;
+#[cfg(all(feature = "neg", feature = "row_vector2"))]
+type MathNegShapeR2<T> = nalgebra::RowVector2<T>;
+#[cfg(all(feature = "neg", feature = "row_vector3"))]
+type MathNegShapeR3<T> = nalgebra::RowVector3<T>;
+#[cfg(all(feature = "neg", feature = "row_vector4"))]
+type MathNegShapeR4<T> = nalgebra::RowVector4<T>;
+#[cfg(all(feature = "neg", feature = "row_vectord"))]
+type MathNegShapeRD<T> = nalgebra::RowDVector<T>;
+#[cfg(all(feature = "neg", feature = "vector2"))]
+type MathNegShapeV2<T> = nalgebra::Vector2<T>;
+#[cfg(all(feature = "neg", feature = "vector3"))]
+type MathNegShapeV3<T> = nalgebra::Vector3<T>;
+#[cfg(all(feature = "neg", feature = "vector4"))]
+type MathNegShapeV4<T> = nalgebra::Vector4<T>;
+#[cfg(all(feature = "neg", feature = "vectord"))]
+type MathNegShapeVD<T> = nalgebra::DVector<T>;
 
 for_each_math_neg_scalar!(declare_math_neg_families_for_scalar,);
 
@@ -877,7 +1327,18 @@ macro_rules! install_math_neg_for_scalar {
         #[cfg(feature = $scalar_cfg)]
         mech_core::paste::paste! {
             [<register_negate_s_ $scalar_token>]($builder)?;
-            [<register_negate_v_ $scalar_token>]($builder)?;
+        }
+        for_each_math_unop_shape!(register_math_neg_vector_factory, ($builder; $scalar_token; $scalar_cfg));
+    };
+}
+
+#[cfg(feature = "neg")]
+macro_rules! register_math_neg_vector_factory {
+    (($builder:ident; $scalar_token:ident; $scalar_cfg:literal), S, none) => {};
+    (($builder:ident; $scalar_token:ident; $scalar_cfg:literal), $suffix:ident, $shape_feature:literal) => {
+        #[cfg(all(feature = $scalar_cfg, feature = $shape_feature))]
+        mech_core::paste::paste! {
+            [<register_negate_v_ $scalar_token _ $suffix:lower>]($builder)?;
         }
     };
 }
@@ -890,18 +1351,44 @@ macro_rules! install_math_neg {
 }
 
 #[cfg(any(
-    feature = "j0", feature = "j1", feature = "y0", feature = "y1",
-    feature = "lgamma", feature = "tgamma",
-    feature = "log", feature = "log10", feature = "log1p", feature = "log2",
-    feature = "cbrt", feature = "sqrt",
-    feature = "ceil", feature = "floor", feature = "rint", feature = "round",
-    feature = "roundeven", feature = "trunc",
-    feature = "erf", feature = "erfc",
-    feature = "acos", feature = "acosh", feature = "acot", feature = "acsc",
-    feature = "asec", feature = "asin", feature = "asinh", feature = "atan",
-    feature = "atanh", feature = "cos", feature = "cosh", feature = "cot",
-    feature = "csc", feature = "sec", feature = "sin", feature = "sinh",
-    feature = "tan", feature = "tanh"
+    feature = "j0",
+    feature = "j1",
+    feature = "y0",
+    feature = "y1",
+    feature = "lgamma",
+    feature = "tgamma",
+    feature = "log",
+    feature = "log10",
+    feature = "log1p",
+    feature = "log2",
+    feature = "cbrt",
+    feature = "sqrt",
+    feature = "ceil",
+    feature = "floor",
+    feature = "rint",
+    feature = "round",
+    feature = "roundeven",
+    feature = "trunc",
+    feature = "erf",
+    feature = "erfc",
+    feature = "acos",
+    feature = "acosh",
+    feature = "acot",
+    feature = "acsc",
+    feature = "asec",
+    feature = "asin",
+    feature = "asinh",
+    feature = "atan",
+    feature = "atanh",
+    feature = "cos",
+    feature = "cosh",
+    feature = "cot",
+    feature = "csc",
+    feature = "sec",
+    feature = "sin",
+    feature = "sinh",
+    feature = "tan",
+    feature = "tanh"
 ))]
 macro_rules! install_float_unop {
     ($builder:ident, $family:ident) => {
@@ -993,6 +1480,7 @@ macro_rules! for_each_canonical_op_assign_index_shape {
     ($callback:ident, $context:tt) => {
         for_each_op_assign_index_shape!($callback, $context);
         $callback!($context; RowDVector; "row_vectord");
+        $callback!($context; DMatrix; "matrixd");
     };
 }
 
@@ -1011,15 +1499,30 @@ macro_rules! for_each_op_assign_vector_range_source {
         $callback!($context; feature = "vector2"; Vector2; "vector2"; Vector2; "vector2");
         $callback!($context; feature = "vector3"; Vector3; "vector3"; Vector3; "vector3");
         $callback!($context; feature = "vector4"; Vector4; "vector4"; Vector4; "vector4");
-        $callback!($context; feature = "row_vector2"; RowVector2; "row_vector2"; Vector2; "vector2");
-        $callback!($context; feature = "row_vector3"; RowVector3; "row_vector3"; Vector3; "vector3");
-        $callback!($context; feature = "row_vector4"; RowVector4; "row_vector4"; Vector4; "vector4");
+        $callback!($context; all(feature = "row_vector2", feature = "vector2"); RowVector2; "row_vector2"; Vector2; "vector2");
+        $callback!($context; all(feature = "row_vector3", feature = "vector3"); RowVector3; "row_vector3"; Vector3; "vector3");
+        $callback!($context; all(feature = "row_vector4", feature = "vector4"); RowVector4; "row_vector4"; Vector4; "vector4");
     };
 }
 
 #[cfg(feature = "op_assign")]
 macro_rules! for_each_source_only_op_assign_vector_range_source {
     ($callback:ident, $context:tt) => {
+        $callback!($context; all(feature = "matrix1", feature = "matrixd"); Matrix1; "matrix1"; DMatrix; "matrixd");
+        $callback!($context; all(feature = "matrix2", feature = "vector4", feature = "matrixd"); Matrix2; "matrix2"; DMatrix; "matrixd");
+        $callback!($context; all(feature = "matrix3", feature = "matrixd"); Matrix3; "matrix3"; DMatrix; "matrixd");
+        $callback!($context; all(feature = "matrix4", feature = "matrixd"); Matrix4; "matrix4"; DMatrix; "matrixd");
+        $callback!($context; all(feature = "matrix2x3", feature = "matrixd"); Matrix2x3; "matrix2x3"; DMatrix; "matrixd");
+        $callback!($context; all(feature = "matrix3x2", feature = "matrixd"); Matrix3x2; "matrix3x2"; DMatrix; "matrixd");
+        $callback!($context; feature = "matrixd"; DMatrix; "matrixd"; DMatrix; "matrixd");
+        $callback!($context; all(feature = "vectord", feature = "matrixd"); DVector; "vectord"; DMatrix; "matrixd");
+        $callback!($context; all(feature = "row_vectord", feature = "matrixd"); RowDVector; "row_vectord"; DMatrix; "matrixd");
+        $callback!($context; all(feature = "vector2", feature = "matrixd"); Vector2; "vector2"; DMatrix; "matrixd");
+        $callback!($context; all(feature = "vector3", feature = "matrixd"); Vector3; "vector3"; DMatrix; "matrixd");
+        $callback!($context; all(feature = "vector4", feature = "matrixd"); Vector4; "vector4"; DMatrix; "matrixd");
+        $callback!($context; all(feature = "row_vector2", feature = "matrixd"); RowVector2; "row_vector2"; DMatrix; "matrixd");
+        $callback!($context; all(feature = "row_vector3", feature = "matrixd"); RowVector3; "row_vector3"; DMatrix; "matrixd");
+        $callback!($context; all(feature = "row_vector4", feature = "matrixd"); RowVector4; "row_vector4"; DMatrix; "matrixd");
         $callback!($context; all(feature = "matrix1", feature = "row_vectord"); Matrix1; "matrix1"; RowDVector; "row_vectord");
         $callback!($context; all(feature = "matrix2", feature = "vector4", feature = "row_vectord"); Matrix2; "matrix2"; RowDVector; "row_vectord");
         $callback!($context; all(feature = "matrix3", feature = "row_vectord"); Matrix3; "matrix3"; RowDVector; "row_vectord");
@@ -1047,6 +1550,94 @@ macro_rules! for_each_canonical_op_assign_vector_range_source {
 }
 
 #[cfg(feature = "op_assign")]
+macro_rules! op_assign_value_operation_ids {
+    (Add) => {
+        [mech_core::OperationId::from_name("math/add-assign")]
+    };
+    (Div) => {
+        [mech_core::OperationId::from_name("math/div-assign")]
+    };
+    (Mul) => {
+        [mech_core::OperationId::from_name("math/mul-assign")]
+    };
+    (Sub) => {
+        [mech_core::OperationId::from_name("math/sub-assign")]
+    };
+}
+
+#[cfg(feature = "op_assign")]
+macro_rules! op_assign_range_operation_ids {
+    (Add; Assign1DRS) => {
+        [mech_core::OperationId::from_name("math/add-assign/range")]
+    };
+    (Add; Assign1DRB) => {
+        [mech_core::OperationId::from_name("math/add-assign/range")]
+    };
+    (Add; Assign1DRV) => {
+        [mech_core::OperationId::from_name("math/add-assign/range")]
+    };
+    (Add; Assign1DRVB) => {
+        [mech_core::OperationId::from_name("math/add-assign/range")]
+    };
+    (Div; Assign1DRS) => {
+        [mech_core::OperationId::from_name("math/div-assign/range")]
+    };
+    (Div; Assign1DRB) => {
+        [mech_core::OperationId::from_name("math/div-assign/range")]
+    };
+    (Div; Assign1DRV) => {
+        [mech_core::OperationId::from_name("math/div-assign/range")]
+    };
+    (Div; Assign1DRVB) => {
+        [mech_core::OperationId::from_name("math/div-assign/range")]
+    };
+    (Mul; Assign1DRS) => {
+        [mech_core::OperationId::from_name("math/mul-assign/range")]
+    };
+    (Mul; Assign1DRB) => {
+        [mech_core::OperationId::from_name("math/mul-assign/range")]
+    };
+    (Mul; Assign1DRV) => {
+        [mech_core::OperationId::from_name("math/mul-assign/range")]
+    };
+    (Mul; Assign1DRVB) => {
+        [mech_core::OperationId::from_name("math/mul-assign/range")]
+    };
+    (Sub; Assign1DRS) => {
+        [mech_core::OperationId::from_name("math/sub-assign/range")]
+    };
+    (Sub; Assign1DRB) => {
+        [mech_core::OperationId::from_name("math/sub-assign/range")]
+    };
+    (Sub; Assign1DRV) => {
+        [mech_core::OperationId::from_name("math/sub-assign/range")]
+    };
+    (Sub; Assign1DRVB) => {
+        [mech_core::OperationId::from_name("math/sub-assign/range")]
+    };
+    (Add; $family:ident) => {
+        [mech_core::OperationId::from_name(
+            "math/add-assign/range-all",
+        )]
+    };
+    (Div; $family:ident) => {
+        [mech_core::OperationId::from_name(
+            "math/div-assign/range-all",
+        )]
+    };
+    (Mul; $family:ident) => {
+        [mech_core::OperationId::from_name(
+            "math/mul-assign/range-all",
+        )]
+    };
+    (Sub; $family:ident) => {
+        [mech_core::OperationId::from_name(
+            "math/sub-assign/range-all",
+        )]
+    };
+}
+
+#[cfg(feature = "op_assign")]
 macro_rules! declare_op_assign_ss {
     (($operation:ident; $operation_feature:literal); $scalar_token:ident; $scalar:ty; $scalar_name:literal; $scalar_cfg:literal; $scalar_feature:literal) => {
         mech_core::paste::paste! {
@@ -1057,6 +1648,7 @@ macro_rules! declare_op_assign_ss {
                 name: concat!(stringify!($operation), "AssignSS<", $scalar_name, ">"),
                 factory_type: [<$operation AssignSS>]<$scalar>,
                 contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
+                operations: op_assign_value_operation_ids!($operation),
                 package: "mech-math", crate_name: "mech_math",
                 installer_path: concat!("mech_math::__mech_native::", stringify!([<install_ $operation:snake _assign_ss_ $scalar_token>])),
                 extra_cargo_features: [$operation_feature],
@@ -1076,6 +1668,7 @@ macro_rules! declare_op_assign_vv {
                 name: concat!(stringify!($operation), "AssignVV<[", $scalar_name, "]:", $shape_name, ">"),
                 factory_type: [<$operation AssignVV>]<$scalar, $shape<$scalar>, $shape<$scalar>>,
                 contract: RuntimeFunctionContract::same_shape(RuntimeOutputAliasPolicy::DisallowInputAlias),
+                operations: op_assign_value_operation_ids!($operation),
                 package: "mech-math", crate_name: "mech_math",
                 installer_path: concat!("mech_math::__mech_native::", stringify!([<install_ $operation:snake _assign_vv_ $shape:snake _ $scalar_token>])),
                 extra_cargo_features: [$operation_feature],
@@ -1099,6 +1692,7 @@ macro_rules! declare_op_assign_range_s {
                     RuntimeOutputAliasPolicy::DisallowInputAlias,
                     validate_canonical_op_assign_slice,
                 ),
+                operations: op_assign_range_operation_ids!($operation; $family),
                 package: "mech-math", crate_name: "mech_math",
                 installer_path: concat!("mech_math::__mech_native::", stringify!([<install_ $operation:snake _assign_ $family:snake _ $sink:snake _ $index:snake _ $scalar_token>])),
                 extra_cargo_features: [$operation_feature],
@@ -1122,6 +1716,7 @@ macro_rules! declare_op_assign_range_v {
                     RuntimeOutputAliasPolicy::DisallowInputAlias,
                     validate_canonical_op_assign_slice,
                 ),
+                operations: op_assign_range_operation_ids!($operation; $family),
                 package: "mech-math", crate_name: "mech_math",
                 installer_path: concat!("mech_math::__mech_native::", stringify!([<install_ $operation:snake _assign_ $family:snake _ $sink:snake _ $source:snake _ $index:snake _ $scalar_token>])),
                 extra_cargo_features: [$operation_feature],
@@ -1406,82 +2001,40 @@ fn install_sub_assign_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
     install_native_op_assign_runtime_factories!(builder, Sub; "sub_assign")
 }
 
-macro_rules! for_each_atan2_factory {
-    ($callback:ident, $context:tt) => {
-        $callback!($context; feature = "f32"; "f32"; Atan2F32; []);
-        $callback!($context; all(feature = "f32", feature = "matrix1"); "f32"; Atan2M1F32; ["matrix1"]);
-        $callback!($context; all(feature = "f32", feature = "matrix2"); "f32"; Atan2M2F32; ["matrix2"]);
-        $callback!($context; all(feature = "f32", feature = "matrix3"); "f32"; Atan2M3F32; ["matrix3"]);
-        $callback!($context; all(feature = "f32", feature = "matrix3x2"); "f32"; Atan2M3x2F32; ["matrix3x2"]);
-        $callback!($context; all(feature = "f32", feature = "matrix2x3"); "f32"; Atan2M2x3F32; ["matrix2x3"]);
-        $callback!($context; all(feature = "f32", feature = "matrix4"); "f32"; Atan2M4F32; ["matrix4"]);
-        $callback!($context; all(feature = "f32", feature = "vector2"); "f32"; Atan2V2F32; ["vector2"]);
-        $callback!($context; all(feature = "f32", feature = "vector3"); "f32"; Atan2V3F32; ["vector3"]);
-        $callback!($context; all(feature = "f32", feature = "vector4"); "f32"; Atan2V4F32; ["vector4"]);
-        $callback!($context; all(feature = "f32", feature = "row_vector2"); "f32"; Atan2R2F32; ["row_vector2"]);
-        $callback!($context; all(feature = "f32", feature = "row_vector3"); "f32"; Atan2R3F32; ["row_vector3"]);
-        $callback!($context; all(feature = "f32", feature = "row_vector4"); "f32"; Atan2R4F32; ["row_vector4"]);
-        $callback!($context; all(feature = "f32", feature = "row_vectord"); "f32"; Atan2RDF32; ["row_vectord"]);
-        $callback!($context; all(feature = "f32", feature = "vectord"); "f32"; Atan2VDF32; ["vectord"]);
-        $callback!($context; all(feature = "f32", feature = "matrixd"); "f32"; Atan2MDF32; ["matrixd"]);
-        $callback!($context; feature = "f64"; "f64"; Atan2F64; []);
-        $callback!($context; all(feature = "f64", feature = "matrix1"); "f64"; Atan2M1F64; ["matrix1"]);
-        $callback!($context; all(feature = "f64", feature = "matrix2"); "f64"; Atan2M2F64; ["matrix2"]);
-        $callback!($context; all(feature = "f64", feature = "matrix3"); "f64"; Atan2M3F64; ["matrix3"]);
-        $callback!($context; all(feature = "f64", feature = "matrix3x2"); "f64"; Atan2M3x2F64; ["matrix3x2"]);
-        $callback!($context; all(feature = "f64", feature = "matrix2x3"); "f64"; Atan2M2x3F64; ["matrix2x3"]);
-        $callback!($context; all(feature = "f64", feature = "matrix4"); "f64"; Atan2M4F64; ["matrix4"]);
-        $callback!($context; all(feature = "f64", feature = "vector2"); "f64"; Atan2V2F64; ["vector2"]);
-        $callback!($context; all(feature = "f64", feature = "vector3"); "f64"; Atan2V3F64; ["vector3"]);
-        $callback!($context; all(feature = "f64", feature = "vector4"); "f64"; Atan2V4F64; ["vector4"]);
-        $callback!($context; all(feature = "f64", feature = "row_vector2"); "f64"; Atan2R2F64; ["row_vector2"]);
-        $callback!($context; all(feature = "f64", feature = "row_vector3"); "f64"; Atan2R3F64; ["row_vector3"]);
-        $callback!($context; all(feature = "f64", feature = "row_vector4"); "f64"; Atan2R4F64; ["row_vector4"]);
-        $callback!($context; all(feature = "f64", feature = "row_vectord"); "f64"; Atan2RDF64; ["row_vectord"]);
-        $callback!($context; all(feature = "f64", feature = "vectord"); "f64"; Atan2VDF64; ["vectord"]);
-        $callback!($context; all(feature = "f64", feature = "matrixd"); "f64"; Atan2MDF64; ["matrixd"]);
-    };
-}
-
-macro_rules! declare_atan2_factory {
-    ($_context:tt; $cfg:meta; $scalar_feature:literal; $factory:ident; [$($shape_feature:literal),* $(,)?]) => {
-        mech_core::paste::paste! { mech_core::declare_native_runtime_factory! {
-            cfg: all(feature = "atan2", $cfg), registration: [<register_ $factory:snake>], installer: [<install_ $factory:snake>],
-            name: stringify!($factory), factory_type: crate::trig::atan2::$factory,
-            contract: atan2_runtime_contract!([$($shape_feature),*]),
-            package: "mech-math", crate_name: "mech_math", installer_path: concat!("mech_math::__mech_native::", stringify!([<install_ $factory:snake>])),
-            extra_cargo_features: ["atan2"],
-        }}
-    };
-}
-
-#[cfg(feature = "atan2")]
-macro_rules! atan2_runtime_contract {
-    ([]) => {
-        RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias)
-    };
-    ([$first:literal $(, $rest:literal)*]) => {
-        RuntimeFunctionContract::same_shape(RuntimeOutputAliasPolicy::DisallowInputAlias)
-    };
-}
-for_each_atan2_factory!(declare_atan2_factory, ());
+declare_math_float_binop!(Atan2, "atan2", "math/atan2");
 
 #[cfg(feature = "atan2")]
 fn install_atan2_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    macro_rules! register_atan2_factory {
-        (($builder:ident); $cfg:meta; $_scalar_feature:literal; $factory:ident; [$($_shape_feature:literal),*]) => {
-            #[cfg(all(feature = "atan2", $cfg))]
-            mech_core::paste::paste! { [<register_ $factory:snake>]($builder)?; }
-        };
-    }
-    for_each_atan2_factory!(register_atan2_factory, (builder));
+    mech_core::install_native_binop_runtime_factories!(
+        builder,
+        Atan2;
+        ("f32", f32, "f32", f32),
+        ("f64", f64, "f64", f64),
+    )?;
     Ok(())
+}
+
+mech_core::declare_native_runtime_factory! {
+    cfg: all(feature = "pow", feature = "rational", feature = "i32"),
+    registration: register_pow_rational,
+    installer: install_pow_rational,
+    name: "PowRational<r64>",
+    factory_type: crate::ops::pow::PowRational,
+    contract: RuntimeFunctionContract::no_matrix(
+        RuntimeOutputAliasPolicy::DisallowInputAlias
+    ),
+    operations: [mech_core::OperationId::from_name("math/pow")],
+    package: "mech-math",
+    crate_name: "mech_math",
+    installer_path: "mech_math::__mech_native::install_pow_rational",
+    extra_cargo_features: ["pow"],
 }
 
 mech_core::declare_native_binop_runtime_factories! {
     package: "mech-math",
     crate_name: "mech_math",
     operation: Div,
+    canonical_operation: "math/div",
     operation_feature: "div",
     additional_features: [],
     scalars:
@@ -1499,6 +2052,7 @@ mech_core::declare_native_binop_runtime_factories! {
     package: "mech-math",
     crate_name: "mech_math",
     operation: Mod,
+    canonical_operation: "math/mod",
     operation_feature: "mod",
     additional_features: [],
     scalars:
@@ -1514,6 +2068,7 @@ mech_core::declare_native_binop_runtime_factories! {
     package: "mech-math",
     crate_name: "mech_math",
     operation: Mul,
+    canonical_operation: "math/mul",
     operation_feature: "mul",
     additional_features: [],
     scalars:
@@ -1531,6 +2086,7 @@ mech_core::declare_native_binop_runtime_factories! {
     package: "mech-math",
     crate_name: "mech_math",
     operation: Pow,
+    canonical_operation: "math/pow",
     operation_feature: "pow",
     additional_features: [],
     scalars:
@@ -1543,6 +2099,7 @@ mech_core::declare_native_binop_runtime_factories! {
     package: "mech-math",
     crate_name: "mech_math",
     operation: Sub,
+    canonical_operation: "math/sub",
     operation_feature: "sub",
     additional_features: [],
     scalars:
@@ -1559,6 +2116,9 @@ mech_core::declare_native_binop_runtime_factories! {
 #[doc(hidden)]
 #[cfg(feature = "native-link")]
 pub mod __mech_native {
+    #[cfg(all(feature = "pow", feature = "rational", feature = "i32"))]
+    pub use super::install_pow_rational;
+
     #[cfg(feature = "add_assign")]
     export_native_op_assign_runtime_factories!(Add; "add_assign");
     #[cfg(feature = "div_assign")]
@@ -1585,6 +2145,31 @@ pub mod __mech_native {
 
     math_float_unop_families!(export_math_float_unop);
 
+    macro_rules! export_math_float_binop {
+        ($operation:ident, $operation_feature:literal, $_canonical:literal) => {
+            #[cfg(all(feature = $operation_feature, feature = "f32"))]
+            mech_core::__mech_for_each_exact_binop_runtime_factory_for_type!(
+                export_math_float_binop_factory,
+                (),
+                $operation,
+                f32,
+                "f32",
+                f32
+            );
+            #[cfg(all(feature = $operation_feature, feature = "f64"))]
+            mech_core::__mech_for_each_exact_binop_runtime_factory_for_type!(
+                export_math_float_binop_factory,
+                (),
+                $operation,
+                f64,
+                "f64",
+                f64
+            );
+        };
+    }
+
+    math_float_binop_families!(export_math_float_binop);
+
     macro_rules! export_math_abs_for_scalar {
         ($_context:tt; $scalar_token:ident; $_scalar:ty; $scalar_cfg:literal; $_scalar_feature:literal) => {
             #[cfg(all(feature = "abs", feature = $scalar_cfg))]
@@ -1599,21 +2184,24 @@ pub mod __mech_native {
             #[cfg(all(feature = "neg", feature = $scalar_cfg))]
             mech_core::paste::paste! {
                 pub use super::[<install_negate_s_ $scalar_token>];
-                pub use super::[<install_negate_v_ $scalar_token>];
+            }
+            for_each_math_unop_shape!(export_math_neg_vector_factory, ($scalar_token; $scalar_cfg));
+        };
+    }
+
+    macro_rules! export_math_neg_vector_factory {
+        (($scalar_token:ident; $scalar_cfg:literal), S, none) => {};
+        (($scalar_token:ident; $scalar_cfg:literal), $suffix:ident, $shape_feature:literal) => {
+            #[cfg(all(feature = "neg", feature = $scalar_cfg, feature = $shape_feature))]
+            mech_core::paste::paste! {
+                pub use super::[<install_negate_v_ $scalar_token _ $suffix:lower>];
             }
         };
     }
 
     for_each_math_neg_scalar!(export_math_neg_for_scalar, ());
 
-    macro_rules! export_atan2_factory {
-        ($_context:tt; $cfg:meta; $_scalar_feature:literal; $factory:ident; [$($_shape_feature:literal),* $(,)?]) => {
-            #[cfg(all(feature = "atan2", $cfg))]
-            mech_core::paste::paste! { pub use super::[<install_ $factory:snake>]; }
-        };
-    }
-
-    for_each_atan2_factory!(export_atan2_factory, ());
+    export_math_float_binop!(Atan2, "atan2", "math/atan2");
 
     mech_core::export_native_binop_runtime_factories! {
         operation_feature: "div", operation: Div;
@@ -1739,6 +2327,8 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         ("f32", f32, "f32", f32),
         ("f64", f64, "f64", f64),
     )?;
+    #[cfg(all(feature = "pow", feature = "rational", feature = "i32"))]
+    register_pow_rational(builder)?;
     #[cfg(feature = "sub")]
     mech_core::install_native_binop_runtime_factories!(
         builder,
@@ -1826,6 +2416,20 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     install_float_unop!(builder, MathAtan);
     #[cfg(feature = "atan2")]
     install_atan2_runtime(builder)?;
+    #[cfg(feature = "copysign")]
+    install_math_float_binop!(builder, Copysign, "copysign", "math/copysign");
+    #[cfg(feature = "fdim")]
+    install_math_float_binop!(builder, Fdim, "fdim", "math/fdim");
+    #[cfg(feature = "fmod")]
+    install_math_float_binop!(builder, Fmod, "fmod", "math/fmod");
+    #[cfg(feature = "nextafter")]
+    install_math_float_binop!(builder, Nextafter, "nextafter", "math/nextafter");
+    #[cfg(feature = "remainder")]
+    install_math_float_binop!(builder, Remainder, "remainder", "math/remainder");
+    #[cfg(feature = "jn")]
+    install_math_float_binop!(builder, Jn, "jn", "math/bessel/jn");
+    #[cfg(feature = "yn")]
+    install_math_float_binop!(builder, Yn, "yn", "math/bessel/yn");
     #[cfg(feature = "atanh")]
     install_float_unop!(builder, MathAtanh);
     #[cfg(feature = "cos")]
@@ -1863,10 +2467,226 @@ pub fn install_native_plan(builder: &mut FunctionCatalogBuilder) -> MResult<()> 
     Ok(())
 }
 
+#[cfg(all(test, feature = "source"))]
+pub(crate) fn specialize_test_operation(
+    catalog: &mech_core::FunctionCatalog,
+    name: &str,
+    cells: Vec<mech_core::ValueCell>,
+) -> mech_core::SpecializedFunction {
+    use mech_core::*;
+    let entry = catalog.specializer(OperationId::from_name(name)).unwrap();
+    let originals = cells
+        .iter()
+        .map(ValueCell::resolved_type)
+        .collect::<MResult<Vec<_>>>()
+        .unwrap();
+    let SourceTypeAuthority::Schemes(declaration) = &entry.type_authority else {
+        panic!("test operation must have a semantic scheme")
+    };
+    let instantiated = declaration.template.map(|template| {
+        FunctionTypeDeclaration::from_schemes(
+            instantiate_source_scheme_template(template, &originals).unwrap(),
+        )
+    });
+    let declaration = instantiated.as_ref().unwrap_or(declaration);
+    let candidates = declaration
+        .overloads
+        .iter()
+        .map(|overload| TypeOverloadCandidate {
+            id: u64::from(overload.id),
+            scheme: &overload.scheme,
+        })
+        .collect::<Vec<_>>();
+    let resolved = resolve_type_overloads(
+        TypeConstraintOrigin::new(name, None),
+        &candidates,
+        &originals,
+        None,
+    )
+    .unwrap();
+    let overload_id = u32::try_from(resolved.candidate_ids[0]).unwrap();
+    let overload = declaration
+        .overloads
+        .iter()
+        .find(|overload| overload.id == overload_id)
+        .unwrap();
+    assert!(
+        resolved
+            .conversions
+            .iter()
+            .all(|plan| matches!(plan.step, ConversionStep::Identity))
+    );
+    let converted_inputs = resolved
+        .conversions
+        .iter()
+        .map(|plan| plan.target.clone())
+        .collect::<Vec<_>>()
+        .into_boxed_slice();
+    let operation = entry
+        .resolved_operation(converted_inputs.len(), &resolved.outputs)
+        .unwrap();
+    let resolved = ResolvedCall {
+        operation,
+        overload_id,
+        original_inputs: originals.into_boxed_slice(),
+        converted_inputs,
+        input_conversions: resolved.conversions,
+        outputs: resolved.outputs,
+        output_schema_rules: overload.output_schema_rules.clone(),
+    };
+    let invocation = SpecializationInvocation::from_cells(cells.into_boxed_slice());
+    let mut context = SpecializationContext::for_resolved_invocation(
+        &invocation,
+        Some(catalog),
+        entry.operation.id,
+        name,
+        resolved,
+    )
+    .unwrap();
+    entry
+        .specializer
+        .specialize_invocation(&invocation, &mut context)
+        .unwrap()
+}
+
+#[cfg(all(
+    test,
+    any(
+        all(feature = "i32", any(feature = "div", feature = "mod")),
+        all(
+            feature = "pow",
+            any(feature = "u8", all(feature = "rational", feature = "i32"))
+        ),
+    )
+))]
+pub(crate) fn bind_test_binary<F: mech_core::MechFunctionFactory>(
+    operation: &str,
+    factory: &str,
+    lhs: mech_core::ValueCell,
+    rhs: mech_core::ValueCell,
+    output: mech_core::ValueCell,
+) -> mech_core::SpecializedFunction {
+    use mech_core::*;
+    let invocation = FunctionInvocation::binary(output, lhs, rhs);
+    let implementation = F::new_invocation(invocation.clone()).unwrap();
+    let operation = ResolvedOperationDescriptor::from_name(
+        operation,
+        F::declared_operation_contract().unwrap().clone(),
+    )
+    .unwrap();
+    SpecializedFunction::syntax_directed(
+        (implementation, invocation),
+        operation,
+        RuntimeFunctionId::from_name(factory),
+        ExecutionTarget::DirectRuntime,
+        F::implementation_memory_class(),
+    )
+    .unwrap()
+}
+
+#[cfg(all(test, feature = "i8", any(feature = "abs", feature = "neg")))]
+pub(crate) fn bind_test_unary<F: mech_core::MechFunctionFactory>(
+    operation: &str,
+    factory: &str,
+    input: mech_core::ValueCell,
+    output: mech_core::ValueCell,
+) -> mech_core::SpecializedFunction {
+    use mech_core::*;
+    let invocation = FunctionInvocation::unary(output, input);
+    let implementation = F::new_invocation(invocation.clone()).unwrap();
+    let operation = ResolvedOperationDescriptor::from_name(
+        operation,
+        F::declared_operation_contract().unwrap().clone(),
+    )
+    .unwrap();
+    SpecializedFunction::syntax_directed(
+        (implementation, invocation),
+        operation,
+        RuntimeFunctionId::from_name(factory),
+        ExecutionTarget::DirectRuntime,
+        F::implementation_memory_class(),
+    )
+    .unwrap()
+}
+
+#[cfg(all(
+    test,
+    feature = "source",
+    feature = "u8",
+    feature = "matrixd",
+    feature = "div",
+    feature = "mod",
+    feature = "pow"
+))]
+mod managed_checked_matrix_tests {
+    use mech_core::*;
+    use nalgebra::DMatrix;
+
+    fn values(cell: &ValueCell) -> Vec<u8> {
+        let value = cell.snapshot().unwrap();
+        let ValueData::Matrix(matrix) = value.data() else {
+            panic!("expected matrix")
+        };
+        let snapshot::SequenceView::U8(values) = matrix.elements() else {
+            panic!("expected U8")
+        };
+        values.to_vec()
+    }
+
+    #[test]
+    fn division_remainder_and_power_preserve_output_on_first_middle_and_last_errors() {
+        let mut builder = FunctionCatalogBuilder::new();
+        super::install_runtime(&mut builder).unwrap();
+        super::install_source(&mut builder).unwrap();
+        let catalog = builder.build().unwrap();
+        for (operation, left, valid, invalid, error) in [
+            ("math/div", 12_u8, 3_u8, 0_u8, "MathDivisionInvalid"),
+            ("math/mod", 12_u8, 5_u8, 0_u8, "MathRemainderInvalid"),
+            ("math/pow", 2_u8, 3_u8, 8_u8, "MathArithmeticOverflow"),
+        ] {
+            let lhs = ValueCell::from_exact(DMatrix::from_element(2, 3, left)).unwrap();
+            let rhs = ValueCell::from_exact(DMatrix::from_element(2, 3, valid)).unwrap();
+            let function =
+                super::specialize_test_operation(&catalog, operation, vec![lhs, rhs.clone()]);
+            let output_alias = function.output().clone();
+            function.instance().solve_result().unwrap();
+            let expected = values(&output_alias);
+            for position in [0, 2, 5] {
+                let mut next = [valid; 6];
+                next[position] = invalid;
+                let replacement = ValueCell::from_exact(DMatrix::from_row_slice(2, 3, &next))
+                    .unwrap()
+                    .snapshot()
+                    .unwrap();
+                rhs.replace(&replacement).unwrap();
+                let version = output_alias.published_version();
+                assert_eq!(
+                    function.instance().solve_result().unwrap_err().kind_name(),
+                    error,
+                    "{operation}, position {position}"
+                );
+                assert_eq!(values(&output_alias), expected);
+                assert_eq!(output_alias.published_version(), version);
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mech_core::{FunctionCatalog, OperationId, RuntimeFunctionId};
+    #[cfg(all(feature = "source", feature = "math_default"))]
+    use mech_core::FunctionCatalog;
+    #[cfg(any(
+        all(feature = "source", feature = "math_default"),
+        all(feature = "neg", feature = "f64", feature = "matrixd")
+    ))]
+    use mech_core::OperationId;
+    use mech_core::RuntimeFunctionId;
+    #[cfg(all(feature = "neg", feature = "f64", feature = "matrixd"))]
+    use mech_core::{
+        ExecutionTarget, FunctionRuntimeType, RuntimeBindingSelector, RuntimeFunctionSignature,
+    };
     use std::collections::BTreeSet;
 
     #[cfg(all(
@@ -1899,7 +2719,7 @@ mod tests {
     }
 
     #[cfg(all(feature = "source", feature = "math_default"))]
-    const FROZEN_NAMES: [&str; 64] = [
+    const EXPECTED_NAMES: [&str; 65] = [
         "math/abs",
         "math/acos",
         "math/acosh",
@@ -1934,6 +2754,7 @@ mod tests {
         "math/div-assign/range-all",
         "math/erf",
         "math/erfc",
+        "math/fdim",
         "math/floor",
         "math/fmod",
         "math/lgamma",
@@ -1997,26 +2818,22 @@ mod tests {
 
     #[cfg(all(feature = "source", feature = "math_default"))]
     #[test]
-    fn source_catalog_matches_the_frozen_math_surface() {
+    fn source_catalog_matches_the_supported_math_surface() {
         let catalog = catalog();
         let actual = catalog
             .specializer_entries()
-            .map(|entry| entry.canonical_name.as_str())
+            .map(|entry| entry.operation.canonical_name.as_ref())
             .collect::<BTreeSet<_>>();
-        let expected = FROZEN_NAMES.into_iter().collect::<BTreeSet<_>>();
+        let expected = EXPECTED_NAMES.into_iter().collect::<BTreeSet<_>>();
 
         assert_eq!(actual, expected);
-        assert_eq!(catalog.specializer_count(), 64);
+        assert_eq!(catalog.specializer_count(), 65);
 
         for excluded in [
             "math/exp",
             "math/exp2",
             "math/exp10",
             "math/expm1",
-            "math/fdim",
-            "math/hypot",
-            "math/ilogb",
-            "math/sincos",
             "math/mul-assign",
         ] {
             assert!(
@@ -2038,7 +2855,7 @@ mod tests {
         let catalog = catalog();
         let prelude = PRELUDE_NAMES.into_iter().collect::<BTreeSet<_>>();
 
-        for name in FROZEN_NAMES {
+        for name in EXPECTED_NAMES {
             let operation = OperationId::from_name(name);
             let exports = catalog.exports_for_operation(operation);
             assert_eq!(exports.len(), 1, "unexpected export count for {name}");
@@ -2088,5 +2905,36 @@ mod tests {
             .expect("math runtime catalog uniqueness thread must spawn")
             .join()
             .unwrap_or_else(|panic| std::panic::resume_unwind(panic));
+    }
+
+    #[cfg(all(feature = "neg", feature = "f64", feature = "matrixd"))]
+    #[test]
+    fn scalar_and_matrix_negation_have_one_exact_binding_each() {
+        let mut builder = FunctionCatalogBuilder::new();
+        install_runtime(&mut builder).unwrap();
+        let catalog = builder.build().unwrap();
+        let operation = RuntimeBindingSelector::Operation(OperationId::from_name("math/neg"));
+
+        let scalar = RuntimeFunctionSignature::unary(
+            <f64 as FunctionRuntimeType>::REPRESENTATION,
+            <f64 as FunctionRuntimeType>::REPRESENTATION,
+        );
+        let scalar_matches = catalog
+            .runtime_entries_for_binding(operation, ExecutionTarget::DirectRuntime)
+            .filter(|entry| entry.signature() == scalar)
+            .collect::<Vec<_>>();
+        assert_eq!(scalar_matches.len(), 1);
+        assert!(scalar_matches[0].name.starts_with("NegateS<"));
+
+        let matrix = RuntimeFunctionSignature::unary(
+            <nalgebra::DMatrix<f64> as FunctionRuntimeType>::REPRESENTATION,
+            <nalgebra::DMatrix<f64> as FunctionRuntimeType>::REPRESENTATION,
+        );
+        let matrix_matches = catalog
+            .runtime_entries_for_binding(operation, ExecutionTarget::DirectRuntime)
+            .filter(|entry| entry.signature() == matrix)
+            .collect::<Vec<_>>();
+        assert_eq!(matrix_matches.len(), 1);
+        assert!(matrix_matches[0].name.starts_with("NegateV<"));
     }
 }

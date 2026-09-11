@@ -6,10 +6,10 @@ use core::cell::RefCell;
 use std::cell::RefCell;
 
 #[cfg(feature = "no_std")]
-use alloc::rc::Rc;
+use alloc::rc::{Rc, Weak};
 use core::sync::atomic::{AtomicU64, Ordering};
 #[cfg(not(feature = "no_std"))]
-use std::rc::Rc;
+use std::rc::{Rc, Weak};
 
 #[cfg(feature = "atom")]
 pub mod atom;
@@ -33,24 +33,40 @@ pub use self::rational_numbers::*;
 /// Callers use this API rather than depending on the current backing store so
 /// the representation can change without leaking into checkpoint or runtime
 /// coordination code.
-pub struct Ref<T>(Rc<RefCell<T>>, CanonicalCellId);
+pub struct Ref<T>(Rc<RefStorage<T>>);
+
+struct RefStorage<T> {
+    value: RefCell<T>,
+    identity: CanonicalCellId,
+    // Caller-owned compatibility wrappers share one publication record. The
+    // registration is weak: retaining an external Ref must not retain a cell,
+    // and the cell's payload adapter must not create an ownership cycle.
+    cell: RefCell<Weak<crate::cell_binding::CellRecord>>,
+}
 
 static NEXT_CANONICAL_CELL_ID: AtomicU64 = AtomicU64::new(1);
 
-pub(crate) fn next_canonical_cell_id() -> CanonicalCellId {
-    CanonicalCellId::new(NEXT_CANONICAL_CELL_ID.fetch_add(1, Ordering::Relaxed))
+pub(crate) fn next_canonical_cell_id() -> Result<CanonicalCellId, MemoryRuntimeError> {
+    NEXT_CANONICAL_CELL_ID
+        .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |current| {
+            current.checked_add(1)
+        })
+        .map(CanonicalCellId::new)
+        .map_err(|_| MemoryRuntimeError::IdentityExhausted {
+            identity: "canonical cell",
+        })
 }
 
 impl<T: Debug> Debug for Ref<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let addr = self.0.as_ptr() as usize;
+        let addr = self.0.value.as_ptr() as usize;
         write!(f, "@0x{addr:016x}: {:#?}", self.borrow())
     }
 }
 
 impl<T> Clone for Ref<T> {
     fn clone(&self) -> Self {
-        Ref(self.0.clone(), self.1)
+        Ref(self.0.clone())
     }
 }
 
@@ -61,25 +77,35 @@ use std::cell;
 
 impl<T> Ref<T> {
     pub fn new(item: T) -> Self {
-        Ref(Rc::new(RefCell::new(item)), next_canonical_cell_id())
+        Self::try_new(item).expect("canonical cell identity space is exhausted")
+    }
+
+    pub fn try_new(item: T) -> MResult<Self> {
+        let identity = next_canonical_cell_id()
+            .map_err(|error| MechError::new(error, None).with_compiler_loc())?;
+        Ok(Ref(Rc::new(RefStorage {
+            value: RefCell::new(item),
+            identity,
+            cell: RefCell::new(Weak::new()),
+        })))
     }
     pub fn as_ptr(&self) -> *const T {
-        self.0.as_ptr()
+        self.0.value.as_ptr()
     }
     pub fn as_mut_ptr(&self) -> *mut T {
-        self.0.as_ptr() as *mut T
+        self.0.value.as_ptr()
     }
     pub fn borrow(&self) -> cell::Ref<'_, T> {
-        self.0.borrow()
+        self.0.value.borrow()
     }
     pub fn borrow_mut(&self) -> cell::RefMut<'_, T> {
-        self.0.borrow_mut()
+        self.0.value.borrow_mut()
     }
     pub fn try_borrow(&self) -> Result<cell::Ref<'_, T>, cell::BorrowError> {
-        self.0.try_borrow()
+        self.0.value.try_borrow()
     }
     pub fn try_borrow_mut(&self) -> Result<cell::RefMut<'_, T>, cell::BorrowMutError> {
-        self.0.try_borrow_mut()
+        self.0.value.try_borrow_mut()
     }
     pub fn same_handle(&self, other: &Self) -> bool {
         Rc::ptr_eq(&self.0, &other.0)
@@ -88,10 +114,13 @@ impl<T> Ref<T> {
         Rc::as_ptr(&self.0) as *const () as usize
     }
     pub fn id(&self) -> u64 {
-        self.1.get()
+        self.0.identity.get()
     }
     pub fn reactive_cell_id(&self) -> CanonicalCellId {
-        self.1
+        self.0.identity
+    }
+    pub(crate) fn cell_registration(&self) -> &RefCell<Weak<crate::cell_binding::CellRecord>> {
+        &self.0.cell
     }
 }
 
@@ -161,7 +190,7 @@ mod value_cell_tests {
     use super::*;
 
     fn index_cell(value: usize) -> ValueCell {
-        ValueCell::from_exact(value).unwrap()
+        ValueCell::from_external_ref(Ref::new(value), None).unwrap()
     }
 
     #[test]

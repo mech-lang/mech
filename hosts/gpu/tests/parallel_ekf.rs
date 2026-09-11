@@ -1050,6 +1050,20 @@ fn fixed_shape_source_and_bytecode_lower_to_the_same_resident_program() {
 
     assert_eq!(source.wgsl(), bytecode.wgsl());
     assert_eq!(
+        source.concrete_execution_cases(),
+        bytecode.concrete_execution_cases(),
+        "source and bytecode lowering must declare the same concrete GPU surface",
+    );
+    assert!(!source.concrete_execution_cases().is_empty());
+    assert!(source.concrete_execution_cases().iter().all(|case| {
+        case.targets.contains(mech_core::ExecutionTarget::GpuBatch)
+            && case.targets.iter().count() == 1
+            && artifact.nodes()[case.node.get() as usize].operation == case.operation
+    }));
+    assert!(source.concrete_execution_cases().iter().any(|case| {
+        case.operation.module_path.as_ref() == ["core"] && case.operation.operation_name == "assign"
+    }));
+    assert_eq!(
         source.compute_program().interface(),
         bytecode.compute_program().interface()
     );

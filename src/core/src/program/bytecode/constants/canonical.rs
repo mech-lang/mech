@@ -22,8 +22,8 @@ use crate::snapshot::{
 use crate::{CanonicalMatrixElementBacking, Ref};
 use crate::{
     CanonicalNominalPath, CardinalitySpec, DimensionExpr, FloatWidth, IntegerWidth, KindExpr,
-    KindField, KindId, MResult, NamedKindPathResolver, SchemaBody, SchemaDraft, SchemaField,
-    SchemaTableBuilder, Value, ValueCell, ValueDataDraft, ValueDraft,
+    KindField, KindId, MResult, MemoryDomain, NamedKindPathResolver, SchemaBody, SchemaDraft,
+    SchemaField, SchemaTableBuilder, Value, ValueCell, ValueDataDraft, ValueDraft,
 };
 #[cfg(feature = "semantic-compiler")]
 use crate::{
@@ -705,6 +705,7 @@ pub(super) fn decode_constant_cells(
     blob: &[u8],
 ) -> MResult<Vec<ValueCell>> {
     let values = decode_constants(types, entries, blob)?;
+    let owner = MemoryDomain::new().map_err(crate::MechError::from)?;
     entries
         .iter()
         .zip(values)
@@ -712,7 +713,7 @@ pub(super) fn decode_constant_cells(
             let ty = types
                 .get(checked_usize(u64::from(entry.type_id), "constant type ID")?)
                 .ok_or_else(|| invalid::<()>("constant type ID is out of range").unwrap_err())?;
-            cell_from_value(value, ty)
+            cell_from_value(&owner, value, ty)
         })
         .collect()
 }
@@ -721,18 +722,19 @@ pub(super) fn decode_encoded_constant_cells(
     constants: &[super::EncodedConstant],
 ) -> MResult<Vec<ValueCell>> {
     let values = decode_encoded_constants(constants)?;
+    let owner = MemoryDomain::new().map_err(crate::MechError::from)?;
     constants
         .iter()
         .zip(values)
-        .map(|(constant, value)| cell_from_value(value, &constant.runtime_type))
+        .map(|(constant, value)| cell_from_value(&owner, value, &constant.runtime_type))
         .collect()
 }
 
-fn cell_from_value(value: Value, ty: &RuntimeType) -> MResult<ValueCell> {
+fn cell_from_value(owner: &MemoryDomain, value: Value, ty: &RuntimeType) -> MResult<ValueCell> {
     #[cfg(not(feature = "matrix"))]
     {
         let _ = ty;
-        return ValueCell::from_snapshot(value);
+        return ValueCell::from_snapshot_in(owner, value);
     }
     #[cfg(feature = "matrix")]
     {
@@ -743,10 +745,10 @@ fn cell_from_value(value: Value, ty: &RuntimeType) -> MResult<ValueCell> {
             cols,
         } = ty
         else {
-            return ValueCell::from_snapshot(value);
+            return ValueCell::from_snapshot_in(owner, value);
         };
         let ValueData::Matrix(matrix) = value.data() else {
-            return ValueCell::from_snapshot(value);
+            return ValueCell::from_snapshot_in(owner, value);
         };
         let sequence = matrix.elements();
         macro_rules! matrix {
@@ -760,7 +762,14 @@ fn cell_from_value(value: Value, ty: &RuntimeType) -> MResult<ValueCell> {
                             })
                     })
                     .collect::<MResult<Vec<_>>>()?;
-                return exact_matrix_cell(value, *storage, *rows as usize, *cols as usize, values);
+                return exact_matrix_cell(
+                    owner,
+                    value,
+                    *storage,
+                    *rows as usize,
+                    *cols as usize,
+                    values,
+                );
             }};
         }
         match element.as_ref() {
@@ -797,7 +806,7 @@ fn cell_from_value(value: Value, ty: &RuntimeType) -> MResult<ValueCell> {
             #[cfg(feature = "string")]
             RuntimeType::String => matrix!(String),
             RuntimeType::Index => matrix!(usize),
-            _ => ValueCell::from_snapshot(value),
+            _ => ValueCell::from_snapshot_in(owner, value),
         }
     }
 }
@@ -831,6 +840,7 @@ fn sequence_len(sequence: SequenceView<'_>) -> usize {
 
 #[cfg(feature = "matrix")]
 fn exact_matrix_cell<T>(
+    owner: &MemoryDomain,
     value: Value,
     storage: super::super::MatrixStorage,
     rows: usize,
@@ -850,7 +860,13 @@ where
         ($feature:literal, $variant:ident, $constructor:expr) => {{
             #[cfg(feature = $feature)]
             {
-                return ValueCell::from_ref(Ref::new($constructor), schema, shape, schemas);
+                return ValueCell::from_decoded_exact_backing_in(
+                    owner,
+                    Ref::new($constructor),
+                    schema,
+                    shape,
+                    schemas,
+                );
             }
             #[cfg(not(feature = $feature))]
             {
@@ -919,7 +935,8 @@ where
         super::super::MatrixStorage::MatrixD => {
             #[cfg(feature = "matrixd")]
             {
-                return ValueCell::from_ref(
+                return ValueCell::from_decoded_exact_backing_in(
+                    owner,
                     Ref::new(na::DMatrix::from_row_slice(rows, columns, &values)),
                     schema,
                     shape,
@@ -1405,7 +1422,14 @@ fn decode_set(
     Ok(DecodedDraft {
         body: SchemaBody::Set {
             element: Box::new(element_body.unwrap_or(runtime_schema_body(element_type)?)),
-            cardinality: CardinalitySpec::Exact(DimensionExpr::Constant(count as u64)),
+            // RuntimeType carries a capacity bound, not an assertion that
+            // every value of this type has the current payload cardinality.
+            // Retaining that distinction is required for nested collections
+            // such as a powerset, whose elements share one bounded Set type
+            // while containing different numbers of values.
+            cardinality: CardinalitySpec::Dynamic {
+                upper_bound: max_len.map(|limit| DimensionExpr::Constant(u64::from(limit))),
+            },
         },
         data: ValueDataDraft::Set(values.into_boxed_slice()),
         named_kinds: named,
@@ -1699,9 +1723,9 @@ pub(crate) fn runtime_schema_body(ty: &RuntimeType) -> MResult<SchemaBody> {
         },
         RuntimeType::Set { element, max_len } => SchemaBody::Set {
             element: Box::new(runtime_schema_body(element)?),
-            cardinality: CardinalitySpec::Exact(DimensionExpr::Constant(u64::from(
-                max_len.unwrap_or(0),
-            ))),
+            cardinality: CardinalitySpec::Dynamic {
+                upper_bound: max_len.map(|maximum| DimensionExpr::Constant(u64::from(maximum))),
+            },
         },
         RuntimeType::Table { columns, .. } => SchemaBody::Table {
             columns: columns

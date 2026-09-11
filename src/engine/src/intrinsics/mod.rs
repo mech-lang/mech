@@ -78,13 +78,10 @@ pub mod catalog;
 pub mod access;
 #[cfg(feature = "assign")]
 pub mod assign;
-#[cfg(all(any(
-    feature = "table",
-    all(
-        feature = "semantic-compiler",
-        any(feature = "access", feature = "assign")
-    )
-)))]
+#[cfg(all(
+    feature = "semantic-compiler",
+    any(feature = "access", feature = "assign")
+))]
 pub(crate) mod canonical_access;
 #[cfg(any(
     feature = "set",
@@ -118,10 +115,11 @@ macro_rules! impl_range_range_fxn_v {
     ($struct_name:ident, $op:ident, $ix1:ty, $ix2:ty) => {
         #[derive(Debug)]
         pub struct $struct_name<T, MatA, MatB, IxVec1, IxVec2> {
-            pub source: Ref<MatB>,
-            pub ixes: (Ref<IxVec1>, Ref<IxVec2>),
-            pub sink: Ref<MatA>,
-            pub _marker: std::marker::PhantomData<T>,
+            pub source: FunctionValueInput,
+            pub ixes: (FunctionValueInput, FunctionValueInput),
+            pub sink: FunctionValueOutput,
+            pub invocation: FunctionInvocation,
+            pub _marker: std::marker::PhantomData<fn() -> (T, MatA, MatB, IxVec1, IxVec2)>,
         }
         impl<
             T,
@@ -144,13 +142,22 @@ macro_rules! impl_range_range_fxn_v {
                 + PartialEq
                 + PartialOrd
                 + ConstElem
-                + FunctionRuntimeType,
+                + FunctionRuntimeType
+                + ManagedAccessElement,
             #[cfg(feature = "semantic-compiler")]
             T: CompileConst + CanonicalMatrixElementBacking,
-            IxVec1: ConstElem + Debug + AsRef<[$ix1]> + FunctionPortBacking,
+            IxVec1: ConstElem
+                + Debug
+                + AsRef<[$ix1]>
+                + FunctionPortBacking
+                + ManagedAccessSelectorBacking,
             #[cfg(feature = "semantic-compiler")]
             IxVec1: CompileConst,
-            IxVec2: ConstElem + Debug + AsRef<[$ix2]> + FunctionPortBacking,
+            IxVec2: ConstElem
+                + Debug
+                + AsRef<[$ix2]>
+                + FunctionPortBacking
+                + ManagedAccessSelectorBacking,
             #[cfg(feature = "semantic-compiler")]
             IxVec2: CompileConst,
             R1: Dim,
@@ -173,26 +180,35 @@ macro_rules! impl_range_range_fxn_v {
                 <IxVec2 as FunctionRuntimeType>::REPRESENTATION,
             );
 
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                T::MEMORY_CLASS
+            }
+
             fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
                 let (sink, source, ix1, ix2) = invocation.expect_ternary()?;
-                let source: Ref<naMatrix<T, R2, C2, S2>> = source.try_ref()?;
-                let ix1: Ref<IxVec1> = ix1.try_ref()?;
-                let ix2: Ref<IxVec2> = ix2.try_ref()?;
-                let sink: Ref<naMatrix<T, R1, C1, S1>> = sink.try_ref()?;
+                T::validate_input(source)?;
+                <IxVec1 as ManagedAccessSelectorBacking>::validate(ix1)?;
+                <IxVec2 as ManagedAccessSelectorBacking>::validate(ix2)?;
+                T::validate_output(sink)?;
                 Ok(Box::new(Self {
-                    sink,
-                    source,
-                    ixes: (ix1, ix2),
+                    sink: sink.value(),
+                    source: source.value(),
+                    ixes: (ix1.value(), ix2.value()),
+                    invocation,
                     _marker: std::marker::PhantomData::default(),
                 }))
+            }
+
+            fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+                Some(&managed_access_contract!($op))
             }
         }
         impl<T, R1, C1, S1, R2, C2, S2, IxVec1, IxVec2> MechFunctionImpl
             for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec1, IxVec2>
         where
-            T: Debug + Clone + Sync + Send + 'static + PartialEq + PartialOrd,
-            IxVec1: AsRef<[$ix1]> + Debug,
-            IxVec2: AsRef<[$ix2]> + Debug,
+            T: ManagedAccessElement,
+            IxVec1: AsRef<[$ix1]> + Debug + ManagedAccessSelectorBacking,
+            IxVec2: AsRef<[$ix2]> + Debug + ManagedAccessSelectorBacking,
             R1: Dim,
             C1: Dim,
             S1: StorageMut<T, R1, C1> + Clone + Debug,
@@ -201,21 +217,44 @@ macro_rules! impl_range_range_fxn_v {
             C2: Dim,
             S2: Storage<T, R2, C2> + Clone + Debug,
         {
-            fn solve_result(&self) -> MResult<()> {
-                unsafe {
-                    let sink = &mut *self.sink.as_mut_ptr();
-                    let source = &*self.source.as_ptr();
-                    let ix1 = (*self.ixes.0.as_ptr()).as_ref();
-                    let ix2 = (*self.ixes.1.as_ptr()).as_ref();
-                    $op!(sink, ix1, ix2, source);
-                };
-                Ok(())
+            fn planned_output_shapes(&self) -> MResult<Option<Box<[ShapeInstance]>>> {
+                Ok(planned_matrix_access_output_shape(
+                    self.invocation.output_cell(),
+                    self.invocation.input_cells(),
+                )?
+                .map(|shape| vec![shape].into_boxed_slice()))
+            }
+
+            fn solve_managed(
+                &self,
+                frame: &mut mech_core::KernelMemoryFrame<'_>,
+                _services: &mut dyn mech_core::MechExecutionServices,
+            ) -> MResult<mech_core::ReactiveSolveStatus> {
+                validate_matrix_access_contract(
+                    self.invocation.output_cell(),
+                    self.invocation.input_cells(),
+                )?;
+                T::solve_ternary::<
+                    <IxVec1 as ManagedAccessSelectorBacking>::Element,
+                    <IxVec2 as ManagedAccessSelectorBacking>::Element,
+                >(
+                    frame,
+                    &self.source,
+                    &self.ixes.0,
+                    &self.ixes.1,
+                    &self.sink,
+                    managed_access_kernel!($op),
+                )?;
+                Ok(mech_core::ReactiveSolveStatus::Changed)
             }
             fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-                Some(FunctionStatePort::from_ref(&self.sink))
+                Some(FunctionStatePort::from_cell(self.sink.cell()))
             }
             fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
-                Ok(Some(vec![FunctionStatePort::from_ref(&self.sink)]))
+                Ok(Some(vec![FunctionStatePort::from_cell(self.sink.cell())]))
+            }
+            fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+                Some(&managed_access_contract!($op))
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
@@ -241,7 +280,13 @@ macro_rules! impl_range_range_fxn_v {
                     function_matrix_storage_name::<IxVec1>(),
                     function_matrix_storage_name::<IxVec2>()
                 );
-                compile_ternop!(name, self.sink, self.source, self.ixes.0, self.ixes.1, ctx);
+                let sink = compile_value_cell_register(self.sink.cell(), ctx)?;
+                let source = compile_value_cell_register(self.source.cell(), ctx)?;
+                let ix1 = compile_value_cell_register(self.ixes.0.cell(), ctx)?;
+                let ix2 = compile_value_cell_register(self.ixes.1.cell(), ctx)?;
+                let function = ctx.function_id(&name)?;
+                ctx.emit_ternop(function, sink, source, ix1, ix2);
+                Ok(sink)
             }
         }
     };
@@ -252,10 +297,11 @@ macro_rules! impl_all_fxn_v {
     ($struct_name:ident, $op:ident, $ix:ty $(, $semantic_contract:path)?) => {
         #[derive(Debug)]
         pub struct $struct_name<T, MatA, MatB, IxVec> {
-            pub source: Ref<MatB>,
-            pub ixes: Ref<IxVec>,
-            pub sink: Ref<MatA>,
-            pub _marker: std::marker::PhantomData<T>,
+            pub source: FunctionValueInput,
+            pub ixes: FunctionValueInput,
+            pub sink: FunctionValueOutput,
+            pub invocation: FunctionInvocation,
+            pub _marker: std::marker::PhantomData<fn() -> (T, MatA, MatB, IxVec)>,
         }
         impl<
             T,
@@ -277,10 +323,15 @@ macro_rules! impl_all_fxn_v {
                 + PartialEq
                 + PartialOrd
                 + ConstElem
-                + FunctionRuntimeType,
+                + FunctionRuntimeType
+                + ManagedAccessElement,
             #[cfg(feature = "semantic-compiler")]
             T: CompileConst + CanonicalMatrixElementBacking,
-            IxVec: ConstElem + Debug + AsRef<[$ix]> + FunctionPortBacking,
+            IxVec: ConstElem
+                + Debug
+                + AsRef<[$ix]>
+                + FunctionPortBacking
+                + ManagedAccessSelectorBacking,
             #[cfg(feature = "semantic-compiler")]
             IxVec: CompileConst,
             R1: Dim,
@@ -302,17 +353,22 @@ macro_rules! impl_all_fxn_v {
                 <IxVec as FunctionRuntimeType>::REPRESENTATION,
             );
 
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                T::MEMORY_CLASS
+            }
+
             fn new_invocation(
                 invocation: FunctionInvocation,
             ) -> MResult<Box<dyn MechFunction>> {
                 let (sink, source, ixes) = invocation.expect_binary()?;
-                let source: Ref<naMatrix<T, R2, C2, S2>> = source.try_ref()?;
-                let ixes: Ref<IxVec> = ixes.try_ref()?;
-                let sink: Ref<naMatrix<T, R1, C1, S1>> = sink.try_ref()?;
+                T::validate_input(source)?;
+                <IxVec as ManagedAccessSelectorBacking>::validate(ixes)?;
+                T::validate_output(sink)?;
                 Ok(Box::new(Self {
-                    sink,
-                    source,
-                    ixes,
+                    sink: sink.value(),
+                    source: source.value(),
+                    ixes: ixes.value(),
+                    invocation,
                     _marker: std::marker::PhantomData::default(),
                 }))
             }
@@ -321,8 +377,8 @@ macro_rules! impl_all_fxn_v {
         impl<T, R1, C1, S1, R2, C2, S2, IxVec> MechFunctionImpl
             for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec>
         where
-            T: Debug + Clone + Sync + Send + 'static + PartialEq + PartialOrd,
-            IxVec: AsRef<[$ix]> + Debug,
+            T: ManagedAccessElement,
+            IxVec: AsRef<[$ix]> + Debug + ManagedAccessSelectorBacking,
             R1: Dim,
             C1: Dim,
             S1: StorageMut<T, R1, C1> + Clone + Debug,
@@ -331,22 +387,39 @@ macro_rules! impl_all_fxn_v {
             C2: Dim,
             S2: Storage<T, R2, C2> + Clone + Debug,
         {
-            fn solve_result(&self) -> MResult<()> {
-                unsafe {
-                    let sink_ptr = &mut *self.sink.as_mut_ptr();
-                    let source_ptr = &*self.source.as_ptr();
-                    let ix_ptr = &(*self.ixes.as_ptr()).as_ref();
-                    $op!(source_ptr, ix_ptr, sink_ptr);
-                };
-                Ok(())
+            fn planned_output_shapes(&self) -> MResult<Option<Box<[ShapeInstance]>>> {
+                Ok(planned_matrix_access_all_range_output_shape(
+                    self.invocation.output_cell(),
+                    self.invocation.input_cells(),
+                )?
+                .map(|shape| vec![shape].into_boxed_slice()))
+            }
+
+            fn solve_managed(
+                &self,
+                frame: &mut mech_core::KernelMemoryFrame<'_>,
+                _services: &mut dyn mech_core::MechExecutionServices,
+            ) -> MResult<mech_core::ReactiveSolveStatus> {
+                validate_matrix_access_all_range_contract(
+                    self.invocation.output_cell(),
+                    self.invocation.input_cells(),
+                )?;
+                T::solve_binary::<<IxVec as ManagedAccessSelectorBacking>::Element>(
+                    frame,
+                    &self.source,
+                    &self.ixes,
+                    &self.sink,
+                    managed_access_kernel!($op),
+                )?;
+                Ok(mech_core::ReactiveSolveStatus::Changed)
             }
             fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-                Some(FunctionStatePort::from_ref(&self.sink))
+                Some(FunctionStatePort::from_cell(self.sink.cell()))
             }
             fn transaction_state_ports(
                 &self,
             ) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
-                Ok(Some(vec![FunctionStatePort::from_ref(&self.sink)]))
+                Ok(Some(vec![FunctionStatePort::from_cell(self.sink.cell())]))
             }
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
                 optional_operation_contract!($($semantic_contract)?)
@@ -374,7 +447,12 @@ macro_rules! impl_all_fxn_v {
                     function_matrix_storage_name::<naMatrix<T, R2, C2, S2>>(),
                     function_matrix_storage_name::<IxVec>()
                 );
-                compile_binop!(name, self.sink, self.source, self.ixes, ctx);
+                let sink = compile_value_cell_register(self.sink.cell(), ctx)?;
+                let source = compile_value_cell_register(self.source.cell(), ctx)?;
+                let ixes = compile_value_cell_register(self.ixes.cell(), ctx)?;
+                let function = ctx.function_id(&name)?;
+                ctx.emit_binop(function, sink, source, ixes);
+                Ok(sink)
             }
         }
     };

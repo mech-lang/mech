@@ -54,6 +54,8 @@ pub struct MechRuntime {
     #[cfg(feature = "resident-routing")]
     pub(super) next_resident_instance: u32,
     #[cfg(feature = "resident-routing")]
+    pub(super) resident_memory_budget: Option<mech_core::ManagedMemoryBudget>,
+    #[cfg(feature = "resident-routing")]
     pub(super) resident_production_probe: ResidentProductionProbe,
     pub(super) id_generator: Box<dyn IdGenerator>,
     pub(super) store: Box<dyn MechStore>,

@@ -1,8 +1,10 @@
-use super::{Complex32Bits, Complex64Bits, F32Bits, F64Bits, Rational64Value, ValueData};
+use super::{
+    Complex32Bits, Complex64Bits, F32Bits, F64Bits, Rational64Value, ValueData, ValueDataDraft,
+};
 use crate::{FloatWidth, IntegerWidth, SchemaBody};
 
 #[cfg(feature = "no_std")]
-use alloc::{boxed::Box, vec::Vec};
+use alloc::{boxed::Box, string::ToString, vec::Vec};
 #[cfg(not(feature = "no_std"))]
 use std::{boxed::Box, vec::Vec};
 
@@ -86,9 +88,125 @@ impl SequenceView<'_> {
     pub fn is_empty(self) -> bool {
         self.len() == 0
     }
+
+    /// Materializes canonical sequence elements without changing their
+    /// schema-directed representation.
+    pub fn to_values(self) -> Vec<ValueData> {
+        macro_rules! unpack {
+            ($values:expr, $variant:ident) => {
+                $values.iter().cloned().map(ValueData::$variant).collect()
+            };
+        }
+
+        match self {
+            Self::U8(values) => unpack!(values, U8),
+            Self::U16(values) => unpack!(values, U16),
+            Self::U32(values) => unpack!(values, U32),
+            Self::U64(values) => unpack!(values, U64),
+            Self::U128(values) => unpack!(values, U128),
+            Self::I8(values) => unpack!(values, I8),
+            Self::I16(values) => unpack!(values, I16),
+            Self::I32(values) => unpack!(values, I32),
+            Self::I64(values) => unpack!(values, I64),
+            Self::I128(values) => unpack!(values, I128),
+            Self::F32(values) => unpack!(values, F32),
+            Self::F64(values) => unpack!(values, F64),
+            Self::Complex32(values) => unpack!(values, Complex32),
+            Self::Complex64(values) => unpack!(values, Complex64),
+            Self::Rational64(values) => unpack!(values, Rational64),
+            Self::Bool(values) => values.iter().copied().map(ValueData::Bool).collect(),
+            Self::String(values) => values.iter().cloned().map(ValueData::String).collect(),
+            Self::Id(values) => unpack!(values, Id),
+            Self::Index(values) => unpack!(values, Index),
+            Self::Unit(count) => (0..count).map(|_| ValueData::Atom).collect(),
+            Self::Values(values) => values.to_vec(),
+        }
+    }
 }
 
 impl SequenceStorage {
+    /// Reconstructs drafts directly from homogeneous packed scalar storage.
+    /// This avoids first expanding every lane to `ValueData` and allocating a
+    /// diagnostic path for every successful scalar conversion.
+    pub(super) fn scalar_drafts(&self, schema: &SchemaBody) -> Option<Box<[ValueDataDraft]>> {
+        macro_rules! drafts {
+            ($values:expr, $variant:ident) => {
+                $values
+                    .iter()
+                    .cloned()
+                    .map(ValueDataDraft::$variant)
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice()
+            };
+        }
+
+        Some(match (schema, self) {
+            (SchemaBody::UnsignedInteger(IntegerWidth::W8), Self::U8(values)) => {
+                drafts!(values, U8)
+            }
+            (SchemaBody::UnsignedInteger(IntegerWidth::W16), Self::U16(values)) => {
+                drafts!(values, U16)
+            }
+            (SchemaBody::UnsignedInteger(IntegerWidth::W32), Self::U32(values)) => {
+                drafts!(values, U32)
+            }
+            (SchemaBody::UnsignedInteger(IntegerWidth::W64), Self::U64(values)) => {
+                drafts!(values, U64)
+            }
+            (SchemaBody::UnsignedInteger(IntegerWidth::W128), Self::U128(values)) => {
+                drafts!(values, U128)
+            }
+            (SchemaBody::SignedInteger(IntegerWidth::W8), Self::I8(values)) => {
+                drafts!(values, I8)
+            }
+            (SchemaBody::SignedInteger(IntegerWidth::W16), Self::I16(values)) => {
+                drafts!(values, I16)
+            }
+            (SchemaBody::SignedInteger(IntegerWidth::W32), Self::I32(values)) => {
+                drafts!(values, I32)
+            }
+            (SchemaBody::SignedInteger(IntegerWidth::W64), Self::I64(values)) => {
+                drafts!(values, I64)
+            }
+            (SchemaBody::SignedInteger(IntegerWidth::W128), Self::I128(values)) => {
+                drafts!(values, I128)
+            }
+            (SchemaBody::FloatingPoint(FloatWidth::W32), Self::F32(values)) => {
+                drafts!(values, F32)
+            }
+            (SchemaBody::FloatingPoint(FloatWidth::W64), Self::F64(values)) => {
+                drafts!(values, F64)
+            }
+            (SchemaBody::Complex(FloatWidth::W32), Self::Complex32(values)) => {
+                drafts!(values, Complex32)
+            }
+            (SchemaBody::Complex(FloatWidth::W64), Self::Complex64(values)) => {
+                drafts!(values, Complex64)
+            }
+            (SchemaBody::Rational64, Self::Rational64(values)) => values
+                .iter()
+                .map(|value| ValueDataDraft::Rational64 {
+                    numerator: value.numerator(),
+                    denominator: value.denominator(),
+                })
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+            (SchemaBody::Bool, Self::Bool(values)) => drafts!(values, Bool),
+            (SchemaBody::String, Self::String(values)) => values
+                .iter()
+                .map(|value| ValueDataDraft::String(value.to_string()))
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+            (SchemaBody::Id, Self::Id(values)) => drafts!(values, Id),
+            (SchemaBody::Index, Self::Index(values)) => drafts!(values, Index),
+            (SchemaBody::Atom(_), Self::Unit(count)) => (0..*count)
+                .map(|_| ValueDataDraft::Atom)
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+            _ => return None,
+        })
+    }
+
     pub(super) fn from_values(schema: &SchemaBody, values: Vec<ValueData>) -> Self {
         macro_rules! pack {
             ($variant:ident, $target:ident) => {{

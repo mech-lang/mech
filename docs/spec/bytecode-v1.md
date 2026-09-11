@@ -430,7 +430,9 @@ with `contract_count u32`, followed by `contract_length u32` and exactly that
 many canonical bytes for each contract. Contract rows are sorted by their
 canonical bytes, duplicate rows are forbidden, and every node and integrity
 constraint contract ID is in range. Each contract starts with encoding version
-`1 u8` and a contract tag: `0` for `Declared`, `1` for `LegacyOpaque`.
+`1 u8` and contract tag `0` for `Declared`. This declared-only encoding is the
+initial supported bytecode-v1 baseline established by R1. Pre-R1 experimental
+contract tags are unsupported and fail canonical decoding.
 
 A declared contract is:
 
@@ -480,13 +482,6 @@ contracts have zero outputs; `Observation` and `TransactionalExternal`
 contracts are not subject to that restriction. Every `Build` module-path
 segment and contract name is nonempty, trimmed, is neither `.` nor `..`, and
 contains no NUL, `/`, or `\` character.
-
-A legacy-opaque contract contains, after its version and tag, an input schema
-list and an output schema list. Each list is `count u32` followed by that many
-`schema u32` IDs. This row represents only an operation for which the source
-compiler has no declared semantic contract; it is not a bytecode compatibility
-adapter. Decoders prove every count against the remaining bytes before
-allocating and require canonical re-encoding to reproduce the original bytes.
 
 The source compiler's in-memory sidecar supplies an exact schema kind for
 every semantic register, one role for every instruction, source-definition

@@ -5,8 +5,6 @@ use mech_core::*;
 #[cfg(feature = "matrixd")]
 use nalgebra::DMatrix;
 
-#[cfg(feature = "matrixd")]
-use itertools::Itertools;
 use num_traits::{One, Zero};
 use std::fmt::Debug;
 use std::ops::{Add, AddAssign, Div, Mul, Sub};
@@ -71,72 +69,6 @@ static PURE_N_CHOOSE_K_MATRIX_CONTRACT: LazyLock<OperationContractDeclaration> =
         .into_boxed_slice(),
         interaction: ExternalInteraction::Pure,
     });
-
-#[cfg(feature = "f64")]
-pub(crate) fn bind_resident_n_choose_k_f64(
-    request: &ResidentKernelBindRequest<'_>,
-) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    let ResolvedOperationContract::Declared(contract) = request.contract else {
-        return Err(ResidentKernelBindError::UnsupportedContract);
-    };
-    if contract.interaction != ExternalInteraction::Pure
-        || contract.inputs.len() != 2
-        || request.inputs.len() != 2
-        || contract.outputs.len() != 1
-        || contract
-            .inputs
-            .iter()
-            .zip(request.inputs)
-            .any(|(port, layout)| {
-                port.schema != layout.schema_id
-                    || port.access != AccessMode::Read
-                    || port.delivery != DeliveryMode::Signal
-            })
-    {
-        return Err(ResidentKernelBindError::UnsupportedContract);
-    }
-    let output = &contract.outputs[0];
-    if output.schema != request.output.schema_id
-        || output.access != AccessMode::Write
-        || output.delivery != DeliveryMode::Signal
-        || output.construction
-            != (OutputConstruction::FullWrite {
-                shape: ShapeRule::Declared,
-            })
-        || output.alias != AliasPolicy::NoAlias
-        || output.change_detection != ChangeDetectionPolicy::ExactScalar
-        || request.inputs.iter().any(|input| {
-            input.kind != ResidentValueKind::F64 || input.shape != ResidentShape::SCALAR
-        })
-        || request.output.kind != ResidentValueKind::F64
-        || request.output.shape != ResidentShape::SCALAR
-    {
-        return Err(ResidentKernelBindError::UnsupportedContract);
-    }
-    Ok(BoundResidentKernel::new_f64_output_2(
-        resident_n_choose_k_f64,
-        Box::new([]),
-    ))
-}
-
-#[cfg(feature = "f64")]
-fn resident_n_choose_k_f64(
-    _kernel: &BoundResidentKernel,
-    n: &[f64],
-    k: &[f64],
-    output: &mut [f64],
-) -> Result<bool, ResidentKernelError> {
-    let ([n], [k], [output]) = (n, k, output) else {
-        return Err(ResidentKernelError::InvalidShape);
-    };
-    if !crate::kernels::n_choose_k::supports_f64(*n, *k) {
-        return Err(ResidentKernelError::InvalidInput);
-    }
-    let next = crate::kernels::n_choose_k::scalar(*n, *k);
-    let changed = output.to_bits() != next.to_bits();
-    *output = next;
-    Ok(changed)
-}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct NChooseKResultUnrepresentable {
@@ -266,7 +198,6 @@ impl RuntimeNChooseK for R64 {
     }
 }
 
-
 #[cfg(feature = "rational")]
 impl NChooseKSelection for R64 {
     fn selection_count(self) -> Option<u128> {
@@ -286,7 +217,6 @@ impl RuntimeNChooseK for C64 {
         Some(crate::kernels::n_choose_k::scalar(self, k))
     }
 }
-
 
 #[cfg(feature = "complex")]
 impl NChooseKSelection for C64 {
@@ -362,10 +292,7 @@ fn canonical_scalar_selection(value: &ValueData) -> Option<(u128, Option<u128>)>
         #[cfg(feature = "f32")]
         ValueData::F32(value) => {
             let value = value.to_f32();
-            if !value.is_finite()
-                || value < 0.0
-                || value.fract() != 0.0
-                || value > u128::MAX as f32
+            if !value.is_finite() || value < 0.0 || value.fract() != 0.0 || value > u128::MAX as f32
             {
                 return None;
             }
@@ -374,10 +301,7 @@ fn canonical_scalar_selection(value: &ValueData) -> Option<(u128, Option<u128>)>
         #[cfg(feature = "f64")]
         ValueData::F64(value) => {
             let value = value.to_f64();
-            if !value.is_finite()
-                || value < 0.0
-                || value.fract() != 0.0
-                || value > u128::MAX as f64
+            if !value.is_finite() || value < 0.0 || value.fract() != 0.0 || value > u128::MAX as f64
             {
                 return None;
             }
@@ -497,20 +421,12 @@ pub(crate) fn validate_canonical_n_choose_k_matrix_contract(
             "output must be matrix-backed",
         ));
     };
-    if !matches!(
-        output.representation(),
-        FunctionValueRepresentation::Matrix {
-            storage: FunctionMatrixStoragePattern::Exact(FunctionMatrixRepresentation::MatrixD),
-            ..
-        }
-    ) {
-        return Err(function_shape_contract_violation(
-            contract,
-            "output must use MatrixD storage",
-        ));
-    }
     let dimensions = |dimensions: &[DimensionExpr]| -> MResult<(usize, usize)> {
-        let [DimensionExpr::Constant(rows), DimensionExpr::Constant(columns)] = dimensions else {
+        let [
+            DimensionExpr::Constant(rows),
+            DimensionExpr::Constant(columns),
+        ] = dimensions
+        else {
             return Err(function_shape_contract_violation(
                 contract,
                 "matrix dimensions must be resolved",
@@ -551,9 +467,7 @@ pub(crate) fn validate_canonical_n_choose_k_matrix_contract(
     {
         return Err(function_shape_contract_violation(
             contract,
-            format!(
-                "output is {output_rows}x{output_columns}, expected {k}x{combinations}"
-            ),
+            format!("output is {output_rows}x{output_columns}, expected {k}x{combinations}"),
         ));
     }
     Ok(())
@@ -644,13 +558,14 @@ fn matrix_result_too_large(available: usize, requested: usize) -> MechError {
 
 #[derive(Debug)]
 pub struct NChooseK<T> {
-    n: Ref<T>,
-    k: Ref<T>,
-    out: Ref<T>,
+    n: ManagedPort<T>,
+    k: ManagedPort<T>,
+    out: ManagedPort<T>,
 }
 impl<T> MechFunctionFactory for NChooseK<T>
 where
-    T: Copy
+    T: ManagedElement
+        + CanonicalMatrixElementBacking
         + Debug
         + Clone
         + Sync
@@ -665,6 +580,7 @@ where
         + FunctionRuntimeType
         + RuntimeNChooseK
         + NChooseKSelection
+        + FunctionPortBacking
         + PartialEq
         + PartialOrd,
     #[cfg(feature = "semantic-compiler")]
@@ -674,18 +590,27 @@ where
     const SIGNATURE: RuntimeFunctionSignature =
         RuntimeFunctionSignature::binary(T::REPRESENTATION, T::REPRESENTATION, T::REPRESENTATION);
 
-    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
-        let (out, n, k) = invocation.expect_binary()?;
-        let n: Ref<T> = n.try_ref()?;
-        let k: Ref<T> = k.try_ref()?;
-        let out: Ref<T> = out.try_ref()?;
-        Ok(Box::new(Self { n, k, out }))
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch
     }
 
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, n, k) = invocation.expect_binary()?;
+        Ok(Box::new(Self {
+            n: n.try_managed_element::<T>()?,
+            k: k.try_managed_element::<T>()?,
+            out: out.try_managed_element::<T>()?,
+        }))
+    }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_N_CHOOSE_K_SCALAR_CONTRACT)
+    }
 }
 impl<T> MechFunctionImpl for NChooseK<T>
 where
-    T: Copy
+    T: ManagedElement
+        + CanonicalMatrixElementBacking
         + Debug
         + Clone
         + Sync
@@ -705,18 +630,27 @@ where
     T: FunctionStateBacking,
 {
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-        Some(FunctionStatePort::from_ref(&self.out))
+        Some(FunctionStatePort::from_cell(self.out.cell()))
     }
     fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
-        Ok(Some(vec![FunctionStatePort::from_ref(&self.out)]))
+        Ok(Some(vec![FunctionStatePort::from_cell(self.out.cell())]))
     }
-    fn solve_result(&self) -> MResult<()> {
-        // Validate every reactive solve, not only bytecode installation: host
-        // or live-resource producers may replace a previously safe operand.
-        validate_n_choose_k_typed(*self.n.borrow(), *self.k.borrow())?;
-        let next = (*self.n.borrow())
-            .runtime_n_choose_k(*self.k.borrow())
-            .ok_or_else(|| {
+    fn solve_managed(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        frame.with_binary_port_views(&self.n, &self.k, &self.out, |n, k, out| {
+            if n.len() != 1 || k.len() != 1 || out.len() != 1 {
+                return Err(function_shape_contract_violation(
+                    "n_choose_k_scalar",
+                    "scalar n-choose-k requires scalar input and output ports",
+                ));
+            }
+            let n = n.get_column_major(0).expect("validated scalar n");
+            let k = k.get_column_major(0).expect("validated scalar k");
+            validate_n_choose_k_typed(n, k)?;
+            let next = n.runtime_n_choose_k(k).ok_or_else(|| {
                 MechError::new(
                     NChooseKResultUnrepresentable {
                         operand_type: std::any::type_name::<T>(),
@@ -725,8 +659,9 @@ where
                 )
                 .with_compiler_loc()
             })?;
-        *self.out.borrow_mut() = next;
-        Ok(())
+            out.try_fill_column_major(|_| Ok(next))
+        })?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_N_CHOOSE_K_SCALAR_CONTRACT)
@@ -743,50 +678,55 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("NChooseK<{}>", <T as FunctionRuntimeType>::REPRESENTATION);
-        compile_binop!(name, self.out, self.n, self.k, ctx);
+        let output = compile_value_cell_register(self.out.cell(), ctx)?;
+        let n = compile_value_cell_register(self.n.cell(), ctx)?;
+        let k = compile_value_cell_register(self.k.cell(), ctx)?;
+        ctx.emit_binop(hash_str(&name), output, n, k);
+        Ok(output)
     }
 }
 #[cfg(all(feature = "matrix", feature = "matrixd"))]
 #[derive(Debug)]
 pub struct NChooseKMatrix<T> {
-    n: Matrix<T>,
-    k: Ref<T>,
-    #[cfg(feature = "semantic-compiler")]
-    out: Ref<DMatrix<T>>,
-    output_value: FunctionValueOutput,
+    n: ManagedPort<T>,
+    k: ManagedPort<T>,
+    out: ManagedPort<T>,
 }
 
 #[cfg(all(feature = "matrix", feature = "matrixd"))]
-fn n_choose_k_matrix_result<T>(n: &Matrix<T>, requested: usize) -> MResult<DMatrix<T>>
-where
-    T: Copy + Clone + Debug + PartialEq + 'static,
-{
-    let elements = n.as_vec();
-    let available = elements.len();
-    if requested == 0 || requested > available {
-        return Err(invalid_matrix_selection(available, requested));
+fn combination_element(
+    available: usize,
+    requested: usize,
+    mut rank: usize,
+    position: usize,
+) -> Option<usize> {
+    let mut previous = 0usize;
+    for selected_position in 0..=position {
+        let remaining = requested.checked_sub(selected_position + 1)?;
+        let maximum = available.checked_sub(remaining + 1)?;
+        let mut selected = previous;
+        loop {
+            if selected > maximum {
+                return None;
+            }
+            let suffix = checked_combination_count(available - selected - 1, remaining)?;
+            if rank < suffix {
+                break;
+            }
+            rank = rank.checked_sub(suffix)?;
+            selected = selected.checked_add(1)?;
+        }
+        previous = selected.checked_add(1)?;
+        if selected_position == position {
+            return Some(selected);
+        }
     }
-    let combination_count = checked_combination_count(available, requested)
-        .ok_or_else(|| matrix_result_too_large(available, requested))?;
-    let element_count = requested
-        .checked_mul(combination_count)
-        .ok_or_else(|| matrix_result_too_large(available, requested))?;
-    let mut flat_data = Vec::new();
-    flat_data
-        .try_reserve_exact(element_count)
-        .map_err(|_| matrix_result_too_large(available, requested))?;
-    for combination in elements.iter().copied().combinations(requested) {
-        flat_data.extend(combination);
-    }
-    if flat_data.len() != element_count {
-        return Err(matrix_result_too_large(available, requested));
-    }
-    Ok(DMatrix::from_vec(requested, combination_count, flat_data))
+    None
 }
 #[cfg(all(feature = "matrix", feature = "matrixd"))]
 impl<T> MechFunctionFactory for NChooseKMatrix<T>
 where
-    T: Copy
+    T: ManagedElement
         + CanonicalMatrixElementBacking
         + Debug
         + Clone
@@ -816,29 +756,40 @@ where
         T::REPRESENTATION,
     );
 
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::NoAdditionalScratch
+    }
+
     fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
         let (out, n, k) = invocation.expect_binary()?;
-        let output_value = out.value();
-        let n: Matrix<T> = n.try_matrix()?;
-        let k: Ref<T> = k.try_ref()?;
-        #[cfg(feature = "semantic-compiler")]
-        let out: Ref<DMatrix<T>> = out.try_ref()?;
-        #[cfg(not(feature = "semantic-compiler"))]
-        out.try_ref::<DMatrix<T>>()?;
+        let representation = n.value().representation();
+        if !matches!(representation, FunctionValueRepresentation::Matrix { .. }) {
+            return Err(MechError::new(
+                FunctionArgumentTypeMismatch {
+                    role: FunctionArgumentRole::Input(0),
+                    expected: "matrix-backed n-choose-k input".into(),
+                    found: format!("{representation:?}"),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        let _ = out.try_managed::<DMatrix<T>>()?;
         Ok(Box::new(Self {
-            n,
-            k,
-            #[cfg(feature = "semantic-compiler")]
-            out,
-            output_value,
+            n: n.try_managed_element::<T>()?,
+            k: k.try_managed_element::<T>()?,
+            out: out.try_managed_element::<T>()?,
         }))
     }
 
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_N_CHOOSE_K_MATRIX_CONTRACT)
+    }
 }
 #[cfg(all(feature = "matrix", feature = "matrixd"))]
 impl<T> MechFunctionImpl for NChooseKMatrix<T>
 where
-    T: Copy
+    T: ManagedElement
         + CanonicalMatrixElementBacking
         + Debug
         + Clone
@@ -858,30 +809,91 @@ where
     DMatrix<T>: FunctionStateBacking,
 {
     fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
-        Some(self.output_value.state_port())
+        Some(FunctionStatePort::from_cell(self.out.cell()))
     }
     fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
-        Ok(Some(vec![self.output_value.state_port()]))
+        Ok(Some(vec![FunctionStatePort::from_cell(self.out.cell())]))
     }
-    fn solve_result(&self) -> MResult<()> {
-        let requested = self
-            .k
-            .borrow()
-            .selection_count()
+    fn planned_output_shapes(&self) -> MResult<Option<Box<[ShapeInstance]>>> {
+        let shape = self.n.cell().shape();
+        let SchemaBody::Matrix { dimensions, .. } = self.n.cell().closed_schema_body()? else {
+            return Err(function_shape_contract_violation(
+                "n_choose_k_matrix",
+                "input 0 must be matrix-backed",
+            ));
+        };
+        let available = dimensions
+            .iter()
+            .map(|dimension| shape.resolve_dimension(dimension))
+            .try_fold(1usize, |count, extent| {
+                let extent = usize::try_from(extent.ok()?).ok()?;
+                count.checked_mul(extent)
+            })
+            .ok_or_else(|| matrix_result_too_large(usize::MAX, 0))?;
+        let selection = self.k.cell().snapshot()?;
+        let requested = T::from_data(selection.data())
+            .and_then(NChooseKSelection::selection_count)
             .and_then(|value| usize::try_from(value).ok())
             .ok_or_else(invalid_matrix_selection_value)?;
-        let next = n_choose_k_matrix_result(&self.n, requested)?;
-        let (rows, columns) = (next.nrows(), next.ncols());
-        let mut elements = Vec::with_capacity(rows.saturating_mul(columns));
-        for row in 0..rows {
-            for column in 0..columns {
-                elements.push(next[(row, column)].data_draft());
-            }
+        if requested == 0 || requested > available {
+            return Err(invalid_matrix_selection(available, requested));
         }
-        self.output_value.replace_matrix_drafts(
-            vec![rows as u64, columns as u64].into_boxed_slice(),
-            elements.into_boxed_slice(),
-        )
+        let combinations = checked_combination_count(available, requested)
+            .ok_or_else(|| matrix_result_too_large(available, requested))?;
+        let output = self.out.cell().snapshot()?;
+        let schemas = output.schemas().ok_or_else(|| {
+            function_shape_contract_violation("n_choose_k_matrix", "missing output schema table")
+        })?;
+        let schema = schemas.entry(output.schema()).ok_or_else(|| {
+            function_shape_contract_violation("n_choose_k_matrix", "missing output schema entry")
+        })?;
+        Ok(Some(
+            vec![
+                shape_for_resolved_extents(
+                    schema.schema(),
+                    &[requested as u64, combinations as u64],
+                )
+                .map_err(|error| MechError::new(error, None).with_compiler_loc())?,
+            ]
+            .into_boxed_slice(),
+        ))
+    }
+    fn solve_managed(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        frame.with_binary_port_views(&self.n, &self.k, &self.out, |n, k, out| {
+            if k.len() != 1 {
+                return Err(invalid_matrix_selection_value());
+            }
+            let requested = k
+                .get_column_major(0)
+                .and_then(NChooseKSelection::selection_count)
+                .and_then(|value| usize::try_from(value).ok())
+                .ok_or_else(invalid_matrix_selection_value)?;
+            let available = n.len();
+            if requested == 0 || requested > available {
+                return Err(invalid_matrix_selection(available, requested));
+            }
+            let combinations = checked_combination_count(available, requested)
+                .ok_or_else(|| matrix_result_too_large(available, requested))?;
+            if out.rows() != requested || out.columns() != combinations {
+                return Err(function_shape_contract_violation(
+                    "n_choose_k_matrix",
+                    "resolved output geometry disagrees with the managed stage",
+                ));
+            }
+            out.try_fill_column_major(|index| {
+                let row = index % requested;
+                let column = index / requested;
+                let source = combination_element(available, requested, column, row)
+                    .ok_or_else(|| matrix_result_too_large(available, requested))?;
+                Ok(n.get_column_major(source)
+                    .expect("validated n-choose-k source element"))
+            })
+        })?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
     }
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(&PURE_N_CHOOSE_K_MATRIX_CONTRACT)
@@ -896,40 +908,23 @@ where
     T: CanonicalMatrixElementBacking + ConstElem + CompileConst + FunctionRuntimeType,
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!("NChooseKMatrix<{}>", <T as FunctionRuntimeType>::REPRESENTATION);
-        let out = compile_register!(self.out, ctx);
-        let n = compile_register_mat!(self.n, ctx);
-        let k = compile_register_brrw!(self.k, ctx);
+        let name = format!(
+            "NChooseKMatrix<{}>",
+            <T as FunctionRuntimeType>::REPRESENTATION
+        );
+        let out = compile_value_cell_register(self.out.cell(), ctx)?;
+        let n = compile_value_cell_register(self.n.cell(), ctx)?;
+        let k = compile_value_cell_register(self.k.cell(), ctx)?;
         ctx.emit_binop(hash_str(&name), out, n, k);
         Ok(out)
     }
 }
 #[cfg(feature = "source")]
-fn specialize_n_choose_k_scalar<T>(
-    n: &SpecializationInput,
-    k: &SpecializationInput,
-) -> MResult<SpecializedFunction>
-where
-    T: FunctionStateBacking,
-    NChooseK<T>: MechFunctionFactory,
-{
-    let invocation = FunctionInvocation::binary(
-        n.cell()?.detached_clone()?,
-        n.cell()?.clone(),
-        k.cell()?.clone(),
-    );
-    let implementation = NChooseK::<T>::new_invocation(invocation.clone())?;
-    Ok(SpecializedFunction::new(FunctionInstance::new(
-        implementation,
-        invocation,
-    )))
-}
-
 #[cfg(all(feature = "source", feature = "matrix", feature = "matrixd"))]
-fn specialize_n_choose_k_matrix<T>(
+fn n_choose_k_matrix_extents<T>(
     n: &SpecializationInput,
     k: &SpecializationInput,
-) -> MResult<SpecializedFunction>
+) -> MResult<Box<[u64]>>
 where
     T: Copy
         + Debug
@@ -955,42 +950,71 @@ where
     Matrix<T>: FunctionRuntimeType,
     DMatrix<T>: FunctionRuntimeType + FunctionStateBacking,
 {
-    let matrix = n.try_matrix::<T>(0)?;
-    let requested = k
-        .try_ref::<T>()?
-        .borrow()
-        .selection_count()
+    let descriptor = n.matrix_descriptor()?.ok_or_else(|| {
+        function_shape_contract_violation("n_choose_k_matrix", "input 0 must be matrix-backed")
+    })?;
+    let selection = k.cell()?.snapshot()?;
+    let requested = T::from_data(selection.data())
+        .and_then(NChooseKSelection::selection_count)
         .and_then(|value| usize::try_from(value).ok())
         .ok_or_else(invalid_matrix_selection_value)?;
-    let output = n_choose_k_matrix_result(&matrix, requested)?;
-    let (rows, columns) = (output.nrows(), output.ncols());
-    let output = ValueCell::from_exact_matrix_ref(Ref::new(output), rows, columns)?;
-    let invocation = FunctionInvocation::binary(output, n.cell()?.clone(), k.cell()?.clone());
-    let implementation = NChooseKMatrix::<T>::new_invocation(invocation.clone())?;
-    Ok(SpecializedFunction::new(FunctionInstance::new(
-        implementation,
-        invocation,
-    )))
+    let available = descriptor
+        .rows
+        .checked_mul(descriptor.cols)
+        .ok_or_else(|| matrix_result_too_large(descriptor.rows, requested))?;
+    if requested == 0 || requested > available {
+        return Err(invalid_matrix_selection(available, requested));
+    }
+    let combinations = checked_combination_count(available, requested)
+        .ok_or_else(|| matrix_result_too_large(available, requested))?;
+    Ok(vec![requested as u64, combinations as u64].into_boxed_slice())
 }
 
 #[cfg(feature = "source")]
 macro_rules! try_n_choose_k_type {
-    ($n:ident, $k:ident, $type:ty) => {{
+    ($context:ident, $n:ident, $k:ident, $type:ty) => {{
         let scalar = <NChooseK<$type> as MechFunctionFactory>::SIGNATURE;
         if let RuntimeFunctionInputs::Binary(expected_n, expected_k) = scalar.inputs
-            && expected_n.matches($n.representation().unwrap_or(FunctionValueRepresentation::Empty))
-            && expected_k.matches($k.representation().unwrap_or(FunctionValueRepresentation::Empty))
+            && expected_n.matches(
+                $n.representation()
+                    .unwrap_or(FunctionValueRepresentation::Empty),
+            )
+            && expected_k.matches(
+                $k.representation()
+                    .unwrap_or(FunctionValueRepresentation::Empty),
+            )
         {
-            return specialize_n_choose_k_scalar::<$type>($n, $k);
+            return $context.bind_resolved_runtime(
+                mech_core::RuntimeBindingSelector::Operation(
+                    $context.resolved_call()?.operation.id,
+                ),
+                mech_core::ExecutionTarget::DirectRuntime,
+                vec![Vec::<u64>::new().into_boxed_slice()].into_boxed_slice(),
+                &[$n, $k],
+            );
         }
         #[cfg(all(feature = "matrix", feature = "matrixd"))]
         {
             let matrix = <NChooseKMatrix<$type> as MechFunctionFactory>::SIGNATURE;
             if let RuntimeFunctionInputs::Binary(expected_n, expected_k) = matrix.inputs
-                && expected_n.matches($n.representation().unwrap_or(FunctionValueRepresentation::Empty))
-                && expected_k.matches($k.representation().unwrap_or(FunctionValueRepresentation::Empty))
+                && expected_n.matches(
+                    $n.representation()
+                        .unwrap_or(FunctionValueRepresentation::Empty),
+                )
+                && expected_k.matches(
+                    $k.representation()
+                        .unwrap_or(FunctionValueRepresentation::Empty),
+                )
             {
-                return specialize_n_choose_k_matrix::<$type>($n, $k);
+                let extents = n_choose_k_matrix_extents::<$type>($n, $k)?;
+                return $context.bind_resolved_runtime(
+                    mech_core::RuntimeBindingSelector::Operation(
+                        $context.resolved_call()?.operation.id,
+                    ),
+                    mech_core::ExecutionTarget::DirectRuntime,
+                    vec![extents].into_boxed_slice(),
+                    &[$n, $k],
+                );
             }
         }
     }};
@@ -1004,7 +1028,7 @@ impl CanonicalFunctionSpecializer for CombinatoricsNChooseK {
     fn specialize_invocation(
         &self,
         invocation: &SpecializationInvocation,
-        _context: &mut SpecializationContext<'_>,
+        context: &mut SpecializationContext<'_>,
     ) -> MResult<SpecializedFunction> {
         if invocation.len() != 2 {
             return Err(MechError::new(
@@ -1019,47 +1043,62 @@ impl CanonicalFunctionSpecializer for CombinatoricsNChooseK {
         let n = invocation.input(0).expect("validated n-choose-k input");
         let k = invocation.input(1).expect("validated n-choose-k selection");
         #[cfg(feature = "u8")]
-        try_n_choose_k_type!(n, k, u8);
+        try_n_choose_k_type!(context, n, k, u8);
         #[cfg(feature = "u16")]
-        try_n_choose_k_type!(n, k, u16);
+        try_n_choose_k_type!(context, n, k, u16);
         #[cfg(feature = "u32")]
-        try_n_choose_k_type!(n, k, u32);
+        try_n_choose_k_type!(context, n, k, u32);
         #[cfg(feature = "u64")]
-        try_n_choose_k_type!(n, k, u64);
+        try_n_choose_k_type!(context, n, k, u64);
         #[cfg(feature = "u128")]
-        try_n_choose_k_type!(n, k, u128);
+        try_n_choose_k_type!(context, n, k, u128);
         #[cfg(feature = "i8")]
-        try_n_choose_k_type!(n, k, i8);
+        try_n_choose_k_type!(context, n, k, i8);
         #[cfg(feature = "i16")]
-        try_n_choose_k_type!(n, k, i16);
+        try_n_choose_k_type!(context, n, k, i16);
         #[cfg(feature = "i32")]
-        try_n_choose_k_type!(n, k, i32);
+        try_n_choose_k_type!(context, n, k, i32);
         #[cfg(feature = "i64")]
-        try_n_choose_k_type!(n, k, i64);
+        try_n_choose_k_type!(context, n, k, i64);
         #[cfg(feature = "i128")]
-        try_n_choose_k_type!(n, k, i128);
+        try_n_choose_k_type!(context, n, k, i128);
         #[cfg(feature = "f32")]
-        try_n_choose_k_type!(n, k, f32);
+        try_n_choose_k_type!(context, n, k, f32);
         #[cfg(feature = "f64")]
-        try_n_choose_k_type!(n, k, f64);
+        try_n_choose_k_type!(context, n, k, f64);
         #[cfg(feature = "rational")]
-        try_n_choose_k_type!(n, k, R64);
+        try_n_choose_k_type!(context, n, k, R64);
         #[cfg(feature = "complex")]
-        try_n_choose_k_type!(n, k, C64);
+        try_n_choose_k_type!(context, n, k, C64);
         Err(MechError::new(
             FunctionArgumentTypeMismatch {
                 role: FunctionArgumentRole::Input(0),
                 expected: "matching scalar or matrix n-choose-k inputs".into(),
-                found: format!(
-                    "{:?} and {:?}",
-                    n.representation(),
-                    k.representation(),
-                ),
+                found: format!("{:?} and {:?}", n.representation(), k.representation(),),
             },
             None,
         )
         .with_compiler_loc())
     }
+}
+
+#[cfg(test)]
+fn test_managed_factory<F: MechFunctionFactory>(
+    invocation: FunctionInvocation,
+    operation: &'static str,
+) -> SpecializedFunction {
+    let implementation = F::new_invocation(invocation.clone()).unwrap();
+    let contract = F::declared_operation_contract()
+        .or_else(|| implementation.semantic_operation_contract())
+        .expect("managed combinatorics fixture requires an operation contract");
+    SpecializedFunction::syntax_directed(
+        (implementation, invocation),
+        ResolvedOperationDescriptor::from_name(operation, contract.clone()).unwrap(),
+        RuntimeFunctionId::from_name(operation),
+        ExecutionTarget::DirectRuntime,
+        F::implementation_memory_class(),
+    )
+    .unwrap()
 }
 
 #[cfg(all(test, feature = "f64"))]
@@ -1079,24 +1118,26 @@ mod canonical_scalar_tests {
         let output = ValueCell::from_exact(0.0_f64).unwrap();
         let alias = output.clone();
         let selection = ValueCell::from_exact(2.0_f64).unwrap();
-        let function = NChooseK::<f64>::new_invocation(FunctionInvocation::binary(
-            output.clone(),
-            ValueCell::from_exact(5.0_f64).unwrap(),
-            selection.clone(),
-        ))
-        .unwrap();
-        function.solve_result().unwrap();
+        let function = test_managed_factory::<NChooseK<f64>>(
+            FunctionInvocation::binary(
+                output.clone(),
+                ValueCell::from_exact(5.0_f64).unwrap(),
+                selection.clone(),
+            ),
+            "test/n-choose-k-scalar",
+        );
+        function.instance().solve_result().unwrap();
         assert_eq!(f64_value(&output), 10.0);
         assert!(output.same_cell(&alias));
         assert_eq!(
-            function.reactive_output_cell_ids(),
+            function.instance().reactive_output_cell_ids(),
             vec![output.reactive_cell_id()]
         );
 
         with_reactive_journal_participant(|mut participant| -> MResult<()> {
-            participant.capture_function_state(function.as_ref())?;
+            participant.capture_function_instance(function.instance())?;
             selection.replace(&ValueCell::from_exact(1.5_f64)?.snapshot()?)?;
-            assert!(function.solve_result().is_err());
+            assert!(function.instance().solve_result().is_err());
             assert_eq!(f64_value(&output), 10.0);
             output.replace(&ValueCell::from_exact(99.0_f64)?.snapshot()?)?;
             participant.preflight_restore_before()?;
@@ -1106,17 +1147,21 @@ mod canonical_scalar_tests {
         .unwrap();
         assert_eq!(f64_value(&output), 10.0);
 
-        assert!(NChooseK::<f64>::new_invocation(FunctionInvocation::binary(
-            ValueCell::from_exact(0.0_f64).unwrap(),
-            ValueCell::from_exact(5.0_f64).unwrap(),
-            ValueCell::from_exact(2_usize).unwrap(),
-        ))
-        .is_err());
-        assert!(NChooseK::<f64>::new_invocation(FunctionInvocation::unary(
-            ValueCell::from_exact(0.0_f64).unwrap(),
-            ValueCell::from_exact(5.0_f64).unwrap(),
-        ))
-        .is_err());
+        assert!(
+            NChooseK::<f64>::new_invocation(FunctionInvocation::binary(
+                ValueCell::from_exact(0.0_f64).unwrap(),
+                ValueCell::from_exact(5.0_f64).unwrap(),
+                ValueCell::from_exact(2_usize).unwrap(),
+            ))
+            .is_err()
+        );
+        assert!(
+            NChooseK::<f64>::new_invocation(FunctionInvocation::unary(
+                ValueCell::from_exact(0.0_f64).unwrap(),
+                ValueCell::from_exact(5.0_f64).unwrap(),
+            ))
+            .is_err()
+        );
     }
 }
 
@@ -1127,45 +1172,45 @@ mod canonical_matrix_tests {
 
     #[test]
     fn matrix_n_choose_k_preserves_input_and_output_identity_across_extents() {
-        let input = Ref::new(Matrix2::new(1.0_f64, 2.0, 3.0, 4.0));
+        let input = ValueCell::from_exact(Matrix2::new(1.0_f64, 2.0, 3.0, 4.0)).unwrap();
         let input_alias = input.clone();
         let selection = ValueCell::from_exact(2.0_f64).unwrap();
-        let out = Ref::new(DMatrix::<f64>::zeros(2, 1));
-        let out_alias = out.clone();
-        let output = ValueCell::from_exact_matrix_ref(out.clone(), 2, 1).unwrap();
-        let function = NChooseKMatrix::<f64>::new_invocation(FunctionInvocation::binary(
-            output.clone(),
-            ValueCell::from_exact_matrix_ref(input.clone(), 2, 2).unwrap(),
-            selection.clone(),
-        ))
-        .unwrap();
-        function.solve_result().unwrap();
-        assert!(input.same_handle(&input_alias));
-        assert!(out.same_handle(&out_alias));
-        assert_eq!(out.borrow().shape(), (2, 6));
+        let output = ValueCell::from_exact(DMatrix::<f64>::zeros(2, 1)).unwrap();
+        let out_alias = output.clone();
+        let function = test_managed_factory::<NChooseKMatrix<f64>>(
+            FunctionInvocation::binary(output.clone(), input.clone(), selection.clone()),
+            "test/n-choose-k-matrix",
+        );
+        function.instance().solve_result().unwrap();
+        assert!(input.same_cell(&input_alias));
+        assert!(output.same_cell(&out_alias));
+        assert_eq!(output.shape().parameter_values(), &[2, 6]);
 
         with_reactive_journal_participant(|mut participant| -> MResult<()> {
-            participant.capture_function_state(function.as_ref())?;
+            participant.capture_function_instance(function.instance())?;
             selection.replace(&ValueCell::from_exact(3.0_f64)?.snapshot()?)?;
-            function.solve_result()?;
-            assert_eq!(out.borrow().shape(), (3, 4));
+            function.instance().solve_result()?;
+            assert_eq!(output.shape().parameter_values(), &[3, 4]);
             selection.replace(&ValueCell::from_exact(0.0_f64)?.snapshot()?)?;
-            assert!(function.solve_result().is_err());
-            assert_eq!(out.borrow().shape(), (3, 4));
-            *out.borrow_mut() = DMatrix::from_element(1, 1, 99.0);
+            assert!(function.instance().solve_result().is_err());
+            assert_eq!(output.shape().parameter_values(), &[3, 4]);
+            output
+                .replace(&ValueCell::from_exact(DMatrix::from_element(1, 1, 99.0))?.snapshot()?)?;
             participant.preflight_restore_before()?;
             participant.apply_restore_before();
             Ok(())
         })
         .unwrap();
-        assert!(out.same_handle(&out_alias));
-        assert_eq!(out.borrow().shape(), (2, 6));
+        assert!(output.same_cell(&out_alias));
+        assert_eq!(output.shape().parameter_values(), &[2, 6]);
 
-        assert!(NChooseKMatrix::<f64>::new_invocation(FunctionInvocation::binary(
-            output,
-            ValueCell::from_exact(4.0_f64).unwrap(),
-            ValueCell::from_exact(2.0_f64).unwrap(),
-        ))
-        .is_err());
+        assert!(
+            NChooseKMatrix::<f64>::new_invocation(FunctionInvocation::binary(
+                output,
+                ValueCell::from_exact(4.0_f64).unwrap(),
+                ValueCell::from_exact(2.0_f64).unwrap(),
+            ))
+            .is_err()
+        );
     }
 }

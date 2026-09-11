@@ -784,6 +784,7 @@ dependencies = [
  "byteorder",
  "grapheme",
  "indexmap",
+ "libm",
  "mech-bytecode",
  "mech-core",
  "mech-syntax",
@@ -792,6 +793,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2 0.10.9",
+ "tinyvec",
  "web-time",
 ]
 

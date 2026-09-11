@@ -12,10 +12,17 @@ use mech_core::{
     ObservationContract, ObservationReplayPolicy, ValueCell, ValueData,
 };
 use mech_runtime::{
-    PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeResourceProvider,
-    RuntimeResourceReadRequest, RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest,
-    RuntimeResourceWriteRequest,
+    PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeEffectId, RuntimeResourceProvider,
+    RuntimeResourceReadRequest, RuntimeResourceWriteCommand, RuntimeResourceWriteIntent,
+    RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest, TransactionId,
 };
+
+fn effect_id() -> RuntimeEffectId {
+    RuntimeEffectId {
+        transaction: TransactionId::new(1),
+        sequence: 0,
+    }
+}
 
 fn string_value(value: &str) -> mech_core::Value {
     ValueCell::from_exact(value.to_owned())
@@ -166,7 +173,7 @@ fn browser_dom_planning_validates_without_touching_the_backend() {
     let planned = provider.plan_read(read_request()).unwrap();
     assert!(matches!(planned.data(), ValueData::String(value) if value.is_empty()));
     provider
-        .plan_write(RuntimeResourceWriteRequest {
+        .plan_write(RuntimeResourceWriteCommand {
             base_uri: BROWSER_DOM_PROVIDER_URI.to_string(),
             path: "body/header/title".to_string(),
             context_name: "ui".to_string(),
@@ -193,6 +200,8 @@ fn browser_dom_write_is_deferred_until_delivery() {
             operation: RuntimeCapabilityOperation::Write,
             value: string_value("deferred"),
             intent: RuntimeResourceWriteIntent::Assign,
+            effect_id: effect_id(),
+            idempotency_key: "browser-test:0".to_owned(),
         })
         .unwrap();
 

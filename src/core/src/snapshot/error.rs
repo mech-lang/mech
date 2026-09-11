@@ -1,4 +1,4 @@
-use crate::{SchemaId, SchemaKey, SemanticModelError, ValueHash};
+use crate::{MemoryRuntimeError, SchemaId, SchemaKey, SemanticModelError, ValueHash};
 
 #[cfg(feature = "no_std")]
 use alloc::{boxed::Box, vec::Vec};
@@ -149,6 +149,9 @@ pub enum SnapshotPathSegment {
 #[derive(Clone, Debug, PartialEq)]
 pub enum SnapshotValueError {
     Semantic(SemanticModelError),
+    /// A managed canonical construction exhausted or failed the R5/R6
+    /// allocation authority supplied to the common snapshot finalizer.
+    MemoryRuntime(MemoryRuntimeError),
     UnknownSnapshotSchema {
         schema: SchemaId,
     },
@@ -197,6 +200,9 @@ pub enum SnapshotValueError {
     DuplicateCanonicalKeyV1 {
         path: SnapshotPath,
     },
+    CanonicalizationWorkLimitExceededV1 {
+        limit: u64,
+    },
     SchemaNotKeyableV1,
     NonCanonicalRationalV1,
     MissingNamedKindResolver,
@@ -210,5 +216,11 @@ pub enum SnapshotValueError {
 impl From<SemanticModelError> for SnapshotValueError {
     fn from(error: SemanticModelError) -> Self {
         Self::Semantic(error)
+    }
+}
+
+impl From<MemoryRuntimeError> for SnapshotValueError {
+    fn from(error: MemoryRuntimeError) -> Self {
+        Self::MemoryRuntime(error)
     }
 }

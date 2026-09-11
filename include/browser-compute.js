@@ -3,6 +3,89 @@ globalThis.MechBrowserCompute ||= (() => {
 let resourceSequence = 0;
 let pipelineBuildCount = 0;
 
+function validateSupportedLimits(required, supported, source) {
+  for (const [name, value] of Object.entries(required)) {
+    if (!Number.isSafeInteger(value) || value <= 0) {
+      throw new Error(`Mech computed an invalid ${name} requirement: ${value}`);
+    }
+    const limit = Number(supported?.[name]);
+    if (!Number.isFinite(limit) || limit <= 0) {
+      throw new Error(`this WebGPU ${source} does not report the required ${name} limit`);
+    }
+    if (value > limit) {
+      throw new Error(`Mech requires ${value} for ${name}, but this ${source} supports ${limit}`);
+    }
+  }
+}
+
+function validateInputs(resource, command) {
+  const inputs = [];
+  for (const input of command.inputs) {
+    const target = resource.inputBindings.get(input.name);
+    if (!target) throw new Error(`Mech wrote undeclared GPU input ${input.name}`);
+    if (input.values.length !== target.binding.elements) {
+      throw new Error(
+        `Mech wrote ${input.values.length} values to ${input.name}; expected ${target.binding.elements}`,
+      );
+    }
+    inputs.push({ input, target });
+  }
+  return inputs;
+}
+
+function writeInputs(resource, inputs, onWritten = null) {
+  for (const { input, target } of inputs) {
+    resource.device.queue.writeBuffer(target.buffer, 0, input.values);
+    resource.metrics.cpuToGpuInputBytes += input.values.byteLength;
+    onWritten?.(target.binding.memoryObject);
+  }
+}
+
+function captureQueueCompletion(device) {
+  try {
+    return Promise.resolve(device.queue.onSubmittedWorkDone());
+  } catch (error) {
+    return Promise.reject(error);
+  }
+}
+
+async function releaseAcceptedQueueWork(resource, completion, memoryHold, writtenObjects) {
+  const [queueResult] = await Promise.allSettled([completion]);
+  try {
+    if (queueResult.status === "fulfilled") {
+      writtenObjects.forEach((object, index) => {
+        if (writtenObjects.indexOf(object) === index) resource.memory.recordWrite(object);
+      });
+    }
+  } finally {
+    resource.memory.complete(memoryHold);
+  }
+}
+
+function trackQueueCleanup(resource, cleanup) {
+  const tracked = Promise.resolve(cleanup).catch((error) => {
+    resource.queueCleanupFailure ||= error instanceof Error ? error : new Error(String(error));
+  });
+  resource.pendingQueueCleanups ||= new Set();
+  resource.pendingQueueCleanups.add(tracked);
+  tracked.finally(() => resource.pendingQueueCleanups.delete(tracked));
+}
+
+function destroyDeviceResource(resource) {
+  for (const buffers of resource.stateBuffers.values()) {
+    buffers.forEach((buffer) => buffer.destroy());
+  }
+  for (const buffer of resource.fixedBuffers.values()) buffer.destroy();
+  const destroyedReadbacks = new Set();
+  for (const buffer of resource.readbackBuffers.values()) {
+    if (!destroyedReadbacks.has(buffer)) buffer.destroy();
+    destroyedReadbacks.add(buffer);
+  }
+  resource.integrityReadback?.destroy();
+  resource.memory.close();
+  resource.device.destroy();
+}
+
 class SubmissionLifecycle {
   constructor(generation) {
     this.generation = String(generation);
@@ -99,6 +182,111 @@ class ResetTracker {
   }
 }
 
+class ManagedMemory {
+  constructor(manifest) {
+    this.closed = false;
+    this.lost = false;
+    this.records = new Map();
+    for (const allocation of manifest.memoryAllocations || []) {
+      const id = Number(allocation.object);
+      const capacity = Number(allocation.capacityBytes);
+      if (!Number.isSafeInteger(id) || id < 0 || !Number.isSafeInteger(capacity) || capacity < 0) {
+        throw new Error("browser GPU memory plan contains an invalid object or capacity");
+      }
+      if (this.records.has(id)) throw new Error(`browser GPU memory plan repeats object ${id}`);
+      this.records.set(id, {
+        id,
+        capacity,
+        space: allocation.space,
+        lifetime: allocation.lifetime,
+        backing: allocation.space === "host" ? new ArrayBuffer(capacity) : null,
+        attached: allocation.space !== "device",
+        inFlight: 0,
+        contentVersion: 0,
+      });
+    }
+  }
+
+  record(id) {
+    const record = this.records.get(Number(id));
+    if (!record) throw new Error(`browser GPU memory plan has no object ${id}`);
+    return record;
+  }
+
+  attachDevice(id, buffer) {
+    const record = this.record(id);
+    if (record.space !== "device") throw new Error(`memory object ${id} is not device storage`);
+    if (record.attached) throw new Error(`device memory object ${id} was attached twice`);
+    if (Number(buffer?.size) !== record.capacity) {
+      throw new Error(
+        `device memory object ${id} has ${Number(buffer?.size)} bytes; planned ${record.capacity}`,
+      );
+    }
+    record.attached = true;
+    record.buffer = buffer;
+  }
+
+  begin(objectIds) {
+    if (this.closed) throw new Error("browser GPU memory domain is closed");
+    if (this.lost) throw new Error("browser GPU device ownership is lost");
+    const records = [...new Set(objectIds.map(Number))]
+      .sort((left, right) => left - right)
+      .map((id) => this.record(id));
+    for (const record of records) {
+      if (!record.attached) throw new Error(`memory object ${record.id} is not realized`);
+      if (record.inFlight === Number.MAX_SAFE_INTEGER) {
+        throw new Error("browser GPU submission pin count exhausted");
+      }
+    }
+    for (const record of records) record.inFlight += 1;
+    return { records, active: true };
+  }
+
+  complete(hold) {
+    if (!hold?.active) throw new Error("browser GPU submission hold was already completed");
+    for (const record of hold.records) {
+      if (record.inFlight <= 0) throw new Error("browser GPU submission accounting underflow");
+    }
+    for (const record of hold.records) record.inFlight -= 1;
+    hold.active = false;
+  }
+
+  recordWrite(id) {
+    const record = this.record(id);
+    if (record.contentVersion === Number.MAX_SAFE_INTEGER) {
+      throw new Error(`device content version exhausted for object ${id}`);
+    }
+    record.contentVersion += 1;
+  }
+
+  stageHost(id, source) {
+    const record = this.record(id);
+    if (record.space !== "host" || !(record.backing instanceof ArrayBuffer)) {
+      throw new Error(`memory object ${id} is not a managed host transfer`);
+    }
+    if (source.byteLength > record.capacity) {
+      throw new Error(
+        `host transfer ${id} needs ${source.byteLength} bytes; planned ${record.capacity}`,
+      );
+    }
+    const target = new Uint8Array(record.backing, 0, source.byteLength);
+    target.set(source);
+    return target;
+  }
+
+  markLost() {
+    this.lost = true;
+  }
+
+  close() {
+    if ([...this.records.values()].some((record) => record.inFlight !== 0)) {
+      throw new Error("browser GPU memory domain closed with a submission in flight");
+    }
+    this.closed = true;
+    this.records.clear();
+  }
+}
+
 class Device {
   static logicalOutputValues(output, physicalValues) {
     const dimensions = (output.sampleDimensions || []).map(Number);
@@ -135,36 +323,32 @@ class Device {
     const bindingBytes = manifest.bindings.map((binding) =>
       Math.max(4, Number(binding.elements) * Float32Array.BYTES_PER_ELEMENT));
     // Output sampling is selected per turn, after device creation. Reserve
-    // enough address space for the largest legal readback plan up front so a
-    // later sample request cannot exceed the limits admitted for this device.
-    const readbackBytes = (manifest.physicalOutputs || [])
-      .reduce(
-        (total, output) => total + Number(output.sampleElements) * Float32Array.BYTES_PER_ELEMENT,
-        0,
-      );
+    // enough address space for every legal readback buffer up front so a later
+    // sample request cannot exceed the limits admitted for this device. R6
+    // realizes one buffer per device memory object, not one combined readback.
+    const readbackBytes = (manifest.physicalOutputs || []).map((output) =>
+      Number(output.sampleElements) * Float32Array.BYTES_PER_ELEMENT);
     const integrityBytes = Number(
       manifest.bindings.find((binding) => binding.role === "integrity-fault")?.elements || 0,
     ) * Uint32Array.BYTES_PER_ELEMENT;
+    const plannedDeviceBytes = (manifest.memoryAllocations || [])
+      .filter((allocation) => allocation.space === "device")
+      .map((allocation) => Number(allocation.capacityBytes));
     const required = {
       maxStorageBuffersPerShaderStage: manifest.bindings.length,
       maxComputeWorkgroupsPerDimension: Math.ceil(
         manifest.dispatchElements / manifest.workgroupSize,
       ),
       maxStorageBufferBindingSize: Math.max(...bindingBytes, 4),
-      maxBufferSize: Math.max(...bindingBytes, readbackBytes + integrityBytes, 4),
+      maxBufferSize: Math.max(
+        ...bindingBytes,
+        ...readbackBytes,
+        ...plannedDeviceBytes,
+        integrityBytes,
+        4,
+      ),
     };
-    for (const [name, value] of Object.entries(required)) {
-      if (!Number.isSafeInteger(value) || value <= 0) {
-        throw new Error(`Mech computed an invalid ${name} requirement: ${value}`);
-      }
-      const limit = Number(supported[name]);
-      if (!Number.isFinite(limit) || limit <= 0) {
-        throw new Error(`this WebGPU adapter does not report the required ${name} limit`);
-      }
-      if (value > limit) {
-        throw new Error(`Mech requires ${value} for ${name}, but this adapter supports ${limit}`);
-      }
-    }
+    validateSupportedLimits(required, supported, "adapter");
     return required;
   }
 
@@ -183,6 +367,7 @@ class Device {
     );
     const device = await adapter.requestDevice({ requiredLimits });
     try {
+      validateSupportedLimits(requiredLimits, device.limits, "device");
       const module = device.createShaderModule({ code: manifest.wgsl });
       const compilation = await module.getCompilationInfo();
       const errors = compilation.messages.filter((message) => message.type === "error");
@@ -217,6 +402,10 @@ class Device {
     this.stateIdentity = `state-${this.resourceIdentity}`;
     this.pipelineBuildCount = pipelineBuildCount;
     this.disposed = false;
+    this.pendingQueueCleanups = new Set();
+    this.queueCleanupFailure = null;
+    this.disposeCompletion = null;
+    this.memory = new ManagedMemory(manifest);
     this.metrics = {
       cpuToGpuInputBytes: 0,
       gpuToCpuReadbackBytes: 0,
@@ -246,6 +435,11 @@ class Device {
         size: Math.max(4, state.elements * Float32Array.BYTES_PER_ELEMENT),
         usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC,
       }));
+      if (!Array.isArray(state.memoryObjects) || state.memoryObjects.length !== 2) {
+        throw new Error(`GPU state ${state.slot} has no managed double-buffer identity`);
+      }
+      this.memory.attachDevice(state.memoryObjects[0], buffers[0]);
+      this.memory.attachDevice(state.memoryObjects[1], buffers[1]);
       this.device.queue.writeBuffer(buffers[0], 0, state.initialValues);
       this.stateBuffers.set(state.slot, buffers);
     }
@@ -257,6 +451,7 @@ class Device {
         size: Math.max(4, binding.elements * Float32Array.BYTES_PER_ELEMENT),
         usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC,
       });
+      this.memory.attachDevice(binding.memoryObject, buffer);
       if (binding.initialValues) this.device.queue.writeBuffer(buffer, 0, binding.initialValues);
       this.fixedBuffers.set(binding.binding, buffer);
       if (binding.role === "input") this.inputBindings.set(binding.name, { binding, buffer });
@@ -271,6 +466,34 @@ class Device {
     this.integrity = this.manifest.bindings.find(
       (binding) => binding.role === "integrity-fault",
     );
+    this.readbackBuffers = new Map();
+    const readbackBuffersByObject = new Map();
+    for (const physical of this.manifest.physicalOutputs || []) {
+      let buffer = readbackBuffersByObject.get(physical.readbackDeviceObject);
+      if (!buffer) {
+        const capacity = this.memory.record(physical.readbackDeviceObject).capacity;
+        buffer = this.device.createBuffer({
+          size: capacity,
+          usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+        });
+        this.memory.attachDevice(physical.readbackDeviceObject, buffer);
+        readbackBuffersByObject.set(physical.readbackDeviceObject, buffer);
+      }
+      this.readbackBuffers.set(physical.id, buffer);
+    }
+    this.integrityReadback = null;
+    if (this.integrity) {
+      const objects = this.manifest.integrityReadbackObjects;
+      if (!Array.isArray(objects) || objects.length !== 2) {
+        throw new Error("GPU integrity binding has no managed transfer identity");
+      }
+      const bytes = this.integrity.elements * Uint32Array.BYTES_PER_ELEMENT;
+      this.integrityReadback = this.device.createBuffer({
+        size: bytes,
+        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+      });
+      this.memory.attachDevice(objects[0], this.integrityReadback);
+    }
     this.configureReadback(requestedOutputNames);
   }
 
@@ -294,7 +517,11 @@ class Device {
       }
       const bytes = physical.sampleElements * Float32Array.BYTES_PER_ELEMENT;
       readbackPlan.push({
-        output: aliases[0], physical, offset: byteLength, bytes, aliases,
+        output: aliases[0],
+        physical,
+        buffer: this.readbackBuffers.get(physical.id),
+        bytes,
+        aliases,
       });
       aliases.forEach((output) => planned.add(output.name));
       byteLength += bytes;
@@ -304,21 +531,12 @@ class Device {
         throw new Error(`GPU logical output ${name} has no physical readback allocation`);
       }
     }
-    const integrityOffset = this.integrity ? byteLength : null;
     if (this.integrity) byteLength += this.integrity.elements * Uint32Array.BYTES_PER_ELEMENT;
-    const replacement = byteLength > 0 ? this.device.createBuffer({
-      size: Math.max(4, byteLength),
-      usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
-    }) : null;
-    const previous = this.readback;
-    this.readback = replacement;
     this.readbackPlan = readbackPlan;
-    this.integrityOffset = integrityOffset;
     this.readbackBytes = byteLength;
     this.readbackSignature = [...requestedOutputNames].sort().join("\u0000");
     this.metrics.logicalOutputs = requestedOutputNames.length;
     this.metrics.uniquePhysicalOutputBuffers = readbackPlan.length;
-    previous?.destroy();
   }
 
   setRequestedOutputs(requestedOutputNames) {
@@ -341,30 +559,26 @@ class Device {
   }
 
   applyInputs(command) {
-    for (const input of command.inputs) {
-      const target = this.inputBindings.get(input.name);
-      if (!target) throw new Error(`Mech wrote undeclared GPU input ${input.name}`);
-      if (input.values.length !== target.binding.elements) {
-        throw new Error(
-          `Mech wrote ${input.values.length} values to ${input.name}; expected ${target.binding.elements}`,
-        );
-      }
-      this.device.queue.writeBuffer(target.buffer, 0, input.values);
-      this.metrics.cpuToGpuInputBytes += input.values.byteLength;
-    }
+    writeInputs(this, validateInputs(this, command));
   }
 
   submit(command, activeBuffer) {
     if (this.disposed) throw new Error("the WebGPU compute device is disposed");
-    this.applyInputs(command);
-    if (this.integrity) {
-      this.device.queue.writeBuffer(
-        this.fixedBuffers.get(this.integrity.binding),
-        0,
-        new Uint32Array([0, 0xffffffff]),
-      );
-    }
+    const inputs = validateInputs(this, command);
     const outputIndex = 1 - activeBuffer;
+    const writtenObjects = inputs.map(({ target }) => target.binding.memoryObject);
+    for (const binding of this.manifest.bindings) {
+      if (
+        binding.access === "read-write" &&
+        binding.role !== "state-read" &&
+        binding.role !== "state-write"
+      ) {
+        writtenObjects.push(binding.memoryObject);
+      }
+    }
+    for (const state of this.manifest.states || []) {
+      writtenObjects.push(state.memoryObjects[outputIndex]);
+    }
     const encoder = this.device.createCommandEncoder();
     const pass = encoder.beginComputePass();
     pass.setPipeline(this.pipeline);
@@ -376,51 +590,148 @@ class Device {
     for (const item of this.readbackPlan) {
       encoder.copyBufferToBuffer(
         this.outputBuffer(outputIndex, item.physical), 0,
-        this.readback, item.offset, item.bytes,
+        item.buffer, 0, item.bytes,
       );
     }
     if (this.integrity) {
       encoder.copyBufferToBuffer(
         this.fixedBuffers.get(this.integrity.binding), 0,
-        this.readback, this.integrityOffset,
+        this.integrityReadback, 0,
         this.integrity.elements * Uint32Array.BYTES_PER_ELEMENT,
       );
     }
-    this.device.queue.submit([encoder.finish()]);
+    const submissionObjects = this.manifest.bindings.map((binding) => binding.memoryObject);
+    for (const state of this.manifest.states || []) {
+      submissionObjects.push(...state.memoryObjects);
+    }
+    for (const item of this.readbackPlan) {
+      submissionObjects.push(
+        item.physical.readbackDeviceObject,
+        item.physical.readbackHostObject,
+      );
+      writtenObjects.push(item.physical.readbackDeviceObject);
+    }
+    if (this.integrity) {
+      submissionObjects.push(...this.manifest.integrityReadbackObjects);
+      writtenObjects.push(this.manifest.integrityReadbackObjects[0]);
+    }
+    const commandBuffer = encoder.finish();
+    const memoryHold = this.memory.begin(submissionObjects);
+    const queuedWrites = [];
+    try {
+      writeInputs(this, inputs, (object) => queuedWrites.push(object));
+      if (this.integrity) {
+        this.device.queue.writeBuffer(
+          this.fixedBuffers.get(this.integrity.binding),
+          0,
+          new Uint32Array([0, 0xffffffff]),
+        );
+        queuedWrites.push(this.integrity.memoryObject);
+      }
+      this.device.queue.submit([commandBuffer]);
+    } catch (error) {
+      if (queuedWrites.length) {
+        // writeBuffer is queue work in its own right. A later upload or the
+        // compute submit may fail, but earlier accepted uploads must keep
+        // their storage live through the boundary captured here.
+        const uploadCompletion = captureQueueCompletion(this.device);
+        trackQueueCleanup(
+          this,
+          releaseAcceptedQueueWork(this, uploadCompletion, memoryHold, queuedWrites),
+        );
+      } else {
+        this.memory.complete(memoryHold);
+      }
+      throw error;
+    }
     // Capture completion at the compute submission boundary. Callers may
     // submit unrelated presentation work to the same queue immediately after
     // this method returns; resident acknowledgement must not wait for it.
-    let completion;
+    const queueCompletion = captureQueueCompletion(this.device);
+    const mappings = [];
+    let mappingSetupFailure = null;
     try {
-      completion = this.readback
-        ? this.readback.mapAsync(GPUMapMode.READ, 0, this.readbackBytes)
-        : this.device.queue.onSubmittedWorkDone();
+      for (const item of this.readbackPlan) {
+        mappings.push(Promise.resolve(
+          item.buffer.mapAsync(GPUMapMode.READ, 0, item.bytes),
+        ));
+      }
+      if (this.integrity) {
+        mappings.push(Promise.resolve(
+          this.integrityReadback.mapAsync(
+            GPUMapMode.READ,
+            0,
+            this.integrity.elements * Uint32Array.BYTES_PER_ELEMENT,
+          ),
+        ));
+      }
     } catch (error) {
       // Submission has already succeeded. Surface setup failure through the
       // completion channel so the bridge records the accepted submission
       // before applying its terminal-failure policy.
-      completion = Promise.reject(error);
+      mappingSetupFailure = error;
     }
-    return { outputIndex, completion };
+    // Do not let one rejected map abort cleanup of the remaining buffers. The
+    // aggregate rejects only after every mapping attempt has settled, so
+    // finish() can safely unmap every buffer it submitted.
+    const mappingSettled = Promise.allSettled(mappings);
+    const mappingCompletion = mappingSettled.then((results) => {
+      if (mappingSetupFailure) throw mappingSetupFailure;
+      const rejected = results.find((result) => result.status === "rejected");
+      if (rejected) throw rejected.reason;
+      return results.map((result) => result.value);
+    });
+    const completion = mappings.length || mappingSetupFailure
+      ? Promise.all([queueCompletion, mappingCompletion]).then(([, values]) => values)
+      : queueCompletion;
+    return {
+      outputIndex,
+      completion,
+      queueCompletion,
+      mappingSettled,
+      memoryHold,
+      writtenObjects,
+    };
   }
 
-  async finish(completion) {
+  async finish(submission) {
+    const {
+      completion,
+      queueCompletion = completion,
+      mappingSettled = Promise.resolve([]),
+      memoryHold,
+      writtenObjects = [],
+    } = submission || {};
     if (!completion || typeof completion.then !== "function") {
       throw new Error("compute completion requires its exact submission promise");
     }
-    await completion;
-    if (!this.readback) {
-      this.publishMetrics();
-      return { outputs: [], integrity: null };
+    if (!queueCompletion || typeof queueCompletion.then !== "function") {
+      throw new Error("compute completion requires its exact queue promise");
     }
     try {
-      const mapped = this.readback.getMappedRange(0, this.readbackBytes);
+      await completion;
+      if (!this.readbackPlan.length && !this.integrity) {
+        this.publishMetrics();
+        return { outputs: [], integrity: null };
+      }
       // This is the physical mapped transfer. Count it exactly once per
       // accepted mapping, including integrity metadata and mappings whose
       // integrity check rejects the candidate state.
       this.metrics.gpuToCpuReadbackBytes += this.readbackBytes;
       if (this.integrity) {
-        const words = new Uint32Array(mapped, this.integrityOffset, this.integrity.elements);
+        const mapped = this.integrityReadback.getMappedRange(
+          0,
+          this.integrity.elements * Uint32Array.BYTES_PER_ELEMENT,
+        );
+        const staged = this.memory.stageHost(
+          this.manifest.integrityReadbackObjects[1],
+          new Uint8Array(mapped),
+        );
+        const words = new Uint32Array(
+          staged.buffer,
+          staged.byteOffset,
+          this.integrity.elements,
+        );
         if (words[0] !== 0) {
           const packed = words[1];
           const code = packed & 0xff;
@@ -437,9 +748,18 @@ class Device {
       }
       const outputs = [];
       for (const item of this.readbackPlan) {
+        const mapped = item.buffer.getMappedRange(0, item.bytes);
+        const staged = this.memory.stageHost(
+          item.physical.readbackHostObject,
+          new Uint8Array(mapped),
+        );
         const values = Device.logicalOutputValues(
           item.output,
-          new Float32Array(mapped, item.offset, item.bytes / Float32Array.BYTES_PER_ELEMENT),
+          new Float32Array(
+            staged.buffer,
+            staged.byteOffset,
+            item.bytes / Float32Array.BYTES_PER_ELEMENT,
+          ),
         );
         this.metrics.gpuToCpuOutputBytes += item.bytes * item.aliases.length;
         for (const output of item.aliases) outputs.push({ name: output.name, values });
@@ -447,7 +767,25 @@ class Device {
       this.publishMetrics();
       return { outputs, integrity: null };
     } finally {
-      this.readback.unmap();
+      const [queueResult] = await Promise.allSettled([queueCompletion]);
+      try {
+        await mappingSettled;
+        const unmapped = new Set();
+        for (const item of this.readbackPlan) {
+          if (!unmapped.has(item.buffer)) item.buffer.unmap();
+          unmapped.add(item.buffer);
+        }
+        if (this.integrity && !unmapped.has(this.integrityReadback)) {
+          this.integrityReadback.unmap();
+        }
+        if (queueResult.status === "fulfilled") {
+          writtenObjects.forEach((object, index) => {
+            if (writtenObjects.indexOf(object) === index) this.memory.recordWrite(object);
+          });
+        }
+      } finally {
+        this.memory.complete(memoryHold);
+      }
     }
   }
 
@@ -465,10 +803,16 @@ class Device {
   dispose() {
     if (this.disposed) return;
     this.disposed = true;
-    for (const buffers of this.stateBuffers.values()) buffers.forEach((buffer) => buffer.destroy());
-    for (const buffer of this.fixedBuffers.values()) buffer.destroy();
-    this.readback?.destroy();
-    this.device.destroy();
+    const pending = [...(this.pendingQueueCleanups || [])];
+    if (pending.length) {
+      this.disposeCompletion = Promise.all(pending).then(() => destroyDeviceResource(this));
+      this.disposeCompletion.catch((error) => {
+        this.queueCleanupFailure ||= error instanceof Error ? error : new Error(String(error));
+      });
+      return;
+    }
+    destroyDeviceResource(this);
+    this.disposeCompletion = Promise.resolve();
   }
 }
 
@@ -499,6 +843,7 @@ class Session {
     this.lifecycle = new SubmissionLifecycle(this.generation);
     this.resource?.device?.lost.then((info) => {
       if (!this.isCurrent()) return;
+      this.resource?.memory?.markLost();
       const reason = info?.message || info?.reason || "unknown reason";
       const failure = new Error(`GPU device lost: ${reason}`);
       failure.mechDeviceLost = true;
@@ -582,10 +927,32 @@ class Session {
       this.lifecycle.markSubmitted(dispatchToken);
       this.lastDispatchToken = dispatchToken;
       this.pending = true;
+      // Install the exact accepted-submission completion before exposing the
+      // submitted hook. That hook may synchronously retire the document; the
+      // retirement path must already have an ownership anchor to wait on.
+      this.completion = this.finish(dispatchToken, submission, hooks);
       hooks.onSubmitted?.({ dispatchToken, ...submission });
     } catch (error) {
-      this.pending = false;
-      submission?.completion?.catch?.(() => {});
+      if (submission) {
+        // The queue operation was accepted even if local lifecycle bookkeeping
+        // or an observation hook failed afterward. Drive the exact submission
+        // through resource cleanup, and keep retirement from destroying its
+        // buffers until that cleanup reaches completion or device loss.
+        if (!this.completion) {
+          let cleanup;
+          try {
+            cleanup = this.resource.finish(submission);
+          } catch (cleanupError) {
+            cleanup = Promise.reject(cleanupError);
+          }
+          this.pending = true;
+          this.completion = Promise.resolve(cleanup)
+            .catch(() => {})
+            .finally(() => { this.pending = false; });
+        }
+      } else {
+        this.pending = false;
+      }
       this.failure = this.lifecycle.markFailed(this.reject(dispatchToken, error));
       try {
         hooks.onFailure?.(this.failure);
@@ -594,15 +961,14 @@ class Session {
       }
       throw this.failure;
     }
-    this.completion = this.finish(dispatchToken, submission, hooks);
     return submission;
   }
 
   async finish(dispatchToken, submission, hooks) {
     let completionSent = false;
     try {
-      const { outputs, integrity } = await this.resource.finish(submission.completion);
-      if (!this.isCurrent()) return;
+      const { outputs, integrity } = await this.resource.finish(submission);
+      if (!this.isCurrent() || this.failure) return;
       if (integrity) {
         this.complete({
           token: dispatchToken,
@@ -642,10 +1008,35 @@ class Session {
 
   retire() {
     this.retired = true;
-    if (this.ownsResource) this.resource?.dispose();
+    if (this.ownsResource && this.resource) {
+      const resource = this.resource;
+      if (this.pending && this.completion) {
+        Promise.resolve(this.completion).finally(() => resource.dispose());
+      } else {
+        resource.dispose();
+      }
+    }
     this.ownsResource = false;
   }
 }
 
-return Object.freeze({ Device, ResetTracker, Session });
+async function awaitSmokeTargetCompletion(target) {
+  const completion = target.computeSession?.completion;
+  if (completion) {
+    await Promise.resolve(completion);
+  }
+  if (target.bridgeFailure) {
+    throw target.bridgeFailure;
+  }
+  target.stop();
+  const disposal = target.computeResource?.disposeCompletion;
+  if (disposal) {
+    await Promise.resolve(disposal);
+  }
+  if (target.bridgeFailure) {
+    throw target.bridgeFailure;
+  }
+}
+
+return Object.freeze({ Device, ResetTracker, Session, awaitSmokeTargetCompletion });
 })();

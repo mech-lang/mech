@@ -2,7 +2,11 @@ use crate::{
     CanonicalStateJournal, FunctionInstance, MResult, MechError, MechErrorKind, MechFunction,
     ValueCell,
 };
-use std::cell::Cell;
+#[cfg(all(feature = "no_std", not(feature = "std")))]
+use alloc::string::{String, ToString};
+use core::cell::Cell;
+#[cfg(any(not(feature = "no_std"), feature = "std"))]
+use std::string::String;
 
 /// The value-state portion of one ephemeral reactive turn.
 ///
@@ -25,27 +29,6 @@ impl CanonicalTurnJournal {
 
     pub(crate) fn capture_function_state(&mut self, function: &dyn MechFunction) -> MResult<()> {
         function.capture_retained_state(&mut self.values)
-    }
-
-    pub(crate) fn capture_primary_and_retained_function_state(
-        &mut self,
-        function: &dyn MechFunction,
-    ) -> MResult<()> {
-        function
-            .primary_output_state_port()
-            .ok_or_else(|| {
-                MechError::new(
-                    crate::TransactionStateUnsupportedError {
-                        function: function.to_string(),
-                        reason: "direct reactive functions must expose an exact primary state port"
-                            .into(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()
-            })?
-            .capture_into(&mut self.values)?;
-        self.capture_function_state(function)
     }
 
     pub(crate) fn capture_function_instance(&mut self, instance: &FunctionInstance) -> MResult<()> {
