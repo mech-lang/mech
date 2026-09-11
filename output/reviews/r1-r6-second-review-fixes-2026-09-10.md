@@ -331,3 +331,48 @@ unchanged, including numerical hashes, zero-allocation assertions, resource
 sizes, and publication behavior. The D2 architecture checker also passes.
 Required normal and Full CI must qualify the corrected exact head; the
 earlier partial run is not substituted for that result.
+
+## Distribution-specific bytecode test follow-up
+
+Normal CI passed again on `53194b69c89df1ab96f5d9993b745a8d87a6591c`.
+Full CI run `34569378873` then exposed a test-profile mismatch rather than a
+production execution failure: the standard/default bytecode test called
+`assert_bool_matrix`, but that helper was restricted to `distribution-full`.
+The same restored-overload test also contained complex-number sources that
+require the full profile's complex syntax and `math_abs` capabilities.
+
+The correction makes the Boolean helper available in both distributions and
+limits only the complex-number source block to the full distribution. Boolean,
+String, numeric, and broadcast cases remain enabled in the standard profile;
+all complex assertions remain enabled in the full profile. No production
+behavior, source semantics, expected value, or CI gate changes.
+
+The corrected tests pass under both exact profiles: 21 default-profile
+bytecode tests and 37 full-profile bytecode tests. The later language-job steps
+were also executed locally rather than stopping at the first formerly failing
+test binary: 373 root-library tests, 189 default-core tests, 270 compiler-enabled
+engine tests, five formatter tests, and both isolated assignment-feature tests
+passed. The isolated compiler and String-concatenation feature checks passed.
+The bytecode package's test targets compiled successfully but executed zero
+tests in that invocation; they are not counted as additional test coverage.
+These runs used a fresh local target directory after the reused D2 fixture
+build cache produced conflicting crate metadata. Dependencies and lockfiles
+were not changed.
+
+On the pushed `53194b69c` head, the full architecture gate now passes, including
+the generated D1/D2 checks and R2–R4 conformance. The R6 runtime gate passed
+20 normal and 20 debug-assertions-disabled release safety tests; pinned Miri
+passed all 20 safety tests independently. Both generated catalog gates passed.
+All 20 native surface jobs, the fresh coverage merge, and all eight exact native
+closure shards passed. The fresh union reproduces 122,083 entries, the expected
+`34db793ac637b3b1bc532978c6e8a6e0be1b8be63c33ec5f3043045f765616f5`
+digest, and 34,916 closure inventories with zero missing linkage, signatures,
+or contracts. This is fresh evidence for that pushed head, not a substitute
+for final-head qualification after the test-profile correction. Complete
+normal and Full CI on the final unchanged head remain required.
+
+The run finished with 124 successful jobs and two failed jobs: the single
+language-test profile failure above and its dependent PR aggregate gate.
+Native-plan generation and every standard/full release-package job passed;
+no other concrete failure was found. The final correction therefore remains
+limited to the two test-feature gates and this qualification record.

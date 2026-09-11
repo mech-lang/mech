@@ -466,7 +466,6 @@ fn assert_u64(value: &Value, expected: u64) {
     assert!(matches!(value.data(), ValueData::U64(actual) if *actual == expected));
 }
 
-#[cfg(feature = "distribution-full")]
 fn assert_bool_matrix(value: &Value, expected: &[bool]) {
     let matrix = value.matrix_view().expect("expected canonical matrix");
     let SequenceView::Bool(actual) = matrix.elements() else {
@@ -1511,6 +1510,7 @@ fn restored_source_overloads_survive_bytecode_and_resident_binding() -> MResult<
             }
         }
     }
+    #[cfg(feature = "distribution-full")]
     for source in [
         "+> math\nmath/abs(3+4i)",
         "+> math\nmath/abs([3+4i 5+12i])",
