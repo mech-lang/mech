@@ -4,6 +4,9 @@
 <p align="center">
   <img width="500px" src="https://mech-lang.org/img/logo.png" alt="Mech Logo">
 </p>
+<p align="center">
+  <a href="https://github.com/mech-lang/mech/actions/workflows/ci.yml"><img src="https://github.com/mech-lang/mech/actions/workflows/ci.yml/badge.svg" alt="GitHub Actions CI"></a>
+</p>
 
 **Mech is for building** data-driven, reactive systems like **robots**, games, embedded devices and more.
 

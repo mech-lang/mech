@@ -105,8 +105,8 @@ struct PublishedCellState {
 }
 
 /// Physical backing authority for one published logical cell value during the
-/// first stable-record cutover. Managed variants are added with the planned
-/// payload realization checkpoint, once their adapters can be constructed.
+/// first stable-record cutover. Device allocations remain owned by the memory
+/// domain and are exposed to backends through checked submission bindings.
 #[derive(Clone)]
 enum CellStorageBinding {
     ManagedHost {
@@ -117,32 +117,20 @@ enum CellStorageBinding {
         owner: MemoryDomain,
         storage: Rc<dyn ErasedCellStorage>,
     },
-    #[expect(
-        dead_code,
-        reason = "backend binding construction is completed by the R6 backend cutover checkpoint"
-    )]
-    ManagedDevice {
-        owner: MemoryDomain,
-        storage: Rc<dyn ErasedCellStorage>,
-    },
     PinnedExternal(Rc<dyn ErasedCellStorage>),
 }
 
 impl CellStorageBinding {
     fn adapter(&self) -> &Rc<dyn ErasedCellStorage> {
         match self {
-            Self::ManagedHost { storage, .. }
-            | Self::ManagedCanonical { storage, .. }
-            | Self::ManagedDevice { storage, .. } => storage,
+            Self::ManagedHost { storage, .. } | Self::ManagedCanonical { storage, .. } => storage,
             Self::PinnedExternal(storage) => storage,
         }
     }
 
     fn owner(&self) -> Option<&MemoryDomain> {
         match self {
-            Self::ManagedHost { owner, .. }
-            | Self::ManagedCanonical { owner, .. }
-            | Self::ManagedDevice { owner, .. } => Some(owner),
+            Self::ManagedHost { owner, .. } | Self::ManagedCanonical { owner, .. } => Some(owner),
             Self::PinnedExternal(_) => None,
         }
     }

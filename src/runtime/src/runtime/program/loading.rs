@@ -134,12 +134,6 @@ impl MechRuntime {
                             .0,
                     ))
                 }
-                MechSourceCode::Tree(_) => Ok(Arc::new(
-                    runtime
-                        .plan_resolved_root_source_product(resolved, module_options)?
-                        .into_parts()
-                        .0,
-                )),
                 MechSourceCode::ByteCode(bytecode) => {
                     runtime.enforce_source_byte_limit(
                         u64::try_from(bytecode.len()).unwrap_or(u64::MAX),
@@ -188,15 +182,6 @@ impl MechRuntime {
                                 .0,
                         ))
                     }
-                    MechSourceCode::Tree(_) => Ok(Arc::new(
-                        runtime
-                            .plan_interactive_resolved_root_source_product(
-                                resolved,
-                                module_options,
-                            )?
-                            .into_parts()
-                            .0,
-                    )),
                     MechSourceCode::ByteCode(bytecode) => {
                         runtime.enforce_source_byte_limit(
                             u64::try_from(bytecode.len()).unwrap_or(u64::MAX),

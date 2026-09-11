@@ -72,8 +72,6 @@ REQUIRED = (
     "scripts/check-r6-memory-runtime.py",
     "scripts/tests/test_check_r6_memory_runtime.py",
     "docs/design/r6-memory-runtime-cutover.md",
-    "docs/design/r6-completion-status.md",
-    "docs/design/r6-completion-status.md",
     ".github/workflows/ci.yml",
     ".github/workflows/ci-full.yml",
     ".github/ci/owners.toml",
@@ -387,7 +385,7 @@ def failures(root: Path) -> list[str]:
     cell_path = root / "src/core/src/cell_binding.rs"
     cell = rust_code(cell_path.read_text(encoding="utf-8")) if cell_path.is_file() else ""
     storage = balanced_body(cell, "CellStorageBinding")
-    required_storage = ("ManagedHost", "ManagedCanonical", "ManagedDevice", "PinnedExternal")
+    required_storage = ("ManagedHost", "ManagedCanonical", "PinnedExternal")
     if storage is None or any(name not in storage for name in required_storage):
         found.append("ValueCell storage is not closed over ordinary managed host and payload bindings")
     if not re.search(r"\bfn\s+allocate_planned\b", cell):

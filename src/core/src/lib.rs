@@ -6,7 +6,6 @@
     reason = "the public macro surface expands cfg attributes on where clauses in downstream crates"
 )]
 
-//extern crate core as rust_core;
 extern crate seahash;
 
 #[cfg(feature = "no_std")]
@@ -205,7 +204,6 @@ pub use self::type_system::*;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum MechSourceCode {
     String(String),
-    Tree(Program),
     Html(String),
     ByteCode(Vec<u8>),
     Program(Vec<MechSourceCode>),
@@ -213,31 +211,106 @@ pub enum MechSourceCode {
 }
 
 impl MechSourceCode {
-    pub fn to_string(&self) -> String {
+    /// Returns the encoded byte size of this source, or `None` if a nested
+    /// program's total cannot be represented as `u64`.
+    pub fn byte_len(&self) -> Option<u64> {
+        match self {
+            Self::String(source) | Self::Html(source) => u64::try_from(source.len()).ok(),
+            Self::ByteCode(bytes) | Self::Image(_, bytes) => u64::try_from(bytes.len()).ok(),
+            Self::Program(sources) => sources
+                .iter()
+                .try_fold(0u64, |total, source| total.checked_add(source.byte_len()?)),
+        }
+    }
+}
+
+impl fmt::Display for MechSourceCode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             MechSourceCode::ByteCode(bc) => {
                 #[cfg(feature = "program")]
                 match ParsedProgram::from_bytes(bc) {
-                    Ok(program) => {
-                        format!("{:#?}", program)
-                    }
-                    Err(e) => return format!("Error parsing bytecode: {:?}", e),
+                    Ok(program) => write!(f, "{program:#?}"),
+                    Err(error) => write!(f, "Error parsing bytecode: {error:?}"),
                 }
                 #[cfg(not(feature = "program"))]
-                format!("{:#?}", bc)
+                write!(f, "{bc:#?}")
             }
             MechSourceCode::Image(extension, img) => {
-                format!("Image (.{}) with {} bytes", extension, img.len())
+                write!(f, "Image (.{extension}) with {} bytes", img.len())
             }
-            MechSourceCode::String(s) => s.clone(),
-            MechSourceCode::Tree(program) => todo!("Print the tree: {program:?}"),
-            MechSourceCode::Html(h) => h.clone(),
-            MechSourceCode::Program(v) => v
-                .iter()
-                .map(|c| c.to_string())
-                .collect::<Vec<String>>()
-                .join("\n"),
+            MechSourceCode::String(source) | MechSourceCode::Html(source) => f.write_str(source),
+            MechSourceCode::Program(sources) => {
+                for (index, source) in sources.iter().enumerate() {
+                    if index > 0 {
+                        f.write_str("\n")?;
+                    }
+                    write!(f, "{source}")?;
+                }
+                Ok(())
+            }
         }
+    }
+}
+
+#[cfg(test)]
+mod source_code_tests {
+    use super::*;
+
+    #[test]
+    fn every_source_code_variant_has_a_non_panicking_display() {
+        assert_eq!(
+            MechSourceCode::String("source".into()).to_string(),
+            "source"
+        );
+        assert_eq!(
+            MechSourceCode::Html("<p>source</p>".into()).to_string(),
+            "<p>source</p>"
+        );
+        assert_eq!(
+            MechSourceCode::Image("png".into(), vec![1, 2, 3]).to_string(),
+            "Image (.png) with 3 bytes"
+        );
+        assert_eq!(
+            MechSourceCode::Program(vec![
+                MechSourceCode::String("first".into()),
+                MechSourceCode::Html("second".into()),
+            ])
+            .to_string(),
+            "first\nsecond"
+        );
+
+        let bytecode = MechSourceCode::ByteCode(Vec::new()).to_string();
+        #[cfg(feature = "program")]
+        assert!(bytecode.starts_with("Error parsing bytecode:"));
+        #[cfg(not(feature = "program"))]
+        assert_eq!(bytecode, "[]");
+    }
+
+    #[test]
+    fn every_source_code_variant_has_a_known_byte_size() {
+        let source = MechSourceCode::Program(vec![
+            MechSourceCode::String("mech".into()),
+            MechSourceCode::Html("<p/>".into()),
+            MechSourceCode::ByteCode(vec![1, 2]),
+            MechSourceCode::Image("png".into(), vec![3, 4, 5]),
+        ]);
+
+        assert_eq!(source.byte_len(), Some(13));
+    }
+
+    #[test]
+    fn empty_bytes_have_an_empty_emoji_representation() {
+        assert_eq!(emojify_bytes(&[]), "");
+    }
+
+    #[test]
+    fn hash_helpers_accept_slices() {
+        assert_eq!(hash_chars(&['m', 'e', 'c', 'h']), hash_str("mech"));
+        assert_eq!(
+            hash_bytes(b"mech"),
+            seahash::hash(b"mech") & 0x00FFFFFFFFFFFFFF
+        );
     }
 }
 
@@ -316,7 +389,7 @@ impl IndexedString {
 // Turn bytes into something more readable by humans
 // Useful for visualizing register dumps, hashes, etc.
 
-pub fn hash_chars(input: &Vec<char>) -> u64 {
+pub fn hash_chars(input: &[char]) -> u64 {
     seahash::hash(
         input
             .iter()
@@ -326,7 +399,7 @@ pub fn hash_chars(input: &Vec<char>) -> u64 {
     ) & 0x00FFFFFFFFFFFFFF
 }
 
-pub fn hash_bytes(input: &Vec<u8>) -> u64 {
+pub fn hash_bytes(input: &[u8]) -> u64 {
     seahash::hash(input) & 0x00FFFFFFFFFFFFFF
 }
 
@@ -335,6 +408,9 @@ pub fn hash_str(input: &str) -> u64 {
 }
 
 pub fn emojify_bytes(bytes: &[u8]) -> String {
+    if bytes.is_empty() {
+        return String::new();
+    }
     let start = bytes
         .iter()
         .position(|&b| b != 0)

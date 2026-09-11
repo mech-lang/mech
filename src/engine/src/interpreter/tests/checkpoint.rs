@@ -1,11 +1,11 @@
 #[cfg(all(test, feature = "functions", feature = "symbol_table", feature = "f64"))]
 mod checkpoint_tests {
     use super::super::super::{
-        CanonicalCellId, CanonicalFunctionSpecializer, CellAccess, Dictionary, ExtensionFunctionId,
-        FunctionBinding, FunctionCatalogBuilder, FunctionDefine, FunctionDefinition,
-        FunctionExport, FunctionExposure, FunctionExtensionEntry, FunctionInvocation, Interpreter,
-        MResult, MechSourceCode, ModuleManifestCatalog, OperationId, ProgramState, Ref,
-        RuntimeContextBinding, SpecializationContext, SpecializationInvocation,
+        Body, CanonicalCellId, CanonicalFunctionSpecializer, CellAccess, Dictionary,
+        ExtensionFunctionId, FunctionBinding, FunctionCatalogBuilder, FunctionDefine,
+        FunctionDefinition, FunctionExport, FunctionExposure, FunctionExtensionEntry,
+        FunctionInvocation, Interpreter, MResult, ModuleManifestCatalog, OperationId, Program,
+        ProgramState, Ref, RuntimeContextBinding, SpecializationContext, SpecializationInvocation,
         SpecializedFunction, ValueCell, ValueCellBorrowConflict, hash_str,
         internal_pattern_value_identifier,
     };
@@ -41,6 +41,15 @@ mod checkpoint_tests {
                 match_arms: Vec::new(),
             },
         )
+    }
+
+    fn empty_program() -> Program {
+        Program {
+            title: None,
+            body: Body {
+                sections: Vec::new(),
+            },
+        }
     }
 
     fn index_payload(value: &ValueCell) -> usize {
@@ -484,7 +493,7 @@ mod checkpoint_tests {
         let symbol_backing_alias = symbol_backing.clone();
         let symbol_backing_identity = symbol_backing.reactive_cell_id();
         root.out = Some(symbol_cell.clone());
-        root.code.push(MechSourceCode::String("before".to_string()));
+        root.code.push(empty_program());
         root.out_values
             .borrow_mut()
             .insert(hash_str("out"), Some(symbol_cell.clone()));
@@ -588,7 +597,7 @@ mod checkpoint_tests {
 
         root.id = 99;
         root.max_steps = 999;
-        root.code.push(MechSourceCode::String("after".to_string()));
+        root.code.push(empty_program());
         root.out = None;
         root.state = Ref::new(ProgramState::new());
         root.out_values = Ref::new(HashMap::new());
@@ -720,10 +729,7 @@ mod checkpoint_tests {
             assert_eq!(*exact_f64(constraint.rhs.as_ref().unwrap()).borrow(), 2.0);
         }
         assert!(root.sub_interpreters.same_handle(&sub_interpreters_alias));
-        assert_eq!(
-            root.code,
-            vec![MechSourceCode::String("before".to_string())]
-        );
+        assert_eq!(root.code, vec![empty_program()]);
         assert_eq!(*root.inline_eval_counter.borrow(), 4);
         assert_eq!(*root.persistent_user_function_plan_depth.borrow(), 2);
         assert_eq!(*root.deferred_expression_solve_depth.borrow(), 3);

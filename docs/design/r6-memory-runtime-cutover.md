@@ -56,8 +56,10 @@ record containing shape, publication version, and storage binding. Physical
 movement changes allocation generation or region incarnation without changing
 logical identity. Equal-content relocation does not report a semantic change.
 
-Managed bindings are closed: host region, canonical payload, device binding,
-or an explicitly pinned external boundary. Ordinary source-created values use
+Cell bindings are closed: managed host region, managed canonical payload, or
+an explicitly pinned external boundary. Device allocations remain under the
+memory domain's checked ownership and submission APIs rather than becoming a
+second `ValueCell` storage authority. Ordinary source-created values use
 managed storage. Pinned backing exists only for explicit ingress and ABI
 compatibility.
 

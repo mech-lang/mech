@@ -36,69 +36,18 @@ impl MechRuntime {
     }
 
     #[cfg(feature = "source")]
-    fn known_source_bytes(source: &MechSourceCode) -> MResult<Option<u64>> {
-        match source {
-            MechSourceCode::String(source) | MechSourceCode::Html(source) => Ok(Some(
-                u64::try_from(source.as_bytes().len()).map_err(|_| {
-                    MechError::new(
-                        ResourceBudgetExceededError {
-                            resource: "source_bytes",
-                            used: u64::MAX,
-                            requested: 1,
-                            max: None,
-                        },
-                        None,
-                    )
-                })?,
-            )),
-            MechSourceCode::ByteCode(bytes) => {
-                Ok(Some(u64::try_from(bytes.len()).map_err(|_| {
-                    MechError::new(
-                        ResourceBudgetExceededError {
-                            resource: "source_bytes",
-                            used: u64::MAX,
-                            requested: 1,
-                            max: None,
-                        },
-                        None,
-                    )
-                })?))
-            }
-            MechSourceCode::Image(_, bytes) => {
-                Ok(Some(u64::try_from(bytes.len()).map_err(|_| {
-                    MechError::new(
-                        ResourceBudgetExceededError {
-                            resource: "source_bytes",
-                            used: u64::MAX,
-                            requested: 1,
-                            max: None,
-                        },
-                        None,
-                    )
-                })?))
-            }
-            MechSourceCode::Program(sources) => {
-                let mut total = 0u64;
-                for source in sources {
-                    let Some(bytes) = Self::known_source_bytes(source)? else {
-                        return Ok(None);
-                    };
-                    total = total.checked_add(bytes).ok_or_else(|| {
-                        MechError::new(
-                            ResourceBudgetExceededError {
-                                resource: "source_bytes",
-                                used: total,
-                                requested: bytes,
-                                max: None,
-                            },
-                            None,
-                        )
-                    })?;
-                }
-                Ok(Some(total))
-            }
-            MechSourceCode::Tree(_) => Ok(None),
-        }
+    fn known_source_bytes(source: &MechSourceCode) -> MResult<u64> {
+        source.byte_len().ok_or_else(|| {
+            MechError::new(
+                ResourceBudgetExceededError {
+                    resource: "source_bytes",
+                    used: u64::MAX,
+                    requested: 1,
+                    max: None,
+                },
+                None,
+            )
+        })
     }
 
     #[cfg(feature = "source")]
@@ -107,10 +56,7 @@ impl MechRuntime {
         context: &mut RuntimeContext,
         source: &MechSourceCode,
     ) -> MResult<()> {
-        let Some(source_bytes) = Self::known_source_bytes(source)? else {
-            return Ok(());
-        };
-
+        let source_bytes = Self::known_source_bytes(source)?;
         self.enforce_source_byte_count(context, source_bytes)
     }
 

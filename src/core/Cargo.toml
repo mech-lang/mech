@@ -13,10 +13,6 @@ readme = "README.md"
 edition = "2024"
 rust-version = "1.92"
 
-[badges]
-gitlab = { repository = "mech-lang/core", branch = "main" }
-maintenance = { status = "actively-developed" }
-
 [features]
 std = []
 no_std = ["rlibc", "hashbrown", "embedded-io", "fxhash"]
@@ -174,15 +170,6 @@ serde_derive = {version = "1.0.219", optional = true}
 serde_json = {version = "1.0.142", optional = true}
 tabled = { version = "0.20.0", default-features = false, features = ["std"], optional = true }
 num-rational = {version = "0.4.2", optional = true}
-#time = {version = "0.3.40", optional = true}
-#ed25519-dalek = {version = "2.1.1", default-features = false, features = ["rand_core"]}
-#rand = "0.9.0"
-#tinyrand = "0.5.0"
-#rand_core = {version = "0.9.3"}
-#simba = "0.9.0"
-#rkyv = "0.8.10"
-#bytemuck = "1.22.0"
-
 [dependencies.num-traits]
 version = "0.2.19"
 default-features = false

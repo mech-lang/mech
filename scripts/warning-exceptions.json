@@ -65,15 +65,6 @@
       "reason": "undo snapshot authority is exercised only by function-enabled transaction plans"
     },
     {
-      "directive": "expect",
-      "expiry_condition": "Remove when the GPU backend installs managed device bindings during its R6 cutover.",
-      "lint": "dead_code",
-      "occurrences": 1,
-      "owner": "Managed device cell bindings",
-      "path": "src/core/src/cell_binding.rs",
-      "reason": "backend binding construction is completed by the R6 backend cutover checkpoint"
-    },
-    {
       "directive": "allow",
       "expiry_condition": "Remove when feature-specific factory generation no longer leaves helper macros unused in reduced and native-link profiles.",
       "lint": "unused_macros",
