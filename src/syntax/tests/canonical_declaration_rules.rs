@@ -107,7 +107,11 @@ fn capability_groups_are_all_or_nothing_suffixes() {
         ),
         ("@users := @main{:read(*),}", "@users := @main{:read(*),}"),
         ("@users := @main{}", "@users := @main"),
-        ("@users := @main {:read(*)}", "@users := @main"),
+        ("@users := @main {:read(*)}", "@users := @main {:read(*)}"),
+        (
+            "@users := @main { :read(*) }",
+            "@users := @main { :read(*) }",
+        ),
         ("@users := @main{:read(foo*)}", "@users := @main"),
         ("@users := @main{:read(*)", "@users := @main"),
     ] {

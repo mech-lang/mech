@@ -212,10 +212,18 @@ fn lower_value<T>(
     lower: impl FnOnce(&SyntaxNode) -> Result<T, String>,
 ) -> Result<T, DiagnosticStore> {
     common::validate_clean_node(syntax, name).map_err(|message| {
-        common::failure_store(syntax, &alloc::format!("lowering/invalid-{name}-syntax"), message)
+        common::failure_store(
+            syntax,
+            &alloc::format!("lowering/invalid-{name}-syntax"),
+            message,
+        )
     })?;
     lower(syntax).map_err(|message| {
-        common::failure_store(syntax, &alloc::format!("lowering/invalid-{name}-syntax"), message)
+        common::failure_store(
+            syntax,
+            &alloc::format!("lowering/invalid-{name}-syntax"),
+            message,
+        )
     })
 }
 

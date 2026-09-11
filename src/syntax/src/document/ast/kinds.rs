@@ -1,7 +1,7 @@
 use alloc::vec::Vec;
 
-use crate::document::red::{AstNode, IdentifierSyntax, SyntaxNode, SyntaxToken};
 use crate::document::SyntaxKind;
+use crate::document::red::{AstNode, IdentifierSyntax, SyntaxNode, SyntaxToken};
 
 macro_rules! primitive_kind_ast_node {
     ($name:ident, $kind:ident) => {

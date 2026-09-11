@@ -387,10 +387,7 @@ fn phase_2b_registry_accounting_and_policies_are_exact() {
             "codeblock-sigil",
             (LoweringPortStatus::NotApplicable, "transparent"),
         ),
-        (
-            "comment",
-            (LoweringPortStatus::Pending, "node:Comment"),
-        ),
+        ("comment", (LoweringPortStatus::Pending, "node:Comment")),
         (
             "comment-sigil",
             (LoweringPortStatus::NotApplicable, "transparent"),
@@ -401,10 +398,7 @@ fn phase_2b_registry_accounting_and_policies_are_exact() {
         ),
         (
             "footnote-reference",
-            (
-                LoweringPortStatus::ParityVerified,
-                "node:FootnoteReference",
-            ),
+            (LoweringPortStatus::ParityVerified, "node:FootnoteReference"),
         ),
         (
             "inline-code",
@@ -412,10 +406,7 @@ fn phase_2b_registry_accounting_and_policies_are_exact() {
         ),
         (
             "inline-equation",
-            (
-                LoweringPortStatus::ParityVerified,
-                "node:InlineEquation",
-            ),
+            (LoweringPortStatus::ParityVerified, "node:InlineEquation"),
         ),
         (
             "paragraph-text",
@@ -431,10 +422,7 @@ fn phase_2b_registry_accounting_and_policies_are_exact() {
         ),
         (
             "section-reference",
-            (
-                LoweringPortStatus::ParityVerified,
-                "node:SectionReference",
-            ),
+            (LoweringPortStatus::ParityVerified, "node:SectionReference"),
         ),
         (
             "thematic-break",
@@ -615,7 +603,10 @@ fn phase_2c_registry_accounting_and_policies_are_exact() {
         .collect::<Vec<_>>();
     assert_eq!(phase_2c.len(), EXPECTED_PHASE_2C);
     assert_eq!(
-        phase_2c.iter().map(|port| port.name).collect::<BTreeSet<_>>(),
+        phase_2c
+            .iter()
+            .map(|port| port.name)
+            .collect::<BTreeSet<_>>(),
         expected_names
     );
 
@@ -641,8 +632,18 @@ fn phase_2c_registry_accounting_and_policies_are_exact() {
             }
         } else {
             assert!(token_rules.contains(&port.name), "{}", port.name);
-            assert_eq!(port.syntax, SyntaxPortStatus::ParityVerified, "{}", port.name);
-            assert_eq!(port.lowering, LoweringPortStatus::NotApplicable, "{}", port.name);
+            assert_eq!(
+                port.syntax,
+                SyntaxPortStatus::ParityVerified,
+                "{}",
+                port.name
+            );
+            assert_eq!(
+                port.lowering,
+                LoweringPortStatus::NotApplicable,
+                "{}",
+                port.name
+            );
             assert_eq!(port.node_policy, NodePolicy::Token, "{}", port.name);
         }
     }
@@ -650,8 +651,7 @@ fn phase_2c_registry_accounting_and_policies_are_exact() {
     let syntax_ported = CANONICAL_PORTS
         .iter()
         .filter(|port| {
-            port.phase == Some(PortPhase::Phase2C)
-                && port.syntax == SyntaxPortStatus::SyntaxPorted
+            port.phase == Some(PortPhase::Phase2C) && port.syntax == SyntaxPortStatus::SyntaxPorted
         })
         .map(|port| port.name)
         .collect::<BTreeSet<_>>();
@@ -738,12 +738,20 @@ fn phase_2d_registry_accounting_and_policies_are_exact() {
         .collect::<Vec<_>>();
     assert_eq!(phase_2d.len(), EXPECTED_PHASE_2D);
     assert_eq!(
-        phase_2d.iter().map(|port| port.name).collect::<BTreeSet<_>>(),
+        phase_2d
+            .iter()
+            .map(|port| port.name)
+            .collect::<BTreeSet<_>>(),
         expected_names
     );
 
     for port in phase_2d {
-        assert_eq!(port.syntax, SyntaxPortStatus::ParityVerified, "{}", port.name);
+        assert_eq!(
+            port.syntax,
+            SyntaxPortStatus::ParityVerified,
+            "{}",
+            port.name
+        );
         if let Some((_, kind)) = node_policies.iter().find(|(name, _)| *name == port.name) {
             assert_eq!(policy_name(port.node_policy), format!("node:{kind}"));
             assert_eq!(port.lowering, LoweringPortStatus::ParityVerified);
@@ -983,7 +991,12 @@ fn phase_2f_registry_accounting_and_policies_are_exact() {
         expected_names
     );
     for port in &phase_2f {
-        assert_eq!(port.syntax, SyntaxPortStatus::ParityVerified, "{}", port.name);
+        assert_eq!(
+            port.syntax,
+            SyntaxPortStatus::ParityVerified,
+            "{}",
+            port.name
+        );
         if let Some((_, kind)) = node_policies.iter().find(|(name, _)| *name == port.name) {
             assert_eq!(policy_name(port.node_policy), format!("node:{kind}"));
             assert_eq!(port.lowering, LoweringPortStatus::ParityVerified);
@@ -1028,7 +1041,9 @@ fn phase_2f_registry_accounting_and_policies_are_exact() {
             let child_port = CANONICAL_PORTS
                 .iter()
                 .find(|port| port.name == child)
-                .unwrap_or_else(|| panic!("{} has unknown canonical child {child}", row[grammar_name]));
+                .unwrap_or_else(|| {
+                    panic!("{} has unknown canonical child {child}", row[grammar_name])
+                });
             assert_ne!(
                 child_port.syntax,
                 SyntaxPortStatus::Unported,
@@ -1082,7 +1097,12 @@ fn phase_2g_registry_accounting_and_policies_are_exact() {
         expected_names,
     );
     for port in phase_2g {
-        assert_eq!(port.syntax, SyntaxPortStatus::ParityVerified, "{}", port.name);
+        assert_eq!(
+            port.syntax,
+            SyntaxPortStatus::ParityVerified,
+            "{}",
+            port.name
+        );
         if let Some((_, kind)) = node_policies.iter().find(|(name, _)| *name == port.name) {
             assert_eq!(policy_name(port.node_policy), format!("node:{kind}"));
             assert_eq!(port.lowering, LoweringPortStatus::ParityVerified);
@@ -1134,7 +1154,12 @@ fn phase_2h_registry_accounting_and_policies_are_exact() {
         expected_names,
     );
     for port in phase_2h {
-        assert_eq!(port.syntax, SyntaxPortStatus::ParityVerified, "{}", port.name);
+        assert_eq!(
+            port.syntax,
+            SyntaxPortStatus::ParityVerified,
+            "{}",
+            port.name
+        );
         if let Some((_, kind)) = node_policies.iter().find(|(name, _)| *name == port.name) {
             assert_eq!(policy_name(port.node_policy), format!("node:{kind}"));
             assert_eq!(port.lowering, LoweringPortStatus::ParityVerified);
@@ -1197,10 +1222,7 @@ fn phase_2c_closed_dependencies_are_all_already_ported() {
         ),
         ("float-decimal-start", &["period", "digit-sequence"]),
         ("float-full", &["digit-sequence", "period"]),
-        (
-            "float-literal",
-            &["float-decimal-start", "float-full"],
-        ),
+        ("float-literal", &["float-decimal-start", "float-full"]),
         ("integer-literal", &["typed-integer", "untyped-integer"]),
         ("typed-integer", &["digit-sequence", "identifier"]),
         ("untyped-integer", &["digit-sequence"]),
@@ -1222,10 +1244,7 @@ fn phase_2c_closed_dependencies_are_all_already_ported() {
                 "period",
             ],
         ),
-        (
-            "context-address-path",
-            &["context-address-path-token"],
-        ),
+        ("context-address-path", &["context-address-path-token"]),
         (
             "prefixed-context-path",
             &[

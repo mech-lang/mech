@@ -24,6 +24,7 @@ type LowerResult<T> = Result<T, String>;
 
 /// A package-private direct-rule value used by the Phase 2F parity tests.
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg(test)]
 pub(crate) enum LegacyDeclarationValue {
     Export(ExportDeclaration),
     ContextDeclaration(ContextDeclaration),
@@ -98,6 +99,7 @@ pub fn lower_legacy_context_capability_scope(
 
 /// Lower any node-valued Phase 2F declaration production for internal parity
 /// coverage. The direct token production intentionally has no value wrapper.
+#[cfg(test)]
 pub(crate) fn lower_phase_2f_declaration_value(
     syntax: &SyntaxNode,
 ) -> Result<LegacyDeclarationValue, DiagnosticStore> {

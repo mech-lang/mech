@@ -54,8 +54,7 @@ pub(crate) fn parse_kind_empty(parser: &mut Parser<'_>) -> Attempt {
 pub(crate) fn parse_kind_atom(parser: &mut Parser<'_>) -> Attempt {
     combinator::transactional(parser, rules::KIND_ATOM, |parser| {
         let kind = parser.start();
-        if !base::parse_rule(parser, rules::COLON) || !base::parse_rule(parser, rules::IDENTIFIER)
-        {
+        if !base::parse_rule(parser, rules::COLON) || !base::parse_rule(parser, rules::IDENTIFIER) {
             kind.abandon(parser);
             return Attempt::NoMatch;
         }

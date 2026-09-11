@@ -13,6 +13,7 @@ use super::common;
 
 /// Direct compatibility values emitted by the node-valued Phase 2H leaves.
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg(test)]
 pub(crate) enum LegacyStructureShellValue {
     TableRow(TableRow),
     EmptyMap(Map),
@@ -47,6 +48,7 @@ pub fn lower_legacy_empty_set(syntax: &EmptySetSyntax) -> Result<Set, Diagnostic
 
 /// Lower a node-valued Phase 2H leaf for direct differential coverage without
 /// introducing a complete structure parent lowerer.
+#[cfg(test)]
 pub(crate) fn lower_phase_2h_structure_shell_value(
     syntax: &SyntaxNode,
 ) -> Result<LegacyStructureShellValue, DiagnosticStore> {

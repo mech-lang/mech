@@ -10,9 +10,9 @@ use alloc::vec::Vec;
 use mech_core::{Token as LegacyToken, TokenKind};
 
 use crate::document::{
-    Diagnostic, DiagnosticAnchor, DiagnosticCode, DiagnosticPhase, DiagnosticStore,
-    DiagnosticTags, IdGenerator, NodeFlags, Severity, SyntaxElement, SyntaxKind, SyntaxNode,
-    SyntaxToken, TextRange, TokenFlags,
+    Diagnostic, DiagnosticAnchor, DiagnosticCode, DiagnosticPhase, DiagnosticStore, DiagnosticTags,
+    IdGenerator, NodeFlags, Severity, SyntaxElement, SyntaxKind, SyntaxNode, SyntaxToken,
+    TextRange, TokenFlags,
 };
 
 use super::source;
@@ -105,9 +105,7 @@ pub(super) fn lower_syntax_token(
     })
 }
 
-pub(super) fn lower_escaped_character_node(
-    syntax: &SyntaxNode,
-) -> Result<LegacyToken, String> {
+pub(super) fn lower_escaped_character_node(syntax: &SyntaxNode) -> Result<LegacyToken, String> {
     validate_node(syntax, SyntaxKind::EscapedCharacter, "escaped-character")?;
     let tokens = direct_tokens(syntax, "escaped-character")?;
     if tokens.len() != 2
@@ -134,18 +132,36 @@ pub(super) fn lower_escaped_character_node(
     if text.is_empty() {
         return Err(String::from("escaped-character value cannot be empty"));
     }
-    Ok(LegacyToken {
-        kind: TokenKind::EscapedChar,
-        chars: text
-            .chars()
+    let extended = text == "0" || text.starts_with("u{");
+    let chars = if text == "0" {
+        vec!['\0']
+    } else if let Some(digits) = text
+        .strip_prefix("u{")
+        .and_then(|text| text.strip_suffix('}'))
+    {
+        let scalar = u32::from_str_radix(digits, 16)
+            .ok()
+            .and_then(char::from_u32)
+            .ok_or_else(|| String::from("escaped-character has an invalid Unicode scalar"))?;
+        vec![scalar]
+    } else {
+        text.chars()
             .map(|character| match character {
                 'n' => '\n',
                 't' => '\t',
                 'r' => '\r',
                 other => other,
             })
-            .collect(),
-        src_range: source_range(syntax, &tokens[1])?,
+            .collect()
+    };
+    Ok(LegacyToken {
+        kind: TokenKind::EscapedChar,
+        chars,
+        src_range: if extended {
+            source_range_for_range(syntax, syntax.range())?
+        } else {
+            source_range(syntax, &tokens[1])?
+        },
     })
 }
 
@@ -153,15 +169,10 @@ pub(super) fn merge_legacy_tokens(
     tokens: &mut Vec<LegacyToken>,
     description: &str,
 ) -> Result<LegacyToken, String> {
-    LegacyToken::merge_tokens(tokens)
-        .ok_or_else(|| alloc::format!("{description} cannot be empty"))
+    LegacyToken::merge_tokens(tokens).ok_or_else(|| alloc::format!("{description} cannot be empty"))
 }
 
-pub(super) fn failure_store(
-    syntax: &SyntaxNode,
-    code: &str,
-    message: String,
-) -> DiagnosticStore {
+pub(super) fn failure_store(syntax: &SyntaxNode, code: &str, message: String) -> DiagnosticStore {
     let mut ids = IdGenerator::new();
     let mut diagnostics = DiagnosticStore::new(syntax.source().revision());
     diagnostics.push(Diagnostic {

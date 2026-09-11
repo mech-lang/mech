@@ -169,6 +169,7 @@ pub fn lower_legacy_set_operator(
 }
 
 /// Lower a direct Phase 2D operator leaf to its exact legacy enum value.
+#[cfg(test)]
 pub(crate) fn lower_phase_2d_operator_value(
     syntax: &OperatorSyntax,
 ) -> Result<LegacyOperatorValue, DiagnosticStore> {

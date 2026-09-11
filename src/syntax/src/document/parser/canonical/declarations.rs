@@ -215,7 +215,9 @@ pub(crate) fn parse_context_declaration(parser: &mut Parser<'_>) -> Attempt {
 
 fn parse_optional_capability_group(parser: &mut Parser<'_>) {
     let group = parser.checkpoint();
-    if !base::parse_rule(parser, rules::LEFT_BRACE)
+    if !base::parse_rule(parser, rules::WHITESPACE0)
+        || !base::parse_rule(parser, rules::LEFT_BRACE)
+        || !base::parse_rule(parser, rules::WHITESPACE0)
         || !parse_context_capability_declaration(parser).accepted()
     {
         if parser.is_halted() {
@@ -244,7 +246,9 @@ fn parse_optional_capability_group(parser: &mut Parser<'_>) {
     if !base::parse_rule(parser, rules::LIST_SEPARATOR) {
         parser.rewind(trailing);
     }
-    if !base::parse_rule(parser, rules::RIGHT_BRACE) {
+    if !base::parse_rule(parser, rules::WHITESPACE0)
+        || !base::parse_rule(parser, rules::RIGHT_BRACE)
+    {
         if parser.is_halted() {
             return;
         }

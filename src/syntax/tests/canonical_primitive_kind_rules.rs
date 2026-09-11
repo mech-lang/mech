@@ -5,9 +5,9 @@ use mech_syntax::document::ast::kinds::{KindAnySyntax, KindAtomSyntax, KindEmpty
 use mech_syntax::document::parser::canonical::parse_canonical_phase_2c_rule_for_test;
 use mech_syntax::document::parser::rules;
 use mech_syntax::document::{
-    lower_legacy_kind_any, lower_legacy_kind_atom, lower_legacy_kind_empty,
-    reconstruct_source_range, AstNode, DocumentId, ParseConfig, Revision, RuleId, SyntaxKind,
-    SyntaxNode, TextRange, TextSize, TextSnapshot,
+    AstNode, DocumentId, ParseConfig, Revision, RuleId, SyntaxKind, SyntaxNode, TextRange,
+    TextSize, TextSnapshot, lower_legacy_kind_any, lower_legacy_kind_atom, lower_legacy_kind_empty,
+    reconstruct_source_range,
 };
 
 fn source(text: &str) -> TextSnapshot {

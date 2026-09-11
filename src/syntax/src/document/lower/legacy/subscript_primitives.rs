@@ -1,13 +1,14 @@
 //! Compatibility lowering for the closed Phase 2G subscript primitives.
 
+#[cfg(test)]
+use crate::document::ast::subscript_primitives::SubscriptPrimitiveSyntax;
 use alloc::string::String;
 use alloc::vec::Vec;
 
-use mech_core::{Identifier, RealNumber, Subscript};
+use mech_core::Subscript;
 
 use crate::document::ast::subscript_primitives::{
-    DotSubscriptIntSyntax, DotSubscriptSyntax, SelectAllSubscriptSyntax, SubscriptPrimitiveSyntax,
-    SwizzleSubscriptSyntax,
+    DotSubscriptIntSyntax, DotSubscriptSyntax, SelectAllSubscriptSyntax, SwizzleSubscriptSyntax,
 };
 use crate::document::{AstNode, DiagnosticStore, SyntaxElement, SyntaxKind, SyntaxNode};
 
@@ -19,6 +20,7 @@ type LowerResult<T> = Result<T, String>;
 
 /// A direct legacy value emitted by a node-valued Phase 2G subscript leaf.
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg(test)]
 pub(crate) enum LegacySubscriptPrimitiveValue {
     SelectAll(Subscript),
     Swizzle(Subscript),
@@ -76,6 +78,7 @@ pub fn lower_legacy_dot_subscript_int(
 
 /// Lower any node-valued Phase 2G subscript primitive for direct parity
 /// coverage without exposing a parent `subscript` lowering entry point.
+#[cfg(test)]
 pub(crate) fn lower_phase_2g_subscript_value(
     syntax: &SubscriptPrimitiveSyntax,
 ) -> Result<LegacySubscriptPrimitiveValue, DiagnosticStore> {

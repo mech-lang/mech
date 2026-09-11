@@ -26,15 +26,15 @@ pub use ports::{
     CanonicalRuleSnapshot, canonical_base_rule_supported, parse_canonical_base_rule_for_test,
     parse_canonical_tag_for_test,
 };
-pub(crate) use recursive_core::PHASE_2I_RULES;
 pub use terminal_spec::{
     FIXED_TERMINAL_COUNT, FIXED_TERMINALS, FixedTerminalSpec, TerminalSpacing, fixed_terminal_spec,
 };
-pub(crate) use test_support::PHASE_2G_RULES;
-pub(crate) use test_support::PHASE_2H_RULES;
 pub use test_support::{
     CanonicalRuleOutcome, CanonicalSourceRuleSnapshot, parse_canonical_phase_2c_rule_for_test,
     parse_canonical_phase_2d_rule_for_test, parse_canonical_phase_2e_rule_for_test,
     parse_canonical_phase_2f_rule_for_test, parse_canonical_phase_2g_rule_for_test,
     parse_canonical_phase_2h_rule_for_test, parse_canonical_phase_2i_rule_for_test,
 };
+
+#[cfg(test)]
+pub(crate) use test_support::{PHASE_2G_RULES, PHASE_2H_RULES};

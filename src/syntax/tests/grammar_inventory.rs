@@ -23,7 +23,6 @@ const MODULES: &[&str] = &[
     "mechdown",
     "mika",
     "grammar",
-    "repl",
     "parser",
 ];
 
@@ -364,6 +363,8 @@ fn generated_function_name(line: &str) -> Option<String> {
 
 fn scan_top_level_functions(source: &str) -> BTreeSet<String> {
     let masked = mask_comments_and_literals(source);
+    // Join formatted macro declarations before extracting their first argument.
+    let masked = masked.replace("!(\n", "!(");
     let mut brace_depth = 0usize;
     let mut functions = BTreeSet::new();
 
@@ -531,7 +532,7 @@ fn productions_inventory_covers_selected_parser_modules() {
             "stable ID {id:?} is claimed by more than one row"
         );
         assert!(
-            MODULES.contains(&module),
+            MODULES.contains(&module) || module == "repl",
             "line {line_number} names unscanned module {module:?}"
         );
         assert!(
@@ -644,6 +645,28 @@ fn productions_inventory_covers_selected_parser_modules() {
         for function in scan_top_level_functions(&source) {
             discovered.insert(((*module).to_string(), function));
         }
+    }
+
+    // The Phase 0 inventory retains stable rule IDs, including the historical
+    // REPL family. Interactive commands moved to mech-runtime before R1–R6.
+    assert!(!syntax_root().join("src/repl.rs").exists());
+    assert!(
+        repository_root()
+            .join("src/runtime/src/repl_command.rs")
+            .is_file()
+    );
+    inventoried.retain(|(module, _)| module != "repl");
+
+    // Reviewed implementation deltas since the frozen Phase 0 baseline.
+    assert!(inventoried.remove(&("structures".into(), "table_bottom".into())));
+    for (module, function) in [
+        ("base", "simple_escaped_char"),
+        ("base", "unicode_escaped_char"),
+        ("base", "zero_escaped_char"),
+        ("mechdown", "annotated_subtitle"),
+        ("mechdown", "section_annotation"),
+    ] {
+        assert!(inventoried.insert((module.into(), function.into())));
     }
 
     let missing = discovered.difference(&inventoried).collect::<Vec<_>>();

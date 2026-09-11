@@ -48,11 +48,7 @@ pub fn lower_legacy_digit_sequence(
                             "digit-sequence contains an invalid digit token",
                         ));
                     }
-                    digits.push(common::lower_syntax_token(
-                        syntax,
-                        token,
-                        TokenKind::Digit,
-                    )?);
+                    digits.push(common::lower_syntax_token(syntax, token, TokenKind::Digit)?);
                     previous_was_underscore = false;
                 }
                 SyntaxKind::Underscore
@@ -83,10 +79,9 @@ pub fn lower_legacy_digit_sequence(
         Ok(digits)
     })();
 
-    lowered
-        .map_err(|message| {
-            common::failure_store(syntax, "lowering/invalid-digit-sequence-syntax", message)
-        })
+    lowered.map_err(|message| {
+        common::failure_store(syntax, "lowering/invalid-digit-sequence-syntax", message)
+    })
 }
 
 /// Lowers a lossless canonical `identifier` node to the merged legacy

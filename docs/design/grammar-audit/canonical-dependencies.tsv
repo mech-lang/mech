@@ -100,7 +100,7 @@ define-operator	whitespace0	context-declaration|enum-define|fsm-declare|fsm-spec
 difference	ws0e	set-operator
 digit	none	digit-token|subtitle
 digit-sequence	digit-token|underscore-digit	binary-literal|decimal-literal|float-decimal-start|float-full|octal-literal|typed-integer|untyped-integer
-digit-token	digit	alphanumeric|context-address-path-token|context-base-resource-uri|context-capability-path-token|context-import-alias-segment|digit-sequence|grammar-identifier|hexadecimal-literal|identifier|identifier-path-segment|raw-text|source-path-component-token|text|ul-subtitle|underscore-digit|uri-scheme-part
+digit-token	digit	alphanumeric|context-address-path-token|context-base-resource-uri|context-capability-path-token|context-import-alias-segment|digit-sequence|escaped-char|grammar-identifier|hexadecimal-literal|identifier|identifier-path-segment|raw-text|source-path-component-token|text|ul-subtitle|underscore-digit|uri-scheme-part
 div-assign-operator	whitespace0	op-assign-operator
 divide	comment-sigil|slash|ws0e	mul-div-operator
 docs-rpl	none	parse-repl-command
@@ -131,7 +131,7 @@ equation-sigil	none	equation|inline-equation|paragraph-text
 error-alt-sigil	none	error-block
 error-block	error-alt-sigil|error-sigil|float-sigil|paragraph-newline|space-tab0	not-mech-code|section-element
 error-sigil	none	error-block|subtitle
-escaped-char	alpha-token|backslash|punctuation|symbol	text
+escaped-char	alpha-token|backslash|digit-token|left-brace|punctuation|right-brace|symbol	text
 eval-inline-mech-code	expression|left-brace|right-brace|whitespace0	paragraph-element
 exclamation	none	invariant-define|not|punctuation
 exp-assign-operator	whitespace0	op-assign-operator
@@ -276,7 +276,7 @@ left-angle	left-angle1|left-angle2	enum-define|grouping-symbol|kind-annotation|k
 left-angle1	none	left-angle|less-than
 left-angle2	none	forbidden-emoji|left-angle
 left-anti-join	ws0e	table-operator
-left-brace	none	activation-arm|activation-scope|brace-subscript|code-block|context-declaration|empty-map|empty-set|eval-inline-mech-code|fsm-block-transition|grouping-symbol|identifier-path-segment-emoji|inline-mech-code|kind-map|kind-record|kind-set|map|module-suffix-import|option-map|paragraph-text|set|set-comprehension|table-start
+left-brace	none	activation-arm|activation-scope|brace-subscript|code-block|context-declaration|empty-map|empty-set|escaped-char|eval-inline-mech-code|fsm-block-transition|grouping-symbol|identifier-path-segment-emoji|inline-mech-code|kind-map|kind-record|kind-set|map|module-suffix-import|option-map|paragraph-text|set|set-comprehension|table-start
 left-bracket	none	bracket-subscript|checked-item|citation|grammar-list|grouping-symbol|hyperlink|kind-matrix|matrix-comprehension|matrix-start|paragraph-text|pattern-array|reference|unchecked-item
 left-join	ws0e	table-operator
 left-parenthesis	none	argument-list|context-capability-declaration|enum-variant-kind|fsm-args|fsm-implementation|fsm-specification|fsm-state-definition-variables|function-define|function-out-args|grammar-group|grouping-symbol|hyperlink|img|kind-tuple|mini-mika|parenthetical-term|pattern-atom-struct|pattern-tuple|pattern-tuple-struct|subtitle|tuple|tuple-destructure|tuple-struct|unordered-list-item
@@ -380,7 +380,7 @@ pattern-array-token	enum-separator|pattern-array-item|spread-operator	pattern-ar
 pattern-atom-struct	colon|identifier|left-parenthesis|list-separator|pattern|right-parenthesis|whitespace0	pattern
 pattern-tuple	left-parenthesis|list-separator|pattern|right-parenthesis|whitespace0	pattern
 pattern-tuple-struct	grave|identifier|left-parenthesis|list-separator|pattern|right-parenthesis|whitespace0	pattern
-percent	none	identifier-symbol|modulus|symbol
+percent	none	identifier-symbol|modulus|source-path-component-token|symbol
 period	none	activation-scope|context-address-path-token|context-base-resource-uri|context-capability-path-token|dot-subscript|dot-subscript-int|expression|float-decimal-start|float-full|fsm-implementation|fsm-specification|function-define-match-arms|function-define-statements|grammar-range|match-expression|ordered-list-item|punctuation|relative-source-import-specifier|section-reference|source-path-component-token|subtitle|swizzle-subscript|ul-subtitle|uri-scheme-part
 plan-rpl	none	parse-repl-command
 plus	none	add|complex-number|grammar-repeat1|identifier-symbol|scientific-literal|symbol|uri-scheme-part
@@ -421,7 +421,7 @@ right-alignment	colon|dash	alignment-separator
 right-angle	right-angle1|right-angle2	enum-define|grammar-peek|grouping-symbol|kind-annotation|kind-define|kind-kind
 right-angle1	none	greater-than|right-angle
 right-angle2	none	forbidden-emoji|right-angle
-right-brace	none	activation-arm|activation-scope|brace-subscript|code-terminal|context-declaration|empty-map|empty-set|eval-inline-mech-code|fsm-block-transition|grouping-symbol|identifier-path-segment-emoji|inline-mech-code|kind-map|kind-record|kind-set|map|module-suffix-import|option-map|set|set-comprehension|table-end
+right-brace	none	activation-arm|activation-scope|brace-subscript|code-terminal|context-declaration|empty-map|empty-set|escaped-char|eval-inline-mech-code|fsm-block-transition|grouping-symbol|identifier-path-segment-emoji|inline-mech-code|kind-map|kind-record|kind-set|map|module-suffix-import|option-map|set|set-comprehension|table-end
 right-bracket	none	bracket-subscript|checked-item|citation|footnote|footnote-reference|grammar-list|grouping-symbol|hyperlink|img|kind-matrix|matrix-comprehension|matrix-end|paragraph-text|pattern-array|reference|unchecked-item
 right-join	ws0e	table-operator
 right-parenthesis	none	argument-list|context-capability-declaration|enum-variant-kind|fsm-args|fsm-implementation|fsm-specification|fsm-state-definition-variables|function-define|function-out-args|grammar-group|grouping-symbol|hyperlink|img|kind-tuple|mini-mika|parenthetical-term|pattern-atom-struct|pattern-tuple|pattern-tuple-struct|subtitle|tuple|tuple-destructure|tuple-struct|unordered-list-item
@@ -447,7 +447,7 @@ source-import-uri-scheme	alpha-token|uri-scheme-part	uri-source-import-specifier
 source-mec-path	slash|source-path-component	absolute-source-import-specifier|bare-source-import-specifier|relative-source-import-specifier
 source-mec-path-wildcard-suffix	asterisk|slash	absolute-source-import-specifier|bare-source-import-specifier|relative-source-import-specifier
 source-path-component	source-path-component-token	source-mec-path
-source-path-component-token	alpha-token|dash|digit-token|period|underscore	source-path-component
+source-path-component-token	alpha-token|dash|digit-token|percent|period|underscore	source-path-component
 space	none	identifier-path-segment-emoji|raw-hyperlink|raw-text|space-tab|text|unordered-list-item|whitespace
 space-tab	nbsp|space|tab|thin-space	comment|newline-indent|row-separator|space-tab0|space-tab1|ws0e|ws1e
 space-tab0	space-tab	abstract-el|alignment-separator|blank-line|code-block|code-terminal|error-block|figures-row|float|generator|idea-block|import-alias-operator|info-block|inline-table|inline-table-header|inline-table-row|matrix-column|matrix-comprehension|matrix-row|mechdown-table-header|mechdown-table-row|module-import|parenthetical-term|prompt|question-block|quote-block|row-separator|set-comprehension|subtitle|success-block|table-column|table-header|table-row|table-row2|table-separator|thematic-break|title-front-matter|ul-subtitle|warning-block

@@ -1,8 +1,8 @@
 use mech_syntax::document::parser::canonical::parse_canonical_phase_2c_rule_for_test;
 use mech_syntax::document::parser::rules;
 use mech_syntax::document::{
-    reconstruct_source_range, DocumentId, ParseConfig, Revision, RuleId, SyntaxKind, SyntaxNode,
-    TextRange, TextSize, TextSnapshot,
+    DocumentId, ParseConfig, Revision, RuleId, SyntaxKind, SyntaxNode, TextRange, TextSize,
+    TextSnapshot, reconstruct_source_range,
 };
 
 fn source(text: &str) -> TextSnapshot {

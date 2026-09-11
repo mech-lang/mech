@@ -42,6 +42,9 @@ use std::collections::HashMap as RangeMap;
 //#[cfg(feature = "mechdown")]
 pub mod activation;
 pub mod base;
+/// Experimental lossless document syntax. Production parsing remains on the
+/// legacy parser during migration.
+pub mod document;
 pub mod expressions;
 #[cfg(feature = "formatter")]
 pub mod formatter;
@@ -58,9 +61,6 @@ pub mod state_machines;
 pub mod statements;
 pub mod structures;
 pub mod submission;
-/// Experimental lossless document syntax. Production parsing remains on the
-/// legacy parser during migration.
-pub mod document;
 
 pub use crate::imports::*;
 pub use crate::parser::*;

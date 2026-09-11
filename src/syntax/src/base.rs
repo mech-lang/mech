@@ -367,7 +367,7 @@ pub fn punctuation(input: ParseString) -> ParseResult<Token> {
     Ok((input, punctuation))
 }
 
-// escaped-char := simple-escaped-char | zero-escaped-char | unicode-escaped-char ;
+// Grammar: docs/design/specification.mec, `escaped-char`; integration adds zero and Unicode escapes.
 pub fn escaped_char(input: ParseString) -> ParseResult<Token> {
     alt((unicode_escaped_char, zero_escaped_char, simple_escaped_char))(input)
 }

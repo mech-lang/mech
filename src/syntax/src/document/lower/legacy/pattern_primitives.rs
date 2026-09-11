@@ -5,12 +5,13 @@ use alloc::string::String;
 use mech_core::Pattern;
 
 use crate::document::ast::pattern_primitives::WildcardPatternSyntax;
-use crate::document::{AstNode, DiagnosticStore, SyntaxKind, SyntaxNode};
+use crate::document::{AstNode, DiagnosticStore, SyntaxKind};
 
 use super::common;
 
 /// The direct legacy value emitted by the node-valued Phase 2G pattern leaf.
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg(test)]
 pub(crate) enum LegacyPatternPrimitiveValue {
     Wildcard(Pattern),
 }
@@ -45,6 +46,7 @@ pub fn lower_legacy_wildcard_pattern(
 }
 
 /// Lower the node-valued Phase 2G wildcard leaf for direct parity coverage.
+#[cfg(test)]
 pub(crate) fn lower_phase_2g_pattern_value(
     syntax: &WildcardPatternSyntax,
 ) -> Result<LegacyPatternPrimitiveValue, DiagnosticStore> {

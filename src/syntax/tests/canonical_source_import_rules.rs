@@ -129,6 +129,9 @@ fn mec_paths_are_maximal_lowercase_candidates_without_backtracking() {
         ("foo.mec/", "foo.mec"),
         ("foo.mec/*", "foo.mec"),
         ("foo.mec/bar.mec", "foo.mec/bar.mec"),
+        ("foo", "foo"),
+        ("foo.mec/bar", "foo.mec/bar"),
+        ("my%20file.mec", "my%20file.mec"),
     ] {
         assert_clean_prefix(
             rules::SOURCE_MEC_PATH,
@@ -137,7 +140,7 @@ fn mec_paths_are_maximal_lowercase_candidates_without_backtracking() {
             Some(SyntaxKind::SourceMecPath),
         );
     }
-    for input in ["foo.MEC", "foo", "foo.mec/bar"] {
+    for input in ["foo.MEC", "foo.txt", "foo.mec/bar.txt"] {
         assert_no_match(rules::SOURCE_MEC_PATH, input);
     }
 }

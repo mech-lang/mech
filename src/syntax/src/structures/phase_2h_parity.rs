@@ -7,7 +7,6 @@
 use super::*;
 
 use alloc::string::String;
-use alloc::vec::Vec;
 
 use mech_core::{SourceLocation, SourceRange, Token as LegacyToken, TokenKind};
 use unicode_segmentation::UnicodeSegmentation;
@@ -33,13 +32,13 @@ use crate::{ParseResult, ParseString};
 use nom::Err;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-enum LegacyValue {
+enum ParityValue {
     Token(LegacyToken),
     Unit,
     Structure(LegacyStructureShellValue),
 }
 
-type LegacyParser = for<'source> fn(ParseString<'source>) -> ParseResult<'source, LegacyValue>;
+type LegacyParser = for<'source> fn(ParseString<'source>) -> ParseResult<'source, ParityValue>;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct Prefix {
@@ -49,7 +48,7 @@ struct Prefix {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct LegacyMatch {
-    value: LegacyValue,
+    value: ParityValue,
     prefix: Prefix,
 }
 
@@ -77,9 +76,9 @@ struct Contract {
 
 macro_rules! legacy_token_parser {
     ($name:ident, $parser:ident) => {
-        fn $name<'source>(input: ParseString<'source>) -> ParseResult<'source, LegacyValue> {
+        fn $name<'source>(input: ParseString<'source>) -> ParseResult<'source, ParityValue> {
             let (input, value) = super::$parser(input)?;
-            Ok((input, LegacyValue::Token(value)))
+            Ok((input, ParityValue::Token(value)))
         }
     };
 }
@@ -91,32 +90,32 @@ legacy_token_parser!(legacy_table_end, table_end);
 legacy_token_parser!(legacy_table_separator, table_separator);
 legacy_token_parser!(legacy_table_horz, table_horz);
 
-fn legacy_table_top<'source>(input: ParseString<'source>) -> ParseResult<'source, LegacyValue> {
+fn legacy_table_top<'source>(input: ParseString<'source>) -> ParseResult<'source, ParityValue> {
     let (input, _) = super::table_top(input)?;
-    Ok((input, LegacyValue::Unit))
+    Ok((input, ParityValue::Unit))
 }
 
-fn legacy_row_separator<'source>(input: ParseString<'source>) -> ParseResult<'source, LegacyValue> {
+fn legacy_row_separator<'source>(input: ParseString<'source>) -> ParseResult<'source, ParityValue> {
     let (input, value) = super::row_separator(input)?;
     Ok((
         input,
-        LegacyValue::Structure(LegacyStructureShellValue::TableRow(value)),
+        ParityValue::Structure(LegacyStructureShellValue::TableRow(value)),
     ))
 }
 
-fn legacy_empty_map<'source>(input: ParseString<'source>) -> ParseResult<'source, LegacyValue> {
+fn legacy_empty_map<'source>(input: ParseString<'source>) -> ParseResult<'source, ParityValue> {
     let (input, value) = super::empty_map(input)?;
     Ok((
         input,
-        LegacyValue::Structure(LegacyStructureShellValue::EmptyMap(value)),
+        ParityValue::Structure(LegacyStructureShellValue::EmptyMap(value)),
     ))
 }
 
-fn legacy_empty_set<'source>(input: ParseString<'source>) -> ParseResult<'source, LegacyValue> {
+fn legacy_empty_set<'source>(input: ParseString<'source>) -> ParseResult<'source, ParityValue> {
     let (input, value) = super::empty_set(input)?;
     Ok((
         input,
-        LegacyValue::Structure(LegacyStructureShellValue::EmptySet(value)),
+        ParityValue::Structure(LegacyStructureShellValue::EmptySet(value)),
     ))
 }
 
@@ -252,17 +251,17 @@ fn find_node(root: &SyntaxNode, kind: SyntaxKind) -> Option<SyntaxNode> {
     root.children().find_map(|child| find_node(&child, kind))
 }
 
-fn canonical_value(contract: Contract, canonical: &CanonicalSourceRuleSnapshot) -> LegacyValue {
+fn canonical_value(contract: Contract, canonical: &CanonicalSourceRuleSnapshot) -> ParityValue {
     match contract.value {
         CanonicalValue::Token => {
             let token = semantic_token(contract.rule, &canonical.syntax());
-            LegacyValue::Token(lower_direct_token(&canonical.syntax(), &token))
+            ParityValue::Token(lower_direct_token(&canonical.syntax(), &token))
         }
-        CanonicalValue::Unit => LegacyValue::Unit,
+        CanonicalValue::Unit => ParityValue::Unit,
         CanonicalValue::Structure(kind) => {
             let node = find_node(&canonical.syntax(), kind)
                 .expect("matched structure leaf must retain its syntax node");
-            LegacyValue::Structure(lower_phase_2h_structure_shell_value(&node).unwrap())
+            ParityValue::Structure(lower_phase_2h_structure_shell_value(&node).unwrap())
         }
     }
 }

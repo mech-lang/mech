@@ -1,0 +1,23 @@
+id	rule	entry-point	feature-set	expected-result	source-file	snapshot-file	notes
+REPL-HELP	repl-command	repl	all	accept	accepted/repl-help.txt	snapshots/REPL-HELP.json	Help command.
+REPL-SAVE	repl-command	repl	all	accept	accepted/repl-save.txt	snapshots/REPL-SAVE.json	Save command with path.
+REPL-PROFILE	repl-command	repl	all	accept	accepted/repl-profile.txt	snapshots/REPL-PROFILE.json	Profile command.
+REPL-STEP	repl-command	repl	all	accept	accepted/repl-step.txt	snapshots/REPL-STEP.json	Step command with count and cycles.
+REPL-CODE	repl-command	repl	all	accept	accepted/repl-code.txt	snapshots/REPL-CODE.json	Code command preserves remaining command text.
+REPL-UNKNOWN	repl-command	repl	all	reject	rejected/repl-unknown.txt	-	Unknown command rejects.
+REPL-HELP-ALIAS	repl-command	repl	all	accept	accepted/repl-help-alias.txt	snapshots/REPL-HELP-ALIAS.json	Short help alias.
+REPL-QUIT-ALIAS	repl-command	repl	all	accept	accepted/repl-quit-alias.txt	snapshots/REPL-QUIT-ALIAS.json	Short quit alias.
+REPL-DOCS	repl-command	repl	all	accept	accepted/repl-docs.txt	snapshots/REPL-DOCS.json	Docs command with subject.
+REPL-DOCS-ALIAS	repl-command	repl	all	accept	accepted/repl-docs-alias.txt	snapshots/REPL-DOCS-ALIAS.json	Short docs alias.
+REPL-SYMBOLS	repl-command	repl	all	accept	accepted/repl-symbols.txt	snapshots/REPL-SYMBOLS.json	Symbols command.
+REPL-WHOS-ALIAS	repl-command	repl	all	accept	accepted/repl-whos-alias.txt	snapshots/REPL-WHOS-ALIAS.json	Short whos alias with names.
+REPL-PLAN-ALIAS	repl-command	repl	all	accept	accepted/repl-plan-alias.txt	snapshots/REPL-PLAN-ALIAS.json	Short plan alias.
+REPL-LS	repl-command	repl	all	accept	accepted/repl-ls.txt	snapshots/REPL-LS.json	List command.
+REPL-CLEAR	repl-command	repl	all	accept	accepted/repl-clear.txt	snapshots/REPL-CLEAR.json	Clear command.
+REPL-CLC	repl-command	repl	all	accept	accepted/repl-clc.txt	snapshots/REPL-CLC.json	Clear console command.
+REPL-SAVE-EMPTY	repl-command	repl	all	accept	accepted/repl-save-empty.txt	snapshots/REPL-SAVE-EMPTY.json	Save accepts an empty path after required space.
+REPL-CODE-ALIAS	repl-command	repl	all	accept	accepted/repl-code-alias.txt	snapshots/REPL-CODE-ALIAS.json	Short code alias consumes the remainder.
+REPL-PREFIX-REJECT	repl-command	repl	all	reject	rejected/repl-prefix.txt	-	Complete REPL root rejects a longer token after a valid command prefix.
+REPL-PROFILE-VALUE	repl-command	repl	all	reject	rejected/repl-profile-value.txt	-	Profile command accepts only on or off.
+REPL-CD	repl-command	repl-crlf	all	accept	accepted/repl-cd.txt	snapshots/REPL-CD.json	CD command terminated with an explicit CRLF by the named entry point.
+REPL-LOAD	repl-command	repl-crlf	all	accept	accepted/repl-load.txt	snapshots/REPL-LOAD.json	Load command terminated with an explicit CRLF by the named entry point.

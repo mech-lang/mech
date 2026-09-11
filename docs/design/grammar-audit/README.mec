@@ -9,6 +9,42 @@ Baseline commit:
 This directory records the audit trail for the language accepted by the syntax
 crate at that baseline. It documents existing behavior, not a parser redesign.
 
+R1–R6 Integration Rebase
+-------------------------------------------------------------------------------
+
+The unfinished syntax stack is rebased through Phase 2I-C onto
+`integration/v0.4` at `535e4b245` (R1–R6 plus the combined integration fixes).
+Phase 2I-D recovery, typed views, and lowering, followed by Phase 2I-E parity
+and atomic registry activation, remain unfinished. This rebase does not
+activate the recursive registry or change the production parser entry point.
+
+The 539 canonical rule IDs and Phase 0 inventory remain stable. Their live
+implementation audit records the intervening integration changes explicitly:
+zero and Unicode escape helpers, annotated subtitles and section annotations,
+and removal of `table_bottom`. REPL commands now belong to
+`src/runtime/src/repl_command.rs`; their Phase 0 cases are archived under
+`src/syntax/tests/fixtures/grammar/retired/repl`. They are historical command
+syntax, not pending work for the lossless document parser. Runtime command
+registry and request tests enforce the current command contract.
+
+Canonical source-import parity now includes extensionless paths, percent
+characters, and whitespace around context capability groups. Canonical escape
+lowering preserves the current parser's zero and Unicode scalar values and
+source ranges. Grammar AST snapshots include the integration branch's section
+annotation and title-import fields. The repository corpus tracks the current
+files and records raw parsing outcomes, including documentation that requires
+preprocessing or is rejected by the production parser.
+
+The syntax suites select the explicit `full` feature profile in the current
+full-validation workflow. Generated Rust registries use the pinned workspace
+formatter, and parser inventories accept formatted multiline terminal macros.
+Unused parity-only helpers are test-gated; the retired interpreter benchmark
+stays deleted. The syntax kind module is named `syntax_kind`, the table-kind
+variant is `TableKind`, and parity-only values use `ParityValue`, avoiding
+names reserved by the retired value-system absence gate. The table-kind's
+numeric discriminant and every other syntax kind ID remain unchanged.
+The strict warning policy and all R1–R6 gates remain enabled.
+
 1. Authority
 -------------------------------------------------------------------------------
 

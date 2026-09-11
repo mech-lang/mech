@@ -1,5 +1,5 @@
 use std::fmt::Debug;
-use std::panic::{catch_unwind, AssertUnwindSafe};
+use std::panic::{AssertUnwindSafe, catch_unwind};
 
 use mech_syntax::document::ast::{
     AtomLiteralSyntax, BinaryLiteralSyntax, DecimalLiteralSyntax, EmptyLiteralSyntax,
@@ -11,6 +11,7 @@ use mech_syntax::document::ast::{
 use mech_syntax::document::parser::canonical::parse_canonical_phase_2c_rule_for_test;
 use mech_syntax::document::parser::rules;
 use mech_syntax::document::{
+    AstNode, DocumentId, ParseConfig, Revision, RuleId, SyntaxKind, SyntaxNode, TextSnapshot,
     lower_legacy_atom, lower_legacy_binary_literal, lower_legacy_complex_number,
     lower_legacy_decimal_literal, lower_legacy_empty, lower_legacy_float_decimal_start,
     lower_legacy_float_full, lower_legacy_float_literal, lower_legacy_hexadecimal_literal,
@@ -18,7 +19,6 @@ use mech_syntax::document::{
     lower_legacy_rational_literal, lower_legacy_raw_string, lower_legacy_real_number,
     lower_legacy_scientific_literal, lower_legacy_string, lower_legacy_typed_integer,
     lower_legacy_untyped_integer, lower_legacy_untyped_real_number, lower_legacy_utf8_string,
-    AstNode, DocumentId, ParseConfig, Revision, RuleId, SyntaxKind, SyntaxNode, TextSnapshot,
 };
 
 fn source(text: &str) -> TextSnapshot {

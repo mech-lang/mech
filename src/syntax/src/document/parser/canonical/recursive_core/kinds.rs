@@ -101,7 +101,7 @@ pub(super) fn parse_kind_table(parser: &mut Parser<'_>) -> Attempt {
                 return Attempt::NoMatch;
             }
             Attempt::Committed => {
-                node.complete(parser, SyntaxKind::KindTable);
+                node.complete(parser, SyntaxKind::TableKind);
                 return Attempt::Committed;
             }
         }
@@ -119,7 +119,7 @@ pub(super) fn parse_kind_table(parser: &mut Parser<'_>) -> Attempt {
                     break;
                 }
                 Attempt::Committed => {
-                    node.complete(parser, SyntaxKind::KindTable);
+                    node.complete(parser, SyntaxKind::TableKind);
                     return Attempt::Committed;
                 }
             }
@@ -133,13 +133,13 @@ pub(super) fn parse_kind_table(parser: &mut Parser<'_>) -> Attempt {
             match literals::parse_literal(parser) {
                 Attempt::Matched => {}
                 Attempt::Committed => {
-                    node.complete(parser, SyntaxKind::KindTable);
+                    node.complete(parser, SyntaxKind::TableKind);
                     return Attempt::Committed;
                 }
                 Attempt::NoMatch => parser.rewind(suffix),
             }
         }
-        node.complete(parser, SyntaxKind::KindTable);
+        node.complete(parser, SyntaxKind::TableKind);
         Attempt::Matched
     })
 }

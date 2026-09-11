@@ -314,7 +314,11 @@ fn unclosed_terminal_synchronizes_before_a_later_rule() {
         .into_iter()
         .map(|node| node.text().unwrap())
         .collect::<Vec<_>>();
-    assert_eq!(rule_text.len(), 2, "later rule was not recovered: {rule_text:?}");
+    assert_eq!(
+        rule_text.len(),
+        2,
+        "later rule was not recovered: {rule_text:?}"
+    );
     assert!(
         rule_text[1].contains("second"),
         "later rule was not recovered: {rule_text:?}"

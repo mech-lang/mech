@@ -4,16 +4,16 @@ use super::super::rule::rules;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum TerminalSpacing {
-  Exact,
-  Whitespace0Both,
+    Exact,
+    Whitespace0Both,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct FixedTerminalSpec {
-  pub rule: RuleId,
-  pub literal: &'static str,
-  pub kind: SyntaxKind,
-  pub spacing: TerminalSpacing,
+    pub rule: RuleId,
+    pub literal: &'static str,
+    pub kind: SyntaxKind,
+    pub spacing: TerminalSpacing,
 }
 
 macro_rules! fixed_terminal_specs {
@@ -147,66 +147,66 @@ fixed_terminal_specs! {
 pub const FIXED_TERMINAL_COUNT: usize = 108;
 
 pub fn fixed_terminal_spec(rule: RuleId) -> Option<&'static FixedTerminalSpec> {
-  FIXED_TERMINALS.iter().find(|spec| spec.rule == rule)
+    FIXED_TERMINALS.iter().find(|spec| spec.rule == rule)
 }
 
 #[cfg(test)]
 mod tests {
-  use super::*;
+    use super::*;
 
-  #[test]
-  fn table_matches_the_phase_0_fixed_terminal_contract() {
-    assert_eq!(FIXED_TERMINALS.len(), FIXED_TERMINAL_COUNT);
-    assert_eq!(
-      FIXED_TERMINALS
-        .iter()
-        .filter(|spec| spec.spacing == TerminalSpacing::Whitespace0Both)
-        .count(),
-      13,
-    );
-    assert!(FIXED_TERMINALS.iter().all(|spec| !spec.literal.is_empty()));
+    #[test]
+    fn table_matches_the_phase_0_fixed_terminal_contract() {
+        assert_eq!(FIXED_TERMINALS.len(), FIXED_TERMINAL_COUNT);
+        assert_eq!(
+            FIXED_TERMINALS
+                .iter()
+                .filter(|spec| spec.spacing == TerminalSpacing::Whitespace0Both)
+                .count(),
+            13,
+        );
+        assert!(FIXED_TERMINALS.iter().all(|spec| !spec.literal.is_empty()));
 
-    for (index, spec) in FIXED_TERMINALS.iter().enumerate() {
-      assert!(
-        FIXED_TERMINALS[..index]
-          .iter()
-          .all(|earlier| earlier.rule != spec.rule),
-        "duplicate fixed-terminal rule {}",
-        spec.rule,
-      );
-      assert_eq!(fixed_terminal_spec(spec.rule), Some(spec));
+        for (index, spec) in FIXED_TERMINALS.iter().enumerate() {
+            assert!(
+                FIXED_TERMINALS[..index]
+                    .iter()
+                    .all(|earlier| earlier.rule != spec.rule),
+                "duplicate fixed-terminal rule {}",
+                spec.rule,
+            );
+            assert_eq!(fixed_terminal_spec(spec.rule), Some(spec));
+        }
     }
-  }
 
-  #[test]
-  fn duplicate_literals_retain_rule_specific_meanings() {
-    let asterisk = fixed_terminal_spec(rules::ASTERISK).unwrap();
-    let emphasis = fixed_terminal_spec(rules::EMPHASIS_SIGIL).unwrap();
-    assert_eq!(asterisk.literal, emphasis.literal);
-    assert_eq!(asterisk.literal, "*");
-    assert_eq!(asterisk.kind, SyntaxKind::Asterisk);
-    assert_eq!(emphasis.kind, SyntaxKind::EmphasisSigil);
+    #[test]
+    fn duplicate_literals_retain_rule_specific_meanings() {
+        let asterisk = fixed_terminal_spec(rules::ASTERISK).unwrap();
+        let emphasis = fixed_terminal_spec(rules::EMPHASIS_SIGIL).unwrap();
+        assert_eq!(asterisk.literal, emphasis.literal);
+        assert_eq!(asterisk.literal, "*");
+        assert_eq!(asterisk.kind, SyntaxKind::Asterisk);
+        assert_eq!(emphasis.kind, SyntaxKind::EmphasisSigil);
 
-    let equal = fixed_terminal_spec(rules::EQUAL).unwrap();
-    let assign = fixed_terminal_spec(rules::ASSIGN_OPERATOR).unwrap();
-    assert_eq!(equal.literal, assign.literal);
-    assert_eq!(equal.literal, "=");
-    assert_eq!(equal.kind, SyntaxKind::Equal);
-    assert_eq!(assign.kind, SyntaxKind::AssignOperator);
+        let equal = fixed_terminal_spec(rules::EQUAL).unwrap();
+        let assign = fixed_terminal_spec(rules::ASSIGN_OPERATOR).unwrap();
+        assert_eq!(equal.literal, assign.literal);
+        assert_eq!(equal.literal, "=");
+        assert_eq!(equal.kind, SyntaxKind::Equal);
+        assert_eq!(assign.kind, SyntaxKind::AssignOperator);
 
-    let right_angle = fixed_terminal_spec(rules::RIGHT_ANGLE1).unwrap();
-    let quote_sigil = fixed_terminal_spec(rules::QUOTE_SIGIL).unwrap();
-    assert_eq!(right_angle.literal, quote_sigil.literal);
-    assert_eq!(right_angle.literal, ">");
-    assert_eq!(right_angle.kind, SyntaxKind::RightAngle);
-    assert_eq!(quote_sigil.kind, SyntaxKind::QuoteSigil);
-  }
+        let right_angle = fixed_terminal_spec(rules::RIGHT_ANGLE1).unwrap();
+        let quote_sigil = fixed_terminal_spec(rules::QUOTE_SIGIL).unwrap();
+        assert_eq!(right_angle.literal, quote_sigil.literal);
+        assert_eq!(right_angle.literal, ">");
+        assert_eq!(right_angle.kind, SyntaxKind::RightAngle);
+        assert_eq!(quote_sigil.kind, SyntaxKind::QuoteSigil);
+    }
 
-  #[test]
-  fn define_operator_uses_the_token_kind_not_the_phase_1_node_kind() {
-    let define = fixed_terminal_spec(rules::DEFINE_OPERATOR).unwrap();
-    assert_eq!(define.literal, ":=");
-    assert_eq!(define.kind, SyntaxKind::DefineOperatorToken);
-    assert_eq!(define.spacing, TerminalSpacing::Whitespace0Both);
-  }
+    #[test]
+    fn define_operator_uses_the_token_kind_not_the_phase_1_node_kind() {
+        let define = fixed_terminal_spec(rules::DEFINE_OPERATOR).unwrap();
+        assert_eq!(define.literal, ":=");
+        assert_eq!(define.kind, SyntaxKind::DefineOperatorToken);
+        assert_eq!(define.spacing, TerminalSpacing::Whitespace0Both);
+    }
 }

@@ -17,7 +17,7 @@ const PHASE_2I_NEW_KINDS: &[SyntaxKind] = &[
     SyntaxKind::Kind,
     SyntaxKind::KindWithOption,
     SyntaxKind::KindKind,
-    SyntaxKind::KindTable,
+    SyntaxKind::TableKind,
     SyntaxKind::KindSet,
     SyntaxKind::KindMap,
     SyntaxKind::KindRecord,
@@ -165,9 +165,8 @@ fn phase_names() -> BTreeSet<String> {
 }
 
 fn ports() -> BTreeMap<String, PortRow> {
-    let source =
-        fs::read_to_string(repository_root().join("docs/design/grammar-audit/ports.tsv"))
-            .expect("read ports.tsv");
+    let source = fs::read_to_string(repository_root().join("docs/design/grammar-audit/ports.tsv"))
+        .expect("read ports.tsv");
     let mut lines = source.lines();
     assert_eq!(lines.next(), Some(PORTS_HEADER));
     let mut rows = BTreeMap::new();
@@ -193,7 +192,10 @@ fn ports() -> BTreeMap<String, PortRow> {
 #[test]
 fn schema_inventory_and_categorical_contracts_are_exact() {
     let schema = schema();
-    assert_eq!(schema.keys().cloned().collect::<BTreeSet<_>>(), phase_names());
+    assert_eq!(
+        schema.keys().cloned().collect::<BTreeSet<_>>(),
+        phase_names()
+    );
 
     let allowed_modules = names(&[
         "kinds",

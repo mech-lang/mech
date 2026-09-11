@@ -1,13 +1,14 @@
 //! Compatibility lowering for the closed Phase 2G assignment primitives.
 
+#[cfg(test)]
+use crate::document::ast::control_operators::OpAssignPrimitiveSyntax;
 use alloc::string::String;
 
 use mech_core::OpAssignOp;
 
 use crate::document::ast::control_operators::{
     AddAssignOperationSyntax, DivAssignOperationSyntax, ExpAssignOperationSyntax,
-    MulAssignOperationSyntax, OpAssignOperatorSyntax, OpAssignPrimitiveSyntax,
-    SubAssignOperationSyntax,
+    MulAssignOperationSyntax, OpAssignOperatorSyntax, SubAssignOperationSyntax,
 };
 use crate::document::{AstNode, DiagnosticStore, SyntaxElement, SyntaxKind, SyntaxNode};
 
@@ -15,6 +16,7 @@ use super::common;
 
 /// The direct legacy values emitted by node-valued Phase 2G control leaves.
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg(test)]
 pub(crate) enum LegacyControlValue {
     Operator(OpAssignOp),
     Add(OpAssignOp),
@@ -98,6 +100,7 @@ pub fn lower_legacy_exp_assign_operation(
 
 /// Lower any node-valued Phase 2G assignment primitive for direct parity
 /// coverage without creating a parent statement lowerer.
+#[cfg(test)]
 pub(crate) fn lower_phase_2g_control_value(
     syntax: &OpAssignPrimitiveSyntax,
 ) -> Result<LegacyControlValue, DiagnosticStore> {

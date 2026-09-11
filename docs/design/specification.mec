@@ -2595,7 +2595,9 @@ identifier-symbol := ampersand
                    | dash
                    | asterisk
                    | caret ;
-escaped-char := backslash, (alpha-token | symbol | punctuation) ;
+escaped-char := backslash,
+  (("u", left-brace, +(alpha-token | digit-token), right-brace)
+   | "0" | alpha-token | symbol | punctuation) ;
 text := alpha-token
       | digit-token
       | emoji
@@ -3088,7 +3090,8 @@ source-path-component-token := alpha-token
                              | digit-token
                              | dash
                              | underscore
-                             | period ;
+                             | period
+                             | percent ;
 source-path-component := +source-path-component-token ;
 source-mec-path := source-path-component,
                    *(slash, source-path-component) ;
@@ -3119,9 +3122,9 @@ export-declaration := whitespace0, module-export-sigil, whitespace1,
 
 context-declaration := whitespace0, at, identifier, define-operator,
                        (context-base-resource-uri | context-base-context),
-                       ?(left-brace,
+                       ?(whitespace0, left-brace, whitespace0,
                          [list-separator, context-capability-declaration],
-                         ?list-separator, right-brace) ;
+                         ?list-separator, whitespace0, right-brace) ;
 context-base-context := at, identifier ;
 context-base-resource-uri :=
   +(alpha-token | digit-token | dash | period),
@@ -4226,7 +4229,10 @@ token language.
 Validation rule:
 `context-send` requires a `var` with a context and no kind.
 `variable-define` rejects an addressed context path. `source-mec-path`
-requires merged text ending in `.mec`. Source-import wildcards are absent or
+requires its final path component to be extensionless or end in `.mec`.
+Unicode escapes require a valid hexadecimal Unicode scalar; an invalid Unicode
+escape candidate falls back to the original single-grapheme escape.
+Source-import wildcards are absent or
 the sole final `/*`. A context capability path accepts no wildcard or one
 final nonempty `/*`; a lone wildcard is the separate `asterisk` scope.
 

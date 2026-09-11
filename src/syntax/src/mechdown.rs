@@ -240,7 +240,7 @@ pub fn ul_subtitle(input: ParseString) -> ParseResult<Subtitle> {
     Ok((input, Subtitle { text, level: 2 }))
 }
 
-// section-annotation := "@", identifier, ?("(", atom, *(comma, atom), ")") ;
+// Parse the integration branch's section annotations and optional atom arguments.
 pub fn section_annotation(input: ParseString) -> ParseResult<SectionAnnotation> {
     let (input, _) = at(input)?;
     let (input, name) = identifier(input)?;
@@ -268,7 +268,7 @@ pub fn section_annotation(input: ParseString) -> ParseResult<SectionAnnotation> 
     ))
 }
 
-// annotated-subtitle := +(!"@", text), +space-tab, section-annotation,
+// Parse subtitle text followed by a section annotation,
 //                       *(+space-tab, section-annotation), newline, +dash, newline ;
 pub fn annotated_subtitle(input: ParseString) -> ParseResult<(Subtitle, Vec<SectionAnnotation>)> {
     let rest = input.rest();
@@ -1443,9 +1443,9 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
                 new_input = input;
                 continue;
             }
-      Err(_) => {
-        // Try a section element.
-      }
+            Err(_) => {
+                // Try a section element.
+            }
         }
 
         match section_element(new_input.clone()) {
