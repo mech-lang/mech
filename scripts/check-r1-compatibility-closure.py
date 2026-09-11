@@ -34,7 +34,7 @@ ARTIFACT_COMPLETENESS_PROOFS = (
     (
         ".github/workflows/ci-full.yml",
         (
-            "r1-artifact-closure",
+            "artifact-closure",
             "scripts/check-r1-artifact-closure.py ${{ matrix.representative }}",
         ),
     ),
@@ -46,7 +46,7 @@ ARTIFACT_COMPLETENESS_PROOFS = (
         ),
     ),
     (
-        "tests/fixtures/d2-contract-generator/src/main.rs",
+        "tests/fixtures/resident-nbody-conformance/src/main.rs",
         (
             "every n-body operation must carry a declared contract",
             "ResolvedOperationContract::Declared",

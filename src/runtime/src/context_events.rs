@@ -162,7 +162,7 @@ impl RuntimeContextEvents {
             self.storage.drain(..hidden);
             self.visible_start = 0;
             #[cfg(any(test, feature = "runtime_bench_probes"))]
-            crate::runtime::gate_a_probe::record_context_event_compaction(moved);
+            crate::runtime::cost_probe::record_context_event_compaction(moved);
         }
         self.bump_local_generation();
         Ok(())
@@ -216,7 +216,7 @@ impl RuntimeContextEvents {
         self.storage.drain(protected_len..self.visible_start);
         self.visible_start = protected_len;
         #[cfg(any(test, feature = "runtime_bench_probes"))]
-        crate::runtime::gate_a_probe::record_context_event_compaction(moved);
+        crate::runtime::cost_probe::record_context_event_compaction(moved);
     }
 
     #[cfg(feature = "runtime_bench_probes")]
@@ -272,7 +272,7 @@ impl Deref for RuntimeContextEvents {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::runtime::gate_a_probe::{gate_a_cost_snapshot, reset_gate_a_costs};
+    use crate::runtime::cost_probe::{reset_runtime_costs, runtime_cost_snapshot};
     use crate::{EventId, RuntimeEventKind};
 
     fn event(id: u128) -> RuntimeEvent {
@@ -331,12 +331,12 @@ mod tests {
         events.push(event(3));
         events.push(event(4));
         events.retain_last(3);
-        reset_gate_a_costs();
+        reset_runtime_costs();
         events.finish_transaction_scope().unwrap();
 
         assert_eq!(events.visible(), [event(2), event(3), event(4)]);
         assert_eq!(events.physical_len(), 4);
-        assert_eq!(gate_a_cost_snapshot().context_event_compaction_count, 0);
+        assert_eq!(runtime_cost_snapshot().context_event_compaction_count, 0);
     }
 
     #[test]
@@ -346,12 +346,12 @@ mod tests {
             events.push(event(id));
         }
         events.retain_last(2);
-        reset_gate_a_costs();
+        reset_runtime_costs();
         events.finish_transaction_scope().unwrap();
 
         assert_eq!(events.visible(), [event(3), event(4)]);
         assert_eq!(events.physical_len(), 2);
-        let costs = gate_a_cost_snapshot();
+        let costs = runtime_cost_snapshot();
         assert_eq!(costs.context_event_compaction_count, 1);
         assert_eq!(costs.context_event_compaction_moved_items, 2);
     }
@@ -363,11 +363,11 @@ mod tests {
             events.push(event(id));
         }
         events.retain_last(2);
-        reset_gate_a_costs();
+        reset_runtime_costs();
         events.finish_transaction_scope().unwrap();
 
         assert_eq!(events.visible(), [event(4), event(5)]);
-        let costs = gate_a_cost_snapshot();
+        let costs = runtime_cost_snapshot();
         assert_eq!(costs.context_event_compaction_count, 1);
         assert_eq!(costs.context_event_compaction_moved_items, 2);
     }
@@ -377,12 +377,12 @@ mod tests {
         let mut events = RuntimeContextEvents::new();
         events.push(event(1));
         events.retain_last(0);
-        reset_gate_a_costs();
+        reset_runtime_costs();
         events.finish_transaction_scope().unwrap();
 
         assert!(events.visible().is_empty());
         assert_eq!(events.physical_len(), 0);
-        let costs = gate_a_cost_snapshot();
+        let costs = runtime_cost_snapshot();
         assert_eq!(costs.context_event_compaction_count, 1);
         assert_eq!(costs.context_event_compaction_moved_items, 0);
     }

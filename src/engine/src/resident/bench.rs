@@ -1,7 +1,6 @@
 use super::{
-    Candidate, GateBInstance, NODES_PER_EKF,
-    ResidentCandidateExecutionError as ResidentExecutionError, execute_ekf_candidate,
-    execute_scheduled_ekf_candidate,
+    Candidate, NODES_PER_EKF, ResidentCandidateExecutionError as ResidentExecutionError,
+    ResidentEkfInstance, execute_ekf_candidate, execute_scheduled_ekf_candidate,
 };
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -20,7 +19,7 @@ pub struct ResidentTurnProbe {
 }
 
 pub struct ResidentEkfBatch {
-    instance: GateBInstance,
+    instance: ResidentEkfInstance,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -97,7 +96,7 @@ impl Drop for PreparedResidentTurn<'_> {
 impl ResidentEkfBatch {
     pub fn new(instances: usize) -> Self {
         Self {
-            instance: GateBInstance::new(instances),
+            instance: ResidentEkfInstance::new(instances),
         }
     }
 
@@ -181,13 +180,13 @@ impl ResidentEkfBatch {
     }
 
     #[doc(hidden)]
-    pub fn set_next_epoch_for_gate_b(&mut self, next_epoch: u64) {
+    pub fn set_next_epoch_for_benchmark(&mut self, next_epoch: u64) {
         assert_ne!(next_epoch, 0, "resident candidate epochs are non-zero");
         self.instance.next_epoch = Some(mech_core::InstanceEpoch(next_epoch));
     }
 
     #[doc(hidden)]
-    pub fn candidate_epoch_is_active_for_gate_b(&self, epoch: u64) -> bool {
+    pub fn candidate_epoch_is_active(&self, epoch: u64) -> bool {
         self.instance
             .state
             .contains_epoch(mech_core::InstanceEpoch(epoch))

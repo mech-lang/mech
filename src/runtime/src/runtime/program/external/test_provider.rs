@@ -1,4 +1,4 @@
-//! Deterministic D3 providers shared by unit tests and controlled evidence.
+//! Deterministic providers shared by resident external tests.
 //!
 //! This module is never present in normal product builds.
 
@@ -19,7 +19,7 @@ use crate::{
     RuntimeResourceWriteIntent, RuntimeResourceWriteRequest,
 };
 
-pub static D3_OBSERVATION_CONTRACT: LazyLock<OperationContractDeclaration> =
+pub static TEST_OBSERVATION_CONTRACT: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| OperationContractDeclaration {
         inputs: InputPortLayout::Fixed(Box::new([])),
         outputs: vec![OutputPortPolicy {
@@ -37,14 +37,14 @@ pub static D3_OBSERVATION_CONTRACT: LazyLock<OperationContractDeclaration> =
         }),
     });
 
-pub static D3_SCENE_CONTRACT: LazyLock<OperationContractDeclaration> = LazyLock::new(|| {
+pub static TEST_SCENE_CONTRACT: LazyLock<OperationContractDeclaration> = LazyLock::new(|| {
     external_contract(ExternalInteraction::Effect(EffectContract {
         delivery: EffectDeliveryPolicy::IdempotentRetry,
         idempotency: IdempotencyRequirement::Required,
     }))
 });
 
-pub static D3_TRANSACTIONAL_CONTRACT: LazyLock<OperationContractDeclaration> =
+pub static TEST_TRANSACTIONAL_CONTRACT: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| {
         external_contract(ExternalInteraction::TransactionalExternal(
             TransactionalExternalContract {
@@ -68,7 +68,7 @@ fn external_contract(interaction: ExternalInteraction) -> OperationContractDecla
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-pub struct D3ProviderTrace {
+pub struct ExternalTestProviderTrace {
     pub plan_calls: u64,
     pub read_calls: u64,
     pub prepared: Vec<(RuntimeEffectId, String)>,
@@ -78,17 +78,17 @@ pub struct D3ProviderTrace {
     pub delivery_failures: u64,
 }
 
-pub type SharedD3ProviderTrace = Arc<Mutex<D3ProviderTrace>>;
+pub type SharedExternalTestProviderTrace = Arc<Mutex<ExternalTestProviderTrace>>;
 
 #[derive(Debug)]
-pub struct D3InputProvider {
+pub struct ExternalTestInputProvider {
     sample: f64,
-    trace: SharedD3ProviderTrace,
+    trace: SharedExternalTestProviderTrace,
     fail_reads: Arc<Mutex<u64>>,
 }
 
-impl D3InputProvider {
-    pub fn new(sample: f64, trace: SharedD3ProviderTrace) -> Self {
+impl ExternalTestInputProvider {
+    pub fn new(sample: f64, trace: SharedExternalTestProviderTrace) -> Self {
         Self {
             sample,
             trace,
@@ -96,7 +96,11 @@ impl D3InputProvider {
         }
     }
 
-    pub fn with_read_failures(sample: f64, trace: SharedD3ProviderTrace, failures: u64) -> Self {
+    pub fn with_read_failures(
+        sample: f64,
+        trace: SharedExternalTestProviderTrace,
+        failures: u64,
+    ) -> Self {
         Self {
             sample,
             trace,
@@ -105,44 +109,53 @@ impl D3InputProvider {
     }
 }
 
-impl RuntimeResourceProvider for D3InputProvider {
+impl RuntimeResourceProvider for ExternalTestInputProvider {
     fn scheme(&self) -> &str {
-        "gate-d3"
+        "test-resource"
     }
 
     fn base_uris(&self) -> Vec<String> {
-        vec!["gate-d3://input/value".to_owned()]
+        vec!["test-resource://input/value".to_owned()]
     }
 
     fn semantic_read_contract(&self) -> Option<&'static OperationContractDeclaration> {
-        Some(&D3_OBSERVATION_CONTRACT)
+        Some(&TEST_OBSERVATION_CONTRACT)
     }
 
     fn plan_read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
-        self.trace.lock().expect("D3 provider trace").plan_calls += 1;
+        self.trace
+            .lock()
+            .expect("external test provider trace")
+            .plan_calls += 1;
         RuntimeHostInputValue::F64(self.sample).into_value()
     }
 
     fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
-        self.trace.lock().expect("D3 provider trace").read_calls += 1;
-        let mut failures = self.fail_reads.lock().expect("D3 input failure count");
+        self.trace
+            .lock()
+            .expect("external test provider trace")
+            .read_calls += 1;
+        let mut failures = self
+            .fail_reads
+            .lock()
+            .expect("external input failure count");
         if *failures > 0 {
             *failures -= 1;
-            return Err(provider_error("injected D3 input read failure"));
+            return Err(provider_error("injected external input read failure"));
         }
         RuntimeHostInputValue::F64(self.sample).into_value()
     }
 }
 
 #[derive(Debug)]
-pub struct D3SceneProvider {
-    trace: SharedD3ProviderTrace,
+pub struct ExternalTestSceneProvider {
+    trace: SharedExternalTestProviderTrace,
     fail_preparations: Arc<Mutex<u64>>,
     fail_deliveries: Arc<Mutex<u64>>,
 }
 
-impl D3SceneProvider {
-    pub fn new(trace: SharedD3ProviderTrace) -> Self {
+impl ExternalTestSceneProvider {
+    pub fn new(trace: SharedExternalTestProviderTrace) -> Self {
         Self {
             trace,
             fail_preparations: Arc::new(Mutex::new(0)),
@@ -150,7 +163,10 @@ impl D3SceneProvider {
         }
     }
 
-    pub fn with_preparation_failures(trace: SharedD3ProviderTrace, failures: u64) -> Self {
+    pub fn with_preparation_failures(
+        trace: SharedExternalTestProviderTrace,
+        failures: u64,
+    ) -> Self {
         Self {
             trace,
             fail_preparations: Arc::new(Mutex::new(failures)),
@@ -158,7 +174,7 @@ impl D3SceneProvider {
         }
     }
 
-    pub fn with_delivery_failures(trace: SharedD3ProviderTrace, failures: u64) -> Self {
+    pub fn with_delivery_failures(trace: SharedExternalTestProviderTrace, failures: u64) -> Self {
         Self {
             trace,
             fail_preparations: Arc::new(Mutex::new(0)),
@@ -167,20 +183,20 @@ impl D3SceneProvider {
     }
 }
 
-impl RuntimeResourceProvider for D3SceneProvider {
+impl RuntimeResourceProvider for ExternalTestSceneProvider {
     fn scheme(&self) -> &str {
-        "gate-d3"
+        "test-resource"
     }
 
     fn base_uris(&self) -> Vec<String> {
-        vec!["gate-d3://scene/output".to_owned()]
+        vec!["test-resource://scene/output".to_owned()]
     }
 
     fn semantic_write_contract(
         &self,
         intent: RuntimeResourceWriteIntent,
     ) -> Option<&'static OperationContractDeclaration> {
-        (intent == RuntimeResourceWriteIntent::Send).then_some(&D3_SCENE_CONTRACT)
+        (intent == RuntimeResourceWriteIntent::Send).then_some(&TEST_SCENE_CONTRACT)
     }
 
     fn supports_resident_idempotency(&self, intent: RuntimeResourceWriteIntent) -> bool {
@@ -189,13 +205,13 @@ impl RuntimeResourceProvider for D3SceneProvider {
 
     fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         Err(provider_error(&format!(
-            "D3 scene provider is write-only: {}#{}",
+            "external scene provider is write-only: {}#{}",
             request.base_uri, request.path
         )))
     }
 
     fn plan_write(&self, request: RuntimeResourceWriteCommand) -> MResult<()> {
-        validate_d3_write_command(&request, "gate-d3://scene/output", "frame")
+        validate_test_write_command(&request, "test-resource://scene/output", "frame")
     }
 
     fn prepare_write(
@@ -204,24 +220,26 @@ impl RuntimeResourceProvider for D3SceneProvider {
     ) -> MResult<PreparedRuntimeEffect> {
         if request.idempotency_key.is_empty() {
             return Err(provider_error(
-                "D3 scene effect requires an idempotency key",
+                "external scene effect requires an idempotency key",
             ));
         }
         self.trace
             .lock()
-            .expect("D3 provider trace")
+            .expect("external test provider trace")
             .prepared
             .push((request.effect_id, request.idempotency_key));
         let mut failures = self
             .fail_preparations
             .lock()
-            .expect("D3 preparation failure count");
+            .expect("external preparation failure count");
         if *failures > 0 {
             *failures -= 1;
-            return Err(provider_error("injected D3 scene preparation failure"));
+            return Err(provider_error(
+                "injected external scene preparation failure",
+            ));
         }
         Ok(PreparedRuntimeEffect::AfterCommit(Box::new(
-            D3SceneDelivery {
+            ExternalTestSceneDelivery {
                 trace: self.trace.clone(),
                 fail_deliveries: self.fail_deliveries.clone(),
             },
@@ -230,67 +248,70 @@ impl RuntimeResourceProvider for D3SceneProvider {
 }
 
 #[derive(Debug)]
-struct D3SceneDelivery {
-    trace: SharedD3ProviderTrace,
+struct ExternalTestSceneDelivery {
+    trace: SharedExternalTestProviderTrace,
     fail_deliveries: Arc<Mutex<u64>>,
 }
 
-impl RuntimeAfterCommitEffect for D3SceneDelivery {
+impl RuntimeAfterCommitEffect for ExternalTestSceneDelivery {
     fn metadata(&self) -> RuntimeEffectMetadata {
         metadata("scene")
     }
 
     fn deliver(&mut self) -> MResult<()> {
-        let mut remaining = self.fail_deliveries.lock().expect("D3 failure count");
+        let mut remaining = self.fail_deliveries.lock().expect("external failure count");
         if *remaining > 0 {
             *remaining -= 1;
             self.trace
                 .lock()
-                .expect("D3 provider trace")
+                .expect("external test provider trace")
                 .delivery_failures += 1;
-            return Err(provider_error("injected D3 scene delivery failure"));
+            return Err(provider_error("injected external scene delivery failure"));
         }
-        self.trace.lock().expect("D3 provider trace").delivered += 1;
+        self.trace
+            .lock()
+            .expect("external test provider trace")
+            .delivered += 1;
         Ok(())
     }
 }
 
 #[derive(Debug)]
-pub struct D3TransactionalProvider {
-    trace: SharedD3ProviderTrace,
+pub struct ExternalTestTransactionalProvider {
+    trace: SharedExternalTestProviderTrace,
 }
 
-impl D3TransactionalProvider {
-    pub fn new(trace: SharedD3ProviderTrace) -> Self {
+impl ExternalTestTransactionalProvider {
+    pub fn new(trace: SharedExternalTestProviderTrace) -> Self {
         Self { trace }
     }
 }
 
-impl RuntimeResourceProvider for D3TransactionalProvider {
+impl RuntimeResourceProvider for ExternalTestTransactionalProvider {
     fn scheme(&self) -> &str {
-        "gate-d3"
+        "test-resource"
     }
 
     fn base_uris(&self) -> Vec<String> {
-        vec!["gate-d3://transactional/state".to_owned()]
+        vec!["test-resource://transactional/state".to_owned()]
     }
 
     fn semantic_write_contract(
         &self,
         intent: RuntimeResourceWriteIntent,
     ) -> Option<&'static OperationContractDeclaration> {
-        (intent == RuntimeResourceWriteIntent::Send).then_some(&D3_TRANSACTIONAL_CONTRACT)
+        (intent == RuntimeResourceWriteIntent::Send).then_some(&TEST_TRANSACTIONAL_CONTRACT)
     }
 
     fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         Err(provider_error(&format!(
-            "D3 transactional provider is write-only: {}#{}",
+            "external transactional provider is write-only: {}#{}",
             request.base_uri, request.path
         )))
     }
 
     fn plan_write(&self, request: RuntimeResourceWriteCommand) -> MResult<()> {
-        validate_d3_write_command(&request, "gate-d3://transactional/state", "value")
+        validate_test_write_command(&request, "test-resource://transactional/state", "value")
     }
 
     fn prepare_write(
@@ -299,11 +320,11 @@ impl RuntimeResourceProvider for D3TransactionalProvider {
     ) -> MResult<PreparedRuntimeEffect> {
         self.trace
             .lock()
-            .expect("D3 provider trace")
+            .expect("external test provider trace")
             .prepared
             .push((request.effect_id, request.idempotency_key));
         Ok(PreparedRuntimeEffect::Compensatable(Box::new(
-            D3CompensatableWrite {
+            ExternalTestCompensatableWrite {
                 trace: self.trace.clone(),
                 applied: false,
             },
@@ -312,25 +333,31 @@ impl RuntimeResourceProvider for D3TransactionalProvider {
 }
 
 #[derive(Debug)]
-struct D3CompensatableWrite {
-    trace: SharedD3ProviderTrace,
+struct ExternalTestCompensatableWrite {
+    trace: SharedExternalTestProviderTrace,
     applied: bool,
 }
 
-impl RuntimeCompensatableEffect for D3CompensatableWrite {
+impl RuntimeCompensatableEffect for ExternalTestCompensatableWrite {
     fn metadata(&self) -> RuntimeEffectMetadata {
         metadata("transactional")
     }
 
     fn apply(&mut self) -> MResult<()> {
         self.applied = true;
-        self.trace.lock().expect("D3 provider trace").applied += 1;
+        self.trace
+            .lock()
+            .expect("external test provider trace")
+            .applied += 1;
         Ok(())
     }
 
     fn compensate(&mut self) -> MResult<()> {
         if self.applied {
-            self.trace.lock().expect("D3 provider trace").compensated += 1;
+            self.trace
+                .lock()
+                .expect("external test provider trace")
+                .compensated += 1;
             self.applied = false;
         }
         Ok(())
@@ -340,7 +367,7 @@ impl RuntimeCompensatableEffect for D3CompensatableWrite {
 fn metadata(name: &str) -> RuntimeEffectMetadata {
     RuntimeEffectMetadata::new(
         RuntimeEffectSource::ResourceProvider {
-            scheme: "gate-d3".to_owned(),
+            scheme: "test-resource".to_owned(),
         },
         "write",
     )
@@ -348,7 +375,7 @@ fn metadata(name: &str) -> RuntimeEffectMetadata {
     .with_cost(RuntimeEffectCost { bytes: 8, items: 1 })
 }
 
-fn validate_d3_write_command(
+fn validate_test_write_command(
     request: &RuntimeResourceWriteCommand,
     expected_base_uri: &str,
     expected_path: &str,
@@ -359,7 +386,7 @@ fn validate_d3_write_command(
         || !matches!(request.value.data(), ValueData::F64(_))
     {
         return Err(provider_error(
-            "D3 fixture write does not match its declared numeric send target",
+            "external test fixture write does not match its declared numeric send target",
         ));
     }
     Ok(())

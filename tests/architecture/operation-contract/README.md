@@ -11,7 +11,7 @@ integrity constraints, and the synthetic EKF-shaped fixture injects complete
 declarations and proves zero `LegacyOpaque` rows under complete metadata plus
 stable bytecode round-tripping.
 
-D1 must compile ordinary Mech EKF source without injected declarations,
+The resident EKF path must compile ordinary Mech source without injected declarations,
 require zero `LegacyOpaque` contracts, and then activate the resulting
 `ProgramArtifact` through the resident executor. Current execution continues
 to use `RuntimeFunctionContract`; C4 does not route `ProgramArtifact` or

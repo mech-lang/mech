@@ -161,10 +161,10 @@ struct SourceInputProvider;
 #[cfg(feature = "semantic-compiler")]
 impl RuntimeResourceProvider for SourceInputProvider {
     fn scheme(&self) -> &str {
-        "gate-d3"
+        "test-resource"
     }
     fn base_uris(&self) -> Vec<String> {
-        vec!["gate-d3://input/value".to_owned()]
+        vec!["test-resource://input/value".to_owned()]
     }
     fn semantic_read_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(&OBSERVATION_CONTRACT)
@@ -179,10 +179,10 @@ impl RuntimeResourceProvider for SourceInputProvider {
 
 impl RuntimeResourceProvider for ObservationProvider {
     fn scheme(&self) -> &str {
-        "gate-d"
+        "test-resource"
     }
     fn base_uris(&self) -> Vec<String> {
-        vec!["gate-d://ekf/frame".to_owned()]
+        vec!["test-resource://ekf/frame".to_owned()]
     }
     fn semantic_read_contract(&self) -> Option<&'static OperationContractDeclaration> {
         Some(&OBSERVATION_CONTRACT)
@@ -218,7 +218,7 @@ struct EffectProvider {
 
 impl RuntimeResourceProvider for EffectProvider {
     fn scheme(&self) -> &str {
-        "gate-d3"
+        "test-resource"
     }
     fn base_uris(&self) -> Vec<String> {
         vec![
@@ -227,14 +227,18 @@ impl RuntimeResourceProvider for EffectProvider {
                 | ProviderProtocol::AfterCommitNoIdempotency
                 | ProviderProtocol::AfterCommitAtMostOnce
                 | ProviderProtocol::AfterCommitAtLeastOnce
-                | ProviderProtocol::WrongTransactional => "gate-d3://scene/output",
+                | ProviderProtocol::WrongTransactional => "test-resource://scene/output",
                 ProviderProtocol::AfterCommitAtMostOnceDistinct
-                | ProviderProtocol::AfterCommitAtMostOnceThenWrong => "gate-d3://zz-once/output",
+                | ProviderProtocol::AfterCommitAtMostOnceThenWrong => {
+                    "test-resource://zz-once/output"
+                }
                 ProviderProtocol::Transactional | ProviderProtocol::Compensatable => {
-                    "gate-d3://transactional/state"
+                    "test-resource://transactional/state"
                 }
                 ProviderProtocol::CompensatableDistinct => match self.protocol {
-                    ProviderProtocol::CompensatableDistinct => "gate-d3://compensatable/state",
+                    ProviderProtocol::CompensatableDistinct => {
+                        "test-resource://compensatable/state"
+                    }
                     _ => unreachable!(),
                 },
             }
@@ -277,7 +281,7 @@ impl RuntimeResourceProvider for EffectProvider {
     fn plan_write(&self, request: RuntimeResourceWriteCommand) -> MResult<()> {
         if !self.base_uris().contains(&request.base_uri) || request.path.is_empty() {
             return Err(test_error(
-                "D3 fixture write is outside its declared target",
+                "external test fixture write is outside its declared target",
             ));
         }
         Ok(())
@@ -342,7 +346,7 @@ impl RuntimeAfterCommitEffect for SceneDelivery {
     fn metadata(&self) -> RuntimeEffectMetadata {
         RuntimeEffectMetadata::new(
             RuntimeEffectSource::ResourceProvider {
-                scheme: "gate-d3".to_owned(),
+                scheme: "test-resource".to_owned(),
             },
             "write",
         )
@@ -435,7 +439,7 @@ impl RuntimeCompensatableEffect for TestCompensatable {
 fn test_metadata() -> RuntimeEffectMetadata {
     RuntimeEffectMetadata::new(
         RuntimeEffectSource::ResourceProvider {
-            scheme: "gate-d3".to_owned(),
+            scheme: "test-resource".to_owned(),
         },
         "write",
     )
@@ -539,17 +543,17 @@ fn artifact_with_effect(artifact: &ProgramArtifact, protocol: ProviderProtocol) 
                         | ProviderProtocol::AfterCommitNoIdempotency
                         | ProviderProtocol::AfterCommitAtMostOnce
                         | ProviderProtocol::AfterCommitAtLeastOnce
-                        | ProviderProtocol::WrongTransactional => "gate-d3://scene/output",
+                        | ProviderProtocol::WrongTransactional => "test-resource://scene/output",
                         ProviderProtocol::AfterCommitAtMostOnceDistinct
                         | ProviderProtocol::AfterCommitAtMostOnceThenWrong => {
-                            "gate-d3://zz-once/output"
+                            "test-resource://zz-once/output"
                         }
                         ProviderProtocol::Transactional | ProviderProtocol::Compensatable => {
-                            "gate-d3://transactional/state"
+                            "test-resource://transactional/state"
                         }
                         ProviderProtocol::CompensatableDistinct => match protocol {
                             ProviderProtocol::CompensatableDistinct => {
-                                "gate-d3://compensatable/state"
+                                "test-resource://compensatable/state"
                             }
                             _ => unreachable!(),
                         },
@@ -2288,7 +2292,9 @@ fn source_fixture_artifact(
     let product = compiler.compile_source(source)?;
     let parsed = ParsedProgram::from_bytes(product.bytecode())?;
     let decoded = decode_program_artifact_sections(&parsed.artifact).map_err(|error| {
-        test_error(&format!("D3 bytecode-v1 artifact decode failed: {error:?}"))
+        test_error(&format!(
+            "external test bytecode-v1 artifact decode failed: {error:?}"
+        ))
     })?;
     Ok((product.artifact().clone(), decoded))
 }
@@ -2297,13 +2303,13 @@ fn source_fixture_artifact(
 #[test]
 fn effect_payload_is_captured_before_a_later_state_mutation() -> MResult<()> {
     const SOURCE: &str = r#"
-@input := gate-d3://input/value{:read(sample)}
+@input := test-resource://input/value{:read(sample)}
 sample := @input/sample
 
 ~state := 0.0
 state += sample
 
-@scene := gate-d3://scene/output
+@scene := test-resource://scene/output
 @scene/frame <- state
 
 state += sample

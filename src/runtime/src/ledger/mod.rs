@@ -13,8 +13,10 @@ use mech_core::MResult;
 
 use crate::turn_record::{AccountedRecord, LedgerSequence};
 
-pub(crate) use capacity::{CapacityController, CapacityReservation, invalid_permit};
-pub use capacity::{LedgerAllocationFailed, RecordEstimate};
+pub use capacity::RecordEstimate;
+pub(crate) use capacity::{CapacityController, CapacityReservation};
+#[cfg(any(feature = "runtime_bench_probes", feature = "resident-external"))]
+pub(crate) use capacity::{LedgerAllocationFailed, invalid_permit};
 #[cfg(any(test, feature = "runtime_bench_probes"))]
 pub use pool::{PooledRecordBuffer, RecordBufferPool};
 #[cfg(any(test, feature = "runtime_bench_probes"))]

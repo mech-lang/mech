@@ -315,9 +315,9 @@ class FullWorkflowContractTests(unittest.TestCase):
             self.assertIn(unit, block)
             self.assertNotIn("continue-on-error", block)
 
-        runtime = job_block(FULL, "r6-memory-runtime")
-        fixed = job_block(FULL, "r6-memory-fixed-profiles")
-        miri = job_block(FULL, "r6-memory-miri")
+        runtime = job_block(FULL, "managed-memory-runtime")
+        fixed = job_block(FULL, "managed-memory-fixed-profiles")
+        miri = job_block(FULL, "managed-memory-miri")
         cargo = job_block(FULL, "cargo")
         self.assertIn(FULL_CHECKOUT_REF, runtime)
         self.assertIn(FULL_CHECKOUT_REF, fixed)
@@ -350,15 +350,15 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("--test r6_managed_functions", fixed)
         self.assertIn("miri test --locked", miri)
         self.assertIn(safety_features, miri)
-        self.assertIn("- r6-memory-runtime", cargo)
-        self.assertIn("- r6-memory-fixed-profiles", cargo)
-        self.assertIn("- r6-memory-miri", cargo)
-        self.assertIn('test "$R6_MEMORY_RESULT" = success', cargo)
-        self.assertIn('test "$R6_FIXED_PROFILES_RESULT" = success', cargo)
-        self.assertIn('test "$R6_MIRI_RESULT" = success', cargo)
+        self.assertIn("- managed-memory-runtime", cargo)
+        self.assertIn("- managed-memory-fixed-profiles", cargo)
+        self.assertIn("- managed-memory-miri", cargo)
+        self.assertIn('test "$MANAGED_MEMORY_RESULT" = success', cargo)
+        self.assertIn('test "$MANAGED_FIXED_PROFILES_RESULT" = success', cargo)
+        self.assertIn('test "$MANAGED_MIRI_RESULT" = success', cargo)
 
     def test_r6_retains_resident_live_admission_unit_tests(self):
-        runtime = job_block(FULL, "r6-memory-runtime")
+        runtime = job_block(FULL, "managed-memory-runtime")
         commands = [
             " ".join(line.split())
             for line in runtime.replace("\\\n", " ").splitlines()
@@ -371,15 +371,8 @@ class FullWorkflowContractTests(unittest.TestCase):
         )
         self.assertNotIn("continue-on-error", runtime)
 
-    def test_architecture_contracts_prefetch_before_offline_historical_evidence(self):
-        block = job_block(FULL, "architecture-contracts")
-        fetch = "cargo +nightly-2026-03-03 fetch --locked"
-        projection = "python3 scripts/generate-d2-contract.py --check"
-        self.assertIn(fetch, block)
-        self.assertLess(block.index(fetch), block.index(projection))
-
     def test_r1_artifact_closure_prefetches_before_offline_native_build(self):
-        block = job_block(FULL, "r1-artifact-closure")
+        block = job_block(FULL, "artifact-closure")
         fetch = "cargo fetch --locked"
         closure = "python3 scripts/check-r1-artifact-closure.py ${{ matrix.representative }}"
         self.assertIn(fetch, block)

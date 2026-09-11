@@ -19,13 +19,13 @@ no_std = ["mech-core/no_std", "mech-engine/no_std", "mech-syntax?/no_std"]
 
 runtime = ["mech-engine/runtime"]
 runtime_bench_probes = ["mech-engine/runtime_bench_probes"]
-runtime_bench_gate_b = ["compiler", "mech-engine/resident-artifact"]
+# Private benchmark/conformance surface; never enable it from product defaults.
+resident_ekf_benchmarks = ["compiler", "mech-engine/resident-artifact"]
 resident-external = ["runtime", "string", "mech-engine/resident-artifact"]
+resident_external_test_support = ["resident-routing-source", "compiler_default"]
 resident-routing = ["resident-external"]
 resident-routing-source = ["resident-routing", "semantic-compiler", "mech-syntax/formatter"]
 compute = ["resident-routing-source", "f32", "f64", "string", "matrixd", "dep:mech-compute"]
-runtime_bench_gate_d = ["runtime_bench_gate_b", "runtime_default"]
-runtime_bench_gate_d3 = ["resident-external", "runtime_bench_gate_d"]
 native-link = ["runtime", "string"]
 source = ["runtime", "mech-engine/source", "dep:mech-syntax"]
 semantic-compiler = ["source", "mech-engine/semantic-compiler"]
@@ -257,9 +257,9 @@ path = "tests/sealed_api.rs"
 required-features = ["source_default"]
 
 [[test]]
-name = "resident_external_gate_d3"
-path = "tests/resident_external_gate_d3.rs"
-required-features = ["runtime_bench_gate_d3"]
+name = "resident_external_contract"
+path = "tests/resident_external_contract.rs"
+required-features = ["resident_external_test_support"]
 
 [[test]]
 name = "resident_external_sealed_api"
@@ -267,9 +267,9 @@ path = "tests/resident_external_sealed_api.rs"
 required-features = ["resident-external"]
 
 [[test]]
-name = "resident_gate_b_contract"
-path = "tests/resident_gate_b_contract.rs"
-required-features = ["runtime_bench_gate_b"]
+name = "resident_ekf_contract"
+path = "tests/resident_ekf_contract.rs"
+required-features = ["resident_ekf_benchmarks"]
 
 [[test]]
 name = "resource_preflight"
@@ -284,4 +284,4 @@ required-features = ["runtime_default", "runtime_bench_probes"]
 [[bench]]
 name = "resident_ekf"
 harness = false
-required-features = ["source_default", "runtime_bench_gate_b"]
+required-features = ["source_default", "resident_ekf_benchmarks"]

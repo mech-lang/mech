@@ -29,13 +29,11 @@ and public APIs all operate on canonical values and cells.
 - `canonical-encoding-v1-vectors.json` contains independent positive and
   negative encoding vectors reproduced by
   `scripts/tests/canonical_encoding_v1_reference.py`.
-- `gate-b-regression.json` freezes inherited efficacy requirements and the
-  protected paths that require fresh evidence.
 - The adjacent `*-schema.json` files define each machine-readable contract.
 
 `scripts/check-value-system-contract.py` validates those documents, reproduces
-the canonical vectors, preserves schema isolation and validated construction
-routes, and checks Gate B evidence:
+the canonical vectors, and preserves schema isolation and validated
+construction routes:
 
 ```sh
 python3 scripts/check-value-system-contract.py
@@ -48,10 +46,10 @@ files, crate-root modules, exact retired symbols, and conversion entry points:
 python3 scripts/check-no-retired-value-system.py
 ```
 
-The migration inventories, growth baseline, C2 allowance, and their generators
-were intentionally removed after the final zero result. Git history retains
-that review evidence; the working tree now carries only permanent canonical
-contracts.
+The migration inventories, performance evidence, growth baseline, C2 allowance,
+and their generators were intentionally removed after the final zero result.
+Git history retains that review evidence; the working tree now carries only
+permanent canonical contracts.
 
 ## Downstream migration
 

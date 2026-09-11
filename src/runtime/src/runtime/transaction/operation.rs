@@ -94,8 +94,8 @@ impl MechRuntime {
         context.prepare_event_checkpoint();
         let transaction = self.active_runtime_transaction(transaction_id)?;
         #[cfg(any(test, feature = "runtime_bench_probes"))]
-        crate::runtime::gate_a_probe::record_runtime_transaction_savepoint_clone(
-            transaction.store.gate_a_staged_item_count(),
+        crate::runtime::cost_probe::record_runtime_transaction_savepoint_clone(
+            transaction.store.staged_item_count_for_cost_probe(),
         );
         Ok(RuntimeOperationSavepoint {
             store: transaction.store.clone(),
@@ -130,8 +130,8 @@ impl MechRuntime {
                     .rollback_to(savepoint.capability_mark);
                 let module_result = transaction.modules.rollback_to(savepoint.module_mark);
                 #[cfg(any(test, feature = "runtime_bench_probes"))]
-                crate::runtime::gate_a_probe::record_runtime_transaction_savepoint_clone(
-                    savepoint.store.gate_a_staged_item_count(),
+                crate::runtime::cost_probe::record_runtime_transaction_savepoint_clone(
+                    savepoint.store.staged_item_count_for_cost_probe(),
                 );
                 transaction.store = savepoint.store.clone();
                 Some((

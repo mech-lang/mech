@@ -2357,7 +2357,7 @@ fn external_requirements_are_artifact_authority_and_round_trip_in_bytecode_v1() 
     let data = fixture_data();
     let requirements = ApplicationRequirementTable::from_canonical_entries(vec![
         ApplicationRequirement::Resource(ExecutionResourceRequest {
-            base_uri: "gate-d3://input/value".to_owned(),
+            base_uri: "test-resource://input/value".to_owned(),
             path: "sample".to_owned(),
             context_name: "value".to_owned(),
             operation: "read".to_owned(),
@@ -2365,7 +2365,7 @@ fn external_requirements_are_artifact_authority_and_round_trip_in_bytecode_v1() 
             delivery: ResourceDelivery::Live,
         }),
         ApplicationRequirement::Resource(ExecutionResourceRequest {
-            base_uri: "gate-d3://scene/output".to_owned(),
+            base_uri: "test-resource://scene/output".to_owned(),
             path: "frame".to_owned(),
             context_name: "output".to_owned(),
             operation: "write".to_owned(),
@@ -2494,7 +2494,7 @@ fn artifact_requirement_table_rejects_noncanonical_resource_syntax() {
     assert!(
         ApplicationRequirementTable::from_canonical_entries(vec![
             ApplicationRequirement::Resource(ExecutionResourceRequest {
-                base_uri: "gate-d3://scene/output/".to_owned(),
+                base_uri: "test-resource://scene/output/".to_owned(),
                 path: "frame/../latest".to_owned(),
                 context_name: "output".to_owned(),
                 operation: "read".to_owned(),

@@ -2,7 +2,7 @@ use core::sync::atomic::{AtomicU64, Ordering};
 
 use mech_core::InstanceEpoch;
 
-use super::{GateBArena, GateBControlFixture, GateBPlan, GateBWorkspace};
+use super::{ResidentEkfArena, ResidentEkfControlFixture, ResidentEkfPlan, ResidentEkfWorkspace};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ResidentExecutionError {
@@ -21,21 +21,21 @@ pub(crate) fn publish_epoch(target: &AtomicU64, epoch: InstanceEpoch) {
 }
 
 #[derive(Debug)]
-pub(crate) struct GateBInstance {
-    pub(crate) plan: GateBPlan,
-    pub(crate) state: GateBArena,
-    pub(crate) workspace: GateBWorkspace,
+pub(crate) struct ResidentEkfInstance {
+    pub(crate) plan: ResidentEkfPlan,
+    pub(crate) state: ResidentEkfArena,
+    pub(crate) workspace: ResidentEkfWorkspace,
     pub(crate) published_epoch: AtomicU64,
     pub(crate) next_epoch: Option<InstanceEpoch>,
     #[cfg(feature = "runtime_bench_probes")]
     pub(crate) publication_store_count: u64,
 }
 
-impl GateBInstance {
+impl ResidentEkfInstance {
     pub(crate) fn new(instances: usize) -> Self {
-        let plan = GateBPlan::from_control_fixture(GateBControlFixture::new(instances));
-        let state = GateBArena::activate(instances);
-        let workspace = GateBWorkspace::activate(&plan);
+        let plan = ResidentEkfPlan::from_control_fixture(ResidentEkfControlFixture::new(instances));
+        let state = ResidentEkfArena::activate(instances);
+        let workspace = ResidentEkfWorkspace::activate(&plan);
         Self {
             plan,
             state,
@@ -76,7 +76,7 @@ impl GateBInstance {
 }
 
 pub(crate) struct Candidate<'a> {
-    pub(crate) instance: &'a mut GateBInstance,
+    pub(crate) instance: &'a mut ResidentEkfInstance,
     pub(crate) base_epoch: InstanceEpoch,
     pub(crate) working_epoch: InstanceEpoch,
     pub(crate) published_buffer: usize,

@@ -4932,7 +4932,7 @@ fn resident_turn_duration_rejects_before_scene_publication_and_surfaces_publicly
 }
 
 #[test]
-fn product_nbody_source_and_bytecode_match_d2_for_4096_accepted_turns() {
+fn product_nbody_source_and_bytecode_match_reference_for_4096_accepted_turns() {
     let (mut source_runtime, source_scene) = product_nbody_runtime();
     let source = source_runtime
         .load_source_program(
@@ -5026,7 +5026,7 @@ fn product_nbody_source_and_bytecode_match_d2_for_4096_accepted_turns() {
         ("aarch64", "macos") => "c6b22824484158404a84bdd19de823d605aa31b5f35622b89af2fc61591268ac",
         ("x86_64", "linux") => "b4d33b7c35c30f890d22e8a7074e415cc54681c1789fac49a80c581204fe86db",
         ("x86_64", "macos") => "5aa064d6b4fcd14952d9391b21d8e4862e754c29180fb2768e29164baef1a9f2",
-        platform => panic!("unsupported D2 trajectory platform {platform:?}"),
+        platform => panic!("unsupported n-body trajectory platform {platform:?}"),
     };
     let source_trajectory = finish_hash(source_trajectory);
     let bytecode_trajectory = finish_hash(bytecode_trajectory);

@@ -94,13 +94,6 @@ intentional compatibility contracts.
   layout or allocation policy; do not hide the decision behind broad lint
   suppression.
 
-### Historical D2 dependency provenance
-
-- Location: the archived D2 fixture consumed by
-  `scripts/d2_historical_evidence.py`.
-- Preserve a reviewed historical lockfile or vendor snapshot if stronger
-  first-materialization provenance is required.
-
 ### Structured secondary-error telemetry
 
 - Locations: runtime transaction failure handling and destructor/callback

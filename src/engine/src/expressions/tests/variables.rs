@@ -248,7 +248,7 @@ fn frozen_ekf_context_read_has_exact_request() {
     .unwrap();
     let mut services = RecordingContextReadServices::returning(frame);
     let (_interpreter, output) = interpret_with_context_services(
-        "@trace := gate-d://ekf/frame{:read(sample)}\nframe := @trace/sample",
+        "@trace := test-resource://ekf/frame{:read(sample)}\nframe := @trace/sample",
         &mut services,
     );
     let output = output.unwrap().unwrap();
@@ -265,7 +265,7 @@ fn frozen_ekf_context_read_has_exact_request() {
     assert_eq!(
         services.reads,
         vec![ExecutionResourceRequest {
-            base_uri: "gate-d://ekf/frame".to_string(),
+            base_uri: "test-resource://ekf/frame".to_string(),
             path: "sample".to_string(),
             context_name: "frame".to_string(),
             operation: "read".to_string(),

@@ -236,8 +236,8 @@ impl RuntimeSessionServices<'_> {
         self.context.charge_bytes(cost.bytes)?;
         self.context.charge_items(cost.items)?;
         #[cfg(any(test, feature = "runtime_bench_probes"))]
-        crate::runtime::gate_a_probe::record_runtime_transaction_savepoint_clone(
-            self.transaction.store.gate_a_staged_item_count(),
+        crate::runtime::cost_probe::record_runtime_transaction_savepoint_clone(
+            self.transaction.store.staged_item_count_for_cost_probe(),
         );
         let store_before = self.transaction.store.clone();
         let effect_mark = self.transaction.effects.mark();
@@ -284,8 +284,8 @@ impl RuntimeSessionServices<'_> {
         self.context.charge_bytes(cost.bytes)?;
         self.context.charge_items(cost.items)?;
         #[cfg(any(test, feature = "runtime_bench_probes"))]
-        crate::runtime::gate_a_probe::record_runtime_transaction_savepoint_clone(
-            self.transaction.store.gate_a_staged_item_count(),
+        crate::runtime::cost_probe::record_runtime_transaction_savepoint_clone(
+            self.transaction.store.staged_item_count_for_cost_probe(),
         );
         let store_before = self.transaction.store.clone();
         let effect_mark = self.transaction.effects.mark();

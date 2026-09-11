@@ -29,10 +29,11 @@ REPRESENTATIVES = {
         "cargo",
         "run",
         "--quiet",
+        "--locked",
         "--manifest-path",
-        "tests/fixtures/d2-contract-generator/Cargo.toml",
+        "tests/fixtures/resident-nbody-conformance/Cargo.toml",
         "--target-dir",
-        "target/d2-contract-generator",
+        "target/resident-nbody-conformance",
     ),
     "particles": (
         "cargo",

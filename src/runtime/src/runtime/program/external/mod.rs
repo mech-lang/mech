@@ -6,7 +6,7 @@ mod input_facts;
 mod outbox_delivery;
 mod provider;
 mod receipt;
-#[cfg(any(test, feature = "runtime_bench_gate_d3"))]
+#[cfg(any(test, feature = "resident_external_test_support"))]
 #[doc(hidden)]
 pub mod test_provider;
 #[cfg(all(test, feature = "semantic-compiler"))]

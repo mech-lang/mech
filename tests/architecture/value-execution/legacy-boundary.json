@@ -15,7 +15,6 @@
       "description": "Legacy runtime operation savepoint capture and its coordinators",
       "pattern": "capture_runtime_operation_savepoint",
       "allowed": [
-        { "path": "src/runtime/src/runtime/transaction/operation.rs", "scope_contains": "gate_a_capture_runtime_operation_savepoint", "max_occurrences": 2 },
         { "path": "src/runtime/src/runtime/transaction/operation.rs", "scope_contains": "pub(in crate::runtime) fn capture_runtime_operation_savepoint", "max_occurrences": 1 },
         { "path": "src/runtime/src/runtime/transaction/modules.rs", "scope_contains": "with_atomic_module_operation", "max_occurrences": 1 },
         { "path": "src/runtime/src/runtime/transaction/reactive.rs", "scope_contains": "with_atomic_reactive_turn", "max_occurrences": 1 }

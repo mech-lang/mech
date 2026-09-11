@@ -48,8 +48,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  r1-artifact-closure:
-    name: R1 artifact closure (${{ matrix.representative }})
+  artifact-closure:
+    name: Artifact closure (${{ matrix.representative }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -118,15 +118,12 @@ jobs:
           python3 scripts/check-r4-type-cutover.py
           python3 scripts/check-r5-memory-planner.py
           python3 scripts/check-r6-memory-runtime.py
-          python3 scripts/check-resident-activation-contract.py
           python3 scripts/check-compiler-planning-quarantine.py
-          python3 scripts/generate-d1-contract.py --check
-          python3 scripts/check-d1-contract.py
-          python3 scripts/generate-d2-contract.py --check
-          python3 scripts/check-d2-contract.py
-          python3 scripts/check-gate-d-contract.py \
-            --report benchmarks/runtime/gate-d/d3-resident-external.json \
-            --expected-phase D3-resident-external
+      - name: Execute resident external publication contract
+        run: >-
+          cargo +nightly-2026-03-03 test --locked -p mech-runtime
+          --no-default-features --features resident_external_test_support
+          --test resident_external_contract
       - name: Execute the complete R2 conformance boundary
         run: >-
           cargo +nightly-2026-03-03 test --locked -p mech-core
@@ -197,18 +194,10 @@ jobs:
             scripts/tests/test_run_python_unittest_shards.py \
             scripts/tests/test_check_program_artifact_contract.py \
             scripts/tests/test_check_operation_contract.py \
-            scripts/tests/test_generate_resident_activation_contract.py \
-            scripts/tests/test_check_resident_activation_contract.py \
-            scripts/tests/test_check_compiler_planning_quarantine.py \
-            scripts/tests/test_generate_d1_contract.py \
-            scripts/tests/test_check_d1_contract.py \
-            scripts/tests/test_generate_d2_contract.py \
-            scripts/tests/test_check_d2_contract.py \
-            scripts/tests/test_run_gate_a_benchmarks.py \
-            scripts/tests/test_run_gate_b_benchmarks.py
+            scripts/tests/test_check_compiler_planning_quarantine.py
 
-  r5-memory-planner:
-    name: R5 memory planner
+  memory-planner-contract:
+    name: Memory planner contract
     runs-on: ubuntu-latest
     env:
       CARGO_INCREMENTAL: 0
@@ -220,9 +209,9 @@ jobs:
           fetch-depth: 0
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
-      - name: Fetch locked R5 dependencies
+      - name: Fetch locked memory-planner dependencies
         run: cargo +nightly-2026-03-03 fetch --locked
-      - name: Execute the complete R5 conformance boundary
+      - name: Execute the complete memory-planner conformance boundary
         run: |
           cargo +nightly-2026-03-03 test --locked -p mech-core \
             --all-features --test r5_memory_plan
@@ -236,8 +225,8 @@ jobs:
           cargo +nightly-2026-03-03 test --locked -p mech-gpu \
             --test r5_memory_plan
 
-  r6-memory-runtime:
-    name: R6 memory runtime
+  managed-memory-runtime:
+    name: Managed memory runtime
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
@@ -252,9 +241,9 @@ jobs:
           fetch-depth: 0
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
-      - name: Fetch locked R6 dependencies
+      - name: Fetch locked managed-memory dependencies
         run: cargo +nightly-2026-03-03 fetch --locked
-      - name: Execute the complete R6 conformance boundary
+      - name: Execute the complete managed-memory conformance boundary
         run: |
           cargo +nightly-2026-03-03 test --locked -p mech-core \
             --all-features --test r6_memory_runtime
@@ -290,8 +279,8 @@ jobs:
             --features jit --test r6_memory_runtime
           cargo +nightly-2026-03-03 check --locked -p mech-gpu --features native
 
-  r6-memory-fixed-profiles:
-    name: R6 fixed profile (${{ matrix.feature }})
+  managed-memory-fixed-profiles:
+    name: Managed memory fixed profile (${{ matrix.feature }})
     runs-on: ubuntu-latest
     timeout-minutes: 90
     strategy:
@@ -321,7 +310,7 @@ jobs:
           ref: ${{ inputs.validation_ref || github.sha }}
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
-      - name: Fetch locked R6 dependencies
+      - name: Fetch locked managed-memory dependencies
         run: cargo +nightly-2026-03-03 fetch --locked
       - name: Execute isolated fixed-shape catalog coverage
         run: |
@@ -329,8 +318,8 @@ jobs:
             --no-default-features --features "full_compiler,${{ matrix.feature }}" \
             --test r6_managed_functions
 
-  r6-memory-miri:
-    name: R6 memory safety (Miri)
+  managed-memory-miri:
+    name: Managed memory safety (Miri)
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
@@ -347,7 +336,7 @@ jobs:
           rustup toolchain install nightly-2026-03-03 --profile minimal \
             --component miri,rust-src
           cargo +nightly-2026-03-03 miri setup
-      - name: Execute R6 sealed-memory safety cases
+      - name: Execute sealed-memory safety cases
         run: |
           cargo +nightly-2026-03-03 miri test --locked \
             -p mech-core --no-default-features \
@@ -970,10 +959,10 @@ jobs:
     if: ${{ always() }}
     needs:
       - cargo-features
-      - r5-memory-planner
-      - r6-memory-runtime
-      - r6-memory-fixed-profiles
-      - r6-memory-miri
+      - memory-planner-contract
+      - managed-memory-runtime
+      - managed-memory-fixed-profiles
+      - managed-memory-miri
       - distribution-contracts
       - engine-catalog
       - function-system-contracts
@@ -999,9 +988,9 @@ jobs:
         env:
           ENGINE_CATALOG_RESULT: ${{ needs.engine-catalog.result }}
           FEATURE_RESULT: ${{ needs.cargo-features.result }}
-          R6_MEMORY_RESULT: ${{ needs.r6-memory-runtime.result }}
-          R6_FIXED_PROFILES_RESULT: ${{ needs.r6-memory-fixed-profiles.result }}
-          R6_MIRI_RESULT: ${{ needs.r6-memory-miri.result }}
+          MANAGED_MEMORY_RESULT: ${{ needs.managed-memory-runtime.result }}
+          MANAGED_FIXED_PROFILES_RESULT: ${{ needs.managed-memory-fixed-profiles.result }}
+          MANAGED_MIRI_RESULT: ${{ needs.managed-memory-miri.result }}
           DISTRIBUTION_RESULT: ${{ needs.distribution-contracts.result }}
           FUNCTION_SYSTEM_RESULT: ${{ needs.function-system-contracts.result }}
           WASM_SOURCE_RESULT: ${{ needs.wasm-source-profile.result }}
@@ -1025,9 +1014,9 @@ jobs:
           test "$DISTRIBUTION_RESULT" = success
           test "$ENGINE_CATALOG_RESULT" = success
           test "$FEATURE_RESULT" = success
-          test "$R6_MEMORY_RESULT" = success
-          test "$R6_FIXED_PROFILES_RESULT" = success
-          test "$R6_MIRI_RESULT" = success
+          test "$MANAGED_MEMORY_RESULT" = success
+          test "$MANAGED_FIXED_PROFILES_RESULT" = success
+          test "$MANAGED_MIRI_RESULT" = success
           test "$FUNCTION_SYSTEM_RESULT" = success
           test "$WASM_SOURCE_RESULT" = success
           test "$BYTECODE_FORMAT_RESULT" = success

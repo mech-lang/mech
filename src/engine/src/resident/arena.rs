@@ -54,12 +54,12 @@ impl<T: Copy> VersionedBatch<T> {
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct GateBArena {
+pub(crate) struct ResidentEkfArena {
     pub(crate) states: VersionedBatch<[f64; 3]>,
     pub(crate) covariances: VersionedBatch<[f64; 9]>,
 }
 
-impl GateBArena {
+impl ResidentEkfArena {
     pub(crate) fn activate(instances: usize) -> Self {
         Self {
             states: VersionedBatch::activate(instances, [2.0, 1.0, 0.15]),

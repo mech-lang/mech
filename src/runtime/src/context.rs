@@ -614,7 +614,7 @@ impl RuntimeContext {
     pub(crate) fn push_event(&mut self, event: RuntimeEvent) {
         self.events.push(event);
         #[cfg(any(test, feature = "runtime_bench_probes"))]
-        crate::runtime::gate_a_probe::record_event_appended();
+        crate::runtime::cost_probe::record_event_appended();
     }
 
     #[cfg(test)]

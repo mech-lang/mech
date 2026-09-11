@@ -81,7 +81,7 @@ def validate_model(source: str, manifest: dict[str, object]) -> list[str]:
         failures.append("ProgramArtifact must not derive unchecked Deserialize")
     node = struct_body(source, "NodeDeclaration") or ""
     if "requirements" in durable_fields and "requirement: Option<ApplicationRequirementId>" not in node:
-        failures.append("D3 artifact requirement table lacks per-node requirement identity")
+        failures.append("resident external artifact requirement table lacks per-node requirement identity")
     for token in manifest["forbidden_artifact_tokens"]:
         if token in node:
             failures.append(f"NodeDeclaration contains forbidden runtime token {token}")

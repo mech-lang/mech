@@ -1,11 +1,11 @@
 #![cfg(feature = "resident-ekf")]
 
-use mech_engine::__gate_b_resident::{FULL_WRITE_ELEMENTS, ResidentEkfBatch, ResidentFullWrite};
+use mech_engine::__resident_ekf::{FULL_WRITE_ELEMENTS, ResidentEkfBatch, ResidentFullWrite};
 use sha2::{Digest, Sha256};
 
 const TRACE: &[u8] = include_bytes!(concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../../benchmarks/runtime/gate-b/ekf-input-v1.bin"
+    "/../../tests/fixtures/resident-ekf/ekf-input-v1.bin"
 ));
 const TURNS: usize = 4_096;
 const EXPECTED_HASH: &str = "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758";

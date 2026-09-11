@@ -1,26 +1,26 @@
 //! Private complete-turn coordinator shared by resident efficacy workloads.
 
 use mech_core::{MResult, MechError, MechErrorKind};
-use mech_engine::__gate_b_resident::{
-    PreparedResidentFullWrite, PreparedResidentTurn as PreparedGateBResidentTurn,
-    ResidentExecutionError, ResidentTurnSummary as GateBResidentTurnSummary,
-};
 use mech_engine::__resident::{
     PreparedResidentTurn as PreparedArtifactResidentTurn,
     ResidentExecutionError as ArtifactResidentExecutionError,
     ResidentTurnSummary as ArtifactResidentTurnSummary,
+};
+use mech_engine::__resident_ekf::{
+    PreparedResidentFullWrite, PreparedResidentTurn as PreparedResidentEkfTurn,
+    ResidentExecutionError, ResidentTurnSummary as ResidentEkfTurnSummary,
 };
 
 use crate::{
     TransactionId,
     ledger::{LedgerPermit, PreparedLedgerAppend, RecordEstimate, RetainedTurnLedger, TurnLedger},
     turn_record::{
-        GateBFixedReceipt, InputSequence, InputSequenceRange, LedgerSequence, OwnedTurnRecord,
+        InputSequence, InputSequenceRange, LedgerSequence, OwnedTurnRecord, ResidentEkfReceipt,
         TurnFailurePhase, TurnFailureRecord, TurnId, TurnRecordHeader, TurnRecordStatus,
     },
 };
 
-pub(crate) type ResidentTurnRecord = OwnedTurnRecord<GateBFixedReceipt>;
+pub(crate) type ResidentTurnRecord = OwnedTurnRecord<ResidentEkfReceipt>;
 const RESIDENT_RECORD_RESERVATION_BYTES: usize = 256;
 const RESIDENT_RECORD_ESTIMATE: RecordEstimate = RecordEstimate {
     records: 1,
@@ -54,7 +54,7 @@ pub struct ResidentRecordInspection<'a> {
     pub accepted: bool,
     pub failure_phase: Option<TurnFailurePhase>,
     pub failure_kind: Option<&'a str>,
-    pub body: GateBFixedReceipt,
+    pub body: ResidentEkfReceipt,
 }
 
 struct PreparedResidentAppend<'ledger> {
@@ -91,7 +91,7 @@ impl ResidentTurnRecorder {
                 u64::try_from(ordinal).map_err(|_| error("history identity overflow"))?;
             let record = accepted_record(
                 identity,
-                GateBResidentTurnSummary {
+                ResidentEkfTurnSummary {
                     before_epoch: identity.saturating_sub(1),
                     after_epoch: identity,
                     state_hash: 0,
@@ -132,7 +132,7 @@ impl ResidentTurnRecorder {
     fn prepare_accepted_append(
         &mut self,
         permit: LedgerPermit,
-        summary: GateBResidentTurnSummary,
+        summary: ResidentEkfTurnSummary,
     ) -> MResult<PreparedResidentAppend<'_>> {
         let identity = self.take_turn_identity()?;
         if core::mem::take(&mut self.fail_next_preparation) {
@@ -150,7 +150,7 @@ impl ResidentTurnRecorder {
     pub fn prepare_commit<'instance>(
         &mut self,
         permit: LedgerPermit,
-        turn: PreparedGateBResidentTurn<'instance>,
+        turn: PreparedResidentEkfTurn<'instance>,
     ) -> MResult<PreparedResidentCommit<'instance, '_>> {
         let summary = turn.summary();
         match self.prepare_accepted_append(permit, summary) {
@@ -332,13 +332,10 @@ fn header(
     })
 }
 
-fn accepted_record(
-    identity: u64,
-    summary: GateBResidentTurnSummary,
-) -> MResult<ResidentTurnRecord> {
+fn accepted_record(identity: u64, summary: ResidentEkfTurnSummary) -> MResult<ResidentTurnRecord> {
     Ok(OwnedTurnRecord {
         header: header(identity, TurnRecordStatus::Accepted, None)?,
-        body: GateBFixedReceipt::accepted(
+        body: ResidentEkfReceipt::accepted(
             summary.before_epoch,
             summary.after_epoch,
             summary.state_hash,
@@ -355,7 +352,7 @@ fn accepted_artifact_record(
 ) -> MResult<ResidentTurnRecord> {
     Ok(OwnedTurnRecord {
         header: header(identity, TurnRecordStatus::Accepted, None)?,
-        body: GateBFixedReceipt::accepted(
+        body: ResidentEkfReceipt::accepted(
             summary.before_epoch.get(),
             summary.after_epoch.get(),
             summary.state_hash,
@@ -418,7 +415,7 @@ fn rejected_record(
                 message: message.to_string(),
             }),
         )?,
-        body: GateBFixedReceipt::rejected(before_epoch),
+        body: ResidentEkfReceipt::rejected(before_epoch),
     })
 }
 
@@ -494,7 +491,7 @@ fn rejected_artifact_record(
                 message: message.to_string(),
             }),
         )?,
-        body: GateBFixedReceipt::rejected(before_epoch),
+        body: ResidentEkfReceipt::rejected(before_epoch),
     })
 }
 
@@ -504,7 +501,7 @@ pub struct PreparedResidentCommit<'instance, 'ledger> {
 }
 
 enum PreparedResidentPublication<'instance> {
-    Ekf(PreparedGateBResidentTurn<'instance>),
+    Ekf(PreparedResidentEkfTurn<'instance>),
     Artifact(PreparedArtifactResidentTurn<'instance>),
     FullWrite(PreparedResidentFullWrite<'instance>),
 }

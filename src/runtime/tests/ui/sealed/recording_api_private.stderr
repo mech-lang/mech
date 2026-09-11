@@ -10,7 +10,7 @@ note: found an item that was configured out
   |       any(
   |  ________-
   | |         feature = "runtime_bench_probes",
-  | |         feature = "runtime_bench_gate_b",
+  | |         feature = "resident_ekf_benchmarks",
   | |         feature = "resident-external"
   | |     )
   | |_____- the item is gated here
@@ -45,7 +45,7 @@ note: found an item that was configured out
   |       any(
   |  ________-
   | |         feature = "runtime_bench_probes",
-  | |         feature = "runtime_bench_gate_b",
+  | |         feature = "resident_ekf_benchmarks",
   | |         feature = "resident-external"
   | |     )
   | |_____- the item is gated here

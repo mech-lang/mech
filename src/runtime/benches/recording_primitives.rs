@@ -6,7 +6,7 @@ use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, Instant};
 
 use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
-use mech_runtime::__gate_a_recording::{
+use mech_runtime::__recording_bench::{
     AccountedRecord, OutboxDeliveryPolicy, OutboxEffectId, OwnedEffectIntent, OwnedTurnRecordQueue,
     RecordBufferPool, RecordEstimate, RetainedEffectOutbox, RetainedTurnLedger, TurnId,
     prepare_outbox, prepare_queue, prepare_retained, reserve_outbox, reserve_queue,
@@ -89,7 +89,7 @@ fn report(operation: &str, history: usize, sample: PhaseSample) {
         return;
     }
     eprintln!(
-        "GATE_A_SAMPLE {{\"operation\":\"{operation}\",\"history\":{history},\"reserve_time_ns\":{},\"prepare_time_ns\":{},\"append_time_ns\":{},\"accounted_record_bytes\":{},\"pool_reuse\":{},\"allocation_count\":{},\"deallocation_count\":{},\"allocated_bytes\":{},\"post_publication_failure_branch\":false}}",
+        "RUNTIME_COST_SAMPLE {{\"operation\":\"{operation}\",\"history\":{history},\"reserve_time_ns\":{},\"prepare_time_ns\":{},\"append_time_ns\":{},\"accounted_record_bytes\":{},\"pool_reuse\":{},\"allocation_count\":{},\"deallocation_count\":{},\"allocated_bytes\":{},\"post_publication_failure_branch\":false}}",
         sample.reserve.as_nanos(),
         sample.prepare.as_nanos(),
         sample.append.as_nanos(),
@@ -135,7 +135,7 @@ fn retained_fixture(history: usize) -> RetainedTurnLedger<Box<[u8]>> {
 }
 
 fn retained_ledger_benchmark(c: &mut Criterion) {
-    let mut group = c.benchmark_group("gate_a_recording/retained_ledger");
+    let mut group = c.benchmark_group("recording/retained_ledger");
     for history in [0_usize, 1_000, 100_000] {
         group.bench_function(BenchmarkId::from_parameter(history), |b| {
             b.iter_custom(|iterations| {
@@ -192,7 +192,7 @@ fn queue_fixture(history: usize) -> OwnedTurnRecordQueue<Box<[u8]>> {
 }
 
 fn owned_queue_benchmark(c: &mut Criterion) {
-    let mut group = c.benchmark_group("gate_a_recording/owned_queue");
+    let mut group = c.benchmark_group("recording/owned_queue");
     for history in [0_usize, 1_000, 100_000] {
         group.bench_function(BenchmarkId::from_parameter(history), |b| {
             b.iter_custom(|iterations| {
@@ -236,7 +236,7 @@ fn pool_fixture(history: usize) -> RecordBufferPool {
 }
 
 fn record_pool_benchmark(c: &mut Criterion) {
-    let mut group = c.benchmark_group("gate_a_recording/record_pool");
+    let mut group = c.benchmark_group("recording/record_pool");
     for history in [0_usize, 1_000, 100_000] {
         group.bench_function(BenchmarkId::from_parameter(history), |b| {
             b.iter_custom(|iterations| {
@@ -302,7 +302,7 @@ fn outbox_fixture(history: usize) -> RetainedEffectOutbox<Box<[u8]>> {
 }
 
 fn effect_outbox_benchmark(c: &mut Criterion) {
-    let mut group = c.benchmark_group("gate_a_recording/effect_outbox");
+    let mut group = c.benchmark_group("recording/effect_outbox");
     for history in [0_usize, 1_000, 100_000] {
         group.bench_function(BenchmarkId::from_parameter(history), |b| {
             b.iter_custom(|iterations| {

@@ -10,20 +10,20 @@ use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
 use mech_engine::__resident::ResidentIntegrityMode;
 
 mod support;
-use support::gate_b::contract::{
+use support::resident_ekf::contract::{
     EPISODE_LENGTH, EkfState, REFERENCE_TRAJECTORY_SHA256, SCALED_INSTANCES, TRACE_SHA256,
     assert_state_close, reference_trajectory, trace_sha256,
 };
-use support::gate_b::full_write::{FullWriteEpochFixture, FullWriteProbe, buffer_hash};
-use support::gate_b::raw_epoch::{EpochFixture, EpochProbe};
-use support::gate_b::raw_kernel::KernelFixture;
-use support::gate_b::resident_artifact::{
+use support::resident_ekf::full_write::{FullWriteEpochFixture, FullWriteProbe, buffer_hash};
+use support::resident_ekf::raw_epoch::{EpochFixture, EpochProbe};
+use support::resident_ekf::raw_kernel::KernelFixture;
+use support::resident_ekf::resident_artifact::{
     ArtifactRoute, ResidentArtifactFixture, ResidentArtifactKernelFixture, ResidentArtifactProbe,
 };
-use support::gate_b::resident_kernel::{
+use support::resident_ekf::resident_kernel::{
     ResidentFullWriteFixture, ResidentKernelFixture, ResidentKernelProbe,
 };
-use support::gate_b::resident_turn::{
+use support::resident_ekf::resident_turn::{
     ResidentCompleteProbe, ResidentFullWriteTurnFixture, ResidentScheduledFixture,
     ResidentTurnFixture,
 };
@@ -238,7 +238,7 @@ fn report_dimensions(
     let mut reported = REPORTED
         .get_or_init(|| Mutex::new(BTreeSet::new()))
         .lock()
-        .expect("Gate B report lock");
+        .expect("resident EKF report lock");
     if !reported.insert((lane.to_string(), instances, retained_history, next_epoch)) {
         return;
     }
@@ -247,7 +247,7 @@ fn report_dimensions(
         .map(|hash| format!("\"{hash}\""))
         .unwrap_or_else(|| "null".to_string());
     let line = format!(
-        "GATE_B_SAMPLE {{\"lane\":\"{lane}\",\"instances\":{instances},\"turns\":{EPISODE_LENGTH},\"retained_history\":{retained_history},\"next_epoch\":{next_epoch},\"allocation_count\":{},\"deallocation_count\":{},\"allocated_bytes\":{},\"correctness\":true,\"quantized_state_hash\":\"{output_hash}\",\"candidate_seed_bytes\":{},\"candidate_written_bytes\":{},\"published_buffer_copy_bytes\":{},\"publication_store_count\":{},\"receipt_bytes\":{},\"commit_runtime_call_count\":{},\"legacy_journal_capture_count\":{},\"dirty_node_count\":{},\"record_preparation_count\":{},\"record_append_count\":{},\"records_retained_before_timing\":{},\"records_appended\":{},\"ledger_records_inspected\":{},\"post_publication_append_infallible\":{},\"abort_output_hash\":{abort}}}",
+        "RESIDENT_EKF_SAMPLE {{\"lane\":\"{lane}\",\"instances\":{instances},\"turns\":{EPISODE_LENGTH},\"retained_history\":{retained_history},\"next_epoch\":{next_epoch},\"allocation_count\":{},\"deallocation_count\":{},\"allocated_bytes\":{},\"correctness\":true,\"quantized_state_hash\":\"{output_hash}\",\"candidate_seed_bytes\":{},\"candidate_written_bytes\":{},\"published_buffer_copy_bytes\":{},\"publication_store_count\":{},\"receipt_bytes\":{},\"commit_runtime_call_count\":{},\"legacy_journal_capture_count\":{},\"dirty_node_count\":{},\"record_preparation_count\":{},\"record_append_count\":{},\"records_retained_before_timing\":{},\"records_appended\":{},\"ledger_records_inspected\":{},\"post_publication_append_infallible\":{},\"abort_output_hash\":{abort}}}",
         allocations.allocations,
         allocations.deallocations,
         allocations.allocated_bytes,
@@ -270,7 +270,7 @@ fn report_dimensions(
     stderr
         .write_all(line.as_bytes())
         .and_then(|()| stderr.write_all(b"\n"))
-        .expect("write Gate B structural sample");
+        .expect("write resident EKF structural sample");
 }
 
 fn validate_final(states: &[EkfState]) {
@@ -344,7 +344,7 @@ fn validate_controls() {
 }
 
 fn rust_kernel(c: &mut Criterion) {
-    let mut group = c.benchmark_group("gate_b/rust-kernel");
+    let mut group = c.benchmark_group("resident_ekf/rust-kernel");
     for instances in SCALED_INSTANCES {
         let mut correctness = KernelFixture::new(instances);
         let trajectory_hash = correctness.run_and_validate_every_turn();
@@ -378,7 +378,7 @@ fn rust_kernel(c: &mut Criterion) {
 }
 
 fn rust_epoch(c: &mut Criterion) {
-    let mut group = c.benchmark_group("gate_b/rust-epoch");
+    let mut group = c.benchmark_group("resident_ekf/rust-epoch");
     for instances in SCALED_INSTANCES {
         let mut correctness = EpochFixture::new(instances);
         let trajectory_hash = correctness.run_and_validate_every_turn();
@@ -412,7 +412,7 @@ fn rust_epoch(c: &mut Criterion) {
 }
 
 fn resident_kernel(c: &mut Criterion) {
-    let mut group = c.benchmark_group("gate_b/mech-resident-kernel");
+    let mut group = c.benchmark_group("resident_ekf/mech-resident-kernel");
     for instances in SCALED_INSTANCES {
         let mut correctness = ResidentKernelFixture::new(instances);
         let trajectory_hash = correctness.run_and_validate_every_turn();
@@ -449,7 +449,7 @@ fn resident_scheduled(c: &mut Criterion) {
     let mut correctness = ResidentScheduledFixture::new(1);
     let trajectory_hash = correctness.run_and_validate_every_turn();
     assert_eq!(trajectory_hash, REFERENCE_TRAJECTORY_SHA256);
-    let mut group = c.benchmark_group("gate_b/mech-resident-scheduled");
+    let mut group = c.benchmark_group("resident_ekf/mech-resident-scheduled");
     group.bench_function("1", |benchmark| {
         benchmark.iter_custom(|iterations| {
             let mut elapsed = Duration::ZERO;
@@ -488,7 +488,7 @@ fn resident_turn(c: &mut Criterion) {
     assert_eq!(trajectory_hash, REFERENCE_TRAJECTORY_SHA256);
     correctness.validate_final();
 
-    let mut group = c.benchmark_group("gate_b/mech-resident-turn");
+    let mut group = c.benchmark_group("resident_ekf/mech-resident-turn");
     for (name, history, next_epoch) in [
         ("history-0-low-epoch", 0, 1),
         ("history-1000-low-epoch", 1_000, 1),
@@ -528,7 +528,7 @@ fn resident_turn(c: &mut Criterion) {
 }
 
 fn resident_artifact(c: &mut Criterion) {
-    let mut complete_group = c.benchmark_group("gate_b/mech-resident-artifact");
+    let mut complete_group = c.benchmark_group("resident_ekf/mech-resident-artifact");
     for (route, lane, benchmark_name, history, next_epoch) in [
         (
             ArtifactRoute::Source,
@@ -602,7 +602,7 @@ fn resident_artifact(c: &mut Criterion) {
     }
     complete_group.finish();
 
-    let mut kernel_group = c.benchmark_group("gate_b/mech-resident-artifact-kernel");
+    let mut kernel_group = c.benchmark_group("resident_ekf/mech-resident-artifact-kernel");
     for (route, integrity, lane, benchmark_name) in [
         (
             ArtifactRoute::Source,
@@ -663,7 +663,7 @@ fn resident_artifact(c: &mut Criterion) {
 }
 
 fn full_write(c: &mut Criterion) {
-    let mut group = c.benchmark_group("gate_b/full-write");
+    let mut group = c.benchmark_group("resident_ekf/full-write");
     group.bench_function("rust-epoch", |benchmark| {
         benchmark.iter_custom(|iterations| {
             let mut elapsed = Duration::ZERO;
@@ -890,10 +890,10 @@ fn resident_structural_samples() {
     );
 }
 
-fn gate_b_controls(c: &mut Criterion) {
+fn resident_ekf_controls(c: &mut Criterion) {
     validate_controls();
     #[cfg(feature = "runtime_bench_probes")]
-    if std::env::var_os("MECH_GATE_B_STRUCTURAL_ONLY").is_some() {
+    if std::env::var_os("MECH_RESIDENT_EKF_STRUCTURAL_ONLY").is_some() {
         resident_structural_samples();
         return;
     }
@@ -906,5 +906,5 @@ fn gate_b_controls(c: &mut Criterion) {
     full_write(c);
 }
 
-criterion_group!(benches, gate_b_controls);
+criterion_group!(benches, resident_ekf_controls);
 criterion_main!(benches);

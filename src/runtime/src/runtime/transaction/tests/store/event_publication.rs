@@ -1,5 +1,5 @@
 use super::{event_count, new_runtime};
-use crate::runtime::gate_a_probe::{gate_a_cost_snapshot, reset_gate_a_costs};
+use crate::runtime::cost_probe::{reset_runtime_costs, runtime_cost_snapshot};
 use crate::{EventId, ObjectId, ObjectRecord, RuntimeConfig, RuntimeEventKind};
 
 #[test]
@@ -121,7 +121,7 @@ fn active_transaction_bounds_hidden_event_history() {
 
     let baseline_physical = context.event_storage_physical_len();
     let transaction_id = runtime.begin_transaction(&mut context).unwrap();
-    reset_gate_a_costs();
+    reset_runtime_costs();
     for object in 100..=355 {
         runtime
             .put_object_with_context(
@@ -133,7 +133,7 @@ fn active_transaction_bounds_hidden_event_history() {
         assert!(context.event_storage_physical_len() <= baseline_physical + 4 * LIMIT);
     }
 
-    assert_eq!(gate_a_cost_snapshot().context_event_snapshot_items, 0);
+    assert_eq!(runtime_cost_snapshot().context_event_snapshot_items, 0);
     runtime
         .abort_runtime_transaction(&mut context, "bounded active history")
         .unwrap();
@@ -158,7 +158,7 @@ fn outer_commit_bounds_hidden_context_event_history() {
             .unwrap();
     }
 
-    reset_gate_a_costs();
+    reset_runtime_costs();
     let transaction_id = runtime.begin_transaction(&mut context).unwrap();
     for object in 10..=13 {
         runtime
@@ -177,7 +177,7 @@ fn outer_commit_bounds_hidden_context_event_history() {
     assert_eq!(context.transaction, None);
     assert_eq!(context.events().len(), 3);
     assert!(context.event_storage_physical_len() < 2 * context.events().len());
-    let costs = gate_a_cost_snapshot();
+    let costs = runtime_cost_snapshot();
     assert_eq!(costs.context_event_snapshot_count, 0);
     assert_eq!(costs.context_event_snapshot_items, 0);
 }
@@ -232,7 +232,7 @@ fn context_event_retention_steady_state_is_amortized_and_snapshot_free() {
         }
         assert_eq!(context.events().len(), limit);
 
-        reset_gate_a_costs();
+        reset_runtime_costs();
         let appended = 4 * limit;
         for index in 0..appended {
             let id = ObjectId(20_000 + index as u128);
@@ -249,7 +249,7 @@ fn context_event_retention_steady_state_is_amortized_and_snapshot_free() {
             );
         }
 
-        let costs = gate_a_cost_snapshot();
+        let costs = runtime_cost_snapshot();
         assert_eq!(costs.context_event_snapshot_count, 0);
         assert_eq!(costs.context_event_snapshot_items, 0);
         assert_eq!(costs.events_appended, appended as u64);

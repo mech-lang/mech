@@ -696,24 +696,19 @@ The shrink-only inventory described below was removed after reaching zero.
 `scripts/check-no-retired-value-system.py` is now the permanent exact-symbol
 and path absence contract.
 
-The Gate A legacy-boundary manifest remains authoritative. Approved production
-uses may disappear and occurrence counts may shrink, but new paths and count
-growth must fail. C0 additionally freezes `Value::MutableReference`,
-`Value::Typed`, `ValRef`, `MutableReference`, `ReactiveCellId`,
-`ValueStateJournal`, `ReactiveTurnJournal`, `transaction_state_values`,
-and the declared pointer APIs on `Ref<T>`. Pointer-derived live-resource
-identity is enforced by the exact Gate A boundary identifiers; C0 does not
-globally interpret unrelated `.id()`, `.as_ptr()`, `.as_mut_ptr()`, or
-`.addr()` method calls. Zero-use boundaries remain forbidden. C0 invokes the
-Gate A checker and does not maintain divergent pointer-identity counts.
+The permanent value-execution boundary manifest remains authoritative.
+Approved production uses may disappear and occurrence counts may shrink, but
+new paths and count growth fail its focused checker. Pointer-derived
+live-resource identity is enforced by exact boundary identifiers rather than
+globally interpreting unrelated `.id()`, `.as_ptr()`, `.as_mut_ptr()`, or
+`.addr()` method calls. Zero-use boundaries remain forbidden.
 
-## Gate B performance regression policy
+## Resident EKF performance history
 
-The exact evidence in `benchmarks/runtime/gate-b/b2-resident-turn.json` is the
-baseline for Gate C. Documentation-only changes validate that committed
-evidence. A later semantic-core or resident-hot-path change must rerun
-`rust-epoch`, `mech-resident-kernel`, `mech-resident-scheduled`, and
-`mech-resident-turn` in one controlled session.
+The completed controlled-machine measurements are archived under
+`benchmarks/archive/runtime-gate-b`. They are historical evidence, not a live
+pull-request gate. Future resident performance work must establish a fresh
+benchmark baseline under benchmark ownership instead of mutating the archive.
 
 The following are hard requirements:
 
@@ -727,11 +722,8 @@ The following are hard requirements:
   ratios are each at most `1.05`;
 - the post-publication append is infallible.
 
-A regression beyond any hard requirement blocks the owning Gate C PR. Gate C0
-must not regenerate or modify the Gate B workload or evidence.
-The Gate B regression manifest and the C0 checker itself are freshness-sensitive
-after their one-time C0 introduction; neither contract may remove its own
-protection or loosen a threshold without fresh controlled evidence.
+A future benchmark regression policy may reuse these structural requirements,
+but any timing threshold must be qualified from fresh controlled evidence.
 
 ## Gate ownership
 

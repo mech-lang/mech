@@ -237,7 +237,7 @@ impl ResidentExternalCoordinator {
         if bound.observations().len() != instance.plan.inputs.len() {
             return Err(MechError::new(
                 ResidentExternalCoordinatorInvalid {
-                    reason: "every D3 resident turn input must be an admitted observation"
+                    reason: "every resident external turn input must be an admitted observation"
                         .to_owned(),
                 },
                 None,
@@ -335,7 +335,7 @@ impl ResidentExternalCoordinator {
         Ok(())
     }
 
-    #[cfg(feature = "runtime_bench_gate_d3")]
+    #[cfg(feature = "resident_external_test_support")]
     #[doc(hidden)]
     pub fn set_next_epoch_for_benchmark(&mut self, next: u64) {
         self.instance
@@ -2170,7 +2170,7 @@ impl MechErrorKind for UnsupportedResidentDurability {
     }
     fn message(&self) -> String {
         format!(
-            "resident durability {:?} is not implemented in D3",
+            "resident durability {:?} is not implemented in resident external execution",
             self.durability
         )
     }

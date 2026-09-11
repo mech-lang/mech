@@ -236,7 +236,7 @@ impl InMemoryStore {
         self.transactions.insert(id, transaction);
         self.transaction_order.push(id);
         #[cfg(any(test, feature = "runtime_bench_probes"))]
-        crate::runtime::gate_a_probe::record_transaction_committed();
+        crate::runtime::cost_probe::record_transaction_committed();
         id
     }
 }

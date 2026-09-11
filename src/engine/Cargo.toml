@@ -18,8 +18,10 @@ std = ["mech-core/std"]
 no_std = ["mech-core/no_std", "mech-syntax?/no_std"]
 
 runtime = ["program", "functions"]
-# Runtime-only diagnostic hook consumed by mech-runtime's non-default Gate A probes.
+# Runtime-only diagnostic hook consumed by mech-runtime's non-default runtime cost probes.
 runtime_bench_probes = ["runtime"]
+# Private benchmark/conformance implementation. It is never product-routed and
+# moves with the resident EKF workload when benchmark ownership is extracted.
 resident-ekf = ["mech-core/resident-execution"]
 artifact-codec = ["dep:serde_json", "mech-core/program", "mech-core/serde"]
 resident-artifact = [

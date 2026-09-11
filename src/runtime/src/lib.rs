@@ -13,7 +13,7 @@ pub mod input;
     feature = "runtime",
     any(
         feature = "runtime_bench_probes",
-        feature = "runtime_bench_gate_b",
+        feature = "resident_ekf_benchmarks",
         feature = "resident-external"
     )
 ))]
@@ -25,7 +25,7 @@ pub mod operation;
 ))]
 mod outbox;
 pub mod protocol;
-#[cfg(all(feature = "runtime", feature = "runtime_bench_gate_b"))]
+#[cfg(all(feature = "runtime", feature = "resident_ekf_benchmarks"))]
 mod resident_recording;
 mod resource;
 mod resource_contract;
@@ -67,7 +67,7 @@ pub mod transaction;
     feature = "runtime",
     any(
         feature = "runtime_bench_probes",
-        feature = "runtime_bench_gate_b",
+        feature = "resident_ekf_benchmarks",
         feature = "resident-external"
     )
 ))]
@@ -120,14 +120,14 @@ pub use self::transaction::*;
 #[cfg(all(feature = "watcher", feature = "source"))]
 pub use self::workspace::*;
 
-/// Provisional Gate A recording primitives for controlled benchmarks only.
+/// Provisional runtime cost recording primitives for controlled benchmarks only.
 ///
 /// This facade is intentionally hidden behind a non-default probe feature. The
 /// normal runtime API does not expose these types while the canonical receipt,
 /// value, slot, schema, and epoch model is still under design.
 #[doc(hidden)]
 #[cfg(all(feature = "runtime", feature = "runtime_bench_probes"))]
-pub mod __gate_a_recording {
+pub mod __recording_bench {
     use mech_core::MResult;
 
     pub use crate::ledger::{
@@ -234,11 +234,11 @@ pub mod __gate_a_recording {
     }
 }
 
-/// Fixed-receipt wrapper over the Gate A ledger for resident efficacy controls.
+/// Fixed-receipt wrapper over the runtime cost ledger for resident efficacy controls.
 ///
 /// Normal runtime builds do not expose this provisional benchmark surface.
 #[doc(hidden)]
-#[cfg(all(feature = "runtime", feature = "runtime_bench_gate_b"))]
+#[cfg(all(feature = "runtime", feature = "resident_ekf_benchmarks"))]
 pub mod __resident_recording {
     use mech_core::MResult;
 
@@ -247,13 +247,13 @@ pub mod __resident_recording {
         PreparedResidentCommit, ResidentRecordInspection, ResidentTurnRecorder,
     };
     pub use crate::turn_record::{
-        AccountedRecord, GateBFixedReceipt, InputSequence, InputSequenceRange, LedgerSequence,
-        OwnedTurnRecord, TurnFailurePhase, TurnId, TurnRecordHeader, TurnRecordStatus,
+        AccountedRecord, InputSequence, InputSequenceRange, LedgerSequence, OwnedTurnRecord,
+        ResidentEkfReceipt, TurnFailurePhase, TurnId, TurnRecordHeader, TurnRecordStatus,
     };
 
     use crate::ledger::{PreparedLedgerAppend, TurnLedger};
 
-    /// A Gate B prepared append bound to its originating retained ledger.
+    /// A resident EKF prepared append bound to its originating retained ledger.
     #[must_use = "prepared records must be appended or dropped"]
     pub struct PreparedRetainedAppend<'a, R: AccountedRecord> {
         ledger: &'a mut RetainedTurnLedger<R>,
