@@ -2,9 +2,12 @@
 
 ## Disposition
 
-**Local integration qualification is green; the candidate is ready for
-exact-head CI. Preserve this implementation and keep the R6 PR branch unchanged
-until that qualification passes.** The corrections
+**The implementation's local qualification passed; exact-head CI qualification
+is still pending.** A first CI attempt exposed stale distribution fingerprints
+outside the Rust profile assertions. The integration fixes remain in stacked
+draft PR #811, targeting the R6 branch behind #809 rather than `main`. Preserve
+that stack and keep the R6 branch unchanged until the correction PR qualifies.
+The corrections
 address reproduced failures at the boundaries between source schemes, concrete
 factories, artifact identity, memory planning, and managed execution. The local
 core/engine and safety results below are positive evidence for those boundaries.
@@ -22,8 +25,9 @@ external review has been requested by this report.
 - Working branch: `codex/v0.4-stack-review-fixes`.
 - Reviewed R6 base: `47fdb6a8ef7e7ce286553c65c1b76782200dc4e4`.
 - Imported checkpoint: `131165e4a4c2d1ea56692b46658da44a8b8c7fc6`.
-- The correction candidate is the commit containing this report. Resolve its
-  exact SHA with `git rev-parse HEAD`; this report does not embed its own hash.
+- Implementation correction: `adb8c0dc1450c3f049e9d48d7399fb9c3d3acc1d`.
+- The distribution-fingerprint follow-up updates this report. Resolve the
+  candidate's exact SHA with `git rev-parse HEAD`; it does not embed its own hash.
 - Local qualification was completed during September 10–11, 2026, against
   the correction contents committed with this report.
 - The handoff records 1,476 standard and 2,201 full generated witnesses passing
@@ -168,18 +172,37 @@ The generated count is not an exhaustive semantic proof:
 Focused semantic, atomicity, safety, resource, bytecode, and reactive tests
 remain necessary alongside the generated gate.
 
-## Work remaining before promotion
+## Distribution-fingerprint follow-up
 
-1. Commit and push the completed local correction to the review branch without
-   changing its qualified source contents.
+Standalone Full CI run `34560842098` on `adb8c0dc1` found old expected counts
+and digests in the static distribution shell gate and its frozen manifest.
+The run was canceled promptly instead of spending the remaining full-suite
+time on a known-red candidate. Its Windows aggregate failed because its
+prerequisites were canceled, not because a Windows test failed.
+
+The duplicate expectations now agree with the measured Rust profile results.
+The complete static distribution shell gate passes. Product distribution
+snapshots are measured separately using the exact no-dev Cargo feature graph;
+their counts must not be inferred from a dev-feature-unified catalog test.
+Both exact product probes completed successfully: standard has 1,698 runtime
+entries and 70 specializers; full has 15,698 entries and 120 specializers.
+Both checked-in snapshots match the generated results byte-for-byte, including
+the graph fingerprints. Packaging, native-host contracts, and 55 CI/catalog/
+native Python tests also passed during the follow-up.
+
+## Work remaining before merge
+
+1. Qualify the distribution-fingerprint follow-up pushed to draft PR #811.
 2. Validate the current full native shard set through the required Full CI
    workflow. Preserve failures as concrete correction work; do not substitute
    the inherited inventory or earlier green run for this result.
 3. Record the immutable tested source SHA and exact-head CI results in the PR
    qualification record, without amending implementation merely to add a run ID.
-4. Before any R6 branch promotion, verify its remote head is still
+4. Merge only through the stack: #811 → #809 (R6) → R5 → earlier phases.
+   Before any authorized merge, verify the R6 remote head is still
    `47fdb6a8ef7e7ce286553c65c1b76782200dc4e4` and preserve intervening work.
-   Promotion depends on completed gates, not the imported checkpoint's status.
+   Qualification depends on completed gates, not the imported checkpoint's
+   status. This report does not authorize a merge or direct branch promotion.
 
 A read-only check during this continuation confirmed the R6 remote remained at
 the expected head with green existing checks. All review threads were resolved;
