@@ -432,3 +432,291 @@ mod managed_index_conversion {
     selector_family!(f32_fractional_ports_are_managed, f32, 1.9, 2.5);
     selector_family!(f64_fractional_ports_are_managed, f64, 1.9, 2.5);
 }
+
+#[cfg(feature = "resident-artifact")]
+mod resident_existing_value_budget_scope {
+    use mech_core::snapshot::{F64Bits, SnapshotValidationContext};
+    use mech_core::*;
+    use mech_engine::__resident::{
+        ActivationFacts, CapturedSignalInput, ReactiveInstance, ResidentActivationError,
+        ResidentValueBorrow, activate,
+    };
+    use mech_engine::{
+        ArtifactBuildContext, OperationReference, ProgramArtifact, SourceInput, SourceNode,
+        SourceNodeOutput, SourceOutput, SourceProgram, SourceValue,
+        compile_source_program_with_contracts,
+    };
+
+    fn catalog() -> FunctionCatalog {
+        let mut builder = FunctionCatalogBuilder::new();
+        mech_engine::install_intrinsic_source(&mut builder).unwrap();
+        mech_engine::install_intrinsic_resident(&mut builder).unwrap();
+        builder.build().unwrap()
+    }
+
+    fn matrix_schema(element: SchemaBody, elements: usize, column: bool) -> Schema {
+        SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body: SchemaBody::Matrix {
+                element: Box::new(element),
+                dimensions: if column {
+                    vec![
+                        DimensionExpr::Constant(elements as u64),
+                        DimensionExpr::Constant(1),
+                    ]
+                } else {
+                    vec![
+                        DimensionExpr::Constant(1),
+                        DimensionExpr::Constant(elements as u64),
+                    ]
+                }
+                .into_boxed_slice(),
+            },
+        }
+        .finalize()
+        .unwrap()
+    }
+
+    // Compile an ordinary semantic artifact using the installed access contract
+    // and Resident binder. The selector remains a signal even for constants,
+    // so both cases cross activation and the real turn/publication boundary.
+    fn access_artifact(
+        catalog: &FunctionCatalog,
+        values: &[f64],
+        constant: bool,
+        gather: bool,
+    ) -> (ProgramArtifact, MemoryObjectOwner) {
+        let mut schemas = SchemaTableBuilder::new();
+        let f64_body = SchemaBody::FloatingPoint(FloatWidth::W64);
+        let source_schema = schemas
+            .insert(matrix_schema(f64_body.clone(), values.len(), false))
+            .unwrap();
+        let output_schema = schemas
+            .insert(if gather {
+                matrix_schema(f64_body, values.len(), true)
+            } else {
+                SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: f64_body,
+                }
+                .finalize()
+                .unwrap()
+            })
+            .unwrap();
+        let selector_schema = schemas
+            .insert(if gather {
+                matrix_schema(SchemaBody::Index, values.len(), true)
+            } else {
+                SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: SchemaBody::Index,
+                }
+                .finalize()
+                .unwrap()
+            })
+            .unwrap();
+        let build = schemas.finish().unwrap();
+        let source_schema = build.resolve(source_schema).unwrap();
+        let output_schema = build.resolve(output_schema).unwrap();
+        let selector_schema = build.resolve(selector_schema).unwrap();
+        let (schemas, _) = build.into_parts();
+
+        let mut constants = ConstantStoreBuilder::new(&schemas);
+        let source_constant = constant.then(|| {
+            constants
+                .insert(
+                    ValueDraft {
+                        schema: source_schema,
+                        shape_values: Box::new([]),
+                        data: ValueDataDraft::Matrix(
+                            values
+                                .iter()
+                                .map(|value| ValueDataDraft::F64(F64Bits::from_f64(*value)))
+                                .collect::<Vec<_>>()
+                                .into_boxed_slice(),
+                        ),
+                    }
+                    .finalize(&SnapshotValidationContext::new(&schemas))
+                    .unwrap(),
+                )
+                .unwrap()
+        });
+        let build = constants.finish().unwrap();
+        let source_constant = source_constant.map(|handle| build.resolve(handle).unwrap());
+        let (constants, _) = build.into_parts();
+        let mut inputs = Vec::new();
+        let (source, owner) = if let Some(constant) = source_constant {
+            (
+                SourceValue::Constant(constant),
+                MemoryObjectOwner::Constant(constant),
+            )
+        } else {
+            inputs.push(SourceInput {
+                name: "source".to_owned(),
+                schema: source_schema,
+            });
+            (
+                SourceValue::Input(0),
+                MemoryObjectOwner::Slot(CellSlotId::new(0)),
+            )
+        };
+        let selector = SourceValue::Input(inputs.len() as u32);
+        inputs.push(SourceInput {
+            name: "selector".to_owned(),
+            schema: selector_schema,
+        });
+        let name = if gather { "range" } else { "scalar" };
+        let graph = SourceProgram {
+            inputs: inputs.into_boxed_slice(),
+            nodes: vec![SourceNode {
+                operation: OperationReference {
+                    module_path: vec!["access".to_owned()].into_boxed_slice(),
+                    operation_name: name.to_owned(),
+                },
+                requirement: None,
+                inputs: vec![source, selector].into_boxed_slice(),
+                outputs: vec![SourceNodeOutput::Derived {
+                    schema: output_schema,
+                }]
+                .into_boxed_slice(),
+            }]
+            .into_boxed_slice(),
+            outputs: vec![SourceOutput {
+                name: "result".to_owned(),
+                interactive_symbol: None,
+                source: SourceValue::NodeOutput {
+                    node: 0,
+                    output_ordinal: 0,
+                },
+                schema: output_schema,
+            }]
+            .into_boxed_slice(),
+            ..SourceProgram::default()
+        };
+        let contract = &catalog
+            .operation_specializer(OperationId::from_name(&format!("access/{name}")))
+            .unwrap()
+            .operation
+            .contract;
+        let artifact = compile_source_program_with_contracts(
+            &graph,
+            &mut ArtifactBuildContext::new(&schemas, &constants),
+            &[contract],
+        )
+        .unwrap();
+        (artifact, owner)
+    }
+
+    fn turn(
+        instance: &mut ReactiveInstance,
+        source: Option<&[f64]>,
+        selector: u64,
+    ) -> Result<(), mech_engine::__resident::ResidentExecutionError> {
+        let selector = [selector];
+        let mut inputs = Vec::new();
+        if let Some(source) = source {
+            inputs.push(CapturedSignalInput {
+                slot: instance.plan.inputs[0].slot,
+                value: ResidentValueRef::F64(source),
+            });
+        }
+        inputs.push(CapturedSignalInput {
+            slot: instance.plan.inputs.last().unwrap().slot,
+            value: ResidentValueRef::Index(&selector),
+        });
+        instance.turn_without_summary(&inputs)
+    }
+
+    fn assert_scalar(instance: &ReactiveInstance, expected: f64) {
+        let ResidentValueBorrow::F64 { shape, values } = instance.output_borrow(0).unwrap() else {
+            panic!("scalar access must publish an F64 result");
+        };
+        assert_eq!(shape, ResidentShape::SCALAR);
+        assert_eq!(values, &[expected]);
+    }
+
+    #[test]
+    fn large_inputs_and_constants_execute_small_results_without_output_quotas() {
+        let catalog = catalog();
+        let limit = TargetMemoryProfile::current_resident_cpu()
+            .unwrap()
+            .limits
+            .max_output_elements
+            .unwrap();
+        assert_eq!(limit, 65_536, "do not relax the published-output quota");
+        for constant in [false, true] {
+            for elements in [limit as usize, limit as usize + 1] {
+                let values = (0..elements)
+                    .map(|index| index as f64 + 0.25)
+                    .collect::<Vec<_>>();
+                let (artifact, owner) = access_artifact(&catalog, &values, constant, false);
+                let mut instance = activate(
+                    ReactiveInstanceId::new(1, 0),
+                    &artifact,
+                    &catalog,
+                    &ActivationFacts::default(),
+                )
+                .unwrap_or_else(|error| {
+                    panic!("constant={constant}, elements={elements}: {error:?}")
+                });
+
+                // Activation also audits each realized lane against this plan;
+                // admitting existing input storage must not remove its bytes.
+                let plan = &instance.plan.memory_plan;
+                let source = plan
+                    .allocations
+                    .iter()
+                    .find(|allocation| {
+                        allocation.owner == owner && allocation.role == AllocationRole::FixedStorage
+                    })
+                    .unwrap();
+                assert_eq!(source.current_bytes, elements as u64 * 8);
+                assert!(source.capacity_bytes >= source.current_bytes);
+                assert!(plan.budget_violations.is_empty());
+                if constant {
+                    assert_eq!(source.lifetime, MemoryLifetime::Program);
+                    assert!(plan.peak.persistent_bytes >= source.current_bytes);
+                    assert_eq!(instance.activation.f64_storage(), values);
+                } else {
+                    assert_eq!(source.lifetime, MemoryLifetime::Activation);
+                    assert!(plan.peak.activation_bytes >= source.current_bytes);
+                }
+
+                let supplied = (!constant).then_some(values.as_slice());
+                turn(&mut instance, supplied, elements as u64).unwrap();
+                assert_scalar(&instance, values[elements - 1]);
+                let epoch = instance.published_epoch();
+                let hash = instance.published_state_hash();
+                assert!(turn(&mut instance, supplied, elements as u64 + 1).is_err());
+                assert_eq!(instance.published_epoch(), epoch);
+                assert_eq!(instance.published_state_hash(), hash);
+                assert_scalar(&instance, values[elements - 1]);
+                turn(&mut instance, supplied, 1).unwrap();
+                assert_scalar(&instance, values[0]);
+            }
+        }
+    }
+
+    #[test]
+    fn producing_an_oversized_result_still_fails_resident_activation() {
+        let catalog = catalog();
+        let values = vec![1.25; 65_537];
+        let (artifact, _) = access_artifact(&catalog, &values, true, true);
+        let error = activate(
+            ReactiveInstanceId::new(1, 0),
+            &artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap_err();
+        let ResidentActivationError::ResidentMemoryPlanRejected {
+            error: MemoryPlanError::TargetLimitExceeded { violation },
+        } = error
+        else {
+            panic!("oversized output must fail its planned output quota, not binding: {error:?}");
+        };
+        assert_eq!(violation.dimension, MemoryBudgetDimension::OutputElements);
+        assert_eq!(violation.required, 65_537);
+        assert_eq!(violation.limit, 65_536);
+    }
+}

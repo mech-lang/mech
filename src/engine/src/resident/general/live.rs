@@ -99,9 +99,13 @@ fn check_measurement(
     work: ResourceDemand,
 ) -> Result<(), MemoryPlanError> {
     let target = TargetMemoryProfile::current_resident_cpu()?;
+    // Inspecting an input or the old publication produces no new output.
+    // Keep call-scoped traversal/retention guards here; facts() carries the
+    // complete measured storage into R5's coexistence and candidate admission.
+    // Aggregate-only admission would incorrectly drop the traversal guards.
     let demand = ResourceDemand {
-        output_elements: f.logical_elements,
-        retained_nodes: f.retained_nodes,
+        output_elements: 0,
+        retained_nodes: f.retained_nodes.max(work.retained_nodes),
         ..work
     };
     if let Some(violation) = mech_core::evaluate_call_memory_budget(
@@ -111,7 +115,7 @@ fn check_measurement(
             port: 0,
         },
         demand,
-        f.payload_bytes,
+        0,
         0,
         target.limits,
     )
@@ -347,19 +351,133 @@ mod tests {
     }
 
     #[test]
-    fn live_measurement_rejects_oversized_payload_before_cloning() {
+    fn live_existing_payload_measurement_is_not_output_admission() {
         let (descriptor, schemas, _) = schema(SchemaBody::String);
         let value = ["x".repeat(mech_core::RESIDENT_MAX_BYTES as usize + 1)];
-        assert!(matches!(
-            footprint(
-                ResidentValueRef::String(&value),
-                &descriptor,
-                &schemas,
-                &mut ResourceDemand::default()
-            ),
-            Err(MemoryPlanError::TargetLimitExceeded { .. })
-        ));
+        let measured = footprint(
+            ResidentValueRef::String(&value),
+            &descriptor,
+            &schemas,
+            &mut ResourceDemand::default(),
+        )
+        .unwrap();
+        assert_eq!(measured.logical_elements, 1);
+        assert_eq!(measured.payload_bytes, value[0].capacity() as u64);
+        assert_eq!(measured.encoded_bytes, value[0].len() as u64 + 8);
+        assert_eq!(measured.retained_nodes, 1);
+
+        // The same bytes would still be rejected as a prospective output.
+        let violations = mech_core::evaluate_call_memory_budget(
+            mech_core::MemoryObjectOwner::NodeOutput {
+                node: NodeId::new(0),
+                port: 0,
+            },
+            ResourceDemand {
+                output_elements: measured.logical_elements,
+                retained_nodes: measured.retained_nodes,
+                ..ResourceDemand::default()
+            },
+            measured.payload_bytes,
+            0,
+            TargetMemoryProfile::current_resident_cpu().unwrap().limits,
+        );
+        assert!(violations.iter().any(|violation| {
+            violation.dimension == mech_core::MemoryBudgetDimension::OutputBytes
+        }));
         assert_eq!(value[0].len(), mech_core::RESIDENT_MAX_BYTES as usize + 1);
+    }
+
+    #[test]
+    fn live_existing_measurement_retains_work_and_retention_guards() {
+        use mech_core::{MemoryBudgetDimension, WorkDemand};
+
+        let footprint = CurrentMemoryFootprint {
+            logical_elements: mech_core::RESIDENT_MAX_OUTPUT_ELEMENTS + 1,
+            payload_bytes: mech_core::RESIDENT_MAX_BYTES + 1,
+            retained_nodes: mech_core::RESIDENT_MAX_RETAINED_NODES,
+            ..CurrentMemoryFootprint::default()
+        };
+        let work = ResourceDemand {
+            work: WorkDemand {
+                compute: mech_core::RESIDENT_MAX_COMPUTE_WORK,
+                comparison: mech_core::RESIDENT_MAX_COMPARISON_WORK,
+                ..WorkDemand::default()
+            },
+            ..ResourceDemand::default()
+        };
+        check_measurement(footprint, work).unwrap();
+        for (measured, demand, expected) in [
+            (
+                CurrentMemoryFootprint {
+                    retained_nodes: footprint.retained_nodes + 1,
+                    ..footprint
+                },
+                work,
+                MemoryBudgetDimension::RetainedNodes,
+            ),
+            (
+                footprint,
+                ResourceDemand {
+                    work: WorkDemand {
+                        compute: work.work.compute + 1,
+                        ..work.work
+                    },
+                    ..work
+                },
+                MemoryBudgetDimension::ComputeWork,
+            ),
+            (
+                footprint,
+                ResourceDemand {
+                    work: WorkDemand {
+                        comparison: work.work.comparison + 1,
+                        ..work.work
+                    },
+                    ..work
+                },
+                MemoryBudgetDimension::ComparisonWork,
+            ),
+            (
+                footprint,
+                ResourceDemand {
+                    turn_peak_bytes: mech_core::RESIDENT_MAX_BYTES + 1,
+                    ..work
+                },
+                MemoryBudgetDimension::TemporaryBytes,
+            ),
+        ] {
+            assert!(matches!(
+                check_measurement(measured, demand),
+                Err(MemoryPlanError::TargetLimitExceeded { violation })
+                    if violation.dimension == expected
+            ));
+        }
+    }
+
+    #[test]
+    fn live_selector_measurement_checks_work_before_traversal() {
+        let selector = [1, 0, 1];
+        let work = ResourceDemand {
+            work: mech_core::WorkDemand {
+                compute: mech_core::RESIDENT_MAX_COMPUTE_WORK - 6,
+                ..mech_core::WorkDemand::default()
+            },
+            ..ResourceDemand::default()
+        };
+        let mut exact = work;
+        assert_eq!(
+            selected_count(ResidentValueRef::Bool(&selector), &mut exact).unwrap(),
+            2
+        );
+        assert_eq!(exact.work.compute, mech_core::RESIDENT_MAX_COMPUTE_WORK);
+        let mut over = work;
+        over.work.compute += 1;
+        assert!(matches!(
+            selected_count(ResidentValueRef::Bool(&selector), &mut over),
+            Err(MemoryPlanError::TargetLimitExceeded { violation })
+                if violation.dimension == mech_core::MemoryBudgetDimension::ComputeWork
+        ));
+        assert_eq!(selector, [1, 0, 1]);
     }
 }
 

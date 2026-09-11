@@ -376,3 +376,52 @@ language-test profile failure above and its dependent PR aggregate gate.
 Native-plan generation and every standard/full release-package job passed;
 no other concrete failure was found. The final correction therefore remains
 limited to the two test-feature gates and this qualification record.
+
+## Follow-up on the review pinned to `65163f2`
+
+The preceding candidate `b7b80535ebdbe75e8481fe77e584a73e5a66399a` completed
+normal and Full CI in run `34575564549`: all 126 checks passed. That qualifies
+that head, not this subsequent correction.
+
+The supplied review's EKF finding was already corrected in `ffa8e5e`.
+`src/stdlib/tests/type_system_source.rs` checks the slice/transpose/broadcast
+composition's singleton row, nonsymmetric 4×2 values, and incompatible matrix
+subtraction. Both regressions passed in the preceding architecture job. The
+unchanged browser compute job `103187161086` passed all five EKF scalar/GPU,
+edit/no-edit cases and parity. No additional EKF or solver change is needed.
+
+The live measurement finding remained valid. Before this correction, an
+ordinary installed `access/scalar` consumer of a supplied 65,537-element F64
+input failed with `ActivationKernel`, despite producing one scalar. The
+corresponding unit tests identified `OutputElements` and `OutputBytes` as the
+false rejections of borrowed existing values. The negative producer test
+already rejected a 65,537-element result with `OutputElements`.
+
+Borrowed measurement now contributes no prospective output elements or bytes.
+It still uses call-scoped admission for traversal work, retained nodes, and
+other supplied resource demands. Complete measured footprints still flow to
+R5 for actual storage, old/candidate coexistence, and candidate-output
+admission; switching wholesale to aggregate-only admission would incorrectly
+drop the work guards. No output limit or memory policy was raised.
+
+After the fix, all 404 engine unit tests and 19 R6 integration tests passed
+under `full_compiler,resident-artifact`. The ordinary tests exercise supplied
+inputs and constants at 65,536 and 65,537 elements, exact scalar values, actual
+constant backing, and planned input backing audited during activation. They
+check activation versus persistent byte accounting according to storage
+lifetime, oversized-produced-output rejection, invalid-selector rollback of
+the value/epoch/hash, and a subsequent successful turn. Unit tests retain
+exact-limit/one-over-limit work and retention checks, bounded selector
+traversal, and the distinction between measuring a large existing String and
+admitting the same payload as a new output.
+
+The existing `full_compiler` owner profile also passed all 229 unit and 17
+integration tests with the Resident-only regressions correctly gated. Pinned
+format checking, the R6 architecture checker, and the unsafe-boundary audit
+passed.
+
+The existing Full CI R6 integration invocation now enables `resident-artifact`
+so the new ordinary Resident tests actually execute. Its existing non-Resident
+owner profile remains supported. No new CI job, Python mutation suite,
+allocator, executor, or broad review was added. Complete normal and Full CI
+must qualify the corrected unchanged head before it is reported green.

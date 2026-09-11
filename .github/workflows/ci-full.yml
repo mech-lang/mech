@@ -263,7 +263,7 @@ jobs:
             --features functions,u8,u64,f64,string,matrixd,bool \
             --test r6_memory_safety
           cargo +nightly-2026-03-03 test --locked -p mech-engine \
-            --no-default-features --features full_compiler \
+            --no-default-features --features full_compiler,resident-artifact \
             --test r6_memory_runtime
           cargo +nightly-2026-03-03 test --locked -p mech-engine \
             --no-default-features --features full_compiler,resident-artifact \
