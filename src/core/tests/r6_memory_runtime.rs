@@ -125,6 +125,194 @@ fn reservations_are_finite_and_release_unused_authority() {
 }
 
 #[test]
+fn configured_memory_budget_counts_unique_arenas_and_shared_reservations() {
+    let budget = mech_core::ManagedMemoryBudget::new(80);
+    let domain = MemoryDomain::with_memory_budget(budget.clone()).unwrap();
+    let sibling = MemoryDomain::with_memory_budget(budget.clone()).unwrap();
+    // The shared 64-byte physical arena is counted once, plus each object's
+    // existing 8-byte initialization bitmap. It is not 64 bytes per member.
+    let allocations = [
+        allocation(0, 0, 0, 8, 32, MemoryLifetime::Activation, None),
+        allocation(1, 0, 32, 8, 32, MemoryLifetime::Activation, None),
+    ];
+    let arenas = [arena(0, ArenaBackingKind::ContiguousBytes, 64, &[0, 1])];
+    let reserve = |owner: &MemoryDomain| {
+        owner.prepare_realization(runtime_plan_view(
+            owner.issue_plan_revision().unwrap(),
+            &allocations,
+            &arenas,
+            ResourceDemand::default(),
+            MemoryBudgetLimits::default(),
+            &[],
+        ))
+    };
+    let reservation = reserve(&domain).unwrap();
+    assert_eq!(reservation.reserved_bytes(), 80);
+    assert_eq!(budget.used_bytes(), 80);
+    assert!(matches!(
+        reserve(&sibling),
+        Err(MemoryRuntimeError::BudgetExceeded {
+            requested: 160,
+            limit: 80,
+            ..
+        })
+    ));
+    assert_eq!(sibling.ledger().reserved_bytes, 0);
+    assert!(sibling.allocation_observations().is_empty());
+    drop(reservation);
+    assert_eq!(budget.used_bytes(), 0);
+    let realized = domain.materialize(reserve(&domain).unwrap()).unwrap();
+    assert_eq!(budget.used_bytes(), 80);
+    drop(domain);
+    assert_eq!(budget.used_bytes(), 80, "live realization owns its backing");
+    drop(realized);
+    assert_eq!(budget.used_bytes(), 0);
+
+    let one_under =
+        MemoryDomain::with_memory_budget(mech_core::ManagedMemoryBudget::new(79)).unwrap();
+    assert!(matches!(
+        reserve(&one_under),
+        Err(MemoryRuntimeError::BudgetExceeded {
+            requested: 80,
+            limit: 79,
+            ..
+        })
+    ));
+    assert!(one_under.allocation_observations().is_empty());
+}
+
+#[test]
+fn configured_memory_budget_rejects_combined_states_before_allocation_and_releases_failure() {
+    let budget = mech_core::ManagedMemoryBudget::new(144);
+    let domain = MemoryDomain::with_memory_budget(budget.clone()).unwrap();
+    let allocations = [
+        allocation(0, 0, 0, 8, 64, MemoryLifetime::Activation, None),
+        allocation(1, 1, 0, 8, 64, MemoryLifetime::Activation, None),
+    ];
+    let arenas = [
+        arena(0, ArenaBackingKind::ContiguousBytes, 64, &[0]),
+        arena(1, ArenaBackingKind::ContiguousBytes, 64, &[1]),
+    ];
+    let reserve = |owner: &MemoryDomain| {
+        owner.prepare_realization(runtime_plan_view(
+            owner.issue_plan_revision().unwrap(),
+            &allocations,
+            &arenas,
+            ResourceDemand::default(),
+            MemoryBudgetLimits::default(),
+            &[],
+        ))
+    };
+    let limited =
+        MemoryDomain::with_memory_budget(mech_core::ManagedMemoryBudget::new(143)).unwrap();
+    assert!(matches!(
+        reserve(&limited),
+        Err(MemoryRuntimeError::BudgetExceeded { .. })
+    ));
+    assert!(limited.allocation_observations().is_empty());
+    domain
+        .inject_failure_after(mech_core::MemoryFailurePoint::HostAllocation, 1)
+        .unwrap();
+    assert!(matches!(
+        domain.materialize(reserve(&domain).unwrap()),
+        Err(MemoryRuntimeError::AllocationFailed { .. })
+    ));
+    assert_eq!(
+        budget.used_bytes(),
+        0,
+        "both partial ownership and unused reservation release"
+    );
+    assert_eq!(domain.ledger().reserved_bytes, 0);
+    assert!(domain.allocation_observations().is_empty());
+    let realized = domain.materialize(reserve(&domain).unwrap()).unwrap();
+    assert_eq!(budget.used_bytes(), 144);
+    domain.close().unwrap();
+    assert_eq!(
+        budget.used_bytes(),
+        144,
+        "close cannot uncharge retained storage"
+    );
+    drop(realized);
+    domain.collect_retired().unwrap();
+    assert_eq!(budget.used_bytes(), 0);
+}
+
+#[test]
+fn configured_memory_budget_follows_independent_payload_and_frozen_owners() {
+    let budget = mech_core::ManagedMemoryBudget::new(1024 * 1024);
+    let domain = MemoryDomain::with_memory_budget(budget.clone()).unwrap();
+    let revision = domain.issue_plan_revision().unwrap();
+    let mut payload = allocation(0, 0, 0, 0, 16, MemoryLifetime::Activation, None);
+    payload.role = AllocationRole::VariablePayload;
+    payload.slot = None;
+    payload.payload_block_capacity = 1;
+    payload.alignment = 1;
+    let realized = domain
+        .materialize(
+            domain
+                .prepare_realization(runtime_plan_view(
+                    revision,
+                    &[payload],
+                    &[arena(0, ArenaBackingKind::IndirectOwnedPayloads, 16, &[0])],
+                    ResourceDemand::default(),
+                    MemoryBudgetLimits::default(),
+                    &[],
+                ))
+                .unwrap(),
+        )
+        .unwrap();
+    let allocator = domain
+        .planned_allocator(
+            &realized,
+            domain
+                .plan_object_key(revision, MemoryObjectId::new(0))
+                .unwrap(),
+        )
+        .unwrap();
+    let string = ManagedString::try_new(allocator.clone(), "retained").unwrap();
+    let envelope_bytes = budget.used_bytes();
+    assert!(envelope_bytes >= 16);
+    domain.close().unwrap();
+    drop(realized);
+    drop(domain);
+    assert_eq!(budget.used_bytes(), envelope_bytes);
+    assert_eq!(string.as_str(), "retained");
+    assert!(matches!(
+        ManagedString::try_new(allocator.clone(), "x"),
+        Err(MemoryRuntimeError::DomainClosed)
+    ));
+    drop(allocator);
+    drop(string);
+    assert_eq!(budget.used_bytes(), 0);
+
+    let domain = MemoryDomain::with_memory_budget(budget.clone()).unwrap();
+    let cell = ValueCell::from_exact_in(&domain, "immutable owned payload".to_owned()).unwrap();
+    let snapshot = cell.snapshot().unwrap();
+    let shared = snapshot.clone();
+    let before_clone = budget.used_bytes();
+    let another = shared.clone();
+    assert_eq!(
+        budget.used_bytes(),
+        before_clone,
+        "shared roots charge once"
+    );
+    drop(another);
+    drop(cell);
+    domain.close().unwrap();
+    drop(domain);
+    assert!(
+        budget.used_bytes() > 0,
+        "detached immutable allocation retains its budget ticket"
+    );
+    assert!(
+        matches!(snapshot.data(), mech_core::ValueData::String(value) if value.as_ref() == "immutable owned payload")
+    );
+    drop(snapshot);
+    std::thread::spawn(move || drop(shared)).join().unwrap();
+    assert_eq!(budget.used_bytes(), 0);
+}
+
+#[test]
 fn plan_member_identity_validation_handles_many_zero_byte_objects_exactly() {
     const MEMBER_COUNT: u32 = 2_048;
 

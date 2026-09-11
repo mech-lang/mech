@@ -6,6 +6,7 @@
 
 mod access;
 mod allocation;
+mod budget;
 mod domain;
 mod error;
 mod identity;
@@ -14,6 +15,8 @@ mod transaction;
 
 pub use self::access::*;
 pub use self::allocation::{PlannedArenaElement, PlannedArenaProjection};
+pub use self::budget::ManagedMemoryBudget;
+pub(crate) use self::budget::ManagedMemoryCharge;
 pub use self::domain::*;
 pub use self::error::*;
 pub use self::identity::*;

@@ -574,6 +574,7 @@ pub struct MemoryReservation {
     active: bool,
     arenas: Box<[ArenaAuthorization]>,
     objects: Box<[ObjectAuthorization]>,
+    budget_charge: Option<super::ManagedMemoryCharge>,
 }
 
 impl MemoryReservation {
@@ -1131,6 +1132,9 @@ pub(crate) struct AllocationRecord {
     pub device_owner_pins: u32,
     pub device_actual_bytes: u64,
     pub device_lost: bool,
+    // Fixed/device/workspace records own their backing lifetime. Indirect
+    // payloads instead retain this authority on PayloadEnvelopeOwner.
+    _budget_charge: Option<super::ManagedMemoryCharge>,
 }
 
 pub(crate) struct AllocationSlot {
@@ -1164,6 +1168,7 @@ pub(crate) struct DomainState {
     pub next_lease_token: u64,
     pub ledger: MemoryLedgerSnapshot,
     pub payload_accounting: Arc<super::RetainedPayloadAccounting>,
+    pub(crate) memory_budget: Option<super::ManagedMemoryBudget>,
     pub allocations: Vec<AllocationSlot>,
     pub(crate) regions: BTreeMap<PlanObjectKey, RuntimeRegionRecord>,
     active_reuse_regions: BTreeMap<(MemoryPlanRevision, ReuseGroupId), Option<PlanObjectKey>>,
@@ -1633,6 +1638,21 @@ impl MemoryDomain {
     }
 
     pub fn new() -> MemoryRuntimeResult<Self> {
+        Self::new_with_budget(None)
+    }
+
+    /// Creates a domain sharing a caller's existing finite allocation account.
+    pub fn with_memory_budget(budget: super::ManagedMemoryBudget) -> MemoryRuntimeResult<Self> {
+        Self::new_with_budget(Some(budget))
+    }
+
+    pub fn memory_budget(&self) -> Option<super::ManagedMemoryBudget> {
+        self.state.borrow().memory_budget.clone()
+    }
+
+    fn new_with_budget(
+        memory_budget: Option<super::ManagedMemoryBudget>,
+    ) -> MemoryRuntimeResult<Self> {
         let id = MemoryDomainId::issue()?;
         Ok(Self {
             state: Rc::new(RefCell::new(DomainState {
@@ -1649,6 +1669,7 @@ impl MemoryDomain {
                 next_lease_token: 1,
                 ledger: MemoryLedgerSnapshot::default(),
                 payload_accounting: Arc::new(super::RetainedPayloadAccounting::default()),
+                memory_budget,
                 allocations: Vec::new(),
                 regions: BTreeMap::new(),
                 active_reuse_regions: BTreeMap::new(),
@@ -1886,6 +1907,15 @@ impl MemoryDomain {
             })?;
         transactions.extend_from_slice(view.transactions);
         let (arenas, objects, bytes) = validate_plan_view(state.id, view)?;
+        // Count the validated unique backing and its existing planned metadata,
+        // not persistent+activation summaries that may describe the same arena.
+        // This reservation precedes physical block/envelope construction and
+        // includes outstanding reservations and retained owners in other domains.
+        let budget_charge = state
+            .memory_budget
+            .as_ref()
+            .map(|budget| budget.reserve(bytes))
+            .transpose()?;
         let record_count = arenas
             .iter()
             .filter(|arena| arena.backing == ArenaBackingKind::ContiguousBytes)
@@ -1941,6 +1971,7 @@ impl MemoryDomain {
             active: true,
             arenas,
             objects,
+            budget_charge,
         })
     }
 
@@ -1966,6 +1997,7 @@ impl MemoryDomain {
             block: Option<HostBlock>,
             leases: Vec<ActiveLeaseRecord>,
             accounted_bytes: u64,
+            budget_charge: Option<super::ManagedMemoryCharge>,
         }
         struct PendingObject {
             authorization: ObjectAuthorization,
@@ -1976,6 +2008,7 @@ impl MemoryDomain {
         struct PendingWorkspace {
             authorization: ObjectAuthorization,
             accounted_bytes: u64,
+            budget_charge: Option<super::ManagedMemoryCharge>,
         }
 
         let mut contiguous = Vec::new();
@@ -2036,6 +2069,11 @@ impl MemoryDomain {
                             current: arena.capacity_bytes,
                             change: initialization_bytes,
                         })?;
+                    let budget_charge = reservation
+                        .budget_charge
+                        .as_mut()
+                        .map(|charge| charge.split(accounted_bytes))
+                        .transpose()?;
                     let block = match arena.space {
                         MemorySpace::Device { .. } => None,
                         MemorySpace::Host | MemorySpace::ResidentCpu => {
@@ -2067,6 +2105,7 @@ impl MemoryDomain {
                         block,
                         leases,
                         accounted_bytes,
+                        budget_charge,
                     });
                 }
                 ArenaBackingKind::IndirectOwnedPayloads
@@ -2108,6 +2147,12 @@ impl MemoryDomain {
                         }
                     })?,
                     payload_accounting.clone(),
+                    reservation
+                        .budget_charge
+                        .as_mut()
+                        .map(|charge| charge.split(accounted_bytes))
+                        .transpose()?,
+                    self.memory_budget(),
                 )?;
                 let mut leases = Vec::new();
                 leases
@@ -2126,9 +2171,15 @@ impl MemoryDomain {
                 });
             } else if backing == ArenaBackingKind::ReservationOnlyWorkspace {
                 let accounted_bytes = object.capacity_bytes;
+                let budget_charge = reservation
+                    .budget_charge
+                    .as_mut()
+                    .map(|charge| charge.split(accounted_bytes))
+                    .transpose()?;
                 workspaces.push(PendingWorkspace {
                     authorization: object,
                     accounted_bytes,
+                    budget_charge,
                 });
             }
         }
@@ -2205,6 +2256,7 @@ impl MemoryDomain {
                 device_owner_pins: 0,
                 device_actual_bytes: 0,
                 device_lost: false,
+                _budget_charge: pending.budget_charge,
             })?;
             arena_handles.insert(pending.authorization.id, handle);
         }
@@ -2227,6 +2279,7 @@ impl MemoryDomain {
                 device_owner_pins: 0,
                 device_actual_bytes: 0,
                 device_lost: false,
+                _budget_charge: None,
             })?;
             indirect_handles.insert(pending.authorization.key, handle);
         }
@@ -2248,6 +2301,7 @@ impl MemoryDomain {
                 device_owner_pins: 0,
                 device_actual_bytes: 0,
                 device_lost: false,
+                _budget_charge: pending.budget_charge,
             })?;
             workspace_handles.insert(pending.authorization.key, handle);
         }

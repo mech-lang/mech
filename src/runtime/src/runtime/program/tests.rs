@@ -2894,6 +2894,96 @@ fn external_source_plans_without_a_live_provider_read_and_freezes_environment() 
 }
 
 #[test]
+fn resident_source_and_bytecode_enforce_configured_aggregate_memory_limits() {
+    const SOURCE: &str = "x := [1.0 2.0; 3.0 4.0]\nx + x";
+    let configured_runtime = |limit| {
+        let mut config = crate::RuntimeConfig::default();
+        config.limits.max_memory_bytes = limit;
+        RuntimeBuilder::new()
+            .config(config)
+            .function_catalog(mech_stdlib::source_catalog())
+            .build()
+            .unwrap()
+    };
+
+    // Measure the admitted fixed-width program itself, not source/bytecode
+    // length or a per-call output quota. Both encodings must use this same
+    // physical storage authority when loaded by the ordinary runtime.
+    let mut measured = configured_runtime(Some(u64::MAX));
+    let expected = measured
+        .load_source_program(SOURCE, crate::ResidentDurabilityPolicy::Volatile)
+        .unwrap()
+        .initial_value;
+    let required = measured
+        .resident_memory_budget
+        .as_ref()
+        .unwrap()
+        .used_bytes();
+    assert!(required > 1);
+    let ActiveProgramExecution::ResidentPure(execution) = &measured.active_program else {
+        panic!("numeric source must activate through Resident")
+    };
+    let bytecode = encode_program_artifact_bytecode_v1(&execution.artifact).unwrap();
+
+    for from_bytecode in [false, true] {
+        let load = |runtime: &mut crate::MechRuntime| {
+            if from_bytecode {
+                runtime.load_bytecode_program(&bytecode, crate::ResidentDurabilityPolicy::Volatile)
+            } else {
+                runtime.load_source_program(SOURCE, crate::ResidentDurabilityPolicy::Volatile)
+            }
+        };
+        let mut exact = configured_runtime(Some(required));
+        assert_eq!(load(&mut exact).unwrap().initial_value, expected);
+        assert_eq!(
+            exact.resident_memory_budget.as_ref().unwrap().used_bytes(),
+            required
+        );
+        exact.unload_active_program().unwrap();
+        assert_eq!(
+            exact.resident_memory_budget.as_ref().unwrap().used_bytes(),
+            0
+        );
+        assert_eq!(load(&mut exact).unwrap().initial_value, expected);
+
+        let mut short = configured_runtime(Some(required - 1));
+        for _ in 0..2 {
+            let error = load(&mut short).unwrap_err();
+            assert_eq!(error.kind_name(), "ResidentRouteFailure");
+            assert!(error.kind_message().contains("BudgetExceeded"), "{error:?}");
+            assert_eq!(short.program_route(), RuntimeProgramRoute::None);
+            assert_eq!(
+                short.resident_memory_budget.as_ref().unwrap().used_bytes(),
+                0
+            );
+            assert_eq!(
+                short.program_execution_info(),
+                RuntimeProgramExecutionInfo::default()
+            );
+        }
+        // Rejection did not consume the reservation or poison the loader.
+        short
+            .load_source_program("7.0", crate::ResidentDurabilityPolicy::Volatile)
+            .unwrap();
+        short.unload_active_program().unwrap();
+        assert_eq!(
+            short.resident_memory_budget.as_ref().unwrap().used_bytes(),
+            0
+        );
+    }
+
+    let mut unconfigured = configured_runtime(None);
+    assert!(unconfigured.resident_memory_budget.is_none());
+    assert_eq!(
+        unconfigured
+            .load_source_program(SOURCE, crate::ResidentDurabilityPolicy::Volatile)
+            .unwrap()
+            .initial_value,
+        expected,
+    );
+}
+
+#[test]
 fn resident_loaders_enforce_source_limits_before_planning_or_decoding() {
     let mut config = crate::RuntimeConfig::default();
     config.limits.max_source_bytes = Some(3);

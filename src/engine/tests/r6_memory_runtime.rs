@@ -439,7 +439,8 @@ mod resident_existing_value_budget_scope {
     use mech_core::*;
     use mech_engine::__resident::{
         ActivationFacts, CapturedSignalInput, ReactiveInstance, ResidentActivationError,
-        ResidentValueBorrow, activate,
+        ResidentActivationOptions, ResidentValueBorrow, StateMigrationPolicy, activate,
+        activate_with_options,
     };
     use mech_engine::{
         ArtifactBuildContext, OperationReference, ProgramArtifact, SourceInput, SourceNode,
@@ -633,6 +634,104 @@ mod resident_existing_value_budget_scope {
         };
         assert_eq!(shape, ResidentShape::SCALAR);
         assert_eq!(values, &[expected]);
+    }
+
+    fn activate_budgeted(
+        artifact: &ProgramArtifact,
+        catalog: &FunctionCatalog,
+        budget: &ManagedMemoryBudget,
+    ) -> Result<ReactiveInstance, ResidentActivationError> {
+        activate_with_options(
+            ReactiveInstanceId::new(1, 0),
+            artifact,
+            catalog,
+            &ActivationFacts::default(),
+            ResidentActivationOptions {
+                memory_budget: Some(budget.clone()),
+                ..ResidentActivationOptions::default()
+            },
+        )
+    }
+
+    #[test]
+    fn configured_resident_budget_is_aggregate_and_preserves_failed_reactivation() {
+        let catalog = catalog();
+        let values = [3.0, 7.0];
+        let (artifact, _) = access_artifact(&catalog, &values, false, false);
+        let larger_values = vec![11.0; 1024];
+        let (larger, _) = access_artifact(&catalog, &larger_values, false, false);
+        let probe = ManagedMemoryBudget::new(u64::MAX);
+        let instance = activate_budgeted(&artifact, &catalog, &probe).unwrap();
+        let small_bytes = probe.used_bytes();
+        assert!(small_bytes > 0);
+        drop(instance);
+        assert_eq!(probe.used_bytes(), 0);
+        let instance = activate_budgeted(&larger, &catalog, &probe).unwrap();
+        let large_bytes = probe.used_bytes();
+        assert!(large_bytes > small_bytes);
+        drop(instance);
+        assert_eq!(probe.used_bytes(), 0);
+
+        let one_under = ManagedMemoryBudget::new(small_bytes - 1);
+        assert!(matches!(
+            activate_budgeted(&artifact, &catalog, &one_under),
+            Err(ResidentActivationError::MemoryRuntime {
+                error: MemoryRuntimeError::BudgetExceeded { .. }
+            })
+        ));
+        assert_eq!(one_under.used_bytes(), 0);
+
+        // A complete legal program fits exactly, but another legal program
+        // sharing its configured account may not exceed the aggregate limit.
+        let exact = ManagedMemoryBudget::new(small_bytes);
+        let mut instance = activate_budgeted(&artifact, &catalog, &exact).unwrap();
+        assert_eq!(exact.used_bytes(), small_bytes);
+        turn(&mut instance, Some(&values), 2).unwrap();
+        assert_scalar(&instance, 7.0);
+        assert!(matches!(
+            activate_budgeted(&artifact, &catalog, &exact),
+            Err(ResidentActivationError::MemoryRuntime {
+                error: MemoryRuntimeError::BudgetExceeded { .. }
+            })
+        ));
+        assert_eq!(exact.used_bytes(), small_bytes);
+        assert_scalar(&instance, 7.0);
+        drop(instance);
+        assert_eq!(exact.used_bytes(), 0);
+
+        // The replacement fits on its own. It still must include the old
+        // instance retained for rollback until replacement publication.
+        let coexist = ManagedMemoryBudget::new(small_bytes + large_bytes - 1);
+        let mut instance = activate_budgeted(&artifact, &catalog, &coexist).unwrap();
+        turn(&mut instance, Some(&values), 2).unwrap();
+        let epoch = instance.published_epoch();
+        let hash = instance.published_state_hash();
+        let generation = instance.plan.plan_generation;
+        assert!(matches!(
+            instance.reactivate(
+                &larger,
+                &catalog,
+                &ActivationFacts::default(),
+                StateMigrationPolicy::PreserveCompatibleResetIncompatible,
+            ),
+            Err(ResidentActivationError::MemoryRuntime {
+                error: MemoryRuntimeError::BudgetExceeded { .. }
+            })
+        ));
+        assert_eq!(coexist.used_bytes(), small_bytes);
+        assert_eq!(instance.published_epoch(), epoch);
+        assert_eq!(instance.published_state_hash(), hash);
+        assert_eq!(instance.plan.plan_generation, generation);
+        assert_scalar(&instance, 7.0);
+        turn(&mut instance, Some(&values), 1).unwrap();
+        assert_scalar(&instance, 3.0);
+        drop(instance);
+        assert_eq!(coexist.used_bytes(), 0);
+        let mut replacement = activate_budgeted(&larger, &catalog, &coexist).unwrap();
+        turn(&mut replacement, Some(&larger_values), 1).unwrap();
+        assert_scalar(&replacement, 11.0);
+        drop(replacement);
+        assert_eq!(coexist.used_bytes(), 0);
     }
 
     #[test]

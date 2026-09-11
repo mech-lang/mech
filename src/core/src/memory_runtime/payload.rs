@@ -49,6 +49,10 @@ pub(crate) struct PayloadEnvelopeOwner {
     blocks: RefCell<Vec<PayloadBlockRecord>>,
     accounting: Arc<RetainedPayloadAccounting>,
     accounted_bytes: u64,
+    memory_budget: Option<super::ManagedMemoryBudget>,
+    // Independent mutable containers retain the whole admitted envelope even
+    // after their creating domain closes. The charge follows this real owner.
+    _budget_charge: Option<super::ManagedMemoryCharge>,
 }
 
 impl PayloadEnvelopeOwner {
@@ -58,6 +62,8 @@ impl PayloadEnvelopeOwner {
         alignment: u32,
         block_capacity: usize,
         accounting: Arc<RetainedPayloadAccounting>,
+        budget_charge: Option<super::ManagedMemoryCharge>,
+        memory_budget: Option<super::ManagedMemoryBudget>,
     ) -> MemoryRuntimeResult<Rc<Self>> {
         let mut blocks = Vec::new();
         blocks.try_reserve_exact(block_capacity).map_err(|_| {
@@ -78,6 +84,8 @@ impl PayloadEnvelopeOwner {
             blocks: RefCell::new(blocks),
             accounting,
             accounted_bytes: capacity_bytes,
+            memory_budget,
+            _budget_charge: budget_charge,
         }))
     }
 
@@ -183,6 +191,7 @@ impl RetainedPayloadAccounting {
 struct RetainedPayloadCharge {
     accounting: Arc<RetainedPayloadAccounting>,
     bytes: u64,
+    budget_charge: Option<super::ManagedMemoryCharge>,
 }
 
 impl Drop for RetainedPayloadCharge {
@@ -754,6 +763,9 @@ impl FrozenSnapshotConstruction {
             let charge = Arc::get_mut(&mut ticket.charge)
                 .expect("prepared retained ticket cannot be shared before completion");
             charge.bytes = actual_retained_bytes;
+            if let Some(budget_charge) = charge.budget_charge.as_mut() {
+                budget_charge.shrink(actual_retained_bytes);
+            }
         }
         Ok(ticket)
     }
@@ -874,11 +886,22 @@ impl PlannedAllocator {
                 requested: retained_nodes,
             });
         }
+        // The immutable tree is a separate real allocation from the reusable
+        // construction envelope. Admit it before its first allocation and keep
+        // its charge on the detached root, not on the mutable domain registry.
+        let budget_charge = self
+            .authority
+            .owner
+            .memory_budget
+            .as_ref()
+            .map(|budget| budget.reserve(retained_bytes))
+            .transpose()?;
         self.authority.owner.accounting.add(retained_bytes)?;
         let ticket = RetainedPayloadTicket {
             charge: Arc::new(RetainedPayloadCharge {
                 accounting: self.authority.owner.accounting.clone(),
                 bytes: retained_bytes,
+                budget_charge,
             }),
         };
         Ok(PreparedFrozenSnapshotAdmission {

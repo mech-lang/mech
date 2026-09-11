@@ -404,6 +404,7 @@ impl MechRuntime {
         }
         let external = !artifact.requirements().is_empty();
         let activation_options = ResidentActivationOptions {
+            memory_budget: self.resident_memory_budget.clone(),
             integrity: ResidentIntegrityMode::Checked,
             external: if external {
                 ResidentExternalAdmission::StructuralOnly
@@ -429,7 +430,7 @@ impl MechRuntime {
             &artifact,
             &self.function_catalog,
             &activation_facts,
-            activation_options,
+            activation_options.clone(),
         )
         .map_err(|error| {
             route_failure(

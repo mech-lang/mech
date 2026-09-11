@@ -253,10 +253,14 @@ pub enum ResidentExternalAdmission {
     StructuralOnly,
 }
 
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct ResidentActivationOptions {
     pub integrity: ResidentIntegrityMode,
     pub external: ResidentExternalAdmission,
+    /// Optional caller-owned aggregate backing budget. Its shared ownership
+    /// includes old/candidate program coexistence, independently of per-call
+    /// output and execution-work limits.
+    pub memory_budget: Option<mech_core::ManagedMemoryBudget>,
 }
 
 #[derive(Clone, Debug)]
@@ -1150,6 +1154,7 @@ impl ReactiveInstance {
             ResidentActivationOptions {
                 integrity: self.plan.integrity_mode,
                 external: self.plan.external_admission,
+                memory_budget: self._managed_memory.domain().memory_budget(),
             },
         )?;
         let same_layout = physical_layout_eq(&self.plan, &replacement.plan);
@@ -1546,6 +1551,7 @@ pub fn activate_external(
         ResidentActivationOptions {
             integrity,
             external: ResidentExternalAdmission::StructuralOnly,
+            memory_budget: None,
         },
     )
 }
@@ -1557,6 +1563,7 @@ fn activate_internal(
     facts: &ActivationFacts,
     options: ResidentActivationOptions,
 ) -> Result<ReactiveInstance, ResidentActivationError> {
+    let memory_budget = options.memory_budget.clone();
     preflight_state_initializers(artifact)?;
     let classification = classify_nodes(artifact, options.external)?;
     let schedule = build_activation_schedule(artifact, &classification)?;
@@ -1577,8 +1584,9 @@ fn activate_internal(
         options,
         &mut static_selectors,
     )?;
-    let managed_memory = ManagedProgramMemory::realize(&plan.memory_plan)
-        .map_err(|error| ResidentActivationError::MemoryRuntime { error })?;
+    let managed_memory =
+        ManagedProgramMemory::realize_with_memory_budget(&plan.memory_plan, memory_budget.as_ref())
+            .map_err(|error| ResidentActivationError::MemoryRuntime { error })?;
     let mut activation = TypedResidentArena::allocate_from_plan(
         &plan.memory_plan,
         ResidentStorageClass::Constant,

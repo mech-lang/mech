@@ -23,7 +23,19 @@ impl core::fmt::Debug for ManagedProgramMemory {
 
 impl ManagedProgramMemory {
     pub fn realize(plan: &ProgramMemoryPlan) -> MemoryRuntimeResult<Self> {
-        let domain = MemoryDomain::new()?;
+        Self::realize_with_memory_budget(plan, None)
+    }
+
+    /// Retains caller-supplied aggregate admission authority across physical
+    /// program realizations, including concurrently retained replacements.
+    pub fn realize_with_memory_budget(
+        plan: &ProgramMemoryPlan,
+        budget: Option<&mech_core::ManagedMemoryBudget>,
+    ) -> MemoryRuntimeResult<Self> {
+        let domain = match budget {
+            Some(budget) => MemoryDomain::with_memory_budget(budget.clone())?,
+            None => MemoryDomain::new()?,
+        };
         let revision = domain.issue_plan_revision()?;
         let transactions = program_transactions(plan);
         let view = RuntimePlanView::for_aggregate(
