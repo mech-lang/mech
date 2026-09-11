@@ -308,5 +308,26 @@ selected checker/catalog mutation tests passed. The exact full-profile catalog
 gate passed all three tests and 2,345 generated witnesses. All 17 stdlib source
 tests passed using that shipping-full feature graph, including both new real-
 catalog EKF expressions. The exact standard-profile catalog gate also passed all
-three tests and 1,592 generated witnesses. Exact-head normal and Full CI remain
-pending; earlier runs are not substituted for qualification of these corrections.
+three tests and 1,592 generated witnesses.
+
+Normal CI passed on `ffa8e5ee4297ed42d5dffc24cc7819950e5d3b43`, including
+Linux, Windows, all package owners, static contracts, and both browser suites.
+Automatically chained Full CI run `34566718048` found one concrete failure:
+the generated D2 artifact fingerprint was stale after the semantic corrections.
+The known-red run was canceled to avoid spending the remaining qualification
+time on that head; its final results were 67 successful jobs, one failed job,
+and 46 canceled jobs. The pinned Miri job passed all 20 safety tests. These are
+partial results, not completed Full CI qualification.
+
+The existing D2 generator was rerun without modification. It executed the
+current and immutable historical fixtures, checked their matching trajectory
+against the frozen platform trajectory, and regenerated all six projections.
+The sole generated difference is `d2-nbody-artifact-v1.json`'s
+`program_revision`: the canonical artifact fingerprint changes from
+`6ee952ad3f165542c6dde921123eaf4dad64748c99b8b8b3158c8e25e239b4a2` to
+`d0d18adc88edd1a4788772cbfea76dc113e0d936f607c5c6bf9ea34388b26cf4`.
+All other artifact fields and all five other projections remain byte-for-byte
+unchanged, including numerical hashes, zero-allocation assertions, resource
+sizes, and publication behavior. The D2 architecture checker also passes.
+Required normal and Full CI must qualify the corrected exact head; the
+earlier partial run is not substituted for that result.
