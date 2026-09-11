@@ -2906,20 +2906,21 @@ fn resident_source_and_bytecode_enforce_configured_aggregate_memory_limits() {
             .unwrap()
     };
 
-    // Measure the admitted fixed-width program itself, not source/bytecode
-    // length or a per-call output quota. Both encodings must use this same
-    // physical storage authority when loaded by the ordinary runtime.
+    // Measure retained storage, not source/bytecode length or a per-call output
+    // quota. The loader also needs temporary headroom for its owning initial
+    // snapshot; retained bytes are not a measurement of that construction peak.
+    // Exact physical admission boundaries are covered by the engine/core tests.
     let mut measured = configured_runtime(Some(u64::MAX));
     let expected = measured
         .load_source_program(SOURCE, crate::ResidentDurabilityPolicy::Volatile)
         .unwrap()
         .initial_value;
-    let required = measured
+    let retained = measured
         .resident_memory_budget
         .as_ref()
         .unwrap()
         .used_bytes();
-    assert!(required > 1);
+    assert!(retained > 1);
     let ActiveProgramExecution::ResidentPure(execution) = &measured.active_program else {
         panic!("numeric source must activate through Resident")
     };
@@ -2933,23 +2934,32 @@ fn resident_source_and_bytecode_enforce_configured_aggregate_memory_limits() {
                 runtime.load_source_program(SOURCE, crate::ResidentDurabilityPolicy::Volatile)
             }
         };
-        let mut exact = configured_runtime(Some(required));
-        assert_eq!(load(&mut exact).unwrap().initial_value, expected);
+        let mut admitted = configured_runtime(Some(1024 * 1024));
+        let result = load(&mut admitted).unwrap();
+        assert_eq!(result.initial_value, expected);
         assert_eq!(
-            exact.resident_memory_budget.as_ref().unwrap().used_bytes(),
-            required
+            admitted
+                .resident_memory_budget
+                .as_ref()
+                .unwrap()
+                .used_bytes(),
+            retained
         );
-        exact.unload_active_program().unwrap();
+        drop(result);
+        admitted.unload_active_program().unwrap();
         assert_eq!(
-            exact.resident_memory_budget.as_ref().unwrap().used_bytes(),
+            admitted
+                .resident_memory_budget
+                .as_ref()
+                .unwrap()
+                .used_bytes(),
             0
         );
-        assert_eq!(load(&mut exact).unwrap().initial_value, expected);
+        assert_eq!(load(&mut admitted).unwrap().initial_value, expected);
 
-        let mut short = configured_runtime(Some(required - 1));
+        let mut short = configured_runtime(Some(1));
         for _ in 0..2 {
             let error = load(&mut short).unwrap_err();
-            assert_eq!(error.kind_name(), "ResidentRouteFailure");
             assert!(error.kind_message().contains("BudgetExceeded"), "{error:?}");
             assert_eq!(short.program_route(), RuntimeProgramRoute::None);
             assert_eq!(
@@ -2961,15 +2971,6 @@ fn resident_source_and_bytecode_enforce_configured_aggregate_memory_limits() {
                 RuntimeProgramExecutionInfo::default()
             );
         }
-        // Rejection did not consume the reservation or poison the loader.
-        short
-            .load_source_program("7.0", crate::ResidentDurabilityPolicy::Volatile)
-            .unwrap();
-        short.unload_active_program().unwrap();
-        assert_eq!(
-            short.resident_memory_budget.as_ref().unwrap().used_bytes(),
-            0
-        );
     }
 
     let mut unconfigured = configured_runtime(None);
@@ -2981,6 +2982,397 @@ fn resident_source_and_bytecode_enforce_configured_aggregate_memory_limits() {
             .initial_value,
         expected,
     );
+}
+
+#[test]
+fn resident_string_outputs_obey_one_aggregate_runtime_memory_limit() {
+    const LIMIT: u64 = 1024 * 1024;
+    let seed = "x".repeat(16 * 1024);
+    let singleton = format!("seed := {seed:?}\nseed + seed");
+    let mut source = format!("seed := {seed:?}\n");
+    for index in 0..40 {
+        source.push_str(&format!("result{index} := seed + seed + \"{index}\"\n"));
+    }
+    let configured = |limit| {
+        let mut config = crate::RuntimeConfig::default();
+        config.limits.max_memory_bytes = limit;
+        RuntimeBuilder::new()
+            .config(config)
+            .function_catalog(mech_stdlib::source_catalog())
+            .build()
+            .unwrap()
+    };
+    let mut one = configured(Some(LIMIT));
+    let result = one
+        .load_source_program(&singleton, crate::ResidentDurabilityPolicy::Volatile)
+        .unwrap();
+    assert!(
+        matches!(result.initial_value.value().data(), ValueData::String(value) if value.len() == 32 * 1024)
+    );
+
+    // Each concat is individually legal. Interactive publication retains all
+    // forty distinct outputs; their payload alone exceeds the aggregate cap.
+    let mut unconfigured = configured(None);
+    unconfigured
+        .load_interactive_source_program(&source, crate::ResidentDurabilityPolicy::Volatile)
+        .unwrap();
+    let ActiveProgramExecution::ResidentPure(execution) = &unconfigured.active_program else {
+        unreachable!()
+    };
+    assert!(execution.artifact.outputs().len() >= 40);
+    let bytecode = encode_program_artifact_bytecode_v1(&execution.artifact).unwrap();
+    for encoded in [false, true] {
+        let mut limited = configured(Some(LIMIT));
+        let error = if encoded {
+            limited.load_bytecode_program(&bytecode, crate::ResidentDurabilityPolicy::Volatile)
+        } else {
+            limited
+                .load_interactive_source_program(&source, crate::ResidentDurabilityPolicy::Volatile)
+        }
+        .unwrap_err();
+        assert!(error.kind_message().contains("BudgetExceeded"), "{error:?}");
+        assert_eq!(limited.program_route(), RuntimeProgramRoute::None);
+        assert_eq!(
+            limited
+                .resident_memory_budget
+                .as_ref()
+                .unwrap()
+                .used_bytes(),
+            0
+        );
+        limited
+            .load_source_program(&singleton, crate::ResidentDurabilityPolicy::Volatile)
+            .unwrap();
+    }
+}
+
+#[test]
+fn resident_string_and_canonical_exports_retain_their_memory_charge_after_unload() {
+    for source in [r#"seed := "retained"; seed + seed"#, r#"("left", "right")"#] {
+        let mut config = crate::RuntimeConfig::default();
+        config.limits.max_memory_bytes = Some(1024 * 1024);
+        let mut runtime = RuntimeBuilder::new()
+            .config(config)
+            .function_catalog(mech_stdlib::source_catalog())
+            .build()
+            .unwrap();
+        let exported = runtime
+            .load_source_program(source, crate::ResidentDurabilityPolicy::Volatile)
+            .unwrap()
+            .initial_value;
+        let budget = runtime.resident_memory_budget.clone().unwrap();
+        let before_clone = budget.used_bytes();
+        let shared = exported.clone();
+        assert!(exported.value().shares_frozen_storage(shared.value()));
+        assert_eq!(budget.used_bytes(), before_clone);
+        runtime.unload_active_program().unwrap();
+        drop(runtime);
+        let retained = budget.used_bytes();
+        assert!(
+            retained > 0,
+            "a live exported payload lost its allocation charge"
+        );
+        assert_eq!(exported, shared);
+        drop(exported);
+        assert_eq!(budget.used_bytes(), retained);
+        assert!(!shared.is_empty());
+        drop(shared);
+        assert_eq!(budget.used_bytes(), 0);
+    }
+}
+
+#[test]
+fn resident_string_growth_rejection_preserves_publication_and_recovers_on_same_consumer() {
+    use mech_core::*;
+    use mech_engine::resident::{
+        ActivationFacts, CapturedSignalInput, ResidentActivationOptions, activate_with_options,
+    };
+    use mech_engine::{
+        ArtifactBuildContext, OperationReference, SourceInput, SourceNode, SourceNodeOutput,
+        SourceOutput, SourceProgram, SourceValue, compile_source_program_with_contracts,
+    };
+
+    let mut schemas = SchemaTableBuilder::new();
+    let string = schemas
+        .insert(
+            SchemaDraft {
+                dimension_parameters: Box::new([]),
+                body: SchemaBody::String,
+            }
+            .finalize()
+            .unwrap(),
+        )
+        .unwrap();
+    let build = schemas.finish().unwrap();
+    let string = build.resolve(string).unwrap();
+    let (schemas, _) = build.into_parts();
+    let (constants, _) = ConstantStoreBuilder::new(&schemas)
+        .finish()
+        .unwrap()
+        .into_parts();
+    let graph = SourceProgram {
+        inputs: ["left", "right"]
+            .map(|name| SourceInput {
+                name: name.to_owned(),
+                schema: string,
+            })
+            .into(),
+        nodes: vec![SourceNode {
+            operation: OperationReference {
+                module_path: vec!["string".to_owned()].into(),
+                operation_name: "concat".to_owned(),
+            },
+            requirement: None,
+            inputs: vec![SourceValue::Input(0), SourceValue::Input(1)].into(),
+            outputs: vec![SourceNodeOutput::Derived { schema: string }].into(),
+        }]
+        .into(),
+        outputs: vec![SourceOutput {
+            name: "result".to_owned(),
+            interactive_symbol: None,
+            source: SourceValue::NodeOutput {
+                node: 0,
+                output_ordinal: 0,
+            },
+            schema: string,
+        }]
+        .into(),
+        ..SourceProgram::default()
+    };
+    let catalog = mech_stdlib::source_catalog();
+    let operation = catalog
+        .operation_specializer(OperationId::from_name("string/concat"))
+        .unwrap()
+        .resolved_operation(
+            2,
+            &[ResolvedType::from_schema_body(&SchemaBody::String, &[]).unwrap()],
+        )
+        .unwrap();
+    let artifact = compile_source_program_with_contracts(
+        &graph,
+        &mut ArtifactBuildContext::new(&schemas, &constants),
+        &[&operation.contract],
+    )
+    .unwrap();
+    let artifact = decode_program_artifact_bytecode_v1(
+        &encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+    )
+    .unwrap();
+    const LIMIT: u64 = 128 * 1024;
+    let budget = ManagedMemoryBudget::new(LIMIT);
+    let mut instance = activate_with_options(
+        ReactiveInstanceId::new(91, 0),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+        ResidentActivationOptions {
+            memory_budget: Some(budget.clone()),
+            ..ResidentActivationOptions::default()
+        },
+    )
+    .unwrap();
+    let turn = |instance: &mut mech_engine::resident::ReactiveInstance, left: &str, right: &str| {
+        let left = [left.to_owned()];
+        let right = [right.to_owned()];
+        let inputs = [
+            CapturedSignalInput {
+                slot: instance.plan.inputs[0].slot,
+                value: ResidentValueRef::String(&left),
+            },
+            CapturedSignalInput {
+                slot: instance.plan.inputs[1].slot,
+                value: ResidentValueRef::String(&right),
+            },
+        ];
+        instance.turn_without_summary(&inputs)
+    };
+    turn(&mut instance, "left", "right").unwrap();
+    turn(&mut instance, &"x".repeat(1024), &"y".repeat(1024)).unwrap();
+    turn(&mut instance, "small", "again").unwrap();
+    let epoch = instance.published_epoch();
+    let hash = instance.published_state_hash();
+    let error = turn(&mut instance, &"x".repeat(LIMIT as usize + 1), "too large").unwrap_err();
+    assert!(format!("{error:?}").contains("BudgetExceeded"), "{error:?}");
+    assert_eq!(instance.published_epoch(), epoch);
+    assert_eq!(instance.published_state_hash(), hash);
+    let Some(ResidentValueBorrow::String { values, .. }) = instance.output_borrow(0) else {
+        panic!("concat must retain its scalar String output")
+    };
+    assert_eq!(values, &["smallagain"]);
+    assert!(budget.used_bytes() <= LIMIT);
+    turn(&mut instance, "recover", "ed").unwrap();
+    let Some(ResidentValueBorrow::String { values, .. }) = instance.output_borrow(0) else {
+        unreachable!()
+    };
+    assert_eq!(values, &["recovered"]);
+    drop(instance);
+    assert_eq!(budget.used_bytes(), 0);
+}
+
+#[test]
+fn resident_canonical_import_allocation_failure_preserves_publication_and_retries() {
+    use mech_core::*;
+    use mech_engine::resident::{
+        ActivationFacts, CapturedValueInput, ResidentActivationOptions, activate_with_options,
+    };
+    use mech_engine::{
+        ArtifactBuildContext, OperationReference, SourceInput, SourceNode, SourceNodeOutput,
+        SourceOutput, SourceProgram, SourceValue, compile_source_program_with_contracts,
+    };
+
+    let mut schemas = SchemaTableBuilder::new();
+    let integer = schemas
+        .insert(
+            SchemaDraft {
+                dimension_parameters: Box::new([]),
+                body: SchemaBody::UnsignedInteger(IntegerWidth::W64),
+            }
+            .finalize()
+            .unwrap(),
+        )
+        .unwrap();
+    let build = schemas.finish().unwrap();
+    let integer = build.resolve(integer).unwrap();
+    let (schemas, _) = build.into_parts();
+    let (constants, _) = ConstantStoreBuilder::new(&schemas)
+        .finish()
+        .unwrap()
+        .into_parts();
+    let graph = SourceProgram {
+        inputs: ["left", "right"]
+            .map(|name| SourceInput {
+                name: name.to_owned(),
+                schema: integer,
+            })
+            .into(),
+        nodes: vec![SourceNode {
+            operation: OperationReference {
+                module_path: vec!["math".to_owned()].into(),
+                operation_name: "add".to_owned(),
+            },
+            requirement: None,
+            inputs: vec![SourceValue::Input(0), SourceValue::Input(1)].into(),
+            outputs: vec![SourceNodeOutput::Derived { schema: integer }].into(),
+        }]
+        .into(),
+        outputs: vec![SourceOutput {
+            name: "result".to_owned(),
+            interactive_symbol: None,
+            source: SourceValue::NodeOutput {
+                node: 0,
+                output_ordinal: 0,
+            },
+            schema: integer,
+        }]
+        .into(),
+        ..SourceProgram::default()
+    };
+    let catalog = mech_stdlib::source_catalog();
+    let operation =
+        catalog
+            .operation_specializer(OperationId::from_name("math/add"))
+            .unwrap()
+            .resolved_operation(
+                2,
+                &[ResolvedType::from_schema_body(
+                    &SchemaBody::UnsignedInteger(IntegerWidth::W64),
+                    &[],
+                )
+                .unwrap()],
+            )
+            .unwrap();
+    let artifact = compile_source_program_with_contracts(
+        &graph,
+        &mut ArtifactBuildContext::new(&schemas, &constants),
+        &[&operation.contract],
+    )
+    .unwrap();
+    let artifact = decode_program_artifact_bytecode_v1(
+        &encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+    )
+    .unwrap();
+    let context = mech_core::snapshot::SnapshotValidationContext::new(artifact.schemas());
+    let value = |number| {
+        ValueDraft {
+            schema: integer,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::U64(number),
+        }
+        .finalize(&context)
+        .unwrap()
+    };
+    let turn =
+        |instance: &mut mech_engine::resident::ReactiveInstance, left: &Value, right: &Value| {
+            let inputs = [
+                CapturedValueInput {
+                    slot: instance.plan.inputs[0].slot,
+                    value: left,
+                },
+                CapturedValueInput {
+                    slot: instance.plan.inputs[1].slot,
+                    value: right,
+                },
+            ];
+            instance.prepare_turn_values(&inputs)?.publish()
+        };
+    let output = |instance: &mech_engine::resident::ReactiveInstance| {
+        let Some(ResidentValueBorrow::Snapshot { values, .. }) = instance.output_borrow(0) else {
+            panic!("U64 addition must execute through the canonical resident lane")
+        };
+        let ValueData::U64(number) = values[0].as_ref().unwrap().data() else {
+            panic!("U64 addition changed its semantic output type")
+        };
+        *number
+    };
+
+    // Exercise both fallible allocations of the returned canonical owner.
+    // Caller-owned roots remain alive throughout rejection, retry and teardown:
+    // importing them may retain a wrapper, but must not mutate their ownership.
+    for successful_allocations in [0, 1] {
+        let budget = ManagedMemoryBudget::new(1024 * 1024);
+        let mut instance = activate_with_options(
+            ReactiveInstanceId::new(92 + successful_allocations, 0),
+            &artifact,
+            &catalog,
+            &ActivationFacts::default(),
+            ResidentActivationOptions {
+                memory_budget: Some(budget.clone()),
+                ..ResidentActivationOptions::default()
+            },
+        )
+        .unwrap();
+        let initial = [value(2), value(3)];
+        let replacement = [value(11), value(13)];
+        turn(&mut instance, &initial[0], &initial[1]).unwrap();
+        assert_eq!(output(&instance), 5);
+        let epoch = instance.published_epoch();
+        let hash = instance.published_state_hash();
+        let retained = budget.used_bytes();
+
+        budget.inject_snapshot_import_failure_after(successful_allocations);
+        let error = turn(&mut instance, &replacement[0], &replacement[1]).unwrap_err();
+        assert!(
+            format!("{error:?}").contains("AllocationFailed"),
+            "{error:?}"
+        );
+        assert_eq!(instance.published_epoch(), epoch);
+        assert_eq!(instance.published_state_hash(), hash);
+        assert_eq!(output(&instance), 5);
+        // A failed import can release an obsolete workspace value, but cannot
+        // strand any additional registration or returned-owner reservation.
+        assert!(budget.used_bytes() <= retained);
+        for caller in initial.iter().chain(&replacement) {
+            assert_eq!(caller.memory_budget_retained_bytes(&budget), None);
+        }
+
+        turn(&mut instance, &replacement[0], &replacement[1]).unwrap();
+        assert_eq!(output(&instance), 24);
+        assert_ne!(instance.published_epoch(), epoch);
+        drop(instance);
+        assert_eq!(budget.used_bytes(), 0);
+        assert!(matches!(replacement[0].data(), ValueData::U64(11)));
+        assert!(matches!(replacement[1].data(), ValueData::U64(13)));
+    }
 }
 
 #[test]

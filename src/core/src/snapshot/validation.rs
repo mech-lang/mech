@@ -12,14 +12,29 @@ use crate::{
 use core::cell::{Cell, OnceCell};
 
 #[cfg(feature = "no_std")]
-use alloc::{boxed::Box, string::String, sync::Arc, vec::Vec};
+use alloc::{
+    boxed::Box,
+    string::String,
+    sync::{Arc, Weak},
+    vec::Vec,
+};
 #[cfg(not(feature = "no_std"))]
-use std::{boxed::Box, string::String, sync::Arc, vec::Vec};
+use std::{
+    boxed::Box,
+    string::String,
+    sync::{Arc, Weak},
+    vec::Vec,
+};
 
 #[cfg(all(feature = "no_std", not(feature = "std")))]
 type SharedOwnershipCell<T> = core::cell::OnceCell<T>;
 #[cfg(any(not(feature = "no_std"), feature = "std"))]
 type SharedOwnershipCell<T> = std::sync::OnceLock<T>;
+
+#[cfg(all(feature = "no_std", not(feature = "std")))]
+type SnapshotBudgetRegistry = core::cell::RefCell<Option<Box<SnapshotBudgetRegistration>>>;
+#[cfg(any(not(feature = "no_std"), feature = "std"))]
+type SnapshotBudgetRegistry = std::sync::Mutex<Option<Box<SnapshotBudgetRegistration>>>;
 
 pub struct SnapshotValidationContext<'a> {
     schemas: &'a SchemaTable,
@@ -246,7 +261,7 @@ impl<'a> SnapshotValidationContext<'a> {
 pub struct Value {
     schema: SchemaId,
     schema_key: SchemaKey,
-    shape: ShapeInstance,
+    shape: Arc<ShapeInstance>,
     root: Arc<FrozenSnapshotStorage>,
     resident_token: u64,
     schemas: Option<Arc<SchemaTable>>,
@@ -258,6 +273,23 @@ pub struct Value {
 #[derive(Debug)]
 pub struct FrozenSnapshotStorage {
     data: Arc<FrozenSnapshotData>,
+    memory_budget: Option<SnapshotBudgetOwnership>,
+}
+
+#[derive(Debug)]
+struct SnapshotBudgetOwnership {
+    schemas: Arc<SchemaTable>,
+    required_bytes: u64,
+    reservation: crate::ManagedMemoryReservation,
+    identity: SharedOwnershipCell<Weak<FrozenSnapshotStorage>>,
+}
+
+#[derive(Debug)]
+struct SnapshotBudgetRegistration {
+    budget: crate::ManagedMemoryBudget,
+    schemas: Weak<SchemaTable>,
+    owner: Weak<FrozenSnapshotStorage>,
+    next: Option<Box<SnapshotBudgetRegistration>>,
 }
 
 /// The immutable canonical tree and its one physical accounting ticket share
@@ -266,11 +298,86 @@ pub struct FrozenSnapshotStorage {
 #[derive(Debug)]
 struct FrozenSnapshotData {
     data: ValueData,
+    // The same immutable shape owner is shared by every ordinary Value clone.
+    // Physical and imported-root tickets retain its real allocation as part
+    // of this data owner, rather than charging a detached metadata copy.
+    shape: Arc<ShapeInstance>,
     // Physical accounting follows the one shared immutable data lifetime,
     // not each cell/import wrapper. Standard builds use a thread-safe once
     // cell so detached Values retain their Send/Sync behavior. no_std has no
     // cross-thread execution surface and uses the core equivalent.
     ownership: SharedOwnershipCell<crate::RetainedPayloadTicket>,
+    budget_imports: SnapshotBudgetRegistry,
+}
+
+impl FrozenSnapshotData {
+    fn with_budget_imports<T>(
+        &self,
+        apply: impl FnOnce(&mut Option<Box<SnapshotBudgetRegistration>>) -> T,
+    ) -> T {
+        #[cfg(all(feature = "no_std", not(feature = "std")))]
+        let mut imports = self.budget_imports.borrow_mut();
+        #[cfg(any(not(feature = "no_std"), feature = "std"))]
+        let mut imports = self
+            .budget_imports
+            .lock()
+            .unwrap_or_else(|error| error.into_inner());
+        apply(&mut imports)
+    }
+
+    fn budget_import(
+        &self,
+        budget: &crate::ManagedMemoryBudget,
+        schemas: &Arc<SchemaTable>,
+    ) -> Option<Arc<FrozenSnapshotStorage>> {
+        self.with_budget_imports(|imports| Self::find_budget_import(imports, budget, schemas))
+    }
+
+    fn find_budget_import(
+        imports: &Option<Box<SnapshotBudgetRegistration>>,
+        budget: &crate::ManagedMemoryBudget,
+        schemas: &Arc<SchemaTable>,
+    ) -> Option<Arc<FrozenSnapshotStorage>> {
+        let mut current = imports.as_deref();
+        while let Some(import) = current {
+            if import.budget == *budget && Weak::ptr_eq(&import.schemas, &Arc::downgrade(schemas)) {
+                if let Some(owner) = import.owner.upgrade() {
+                    return Some(owner);
+                }
+            }
+            current = import.next.as_deref();
+        }
+        None
+    }
+}
+
+impl Drop for FrozenSnapshotStorage {
+    fn drop(&mut self) {
+        let Some(owner) = self
+            .memory_budget
+            .as_ref()
+            .and_then(|ownership| ownership.identity.get())
+        else {
+            return;
+        };
+        let removed = self.data.with_budget_imports(|imports| {
+            let mut position = imports;
+            loop {
+                match position {
+                    Some(entry) if Weak::ptr_eq(&entry.owner, owner) => {
+                        let mut removed = position.take().expect("located immutable import");
+                        *position = removed.next.take();
+                        break Some(removed);
+                    }
+                    Some(entry) => position = &mut entry.next,
+                    None => break None,
+                }
+            }
+        });
+        // Free the exact admitted registration outside its registry lock,
+        // before field destruction releases this wrapper's reservation.
+        drop(removed);
+    }
 }
 
 impl core::fmt::Debug for Value {
@@ -302,60 +409,13 @@ impl Value {
         }
     }
 
-    /// Clones only the small shape metadata through an admitted construction
-    /// token while sharing the immutable payload and schema owners.
+    /// Shares immutable data, shape, and schema owners without allocating.
     #[cfg(feature = "functions")]
     pub(crate) fn try_clone_for_external_marshalling(
         &self,
-        construction: &dyn SnapshotConstructionAuthority,
+        _construction: &dyn SnapshotConstructionAuthority,
     ) -> Result<Self, SnapshotValueError> {
-        let shape_bytes = self
-            .shape
-            .parameter_values()
-            .len()
-            .checked_mul(core::mem::size_of::<u64>())
-            .and_then(|bytes| u64::try_from(bytes).ok())
-            .ok_or(crate::MemoryRuntimeError::InvalidLayout {
-                object: construction.allocation_object(),
-                size: u64::MAX,
-                alignment: u32::try_from(core::mem::align_of::<u64>()).unwrap_or(u32::MAX),
-                reason: "external canonical shape clone layout overflows",
-            })?;
-        construction.admit_snapshot_allocation(
-            shape_bytes,
-            u32::try_from(core::mem::align_of::<u64>()).unwrap_or(u32::MAX),
-        )?;
-        let mut shape_values = Vec::new();
-        shape_values
-            .try_reserve_exact(self.shape.parameter_values().len())
-            .map_err(|_| {
-                SnapshotValueError::from(crate::MemoryRuntimeError::AllocationFailed {
-                    object: construction.allocation_object(),
-                    requested: shape_bytes,
-                    alignment: u32::try_from(core::mem::align_of::<u64>()).unwrap_or(u32::MAX),
-                    space: crate::MemorySpace::Host,
-                })
-            })?;
-        shape_values.extend_from_slice(self.shape.parameter_values());
-        let shape_schema = self
-            .schemas
-            .as_ref()
-            .and_then(|schemas| schemas.get(self.schema))
-            .ok_or_else(|| {
-                SnapshotValueError::from(crate::MemoryRuntimeError::CandidateValidationFailed {
-                    object: construction.allocation_object(),
-                    reason: "external canonical input has no retained schema context".into(),
-                })
-            })?;
-        let shape = shape_schema.instantiate_shape(shape_values.into_boxed_slice())?;
-        Ok(Self {
-            schema: self.schema,
-            schema_key: self.schema_key,
-            shape,
-            root: self.root.clone(),
-            resident_token: self.resident_token,
-            schemas: self.schemas.clone(),
-        })
+        Ok(self.clone())
     }
 
     /// Sealed handoff from an admitted mutable payload envelope into a
@@ -375,6 +435,294 @@ impl Value {
         self.root.data.ownership.get().is_some()
     }
 
+    /// Imports this value into an admitted, independently owned budget
+    /// wrapper. The caller's other clones remain unchanged. Failed candidates
+    /// release their own import claim even when the original data stays alive.
+    pub fn into_memory_budget(
+        mut self,
+        reservation: &mut crate::ManagedMemoryReservation,
+    ) -> crate::MemoryRuntimeResult<Self> {
+        let budget = reservation.budget();
+        let schemas = self.schemas.clone().ok_or_else(|| {
+            crate::MemoryRuntimeError::CandidateValidationFailed {
+                object: None,
+                reason: "immutable snapshot has no retained schema context".into(),
+            }
+        })?;
+        if let Some(owner) = self.root.data.budget_import(&budget, &schemas) {
+            self.root = owner;
+            return Ok(self);
+        }
+        let retained_bytes = self.memory_budget_required_bytes()?;
+        let admitted_bytes = self.unshared_memory_budget_admission_bytes(&budget)?;
+        if admitted_bytes > reservation.capacity_bytes() {
+            return Err(crate::MemoryRuntimeError::BudgetExceeded {
+                operation: None,
+                requested: admitted_bytes,
+                limit: reservation.capacity_bytes(),
+            });
+        }
+        budget.check_snapshot_import_allocation(
+            core::mem::size_of::<SnapshotBudgetRegistration>() as u64,
+            core::mem::align_of::<SnapshotBudgetRegistration>() as u32,
+        )?;
+        let mut registration = Box::try_new(SnapshotBudgetRegistration {
+            budget: budget.clone(),
+            schemas: Arc::downgrade(&schemas),
+            owner: Weak::new(),
+            next: None,
+        })
+        .map_err(|_| crate::MemoryRuntimeError::AllocationFailed {
+            object: None,
+            requested: core::mem::size_of::<SnapshotBudgetRegistration>() as u64,
+            alignment: core::mem::align_of::<SnapshotBudgetRegistration>() as u32,
+            space: crate::MemorySpace::Host,
+        })?;
+        let data = self.root.data.clone();
+        budget.check_snapshot_import_allocation(
+            core::mem::size_of::<FrozenSnapshotStorage>() as u64,
+            core::mem::align_of::<FrozenSnapshotStorage>() as u32,
+        )?;
+        let mut prepared = Arc::try_new(FrozenSnapshotStorage {
+            data: data.clone(),
+            memory_budget: None,
+        })
+        .map_err(|_| crate::MemoryRuntimeError::AllocationFailed {
+            object: None,
+            requested: core::mem::size_of::<FrozenSnapshotStorage>() as u64,
+            alignment: core::mem::align_of::<FrozenSnapshotStorage>() as u32,
+            space: crate::MemorySpace::Host,
+        })?;
+        let owner = data.with_budget_imports(|imports| {
+            if let Some(existing) =
+                FrozenSnapshotData::find_budget_import(imports, &budget, &schemas)
+            {
+                return Ok(existing);
+            }
+            // All physical construction has succeeded under the reservation.
+            // No user code runs under this short metadata gate.
+            let charge = reservation.split_capacity(admitted_bytes)?;
+            Arc::get_mut(&mut prepared)
+                .expect("unpublished import has no shared or weak wrapper owner")
+                .memory_budget = Some(SnapshotBudgetOwnership {
+                schemas,
+                required_bytes: retained_bytes,
+                reservation: charge,
+                identity: SharedOwnershipCell::new(),
+            });
+            registration.owner = Arc::downgrade(&prepared);
+            let _ = prepared
+                .memory_budget
+                .as_ref()
+                .expect("prepared immutable ownership")
+                .identity
+                .set(registration.owner.clone());
+            registration.next = imports.take();
+            *imports = Some(registration);
+            Ok::<_, crate::MemoryRuntimeError>(prepared.clone())
+        })?;
+        self.root = owner;
+        Ok(self)
+    }
+
+    /// Exact extra wrapper/registration metadata for an independently owned
+    /// budget import. Candidate planners include this before materialization.
+    pub const fn memory_budget_claim_metadata_bytes() -> u64 {
+        Self::shared_owner_allocation_bytes(
+            core::mem::size_of::<FrozenSnapshotStorage>(),
+            core::mem::align_of::<FrozenSnapshotStorage>(),
+        ) + core::mem::size_of::<SnapshotBudgetRegistration>() as u64
+    }
+
+    /// Concrete shared-owner allocations retained by one finalized root.
+    /// Shape elements and cloned schema contents are supplied separately by
+    /// the checked footprint; only their owner headers appear here.
+    pub(crate) const fn canonical_owner_allocation_bytes() -> u64 {
+        Self::shared_owner_allocation_bytes(
+            core::mem::size_of::<FrozenSnapshotStorage>(),
+            core::mem::align_of::<FrozenSnapshotStorage>(),
+        ) + Self::shared_owner_allocation_bytes(
+            core::mem::size_of::<FrozenSnapshotData>(),
+            core::mem::align_of::<FrozenSnapshotData>(),
+        ) + Self::shared_owner_allocation_bytes(
+            core::mem::size_of::<ShapeInstance>(),
+            core::mem::align_of::<ShapeInstance>(),
+        ) + Self::shared_owner_allocation_bytes(
+            crate::RetainedPayloadTicket::ownership_header_bytes() as usize,
+            crate::RetainedPayloadTicket::ownership_header_alignment(),
+        ) + Self::shared_owner_allocation_bytes(
+            core::mem::size_of::<SchemaTable>(),
+            core::mem::align_of::<SchemaTable>(),
+        ) - core::mem::size_of::<SchemaTable>() as u64
+    }
+
+    const fn shared_owner_allocation_bytes(size: usize, alignment: usize) -> u64 {
+        // Pinned Arc layout: two pointer-width counters followed by its
+        // aligned concrete value, rounded to the complete allocation's
+        // alignment. This includes target-specific prefix/tail padding.
+        let counters = 2 * core::mem::size_of::<usize>();
+        let prefix = counters.div_ceil(alignment) * alignment;
+        let allocation_alignment = if alignment > core::mem::align_of::<usize>() {
+            alignment
+        } else {
+            core::mem::align_of::<usize>()
+        };
+        (prefix + size).div_ceil(allocation_alignment) as u64 * allocation_alignment as u64
+    }
+
+    /// Additional capacity needed to retain this actual data and schema owner
+    /// in `budget`. Existing same-account import wrappers share ownership;
+    /// existing physical accounting stays with its original ticket.
+    pub fn memory_budget_admission_bytes(
+        &self,
+        budget: &crate::ManagedMemoryBudget,
+    ) -> crate::MemoryRuntimeResult<u64> {
+        if let Some(schemas) = &self.schemas {
+            if self.root.data.budget_import(budget, schemas).is_some() {
+                return Ok(0);
+            }
+        }
+        self.unshared_memory_budget_admission_bytes(budget)
+    }
+
+    fn unshared_memory_budget_admission_bytes(
+        &self,
+        budget: &crate::ManagedMemoryBudget,
+    ) -> crate::MemoryRuntimeResult<u64> {
+        let required = self.memory_budget_required_bytes()?;
+        let physical = self
+            .root
+            .data
+            .ownership
+            .get()
+            .and_then(|owner| owner.memory_budget_retained_bytes(budget))
+            .unwrap_or(0);
+        (required - required.min(physical))
+            .checked_add(core::mem::size_of::<SnapshotBudgetRegistration>() as u64)
+            .ok_or_else(|| crate::MemoryRuntimeError::CandidateValidationFailed {
+                object: None,
+                reason: "immutable snapshot import witness overflows".into(),
+            })
+    }
+
+    /// Checked retained-allocation witness used by `into_memory_budget`.
+    /// It covers canonical payload, shared-owner headers and the retained
+    /// schema context. Only actual nested dynamic roots add shared-owner
+    /// headers; primitive sequence elements do not each count as a root.
+    /// This is admitted capacity, not a report of observed physical bytes.
+    pub fn memory_budget_required_bytes(&self) -> crate::MemoryRuntimeResult<u64> {
+        let schemas = self.schemas.as_deref().ok_or_else(|| {
+            crate::MemoryRuntimeError::CandidateValidationFailed {
+                object: None,
+                reason: "immutable snapshot has no retained schema context".into(),
+            }
+        })?;
+        let footprint = self.retained_footprint(schemas).map_err(|_| {
+            crate::MemoryRuntimeError::CandidateValidationFailed {
+                object: None,
+                reason: "immutable snapshot retained footprint is invalid or overflows".into(),
+            }
+        })?;
+        let arithmetic_error = || crate::MemoryRuntimeError::CandidateValidationFailed {
+            object: None,
+            reason: "immutable snapshot ownership witness overflows".into(),
+        };
+        let owner_bytes = self
+            .memory_budget_owner_bytes(None)
+            .ok_or_else(arithmetic_error)?;
+        footprint
+            .retained_bytes
+            .checked_add(owner_bytes)
+            .ok_or_else(arithmetic_error)
+    }
+
+    fn memory_budget_owner_bytes(&self, shared_schemas: Option<&Arc<SchemaTable>>) -> Option<u64> {
+        let schemas = self.schemas.as_ref()?;
+        let schema_bytes = if shared_schemas.is_some_and(|shared| Arc::ptr_eq(shared, schemas)) {
+            0
+        } else {
+            schemas.clone_allocation_bound_bytes()?.checked_add(
+                Self::shared_owner_allocation_bytes(
+                    core::mem::size_of::<SchemaTable>(),
+                    core::mem::align_of::<SchemaTable>(),
+                ) - core::mem::size_of::<SchemaTable>() as u64,
+            )?
+        };
+        let owner_bytes = Self::shared_owner_allocation_bytes(
+            core::mem::size_of::<FrozenSnapshotStorage>(),
+            core::mem::align_of::<FrozenSnapshotStorage>(),
+        )
+        .checked_add(Self::shared_owner_allocation_bytes(
+            core::mem::size_of::<FrozenSnapshotData>(),
+            core::mem::align_of::<FrozenSnapshotData>(),
+        ))?
+        .checked_add(Self::shared_owner_allocation_bytes(
+            crate::RetainedPayloadTicket::ownership_header_bytes() as usize,
+            crate::RetainedPayloadTicket::ownership_header_alignment(),
+        ))?
+        .checked_add(Self::shared_owner_allocation_bytes(
+            core::mem::size_of::<ShapeInstance>(),
+            core::mem::align_of::<ShapeInstance>(),
+        ))?;
+        owner_bytes
+            .checked_add(schema_bytes)?
+            .checked_add(Self::nested_budget_owner_bytes(self.data(), schemas)?)
+    }
+
+    fn nested_budget_owner_bytes(data: &ValueData, schemas: &Arc<SchemaTable>) -> Option<u64> {
+        fn children<'a>(
+            mut values: impl Iterator<Item = &'a ValueData>,
+            schemas: &Arc<SchemaTable>,
+        ) -> Option<u64> {
+            values.try_fold(0_u64, |total, value| {
+                total.checked_add(Value::nested_budget_owner_bytes(value, schemas)?)
+            })
+        }
+        fn sequence(values: &SequenceStorage, schemas: &Arc<SchemaTable>) -> Option<u64> {
+            match values {
+                SequenceStorage::Values(values) => children(values.iter(), schemas),
+                _ => Some(0),
+            }
+        }
+        match data {
+            ValueData::Dynamic(value) => match value.value.as_deref() {
+                Some(value) => value.memory_budget_owner_bytes(Some(schemas)),
+                None => Some(0),
+            },
+            ValueData::Enum(value) => children(value.payload().into_iter(), schemas),
+            ValueData::Option(value) => children(value.as_deref().into_iter(), schemas),
+            ValueData::Tuple(values) => children(values.iter(), schemas),
+            ValueData::Record(value) => children(value.fields().iter(), schemas),
+            ValueData::Matrix(value) => sequence(&value.elements, schemas),
+            ValueData::Table(value) => value.columns.iter().try_fold(0_u64, |total, values| {
+                total.checked_add(sequence(values, schemas)?)
+            }),
+            ValueData::Set(value) => children(
+                value.elements().iter().map(CanonicalKeyValue::data),
+                schemas,
+            ),
+            ValueData::Map(value) => children(
+                value
+                    .entries()
+                    .iter()
+                    .flat_map(|entry| [entry.key().data(), entry.value()]),
+                schemas,
+            ),
+            _ => Some(0),
+        }
+    }
+
+    /// Reports this shared root's already transferred capacity in `budget`.
+    /// An uncharged or only partially covered root returns None. In particular,
+    /// an older payload-only physical ticket is not complete budget clearance
+    /// for its retained headers and schema; handoff supplements it first.
+    pub fn memory_budget_retained_bytes(&self, budget: &crate::ManagedMemoryBudget) -> Option<u64> {
+        let ownership = self.root.memory_budget.as_ref()?;
+        let schemas = self.schemas.as_ref()?;
+        (ownership.reservation.budget() == *budget && Arc::ptr_eq(schemas, &ownership.schemas))
+            .then_some(ownership.required_bytes)
+    }
+
     pub const fn schema(&self) -> SchemaId {
         self.schema
     }
@@ -383,7 +731,8 @@ impl Value {
         self.schema_key
     }
 
-    pub const fn shape(&self) -> &ShapeInstance {
+    pub fn shape(&self) -> &ShapeInstance {
+        debug_assert!(Arc::ptr_eq(&self.shape, &self.root.data.shape));
         &self.shape
     }
 
@@ -439,7 +788,8 @@ impl Value {
         // metadata in another table may share the immutable tree, but the
         // returned value must retain that target table. Dynamic children carry
         // nested schema identities, so they must take the rebuilding path.
-        if target_entry.key() == self.schema_key && shape == &self.shape && exact_definition {
+        if target_entry.key() == self.schema_key && shape == self.shape.as_ref() && exact_definition
+        {
             if core::ptr::eq(source_schemas, schemas) && schema == self.schema {
                 return Ok(self.clone());
             }
@@ -447,7 +797,7 @@ impl Value {
                 return Ok(Self {
                     schema,
                     schema_key: target_entry.key(),
-                    shape: shape.clone(),
+                    shape: self.shape.clone(),
                     root: self.root.clone(),
                     resident_token: self.resident_token,
                     schemas: Some(Arc::new(schemas.clone())),
@@ -1772,15 +2122,19 @@ fn finalized_value(
         resident_token = token_word(resident_token, *value);
     }
     resident_token = token_data(resident_token, &data);
+    let shape = Arc::new(shape);
     Value {
         schema,
         schema_key,
-        shape,
+        shape: shape.clone(),
         root: Arc::new(FrozenSnapshotStorage {
             data: Arc::new(FrozenSnapshotData {
                 data,
+                shape,
                 ownership: SharedOwnershipCell::new(),
+                budget_imports: SnapshotBudgetRegistry::default(),
             }),
+            memory_budget: None,
         }),
         resident_token,
         schemas,
@@ -1801,11 +2155,20 @@ fn finalized_value_with_construction(
         resident_token = token_word(resident_token, *value);
     }
     resident_token = token_data(resident_token, &data);
+    // Final Arc allocations are directly owned by the immutable tree. They
+    // consume the admitted finalization byte allowance, not mutable-envelope
+    // block registrations, and cannot grow that registry during construction.
+    let shape = context.try_arc(shape)?;
     let data = context.try_arc(FrozenSnapshotData {
         data,
+        shape: shape.clone(),
         ownership: SharedOwnershipCell::new(),
+        budget_imports: SnapshotBudgetRegistry::default(),
     })?;
-    let root = context.try_arc(FrozenSnapshotStorage { data })?;
+    let root = context.try_arc(FrozenSnapshotStorage {
+        data,
+        memory_budget: None,
+    })?;
     Ok(Value {
         schema,
         schema_key,
@@ -1959,7 +2322,7 @@ pub fn rebuild_composite_snapshot(template: &Value, children: Box<[ValueData]>) 
     Some(finalized_value(
         template.schema,
         template.schema_key,
-        template.shape.clone(),
+        template.shape.as_ref().clone(),
         data,
         template.schemas.clone(),
     ))
@@ -1984,7 +2347,7 @@ pub fn rebuild_f64_set_snapshot(template: &Value, candidates: &[f64]) -> Option<
     build_f64_set_snapshot(
         template.schema,
         template.schema_key,
-        template.shape.clone(),
+        template.shape.as_ref().clone(),
         template.schemas.as_deref()?,
         Some(expected.elements().len()),
         Some(expected.elements().len()),

@@ -30,6 +30,147 @@ mod allocation_probe;
 #[global_allocator]
 static ALLOCATOR: allocation_probe::ProbeAllocator = allocation_probe::ProbeAllocator;
 
+#[test]
+fn parameterized_snapshot_clones_share_admitted_shape_storage_without_allocating() {
+    use mech_core::{
+        DimensionExpr, DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+        DimensionParameterOrigin, SchemaBody, SchemaDraft, SchemaTableBuilder, ValueDataDraft,
+        ValueDraft, snapshot::SnapshotValidationContext,
+    };
+    let mut schemas = SchemaTableBuilder::new();
+    let schema = schemas
+        .insert(
+            SchemaDraft {
+                dimension_parameters: vec![DimensionParameterDeclaration {
+                    id: DimensionParameterId::new(0),
+                    origin: DimensionParameterOrigin::Explicit,
+                    lifetime: DimensionLifetime::Turn,
+                    lower_bound: DimensionExpr::Constant(1),
+                    upper_bound: Some(DimensionExpr::Constant(8)),
+                }]
+                .into_boxed_slice(),
+                body: SchemaBody::Matrix {
+                    element: Box::new(SchemaBody::Bool),
+                    dimensions: vec![DimensionExpr::Parameter(DimensionParameterId::new(0))]
+                        .into_boxed_slice(),
+                },
+            }
+            .finalize()
+            .unwrap(),
+        )
+        .unwrap();
+    let schemas = schemas.finish().unwrap();
+    let value = ValueDraft {
+        schema: schemas.resolve(schema).unwrap(),
+        shape_values: vec![3].into_boxed_slice(),
+        data: ValueDataDraft::Matrix(vec![ValueDataDraft::Bool(true); 3].into_boxed_slice()),
+    }
+    .finalize(&SnapshotValidationContext::new(&schemas.table))
+    .unwrap();
+    let budget = mech_core::ManagedMemoryBudget::new(1_000_000);
+    let required = value.memory_budget_admission_bytes(&budget).unwrap();
+    let mut reservation = budget.reserve_capacity(required).unwrap();
+    let value = value.into_memory_budget(&mut reservation).unwrap();
+    drop(reservation);
+    let (_, allocations) = allocation_probe::measured(|| {
+        for _ in 0..128 {
+            let copy = value.clone();
+            assert!(core::ptr::eq(
+                value.shape().parameter_values(),
+                copy.shape().parameter_values()
+            ));
+            assert_eq!(copy.shape().parameter_values(), &[3]);
+        }
+    });
+    assert_eq!(
+        allocations, 0,
+        "immutable Value clones copied shape storage"
+    );
+    assert_eq!(budget.used_bytes(), required);
+    let exported = value.clone();
+    drop(value);
+    assert_eq!(exported.shape().parameter_values(), &[3]);
+    assert_eq!(budget.used_bytes(), required);
+    drop(exported);
+    assert_eq!(budget.used_bytes(), 0);
+}
+
+#[test]
+fn immutable_import_ownership_outlives_the_session_and_releases_on_last_clone() {
+    let domain = MemoryDomain::new().unwrap();
+    let cell = ValueCell::from_exact_in(&domain, "retained immutable bytes".to_owned()).unwrap();
+    let original = cell.snapshot().unwrap();
+    let budget = mech_core::ManagedMemoryBudget::new(1_000_000);
+    let required = original.memory_budget_admission_bytes(&budget).unwrap();
+    let mut reservation = budget.reserve_capacity(required).unwrap();
+    let imported = original
+        .clone()
+        .into_memory_budget(&mut reservation)
+        .unwrap();
+    let alias = original
+        .clone()
+        .into_memory_budget(&mut reservation)
+        .unwrap();
+    assert_eq!(reservation.capacity_bytes(), 0);
+    assert_eq!(budget.used_bytes(), required);
+    assert_eq!(original.memory_budget_retained_bytes(&budget), None);
+
+    drop(cell);
+    domain.close().unwrap();
+    drop(domain);
+    drop(imported);
+    drop(reservation);
+    assert_eq!(budget.used_bytes(), required);
+    std::thread::spawn(move || {
+        assert!(matches!(alias.data(), mech_core::ValueData::String(value)
+            if value.as_ref() == "retained immutable bytes"));
+        drop(alias);
+    })
+    .join()
+    .unwrap();
+    assert_eq!(budget.used_bytes(), 0);
+    assert!(
+        matches!(original.data(), mech_core::ValueData::String(value)
+        if value.as_ref() == "retained immutable bytes")
+    );
+}
+
+#[test]
+fn immutable_import_partial_allocation_failure_keeps_caller_and_account_reusable() {
+    for successful_steps in [0, 1] {
+        let original = ValueCell::from_exact("caller survives failed import".to_owned())
+            .unwrap()
+            .snapshot()
+            .unwrap();
+        let budget = mech_core::ManagedMemoryBudget::new(1_000_000);
+        let required = original.memory_budget_admission_bytes(&budget).unwrap();
+        let mut reservation = budget.reserve_capacity(required).unwrap();
+        budget.inject_snapshot_import_failure_after(successful_steps);
+        assert!(matches!(
+            original.clone().into_memory_budget(&mut reservation),
+            Err(MemoryRuntimeError::AllocationFailed { .. })
+        ));
+        assert_eq!(reservation.capacity_bytes(), required);
+        assert_eq!(budget.used_bytes(), required);
+        assert_eq!(original.memory_budget_retained_bytes(&budget), None);
+        assert_eq!(
+            original.memory_budget_admission_bytes(&budget).unwrap(),
+            required
+        );
+        let imported = original
+            .clone()
+            .into_memory_budget(&mut reservation)
+            .unwrap();
+        drop(imported);
+        drop(reservation);
+        assert_eq!(budget.used_bytes(), 0);
+        assert!(
+            matches!(original.data(), mech_core::ValueData::String(value)
+            if value.as_ref() == "caller survives failed import")
+        );
+    }
+}
+
 #[derive(Debug)]
 struct PublishedInvariantUnchanged;
 

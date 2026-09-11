@@ -10,8 +10,38 @@ use crate::memory_planner::{
     try_admit_fixed_turn_memory,
 };
 
+#[path = "payload_budget.rs"]
+pub(crate) mod payload;
+
 thread_local! {
     static ACTIVE_TURN_PLAN: Mutex<Option<Arc<TurnMemoryPlan>>> = const { Mutex::new(None) };
+    static ACTIVE_PAYLOAD_ADMISSION: std::cell::RefCell<Option<std::rc::Rc<payload::ResidentPayloadAdmission>>> = const { std::cell::RefCell::new(None) };
+}
+
+pub(crate) fn with_payload_admission<T>(
+    admission: Option<std::rc::Rc<payload::ResidentPayloadAdmission>>,
+    execute: impl FnOnce() -> T,
+) -> T {
+    struct Guard(Option<std::rc::Rc<payload::ResidentPayloadAdmission>>);
+    impl Drop for Guard {
+        fn drop(&mut self) {
+            ACTIVE_PAYLOAD_ADMISSION.with(|active| *active.borrow_mut() = self.0.take());
+        }
+    }
+    let previous = ACTIVE_PAYLOAD_ADMISSION.with(|active| active.replace(admission));
+    let _guard = Guard(previous);
+    execute()
+}
+
+fn admit_payload_plan(plan: &TurnMemoryPlan) -> Result<(), ResidentKernelError> {
+    ACTIVE_PAYLOAD_ADMISSION.with(|active| {
+        if let Some(admission) = active.borrow().as_ref() {
+            admission
+                .admit_plan(plan)
+                .map_err(|_| ResidentKernelError::InvalidShape)?;
+        }
+        Ok(())
+    })
 }
 
 fn with_active_turn_plan<T>(use_plan: impl FnOnce(&mut Option<Arc<TurnMemoryPlan>>) -> T) -> T {
@@ -268,6 +298,7 @@ impl KernelCostEstimate {
             if let Some(demand) = try_admit_fixed_turn_memory(&active, self.demand, final_output)
                 .map_err(|_| ResidentKernelError::InvalidShape)?
             {
+                admit_payload_plan(&active)?;
                 return Ok(ResidentBudgetPermit {
                     _plan: active,
                     _demand: demand,
@@ -386,6 +417,7 @@ impl ResidentBudgetPermit {
         if !plan.budget_violations.is_empty() {
             return Err(ResidentKernelError::InvalidShape);
         }
+        admit_payload_plan(&plan)?;
         Ok(Self {
             _demand: plan.demand,
             _plan: Arc::new(plan),

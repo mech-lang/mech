@@ -312,6 +312,253 @@ fn configured_memory_budget_follows_independent_payload_and_frozen_owners() {
     assert_eq!(budget.used_bytes(), 0);
 }
 
+fn detached_budget_test_value(payload: &str) -> mech_core::Value {
+    let schema = SchemaDraft {
+        dimension_parameters: Box::new([]),
+        body: SchemaBody::String,
+    }
+    .finalize()
+    .unwrap();
+    let mut builder = SchemaTableBuilder::new();
+    let handle = builder.insert(schema).unwrap();
+    let build = builder.finish().unwrap();
+    let schema = build.resolve(handle).unwrap();
+    let (schemas, _) = build.into_parts();
+    ValueDraft {
+        schema,
+        shape_values: Box::new([]),
+        data: ValueDataDraft::String(payload.to_owned()),
+    }
+    .finalize(&SnapshotValidationContext::new(&schemas))
+    .unwrap()
+}
+
+#[test]
+fn immutable_budget_handoff_shares_roots_and_retains_old_candidate_coexistence() {
+    let old = detached_budget_test_value("old immutable bytes");
+    let bytes = old
+        .memory_budget_admission_bytes(&mech_core::ManagedMemoryBudget::new(u64::MAX))
+        .unwrap();
+    let retained = old.memory_budget_required_bytes().unwrap();
+    let budget = mech_core::ManagedMemoryBudget::new(bytes * 2);
+    let mut admitted = budget.reserve_capacity(bytes * 2).unwrap();
+    let old = old.into_memory_budget(&mut admitted).unwrap();
+    assert_eq!(admitted.capacity_bytes(), bytes);
+    assert_eq!(old.memory_budget_retained_bytes(&budget), Some(retained));
+    let exported = old.clone().into_memory_budget(&mut admitted).unwrap();
+    assert_eq!(admitted.capacity_bytes(), bytes);
+    assert!(old.shares_frozen_storage(&exported));
+
+    let candidate = detached_budget_test_value("new immutable bytes");
+    assert_eq!(
+        candidate.memory_budget_admission_bytes(&budget).unwrap(),
+        bytes
+    );
+    let candidate = candidate.into_memory_budget(&mut admitted).unwrap();
+    assert_eq!(admitted.capacity_bytes(), 0);
+    assert_eq!(budget.used_bytes(), bytes * 2);
+    assert!(budget.reserve_capacity(1).is_err());
+    drop(old);
+    assert_eq!(budget.used_bytes(), bytes * 2);
+    std::thread::spawn(move || {
+        assert!(
+            matches!(exported.data(), mech_core::ValueData::String(value)
+            if value.as_ref() == "old immutable bytes")
+        );
+        drop(exported);
+    })
+    .join()
+    .unwrap();
+    assert_eq!(budget.used_bytes(), bytes);
+    drop(candidate);
+    drop(admitted);
+    assert_eq!(budget.used_bytes(), 0);
+}
+
+#[test]
+fn immutable_budget_handoff_rejects_insufficient_capacity_without_consuming_it() {
+    let value = detached_budget_test_value("immutable capacity failure");
+    let bytes = value
+        .memory_budget_admission_bytes(&mech_core::ManagedMemoryBudget::new(u64::MAX))
+        .unwrap();
+    let budget = mech_core::ManagedMemoryBudget::new(bytes);
+    let mut admitted = budget.reserve_capacity(bytes - 1).unwrap();
+    assert!(matches!(
+        value.clone().into_memory_budget(&mut admitted),
+        Err(MemoryRuntimeError::BudgetExceeded { requested, limit, .. })
+            if requested == bytes && limit == bytes - 1
+    ));
+    assert_eq!(admitted.capacity_bytes(), bytes - 1);
+    assert_eq!(budget.used_bytes(), bytes - 1);
+    assert_eq!(value.memory_budget_retained_bytes(&budget), None);
+    admitted.resize_capacity(bytes).unwrap();
+    let value = value.into_memory_budget(&mut admitted).unwrap();
+    assert_eq!(admitted.capacity_bytes(), 0);
+    drop(admitted);
+    assert_eq!(budget.used_bytes(), bytes);
+    drop(value);
+    assert_eq!(budget.used_bytes(), 0);
+}
+
+#[test]
+fn immutable_budget_handoff_preserves_existing_physical_ticket_after_domain_close() {
+    let domain = MemoryDomain::new().unwrap();
+    let cell = ValueCell::from_exact_in(&domain, "owned by its frozen tree".to_owned()).unwrap();
+    let snapshot = cell.snapshot().unwrap();
+    let original = snapshot.clone();
+    let before = domain.ledger();
+    let bytes = snapshot
+        .memory_budget_admission_bytes(&mech_core::ManagedMemoryBudget::new(u64::MAX))
+        .unwrap();
+    let retained = snapshot.memory_budget_required_bytes().unwrap();
+    let budget = mech_core::ManagedMemoryBudget::new(bytes);
+    let mut admitted = budget.reserve_capacity(bytes).unwrap();
+    let snapshot = snapshot.into_memory_budget(&mut admitted).unwrap();
+    let shared = snapshot.clone();
+    assert!(snapshot.shares_retained_payload_ticket(&original));
+    assert_eq!(domain.ledger(), before);
+    assert_eq!(shared.memory_budget_retained_bytes(&budget), Some(retained));
+    drop(cell);
+    domain.close().unwrap();
+    drop(domain);
+    assert_eq!(budget.used_bytes(), bytes);
+    assert!(matches!(shared.data(), mech_core::ValueData::String(value)
+        if value.as_ref() == "owned by its frozen tree"));
+    drop(snapshot);
+    assert_eq!(budget.used_bytes(), bytes);
+    std::thread::spawn(move || drop(shared)).join().unwrap();
+    drop(admitted);
+    assert_eq!(budget.used_bytes(), 0);
+    assert!(
+        matches!(original.data(), mech_core::ValueData::String(_)),
+        "the caller's original data can outlive a released import claim"
+    );
+}
+
+#[test]
+fn immutable_budget_import_rollback_releases_claims_while_callers_retain_their_values() {
+    let original = detached_budget_test_value("caller keeps immutable input");
+    let rejected = detached_budget_test_value("a later candidate needs additional bytes");
+    let account_a = mech_core::ManagedMemoryBudget::new(1_000_000);
+    let mut a = account_a
+        .reserve_capacity(original.memory_budget_admission_bytes(&account_a).unwrap())
+        .unwrap();
+    let original = original.into_memory_budget(&mut a).unwrap();
+    drop(a);
+    let baseline_a = account_a.used_bytes();
+
+    let account_b = mech_core::ManagedMemoryBudget::new(1_000_000);
+    let first = original.memory_budget_admission_bytes(&account_b).unwrap();
+    let mut b = account_b.reserve_capacity(first).unwrap();
+    let imported = original.clone().into_memory_budget(&mut b).unwrap();
+    assert_eq!(b.capacity_bytes(), 0);
+    assert_eq!(original.memory_budget_retained_bytes(&account_b), None);
+    assert_eq!(account_a.used_bytes(), baseline_a);
+    assert!(matches!(
+        rejected.clone().into_memory_budget(&mut b),
+        Err(MemoryRuntimeError::BudgetExceeded { .. })
+    ));
+    drop(imported);
+    drop(b);
+    assert_eq!(
+        account_b.used_bytes(),
+        0,
+        "failed candidate import leaves no permanent account claim in caller data"
+    );
+    assert_eq!(account_a.used_bytes(), baseline_a);
+    assert!(
+        matches!(original.data(), mech_core::ValueData::String(value) if value.as_ref() == "caller keeps immutable input")
+    );
+
+    let mut retry = account_b.reserve_capacity(first).unwrap();
+    let imported = original.clone().into_memory_budget(&mut retry).unwrap();
+    assert_eq!(
+        original.memory_budget_admission_bytes(&account_b).unwrap(),
+        0
+    );
+    let alias = original.clone().into_memory_budget(&mut retry).unwrap();
+    assert_eq!(account_b.used_bytes(), first);
+    drop(imported);
+    assert_eq!(account_b.used_bytes(), first);
+    drop(alias);
+    drop(retry);
+    assert_eq!(account_b.used_bytes(), 0);
+    drop(original);
+    assert_eq!(account_a.used_bytes(), 0);
+}
+
+#[test]
+fn immutable_budget_import_keys_schema_ownership_separately_from_shared_data() {
+    let original = detached_budget_test_value("shared bytes with two schema owners");
+    let schemas = original.schemas().unwrap();
+    let rebound = original
+        .rebind(original.schema(), original.shape(), &schemas.clone())
+        .unwrap();
+    // Force the distinct context path rather than the true-clone fast path.
+    let copied_schemas = (*schemas).clone();
+    let rebound = rebound
+        .rebind(rebound.schema(), rebound.shape(), &copied_schemas)
+        .unwrap();
+    assert!(original.shares_frozen_storage(&rebound));
+    assert!(!std::sync::Arc::ptr_eq(
+        &original.schemas().unwrap(),
+        &rebound.schemas().unwrap()
+    ));
+    let budget = mech_core::ManagedMemoryBudget::new(1_000_000);
+    let first = original.memory_budget_admission_bytes(&budget).unwrap();
+    let second = rebound.memory_budget_admission_bytes(&budget).unwrap();
+    let mut admitted = budget.reserve_capacity(first + second).unwrap();
+    let original = original.into_memory_budget(&mut admitted).unwrap();
+    assert_eq!(
+        rebound.memory_budget_admission_bytes(&budget).unwrap(),
+        second
+    );
+    let rebound = rebound.into_memory_budget(&mut admitted).unwrap();
+    assert_eq!(admitted.capacity_bytes(), 0);
+    assert_eq!(budget.used_bytes(), first + second);
+    drop(original);
+    assert_eq!(budget.used_bytes(), second);
+    drop(rebound);
+    drop(admitted);
+    assert_eq!(budget.used_bytes(), 0);
+}
+
+#[test]
+fn immutable_budget_import_allocation_failures_preserve_callers_and_allow_retry() {
+    for successful_steps in [0, 1] {
+        let original = detached_budget_test_value("unchanged after failed owner construction");
+        let budget = mech_core::ManagedMemoryBudget::new(1_000_000);
+        let required = original.memory_budget_admission_bytes(&budget).unwrap();
+        let mut admitted = budget.reserve_capacity(required).unwrap();
+        budget.inject_snapshot_import_failure_after(successful_steps);
+        assert!(matches!(
+            original.clone().into_memory_budget(&mut admitted),
+            Err(MemoryRuntimeError::AllocationFailed { .. })
+        ));
+        assert_eq!(admitted.capacity_bytes(), required);
+        assert_eq!(budget.used_bytes(), required);
+        assert_eq!(original.memory_budget_retained_bytes(&budget), None);
+        assert_eq!(
+            original.memory_budget_admission_bytes(&budget).unwrap(),
+            required
+        );
+        drop(admitted);
+        assert_eq!(budget.used_bytes(), 0);
+        assert!(
+            matches!(original.data(), mech_core::ValueData::String(value)
+            if value.as_ref() == "unchanged after failed owner construction")
+        );
+
+        let mut retry = budget.reserve_capacity(required).unwrap();
+        let imported = original.clone().into_memory_budget(&mut retry).unwrap();
+        assert_eq!(retry.capacity_bytes(), 0);
+        drop(imported);
+        drop(retry);
+        assert_eq!(budget.used_bytes(), 0);
+        assert!(matches!(original.data(), mech_core::ValueData::String(_)));
+    }
+}
+
 #[test]
 fn plan_member_identity_validation_handles_many_zero_byte_objects_exactly() {
     const MEMBER_COUNT: u32 = 2_048;

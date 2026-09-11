@@ -475,3 +475,70 @@ Full CI still executes and requires the native job itself. No test assertion or
 required gate is removed. All 37 CI contract/impact tests pass, including shell
 execution proving failed, cancelled, skipped, or missing early native results
 cannot make a required PR gate green.
+
+## Aggregate payload ownership completion — 2026-09-11
+
+This correction completes the payload integration explicitly left open by the
+preceding checkpoint. It uses the same optional configured account and R5
+turn estimates; it does not replace per-call output/work guards, introduce a
+finite default, or claim to limit compiler allocations or process RSS.
+
+The existing Resident typed arena now retains its additional String capacity
+with a payload owner. Cold input construction, captured inputs, kernel staging,
+read/modify/write seeds, retained state, effect copies, and output projections
+admit candidate/temporary capacity before materialization. Initial envelope
+capacity is credited once. Tracked capacity follows the actual String buffers,
+including shrink/replacement, while failed candidates leave publication intact.
+Invariant fixed-width execution retains its cached allocation-free path.
+
+Canonical imports consume an admitted reservation into a new immutable ownership
+wrapper. The wrapper retains the actual shared data and schema owner, and its
+charge survives export, runtime unload, and session close. A weak registration
+shares true same-account/same-schema imports without changing caller-owned Value
+clones. Cross-account imports retain independent obligations. Dropping a rejected
+candidate removes its claim even while the caller retains the original value.
+Both fallible wrapper/registration construction points have rollback tests.
+No raw pointer identity, unsafe Send/Sync, or new unsafe allowlist is introduced.
+
+Owning output/effect exports admit their complete copy/finalization peak and
+transfer retained ownership to the returned Value. A borrowed output read needs
+no extra owning export. Projection and migration copies stage before switching
+publication tags; failure does not advance their versions or require fallible
+rollback. Input/candidate coexistence remains charged to the same runtime account.
+
+The bounded final check also found that parameterized Value clones copied
+their shape-parameter Box, and that the old schema-clone byte multiplier
+undercounted wide structural schemas. Immutable Values now share the admitted
+shape owner with their frozen data, including across exact rebinding and
+exports. The general semantic ShapeInstance API and its encoding are unchanged.
+The existing R5 finalization witness accounts the concrete shared-owner headers;
+the schema clone witness traverses actual boxed children, dimensions, names,
+parameter declarations, and retained encoding buffers with checked arithmetic.
+These are part of the same complete metadata-ownership correction, not new
+default limits or a separate planning policy.
+
+Local candidate evidence (pinned nightly, locked dependencies):
+
+- Engine: all 408 library and 20 R6 integration tests passed, including
+  parameterized owning export at an exact account limit.
+- Core safety/runtime profile: all 155 unit, 41 R6 runtime, and 23 safety tests
+  passed. This includes exact structural clone witnesses and 128 parameterized
+  immutable clones performing zero allocations while retaining one charge.
+- New ordinary runtime regressions passed for aggregate String outputs,
+  source/bytecode budget propagation, String grow/shrink/rejection/retry,
+  canonical import failure/retry with unchanged caller/publication, and exported
+  String/canonical ownership after unload. A broader reduced-feature invocation
+  also selected three unrelated feature-dependent tests and failed; it is not
+  reported as a clean full runtime suite.
+- Release safety with debug assertions disabled: all 23 tests passed.
+- Pinned Miri safety: all 23 tests passed, including the shared parameterized
+  shape regression (140.20 seconds executing the final suite).
+- Complete runtime owner profile (`full_compiler,resident-routing-source`): all
+  626 library tests passed on the frozen final correction, including the new
+  budget regressions and maintained N-body source/bytecode paths.
+- Final formatting, whitespace validation, R1 compatibility and R2–R6
+  architecture checks, and the unsafe-boundary audit passed. D1/D2 checks also
+  passed earlier in this correction; their exact final qualification remains
+  part of the required normal/Full CI.
+  Complete normal/Full CI and review must qualify the pushed exact
+  head; the earlier clean reviews of `551622578` do not qualify this correction.

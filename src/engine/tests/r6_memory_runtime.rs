@@ -688,6 +688,15 @@ mod resident_existing_value_budget_scope {
         assert_eq!(exact.used_bytes(), small_bytes);
         turn(&mut instance, Some(&values), 2).unwrap();
         assert_scalar(&instance, 7.0);
+        // Borrowed observation is allocation-free at the exact backing limit.
+        // A distinct owning export must obtain additional admitted ownership.
+        let export_error = instance.copied_output(0).unwrap_err();
+        assert!(
+            format!("{export_error:?}").contains("BudgetExceeded"),
+            "{export_error:?}"
+        );
+        assert_eq!(exact.used_bytes(), small_bytes);
+        assert_scalar(&instance, 7.0);
         assert!(matches!(
             activate_budgeted(&artifact, &catalog, &exact),
             Err(ResidentActivationError::MemoryRuntime {

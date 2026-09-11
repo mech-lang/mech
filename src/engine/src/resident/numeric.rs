@@ -5792,7 +5792,9 @@ fn hold_state(
             .admit()?
             .into_plan();
             let changed = source != target;
-            target.clone_from_slice(source);
+            for (target, source) in target.iter_mut().zip(source) {
+                *target = source.clone();
+            }
             Ok(changed)
         }
         (ResidentValueRef::Snapshot(source), ResidentValueMut::Snapshot(target))
@@ -11812,8 +11814,7 @@ fn write_access_output(
         }
         (ValueData::String(value), ResidentValueMut::String([target])) => {
             let changed = target.as_str() != value.as_ref();
-            target.clear();
-            target.push_str(value);
+            *target = value.as_ref().to_owned();
             Ok(changed)
         }
         (ValueData::Matrix(matrix), ResidentValueMut::Bool(target)) => {
@@ -11872,7 +11873,9 @@ fn write_access_output(
                 .map(|index| values[canonical_to_dense(index)].as_ref().to_owned())
                 .collect::<Vec<_>>();
             let changed = target != staged;
-            target.clone_from_slice(&staged);
+            for (target, value) in target.iter_mut().zip(staged) {
+                *target = value;
+            }
             Ok(changed)
         }
         _ => Err(ResidentKernelError::InvalidOutput),

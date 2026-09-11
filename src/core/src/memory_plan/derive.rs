@@ -1955,7 +1955,7 @@ fn apply_implementation_demand(
 
 /// Conservative bytes required by the selected common canonical finalizer.
 /// The payload/encoding term covers the packed immutable data; the fixed
-/// metadata term covers the two shared roots, Value metadata, schema-table
+/// metadata term covers shared data/shape roots, ownership and schema-table
 /// shell, and shape parameters. Nested schema payload is supplied through the
 /// witness's schema byte count when present.
 pub fn canonical_snapshot_finalization_bytes(
@@ -1968,9 +1968,8 @@ pub fn canonical_snapshot_finalization_bytes(
         .ok_or(MemoryPlanError::ArithmeticOverflow {
             field: "canonical finalization shape bytes",
         })?;
-    let metadata = (core::mem::size_of::<crate::Value>() as u64)
-        .checked_mul(4)
-        .and_then(|bytes| bytes.checked_add(core::mem::size_of::<crate::SchemaTable>() as u64))
+    let metadata = crate::Value::canonical_owner_allocation_bytes()
+        .checked_add(core::mem::size_of::<crate::SchemaTable>() as u64)
         .ok_or(MemoryPlanError::ArithmeticOverflow {
             field: "canonical finalization metadata bytes",
         })?;

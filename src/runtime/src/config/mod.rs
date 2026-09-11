@@ -183,13 +183,19 @@ pub struct RuntimeLimits {
 
     /// Memory budget for runtime-managed allocations, in bytes.
     ///
-    /// Resident activation and replacement share this aggregate planned-backing
-    /// ceiling, independently of each operation's output/work limits. Mutable
-    /// Resident String/Snapshot growth is not yet fully connected to this
-    /// account, so this is not yet a complete Resident payload ceiling.
+    /// Resident activation, replacement, and turns share one aggregate account
+    /// for admitted backing and payload capacity. It includes String growth,
+    /// canonical ownership, captured input/state/effect copies, and temporary
+    /// staging before materialization. Old and candidate owners coexist under
+    /// the same ceiling; exported canonical values retain their charge until
+    /// their last owning clone is dropped. Operation output/work limits remain
+    /// separate and unchanged.
+    ///
     /// The same value remains the default context byte budget. Independently
-    /// constructed runtimes have independent accounts; this is not a process
-    /// memory limit. None leaves the aggregate ceiling unconfigured.
+    /// constructed runtimes have independent accounts. This is not a process
+    /// RSS limit or a ceiling on compiler or caller-owned allocations. None
+    /// leaves the aggregate ceiling unconfigured; no default host quota is
+    /// installed.
     pub max_memory_bytes: Option<u64>,
 
     /// Maximum number of tasks allowed to exist at once.

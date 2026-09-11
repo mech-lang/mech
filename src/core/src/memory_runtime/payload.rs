@@ -208,6 +208,25 @@ pub struct RetainedPayloadTicket {
 }
 
 impl RetainedPayloadTicket {
+    pub(crate) const fn ownership_header_bytes() -> u64 {
+        core::mem::size_of::<RetainedPayloadCharge>() as u64
+    }
+
+    pub(crate) const fn ownership_header_alignment() -> usize {
+        core::mem::align_of::<RetainedPayloadCharge>()
+    }
+
+    pub(crate) fn memory_budget_retained_bytes(
+        &self,
+        budget: &super::ManagedMemoryBudget,
+    ) -> Option<u64> {
+        self.charge
+            .budget_charge
+            .as_ref()
+            .filter(|charge| charge.budget() == *budget)
+            .map(super::ManagedMemoryReservation::capacity_bytes)
+    }
+
     pub fn bytes(&self) -> u64 {
         self.charge.bytes
     }
