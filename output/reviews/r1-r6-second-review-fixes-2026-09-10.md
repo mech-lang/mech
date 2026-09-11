@@ -26,7 +26,7 @@ external review has been requested by this report.
 - Reviewed R6 base: `47fdb6a8ef7e7ce286553c65c1b76782200dc4e4`.
 - Imported checkpoint: `131165e4a4c2d1ea56692b46658da44a8b8c7fc6`.
 - Implementation correction: `adb8c0dc1450c3f049e9d48d7399fb9c3d3acc1d`.
-- The distribution-fingerprint follow-up updates this report. Resolve the
+- The CI integration follow-ups update this report. Resolve the
   candidate's exact SHA with `git rev-parse HEAD`; it does not embed its own hash.
 - Local qualification was completed during September 10–11, 2026, against
   the correction contents committed with this report.
@@ -190,9 +190,45 @@ Both checked-in snapshots match the generated results byte-for-byte, including
 the graph fingerprints. Packaging, native-host contracts, and 55 CI/catalog/
 native Python tests also passed during the follow-up.
 
+## Exact-head CI integration follow-up
+
+Normal CI run `34561935652` on `89634ab570a31387f4a835332f51d9f9e93542ef`
+passed Linux, Windows, every static gate, and most owner suites, including the
+corrected distribution checks. Five execution jobs failed from two shared
+causes; browser/PR aggregation failures are not additional causes:
+
+- GPU owner and browser-compute compilation still called the removed unscoped
+  budget APIs. GPU backing is an aggregate physical projection, so both its
+  budget evaluation and domain realization now use the aggregate APIs. Two
+  regressions retain the separation from per-call limits and independently
+  enforce exact/one-over storage limits even with an empty supplied violation
+  list.
+- Runtime owner, browser N-body reference, and standard browser source loading
+  encountered the same `math/mul` ambiguity: symmetric broadcast candidates
+  described one compatible output using fixed versus live dimension names.
+  Inferred output dimensions now normalize under the admitted live-equality
+  relations, while imported rigid dimensions, bounds, input conversion plans,
+  and explicitly expected outputs retain their authority. Otherwise equal
+  overloads prefer an already-proved shape relation over an extra deferred
+  live check, preserving singleton and empty broadcasts.
+
+The first runtime run passed 614 tests and failed seven through this shared
+source-planning ambiguity. Existing N-body physics, trajectory, durability,
+and no-fallback assertions are unchanged. The correction adds shared numeric,
+comparison, String-equality, Boolean, fixed/live, operand-order, and expected-
+output regressions instead of special-casing N-body or changing its source.
+
+Local follow-up evidence: all 52 core catalog/solver tests, all six exact GPU
+owner tests (three R5 and three R6), and all 621 runtime owner tests pass.
+The seven previously failing runtime tests now pass unchanged, including both
+the public N-body independent-reference test and the source/bytecode D2 test
+for 4,096 accepted turns. All 35 R3 mutation tests, R3/R5/R6 architecture gates,
+and formatting checks pass. Required exact-head normal and Full CI remain
+pending; no completed-green claim applies to this revision.
+
 ## Work remaining before merge
 
-1. Qualify the distribution-fingerprint follow-up pushed to draft PR #811.
+1. Qualify the GPU admission and broadcast-resolution follow-up in draft PR #811.
 2. Validate the current full native shard set through the required Full CI
    workflow. Preserve failures as concrete correction work; do not substitute
    the inherited inventory or earlier green run for this result.

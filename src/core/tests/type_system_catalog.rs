@@ -220,15 +220,17 @@ fn fixed_set(kind: BuiltinScalarKind, cardinality: u64) -> ResolvedType {
 }
 
 fn turn_row_matrix(kind: BuiltinScalarKind, columns: u64) -> ResolvedType {
+    turn_axis_matrix(kind, 0, columns)
+}
+
+fn turn_axis_matrix(kind: BuiltinScalarKind, axis: usize, fixed: u64) -> ResolvedType {
     let rows = DimensionParameterId::new(0);
+    let mut dimensions = vec![DimensionExpr::Constant(fixed); 2];
+    dimensions[axis] = DimensionExpr::Parameter(rows);
     ResolvedType::new(
         KindExpr::Matrix {
             element: Box::new(kind.kind_expr()),
-            dimensions: vec![
-                DimensionExpr::Parameter(rows),
-                DimensionExpr::Constant(columns),
-            ]
-            .into_boxed_slice(),
+            dimensions: dimensions.into_boxed_slice(),
         },
         vec![DimensionParameterDeclaration {
             id: rows,
@@ -516,6 +518,14 @@ fn resolve_named_overload(
     name: &str,
     inputs: &[ResolvedType],
 ) -> Result<mech_core::ResolvedOverload, mech_core::TypeResolutionError> {
+    resolve_named_overload_with_expected(name, inputs, None)
+}
+
+fn resolve_named_overload_with_expected(
+    name: &str,
+    inputs: &[ResolvedType],
+    expected_outputs: Option<&[ResolvedType]>,
+) -> Result<mech_core::ResolvedOverload, mech_core::TypeResolutionError> {
     let declaration = maintained_source_type_declaration(name).unwrap();
     let candidates = declaration
         .overloads
@@ -529,7 +539,7 @@ fn resolve_named_overload(
         TypeConstraintOrigin::new(name, None),
         &candidates,
         inputs,
-        None,
+        expected_outputs,
     )
 }
 
@@ -638,6 +648,110 @@ fn promoted_elementwise_schemes_admit_only_supported_broadcast_axes() {
                 resolve_named_overload(name, &[matrix.clone(), other]).is_err(),
                 "{name} admitted incompatible elementwise matrix dimensions"
             );
+        }
+    }
+}
+
+#[test]
+fn mixed_fixed_and_live_broadcast_axes_have_one_semantic_result() {
+    for (name, input_element, output_element) in [
+        ("math/add", BuiltinScalarKind::F64, BuiltinScalarKind::F64),
+        ("math/mul", BuiltinScalarKind::F64, BuiltinScalarKind::F64),
+        (
+            "compare/gt",
+            BuiltinScalarKind::F64,
+            BuiltinScalarKind::Bool,
+        ),
+        (
+            "compare/eq",
+            BuiltinScalarKind::String,
+            BuiltinScalarKind::Bool,
+        ),
+        (
+            "logic/and",
+            BuiltinScalarKind::Bool,
+            BuiltinScalarKind::Bool,
+        ),
+    ] {
+        for axis in 0..2 {
+            for extent in [0, 1, 10] {
+                let live = turn_axis_matrix(input_element, axis, 1);
+                let (rows, columns) = if axis == 0 { (extent, 1) } else { (1, extent) };
+                let fixed = fixed_matrix(input_element, rows, columns);
+                let expected = if extent == 1 {
+                    // A singleton broadcasts without requiring the live axis
+                    // itself to become one. Empty live axes are valid too.
+                    turn_axis_matrix(output_element, axis, 1)
+                } else {
+                    fixed_matrix(output_element, rows, columns)
+                };
+                for inputs in [[live.clone(), fixed.clone()], [fixed.clone(), live.clone()]] {
+                    let resolved = resolve_named_overload(name, &inputs).unwrap_or_else(|error| {
+                        panic!("{name}, axis {axis}, extent {extent}: {error:?}")
+                    });
+                    assert_eq!(resolved.outputs.as_ref(), &[expected.clone()], "{name}");
+                    for (conversion, original) in resolved.conversions.iter().zip(&inputs) {
+                        // Result normalization must not rewrite the rigid input
+                        // type or convert a live extent into a fixed one.
+                        assert_eq!(&conversion.source, original);
+                        assert_eq!(&conversion.target, original);
+                        assert_eq!(conversion.cost, 0);
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn distinct_live_broadcast_axes_do_not_require_rigid_input_equality() {
+    for name in ["math/add", "math/mul"] {
+        let mut live = turn_row_matrix(BuiltinScalarKind::F64, 1);
+        let bounded = ResolvedType::new(
+            live.kind().clone(),
+            vec![DimensionParameterDeclaration {
+                id: DimensionParameterId::new(0),
+                origin: DimensionParameterOrigin::Inferred,
+                lifetime: DimensionLifetime::Turn,
+                lower_bound: DimensionExpr::Constant(0),
+                upper_bound: Some(DimensionExpr::Constant(64)),
+            }]
+            .into_boxed_slice(),
+        )
+        .unwrap();
+        assert_ne!(live, bounded);
+        for other in [bounded, live.clone()] {
+            for inputs in [[live.clone(), other.clone()], [other.clone(), live.clone()]] {
+                let resolved = resolve_named_overload(name, &inputs).unwrap();
+                assert_eq!(resolved.outputs.len(), 1);
+                assert!(resolved.conversions.iter().all(|plan| plan.cost == 0));
+            }
+            // Check both declaration orders without making them equal.
+            live = other;
+        }
+    }
+}
+
+#[test]
+fn live_broadcast_normalization_preserves_explicit_expected_output_authority() {
+    for axis in 0..2 {
+        let live = turn_axis_matrix(BuiltinScalarKind::F64, axis, 1);
+        let fixed = if axis == 0 {
+            fixed_matrix(BuiltinScalarKind::F64, 10, 1)
+        } else {
+            fixed_matrix(BuiltinScalarKind::F64, 1, 10)
+        };
+        for inputs in [[live.clone(), fixed.clone()], [fixed.clone(), live.clone()]] {
+            for expected in [live.clone(), fixed.clone()] {
+                let resolved = resolve_named_overload_with_expected(
+                    "math/mul",
+                    &inputs,
+                    Some(core::slice::from_ref(&expected)),
+                )
+                .unwrap();
+                assert_eq!(resolved.outputs.as_ref(), core::slice::from_ref(&expected));
+                assert!(resolved.conversions.iter().all(|plan| plan.cost == 0));
+            }
         }
     }
 }

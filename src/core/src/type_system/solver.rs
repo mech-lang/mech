@@ -7,7 +7,8 @@ use super::{
     plan_numeric_promotion, semantic_dimension_name, semantic_kind_name,
 };
 use crate::dimension::{
-    collect_dimension_references, normalize_dimension, rewrite_dimension_references,
+    collect_dimension_references, encode_normalized_dimension, normalize_dimension,
+    rewrite_dimension_references,
 };
 use crate::kind_expr::{
     collect_kind_dimension_references, rewrite_kind_dimensions, visit_kind_dimensions,
@@ -95,6 +96,7 @@ pub struct OverloadScore {
     pub unconstrained_kind_bindings: u32,
     pub unconstrained_dimension_bindings: u32,
     pub predicate_generality: u32,
+    pub deferred_dimension_checks: u32,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -240,6 +242,7 @@ pub struct TypeConstraintEnvironment {
     bindable_dimensions: BTreeSet<DimensionParameterId>,
     kind_bindings: BTreeMap<KindParameterId, KindBinding>,
     dimension_bindings: BTreeMap<DimensionParameterId, DimensionExpr>,
+    output_dimension_equivalences: Vec<Vec<DimensionExpr>>,
     imported_evidence: Vec<(KindExpr, BuiltinKindPredicateSet)>,
     imported_type_groups: Vec<(ResolvedType, u32)>,
     rigid_dimension_origins: BTreeMap<DimensionParameterId, RigidDimensionOrigin>,
@@ -257,6 +260,7 @@ impl TypeConstraintEnvironment {
             bindable_dimensions: BTreeSet::new(),
             kind_bindings: BTreeMap::new(),
             dimension_bindings: BTreeMap::new(),
+            output_dimension_equivalences: Vec::new(),
             imported_evidence: Vec::new(),
             imported_type_groups: Vec::new(),
             rigid_dimension_origins: BTreeMap::new(),
@@ -434,6 +438,7 @@ impl TypeConstraintEnvironment {
             match constraint {
                 KindConstraint::DimensionCompatible(left, right) => {
                     self.require_dimension_compatible(left, right)?;
+                    self.record_output_dimension_equivalence(left, right)?;
                 }
                 KindConstraint::DimensionLessEqual(left, right) => {
                     self.require_dimension_less_equal(left, right)?;
@@ -457,7 +462,7 @@ impl TypeConstraintEnvironment {
         let outputs = scheme
             .outputs
             .iter()
-            .map(|output| self.close_output(output))
+            .map(|output| self.close_output(output, expected_outputs.is_none()))
             .collect::<Result<Vec<_>, _>>()?
             .into_boxed_slice();
         Ok(SchemeResolution {
@@ -1111,7 +1116,7 @@ impl TypeConstraintEnvironment {
     }
 
     fn require_dimension_compatible(
-        &self,
+        &mut self,
         left: &DimensionExpr,
         right: &DimensionExpr,
     ) -> Result<(), TypeResolutionError> {
@@ -1123,6 +1128,19 @@ impl TypeConstraintEnvironment {
         let left_evolution = self.dimension_evolution(&left)?;
         let right_evolution = self.dimension_evolution(&right)?;
         if left_evolution >= 2 || right_evolution >= 2 {
+            // Prefer a candidate whose shape relationship is already proved
+            // over one that additionally constrains a live extent. In
+            // particular, a singleton broadcast must preserve the shaped
+            // operand rather than select an alternative requiring it to be 1.
+            self.score.deferred_dimension_checks = self
+                .score
+                .deferred_dimension_checks
+                .checked_add(1)
+                .ok_or_else(|| {
+                    self.error(TypeConstraintFailure::InvalidScheme {
+                        reason: "overload deferred-dimension score overflow".into(),
+                    })
+                })?;
             return Ok(());
         }
         let left_interval = self.dimension_interval(&left)?;
@@ -1137,6 +1155,72 @@ impl TypeConstraintEnvironment {
             expected: semantic_dimension_name(&left),
             actual: semantic_dimension_name(&right),
         })
+    }
+
+    /// Compatible extents are equal on successful execution, but are not an
+    /// unconditional equality proof about imported (rigid) input dimensions.
+    /// Normalize only the result under that relation: symmetric broadcast
+    /// schemes must not report different results merely because one names the
+    /// fixed operand's axis and another names its live-checked dynamic peer.
+    /// Input conversions, dimension bounds and exact equality remain unchanged.
+    fn record_output_dimension_equivalence(
+        &mut self,
+        left: &DimensionExpr,
+        right: &DimensionExpr,
+    ) -> Result<(), TypeResolutionError> {
+        let mut equivalent = vec![
+            self.substitute_dimension(left)?,
+            self.substitute_dimension(right)?,
+        ];
+        let mut index = 0;
+        while index < self.output_dimension_equivalences.len() {
+            if self.output_dimension_equivalences[index]
+                .iter()
+                .any(|known| equivalent.contains(known))
+            {
+                equivalent.extend(self.output_dimension_equivalences.remove(index));
+            } else {
+                index += 1;
+            }
+        }
+        // The canonical dimension encoding orders constants before parameters,
+        // then compound expressions; it never depends on catalog/factory IDs.
+        equivalent.sort_by_key(encode_normalized_dimension);
+        equivalent.dedup();
+        self.output_dimension_equivalences.push(equivalent);
+        Ok(())
+    }
+
+    fn close_output_dimension(
+        &self,
+        dimension: &DimensionExpr,
+    ) -> Result<DimensionExpr, TypeResolutionError> {
+        fn rewrite(dimension: &DimensionExpr, equivalents: &[Vec<DimensionExpr>]) -> DimensionExpr {
+            if let Some(group) = equivalents.iter().find(|group| group.contains(dimension)) {
+                return group[0].clone();
+            }
+            let children = |values: &[DimensionExpr]| {
+                values
+                    .iter()
+                    .map(|value| rewrite(value, equivalents))
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice()
+            };
+            match dimension {
+                DimensionExpr::Add(values) => DimensionExpr::Add(children(values)),
+                DimensionExpr::Multiply(values) => DimensionExpr::Multiply(children(values)),
+                DimensionExpr::Min(values) => DimensionExpr::Min(children(values)),
+                DimensionExpr::Max(values) => DimensionExpr::Max(children(values)),
+                other => other.clone(),
+            }
+        }
+        let dimension = self.substitute_dimension(dimension)?;
+        normalize_dimension(
+            &rewrite(&dimension, &self.output_dimension_equivalences),
+            self.dimensions.len(),
+        )
+        .map_err(TypeResolutionError::semantic)
+        .map_err(|error| error.with_origin(self.origin.clone()))
     }
 
     fn validate_kind_parameter_bounds(
@@ -1191,7 +1275,11 @@ impl TypeConstraintEnvironment {
         Ok(())
     }
 
-    fn close_output(&self, output: &KindExpr) -> Result<ResolvedType, TypeResolutionError> {
+    fn close_output(
+        &self,
+        output: &KindExpr,
+        normalize_compatible_dimensions: bool,
+    ) -> Result<ResolvedType, TypeResolutionError> {
         let output = self.substitute_kind(output)?;
         let mut unresolved_kind = None;
         visit_kind_parameters(&output, &mut |id| {
@@ -1205,7 +1293,14 @@ impl TypeConstraintEnvironment {
         }
 
         let output = substitute_kind_dimensions(&output, &mut |dimension| {
-            self.substitute_dimension(dimension)
+            if normalize_compatible_dimensions {
+                self.close_output_dimension(dimension)
+            } else {
+                // An explicitly supplied expected type already selected the
+                // output dimension authority. Do not replace that exact type
+                // with an equivalent live-checked input's representation.
+                self.substitute_dimension(dimension)
+            }
         })?;
         let mut unresolved_dimension = None;
         visit_kind_dimensions(&output, &mut |dimension| {

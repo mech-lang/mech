@@ -23,7 +23,7 @@ use mech_core::{
     MemoryLifetime, MemoryObjectId, MemoryObjectOwner, MemoryPlanError, MemoryPlanPoint,
     MemoryRuntimeError, MemorySpace, PlanObjectKey, PreparedCallAccess, PreparedDeviceSubmission,
     RealizedMemoryPlan, ResourceDemand, RuntimePlanView, TargetMemoryProfile, TransferDirection,
-    TransferPlan, evaluate_memory_budget,
+    TransferPlan, evaluate_aggregate_memory_budget,
 };
 
 /// Existing GPU execution plan paired with the process-local, non-wire R5
@@ -118,12 +118,11 @@ impl ManagedGpuMemory {
     pub fn realize(plan: &GpuBackingMemoryPlan) -> Result<Self, GpuMemoryPlanError> {
         let domain = MemoryDomain::new()?;
         let revision = domain.issue_plan_revision()?;
-        let reservation = domain.prepare_realization(RuntimePlanView::new(
+        let reservation = domain.prepare_realization(RuntimePlanView::for_aggregate(
             revision,
             &plan.allocations,
             &plan.arenas,
             plan.demand,
-            0,
             plan.budget_limits,
             &[],
             1,
@@ -895,10 +894,9 @@ impl PlannedGpuExecution {
         }
         let mut budget_violations = Vec::<MemoryBudgetViolation>::new();
         for allocation in &allocations {
-            budget_violations.extend(evaluate_memory_budget(
+            budget_violations.extend(evaluate_aggregate_memory_budget(
                 allocation.owner.clone(),
                 demand_for_gpu_allocation(allocation, demand.storage_bindings),
-                allocation.capacity_bytes,
                 allocation.capacity_bytes,
                 target.limits,
             ));

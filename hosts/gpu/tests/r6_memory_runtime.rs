@@ -67,6 +67,48 @@ fn unregistered_device_buffers_cannot_enter_submission() {
     ));
 }
 
+#[test]
+fn backing_realization_does_not_reapply_per_call_limits_to_aggregate_demand() {
+    let mut plan = planned_execution(4);
+    // The backing projection may retain totals from multiple admitted calls.
+    // Only each call's semantic plan has authority over output/work limits.
+    plan.memory.demand.output_elements = 4;
+    plan.memory.demand.work.comparison = 4;
+    plan.memory.demand.work.compute = 4;
+    plan.memory.demand.work.scalar_instructions = 4;
+    plan.memory.budget_limits.max_output_elements = Some(1);
+    plan.memory.budget_limits.max_output_bytes = Some(1);
+    plan.memory.budget_limits.max_comparison_work = Some(1);
+    plan.memory.budget_limits.max_compute_work = Some(1);
+    plan.memory.budget_limits.max_scalar_instructions = Some(1);
+
+    let memory = plan.managed_memory().unwrap();
+    assert_eq!(memory.allocations().len(), 1);
+    assert_eq!(plan.binding_bytes(0), Some(16));
+    assert_eq!(memory.allocations()[0].actual_block_bytes, 0);
+}
+
+#[test]
+fn backing_realization_rechecks_storage_limits_with_no_supplied_violations() {
+    let mut plan = planned_execution(4);
+    assert!(plan.memory.budget_violations.is_empty());
+
+    plan.memory.budget_limits.max_storage_buffer_bytes = Some(16);
+    assert!(plan.managed_memory().is_ok());
+
+    plan.memory.budget_limits.max_storage_buffer_bytes = Some(15);
+    assert!(matches!(
+        plan.managed_memory(),
+        Err(GpuMemoryPlanError::Runtime(
+            MemoryRuntimeError::BudgetExceeded {
+                requested: 16,
+                limit: 15,
+                ..
+            }
+        ))
+    ));
+}
+
 #[cfg(feature = "native")]
 #[test]
 fn registered_device_buffer_couples_storage_loss_and_accounting_lifetimes() {
