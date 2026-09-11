@@ -10,10 +10,12 @@ use std::sync::{
 };
 use std::time::{Duration, Instant};
 
-use colored::*;
+use colored::{ColoredString, Colorize};
 use ignore::WalkBuilder;
 use mech_browser::BrowserRuntimeInjectionConfig;
-use mech_core::*;
+use mech_core::{
+    GenericError, MResult, MechError, MechErrorKind, MechSourceCode, compress_and_encode,
+};
 use mech_runtime::{
     DefaultIdGenerator, EventId, EventSink, FS_IMPORT, FS_LIST, FS_READ, FS_RESOLVE, FS_SERVE,
     FS_WATCH, HostFilesystemAuthority, ModuleBuildOptions, RuntimeConfig, RuntimeEvent,
@@ -27,7 +29,10 @@ use mech_syntax::{
 };
 use warp::Filter;
 
-use crate::*;
+use crate::{
+    HostAuthorityInjection, inject_browser_host_config_script,
+    inject_host_authority_injection_script,
+};
 
 const SERVER_SHUTDOWN_GRACE: Duration = Duration::from_secs(2);
 
