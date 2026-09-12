@@ -8,8 +8,8 @@ use crate::document::{
 };
 
 use super::{
-    FormulaSyntax, FunctionCallSyntax, LiteralSyntax, PatternSyntax, SliceSyntax, StructureSyntax,
-    VariableSyntax, child, children, direct_token,
+    FormulaSyntax, FunctionCallSyntax, LiteralSyntax, MatrixComprehensionSyntax, PatternSyntax,
+    SliceSyntax, StructureSyntax, VariableSyntax, child, children, direct_token,
 };
 
 recursive_ast_node!(FactorSyntax, Factor);
@@ -34,6 +34,7 @@ pub enum FactorValueSyntax {
     Structure(StructureSyntax),
     Literal(LiteralSyntax),
     Call(FunctionCallSyntax),
+    MatrixComprehension(MatrixComprehensionSyntax),
     Slice(SliceSyntax),
     Variable(VariableSyntax),
 }
@@ -48,6 +49,7 @@ impl AstNode for FactorValueSyntax {
                 | SyntaxKind::Structure
                 | SyntaxKind::Literal
                 | SyntaxKind::FunctionCall
+                | SyntaxKind::MatrixComprehension
                 | SyntaxKind::Slice
                 | SyntaxKind::Variable
         )
@@ -63,6 +65,9 @@ impl AstNode for FactorValueSyntax {
             SyntaxKind::Structure => StructureSyntax::cast(syntax).map(Self::Structure),
             SyntaxKind::Literal => LiteralSyntax::cast(syntax).map(Self::Literal),
             SyntaxKind::FunctionCall => FunctionCallSyntax::cast(syntax).map(Self::Call),
+            SyntaxKind::MatrixComprehension => {
+                MatrixComprehensionSyntax::cast(syntax).map(Self::MatrixComprehension)
+            }
             SyntaxKind::Slice => SliceSyntax::cast(syntax).map(Self::Slice),
             SyntaxKind::Variable => VariableSyntax::cast(syntax).map(Self::Variable),
             _ => None,
@@ -77,6 +82,7 @@ impl AstNode for FactorValueSyntax {
             Self::Structure(value) => value.syntax(),
             Self::Literal(value) => value.syntax(),
             Self::Call(value) => value.syntax(),
+            Self::MatrixComprehension(value) => value.syntax(),
             Self::Slice(value) => value.syntax(),
             Self::Variable(value) => value.syntax(),
         }
@@ -196,15 +202,37 @@ impl MatchArmSyntax {
     }
 
     pub fn guard(&self) -> Option<crate::document::ExpressionSyntax> {
-        let mut expressions = self.expressions();
-        (expressions.len() == 2).then(|| expressions.remove(0))
+        self.expressions_around_output().0
     }
 
     pub fn value(&self) -> Option<crate::document::ExpressionSyntax> {
-        self.expressions().pop()
+        self.expressions_around_output().1
     }
 
     pub fn output_operator(&self) -> Option<SyntaxToken> {
         direct_token(&self.0, SyntaxKind::OutputOperator, 0)
+    }
+
+    fn expressions_around_output(
+        &self,
+    ) -> (
+        Option<crate::document::ExpressionSyntax>,
+        Option<crate::document::ExpressionSyntax>,
+    ) {
+        let Some(output) = self.output_operator() else {
+            return (self.expressions().into_iter().next(), None);
+        };
+        let boundary = output.range().start;
+        let mut guard = None;
+        let mut value = None;
+        for expression in self.expressions() {
+            if expression.syntax().range().end <= boundary {
+                guard = Some(expression);
+            } else {
+                value = Some(expression);
+                break;
+            }
+        }
+        (guard, value)
     }
 }

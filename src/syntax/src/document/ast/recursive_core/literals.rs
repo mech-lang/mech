@@ -64,9 +64,11 @@ impl LiteralSyntax {
     }
 
     pub fn annotation(&self) -> Option<KindAnnotationSyntax> {
-        self.0
-            .children()
-            .filter_map(KindAnnotationSyntax::cast)
-            .last()
+        let mut annotations = self.0.children().filter_map(KindAnnotationSyntax::cast);
+        if matches!(self.value(), Some(LiteralValueSyntax::KindAnnotation(_))) {
+            annotations.nth(1)
+        } else {
+            annotations.next()
+        }
     }
 }

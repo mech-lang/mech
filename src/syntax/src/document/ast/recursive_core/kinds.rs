@@ -216,7 +216,7 @@ impl TableKindSyntax {
     pub fn field_names(&self) -> Vec<IdentifierSyntax> {
         children(&self.0)
     }
-    pub fn field_kinds(&self) -> Vec<KindWithOptionSyntax> {
+    pub fn field_kinds(&self) -> Vec<KindAnnotationSyntax> {
         children(&self.0)
     }
     pub fn closing_bar(&self) -> Option<SyntaxToken> {

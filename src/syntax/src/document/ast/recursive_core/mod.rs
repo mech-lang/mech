@@ -102,14 +102,17 @@ pub(super) fn direct_token(
 }
 
 pub(super) fn direct_tokens(syntax: &SyntaxNode) -> Vec<SyntaxToken> {
-    syntax
-        .children_with_tokens()
-        .into_iter()
-        .filter_map(|element| match element {
-            SyntaxElement::Token(token) => Some(token),
-            SyntaxElement::Node(_) => None,
-        })
-        .collect()
+    let mut tokens = Vec::new();
+    for element in syntax.children_with_tokens() {
+        match element {
+            SyntaxElement::Token(token) => tokens.push(token),
+            SyntaxElement::Node(node) if node.kind() == SyntaxKind::Missing => {
+                tokens.extend(node.tokens());
+            }
+            SyntaxElement::Node(_) => {}
+        }
+    }
+    tokens
 }
 
 fn collect_nodes<N: AstNode>(syntax: &SyntaxNode, output: &mut Vec<N>) {

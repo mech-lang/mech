@@ -8,10 +8,11 @@ use mech_syntax::document::parser::canonical::{
 };
 use mech_syntax::document::parser::rules;
 use mech_syntax::document::{
-    ArgumentListSyntax, AstNode, DocumentId, ExpressionSyntax, FormulaSyntax, GreenNode, MapSyntax,
-    NodeFlags, NodeId, ParseConfig, PatternArrayItemSyntax, RecursiveCoreSyntax,
-    RecursiveSyntaxNode, Revision, SyntaxKind, SyntaxNode, TextSize, TextSnapshot,
-    phase_2i_node_kind,
+    ArgumentListSyntax, AstNode, DocumentId, ExpressionSyntax, FactorSyntax, FactorValueSyntax,
+    FormulaSyntax, GreenNode, LiteralSyntax, LiteralValueSyntax, MapSyntax, MatchArmSyntax,
+    MatrixSyntax, NodeFlags, NodeId, ParseConfig, PatternArrayItemSyntax, RecursiveCoreSyntax,
+    RecursiveSyntaxNode, Revision, SyntaxKind, SyntaxNode, TableKindSyntax, TextSize, TextSnapshot,
+    TokenFlags, phase_2i_node_kind,
 };
 
 fn repository_root() -> PathBuf {
@@ -52,6 +53,19 @@ fn find_kind(node: &SyntaxNode, kind: SyntaxKind) -> Option<SyntaxNode> {
         return Some(node.clone());
     }
     node.children().find_map(|child| find_kind(&child, kind))
+}
+
+fn find_matrix_comprehension_factor(node: &SyntaxNode) -> Option<FactorSyntax> {
+    if let Some(factor) = FactorSyntax::cast(node.clone())
+        && matches!(
+            factor.value(),
+            Some(FactorValueSyntax::MatrixComprehension(_))
+        )
+    {
+        return Some(factor);
+    }
+    node.children()
+        .find_map(|child| find_matrix_comprehension_factor(&child))
 }
 
 #[test]
@@ -175,4 +189,71 @@ fn typed_access_survives_missing_and_error_recovery() {
     assert!(expression.body().is_some());
     assert_eq!(expression.error_nodes().len(), 1);
     assert!(expression.missing_nodes().is_empty());
+}
+
+#[test]
+fn typed_roles_follow_parser_boundaries_and_recovery_ownership() {
+    let table = parse_canonical_phase_2i_rule_for_test(
+        source("|x<u8>|"),
+        rules::KIND_TABLE,
+        ParseConfig::default(),
+    )
+    .unwrap();
+    let table =
+        TableKindSyntax::cast(find_kind(&table.syntax(), SyntaxKind::TableKind).unwrap()).unwrap();
+    assert_eq!(table.field_names().len(), 1);
+    assert_eq!(table.field_kinds().len(), 1);
+    assert!(table.field_kinds()[0].kind().is_some());
+
+    let matrix =
+        parse_canonical_phase_2i_rule_for_test(source("[1"), rules::MATRIX, ParseConfig::default())
+            .unwrap();
+    let matrix =
+        MatrixSyntax::cast(find_kind(&matrix.syntax(), SyntaxKind::Matrix).unwrap()).unwrap();
+    let closing = matrix
+        .closing_delimiter()
+        .expect("matrix owns its recovered closing delimiter");
+    assert_eq!(closing.kind(), SyntaxKind::RightBracket);
+    assert!(closing.flags().contains(TokenFlags::MISSING));
+    assert!(matrix.direct_tokens().iter().any(|token| {
+        token.kind() == SyntaxKind::RightBracket && token.flags().contains(TokenFlags::MISSING)
+    }));
+
+    let arm = parse_canonical_phase_2i_rule_for_test(
+        source("| *, x =>"),
+        rules::MATCH_ARM,
+        ParseConfig::default(),
+    )
+    .unwrap();
+    let arm =
+        MatchArmSyntax::cast(find_kind(&arm.syntax(), SyntaxKind::MatchArm).unwrap()).unwrap();
+    assert!(arm.guard().is_some());
+    assert!(arm.value().is_none());
+
+    let literal = parse_canonical_phase_2i_rule_for_test(
+        source("<u8>"),
+        rules::LITERAL,
+        ParseConfig::default(),
+    )
+    .unwrap();
+    let literal =
+        LiteralSyntax::cast(find_kind(&literal.syntax(), SyntaxKind::Literal).unwrap()).unwrap();
+    assert!(matches!(
+        literal.value(),
+        Some(LiteralValueSyntax::KindAnnotation(_))
+    ));
+    assert!(literal.annotation().is_none());
+
+    let expression = parse_canonical_phase_2i_rule_for_test(
+        source("[x | x <- xs]"),
+        rules::FACTOR,
+        ParseConfig::default(),
+    )
+    .unwrap();
+    let factor = find_matrix_comprehension_factor(&expression.syntax())
+        .expect("matrix comprehension factor");
+    assert!(matches!(
+        factor.value(),
+        Some(FactorValueSyntax::MatrixComprehension(_))
+    ));
 }

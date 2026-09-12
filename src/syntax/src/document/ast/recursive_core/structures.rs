@@ -5,7 +5,7 @@ use crate::document::{
     SyntaxNode, SyntaxToken,
 };
 
-use super::{KindAnnotationSyntax, child, children, direct_token, nth_child};
+use super::{KindAnnotationSyntax, child, children, direct_token, direct_tokens, nth_child};
 
 recursive_ast_node!(StructureSyntax, Structure);
 recursive_ast_node!(MatrixSyntax, Matrix);
@@ -101,35 +101,21 @@ impl MatrixSyntax {
         children(&self.0)
     }
     pub fn opening_delimiter(&self) -> Option<SyntaxToken> {
-        self.0
-            .children_with_tokens()
-            .into_iter()
-            .find_map(|element| match element {
-                crate::document::SyntaxElement::Token(token)
-                    if matches!(
-                        token.kind(),
-                        SyntaxKind::LeftBracket | SyntaxKind::BoxDrawing
-                    ) =>
-                {
-                    Some(token)
-                }
-                _ => None,
-            })
+        direct_tokens(&self.0).into_iter().find(|token| {
+            matches!(
+                token.kind(),
+                SyntaxKind::LeftBracket | SyntaxKind::BoxDrawing
+            )
+        })
     }
     pub fn closing_delimiter(&self) -> Option<SyntaxToken> {
-        self.0
-            .children_with_tokens()
+        direct_tokens(&self.0)
             .into_iter()
-            .filter_map(|element| match element {
-                crate::document::SyntaxElement::Token(token)
-                    if matches!(
-                        token.kind(),
-                        SyntaxKind::RightBracket | SyntaxKind::BoxDrawing
-                    ) =>
-                {
-                    Some(token)
-                }
-                _ => None,
+            .filter(|token| {
+                matches!(
+                    token.kind(),
+                    SyntaxKind::RightBracket | SyntaxKind::BoxDrawing
+                )
             })
             .last()
     }
