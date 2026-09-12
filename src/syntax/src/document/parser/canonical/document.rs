@@ -51,6 +51,9 @@ pub(crate) fn parse_rule(parser: &mut Parser<'_>, rule: RuleId) -> Attempt {
     else {
         return Attempt::NoMatch;
     };
+    if !document_rule_enabled(specification) {
+        return Attempt::NoMatch;
+    }
     let checkpoint = parser.checkpoint();
     let Some(result) = parser.with_nesting(|parser| {
         parser.with_canonical_rule(rule, |parser| parse_document_rule(parser, specification))
@@ -73,7 +76,12 @@ fn parse_document_rule(parser: &mut Parser<'_>, specification: &DocumentRule) ->
     let mut result = if specification.rule == rules::MECH_CODE_ALT
         && comment_wins_at_mech_item_boundary(parser)
     {
-        parse_any_rule(parser, rules::COMMENT)
+        let leading = parse_any_rule(parser, rules::WHITESPACE0);
+        if !leading.accepted() {
+            leading
+        } else {
+            parse_any_rule(parser, rules::COMMENT)
+        }
     } else {
         parse_expression(parser, &specification.expression, &mut state)
     };
@@ -120,11 +128,28 @@ fn comment_wins_at_mech_item_boundary(parser: &mut Parser<'_>) -> bool {
         parser.rewind(checkpoint);
         return false;
     }
+    if matches!(
+        parser.cursor().byte_at(2),
+        None | Some(b' ' | b'\t' | b'\r' | b'\n')
+    ) {
+        parser.rewind(checkpoint);
+        return true;
+    }
     let expression = parse_any_rule(parser, rules::EXPRESSION);
-    let complete_expression =
-        expression == Attempt::Matched && parse_any_rule(parser, rules::CODE_TERMINAL).accepted();
+    let complete_expression = expression == Attempt::Committed
+        || expression == Attempt::Matched
+            && parse_any_rule(parser, rules::CODE_TERMINAL).accepted();
     parser.rewind(checkpoint);
     !complete_expression
+}
+
+fn document_rule_enabled(specification: &DocumentRule) -> bool {
+    match specification.feature {
+        None => true,
+        Some("mika") => cfg!(feature = "mika"),
+        Some("invariant_define") => cfg!(feature = "invariant_define"),
+        Some(feature) => unreachable!("unknown generated document feature {feature}"),
+    }
 }
 
 fn parse_expression(
@@ -137,6 +162,9 @@ fn parse_expression(
     }
     match expression {
         GrammarExpression::Rule(rule) => {
+            if *rule == rules::MIKA_SECTION_CLOSE && !cfg!(feature = "mika") {
+                return Attempt::NoMatch;
+            }
             let start = parser.offset();
             let mut result = parse_any_rule(parser, *rule);
             if parser.is_halted() {
@@ -348,10 +376,18 @@ fn parse_sequence(
     let initial_state = *state;
     let mut committed = false;
     let mut distinctive_prefix = false;
-    for item in items {
+    let inline_mech_sequence = matches!(
+        (items.first(), items.get(1)),
+        (
+            Some(GrammarExpression::Rule(left)),
+            Some(GrammarExpression::Rule(right))
+        ) if *left == rules::LEFT_BRACE && *right == rules::LEFT_BRACE
+    );
+    for (index, item) in items.iter().enumerate() {
         match parse_expression(parser, item, state) {
             Attempt::Matched => {
-                if matches!(item, GrammarExpression::Rule(rule) if *rule == rules::CODEBLOCK_SIGIL)
+                if matches!(item, GrammarExpression::Rule(rule) if *rule == rules::CODEBLOCK_SIGIL || *rule == rules::MIKA_SECTION_OPEN)
+                    || inline_mech_sequence && index == 1
                 {
                     distinctive_prefix = true;
                 }
@@ -379,6 +415,11 @@ fn parse_sequence(
                 );
                 committed = true;
             }
+            Attempt::NoMatch
+                if distinctive_prefix && recover_required_sequence_item(parser, item) =>
+            {
+                committed = true;
+            }
             Attempt::NoMatch if committed || distinctive_prefix => return Attempt::Committed,
             Attempt::NoMatch => {
                 parser.rewind(checkpoint);
@@ -392,6 +433,41 @@ fn parse_sequence(
     } else {
         Attempt::Matched
     }
+}
+
+fn recover_required_sequence_item(parser: &mut Parser<'_>, item: &GrammarExpression) -> bool {
+    let GrammarExpression::Rule(rule) = item else {
+        return false;
+    };
+    let (code, message, token) = if *rule == rules::NEW_LINE {
+        (
+            "syntax/missing-codeblock-header-newline",
+            "expected a newline after the code-block header",
+            SyntaxKind::Newline,
+        )
+    } else if *rule == rules::RIGHT_BRACE {
+        (
+            "syntax/missing-inline-mech-closer",
+            "expected a closing brace for inline Mech code",
+            SyntaxKind::RightBrace,
+        )
+    } else if *rule == rules::MIKA_SECTION_CLOSE {
+        (
+            "syntax/missing-mika-section-closer",
+            "expected a closing Mika section delimiter",
+            SyntaxKind::MikaSectionClose,
+        )
+    } else {
+        return false;
+    };
+    recovery::insert_missing(
+        parser,
+        code,
+        message,
+        ExpectedSyntax::Token(token),
+        Some(token),
+    );
+    true
 }
 
 fn parse_repetition(

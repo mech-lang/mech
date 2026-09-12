@@ -1,6 +1,8 @@
 use std::fs;
 use std::path::PathBuf;
 
+use mech_syntax::document::parser::canonical::parse_canonical_document_rule_for_test;
+use mech_syntax::document::parser::rules;
 use mech_syntax::document::{
     AstNode, CodeBlockSyntax, DocumentId, DocumentSyntax, ParseConfig, ParseLimits,
     RecursiveSyntaxNode, Revision, SyntaxKind, SyntaxNode, TextSnapshot, compact_debug_tree,
@@ -161,6 +163,55 @@ fn comment_selection_preserves_complete_recursive_negation() {
     assert!(comment.is_strictly_clean(), "{:#?}", comment.diagnostics);
     assert_eq!(count(&comment.syntax(), SyntaxKind::Comment), 1);
     assert_eq!(count(&comment.syntax(), SyntaxKind::Expression), 0);
+}
+
+#[test]
+fn comment_selection_preserves_whitespace_and_committed_expression_recovery() {
+    let comment = parse_canonical_document_rule_for_test(
+        source("\n  -- note"),
+        rules::MECH_CODE_ALT,
+        ParseConfig::default(),
+    )
+    .unwrap();
+    assert!(comment.is_strictly_clean(), "{:#?}", comment.diagnostics);
+    let comment_node = find(comment.syntax(), SyntaxKind::Comment).expect("typed comment");
+    assert_eq!(comment_node.range().start.0, 3);
+
+    let expression = parse_canonical_document(source("--x +\n"), ParseConfig::default());
+    assert!(!expression.is_strictly_clean());
+    assert_eq!(count(&expression.syntax(), SyntaxKind::NegateFactor), 2);
+    assert_eq!(count(&expression.syntax(), SyntaxKind::Comment), 0);
+}
+
+#[test]
+fn distinctive_document_openers_recover_required_closers() {
+    let mika = parse_canonical_document(source("~∘~⸢text\n"), ParseConfig::default());
+    assert!(!mika.is_strictly_clean());
+    assert!(find(mika.syntax(), SyntaxKind::MikaSection).is_some());
+    assert!(
+        mika.diagnostics
+            .iter()
+            .any(|diagnostic| { diagnostic.code.as_str() == "syntax/missing-mika-section-closer" })
+    );
+
+    let inline = parse_canonical_document(source("Text {{x := 1}\n"), ParseConfig::default());
+    assert!(!inline.is_strictly_clean());
+    assert!(find(inline.syntax(), SyntaxKind::InlineMechCode).is_some());
+    assert!(
+        inline
+            .diagnostics
+            .iter()
+            .any(|diagnostic| { diagnostic.code.as_str() == "syntax/missing-inline-mech-closer" })
+    );
+
+    for text in ["```", "```mech"] {
+        let fence = parse_canonical_document(source(text), ParseConfig::default());
+        assert!(!fence.is_strictly_clean(), "{text:?}");
+        assert!(find(fence.syntax(), SyntaxKind::CodeBlock).is_some());
+        assert!(fence.diagnostics.iter().any(|diagnostic| {
+            diagnostic.code.as_str() == "syntax/missing-codeblock-header-newline"
+        }));
+    }
 }
 
 #[test]
