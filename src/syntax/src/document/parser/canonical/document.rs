@@ -70,7 +70,13 @@ fn parse_document_rule(parser: &mut Parser<'_>, specification: &DocumentRule) ->
     }
     let marker = specification.kind.map(|_| parser.start());
     let mut state = GrammarState::default();
-    let mut result = parse_expression(parser, &specification.expression, &mut state);
+    let mut result = if specification.rule == rules::MECH_CODE_ALT
+        && comment_wins_at_mech_item_boundary(parser)
+    {
+        parse_any_rule(parser, rules::COMMENT)
+    } else {
+        parse_expression(parser, &specification.expression, &mut state)
+    };
     if parser.is_halted() {
         result = Attempt::Committed;
     }
@@ -105,6 +111,20 @@ fn parse_document_rule(parser: &mut Parser<'_>, specification: &DocumentRule) ->
         }
     }
     result
+}
+
+fn comment_wins_at_mech_item_boundary(parser: &mut Parser<'_>) -> bool {
+    let checkpoint = parser.checkpoint();
+    let _ = base::parse_rule(parser, rules::WHITESPACE0);
+    if !parser.cursor().starts_with("--") {
+        parser.rewind(checkpoint);
+        return false;
+    }
+    let expression = parse_any_rule(parser, rules::EXPRESSION);
+    let complete_expression =
+        expression == Attempt::Matched && parse_any_rule(parser, rules::CODE_TERMINAL).accepted();
+    parser.rewind(checkpoint);
+    !complete_expression
 }
 
 fn parse_expression(
@@ -154,6 +174,9 @@ fn parse_expression(
             } else {
                 result
             }
+        }
+        GrammarExpression::MikaExpressionTriples(triples) => {
+            parse_registered_mika_expression(parser, triples)
         }
         GrammarExpression::Empty => Attempt::Matched,
         GrammarExpression::Sequence(items) => parse_sequence(parser, items, state),
@@ -277,6 +300,43 @@ fn parse_expression(
             }
         }
     }
+}
+
+fn parse_registered_mika_expression(
+    parser: &mut Parser<'_>,
+    triples: &[(&str, &str, &str)],
+) -> Attempt {
+    for &(left, nose, right) in triples {
+        let checkpoint = parser.checkpoint();
+        let parts = [
+            (rules::MIKA_EYE_LEFT, SyntaxKind::MikaEyeLeft, left),
+            (rules::MIKA_NOSE, SyntaxKind::MikaNose, nose),
+            (rules::MIKA_EYE_RIGHT, SyntaxKind::MikaEyeRight, right),
+        ];
+        if parts.into_iter().all(|(rule, kind, literal)| {
+            parser.with_canonical_rule(rule, |parser| {
+                let marker = parser.start();
+                if parser.cursor().grapheme_literal_end(literal).is_none() {
+                    marker.abandon(parser);
+                    return false;
+                }
+                let Ok(length) = u32::try_from(literal.len()) else {
+                    marker.abandon(parser);
+                    return false;
+                };
+                if parser.bump_bytes_token(length, SyntaxKind::Text).is_none() {
+                    marker.abandon(parser);
+                    return false;
+                }
+                marker.complete(parser, kind);
+                true
+            })
+        }) {
+            return Attempt::Matched;
+        }
+        parser.rewind(checkpoint);
+    }
+    Attempt::NoMatch
 }
 
 fn parse_sequence(

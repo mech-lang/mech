@@ -140,6 +140,34 @@ fn only_the_three_specified_rules_use_best_choice() {
 }
 
 #[test]
+fn mika_expression_inner_accepts_only_registered_triples() {
+    let rule = canonical_rule_id("mika-expression-inner").unwrap();
+    for text in ["ˆ◯ˆ", "ㆆ⍜ㆆ", "⌐▰◯▰", "¬◯¬"] {
+        let parsed =
+            parse_canonical_document_rule_for_test(source(text), rule, ParseConfig::default())
+                .unwrap();
+        assert_eq!(parsed.outcome, CanonicalRuleOutcome::Matched, "{text:?}");
+        assert_eq!(parsed.consumed, parsed.source.full_range(), "{text:?}");
+        assert!(parsed.diagnostics.is_empty(), "{text:?}");
+        for kind in [
+            SyntaxKind::MikaEyeLeft,
+            SyntaxKind::MikaNose,
+            SyntaxKind::MikaEyeRight,
+        ] {
+            assert!(find(parsed.syntax(), kind).is_some(), "{text:?}: {kind:?}");
+        }
+    }
+    for text in ["¬∘¬", "ˆ◯ಠ", "ㆆ◯ㆆ"] {
+        let parsed =
+            parse_canonical_document_rule_for_test(source(text), rule, ParseConfig::default())
+                .unwrap();
+        assert_eq!(parsed.outcome, CanonicalRuleOutcome::NoMatch, "{text:?}");
+        assert_eq!(parsed.consumed.start, parsed.consumed.end, "{text:?}");
+        assert!(parsed.diagnostics.is_empty(), "{text:?}");
+    }
+}
+
+#[test]
 fn s7_dispositions_cover_the_exact_remaining_inventory() {
     let table =
         fs::read_to_string(repository_root().join("docs/design/grammar-audit/s7-dispositions.tsv"))

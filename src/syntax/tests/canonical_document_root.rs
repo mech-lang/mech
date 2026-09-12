@@ -30,6 +30,14 @@ fn find(node: SyntaxNode, kind: SyntaxKind) -> Option<SyntaxNode> {
     node.children().find_map(|child| find(child, kind))
 }
 
+fn count(node: &SyntaxNode, kind: SyntaxKind) -> usize {
+    usize::from(node.kind() == kind)
+        + node
+            .children()
+            .map(|child| count(&child, kind))
+            .sum::<usize>()
+}
+
 #[test]
 fn canonical_document_root_owns_the_whole_source_fixture_corpus() {
     let matrix = fs::read_to_string(
@@ -136,6 +144,35 @@ fn committed_statement_recovery_is_not_replaced_by_a_short_expression() {
     validate_lossless(&snapshot.root, &snapshot.source).unwrap();
     assert!(!snapshot.diagnostics.is_empty());
     assert!(find(snapshot.syntax(), SyntaxKind::VariableDefine).is_some());
+}
+
+#[test]
+fn comment_selection_preserves_complete_recursive_negation() {
+    let expression = parse_canonical_document(source("--x\n"), ParseConfig::default());
+    assert!(
+        expression.is_strictly_clean(),
+        "{:#?}",
+        expression.diagnostics
+    );
+    assert_eq!(count(&expression.syntax(), SyntaxKind::NegateFactor), 2);
+    assert_eq!(count(&expression.syntax(), SyntaxKind::Comment), 0);
+
+    let comment = parse_canonical_document(source("-- note\n"), ParseConfig::default());
+    assert!(comment.is_strictly_clean(), "{:#?}", comment.diagnostics);
+    assert_eq!(count(&comment.syntax(), SyntaxKind::Comment), 1);
+    assert_eq!(count(&comment.syntax(), SyntaxKind::Expression), 0);
+}
+
+#[test]
+fn consecutive_underlined_subtitles_start_distinct_sections() {
+    let snapshot = parse_canonical_document(
+        source("1.First\n-----\n2.Second\n------\n"),
+        ParseConfig::default(),
+    );
+    assert!(snapshot.is_strictly_clean(), "{:#?}", snapshot.diagnostics);
+    let document = DocumentSyntax::cast(snapshot.syntax()).unwrap();
+    assert_eq!(document.sections().len(), 2);
+    assert_eq!(count(document.syntax(), SyntaxKind::UlSubtitle), 2);
 }
 
 #[test]

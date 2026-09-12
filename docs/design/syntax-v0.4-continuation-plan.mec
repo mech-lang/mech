@@ -19,8 +19,9 @@ the atomic product cutover have independent gates.
 The canonical inventory contains exactly 539 rules:
 
 ```text
-canonical syntax certified 522
+canonical syntax certified 520
 historical command rules    17
+outside Document closure     2
                            ---
 total                      539
 ```
