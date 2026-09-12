@@ -31,6 +31,11 @@ use mech_core::{
     OutputConstruction, OutputPortPolicy, Register, RuntimeType, SchemaBody, SchemaDraft,
     SchemaHandle, SchemaTableBuilder, ShapeInstance, ShapeRule, Value,
 };
+#[cfg(all(feature = "source", not(feature = "semantic-compiler")))]
+use mech_core::{
+    AccessMode, AliasPolicy, ChangeDetectionPolicy, DeliveryMode, ExternalInteraction,
+    InputPortLayout, InputPortPolicy, OutputConstruction, OutputPortPolicy, ShapeRule,
+};
 
 #[cfg(feature = "semantic-compiler")]
 use super::ComputeRegionDeclaration;
@@ -110,8 +115,8 @@ static COMPILER_STATE_HOLD_CONTRACT: LazyLock<OperationContractDeclaration> =
         interaction: ExternalInteraction::Pure,
     });
 
-#[cfg(feature = "semantic-compiler")]
-fn matrix_literal_contract(element_count: usize) -> OperationContractDeclaration {
+#[cfg(any(feature = "semantic-compiler", feature = "source"))]
+pub(crate) fn matrix_literal_contract(element_count: usize) -> OperationContractDeclaration {
     OperationContractDeclaration {
         inputs: InputPortLayout::Fixed(
             (0..element_count)

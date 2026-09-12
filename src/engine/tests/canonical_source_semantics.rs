@@ -1,4 +1,4 @@
-#![cfg(feature = "source")]
+#![cfg(feature = "source_default")]
 
 use std::fs;
 use std::path::PathBuf;
@@ -8,7 +8,8 @@ use mech_core::{
 };
 use mech_engine::{
     CanonicalSourceFrontend, PHASE_2I_SEMANTIC_RULES, Phase2iSemanticDisposition, SourceNodeOutput,
-    SourceSemanticComprehensionQualifierRole, SourceValue, phase_2i_semantic_disposition,
+    SourceSemanticComprehensionQualifierRole, SourceStateInitializer, SourceValue,
+    phase_2i_semantic_disposition,
 };
 use mech_syntax::document::parser::canonical::parse_canonical_phase_2i_rule_for_test;
 use mech_syntax::document::parser::rules;
@@ -146,7 +147,7 @@ fn typed_expression_builds_source_program_and_preserves_anchors() {
 #[test]
 fn identifiers_are_resolved_once_and_reused_as_source_inputs() {
     let compiled = CanonicalSourceFrontend
-        .compile_expression(&expression("signal + signal"))
+        .compile_expression(&expression("signal<u8> + signal<u8>"))
         .unwrap();
     assert_eq!(compiled.program().inputs.len(), 1);
     assert_eq!(compiled.program().inputs[0].name, "signal");
@@ -164,7 +165,7 @@ fn structures_calls_comprehensions_and_fsm_enter_one_source_graph() {
         ("{1: 2, 3: 4}", "source/map"),
         ("{1, 2}", "set/define"),
         ("(1, 2)", "source/tuple"),
-        ("[1 2]", "source/matrix"),
+        ("[1 2]", "matrix/literal"),
         ("|a<u8>|1|", "source/table"),
         ("f(left: 1, 2)", "f"),
         ("x[1].field", "access/index"),
@@ -328,7 +329,7 @@ fn calls_ranges_subscripts_and_patterns_keep_their_canonical_roles() {
     );
 
     let destructured = CanonicalSourceFrontend
-        .compile_expression(&expression("[a + b | (a, b) <- xs]"))
+        .compile_expression(&expression("[a + b | (a<u8>, b<u8>) <- xs]"))
         .unwrap();
     let bindings = destructured
         .source_map()
@@ -550,15 +551,23 @@ fn canonical_numeric_kinds_annotations_strings_and_state_are_preserved() {
 
     let constrained_optional = CanonicalSourceFrontend
         .compile_expression(&expression("signal<u8:1..10?>"))
-        .unwrap();
-    assert!(matches!(
-        constrained_optional
-            .schemas()
-            .get(constrained_optional.program().inputs[0].schema)
-            .unwrap()
-            .body(),
-        SchemaBody::Option(payload) if matches!(payload.as_ref(), SchemaBody::Dynamic)
-    ));
+        .err()
+        .expect("unsupported constrained annotations must be diagnosed");
+    assert_eq!(
+        constrained_optional.code,
+        "source-semantics/unsupported-kind-annotation"
+    );
+    for source in ["matrix<[u64]>", "row<{x<u8>}>"] {
+        assert_eq!(
+            CanonicalSourceFrontend
+                .compile_expression(&expression(source))
+                .err()
+                .expect("unsupported composite annotations must be diagnosed")
+                .code,
+            "source-semantics/unsupported-kind-annotation",
+            "{source:?}",
+        );
+    }
 
     let promoted = CanonicalSourceFrontend
         .compile_expression(&expression("1u8 + 2u16"))
@@ -636,15 +645,21 @@ fn canonical_numeric_kinds_annotations_strings_and_state_are_preserved() {
     ));
 
     for source in ["~state := signal", "~state := 1 + 2"] {
-        let error = CanonicalSourceFrontend
+        let compiled = CanonicalSourceFrontend
             .compile_definition(&definition(source))
-            .err()
-            .expect("nonconstant state initializer must be rejected");
-        assert_eq!(error.code, "source-semantics/nonconstant-state-initializer");
+            .unwrap_or_else(|error| panic!("{source:?}: {error}"));
+        assert!(matches!(
+            compiled.state_initializers(),
+            [SourceStateInitializer::Deferred(_)]
+        ));
+        assert!(matches!(
+            compiled.compile_artifact(),
+            Err(mech_engine::ArtifactBuildError::DeclaredSourceNodeLoweringUnsupported { .. })
+        ));
     }
 
     let overflow = CanonicalSourceFrontend
-        .compile_expression(&expression("1e100<f32>"))
+        .compile_expression(&expression("1.0e100<f32>"))
         .err()
         .expect("finite f64 values that overflow f32 must be rejected");
     assert_eq!(overflow.code, "source-semantics/invalid-number-literal");
@@ -690,27 +705,12 @@ fn canonical_numeric_kinds_annotations_strings_and_state_are_preserved() {
 fn semantic_kind_edges_are_resolved_before_graph_emission() {
     let dynamic_option = CanonicalSourceFrontend
         .compile_expression(&expression("1<u8:1..10?>"))
-        .unwrap();
-    let SourceValue::Constant(id) = dynamic_option.program().outputs[0].source else {
-        panic!("constrained optional number did not produce a constant")
-    };
-    assert!(matches!(
-        dynamic_option
-            .schemas()
-            .get(dynamic_option.program().outputs[0].schema)
-            .unwrap()
-            .body(),
-        SchemaBody::Option(payload) if matches!(payload.as_ref(), SchemaBody::Dynamic)
-    ));
-    assert!(matches!(
-        dynamic_option.constants().get(id).unwrap().data(),
-        ValueData::Option(Some(value))
-            if matches!(value.as_ref(), ValueData::Dynamic(dynamic)
-                if matches!(dynamic.value().map(|value| value.data()), Some(ValueData::F64(_))))
-    ));
-    dynamic_option
-        .compile_artifact()
-        .expect("a constrained optional number must finalize as a dynamic payload");
+        .err()
+        .expect("unsupported constrained annotations must be diagnosed");
+    assert_eq!(
+        dynamic_option.code,
+        "source-semantics/unsupported-kind-annotation"
+    );
 
     for (source, numerator, denominator) in [("2/4", 1, 2), ("7/7", 1, 1)] {
         let compiled = CanonicalSourceFrontend
@@ -984,6 +984,20 @@ fn reviewed_source_kind_edges_match_operation_and_literal_contracts() {
             "-(1<c32>)",
             "source-semantics/unsupported-resident-arithmetic-kind",
         ),
+        (
+            "true + true",
+            "source-semantics/non-numeric-arithmetic-kind",
+        ),
+        (
+            "\"a\" * \"b\"",
+            "source-semantics/non-numeric-arithmetic-kind",
+        ),
+        ("-:ready", "source-semantics/non-negatable-kind"),
+        ("-<u8>", "source-semantics/non-negatable-kind"),
+        (
+            "x ? | *, 1 => 2 | * => 3",
+            "source-semantics/non-boolean-operator-kind",
+        ),
     ] {
         assert_eq!(
             CanonicalSourceFrontend
@@ -1003,6 +1017,8 @@ fn reviewed_source_kind_edges_match_operation_and_literal_contracts() {
         ":ready == :ready",
         "limit < 1",
         "value % 2",
+        "value + 1",
+        "\"a\" + \"b\"",
     ] {
         let compiled = CanonicalSourceFrontend
             .compile_expression(&expression(source))
@@ -1011,6 +1027,19 @@ fn reviewed_source_kind_edges_match_operation_and_literal_contracts() {
             .compile_artifact()
             .unwrap_or_else(|error| panic!("{source:?}: {error:?}"));
     }
+    let concatenated = CanonicalSourceFrontend
+        .compile_expression(&expression("\"a\" + \"b\""))
+        .unwrap();
+    assert_eq!(
+        concatenated
+            .program()
+            .nodes
+            .last()
+            .unwrap()
+            .operation
+            .canonical_name(),
+        "string/concat"
+    );
 
     let maximum = CanonicalSourceFrontend
         .compile_expression(&expression("340282366920938463463374607431768211455u128"))
@@ -1102,6 +1131,51 @@ fn reviewed_source_kind_edges_match_operation_and_literal_contracts() {
     ordered_matrices
         .compile_artifact()
         .expect("ordered matrix comparison must satisfy its matrix scheme");
+
+    let equal_matrices = CanonicalSourceFrontend
+        .compile_expression(&expression("(1..3) == (1..3)"))
+        .unwrap();
+    let SchemaBody::Matrix { element, .. } = equal_matrices
+        .schemas()
+        .get(equal_matrices.program().outputs[0].schema)
+        .unwrap()
+        .body()
+    else {
+        panic!("matrix equality did not retain matrix shape")
+    };
+    assert!(matches!(element.as_ref(), SchemaBody::Bool));
+    assert_eq!(
+        equal_matrices
+            .contracts()
+            .last()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .outputs[0]
+            .change_detection,
+        ChangeDetectionPolicy::KernelReported
+    );
+
+    assert_eq!(
+        CanonicalSourceFrontend
+            .compile_expression(&expression("1e3"))
+            .err()
+            .expect("the selected typed-integer suffix must not be reinterpreted")
+            .code,
+        "source-semantics/unsupported-number-kind-suffix"
+    );
+    for source in ["1.0e3u8", "1.0e3units"] {
+        let scientific = CanonicalSourceFrontend
+            .compile_expression(&expression(source))
+            .unwrap();
+        let SourceValue::Constant(id) = scientific.program().outputs[0].source else {
+            panic!("scientific literal did not produce a constant")
+        };
+        assert!(matches!(
+            scientific.constants().get(id).unwrap().data(),
+            ValueData::F64(value) if value.to_f64() == 1000.0
+        ));
+    }
 
     assert_eq!(
         CanonicalSourceFrontend
@@ -1217,6 +1291,74 @@ fn exact_table_columns_and_c32_are_first_class_source_schemas() {
     };
     assert!(matches!(columns[0].schema, SchemaBody::Matrix { .. }));
     assert!(!table_schema.dimension_parameters().is_empty());
+
+    let matrix = CanonicalSourceFrontend
+        .compile_expression(&expression("[1 2]"))
+        .unwrap();
+    assert_eq!(
+        matrix
+            .program()
+            .nodes
+            .last()
+            .unwrap()
+            .operation
+            .canonical_name(),
+        "matrix/literal"
+    );
+    assert!(matches!(
+        matrix
+            .schemas()
+            .get(matrix.program().outputs[0].schema)
+            .unwrap()
+            .body(),
+        SchemaBody::Matrix { .. }
+    ));
+    matrix
+        .compile_artifact()
+        .expect("matrix literals must construct canonical artifacts");
+
+    let set = CanonicalSourceFrontend
+        .compile_expression(&expression("{1u8, 2u8}"))
+        .unwrap();
+    assert!(matches!(
+        set.schemas()
+            .get(set.program().outputs[0].schema)
+            .unwrap()
+            .body(),
+        SchemaBody::Set { element, cardinality }
+            if matches!(element.as_ref(), SchemaBody::UnsignedInteger(IntegerWidth::W8))
+                && *cardinality == mech_core::CardinalitySpec::Exact(
+                    mech_core::DimensionExpr::Constant(2)
+                )
+    ));
+    assert_eq!(
+        CanonicalSourceFrontend
+            .compile_expression(&expression("{1+2i}"))
+            .err()
+            .expect("non-keyable set elements must be rejected")
+            .code,
+        "source-semantics/non-keyable-set-element-kind"
+    );
+
+    let call = CanonicalSourceFrontend
+        .compile_expression(&expression("math/sin(1)"))
+        .unwrap();
+    assert!(matches!(
+        call.schemas()
+            .get(call.program().outputs[0].schema)
+            .unwrap()
+            .body(),
+        SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)
+    ));
+    assert!(call.contracts().last().unwrap().is_some());
+    assert_eq!(
+        call.contracts().last().unwrap().as_ref().unwrap().outputs[0].construction,
+        OutputConstruction::FullWrite {
+            shape: ShapeRule::SameAsInput { input: 0 }
+        }
+    );
+    call.compile_artifact()
+        .expect("maintained calls must produce contracted artifacts");
 }
 
 #[test]
