@@ -19,6 +19,11 @@ fn concrete_provider_contracts_equal_the_portable_source_authority() {
         ("range/inclusive-increment", 3),
         ("range/exclusive-increment", 3),
         ("matrix/transpose", 1),
+        ("set/union", 2),
+        ("set/intersection", 2),
+        ("set/difference", 2),
+        ("set/symmetric-difference", 2),
+        ("set/cartesian-product", 2),
     ] {
         let operation = OperationId::from_name(name);
         assert!(

@@ -96,6 +96,31 @@ pub fn maintained_operation_contract(
         {
             Some(elementwise_operation_contract(2, change_detection))
         }
+        "table/join"
+        | "table/left-outer-join"
+        | "table/right-outer-join"
+        | "table/full-outer-join"
+        | "table/left-semi-join"
+        | "table/left-anti-join"
+            if input_count == 2 =>
+        {
+            Some(full(ShapeRule::Declared))
+        }
+        "set/union"
+        | "set/intersection"
+        | "set/difference"
+        | "set/symmetric-difference"
+        | "set/cartesian-product"
+            if input_count == 2 =>
+        {
+            Some(declaration(
+                fixed(),
+                OutputConstruction::FullWrite {
+                    shape: ShapeRule::Declared,
+                },
+                ChangeDetectionPolicy::AlwaysChanged,
+            ))
+        }
         "logic/not" if input_count == 1 => {
             Some(elementwise_operation_contract(1, change_detection))
         }
