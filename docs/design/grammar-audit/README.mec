@@ -14,9 +14,13 @@ R1–R6 Integration Rebase
 
 The unfinished syntax stack is rebased through Phase 2I-C onto
 `integration/v0.4` at `535e4b245` (R1–R6 plus the combined integration fixes).
-Phase 2I-D recovery, typed views, and lowering, followed by Phase 2I-E parity
-and atomic registry activation, remain unfinished. This rebase does not
-activate the recursive registry or change the production parser entry point.
+Recovery, typed views, engine-owned source semantics, certification, and atomic
+registry activation remain unfinished.
+`docs/design/syntax-v0.4-continuation-plan.mec` replaces the old combined Phase
+2I-D/2I-E delivery assumption with independently gated milestones and an atomic
+document-root/product cutover that removes the Nom path and compatibility
+lowerers. This rebase does not activate the recursive registry or change the
+production parser entry point.
 
 The 539 canonical rule IDs and Phase 0 inventory remain stable. Their live
 implementation audit records the intervening integration changes explicitly:
@@ -117,6 +121,14 @@ The artifacts have distinct responsibilities:
   the canonical grammar.
 - `discrepancies.mec` is the append-only, stable-ID ledger for conflicts,
   ambiguities, and required behavioral investigations.
+- `source-parser-consumers.tsv` inventories every production call into the Nom
+  source path as an atomic-cutover removal target and assigns its final
+  canonical consumer boundary. Its source scanner binds each call to the exact
+  enclosing function and rejects imports, globs, renames, and function-value
+  aliases that could bypass the census.
+- `source-parser-consumer-fixtures.tsv` freezes specification-derived document
+  expectations shared by those consumer contracts without executing the old
+  parser as an oracle.
 - `src/syntax/tests/grammar_inventory.rs` mechanically checks inventory
   coverage, stable specification references, source-comment hygiene, and
   manifest invariants.
@@ -292,7 +304,7 @@ Any parser change must update the audit in the same change:
 An implementation production must map to a canonical grammar rule, and every
 canonical grammar rule must map back to at least one implementation function
 or an explicitly declared primitive/feature gate. Separate roots and
-intentional legacy/dead rules are named rather than made artificially
+intentionally retained or dead rules are named rather than made artificially
 reachable.
 
 8. Completion criteria

@@ -1,0 +1,410 @@
+Syntax v0.4 Continuation Plan
+===============================================================================
+
+Status: S0 complete; S1 source-boundary work in progress.
+
+Planning baseline: `feature/syntax` at `4560e5e6c`, rebased onto
+`integration/v0.4` after the R1-R6 stack. Pull request 812 is green at this
+baseline. This document changes the delivery plan only; it does not activate a
+rule or change the shipping parser.
+
+This plan supersedes the old Phase 2I-D/2I-E sequence. The refactor has one
+language authority and one final source path. Recovery, typed syntax, source
+semantics, certification, registry activation, document-root completion, and
+the atomic product cutover have independent gates.
+
+1. Current state
+-------------------------------------------------------------------------------
+
+The canonical inventory contains exactly 539 rules:
+
+```text
+canonical syntax complete  328
+not yet implemented        211
+                           ---
+total                      539
+```
+
+The completed phases cover 328 / 539 rules. The generated Phase 2I recursive
+component contains 80 of the 211 unported rules. Phase 2I-C recognizes clean
+input for all 80 rules with the canonical event parser, but activates none of
+them. Those rows remain `unported` with no phase assignment.
+
+The component still lacks local malformed-input recovery, complete typed
+red-tree views, source-semantic handling, certification against the canonical
+contracts, and atomic registry activation.
+
+The supported canonical roots are currently `Canonical + Grammar` and
+`Prototype + Document`. The shipping
+`mech_syntax::parser::parse(&str) -> MResult<mech_core::Program>` entry point
+still uses Nom. Twenty-nine production calls across the CLI, formatter,
+resolver, runtime, engine, server, bundler, and WASM controller still select
+that path. S1 inventories them as removal targets.
+
+R1-R6 changed the downstream semantic architecture. `SourceProgram`, canonical
+program artifacts, Type System v1, compiler IR, memory plans, and runtime values
+now have explicit owners. The new syntax path must enter those owners directly
+without recreating the old parser AST pipeline.
+
+2. Single-authority architecture
+-------------------------------------------------------------------------------
+
+`docs/design/specification.mec` is the sole language authority. Generated rule,
+dependency, schema, port, and conformance inventories derive from it. The Nom
+parser and its output do not decide accepted syntax, tree shape, whitespace,
+selection, or error behavior for new work.
+
+The authoritative parsed representation is the lossless `SyntaxSnapshot`.
+Typed red-tree views are the source API for formatting, indexing, editor tools,
+document inspection, and semantic compilation. Canonical rule contracts are
+expressed only in terms of grammar rules, syntax kinds, tokens, typed accessors,
+ranges, diagnostics, and recovery.
+
+Execution follows this ownership chain:
+
+```text
+UTF-8 source
+  -> canonical SyntaxSnapshot
+  -> strict validation
+  -> typed canonical document
+  -> engine-owned source semantics
+  -> SourceProgram / ProgramArtifact
+  -> Type System v1 and memory planning
+  -> runtime activation
+```
+
+The syntax crate ends at typed source and validation. It does not construct
+`SourceProgram`, compiler IR, `Value`, bytecode, memory plans, or runtime cells.
+The engine source frontend consumes typed syntax and constructs the semantic
+program forms it owns.
+
+Source tools use the shortest canonical route:
+
+```text
+formatter and document renderer -> typed document plus lossless tokens
+source resolver and indexer      -> typed imports, exports, contexts, scopes
+CLI classification               -> typed document structure
+incremental/editor consumers     -> SyntaxSnapshot and diagnostics
+```
+
+There is no rule-by-rule translation to `mech_core::Program`, no compatibility
+lowering tree, and no second parser authority. The final product cutover removes
+the old route instead of retaining a fallback or shadow implementation.
+
+3. Non-goals
+-------------------------------------------------------------------------------
+
+This continuation does not:
+
+- change bytecode-v1, canonical encoding, dynamic ABI, native linkage, program
+  artifact formats, Type System v1, or memory planner/runtime contracts;
+- create compiler or runtime values inside the syntax crate;
+- restore removed interpreter or REPL grammar paths;
+- add a canonical-to-old-AST compatibility layer;
+- use the old parser as an acceptance or tree-shape oracle;
+- ship two selectable parser implementations;
+- make a partial Phase 2I registry claim; or
+- change the canonical language without updating the specification, generated
+  inventories, conformance cases, and diagnostics together.
+
+4. Delivery sequence
+-------------------------------------------------------------------------------
+
+S0. Rebaseline and contract record
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Record the post-R1-R6 plan and update older Phase 2I documents to point to it.
+Freeze the green rebased baseline and current inventory counts. This step
+contains no parser behavior.
+
+Exit gate:
+
+- architecture, recursive-core, audit, and continuation documents agree;
+- generated inventories remain unchanged; and
+- the branch remains green against `integration/v0.4`.
+
+S1. Canonical boundary and removal census
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Turn the current source surface into an enforced migration contract before
+adding parser behavior.
+
+Deliverables:
+
+- inventory every production call through `mech_syntax::parser::parse` or its
+  crate-root `mech_syntax::parse` re-export, including
+  input normalization, feature gate, failure behavior, and result use;
+- assign each caller its final canonical boundary: snapshot, typed document,
+  source index, or engine source semantics;
+- enforce the existing 80-row Phase 2I syntax schema as the rule-level output
+  contract, including node, conditional-node, and transparent policies;
+- define the strict-validation diagnostic schema used before typed source enters
+  tools or engine semantics;
+- freeze representative whole-source fixtures with expectations derived from
+  the canonical specification; and
+- prohibit new production calls to the old parser outside the removal census.
+
+The current parser may keep the product green while the canonical document root
+is incomplete. It supplies no expected results to canonical tests.
+
+Exit gate:
+
+- all 29 current production calls are inventoried at their exact source path
+  and enclosing function, no unlisted call exists, and aliases cannot bypass
+  the census;
+- every caller has a final canonical target and cutover action;
+- every Phase 2I rule has a canonical typed-syntax disposition;
+- fixtures name their canonical rule/root and expected acceptance; and
+- canonical parser, AST, validation, and semantic-front-end modules do not
+  import or invoke Nom parser code.
+
+S2. Recursive-core recovery
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Add local recovery for the complete 80-rule component using the ownership rules
+in `recursive-executable-core.mec`.
+
+Deliverables:
+
+- `MISSING` insertion only at legitimate committed boundaries;
+- unexpected source retained beneath `ERROR` nodes;
+- delimiter-aware abandonment to the owning ancestor restart root;
+- stable rule/context diagnostics and recovery actions;
+- progress enforcement for every parse and recovery loop; and
+- hard fuel, nesting, event, diagnostic, and recovery-byte limits.
+
+Clean trees must remain byte-for-byte and structurally stable. Recovery must
+preserve complete-form selection for tuples, parentheticals, matrices,
+comprehensions, records, maps, sets, calls, slices, atoms, and tuple structures.
+
+Exit gate:
+
+- all 80 direct roots have malformed-input coverage;
+- clean snapshots remain unchanged from Phase 2I-C;
+- recovered snapshots reproduce every source byte exactly once;
+- committed failures retain their diagnostic and partial parent structure; and
+- adversarial shared-prefix and nesting cases stay within documented bounds.
+
+All 80 registry rows remain inactive.
+
+S3. Typed recursive syntax
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Add zero-copy typed red-tree views under `document/ast/recursive_core/`,
+mirroring frozen parser ownership.
+
+Deliverables:
+
+- typed casts for all unconditional and conditional Phase 2I node kinds;
+- optional accessors for required children that may be absent in live syntax;
+- ordered repeated-child accessors where grammar order carries meaning;
+- token and delimiter access for source-preserving tools;
+- explicit transparent aliases without invented wrappers; and
+- schema-driven completeness generation or tests.
+
+Exit gate:
+
+- every node-valued schema row has a typed view;
+- accessors cover clean, missing, error, and trivia-bearing forms;
+- casts reject unrelated kinds; and
+- typed access allocates no second tree and copies no source text.
+
+All 80 registry rows remain inactive.
+
+S4. Engine-owned source semantics
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Add a source frontend in the engine that consumes strictly valid typed canonical
+syntax. It replaces the semantic work currently reached through
+`mech_core::Program`; it does not live in the syntax crate.
+
+Deliverables:
+
+- define the typed document/expression inputs accepted by the engine frontend;
+- give every executable Phase 2I form a semantic handling rule and every
+  syntax-only form an explicit disposition;
+- resolve identifiers, kinds, literals, structures, calls, patterns,
+  comprehensions, FSM forms, and precedence through current compiler services;
+- construct the existing engine-owned `SourceProgram` and canonical artifact
+  inputs directly;
+- preserve source ranges and stable diagnostic anchors into semantic errors;
+- keep feature-dependent semantics behind their current compiler features; and
+- reject erroneous or missing typed syntax before semantic construction.
+
+Exit gate:
+
+- all executable Phase 2I forms reach engine-owned source semantics;
+- syntax-only forms are fully usable by their typed consumers;
+- no syntax module imports engine, compiler IR, or runtime value types;
+- no engine source-semantic module accepts `mech_core::Program`; and
+- Type System v1, artifact, memory, and runtime canaries remain unchanged.
+
+All 80 registry rows remain inactive.
+
+S5. Canonical certification
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Certify the component from the specification and canonical schema before
+changing inventory status.
+
+Deliverables:
+
+- direct accepted and rejected cases for every Phase 2I rule;
+- exact lossless tree and typed-accessor snapshots;
+- ambiguity cases for every shared prefix and complete-form selection rule;
+- generated/property cases for nesting, repeated operands, trivia, Unicode,
+  delimiters, and boundary whitespace;
+- recovery and resource-limit cases tied to stable diagnostic fields;
+- semantic cases derived from the specification for executable forms; and
+- downstream canaries for the canonical consumer of each typed family.
+
+`MATCH-001` remains part of the canonical grammar and conformance corpus. It is
+not treated as a difference from another parser.
+
+Exit gate:
+
+- the 80-rule matrix passes under full and base syntax profiles;
+- ambiguity, recovery, and resource suites pass;
+- semantic fixtures produce the specified canonical program behavior; and
+- no test imports the old parser to establish an expected result.
+
+All 80 registry rows remain inactive until this gate is complete.
+
+S6. Atomic Phase 2I activation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Update `ports.tsv` for all 80 rules in one change and regenerate the canonical
+port registry. Each member becomes Phase 2I with certified syntax, typed views,
+recovery, and source-semantic disposition.
+
+Replace the registry's pre-plan `lowering-status` field with an explicit
+`semantic-status` field before assigning Phase 2I. Replace the ambiguous
+`parity-verified` syntax label with `certified`. Existing closed phases are
+reclassified from their canonical evidence; the retiring lowerers are not a
+status source.
+
+Expected inventory after activation:
+
+```text
+canonical syntax certified 408
+not yet implemented        131
+                           ---
+total                      539
+```
+
+Exit gate:
+
+- the generated SCC report still identifies exactly the reviewed 80 members;
+- every row has parse, recovery, typed-view, semantic, ambiguity, and
+  resource-limit evidence;
+- generated registries and inventory tests pass; and
+- the public root matrix is unchanged.
+
+S7. Complete the canonical document root
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Regenerate dependency and SCC reports after Phase 2I activation. The 131 rows
+that remain unported are an inventory count, not an assumption that every row
+belongs to the shipping document closure. Partition them into generated
+document dependencies, maintained roots, and historical or non-syntax entries.
+Give every row an explicit current disposition. Port the document closure in
+generated order, one complete SCC or closed acyclic batch at a time.
+
+Every batch repeats the canonical gates:
+
+```text
+schema -> clean parse -> recovery -> typed views -> source semantics
+       -> canonical certification -> atomic batch activation
+```
+
+The objective is a complete canonical `Document` root for sibling Mech and
+Mechdown constructs. It must preserve all source bytes and expose title,
+section, annotation, fenced-code, import/export/context, comment, and range
+structure to its typed consumers.
+
+Exit gate:
+
+- `Canonical + Document` is the supported production-capable root;
+- every rule needed by it is registered and certified;
+- every remaining inventory row has a reviewed current disposition;
+- tools and engine source semantics cover the complete canonical fixture corpus;
+- malformed documents produce total snapshots and structured diagnostics; and
+- no product caller has switched early.
+
+S8. Atomic product cutover and removal
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Replace the complete S1 caller inventory by consumer class:
+
+- formatter, HTML, CLI classification, source indexing, and document tooling
+  consume canonical snapshots and typed documents;
+- resolver and incremental consumers retain canonical source revisions and
+  typed indexes;
+- engine, runtime, config, and WASM execution enter through engine-owned source
+  semantics; and
+- bundles publish canonical program artifacts rather than serialized old parser
+  trees.
+
+The same milestone removes:
+
+- the Nom parser and direct-rule infrastructure;
+- the `document/lower/legacy` tree;
+- the old source-to-`mech_core::Program` route and internal callers;
+- obsolete parser feature coupling and duplicate formatter/index paths; and
+- tests whose only purpose was to compare or preserve the removed parser.
+
+There is no runtime selector, shadow mode, compatibility adapter, or fallback.
+Any public API break is explicit and documented in the cutover change.
+
+Exit gate:
+
+- the removal census contains zero remaining production calls;
+- repository scans find no Nom parser path or compatibility lowerer;
+- all source tools use canonical typed syntax;
+- all execution consumers use engine source semantics;
+- static native, WASM source, no-std, warning, artifact, and runtime jobs pass;
+  and
+- full integration CI is green with one language authority and one source path.
+
+5. Validation policy
+-------------------------------------------------------------------------------
+
+Each milestone runs the checks that prove its local gate:
+
+- generated rule, port, dependency, schema, and SCC inventories;
+- full and base syntax test profiles;
+- grammar conformance under explicit feature sets;
+- Mika-only and reduced/no-std boundary checks;
+- formatting, static architecture, module layout, and warning policy; and
+- focused recovery, typed-view, semantic, ambiguity, or complexity suites.
+
+S6 and S8 require the full integration workflow because they change an
+authoritative registry or the shipping source path. S8 also requires static
+native and WASM source distributions plus the end-to-end compiler/runtime
+canaries used by `integration/v0.4`.
+
+Tests compare canonical structure, values, ranges, diagnostic codes, and
+recovery actions. English diagnostic wording is not an oracle.
+
+6. Review and branch shape
+-------------------------------------------------------------------------------
+
+Use one reviewable branch per numbered milestone. Recovery, typed syntax, and
+engine source semantics stay separate even if later work begins in a stack. A
+branch targets the last accepted syntax milestone and is rebased when its base
+moves.
+
+Generated files and their source inventories change together. Phase 2I
+activation is isolated so reviewers can verify the exact 80-row transition. The
+product cutover is one coordinated removal milestone; implementation branches
+may prepare canonical modules beforehand, but merged production code never
+exposes two selectable source paths.
+
+7. Completion definition
+-------------------------------------------------------------------------------
+
+The syntax continuation is complete when the canonical document parser is the
+only production source parser, all 539 canonical rules have a current reviewed
+disposition, tools consume canonical typed syntax, execution consumes the
+engine-owned source-semantic path, and Nom plus compatibility lowering are
+absent from production dependencies.

@@ -6,6 +6,8 @@ Status: Phase 2I-C complete clean recursive recognizer.
 Current canonical progress remains 328 / 539. Phase 2I-C implements clean,
 lossless recognition for all 80 rules but activates zero productions. The
 generated implementation boundary remains one strongly connected component.
+`docs/design/syntax-v0.4-continuation-plan.mec` is the current delivery plan
+after the R1-R6 integration rebase.
 
 The authoritative member inventory is
 `docs/design/grammar-audit/phase-2i-recursive-core.tsv`. The generated count is
@@ -27,42 +29,41 @@ normative grammar graph. The deterministic
 that grammar and records its direct child and reverse parent edges.
 
 `docs/design/grammar-audit/productions.tsv` records the canonical rule
-inventory, legacy implementation provenance, and audit notes. Its current
-`parent-rules` and `child-rules` columns are implementation-derived legacy call
+inventory, retiring implementation provenance, and audit notes. Its current
+`parent-rules` and `child-rules` columns are implementation-derived call
 metadata. They are not normative EBNF dependency edges and do not define the
 canonical recursive closure.
 
-`docs/design/grammar-audit/ports.tsv` defines syntax migration and lowering
-status. The recursive-core closure starts at `expression`, follows generated
-canonical dependencies through complete unported strongly connected
-components, and stops only at rules whose syntax is already implemented.
+`docs/design/grammar-audit/ports.tsv` defines syntax migration status. Its
+existing `lowering-status` column predates the single-authority plan and is
+replaced by an explicit source-semantic disposition before Phase 2I activation.
+The recursive-core closure starts at `expression`, follows generated canonical
+dependencies through complete unported strongly connected components, and
+stops only at rules whose syntax is already implemented.
 
 `phase-2i-recursive-core.tsv` defines membership and dependencies.
 `phase-2i-syntax-schema.tsv` defines module ownership and concrete tree
 emission. The schema does not replace or duplicate the dependency graph.
 
-The dependency extractor does not inspect legacy Rust parser calls. An
+The dependency extractor does not inspect retiring Rust parser calls. An
 independent repository test normalizes implementation-level descriptive
 primitives and the grammar meta-parser's whitespace-only terminal in memory,
 parses the complete grammar with the canonical grammar root, and requires the
 typed grammar syntax to reproduce every generated edge.
 
-2. Canonical parser only
+2. Canonical authority only
 -------------------------------------------------------------------------------
 
-All Phase 2I production code uses the canonical event-based parser.
-
-Nom is frozen legacy infrastructure. Phase 2I production code uses only the
-canonical event-based parser kernel. The Phase 2I-C recognizer does not call,
-wrap, translate, or extend a Nom parser.
+All Phase 2I production code uses the canonical event-based parser and the
+canonical specification. The Phase 2I-C recognizer does not call, wrap,
+translate, or extend a Nom parser.
 
 `ParseString` and `ParseResult` do not appear in canonical recursive-core code.
-Legacy parser functions may later be invoked only by isolated test-oracle
-adapters. They are never production dependencies.
+Nom parser functions are not test or production dependencies of canonical
+parser, typed-syntax, validation, certification, or source-semantic modules.
 
-No Phase 2I production code uses Nom. The dependency extractor does not inspect
-legacy Rust parser calls. The canonical grammar parser is the independent
-dependency oracle.
+The dependency extractor does not inspect old Rust parser calls. The canonical
+grammar graph is the only dependency authority.
 
 3. Atomic activation
 -------------------------------------------------------------------------------
@@ -73,15 +74,16 @@ No generated member is assigned Phase 2I until the complete closure:
 parses
 recovers
 exposes typed syntax
-lowers
-passes direct parity
+has a source-semantic disposition
+passes canonical conformance
 passes ambiguity tests
 passes resource-limit tests
 ```
 
 Intermediate stacked PRs may add implementation while leaving `ports.tsv`
-unchanged. Phase 2I-E activates the complete reviewed closure atomically. There
-is no partial registry activation and no earlier phase count change.
+unchanged. S6 of `docs/design/syntax-v0.4-continuation-plan.mec` activates the
+complete reviewed closure atomically. There is no partial registry activation
+and no earlier phase count change.
 
 4. Module design
 -------------------------------------------------------------------------------
@@ -122,24 +124,27 @@ parser/canonical/recursive_core/
   expressions.rs
 ```
 
-The typed syntax and compatibility lowering layouts mirror it under:
+The typed syntax layout mirrors it under:
 
 ```text
 ast/recursive_core/
-lower/legacy/recursive_core/
 ```
+
+Executable typed forms enter through the engine-owned source frontend defined
+by `docs/design/syntax-v0.4-continuation-plan.mec`. No recursive-core
+compatibility-lowering tree is added to the syntax crate.
 
 The implementation uses ordinary mutually recursive Rust functions. It does
 not introduce a parser generator, boxed parser closures, a Nom-like combinator
 framework, or one monolithic `recursive_core.rs` module.
 
 Phase 2I-C creates the parser directory above and implements the complete clean
-recognizer. The typed-syntax and compatibility-lowering directories remain
-absent. No parser root or port activation is introduced.
+recognizer. The typed-syntax directory and engine source-semantic handling
+remain absent. No parser root or port activation is introduced.
 
-`MATCH-001` records the accepted-language correction that expression match
-suffixes permit whitespace before their question mark. The optional suffix
-owns that whitespace only when the following question mark matches.
+`MATCH-001` records the canonical expression-match whitespace rule. The
+optional suffix owns that whitespace only when the following question mark
+matches.
 
 5. Complete-form selection
 -------------------------------------------------------------------------------
@@ -231,7 +236,7 @@ Canonical + Grammar
 
 This is the complete current parser-root API.
 
-10. Delivery sequence
+10. Historical delivery sequence
 -------------------------------------------------------------------------------
 
 ```text
@@ -242,10 +247,16 @@ This is the complete current parser-root API.
 2I-E  parity and atomic registry activation
 ```
 
+This sequence records the plan used to reach Phase 2I-C. The combined 2I-D and
+2I-E steps are superseded by the independently gated S1-S6 milestones in
+`docs/design/syntax-v0.4-continuation-plan.mec`. The current plan replaces
+compatibility lowering and cross-parser parity with canonical typed syntax,
+engine-owned source semantics, and specification-derived certification.
+
 Phase 2I-C implements clean, lossless recognition for all 80 mutually recursive
 productions against the frozen schema. All 80 rules remain unactivated. Local
-malformed-input recovery, typed syntax, compatibility lowering, and parity
-certification remain pending.
+malformed-input recovery, typed syntax, engine-owned source semantics, and
+canonical certification remain pending.
 
 Shared parenthesis, bracket, brace, colon, identifier, and kind prefixes are
 handled without exponential reparsing. Expression-level set and matrix
