@@ -392,7 +392,7 @@ fn semantic_evidence_distinguishes_non_wire_shape_values_and_slot_ownership() {
 }
 
 #[test]
-fn slice_semantic_evidence_preserves_selection_roles_and_select_all_identity() {
+fn slice_semantic_evidence_preserves_linear_gathers_and_whole_identity() {
     let contracts = certification_contracts();
     let source = contracts["slice"]
         .semantic_source
@@ -410,16 +410,74 @@ fn slice_semantic_evidence_preserves_selection_roles_and_select_all_identity() {
         .filter(|node| node.operation.starts_with("access/"))
         .map(|node| node.operation.as_str())
         .collect::<Vec<_>>();
-    assert_eq!(operations, ["access/scalar", "access/range"]);
+    assert_eq!(
+        operations,
+        ["access/scalar", "access/range", "access/range"]
+    );
     let tuple = compiled.program().nodes.last().expect("tuple result");
     assert_eq!(tuple.operation.canonical_name(), "core/composite-pack");
     assert_eq!(tuple.inputs.len(), 3);
-    assert_eq!(tuple.inputs[2], SourceValue::Input(0));
-    let identity = CanonicalSourceFrontend
-        .compile_expression(&expression("x[:][:]"))
+    let SourceValue::NodeOutput {
+        node,
+        output_ordinal: 0,
+    } = tuple.inputs[2]
+    else {
+        panic!("one-axis all must retain its gather output")
+    };
+    let gather = &compiled.program().nodes[node as usize];
+    assert_eq!(gather.operation.canonical_name(), "access/range");
+    assert_eq!(gather.inputs.as_ref(), &[SourceValue::Input(0)]);
+    compiled.compile_artifact().unwrap();
+
+    let linear = CanonicalSourceFrontend
+        .compile_expression(&expression("(x<[f64]:2,3>, x[:][:])"))
         .unwrap();
-    assert!(identity.program().nodes.is_empty());
-    assert_eq!(identity.program().outputs[0].source, SourceValue::Input(0));
+    assert_eq!(
+        linear
+            .program()
+            .nodes
+            .iter()
+            .filter(|node| node.operation.canonical_name() == "access/range")
+            .count(),
+        2
+    );
+    let linear_artifact = linear.compile_artifact().unwrap();
+    let SchemaBody::Tuple(items) = linear_artifact
+        .schemas()
+        .get(linear_artifact.outputs()[0].schema)
+        .unwrap()
+        .body()
+    else {
+        panic!()
+    };
+    assert!(
+        matches!(&items[1], SchemaBody::Matrix { dimensions, .. } if dimensions.as_ref() == [DimensionExpr::Constant(6), DimensionExpr::Constant(1)])
+    );
+
+    let identity = CanonicalSourceFrontend
+        .compile_expression(&expression("(x<[f64]:2,3>, x[:,:][:,:])"))
+        .unwrap();
+    assert_eq!(identity.program().nodes.len(), 1);
+    assert_eq!(
+        identity.program().nodes[0].operation.canonical_name(),
+        "core/composite-pack"
+    );
+    assert_eq!(
+        identity.program().nodes[0].inputs.as_ref(),
+        &[SourceValue::Input(0), SourceValue::Input(0)]
+    );
+    let artifact = identity.compile_artifact().unwrap();
+    let SchemaBody::Tuple(items) = artifact
+        .schemas()
+        .get(artifact.outputs()[0].schema)
+        .unwrap()
+        .body()
+    else {
+        panic!()
+    };
+    assert!(
+        matches!(&items[1], SchemaBody::Matrix { dimensions, .. } if dimensions.as_ref() == [DimensionExpr::Constant(2), DimensionExpr::Constant(3)])
+    );
 }
 
 #[test]
