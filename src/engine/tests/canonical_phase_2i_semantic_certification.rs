@@ -178,6 +178,18 @@ fn hash_optional_u32(hash: &mut StableHash, value: Option<u32>) {
     }
 }
 
+fn hash_slot_shapes(
+    hash: &mut StableHash,
+    shapes: &[(mech_core::CellSlotId, &mech_core::ShapeInstance)],
+) {
+    hash.field("artifact-slot-shape-hints-v1");
+    hash.usize(shapes.len());
+    for (slot, shape) in shapes {
+        hash.u32(slot.get());
+        hash.bytes(&shape.canonical_bytes());
+    }
+}
+
 fn semantic_snapshot_hash(compiled: &CanonicalSourceProgram) -> u64 {
     let mut hash = StableHash::new();
     let program = compiled.program();
@@ -352,12 +364,7 @@ fn semantic_snapshot_hash(compiled: &CanonicalSourceProgram) -> u64 {
                         .map(|shape| (slot.slot, shape))
                 })
                 .collect::<Vec<_>>();
-            hash.field("artifact-slot-shape-hints-v1");
-            hash.usize(slot_shape_hints.len());
-            for (slot, shape) in slot_shape_hints {
-                hash.u32(slot.get());
-                hash.bytes(&shape.canonical_bytes());
-            }
+            hash_slot_shapes(&mut hash, &slot_shape_hints);
         }
         Err(ArtifactBuildError::MissingOperationContract { node, operation }) => {
             hash.field("artifact-missing-operation-contract");
@@ -368,13 +375,37 @@ fn semantic_snapshot_hash(compiled: &CanonicalSourceProgram) -> u64 {
             hash.field("artifact-deferred-source-node");
             hash.u32(source_node);
         }
-        Err(_) => hash.field("artifact-build-error"),
+        Err(error) => panic!("unclassified semantic certification artifact failure: {error:?}"),
     }
     hash.0
 }
 
 #[test]
-fn slice_semantic_evidence_reaches_the_select_all_operation() {
+fn semantic_evidence_distinguishes_non_wire_shape_values_and_slot_ownership() {
+    let compiled = CanonicalSourceFrontend
+        .compile_expression(&expression("1..3"))
+        .unwrap();
+    let schema = compiled
+        .schemas()
+        .get(compiled.program().outputs[0].schema)
+        .unwrap();
+    assert_eq!(schema.dimension_parameters().len(), 1);
+    let two = schema.instantiate_shape(Box::new([2])).unwrap();
+    let three = schema.instantiate_shape(Box::new([3])).unwrap();
+    let snapshot = |shapes: &[(mech_core::CellSlotId, &mech_core::ShapeInstance)]| {
+        let mut hash = StableHash::new();
+        hash_slot_shapes(&mut hash, shapes);
+        hash.0
+    };
+    let slot = mech_core::CellSlotId::new(0);
+    let original = snapshot(&[(slot, &two)]);
+    assert_ne!(original, snapshot(&[]));
+    assert_ne!(original, snapshot(&[(slot, &three)]));
+    assert_ne!(original, snapshot(&[(mech_core::CellSlotId::new(1), &two)]));
+}
+
+#[test]
+fn slice_semantic_evidence_preserves_selection_roles_and_select_all_identity() {
     let contracts = certification_contracts();
     let source = contracts["slice"]
         .semantic_source
@@ -383,13 +414,25 @@ fn slice_semantic_evidence_reaches_the_select_all_operation() {
     let compiled = CanonicalSourceFrontend
         .compile_expression(&expression(source))
         .unwrap();
-    assert!(
-        compiled
-            .source_map()
-            .nodes
-            .iter()
-            .any(|node| node.operation == "source/select-all")
-    );
+    assert_eq!(compiled.program().inputs.len(), 1);
+    assert_eq!(compiled.program().inputs[0].name, "x");
+    let operations = compiled
+        .source_map()
+        .nodes
+        .iter()
+        .filter(|node| node.operation.starts_with("access/"))
+        .map(|node| node.operation.as_str())
+        .collect::<Vec<_>>();
+    assert_eq!(operations, ["access/scalar", "access/range"]);
+    let tuple = compiled.program().nodes.last().expect("tuple result");
+    assert_eq!(tuple.operation.canonical_name(), "source/tuple");
+    assert_eq!(tuple.inputs.len(), 3);
+    assert_eq!(tuple.inputs[2], SourceValue::Input(0));
+    let identity = CanonicalSourceFrontend
+        .compile_expression(&expression("x[:][:]"))
+        .unwrap();
+    assert!(identity.program().nodes.is_empty());
+    assert_eq!(identity.program().outputs[0].source, SourceValue::Input(0));
 }
 
 #[test]

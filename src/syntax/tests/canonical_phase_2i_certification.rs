@@ -570,8 +570,15 @@ fn typed_access_hash(rule_name: &str, node: &SyntaxNode) -> u64 {
             nodes!("bounds", view.bounds());
             nodes!("operators", view.operators());
         }
-        RecursiveCoreSyntax::RangeSubscript(view) => node!("range", view.range()),
-        RecursiveCoreSyntax::Record(view) => nodes!("bindings", view.bindings()),
+        RecursiveCoreSyntax::RangeSubscript(view) => {
+            node!("range", view.range());
+            node!("recovered-expression", view.recovered_expression());
+        }
+        RecursiveCoreSyntax::Record(view) => {
+            token!("opening-delimiter", view.opening_delimiter());
+            nodes!("bindings", view.bindings());
+            token!("closing-delimiter", view.closing_delimiter());
+        }
         RecursiveCoreSyntax::RegularTable(view) => {
             node!("header", view.header());
             nodes!("rows", view.rows());
@@ -662,6 +669,7 @@ fn certification_table_executes_every_direct_accept_reject_and_recovery_case() {
     let contracts = inventory_contracts();
     assert_eq!(rows.len(), 80);
     assert_eq!(contracts.len(), rows.len());
+    let mut stale_hashes = Vec::new();
     for row in rows {
         let contract = contracts
             .get(&row.name)
@@ -692,11 +700,12 @@ fn certification_table_executes_every_direct_accept_reject_and_recovery_case() {
             "{}",
             row.name
         );
-        assert_eq!(
-            accepted.root.structural_hash, row.clean_tree_hash,
-            "{}",
-            row.name
-        );
+        if accepted.root.structural_hash != row.clean_tree_hash {
+            stale_hashes.push(format!(
+                "{}\tclean-tree\t{}\t{}",
+                row.name, row.clean_tree_hash, accepted.root.structural_hash
+            ));
+        }
         validate_lossless_range(&accepted.root, &accepted.source, accepted.consumed).unwrap();
         assert_eq!(
             reconstruct_source_range(&accepted.root, &accepted.source, accepted.consumed).unwrap(),
@@ -705,7 +714,12 @@ fn certification_table_executes_every_direct_accept_reject_and_recovery_case() {
             row.name
         );
         let typed_hash = typed_access_hash(&row.name, &accepted.syntax());
-        assert_eq!(typed_hash, row.typed_access_hash, "{}", row.name);
+        if typed_hash != row.typed_access_hash {
+            stale_hashes.push(format!(
+                "{}\ttyped-access\t{}\t{}",
+                row.name, row.typed_access_hash, typed_hash
+            ));
+        }
 
         assert!(!row.rejected.is_empty(), "{}", row.name);
         assert_ne!(row.rejected, row.accepted, "{}", row.name);
@@ -764,7 +778,12 @@ fn certification_table_executes_every_direct_accept_reject_and_recovery_case() {
             row.name
         );
         let recovery_hash = recovery_snapshot_hash(&recovered);
-        assert_eq!(recovery_hash, row.recovery_snapshot_hash, "{}", row.name);
+        if recovery_hash != row.recovery_snapshot_hash {
+            stale_hashes.push(format!(
+                "{}\trecovery\t{}\t{}",
+                row.name, row.recovery_snapshot_hash, recovery_hash
+            ));
+        }
 
         assert!(matches!(
             row.emission_policy.as_str(),
@@ -796,6 +815,11 @@ fn certification_table_executes_every_direct_accept_reject_and_recovery_case() {
             _ => unreachable!("closed semantic disposition"),
         }
     }
+    assert!(
+        stale_hashes.is_empty(),
+        "syntax certification snapshots changed:\n{}",
+        stale_hashes.join("\n")
+    );
 }
 
 #[test]
