@@ -527,7 +527,7 @@ uri-source-import-specifier	statements	certified	certified	node:UriSourceImportS
 utf8-string	literals	certified	certified	node:Utf8String	2C	Phase 2C closed literal, path, and primitive kind island
 var	expressions	certified	certified	node:Variable	2I	Phase 2I canonical recursive core; semantic disposition: executable.
 variable-assign	statements	unported	pending	undecided		Deferred beyond Phase 2A.
-variable-define	statements	certified	certified	node:VariableDefine	2I	Phase 2I canonical recursive core; semantic disposition: structural.
+variable-define	statements	certified	certified	node:VariableDefine	2I	Phase 2I canonical recursive core; semantic disposition: executable.
 warning-block	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
 warning-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 whitespace	base	certified	syntax-only	token	2A	Phase 2A canonical base closure

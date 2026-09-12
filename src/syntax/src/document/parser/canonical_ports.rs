@@ -5362,7 +5362,7 @@ pub static CANONICAL_PORTS: &[RulePort] = &[
         semantic: SemanticPortStatus::Certified,
         node_policy: NodePolicy::Node(SyntaxKind::VariableDefine),
         phase: Some(PortPhase::Phase2I),
-        notes: "Phase 2I canonical recursive core; semantic disposition: structural.",
+        notes: "Phase 2I canonical recursive core; semantic disposition: executable.",
     },
     RulePort {
         name: "warning-block",
