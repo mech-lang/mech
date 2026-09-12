@@ -4,6 +4,9 @@ use comprehension::{PendingComprehension, resolve_comprehension};
 
 use std::collections::{BTreeMap, BTreeSet};
 
+#[path = "document_lowering.rs"]
+mod document_lowering;
+
 use mech_core::snapshot::{
     Complex32Bits, Complex64Bits, F32Bits, F64Bits, OptionDraft, ReifiedKind, ReifiedTypeDraft,
     SnapshotValidationContext,
@@ -221,6 +224,9 @@ impl CanonicalSourceFrontend {
                         ExpressionSyntax::cast(unit).expect("kind-checked expression cast");
                     last = Some(builder.expression(&expression)?);
                 }
+                SyntaxKind::OpAssign | SyntaxKind::VariableAssign => {
+                    last = Some(builder.document_assignment(&unit)?);
+                }
                 _ => unreachable!("document unit collector is closed"),
             }
         }
@@ -232,6 +238,7 @@ impl CanonicalSourceFrontend {
             });
         };
         builder.publish("result", None, value, &syntax);
+        builder.order_document_state_writers();
         builder.finish()
     }
 }
@@ -248,7 +255,10 @@ fn collect_document_units(
     }
     if matches!(
         node.kind(),
-        SyntaxKind::VariableDefine | SyntaxKind::Expression
+        SyntaxKind::VariableDefine
+            | SyntaxKind::Expression
+            | SyntaxKind::OpAssign
+            | SyntaxKind::VariableAssign
     ) {
         output.push(node.clone());
         return Ok(());
@@ -269,9 +279,7 @@ fn collect_document_units(
             | SyntaxKind::ImportDeclaration
             | SyntaxKind::KindDefine
             | SyntaxKind::ModuleImport
-            | SyntaxKind::OpAssign
             | SyntaxKind::TupleDestructure
-            | SyntaxKind::VariableAssign
     ) {
         return Err(SourceSemanticError {
             code: "source-semantics/unsupported-document-unit",
@@ -1405,6 +1413,12 @@ fn unresolved_empty(anchor: SourceSemanticAnchor) -> SourceSemanticError {
     }
 }
 
+#[derive(Clone, Copy)]
+enum PendingBinding {
+    Value(PendingValue),
+    MutableState(u32),
+}
+
 struct PendingConstant {
     schema: SchemaDraft,
     data: ValueDataDraft,
@@ -1552,7 +1566,7 @@ struct SemanticBuilder {
     nodes: Vec<PendingNode>,
     states: Vec<PendingState>,
     outputs: Vec<PendingOutput>,
-    bindings: BTreeMap<String, PendingValue>,
+    bindings: BTreeMap<String, PendingBinding>,
     scope_definitions: BTreeSet<String>,
     patterns: Vec<SourceSemanticPattern>,
 }
@@ -1700,7 +1714,9 @@ impl SemanticBuilder {
                 let stem = self.required(variable.stem(), variable.syntax(), "a variable stem")?;
                 bindings.insert(node_text(stem.syntax())?);
             }
-            SyntaxKind::Expression => self.declare_input_annotations(unit, bindings)?,
+            SyntaxKind::Expression | SyntaxKind::OpAssign | SyntaxKind::VariableAssign => {
+                self.declare_input_annotations(unit, bindings)?;
+            }
             _ => unreachable!("document unit collector is closed"),
         }
         Ok(())
@@ -2781,6 +2797,7 @@ impl SemanticBuilder {
             .map(|annotation| annotation_schema_draft(&annotation))
             .transpose()?;
         if let Some(value) = self.bindings.get(&name).copied() {
+            let value = self.read_document_binding(value, variable.syntax());
             return annotation.map_or(Ok(value), |expected| {
                 self.conform_schema_draft(
                     value,
@@ -2926,7 +2943,15 @@ impl SemanticBuilder {
             value
         };
         self.scope_definitions.insert(name.clone());
-        self.bindings.insert(name, bound);
+        let binding = if definition.mutability_marker().is_some() {
+            let PendingValue::State(state) = bound else {
+                unreachable!("mutable definitions allocate a state slot")
+            };
+            PendingBinding::MutableState(state)
+        } else {
+            PendingBinding::Value(bound)
+        };
+        self.bindings.insert(name, binding);
         Ok((bound, definition.syntax().clone()))
     }
 
@@ -4711,8 +4736,8 @@ impl SemanticBuilder {
 
     fn input_for_node(&mut self, node: &SyntaxNode) -> Result<PendingValue, SourceSemanticError> {
         let name = node_text(node)?;
-        if let Some(value) = self.bindings.get(&name) {
-            return Ok(*value);
+        if let Some(value) = self.bindings.get(&name).copied() {
+            return Ok(self.read_document_binding(value, node));
         }
         if let Some(index) = self.input_by_name.get(&name) {
             return Ok(PendingValue::Input(*index));
