@@ -208,7 +208,7 @@ pub(super) fn recover_required_production(
     production: &str,
 ) -> Attempt {
     combinator::consume_grammar_ignored_trivia(parser);
-    const RESTART_BOUNDARIES: &[char] = &[')', ']', '}', ',', ';', '|'];
+    const RESTART_BOUNDARIES: &[char] = &[')', ']', '}', '>', '⟩', ',', ';', '|'];
     if parser.is_eof()
         || parser
             .cursor()
@@ -236,7 +236,7 @@ pub(super) fn recover_required_token(
     text: &str,
 ) -> Attempt {
     combinator::consume_grammar_ignored_trivia(parser);
-    const RESTART_BOUNDARIES: &[char] = &[')', ']', '}', ',', ';', '|'];
+    const RESTART_BOUNDARIES: &[char] = &[')', ']', '}', '>', '⟩', ',', ';', '|'];
     if parser.is_eof()
         || parser
             .cursor()

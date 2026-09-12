@@ -109,6 +109,14 @@ fn contains_kind(node: &SyntaxNode, expected: SyntaxKind) -> bool {
     node.kind() == expected || node.children().any(|child| contains_kind(&child, expected))
 }
 
+fn count_kind(node: &SyntaxNode, expected: SyntaxKind) -> usize {
+    usize::from(node.kind() == expected)
+        + node
+            .children()
+            .map(|child| count_kind(&child, expected))
+            .sum::<usize>()
+}
+
 fn repository_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
@@ -276,6 +284,106 @@ fn delimiter_recovery_skips_nested_source_and_leaves_ancestor_closers() {
             at: TextSize(2),
         })
     );
+}
+
+#[test]
+fn mismatched_nested_closer_restarts_the_owning_delimited_rule() {
+    let parsed = parse(rules::ARGUMENT_LIST, "(1 @ [2)");
+    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+    assert_eq!(parsed.consumed.end, TextSize(8));
+    assert!(contains_kind(&parsed.syntax(), SyntaxKind::Error));
+    assert!(!contains_kind(&parsed.syntax(), SyntaxKind::Missing));
+    assert_eq!(
+        reconstruct_source_range(&parsed.root, &parsed.source, parsed.consumed).unwrap(),
+        "(1 @ [2)"
+    );
+    assert_eq!(
+        parsed.diagnostics.iter().next().unwrap().recovery,
+        Some(RecoveryAction::Abandon {
+            rule: rules::ARGUMENT_LIST,
+            at: TextSize(7),
+        })
+    );
+}
+
+#[test]
+fn angle_closer_remains_physical_when_the_required_kind_is_absent() {
+    for text in ["<>", "<⟩"] {
+        let parsed = parse(rules::KIND_ANNOTATION, text);
+        assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed, "{text:?}");
+        assert_eq!(parsed.consumed.end.0 as usize, text.len(), "{text:?}");
+        assert!(
+            contains_kind(&parsed.syntax(), SyntaxKind::Missing),
+            "{text:?}"
+        );
+        assert!(
+            !contains_kind(&parsed.syntax(), SyntaxKind::Error),
+            "{text:?}"
+        );
+        let right_angles = parsed
+            .syntax()
+            .tokens()
+            .into_iter()
+            .filter(|token| token.kind() == SyntaxKind::RightAngle)
+            .collect::<Vec<_>>();
+        assert_eq!(right_angles.len(), 1, "{text:?}");
+        assert!(
+            !right_angles[0]
+                .flags()
+                .contains(mech_syntax::document::TokenFlags::MISSING)
+        );
+    }
+}
+
+#[test]
+fn committed_kind_record_recovery_keeps_its_selected_form_exclusive() {
+    let parsed = parse(rules::KIND, "{a<u8");
+    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+    assert!(contains_kind(&parsed.syntax(), SyntaxKind::KindRecord));
+    assert!(!contains_kind(&parsed.syntax(), SyntaxKind::KindSet));
+    assert!(!contains_kind(&parsed.syntax(), SyntaxKind::KindMap));
+}
+
+#[test]
+fn record_tail_recovery_preserves_a_selected_direct_record() {
+    let text = "{a: 1 @}";
+    let parsed = parse(rules::RECORD, text);
+    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+    assert_eq!(parsed.consumed.end.0 as usize, text.len());
+    assert!(contains_kind(&parsed.syntax(), SyntaxKind::Record));
+    assert!(contains_kind(&parsed.syntax(), SyntaxKind::Error));
+    assert_eq!(
+        parsed.diagnostics.iter().next().unwrap().code.as_str(),
+        "syntax/unexpected-delimited-content"
+    );
+
+    let map = parse(rules::RECORD, "{a: 1, 2: 3}");
+    assert_eq!(map.outcome, CanonicalRuleOutcome::NoMatch);
+    assert_eq!(map.consumed, TextRange::empty(TextSize::ZERO));
+}
+
+#[test]
+fn tuple_recovery_resumes_at_the_next_sibling_separator() {
+    for rule in [rules::TUPLE, rules::EXPRESSION] {
+        let text = "(1, 2 +, 3)";
+        let parsed = parse(rule, text);
+        assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed, "{rule:?}");
+        assert_eq!(parsed.consumed.end.0 as usize, text.len(), "{rule:?}");
+        let expected_expressions = if rule == rules::TUPLE { 3 } else { 4 };
+        assert_eq!(
+            count_kind(&parsed.syntax(), SyntaxKind::Expression),
+            expected_expressions,
+            "{rule:?}"
+        );
+        assert!(
+            contains_kind(&parsed.syntax(), SyntaxKind::Missing),
+            "{rule:?}"
+        );
+        assert!(
+            !contains_kind(&parsed.syntax(), SyntaxKind::Error),
+            "{rule:?}"
+        );
+    }
 }
 
 #[test]

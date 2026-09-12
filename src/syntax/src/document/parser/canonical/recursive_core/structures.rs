@@ -623,8 +623,10 @@ pub(super) fn parse_record(parser: &mut Parser<'_>) -> Attempt {
                 Attempt::Matched
             } else if parser.is_eof() {
                 recover_table_end(parser, rules::RECORD, delimiter)
-            } else {
+            } else if ahead(parser, parse_mapping) {
                 Attempt::NoMatch
+            } else {
+                recover_table_end(parser, rules::RECORD, delimiter)
             }
         }) else {
             let result = nesting_limit(parser);
@@ -812,7 +814,6 @@ pub(super) fn parse_tuple(parser: &mut Parser<'_>) -> Attempt {
                     }
                     Attempt::Committed => {
                         committed = true;
-                        break;
                     }
                 }
             }
@@ -1002,7 +1003,6 @@ pub(super) fn parenthesis_factor(parser: &mut Parser<'_>) -> Attempt {
                 }
                 Attempt::Committed => {
                     committed = true;
-                    break;
                 }
             }
         }

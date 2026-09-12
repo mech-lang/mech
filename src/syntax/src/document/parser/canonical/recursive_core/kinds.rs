@@ -529,8 +529,8 @@ fn kind_brace_selection(parser: &mut Parser<'_>) -> Attempt {
                 Attempt::NoMatch => return Attempt::NoMatch,
                 Attempt::Committed => {
                     record.complete(parser, SyntaxKind::KindRecord);
-                    set.complete(parser, SyntaxKind::KindSet);
-                    map.complete(parser, SyntaxKind::KindMap);
+                    set.abandon(parser);
+                    map.abandon(parser);
                     return Attempt::Committed;
                 }
             }
@@ -543,8 +543,8 @@ fn kind_brace_selection(parser: &mut Parser<'_>) -> Attempt {
                 Attempt::Matched => return finish_selected_kind_record(parser, record, set, map),
                 Attempt::Committed => {
                     record.complete(parser, SyntaxKind::KindRecord);
-                    set.complete(parser, SyntaxKind::KindSet);
-                    map.complete(parser, SyntaxKind::KindMap);
+                    set.abandon(parser);
+                    map.abandon(parser);
                     return Attempt::Committed;
                 }
                 Attempt::NoMatch => {}
@@ -589,7 +589,7 @@ fn kind_brace_selection(parser: &mut Parser<'_>) -> Attempt {
             }
             Attempt::Committed => {
                 set.complete(parser, SyntaxKind::KindSet);
-                map.complete(parser, SyntaxKind::KindMap);
+                map.abandon(parser);
                 Attempt::Committed
             }
             Attempt::NoMatch => Attempt::NoMatch,
@@ -666,8 +666,8 @@ fn finish_selected_kind_record(
         Attempt::NoMatch => Attempt::NoMatch,
         Attempt::Committed => {
             record.complete(parser, SyntaxKind::KindRecord);
-            set.complete(parser, SyntaxKind::KindSet);
-            map.complete(parser, SyntaxKind::KindMap);
+            set.abandon(parser);
+            map.abandon(parser);
             Attempt::Committed
         }
     }

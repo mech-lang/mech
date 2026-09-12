@@ -1,4 +1,4 @@
-use alloc::string::String;
+use alloc::{string::String, vec::Vec};
 
 use crate::document::{
     Diagnostic, DiagnosticAnchor, DiagnosticCode, DiagnosticPhase, DiagnosticTags, ExpectedSyntax,
@@ -142,9 +142,7 @@ fn abandon_until(
     let marker = parser.start();
     let mut recovered = 0_u32;
     let remaining = remaining_recovery_bytes(parser);
-    let mut parentheses = 0_u32;
-    let mut brackets = 0_u32;
-    let mut braces = 0_u32;
+    let mut delimiters = Vec::new();
     let mut quoted = None;
     let mut escaped = false;
 
@@ -152,8 +150,7 @@ fn abandon_until(
         let Some(character) = parser.cursor().peek_char() else {
             break;
         };
-        let at_owner_depth = parentheses == 0 && brackets == 0 && braces == 0;
-        if quoted.is_none() && at_owner_depth && should_stop(character) {
+        if quoted.is_none() && recovery_boundary(character, &delimiters, &should_stop) {
             break;
         }
         if character.len_utf8() as u32 > remaining.saturating_sub(recovered) {
@@ -179,21 +176,24 @@ fn abandon_until(
         }
         match character {
             '\'' | '"' => quoted = Some(character),
-            '(' => parentheses = parentheses.saturating_add(1),
-            ')' => parentheses = parentheses.saturating_sub(1),
-            '[' => brackets = brackets.saturating_add(1),
-            ']' => brackets = brackets.saturating_sub(1),
-            '{' => braces = braces.saturating_add(1),
-            '}' => braces = braces.saturating_sub(1),
+            '(' | '[' | '{' => delimiters.push(character),
+            ')' | ']' | '}' => {
+                if delimiters
+                    .last()
+                    .is_some_and(|opener| delimiters_match(*opener, character))
+                {
+                    delimiters.pop();
+                }
+            }
             _ => {}
         }
     }
 
     let stopped_at_boundary = quoted.is_none()
-        && parentheses == 0
-        && brackets == 0
-        && braces == 0
-        && parser.cursor().peek_char().is_some_and(&should_stop);
+        && parser
+            .cursor()
+            .peek_char()
+            .is_some_and(|character| recovery_boundary(character, &delimiters, &should_stop));
     let exhausted = recovered >= remaining && !parser.is_eof() && !stopped_at_boundary;
     if exhausted {
         parser.halt();
@@ -242,6 +242,28 @@ fn abandon_until(
         TextRange::new(crate::document::TextSize::ZERO, range.len()),
     );
     Some(error)
+}
+
+fn recovery_boundary(
+    character: char,
+    delimiters: &[char],
+    should_stop: &impl Fn(char) -> bool,
+) -> bool {
+    if !should_stop(character) {
+        return false;
+    }
+    let Some(opener) = delimiters.last().copied() else {
+        return true;
+    };
+    is_recovery_closer(character) && !delimiters_match(opener, character)
+}
+
+fn is_recovery_closer(character: char) -> bool {
+    matches!(character, ')' | ']' | '}' | '>' | '⟩')
+}
+
+fn delimiters_match(opener: char, closer: char) -> bool {
+    matches!((opener, closer), ('(', ')') | ('[', ']') | ('{', '}'))
 }
 
 pub(crate) fn insert_missing(
