@@ -276,10 +276,10 @@ This sequence records the plan used to reach Phase 2I-C. The combined 2I-D and
 compatibility lowering and cross-parser parity with canonical typed syntax,
 engine-owned source semantics, and specification-derived certification.
 
-The component implements clean recognition and local, lossless recovery for all
-80 mutually recursive productions against the frozen schema. All 80 rules
-remain unactivated. Typed syntax, engine-owned source semantics, and canonical
-certification remain pending.
+The component implements clean recognition, local lossless recovery, typed
+views, engine-owned source semantics, and canonical certification for all 80
+mutually recursive productions against the frozen schema. All 80 rules remain
+unactivated until the atomic S6 registry change.
 
 Shared parenthesis, bracket, brace, colon, identifier, and kind prefixes are
 handled without exponential reparsing. Expression-level set and matrix
