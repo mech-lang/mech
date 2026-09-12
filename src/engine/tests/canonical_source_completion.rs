@@ -120,6 +120,21 @@ fn expected_error_families_also_have_positive_call_and_literal_execution() {
 }
 
 #[test]
+fn table_join_has_real_resident_output_after_artifact_roundtrip() {
+    let expected = Data::Table(
+        vec![TableColumnDraft {
+            name: "a".to_owned(),
+            values: vec![Data::U8(1)].into_boxed_slice(),
+        }]
+        .into_boxed_slice(),
+    );
+    execute(
+        "x := (|a<u8>|1u8|) ⋈ (|a<u8>|1u8|)",
+        [(Vec::new(), expected.clone()), (Vec::new(), expected)],
+    );
+}
+
+#[test]
 fn nested_structured_values_execute_and_preserve_field_column_and_key_order() {
     for value in [3.0, 7.0] {
         let input = [value];
@@ -232,7 +247,11 @@ fn mutable_definition_publishes_its_resolved_initial_state() {
 #[test]
 fn unresolved_empty_and_unknown_calls_are_anchored_user_errors() {
     for (source, expected, offending) in [
-        ("x := _", "source-semantics/unresolved-empty-expression", "_"),
+        (
+            "x := _",
+            "source-semantics/unresolved-empty-expression",
+            "_",
+        ),
         (
             "x := not-declared(1)",
             "source-semantics/unknown-function",
