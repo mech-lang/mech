@@ -343,7 +343,18 @@ fn every_recovery_continuation_unwinds_at_each_fuel_and_event_boundary() {
             } else {
                 assert_eq!(parsed.consumed.start, TextSize(0));
                 assert!(parsed.source.full_range().contains_range(parsed.consumed));
-                assert!(parsed.matched, "{rule:?} {text:?} {limits:?}");
+                if !parsed.matched {
+                    // Local recovery in a speculative head can prevent the bar
+                    // discriminator from being recognized. A direct comprehension
+                    // must then reject transactionally, rather than invent a bar.
+                    assert_eq!(rule, rules::SET_COMPREHENSION);
+                    assert_eq!(parsed.outcome, CanonicalRuleOutcome::NoMatch);
+                    assert_eq!(
+                        parsed.consumed,
+                        mech_syntax::document::TextRange::empty(TextSize(0))
+                    );
+                    assert!(parsed.diagnostics.is_empty());
+                }
                 if parsed
                     .diagnostics
                     .iter()

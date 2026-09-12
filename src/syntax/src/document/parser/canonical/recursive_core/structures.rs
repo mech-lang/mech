@@ -101,29 +101,29 @@ pub(super) fn parse_fancy_table(parser: &mut Parser<'_>) -> Attempt {
             node.abandon(parser);
             return Attempt::NoMatch;
         }
+        let mut committed = false;
+        let child = parse_fancy_table_header(parser);
+        match child {
+            Attempt::Matched => {}
+            Attempt::NoMatch => {
+                recover_required_production(
+                    parser,
+                    rules::FANCY_TABLE,
+                    "syntax/missing-fancy-table-header",
+                    "missing framed table header",
+                    "fancy-table-header",
+                );
+                recover_table_separator(parser, rules::FANCY_TABLE);
+                committed = true;
+                let _ = base::parse_rule(parser, rules::WHITESPACE0);
+            }
+            Attempt::Committed => {
+                committed = true;
+                let _ = base::parse_rule(parser, rules::WHITESPACE0);
+            }
+        }
         parser
             .with_nesting(|parser| {
-                let mut committed = false;
-                let child = parse_fancy_table_header(parser);
-                match child {
-                    Attempt::Matched => {}
-                    Attempt::NoMatch => {
-                        recover_required_production(
-                            parser,
-                            rules::FANCY_TABLE,
-                            "syntax/missing-fancy-table-header",
-                            "missing framed table header",
-                            "fancy-table-header",
-                        );
-                        recover_table_separator(parser, rules::FANCY_TABLE);
-                        committed = true;
-                        let _ = base::parse_rule(parser, rules::WHITESPACE0);
-                    }
-                    Attempt::Committed => {
-                        committed = true;
-                        let _ = base::parse_rule(parser, rules::WHITESPACE0);
-                    }
-                }
                 let first = fancy_row(parser);
                 match first {
                     Attempt::Matched => {}
@@ -223,43 +223,43 @@ pub(super) fn parse_inline_table(parser: &mut Parser<'_>) -> Attempt {
             node.abandon(parser);
             return Attempt::NoMatch;
         }
-        parser
-            .with_nesting(|parser| {
-                let mut committed = false;
-                let child = parse_inline_table_header(parser);
-                match child {
-                    Attempt::Matched => {}
-                    Attempt::NoMatch => {
-                        if !ahead(parser, structure_shell::parse_table_separator) {
-                            node.abandon(parser);
-                            return Attempt::NoMatch;
-                        }
-                        recover_required_production(
-                            parser,
-                            rules::INLINE_TABLE,
-                            "syntax/missing-inline-table-header",
-                            "missing inline table header",
-                            "inline-table-header",
-                        );
-                        recover_table_separator(parser, rules::INLINE_TABLE);
-                        committed = true;
-                    }
-                    Attempt::Committed => {
-                        if parser.cursor().starts_with("\n") || parser.cursor().starts_with("\r") {
-                            node.abandon(parser);
-                            return Attempt::NoMatch;
-                        }
-                        committed = true;
-                    }
-                }
-                if parser.is_halted() {
-                    node.complete(parser, SyntaxKind::InlineTable);
-                    return Attempt::Committed;
-                }
-                if !base::parse_rule(parser, rules::SPACE_TAB0) {
+        let mut committed = false;
+        let child = parse_inline_table_header(parser);
+        match child {
+            Attempt::Matched => {}
+            Attempt::NoMatch => {
+                if !ahead(parser, structure_shell::parse_table_separator) {
                     node.abandon(parser);
                     return Attempt::NoMatch;
                 }
+                recover_required_production(
+                    parser,
+                    rules::INLINE_TABLE,
+                    "syntax/missing-inline-table-header",
+                    "missing inline table header",
+                    "inline-table-header",
+                );
+                recover_table_separator(parser, rules::INLINE_TABLE);
+                committed = true;
+            }
+            Attempt::Committed => {
+                if parser.cursor().starts_with("\n") || parser.cursor().starts_with("\r") {
+                    node.abandon(parser);
+                    return Attempt::NoMatch;
+                }
+                committed = true;
+            }
+        }
+        if parser.is_halted() {
+            node.complete(parser, SyntaxKind::InlineTable);
+            return Attempt::Committed;
+        }
+        if !base::parse_rule(parser, rules::SPACE_TAB0) {
+            node.abandon(parser);
+            return Attempt::NoMatch;
+        }
+        parser
+            .with_nesting(|parser| {
                 let child = parse_inline_table_row(parser);
                 match child {
                     Attempt::Matched => {}
@@ -404,21 +404,21 @@ pub(super) fn parse_regular_table(parser: &mut Parser<'_>) -> Attempt {
             node.abandon(parser);
             return Attempt::NoMatch;
         }
+        let mut committed = false;
+        let child = parse_table_header(parser);
+        match child {
+            Attempt::Matched => {}
+            Attempt::NoMatch => {
+                node.abandon(parser);
+                return Attempt::NoMatch;
+            }
+            Attempt::Committed => {
+                committed = true;
+                let _ = base::parse_rule(parser, rules::WHITESPACE0);
+            }
+        }
         parser
             .with_nesting(|parser| {
-                let mut committed = false;
-                let child = parse_table_header(parser);
-                match child {
-                    Attempt::Matched => {}
-                    Attempt::NoMatch => {
-                        node.abandon(parser);
-                        return Attempt::NoMatch;
-                    }
-                    Attempt::Committed => {
-                        committed = true;
-                        let _ = base::parse_rule(parser, rules::WHITESPACE0);
-                    }
-                }
                 let first = parse_table_row(parser);
                 match first {
                     Attempt::Matched => {}
