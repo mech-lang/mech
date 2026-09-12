@@ -2538,7 +2538,7 @@ impl SemanticBuilder {
             .map(|annotation| annotation_schema_draft(&annotation))
             .transpose()?;
         if let Some(value) = self.bindings.get(&name).copied() {
-            let value = self.read_document_binding(value, variable.syntax());
+            let value = self.read_document_binding(value, variable.syntax())?;
             return annotation.map_or(Ok(value), |expected| {
                 self.conform_schema_draft(
                     value,
@@ -4433,7 +4433,7 @@ impl SemanticBuilder {
     fn input_for_node(&mut self, node: &SyntaxNode) -> Result<PendingValue, SourceSemanticError> {
         let name = node_text(node)?;
         if let Some(value) = self.bindings.get(&name).copied() {
-            return Ok(self.read_document_binding(value, node));
+            return self.read_document_binding(value, node);
         }
         if let Some(index) = self.input_by_name.get(&name) {
             return Ok(PendingValue::Input(*index));
@@ -4860,7 +4860,10 @@ impl SemanticBuilder {
                     .flat_map(|node| node.inputs.iter().copied()),
             )
             .chain(self.states.iter().map(|state| state.initializer))
-            .chain(self.bindings.values().copied())
+            .chain(self.bindings.values().map(|binding| match *binding {
+                PendingBinding::Value(value) => value,
+                PendingBinding::MutableState(state) => PendingValue::State(state),
+            }))
         {
             value.resolved()?;
         }
