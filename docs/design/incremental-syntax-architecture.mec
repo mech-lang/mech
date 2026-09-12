@@ -23,7 +23,7 @@ package builds read only that package-local registry; a repository test
 recomputes and verifies every ordered `(name, RuleId)` entry against the
 inventory.
 
-Current canonical parity progress is 328 / 539 productions. The closed
+Current canonical syntax progress is 328 / 539 productions. The closed
 Phase 2H structure-shell layer contributes 10 of those productions without
 adding a complete matrix, table, map, set, structure, expression, or document
 parser root.
@@ -32,8 +32,8 @@ The exact next executable implementation boundary is generated from the
 normative `ebnf:canonical` grammar graph in `docs/design/specification.mec` and
 recorded in `docs/design/grammar-audit/phase-2i-recursive-core.tsv`.
 `canonical-dependencies.tsv` records the generated canonical edges,
-`productions.tsv` retains inventory and implementation-derived legacy call
-provenance, and `ports.tsv` defines migration status. The legacy call columns do
+`productions.tsv` retains inventory and implementation-derived call provenance,
+and `ports.tsv` defines migration status. The implementation call columns do
 not define the canonical grammar closure.
 
 Phase 2I-A adds only the generated dependency contract. Phase 2I-B freezes the
@@ -48,12 +48,12 @@ progress remains 328 / 539 because every Phase 2I rule remains unactivated.
 `phase-2i-syntax-schema.tsv` defines module ownership and concrete tree
 emission. Phase 2I-C adds the complete clean recognizer without a public parser
 root or port activation. Local malformed-input recovery, typed syntax,
-compatibility lowering, and parity certification remain pending. Shared
+engine-owned source semantics, and canonical certification remain pending. Shared
 parenthesis, bracket, brace, colon, identifier, and kind prefixes are handled
 without exponential reparsing.
 
-`MATCH-001` permits whitespace before an expression match question mark and is
-the one accepted-language correction in Phase 2I-C. Expression-level set and
+`MATCH-001` records the canonical rule permitting whitespace before an
+expression match question mark. Expression-level set and
 matrix comprehensions retain their formal priority over formula parsing, while
 set comprehensions remain unavailable as factors. Complete record candidates
 may fall through to maps after clean failure with measured-linear nested-prefix
@@ -61,9 +61,10 @@ growth. Matrix structure selection preserves leading whitespace, newlines, and
 box borders, and every recursive repetition propagates committed child
 recovery. The 80 rules remain unactivated and progress remains 328 / 539.
 
-The legacy parser, public `parse` API, existing `Program` AST, formatter,
-interpreter, runtime, and accepted grammar remain unchanged while this
-architecture is introduced.
+The current Nom source path remains unchanged while the canonical document root
+is incomplete. The final cutover removes that path atomically; this
+architecture does not introduce a compatibility lowering layer or selectable
+fallback.
 
 1. Goals
 -------------------------------------------------------------------------------
@@ -121,12 +122,12 @@ finishes. `max_events` below this documented minimum permits an explicit,
 lossless whole-range fallback. At and above the minimum, whole-range fallback
 is not used merely because the parser exhausts its event budget.
 
-Strict validation and lowering are later consumers:
+Strict validation and typed access are later consumers:
 
 ```rust
 parse_document(source, config)
 validate_strict(&snapshot)
-lower_live(&snapshot)
+typed_document(&snapshot)
 ```
 
 The parser kernel is an event-based ordinary-function parser. It uses explicit
@@ -336,8 +337,8 @@ structures rather than a Rust-specific framework.
 
 Concrete syntax retains presentation exactly: delimiters, border spellings,
 horizontal trivia, and physical newlines remain ordinary syntax tokens. Semantic
-structures intentionally discard that presentation when compatibility lowering
-constructs values such as matrices, maps, sets, and table rows.
+structures intentionally discard that presentation when the engine source
+frontend constructs values such as matrices, maps, sets, and table rows.
 
 Format preservation is therefore syntax-driven. A formatter may preserve the
 retained structure or apply an explicitly selected normalization policy, but it

@@ -1,0 +1,10 @@
+fixture-id	source-path	canonical-root	canonical-outcome	consumer-contracts	notes
+compiler	tests/fixtures/syntax-source-boundary/compiler.mec	document	accept	compiler-planning,program-artifact	Matrix selection reaches compiler and artifact consumers.
+config	tests/fixtures/syntax-source-boundary/config.mec	document	accept	config-profile	Nested records and paths reach the configuration profile.
+document	tests/fixtures/syntax-source-boundary/document.mec	document	accept	bundle-web,format,serve	Front matter, prose, inline evaluation, state, and fenced Mech share one document.
+empty	tests/fixtures/syntax-source-boundary/empty.mec	document	accept	interactive-reset	Empty input produces the canonical empty document.
+executable	tests/fixtures/syntax-source-boundary/executable.mec	document	accept	cli-classification,repl-format	A complete inline program is executable source.
+interactive	tests/fixtures/syntax-source-boundary/interactive.mec	document	accept	interactive,program-compiler,wasm-console	State definition, mutation, and final output exercise incremental consumers.
+malformed	tests/fixtures/syntax-source-boundary/malformed.mec	document	reject	resolver-builder	Malformed input remains a lossless document with canonical diagnostics.
+resolver-index	tests/fixtures/syntax-source-boundary/resolver-index.mec	document	accept	file-resolver,memory-resolver,module-index	A fenced context import and address read exercise source indexing.
+wasm-document	tests/fixtures/syntax-source-boundary/wasm-document.mec	document	accept	wasm-document	A titled document with a fenced output exercises browser document paths.
