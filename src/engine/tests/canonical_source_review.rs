@@ -1131,3 +1131,106 @@ fn whole_string_select_all_preserves_changed_unicode_and_empty_values() {
         }
     }
 }
+
+#[test]
+fn contextual_composite_empty_rejects_incompatible_values_at_their_source() {
+    for (source, code, offending) in [
+        (
+            "x<(f64,{missing<u8?>})> := (1,{missing:\"bad\"})",
+            "source-semantics/incompatible-record-field-kind",
+            "\"bad\"",
+        ),
+        (
+            "x<[u8?]:1,2> := [_ true]",
+            "source-semantics/incompatible-matrix-element-kind",
+            "true",
+        ),
+        (
+            "x<{missing<u8>}> := {missing:_}",
+            "source-semantics/unresolved-empty-expression",
+            "_",
+        ),
+        (
+            "x<({missing<u8?>},u8)> := ({missing:_},true)",
+            "source-semantics/incompatible-tuple-item-kind",
+            "true",
+        ),
+        (
+            "x<{u8:{missing<u8?>}}> := {1u8:{missing:\"bad\"}}",
+            "source-semantics/incompatible-record-field-kind",
+            "\"bad\"",
+        ),
+        (
+            "x := (|value<{missing<u8?>}>|{missing:\"bad\"}|)",
+            "source-semantics/incompatible-record-field-kind",
+            "\"bad\"",
+        ),
+        (
+            "x<*> := {missing:_}",
+            "source-semantics/unresolved-empty-expression",
+            "_",
+        ),
+        (
+            "x<(u8,u8)> := (1u8,_)",
+            "source-semantics/unresolved-empty-expression",
+            "_",
+        ),
+        (
+            "x<u8?> := (1u8 + _)",
+            "source-semantics/unresolved-empty-expression",
+            "_",
+        ),
+        (
+            "x<[u8?]:2,2> := [_ _]",
+            "source-semantics/incompatible-definition-kind",
+            "x<[u8?]:2,2> := [_ _]",
+        ),
+    ] {
+        let error = CanonicalSourceFrontend
+            .compile_definition(&definition(source))
+            .err()
+            .expect(source);
+        assert_eq!(error.code, code, "{source}: {error:?}");
+        assert_eq!(error.anchor.document, DocumentId(0x544));
+        assert_eq!(error.anchor.revision, Revision(1));
+        assert_eq!(
+            &source[error.anchor.range.start.0 as usize..error.anchor.range.end.0 as usize],
+            offending,
+            "{source}: {error:?}"
+        );
+    }
+}
+
+#[test]
+fn contextual_all_empty_matrix_blocks_receive_element_expectations() {
+    let cases = [
+        ("x<[u8?]:1,4> := [[_ _] [_ _]]", 1, 4),
+        ("x<[u8?]:2,2> := [[_ _]; [_ _]]", 2, 2),
+        ("x<[u8?]:2,4> := [[[_ _] [_ _]]; [[_ _] [_ _]]]", 2, 4),
+        ("x<[u8?]:1,4> := [([_ _]) ([_ _])]", 1, 4),
+    ];
+    let mut failures = Vec::new();
+    for (source, rows, columns) in cases {
+        match CanonicalSourceFrontend.compile_definition(&definition(source)) {
+            Ok(program) => {
+                assert_eq!(
+                    output(&program),
+                    &SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::Option(Box::new(
+                            SchemaBody::UnsignedInteger(IntegerWidth::W8)
+                        ))),
+                        dimensions: vec![
+                            mech_core::DimensionExpr::Constant(rows),
+                            mech_core::DimensionExpr::Constant(columns)
+                        ]
+                        .into_boxed_slice(),
+                    },
+                    "{source}"
+                );
+                program.compile_artifact().unwrap();
+            }
+            Err(error) => failures.push((source, error)),
+        }
+    }
+    assert!(failures.is_empty(), "{failures:?}");
+}

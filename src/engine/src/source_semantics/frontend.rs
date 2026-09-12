@@ -19,9 +19,9 @@ use mech_syntax::document::{
     DocumentId, DocumentSyntax, ExpressionBodySyntax, ExpressionSyntax, FactorSyntax,
     FactorValueSyntax, FormulaSyntax, FsmPipeSyntax, FsmStageSyntax, IntegerLiteralSyntax,
     KindAnnotationSyntax, KindSyntax, KindValueSyntax, LiteralSyntax, LiteralValueSyntax,
-    MapSyntax, MatrixComprehensionSyntax, MatrixSyntax, MultiplicativeExpressionSyntax, NodeFlags,
-    OperatorSyntax, PatternSyntax, PatternValueSyntax, RangeExpressionSyntax, RecordSyntax,
-    RecursiveSyntaxNode, Revision, SetComprehensionSyntax, SetSyntax, SliceStemSyntax, SliceSyntax,
+    MapSyntax, MatrixComprehensionSyntax, MatrixSyntax, NodeFlags, OperatorSyntax, PatternSyntax,
+    PatternValueSyntax, RangeExpressionSyntax, RecordSyntax, RecursiveSyntaxNode, Revision,
+    SetComprehensionSyntax, SetSyntax, SliceStemSyntax, SliceSyntax,
     StructureSyntax, StructureValueSyntax, SubscriptItemSyntax, SubscriptValueSyntax, SyntaxKind,
     SyntaxNode, TableSyntax, TableValueSyntax, TextRange, TupleStructSyntax, TupleSyntax,
     VariableDefineSyntax, VariableStemSyntax, VariableSyntax,
@@ -758,6 +758,29 @@ fn builtin_schema_for_body(body: &SchemaBody) -> Option<BuiltinSchema> {
         SchemaBody::Rational64 => BuiltinSchema::R64,
         _ => return None,
     })
+}
+
+/// Context carries one canonical schema. A matrix cell may be a scalar or a
+/// concatenated matrix block, whose dimensions must be inferred independently.
+#[derive(Clone, Copy)]
+enum ExpectedSchema<'schema> {
+    Value(&'schema SchemaDraft),
+    MatrixElement(&'schema SchemaDraft),
+}
+
+impl<'schema> ExpectedSchema<'schema> {
+    fn schema(self) -> &'schema SchemaDraft {
+        match self {
+            Self::Value(schema) | Self::MatrixElement(schema) => schema,
+        }
+    }
+}
+
+fn schema_component(schema: &SchemaDraft, body: &SchemaBody) -> SchemaDraft {
+    SchemaDraft {
+        body: body.clone(),
+        dimension_parameters: schema.dimension_parameters.clone(),
+    }
 }
 
 fn embed_schema_draft(
@@ -1661,9 +1684,18 @@ impl SemanticBuilder {
         &mut self,
         expression: &ExpressionSyntax,
     ) -> Result<(PendingValue, SyntaxNode), SourceSemanticError> {
+        self.expression_with_expected(expression, None)
+    }
+
+    fn expression_with_expected(
+        &mut self,
+        expression: &ExpressionSyntax,
+        expected: Option<ExpectedSchema<'_>>,
+    ) -> Result<(PendingValue, SyntaxNode), SourceSemanticError> {
         let body = self.required(expression.body(), expression.syntax(), "an expression body")?;
-        let mut value = self.expression_body(&body)?;
         let arms = expression.match_arms();
+        let mut value = self
+            .expression_body_with_expected(&body, if arms.is_empty() { expected } else { None })?;
         if !arms.is_empty() {
             let mut inputs = vec![value];
             let mut layouts = Vec::with_capacity(arms.len());
@@ -1685,7 +1717,7 @@ impl SemanticBuilder {
                     };
                     let result = self.required(arm.value(), arm.syntax(), "a match result")?;
                     let result_input = inputs.len() as u32;
-                    let result = self.expression(&result)?.0;
+                    let result = self.expression_with_expected(&result, expected)?.0;
                     let schema = self.schema_draft_of(result)?;
                     if matches!(schema.body, SchemaBody::Dynamic) {
                         return Err(SourceSemanticError {
@@ -1735,41 +1767,73 @@ impl SemanticBuilder {
         Ok((value, expression.syntax().clone()))
     }
 
-    fn expression_body(
+    fn expression_body_with_expected(
         &mut self,
         body: &ExpressionBodySyntax,
+        expected: Option<ExpectedSchema<'_>>,
     ) -> Result<PendingValue, SourceSemanticError> {
         match body {
             ExpressionBodySyntax::FsmPipe(pipe) => self.fsm_pipe(pipe),
             ExpressionBodySyntax::SetComprehension(value) => self.set_comprehension(value),
             ExpressionBodySyntax::MatrixComprehension(value) => self.matrix_comprehension(value),
             ExpressionBodySyntax::Range(range) => self.range(range),
-            ExpressionBodySyntax::Formula(formula) => self.formula(formula),
+            ExpressionBodySyntax::Formula(formula) => self.formula_with_expected(formula, expected),
         }
     }
 
     fn formula(&mut self, formula: &FormulaSyntax) -> Result<PendingValue, SourceSemanticError> {
+        self.formula_with_expected(formula, None)
+    }
+
+    fn formula_with_expected(
+        &mut self,
+        formula: &FormulaSyntax,
+        expected: Option<ExpectedSchema<'_>>,
+    ) -> Result<PendingValue, SourceSemanticError> {
         match formula {
-            FormulaSyntax::Logic(value) => {
-                self.chain(value.syntax(), value.operands(), value.operators())
-            }
-            FormulaSyntax::Comparison(value) => {
-                self.chain(value.syntax(), value.operands(), value.operators())
-            }
-            FormulaSyntax::Additive(value) => {
-                self.chain(value.syntax(), value.operands(), value.operators())
-            }
-            FormulaSyntax::Multiplicative(value) => self.multiplicative(value),
-            FormulaSyntax::Power(value) => {
-                self.chain(value.syntax(), value.operands(), value.operators())
-            }
-            FormulaSyntax::Table(value) => {
-                self.chain(value.syntax(), value.operands(), value.operators())
-            }
-            FormulaSyntax::Set(value) => {
-                self.chain(value.syntax(), value.operands(), value.operators())
-            }
-            FormulaSyntax::Factor(value) => self.factor(value),
+            FormulaSyntax::Logic(value) => self.chain(
+                value.syntax(),
+                value.operands(),
+                value.operators(),
+                expected,
+            ),
+            FormulaSyntax::Comparison(value) => self.chain(
+                value.syntax(),
+                value.operands(),
+                value.operators(),
+                expected,
+            ),
+            FormulaSyntax::Additive(value) => self.chain(
+                value.syntax(),
+                value.operands(),
+                value.operators(),
+                expected,
+            ),
+            FormulaSyntax::Multiplicative(value) => self.chain(
+                value.syntax(),
+                value.operands(),
+                value.operators(),
+                expected,
+            ),
+            FormulaSyntax::Power(value) => self.chain(
+                value.syntax(),
+                value.operands(),
+                value.operators(),
+                expected,
+            ),
+            FormulaSyntax::Table(value) => self.chain(
+                value.syntax(),
+                value.operands(),
+                value.operators(),
+                expected,
+            ),
+            FormulaSyntax::Set(value) => self.chain(
+                value.syntax(),
+                value.operands(),
+                value.operators(),
+                expected,
+            ),
+            FormulaSyntax::Factor(value) => self.factor_with_expected(value, expected),
         }
     }
 
@@ -1778,6 +1842,7 @@ impl SemanticBuilder {
         syntax: &SyntaxNode,
         operands: Vec<FormulaSyntax>,
         operators: Vec<O>,
+        expected: Option<ExpectedSchema<'_>>,
     ) -> Result<PendingValue, SourceSemanticError> {
         if operands.len() != operators.len().saturating_add(1) {
             return Err(SourceSemanticError {
@@ -1792,20 +1857,14 @@ impl SemanticBuilder {
         }
         let mut operands = operands.into_iter();
         let first = self.required(operands.next(), syntax, "a left operand")?;
-        let mut value = self.formula(&first)?;
+        let mut value =
+            self.formula_with_expected(&first, if operators.is_empty() { expected } else { None })?;
         for (operator, rhs) in operators.into_iter().zip(operands) {
             let operator = self.operator(&operator)?;
             let rhs = self.formula(&rhs)?;
             value = self.emit_operator(operator, value, rhs, syntax)?;
         }
         Ok(value)
-    }
-
-    fn multiplicative(
-        &mut self,
-        value: &MultiplicativeExpressionSyntax,
-    ) -> Result<PendingValue, SourceSemanticError> {
-        self.chain(value.syntax(), value.operands(), value.operators())
     }
 
     fn operator<O: AstNode>(&self, operator: &O) -> Result<CanonicalOperator, SourceSemanticError> {
@@ -2041,6 +2100,21 @@ impl SemanticBuilder {
     }
 
     fn factor(&mut self, factor: &FactorSyntax) -> Result<PendingValue, SourceSemanticError> {
+        self.factor_with_expected(factor, None)
+    }
+
+    fn factor_with_expected(
+        &mut self,
+        factor: &FactorSyntax,
+        expected: Option<ExpectedSchema<'_>>,
+    ) -> Result<PendingValue, SourceSemanticError> {
+        // Postfix transpose changes the expected shape. Its operand continues to
+        // infer normally rather than receiving the output's dimension contract.
+        let expected = if factor.transpose().is_none() {
+            expected
+        } else {
+            None
+        };
         let value = self.required(factor.value(), factor.syntax(), "a factor value")?;
         let mut result = match value {
             FactorValueSyntax::Parenthetical(value) => {
@@ -2049,7 +2123,7 @@ impl SemanticBuilder {
                     value.syntax(),
                     "a parenthesized expression",
                 )?;
-                self.expression_body(&expression)?
+                self.expression_body_with_expected(&expression, expected)?
             }
             FactorValueSyntax::Negate(value) => {
                 let operand = self.required(value.operand(), value.syntax(), "a unary operand")?;
@@ -2136,7 +2210,7 @@ impl SemanticBuilder {
                     None,
                 )
             }
-            FactorValueSyntax::Structure(value) => self.structure(&value)?,
+            FactorValueSyntax::Structure(value) => self.structure(&value, expected)?,
             FactorValueSyntax::Literal(value) => self.literal(&value)?,
             FactorValueSyntax::Call(value) => {
                 let function =
@@ -2580,6 +2654,24 @@ impl SemanticBuilder {
         Ok(PendingValue::Input(index))
     }
 
+    fn contextual_expression(
+        &mut self,
+        expression: &ExpressionSyntax,
+        expected: Option<&SchemaDraft>,
+        code: &'static str,
+        message: &str,
+    ) -> Result<PendingValue, SourceSemanticError> {
+        let value = self
+            .expression_with_expected(expression, expected.map(ExpectedSchema::Value))?
+            .0;
+        match expected {
+            Some(expected) => {
+                self.conform_schema_draft(value, expected, expression.syntax(), code, message)
+            }
+            None => Ok(value),
+        }
+    }
+
     fn definition(
         &mut self,
         definition: &VariableDefineSyntax,
@@ -2596,9 +2688,14 @@ impl SemanticBuilder {
             definition.syntax(),
             "a definition value",
         )?;
-        let mut value = self.expression(&expression)?.0;
-        if let Some(annotation) = variable.annotation() {
-            let expected = annotation_schema_draft(&annotation)?;
+        let expected = variable
+            .annotation()
+            .map(|annotation| annotation_schema_draft(&annotation))
+            .transpose()?;
+        let mut value = self
+            .expression_with_expected(&expression, expected.as_ref().map(ExpectedSchema::Value))?
+            .0;
+        if let Some(expected) = expected {
             value = self.conform_schema_draft(
                 value,
                 &expected,
@@ -2849,17 +2946,51 @@ impl SemanticBuilder {
     fn structure(
         &mut self,
         structure: &StructureSyntax,
+        expected: Option<ExpectedSchema<'_>>,
     ) -> Result<PendingValue, SourceSemanticError> {
         let value = self.required(structure.value(), structure.syntax(), "a structure value")?;
+        // A singleton tuple is grouping and retains the complete context,
+        // including optionality and the matrix-cell/block distinction.
+        if let StructureValueSyntax::Tuple(tuple) = &value {
+            if let [item] = tuple.items().as_slice() {
+                return self
+                    .expression_with_expected(item, expected)
+                    .map(|value| value.0);
+            }
+        }
+        let matrix_element = expected.and_then(|context| match context {
+            ExpectedSchema::MatrixElement(element) => Some(element.clone()),
+            ExpectedSchema::Value(schema) => {
+                let body = match &schema.body {
+                    SchemaBody::Option(payload) => payload.as_ref(),
+                    body => body,
+                };
+                match body {
+                    SchemaBody::Matrix { element, .. } => Some(schema_component(schema, element)),
+                    _ => None,
+                }
+            }
+        });
+        let context = expected.map(|context| {
+            let schema = context.schema();
+            schema_component(
+                schema,
+                match &schema.body {
+                    SchemaBody::Option(payload) => payload.as_ref(),
+                    body => body,
+                },
+            )
+        });
+        let expected = context.as_ref();
         match value {
-            StructureValueSyntax::Matrix(value) => self.matrix(&value),
+            StructureValueSyntax::Matrix(value) => self.matrix(&value, matrix_element.as_ref()),
             StructureValueSyntax::MatrixComprehension(value) => self.matrix_comprehension(&value),
-            StructureValueSyntax::Table(value) => self.table(&value),
-            StructureValueSyntax::Map(value) => self.map(&value),
-            StructureValueSyntax::Record(value) => self.record(&value),
-            StructureValueSyntax::Set(value) => self.set(&value),
-            StructureValueSyntax::Tuple(value) => self.tuple(&value),
-            StructureValueSyntax::TupleStruct(value) => self.tuple_struct(&value),
+            StructureValueSyntax::Table(value) => self.table(&value, expected),
+            StructureValueSyntax::Map(value) => self.map(&value, expected),
+            StructureValueSyntax::Record(value) => self.record(&value, expected),
+            StructureValueSyntax::Set(value) => self.set(&value, expected),
+            StructureValueSyntax::Tuple(value) => self.tuple(&value, expected),
+            StructureValueSyntax::TupleStruct(value) => self.tuple_struct(&value, expected),
             StructureValueSyntax::EmptyMap(value) => Err(SourceSemanticError {
                 code: "source-semantics/unresolved-map-entry-kind",
                 message: "empty map literals require explicit key and value kinds".to_owned(),
@@ -2873,15 +3004,63 @@ impl SemanticBuilder {
         }
     }
 
-    fn matrix(&mut self, matrix: &MatrixSyntax) -> Result<PendingValue, SourceSemanticError> {
+    fn matrix(
+        &mut self,
+        matrix: &MatrixSyntax,
+        element: Option<&SchemaDraft>,
+    ) -> Result<PendingValue, SourceSemanticError> {
         let rows = matrix.rows();
         let mut values = Vec::new();
+        let mut has_matrix_blocks = false;
         for row in rows {
             let columns = row.columns();
             let mut row_values = Vec::with_capacity(columns.len());
             for column in columns {
                 let value = self.required(column.value(), column.syntax(), "a matrix value")?;
-                let value = self.expression(&value)?.0;
+                let mut lowered = self
+                    .expression_with_expected(&value, element.map(ExpectedSchema::MatrixElement))?
+                    .0;
+                if let Some(element) = element {
+                    // Matrix literals also concatenate matrix blocks. Preserve
+                    // each block's own dimensions when constraining its elements.
+                    let actual = match lowered {
+                        PendingValue::UnresolvedEmpty(_) => None,
+                        value => Some(self.schema_draft_of(value)?),
+                    };
+                    let target = match actual {
+                        Some(SchemaDraft {
+                            body: SchemaBody::Matrix { dimensions, .. },
+                            dimension_parameters,
+                        }) => {
+                            let mut parameters = dimension_parameters.into_vec();
+                            let element = embed_schema_draft(
+                                element,
+                                &mut parameters,
+                                SourceSemanticAnchor::for_node(value.syntax()),
+                            )?;
+                            SchemaDraft {
+                                body: SchemaBody::Matrix {
+                                    element: Box::new(element),
+                                    dimensions,
+                                },
+                                dimension_parameters: parameters.into_boxed_slice(),
+                            }
+                        }
+                        _ => element.clone(),
+                    };
+                    lowered = self.conform_schema_draft(
+                        lowered,
+                        &target,
+                        value.syntax(),
+                        "source-semantics/incompatible-matrix-element-kind",
+                        "matrix element does not satisfy its declared kind",
+                    )?;
+                }
+                let value = lowered;
+                if !matches!(value, PendingValue::UnresolvedEmpty(_)) {
+                    has_matrix_blocks |=
+                        matches!(self.schema_body_of(value)?, SchemaBody::Matrix { .. });
+                }
                 row_values
                     .push((!matches!(value, PendingValue::UnresolvedEmpty(_))).then_some(value));
             }
@@ -2901,8 +3080,13 @@ impl SemanticBuilder {
                 anchor: SourceSemanticAnchor::for_node(matrix.syntax()),
             });
         }
-        if values.iter().flatten().any(Option::is_none) {
-            return self.optional_matrix(values, matrix.syntax());
+        if values.iter().flatten().any(Option::is_none)
+            || (element
+                .as_ref()
+                .is_some_and(|schema| matches!(schema.body, SchemaBody::Option(_)))
+                && !has_matrix_blocks)
+        {
+            return self.optional_matrix(values, matrix.syntax(), element);
         }
 
         let mut rows = Vec::with_capacity(values.len());
@@ -2953,26 +3137,34 @@ impl SemanticBuilder {
         &mut self,
         values: Vec<Vec<Option<PendingValue>>>,
         syntax: &SyntaxNode,
+        expected: Option<&SchemaDraft>,
     ) -> Result<PendingValue, SourceSemanticError> {
-        let element = self
-            .first_concrete_schema(values.iter().flatten().filter_map(|value| *value))?
-            .ok_or_else(|| SourceSemanticError {
-                code: "source-semantics/unresolved-matrix-element-kind",
-                message: "matrix literals require a present value with a concrete element kind"
-                    .to_owned(),
-                anchor: SourceSemanticAnchor::for_node(syntax),
-            })?;
-        let Some(payload) = builtin_schema_for_annotation_body(&element.body) else {
-            return Err(SourceSemanticError {
-                code: "source-semantics/incompatible-matrix-element-kind",
-                message: "absent matrix cells require a concrete scalar peer".to_owned(),
-                anchor: SourceSemanticAnchor::for_node(syntax),
-            });
-        };
-        let option = if option_payload_schema(payload).is_some() {
-            payload
-        } else {
-            option_schema(payload).expect("builtin scalar schemas have option schemas")
+        let option = match expected {
+            Some(expected) if matches!(expected.body, SchemaBody::Option(_)) => expected.clone(),
+            _ => {
+                let element = self
+                    .first_concrete_schema(values.iter().flatten().filter_map(|value| *value))?
+                    .ok_or_else(|| SourceSemanticError {
+                        code: "source-semantics/unresolved-matrix-element-kind",
+                        message:
+                            "matrix literals require a present value with a concrete element kind"
+                                .to_owned(),
+                        anchor: SourceSemanticAnchor::for_node(syntax),
+                    })?;
+                let Some(payload) = builtin_schema_for_annotation_body(&element.body) else {
+                    return Err(SourceSemanticError {
+                        code: "source-semantics/incompatible-matrix-element-kind",
+                        message: "absent matrix cells require a concrete scalar peer".to_owned(),
+                        anchor: SourceSemanticAnchor::for_node(syntax),
+                    });
+                };
+                let option = if option_payload_schema(payload).is_some() {
+                    payload
+                } else {
+                    option_schema(payload).expect("builtin scalar schemas have option schemas")
+                };
+                builtin_schema_draft(option)
+            }
         };
         let mut inputs = Vec::new();
         let mut row_width = None;
@@ -2989,15 +3181,15 @@ impl SemanticBuilder {
             }
             for value in row {
                 inputs.push(match value {
-                    Some(value) => self.conform_value(
+                    Some(value) => self.conform_schema_draft(
                         *value,
-                        option,
+                        &option,
                         syntax,
                         "source-semantics/incompatible-matrix-element-kind",
                         "optional matrix elements require one exact scalar kind",
                     )?,
-                    None => self.constant(
-                        option,
+                    None => self.constant_draft(
+                        option.clone(),
                         ValueDataDraft::Option(OptionDraft {
                             present: false,
                             value: None,
@@ -3011,9 +3203,9 @@ impl SemanticBuilder {
             "matrix/literal",
             inputs,
             SchemaDraft {
-                dimension_parameters: Box::new([]),
+                dimension_parameters: option.dimension_parameters,
                 body: SchemaBody::Matrix {
-                    element: Box::new(schema_body(option)),
+                    element: Box::new(option.body),
                     dimensions: vec![
                         DimensionExpr::Constant(values.len() as u64),
                         DimensionExpr::Constant(columns as u64),
@@ -3027,7 +3219,11 @@ impl SemanticBuilder {
         ))
     }
 
-    fn table(&mut self, table: &TableSyntax) -> Result<PendingValue, SourceSemanticError> {
+    fn table(
+        &mut self,
+        table: &TableSyntax,
+        expected: Option<&SchemaDraft>,
+    ) -> Result<PendingValue, SourceSemanticError> {
         let value = self.required(table.value(), table.syntax(), "a table presentation")?;
         let (mut headers, rows, syntax): (
             Vec<(String, Option<SchemaDraft>)>,
@@ -3097,15 +3293,34 @@ impl SemanticBuilder {
                 value.syntax().clone(),
             ),
         };
+        if let Some(schema) = expected {
+            if let SchemaBody::Table { columns, .. } = &schema.body {
+                for (name, header) in &mut headers {
+                    if header.is_none() {
+                        *header = columns
+                            .iter()
+                            .find(|column| column.name == *name)
+                            .map(|column| schema_component(schema, &column.schema));
+                    }
+                }
+            }
+        }
         let mut widths = Vec::new();
         let mut compiled_rows = Vec::new();
         for row in rows {
             widths.push(row.len());
             compiled_rows.push(
                 row.into_iter()
-                    .map(|cell| {
-                        self.expression(&cell)
-                            .map(|value| (value.0, cell.syntax().clone()))
+                    .enumerate()
+                    .map(|(column, cell)| {
+                        let expected = headers.get(column).and_then(|(_, schema)| schema.as_ref());
+                        self.contextual_expression(
+                            &cell,
+                            expected,
+                            "source-semantics/incompatible-table-field-kind",
+                            "table field does not satisfy its kind annotation",
+                        )
+                        .map(|value| (value, cell.syntax().clone()))
                     })
                     .collect::<Result<Vec<_>, _>>()?,
             );
@@ -3183,12 +3398,38 @@ impl SemanticBuilder {
         ))
     }
 
-    fn map(&mut self, map: &MapSyntax) -> Result<PendingValue, SourceSemanticError> {
+    fn map(
+        &mut self,
+        map: &MapSyntax,
+        expected: Option<&SchemaDraft>,
+    ) -> Result<PendingValue, SourceSemanticError> {
+        let (key_context, value_context) = expected
+            .and_then(|schema| match &schema.body {
+                SchemaBody::Map { key, value, .. } => Some((
+                    schema_component(schema, key),
+                    schema_component(schema, value),
+                )),
+                _ => None,
+            })
+            .map_or((None, None), |(key, value)| (Some(key), Some(value)));
         let mut entries = Vec::new();
         for entry in map.entries() {
             let key = self.required(entry.key(), entry.syntax(), "a map key")?;
             let value = self.required(entry.value(), entry.syntax(), "a map value")?;
-            entries.push((self.expression(&key)?.0, self.expression(&value)?.0));
+            entries.push((
+                self.contextual_expression(
+                    &key,
+                    key_context.as_ref(),
+                    "source-semantics/incompatible-map-key-kind",
+                    "map key does not satisfy its declared kind",
+                )?,
+                self.contextual_expression(
+                    &value,
+                    value_context.as_ref(),
+                    "source-semantics/incompatible-map-value-kind",
+                    "map value does not satisfy its declared kind",
+                )?,
+            ));
         }
         let key_schema = self
             .first_concrete_schema(entries.iter().map(|(key, _)| *key))?
@@ -3272,7 +3513,11 @@ impl SemanticBuilder {
         ))
     }
 
-    fn record(&mut self, record: &RecordSyntax) -> Result<PendingValue, SourceSemanticError> {
+    fn record(
+        &mut self,
+        record: &RecordSyntax,
+        expected: Option<&SchemaDraft>,
+    ) -> Result<PendingValue, SourceSemanticError> {
         let mut inputs = Vec::new();
         let mut fields = Vec::new();
         let mut parameters = Vec::new();
@@ -3280,17 +3525,25 @@ impl SemanticBuilder {
             let name = self.required(binding.name(), binding.syntax(), "a record field name")?;
             let value = self.required(binding.value(), binding.syntax(), "a record field value")?;
             let name = node_text(name.syntax())?;
-            let mut value = self.expression(&value)?.0;
-            if let Some(annotation) = binding.annotation() {
-                let expected = annotation_schema_draft(&annotation)?;
-                value = self.conform_schema_draft(
-                    value,
-                    &expected,
-                    binding.syntax(),
-                    "source-semantics/incompatible-record-field-kind",
-                    &format!("record field {name} does not satisfy its kind annotation"),
-                )?;
-            }
+            let context = binding
+                .annotation()
+                .map(|annotation| annotation_schema_draft(&annotation))
+                .transpose()?
+                .or_else(|| {
+                    expected.and_then(|schema| match &schema.body {
+                        SchemaBody::Record(fields) => fields
+                            .iter()
+                            .find(|field| field.name == name)
+                            .map(|field| schema_component(schema, &field.schema)),
+                        _ => None,
+                    })
+                });
+            let value = self.contextual_expression(
+                &value,
+                context.as_ref(),
+                "source-semantics/incompatible-record-field-kind",
+                &format!("record field {name} does not satisfy its kind annotation"),
+            )?;
             fields.push(SchemaField {
                 name,
                 schema: embed_schema_draft(
@@ -3319,10 +3572,23 @@ impl SemanticBuilder {
         ))
     }
 
-    fn set(&mut self, set: &SetSyntax) -> Result<PendingValue, SourceSemanticError> {
+    fn set(
+        &mut self,
+        set: &SetSyntax,
+        expected: Option<&SchemaDraft>,
+    ) -> Result<PendingValue, SourceSemanticError> {
+        let context = expected.and_then(|schema| match &schema.body {
+            SchemaBody::Set { element, .. } => Some(schema_component(schema, element)),
+            _ => None,
+        });
         let mut values = Vec::new();
         for item in set.items() {
-            let value = self.expression(&item)?.0;
+            let value = self.contextual_expression(
+                &item,
+                context.as_ref(),
+                "source-semantics/incompatible-set-element-kind",
+                "set element does not satisfy its declared kind",
+            )?;
             values.push((!matches!(value, PendingValue::UnresolvedEmpty(_))).then_some(value));
         }
         let mut element = self
@@ -3421,11 +3687,33 @@ impl SemanticBuilder {
         ))
     }
 
-    fn tuple(&mut self, tuple: &TupleSyntax) -> Result<PendingValue, SourceSemanticError> {
-        let inputs = tuple
-            .items()
+    fn tuple(
+        &mut self,
+        tuple: &TupleSyntax,
+        expected: Option<&SchemaDraft>,
+    ) -> Result<PendingValue, SourceSemanticError> {
+        let source_items = tuple.items();
+        let inputs = source_items
             .iter()
-            .map(|item| self.expression(item).map(|value| value.0))
+            .enumerate()
+            .map(|(index, item)| {
+                let context = if source_items.len() == 1 {
+                    expected.cloned()
+                } else {
+                    expected.and_then(|schema| match &schema.body {
+                        SchemaBody::Tuple(items) => {
+                            items.get(index).map(|body| schema_component(schema, body))
+                        }
+                        _ => None,
+                    })
+                };
+                self.contextual_expression(
+                    item,
+                    context.as_ref(),
+                    "source-semantics/incompatible-tuple-item-kind",
+                    "tuple item does not satisfy its declared kind",
+                )
+            })
             .collect::<Result<Vec<_>, _>>()?;
         if let [value] = inputs.as_slice() {
             return Ok(*value);
@@ -3457,10 +3745,22 @@ impl SemanticBuilder {
     fn tuple_struct(
         &mut self,
         tuple: &TupleStructSyntax,
+        expected: Option<&SchemaDraft>,
     ) -> Result<PendingValue, SourceSemanticError> {
         let name = self.required(tuple.name(), tuple.syntax(), "a tuple-structure name")?;
         let value = self.required(tuple.value(), tuple.syntax(), "a tuple-structure value")?;
-        let value = self.expression(&value)?.0;
+        let context = expected.and_then(|schema| match &schema.body {
+            SchemaBody::Tuple(items) if items.len() == 2 => {
+                Some(schema_component(schema, &items[1]))
+            }
+            _ => None,
+        });
+        let value = self.contextual_expression(
+            &value,
+            context.as_ref(),
+            "source-semantics/incompatible-tuple-struct-kind",
+            "tuple-structure payload does not satisfy its declared kind",
+        )?;
         let path = CanonicalNominalPath::new(
             node_text(name.syntax())?
                 .split('/')

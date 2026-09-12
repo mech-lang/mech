@@ -811,3 +811,273 @@ fn hexadecimal_and_large_rational_values_survive_artifact_roundtrip_and_executio
         }
     }
 }
+
+#[test]
+fn contextual_composite_empty_values_survive_codec_and_two_resident_turns() {
+    use mech_core::snapshot::{MapEntryDraft, NamedValueDraft, OptionDraft, TableColumnDraft};
+    use mech_core::{
+        CardinalitySpec, DimensionExpr, IntegerWidth, SchemaField, ValueDataDraft as D,
+    };
+    fn none() -> D {
+        D::Option(OptionDraft {
+            present: false,
+            value: None,
+        })
+    }
+    fn some(value: D) -> D {
+        D::Option(OptionDraft {
+            present: true,
+            value: Some(Box::new(value)),
+        })
+    }
+    fn number(value: f64) -> D {
+        D::F64(mech_core::snapshot::F64Bits::from_f64(value))
+    }
+    fn record(value: D) -> D {
+        D::Record(
+            vec![NamedValueDraft {
+                name: "missing".to_owned(),
+                value,
+            }]
+            .into_boxed_slice(),
+        )
+    }
+    let u8_schema = SchemaBody::UnsignedInteger(IntegerWidth::W8);
+    let optional_u8 = SchemaBody::Option(Box::new(u8_schema.clone()));
+    let f64_schema = SchemaBody::FloatingPoint(mech_core::FloatWidth::W64);
+    let missing_record = SchemaBody::Record(
+        vec![SchemaField {
+            name: "missing".to_owned(),
+            schema: optional_u8.clone(),
+        }]
+        .into_boxed_slice(),
+    );
+    let matrix = |element, rows, columns| SchemaBody::Matrix {
+        element: Box::new(element),
+        dimensions: vec![
+            DimensionExpr::Constant(rows),
+            DimensionExpr::Constant(columns),
+        ]
+        .into_boxed_slice(),
+    };
+    let path = mech_core::CanonicalNominalPath::new(vec!["some".to_owned()]).unwrap();
+    let tag = SchemaBody::Atom(mech_core::NominalKey::from_path(
+        mech_core::NominalKind::Atom,
+        &path,
+    ));
+    let cases: Vec<(&str, SchemaBody, fn(f64) -> D)> = vec![
+        (
+            "x<(f64,{missing<u8?>})> := (signal<f64>,{missing:_})",
+            SchemaBody::Tuple(vec![f64_schema.clone(), missing_record.clone()].into_boxed_slice()),
+            |value| D::Tuple(vec![number(value), record(none())].into_boxed_slice()),
+        ),
+        ("x<u8?> := (_)", optional_u8.clone(), |_| none()),
+        (
+            "x<[u8?]:1,2> := [_ _]",
+            matrix(optional_u8.clone(), 1, 2),
+            |_| D::Matrix(vec![none(), none()].into_boxed_slice()),
+        ),
+        (
+            "x<[u8?]:1,4> := [[_ _] [_ _]]",
+            matrix(optional_u8.clone(), 1, 4),
+            |_| {
+                D::Matrix(
+                    (0..4)
+                        .map(|_| none())
+                        .collect::<Vec<_>>()
+                        .into_boxed_slice(),
+                )
+            },
+        ),
+        (
+            "x<[u8?]:2,2> := [[_ _]; [_ _]]",
+            matrix(optional_u8.clone(), 2, 2),
+            |_| {
+                D::Matrix(
+                    (0..4)
+                        .map(|_| none())
+                        .collect::<Vec<_>>()
+                        .into_boxed_slice(),
+                )
+            },
+        ),
+        (
+            "x<[u8?]:2,4> := [[[_ _] [_ _]]; [[_ _] [_ _]]]",
+            matrix(optional_u8.clone(), 2, 4),
+            |_| {
+                D::Matrix(
+                    (0..8)
+                        .map(|_| none())
+                        .collect::<Vec<_>>()
+                        .into_boxed_slice(),
+                )
+            },
+        ),
+        (
+            "x<[u8?]:1,4> := [([_ _]) ([_ _])]",
+            matrix(optional_u8.clone(), 1, 4),
+            |_| {
+                D::Matrix(
+                    (0..4)
+                        .map(|_| none())
+                        .collect::<Vec<_>>()
+                        .into_boxed_slice(),
+                )
+            },
+        ),
+        (
+            "x<[f64?]:2,2> := [_ signal<f64>; signal _]",
+            matrix(SchemaBody::Option(Box::new(f64_schema.clone())), 2, 2),
+            |value| {
+                D::Matrix(
+                    vec![none(), some(number(value)), some(number(value)), none()]
+                        .into_boxed_slice(),
+                )
+            },
+        ),
+        (
+            "x<[u8?]:2,2> := [[_ 1u8]; [2u8 _]]",
+            matrix(optional_u8.clone(), 2, 2),
+            |_| D::Matrix(vec![none(), some(D::U8(1)), some(D::U8(2)), none()].into_boxed_slice()),
+        ),
+        (
+            "x<{missing<u8?>}> := {missing:_}",
+            missing_record.clone(),
+            |_| record(none()),
+        ),
+        (
+            "x := {missing<[u8?]:1,2>: [_ _]}",
+            SchemaBody::Record(
+                vec![SchemaField {
+                    name: "missing".to_owned(),
+                    schema: matrix(optional_u8.clone(), 1, 2),
+                }]
+                .into_boxed_slice(),
+            ),
+            |_| record(D::Matrix(vec![none(), none()].into_boxed_slice())),
+        ),
+        (
+            "x<{u8:{missing<u8?>}}> := {2u8:{missing:_},1u8:{missing:3u8}}",
+            SchemaBody::Map {
+                key: Box::new(u8_schema),
+                value: Box::new(missing_record.clone()),
+                cardinality: CardinalitySpec::Exact(DimensionExpr::Constant(2)),
+            },
+            |_| {
+                D::Map(
+                    vec![
+                        MapEntryDraft {
+                            items: vec![D::U8(1), record(some(D::U8(3)))].into_boxed_slice(),
+                        },
+                        MapEntryDraft {
+                            items: vec![D::U8(2), record(none())].into_boxed_slice(),
+                        },
+                    ]
+                    .into_boxed_slice(),
+                )
+            },
+        ),
+        (
+            "x<[{missing<u8?>}?]:1,2> := [{missing:_} _]",
+            matrix(SchemaBody::Option(Box::new(missing_record.clone())), 1, 2),
+            |_| D::Matrix(vec![some(record(none())), none()].into_boxed_slice()),
+        ),
+        (
+            "x<|value<{missing<u8?>}>|:1> := ╭─────────╮\n│ value │\n├─────────┤\n│ {missing:_} │\n╰─────────╯",
+            SchemaBody::Table {
+                columns: vec![SchemaField {
+                    name: "value".to_owned(),
+                    schema: missing_record.clone(),
+                }]
+                .into_boxed_slice(),
+                rows: CardinalitySpec::Exact(DimensionExpr::Constant(1)),
+            },
+            |_| {
+                D::Table(
+                    vec![TableColumnDraft {
+                        name: "value".to_owned(),
+                        values: vec![record(none())].into_boxed_slice(),
+                    }]
+                    .into_boxed_slice(),
+                )
+            },
+        ),
+        (
+            "x := (|value<{missing<u8?>}>|{missing:_}|)",
+            SchemaBody::Table {
+                columns: vec![SchemaField {
+                    name: "value".to_owned(),
+                    schema: missing_record.clone(),
+                }]
+                .into_boxed_slice(),
+                rows: CardinalitySpec::Exact(DimensionExpr::Constant(1)),
+            },
+            |_| {
+                D::Table(
+                    vec![TableColumnDraft {
+                        name: "value".to_owned(),
+                        values: vec![record(none())].into_boxed_slice(),
+                    }]
+                    .into_boxed_slice(),
+                )
+            },
+        ),
+        (
+            "x<(:some,{missing<u8?>})> := :some({missing:_})",
+            SchemaBody::Tuple(vec![tag, missing_record.clone()].into_boxed_slice()),
+            |_| D::Tuple(vec![D::Atom, record(none())].into_boxed_slice()),
+        ),
+        (
+            "x<{missing<u8?>}?> := {missing:_}",
+            SchemaBody::Option(Box::new(missing_record)),
+            |_| some(record(none())),
+        ),
+    ];
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    for (source, expected_schema, expected_value) in cases {
+        let direct = definition(source).compile_artifact().unwrap();
+        let decoded = roundtrip(source);
+        for artifact in [&direct, &decoded] {
+            let mut instance = activate(
+                ReactiveInstanceId::new(0x55a, 0),
+                artifact,
+                &catalog,
+                &ActivationFacts::default(),
+            )
+            .unwrap_or_else(|error| panic!("{source}: {error:?}"));
+            for value in [3.0, 7.0] {
+                let data = [value];
+                let inputs = instance
+                    .plan
+                    .inputs
+                    .iter()
+                    .map(|input| CapturedSignalInput {
+                        slot: input.slot,
+                        value: ResidentValueRef::F64(&data),
+                    })
+                    .collect::<Vec<_>>();
+                instance
+                    .turn(&inputs)
+                    .unwrap_or_else(|error| panic!("{source}: {error:?}"));
+                let output = instance.copied_output(0).unwrap();
+                assert_eq!(
+                    artifact
+                        .schemas()
+                        .get(output.schema())
+                        .unwrap()
+                        .closed_body(output.shape())
+                        .unwrap(),
+                    expected_schema,
+                    "{source}"
+                );
+                assert_eq!(
+                    output.canonical_data_draft().unwrap(),
+                    expected_value(value),
+                    "{source}"
+                );
+            }
+        }
+    }
+}
