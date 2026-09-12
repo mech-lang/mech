@@ -9,8 +9,8 @@ use mech_syntax::document::parser::canonical::{
 use mech_syntax::document::parser::rules;
 use mech_syntax::document::{
     ArgumentListSyntax, ArrayPatternSyntax, AstNode, DocumentId, ExpressionSyntax, FactorSyntax,
-    FactorValueSyntax, FormulaSyntax, GreenElement, GreenNode, GreenToken, LiteralSyntax,
-    LiteralValueSyntax, MapSyntax, MatchArmSyntax, MatrixSyntax, NodeFlags, NodeId,
+    FactorValueSyntax, FormulaSyntax, GreenElement, GreenNode, GreenToken, KindScalarSyntax,
+    LiteralSyntax, LiteralValueSyntax, MapSyntax, MatchArmSyntax, MatrixSyntax, NodeFlags, NodeId,
     ParentheticalExpressionSyntax, ParseConfig, ParseLimits, PatternArrayItemSyntax,
     RangeExpressionSyntax, RangeSubscriptSyntax, RecordSyntax, RecursiveCoreSyntax,
     RecursiveSyntaxNode, Revision, StructureSyntax, StructureValueSyntax, SubscriptItemSyntax,
@@ -514,6 +514,83 @@ fn range_subscript_exposes_actual_resource_recovery_expression() {
     .unwrap();
     assert!(subscript.recovered_expression().is_none());
     let range = subscript.range().unwrap();
+    assert_eq!(range.bounds().len(), 2);
+    assert_eq!(range.operators().len(), 1);
+}
+
+#[test]
+fn scalar_kind_exposes_actual_resource_recovery_expression() {
+    let text = format!(
+        "u8:{}..9",
+        core::iter::repeat_n("1", 32)
+            .collect::<Vec<_>>()
+            .join(" + ")
+    );
+    for limits in [
+        ParseLimits {
+            fuel: 64,
+            ..ParseLimits::default()
+        },
+        ParseLimits {
+            max_events: 96,
+            ..ParseLimits::default()
+        },
+    ] {
+        let parsed = parse_canonical_phase_2i_rule_for_test(
+            source(&text),
+            rules::KIND_SCALAR,
+            ParseConfig { limits },
+        )
+        .unwrap();
+        assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+        let scalar =
+            KindScalarSyntax::cast(find_kind(&parsed.syntax(), SyntaxKind::KindScalar).unwrap())
+                .unwrap();
+        let raw = scalar
+            .syntax()
+            .children()
+            .find(|node| node.kind() == SyntaxKind::Expression)
+            .expect("parser retains partial first bound as Expression");
+        let recovered = scalar
+            .recovered_expression()
+            .expect("typed accessor exposes resource-retained expression");
+        assert!(scalar.constraint().is_none());
+        assert!(RangeExpressionSyntax::cast(raw.clone()).is_none());
+        assert!(recovered.body().is_some());
+        assert!(Arc::ptr_eq(raw.green(), recovered.syntax().green()));
+        assert_eq!(
+            raw.source().chunks().next().unwrap().as_ptr(),
+            recovered
+                .syntax()
+                .source()
+                .chunks()
+                .next()
+                .unwrap()
+                .as_ptr()
+        );
+        assert_eq!(raw.range(), recovered.syntax().range());
+        assert!(parsed.diagnostics.iter().any(|diagnostic| {
+            diagnostic.code.as_str() == "syntax/recovery-limit"
+                && matches!(
+                    diagnostic.recovery,
+                    Some(mech_syntax::document::RecoveryAction::ResourceLimit { .. })
+                )
+        }));
+        assert!(parsed.stats.parser_steps <= limits.fuel);
+        assert!(parsed.stats.events_emitted <= u64::from(limits.max_events));
+    }
+    let parsed = parse_canonical_phase_2i_rule_for_test(
+        source("u8:1..9"),
+        rules::KIND_SCALAR,
+        ParseConfig::default(),
+    )
+    .unwrap();
+    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Matched);
+    let scalar =
+        KindScalarSyntax::cast(find_kind(&parsed.syntax(), SyntaxKind::KindScalar).unwrap())
+            .unwrap();
+    assert!(scalar.recovered_expression().is_none());
+    let range = scalar.constraint().unwrap();
     assert_eq!(range.bounds().len(), 2);
     assert_eq!(range.operators().len(), 1);
 }
