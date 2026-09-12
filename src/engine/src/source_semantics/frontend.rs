@@ -430,16 +430,15 @@ enum BuiltinSchema {
     OptionR64,
 }
 
-struct BuiltinSchemas {
+struct SourceSchemas {
     table: SchemaTable,
-    ids: BTreeMap<BuiltinSchema, SchemaId>,
-    input_ids: BTreeMap<usize, SchemaId>,
-    node_ids: BTreeMap<usize, SchemaId>,
-    constant_ids: BTreeMap<usize, SchemaId>,
+    input_ids: Vec<SchemaId>,
+    node_ids: Vec<SchemaId>,
+    constant_ids: Vec<SchemaId>,
     dynamic_payload_ids: BTreeMap<usize, SchemaId>,
 }
 
-impl BuiltinSchemas {
+impl SourceSchemas {
     fn build(
         anchor: SourceSemanticAnchor,
         inputs: &[PendingInput],
@@ -447,223 +446,71 @@ impl BuiltinSchemas {
         constants: &[PendingConstant],
     ) -> Result<Self, SourceSemanticError> {
         let mut builder = SchemaTableBuilder::new();
-        let mut handles = Vec::new();
-        for builtin in [
-            BuiltinSchema::Dynamic,
-            BuiltinSchema::Bool,
-            BuiltinSchema::String,
-            BuiltinSchema::Index,
-            BuiltinSchema::U8,
-            BuiltinSchema::U16,
-            BuiltinSchema::U32,
-            BuiltinSchema::U64,
-            BuiltinSchema::U128,
-            BuiltinSchema::I8,
-            BuiltinSchema::I16,
-            BuiltinSchema::I32,
-            BuiltinSchema::I64,
-            BuiltinSchema::I128,
-            BuiltinSchema::F32,
-            BuiltinSchema::F64,
-            BuiltinSchema::C32,
-            BuiltinSchema::C64,
-            BuiltinSchema::R64,
-            BuiltinSchema::OptionDynamic,
-            BuiltinSchema::OptionBool,
-            BuiltinSchema::OptionString,
-            BuiltinSchema::OptionIndex,
-            BuiltinSchema::OptionU8,
-            BuiltinSchema::OptionU16,
-            BuiltinSchema::OptionU32,
-            BuiltinSchema::OptionU64,
-            BuiltinSchema::OptionU128,
-            BuiltinSchema::OptionI8,
-            BuiltinSchema::OptionI16,
-            BuiltinSchema::OptionI32,
-            BuiltinSchema::OptionI64,
-            BuiltinSchema::OptionI128,
-            BuiltinSchema::OptionF32,
-            BuiltinSchema::OptionF64,
-            BuiltinSchema::OptionC32,
-            BuiltinSchema::OptionC64,
-            BuiltinSchema::OptionR64,
-        ] {
-            let schema = SchemaDraft {
-                dimension_parameters: Box::new([]),
-                body: schema_body(builtin),
-            }
-            .finalize()
-            .map_err(|error| internal(anchor, format!("invalid builtin schema: {error:?}")))?;
-            let handle = builder
-                .insert(schema)
-                .map_err(|error| internal(anchor, format!("unable to retain schema: {error:?}")))?;
-            handles.push((builtin, handle));
-        }
+        let mut insert = |draft: &SchemaDraft| {
+            let schema = draft
+                .clone()
+                .finalize()
+                .map_err(|error| internal(anchor, format!("invalid source schema: {error:?}")))?;
+            builder.insert(schema).map_err(|error| {
+                internal(anchor, format!("unable to retain source schema: {error:?}"))
+            })
+        };
         let input_handles = inputs
             .iter()
-            .enumerate()
-            .map(|(index, input)| {
-                let schema = input.schema.clone().finalize().map_err(|error| {
-                    internal(anchor, format!("invalid input schema: {error:?}"))
-                })?;
-                builder
-                    .insert(schema)
-                    .map(|handle| (index, handle))
-                    .map_err(|error| {
-                        internal(anchor, format!("unable to retain input schema: {error:?}"))
-                    })
-            })
+            .map(|value| insert(&value.schema))
             .collect::<Result<Vec<_>, _>>()?;
         let node_handles = nodes
             .iter()
-            .enumerate()
-            .filter_map(|(index, node)| node.schema_body.as_ref().map(|body| (index, node, body)))
-            .map(|(index, node, body)| {
-                let schema = SchemaDraft {
-                    dimension_parameters: node.schema_parameters.clone(),
-                    body: body.clone(),
-                }
-                .finalize()
-                .map_err(|error| internal(anchor, format!("invalid source schema: {error:?}")))?;
-                builder
-                    .insert(schema)
-                    .map(|handle| (index, handle))
-                    .map_err(|error| {
-                        internal(anchor, format!("unable to retain source schema: {error:?}"))
-                    })
-            })
+            .map(|value| insert(&value.schema))
             .collect::<Result<Vec<_>, _>>()?;
         let constant_handles = constants
             .iter()
-            .enumerate()
-            .filter_map(|(index, constant)| {
-                constant
-                    .schema_body
-                    .as_ref()
-                    .map(|body| (index, constant, body))
-            })
-            .map(|(index, constant, body)| {
-                let schema = SchemaDraft {
-                    dimension_parameters: constant.schema_parameters.clone(),
-                    body: body.clone(),
-                }
-                .finalize()
-                .map_err(|error| internal(anchor, format!("invalid constant schema: {error:?}")))?;
-                builder
-                    .insert(schema)
-                    .map(|handle| (index, handle))
-                    .map_err(|error| {
-                        internal(
-                            anchor,
-                            format!("unable to retain constant schema: {error:?}"),
-                        )
-                    })
-            })
+            .map(|value| insert(&value.schema))
             .collect::<Result<Vec<_>, _>>()?;
-        let dynamic_payload_handles = constants
+        let payload_handles = constants
             .iter()
             .enumerate()
-            .filter_map(|(index, constant)| {
-                constant
+            .filter_map(|(index, value)| {
+                value
                     .dynamic_payload
                     .as_ref()
-                    .and_then(|(_, body, _)| body.as_ref())
-                    .map(|body| (index, body))
+                    .map(|(schema, _)| (index, schema))
             })
-            .map(|(index, body)| {
-                let schema = SchemaDraft {
-                    dimension_parameters: Box::new([]),
-                    body: body.clone(),
-                }
-                .finalize()
-                .map_err(|error| {
-                    internal(anchor, format!("invalid dynamic payload schema: {error:?}"))
-                })?;
-                builder
-                    .insert(schema)
-                    .map(|handle| (index, handle))
-                    .map_err(|error| {
-                        internal(
-                            anchor,
-                            format!("unable to retain dynamic payload schema: {error:?}"),
-                        )
-                    })
-            })
+            .map(|(index, schema)| insert(schema).map(|handle| (index, handle)))
             .collect::<Result<Vec<_>, _>>()?;
-        let build = builder
-            .finish()
-            .map_err(|error| internal(anchor, format!("unable to finalize schemas: {error:?}")))?;
-        let ids = handles
-            .into_iter()
-            .map(|(schema, handle)| {
-                build
-                    .resolve(handle)
-                    .map(|id| (schema, id))
-                    .map_err(|error| {
-                        internal(
-                            anchor,
-                            format!("unable to resolve {schema:?} schema: {error:?}"),
-                        )
-                    })
+        let build = builder.finish().map_err(|error| {
+            internal(
+                anchor,
+                format!("unable to finalize source schemas: {error:?}"),
+            )
+        })?;
+        let resolve = |handle| {
+            build.resolve(handle).map_err(|error| {
+                internal(
+                    anchor,
+                    format!("unable to resolve source schema: {error:?}"),
+                )
             })
-            .collect::<Result<BTreeMap<_, _>, _>>()?;
+        };
         let input_ids = input_handles
             .into_iter()
-            .map(|(index, handle)| {
-                build
-                    .resolve(handle)
-                    .map(|id| (index, id))
-                    .map_err(|error| {
-                        internal(anchor, format!("unable to resolve input schema: {error:?}"))
-                    })
-            })
-            .collect::<Result<BTreeMap<_, _>, _>>()?;
+            .map(resolve)
+            .collect::<Result<Vec<_>, _>>()?;
         let node_ids = node_handles
             .into_iter()
-            .map(|(index, handle)| {
-                build
-                    .resolve(handle)
-                    .map(|id| (index, id))
-                    .map_err(|error| {
-                        internal(
-                            anchor,
-                            format!("unable to resolve source schema: {error:?}"),
-                        )
-                    })
-            })
-            .collect::<Result<BTreeMap<_, _>, _>>()?;
+            .map(resolve)
+            .collect::<Result<Vec<_>, _>>()?;
         let constant_ids = constant_handles
             .into_iter()
-            .map(|(index, handle)| {
-                build
-                    .resolve(handle)
-                    .map(|id| (index, id))
-                    .map_err(|error| {
-                        internal(
-                            anchor,
-                            format!("unable to resolve constant schema: {error:?}"),
-                        )
-                    })
-            })
-            .collect::<Result<BTreeMap<_, _>, _>>()?;
-        let dynamic_payload_ids = dynamic_payload_handles
+            .map(resolve)
+            .collect::<Result<Vec<_>, _>>()?;
+        let dynamic_payload_ids = payload_handles
             .into_iter()
-            .map(|(index, handle)| {
-                build
-                    .resolve(handle)
-                    .map(|id| (index, id))
-                    .map_err(|error| {
-                        internal(
-                            anchor,
-                            format!("unable to resolve dynamic payload schema: {error:?}"),
-                        )
-                    })
-            })
+            .map(|(index, handle)| resolve(handle).map(|id| (index, id)))
             .collect::<Result<BTreeMap<_, _>, _>>()?;
         let (table, _) = build.into_parts();
         Ok(Self {
             table,
-            ids,
             input_ids,
             node_ids,
             constant_ids,
@@ -671,33 +518,24 @@ impl BuiltinSchemas {
         })
     }
 
-    fn id(&self, schema: BuiltinSchema) -> SchemaId {
-        self.ids[&schema]
-    }
-
     fn input_id(&self, index: usize) -> SchemaId {
-        self.input_ids[&index]
+        self.input_ids[index]
     }
-
-    fn node_id(&self, index: usize, fallback: BuiltinSchema) -> SchemaId {
-        self.node_ids
-            .get(&index)
-            .copied()
-            .unwrap_or_else(|| self.id(fallback))
+    fn node_id(&self, index: usize) -> SchemaId {
+        self.node_ids[index]
     }
-
-    fn constant_id(&self, index: usize, fallback: BuiltinSchema) -> SchemaId {
-        self.constant_ids
-            .get(&index)
-            .copied()
-            .unwrap_or_else(|| self.id(fallback))
+    fn constant_id(&self, index: usize) -> SchemaId {
+        self.constant_ids[index]
     }
+    fn dynamic_payload_id(&self, index: usize) -> SchemaId {
+        self.dynamic_payload_ids[&index]
+    }
+}
 
-    fn dynamic_payload_id(&self, index: usize, fallback: BuiltinSchema) -> SchemaId {
-        self.dynamic_payload_ids
-            .get(&index)
-            .copied()
-            .unwrap_or_else(|| self.id(fallback))
+fn builtin_schema_draft(schema: BuiltinSchema) -> SchemaDraft {
+    SchemaDraft {
+        body: schema_body(schema),
+        dimension_parameters: Box::new([]),
     }
 }
 
@@ -1468,11 +1306,9 @@ enum PendingValue {
 }
 
 struct PendingConstant {
-    schema: BuiltinSchema,
-    schema_body: Option<SchemaBody>,
-    schema_parameters: Box<[DimensionParameterDeclaration]>,
+    schema: SchemaDraft,
     data: ValueDataDraft,
-    dynamic_payload: Option<(BuiltinSchema, Option<SchemaBody>, ValueDataDraft)>,
+    dynamic_payload: Option<(SchemaDraft, ValueDataDraft)>,
 }
 
 #[derive(Clone)]
@@ -1486,15 +1322,12 @@ struct PendingNode {
     inferable_projection: bool,
     operation: OperationReference,
     inputs: Vec<PendingValue>,
-    schema: BuiltinSchema,
-    schema_body: Option<SchemaBody>,
-    schema_parameters: Box<[DimensionParameterDeclaration]>,
+    schema: SchemaDraft,
     state: Option<u32>,
     semantic: SourceSemanticNode,
 }
 
 struct PendingState {
-    schema: BuiltinSchema,
     initializer: PendingValue,
     producer_node: u32,
 }
@@ -1977,8 +1810,8 @@ impl SemanticBuilder {
     ) -> Result<PendingValue, SourceSemanticError> {
         let (mut name, _) = operator_name(operator);
         if operator == CanonicalOperator::Add
-            && (self.schema_of(lhs) == BuiltinSchema::String
-                || self.schema_of(rhs) == BuiltinSchema::String)
+            && (self.schema_of(lhs) == Some(BuiltinSchema::String)
+                || self.schema_of(rhs) == Some(BuiltinSchema::String))
         {
             name = "string/concat";
         }
@@ -2141,10 +1974,7 @@ impl SemanticBuilder {
         if let PendingValue::Node(index) = value {
             let node = &mut self.nodes[index as usize];
             if node.inferable_projection {
-                node.schema = builtin_schema_for_annotation_body(&target.body)
-                    .unwrap_or(BuiltinSchema::Dynamic);
-                node.schema_body = Some(target.body.clone());
-                node.schema_parameters = target.dimension_parameters.clone();
+                node.schema = target.clone();
                 node.inferable_projection = false;
                 return Ok(value);
             }
@@ -2162,19 +1992,15 @@ impl SemanticBuilder {
         syntax: &SyntaxNode,
     ) -> Result<PendingValue, SourceSemanticError> {
         match self.schema_of(operand) {
-            BuiltinSchema::Bool => Ok(operand),
-            BuiltinSchema::Dynamic
-                if matches!(self.schema_body_of(operand), SchemaBody::Dynamic) =>
-            {
-                self.conform_dynamic_to_schema(
-                    operand,
-                    &SchemaDraft {
-                        body: SchemaBody::Bool,
-                        dimension_parameters: Box::new([]),
-                    },
-                    syntax,
-                )
-            }
+            Some(BuiltinSchema::Bool) => Ok(operand),
+            Some(BuiltinSchema::Dynamic) => self.conform_dynamic_to_schema(
+                operand,
+                &SchemaDraft {
+                    body: SchemaBody::Bool,
+                    dimension_parameters: Box::new([]),
+                },
+                syntax,
+            ),
             _ => Err(SourceSemanticError {
                 code: "source-semantics/non-boolean-operator-kind",
                 message: "logical binary operators require boolean operands".to_owned(),
@@ -2184,8 +2010,7 @@ impl SemanticBuilder {
     }
 
     fn is_genuinely_dynamic(&self, value: PendingValue) -> bool {
-        self.schema_of(value) == BuiltinSchema::Dynamic
-            && matches!(self.schema_body_of(value), SchemaBody::Dynamic)
+        matches!(self.schema_draft(value).body, SchemaBody::Dynamic)
     }
 
     fn conform_dynamic_operand(
@@ -2593,9 +2418,15 @@ impl SemanticBuilder {
             .filter(|value| !self.is_genuinely_dynamic(*value))
             .collect::<Vec<_>>();
         for value in &concrete {
-            if !resolved_schema_type(self.schema_of(*value), range.syntax())?
-                .is_some_and(|kind| kind.satisfies(BuiltinKindPredicate::RangeEndpoint))
-            {
+            let schema = self.schema_draft(*value);
+            let kind = ResolvedType::from_schema_body(&schema.body, &schema.dimension_parameters)
+                .map_err(|error| {
+                internal(
+                    SourceSemanticAnchor::for_node(range.syntax()),
+                    error.to_string(),
+                )
+            })?;
+            if !kind.satisfies(BuiltinKindPredicate::RangeEndpoint) {
                 return Err(SourceSemanticError {
                     code: "source-semantics/invalid-range-endpoint-kind",
                     message: "range endpoints require a range-endpoint kind".to_owned(),
@@ -2611,7 +2442,11 @@ impl SemanticBuilder {
         for other in concrete.iter().skip(1) {
             peer = self.promote_operands(peer, *other, range.syntax())?.0;
         }
-        let element_schema = self.schema_of(peer);
+        let element_schema = self.schema_of(peer).ok_or_else(|| SourceSemanticError {
+            code: "source-semantics/invalid-range-endpoint-kind",
+            message: "range endpoints require a scalar range-endpoint kind".to_owned(),
+            anchor: SourceSemanticAnchor::for_node(range.syntax()),
+        })?;
         for value in &mut values {
             *value = self.conform_value(
                 *value,
@@ -2752,7 +2587,6 @@ impl SemanticBuilder {
             )?;
         }
         let bound = if definition.mutability_marker().is_some() {
-            let schema = self.schema_of(value);
             let schema_draft = self.schema_draft_of(value);
             let state = u32::try_from(self.states.len()).map_err(|_| SourceSemanticError {
                 code: "source-semantics/state-identity-exhausted",
@@ -2761,7 +2595,6 @@ impl SemanticBuilder {
             })?;
             let node = self.nodes.len() as u32;
             self.states.push(PendingState {
-                schema,
                 initializer: value,
                 producer_node: node,
             });
@@ -2769,9 +2602,7 @@ impl SemanticBuilder {
                 inferable_projection: false,
                 operation: operation_reference("core/assign"),
                 inputs: vec![PendingValue::State(state)],
-                schema,
-                schema_body: Some(schema_draft.body),
-                schema_parameters: schema_draft.dimension_parameters,
+                schema: schema_draft,
                 state: Some(state),
                 semantic: SourceSemanticNode {
                     operation: "core/assign".to_owned(),
@@ -2841,7 +2672,7 @@ impl SemanticBuilder {
                             anchor: SourceSemanticAnchor::for_node(value.syntax()),
                         })?;
                     if dynamic_option {
-                        return Ok(self.constant_dynamic_option(schema, None, data));
+                        return Ok(self.constant_dynamic_option(builtin_schema_draft(schema), data));
                     }
                     let literal = self.constant(schema, data);
                     return self.conform_value(
@@ -2862,7 +2693,7 @@ impl SemanticBuilder {
                             anchor: SourceSemanticAnchor::for_node(value.syntax()),
                         })?;
                 Ok(if dynamic_option {
-                    self.constant_dynamic_option(schema, None, data)
+                    self.constant_dynamic_option(builtin_schema_draft(schema), data)
                 } else {
                     self.constant(schema, data)
                 })
@@ -2952,7 +2783,13 @@ impl SemanticBuilder {
     ) -> Result<PendingValue, SourceSemanticError> {
         require_literal_schema(annotation, BuiltinSchema::Dynamic, syntax)?;
         if annotation == Some(BuiltinSchema::OptionDynamic) {
-            return Ok(self.constant_dynamic_option(BuiltinSchema::Dynamic, Some(actual), data));
+            return Ok(self.constant_dynamic_option(
+                SchemaDraft {
+                    body: actual,
+                    dimension_parameters: Box::new([]),
+                },
+                data,
+            ));
         }
         Ok(self.constant_exact(actual, data))
     }
@@ -4328,71 +4165,27 @@ impl SemanticBuilder {
         self.input_for_node(node)
     }
 
-    fn schema_of(&self, value: PendingValue) -> BuiltinSchema {
+    fn schema_of(&self, value: PendingValue) -> Option<BuiltinSchema> {
+        builtin_schema_for_body(&self.schema_draft(value).body)
+    }
+
+    fn schema_draft(&self, value: PendingValue) -> &SchemaDraft {
         match value {
-            PendingValue::Constant(index) => self.constants[index].schema,
-            PendingValue::Input(index) => {
-                builtin_schema_for_annotation_body(&self.inputs[index as usize].schema.body)
-                    .unwrap_or(BuiltinSchema::Dynamic)
+            PendingValue::Constant(index) => &self.constants[index].schema,
+            PendingValue::Input(index) => &self.inputs[index as usize].schema,
+            PendingValue::State(index) => {
+                &self.nodes[self.states[index as usize].producer_node as usize].schema
             }
-            PendingValue::State(index) => self.states[index as usize].schema,
-            PendingValue::Node(index) => self.nodes[index as usize].schema,
+            PendingValue::Node(index) => &self.nodes[index as usize].schema,
         }
     }
 
     fn schema_body_of(&self, value: PendingValue) -> SchemaBody {
-        match value {
-            PendingValue::Constant(index) => self.constants[index]
-                .schema_body
-                .clone()
-                .unwrap_or_else(|| schema_body(self.constants[index].schema)),
-            PendingValue::Input(index) => self.inputs[index as usize].schema.body.clone(),
-            PendingValue::State(index) => self
-                .nodes
-                .iter()
-                .find(|node| node.state == Some(index))
-                .and_then(|node| node.schema_body.clone())
-                .unwrap_or_else(|| schema_body(self.states[index as usize].schema)),
-            PendingValue::Node(index) => self.nodes[index as usize]
-                .schema_body
-                .clone()
-                .unwrap_or_else(|| schema_body(self.nodes[index as usize].schema)),
-        }
+        self.schema_draft(value).body.clone()
     }
 
     fn schema_draft_of(&self, value: PendingValue) -> SchemaDraft {
-        match value {
-            PendingValue::Constant(index) => SchemaDraft {
-                dimension_parameters: self.constants[index].schema_parameters.clone(),
-                body: self.constants[index]
-                    .schema_body
-                    .clone()
-                    .unwrap_or_else(|| schema_body(self.constants[index].schema)),
-            },
-            PendingValue::Input(index) => self.inputs[index as usize].schema.clone(),
-            PendingValue::State(index) => self
-                .nodes
-                .iter()
-                .find(|node| node.state == Some(index))
-                .map(|node| SchemaDraft {
-                    dimension_parameters: node.schema_parameters.clone(),
-                    body: node
-                        .schema_body
-                        .clone()
-                        .unwrap_or_else(|| schema_body(node.schema)),
-                })
-                .unwrap_or_else(|| SchemaDraft {
-                    dimension_parameters: Box::new([]),
-                    body: schema_body(self.states[index as usize].schema),
-                }),
-            PendingValue::Node(index) => SchemaDraft {
-                dimension_parameters: self.nodes[index as usize].schema_parameters.clone(),
-                body: self.nodes[index as usize]
-                    .schema_body
-                    .clone()
-                    .unwrap_or_else(|| schema_body(self.nodes[index as usize].schema)),
-            },
-        }
+        self.schema_draft(value).clone()
     }
 
     fn promote_operands(
@@ -4403,11 +4196,10 @@ impl SemanticBuilder {
     ) -> Result<(PendingValue, PendingValue, Option<BuiltinSchema>), SourceSemanticError> {
         let lhs_schema = self.schema_of(lhs);
         let rhs_schema = self.schema_of(rhs);
-        if lhs_schema == BuiltinSchema::Dynamic || rhs_schema == BuiltinSchema::Dynamic {
-            return Ok((lhs, rhs, None));
-        }
-        let (Some(lhs_kind), Some(rhs_kind)) = (builtin_kind(lhs_schema), builtin_kind(rhs_schema))
-        else {
+        let (Some(lhs_kind), Some(rhs_kind)) = (
+            lhs_schema.and_then(builtin_kind),
+            rhs_schema.and_then(builtin_kind),
+        ) else {
             return Ok((lhs, rhs, None));
         };
         let lhs_type = resolved_builtin_type(lhs_kind, syntax)?;
@@ -4452,7 +4244,7 @@ impl SemanticBuilder {
         plan: &mech_core::ConversionPlan,
         syntax: &SyntaxNode,
     ) -> Result<PendingValue, SourceSemanticError> {
-        if self.schema_of(value) == target {
+        if self.schema_of(value) == Some(target) {
             return Ok(value);
         }
         if let PendingValue::Constant(index) = value {
@@ -4509,79 +4301,13 @@ impl SemanticBuilder {
         code: &'static str,
         message: &str,
     ) -> Result<PendingValue, SourceSemanticError> {
-        let actual = self.schema_of(value);
-        if expected == BuiltinSchema::Dynamic || actual == expected {
-            return Ok(value);
-        }
-        if let Some(payload) = option_payload_schema(expected) {
-            let value = self.conform_value(value, payload, syntax, code, message)?;
-            let PendingValue::Constant(index) = value else {
-                return Ok(self.emit(
-                    "option/some",
-                    vec![value],
-                    expected,
-                    syntax,
-                    "present-option",
-                    Some("presence=present".to_owned()),
-                ));
-            };
-            let data = self.constants[index].data.clone();
-            if expected == BuiltinSchema::OptionDynamic {
-                let schema = self.constants[index].schema;
-                let schema_body = self.constants[index].schema_body.clone();
-                if schema != BuiltinSchema::Dynamic || schema_body.is_some() {
-                    return Ok(self.constant_dynamic_option(schema, schema_body, data));
-                }
-            }
-            return Ok(self.constant(
-                expected,
-                ValueDataDraft::Option(OptionDraft {
-                    present: true,
-                    value: Some(Box::new(data)),
-                }),
-            ));
-        }
-        if actual == BuiltinSchema::Dynamic {
-            if !matches!(self.schema_body_of(value), SchemaBody::Dynamic) {
-                return Err(SourceSemanticError {
-                    code,
-                    message: message.to_owned(),
-                    anchor: SourceSemanticAnchor::for_node(syntax),
-                });
-            }
-            return self.conform_dynamic_to_schema(
-                value,
-                &SchemaDraft {
-                    body: schema_body(expected),
-                    dimension_parameters: Box::new([]),
-                },
-                syntax,
-            );
-        }
-
-        let (Some(actual_kind), Some(expected_kind)) =
-            (builtin_kind(actual), builtin_kind(expected))
-        else {
-            return Err(SourceSemanticError {
-                code,
-                message: message.to_owned(),
-                anchor: SourceSemanticAnchor::for_node(syntax),
-            });
-        };
-        let actual_type = resolved_builtin_type(actual_kind, syntax)?;
-        let expected_type = resolved_builtin_type(expected_kind, syntax)?;
-        let plan =
-            plan_explicit_cast(&actual_type, &expected_type).map_err(|_| SourceSemanticError {
-                code,
-                message: message.to_owned(),
-                anchor: SourceSemanticAnchor::for_node(syntax),
-            })?;
-        self.apply_conversion(value, expected, &plan, syntax)
-            .map_err(|_| SourceSemanticError {
-                code,
-                message: message.to_owned(),
-                anchor: SourceSemanticAnchor::for_node(syntax),
-            })
+        self.conform_schema_draft(
+            value,
+            &builtin_schema_draft(expected),
+            syntax,
+            code,
+            message,
+        )
     }
 
     fn conform_schema_draft(
@@ -4592,16 +4318,53 @@ impl SemanticBuilder {
         code: &'static str,
         message: &str,
     ) -> Result<PendingValue, SourceSemanticError> {
+        let actual = self.schema_draft_of(value);
         if is_dynamic_schema_draft(expected)
-            || self.schema_draft_of(value) == *expected
-            || schema_annotation_accepts(&self.schema_draft_of(value).body, &expected.body)
+            || actual == *expected
+            || schema_annotation_accepts(&actual.body, &expected.body)
         {
             return Ok(value);
         }
-        if let Some(expected) = builtin_schema_for_annotation_body(&expected.body) {
-            return self.conform_value(value, expected, syntax, code, message);
+        if let SchemaBody::Option(payload) = &expected.body {
+            if !matches!(actual.body, SchemaBody::Option(_)) {
+                let payload_schema = SchemaDraft {
+                    body: payload.as_ref().clone(),
+                    dimension_parameters: expected.dimension_parameters.clone(),
+                };
+                let value =
+                    self.conform_schema_draft(value, &payload_schema, syntax, code, message)?;
+                if let PendingValue::Constant(index) = value {
+                    let data = self.constants[index].data.clone();
+                    let actual_payload = self.constants[index].schema.clone();
+                    if matches!(payload.as_ref(), SchemaBody::Dynamic)
+                        && !matches!(actual_payload.body, SchemaBody::Dynamic)
+                    {
+                        return Ok(self.constant_dynamic_option(actual_payload, data));
+                    }
+                    let index = self.constants.len();
+                    self.constants.push(PendingConstant {
+                        schema: expected.clone(),
+                        data: ValueDataDraft::Option(OptionDraft {
+                            present: true,
+                            value: Some(Box::new(data)),
+                        }),
+                        dynamic_payload: None,
+                    });
+                    return Ok(PendingValue::Constant(index));
+                }
+                return Ok(self.emit_with_schema_draft(
+                    "option/some",
+                    vec![value],
+                    expected.clone(),
+                    syntax,
+                    "present-option",
+                    Some("presence=present".to_owned()),
+                ));
+            }
         }
-        let actual = self.schema_draft_of(value);
+        if matches!(actual.body, SchemaBody::Dynamic) {
+            return self.conform_dynamic_to_schema(value, expected, syntax);
+        }
         let actual_type =
             ResolvedType::from_schema_body(&actual.body, &actual.dimension_parameters).map_err(
                 |error| internal(SourceSemanticAnchor::for_node(syntax), error.to_string()),
@@ -4618,6 +4381,11 @@ impl SemanticBuilder {
                 anchor: SourceSemanticAnchor::for_node(syntax),
             })?;
         self.apply_resolved_conversion(value, &expected_type, &plan, syntax)
+            .map_err(|_| SourceSemanticError {
+                code,
+                message: message.to_owned(),
+                anchor: SourceSemanticAnchor::for_node(syntax),
+            })
     }
 
     fn conform_table_value(
@@ -4656,9 +4424,7 @@ impl SemanticBuilder {
     fn constant(&mut self, schema: BuiltinSchema, data: ValueDataDraft) -> PendingValue {
         let index = self.constants.len();
         self.constants.push(PendingConstant {
-            schema,
-            schema_body: None,
-            schema_parameters: Box::new([]),
+            schema: builtin_schema_draft(schema),
             data,
             dynamic_payload: None,
         });
@@ -4668,9 +4434,10 @@ impl SemanticBuilder {
     fn constant_exact(&mut self, schema_body: SchemaBody, data: ValueDataDraft) -> PendingValue {
         let index = self.constants.len();
         self.constants.push(PendingConstant {
-            schema: BuiltinSchema::Dynamic,
-            schema_body: Some(schema_body),
-            schema_parameters: Box::new([]),
+            schema: SchemaDraft {
+                body: schema_body,
+                dimension_parameters: Box::new([]),
+            },
             data,
             dynamic_payload: None,
         });
@@ -4679,20 +4446,17 @@ impl SemanticBuilder {
 
     fn constant_dynamic_option(
         &mut self,
-        payload_schema: BuiltinSchema,
-        payload_schema_body: Option<SchemaBody>,
+        payload_schema: SchemaDraft,
         payload: ValueDataDraft,
     ) -> PendingValue {
         let index = self.constants.len();
         self.constants.push(PendingConstant {
-            schema: BuiltinSchema::OptionDynamic,
-            schema_body: None,
-            schema_parameters: Box::new([]),
+            schema: builtin_schema_draft(BuiltinSchema::OptionDynamic),
             data: ValueDataDraft::Option(OptionDraft {
                 present: true,
                 value: None,
             }),
-            dynamic_payload: Some((payload_schema, payload_schema_body, payload)),
+            dynamic_payload: Some((payload_schema, payload)),
         });
         PendingValue::Constant(index)
     }
@@ -4706,23 +4470,14 @@ impl SemanticBuilder {
         role: &'static str,
         detail: Option<String>,
     ) -> PendingValue {
-        let index = self.nodes.len() as u32;
-        self.nodes.push(PendingNode {
-            inferable_projection: false,
-            operation: operation_reference(operation),
+        self.emit_with_schema_draft(
+            operation,
             inputs,
-            schema,
-            schema_body: None,
-            schema_parameters: Box::new([]),
-            state: None,
-            semantic: SourceSemanticNode {
-                operation: operation.to_owned(),
-                role,
-                detail,
-                anchor: SourceSemanticAnchor::for_node(syntax),
-            },
-        });
-        PendingValue::Node(index)
+            builtin_schema_draft(schema),
+            syntax,
+            role,
+            detail,
+        )
     }
 
     fn emit_with_schema_draft(
@@ -4734,14 +4489,21 @@ impl SemanticBuilder {
         role: &'static str,
         detail: Option<String>,
     ) -> PendingValue {
-        let builtin = builtin_schema_for_body(&schema.body).unwrap_or(BuiltinSchema::Dynamic);
-        let value = self.emit(operation, inputs, builtin, syntax, role, detail);
-        let PendingValue::Node(index) = value else {
-            unreachable!("emit always returns a node")
-        };
-        self.nodes[index as usize].schema_body = Some(schema.body);
-        self.nodes[index as usize].schema_parameters = schema.dimension_parameters;
-        value
+        let index = self.nodes.len() as u32;
+        self.nodes.push(PendingNode {
+            inferable_projection: false,
+            operation: operation_reference(operation),
+            inputs,
+            schema,
+            state: None,
+            semantic: SourceSemanticNode {
+                operation: operation.to_owned(),
+                role,
+                detail,
+                anchor: SourceSemanticAnchor::for_node(syntax),
+            },
+        });
+        PendingValue::Node(index)
     }
 
     fn publish(
@@ -4761,23 +4523,23 @@ impl SemanticBuilder {
 
     fn finish(self) -> Result<CanonicalSourceProgram, SourceSemanticError> {
         let schemas =
-            BuiltinSchemas::build(self.anchor, &self.inputs, &self.nodes, &self.constants)?;
+            SourceSchemas::build(self.anchor, &self.inputs, &self.nodes, &self.constants)?;
         let constant_schema_ids = self
             .constants
             .iter()
             .enumerate()
-            .map(|(index, constant)| schemas.constant_id(index, constant.schema))
+            .map(|(index, _)| schemas.constant_id(index))
             .collect::<Vec<_>>();
         let mut constants = ConstantStoreBuilder::new(&schemas.table);
         let mut handles = Vec::with_capacity(self.constants.len());
         for (index, constant) in self.constants.into_iter().enumerate() {
             let schema = constant_schema_ids[index];
             let data = match constant.dynamic_payload {
-                Some((payload_schema, _, payload)) => ValueDataDraft::Option(OptionDraft {
+                Some((_, payload)) => ValueDataDraft::Option(OptionDraft {
                     present: true,
                     value: Some(Box::new(ValueDataDraft::Dynamic(Some(Box::new(
                         ValueDraft {
-                            schema: schemas.dynamic_payload_id(index, payload_schema),
+                            schema: schemas.dynamic_payload_id(index),
                             shape_values: Box::new([]),
                             data: payload,
                         },
@@ -4841,9 +4603,9 @@ impl SemanticBuilder {
                 contracts.push(resolved_operation_contract(
                     &node.operation,
                     node.inputs.len(),
-                    node.schema,
+                    builtin_schema_for_body(&node.schema.body),
                     node.state.is_some(),
-                    matches!(node.schema_body.as_ref(), Some(SchemaBody::Matrix { .. })),
+                    matches!(node.schema.body, SchemaBody::Matrix { .. }),
                 ));
                 SourceNode {
                     operation: node.operation.clone(),
@@ -4857,7 +4619,7 @@ impl SemanticBuilder {
                     outputs: vec![match node.state {
                         Some(state) => SourceNodeOutput::State(state),
                         None => SourceNodeOutput::Derived {
-                            schema: schemas.node_id(index, node.schema),
+                            schema: schemas.node_id(index),
                         },
                     }]
                     .into_boxed_slice(),
@@ -4924,7 +4686,7 @@ impl SemanticBuilder {
                     .states
                     .iter()
                     .map(|state| SourceState {
-                        schema: schemas.node_id(state.producer_node as usize, state.schema),
+                        schema: schemas.node_id(state.producer_node as usize),
                         initializer: match state.initializer {
                             PendingValue::Constant(index) => Some(constant_ids[index]),
                             _ => None,
@@ -4950,29 +4712,21 @@ impl SemanticBuilder {
 fn pending_schema(
     value: PendingValue,
     constants: &[SchemaId],
-    inputs: &[PendingInput],
+    _inputs: &[PendingInput],
     nodes: &[PendingNode],
-    schemas: &BuiltinSchemas,
+    schemas: &SourceSchemas,
 ) -> SchemaId {
     match value {
-        PendingValue::Constant(index) => constants
-            .get(index)
-            .copied()
-            .unwrap_or_else(|| schemas.id(BuiltinSchema::Dynamic)),
-        PendingValue::Input(index) => inputs
-            .get(index as usize)
-            .map(|_| schemas.input_id(index as usize))
-            .unwrap_or_else(|| schemas.id(BuiltinSchema::Dynamic)),
-        PendingValue::State(index) => nodes
-            .iter()
-            .enumerate()
-            .find(|(_, node)| node.state == Some(index))
-            .map(|(node_index, node)| schemas.node_id(node_index, node.schema))
-            .unwrap_or_else(|| schemas.id(BuiltinSchema::Dynamic)),
-        PendingValue::Node(node) => nodes
-            .get(node as usize)
-            .map(|node_value| schemas.node_id(node as usize, node_value.schema))
-            .unwrap_or_else(|| schemas.id(BuiltinSchema::Dynamic)),
+        PendingValue::Constant(index) => constants[index],
+        PendingValue::Input(index) => schemas.input_id(index as usize),
+        PendingValue::State(index) => {
+            let node = nodes
+                .iter()
+                .position(|node| node.state == Some(index))
+                .expect("a source state has exactly one producer");
+            schemas.node_id(node)
+        }
+        PendingValue::Node(node) => schemas.node_id(node as usize),
     }
 }
 
@@ -5000,7 +4754,7 @@ fn operation_reference(name: &str) -> OperationReference {
 fn resolved_operation_contract(
     operation: &OperationReference,
     input_count: usize,
-    output_schema: BuiltinSchema,
+    output_schema: Option<BuiltinSchema>,
     state_output: bool,
     matrix_output: bool,
 ) -> Option<OperationContractDeclaration> {
@@ -5061,7 +4815,7 @@ fn range_contract(input_count: usize, contract_name: &str) -> OperationContractD
     }
 }
 
-fn negation_contract(output_schema: BuiltinSchema) -> OperationContractDeclaration {
+fn negation_contract(output_schema: Option<BuiltinSchema>) -> OperationContractDeclaration {
     OperationContractDeclaration {
         inputs: read_inputs(1),
         outputs: vec![OutputPortPolicy {
@@ -5071,7 +4825,7 @@ fn negation_contract(output_schema: BuiltinSchema) -> OperationContractDeclarati
                 shape: ShapeRule::SameAsInput { input: 0 },
             },
             alias: AliasPolicy::NoAlias,
-            change_detection: if is_scalar_schema(output_schema) {
+            change_detection: if output_schema.is_some_and(is_scalar_schema) {
                 ChangeDetectionPolicy::ExactScalar
             } else {
                 ChangeDetectionPolicy::KernelReported
@@ -5137,7 +4891,7 @@ fn read_inputs(input_count: usize) -> InputPortLayout {
 
 fn operation_contract(
     input_count: usize,
-    output_schema: BuiltinSchema,
+    output_schema: Option<BuiltinSchema>,
     state_output: bool,
 ) -> OperationContractDeclaration {
     OperationContractDeclaration {
@@ -5155,7 +4909,7 @@ fn operation_contract(
             alias: AliasPolicy::NoAlias,
             change_detection: if state_output {
                 ChangeDetectionPolicy::KernelReported
-            } else if is_scalar_schema(output_schema) {
+            } else if output_schema.is_some_and(is_scalar_schema) {
                 ChangeDetectionPolicy::ExactScalar
             } else {
                 ChangeDetectionPolicy::AlwaysChanged
@@ -5168,7 +4922,7 @@ fn operation_contract(
 
 fn elementwise_contract(
     input_count: usize,
-    output_schema: BuiltinSchema,
+    output_schema: Option<BuiltinSchema>,
 ) -> OperationContractDeclaration {
     OperationContractDeclaration {
         inputs: read_inputs(input_count),
@@ -5179,7 +4933,7 @@ fn elementwise_contract(
                 shape: ShapeRule::Declared,
             },
             alias: AliasPolicy::NoAlias,
-            change_detection: if is_scalar_schema(output_schema) {
+            change_detection: if output_schema.is_some_and(is_scalar_schema) {
                 ChangeDetectionPolicy::ExactScalar
             } else {
                 ChangeDetectionPolicy::KernelReported
@@ -6224,9 +5978,15 @@ mod tests {
             .unwrap();
         assert!(matches!(original, PendingValue::Constant(0)));
         assert!(matches!(converted, PendingValue::Constant(1)));
-        assert_eq!(builder.constants[0].schema, BuiltinSchema::F64);
+        assert_eq!(
+            builder.constants[0].schema,
+            builtin_schema_draft(BuiltinSchema::F64)
+        );
         assert!(matches!(builder.constants[0].data, ValueDataDraft::F64(_)));
-        assert_eq!(builder.constants[1].schema, BuiltinSchema::U8);
+        assert_eq!(
+            builder.constants[1].schema,
+            builtin_schema_draft(BuiltinSchema::U8)
+        );
         assert!(matches!(builder.constants[1].data, ValueDataDraft::U8(1)));
     }
 }
