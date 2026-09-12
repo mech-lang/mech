@@ -1,15 +1,16 @@
 use alloc::vec::Vec;
 
 use crate::document::{
-    AddSubOperatorSyntax, AstNode, ComparisonOperatorSyntax, LogicOperatorSyntax,
+    AddSubOperatorSyntax, AstNode, ComparisonOperatorSyntax, ExpressionSyntax, LogicOperatorSyntax,
     MatrixOperatorSyntax, MulDivOperatorSyntax, NotOperationSyntax, PowerOperatorSyntax,
     RangeOperatorSyntax, SetOperatorSyntax, SyntaxKind, SyntaxNode, SyntaxToken,
     TableOperatorSyntax,
 };
 
 use super::{
-    FormulaSyntax, FunctionCallSyntax, LiteralSyntax, MatrixComprehensionSyntax, PatternSyntax,
-    SliceSyntax, StructureSyntax, VariableSyntax, child, children, direct_token,
+    ExpressionBodySyntax, FormulaSyntax, FunctionCallSyntax, LiteralSyntax,
+    MatrixComprehensionSyntax, PatternSyntax, SliceSyntax, StructureSyntax, VariableSyntax, child,
+    children, direct_token,
 };
 
 recursive_ast_node!(FactorSyntax, Factor);
@@ -99,8 +100,10 @@ impl ParentheticalExpressionSyntax {
     pub fn opening_parenthesis(&self) -> Option<SyntaxToken> {
         direct_token(&self.0, SyntaxKind::LeftParen, 0)
     }
-    pub fn expression(&self) -> Option<FormulaSyntax> {
-        child(&self.0)
+    pub fn expression(&self) -> Option<ExpressionBodySyntax> {
+        child::<ExpressionSyntax>(&self.0)
+            .and_then(|expression| expression.body())
+            .or_else(|| child(&self.0))
     }
     pub fn closing_parenthesis(&self) -> Option<SyntaxToken> {
         direct_token(&self.0, SyntaxKind::RightParen, 0)

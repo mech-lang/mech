@@ -10,9 +10,9 @@ use mech_syntax::document::parser::rules;
 use mech_syntax::document::{
     ArgumentListSyntax, AstNode, DocumentId, ExpressionSyntax, FactorSyntax, FactorValueSyntax,
     FormulaSyntax, GreenNode, LiteralSyntax, LiteralValueSyntax, MapSyntax, MatchArmSyntax,
-    MatrixSyntax, NodeFlags, NodeId, ParseConfig, PatternArrayItemSyntax, RecursiveCoreSyntax,
-    RecursiveSyntaxNode, Revision, SyntaxKind, SyntaxNode, TableKindSyntax, TextSize, TextSnapshot,
-    TokenFlags, phase_2i_node_kind,
+    MatrixSyntax, NodeFlags, NodeId, ParentheticalExpressionSyntax, ParseConfig,
+    PatternArrayItemSyntax, RecursiveCoreSyntax, RecursiveSyntaxNode, Revision, SyntaxKind,
+    SyntaxNode, TableKindSyntax, TextSize, TextSnapshot, TokenFlags, phase_2i_node_kind,
 };
 
 fn repository_root() -> PathBuf {
@@ -243,6 +243,19 @@ fn typed_roles_follow_parser_boundaries_and_recovery_ownership() {
         Some(LiteralValueSyntax::KindAnnotation(_))
     ));
     assert!(literal.annotation().is_none());
+
+    let parenthetical =
+        parse_canonical_phase_2i_rule_for_test(source("(1"), rules::FACTOR, ParseConfig::default())
+            .unwrap();
+    let parenthetical = ParentheticalExpressionSyntax::cast(
+        find_kind(&parenthetical.syntax(), SyntaxKind::ParentheticalExpression).unwrap(),
+    )
+    .unwrap();
+    assert!(parenthetical.expression().is_some());
+    let closing = parenthetical
+        .closing_parenthesis()
+        .expect("parenthetical owns its recovered closing delimiter");
+    assert!(closing.flags().contains(TokenFlags::MISSING));
 
     let expression = parse_canonical_phase_2i_rule_for_test(
         source("[x | x <- xs]"),
