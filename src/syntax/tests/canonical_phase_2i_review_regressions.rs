@@ -1,4 +1,4 @@
-//! Owner, continuation, and diagnostic evidence for the nine S2 review findings.
+//! Owner, continuation, and diagnostic evidence for the S2 review findings.
 use mech_syntax::document::parser::canonical::{
     CanonicalRuleOutcome, CanonicalSourceRuleSnapshot, parse_canonical_phase_2i_rule_for_test,
 };
@@ -245,7 +245,7 @@ fn missing_tuple_item_keeps_ordered_siblings_and_physical_closer() {
     }
 }
 
-// 3996399720 and the corresponding shared-bracket continuation.
+// 3996399720, 3996556038, 3996556042 and the corresponding shared-bracket continuation.
 #[test]
 fn recovered_comprehension_head_keeps_selected_form_and_qualifier() {
     for (rule, text, kind, open, close) in [
@@ -489,6 +489,441 @@ fn range_dots_after_a_variable_are_not_dispatched_as_a_slice() {
         assert_eq!(
             only(&parsed.syntax(), SyntaxKind::Slice).text().unwrap(),
             text
+        );
+    }
+}
+
+// 3996556030
+#[test]
+fn recovered_inline_header_keeps_required_row_and_physical_bars() {
+    for rule in [rules::INLINE_TABLE, rules::TABLE, rules::EXPRESSION] {
+        let parsed = parse(rule, "|a<u8|1|");
+        let table = only(&parsed.syntax(), SyntaxKind::InlineTable);
+        assert!(nodes(&parsed.syntax(), SyntaxKind::RegularTable).is_empty());
+        let header = only(&table, SyntaxKind::InlineTableHeader);
+        let row = only(&table, SyntaxKind::InlineTableRow);
+        assert_eq!(row.text().unwrap(), "1|");
+        assert_eq!(only(&row, SyntaxKind::IntegerLiteral).text().unwrap(), "1");
+        physical(&table, SyntaxKind::Bar, "|", 0);
+        physical(&header, SyntaxKind::Bar, "|", 5);
+        physical(&row, SyntaxKind::Bar, "|", 7);
+        inserted(
+            &parsed,
+            "syntax/missing-delimiter",
+            rules::KIND_ANNOTATION,
+            5,
+            ExpectedSyntax::Token(SyntaxKind::RightAngle),
+            SyntaxKind::Bar,
+            "|",
+        );
+    }
+}
+
+// 3996556035
+#[test]
+fn absent_fancy_header_keeps_its_separator_and_later_data_row() {
+    for rule in [rules::FANCY_TABLE, rules::TABLE, rules::EXPRESSION] {
+        let parsed = parse(rule, "╭─\n││\n│1│");
+        let table = only(&parsed.syntax(), SyntaxKind::FancyTable);
+        assert!(nodes(&table, SyntaxKind::FancyTableHeader).is_empty());
+        let row = only(&table, SyntaxKind::FancyTableRow);
+        assert_eq!(row.text().unwrap(), "│1│");
+        assert_eq!(only(&row, SyntaxKind::IntegerLiteral).text().unwrap(), "1");
+        physical(&table, SyntaxKind::BoxDrawing, "│", 7);
+        physical(&table, SyntaxKind::BoxDrawing, "│", 10);
+        physical(&row, SyntaxKind::BoxDrawing, "│", 14);
+        physical(&row, SyntaxKind::BoxDrawing, "│", 18);
+        inserted(
+            &parsed,
+            "syntax/missing-fancy-table-header",
+            rules::FANCY_TABLE,
+            10,
+            ExpectedSyntax::Production("fancy-table-header".into()),
+            SyntaxKind::BoxDrawing,
+            "│",
+        );
+    }
+}
+
+// 3996556040
+#[test]
+fn recovered_kind_set_keeps_literal_and_n_suffixes_in_direct_and_shared_paths() {
+    for rule in [rules::KIND_SET, rules::KIND] {
+        for text in ["{<u8}:N", "{<u8}:1:N"] {
+            let parsed = parse(rule, text);
+            let set = only(&parsed.syntax(), SyntaxKind::KindSet);
+            assert!(nodes(&parsed.syntax(), SyntaxKind::KindMap).is_empty());
+            assert!(nodes(&parsed.syntax(), SyntaxKind::KindRecord).is_empty());
+            physical(&set, SyntaxKind::LeftBrace, "{", 0);
+            physical(&set, SyntaxKind::RightBrace, "}", 4);
+            physical(&set, SyntaxKind::Text, ":N", text.len() - 2);
+            if text == "{<u8}:1:N" {
+                physical(&set, SyntaxKind::Colon, ":", 5);
+                assert_eq!(only(&set, SyntaxKind::Literal).text().unwrap(), "1");
+            }
+            inserted(
+                &parsed,
+                "syntax/missing-delimiter",
+                rules::KIND_KIND,
+                4,
+                ExpectedSyntax::Token(SyntaxKind::RightAngle),
+                SyntaxKind::RightBrace,
+                "}",
+            );
+        }
+    }
+}
+
+// 3996556056: use a Unicode scalar-range annotation and an ASCII set annotation
+// to isolate the lookahead colon from ASCII `>` comparison-operator selection.
+#[test]
+fn mapping_lookahead_ignores_colons_inside_both_angle_annotation_families() {
+    for rule in [rules::RECORD, rules::STRUCTURE, rules::EXPRESSION] {
+        for tail in ["b⟨u8:1..2⟩", "b<{u8}:N>", "b<{u8}:N⟩", "b⟨{u8}:N>"] {
+            let text = format!("{{a: 1, {tail}}}");
+            let parsed = parse(rule, &text);
+            let record = only(&parsed.syntax(), SyntaxKind::Record);
+            assert!(nodes(&parsed.syntax(), SyntaxKind::Map).is_empty());
+            assert!(nodes(&parsed.syntax(), SyntaxKind::Set).is_empty());
+            assert_eq!(
+                only(&record, SyntaxKind::RecordBinding).text().unwrap(),
+                "a: 1, "
+            );
+            let error = only(&record, SyntaxKind::Error);
+            assert_eq!(error.text().unwrap(), tail);
+            assert_eq!(error.range(), range(7, text.len() - 1));
+            assert!(nodes(&record, SyntaxKind::Missing).is_empty());
+            physical(&record, SyntaxKind::LeftBrace, "{", 0);
+            physical(&record, SyntaxKind::RightBrace, "}", text.len() - 1);
+            assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+            assert_eq!(parsed.diagnostics.len(), 1);
+            let diagnostic = parsed.diagnostics.iter().next().unwrap();
+            assert_eq!(
+                diagnostic.code.as_str(),
+                "syntax/unexpected-delimited-content"
+            );
+            assert_eq!(diagnostic.phase, DiagnosticPhase::Syntax);
+            assert_eq!(diagnostic.severity, Severity::Error);
+            assert_eq!(
+                diagnostic.rule,
+                Some(if rule == rules::EXPRESSION {
+                    rules::EXPRESSION
+                } else {
+                    rules::RECORD
+                })
+            );
+            assert_eq!(diagnostic.context, None);
+            assert_eq!(
+                diagnostic
+                    .primary
+                    .resolve(parsed.source.revision(), &parsed.nodes),
+                Some(error.range())
+            );
+            assert!(diagnostic.expected.is_empty());
+            assert_eq!(
+                diagnostic.found.as_ref().unwrap().kind,
+                Some(SyntaxKind::Unknown)
+            );
+            assert_eq!(
+                diagnostic.found.as_ref().unwrap().text.as_deref(),
+                Some(tail)
+            );
+            assert_eq!(
+                diagnostic.recovery,
+                Some(RecoveryAction::Abandon {
+                    rule: rules::RECORD,
+                    at: TextSize((text.len() - 1) as u32)
+                })
+            );
+        }
+    }
+}
+
+// 3996556063
+#[test]
+fn missing_precedence_operands_keep_same_level_pairs_in_both_formula_paths() {
+    for (rule, text, kind, operator_kind, diagnostic_rule, at, token_kind, token) in [
+        (
+            rules::L3,
+            "1 + + 3",
+            SyntaxKind::AdditiveExpression,
+            SyntaxKind::AddSubOperator,
+            rules::L3,
+            4,
+            SyntaxKind::Plus,
+            "+",
+        ),
+        (
+            rules::EXPRESSION,
+            "1 + + 3",
+            SyntaxKind::AdditiveExpression,
+            SyntaxKind::AddSubOperator,
+            rules::L3,
+            4,
+            SyntaxKind::Plus,
+            "+",
+        ),
+        (
+            rules::L4,
+            "1 * * 3",
+            SyntaxKind::MultiplicativeExpression,
+            SyntaxKind::MulDivOperator,
+            rules::L4,
+            4,
+            SyntaxKind::Asterisk,
+            "*",
+        ),
+        (
+            rules::EXPRESSION,
+            "[1] + + 3",
+            SyntaxKind::AdditiveExpression,
+            SyntaxKind::AddSubOperator,
+            rules::EXPRESSION,
+            6,
+            SyntaxKind::Plus,
+            "+",
+        ),
+        (
+            rules::EXPRESSION,
+            "{1} + + 3",
+            SyntaxKind::AdditiveExpression,
+            SyntaxKind::AddSubOperator,
+            rules::EXPRESSION,
+            6,
+            SyntaxKind::Plus,
+            "+",
+        ),
+    ] {
+        let parsed = parse(rule, text);
+        let chain = only(&parsed.syntax(), kind);
+        assert_eq!(direct(&chain, operator_kind).len(), 2);
+        assert_eq!(
+            chain.children().map(|n| n.kind()).collect::<Vec<_>>(),
+            [
+                SyntaxKind::Factor,
+                operator_kind,
+                SyntaxKind::Missing,
+                operator_kind,
+                SyntaxKind::Factor
+            ]
+        );
+        let operands = direct(&chain, SyntaxKind::Factor);
+        assert_eq!(
+            only(&operands[1], SyntaxKind::IntegerLiteral)
+                .text()
+                .unwrap(),
+            "3"
+        );
+        physical(
+            &only(
+                &direct(&chain, operator_kind)[1],
+                if token == "+" {
+                    SyntaxKind::AddOperation
+                } else {
+                    SyntaxKind::MultiplyOperation
+                },
+            ),
+            if token == "*" {
+                SyntaxKind::Text
+            } else {
+                token_kind
+            },
+            token,
+            at,
+        );
+        inserted(
+            &parsed,
+            "syntax/missing-operator-operand",
+            diagnostic_rule,
+            at,
+            expression(),
+            token_kind,
+            token,
+        );
+    }
+}
+
+// 3996556068
+#[test]
+fn recovered_record_binding_keeps_later_binding_and_shared_owner_brace() {
+    for rule in [rules::RECORD, rules::STRUCTURE, rules::EXPRESSION] {
+        let parsed = parse(rule, "{a: 1, b:, c: 3}");
+        let record = only(&parsed.syntax(), SyntaxKind::Record);
+        assert!(nodes(&parsed.syntax(), SyntaxKind::Map).is_empty());
+        assert!(nodes(&parsed.syntax(), SyntaxKind::Set).is_empty());
+        let bindings = direct(&record, SyntaxKind::RecordBinding);
+        assert_eq!(bindings.len(), 3);
+        assert_eq!(
+            only(&bindings[1], SyntaxKind::Identifier).text().unwrap(),
+            "b"
+        );
+        assert_eq!(only(&bindings[1], SyntaxKind::Missing).range(), range(9, 9));
+        assert_eq!(
+            only(&bindings[2], SyntaxKind::Identifier).text().unwrap(),
+            "c"
+        );
+        assert_eq!(
+            only(&bindings[2], SyntaxKind::Expression).text().unwrap(),
+            "3"
+        );
+        physical(&record, SyntaxKind::RightBrace, "}", 15);
+        inserted(
+            &parsed,
+            "syntax/missing-binding-value",
+            rules::BINDING,
+            9,
+            expression(),
+            SyntaxKind::Comma,
+            ",",
+        );
+    }
+}
+
+// 3996556069
+#[test]
+fn missing_first_set_item_keeps_later_item_and_only_the_set_owner() {
+    for rule in [rules::SET, rules::STRUCTURE, rules::EXPRESSION] {
+        let parsed = parse(rule, "{, 1}");
+        let set = only(&parsed.syntax(), SyntaxKind::Set);
+        assert!(nodes(&parsed.syntax(), SyntaxKind::Map).is_empty());
+        assert!(nodes(&parsed.syntax(), SyntaxKind::Record).is_empty());
+        assert!(nodes(&parsed.syntax(), SyntaxKind::SetComprehension).is_empty());
+        assert_eq!(
+            set.children().map(|n| n.kind()).collect::<Vec<_>>(),
+            [SyntaxKind::Missing, SyntaxKind::Expression]
+        );
+        assert_eq!(only(&set, SyntaxKind::IntegerLiteral).text().unwrap(), "1");
+        physical(&set, SyntaxKind::LeftBrace, "{", 0);
+        physical(&set, SyntaxKind::Comma, ",", 1);
+        physical(&set, SyntaxKind::RightBrace, "}", 4);
+        inserted(
+            &parsed,
+            "syntax/missing-set-item",
+            if rule == rules::EXPRESSION {
+                rules::EXPRESSION
+            } else {
+                rules::SET
+            },
+            1,
+            expression(),
+            SyntaxKind::Comma,
+            ",",
+        );
+    }
+}
+
+// 3996556075
+#[test]
+fn recovered_subscript_keeps_adjacent_bracket_and_its_value() {
+    for (rule, text, start) in [
+        (rules::SUBSCRIPT, "[1 +][2]", 0),
+        (rules::SLICE, "x[1 +][2]", 1),
+        (rules::EXPRESSION, "x[1 +][2]", 1),
+    ] {
+        let parsed = parse(rule, text);
+        let subscripts = only(&parsed.syntax(), SyntaxKind::SubscriptList);
+        let brackets = direct(&subscripts, SyntaxKind::BracketSubscript);
+        assert_eq!(texts(&brackets), ["[1 +]", "[2]"]);
+        assert_eq!(
+            only(&brackets[1], SyntaxKind::IntegerLiteral)
+                .text()
+                .unwrap(),
+            "2"
+        );
+        physical(&brackets[0], SyntaxKind::RightBracket, "]", start + 4);
+        physical(&brackets[1], SyntaxKind::LeftBracket, "[", start + 5);
+        physical(&brackets[1], SyntaxKind::RightBracket, "]", start + 7);
+        inserted(
+            &parsed,
+            "syntax/missing-operator-operand",
+            rules::L3,
+            start + 4,
+            expression(),
+            SyntaxKind::RightBracket,
+            "]",
+        );
+    }
+}
+
+// 3996556078
+#[test]
+fn recovered_factor_keeps_physical_transpose_after_its_parenthetical_closer() {
+    for rule in [rules::FACTOR, rules::EXPRESSION] {
+        let parsed = parse(rule, "(1 +)'");
+        let factor = nodes(&parsed.syntax(), SyntaxKind::Factor)
+            .into_iter()
+            .find(|n| n.range() == range(0, 6))
+            .unwrap();
+        let parenthetical = only(&factor, SyntaxKind::ParentheticalExpression);
+        physical(&parenthetical, SyntaxKind::RightParen, ")", 4);
+        physical(&factor, SyntaxKind::Apostrophe, "'", 5);
+        inserted(
+            &parsed,
+            "syntax/missing-operator-operand",
+            rules::L3,
+            4,
+            expression(),
+            SyntaxKind::RightParen,
+            ")",
+        );
+    }
+}
+
+#[test]
+fn annotation_lookahead_preserves_spaced_comparison_keys() {
+    for rule in [rules::STRUCTURE, rules::EXPRESSION] {
+        for operator in ["<", ">", "<="] {
+            let text = format!("{{a: 1, b {operator} c: 3}}");
+            let parsed = parse(rule, &text);
+            assert_eq!(parsed.outcome, CanonicalRuleOutcome::Matched);
+            assert!(parsed.diagnostics.is_empty());
+            let map = only(&parsed.syntax(), SyntaxKind::Map);
+            assert!(nodes(&parsed.syntax(), SyntaxKind::Record).is_empty());
+            let entries = direct(&map, SyntaxKind::MapEntry);
+            assert_eq!(entries.len(), 2);
+            assert_eq!(
+                only(&entries[1], SyntaxKind::ComparisonExpression)
+                    .text()
+                    .unwrap(),
+                format!("b {operator} c")
+            );
+            assert_eq!(
+                only(&entries[1], SyntaxKind::IntegerLiteral)
+                    .text()
+                    .unwrap(),
+                "3"
+            );
+            physical(&map, SyntaxKind::RightBrace, "}", text.len() - 1);
+        }
+    }
+}
+
+#[test]
+fn recovered_first_record_binding_uses_the_same_sibling_continuation() {
+    for rule in [rules::RECORD, rules::STRUCTURE, rules::EXPRESSION] {
+        let parsed = parse(rule, "{a:, b: 3}");
+        let record = only(&parsed.syntax(), SyntaxKind::Record);
+        let bindings = direct(&record, SyntaxKind::RecordBinding);
+        assert_eq!(bindings.len(), 2);
+        assert_eq!(only(&bindings[0], SyntaxKind::Missing).range(), range(3, 3));
+        assert_eq!(
+            only(&bindings[1], SyntaxKind::Identifier).text().unwrap(),
+            "b"
+        );
+        assert_eq!(
+            only(&bindings[1], SyntaxKind::Expression).text().unwrap(),
+            "3"
+        );
+        assert!(nodes(&parsed.syntax(), SyntaxKind::Map).is_empty());
+        physical(&record, SyntaxKind::RightBrace, "}", 9);
+        inserted(
+            &parsed,
+            "syntax/missing-binding-value",
+            rules::BINDING,
+            3,
+            expression(),
+            SyntaxKind::Comma,
+            ",",
         );
     }
 }

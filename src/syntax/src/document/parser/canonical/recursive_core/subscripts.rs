@@ -11,23 +11,33 @@ use super::{
 pub(super) fn parse_subscript(parser: &mut Parser<'_>) -> Attempt {
     combinator::transactional(parser, rules::SUBSCRIPT, |parser| {
         let node = parser.start();
-        let first = subscript_item(parser);
-        if let Some(result) = child_result(parser, node, SyntaxKind::SubscriptList, first) {
-            return result;
-        }
-        loop {
+        let mut committed = match subscript_item(parser) {
+            Attempt::Matched => false,
+            Attempt::Committed => true,
+            Attempt::NoMatch => {
+                node.abandon(parser);
+                return Attempt::NoMatch;
+            }
+        };
+        while !parser.is_halted() {
             let before = parser.offset();
             match subscript_item(parser) {
                 Attempt::Matched if parser.offset() > before => {}
                 Attempt::Matched | Attempt::NoMatch => break,
                 Attempt::Committed => {
-                    node.complete(parser, SyntaxKind::SubscriptList);
-                    return Attempt::Committed;
+                    committed = true;
+                    if parser.offset() == before {
+                        break;
+                    }
                 }
             }
         }
         node.complete(parser, SyntaxKind::SubscriptList);
-        Attempt::Matched
+        if committed {
+            Attempt::Committed
+        } else {
+            Attempt::Matched
+        }
     })
 }
 

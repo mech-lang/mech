@@ -182,6 +182,14 @@ pub(super) fn child_result(
     }
 }
 
+pub(super) fn finish_provisional_marker(parser: &mut Parser<'_>, marker: Marker, kind: SyntaxKind) {
+    if parser.is_halted() {
+        marker.complete(parser, kind);
+    } else {
+        marker.abandon(parser);
+    }
+}
+
 pub(super) fn nesting_limit(parser: &mut Parser<'_>) -> Attempt {
     recovery::nesting_limit(parser);
     Attempt::Committed
@@ -222,9 +230,49 @@ pub(super) fn recover_required_production_with_boundaries(
     production: &str,
     owner_boundaries: &[char],
 ) -> Attempt {
+    recover_required_production_at_boundaries(
+        parser,
+        target,
+        code,
+        message,
+        production,
+        owner_boundaries,
+        &[],
+    )
+}
+
+pub(super) fn recover_required_production_with_prefixes(
+    parser: &mut Parser<'_>,
+    target: RuleId,
+    code: &str,
+    message: &str,
+    production: &str,
+    owner_prefixes: &[&str],
+) -> Attempt {
+    recover_required_production_at_boundaries(
+        parser,
+        target,
+        code,
+        message,
+        production,
+        &[],
+        owner_prefixes,
+    )
+}
+
+fn recover_required_production_at_boundaries(
+    parser: &mut Parser<'_>,
+    target: RuleId,
+    code: &str,
+    message: &str,
+    production: &str,
+    owner_boundaries: &[char],
+    owner_prefixes: &[&str],
+) -> Attempt {
     combinator::consume_grammar_horizontal_trivia(parser);
-    const RESTART_BOUNDARIES: &[char] =
-        &[')', ']', '}', '>', '⟩', ',', ';', '|', '│', '┃', '\n', '\r'];
+    const RESTART_BOUNDARIES: &[char] = &[
+        ')', ']', '}', '>', '⟩', '╯', '┘', '┛', ',', ';', '|', '│', '┃', '\n', '\r',
+    ];
     let mut boundaries = alloc::vec::Vec::from(RESTART_BOUNDARIES);
     boundaries.extend_from_slice(owner_boundaries);
     if parser.is_eof()
@@ -232,13 +280,17 @@ pub(super) fn recover_required_production_with_boundaries(
             .cursor()
             .peek_char()
             .is_some_and(|character| boundaries.contains(&character))
+        || owner_prefixes
+            .iter()
+            .any(|prefix| parser.cursor().starts_with(prefix))
     {
         return missing_production(parser, code, message, production);
     }
-    let _ = recovery::abandon_to_restart(
+    let _ = recovery::abandon_to_restart_with_prefixes(
         parser,
         target,
         &boundaries,
+        owner_prefixes,
         "syntax/unexpected-production-source",
         "unexpected source where a required production was expected",
     );

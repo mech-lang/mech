@@ -5,8 +5,8 @@ use super::super::super::rule::rules;
 use super::super::super::{Parser, ParserCheckpoint};
 use super::super::{base, combinator, control_operators, operators};
 use super::{
-    Attempt, calls, child_result, expressions, literals, recover_closer,
-    recover_required_production, recover_required_token, structures, subscripts, variables,
+    Attempt, calls, expressions, literals, recover_closer, recover_required_production,
+    recover_required_token, structures, subscripts, variables,
 };
 
 pub(super) struct FormulaSeed {
@@ -195,16 +195,21 @@ pub(super) fn parse_l7(parser: &mut Parser<'_>) -> Attempt {
 pub(super) fn parse_factor(parser: &mut Parser<'_>) -> Attempt {
     combinator::transactional(parser, rules::FACTOR, |parser| {
         let node = parser.start();
-        let selected = factor_body(parser);
-        if let Some(result) = child_result(parser, node, SyntaxKind::Factor, selected) {
-            return result;
-        }
-        if operators::parse_transpose(parser) == Attempt::Committed {
-            node.complete(parser, SyntaxKind::Factor);
-            return Attempt::Committed;
-        }
+        let committed = match factor_body(parser) {
+            Attempt::Matched => false,
+            Attempt::Committed => true,
+            Attempt::NoMatch => {
+                node.abandon(parser);
+                return Attempt::NoMatch;
+            }
+        };
+        let suffix = operators::parse_transpose(parser);
         node.complete(parser, SyntaxKind::Factor);
-        Attempt::Matched
+        if committed || suffix == Attempt::Committed {
+            Attempt::Committed
+        } else {
+            Attempt::Matched
+        }
     })
 }
 
@@ -318,12 +323,13 @@ pub(super) fn parse_match_arm(parser: &mut Parser<'_>) -> Attempt {
             Attempt::Matched => false,
             Attempt::Committed => true,
             Attempt::NoMatch => {
-                recover_required_production(
+                super::recover_required_production_with_prefixes(
                     parser,
                     rules::MATCH_ARM,
                     "syntax/missing-match-arm-pattern",
                     "missing pattern after match arm guard",
                     "pattern",
+                    &["=>", "⇒"],
                 );
                 true
             }
@@ -470,57 +476,7 @@ fn seeded_precedence_level(
     operand: fn(&mut Parser<'_>) -> Attempt,
     operator: fn(&mut Parser<'_>) -> Attempt,
 ) -> Attempt {
-    let mut pairs = 0_u32;
-    loop {
-        let before = parser.offset();
-        match operator(parser) {
-            Attempt::NoMatch if parser.is_halted() => {
-                marker.complete(parser, kind);
-                return Attempt::Committed;
-            }
-            Attempt::NoMatch => break,
-            Attempt::Committed => {
-                marker.complete(parser, kind);
-                return Attempt::Committed;
-            }
-            Attempt::Matched => {}
-        }
-        match operand(parser) {
-            Attempt::Matched if parser.offset() > before => pairs += 1,
-            Attempt::NoMatch if parser.is_halted() => {
-                marker.complete(parser, kind);
-                return Attempt::Committed;
-            }
-            Attempt::Matched => return Attempt::NoMatch,
-            Attempt::NoMatch => {
-                let target = parser.current_rule().unwrap_or(rules::EXPRESSION);
-                recover_required_production(
-                    parser,
-                    target,
-                    "syntax/missing-operator-operand",
-                    "missing expression after operator",
-                    "expression",
-                );
-                marker.complete(parser, kind);
-                return Attempt::Committed;
-            }
-            Attempt::Committed => {
-                marker.complete(parser, kind);
-                return Attempt::Committed;
-            }
-        }
-    }
-    if parser.is_halted() {
-        marker.complete(parser, kind);
-        Attempt::Committed
-    } else {
-        if pairs == 0 {
-            marker.abandon(parser);
-        } else {
-            marker.complete(parser, kind);
-        }
-        Attempt::Matched
-    }
+    finish_precedence_level(parser, marker, kind, operand, operator, false)
 }
 
 fn precedence_level(
@@ -532,70 +488,87 @@ fn precedence_level(
 ) -> Attempt {
     combinator::transactional(parser, rule, |parser| {
         let node = parser.start();
-        match operand(parser) {
-            Attempt::Matched => {}
-            Attempt::NoMatch if parser.is_halted() => {
-                node.complete(parser, kind);
-                return Attempt::Committed;
-            }
+        let committed = match operand(parser) {
+            Attempt::Matched => false,
+            Attempt::Committed => true,
             Attempt::NoMatch => {
                 node.abandon(parser);
                 return Attempt::NoMatch;
             }
+        };
+        finish_precedence_level(parser, node, kind, operand, operator, committed)
+    })
+}
+
+fn finish_precedence_level(
+    parser: &mut Parser<'_>,
+    marker: Marker,
+    kind: SyntaxKind,
+    operand: fn(&mut Parser<'_>) -> Attempt,
+    operator: fn(&mut Parser<'_>) -> Attempt,
+    mut committed: bool,
+) -> Attempt {
+    let mut pairs = 0_u32;
+    while !parser.is_halted() {
+        let before = parser.offset();
+        match operator(parser) {
+            Attempt::NoMatch => break,
             Attempt::Committed => {
-                node.complete(parser, kind);
-                return Attempt::Committed;
+                committed = true;
+                break;
             }
+            Attempt::Matched => {}
         }
-        let mut pairs = 0_u32;
-        loop {
-            let before = parser.offset();
-            match operator(parser) {
-                Attempt::NoMatch if parser.is_halted() => {
-                    node.complete(parser, kind);
-                    return Attempt::Committed;
+        pairs += 1;
+        match operand(parser) {
+            Attempt::Matched if parser.offset() > before => {}
+            Attempt::Matched => return Attempt::NoMatch,
+            Attempt::Committed => committed = true,
+            Attempt::NoMatch => {
+                committed = true;
+                // The selected operator production is the authority for its next
+                // pair; a same-level operator cannot begin this missing operand.
+                let next = parser.checkpoint();
+                let at_operator = operator(parser).accepted();
+                parser.rewind(next);
+                if parser.is_halted() {
+                    break;
                 }
-                Attempt::NoMatch => break,
-                Attempt::Committed => {
-                    node.complete(parser, kind);
-                    return Attempt::Committed;
-                }
-                Attempt::Matched => {}
-            }
-            match operand(parser) {
-                Attempt::Matched if parser.offset() > before => pairs += 1,
-                Attempt::NoMatch if parser.is_halted() => {
-                    node.complete(parser, kind);
-                    return Attempt::Committed;
-                }
-                Attempt::Matched => return Attempt::NoMatch,
-                Attempt::NoMatch => {
-                    recover_required_production(
+                if at_operator {
+                    super::missing_production(
                         parser,
-                        rule,
                         "syntax/missing-operator-operand",
                         "missing expression after operator",
                         "expression",
                     );
-                    node.complete(parser, kind);
-                    return Attempt::Committed;
-                }
-                Attempt::Committed => {
-                    node.complete(parser, kind);
-                    return Attempt::Committed;
+                } else {
+                    let target = parser.current_rule().unwrap_or(rules::EXPRESSION);
+                    recover_required_production(
+                        parser,
+                        target,
+                        "syntax/missing-operator-operand",
+                        "missing expression after operator",
+                        "expression",
+                    );
+                    break;
                 }
             }
         }
-        if parser.is_halted() {
-            node.complete(parser, kind);
-            return Attempt::Committed;
-        } else if pairs == 0 {
-            node.abandon(parser);
+        if parser.offset() <= before {
+            break;
+        }
+    }
+    if committed || parser.is_halted() {
+        marker.complete(parser, kind);
+        Attempt::Committed
+    } else {
+        if pairs == 0 {
+            marker.abandon(parser);
         } else {
-            node.complete(parser, kind);
+            marker.complete(parser, kind);
         }
         Attempt::Matched
-    })
+    }
 }
 
 fn parse_l4_operator(parser: &mut Parser<'_>) -> Attempt {

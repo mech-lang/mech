@@ -3,7 +3,7 @@ use crate::document::SyntaxKind;
 use super::super::super::Parser;
 use super::super::super::rule::rules;
 use super::super::{base, combinator};
-use super::{Attempt, FactAttempt, calls, patterns, recover_required_production_with_boundaries};
+use super::{Attempt, FactAttempt, calls, patterns, recover_required_production_with_prefixes};
 
 pub(super) fn parse_fsm_pipe(parser: &mut Parser<'_>) -> Attempt {
     combinator::transactional(parser, rules::FSM_PIPE, |parser| {
@@ -44,13 +44,13 @@ pub(super) fn parse_fsm_instance(parser: &mut Parser<'_>) -> Attempt {
             return Attempt::NoMatch;
         }
         if !base::parse_rule(parser, rules::IDENTIFIER) {
-            recover_required_production_with_boundaries(
+            recover_required_production_with_prefixes(
                 parser,
                 rules::FSM_INSTANCE,
                 "syntax/missing-fsm-name",
                 "missing state-machine name after hash sign",
                 "identifier",
-                &['-', '~', '='],
+                &["->", "~>", "=>", "→", "⇒"],
             );
             node.complete(parser, SyntaxKind::FsmInstance);
             return Attempt::Committed;
@@ -151,13 +151,13 @@ fn transition(
                 return Attempt::Committed;
             }
             Attempt::NoMatch => {
-                recover_required_production_with_boundaries(
+                recover_required_production_with_prefixes(
                     parser,
                     rule,
                     "syntax/missing-fsm-transition-value",
                     "missing state-machine value after transition operator",
                     "fsm-value",
-                    &['-', '~', '='],
+                    &["->", "~>", "=>", "→", "⇒"],
                 );
                 node.complete(parser, kind);
                 return Attempt::Committed;

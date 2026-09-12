@@ -228,8 +228,8 @@ variable-range dispatch regression each have a named test in
 recorded beside their tests. Evidence includes direct/shared paths, selected
 owners, later children, physical delimiters, missing/error structure, diagnostic
 fields and anchors, and exact source reconstruction. The resource suite adds
-4,338 parses across every fuel/event budget from 16 through 256 in nine affected
-families. Both formerly unfinished resource tests hang on historical parent
+13,203 parses across 26 fixtures: every fuel/event budget from 16 through 256,
+plus nesting, diagnostic-count, and recovery-byte limits. Both formerly unfinished resource tests hang on historical parent
 `0f846c680` (each stopped after five seconds); both now finish. Numeric and
 recursive parents retain resource failures, and finalized error envelopes
 cannot lose source through later lookahead. Descendants still require restacking
