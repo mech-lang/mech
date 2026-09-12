@@ -637,3 +637,173 @@ fn shared_math_contracts_reach_resident_results() {
         assert!((actual.to_f64() - expected).abs() < 1e-12, "{source}");
     }
 }
+
+#[test]
+fn unresolved_empty_and_unknown_functions_are_source_diagnostics() {
+    for (source, code, offending) in [
+        ("_", "source-semantics/unresolved-empty-expression", "_"),
+        ("(_)", "source-semantics/unresolved-empty-expression", "_"),
+        ("1 + _", "source-semantics/unresolved-empty-expression", "_"),
+        ("-_", "source-semantics/unresolved-empty-expression", "_"),
+        ("!_", "source-semantics/unresolved-empty-expression", "_"),
+        (
+            "math/sin(_)",
+            "source-semantics/unresolved-empty-expression",
+            "_",
+        ),
+        (
+            "(1, _)",
+            "source-semantics/unresolved-empty-expression",
+            "_",
+        ),
+        (
+            "{a: _}",
+            "source-semantics/unresolved-empty-expression",
+            "_",
+        ),
+        (
+            "{_: 1}",
+            "source-semantics/unresolved-empty-expression",
+            "_",
+        ),
+        ("foo(1)", "source-semantics/unknown-function", "foo"),
+        (
+            "math/not-declared(1)",
+            "source-semantics/unknown-function",
+            "math/not-declared",
+        ),
+    ] {
+        let error = CanonicalSourceFrontend
+            .compile_expression(&expression(source))
+            .err()
+            .expect(source);
+        assert_eq!(error.code, code, "{source}");
+        assert_eq!(error.anchor.document, DocumentId(0x544));
+        assert_eq!(error.anchor.revision, Revision(1));
+        assert_eq!(
+            &source[error.anchor.range.start.0 as usize..error.anchor.range.end.0 as usize],
+            offending,
+            "{source}"
+        );
+    }
+    let error = CanonicalSourceFrontend
+        .compile_definition(&definition("x := _"))
+        .err()
+        .expect("an untyped binding cannot retain unresolved empty");
+    assert_eq!(error.code, "source-semantics/unresolved-empty-expression");
+    assert_eq!(
+        error.anchor.range,
+        mech_syntax::document::TextRange::new(
+            mech_syntax::document::TextSize(5),
+            mech_syntax::document::TextSize(6)
+        )
+    );
+}
+
+#[test]
+fn contextual_empty_resolves_only_to_exact_optional_constants() {
+    use mech_core::ValueData;
+    let programs = [
+        CanonicalSourceFrontend
+            .compile_definition(&definition("x<u8?> := _"))
+            .unwrap(),
+        CanonicalSourceFrontend
+            .compile_definition(&definition("x<(u8,bool)?> := _"))
+            .unwrap(),
+        CanonicalSourceFrontend
+            .compile_expression(&expression("_<(u8,bool)?>"))
+            .unwrap(),
+    ];
+    for (index, program) in programs.iter().enumerate() {
+        assert!(
+            program.program().nodes.is_empty(),
+            "resolving absence creates no operation node"
+        );
+        let SourceValue::Constant(id) = program.program().outputs[0].source else {
+            panic!("absence must become a typed constant");
+        };
+        assert!(matches!(
+            program.constants().get(id).unwrap().data(),
+            ValueData::Option(None)
+        ));
+        let SchemaBody::Option(payload) = output(program) else {
+            panic!("absence requires an Option schema");
+        };
+        if index == 0 {
+            assert!(matches!(
+                payload.as_ref(),
+                SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W8)
+            ));
+        } else {
+            assert!(
+                matches!(payload.as_ref(), SchemaBody::Tuple(items) if items.as_ref() == [SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W8), SchemaBody::Bool])
+            );
+        }
+        program
+            .compile_artifact()
+            .expect("resolved optional absence must compile");
+    }
+    for source in ["x<u8> := _", "x<*> := _"] {
+        let error = CanonicalSourceFrontend
+            .compile_definition(&definition(source))
+            .err()
+            .expect(source);
+        assert_eq!(
+            error.code, "source-semantics/unresolved-empty-expression",
+            "{source}"
+        );
+        assert_eq!(
+            &source[error.anchor.range.start.0 as usize..error.anchor.range.end.0 as usize],
+            "_"
+        );
+    }
+}
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn resolved_optional_absence_executes_without_empty_operation_nodes() {
+    use mech_core::{FunctionCatalogBuilder, ReactiveInstanceId, ValueData};
+    use mech_engine::resident::{ActivationFacts, activate};
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    for source in ["_<u8?>", "_<(u8,bool)?>", "[_ 1u8]", "[(_) 1u8; 2u8 (_)]"] {
+        let program = compile(source);
+        assert!(
+            program
+                .source_map()
+                .nodes
+                .iter()
+                .all(|node| node.operation != "source/empty")
+        );
+        let artifact = program.compile_artifact().unwrap();
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x548, 0),
+            &artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        for _ in 0..2 {
+            instance.turn(&[]).unwrap();
+            let value = instance.copied_output(0).unwrap();
+            if source.starts_with('_') {
+                assert!(matches!(value.data(), ValueData::Option(None)), "{source}");
+            } else {
+                let ValueData::Matrix(matrix) = value.data() else {
+                    panic!("{source}: {:?}", value.data());
+                };
+                let values = matrix.elements().to_values();
+                if source == "[_ 1u8]" {
+                    assert!(
+                        matches!(values.as_slice(), [ValueData::Option(None), ValueData::Option(Some(one))] if matches!(one.as_ref(), ValueData::U8(1)))
+                    );
+                } else {
+                    assert!(
+                        matches!(values.as_slice(), [ValueData::Option(None), ValueData::Option(Some(one)), ValueData::Option(Some(two)), ValueData::Option(None)] if matches!(one.as_ref(), ValueData::U8(1)) && matches!(two.as_ref(), ValueData::U8(2)))
+                    );
+                }
+            }
+        }
+    }
+}

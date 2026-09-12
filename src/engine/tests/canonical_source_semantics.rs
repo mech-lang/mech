@@ -167,7 +167,7 @@ fn structures_calls_comprehensions_and_fsm_enter_one_source_graph() {
         ("(1, 2)", "core/composite-pack"),
         ("[1 2]", "matrix/horzcat"),
         ("|a<u8>|1|", "core/composite-pack"),
-        ("f(left: 1, 2)", "f"),
+        ("math/add(left: 1, 2)", "math/add"),
         ("x[1].field", "access/column"),
         ("1..10", "range/exclusive"),
         ("x ? | * => 1", "source/match"),
@@ -203,19 +203,16 @@ fn recovered_trees_never_construct_partial_semantics() {
 #[test]
 fn calls_ranges_subscripts_and_patterns_keep_their_canonical_roles() {
     let call = CanonicalSourceFrontend
-        .compile_expression(&expression("f(left: 1, 2)"))
+        .compile_expression(&expression("math/add(left: 1, 2)"))
         .unwrap();
     let node = call.program().nodes.last().unwrap();
-    assert_eq!(node.operation.canonical_name(), "f");
+    assert_eq!(node.operation.canonical_name(), "math/add");
     assert_eq!(
         call.source_map().nodes.last().unwrap().detail.as_deref(),
-        Some("f(left,)")
+        Some("math/add(left,)")
     );
-    assert!(matches!(
-        call.compile_artifact(),
-        Err(mech_engine::ArtifactBuildError::MissingOperationContract { operation, .. })
-            if operation.canonical_name() == "f"
-    ));
+    call.compile_artifact()
+        .expect("a declared source call must carry its maintained contract");
 
     let range = CanonicalSourceFrontend
         .compile_expression(&expression("1..2..=10"))
