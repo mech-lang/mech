@@ -14,14 +14,15 @@ use mech_engine::{
 use mech_syntax::document::parser::canonical::parse_canonical_phase_2i_rule_for_test;
 use mech_syntax::document::parser::rules;
 use mech_syntax::document::{
-    AstNode, DocumentId, ExpressionSyntax, ParseConfig, Revision, SyntaxKind, SyntaxNode, TextSize,
-    TextSnapshot, VariableDefineSyntax, phase_2i_node_kind,
+    AstNode, DocumentId, ExpressionSyntax, FunctionCallSyntax, ParseConfig, Revision, SyntaxKind,
+    SyntaxNode, TextSize, TextSnapshot, VariableDefineSyntax, phase_2i_node_kind,
 };
 
 struct CertificationContract {
     semantic_source: Option<String>,
     disposition: String,
     semantic_snapshot_hash: String,
+    required_outcome: String,
 }
 
 fn repository_root() -> PathBuf {
@@ -81,7 +82,7 @@ fn certification_contracts() -> BTreeMap<String, CertificationContract> {
         .skip(1)
         .map(|line| {
             let fields = line.split('\t').collect::<Vec<_>>();
-            assert_eq!(fields.len(), 15);
+            assert_eq!(fields.len(), 16);
             (
                 fields[0].to_owned(),
                 CertificationContract {
@@ -89,6 +90,7 @@ fn certification_contracts() -> BTreeMap<String, CertificationContract> {
                         .then(|| serde_json::from_str(fields[10]).expect("semantic source JSON")),
                     disposition: fields[9].to_owned(),
                     semantic_snapshot_hash: fields[13].to_owned(),
+                    required_outcome: fields[15].to_owned(),
                 },
             )
         })
@@ -478,7 +480,7 @@ fn compound_kind_evidence_retains_each_resolved_schema() {
 }
 
 #[test]
-fn every_semantic_rule_has_specification_derived_program_evidence() {
+fn every_semantic_rule_meets_its_required_witness_outcome() {
     let contracts = certification_contracts();
     let certified = PHASE_2I_SEMANTIC_RULES
         .iter()
@@ -513,20 +515,12 @@ fn every_semantic_rule_has_specification_derived_program_evidence() {
         let (syntax, compiled) = if rule.grammar_name == "variable-define" {
             let definition = variable_definition(semantic_source);
             let syntax = definition.syntax().clone();
-            let compiled = CanonicalSourceFrontend
-                .compile_definition(&definition)
-                .unwrap_or_else(|error| {
-                    panic!("{} on {semantic_source:?}: {error}", rule.grammar_name)
-                });
+            let compiled = CanonicalSourceFrontend.compile_definition(&definition);
             (syntax, compiled)
         } else {
             let expression = expression(semantic_source);
             let syntax = expression.syntax().clone();
-            let compiled = CanonicalSourceFrontend
-                .compile_expression(&expression)
-                .unwrap_or_else(|error| {
-                    panic!("{} on {semantic_source:?}: {error}", rule.grammar_name)
-                });
+            let compiled = CanonicalSourceFrontend.compile_expression(&expression);
             (syntax, compiled)
         };
         if let Some(kind) = phase_2i_node_kind(rule.grammar_name) {
@@ -536,6 +530,56 @@ fn every_semantic_rule_has_specification_derived_program_evidence() {
                 rule.grammar_name
             );
         }
+        if let Some(expected_code) = contract
+            .required_outcome
+            .strip_prefix("expected-user-error:")
+        {
+            let error = match compiled {
+                Err(error) => error,
+                Ok(_) => {
+                    unfinished_witnesses.push(format!(
+                        "{} on {semantic_source:?} requires user error {expected_code}, but produced a program",
+                        rule.grammar_name,
+                    ));
+                    continue;
+                }
+            };
+            assert_eq!(
+                error.code, expected_code,
+                "{} on {semantic_source:?}",
+                rule.grammar_name
+            );
+            assert_eq!(error.anchor.document, syntax.source().document());
+            assert_eq!(error.anchor.revision, syntax.source().revision());
+            let expected_range = if expected_code == "source-semantics/unknown-function" {
+                find(syntax.clone(), SyntaxKind::FunctionCall)
+                    .and_then(FunctionCallSyntax::cast)
+                    .and_then(|call| call.function())
+                    .expect("unknown-call witness has a function identifier")
+                    .syntax()
+                    .range()
+            } else {
+                syntax.range()
+            };
+            assert_eq!(error.anchor.range, expected_range, "{}", rule.grammar_name);
+            assert_eq!(contract.semantic_snapshot_hash, "none");
+            continue;
+        }
+        assert_eq!(
+            contract.required_outcome, contract.disposition,
+            "{}",
+            rule.grammar_name
+        );
+        let compiled = match compiled {
+            Ok(compiled) => compiled,
+            Err(error) => {
+                unfinished_witnesses.push(format!(
+                    "{} requires {} on {semantic_source:?}; unfinished source lowering: {error}",
+                    rule.grammar_name, contract.required_outcome,
+                ));
+                continue;
+            }
+        };
         assert_eq!(compiled.program().outputs.len(), 1, "{}", rule.grammar_name);
         assert_eq!(
             compiled.program().nodes.len(),
@@ -553,7 +597,7 @@ fn every_semantic_rule_has_specification_derived_program_evidence() {
             Ok(artifact) => artifact,
             Err(error) => {
                 unfinished_witnesses.push(format!(
-                    "{} on {semantic_source:?}: {error:?}",
+                    "{} on {semantic_source:?}: unfinished artifact lowering: {error:?}",
                     rule.grammar_name,
                 ));
                 continue;
