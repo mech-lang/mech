@@ -29,6 +29,35 @@ fn declaration(
     }
 }
 
+/// The maintained elementwise contract shared by semantic producers and
+/// concrete provider declarations. Providers retain their established output
+/// change policy; this function defines the common port and shape semantics.
+pub fn elementwise_operation_contract(
+    input_count: usize,
+    change_detection: ChangeDetectionPolicy,
+) -> OperationContractDeclaration {
+    declaration(
+        InputPortLayout::Fixed(vec![read(); input_count].into_boxed_slice()),
+        OutputConstruction::FullWrite {
+            shape: ShapeRule::Declared,
+        },
+        change_detection,
+    )
+}
+
+/// Shape-preserving mathematical unary operations use the input's geometry.
+pub fn unary_math_operation_contract(
+    change_detection: ChangeDetectionPolicy,
+) -> OperationContractDeclaration {
+    declaration(
+        InputPortLayout::Fixed(vec![read()].into_boxed_slice()),
+        OutputConstruction::FullWrite {
+            shape: ShapeRule::SameAsInput { input: 0 },
+        },
+        change_detection,
+    )
+}
+
 /// Operations whose semantics must be available independently of installed kernels.
 /// `matrix_output` describes the resolved schema, never a runtime representation choice.
 pub fn maintained_operation_contract(
@@ -36,6 +65,21 @@ pub fn maintained_operation_contract(
     input_count: usize,
     matrix_output: bool,
 ) -> Option<OperationContractDeclaration> {
+    let change_detection = if matrix_output {
+        ChangeDetectionPolicy::KernelReported
+    } else {
+        ChangeDetectionPolicy::ExactScalar
+    };
+    if let Some(operation) = crate::maintained_math_operation(name) {
+        if operation.input_count() != input_count {
+            return None;
+        }
+        return Some(if input_count == 1 {
+            unary_math_operation_contract(change_detection)
+        } else {
+            elementwise_operation_contract(input_count, change_detection)
+        });
+    }
     let fixed = || InputPortLayout::Fixed(vec![read(); input_count].into_boxed_slice());
     let full = |shape| {
         declaration(
@@ -45,6 +89,41 @@ pub fn maintained_operation_contract(
         )
     };
     match name {
+        "compare/neq" | "compare/eq" | "compare/sneq" | "compare/seq" | "compare/gt"
+        | "compare/lt" | "compare/gte" | "compare/lte" | "compare/min" | "compare/max"
+        | "logic/or" | "logic/and" | "logic/xor" | "string/concat"
+            if input_count == 2 =>
+        {
+            Some(elementwise_operation_contract(2, change_detection))
+        }
+        "logic/not" if input_count == 1 => {
+            Some(elementwise_operation_contract(1, change_detection))
+        }
+        "range/inclusive" | "range/exclusive" if input_count == 2 => {
+            Some(range_operation_contract(name, input_count))
+        }
+        "range/inclusive-increment" | "range/exclusive-increment" if input_count == 3 => {
+            Some(range_operation_contract(name, input_count))
+        }
+        "matrix/transpose" if input_count == 1 => Some(full(ShapeRule::TransposeOf { input: 0 })),
+        "matrix/literal" => Some(declaration(
+            fixed(),
+            OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            ChangeDetectionPolicy::AlwaysChanged,
+        )),
+        "core/composite-pack" => Some(declaration(
+            InputPortLayout::Variadic {
+                prefix: Box::new([]),
+                repeated: read(),
+                min_repetitions: 0,
+            },
+            OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            ChangeDetectionPolicy::KernelReported,
+        )),
         "matrix/horzcat"
         | "matrix/vertcat"
         | "matrix/comprehension"
@@ -102,4 +181,25 @@ pub fn maintained_operation_contract(
         })),
         _ => None,
     }
+}
+
+fn range_operation_contract(name: &str, input_count: usize) -> OperationContractDeclaration {
+    // Called only by the four explicit maintained range entries above.
+    let contract_name = match name {
+        "range/inclusive" => "inclusive-output",
+        "range/exclusive" => "exclusive-output",
+        "range/inclusive-increment" => "inclusive-increment-output",
+        "range/exclusive-increment" => "exclusive-increment-output",
+        _ => unreachable!("maintained range declaration"),
+    };
+    declaration(
+        InputPortLayout::Fixed(vec![read(); input_count].into_boxed_slice()),
+        OutputConstruction::Build {
+            postcondition: ShapeContractReference {
+                module_path: vec!["range".to_string()].into_boxed_slice(),
+                contract_name: contract_name.to_string(),
+            },
+        },
+        ChangeDetectionPolicy::KernelReported,
+    )
 }

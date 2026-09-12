@@ -345,6 +345,7 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
 #[derive(Debug)]
 struct ResidentConversionPlan {
     source: SchemaBody,
+    source_layout: mech_core::ResidentShape,
     target: SchemaBody,
     conversion: mech_core::ConversionPlan,
     wrap_present: bool,
@@ -440,6 +441,7 @@ fn bind_conversion(
         .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
     let plan = ResidentConversionPlan {
         source: source_schema.body().clone(),
+        source_layout: input.shape,
         target: target_schema.body().clone(),
         conversion,
         wrap_present,
@@ -535,6 +537,14 @@ fn preflight_present_option(
         .snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidInput)?;
     let mut meter = ResidentBudgetMeter::default();
+    let planned = kernel.retained_state::<ResidentConversionPlan>();
+    let expected = planned
+        .map_or(Some(1), |plan| plan.source_layout.len())
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    if input.len() != expected {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let length = checked_u64(input.len())?;
     let (bytes, nodes, work) = match input {
         ResidentValueRef::Snapshot([Some(value)]) => {
             let cost = super::budget::charge_canonical_value_footprint(&mut meter, value, schemas)?;
@@ -544,18 +554,36 @@ fn preflight_present_option(
                 cost.encoded_bytes.max(cost.node_count),
             )
         }
-        ResidentValueRef::F64([_]) | ResidentValueRef::Index([_]) => (8, 1, 1),
-        ResidentValueRef::Bool([value]) if *value <= 1 => (1, 1, 1),
-        ResidentValueRef::String([value]) => (
-            checked_cost_sum(&[
-                checked_u64(value.len())?,
-                checked_u64(core::mem::size_of::<String>())?,
-            ])?,
-            1,
-            checked_u64(value.len())?,
-        ),
+        ResidentValueRef::F64(_) | ResidentValueRef::Index(_) => {
+            (checked_cost_product(&[8, length])?, length, length)
+        }
+        ResidentValueRef::Bool(values) if values.iter().all(|value| *value <= 1) => {
+            (length, length, length)
+        }
+        ResidentValueRef::String(values) => {
+            let payload = values.iter().try_fold(0_u64, |total, value| {
+                checked_cost_sum(&[total, checked_u64(value.len())?])
+            })?;
+            (
+                checked_cost_sum(&[
+                    payload,
+                    checked_cost_product(&[length, checked_u64(core::mem::size_of::<String>())?])?,
+                ])?,
+                length,
+                payload,
+            )
+        }
         _ => return Err(ResidentKernelError::InvalidInput),
     };
+    let matrix_drafts =
+        if planned.is_some_and(|plan| matches!(plan.source, SchemaBody::Matrix { .. })) {
+            checked_cost_product(&[
+                checked_u64(logical_input_len(input)?)?,
+                checked_u64(core::mem::size_of::<ValueDataDraft>())?,
+            ])?
+        } else {
+            0
+        };
     if let ResidentValueMut::Snapshot([Some(previous)]) = output {
         super::budget::charge_canonical_value_footprint(&mut meter, previous, schemas)?;
     }
@@ -568,6 +596,7 @@ fn preflight_present_option(
     let output_bytes = checked_cost_sum(&[
         bytes,
         shape_bytes,
+        matrix_drafts,
         checked_u64(core::mem::size_of::<ValueDataDraft>())?,
         checked_u64(core::mem::size_of::<ValueDraft>())?,
         checked_u64(core::mem::size_of::<mech_core::Value>())?,
@@ -602,7 +631,40 @@ fn execute_kind_conversion(
     if plan.wrap_present {
         preflight_present_option(kernel, input, &output)?;
     }
-    let source = resident_input_draft(input, &plan.source)?;
+    let source = if plan.wrap_present
+        && matches!(plan.source, SchemaBody::Matrix { .. })
+        && !matches!(input, ResidentValueRef::Snapshot(_))
+    {
+        // Reuse the composite boundary's column-major resident to canonical
+        // row-major conversion before embedding the immutable typed payload.
+        let matrix = match input {
+            ResidentValueRef::F64(values) => {
+                super::composite::canonical_matrix_elements(values, plan.source_layout, |value| {
+                    Some(ValueDataDraft::F64(F64Bits::from_f64(*value)))
+                })
+            }
+            ResidentValueRef::Index(values) => {
+                super::composite::canonical_matrix_elements(values, plan.source_layout, |value| {
+                    Some(ValueDataDraft::Index(*value))
+                })
+            }
+            ResidentValueRef::Bool(values) => {
+                super::composite::canonical_matrix_elements(values, plan.source_layout, |value| {
+                    (*value <= 1).then_some(ValueDataDraft::Bool(*value != 0))
+                })
+            }
+            ResidentValueRef::String(values) => {
+                super::composite::canonical_matrix_elements(values, plan.source_layout, |value| {
+                    Some(ValueDataDraft::String(value.clone()))
+                })
+            }
+            ResidentValueRef::Snapshot(_) => unreachable!("snapshot handled below"),
+        }
+        .ok_or(ResidentKernelError::InvalidInput)?;
+        ValueDataDraft::Matrix(matrix)
+    } else {
+        resident_input_draft(input, &plan.source)?
+    };
     let converted = execute_conversion_draft(source, &plan.conversion.step)
         .map_err(|_| ResidentKernelError::Arithmetic)?;
     let converted = if let Some((schema, shape_values)) = &plan.dynamic_payload {

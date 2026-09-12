@@ -5,16 +5,14 @@ use mech_core::snapshot::{
     SnapshotValidationContext,
 };
 use mech_core::{
-    AccessMode, AliasPolicy, BuiltinKindPredicate, BuiltinScalarKind, CanonicalNominalPath,
-    CardinalitySpec, ChangeDetectionPolicy, ConstantStore, ConstantStoreBuilder, DeliveryMode,
-    DimensionEnvironmentBuilder, DimensionExpr, DimensionLifetime, DimensionParameterDeclaration,
-    DimensionParameterId, DimensionParameterOrigin, ExternalInteraction, FloatWidth,
-    InputKindScheme, InputPortLayout, InputPortPolicy, IntegerWidth, KindExpr, KindField, KindId,
-    NamedKindPathResolver, NodeId, NominalKey, NominalKind, OperationContractDeclaration,
-    OutputConstruction, OutputPortPolicy, ResolvedOutputSchemaRule, ResolvedType, SchemaBody,
-    SchemaDraft, SchemaField, SchemaId, SchemaTable, SchemaTableBuilder, ShapeContractReference,
-    ShapeRule, SourceInputKind, TypeConstraintOrigin, TypeOverloadCandidate, ValueDataDraft,
-    ValueDraft, execute_conversion_draft, plan_explicit_cast, plan_numeric_promotion,
+    BuiltinKindPredicate, BuiltinScalarKind, CanonicalNominalPath, CardinalitySpec, ConstantStore,
+    ConstantStoreBuilder, DimensionEnvironmentBuilder, DimensionExpr, DimensionLifetime,
+    DimensionParameterDeclaration, DimensionParameterId, DimensionParameterOrigin, FloatWidth,
+    InputKindScheme, IntegerWidth, KindExpr, KindField, KindId, NamedKindPathResolver, NodeId,
+    NominalKey, NominalKind, OperationContractDeclaration, ResolvedOutputSchemaRule, ResolvedType,
+    SchemaBody, SchemaDraft, SchemaField, SchemaId, SchemaTable, SchemaTableBuilder,
+    SourceInputKind, TypeConstraintOrigin, TypeOverloadCandidate, ValueDataDraft, ValueDraft,
+    execute_conversion_draft, plan_explicit_cast, plan_numeric_promotion,
 };
 use mech_syntax::document::{
     AnyCallArgumentSyntax, AstNode, CanonicalOperator, ComprehensionQualifierValueSyntax,
@@ -1319,6 +1317,7 @@ struct PendingInput {
 }
 
 struct PendingNode {
+    contract: Option<OperationContractDeclaration>,
     inferable_projection: bool,
     operation: OperationReference,
     inputs: Vec<PendingValue>,
@@ -2599,6 +2598,7 @@ impl SemanticBuilder {
                 producer_node: node,
             });
             self.nodes.push(PendingNode {
+                contract: mech_core::maintained_operation_contract("core/assign", 1, false),
                 inferable_projection: false,
                 operation: operation_reference("core/assign"),
                 inputs: vec![PendingValue::State(state)],
@@ -3018,7 +3018,7 @@ impl SemanticBuilder {
     fn table(&mut self, table: &TableSyntax) -> Result<PendingValue, SourceSemanticError> {
         let value = self.required(table.value(), table.syntax(), "a table presentation")?;
         let (mut headers, rows, syntax): (
-            Vec<(String, BuiltinSchema, Option<SchemaDraft>)>,
+            Vec<(String, Option<SchemaDraft>)>,
             Vec<Vec<ExpressionSyntax>>,
             SyntaxNode,
         ) = match value {
@@ -3032,10 +3032,9 @@ impl SemanticBuilder {
                             self.required(field.name(), field.syntax(), "a table field name")?;
                         let schema = field
                             .annotation()
-                            .map(|annotation| annotation_schema(&annotation))
-                            .transpose()?
-                            .unwrap_or(BuiltinSchema::Dynamic);
-                        Ok((node_text(name.syntax())?, schema, None))
+                            .map(|annotation| annotation_schema_draft(&annotation))
+                            .transpose()?;
+                        Ok((node_text(name.syntax())?, schema))
                     })
                     .collect::<Result<Vec<_>, SourceSemanticError>>()?,
                 value.rows().into_iter().map(|row| row.cells()).collect(),
@@ -3056,8 +3055,7 @@ impl SemanticBuilder {
                         )?;
                         Ok((
                             node_text(name.syntax())?,
-                            annotation_schema(&annotation)?,
-                            None,
+                            Some(annotation_schema_draft(&annotation)?),
                         ))
                     })
                     .collect::<Result<Vec<_>, SourceSemanticError>>()?,
@@ -3079,8 +3077,7 @@ impl SemanticBuilder {
                         )?;
                         Ok((
                             node_text(name.syntax())?,
-                            annotation_schema(&annotation)?,
-                            None,
+                            Some(annotation_schema_draft(&annotation)?),
                         ))
                     })
                     .collect::<Result<Vec<_>, SourceSemanticError>>()?,
@@ -3108,53 +3105,48 @@ impl SemanticBuilder {
                 anchor: SourceSemanticAnchor::for_node(&syntax),
             });
         }
-        for index in 0..headers.len() {
-            if headers[index].1 == BuiltinSchema::Dynamic && headers[index].2.is_none() {
-                let inferred = compiled_rows
-                    .iter()
-                    .map(|row| self.schema_draft_of(row[index].0))
-                    .find(|schema| !matches!(schema.body, SchemaBody::Dynamic))
-                    .ok_or_else(|| SourceSemanticError {
-                        code: "source-semantics/unresolved-table-column-kind",
-                        message: format!(
-                            "table field {} has no value from which to infer its kind",
-                            headers[index].0
-                        ),
-                        anchor: SourceSemanticAnchor::for_node(&syntax),
-                    })?;
-                if let Some(schema) = builtin_schema_for_body(&inferred.body) {
-                    headers[index].1 = schema;
-                } else {
-                    headers[index].2 = Some(inferred);
-                }
+        for (index, (name, schema)) in headers.iter_mut().enumerate() {
+            if schema.is_none() {
+                *schema = Some(
+                    compiled_rows
+                        .iter()
+                        .map(|row| self.schema_draft_of(row[index].0))
+                        .find(|schema| !matches!(schema.body, SchemaBody::Dynamic))
+                        .ok_or_else(|| SourceSemanticError {
+                            code: "source-semantics/unresolved-table-column-kind",
+                            message: format!(
+                                "table field {name} has no value from which to infer its kind"
+                            ),
+                            anchor: SourceSemanticAnchor::for_node(&syntax),
+                        })?,
+                );
             }
-            let (name, expected, exact) = headers[index].clone();
+            let expected = schema
+                .as_ref()
+                .expect("table column annotation or inference exists");
             for row in &mut compiled_rows {
-                row[index].0 = if let Some(expected) = exact.as_ref() {
-                    self.conform_exact_table_value(row[index].0, expected, &name, &row[index].1)?
-                } else {
-                    self.conform_table_value(row[index].0, expected, &name, &row[index].1)?
-                };
+                row[index].0 = self.conform_schema_draft(
+                    row[index].0,
+                    expected,
+                    &row[index].1,
+                    "source-semantics/incompatible-table-field-kind",
+                    &format!("table field {name} does not satisfy its kind annotation"),
+                )?;
             }
         }
-        let inputs = compiled_rows
-            .into_iter()
-            .flatten()
-            .map(|(value, _)| value)
+        // Composite children follow declared column order, then row order.
+        let inputs = (0..headers.len())
+            .flat_map(|column| compiled_rows.iter().map(move |row| row[column].0))
             .collect::<Vec<_>>();
         let mut schema_parameters = Vec::new();
         let columns = headers
             .iter()
-            .map(|(name, schema, exact)| {
-                let schema = if let Some(exact) = exact {
-                    embed_schema_draft(
-                        exact,
-                        &mut schema_parameters,
-                        SourceSemanticAnchor::for_node(&syntax),
-                    )?
-                } else {
-                    schema_body(*schema)
-                };
+            .map(|(name, schema)| {
+                let schema = embed_schema_draft(
+                    schema.as_ref().expect("resolved table column"),
+                    &mut schema_parameters,
+                    SourceSemanticAnchor::for_node(&syntax),
+                )?;
                 Ok(SchemaField {
                     name: name.clone(),
                     schema,
@@ -3167,10 +3159,10 @@ impl SemanticBuilder {
         };
         let names = headers
             .iter()
-            .map(|(name, _, _)| name.as_str())
+            .map(|(name, _)| name.as_str())
             .collect::<Vec<_>>();
         Ok(self.emit_with_schema_draft(
-            "source/table",
+            "core/composite-pack",
             inputs,
             SchemaDraft {
                 dimension_parameters: schema_parameters.into_boxed_slice(),
@@ -3257,7 +3249,7 @@ impl SemanticBuilder {
             .flat_map(|(key, value)| [key, value])
             .collect();
         Ok(self.emit_with_schema_draft(
-            "source/map",
+            "core/composite-pack",
             inputs,
             SchemaDraft {
                 dimension_parameters: parameters.into_boxed_slice(),
@@ -3285,10 +3277,10 @@ impl SemanticBuilder {
             let name = node_text(name.syntax())?;
             let mut value = self.expression(&value)?.0;
             if let Some(annotation) = binding.annotation() {
-                let expected = annotation_schema(&annotation)?;
-                value = self.conform_value(
+                let expected = annotation_schema_draft(&annotation)?;
+                value = self.conform_schema_draft(
                     value,
-                    expected,
+                    &expected,
                     binding.syntax(),
                     "source-semantics/incompatible-record-field-kind",
                     &format!("record field {name} does not satisfy its kind annotation"),
@@ -3310,7 +3302,7 @@ impl SemanticBuilder {
             .collect::<Vec<_>>()
             .join(",");
         Ok(self.emit_with_schema_draft(
-            "source/record",
+            "core/composite-pack",
             inputs,
             SchemaDraft {
                 dimension_parameters: parameters.into_boxed_slice(),
@@ -3448,7 +3440,7 @@ impl SemanticBuilder {
             })
             .collect::<Result<Vec<_>, _>>()?;
         Ok(self.emit_with_schema_draft(
-            "source/tuple",
+            "core/composite-pack",
             inputs,
             SchemaDraft {
                 dimension_parameters: parameters.into_boxed_slice(),
@@ -3467,13 +3459,36 @@ impl SemanticBuilder {
         let name = self.required(tuple.name(), tuple.syntax(), "a tuple-structure name")?;
         let value = self.required(tuple.value(), tuple.syntax(), "a tuple-structure value")?;
         let value = self.expression(&value)?.0;
-        Ok(self.emit(
-            "source/tuple-struct",
-            vec![value],
-            BuiltinSchema::Dynamic,
+        let path = CanonicalNominalPath::new(
+            node_text(name.syntax())?
+                .split('/')
+                .map(str::to_owned)
+                .collect::<Vec<_>>(),
+        )
+        .map_err(|error| {
+            internal(
+                SourceSemanticAnchor::for_node(tuple.syntax()),
+                format!("invalid tuple-structure tag: {error:?}"),
+            )
+        })?;
+        let tag_schema = SchemaBody::Atom(NominalKey::from_path(NominalKind::Atom, &path));
+        let tag = self.constant_exact(tag_schema.clone(), ValueDataDraft::Atom);
+        let mut parameters = Vec::new();
+        let payload = embed_schema_draft(
+            &self.schema_draft_of(value),
+            &mut parameters,
+            SourceSemanticAnchor::for_node(tuple.syntax()),
+        )?;
+        Ok(self.emit_with_schema_draft(
+            "core/composite-pack",
+            vec![tag, value],
+            SchemaDraft {
+                dimension_parameters: parameters.into_boxed_slice(),
+                body: SchemaBody::Tuple(vec![tag_schema, payload].into_boxed_slice()),
+            },
             tuple.syntax(),
             "tuple-struct",
-            Some(node_text(name.syntax())?),
+            None,
         ))
     }
 
@@ -4388,6 +4403,7 @@ impl SemanticBuilder {
             })
     }
 
+    #[cfg(test)]
     fn conform_table_value(
         &mut self,
         value: PendingValue,
@@ -4402,23 +4418,6 @@ impl SemanticBuilder {
             "source-semantics/incompatible-table-field-kind",
             &format!("table field {field} does not satisfy its kind annotation"),
         )
-    }
-
-    fn conform_exact_table_value(
-        &self,
-        value: PendingValue,
-        expected: &SchemaDraft,
-        field: &str,
-        syntax: &SyntaxNode,
-    ) -> Result<PendingValue, SourceSemanticError> {
-        if self.schema_draft_of(value) == *expected {
-            return Ok(value);
-        }
-        Err(SourceSemanticError {
-            code: "source-semantics/incompatible-table-field-kind",
-            message: format!("table field {field} does not have one exact inferred kind"),
-            anchor: SourceSemanticAnchor::for_node(syntax),
-        })
     }
 
     fn constant(&mut self, schema: BuiltinSchema, data: ValueDataDraft) -> PendingValue {
@@ -4490,7 +4489,16 @@ impl SemanticBuilder {
         detail: Option<String>,
     ) -> PendingValue {
         let index = self.nodes.len() as u32;
+        // Keep the operation contract with the selected identity, converted
+        // arguments and exact output schema. Artifact handoff only transports
+        // this binding; it never reselects semantics from a name or feature set.
+        let contract = mech_core::maintained_operation_contract(
+            operation,
+            inputs.len(),
+            matches!(schema.body, SchemaBody::Matrix { .. }),
+        );
         self.nodes.push(PendingNode {
+            contract,
             inferable_projection: false,
             operation: operation_reference(operation),
             inputs,
@@ -4600,13 +4608,7 @@ impl SemanticBuilder {
             .iter()
             .enumerate()
             .map(|(index, node)| {
-                contracts.push(resolved_operation_contract(
-                    &node.operation,
-                    node.inputs.len(),
-                    builtin_schema_for_body(&node.schema.body),
-                    node.state.is_some(),
-                    matches!(node.schema.body, SchemaBody::Matrix { .. }),
-                ));
+                contracts.push(node.contract.clone());
                 SourceNode {
                     operation: node.operation.clone(),
                     requirement: None,
@@ -4748,199 +4750,6 @@ fn operation_reference(name: &str) -> OperationReference {
     OperationReference {
         module_path: parts.into_boxed_slice(),
         operation_name,
-    }
-}
-
-fn resolved_operation_contract(
-    operation: &OperationReference,
-    input_count: usize,
-    output_schema: Option<BuiltinSchema>,
-    state_output: bool,
-    matrix_output: bool,
-) -> Option<OperationContractDeclaration> {
-    let name = operation.canonical_name();
-    if let Some(contract) =
-        mech_core::maintained_operation_contract(&name, input_count, matrix_output)
-    {
-        return Some(contract);
-    }
-    match name.as_str() {
-        "range/inclusive" => Some(range_contract(input_count, "inclusive-output")),
-        "range/exclusive" => Some(range_contract(input_count, "exclusive-output")),
-        "range/inclusive-increment" => {
-            Some(range_contract(input_count, "inclusive-increment-output"))
-        }
-        "range/exclusive-increment" => {
-            Some(range_contract(input_count, "exclusive-increment-output"))
-        }
-        "math/neg" => Some(negation_contract(output_schema)),
-        "matrix/transpose" => Some(transpose_contract()),
-        "matrix/literal" => Some(crate::matrix_literal_contract(input_count)),
-        "string/concat" => Some(operation_contract(input_count, output_schema, state_output)),
-        "math/add" | "math/sub" | "math/mul" | "math/div" | "math/mod" | "math/pow"
-        | "compare/neq" | "compare/eq" | "compare/sneq" | "compare/seq" | "compare/gt"
-        | "compare/lt" | "compare/gte" | "compare/lte" => {
-            Some(elementwise_contract(input_count, output_schema))
-        }
-        "logic/or" | "logic/and" | "logic/not" | "logic/xor" => {
-            Some(elementwise_contract(input_count, output_schema))
-        }
-        _ if name.starts_with("math/")
-            && input_count == 1
-            && mech_core::maintained_source_type_declaration(&name).is_ok() =>
-        {
-            Some(negation_contract(output_schema))
-        }
-        _ => None,
-    }
-}
-
-fn range_contract(input_count: usize, contract_name: &str) -> OperationContractDeclaration {
-    OperationContractDeclaration {
-        inputs: read_inputs(input_count),
-        outputs: vec![OutputPortPolicy {
-            access: AccessMode::Write,
-            delivery: DeliveryMode::Signal,
-            construction: OutputConstruction::Build {
-                postcondition: ShapeContractReference {
-                    module_path: vec!["range".to_owned()].into_boxed_slice(),
-                    contract_name: contract_name.to_owned(),
-                },
-            },
-            alias: AliasPolicy::NoAlias,
-            change_detection: ChangeDetectionPolicy::KernelReported,
-        }]
-        .into_boxed_slice(),
-        interaction: ExternalInteraction::Pure,
-    }
-}
-
-fn negation_contract(output_schema: Option<BuiltinSchema>) -> OperationContractDeclaration {
-    OperationContractDeclaration {
-        inputs: read_inputs(1),
-        outputs: vec![OutputPortPolicy {
-            access: AccessMode::Write,
-            delivery: DeliveryMode::Signal,
-            construction: OutputConstruction::FullWrite {
-                shape: ShapeRule::SameAsInput { input: 0 },
-            },
-            alias: AliasPolicy::NoAlias,
-            change_detection: if output_schema.is_some_and(is_scalar_schema) {
-                ChangeDetectionPolicy::ExactScalar
-            } else {
-                ChangeDetectionPolicy::KernelReported
-            },
-        }]
-        .into_boxed_slice(),
-        interaction: ExternalInteraction::Pure,
-    }
-}
-
-fn transpose_contract() -> OperationContractDeclaration {
-    OperationContractDeclaration {
-        inputs: read_inputs(1),
-        outputs: vec![OutputPortPolicy {
-            access: AccessMode::Write,
-            delivery: DeliveryMode::Signal,
-            construction: OutputConstruction::FullWrite {
-                shape: ShapeRule::TransposeOf { input: 0 },
-            },
-            alias: AliasPolicy::NoAlias,
-            change_detection: ChangeDetectionPolicy::KernelReported,
-        }]
-        .into_boxed_slice(),
-        interaction: ExternalInteraction::Pure,
-    }
-}
-
-fn is_scalar_schema(schema: BuiltinSchema) -> bool {
-    matches!(
-        schema,
-        BuiltinSchema::Bool
-            | BuiltinSchema::String
-            | BuiltinSchema::Index
-            | BuiltinSchema::U8
-            | BuiltinSchema::U16
-            | BuiltinSchema::U32
-            | BuiltinSchema::U64
-            | BuiltinSchema::U128
-            | BuiltinSchema::I8
-            | BuiltinSchema::I16
-            | BuiltinSchema::I32
-            | BuiltinSchema::I64
-            | BuiltinSchema::I128
-            | BuiltinSchema::F32
-            | BuiltinSchema::F64
-            | BuiltinSchema::C32
-            | BuiltinSchema::C64
-            | BuiltinSchema::R64
-    )
-}
-
-fn read_inputs(input_count: usize) -> InputPortLayout {
-    InputPortLayout::Fixed(
-        (0..input_count)
-            .map(|_| InputPortPolicy {
-                access: AccessMode::Read,
-                delivery: DeliveryMode::Signal,
-            })
-            .collect::<Vec<_>>()
-            .into_boxed_slice(),
-    )
-}
-
-fn operation_contract(
-    input_count: usize,
-    output_schema: Option<BuiltinSchema>,
-    state_output: bool,
-) -> OperationContractDeclaration {
-    OperationContractDeclaration {
-        inputs: read_inputs(input_count),
-        outputs: vec![OutputPortPolicy {
-            access: AccessMode::Write,
-            delivery: DeliveryMode::Signal,
-            construction: OutputConstruction::FullWrite {
-                shape: if state_output {
-                    ShapeRule::SameAsInput { input: 0 }
-                } else {
-                    ShapeRule::Declared
-                },
-            },
-            alias: AliasPolicy::NoAlias,
-            change_detection: if state_output {
-                ChangeDetectionPolicy::KernelReported
-            } else if output_schema.is_some_and(is_scalar_schema) {
-                ChangeDetectionPolicy::ExactScalar
-            } else {
-                ChangeDetectionPolicy::AlwaysChanged
-            },
-        }]
-        .into_boxed_slice(),
-        interaction: ExternalInteraction::Pure,
-    }
-}
-
-fn elementwise_contract(
-    input_count: usize,
-    output_schema: Option<BuiltinSchema>,
-) -> OperationContractDeclaration {
-    OperationContractDeclaration {
-        inputs: read_inputs(input_count),
-        outputs: vec![OutputPortPolicy {
-            access: AccessMode::Write,
-            delivery: DeliveryMode::Signal,
-            construction: OutputConstruction::FullWrite {
-                shape: ShapeRule::Declared,
-            },
-            alias: AliasPolicy::NoAlias,
-            change_detection: if output_schema.is_some_and(is_scalar_schema) {
-                ChangeDetectionPolicy::ExactScalar
-            } else {
-                ChangeDetectionPolicy::KernelReported
-            },
-        }]
-        .into_boxed_slice(),
-        interaction: ExternalInteraction::Pure,
     }
 }
 

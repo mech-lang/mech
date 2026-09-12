@@ -675,7 +675,7 @@ jobs:
               --test profile_contracts
             cargo +nightly-2026-03-03 test --locked -p mech-stdlib \
               --no-default-features --features full_source \
-              --test profile_contracts
+              --test profile_contracts --test maintained_contract_authority
             cargo +nightly-2026-03-03 test --locked -p mech-stdlib \
               --no-default-features --features full_compiler \
               --test profile_contracts
@@ -1118,7 +1118,7 @@ jobs:
         run: |
           cargo +nightly-2026-03-03 check --locked -p mech-engine --no-default-features --features source
           cargo +nightly-2026-03-03 test --locked -p mech-engine --no-default-features --features source --test canonical_source_profile --test canonical_source_review
-          cargo +nightly-2026-03-03 test --locked -p mech-engine --no-default-features --features full_source,resident-artifact --test canonical_source_semantics --test canonical_source_review
+          cargo +nightly-2026-03-03 test --locked -p mech-engine --no-default-features --features full_source,resident-artifact --test canonical_source_semantics --test canonical_source_review --test canonical_source_structures
           cargo +nightly-2026-03-03 test --locked -p mech-engine --no-default-features --features full_source,resident-artifact --lib source_semantics::frontend::
 
       - name: Run retained non-UTF-8 source-root regression

@@ -28,32 +28,7 @@ static PURE_STRING_BINARY_KERNEL_REPORTED: LazyLock<OperationContractDeclaration
     LazyLock::new(|| string_binary_contract(ChangeDetectionPolicy::KernelReported));
 
 fn string_binary_contract(change_detection: ChangeDetectionPolicy) -> OperationContractDeclaration {
-    OperationContractDeclaration {
-        inputs: InputPortLayout::Fixed(
-            vec![
-                InputPortPolicy {
-                    access: AccessMode::Read,
-                    delivery: DeliveryMode::Signal,
-                },
-                InputPortPolicy {
-                    access: AccessMode::Read,
-                    delivery: DeliveryMode::Signal,
-                },
-            ]
-            .into_boxed_slice(),
-        ),
-        outputs: vec![OutputPortPolicy {
-            access: AccessMode::Write,
-            delivery: DeliveryMode::Signal,
-            construction: OutputConstruction::FullWrite {
-                shape: ShapeRule::Declared,
-            },
-            alias: AliasPolicy::NoAlias,
-            change_detection,
-        }]
-        .into_boxed_slice(),
-        interaction: ExternalInteraction::Pure,
-    }
+    mech_core::elementwise_operation_contract(2, change_detection)
 }
 
 fn string_binary_full_write_contract(
@@ -307,12 +282,10 @@ fn canonical_concat_value(
 ) -> MResult<Value> {
     let geometry = canonical_concat_geometry(lhs, rhs)?;
     let Some((rows, columns)) = geometry.output else {
-        let next = ValueDataDraft::String(
-            construction.try_concatenate_string(
-                canonical_string_at(lhs, None, 0, 0)?,
-                canonical_string_at(rhs, None, 0, 0)?,
-            )?,
-        );
+        let next = ValueDataDraft::String(construction.try_concatenate_string(
+            canonical_string_at(lhs, None, 0, 0)?,
+            canonical_string_at(rhs, None, 0, 0)?,
+        )?);
         return construction.try_rebuild_data_draft(output, next);
     };
     let count = rows.checked_mul(columns).ok_or_else(|| {
@@ -507,9 +480,7 @@ macro_rules! impl_string_binop {
             fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
                 Ok(Some(vec![FunctionStatePort::from_cell(self.out.cell())]))
             }
-            fn planned_output_footprints(
-                &self,
-            ) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+            fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
                 let lhs = self.lhs.cell().snapshot()?;
                 let rhs = self.rhs.cell().snapshot()?;
                 Ok(Some(
@@ -531,16 +502,12 @@ macro_rules! impl_string_binop {
                     &self.lhs,
                     &self.rhs,
                     &self.out,
-                    |lhs, rhs, output| {
-                        $crate::canonical_concat_footprint(lhs, rhs, output)
-                    },
+                    |lhs, rhs, output| $crate::canonical_concat_footprint(lhs, rhs, output),
                     |lhs, rhs, output, construction| {
-                        Ok(((), $crate::canonical_concat_value(
-                            lhs,
-                            rhs,
-                            output,
-                            construction,
-                        )?))
+                        Ok((
+                            (),
+                            $crate::canonical_concat_value(lhs, rhs, output, construction)?,
+                        ))
                     },
                 )?;
                 Ok(mech_core::ReactiveSolveStatus::Changed)

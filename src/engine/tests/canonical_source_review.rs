@@ -528,3 +528,112 @@ fn recursive_conformance_retains_dimensions_and_independent_nested_parameters() 
             .all(|dimension| matches!(dimension, mech_core::DimensionExpr::Parameter(_)))
     );
 }
+
+#[test]
+fn selected_operation_contracts_travel_with_conversions_and_exact_schemas() {
+    use mech_core::{ChangeDetectionPolicy, FloatWidth};
+    for (source, operation, shape) in [
+        ("x<u8> + 2u16", "math/add", ShapeRule::Declared),
+        ("math/atan2(1,2)", "math/atan2", ShapeRule::Declared),
+        (
+            "math/sin(1)",
+            "math/sin",
+            ShapeRule::SameAsInput { input: 0 },
+        ),
+        (
+            "math/neg([1 2])",
+            "math/neg",
+            ShapeRule::SameAsInput { input: 0 },
+        ),
+        ("logic/not(true)", "logic/not", ShapeRule::Declared),
+        (
+            "matrix/transpose([1 2])",
+            "matrix/transpose",
+            ShapeRule::TransposeOf { input: 0 },
+        ),
+    ] {
+        let compiled = compile(source);
+        let (index, node) = compiled
+            .program()
+            .nodes
+            .iter()
+            .enumerate()
+            .find(|(_, node)| node.operation.canonical_name() == operation)
+            .unwrap();
+        let SourceNodeOutput::Derived { schema } = node.outputs[0] else {
+            panic!("expected derived output");
+        };
+        let output = compiled.schemas().get(schema).unwrap().body();
+        let matrix = matches!(output, SchemaBody::Matrix { .. });
+        let contract = compiled.contracts()[index]
+            .as_ref()
+            .expect("selected operation has a contract");
+        assert_eq!(
+            contract,
+            &mech_core::maintained_operation_contract(operation, node.inputs.len(), matrix)
+                .unwrap()
+        );
+        assert_eq!(
+            contract.outputs[0].construction,
+            OutputConstruction::FullWrite { shape }
+        );
+        assert_eq!(
+            contract.outputs[0].change_detection,
+            if matrix || operation == "matrix/transpose" {
+                ChangeDetectionPolicy::KernelReported
+            } else {
+                ChangeDetectionPolicy::ExactScalar
+            }
+        );
+        if operation == "math/atan2" {
+            assert_eq!(output, &SchemaBody::FloatingPoint(FloatWidth::W64));
+        }
+        if source == "x<u8> + 2u16" {
+            assert_eq!(output, &SchemaBody::UnsignedInteger(IntegerWidth::W16));
+            let SourceValue::NodeOutput {
+                node: conversion, ..
+            } = node.inputs[0]
+            else {
+                panic!("the selected promotion must survive handoff");
+            };
+            assert_eq!(
+                compiled.program().nodes[conversion as usize]
+                    .operation
+                    .canonical_name(),
+                "convert/kind"
+            );
+            assert!(compiled.contracts()[conversion as usize].is_some());
+        }
+        compiled.compile_artifact().unwrap();
+    }
+}
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn shared_math_contracts_reach_resident_results() {
+    use mech_core::{FunctionCatalogBuilder, ReactiveInstanceId, ValueData};
+    use mech_engine::__resident::{ActivationFacts, activate};
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    for (source, expected) in [
+        ("math/atan2(1,1)", std::f64::consts::FRAC_PI_4),
+        ("math/sin(0)", 0.0),
+        ("1 + 2 * 3", 7.0),
+    ] {
+        let artifact = compile(source).compile_artifact().unwrap();
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x551, 0),
+            &artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        instance.turn(&[]).unwrap();
+        let output = instance.copied_output(0).unwrap();
+        let ValueData::F64(actual) = output.data() else {
+            panic!("{source}: {:?}", output.data());
+        };
+        assert!((actual.to_f64() - expected).abs() < 1e-12, "{source}");
+    }
+}

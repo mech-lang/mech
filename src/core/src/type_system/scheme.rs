@@ -1346,12 +1346,84 @@ pub fn instantiate_source_scheme_template(
     Ok(vec![scheme])
 }
 
+/// Maintained mathematical operation families. This single registry supplies
+/// both source type schemes and portable operation-contract selection.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum MaintainedMathOperation {
+    PromotedBinary,
+    Power,
+    Modulus,
+    Negate,
+    AbsoluteValue,
+    FloatingBinary,
+    FloatingUnary,
+}
+
+impl MaintainedMathOperation {
+    pub const fn input_count(self) -> usize {
+        match self {
+            Self::Negate | Self::AbsoluteValue | Self::FloatingUnary => 1,
+            Self::PromotedBinary | Self::Power | Self::Modulus | Self::FloatingBinary => 2,
+        }
+    }
+}
+
+pub fn maintained_math_operation(name: &str) -> Option<MaintainedMathOperation> {
+    use MaintainedMathOperation::*;
+    Some(match name {
+        "math/add" | "math/sub" | "math/mul" | "math/div" => PromotedBinary,
+        "math/pow" => Power,
+        "math/mod" => Modulus,
+        "math/neg" => Negate,
+        "math/abs" => AbsoluteValue,
+        "math/atan2" | "math/copysign" | "math/fdim" | "math/fmod" | "math/nextafter"
+        | "math/remainder" | "math/bessel/jn" | "math/bessel/yn" => FloatingBinary,
+        "math/acos" | "math/acosh" | "math/acot" | "math/acsc" | "math/asec" | "math/asin"
+        | "math/asinh" | "math/atan" | "math/atanh" | "math/bessel/j0" | "math/bessel/j1"
+        | "math/bessel/y0" | "math/bessel/y1" | "math/cbrt" | "math/ceil" | "math/cos"
+        | "math/cosh" | "math/cot" | "math/csc" | "math/erf" | "math/erfc" | "math/floor"
+        | "math/lgamma" | "math/log" | "math/log10" | "math/log1p" | "math/log2" | "math/rint"
+        | "math/round" | "math/roundeven" | "math/sec" | "math/sin" | "math/sinh" | "math/sqrt"
+        | "math/tan" | "math/tanh" | "math/tgamma" | "math/trunc" => FloatingUnary,
+        _ => return None,
+    })
+}
+
 /// Returns the explicit storage-blind schemes for one maintained source name.
 /// This registry is catalog-construction metadata; execution never inspects
 /// operation names to infer a result.
 pub fn maintained_source_schemes(
     name: &str,
 ) -> Result<Option<Vec<KindScheme>>, SemanticModelError> {
+    if let Some(operation) = maintained_math_operation(name) {
+        use MaintainedMathOperation::*;
+        let schemes = match operation {
+            PromotedBinary => promoted_binary_elementwise()?,
+            Power => {
+                let mut schemes = promoted_binary_elementwise()?;
+                // Rational power retains its integral exponent instead of
+                // promoting that input to the base's rational kind.
+                schemes.push(exact_binary(
+                    BuiltinScalarKind::R64.kind_expr(),
+                    BuiltinScalarKind::I32.kind_expr(),
+                    BuiltinScalarKind::R64.kind_expr(),
+                )?);
+                schemes
+            }
+            Modulus => {
+                let mut schemes = numeric_binary_for_predicate(BuiltinKindPredicate::Integer)?;
+                schemes.extend(numeric_binary_for_predicate(
+                    BuiltinKindPredicate::FloatingPoint,
+                )?);
+                schemes
+            }
+            Negate => predicate_unary_same(BuiltinKindPredicate::Negatable)?,
+            AbsoluteValue => absolute_value()?,
+            FloatingBinary => numeric_binary_for_predicate(BuiltinKindPredicate::FloatingPoint)?,
+            FloatingUnary => predicate_unary_same(BuiltinKindPredicate::FloatingPoint)?,
+        };
+        return Ok(Some(schemes));
+    }
     let schemes = match name {
         name if name.contains("-assign") => {
             let arity = if name.ends_with("/range-all") || name.ends_with("/range") {
@@ -1360,34 +1432,6 @@ pub fn maintained_source_schemes(
                 2
             };
             exact_assignment(arity)?
-        }
-        "math/add" | "math/sub" | "math/mul" | "math/div" => promoted_binary_elementwise()?,
-        "math/pow" => {
-            let mut schemes = promoted_binary_elementwise()?;
-            // Rational power has an integral exponent; promoting that input
-            // to the base's kind would erase the operation's exact signature.
-            schemes.push(exact_binary(
-                BuiltinScalarKind::R64.kind_expr(),
-                BuiltinScalarKind::I32.kind_expr(),
-                BuiltinScalarKind::R64.kind_expr(),
-            )?);
-            schemes
-        }
-        "math/mod" => {
-            let mut values = numeric_binary_for_predicate(BuiltinKindPredicate::Integer)?;
-            values.extend(numeric_binary_for_predicate(
-                BuiltinKindPredicate::FloatingPoint,
-            )?);
-            values
-        }
-        "math/neg" => predicate_unary_same(BuiltinKindPredicate::Negatable)?,
-        "math/abs" => absolute_value()?,
-        "math/atan2" | "math/copysign" | "math/fdim" | "math/fmod" | "math/nextafter"
-        | "math/remainder" | "math/bessel/jn" | "math/bessel/yn" => {
-            numeric_binary_for_predicate(BuiltinKindPredicate::FloatingPoint)?
-        }
-        name if name.starts_with("math/") => {
-            predicate_unary_same(BuiltinKindPredicate::FloatingPoint)?
         }
         "compare/seq" | "compare/sneq" => strict_comparison_exact()?,
         "compare/eq" | "compare/neq" => {

@@ -161,12 +161,12 @@ fn identifiers_are_resolved_once_and_reused_as_source_inputs() {
 #[test]
 fn structures_calls_comprehensions_and_fsm_enter_one_source_graph() {
     for (source, final_operation) in [
-        ("{a: 1, b: 2}", "source/record"),
-        ("{1: 2, 3: 4}", "source/map"),
+        ("{a: 1, b: 2}", "core/composite-pack"),
+        ("{1: 2, 3: 4}", "core/composite-pack"),
         ("{1, 2}", "set/define"),
-        ("(1, 2)", "source/tuple"),
+        ("(1, 2)", "core/composite-pack"),
         ("[1 2]", "matrix/horzcat"),
-        ("|a<u8>|1|", "source/table"),
+        ("|a<u8>|1|", "core/composite-pack"),
         ("f(left: 1, 2)", "f"),
         ("x[1].field", "access/column"),
         ("1..10", "range/exclusive"),

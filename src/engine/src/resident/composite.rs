@@ -1,6 +1,4 @@
-use mech_core::snapshot::{
-    F64Bits, MatrixValue, rebuild_composite_snapshot, wrap_resident_dynamic_data,
-};
+use mech_core::snapshot::{F64Bits, MatrixValue};
 use mech_core::{
     AccessMode, AliasPolicy, BoundResidentKernel, CardinalitySpec, ChangeDetectionPolicy,
     DeliveryMode, DimensionExpr, ExternalInteraction, FunctionCatalogBuilder,
@@ -17,7 +15,8 @@ struct CompositeChildPlan {
     input_is_matrix: bool,
     snapshot_backed_matrix: bool,
     shape: ResidentShape,
-    dynamic: Option<DynamicChildPlan>,
+    dynamic: bool,
+    source: mech_core::ResidentPortLayout,
 }
 
 fn resolved_matrix_shape(body: &SchemaBody, shape: &ShapeInstance) -> Option<ResidentShape> {
@@ -34,18 +33,12 @@ fn resolved_matrix_shape(body: &SchemaBody, shape: &ShapeInstance) -> Option<Res
 }
 
 #[derive(Clone, Debug)]
-struct DynamicChildPlan {
-    schema_id: mech_core::SchemaId,
-    schema_key: mech_core::SchemaKey,
-    shape: ShapeInstance,
-    schemas: Arc<mech_core::SchemaTable>,
-    body: SchemaBody,
-}
-
-#[derive(Clone, Debug)]
 struct CompositePackPlan {
     children: Box<[CompositeChildPlan]>,
     table: Option<CompositeTablePlan>,
+    output: mech_core::ResidentPortLayout,
+    schemas: Arc<mech_core::SchemaTable>,
+    constructor: mech_core::snapshot::CompositeSnapshotConstructor,
 }
 
 #[derive(Clone, Debug)]
@@ -106,7 +99,7 @@ fn composite_children_match_output_schema(request: &ResidentKernelBindRequest<'_
     let Ok(output) = output.closed_body(&request.output.shape_instance) else {
         return false;
     };
-    let children = &request.inputs[1..];
+    let children = request.inputs;
     composite_child_schemas(&output, children.len()).is_some_and(|(expected, _)| {
         children
             .iter()
@@ -127,6 +120,28 @@ fn composite_child_schemas(
             fields.iter().map(|field| field.schema.clone()).collect(),
             None,
         )),
+        SchemaBody::Map {
+            key,
+            value,
+            cardinality,
+        } if child_count % 2 == 0 => {
+            let count = child_count / 2;
+            let accepted = match cardinality {
+                CardinalitySpec::Exact(DimensionExpr::Constant(n)) => *n == count as u64,
+                CardinalitySpec::Dynamic {
+                    upper_bound: Some(DimensionExpr::Constant(n)),
+                } => count as u64 <= *n,
+                _ => true,
+            };
+            accepted.then(|| {
+                (
+                    (0..count)
+                        .flat_map(|_| [key.as_ref().clone(), value.as_ref().clone()])
+                        .collect(),
+                    None,
+                )
+            })
+        }
         SchemaBody::Table { columns, rows } => {
             if columns.is_empty() {
                 let CardinalitySpec::Exact(DimensionExpr::Constant(row_count)) = rows else {
@@ -178,7 +193,8 @@ fn composite_child_schemas(
 fn composite_pack_plan(request: &ResidentKernelBindRequest<'_>) -> Option<CompositePackPlan> {
     let output = request.schemas.get(request.output.schema_id)?;
     let plans = |expected: &[SchemaBody]| {
-        request.inputs[1..]
+        request
+            .inputs
             .iter()
             .zip(expected)
             .map(|(input, expected)| {
@@ -198,26 +214,38 @@ fn composite_pack_plan(request: &ResidentKernelBindRequest<'_>) -> Option<Compos
                     _ => None,
                 };
                 Some(CompositeChildPlan {
+                    source: input.clone(),
                     matrix_dimensions,
                     input_is_matrix,
                     snapshot_backed_matrix: input_is_matrix
                         && input.kind == ResidentValueKind::Snapshot,
                     shape: logical_matrix_shape.unwrap_or(input.shape),
-                    dynamic: matches!(expected, SchemaBody::Dynamic).then(|| DynamicChildPlan {
-                        schema_id: input.schema_id,
-                        schema_key: input.schema_key,
-                        shape: input.shape_instance.clone(),
-                        schemas: Arc::new(request.schemas.clone()),
-                        body: input_schema.body().clone(),
-                    }),
+                    dynamic: matches!(expected, SchemaBody::Dynamic),
                 })
             })
             .collect::<Option<Vec<_>>>()
             .map(Vec::into_boxed_slice)
     };
-    let (expected, table) = composite_child_schemas(output.body(), request.inputs.len() - 1)?;
+    let (expected, table) = composite_child_schemas(output.body(), request.inputs.len())?;
     let children = plans(&expected)?;
-    Some(CompositePackPlan { children, table })
+    let constructor = mech_core::snapshot::CompositeSnapshotConstructor::bind(
+        request.output.schema_id,
+        request.output.shape_instance.clone(),
+        &request
+            .inputs
+            .iter()
+            .map(|input| (input.schema_id, input.shape_instance.clone()))
+            .collect::<Vec<_>>(),
+        Arc::new(request.schemas.clone()),
+    )
+    .ok()?;
+    Some(CompositePackPlan {
+        children,
+        table,
+        constructor,
+        output: request.output.clone(),
+        schemas: Arc::new(request.schemas.clone()),
+    })
 }
 
 fn composite_child_layout_supported(
@@ -257,56 +285,30 @@ fn bind_composite_pack(
     let ResolvedOperationContract::Declared(contract) = request.contract else {
         return Err(ResidentKernelBindError::UnsupportedContract);
     };
-    if matches!(
+    let empty_matrix = matches!(
         request
             .schemas
             .get(request.output.schema_id)
             .map(|schema| schema.body()),
         Some(SchemaBody::Matrix { .. })
-    ) && request.inputs.len() == 1
-        && request.inputs[0].schema_id == request.output.schema_id
-        && request.inputs[0].kind == request.output.kind
-        && request.inputs[0].shape == request.output.shape
-        && request.output.shape.len() == Some(0)
-    {
-        if contract.interaction != ExternalInteraction::Pure
-            || contract.inputs.len() != 1
-            || contract.inputs[0].schema != request.inputs[0].schema_id
-            || contract.inputs[0].access != AccessMode::Read
-            || contract.inputs[0].delivery != DeliveryMode::Signal
-            || contract.outputs.len() != 1
-        {
-            return Err(ResidentKernelBindError::UnsupportedContract);
-        }
-        let output = &contract.outputs[0];
-        if output.schema != request.output.schema_id
-            || output.access != AccessMode::Write
-            || output.delivery != DeliveryMode::Signal
-            || output.construction
-                != (OutputConstruction::FullWrite {
-                    shape: ShapeRule::Declared,
-                })
-            || output.alias != AliasPolicy::NoAlias
-            || output.change_detection != ChangeDetectionPolicy::AlwaysChanged
-        {
-            return Err(ResidentKernelBindError::UnsupportedContract);
-        }
-        return Ok(BoundResidentKernel::new(
-            retain_empty_matrix_composite,
-            Box::new([]),
-        ));
-    }
+    ) && request.inputs.is_empty()
+        && request.output.shape.len() == Some(0);
     if contract.interaction != ExternalInteraction::Pure
         || contract.inputs.len() != request.inputs.len()
-        || contract.inputs.is_empty()
         || contract.outputs.len() != 1
-        || !matches!(
-            request
-                .schemas
-                .get(request.output.schema_id)
-                .map(|schema| schema.body()),
-            Some(SchemaBody::Tuple { .. } | SchemaBody::Record { .. } | SchemaBody::Table { .. })
-        )
+        || (!empty_matrix
+            && !matches!(
+                request
+                    .schemas
+                    .get(request.output.schema_id)
+                    .map(|schema| schema.body()),
+                Some(
+                    SchemaBody::Tuple { .. }
+                        | SchemaBody::Record { .. }
+                        | SchemaBody::Table { .. }
+                        | SchemaBody::Map { .. }
+                )
+            ))
         || contract
             .inputs
             .iter()
@@ -316,11 +318,9 @@ fn bind_composite_pack(
             .iter()
             .zip(request.inputs.iter())
             .any(|(contract, input)| contract.schema != input.schema_id)
-        || request.inputs[0].schema_id != request.output.schema_id
-        || !composite_children_match_output_schema(request)
-        || request.inputs[0].kind != ResidentValueKind::Snapshot
-        || request.inputs[0].shape != ResidentShape::SCALAR
-        || request.inputs[1..]
+        || (!empty_matrix && !composite_children_match_output_schema(request))
+        || request
+            .inputs
             .iter()
             .any(|input| !composite_child_layout_supported(request, input))
     {
@@ -335,46 +335,42 @@ fn bind_composite_pack(
                 shape: ShapeRule::Declared,
             })
         || output.alias != AliasPolicy::NoAlias
-        || output.change_detection != ChangeDetectionPolicy::AlwaysChanged
-        || request.output.kind != ResidentValueKind::Snapshot
-        || request.output.shape != ResidentShape::SCALAR
+        || output.change_detection != ChangeDetectionPolicy::KernelReported
+        || (!empty_matrix
+            && (request.output.kind != ResidentValueKind::Snapshot
+                || request.output.shape != ResidentShape::SCALAR))
     {
         return Err(ResidentKernelBindError::UnsupportedContract);
+    }
+    if empty_matrix {
+        return Ok(BoundResidentKernel::new(
+            construct_empty_matrix,
+            Box::new([]),
+        ));
     }
     let plan = composite_pack_plan(request).ok_or(ResidentKernelBindError::UnsupportedLayout)?;
     Ok(BoundResidentKernel::new(composite_pack, Box::new([])).with_retained_state(Arc::new(plan)))
 }
 
-fn retain_empty_matrix_composite(
+fn construct_empty_matrix(
     _kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    if inputs.len() != 1 {
-        return Err(ResidentKernelError::InvalidInput);
-    }
-    let input_is_empty = match inputs.get(0) {
-        Some(ResidentValueRef::Bool(values)) => values.is_empty(),
-        Some(ResidentValueRef::Index(values)) => values.is_empty(),
-        Some(ResidentValueRef::F64(values)) => values.is_empty(),
-        Some(ResidentValueRef::String(values)) => values.is_empty(),
-        Some(ResidentValueRef::Snapshot(values)) => values.is_empty(),
-        None => false,
-    };
-    let output_is_empty = match output {
+    let empty = match output {
         ResidentValueMut::Bool(values) => values.is_empty(),
         ResidentValueMut::Index(values) => values.is_empty(),
         ResidentValueMut::F64(values) => values.is_empty(),
         ResidentValueMut::String(values) => values.is_empty(),
         ResidentValueMut::Snapshot(values) => values.is_empty(),
     };
-    if !input_is_empty || !output_is_empty {
+    if inputs.len() != 0 || !empty {
         return Err(ResidentKernelError::InvalidShape);
     }
     Ok(true)
 }
 
-fn composite_shapes_match_template(shape: &ShapeInstance, plan: &CompositePackPlan) -> bool {
+fn composite_shapes_match_declared_output(shape: &ShapeInstance, plan: &CompositePackPlan) -> bool {
     let matrices_match = plan.children.iter().all(|child| {
         let Some(dimensions) = &child.matrix_dimensions else {
             return true;
@@ -395,7 +391,7 @@ fn composite_shapes_match_template(shape: &ShapeInstance, plan: &CompositePackPl
             .is_none_or(|table| cardinality_accepts(&table.rows, table.row_count, shape))
 }
 
-fn canonical_matrix_elements<T, U>(
+pub(super) fn canonical_matrix_elements<T, U>(
     values: &[T],
     shape: ResidentShape,
     mut convert: impl FnMut(&T) -> Option<U>,
@@ -466,17 +462,7 @@ fn composite_child_data(
             _ => None,
         }?
     };
-    Some(match &plan.dynamic {
-        Some(dynamic) => wrap_resident_dynamic_data(
-            dynamic.schema_id,
-            dynamic.schema_key,
-            dynamic.shape.clone(),
-            Arc::clone(&dynamic.schemas),
-            &dynamic.body,
-            data,
-        ),
-        None => data,
-    })
+    Some(data)
 }
 
 fn checked_cost_usize(value: u64) -> Result<usize, ResidentKernelError> {
@@ -550,16 +536,33 @@ fn resident_child_clone_cost(
             (retained, nodes)
         }
     };
-    let dynamic_overhead = usize::from(plan.dynamic.is_some())
-        .checked_mul(core::mem::size_of::<ValueData>())
-        .ok_or(ResidentKernelError::InvalidShape)?;
+    let dynamic_overhead = if plan.dynamic {
+        mech_core::snapshot::CompositeSnapshotConstructor::value_container_bytes(
+            plan.source.shape_instance.parameter_values().len(),
+        )
+        .and_then(|bytes| bytes.checked_add(core::mem::size_of::<ValueData>()))
+        .and_then(|bytes| bytes.checked_add(1 + 32 + 8 + 5 + 8))
+        .and_then(|bytes| {
+            bytes.checked_add(
+                plan.source
+                    .shape_instance
+                    .parameter_values()
+                    .len()
+                    .checked_mul(8)?,
+            )
+        })
+        .and_then(|bytes| bytes.checked_add(payload))
+        .ok_or(ResidentKernelError::InvalidShape)?
+    } else {
+        0
+    };
     Ok((
         container
             .checked_add(payload)
             .and_then(|bytes| bytes.checked_add(dynamic_overhead))
             .ok_or(ResidentKernelError::InvalidShape)?,
         nodes
-            .checked_add(1 + usize::from(plan.dynamic.is_some()))
+            .checked_add(1 + usize::from(plan.dynamic))
             .ok_or(ResidentKernelError::InvalidShape)?,
     ))
 }
@@ -572,39 +575,68 @@ fn composite_pack(
     let ResidentValueMut::Snapshot([target]) = output else {
         return Err(ResidentKernelError::InvalidOutput);
     };
-    let Some(ResidentValueRef::Snapshot([Some(template)])) = inputs.get(0) else {
-        return Err(ResidentKernelError::InvalidInput);
-    };
     let plan = kernel
         .retained_state::<CompositePackPlan>()
         .ok_or(ResidentKernelError::InvalidInput)?;
-    if plan.children.len() != inputs.len() - 1
-        || !composite_shapes_match_template(template.shape(), plan)
+    if plan.children.len() != inputs.len()
+        || !composite_shapes_match_declared_output(&plan.output.shape_instance, plan)
     {
         return Err(ResidentKernelError::InvalidShape);
     }
-    let template_schemas = template
-        .schemas()
-        .ok_or(ResidentKernelError::InvalidInput)?;
     let mut footprint_meter = super::budget::ResidentBudgetMeter::default();
-    let template_footprint = super::budget::measure_canonical_value_footprint(
-        &mut footprint_meter,
-        template,
-        &template_schemas,
-    )?;
-    let mut retained_bytes = checked_cost_usize(template_footprint.retained_bytes)?;
+    let mut child_bytes = 0usize;
+    let mut native_draft_bytes = 0usize;
+    let mut native_value_bytes = 0usize;
+    let mut key_bytes = 0usize;
+    let mut key_work = 0u64;
+    let map = matches!(
+        plan.schemas
+            .get(plan.output.schema_id)
+            .map(|schema| schema.body()),
+        Some(SchemaBody::Map { .. })
+    );
     let mut staged_child_nodes = 0usize;
     for (index, child) in plan.children.iter().enumerate() {
         let (bytes, nodes) = resident_child_clone_cost(
             &mut footprint_meter,
-            inputs
-                .get(index + 1)
-                .ok_or(ResidentKernelError::InvalidInput)?,
+            inputs.get(index).ok_or(ResidentKernelError::InvalidInput)?,
             child,
         )?;
-        retained_bytes = retained_bytes
+        child_bytes = child_bytes
             .checked_add(bytes)
             .ok_or(ResidentKernelError::InvalidShape)?;
+        let input = inputs.get(index).ok_or(ResidentKernelError::InvalidInput)?;
+        if !matches!(input, ResidentValueRef::Snapshot(_)) {
+            native_draft_bytes = native_draft_bytes
+                .checked_add(
+                    input
+                        .len()
+                        .checked_mul(core::mem::size_of::<mech_core::ValueDataDraft>())
+                        .ok_or(ResidentKernelError::InvalidShape)?,
+                )
+                .and_then(|total| total.checked_add(bytes))
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            native_value_bytes = native_value_bytes
+                .checked_add(bytes)
+                .and_then(|total| {
+                    total.checked_add(
+                        mech_core::snapshot::CompositeSnapshotConstructor::value_container_bytes(
+                            child.source.shape_instance.parameter_values().len(),
+                        )?,
+                    )
+                })
+                .ok_or(ResidentKernelError::InvalidShape)?;
+        }
+        if map && index % 2 == 0 {
+            key_bytes = key_bytes
+                .checked_add(bytes)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            // Encoded bytes and node counts conservatively bound key comparison
+            // and recursive normalization work, without materializing a draft.
+            key_work = key_work
+                .checked_add(super::budget::checked_u64(bytes.max(nodes))?)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+        }
         staged_child_nodes = staged_child_nodes
             .checked_add(nodes)
             .ok_or(ResidentKernelError::InvalidShape)?;
@@ -613,14 +645,67 @@ fn composite_pack(
         super::budget::measure_canonical_value_footprint(
             &mut footprint_meter,
             previous,
-            &template_schemas,
+            &plan.schemas,
         )?;
     }
+    let (output_containers, table_scratch) = plan
+        .constructor
+        .allocation_containers()
+        .ok_or(ResidentKernelError::InvalidShape)?;
     let child_containers = plan
         .children
         .len()
-        .checked_mul(core::mem::size_of::<ValueData>())
+        .checked_mul(core::mem::size_of::<mech_core::Value>() + core::mem::size_of::<ValueData>())
         .ok_or(ResidentKernelError::InvalidShape)?;
+    let output_bytes = child_bytes
+        .checked_add(output_containers)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    // These phases can coexist: typed native children, cloned canonical output,
+    // native drafts, and key normalization / table packing scratch. Schema
+    // labels are retained in the bound arena and have no turn allocation.
+    let temporary_bytes = [
+        native_value_bytes,
+        output_bytes,
+        native_draft_bytes,
+        key_bytes,
+        table_scratch,
+        child_containers,
+    ]
+    .into_iter()
+    .try_fold(0usize, |total, bytes| total.checked_add(bytes))
+    .ok_or(ResidentKernelError::InvalidShape)?;
+    let container_bytes = [
+        output_containers,
+        child_containers,
+        native_draft_bytes,
+        key_bytes,
+        table_scratch,
+    ]
+    .into_iter()
+    .try_fold(0usize, |total, bytes| total.checked_add(bytes))
+    .ok_or(ResidentKernelError::InvalidShape)?;
+    // Canonical insertion checks the previous key then scans prior keys; each
+    // pair comparison visits both keys, and insertion can shift every prior
+    // entry. Also reserve a full key walk for recursive normalization.
+    let count = super::budget::checked_u64(plan.children.len() / 2)?;
+    let finalization_work = if map {
+        key_work
+            .checked_mul(
+                count
+                    .checked_mul(2)
+                    .and_then(|n| n.checked_add(1))
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+            )
+            .and_then(|work| {
+                count
+                    .checked_mul(count.saturating_sub(1))
+                    .and_then(|shifts| work.checked_add(shifts / 2))
+            })
+            .ok_or(ResidentKernelError::InvalidShape)?
+    } else {
+        0
+    };
+    footprint_meter.charge_comparison_work(finalization_work)?;
     let measured = footprint_meter.estimate();
     let final_output_nodes = super::budget::checked_u64(staged_child_nodes)?
         .checked_add(2)
@@ -637,12 +722,10 @@ fn composite_pack(
                 )
                 .ok_or(ResidentKernelError::InvalidShape)?,
             output_elements: plan.children.len(),
-            output_bytes: retained_bytes,
-            temporary_bytes: retained_bytes
-                .checked_mul(3)
-                .ok_or(ResidentKernelError::InvalidShape)?,
-            cloned_bytes: retained_bytes,
-            container_bytes: child_containers,
+            output_bytes: output_bytes,
+            temporary_bytes: temporary_bytes,
+            cloned_bytes: child_bytes.checked_add(native_value_bytes).and_then(|bytes|bytes.checked_add(key_bytes)).ok_or(ResidentKernelError::InvalidShape)?,
+            container_bytes: container_bytes,
             retained_nodes: measured.retained_nodes()
                 .checked_add(final_output_nodes)
                 .ok_or(ResidentKernelError::InvalidShape)?,
@@ -651,13 +734,48 @@ fn composite_pack(
     )
     .admit()?
     .into_plan();
-    let children = (1..=admitted_children)
-        .map(|index| composite_child_data(inputs.get(index)?, plan.children.get(index - 1)?))
-        .collect::<Option<Vec<_>>>()
-        .ok_or(ResidentKernelError::InvalidInput)?
+    let context =
+        mech_core::snapshot::SnapshotValidationContext::with_shared_schemas(&plan.schemas);
+    let children = (0..admitted_children)
+        .map(|index| {
+            let input = inputs.get(index).ok_or(ResidentKernelError::InvalidInput)?;
+            if let ResidentValueRef::Snapshot([Some(value)]) = input {
+                return Ok(value.clone());
+            }
+            let child = &plan.children[index];
+            let data =
+                composite_child_data(input, child).ok_or(ResidentKernelError::InvalidInput)?;
+            let schema = plan
+                .schemas
+                .get(child.source.schema_id)
+                .ok_or(ResidentKernelError::InvalidInput)?;
+            let data = mech_core::snapshot::canonical_snapshot_data_draft(schema.body(), &data)
+                .map_err(|_| ResidentKernelError::InvalidInput)?;
+            mech_core::ValueDraft {
+                schema: child.source.schema_id,
+                shape_values: child
+                    .source
+                    .shape_instance
+                    .parameter_values()
+                    .to_vec()
+                    .into_boxed_slice(),
+                data,
+            }
+            .finalize(&context)
+            .map_err(|_| ResidentKernelError::InvalidInput)
+        })
+        .collect::<Result<Vec<_>, _>>()?
         .into_boxed_slice();
-    let next =
-        rebuild_composite_snapshot(template, children).ok_or(ResidentKernelError::InvalidInput)?;
+    let budget = mech_core::snapshot::SnapshotCanonicalizationBudget::new(finalization_work);
+    let next = plan
+        .constructor
+        .construct(children, Some(&budget))
+        .map_err(|error| match error {
+            mech_core::snapshot::SnapshotValueError::CanonicalizationWorkLimitExceededV1 {
+                ..
+            } => ResidentKernelError::InvalidShape,
+            _ => ResidentKernelError::InvalidInput,
+        })?;
     *target = Some(next);
     Ok(true)
 }
@@ -751,10 +869,7 @@ mod tests {
         });
         let output = layout(&schemas, tuple, ResidentValueKind::Snapshot);
 
-        let good = [
-            layout(&schemas, tuple, ResidentValueKind::Snapshot),
-            layout(&schemas, scalar, ResidentValueKind::F64),
-        ];
+        let good = [layout(&schemas, scalar, ResidentValueKind::F64)];
         assert!(composite_children_match_output_schema(
             &ResidentKernelBindRequest {
                 contract: &contract,
@@ -764,10 +879,7 @@ mod tests {
             }
         ));
 
-        let bad = [
-            layout(&schemas, tuple, ResidentValueKind::Snapshot),
-            layout(&schemas, matrix, ResidentValueKind::F64),
-        ];
+        let bad = [layout(&schemas, matrix, ResidentValueKind::F64)];
         assert!(!composite_children_match_output_schema(
             &ResidentKernelBindRequest {
                 contract: &contract,
@@ -874,7 +986,8 @@ mod tests {
                 rows: 2,
                 columns: 3,
             },
-            dynamic: None,
+            dynamic: false,
+            source: matrix_layout,
         };
         let Some(ValueData::Matrix(matrix)) =
             composite_child_data(ResidentValueRef::F64(&values), &plan)
@@ -912,18 +1025,11 @@ mod tests {
         let tuple = build.resolve(tuple).unwrap();
         let (schemas, _) = build.into_parts();
         let contract = ResolvedOperationContract::Declared(mech_core::DeclaredOperationContract {
-            inputs: vec![
-                mech_core::ResolvedInputPort {
-                    schema: tuple,
-                    access: AccessMode::Read,
-                    delivery: DeliveryMode::Signal,
-                },
-                mech_core::ResolvedInputPort {
-                    schema: matrix,
-                    access: AccessMode::Read,
-                    delivery: DeliveryMode::Signal,
-                },
-            ]
+            inputs: vec![mech_core::ResolvedInputPort {
+                schema: matrix,
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            }]
             .into_boxed_slice(),
             outputs: vec![mech_core::ResolvedOutputPort {
                 schema: tuple,
@@ -933,15 +1039,12 @@ mod tests {
                     shape: ShapeRule::Declared,
                 },
                 alias: AliasPolicy::NoAlias,
-                change_detection: ChangeDetectionPolicy::AlwaysChanged,
+                change_detection: ChangeDetectionPolicy::KernelReported,
             }]
             .into_boxed_slice(),
             interaction: ExternalInteraction::Pure,
         });
-        let inputs = [
-            layout(&schemas, tuple, ResidentValueKind::Snapshot),
-            layout(&schemas, matrix, ResidentValueKind::Snapshot),
-        ];
+        let inputs = [layout(&schemas, matrix, ResidentValueKind::Snapshot)];
         let kernel = bind_composite_pack(&ResidentKernelBindRequest {
             contract: &contract,
             schemas: &schemas,
@@ -958,17 +1061,6 @@ mod tests {
                     .into_boxed_slice(),
             )
         };
-        let template = [Some(
-            mech_core::ValueDraft {
-                schema: tuple,
-                shape_values: Box::new([]),
-                data: ValueDataDraft::Tuple(vec![matrix_draft()].into_boxed_slice()),
-            }
-            .finalize(&mech_core::snapshot::SnapshotValidationContext::new(
-                &schemas,
-            ))
-            .unwrap(),
-        )];
         let child = [Some(
             mech_core::ValueDraft {
                 schema: matrix,
@@ -980,10 +1072,7 @@ mod tests {
             ))
             .unwrap(),
         )];
-        let resident_inputs = [
-            ResidentValueRef::Snapshot(&template),
-            ResidentValueRef::Snapshot(&child),
-        ];
+        let resident_inputs = [ResidentValueRef::Snapshot(&child)];
         let mut output = [None];
         kernel
             .execute(
@@ -1009,7 +1098,7 @@ mod tests {
     }
 
     #[test]
-    fn parameterized_matrix_child_shape_must_match_the_template_instance() {
+    fn parameterized_matrix_child_shape_must_match_the_declared_output_instance() {
         let parameter = mech_core::DimensionParameterId::new(0);
         let schema = mech_core::SchemaDraft {
             dimension_parameters: vec![mech_core::DimensionParameterDeclaration {
@@ -1034,9 +1123,44 @@ mod tests {
         }
         .finalize()
         .unwrap();
-        let template_shape = schema
+        let output_shape = schema
             .instantiate_shape(vec![3].into_boxed_slice())
             .unwrap();
+        let mut builder = mech_core::SchemaTableBuilder::new();
+        let matrix_body = match schema.body() {
+            SchemaBody::Tuple(items) => items[0].clone(),
+            _ => unreachable!(),
+        };
+        let input = builder
+            .insert(
+                mech_core::SchemaDraft {
+                    body: matrix_body,
+                    dimension_parameters: vec![mech_core::DimensionParameterDeclaration {
+                        id: parameter,
+                        origin: mech_core::DimensionParameterOrigin::Explicit,
+                        lifetime: mech_core::DimensionLifetime::Activation,
+                        lower_bound: DimensionExpr::Constant(1),
+                        upper_bound: None,
+                    }]
+                    .into_boxed_slice(),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let output = builder.insert(schema.clone()).unwrap();
+        let build = builder.finish().unwrap();
+        let output = build.resolve(output).unwrap();
+        let input = build.resolve(input).unwrap();
+        let (schemas, _) = build.into_parts();
+        let output = mech_core::ResidentPortLayout {
+            schema_id: output,
+            schema_key: schemas.entry(output).unwrap().key(),
+            shape_instance: output_shape.clone(),
+            shape: ResidentShape::SCALAR,
+            kind: ResidentValueKind::Snapshot,
+            resolved_selector: None,
+        };
         let dimensions = vec![
             mech_core::DimensionExpr::Constant(1),
             mech_core::DimensionExpr::Parameter(parameter),
@@ -1052,13 +1176,23 @@ mod tests {
                     rows: 1,
                     columns: 2,
                 },
-                dynamic: None,
+                dynamic: false,
+                source: output.clone(),
             }]
             .into_boxed_slice(),
             table: None,
+            output: output.clone(),
+            schemas: Arc::new(schemas.clone()),
+            constructor: mech_core::snapshot::CompositeSnapshotConstructor::bind(
+                output.schema_id,
+                output.shape_instance.clone(),
+                &[(input, output.shape_instance.clone())],
+                Arc::new(schemas.clone()),
+            )
+            .unwrap(),
         };
-        assert!(!composite_shapes_match_template(
-            &template_shape,
+        assert!(!composite_shapes_match_declared_output(
+            &output_shape,
             &mismatched
         ));
 
@@ -1071,11 +1205,24 @@ mod tests {
                     rows: 1,
                     columns: 3,
                 },
-                dynamic: None,
+                dynamic: false,
+                source: output.clone(),
             }]
             .into_boxed_slice(),
             table: None,
+            output: output.clone(),
+            schemas: Arc::new(schemas.clone()),
+            constructor: mech_core::snapshot::CompositeSnapshotConstructor::bind(
+                output.schema_id,
+                output.shape_instance.clone(),
+                &[(input, output.shape_instance.clone())],
+                Arc::new(schemas.clone()),
+            )
+            .unwrap(),
         };
-        assert!(composite_shapes_match_template(&template_shape, &matching));
+        assert!(composite_shapes_match_declared_output(
+            &output_shape,
+            &matching
+        ));
     }
 }
