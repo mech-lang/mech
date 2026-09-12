@@ -8,8 +8,8 @@ const SCHEMA_HEADER: &str =
     "grammar-name\tparser-module\temission-policy\tsyntax-kind\tkind-origin\tnotes";
 const PHASE_HEADER: &str = "grammar-name\tfamily\tcomponent-id\tcomponent-size\t\
                             recursive-component\tsame-component-children\tclosure-children\t\
-                            ported-external-children";
-const PORTS_HEADER: &str = "grammar-name\tfamily\tsyntax-status\tlowering-status\t\
+                            certified-external-children";
+const PORTS_HEADER: &str = "grammar-name\tfamily\tsyntax-status\tsemantic-status\t\
                             node-policy\tphase\tnotes";
 
 const PHASE_2I_NEW_KINDS: &[SyntaxKind] = &[
@@ -99,7 +99,7 @@ struct SchemaRow {
 #[derive(Debug)]
 struct PortRow {
     syntax: String,
-    lowering: String,
+    semantic: String,
     policy: String,
     phase: String,
 }
@@ -178,7 +178,7 @@ fn ports() -> BTreeMap<String, PortRow> {
                 row[0].to_owned(),
                 PortRow {
                     syntax: row[2].to_owned(),
-                    lowering: row[3].to_owned(),
+                    semantic: row[3].to_owned(),
                     policy: row[4].to_owned(),
                     phase: row[5].to_owned(),
                 },
@@ -363,14 +363,19 @@ fn new_kinds_match_the_exact_append_only_schema() {
 }
 
 #[test]
-fn recursive_core_port_status_remains_inactive() {
+fn recursive_core_port_status_matches_the_certified_schema() {
     let schema = schema();
     let ports = ports();
-    for name in schema.keys() {
+    for (name, schema) in &schema {
         let port = &ports[name];
-        assert_eq!(port.syntax, "unported", "syntax status for {name}");
-        assert_eq!(port.lowering, "pending", "lowering status for {name}");
-        assert_eq!(port.policy, "undecided", "node policy for {name}");
-        assert!(port.phase.is_empty(), "phase for {name}");
+        assert_eq!(port.syntax, "certified", "syntax status for {name}");
+        assert_eq!(port.semantic, "certified", "semantic status for {name}");
+        let expected_policy = if schema.policy == "transparent" {
+            "transparent".to_owned()
+        } else {
+            format!("node:{}", schema.kind)
+        };
+        assert_eq!(port.policy, expected_policy, "node policy for {name}");
+        assert_eq!(port.phase, "2I", "phase for {name}");
     }
 }
