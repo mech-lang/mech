@@ -36,10 +36,11 @@ row has specification-linked accepted and recovery inputs, a direct rejection
 case formed by placing a forbidden closing delimiter before that rule's accepted
 form, frozen lossless-tree and rule-specific typed-accessor snapshots, stable
 recovery evidence, an explicit semantic disposition, and a canonical downstream
-consumer. Executable and compile-time rows provide one canonical expression
-context and freeze the complete source program, schemas, constants, operation
-contracts, source map, artifact result, and per-slot shape hints. The matrix and
-engine semantic fixtures derive expectations only from canonical source.
+consumer. Executable and compile-time rows provide one canonical expression or
+definition context and freeze the complete source program, schemas, constants,
+operation contracts, source map, artifact result, and per-slot shape hints. The
+matrix and engine semantic fixtures derive expectations only from canonical
+source.
 
 Canonical source-import parity now includes extensionless paths, percent
 characters, and whitespace around context capability groups. Canonical escape

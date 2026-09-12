@@ -101,7 +101,7 @@ pub const PHASE_2I_SEMANTIC_RULES: [Phase2iSemanticRule; 80] = [
     rule("tuple", Executable),
     rule("tuple-struct", Executable),
     rule("var", Executable),
-    rule("variable-define", Structural),
+    rule("variable-define", Executable),
 ];
 
 const fn rule(
