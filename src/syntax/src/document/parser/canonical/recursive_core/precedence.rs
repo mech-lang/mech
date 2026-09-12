@@ -5,8 +5,8 @@ use super::super::super::rule::rules;
 use super::super::super::{Parser, ParserCheckpoint};
 use super::super::{base, combinator, control_operators, operators};
 use super::{
-    Attempt, calls, expressions, literals, recover_closer, recover_required_production,
-    recover_required_token, structures, subscripts, variables,
+    Attempt, calls, expressions, literals, recover_closer, recover_required_production, structures,
+    subscripts, variables,
 };
 
 pub(super) struct FormulaSeed {
@@ -345,16 +345,20 @@ pub(super) fn parse_match_arm(parser: &mut Parser<'_>) -> Attempt {
             }
         }
         if !base::parse_rule(parser, rules::OUTPUT_OPERATOR) {
-            recover_required_token(
+            super::recover_required_token_with_prefixes(
                 parser,
                 rules::MATCH_ARM,
                 "syntax/missing-match-arm-output-operator",
                 "missing output operator after match arm pattern",
                 SyntaxKind::OutputOperator,
                 "=>",
+                &["=>", "⇒"],
             );
-            node.complete(parser, SyntaxKind::MatchArm);
-            return Attempt::Committed;
+            committed = true;
+            if !base::parse_rule(parser, rules::OUTPUT_OPERATOR) {
+                node.complete(parser, SyntaxKind::MatchArm);
+                return Attempt::Committed;
+            }
         }
         let child = expressions::parse_expression(parser);
         match child {

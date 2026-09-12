@@ -148,6 +148,9 @@ pub(super) enum BracketForm {
 pub(super) enum FactAttempt<T> {
     NoMatch,
     Matched(T),
+    /// The production recovered after retaining its discriminator facts.
+    Recovered(T),
+    /// The production committed without retaining discriminator facts.
     Committed,
 }
 
@@ -156,7 +159,7 @@ impl<T> FactAttempt<T> {
         match self {
             Self::NoMatch => Attempt::NoMatch,
             Self::Matched(_) => Attempt::Matched,
-            Self::Committed => Attempt::Committed,
+            Self::Recovered(_) | Self::Committed => Attempt::Committed,
         }
     }
 }
@@ -328,13 +331,14 @@ fn recover_required_production_at_boundaries(
     Attempt::Committed
 }
 
-pub(super) fn recover_required_token(
+pub(super) fn recover_required_token_with_prefixes(
     parser: &mut Parser<'_>,
     target: RuleId,
     code: &str,
     message: &str,
     token: SyntaxKind,
     text: &str,
+    prefixes: &[&str],
 ) -> Attempt {
     combinator::consume_grammar_horizontal_trivia(parser);
     const RESTART_BOUNDARIES: &[char] = &[
@@ -355,12 +359,17 @@ pub(super) fn recover_required_token(
             Some(text),
         );
     } else {
-        let _ = recovery::abandon_to_restart(
+        let _ = recovery::abandon_until(
             parser,
             target,
-            RESTART_BOUNDARIES,
             "syntax/unexpected-token-source",
             "unexpected source where a required token was expected",
+            |parser, character| {
+                RESTART_BOUNDARIES.contains(&character)
+                    || prefixes
+                        .iter()
+                        .any(|prefix| parser.cursor().starts_with(prefix))
+            },
         );
     }
     Attempt::Committed
@@ -436,7 +445,12 @@ pub(super) fn transactional_fact<T>(
         parser.rewind(checkpoint);
     }
     if parser.is_halted() {
-        FactAttempt::Committed
+        match result {
+            FactAttempt::Matched(facts) | FactAttempt::Recovered(facts) => {
+                FactAttempt::Recovered(facts)
+            }
+            _ => FactAttempt::Committed,
+        }
     } else {
         result
     }

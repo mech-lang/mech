@@ -698,7 +698,8 @@ fn binding_with_marker(parser: &mut Parser<'_>) -> FactAttempt<BindingCandidate>
             node.abandon(parser);
             return FactAttempt::NoMatch;
         }
-        if parser.is_halted() || kinds::parse_kind_annotation(parser) == Attempt::Committed {
+        let annotation_committed = kinds::parse_kind_annotation(parser) == Attempt::Committed;
+        if parser.is_halted() {
             node.complete(parser, SyntaxKind::RecordBinding);
             return FactAttempt::Committed;
         }
@@ -735,7 +736,7 @@ fn binding_with_marker(parser: &mut Parser<'_>) -> FactAttempt<BindingCandidate>
             return FactAttempt::NoMatch;
         }
         node.complete(parser, SyntaxKind::RecordBinding);
-        if committed || parser.is_halted() {
+        if annotation_committed || committed || parser.is_halted() {
             FactAttempt::Committed
         } else {
             FactAttempt::Matched(BindingCandidate {
@@ -995,7 +996,7 @@ pub(super) fn parenthesis_factor(parser: &mut Parser<'_>) -> Attempt {
                     expression.complete(parser, SyntaxKind::Expression);
                 }
                 FactAttempt::NoMatch => return Attempt::NoMatch,
-                FactAttempt::Committed => {
+                FactAttempt::Recovered(_) | FactAttempt::Committed => {
                     expression.complete(parser, SyntaxKind::Expression);
                     committed = true;
                     let after_body = parser.checkpoint();
@@ -1024,7 +1025,7 @@ pub(super) fn parenthesis_factor(parser: &mut Parser<'_>) -> Attempt {
                 FactAttempt::Matched(_) => {
                     expression.complete(parser, SyntaxKind::Expression);
                 }
-                FactAttempt::Committed => {
+                FactAttempt::Recovered(_) | FactAttempt::Committed => {
                     expression.complete(parser, SyntaxKind::Expression);
                     committed = true;
                     let after_body = parser.checkpoint();
@@ -1123,7 +1124,11 @@ pub(super) fn bracket_factor(parser: &mut Parser<'_>) -> Attempt {
             structure.abandon(parser);
             Attempt::Matched
         }
-        FactAttempt::Committed => {
+        FactAttempt::Recovered(BracketForm::Comprehension) if !parser.is_halted() => {
+            structure.abandon(parser);
+            Attempt::Committed
+        }
+        FactAttempt::Recovered(_) | FactAttempt::Committed => {
             structure.complete(parser, SyntaxKind::Structure);
             Attempt::Committed
         }
@@ -1146,7 +1151,11 @@ pub(super) fn bracket_expression(parser: &mut Parser<'_>) -> FactAttempt<Express
             structure.abandon(parser);
             FactAttempt::Matched(ExpressionForm::MatrixComprehension)
         }
-        FactAttempt::Committed => {
+        FactAttempt::Recovered(BracketForm::Comprehension) if !parser.is_halted() => {
+            structure.abandon(parser);
+            FactAttempt::Recovered(ExpressionForm::MatrixComprehension)
+        }
+        FactAttempt::Recovered(_) | FactAttempt::Committed => {
             structure.complete(parser, SyntaxKind::Structure);
             FactAttempt::Committed
         }
@@ -1287,7 +1296,7 @@ fn bracket_body(parser: &mut Parser<'_>, mode: BracketMode) -> FactAttempt<Brack
                                     comprehension.complete(parser, SyntaxKind::MatrixComprehension);
                                     matrix.abandon(parser);
                                     return if head == Attempt::Committed {
-                                        FactAttempt::Committed
+                                        FactAttempt::Recovered(BracketForm::Comprehension)
                                     } else {
                                         FactAttempt::Matched(BracketForm::Comprehension)
                                     };
@@ -1307,7 +1316,7 @@ fn bracket_body(parser: &mut Parser<'_>, mode: BracketMode) -> FactAttempt<Brack
                                     finish_provisional_marker(parser, row, SyntaxKind::MatrixRow);
                                     comprehension.complete(parser, SyntaxKind::MatrixComprehension);
                                     finish_provisional_marker(parser, matrix, SyntaxKind::Matrix);
-                                    return FactAttempt::Committed;
+                                    return FactAttempt::Recovered(BracketForm::Comprehension);
                                 }
                             }
                         }
@@ -1567,7 +1576,7 @@ fn brace_general(parser: &mut Parser<'_>, mode: BraceMode) -> FactAttempt<Expres
                     Some(first),
                 );
             }
-            FactAttempt::Committed => {
+            FactAttempt::Recovered(_) | FactAttempt::Committed => {
                 return finish_shared_record_or_map(
                     parser,
                     structure,
@@ -1620,7 +1629,7 @@ fn brace_general(parser: &mut Parser<'_>, mode: BraceMode) -> FactAttempt<Expres
                     finish_provisional_marker(parser, map, SyntaxKind::Map);
                     finish_provisional_marker(parser, structure, SyntaxKind::Structure);
                     return if head_committed {
-                        FactAttempt::Committed
+                        FactAttempt::Recovered(ExpressionForm::SetComprehension)
                     } else {
                         FactAttempt::Matched(ExpressionForm::SetComprehension)
                     };
@@ -1631,7 +1640,7 @@ fn brace_general(parser: &mut Parser<'_>, mode: BraceMode) -> FactAttempt<Expres
                     finish_provisional_marker(parser, set, SyntaxKind::Set);
                     finish_provisional_marker(parser, map, SyntaxKind::Map);
                     finish_provisional_marker(parser, structure, SyntaxKind::Structure);
-                    return FactAttempt::Committed;
+                    return FactAttempt::Recovered(ExpressionForm::SetComprehension);
                 }
             }
         }
@@ -1782,7 +1791,7 @@ fn finish_shared_record_or_map(
         let before = parser.offset();
         match binding_with_marker(parser) {
             FactAttempt::Matched(binding) => bindings.push(binding),
-            FactAttempt::Committed => {
+            FactAttempt::Recovered(_) | FactAttempt::Committed => {
                 committed = true;
                 let _ = base::parse_rule(parser, rules::LIST_SEPARATOR);
                 if parser.offset() == before {

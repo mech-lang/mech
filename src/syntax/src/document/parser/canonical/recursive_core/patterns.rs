@@ -89,7 +89,7 @@ pub(super) fn pattern_with_facts(parser: &mut Parser<'_>) -> FactAttempt<Pattern
         if matches!(selected, FactAttempt::NoMatch) {
             selected = match expressions::parse_expression(parser) {
                 Attempt::Matched => FactAttempt::Matched(PatternFacts::default()),
-                Attempt::Committed => FactAttempt::Committed,
+                Attempt::Committed => FactAttempt::Recovered(PatternFacts::default()),
                 Attempt::NoMatch => FactAttempt::NoMatch,
             };
         }
@@ -97,6 +97,10 @@ pub(super) fn pattern_with_facts(parser: &mut Parser<'_>) -> FactAttempt<Pattern
             FactAttempt::Matched(facts) => {
                 node.complete(parser, SyntaxKind::Pattern);
                 FactAttempt::Matched(facts)
+            }
+            FactAttempt::Recovered(facts) => {
+                node.complete(parser, SyntaxKind::Pattern);
+                FactAttempt::Recovered(facts)
             }
             FactAttempt::Committed => {
                 node.complete(parser, SyntaxKind::Pattern);
@@ -165,6 +169,10 @@ fn pattern_list(
     let mut committed = false;
     let mut facts = match pattern_with_facts(parser) {
         FactAttempt::Matched(facts) => facts,
+        FactAttempt::Recovered(facts) => {
+            committed = true;
+            facts
+        }
         FactAttempt::NoMatch => {
             recover_required_production(
                 parser,
@@ -187,6 +195,10 @@ fn pattern_list(
         }
         match pattern_with_facts(parser) {
             FactAttempt::Matched(item) => facts.merge(item),
+            FactAttempt::Recovered(item) => {
+                facts.merge(item);
+                committed = true;
+            }
             FactAttempt::NoMatch => {
                 recover_required_production(
                     parser,
@@ -205,7 +217,7 @@ fn pattern_list(
     let _ = base::parse_rule(parser, rules::WHITESPACE0);
     if base::parse_rule(parser, rules::RIGHT_PARENTHESIS) {
         if committed {
-            FactAttempt::Committed
+            FactAttempt::Recovered(facts)
         } else {
             FactAttempt::Matched(facts)
         }
@@ -218,7 +230,7 @@ fn pattern_list(
             ')',
             ")",
         );
-        FactAttempt::Committed
+        FactAttempt::Recovered(facts)
     }
 }
 
@@ -243,6 +255,13 @@ fn array_with_facts(parser: &mut Parser<'_>) -> FactAttempt<PatternFacts> {
                 match array_token(parser) {
                     FactAttempt::Matched(token) if parser.offset() > before => tokens.push(token),
                     FactAttempt::Matched(_) => return FactAttempt::NoMatch,
+                    FactAttempt::Recovered(token) => {
+                        tokens.push(token);
+                        committed = true;
+                        if parser.offset() == before {
+                            break;
+                        }
+                    }
                     FactAttempt::NoMatch if parser.cursor().starts_with(",") => {
                         let element = parser.start();
                         recover_required_production(
@@ -277,18 +296,23 @@ fn array_with_facts(parser: &mut Parser<'_>) -> FactAttempt<PatternFacts> {
                             ']',
                             "]",
                         );
-                        return FactAttempt::Committed;
+                        committed = true;
+                        break;
                     }
+                }
+                if parser.is_halted() {
+                    break;
                 }
                 if !base::parse_rule(parser, rules::WHITESPACE0) {
                     return FactAttempt::NoMatch;
                 }
                 let _ = base::parse_rule(parser, rules::LIST_SEPARATOR);
             }
-            if committed {
-                FactAttempt::Committed
-            } else {
-                validate_array_tokens(&tokens)
+            match validate_array_tokens(&tokens) {
+                FactAttempt::Matched(facts) if committed || parser.is_halted() => {
+                    FactAttempt::Recovered(facts)
+                }
+                result => result,
             }
         }) else {
             nesting_limit(parser);
@@ -309,6 +333,10 @@ fn array_token(parser: &mut Parser<'_>) -> FactAttempt<ArrayToken> {
         } else {
             match pattern_with_facts(parser) {
                 FactAttempt::Matched(facts) => ArrayToken::Item(facts),
+                FactAttempt::Recovered(facts) => {
+                    node.complete(parser, SyntaxKind::ArrayPatternElement);
+                    return FactAttempt::Recovered(ArrayToken::Item(facts));
+                }
                 FactAttempt::NoMatch => {
                     node.abandon(parser);
                     return FactAttempt::NoMatch;
@@ -370,7 +398,12 @@ fn finish_facts(
 ) -> FactAttempt<PatternFacts> {
     if parser.is_halted() {
         node.complete(parser, kind);
-        return FactAttempt::Committed;
+        return match result {
+            FactAttempt::Matched(facts) | FactAttempt::Recovered(facts) => {
+                FactAttempt::Recovered(facts)
+            }
+            _ => FactAttempt::Committed,
+        };
     }
     match result {
         FactAttempt::Matched(facts) => {
@@ -380,6 +413,10 @@ fn finish_facts(
         FactAttempt::NoMatch => {
             node.abandon(parser);
             FactAttempt::NoMatch
+        }
+        FactAttempt::Recovered(facts) => {
+            node.complete(parser, kind);
+            FactAttempt::Recovered(facts)
         }
         FactAttempt::Committed => {
             node.complete(parser, kind);

@@ -206,7 +206,7 @@ fn generator(parser: &mut Parser<'_>) -> QualifierAttempt {
                 node.abandon(parser);
                 return Attempt::NoMatch;
             }
-            FactAttempt::Committed => {
+            FactAttempt::Recovered(_) | FactAttempt::Committed => {
                 if parser.is_halted() {
                     node.complete(parser, SyntaxKind::Generator);
                     return Attempt::Committed;

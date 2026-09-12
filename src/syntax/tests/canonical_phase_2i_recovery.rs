@@ -718,7 +718,7 @@ fn transpose_apostrophe_does_not_hide_an_owner_closer() {
 }
 
 #[test]
-fn speculative_record_selection_restores_the_recovery_budget() {
+fn speculative_record_selection_respects_the_cumulative_recovery_budget() {
     let text = "{a: 1, 2: @}";
     let limits = ParseLimits {
         max_recovery_bytes: 1,
@@ -1109,6 +1109,160 @@ fn inline_table_separator_disambiguation_retains_resource_limits() {
                 &text[..parsed.consumed.end.0 as usize],
                 "{limits:?}"
             );
+        }
+    }
+}
+
+#[test]
+fn recovered_binding_annotations_retain_values_and_later_bindings() {
+    for (rule, text, bindings) in [
+        (rules::BINDING, "a<>: 1, ", 1),
+        (rules::EXPRESSION, "{a<>: 1, b: 2}", 2),
+    ] {
+        let parsed = parse(rule, text);
+        assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed, "{text}");
+        assert_eq!(parsed.consumed.end.0 as usize, text.len(), "{text}");
+        assert_eq!(
+            count_kind(&parsed.syntax(), SyntaxKind::RecordBinding),
+            bindings
+        );
+        assert_eq!(
+            count_kind(&parsed.syntax(), SyntaxKind::IntegerLiteral),
+            bindings
+        );
+    }
+}
+
+#[test]
+fn recovered_fsm_names_retain_arguments_and_transitions() {
+    let text = "#(1)->:next";
+    let parsed = parse(rules::FSM_PIPE, text);
+    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+    assert_eq!(parsed.consumed.end.0 as usize, text.len());
+    assert_eq!(count_kind(&parsed.syntax(), SyntaxKind::FsmArguments), 1);
+    assert_eq!(
+        count_kind(&parsed.syntax(), SyntaxKind::FsmStateTransition),
+        1
+    );
+}
+
+#[test]
+fn recovered_patterns_keep_fsm_exclusion_facts() {
+    for text in [
+        "[head, ..., (1 +)]",
+        "[*, (1 +)]",
+        "([head, ..., (1 +)], 2)",
+    ] {
+        let pattern = parse(rules::PATTERN, text);
+        assert_eq!(pattern.outcome, CanonicalRuleOutcome::Committed, "{text}");
+        let fsm = parse(rules::FSM_VALUE, text);
+        assert_eq!(fsm.outcome, CanonicalRuleOutcome::NoMatch, "{text}");
+        assert!(
+            !contains_kind(&fsm.syntax(), SyntaxKind::FsmValue),
+            "{text}"
+        );
+    }
+    let allowed = parse(rules::FSM_VALUE, "[head, (1 +)]");
+    assert_eq!(allowed.outcome, CanonicalRuleOutcome::Committed);
+    assert!(contains_kind(&allowed.syntax(), SyntaxKind::FsmValue));
+}
+
+#[test]
+fn match_output_recovery_keeps_complete_physical_operator() {
+    for text in ["| x @ => 2", "| x @ ⇒ 2", "| x @ \"=>\" => 2"] {
+        let parsed = parse(rules::MATCH_ARM, text);
+        assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed, "{text}");
+        assert_eq!(parsed.consumed.end.0 as usize, text.len(), "{text}");
+        assert_eq!(
+            count_kind(&parsed.syntax(), SyntaxKind::IntegerLiteral),
+            1,
+            "{text}"
+        );
+        let operators: Vec<_> = parsed
+            .syntax()
+            .tokens()
+            .into_iter()
+            .filter(|token| token.kind() == SyntaxKind::OutputOperator)
+            .collect();
+        assert_eq!(operators.len(), 1, "{text}");
+        assert_eq!(
+            operators[0].text().unwrap(),
+            if text.contains('⇒') { "⇒" } else { "=>" }
+        );
+        assert!(!operators[0].flags().intersects(
+            mech_syntax::document::TokenFlags::MISSING | mech_syntax::document::TokenFlags::ERROR
+        ));
+    }
+}
+
+#[test]
+fn recovered_comprehension_heads_keep_selected_expression_form() {
+    for text in ["[(1 +) | x <- xs]", "[x | x <- (1 +)]", "{(1 +) | x <- xs}"] {
+        let parsed = parse(rules::EXPRESSION, text);
+        assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed, "{text}");
+        assert_eq!(parsed.consumed.end.0 as usize, text.len(), "{text}");
+        let expression = parsed
+            .syntax()
+            .children()
+            .find(|node| node.kind() == SyntaxKind::Expression)
+            .unwrap();
+        let kinds: Vec<_> = expression.children().map(|node| node.kind()).collect();
+        let expected = if text.starts_with('[') {
+            SyntaxKind::MatrixComprehension
+        } else {
+            SyntaxKind::SetComprehension
+        };
+        assert_eq!(kinds, vec![expected], "{text}");
+    }
+}
+
+#[test]
+fn recovered_fact_paths_remain_lossless_under_resource_limits() {
+    for (rule, text) in [
+        (rules::EXPRESSION, "{a<>: 1, b: 2}"),
+        (rules::FSM_PIPE, "#(1)->:next"),
+        (rules::FSM_VALUE, "[head, ..., (1 +)]"),
+        (rules::MATCH_ARM, "| x @ => 2"),
+        (rules::EXPRESSION, "[(1 +) | x <- xs]"),
+        (rules::EXPRESSION, "[x | (1 + @)]"),
+        (rules::EXPRESSION, "{(1 +) | x <- xs}"),
+    ] {
+        for limit in 0..=200 {
+            for limits in [
+                ParseLimits {
+                    fuel: limit,
+                    ..ParseLimits::default()
+                },
+                ParseLimits {
+                    max_events: (limit as u32)
+                        .max(mech_syntax::document::parser::MIN_PREFIX_PRESERVING_EVENTS),
+                    ..ParseLimits::default()
+                },
+                ParseLimits {
+                    max_recovery_bytes: (limit % 8) as u32,
+                    ..ParseLimits::default()
+                },
+            ] {
+                let parsed = parse_canonical_phase_2i_rule_for_test(
+                    source(text),
+                    rule,
+                    ParseConfig { limits },
+                )
+                .unwrap();
+                validate_lossless_range(&parsed.root, &parsed.source, parsed.consumed).unwrap();
+                assert!(
+                    parsed.stats.parser_steps <= limits.fuel,
+                    "{text} {limits:?}"
+                );
+                assert!(
+                    parsed.stats.events_emitted <= u64::from(limits.max_events),
+                    "{text} {limits:?}"
+                );
+                assert!(
+                    parsed.stats.recovery_bytes <= u64::from(limits.max_recovery_bytes),
+                    "{text} {limits:?}"
+                );
+            }
         }
     }
 }
