@@ -3,6 +3,7 @@
 use std::fs;
 use std::path::PathBuf;
 
+use mech_core::{ChangeDetectionPolicy, IntegerWidth, SchemaBody, ShapeRule, ValueData};
 use mech_engine::{
     CanonicalSourceFrontend, PHASE_2I_SEMANTIC_RULES, Phase2iSemanticDisposition, SourceValue,
     phase_2i_semantic_disposition,
@@ -10,8 +11,8 @@ use mech_engine::{
 use mech_syntax::document::parser::canonical::parse_canonical_phase_2i_rule_for_test;
 use mech_syntax::document::parser::rules;
 use mech_syntax::document::{
-    AstNode, DocumentId, ExpressionSyntax, ParseConfig, Revision, SyntaxKind, SyntaxNode,
-    TextSnapshot,
+    AstNode, DocumentId, ExpressionSyntax, ParseConfig, Revision, SyntaxKind, SyntaxNode, TextSize,
+    TextSnapshot, VariableDefineSyntax,
 };
 
 fn repository_root() -> PathBuf {
@@ -42,6 +43,19 @@ fn recovered_expression(source: &str) -> ExpressionSyntax {
     find(parsed.syntax(), SyntaxKind::Expression)
         .and_then(ExpressionSyntax::cast)
         .expect("recovered Expression")
+}
+
+fn definition(source: &str) -> VariableDefineSyntax {
+    let parsed = parse_canonical_phase_2i_rule_for_test(
+        TextSnapshot::new(DocumentId(0x540), Revision(4), source).unwrap(),
+        rules::VARIABLE_DEFINE,
+        ParseConfig::default(),
+    )
+    .unwrap();
+    assert!(parsed.is_strictly_clean(), "{source:?}");
+    find(parsed.syntax(), SyntaxKind::VariableDefine)
+        .and_then(VariableDefineSyntax::cast)
+        .expect("canonical VariableDefine")
 }
 
 fn find(node: SyntaxNode, kind: SyntaxKind) -> Option<SyntaxNode> {
@@ -98,6 +112,24 @@ fn typed_expression_builds_source_program_and_preserves_anchors() {
     assert_eq!(compiled.source_map().nodes.len(), 2);
     assert_eq!(compiled.source_map().nodes[0].operation, "math/mul");
     assert_eq!(compiled.source_map().nodes[1].operation, "math/add");
+    assert!(matches!(
+        compiled
+            .schemas()
+            .get(compiled.program().outputs[0].schema)
+            .unwrap()
+            .body(),
+        SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)
+    ));
+    assert_eq!(
+        compiled.contracts()[1].as_ref().unwrap().outputs[0].change_detection,
+        ChangeDetectionPolicy::ExactScalar
+    );
+    assert_eq!(
+        compiled.contracts()[1].as_ref().unwrap().outputs[0].construction,
+        mech_core::OutputConstruction::FullWrite {
+            shape: ShapeRule::Declared
+        }
+    );
     assert_eq!(compiled.source_map().outputs[0].document, DocumentId(0x540));
     assert_eq!(compiled.source_map().outputs[0].revision, Revision(4));
     assert_eq!(
@@ -132,7 +164,7 @@ fn structures_calls_comprehensions_and_fsm_enter_one_source_graph() {
         ("(1, 2)", "source/tuple"),
         ("[1 2]", "source/matrix"),
         ("|a<u8>|1|", "source/table"),
-        ("f(left: 1, 2)", "source/call"),
+        ("f(left: 1, 2)", "f"),
         ("x[1].field", "access/index"),
         ("1..10", "range/exclusive"),
         ("x ? | * => 1", "source/match"),
@@ -161,6 +193,162 @@ fn recovered_trees_never_construct_partial_semantics() {
     assert_eq!(error.code, "source-semantics/recovered-syntax");
     assert_eq!(error.anchor.document, DocumentId(0x540));
     assert_eq!(error.anchor.revision, Revision(4));
+    assert_eq!(error.anchor.range.start, TextSize(3));
+    assert_eq!(error.anchor.range.end, TextSize(3));
+}
+
+#[test]
+fn calls_ranges_subscripts_and_patterns_keep_their_canonical_roles() {
+    let call = CanonicalSourceFrontend
+        .compile_expression(&expression("f(left: 1, 2)"))
+        .unwrap();
+    let node = call.program().nodes.last().unwrap();
+    assert_eq!(node.operation.canonical_name(), "f");
+    assert_eq!(
+        call.source_map().nodes.last().unwrap().detail.as_deref(),
+        Some("f(left,)")
+    );
+    assert!(matches!(
+        call.compile_artifact(),
+        Err(mech_engine::ArtifactBuildError::MissingOperationContract { operation, .. })
+            if operation.canonical_name() == "f"
+    ));
+
+    let range = CanonicalSourceFrontend
+        .compile_expression(&expression("1..2..=10"))
+        .unwrap();
+    assert_eq!(
+        range.source_map().nodes.last().unwrap().operation,
+        "range/inclusive-increment"
+    );
+
+    let slice = CanonicalSourceFrontend
+        .compile_expression(&expression("x[1][2]"))
+        .unwrap();
+    let accesses = slice
+        .program()
+        .nodes
+        .iter()
+        .filter(|node| node.operation.canonical_name() == "access/index")
+        .collect::<Vec<_>>();
+    assert_eq!(accesses.len(), 2);
+    assert!(matches!(
+        accesses[1].inputs[0],
+        SourceValue::NodeOutput {
+            node: _,
+            output_ordinal: 0
+        }
+    ));
+
+    let comprehension = CanonicalSourceFrontend
+        .compile_expression(&expression("[x | x <- xs]"))
+        .unwrap();
+    assert_eq!(
+        comprehension
+            .program()
+            .inputs
+            .iter()
+            .map(|input| input.name.as_str())
+            .collect::<Vec<_>>(),
+        vec!["xs"]
+    );
+    assert_eq!(comprehension.source_map().patterns.len(), 1);
+    assert_eq!(
+        comprehension.source_map().patterns[0].bindings.as_ref(),
+        &["x"]
+    );
+    assert!(comprehension.program().nodes.iter().all(|node| {
+        !node
+            .operation
+            .canonical_name()
+            .starts_with("source/pattern")
+    }));
+}
+
+#[test]
+fn canonical_numeric_kinds_annotations_strings_and_state_are_preserved() {
+    for (source, expected) in [
+        ("1u8", "u8"),
+        ("0x10", "f64"),
+        ("1/2", "r64"),
+        ("1+2i", "c64"),
+        ("1<u8>", "u8"),
+    ] {
+        let compiled = CanonicalSourceFrontend
+            .compile_expression(&expression(source))
+            .unwrap_or_else(|error| panic!("{source:?}: {error}"));
+        let SourceValue::Constant(id) = compiled.program().outputs[0].source else {
+            panic!("{source:?} did not produce a constant")
+        };
+        let value = compiled.constants().get(id).unwrap();
+        let actual = match value.data() {
+            ValueData::U8(1) => "u8",
+            ValueData::F64(value) if value.to_f64() == 16.0 => "f64",
+            ValueData::Rational64(value) if value.numerator() == 1 && value.denominator() == 2 => {
+                "r64"
+            }
+            ValueData::Complex64(_) => "c64",
+            other => panic!("unexpected value for {source:?}: {other:?}"),
+        };
+        assert_eq!(actual, expected, "{source:?}");
+    }
+
+    let input = CanonicalSourceFrontend
+        .compile_expression(&expression("signal<u8>"))
+        .unwrap();
+    assert!(matches!(
+        input
+            .schemas()
+            .get(input.program().inputs[0].schema)
+            .unwrap()
+            .body(),
+        SchemaBody::UnsignedInteger(IntegerWidth::W8)
+    ));
+
+    let table = CanonicalSourceFrontend
+        .compile_expression(&expression("|count<u8>|1u8|"))
+        .unwrap();
+    let SchemaBody::Table { columns, rows } = table
+        .schemas()
+        .get(table.program().outputs[0].schema)
+        .unwrap()
+        .body()
+    else {
+        panic!("annotated table did not produce a table schema")
+    };
+    assert_eq!(columns[0].name, "count");
+    assert_eq!(
+        columns[0].schema,
+        SchemaBody::UnsignedInteger(IntegerWidth::W8)
+    );
+    assert_eq!(
+        rows,
+        &mech_core::CardinalitySpec::Exact(mech_core::DimensionExpr::Constant(1))
+    );
+
+    let string = CanonicalSourceFrontend
+        .compile_expression(&expression("\"\\0\\u{41}\""))
+        .unwrap();
+    let SourceValue::Constant(id) = string.program().outputs[0].source else {
+        panic!("string did not produce a constant")
+    };
+    assert!(
+        matches!(string.constants().get(id).unwrap().data(), ValueData::String(value) if value.as_ref() == "\0A")
+    );
+
+    let state = CanonicalSourceFrontend
+        .compile_definition(&definition("~state := 1"))
+        .unwrap();
+    assert_eq!(state.program().states.len(), 1);
+    assert!(state.program().states[0].initializer.is_some());
+    assert_eq!(
+        state.program().nodes[0].operation.canonical_name(),
+        "core/assign"
+    );
+    assert_eq!(state.program().outputs[0].source, SourceValue::State(0));
+    state
+        .compile_artifact()
+        .expect("mutable definition has a resolved state contract");
 }
 
 #[test]
