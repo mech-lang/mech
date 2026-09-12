@@ -1,7 +1,7 @@
 use alloc::vec::Vec;
 
 use crate::document::{
-    AstNode, DotSubscriptIntSyntax, DotSubscriptSyntax, IdentifierSyntax,
+    AstNode, DotSubscriptIntSyntax, DotSubscriptSyntax, ExpressionSyntax, IdentifierSyntax,
     PrefixedContextPathSyntax, SelectAllSubscriptSyntax, SubscriptPrimitiveSyntax,
     SwizzleSubscriptSyntax, SyntaxKind, SyntaxNode, SyntaxToken,
 };
@@ -162,6 +162,12 @@ impl FormulaSubscriptSyntax {
 
 impl RangeSubscriptSyntax {
     pub fn range(&self) -> Option<RangeExpressionSyntax> {
+        child(&self.0)
+    }
+
+    /// The partial first bound retained when a resource limit stops range recognition.
+    /// Its expression body exposes the emitted formula without claiming a range node.
+    pub fn recovered_expression(&self) -> Option<ExpressionSyntax> {
         child(&self.0)
     }
 }

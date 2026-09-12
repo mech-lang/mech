@@ -11,10 +11,11 @@ use mech_syntax::document::{
     ArgumentListSyntax, ArrayPatternSyntax, AstNode, DocumentId, ExpressionSyntax, FactorSyntax,
     FactorValueSyntax, FormulaSyntax, GreenElement, GreenNode, GreenToken, LiteralSyntax,
     LiteralValueSyntax, MapSyntax, MatchArmSyntax, MatrixSyntax, NodeFlags, NodeId,
-    ParentheticalExpressionSyntax, ParseConfig, ParseLimits, PatternArrayItemSyntax, RecordSyntax,
-    RecursiveCoreSyntax, RecursiveSyntaxNode, Revision, StructureSyntax, StructureValueSyntax,
-    SubscriptItemSyntax, SyntaxKind, SyntaxNode, TableKindSyntax, TextSize, TextSnapshot,
-    TokenFlags, TokenId, phase_2i_node_kind, text_hash,
+    ParentheticalExpressionSyntax, ParseConfig, ParseLimits, PatternArrayItemSyntax,
+    RangeExpressionSyntax, RangeSubscriptSyntax, RecordSyntax, RecursiveCoreSyntax,
+    RecursiveSyntaxNode, Revision, StructureSyntax, StructureValueSyntax, SubscriptItemSyntax,
+    SyntaxKind, SyntaxNode, TableKindSyntax, TextSize, TextSnapshot, TokenFlags, TokenId,
+    phase_2i_node_kind, text_hash,
 };
 
 fn repository_root() -> PathBuf {
@@ -347,6 +348,13 @@ fn record_views_expose_physical_and_recovered_delimiters() {
         ("{a: 1}", "{", "}"),
         ("|a: 1|", "|", "|"),
         ("╭a: 1╯", "╭", "╯"),
+        ("│a: 1│", "│", "│"),
+        ("┃a: 1┃", "┃", "┃"),
+        ("┌a: 1 ┘", "┌", "┘"),
+        ("┏a: 1 ┛", "┏", "┛"),
+        ("╭a: 1│", "╭", "│"),
+        ("│a: 1|", "│", "|"),
+        ("|a: 1┃", "|", "┃"),
     ] {
         let parsed = parse_canonical_phase_2i_rule_for_test(
             source(text),
@@ -354,10 +362,21 @@ fn record_views_expose_physical_and_recovered_delimiters() {
             ParseConfig::default(),
         )
         .unwrap();
+        assert_eq!(
+            parsed.outcome,
+            CanonicalRuleOutcome::Matched,
+            "{text:?}: {:?}\n{}",
+            parsed.diagnostics,
+            mech_syntax::document::compact_debug_tree(&parsed.syntax())
+        );
         let record =
             RecordSyntax::cast(find_kind(&parsed.syntax(), SyntaxKind::Record).unwrap()).unwrap();
         assert_eq!(record.opening_delimiter().unwrap().text().unwrap(), opening);
         assert_eq!(record.closing_delimiter().unwrap().text().unwrap(), closing);
+        assert_ne!(
+            record.opening_delimiter().unwrap().id(),
+            record.closing_delimiter().unwrap().id()
+        );
     }
 
     let parsed = parse_canonical_phase_2i_rule_for_test(
@@ -378,22 +397,125 @@ fn record_views_expose_physical_and_recovered_delimiters() {
 }
 
 #[test]
-fn resource_limited_bar_record_has_no_closing_delimiter() {
-    let parsed = parse_canonical_phase_2i_rule_for_test(
-        source("|a: 1|"),
-        rules::RECORD,
-        ParseConfig {
-            limits: ParseLimits {
-                max_nesting: 0,
-                ..ParseLimits::default()
+fn resource_limited_record_opener_is_not_a_closing_delimiter() {
+    for opening in ["{", "|", "│", "┃", "╭", "┌", "┏"] {
+        let parsed = parse_canonical_phase_2i_rule_for_test(
+            source(&format!("{opening}a: 1|")),
+            rules::RECORD,
+            ParseConfig {
+                limits: ParseLimits {
+                    max_nesting: 0,
+                    ..ParseLimits::default()
+                },
             },
+        )
+        .unwrap();
+        let record =
+            RecordSyntax::cast(find_kind(&parsed.syntax(), SyntaxKind::Record).unwrap()).unwrap();
+        assert_eq!(record.opening_delimiter().unwrap().text().unwrap(), opening);
+        assert!(record.closing_delimiter().is_none());
+    }
+}
+
+#[test]
+fn truncated_vertical_records_expose_synthetic_closers() {
+    for opening in ["│", "┃"] {
+        let parsed = parse_canonical_phase_2i_rule_for_test(
+            source(&format!("{opening}a: 1")),
+            rules::RECORD,
+            ParseConfig::default(),
+        )
+        .unwrap();
+        assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+        let record =
+            RecordSyntax::cast(find_kind(&parsed.syntax(), SyntaxKind::Record).unwrap()).unwrap();
+        let start = record.opening_delimiter().unwrap();
+        let end = record.closing_delimiter().unwrap();
+        assert_eq!(start.text().unwrap(), opening);
+        assert_ne!(start.id(), end.id());
+        assert!(!start.flags().contains(TokenFlags::MISSING));
+        assert!(end.flags().contains(TokenFlags::MISSING));
+        assert!(end.range().is_empty());
+    }
+}
+
+#[test]
+fn range_subscript_exposes_actual_resource_recovery_expression() {
+    let text = format!(
+        "{}..9",
+        core::iter::repeat_n("1", 32)
+            .collect::<Vec<_>>()
+            .join(" + ")
+    );
+    for limits in [
+        ParseLimits {
+            fuel: 64,
+            ..ParseLimits::default()
         },
+        ParseLimits {
+            max_events: 96,
+            ..ParseLimits::default()
+        },
+    ] {
+        let parsed = parse_canonical_phase_2i_rule_for_test(
+            source(&text),
+            rules::RANGE_SUBSCRIPT,
+            ParseConfig { limits },
+        )
+        .unwrap();
+        assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+        let subscript = RangeSubscriptSyntax::cast(
+            find_kind(&parsed.syntax(), SyntaxKind::RangeSubscript).unwrap(),
+        )
+        .unwrap();
+        let raw = subscript
+            .syntax()
+            .children()
+            .find(|node| node.kind() == SyntaxKind::Expression)
+            .expect("parser retains partial first bound as Expression");
+        let recovered = subscript
+            .recovered_expression()
+            .expect("typed accessor exposes resource-retained expression");
+        assert!(subscript.range().is_none());
+        assert!(RangeExpressionSyntax::cast(raw.clone()).is_none());
+        assert!(recovered.body().is_some());
+        assert!(Arc::ptr_eq(raw.green(), recovered.syntax().green()));
+        assert_eq!(
+            raw.source().chunks().next().unwrap().as_ptr(),
+            recovered
+                .syntax()
+                .source()
+                .chunks()
+                .next()
+                .unwrap()
+                .as_ptr()
+        );
+        assert_eq!(raw.range(), recovered.syntax().range());
+        assert!(parsed.diagnostics.iter().any(|diagnostic| {
+            diagnostic.code.as_str() == "syntax/recovery-limit"
+                && matches!(
+                    diagnostic.recovery,
+                    Some(mech_syntax::document::RecoveryAction::ResourceLimit { .. })
+                )
+        }));
+        assert!(parsed.stats.parser_steps <= limits.fuel);
+        assert!(parsed.stats.events_emitted <= u64::from(limits.max_events));
+    }
+    let parsed = parse_canonical_phase_2i_rule_for_test(
+        source("1..9"),
+        rules::RANGE_SUBSCRIPT,
+        ParseConfig::default(),
     )
     .unwrap();
-    let record =
-        RecordSyntax::cast(find_kind(&parsed.syntax(), SyntaxKind::Record).unwrap()).unwrap();
-    assert_eq!(record.opening_delimiter().unwrap().text().unwrap(), "|");
-    assert!(record.closing_delimiter().is_none());
+    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Matched);
+    let subscript = RangeSubscriptSyntax::cast(
+        find_kind(&parsed.syntax(), SyntaxKind::RangeSubscript).unwrap(),
+    )
+    .unwrap();
+    assert!(subscript.recovered_expression().is_none());
+    let range = subscript.range().unwrap();
+    assert_eq!(range.bounds().len(), 2);
+    assert_eq!(range.operators().len(), 1);
 }
 
 #[test]
