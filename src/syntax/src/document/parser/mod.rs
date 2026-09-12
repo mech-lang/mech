@@ -843,7 +843,7 @@ fn parse_canonical_grammar_with_ids(
     finish_snapshot(source, output, ids, SyntaxKind::GrammarDocument)
 }
 
-fn parse_canonical_document_with_ids(
+pub(crate) fn parse_canonical_document_with_ids(
     source: TextSnapshot,
     config: ParseConfig,
     ids: &mut IdGenerator,
