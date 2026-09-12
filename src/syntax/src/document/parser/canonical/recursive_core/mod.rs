@@ -306,8 +306,9 @@ pub(super) fn recover_required_token(
     text: &str,
 ) -> Attempt {
     combinator::consume_grammar_horizontal_trivia(parser);
-    const RESTART_BOUNDARIES: &[char] =
-        &[')', ']', '}', '>', '⟩', ',', ';', '|', '│', '┃', '\n', '\r'];
+    const RESTART_BOUNDARIES: &[char] = &[
+        ')', ']', '}', '>', '⟩', '╯', '┘', '┛', ',', ';', '|', '│', '┃', '\n', '\r',
+    ];
     if parser.is_eof()
         || parser
             .cursor()
@@ -342,8 +343,9 @@ pub(super) fn recover_closer(
     _close_character: char,
     close_text: &str,
 ) -> Attempt {
-    const RESTART_BOUNDARIES: &[char] =
-        &[')', ']', '}', '>', '⟩', ',', ';', '|', '│', '┃', '\n', '\r'];
+    const RESTART_BOUNDARIES: &[char] = &[
+        ')', ']', '}', '>', '⟩', '╯', '┘', '┛', ',', ';', '|', '│', '┃', '\n', '\r',
+    ];
     let _ = recovery::abandon_to_restart(
         parser,
         target,

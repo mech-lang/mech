@@ -179,10 +179,10 @@ fn abandon_until(
         // These canonical operator/sigil prefixes contain no angle opener.
         // In particular a generator arrow inside skipped comprehension source
         // must not hide its enclosing brace from the recovery scanner.
-        let opens_ascii_angle = character == '<'
-            && !["<-", "<=", "<+"]
-                .iter()
-                .any(|prefix| parser.cursor().starts_with(prefix));
+        let opens_angle = matches!(character, '<' | '⟨') && opens_kind_annotation(parser);
+        if parser.is_halted() {
+            break;
+        }
         let Some((character, range)) = parser.bump_char_raw() else {
             break;
         };
@@ -204,8 +204,8 @@ fn abandon_until(
         }
         match character {
             '"' => quoted = Some(character),
-            '(' | '[' | '{' | '⟨' => delimiters.push(character),
-            '<' if opens_ascii_angle => delimiters.push(character),
+            '(' | '[' | '{' => delimiters.push(character),
+            '<' | '⟨' if opens_angle => delimiters.push(character),
             ')' | ']' | '}' | '>' | '⟩' => {
                 if delimiters
                     .last()
@@ -271,6 +271,25 @@ fn abandon_until(
         TextRange::new(crate::document::TextSize::ZERO, range.len()),
     );
     Some(error)
+}
+
+fn opens_kind_annotation(parser: &mut Parser<'_>) -> bool {
+    if ["<-", "<=", "<+"]
+        .iter()
+        .any(|prefix| parser.cursor().starts_with(prefix))
+    {
+        return false;
+    }
+    // Only a complete annotation may hide a sibling delimiter. The same `<`
+    // also starts comparisons, so punctuation alone cannot select its owner.
+    // Reuse the canonical candidate transaction and its shared resource limits;
+    // failed recovery is rewound while fuel remains charged.
+    let checkpoint = parser.checkpoint();
+    let matched =
+        super::canonical::recursive_core::parse_rule(parser, super::rule::rules::KIND_ANNOTATION)
+            == Some(super::canonical::combinator::Attempt::Matched);
+    parser.rewind(checkpoint);
+    matched
 }
 
 fn recovery_boundary(character: char, delimiters: &[char], should_stop: bool) -> bool {

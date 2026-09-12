@@ -37,41 +37,15 @@ pub(super) fn parse_matrix_row(parser: &mut Parser<'_>) -> Attempt {
             node.abandon(parser);
             return Attempt::NoMatch;
         }
-        match parse_matrix_column(parser) {
-            Attempt::Matched => {}
+        let committed = match parse_matrix_column(parser) {
+            Attempt::Matched => false,
             Attempt::NoMatch => {
                 node.abandon(parser);
                 return Attempt::NoMatch;
             }
-            Attempt::Committed => {
-                matrix_row_suffix(parser);
-                node.complete(parser, SyntaxKind::MatrixRow);
-                return Attempt::Committed;
-            }
-        }
-        loop {
-            let before = parser.offset();
-            match parse_matrix_column(parser) {
-                Attempt::Matched if parser.offset() > before => {}
-                Attempt::Matched | Attempt::NoMatch => break,
-                Attempt::Committed => {
-                    matrix_row_suffix(parser);
-                    node.complete(parser, SyntaxKind::MatrixRow);
-                    return Attempt::Committed;
-                }
-            }
-        }
-        let _ = base::parse_rule(parser, rules::SEMICOLON);
-        let _ = base::parse_rule(parser, rules::NEW_LINE);
-        let border = parser.checkpoint();
-        if base::parse_rule(parser, rules::BOX_DRAWING_CHAR) {
-            while base::parse_rule(parser, rules::BOX_DRAWING_CHAR) {}
-            if !base::parse_rule(parser, rules::NEW_LINE) {
-                parser.rewind(border);
-            }
-        }
-        node.complete(parser, SyntaxKind::MatrixRow);
-        Attempt::Matched
+            Attempt::Committed => true,
+        };
+        finish_seeded_matrix_row(parser, node, committed)
     })
 }
 
@@ -82,23 +56,24 @@ pub(super) fn parse_matrix_column(parser: &mut Parser<'_>) -> Attempt {
             node.abandon(parser);
             return Attempt::NoMatch;
         }
-        let child = expressions::parse_expression(parser);
-        if let Some(result) = child_result(parser, node, SyntaxKind::MatrixColumn, child) {
-            return result;
-        }
-        if !base::parse_rule(parser, rules::SPACE_TAB0) {
-            node.abandon(parser);
-            return Attempt::NoMatch;
-        }
-        if !base::parse_rule(parser, rules::COMMA) && !base::parse_rule(parser, rules::BOX_VERT) {
-            let _ = base::parse_rule(parser, rules::BOX_VERT_BOLD);
-        }
-        if !base::parse_rule(parser, rules::SPACE_TAB0) {
+        let committed = match expressions::parse_expression(parser) {
+            Attempt::Matched => false,
+            Attempt::NoMatch => {
+                node.abandon(parser);
+                return Attempt::NoMatch;
+            }
+            Attempt::Committed => true,
+        };
+        if !matrix_column_tail(parser) && !parser.is_halted() {
             node.abandon(parser);
             return Attempt::NoMatch;
         }
         node.complete(parser, SyntaxKind::MatrixColumn);
-        Attempt::Matched
+        if committed || parser.is_halted() {
+            Attempt::Committed
+        } else {
+            Attempt::Matched
+        }
     })
 }
 
@@ -249,8 +224,19 @@ pub(super) fn parse_inline_table(parser: &mut Parser<'_>) -> Attempt {
         match child {
             Attempt::Matched => {}
             Attempt::NoMatch => {
-                node.abandon(parser);
-                return Attempt::NoMatch;
+                if !ahead(parser, structure_shell::parse_table_separator) {
+                    node.abandon(parser);
+                    return Attempt::NoMatch;
+                }
+                recover_required_production(
+                    parser,
+                    rules::INLINE_TABLE,
+                    "syntax/missing-inline-table-header",
+                    "missing inline table header",
+                    "inline-table-header",
+                );
+                recover_table_separator(parser, rules::INLINE_TABLE);
+                committed = true;
             }
             Attempt::Committed => {
                 if parser.cursor().starts_with("\n") || parser.cursor().starts_with("\r") {
@@ -588,14 +574,22 @@ fn parse_mapping_with_cached_value(
             node.abandon(parser);
             return Attempt::NoMatch;
         }
-        let child = expressions::parse_expression(parser);
-        if let Some(result) = child_result(parser, node, SyntaxKind::MapEntry, child) {
-            return result;
-        }
+        let committed = match expressions::parse_expression(parser) {
+            Attempt::Matched => false,
+            Attempt::NoMatch => {
+                node.abandon(parser);
+                return Attempt::NoMatch;
+            }
+            Attempt::Committed => true,
+        };
         if !base::parse_rule(parser, rules::WHITESPACE0)
             || !base::parse_rule(parser, rules::COLON)
             || !base::parse_rule(parser, rules::WHITESPACE0)
         {
+            if committed || parser.is_halted() {
+                node.complete(parser, SyntaxKind::MapEntry);
+                return Attempt::Committed;
+            }
             node.abandon(parser);
             return Attempt::NoMatch;
         }
@@ -623,6 +617,10 @@ fn parse_mapping_with_cached_value(
                 node.complete(parser, SyntaxKind::MapEntry);
                 return Attempt::Committed;
             }
+        }
+        if committed {
+            node.complete(parser, SyntaxKind::MapEntry);
+            return Attempt::Committed;
         }
         if !base::parse_rule(parser, rules::WHITESPACE0) {
             node.abandon(parser);
@@ -1320,7 +1318,7 @@ fn bracket_body(parser: &mut Parser<'_>, mode: BracketMode) -> FactAttempt<Brack
                             return FactAttempt::NoMatch;
                         }
                         column.complete(parser, SyntaxKind::MatrixColumn);
-                        match finish_seeded_matrix_row(parser, row) {
+                        match finish_seeded_matrix_row(parser, row, head == Attempt::Committed) {
                             Attempt::Matched => {}
                             Attempt::NoMatch => return FactAttempt::NoMatch,
                             Attempt::Committed => {
@@ -1364,22 +1362,34 @@ fn bracket_body(parser: &mut Parser<'_>, mode: BracketMode) -> FactAttempt<Brack
 fn finish_seeded_matrix_row(
     parser: &mut Parser<'_>,
     row: super::super::super::marker::Marker,
+    mut committed: bool,
 ) -> Attempt {
-    loop {
+    while !parser.is_halted() {
+        if committed && ahead(parser, structure_shell::parse_matrix_end) {
+            break;
+        }
+        if parser.is_halted() {
+            break;
+        }
         let before = parser.offset();
         match parse_matrix_column(parser) {
             Attempt::Matched if parser.offset() > before => {}
             Attempt::Matched | Attempt::NoMatch => break,
             Attempt::Committed => {
-                matrix_row_suffix(parser);
-                row.complete(parser, SyntaxKind::MatrixRow);
-                return Attempt::Committed;
+                committed = true;
+                if parser.offset() == before {
+                    break;
+                }
             }
         }
     }
     matrix_row_suffix(parser);
     row.complete(parser, SyntaxKind::MatrixRow);
-    Attempt::Matched
+    if committed || parser.is_halted() {
+        Attempt::Committed
+    } else {
+        Attempt::Matched
+    }
 }
 
 fn finish_matrix_body(
@@ -1626,12 +1636,11 @@ fn brace_general(parser: &mut Parser<'_>, mode: BraceMode) -> FactAttempt<Expres
         }
         parser.rewind(after_expression);
 
-        if !head_committed
-            && base::parse_rule(parser, rules::WHITESPACE0)
+        if base::parse_rule(parser, rules::WHITESPACE0)
             && base::parse_rule(parser, rules::COLON)
             && base::parse_rule(parser, rules::WHITESPACE0)
         {
-            let mut committed = false;
+            let mut committed = head_committed;
             match expressions::parse_expression(parser) {
                 Attempt::Matched => {}
                 Attempt::NoMatch => {

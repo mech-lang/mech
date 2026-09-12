@@ -42,6 +42,7 @@ pub(super) fn expression_body(parser: &mut Parser<'_>) -> FactAttempt<Expression
     }
 
     let range = parser.start();
+    let mut committed = false;
     if parser.cursor().starts_with("{") || parser.cursor().starts_with("[") {
         let seed = precedence::FormulaSeed::start(parser);
         let selected = if parser.cursor().starts_with("{") {
@@ -89,19 +90,23 @@ pub(super) fn expression_body(parser: &mut Parser<'_>) -> FactAttempt<Expression
                 return FactAttempt::NoMatch;
             }
             Attempt::Committed => {
-                finish_provisional_formula_marker(parser, range);
-                return FactAttempt::Committed;
+                if parser.is_halted() {
+                    finish_provisional_formula_marker(parser, range);
+                    return FactAttempt::Committed;
+                }
+                committed = true;
             }
             Attempt::Matched => {}
         }
     }
 
-    finish_formula_expression(parser, range)
+    finish_formula_expression(parser, range, committed)
 }
 
 fn finish_formula_expression(
     parser: &mut Parser<'_>,
     range: Marker,
+    mut committed: bool,
 ) -> FactAttempt<ExpressionForm> {
     match operators::parse_range_operator(parser) {
         Attempt::Matched => {}
@@ -111,14 +116,22 @@ fn finish_formula_expression(
         }
         Attempt::NoMatch => {
             range.abandon(parser);
-            return finish_match_suffix(parser);
+            let suffix = finish_match_suffix(parser);
+            return if committed {
+                FactAttempt::Committed
+            } else {
+                suffix
+            };
         }
     }
     match parse_formula(parser) {
         Attempt::Matched => {}
         Attempt::Committed => {
-            range.complete(parser, SyntaxKind::RangeExpression);
-            return FactAttempt::Committed;
+            if parser.is_halted() {
+                range.complete(parser, SyntaxKind::RangeExpression);
+                return FactAttempt::Committed;
+            }
+            committed = true;
         }
         Attempt::NoMatch => {
             recover_required_production(
@@ -158,7 +171,11 @@ fn finish_formula_expression(
         Attempt::NoMatch => {}
     }
     range.complete(parser, SyntaxKind::RangeExpression);
-    FactAttempt::Matched(ExpressionForm::Range)
+    if committed {
+        FactAttempt::Committed
+    } else {
+        FactAttempt::Matched(ExpressionForm::Range)
+    }
 }
 
 fn finish_match_suffix(parser: &mut Parser<'_>) -> FactAttempt<ExpressionForm> {
@@ -206,6 +223,7 @@ pub(super) fn formula_or_range(parser: &mut Parser<'_>, require_range: bool) -> 
     let checkpoint = parser.checkpoint();
     let range = parser.start();
     let formula = parse_formula(parser);
+    let mut committed = false;
     match formula {
         Attempt::Matched => {}
         Attempt::NoMatch => {
@@ -213,14 +231,19 @@ pub(super) fn formula_or_range(parser: &mut Parser<'_>, require_range: bool) -> 
             return Attempt::NoMatch;
         }
         Attempt::Committed => {
-            finish_provisional_formula_marker(parser, range);
-            return Attempt::Committed;
+            if parser.is_halted() {
+                finish_provisional_formula_marker(parser, range);
+                return Attempt::Committed;
+            }
+            committed = true;
         }
     }
     match operators::parse_range_operator(parser) {
         Attempt::NoMatch => {
             range.abandon(parser);
-            if require_range {
+            if committed {
+                Attempt::Committed
+            } else if require_range {
                 parser.rewind(checkpoint);
                 Attempt::NoMatch
             } else {
@@ -247,8 +270,11 @@ pub(super) fn formula_or_range(parser: &mut Parser<'_>, require_range: bool) -> 
                     return Attempt::Committed;
                 }
                 Attempt::Committed => {
-                    range.complete(parser, SyntaxKind::RangeExpression);
-                    return Attempt::Committed;
+                    if parser.is_halted() {
+                        range.complete(parser, SyntaxKind::RangeExpression);
+                        return Attempt::Committed;
+                    }
+                    committed = true;
                 }
             }
             match operators::parse_range_operator(parser) {
@@ -278,7 +304,11 @@ pub(super) fn formula_or_range(parser: &mut Parser<'_>, require_range: bool) -> 
                 Attempt::NoMatch => {}
             }
             range.complete(parser, SyntaxKind::RangeExpression);
-            Attempt::Matched
+            if committed {
+                Attempt::Committed
+            } else {
+                Attempt::Matched
+            }
         }
     }
 }
