@@ -37,36 +37,33 @@ pub(crate) fn skip_error(
 ) -> Option<CompletedMarker> {
     let start = parser.offset();
     let marker = parser.start();
-    let mut recovered = 0_u32;
-    let remaining = remaining_recovery_bytes(parser);
-    while !parser.is_eof() && recovered < remaining {
+    while !parser.is_eof() && remaining_recovery_bytes(parser) > 0 {
         if should_stop(parser, class, start) {
             break;
         }
         let Some(character) = parser.cursor().peek_char() else {
             break;
         };
-        if character.len_utf8() as u32 > remaining.saturating_sub(recovered) {
+        if character.len_utf8() as u32 > remaining_recovery_bytes(parser) {
             parser.halt();
             break;
         }
         let Some((character, range)) = parser.bump_char_raw() else {
             break;
         };
-        recovered = recovered.saturating_add(range.len().0);
+        charge_recovery_bytes(parser, range.len().0);
         parser.token_with_flags(token_kind_for_char(character), range, TokenFlags::ERROR);
     }
-    if recovered >= remaining && !parser.is_eof() && !should_stop(parser, class, start) {
+    if remaining_recovery_bytes(parser) == 0
+        && !parser.is_eof()
+        && !should_stop(parser, class, start)
+    {
         parser.halt();
     }
     if parser.offset() == start {
         marker.abandon(parser);
         return None;
     }
-    parser.stats_mut().recovery_bytes = parser
-        .stats()
-        .recovery_bytes
-        .saturating_add(u64::from(recovered));
     let error = marker.complete_with_flags(parser, SyntaxKind::Error, NodeFlags::ERROR);
     let range = TextRange::new(start, parser.offset());
     let found = parser.source().text(range).ok().map(|text| FoundSyntax {
@@ -138,16 +135,14 @@ pub(crate) fn abandon_until(
 ) -> Option<CompletedMarker> {
     let start = parser.offset();
     let marker = parser.start();
-    let mut recovered = 0_u32;
-    let remaining = remaining_recovery_bytes(parser);
     let mut delimiters = Vec::new();
     let mut quoted = None;
     let mut raw_triple = false;
     let mut escaped = false;
 
-    while !parser.is_eof() && !parser.is_halted() && recovered < remaining {
+    while !parser.is_eof() && !parser.is_halted() && remaining_recovery_bytes(parser) > 0 {
         if quoted.is_none() && parser.cursor().starts_with("\"\"\"") {
-            if remaining.saturating_sub(recovered) < 3 {
+            if remaining_recovery_bytes(parser) < 3 {
                 parser.halt();
                 break;
             }
@@ -156,7 +151,7 @@ pub(crate) fn abandon_until(
                     parser.halt();
                     break;
                 };
-                recovered = recovered.saturating_add(range.len().0);
+                charge_recovery_bytes(parser, range.len().0);
                 parser.token_with_flags(token_kind_for_char(character), range, TokenFlags::ERROR);
             }
             raw_triple = !raw_triple;
@@ -171,7 +166,7 @@ pub(crate) fn abandon_until(
         {
             break;
         }
-        if character.len_utf8() as u32 > remaining.saturating_sub(recovered) {
+        if character.len_utf8() as u32 > remaining_recovery_bytes(parser) {
             parser.halt();
             break;
         }
@@ -183,10 +178,16 @@ pub(crate) fn abandon_until(
         if parser.is_halted() {
             break;
         }
+        // The annotation probe may itself recover. Recheck the shared allowance
+        // before this scanner consumes another scalar.
+        if character.len_utf8() as u32 > remaining_recovery_bytes(parser) {
+            parser.halt();
+            break;
+        }
         let Some((character, range)) = parser.bump_char_raw() else {
             break;
         };
-        recovered = recovered.saturating_add(range.len().0);
+        charge_recovery_bytes(parser, range.len().0);
         parser.token_with_flags(token_kind_for_char(character), range, TokenFlags::ERROR);
 
         if raw_triple {
@@ -223,7 +224,8 @@ pub(crate) fn abandon_until(
         && parser.cursor().peek_char().is_some_and(|character| {
             recovery_boundary(character, &delimiters, should_stop(parser, character))
         });
-    let exhausted = recovered >= remaining && !parser.is_eof() && !stopped_at_boundary;
+    let exhausted =
+        remaining_recovery_bytes(parser) == 0 && !parser.is_eof() && !stopped_at_boundary;
     if exhausted {
         parser.halt();
     }
@@ -232,10 +234,6 @@ pub(crate) fn abandon_until(
         return None;
     }
 
-    parser.stats_mut().recovery_bytes = parser
-        .stats()
-        .recovery_bytes
-        .saturating_add(u64::from(recovered));
     let error = marker.complete_with_flags(parser, SyntaxKind::Error, NodeFlags::ERROR);
     let range = TextRange::new(start, parser.offset());
     let found = parser.source().text(range).ok().map(|text| FoundSyntax {
@@ -283,7 +281,7 @@ fn opens_kind_annotation(parser: &mut Parser<'_>) -> bool {
     // Only a complete annotation may hide a sibling delimiter. The same `<`
     // also starts comparisons, so punctuation alone cannot select its owner.
     // Reuse the canonical candidate transaction and its shared resource limits;
-    // failed recovery is rewound while fuel remains charged.
+    // failed syntax is rewound while fuel and recovery work remain charged.
     let checkpoint = parser.checkpoint();
     let matched = super::canonical::recursive_core::parse_kind_annotation_candidate(parser)
         == super::canonical::combinator::Attempt::Matched;
@@ -403,17 +401,15 @@ fn should_stop(
 pub(crate) fn nesting_limit(parser: &mut Parser<'_>) {
     let start = parser.offset();
     let marker = parser.start();
-    let mut recovered = 0_u32;
     let mut nested = 0_u32;
-    let remaining = remaining_recovery_bytes(parser);
-    while !parser.is_eof() && recovered < remaining {
+    while !parser.is_eof() && remaining_recovery_bytes(parser) > 0 {
         if nesting_should_stop(parser, nested) {
             break;
         }
         let Some(character) = parser.cursor().peek_char() else {
             break;
         };
-        if character.len_utf8() as u32 > remaining.saturating_sub(recovered) {
+        if character.len_utf8() as u32 > remaining_recovery_bytes(parser) {
             parser.halt();
             break;
         }
@@ -425,10 +421,13 @@ pub(crate) fn nesting_limit(parser: &mut Parser<'_>) {
         } else if character == ')' {
             nested = nested.saturating_sub(1);
         }
-        recovered = recovered.saturating_add(range.len().0);
+        charge_recovery_bytes(parser, range.len().0);
         parser.token_with_flags(token_kind_for_char(character), range, TokenFlags::ERROR);
     }
-    if recovered >= remaining && !parser.is_eof() && !nesting_should_stop(parser, nested) {
+    if remaining_recovery_bytes(parser) == 0
+        && !parser.is_eof()
+        && !nesting_should_stop(parser, nested)
+    {
         parser.halt();
     }
     if start == parser.offset() {
@@ -442,10 +441,6 @@ pub(crate) fn nesting_limit(parser: &mut Parser<'_>) {
         );
         return;
     }
-    parser.stats_mut().recovery_bytes = parser
-        .stats()
-        .recovery_bytes
-        .saturating_add(u64::from(recovered));
     let error = marker.complete_with_flags(parser, SyntaxKind::Error, NodeFlags::ERROR);
     let range = TextRange::new(start, parser.offset());
     let found = parser.source().text(range).ok().map(|text| FoundSyntax {
@@ -477,6 +472,13 @@ pub(crate) fn nesting_limit(parser: &mut Parser<'_>) {
         Some(error.position()),
         TextRange::new(crate::document::TextSize::ZERO, range.len()),
     );
+}
+
+fn charge_recovery_bytes(parser: &mut Parser<'_>, bytes: u32) {
+    parser.stats_mut().recovery_bytes = parser
+        .stats()
+        .recovery_bytes
+        .saturating_add(u64::from(bytes));
 }
 
 fn remaining_recovery_bytes(parser: &Parser<'_>) -> u32 {
