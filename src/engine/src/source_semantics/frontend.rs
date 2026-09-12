@@ -7,14 +7,14 @@ use mech_core::snapshot::{
 use mech_core::{
     AccessMode, AliasPolicy, BuiltinKindPredicate, BuiltinScalarKind, CanonicalNominalPath,
     CardinalitySpec, ChangeDetectionPolicy, ConstantStore, ConstantStoreBuilder, DeliveryMode,
-    DimensionExpr, DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
-    DimensionParameterOrigin, ExternalInteraction, FloatWidth, InputKindScheme, InputPortLayout,
-    InputPortPolicy, IntegerWidth, KindExpr, KindId, NamedKindPathResolver, NodeId, NominalKey,
-    NominalKind, OperationContractDeclaration, OutputConstruction, OutputPortPolicy,
-    ResolvedOutputSchemaRule, ResolvedType, SchemaBody, SchemaDraft, SchemaField, SchemaId,
-    SchemaTable, SchemaTableBuilder, ShapeContractReference, ShapeRule, SourceInputKind,
-    TypeConstraintOrigin, TypeOverloadCandidate, ValueDataDraft, ValueDraft,
-    execute_conversion_draft, plan_explicit_cast, plan_numeric_promotion,
+    DimensionEnvironmentBuilder, DimensionExpr, DimensionLifetime, DimensionParameterDeclaration,
+    DimensionParameterId, DimensionParameterOrigin, ExternalInteraction, FloatWidth,
+    InputKindScheme, InputPortLayout, InputPortPolicy, IntegerWidth, KindExpr, KindField, KindId,
+    NamedKindPathResolver, NodeId, NominalKey, NominalKind, OperationContractDeclaration,
+    OutputConstruction, OutputPortPolicy, ResolvedOutputSchemaRule, ResolvedType, SchemaBody,
+    SchemaDraft, SchemaField, SchemaId, SchemaTable, SchemaTableBuilder, ShapeContractReference,
+    ShapeRule, SourceInputKind, TypeConstraintOrigin, TypeOverloadCandidate, ValueDataDraft,
+    ValueDraft, execute_conversion_draft, plan_explicit_cast, plan_numeric_promotion,
 };
 use mech_syntax::document::{
     AnyCallArgumentSyntax, AstNode, CanonicalOperator, ComprehensionQualifierValueSyntax,
@@ -1447,24 +1447,6 @@ fn builtin_kind_named(name: &str) -> Option<BuiltinScalarKind> {
     })
 }
 
-fn annotation_kind_expr(source: &str) -> Option<KindExpr> {
-    let name = source.strip_prefix('<')?.strip_suffix('>')?;
-    let (name, optional) = name
-        .strip_suffix('?')
-        .map_or((name, false), |name| (name, true));
-    let kind = match name {
-        "*" => Some(KindExpr::Wildcard),
-        "_" => Some(KindExpr::Never),
-        "ix" | "index" => Some(KindExpr::Index),
-        _ => builtin_kind_named(name).map(BuiltinScalarKind::kind_expr),
-    }?;
-    Some(if optional {
-        KindExpr::Option(Box::new(kind))
-    } else {
-        kind
-    })
-}
-
 #[derive(Clone, Copy)]
 enum PendingValue {
     Constant(usize),
@@ -1821,6 +1803,7 @@ impl SemanticBuilder {
         if !arms.is_empty() {
             let mut inputs = vec![value];
             let mut layouts = Vec::with_capacity(arms.len());
+            let mut result_schema = None;
             for arm in arms {
                 let pattern = self.required(arm.pattern(), arm.syntax(), "a match pattern")?;
                 let saved = self.bindings.clone();
@@ -1838,17 +1821,37 @@ impl SemanticBuilder {
                     };
                     let result = self.required(arm.value(), arm.syntax(), "a match result")?;
                     let result_input = inputs.len() as u32;
-                    inputs.push(self.expression(&result)?.0);
+                    let result = self.expression(&result)?.0;
+                    let schema = self.schema_draft_of(result);
+                    if matches!(schema.body, SchemaBody::Dynamic) {
+                        return Err(SourceSemanticError {
+                            code: "source-semantics/unresolved-match-result-kind",
+                            message: "match arms require a concrete result schema".to_owned(),
+                            anchor: SourceSemanticAnchor::for_node(arm.syntax()),
+                        });
+                    }
+                    if result_schema
+                        .as_ref()
+                        .is_some_and(|expected| expected != &schema)
+                    {
+                        return Err(SourceSemanticError {
+                            code: "source-semantics/incompatible-match-result-kind",
+                            message: "match arms require one exact result schema".to_owned(),
+                            anchor: SourceSemanticAnchor::for_node(arm.syntax()),
+                        });
+                    }
+                    result_schema.get_or_insert(schema);
+                    inputs.push(result);
                     layouts.push((pattern.index, guard_input, result_input));
                     Ok::<_, SourceSemanticError>(())
                 })();
                 self.bindings = saved;
                 result?;
             }
-            value = self.emit(
+            value = self.emit_with_schema_draft(
                 "source/match",
                 inputs,
-                BuiltinSchema::Dynamic,
+                result_schema.expect("a nonempty match has a result schema"),
                 expression.syntax(),
                 "match",
                 None,
@@ -2112,7 +2115,6 @@ impl SemanticBuilder {
                 anchor: SourceSemanticAnchor::for_node(syntax),
             });
         }
-        self.ensure_source_operation_enabled("convert/kind", syntax)?;
         Ok(self.emit_with_schema_draft(
             "convert/kind",
             vec![value],
@@ -2133,7 +2135,6 @@ impl SemanticBuilder {
             BuiltinSchema::Dynamic
                 if matches!(self.schema_body_of(operand), SchemaBody::Dynamic) =>
             {
-                self.ensure_source_operation_enabled("convert/kind", syntax)?;
                 Ok(self.emit(
                     "convert/kind",
                     vec![operand],
@@ -2221,7 +2222,6 @@ impl SemanticBuilder {
                         anchor: SourceSemanticAnchor::for_node(value.syntax()),
                     });
                 }
-                self.ensure_source_operation_enabled("math/neg", value.syntax())?;
                 if matches!(schema.body, SchemaBody::Matrix { .. }) {
                     self.emit_with_schema_draft(
                         "math/neg",
@@ -2245,34 +2245,28 @@ impl SemanticBuilder {
             FactorValueSyntax::Not(value) => {
                 let operand = self.required(value.operand(), value.syntax(), "a unary operand")?;
                 let mut operand = self.factor(&operand)?;
-                match self.schema_of(operand) {
-                    BuiltinSchema::Bool => {}
-                    BuiltinSchema::Dynamic
-                        if matches!(self.schema_body_of(operand), SchemaBody::Dynamic) =>
-                    {
-                        self.ensure_source_operation_enabled("convert/kind", value.syntax())?;
-                        operand = self.emit(
-                            "convert/kind",
-                            vec![operand],
-                            BuiltinSchema::Bool,
-                            value.syntax(),
-                            "declared-conversion",
-                            Some("target=bool".to_owned()),
-                        );
-                    }
-                    _ => {
-                        return Err(SourceSemanticError {
-                            code: "source-semantics/non-boolean-negation-kind",
-                            message: "logical negation requires a boolean kind".to_owned(),
-                            anchor: SourceSemanticAnchor::for_node(value.syntax()),
-                        });
-                    }
+                if self.is_genuinely_dynamic(operand) {
+                    operand =
+                        self.conform_dynamic_operand(operand, BuiltinSchema::Bool, value.syntax())?;
                 }
-                self.ensure_source_operation_enabled("logic/not", value.syntax())?;
-                self.emit(
+                let Some((inputs, output)) = self
+                    .resolve_maintained_call("logic/not", vec![operand], value.syntax())
+                    .map_err(|mut error| {
+                        if error.code == "source-semantics/incompatible-call-kind" {
+                            error.code = "source-semantics/non-boolean-negation-kind";
+                        }
+                        error
+                    })?
+                else {
+                    return Err(internal(
+                        SourceSemanticAnchor::for_node(value.syntax()),
+                        "logical negation has no maintained type declaration".to_owned(),
+                    ));
+                };
+                self.emit_with_schema_draft(
                     "logic/not",
-                    vec![operand],
-                    BuiltinSchema::Bool,
+                    inputs,
+                    output,
                     value.syntax(),
                     "unary",
                     None,
@@ -2347,7 +2341,6 @@ impl SemanticBuilder {
         };
         if factor.transpose().is_some() {
             result = if self.is_genuinely_dynamic(result) {
-                self.ensure_source_operation_enabled("matrix/transpose", factor.syntax())?;
                 self.emit(
                     "matrix/transpose",
                     vec![result],
@@ -2390,7 +2383,6 @@ impl SemanticBuilder {
         let Ok(mut declaration) = mech_core::maintained_source_type_declaration(name) else {
             return Ok(None);
         };
-        self.ensure_source_operation_enabled(name, syntax)?;
         let input_types = inputs
             .iter()
             .map(|input| {
@@ -2630,7 +2622,6 @@ impl SemanticBuilder {
                 anchor: SourceSemanticAnchor::for_node(range.syntax()),
             });
         }
-        self.ensure_source_operation_enabled(name, range.syntax())?;
         Ok(self.emit_with_schema_draft(
             name,
             values,
@@ -2752,7 +2743,6 @@ impl SemanticBuilder {
             )?;
         }
         let bound = if definition.mutability_marker().is_some() {
-            self.ensure_source_operation_enabled("core/assign", definition.syntax())?;
             let schema = self.schema_of(value);
             let schema_draft = self.schema_draft_of(value);
             let state = u32::try_from(self.states.len()).map_err(|_| SourceSemanticError {
@@ -2962,19 +2952,15 @@ impl SemanticBuilder {
         kind: &KindAnnotationSyntax,
         annotation: Option<BuiltinSchema>,
     ) -> Result<PendingValue, SourceSemanticError> {
-        let source = node_text(kind.syntax())?;
-        let kind_expr = annotation_kind_expr(&source).ok_or_else(|| SourceSemanticError {
-            code: "source-semantics/unsupported-kind-value",
-            message: "kind value is not yet representable by the canonical type store".to_owned(),
-            anchor: SourceSemanticAnchor::for_node(kind.syntax()),
-        })?;
+        let (kind_expr, dimensions) = annotation_kind_expr(kind)?;
         let paths = BuiltinKindPaths::build(SourceSemanticAnchor::for_node(kind.syntax()))?;
-        let reified = ReifiedKind::from_closed_kind(&kind_expr, &[], &paths).map_err(|error| {
-            internal(
-                SourceSemanticAnchor::for_node(kind.syntax()),
-                format!("unable to canonicalize kind value: {error:?}"),
-            )
-        })?;
+        let reified =
+            ReifiedKind::from_closed_kind(&kind_expr, &dimensions, &paths).map_err(|error| {
+                internal(
+                    SourceSemanticAnchor::for_node(kind.syntax()),
+                    format!("unable to canonicalize kind value: {error:?}"),
+                )
+            })?;
         self.exact_literal_constant(
             annotation,
             SchemaBody::ReifiedType,
@@ -3004,97 +2990,178 @@ impl SemanticBuilder {
                 message: "empty map literals require explicit key and value kinds".to_owned(),
                 anchor: SourceSemanticAnchor::for_node(value.syntax()),
             }),
-            StructureValueSyntax::EmptySet(value) => {
-                self.ensure_source_operation_enabled("set/define", value.syntax())?;
-                Err(SourceSemanticError {
-                    code: "source-semantics/unresolved-set-element-kind",
-                    message: "empty set literals require an explicit element kind".to_owned(),
-                    anchor: SourceSemanticAnchor::for_node(value.syntax()),
-                })
-            }
+            StructureValueSyntax::EmptySet(value) => Err(SourceSemanticError {
+                code: "source-semantics/unresolved-set-element-kind",
+                message: "empty set literals require an explicit element kind".to_owned(),
+                anchor: SourceSemanticAnchor::for_node(value.syntax()),
+            }),
         }
     }
 
     fn matrix(&mut self, matrix: &MatrixSyntax) -> Result<PendingValue, SourceSemanticError> {
         let rows = matrix.rows();
-        let mut inputs = Vec::new();
-        let mut widths = Vec::new();
+        let mut values = Vec::new();
         for row in rows {
             let columns = row.columns();
-            widths.push(columns.len());
+            let mut row_values = Vec::with_capacity(columns.len());
             for column in columns {
                 let value = self.required(column.value(), column.syntax(), "a matrix value")?;
-                inputs.push(self.expression(&value)?.0);
+                let value = self.expression(&value)?.0;
+                row_values.push((!self.take_source_absence(value)).then_some(value));
             }
+            values.push(row_values);
         }
-        let Some(columns) = widths.first().copied() else {
+        let Some(first) = values.first() else {
             return Err(SourceSemanticError {
                 code: "source-semantics/empty-matrix-literal",
                 message: "matrix literals require at least one row".to_owned(),
                 anchor: SourceSemanticAnchor::for_node(matrix.syntax()),
             });
         };
-        if columns == 0 || widths.iter().any(|width| *width != columns) {
+        if first.is_empty() {
             return Err(SourceSemanticError {
                 code: "source-semantics/matrix-row-width",
-                message: "matrix literal rows require one common nonzero width".to_owned(),
+                message: "matrix literal rows require a nonempty source row".to_owned(),
                 anchor: SourceSemanticAnchor::for_node(matrix.syntax()),
             });
         }
-        let element = inputs
+        if values.iter().flatten().any(Option::is_none) {
+            return self.optional_matrix(values, matrix.syntax());
+        }
+
+        let mut rows = Vec::with_capacity(values.len());
+        for row in values {
+            let row = row
+                .into_iter()
+                .map(|value| value.expect("absence handled above"))
+                .collect::<Vec<_>>();
+            let Some((inputs, output)) =
+                self.resolve_maintained_call("matrix/horzcat", row, matrix.syntax())?
+            else {
+                return Err(internal(
+                    SourceSemanticAnchor::for_node(matrix.syntax()),
+                    "horizontal matrix concatenation has no maintained type declaration".to_owned(),
+                ));
+            };
+            rows.push(self.emit_with_schema_draft(
+                "matrix/horzcat",
+                inputs,
+                output,
+                matrix.syntax(),
+                "matrix-row",
+                None,
+            ));
+        }
+        if rows.len() == 1 {
+            return Ok(rows[0]);
+        }
+        let Some((inputs, output)) =
+            self.resolve_maintained_call("matrix/vertcat", rows, matrix.syntax())?
+        else {
+            return Err(internal(
+                SourceSemanticAnchor::for_node(matrix.syntax()),
+                "vertical matrix concatenation has no maintained type declaration".to_owned(),
+            ));
+        };
+        Ok(self.emit_with_schema_draft(
+            "matrix/vertcat",
+            inputs,
+            output,
+            matrix.syntax(),
+            "matrix",
+            None,
+        ))
+    }
+
+    fn optional_matrix(
+        &mut self,
+        values: Vec<Vec<Option<PendingValue>>>,
+        syntax: &SyntaxNode,
+    ) -> Result<PendingValue, SourceSemanticError> {
+        let element = values
             .iter()
-            .map(|value| self.schema_draft_of(*value))
+            .flatten()
+            .filter_map(|value| *value)
+            .map(|value| self.schema_draft_of(value))
             .find(|schema| !matches!(schema.body, SchemaBody::Dynamic))
             .ok_or_else(|| SourceSemanticError {
                 code: "source-semantics/unresolved-matrix-element-kind",
-                message: "matrix literals require a concrete element kind".to_owned(),
-                anchor: SourceSemanticAnchor::for_node(matrix.syntax()),
+                message: "matrix literals require a present value with a concrete element kind"
+                    .to_owned(),
+                anchor: SourceSemanticAnchor::for_node(syntax),
             })?;
-        for input in &mut inputs {
-            if self.is_genuinely_dynamic(*input) {
-                let Some(target) = builtin_schema_for_body(&element.body) else {
-                    return Err(SourceSemanticError {
-                        code: "source-semantics/incompatible-matrix-element-kind",
-                        message: "dynamic matrix elements require a concrete scalar peer"
-                            .to_owned(),
-                        anchor: SourceSemanticAnchor::for_node(matrix.syntax()),
-                    });
-                };
-                *input = self.conform_dynamic_operand(*input, target, matrix.syntax())?;
-            }
-            if self.schema_draft_of(*input) != element {
+        let Some(payload) = builtin_schema_for_body(&element.body) else {
+            return Err(SourceSemanticError {
+                code: "source-semantics/incompatible-matrix-element-kind",
+                message: "absent matrix cells require a concrete scalar peer".to_owned(),
+                anchor: SourceSemanticAnchor::for_node(syntax),
+            });
+        };
+        let option = option_schema(payload).expect("builtin scalar schemas have option schemas");
+        let mut inputs = Vec::new();
+        let mut row_width = None;
+        for row in &values {
+            let width = row.len();
+            row_width.get_or_insert(width);
+            if width == 0 || row_width != Some(width) {
                 return Err(SourceSemanticError {
-                    code: "source-semantics/incompatible-matrix-element-kind",
-                    message: "matrix literal elements require one exact kind".to_owned(),
-                    anchor: SourceSemanticAnchor::for_node(matrix.syntax()),
+                    code: "source-semantics/matrix-row-width",
+                    message: "optional matrix rows require one common nonzero scalar width"
+                        .to_owned(),
+                    anchor: SourceSemanticAnchor::for_node(syntax),
+                });
+            }
+            for value in row {
+                inputs.push(match value {
+                    Some(value) => self.conform_value(
+                        *value,
+                        option,
+                        syntax,
+                        "source-semantics/incompatible-matrix-element-kind",
+                        "optional matrix elements require one exact scalar kind",
+                    )?,
+                    None => self.constant(
+                        option,
+                        ValueDataDraft::Option(OptionDraft {
+                            present: false,
+                            value: None,
+                        }),
+                    ),
                 });
             }
         }
-        self.ensure_source_operation_enabled("matrix/literal", matrix.syntax())?;
-        let mut parameters = Vec::new();
-        let element = embed_schema_draft(
-            &element,
-            &mut parameters,
-            SourceSemanticAnchor::for_node(matrix.syntax()),
-        )?;
+        let columns = row_width.expect("nonempty optional matrix has a row width");
         Ok(self.emit_with_schema_draft(
             "matrix/literal",
             inputs,
             SchemaDraft {
-                dimension_parameters: parameters.into_boxed_slice(),
+                dimension_parameters: Box::new([]),
                 body: SchemaBody::Matrix {
-                    element: Box::new(element),
+                    element: Box::new(SchemaBody::Option(Box::new(element.body))),
                     dimensions: vec![
-                        DimensionExpr::Constant(widths.len() as u64),
+                        DimensionExpr::Constant(values.len() as u64),
                         DimensionExpr::Constant(columns as u64),
                     ]
                     .into_boxed_slice(),
                 },
             },
-            matrix.syntax(),
+            syntax,
             "matrix",
-            Some(format!("row-widths={widths:?}")),
+            Some(format!("row-width={columns}")),
         ))
+    }
+
+    fn take_source_absence(&mut self, value: PendingValue) -> bool {
+        let PendingValue::Node(index) = value else {
+            return false;
+        };
+        if index as usize + 1 != self.nodes.len()
+            || self.nodes[index as usize].operation.canonical_name() != "source/empty"
+        {
+            return false;
+        }
+        self.nodes.pop();
+        true
     }
 
     fn table(&mut self, table: &TableSyntax) -> Result<PendingValue, SourceSemanticError> {
@@ -3452,7 +3519,6 @@ impl SemanticBuilder {
                 anchor: SourceSemanticAnchor::for_node(set.syntax()),
             });
         }
-        self.ensure_source_operation_enabled("set/define", set.syntax())?;
         let mut parameters = Vec::new();
         let element = embed_schema_draft(
             &element,
@@ -3651,7 +3717,6 @@ impl SemanticBuilder {
         qualifiers: Vec<mech_syntax::document::ComprehensionQualifierSyntax>,
         operation: &'static str,
     ) -> Result<PendingValue, SourceSemanticError> {
-        self.ensure_source_operation_enabled(operation, syntax)?;
         let saved = self.bindings.clone();
         let compiled = (|| {
             let mut inputs = Vec::new();
@@ -4129,7 +4194,6 @@ impl SemanticBuilder {
                 })?;
             return Ok(self.constant(target, data));
         }
-        self.ensure_source_operation_enabled("convert/kind", syntax)?;
         Ok(self.emit(
             "convert/kind",
             vec![value],
@@ -4157,7 +4221,6 @@ impl SemanticBuilder {
         if self.schema_draft_of(value) == target {
             return Ok(value);
         }
-        self.ensure_source_operation_enabled("convert/kind", syntax)?;
         Ok(self.emit_with_schema_draft(
             "convert/kind",
             vec![value],
@@ -4213,7 +4276,6 @@ impl SemanticBuilder {
                     anchor: SourceSemanticAnchor::for_node(syntax),
                 });
             }
-            self.ensure_source_operation_enabled("convert/kind", syntax)?;
             return Ok(self.emit(
                 "convert/kind",
                 vec![value],
@@ -4395,21 +4457,6 @@ impl SemanticBuilder {
         self.nodes[index as usize].schema_body = Some(schema.body);
         self.nodes[index as usize].schema_parameters = schema.dimension_parameters;
         value
-    }
-
-    fn ensure_source_operation_enabled(
-        &self,
-        operation: &str,
-        syntax: &SyntaxNode,
-    ) -> Result<(), SourceSemanticError> {
-        if source_operation_enabled(operation) {
-            return Ok(());
-        }
-        Err(SourceSemanticError {
-            code: "source-semantics/unavailable-operation",
-            message: format!("canonical operation {operation} is disabled in this source profile"),
-            anchor: SourceSemanticAnchor::for_node(syntax),
-        })
     }
 
     fn publish(
@@ -4664,101 +4711,6 @@ fn operation_reference(name: &str) -> OperationReference {
     }
 }
 
-fn source_operation_enabled(name: &str) -> bool {
-    match name {
-        "convert/kind" => cfg!(feature = "convert"),
-        "core/assign" => cfg!(feature = "assign"),
-        "matrix/literal" => cfg!(feature = "matrix"),
-        "matrix/transpose" => cfg!(feature = "matrix_transpose"),
-        "matrix/matmul" => cfg!(feature = "matrix_matmul"),
-        "matrix/solve" => cfg!(feature = "matrix_solve"),
-        "matrix/dot" => cfg!(feature = "matrix_dot"),
-        "matrix/horzcat" => cfg!(feature = "matrix_horzcat"),
-        "matrix/vertcat" => cfg!(feature = "matrix_vertcat"),
-        "matrix/comprehension" => cfg!(feature = "matrix_comprehensions"),
-        "set/define" => cfg!(feature = "set"),
-        "set/comprehension" => cfg!(feature = "set_comprehensions"),
-        "set/insert" => cfg!(feature = "set_insert"),
-        "set/remove" => cfg!(feature = "set_remove"),
-        "set/powerset" => cfg!(feature = "set_powerset"),
-        "set/cartesian-product" => cfg!(feature = "set_cartesian_product"),
-        "set/size" => cfg!(feature = "set_size"),
-        "set/equals" => cfg!(feature = "set_equals"),
-        "set/not_equals" => cfg!(feature = "set_not_equals"),
-        "set/disjoint" => cfg!(feature = "set_disjoint"),
-        "set/union" => cfg!(feature = "set_union"),
-        "set/intersection" => cfg!(feature = "set_intersection"),
-        "set/difference" => cfg!(feature = "set_difference"),
-        "set/symmetric-difference" => cfg!(feature = "set_symmetric_difference"),
-        "set/subset" => cfg!(feature = "set_subset"),
-        "set/superset" => cfg!(feature = "set_superset"),
-        "set/proper_subset" => cfg!(feature = "set_proper_subset"),
-        "set/proper-superset" => cfg!(feature = "set_proper_superset"),
-        "set/element-of" => cfg!(feature = "set_element_of"),
-        "set/not-element-of" => cfg!(feature = "set_not_element_of"),
-        "string/concat" => cfg!(feature = "string_concat"),
-        "table/join"
-        | "table/left-outer-join"
-        | "table/right-outer-join"
-        | "table/full-outer-join"
-        | "table/left-semi-join"
-        | "table/left-anti-join" => cfg!(feature = "table"),
-        "range/inclusive" => cfg!(feature = "range_inclusive"),
-        "range/exclusive" => cfg!(feature = "range_exclusive"),
-        "range/inclusive-increment" => cfg!(feature = "range_inclusive_increment"),
-        "range/exclusive-increment" => cfg!(feature = "range_exclusive_increment"),
-        "compare/eq" => cfg!(feature = "compare_eq"),
-        "compare/neq" => cfg!(feature = "compare_neq"),
-        "compare/seq" => cfg!(feature = "compare_seq"),
-        "compare/sneq" => cfg!(feature = "compare_sneq"),
-        "compare/lt" => cfg!(feature = "compare_lt"),
-        "compare/gt" => cfg!(feature = "compare_gt"),
-        "compare/lte" => cfg!(feature = "compare_lte"),
-        "compare/gte" => cfg!(feature = "compare_gte"),
-        "compare/max" | "compare/min" => false,
-        "logic/and" => cfg!(feature = "logic_and"),
-        "logic/or" => cfg!(feature = "logic_or"),
-        "logic/not" => cfg!(feature = "logic_not"),
-        "logic/xor" => cfg!(feature = "logic_xor"),
-        "math/add" => cfg!(feature = "math_add"),
-        "math/sub" => cfg!(feature = "math_sub"),
-        "math/mul" => cfg!(feature = "math_mul"),
-        "math/div" => cfg!(feature = "math_div"),
-        "math/mod" => cfg!(feature = "math_mod"),
-        "math/pow" => cfg!(feature = "math_pow"),
-        "math/neg" => cfg!(feature = "math_neg"),
-        "math/sqrt" => cfg!(feature = "math_sqrt"),
-        "math/acos" => cfg!(feature = "math_acos"),
-        "math/acosh" => cfg!(feature = "math_acosh"),
-        "math/acot" => cfg!(feature = "math_acot"),
-        "math/acsc" => cfg!(feature = "math_acsc"),
-        "math/asec" => cfg!(feature = "math_asec"),
-        "math/asin" => cfg!(feature = "math_asin"),
-        "math/asinh" => cfg!(feature = "math_asinh"),
-        "math/atan" => cfg!(feature = "math_atan"),
-        "math/atan2" => cfg!(feature = "math_atan2"),
-        "math/atanh" => cfg!(feature = "math_atanh"),
-        "math/cos" => cfg!(feature = "math_cos"),
-        "math/cosh" => cfg!(feature = "math_cosh"),
-        "math/cot" => cfg!(feature = "math_cot"),
-        "math/csc" => cfg!(feature = "math_csc"),
-        "math/sec" => cfg!(feature = "math_sec"),
-        "math/sin" => cfg!(feature = "math_sin"),
-        "math/sinh" => cfg!(feature = "math_sinh"),
-        "math/tan" => cfg!(feature = "math_tan"),
-        "math/tanh" => cfg!(feature = "math_tanh"),
-        "stats/sum/column" | "stats/sum/row" => cfg!(feature = "stats_sum"),
-        "combinatorics/n-choose-k" => cfg!(feature = "combinatorics_n_choose_k"),
-        name if name.starts_with("math/")
-            || name.starts_with("stats/")
-            || name.starts_with("combinatorics/") =>
-        {
-            false
-        }
-        _ => true,
-    }
-}
-
 fn resolved_operation_contract(
     operation: &OperationReference,
     input_count: usize,
@@ -4766,9 +4718,6 @@ fn resolved_operation_contract(
     state_output: bool,
 ) -> Option<OperationContractDeclaration> {
     let name = operation.canonical_name();
-    if !source_operation_enabled(&name) {
-        return None;
-    }
     match name.as_str() {
         "range/inclusive" => Some(range_contract(input_count, "inclusive-output")),
         "range/exclusive" => Some(range_contract(input_count, "exclusive-output")),
@@ -4783,6 +4732,14 @@ fn resolved_operation_contract(
         "math/neg" => Some(negation_contract(output_schema)),
         "matrix/transpose" => Some(transpose_contract()),
         "matrix/literal" => Some(crate::matrix_literal_contract(input_count)),
+        #[cfg(feature = "matrix_horzcat")]
+        "matrix/horzcat" => {
+            Some((*crate::intrinsics::constructors::PURE_MATRIX_HORZCAT_CONTRACT).clone())
+        }
+        #[cfg(feature = "matrix_vertcat")]
+        "matrix/vertcat" => {
+            Some((*crate::intrinsics::constructors::PURE_MATRIX_VERTCAT_CONTRACT).clone())
+        }
         #[cfg(feature = "set")]
         "set/define" => Some((*crate::intrinsics::constructors::PURE_SET_DEFINE_CONTRACT).clone()),
         #[cfg(feature = "set_comprehensions")]
@@ -4802,7 +4759,7 @@ fn resolved_operation_contract(
             Some(elementwise_contract(input_count, output_schema))
         }
         "logic/or" | "logic/and" | "logic/not" | "logic/xor" => {
-            Some(operation_contract(input_count, output_schema, state_output))
+            Some(elementwise_contract(input_count, output_schema))
         }
         _ if name.starts_with("math/") && input_count == 1 => {
             Some(negation_contract(output_schema))
@@ -5010,6 +4967,220 @@ fn operator_name(operator: CanonicalOperator) -> (&'static str, Option<BuiltinSc
     }
 }
 
+fn annotation_kind_expr(
+    annotation: &KindAnnotationSyntax,
+) -> Result<(KindExpr, Box<[DimensionParameterDeclaration]>), SourceSemanticError> {
+    let mut dimensions = DimensionEnvironmentBuilder::new();
+    let kind = annotation_kind_expr_with(annotation, &mut dimensions)?;
+    Ok((kind, dimensions.into_declarations()))
+}
+
+fn annotation_kind_expr_with(
+    annotation: &KindAnnotationSyntax,
+    dimensions: &mut DimensionEnvironmentBuilder,
+) -> Result<KindExpr, SourceSemanticError> {
+    let kind = annotation
+        .kind()
+        .ok_or_else(|| missing_kind_child(annotation.syntax(), "kind annotation"))?;
+    kind_with_option_expr(&kind, dimensions)
+}
+
+fn kind_with_option_expr(
+    kind: &mech_syntax::document::KindWithOptionSyntax,
+    dimensions: &mut DimensionEnvironmentBuilder,
+) -> Result<KindExpr, SourceSemanticError> {
+    let inner = kind
+        .kind()
+        .ok_or_else(|| missing_kind_child(kind.syntax(), "optional kind"))?;
+    let inner = kind_expr(&inner, dimensions)?;
+    Ok(if kind.question_mark().is_some() {
+        KindExpr::Option(Box::new(inner))
+    } else {
+        inner
+    })
+}
+
+fn kind_expr(
+    kind: &KindSyntax,
+    dimensions: &mut DimensionEnvironmentBuilder,
+) -> Result<KindExpr, SourceSemanticError> {
+    let value = kind
+        .value()
+        .ok_or_else(|| missing_kind_child(kind.syntax(), "kind"))?;
+    let anchor = SourceSemanticAnchor::for_node(value.syntax());
+    Ok(match value {
+        KindValueSyntax::Any(_) => KindExpr::Wildcard,
+        KindValueSyntax::Empty(_) => KindExpr::Never,
+        KindValueSyntax::Nested(nested) => KindExpr::TypeOf(Box::new(kind_with_option_expr(
+            &nested
+                .kind()
+                .ok_or_else(|| missing_kind_child(nested.syntax(), "nested kind"))?,
+            dimensions,
+        )?)),
+        KindValueSyntax::Atom(atom) => {
+            let name = atom
+                .name()
+                .ok_or_else(|| missing_kind_child(atom.syntax(), "atom kind name"))?;
+            let source = node_text(name.syntax())?;
+            let path = CanonicalNominalPath::new(
+                source
+                    .trim_start_matches(':')
+                    .split('/')
+                    .filter(|segment| !segment.is_empty())
+                    .map(str::to_owned)
+                    .collect::<Vec<_>>(),
+            )
+            .map_err(|error| internal(anchor, format!("invalid atom kind path: {error:?}")))?;
+            KindExpr::Atom(NominalKey::from_path(NominalKind::Atom, &path))
+        }
+        KindValueSyntax::Scalar(scalar) => {
+            if scalar.constraint().is_some() {
+                return Err(SourceSemanticError {
+                    code: "source-semantics/unsupported-kind-constraint",
+                    message: "reified scalar range constraints are not representable".to_owned(),
+                    anchor,
+                });
+            }
+            let name = scalar
+                .name()
+                .ok_or_else(|| missing_kind_child(scalar.syntax(), "scalar kind name"))?;
+            match node_text(name.syntax())?.as_str() {
+                "id" => KindExpr::Id,
+                "ix" | "index" => KindExpr::Index,
+                name => builtin_kind_named(name)
+                    .map(BuiltinScalarKind::kind_expr)
+                    .ok_or_else(|| SourceSemanticError {
+                        code: "source-semantics/unsupported-kind-value",
+                        message: format!("unknown scalar kind {name:?}"),
+                        anchor,
+                    })?,
+            }
+        }
+        KindValueSyntax::Map(map) => KindExpr::Map {
+            key: Box::new(kind_expr(
+                &map.key()
+                    .ok_or_else(|| missing_kind_child(map.syntax(), "map key kind"))?,
+                dimensions,
+            )?),
+            value: Box::new(kind_expr(
+                &map.value()
+                    .ok_or_else(|| missing_kind_child(map.syntax(), "map value kind"))?,
+                dimensions,
+            )?),
+            cardinality: inferred_kind_dimension(dimensions, anchor)?,
+        },
+        KindValueSyntax::Set(set) => KindExpr::Set {
+            element: Box::new(kind_expr(
+                &set.element()
+                    .ok_or_else(|| missing_kind_child(set.syntax(), "set element kind"))?,
+                dimensions,
+            )?),
+            cardinality: set
+                .literal_constraint()
+                .as_ref()
+                .map(kind_dimension)
+                .transpose()?
+                .map_or_else(
+                    || inferred_kind_dimension(dimensions, anchor),
+                    |dimension| Ok(dimension),
+                )?,
+        },
+        KindValueSyntax::Matrix(matrix) => {
+            let element = matrix
+                .element()
+                .ok_or_else(|| missing_kind_child(matrix.syntax(), "matrix element kind"))?;
+            let extents = matrix
+                .dimensions()
+                .iter()
+                .map(kind_dimension)
+                .collect::<Result<Vec<_>, _>>()?;
+            if extents.is_empty() {
+                return Err(SourceSemanticError {
+                    code: "source-semantics/unsupported-kind-value",
+                    message: "reified matrix kinds require explicit dimensions".to_owned(),
+                    anchor,
+                });
+            }
+            KindExpr::Matrix {
+                element: Box::new(kind_with_option_expr(&element, dimensions)?),
+                dimensions: extents.into_boxed_slice(),
+            }
+        }
+        KindValueSyntax::Tuple(tuple) => KindExpr::Tuple(
+            tuple
+                .items()
+                .iter()
+                .map(|kind| kind_expr(kind, dimensions))
+                .collect::<Result<Vec<_>, _>>()?
+                .into_boxed_slice(),
+        ),
+        KindValueSyntax::Record(record) => {
+            let names = record.fields();
+            let kinds = record.field_kinds();
+            if names.len() != kinds.len() {
+                return Err(missing_kind_child(record.syntax(), "record field kind"));
+            }
+            KindExpr::Record(
+                names
+                    .iter()
+                    .zip(&kinds)
+                    .map(|(name, kind)| {
+                        Ok(KindField {
+                            name: node_text(name.syntax())?,
+                            kind: annotation_kind_expr_with(kind, dimensions)?,
+                        })
+                    })
+                    .collect::<Result<Vec<_>, SourceSemanticError>>()?
+                    .into_boxed_slice(),
+            )
+        }
+        KindValueSyntax::Table(table) => {
+            let names = table.field_names();
+            let kinds = table.field_kinds();
+            if names.len() != kinds.len() {
+                return Err(missing_kind_child(table.syntax(), "table field kind"));
+            }
+            KindExpr::Table {
+                columns: names
+                    .iter()
+                    .zip(&kinds)
+                    .map(|(name, kind)| {
+                        Ok(KindField {
+                            name: node_text(name.syntax())?,
+                            kind: annotation_kind_expr_with(kind, dimensions)?,
+                        })
+                    })
+                    .collect::<Result<Vec<_>, SourceSemanticError>>()?
+                    .into_boxed_slice(),
+                rows: table
+                    .constraint()
+                    .as_ref()
+                    .map(kind_dimension)
+                    .transpose()?
+                    .map_or_else(
+                        || inferred_kind_dimension(dimensions, anchor),
+                        |dimension| Ok(dimension),
+                    )?,
+            }
+        }
+    })
+}
+
+fn inferred_kind_dimension(
+    dimensions: &mut DimensionEnvironmentBuilder,
+    anchor: SourceSemanticAnchor,
+) -> Result<DimensionExpr, SourceSemanticError> {
+    dimensions
+        .declare(
+            DimensionParameterOrigin::Inferred,
+            DimensionLifetime::Activation,
+            DimensionExpr::Constant(0),
+            None,
+        )
+        .map(DimensionExpr::Parameter)
+        .map_err(|error| internal(anchor, format!("unable to declare kind extent: {error:?}")))
+}
+
 fn annotation_schema(
     annotation: &KindAnnotationSyntax,
 ) -> Result<BuiltinSchema, SourceSemanticError> {
@@ -5212,13 +5383,73 @@ fn kind_extent(literal: Option<&LiteralSyntax>) -> Result<CardinalitySpec, Sourc
 }
 
 fn kind_dimension(literal: &LiteralSyntax) -> Result<DimensionExpr, SourceSemanticError> {
-    let source = node_text(literal.syntax())?;
-    source
-        .parse::<u64>()
+    let Some(LiteralValueSyntax::Number(number)) = literal.value() else {
+        return Err(SourceSemanticError {
+            code: "source-semantics/unsupported-kind-dimension",
+            message: "kind extents require unsigned integer constants".to_owned(),
+            anchor: SourceSemanticAnchor::for_node(literal.syntax()),
+        });
+    };
+    let Some(integer) = number.real().and_then(|real| real.value()) else {
+        return Err(SourceSemanticError {
+            code: "source-semantics/unsupported-kind-dimension",
+            message: "kind extents require unsigned integer constants".to_owned(),
+            anchor: SourceSemanticAnchor::for_node(literal.syntax()),
+        });
+    };
+    let Some(integer) = IntegerLiteralSyntax::cast(integer) else {
+        return Err(SourceSemanticError {
+            code: "source-semantics/unsupported-kind-dimension",
+            message: "kind extents require unsigned integer constants".to_owned(),
+            anchor: SourceSemanticAnchor::for_node(literal.syntax()),
+        });
+    };
+    if let Some(typed) = integer.typed() {
+        let suffix = typed
+            .suffix()
+            .ok_or_else(|| missing_kind_child(typed.syntax(), "integer kind suffix"))?;
+        let suffix = node_text(suffix.syntax())?;
+        if !matches!(
+            builtin_kind_named(&suffix),
+            Some(
+                BuiltinScalarKind::U8
+                    | BuiltinScalarKind::U16
+                    | BuiltinScalarKind::U32
+                    | BuiltinScalarKind::U64
+                    | BuiltinScalarKind::U128
+                    | BuiltinScalarKind::I8
+                    | BuiltinScalarKind::I16
+                    | BuiltinScalarKind::I32
+                    | BuiltinScalarKind::I64
+                    | BuiltinScalarKind::I128
+            )
+        ) {
+            return Err(SourceSemanticError {
+                code: "source-semantics/unsupported-kind-dimension",
+                message: "kind extent suffixes require an integer kind".to_owned(),
+                anchor: SourceSemanticAnchor::for_node(typed.syntax()),
+            });
+        }
+    }
+    let source = canonical_number_source(&number)?.replace('_', "");
+    let (source, _) = numeric_suffix(&source);
+    let (negative, magnitude) = integer_parts(source).ok_or_else(|| SourceSemanticError {
+        code: "source-semantics/unsupported-kind-dimension",
+        message: "kind extents require unsigned integer constants".to_owned(),
+        anchor: SourceSemanticAnchor::for_node(literal.syntax()),
+    })?;
+    if negative {
+        return Err(SourceSemanticError {
+            code: "source-semantics/unsupported-kind-dimension",
+            message: "kind extents require unsigned integer constants".to_owned(),
+            anchor: SourceSemanticAnchor::for_node(literal.syntax()),
+        });
+    }
+    u64::try_from(magnitude)
         .map(DimensionExpr::Constant)
         .map_err(|_| SourceSemanticError {
             code: "source-semantics/unsupported-kind-dimension",
-            message: "kind extents require unsigned integer constants".to_owned(),
+            message: "kind extent exceeds the canonical u64 dimension range".to_owned(),
             anchor: SourceSemanticAnchor::for_node(literal.syntax()),
         })
 }

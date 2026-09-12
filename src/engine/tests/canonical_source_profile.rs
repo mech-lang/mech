@@ -29,10 +29,13 @@ fn expression(source: &str) -> ExpressionSyntax {
 }
 
 #[test]
-fn disabled_source_operations_are_rejected_before_graph_emission() {
-    let error = CanonicalSourceFrontend
+fn maintained_source_types_do_not_depend_on_an_engine_feature_mirror() {
+    let compiled = CanonicalSourceFrontend
         .compile_expression(&expression("1 + 2"))
-        .err()
-        .expect("a disabled arithmetic operation must not be resolved");
-    assert_eq!(error.code, "source-semantics/unavailable-operation");
+        .expect("the maintained arithmetic declaration must resolve");
+    assert_eq!(
+        compiled.program().nodes[0].operation.canonical_name(),
+        "math/add"
+    );
+    assert!(compiled.contracts()[0].is_some());
 }

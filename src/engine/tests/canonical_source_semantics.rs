@@ -165,7 +165,7 @@ fn structures_calls_comprehensions_and_fsm_enter_one_source_graph() {
         ("{1: 2, 3: 4}", "source/map"),
         ("{1, 2}", "set/define"),
         ("(1, 2)", "source/tuple"),
-        ("[1 2]", "matrix/literal"),
+        ("[1 2]", "matrix/horzcat"),
         ("|a<u8>|1|", "source/table"),
         ("f(left: 1, 2)", "f"),
         ("x[1].field", "access/index"),
@@ -1200,6 +1200,194 @@ fn reviewed_source_kind_edges_match_operation_and_literal_contracts() {
 }
 
 #[test]
+fn reviewed_exact_source_authorities_cover_matches_kinds_logic_and_matrices() {
+    let matched = CanonicalSourceFrontend
+        .compile_expression(&expression("x ? | * => 1u8 | * => 2u8"))
+        .unwrap();
+    assert!(matches!(
+        matched
+            .schemas()
+            .get(matched.program().outputs[0].schema)
+            .unwrap()
+            .body(),
+        SchemaBody::UnsignedInteger(IntegerWidth::W8)
+    ));
+    assert_eq!(
+        CanonicalSourceFrontend
+            .compile_expression(&expression("x ? | * => 1u8 | * => true"))
+            .err()
+            .expect("incompatible match result schemas must fail")
+            .code,
+        "source-semantics/incompatible-match-result-kind"
+    );
+
+    let negated = CanonicalSourceFrontend
+        .compile_expression(&expression("¬[true false]"))
+        .unwrap();
+    assert!(matches!(
+        negated
+            .schemas()
+            .get(negated.program().outputs[0].schema)
+            .unwrap()
+            .body(),
+        SchemaBody::Matrix { element, .. } if matches!(element.as_ref(), SchemaBody::Bool)
+    ));
+    assert_eq!(
+        negated
+            .contracts()
+            .last()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .outputs[0]
+            .change_detection,
+        ChangeDetectionPolicy::KernelReported
+    );
+
+    for source in [
+        "<[u8]:1_024,2u8>",
+        "<{u8:f64}>",
+        "<{u8}:10>",
+        "<{a<u8>,b<bool?>}>",
+        "<(u8,f64)>",
+        "<|a<u8>|:10>",
+    ] {
+        let reified = CanonicalSourceFrontend
+            .compile_expression(&expression(source))
+            .unwrap_or_else(|error| panic!("{source:?}: {error}"));
+        let SourceValue::Constant(id) = reified.program().outputs[0].source else {
+            panic!("{source:?} did not produce a reified kind constant")
+        };
+        assert!(matches!(
+            reified.constants().get(id).unwrap().data(),
+            ValueData::Type(_)
+        ));
+        if source == "<[u8]:1_024,2u8>" {
+            let ValueData::Type(mech_core::snapshot::ReifiedType::Kind(kind)) =
+                reified.constants().get(id).unwrap().data()
+            else {
+                panic!("matrix kind did not retain a canonical kind value")
+            };
+            let (kind, dimensions, _) = kind.decoded_closed_kind().unwrap();
+            assert!(dimensions.is_empty());
+            assert!(matches!(
+                kind,
+                mech_core::KindExpr::Matrix { dimensions, .. }
+                    if dimensions.as_ref()
+                        == [mech_core::DimensionExpr::Constant(1_024),
+                            mech_core::DimensionExpr::Constant(2)]
+            ));
+        }
+    }
+
+    let blocks = CanonicalSourceFrontend
+        .compile_expression(&expression("[(1..3) (4..6)]"))
+        .unwrap();
+    let SchemaBody::Matrix {
+        element,
+        dimensions,
+    } = blocks
+        .schemas()
+        .get(blocks.program().outputs[0].schema)
+        .unwrap()
+        .body()
+    else {
+        panic!("matrix blocks did not produce a matrix schema")
+    };
+    assert!(matches!(
+        element.as_ref(),
+        SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)
+    ));
+    assert_eq!(dimensions.len(), 2);
+    assert_eq!(
+        blocks
+            .program()
+            .nodes
+            .last()
+            .unwrap()
+            .operation
+            .canonical_name(),
+        "matrix/horzcat"
+    );
+    blocks
+        .compile_artifact()
+        .expect("matrix block concatenation must retain its shared contract");
+
+    let optional = CanonicalSourceFrontend
+        .compile_expression(&expression("[1 _]"))
+        .unwrap();
+    assert!(matches!(
+        optional
+            .schemas()
+            .get(optional.program().outputs[0].schema)
+            .unwrap()
+            .body(),
+        SchemaBody::Matrix { element, dimensions }
+            if matches!(element.as_ref(), SchemaBody::Option(payload)
+                if matches!(payload.as_ref(), SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)))
+                && dimensions.as_ref()
+                    == [mech_core::DimensionExpr::Constant(1), mech_core::DimensionExpr::Constant(2)]
+    ));
+    let node = optional.program().nodes.last().unwrap();
+    assert_eq!(node.operation.canonical_name(), "matrix/literal");
+    assert_eq!(node.inputs.len(), 2);
+    assert!(
+        optional
+            .source_map()
+            .nodes
+            .iter()
+            .all(|node| { node.operation != "source/empty" && node.operation != "convert/kind" })
+    );
+    assert!(
+        optional
+            .source_map()
+            .nodes
+            .iter()
+            .all(|node| { node.operation != "source/empty" && node.operation != "convert/kind" })
+    );
+    let values = node
+        .inputs
+        .iter()
+        .map(|input| {
+            let SourceValue::Constant(id) = input else {
+                panic!("optional matrix elements must remain constants")
+            };
+            optional.constants().get(*id).unwrap().data()
+        })
+        .collect::<Vec<_>>();
+    assert!(matches!(values[0], ValueData::Option(Some(_))));
+    assert!(matches!(values[1], ValueData::Option(None)));
+    optional
+        .compile_artifact()
+        .expect("optional matrix constants must produce a contracted artifact");
+
+    for source in ["matrix/horzcat([1], [2])", "matrix/vertcat([1], [2])"] {
+        let concatenated = CanonicalSourceFrontend
+            .compile_expression(&expression(source))
+            .unwrap_or_else(|error| panic!("{source:?}: {error}"));
+        let contract = concatenated.contracts().last().unwrap().as_ref().unwrap();
+        assert!(matches!(
+            contract.inputs,
+            mech_core::InputPortLayout::Variadic { .. }
+        ));
+        assert!(matches!(
+            contract.outputs[0].construction,
+            OutputConstruction::Build { .. }
+        ));
+        assert_eq!(
+            contract.outputs[0].change_detection,
+            ChangeDetectionPolicy::KernelReported
+        );
+    }
+
+    CanonicalSourceFrontend
+        .compile_expression(&expression("math/abs(-1.0)"))
+        .expect(
+            "distribution-owned maintained operations must compile without an engine feature gate",
+        );
+}
+
+#[test]
 fn exact_table_columns_and_c32_are_first_class_source_schemas() {
     for (source, expected) in [
         (
@@ -1305,7 +1493,7 @@ fn exact_table_columns_and_c32_are_first_class_source_schemas() {
             .unwrap()
             .operation
             .canonical_name(),
-        "matrix/literal"
+        "matrix/horzcat"
     );
     assert!(matches!(
         matrix
