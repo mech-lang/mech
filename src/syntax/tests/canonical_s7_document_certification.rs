@@ -115,6 +115,31 @@ fn every_s7_rule_has_a_clean_specification_derived_source() {
 }
 
 #[test]
+fn only_the_three_specified_rules_use_best_choice() {
+    let generated = fs::read_to_string(
+        repository_root().join("src/syntax/src/document/parser/canonical/document_grammar.rs"),
+    )
+    .unwrap();
+    assert_eq!(
+        generated.matches("GrammarExpression::BestChoice").count(),
+        3
+    );
+    for name in ["statement", "mech-code-alt", "section-element"] {
+        let rule = format!("rule: rules::{},", name.replace('-', "_").to_uppercase());
+        let block = generated
+            .split_once(&rule)
+            .unwrap_or_else(|| panic!("missing {name}"))
+            .1
+            .split_once("DocumentRule {")
+            .map_or_else(|| generated.as_str(), |(block, _)| block);
+        assert!(
+            block.contains("GrammarExpression::BestChoice"),
+            "{name} did not retain alt_best selection"
+        );
+    }
+}
+
+#[test]
 fn s7_dispositions_cover_the_exact_remaining_inventory() {
     let table =
         fs::read_to_string(repository_root().join("docs/design/grammar-audit/s7-dispositions.tsv"))

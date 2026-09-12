@@ -204,7 +204,24 @@ class GrammarParser:
         raise ValueError(f"expected grammar atom, found {found}")
 
 
-def rust_expression(expression: Expression, known_rules: set[str]) -> str:
+def choice_count(expression: Expression) -> int:
+    kind = expression[0]
+    if kind == "choice":
+        return 1 + sum(choice_count(item) for item in expression[1])
+    if kind in {"sequence"}:
+        return sum(choice_count(item) for item in expression[1])
+    if kind == "separated":
+        return choice_count(expression[1]) + choice_count(expression[2])
+    if kind in {"optional", "zero_or_more", "one_or_more", "peek", "not"}:
+        return choice_count(expression[1])
+    return 0
+
+
+def rust_expression(
+    expression: Expression,
+    known_rules: set[str],
+    best_choice: bool = False,
+) -> str:
     kind = expression[0]
     if kind == "rule":
         if expression[1] not in known_rules:
@@ -215,15 +232,23 @@ def rust_expression(expression: Expression, known_rules: set[str]) -> str:
     if kind == "empty":
         return "GrammarExpression::Empty"
     if kind in {"sequence", "choice"}:
-        variant = "Sequence" if kind == "sequence" else "Choice"
-        items = ", ".join(rust_expression(item, known_rules) for item in expression[1])
+        if kind == "sequence":
+            variant = "Sequence"
+        elif best_choice:
+            variant = "BestChoice"
+        else:
+            variant = "Choice"
+        items = ", ".join(
+            rust_expression(item, known_rules, best_choice)
+            for item in expression[1]
+        )
         return f"GrammarExpression::{variant}(&[{items}])"
     if kind == "separated":
         return (
             "GrammarExpression::Separated { separator: &"
-            + rust_expression(expression[1], known_rules)
+            + rust_expression(expression[1], known_rules, best_choice)
             + ", item: &"
-            + rust_expression(expression[2], known_rules)
+            + rust_expression(expression[2], known_rules, best_choice)
             + " }"
         )
     variants = {
@@ -235,11 +260,12 @@ def rust_expression(expression: Expression, known_rules: set[str]) -> str:
     }
     return (
         f"GrammarExpression::{variants[kind]}"
-        f"(&{rust_expression(expression[1], known_rules)})"
+        f"(&{rust_expression(expression[1], known_rules, best_choice)})"
     )
 
 
 TRANSPARENT = {"parse-mech", "program"}
+BEST_CHOICE_RULES = {"statement", "mech-code-alt", "section-element"}
 ROOT_KINDS = {"parse": "Document"}
 EXISTING_KINDS = {
     "body": "Body",
@@ -290,6 +316,7 @@ def render_grammar(names: list[str], parsed: dict[str, Expression]) -> str:
         "    Empty,",
         "    Sequence(&'static [GrammarExpression]),",
         "    Choice(&'static [GrammarExpression]),",
+        "    BestChoice(&'static [GrammarExpression]),",
         "    Optional(&'static GrammarExpression),",
         "    ZeroOrMore(&'static GrammarExpression),",
         "    OneOrMore(&'static GrammarExpression),",
@@ -313,6 +340,10 @@ def render_grammar(names: list[str], parsed: dict[str, Expression]) -> str:
         "pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[",
     ]
     for name in names:
+        if name in BEST_CHOICE_RULES and choice_count(parsed[name]) != 1:
+            raise ValueError(
+                f"{name} must contain exactly one alt_best choice"
+            )
         if name in TRANSPARENT:
             kind = "None"
         else:
@@ -322,7 +353,7 @@ def render_grammar(names: list[str], parsed: dict[str, Expression]) -> str:
             [
                 "    DocumentRule {",
                 f"        rule: rules::{rust_constant(name)},",
-                f"        expression: {rust_expression(parsed[name], known_rules)},",
+                f"        expression: {rust_expression(parsed[name], known_rules, name in BEST_CHOICE_RULES)},",
                 f"        kind: {kind},",
                 f"        root: {'true' if name in ROOT_KINDS else 'false'},",
                 "    },",
