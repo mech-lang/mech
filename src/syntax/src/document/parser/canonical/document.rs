@@ -156,6 +156,33 @@ fn parse_expression(
         GrammarExpression::Sequence(items) => parse_sequence(parser, items, state),
         GrammarExpression::Choice(items) => {
             let start = parser.checkpoint();
+            let initial_state = *state;
+            let mut recovered = None;
+            for (index, item) in items.iter().enumerate() {
+                parser.rewind(start);
+                *state = initial_state;
+                let result = parse_expression(parser, item, state);
+                if parser.is_halted() {
+                    return Attempt::Committed;
+                }
+                match result {
+                    Attempt::Matched => return Attempt::Matched,
+                    Attempt::Committed => {
+                        if recovered.is_none() {
+                            recovered = Some(index);
+                        }
+                    }
+                    Attempt::NoMatch => {}
+                }
+            }
+            parser.rewind(start);
+            *state = initial_state;
+            recovered
+                .map(|index| parse_expression(parser, &items[index], state))
+                .unwrap_or(Attempt::NoMatch)
+        }
+        GrammarExpression::BestChoice(items) => {
+            let start = parser.checkpoint();
             let start_offset = parser.offset();
             let initial_state = *state;
             let mut selected = None::<(usize, bool, u32)>;

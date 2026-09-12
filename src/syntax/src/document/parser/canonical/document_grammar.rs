@@ -13,6 +13,7 @@ pub(crate) enum GrammarExpression {
     Empty,
     Sequence(&'static [GrammarExpression]),
     Choice(&'static [GrammarExpression]),
+    BestChoice(&'static [GrammarExpression]),
     Optional(&'static GrammarExpression),
     ZeroOrMore(&'static GrammarExpression),
     OneOrMore(&'static GrammarExpression),
@@ -815,7 +816,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         rule: rules::MECH_CODE_ALT,
         expression: GrammarExpression::Sequence(&[
             GrammarExpression::Rule(rules::WHITESPACE0),
-            GrammarExpression::Choice(&[
+            GrammarExpression::BestChoice(&[
                 GrammarExpression::Rule(rules::ACTIVATION_SCOPE),
                 GrammarExpression::Rule(rules::FSM_SPECIFICATION),
                 GrammarExpression::Rule(rules::FSM_IMPLEMENTATION),
@@ -1320,7 +1321,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
     },
     DocumentRule {
         rule: rules::SECTION_ELEMENT,
-        expression: GrammarExpression::Choice(&[
+        expression: GrammarExpression::BestChoice(&[
             GrammarExpression::Rule(rules::MECHDOWN_LIST),
             GrammarExpression::Rule(rules::PROMPT),
             GrammarExpression::Rule(rules::FOOTNOTE),
@@ -1363,7 +1364,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
     },
     DocumentRule {
         rule: rules::STATEMENT,
-        expression: GrammarExpression::Choice(&[
+        expression: GrammarExpression::BestChoice(&[
             GrammarExpression::Rule(rules::IMPORT_DECLARATION),
             GrammarExpression::Rule(rules::EXPORT_DECLARATION),
             GrammarExpression::Rule(rules::CONTEXT_DECLARATION),
