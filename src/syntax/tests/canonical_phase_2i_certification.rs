@@ -7,15 +7,17 @@ use mech_syntax::document::parser::canonical::{
 };
 use mech_syntax::document::parser::{canonical_rule_id, canonical_rule_name, rules};
 use mech_syntax::document::{
-    AstNode, DocumentId, NodeFlags, ParseConfig, RecursiveCoreSyntax, RecursiveSyntaxNode,
-    Revision, SyntaxNode, TextRange, TextSize, TextSnapshot, compact_debug_tree,
-    normalize_diagnostics, reconstruct_source_range, validate_lossless_range,
+    AstNode, DocumentId, FormulaSyntax, NodeFlags, ParseConfig, PatternArrayItemSyntax,
+    RecursiveCoreSyntax, Revision, SyntaxNode, SyntaxToken, TextRange, TextSize, TextSnapshot,
+    compact_debug_tree, normalize_diagnostics, phase_2i_node_kind, reconstruct_source_range,
+    validate_lossless_range,
 };
 
 #[derive(Debug)]
 struct CertificationRow {
     name: String,
     accepted: String,
+    rejected: String,
     recovery: String,
     emission_policy: String,
     syntax_kind: String,
@@ -25,6 +27,7 @@ struct CertificationRow {
     semantic_disposition: String,
     spec_location: String,
     conformance_cases: String,
+    semantic_snapshot_hash: String,
     canonical_consumer: String,
 }
 
@@ -45,26 +48,28 @@ fn certification_rows() -> Vec<CertificationRow> {
     assert_eq!(
         lines.next(),
         Some(
-            "grammar-name\taccepted-source-json\trecovery-source-json\temission-policy\tsyntax-kind\tclean-tree-hash\ttyped-access-hash\trecovery-snapshot-hash\tsemantic-disposition\tspec-location\tconformance-cases\tcanonical-consumer"
+            "grammar-name\taccepted-source-json\trejected-source-json\trecovery-source-json\temission-policy\tsyntax-kind\tclean-tree-hash\ttyped-access-hash\trecovery-snapshot-hash\tsemantic-disposition\tspec-location\tconformance-cases\tsemantic-snapshot-hash\tcanonical-consumer"
         )
     );
     lines
         .map(|line| {
             let fields = line.split('\t').collect::<Vec<_>>();
-            assert_eq!(fields.len(), 12, "invalid certification row: {line}");
+            assert_eq!(fields.len(), 14, "invalid certification row: {line}");
             CertificationRow {
                 name: fields[0].to_owned(),
                 accepted: serde_json::from_str(fields[1]).expect("accepted source JSON"),
-                recovery: serde_json::from_str(fields[2]).expect("recovery source JSON"),
-                emission_policy: fields[3].to_owned(),
-                syntax_kind: fields[4].to_owned(),
-                clean_tree_hash: fields[5].parse().expect("clean tree hash"),
-                typed_access_hash: fields[6].parse().expect("typed access hash"),
-                recovery_snapshot_hash: fields[7].parse().expect("recovery snapshot hash"),
-                semantic_disposition: fields[8].to_owned(),
-                spec_location: fields[9].to_owned(),
-                conformance_cases: fields[10].to_owned(),
-                canonical_consumer: fields[11].to_owned(),
+                rejected: serde_json::from_str(fields[2]).expect("rejected source JSON"),
+                recovery: serde_json::from_str(fields[3]).expect("recovery source JSON"),
+                emission_policy: fields[4].to_owned(),
+                syntax_kind: fields[5].to_owned(),
+                clean_tree_hash: fields[6].parse().expect("clean tree hash"),
+                typed_access_hash: fields[7].parse().expect("typed access hash"),
+                recovery_snapshot_hash: fields[8].parse().expect("recovery snapshot hash"),
+                semantic_disposition: fields[9].to_owned(),
+                spec_location: fields[10].to_owned(),
+                conformance_cases: fields[11].to_owned(),
+                semantic_snapshot_hash: fields[12].to_owned(),
+                canonical_consumer: fields[13].to_owned(),
             }
         })
         .collect()
@@ -135,43 +140,480 @@ impl StableHash {
     }
 }
 
-fn visit_typed_access(node: &SyntaxNode, hash: &mut StableHash) {
-    if let Some(view) = RecursiveCoreSyntax::cast(node.clone()) {
-        hash.field(&format!(
-            "{:?}:{}:{}:{}",
-            view.syntax().kind(),
-            view.syntax().range().start.0,
-            view.syntax().range().end.0,
-            view.syntax().flags().0
-        ));
-        for child in view.syntax().children() {
-            hash.field(&format!(
-                "child:{:?}:{}:{}:{}",
-                child.kind(),
-                child.range().start.0,
-                child.range().end.0,
-                child.flags().0
-            ));
-        }
-        for token in view.direct_tokens() {
-            hash.field(&format!(
-                "token:{:?}:{}:{}:{}:{}",
-                token.kind(),
-                token.range().start.0,
-                token.range().end.0,
-                token.flags().0,
-                token.text().expect("clean source token text")
-            ));
-        }
+fn find_kind(node: &SyntaxNode, kind: mech_syntax::document::SyntaxKind) -> Option<SyntaxNode> {
+    if node.kind() == kind {
+        return Some(node.clone());
     }
-    for child in node.children() {
-        visit_typed_access(&child, hash);
+    node.children().find_map(|child| find_kind(&child, kind))
+}
+
+fn find_typed<N: AstNode>(node: &SyntaxNode) -> Option<N> {
+    N::cast(node.clone()).or_else(|| node.children().find_map(|child| find_typed(&child)))
+}
+
+fn hash_node<N: AstNode + std::fmt::Debug>(hash: &mut StableHash, role: &str, value: Option<N>) {
+    hash.field(role);
+    hash.field(std::any::type_name::<N>());
+    match value {
+        Some(value) => {
+            hash.field(&format!("typed:{value:?}"));
+            hash.field(&format!(
+                "some:{:?}:{}:{}:{}",
+                value.syntax().kind(),
+                value.syntax().range().start.0,
+                value.syntax().range().end.0,
+                value.syntax().flags().0,
+            ));
+        }
+        None => hash.field("none"),
     }
 }
 
-fn typed_access_hash(node: &SyntaxNode) -> u64 {
+fn hash_nodes<N: AstNode + std::fmt::Debug>(hash: &mut StableHash, role: &str, values: Vec<N>) {
+    hash.field(role);
+    hash.field(&values.len().to_string());
+    for (index, value) in values.into_iter().enumerate() {
+        hash.field(&index.to_string());
+        hash_node(hash, "item", Some(value));
+    }
+}
+
+fn hash_token(hash: &mut StableHash, role: &str, value: Option<SyntaxToken>) {
+    hash.field(role);
+    match value {
+        Some(value) => hash.field(&format!(
+            "some:{:?}:{}:{}:{}:{}",
+            value.kind(),
+            value.range().start.0,
+            value.range().end.0,
+            value.flags().0,
+            value.text().expect("clean source token text"),
+        )),
+        None => hash.field("none"),
+    }
+}
+
+fn typed_access_hash(rule_name: &str, node: &SyntaxNode) -> u64 {
     let mut hash = StableHash::new();
-    visit_typed_access(node, &mut hash);
+    hash.field(rule_name);
+    if rule_name == "formula" {
+        let view = find_typed::<FormulaSyntax>(node).expect("transparent formula typed view");
+        hash_node(&mut hash, "formula", Some(view));
+        return hash.0;
+    }
+    if rule_name == "pattern-array-item" {
+        let view = find_typed::<PatternArrayItemSyntax>(node)
+            .expect("transparent pattern-array-item typed view");
+        hash_node(&mut hash, "pattern-array-item", Some(view.clone()));
+        hash_node(&mut hash, "value", view.value());
+        return hash.0;
+    }
+    let kind = phase_2i_node_kind(rule_name).expect("node-valued certification rule");
+    let syntax = find_kind(node, kind).expect("certified typed node");
+    let view = RecursiveCoreSyntax::cast(syntax).expect("closed recursive typed view");
+    hash.field(match &view {
+        RecursiveCoreSyntax::ArgumentList(_) => "ArgumentList",
+        RecursiveCoreSyntax::RecordBinding(_) => "RecordBinding",
+        RecursiveCoreSyntax::BraceSubscript(_) => "BraceSubscript",
+        RecursiveCoreSyntax::BracketSubscript(_) => "BracketSubscript",
+        RecursiveCoreSyntax::CallArgument(_) => "CallArgument",
+        RecursiveCoreSyntax::BoundCallArgument(_) => "BoundCallArgument",
+        RecursiveCoreSyntax::ComprehensionQualifier(_) => "ComprehensionQualifier",
+        RecursiveCoreSyntax::Expression(_) => "Expression",
+        RecursiveCoreSyntax::Factor(_) => "Factor",
+        RecursiveCoreSyntax::FancyTable(_) => "FancyTable",
+        RecursiveCoreSyntax::FancyTableHeader(_) => "FancyTableHeader",
+        RecursiveCoreSyntax::TableField(_) => "TableField",
+        RecursiveCoreSyntax::FormulaSubscript(_) => "FormulaSubscript",
+        RecursiveCoreSyntax::FsmArguments(_) => "FsmArguments",
+        RecursiveCoreSyntax::FsmAsyncTransition(_) => "FsmAsyncTransition",
+        RecursiveCoreSyntax::FsmInstance(_) => "FsmInstance",
+        RecursiveCoreSyntax::FsmOutput(_) => "FsmOutput",
+        RecursiveCoreSyntax::FsmPipe(_) => "FsmPipe",
+        RecursiveCoreSyntax::FsmStateTransition(_) => "FsmStateTransition",
+        RecursiveCoreSyntax::FsmValue(_) => "FsmValue",
+        RecursiveCoreSyntax::FunctionCall(_) => "FunctionCall",
+        RecursiveCoreSyntax::Generator(_) => "Generator",
+        RecursiveCoreSyntax::HeaderField(_) => "HeaderField",
+        RecursiveCoreSyntax::InlineTable(_) => "InlineTable",
+        RecursiveCoreSyntax::InlineTableHeader(_) => "InlineTableHeader",
+        RecursiveCoreSyntax::InlineTableRow(_) => "InlineTableRow",
+        RecursiveCoreSyntax::Kind(_) => "Kind",
+        RecursiveCoreSyntax::KindAnnotation(_) => "KindAnnotation",
+        RecursiveCoreSyntax::KindKind(_) => "KindKind",
+        RecursiveCoreSyntax::KindMap(_) => "KindMap",
+        RecursiveCoreSyntax::KindMatrix(_) => "KindMatrix",
+        RecursiveCoreSyntax::KindRecord(_) => "KindRecord",
+        RecursiveCoreSyntax::KindScalar(_) => "KindScalar",
+        RecursiveCoreSyntax::KindSet(_) => "KindSet",
+        RecursiveCoreSyntax::TableKind(_) => "TableKind",
+        RecursiveCoreSyntax::KindTuple(_) => "KindTuple",
+        RecursiveCoreSyntax::KindWithOption(_) => "KindWithOption",
+        RecursiveCoreSyntax::LogicExpression(_) => "LogicExpression",
+        RecursiveCoreSyntax::ComparisonExpression(_) => "ComparisonExpression",
+        RecursiveCoreSyntax::AdditiveExpression(_) => "AdditiveExpression",
+        RecursiveCoreSyntax::MultiplicativeExpression(_) => "MultiplicativeExpression",
+        RecursiveCoreSyntax::PowerExpression(_) => "PowerExpression",
+        RecursiveCoreSyntax::TableExpression(_) => "TableExpression",
+        RecursiveCoreSyntax::SetExpression(_) => "SetExpression",
+        RecursiveCoreSyntax::Literal(_) => "Literal",
+        RecursiveCoreSyntax::Map(_) => "Map",
+        RecursiveCoreSyntax::MapEntry(_) => "MapEntry",
+        RecursiveCoreSyntax::MatchArm(_) => "MatchArm",
+        RecursiveCoreSyntax::Matrix(_) => "Matrix",
+        RecursiveCoreSyntax::MatrixColumn(_) => "MatrixColumn",
+        RecursiveCoreSyntax::MatrixComprehension(_) => "MatrixComprehension",
+        RecursiveCoreSyntax::MatrixRow(_) => "MatrixRow",
+        RecursiveCoreSyntax::NegateFactor(_) => "NegateFactor",
+        RecursiveCoreSyntax::NotFactor(_) => "NotFactor",
+        RecursiveCoreSyntax::ParentheticalExpression(_) => "ParentheticalExpression",
+        RecursiveCoreSyntax::Pattern(_) => "Pattern",
+        RecursiveCoreSyntax::ArrayPattern(_) => "ArrayPattern",
+        RecursiveCoreSyntax::ArrayPatternElement(_) => "ArrayPatternElement",
+        RecursiveCoreSyntax::AtomStructPattern(_) => "AtomStructPattern",
+        RecursiveCoreSyntax::TuplePattern(_) => "TuplePattern",
+        RecursiveCoreSyntax::TupleStructPattern(_) => "TupleStructPattern",
+        RecursiveCoreSyntax::RangeExpression(_) => "RangeExpression",
+        RecursiveCoreSyntax::RangeSubscript(_) => "RangeSubscript",
+        RecursiveCoreSyntax::Record(_) => "Record",
+        RecursiveCoreSyntax::RegularTable(_) => "RegularTable",
+        RecursiveCoreSyntax::Set(_) => "Set",
+        RecursiveCoreSyntax::SetComprehension(_) => "SetComprehension",
+        RecursiveCoreSyntax::Slice(_) => "Slice",
+        RecursiveCoreSyntax::Structure(_) => "Structure",
+        RecursiveCoreSyntax::SubscriptList(_) => "SubscriptList",
+        RecursiveCoreSyntax::Table(_) => "Table",
+        RecursiveCoreSyntax::TableHeader(_) => "TableHeader",
+        RecursiveCoreSyntax::TableRow(_) => "TableRow",
+        RecursiveCoreSyntax::FancyTableRow(_) => "FancyTableRow",
+        RecursiveCoreSyntax::Tuple(_) => "Tuple",
+        RecursiveCoreSyntax::TupleStruct(_) => "TupleStruct",
+        RecursiveCoreSyntax::Variable(_) => "Variable",
+        RecursiveCoreSyntax::VariableDefine(_) => "VariableDefine",
+    });
+    macro_rules! node {
+        ($role:literal, $value:expr) => {
+            hash_node(&mut hash, $role, $value)
+        };
+    }
+    macro_rules! nodes {
+        ($role:literal, $value:expr) => {
+            hash_nodes(&mut hash, $role, $value)
+        };
+    }
+    macro_rules! token {
+        ($role:literal, $value:expr) => {
+            hash_token(&mut hash, $role, $value)
+        };
+    }
+    match view {
+        RecursiveCoreSyntax::ArgumentList(view) => {
+            token!("opening-parenthesis", view.opening_parenthesis());
+            nodes!("arguments", view.arguments());
+            token!("closing-parenthesis", view.closing_parenthesis());
+        }
+        RecursiveCoreSyntax::RecordBinding(view) => {
+            node!("name", view.name());
+            node!("annotation", view.annotation());
+            token!("colon", view.colon());
+            node!("value", view.value());
+        }
+        RecursiveCoreSyntax::BraceSubscript(view) => {
+            token!("opening-delimiter", view.opening_delimiter());
+            nodes!("values", view.values());
+            token!("closing-delimiter", view.closing_delimiter());
+        }
+        RecursiveCoreSyntax::BracketSubscript(view) => {
+            token!("opening-delimiter", view.opening_delimiter());
+            nodes!("values", view.values());
+            token!("closing-delimiter", view.closing_delimiter());
+        }
+        RecursiveCoreSyntax::CallArgument(view) => node!("value", view.value()),
+        RecursiveCoreSyntax::BoundCallArgument(view) => {
+            node!("name", view.name());
+            token!("colon", view.colon());
+            node!("value", view.value());
+        }
+        RecursiveCoreSyntax::ComprehensionQualifier(view) => node!("value", view.value()),
+        RecursiveCoreSyntax::Expression(view) => {
+            node!("body", view.body());
+            nodes!("match-arms", view.match_arms());
+        }
+        RecursiveCoreSyntax::Factor(view) => node!("value", view.value()),
+        RecursiveCoreSyntax::FancyTable(view) => {
+            node!("header", view.header());
+            nodes!("rows", view.rows());
+        }
+        RecursiveCoreSyntax::FancyTableHeader(view) => nodes!("fields", view.fields()),
+        RecursiveCoreSyntax::TableField(view) => {
+            node!("name", view.name());
+            node!("annotation", view.annotation());
+        }
+        RecursiveCoreSyntax::FormulaSubscript(view) => node!("formula", view.formula()),
+        RecursiveCoreSyntax::FsmArguments(view) => {
+            token!("opening-parenthesis", view.opening_parenthesis());
+            nodes!("arguments", view.arguments());
+            token!("closing-parenthesis", view.closing_parenthesis());
+        }
+        RecursiveCoreSyntax::FsmAsyncTransition(view) => {
+            token!("operator", view.operator());
+            node!("value", view.value());
+        }
+        RecursiveCoreSyntax::FsmInstance(view) => {
+            token!("hash", view.hash());
+            node!("name", view.name());
+            node!("arguments", view.arguments());
+        }
+        RecursiveCoreSyntax::FsmOutput(view) => {
+            token!("operator", view.operator());
+            node!("value", view.value());
+        }
+        RecursiveCoreSyntax::FsmPipe(view) => {
+            node!("instance", view.instance());
+            nodes!("stages", view.stages());
+        }
+        RecursiveCoreSyntax::FsmStateTransition(view) => {
+            token!("operator", view.operator());
+            node!("value", view.value());
+        }
+        RecursiveCoreSyntax::FsmValue(view) => node!("pattern", view.pattern()),
+        RecursiveCoreSyntax::FunctionCall(view) => {
+            node!("function", view.function());
+            node!("arguments", view.arguments());
+        }
+        RecursiveCoreSyntax::Generator(view) => {
+            node!("pattern", view.pattern());
+            token!("arrow", view.arrow());
+            node!("source", view.source());
+        }
+        RecursiveCoreSyntax::HeaderField(view) => {
+            node!("name", view.name());
+            node!("annotation", view.annotation());
+        }
+        RecursiveCoreSyntax::InlineTable(view) => {
+            node!("header", view.header());
+            nodes!("rows", view.rows());
+        }
+        RecursiveCoreSyntax::InlineTableHeader(view) => nodes!("fields", view.fields()),
+        RecursiveCoreSyntax::InlineTableRow(view) => nodes!("cells", view.cells()),
+        RecursiveCoreSyntax::Kind(view) => node!("value", view.value()),
+        RecursiveCoreSyntax::KindAnnotation(view) => {
+            token!("opening-angle", view.opening_angle());
+            node!("kind", view.kind());
+            token!("closing-angle", view.closing_angle());
+        }
+        RecursiveCoreSyntax::KindKind(view) => {
+            token!("opening-angle", view.opening_angle());
+            node!("kind", view.kind());
+            token!("closing-angle", view.closing_angle());
+        }
+        RecursiveCoreSyntax::KindMap(view) => {
+            token!("opening-brace", view.opening_brace());
+            node!("key", view.key());
+            token!("colon", view.colon());
+            node!("value", view.value());
+            token!("closing-brace", view.closing_brace());
+        }
+        RecursiveCoreSyntax::KindMatrix(view) => {
+            token!("opening-bracket", view.opening_bracket());
+            node!("element", view.element());
+            nodes!("dimensions", view.dimensions());
+            token!("closing-bracket", view.closing_bracket());
+        }
+        RecursiveCoreSyntax::KindRecord(view) => {
+            token!("opening-brace", view.opening_brace());
+            nodes!("fields", view.fields());
+            nodes!("field-kinds", view.field_kinds());
+            token!("closing-brace", view.closing_brace());
+        }
+        RecursiveCoreSyntax::KindScalar(view) => {
+            node!("name", view.name());
+            node!("constraint", view.constraint());
+        }
+        RecursiveCoreSyntax::KindSet(view) => {
+            token!("opening-brace", view.opening_brace());
+            node!("element", view.element());
+            node!("literal-constraint", view.literal_constraint());
+            token!("closing-brace", view.closing_brace());
+        }
+        RecursiveCoreSyntax::TableKind(view) => {
+            token!("opening-bar", view.opening_bar());
+            nodes!("field-names", view.field_names());
+            nodes!("field-kinds", view.field_kinds());
+            token!("closing-bar", view.closing_bar());
+            node!("constraint", view.constraint());
+        }
+        RecursiveCoreSyntax::KindTuple(view) => {
+            token!("opening-parenthesis", view.opening_parenthesis());
+            nodes!("items", view.items());
+            token!("closing-parenthesis", view.closing_parenthesis());
+        }
+        RecursiveCoreSyntax::KindWithOption(view) => {
+            node!("kind", view.kind());
+            token!("question-mark", view.question_mark());
+        }
+        RecursiveCoreSyntax::LogicExpression(view) => {
+            nodes!("operands", view.operands());
+            nodes!("operators", view.operators());
+        }
+        RecursiveCoreSyntax::ComparisonExpression(view) => {
+            nodes!("operands", view.operands());
+            nodes!("operators", view.operators());
+        }
+        RecursiveCoreSyntax::AdditiveExpression(view) => {
+            nodes!("operands", view.operands());
+            nodes!("operators", view.operators());
+        }
+        RecursiveCoreSyntax::MultiplicativeExpression(view) => {
+            nodes!("operands", view.operands());
+            nodes!("operators", view.operators());
+        }
+        RecursiveCoreSyntax::PowerExpression(view) => {
+            nodes!("operands", view.operands());
+            nodes!("operators", view.operators());
+        }
+        RecursiveCoreSyntax::TableExpression(view) => {
+            nodes!("operands", view.operands());
+            nodes!("operators", view.operators());
+        }
+        RecursiveCoreSyntax::SetExpression(view) => {
+            nodes!("operands", view.operands());
+            nodes!("operators", view.operators());
+        }
+        RecursiveCoreSyntax::Literal(view) => {
+            node!("value", view.value());
+            token!("true-token", view.true_token());
+            token!("false-token", view.false_token());
+            node!("annotation", view.annotation());
+        }
+        RecursiveCoreSyntax::Map(view) => {
+            token!("opening-brace", view.opening_brace());
+            nodes!("entries", view.entries());
+            token!("closing-brace", view.closing_brace());
+        }
+        RecursiveCoreSyntax::MapEntry(view) => {
+            node!("key", view.key());
+            token!("colon", view.colon());
+            node!("value", view.value());
+        }
+        RecursiveCoreSyntax::MatchArm(view) => {
+            node!("pattern", view.pattern());
+            node!("guard", view.guard());
+            token!("output-operator", view.output_operator());
+            node!("value", view.value());
+        }
+        RecursiveCoreSyntax::Matrix(view) => {
+            token!("opening-delimiter", view.opening_delimiter());
+            nodes!("rows", view.rows());
+            token!("closing-delimiter", view.closing_delimiter());
+        }
+        RecursiveCoreSyntax::MatrixColumn(view) => node!("value", view.value()),
+        RecursiveCoreSyntax::MatrixComprehension(view) => {
+            token!("opening-delimiter", view.opening_delimiter());
+            node!("value", view.value());
+            token!("bar", view.bar());
+            nodes!("qualifiers", view.qualifiers());
+            token!("closing-delimiter", view.closing_delimiter());
+        }
+        RecursiveCoreSyntax::MatrixRow(view) => nodes!("columns", view.columns()),
+        RecursiveCoreSyntax::NegateFactor(view) => {
+            token!("dash", view.dash());
+            node!("operand", view.operand());
+        }
+        RecursiveCoreSyntax::NotFactor(view) => {
+            node!("operator", view.operator());
+            node!("operand", view.operand());
+        }
+        RecursiveCoreSyntax::ParentheticalExpression(view) => {
+            token!("opening-parenthesis", view.opening_parenthesis());
+            node!("expression", view.expression());
+            token!("closing-parenthesis", view.closing_parenthesis());
+        }
+        RecursiveCoreSyntax::Pattern(view) => node!("value", view.value()),
+        RecursiveCoreSyntax::ArrayPattern(view) => {
+            token!("opening-bracket", view.opening_bracket());
+            nodes!("elements", view.elements());
+            token!("closing-bracket", view.closing_bracket());
+        }
+        RecursiveCoreSyntax::ArrayPatternElement(view) => {
+            node!("pattern", view.pattern());
+            token!("spread", view.spread());
+            token!("rest", view.rest());
+        }
+        RecursiveCoreSyntax::AtomStructPattern(view) => {
+            token!("prefix", view.prefix());
+            node!("name", view.name());
+            token!("opening-parenthesis", view.opening_parenthesis());
+            nodes!("items", view.items());
+            token!("closing-parenthesis", view.closing_parenthesis());
+        }
+        RecursiveCoreSyntax::TuplePattern(view) => {
+            token!("opening-parenthesis", view.opening_parenthesis());
+            nodes!("items", view.items());
+            token!("closing-parenthesis", view.closing_parenthesis());
+        }
+        RecursiveCoreSyntax::TupleStructPattern(view) => {
+            token!("prefix", view.prefix());
+            node!("name", view.name());
+            token!("opening-parenthesis", view.opening_parenthesis());
+            nodes!("items", view.items());
+            token!("closing-parenthesis", view.closing_parenthesis());
+        }
+        RecursiveCoreSyntax::RangeExpression(view) => {
+            nodes!("bounds", view.bounds());
+            nodes!("operators", view.operators());
+        }
+        RecursiveCoreSyntax::RangeSubscript(view) => node!("range", view.range()),
+        RecursiveCoreSyntax::Record(view) => nodes!("bindings", view.bindings()),
+        RecursiveCoreSyntax::RegularTable(view) => {
+            node!("header", view.header());
+            nodes!("rows", view.rows());
+        }
+        RecursiveCoreSyntax::Set(view) => {
+            token!("opening-brace", view.opening_brace());
+            nodes!("items", view.items());
+            token!("closing-brace", view.closing_brace());
+        }
+        RecursiveCoreSyntax::SetComprehension(view) => {
+            token!("opening-delimiter", view.opening_delimiter());
+            node!("value", view.value());
+            token!("bar", view.bar());
+            nodes!("qualifiers", view.qualifiers());
+            token!("closing-delimiter", view.closing_delimiter());
+        }
+        RecursiveCoreSyntax::Slice(view) => {
+            node!("stem", view.stem());
+            node!("subscripts", view.subscripts());
+        }
+        RecursiveCoreSyntax::Structure(view) => node!("value", view.value()),
+        RecursiveCoreSyntax::SubscriptList(view) => nodes!("items", view.items()),
+        RecursiveCoreSyntax::Table(view) => node!("value", view.value()),
+        RecursiveCoreSyntax::TableHeader(view) => nodes!("fields", view.fields()),
+        RecursiveCoreSyntax::TableRow(view) => nodes!("cells", view.cells()),
+        RecursiveCoreSyntax::FancyTableRow(view) => nodes!("cells", view.cells()),
+        RecursiveCoreSyntax::Tuple(view) => {
+            token!("opening-parenthesis", view.opening_parenthesis());
+            nodes!("items", view.items());
+            token!("closing-parenthesis", view.closing_parenthesis());
+        }
+        RecursiveCoreSyntax::TupleStruct(view) => {
+            token!("prefix", view.prefix());
+            node!("name", view.name());
+            token!("opening-parenthesis", view.opening_parenthesis());
+            node!("value", view.value());
+            token!("closing-parenthesis", view.closing_parenthesis());
+        }
+        RecursiveCoreSyntax::Variable(view) => {
+            node!("stem", view.stem());
+            node!("annotation", view.annotation());
+        }
+        RecursiveCoreSyntax::VariableDefine(view) => {
+            token!("mutability-marker", view.mutability_marker());
+            node!("variable", view.variable());
+            token!("define-operator", view.define_operator());
+            node!("value", view.value());
+        }
+    }
     hash.0
 }
 
@@ -255,12 +697,18 @@ fn certification_table_executes_every_direct_accept_reject_and_recovery_case() {
             "{}",
             row.name
         );
-        let typed_hash = typed_access_hash(&accepted.syntax());
+        let typed_hash = typed_access_hash(&row.name, &accepted.syntax());
         assert_eq!(typed_hash, row.typed_access_hash, "{}", row.name);
 
-        let rejected =
-            parse_canonical_phase_2i_rule_for_test(source(""), rule, ParseConfig::default())
-                .expect("Phase 2I direct dispatcher");
+        assert!(!row.rejected.is_empty(), "{}", row.name);
+        assert_ne!(row.rejected, row.accepted, "{}", row.name);
+        assert_ne!(row.rejected, row.recovery, "{}", row.name);
+        let rejected = parse_canonical_phase_2i_rule_for_test(
+            source(&row.rejected),
+            rule,
+            ParseConfig::default(),
+        )
+        .expect("Phase 2I direct dispatcher");
         assert_eq!(
             rejected.outcome,
             CanonicalRuleOutcome::NoMatch,
@@ -315,13 +763,20 @@ fn certification_table_executes_every_direct_accept_reject_and_recovery_case() {
             "executable" | "structural" | "compile-time"
         ));
         match row.semantic_disposition.as_str() {
-            "executable" => assert_eq!(row.canonical_consumer, "engine/source-semantics"),
-            "structural" => assert!(row.canonical_consumer.starts_with("syntax/typed-")),
+            "executable" => {
+                assert_eq!(row.canonical_consumer, "engine/source-semantics");
+                assert!(row.semantic_snapshot_hash.parse::<u64>().is_ok());
+            }
+            "structural" => {
+                assert!(row.canonical_consumer.starts_with("syntax/typed-"));
+                assert_eq!(row.semantic_snapshot_hash, "none");
+            }
             "compile-time" => {
                 assert_eq!(
                     row.canonical_consumer,
                     "engine/source-semantics/compile-time"
                 );
+                assert_eq!(row.semantic_snapshot_hash, "none");
             }
             _ => unreachable!("closed semantic disposition"),
         }
@@ -384,6 +839,11 @@ fn certification_evidence_uses_only_canonical_authorities() {
 fn assert_canonical_only(path: &Path, evidence: &str) {
     for forbidden in [
         concat!("mech_syntax::", "parser"),
+        concat!("mech_syntax::", "parse"),
+        concat!("use mech_syntax", " as "),
+        concat!("mech_syntax::", "{"),
+        concat!("mech_syntax::", "*"),
+        concat!("extern crate mech_", "syntax"),
         concat!("document::lower::", "legacy"),
         concat!("mech_core::", "Program"),
     ] {
