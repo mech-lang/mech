@@ -12,7 +12,7 @@ crate at that baseline. It documents existing behavior, not a parser redesign.
 R1–R6 Integration Rebase
 -------------------------------------------------------------------------------
 
-The syntax stack is rebased through S6 onto
+The syntax stack is rebased through S7 onto
 `integration/v0.4` at `535e4b245` (R1–R6 plus the combined integration fixes).
 Local recursive-core recovery, typed views, engine-owned source semantics, and
 canonical certification and atomic Phase 2I registry activation are complete.
@@ -20,8 +20,14 @@ canonical certification and atomic Phase 2I registry activation are complete.
 2I-D/2I-E delivery assumption with independently gated milestones: canonical
 document-root completion, followed by the atomic product cutover that removes
 the Nom implementation and its lowerers. S6 activates the certified 80-rule
-recursive registry atomically. Canonical document-root completion remains the
-S7 milestone; product cutover and removal are reserved for S8.
+recursive registry atomically. The S7 canonical document closure adds 114
+certified rules and leaves only 17 runtime-owned interactive-command rows
+outside document syntax. Product cutover and removal remain reserved for S8.
+
+`s7-document-certification.tsv` records a specification-derived clean source,
+typed node policy, semantic status, and stable specification location for every
+document rule. `s7-dispositions.tsv` accounts for all 131 rows that entered S7:
+112 document dependencies, two maintained roots, and 17 historical commands.
 
 The 539 canonical rule IDs and Phase 0 inventory remain stable. Their live
 implementation audit records the intervening integration changes explicitly:

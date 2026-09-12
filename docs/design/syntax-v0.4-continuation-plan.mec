@@ -1,7 +1,7 @@
 Syntax v0.4 Continuation Plan
 ===============================================================================
 
-Status: S0-S6 complete; S7 canonical document-root completion is next.
+Status: S0-S7 complete; S8 atomic product cutover is next.
 
 Planning baseline: `feature/syntax` at `4560e5e6c`, rebased onto
 `integration/v0.4` after the R1-R6 stack. Pull request 812 is green at this
@@ -19,21 +19,25 @@ the atomic product cutover have independent gates.
 The canonical inventory contains exactly 539 rules:
 
 ```text
-canonical syntax certified 408
-not yet implemented        131
+canonical syntax certified 522
+historical command rules    17
                            ---
 total                      539
 ```
 
-The completed phases cover 408 / 539 rules. The generated Phase 2I recursive
-component contains 80 rules and is active as one certified component.
+The completed phases cover 522 / 539 rules. The other 17 inventory rows are
+runtime-owned interactive commands rather than document syntax. The generated
+Phase 2I recursive component contains 80 rules and is active as one certified
+component.
 
 The component has local malformed-input recovery, complete typed red-tree views,
 engine-owned source semantics, and canonical certification for all 80 direct
-roots. S6 applied the registry transition atomically.
+roots. S6 applied the registry transition atomically. S7 adds the generated
+114-rule document closure, typed document views, whole-source recovery, and the
+public canonical `Document` root.
 
-The supported canonical roots are currently `Canonical + Grammar` and
-`Prototype + Document`. The shipping
+The supported canonical roots are `Canonical + Grammar` and
+`Canonical + Document`. The shipping
 `mech_syntax::parser::parse(&str) -> MResult<mech_core::Program>` entry point
 still uses Nom. Twenty-nine production calls across the CLI, formatter,
 resolver, runtime, engine, server, bundler, and WASM controller still select
@@ -338,6 +342,22 @@ Exit gate:
 - tools and engine source semantics cover the complete canonical fixture corpus;
 - malformed documents produce total snapshots and structured diagnostics; and
 - no product caller has switched early.
+
+Implementation record:
+
+- the specification generates the 114-rule document grammar, typed-node
+  inventory, accepted-source certification matrix, and registry activation;
+- all 114 document rules are certified, leaving only the 17 runtime-owned
+  interactive-command rows outside the document parser;
+- the canonical root preserves the complete source corpus, reports mismatched
+  fences and malformed documents structurally, and behaves identically across
+  contiguous and piece-backed source;
+- typed document views expose title front matter, sections, paragraphs, inline
+  Mech, and fenced blocks without copying source text;
+- engine document compilation handles canonical definitions and expressions in
+  source order, rejects recovered syntax, and returns an explicit error for
+  executable document units whose engine behavior is not implemented; and
+- product callers remain unchanged for the coordinated S8 source-path cutover.
 
 S8. Atomic product cutover and removal
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

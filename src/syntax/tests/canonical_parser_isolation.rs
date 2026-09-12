@@ -20,6 +20,8 @@ const REQUIRED_CANONICAL_SOURCES: &[&str] = &[
     "imports.rs",
     "source_imports.rs",
     "declarations.rs",
+    "document.rs",
+    "document_grammar.rs",
     "subscript_primitives.rs",
     "pattern_primitives.rs",
     "control_operators.rs",
@@ -1538,7 +1540,7 @@ fn phase_2d_sources_do_not_reference_unported_expression_parent_rules() {
 }
 
 #[test]
-fn parser_surface_has_only_the_two_phase_2a_root_pairs() {
+fn parser_surface_adds_only_the_s7_canonical_document_pair() {
     use mech_syntax::document::{
         DocumentId, ParseConfig, ParseRequestError, ParseRoot, ParserImplementation, Revision,
         TextSnapshot, parse_syntax,
@@ -1563,18 +1565,15 @@ fn parser_surface_has_only_the_two_phase_2a_root_pairs() {
         )
         .is_ok()
     );
-    assert!(matches!(
+    assert!(
         parse_syntax(
             source(),
             ParseRoot::Document,
             ParserImplementation::Canonical,
             ParseConfig::default(),
-        ),
-        Err(ParseRequestError::Unsupported {
-            implementation: ParserImplementation::Canonical,
-            root: ParseRoot::Document,
-        })
-    ));
+        )
+        .is_ok()
+    );
     assert!(matches!(
         parse_syntax(
             source(),
@@ -1611,17 +1610,16 @@ fn parser_surface_has_only_the_two_phase_2a_root_pairs() {
 }
 
 #[test]
-fn migration_state_and_document_skeleton_sources_are_absent() {
+fn removed_migration_state_and_document_skeleton_types_stay_absent() {
     let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     for relative in [
         "src/document/coverage.rs",
-        "src/document/parser/canonical/document.rs",
         "src/document/parser/canonical/migration.rs",
         "src/document/parser/physical.rs",
     ] {
         assert!(
             !manifest.join(relative).exists(),
-            "Phase 2B must not retain {relative}"
+            "S7 must not retain {relative}"
         );
     }
 

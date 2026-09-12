@@ -51,8 +51,8 @@ use std::collections::HashMap as RangeMap;
 //#[cfg(feature = "mechdown")]
 pub mod activation;
 pub mod base;
-/// Experimental lossless document syntax. Production parsing remains on the
-/// legacy parser during migration.
+/// Lossless canonical syntax. Product callers move to this surface together
+/// in the S8 source-path cutover.
 pub mod document;
 pub mod expressions;
 #[cfg(feature = "formatter")]

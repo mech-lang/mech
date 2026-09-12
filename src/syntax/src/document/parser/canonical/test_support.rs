@@ -14,9 +14,24 @@ use super::super::rule::rules;
 use super::super::{LexicalMode, ParseConfig, Parser, sink};
 use super::combinator::Attempt;
 use super::{
-    control_operators, declarations, imports, kinds, literals, operators, paths,
+    control_operators, declarations, document, imports, kinds, literals, operators, paths,
     pattern_primitives, recursive_core, source_imports, structure_shell, subscript_primitives,
 };
+
+/// Parse one rule from the generated S7 document closure as a deterministic
+/// source prefix.
+#[doc(hidden)]
+pub fn parse_canonical_document_rule_for_test(
+    source: TextSnapshot,
+    rule: RuleId,
+    config: ParseConfig,
+) -> Option<CanonicalSourceRuleSnapshot> {
+    document::supports(rule).then(|| {
+        parse_source_rule_prefix(source, rule, config, |parser| {
+            document::parse_rule(parser, rule)
+        })
+    })
+}
 
 /// The exact combined Phase 2F direct-rule surface.
 pub(crate) const PHASE_2F_RULES: &[RuleId; 21] = &[

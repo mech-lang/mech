@@ -1,13 +1,118 @@
 use alloc::vec::Vec;
 
-use crate::document::SyntaxKind;
-use crate::document::red::{AstNode, DocumentSyntax, SectionSyntax, SyntaxNode};
+use crate::document::red::{
+    AstNode, DocumentSyntax, IdentifierSyntax, ParagraphSyntax, SectionSyntax, SyntaxNode,
+    SyntaxToken,
+};
+use crate::document::{
+    BodySyntax, CodeBlockSyntax, MechCodeAltSyntax, MechCodeSyntax, ParagraphElementSyntax,
+    SectionElementSyntax, SyntaxKind, TitleFrontMatterSyntax, TitleSyntax, UlSubtitleSyntax,
+};
 
 impl DocumentSyntax {
+    pub fn title(&self) -> Option<TitleSyntax> {
+        self.syntax().children().find_map(TitleSyntax::cast)
+    }
+
+    pub fn body(&self) -> Option<BodySyntax> {
+        self.syntax().children().find_map(BodySyntax::cast)
+    }
+
     pub fn sections(&self) -> Vec<SectionSyntax> {
         let mut sections = Vec::new();
         collect_sections(self.syntax(), &mut sections);
         sections
+    }
+}
+
+impl BodySyntax {
+    pub fn sections(&self) -> Vec<SectionSyntax> {
+        self.syntax()
+            .children()
+            .filter_map(SectionSyntax::cast)
+            .collect()
+    }
+}
+
+impl TitleSyntax {
+    pub fn front_matter(&self) -> Option<TitleFrontMatterSyntax> {
+        self.syntax()
+            .children()
+            .find_map(TitleFrontMatterSyntax::cast)
+    }
+}
+
+impl TitleFrontMatterSyntax {
+    pub fn keys(&self) -> Vec<IdentifierSyntax> {
+        self.syntax()
+            .children()
+            .filter_map(IdentifierSyntax::cast)
+            .collect()
+    }
+}
+
+impl SectionSyntax {
+    pub fn subtitle(&self) -> Option<UlSubtitleSyntax> {
+        self.syntax().children().find_map(UlSubtitleSyntax::cast)
+    }
+
+    pub fn elements(&self) -> Vec<SectionElementSyntax> {
+        self.syntax()
+            .children()
+            .filter_map(SectionElementSyntax::cast)
+            .collect()
+    }
+
+    pub fn mech_blocks(&self) -> Vec<MechCodeSyntax> {
+        self.syntax()
+            .children()
+            .filter_map(MechCodeSyntax::cast)
+            .collect()
+    }
+}
+
+impl SectionElementSyntax {
+    pub fn value(&self) -> Option<SyntaxNode> {
+        self.syntax().children().next()
+    }
+}
+
+impl ParagraphSyntax {
+    pub fn elements(&self) -> Vec<ParagraphElementSyntax> {
+        self.syntax()
+            .children()
+            .filter_map(ParagraphElementSyntax::cast)
+            .collect()
+    }
+}
+
+impl CodeBlockSyntax {
+    pub fn delimiters(&self) -> Vec<SyntaxToken> {
+        self.syntax()
+            .tokens()
+            .into_iter()
+            .filter(|token| {
+                matches!(
+                    token.kind(),
+                    SyntaxKind::GraveCodeBlockSigil | SyntaxKind::TildeCodeBlockSigil
+                )
+            })
+            .collect()
+    }
+}
+
+impl MechCodeSyntax {
+    pub fn items(&self) -> Vec<MechCodeAltSyntax> {
+        self.syntax()
+            .children()
+            .filter_map(MechCodeAltSyntax::cast)
+            .collect()
+    }
+}
+
+impl MechCodeAltSyntax {
+    pub fn value(&self) -> Option<SyntaxNode> {
+        self.syntax().children().next()
     }
 }
 

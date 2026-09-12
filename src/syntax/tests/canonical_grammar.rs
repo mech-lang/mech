@@ -291,7 +291,7 @@ fn clustered_quote_inside_a_terminal_remains_whole_content() {
 }
 
 #[test]
-fn dispatcher_supports_only_the_two_phase_2a_pairs() {
+fn dispatcher_supports_the_canonical_document_root() {
     let config = ParseConfig::default();
     assert!(
         parse_syntax(
@@ -311,17 +311,23 @@ fn dispatcher_supports_only_the_two_phase_2a_pairs() {
         )
         .is_ok()
     );
-    for (implementation, root) in [
-        (ParserImplementation::Canonical, ParseRoot::Document),
-        (ParserImplementation::Prototype, ParseRoot::Grammar),
-    ] {
-        let error = parse_syntax(source(""), root, implementation, config).unwrap_err();
-        assert_eq!(
-            error,
-            ParseRequestError::Unsupported {
-                implementation,
-                root,
-            }
-        );
-    }
+    assert!(
+        parse_syntax(
+            source("x := 1"),
+            ParseRoot::Document,
+            ParserImplementation::Canonical,
+            config,
+        )
+        .is_ok()
+    );
+    let implementation = ParserImplementation::Prototype;
+    let root = ParseRoot::Grammar;
+    let error = parse_syntax(source(""), root, implementation, config).unwrap_err();
+    assert_eq!(
+        error,
+        ParseRequestError::Unsupported {
+            implementation,
+            root,
+        }
+    );
 }

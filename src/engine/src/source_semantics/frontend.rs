@@ -231,7 +231,7 @@ impl CanonicalSourceFrontend {
         reject_recovered_syntax(document)?;
         let anchor = SourceSemanticAnchor::for_node(document.syntax());
         let mut units = Vec::new();
-        collect_document_units(document.syntax(), &mut units);
+        collect_document_units(document.syntax(), &mut units)?;
         let mut builder = SemanticBuilder::new(anchor);
         let mut declared_bindings = BTreeSet::new();
         for unit in &units {
@@ -265,20 +265,51 @@ impl CanonicalSourceFrontend {
     }
 }
 
-fn collect_document_units(node: &SyntaxNode, output: &mut Vec<SyntaxNode>) {
-    match node.kind() {
-        SyntaxKind::VariableDefine | SyntaxKind::Expression => output.push(node.clone()),
-        SyntaxKind::Document
-        | SyntaxKind::Body
-        | SyntaxKind::Section
-        | SyntaxKind::SectionElement
-        | SyntaxKind::MechItem => {
-            for child in node.children() {
-                collect_document_units(&child, output);
-            }
-        }
-        _ => {}
+fn collect_document_units(
+    node: &SyntaxNode,
+    output: &mut Vec<SyntaxNode>,
+) -> Result<(), SourceSemanticError> {
+    if matches!(
+        node.kind(),
+        SyntaxKind::VariableDefine | SyntaxKind::Expression
+    ) {
+        output.push(node.clone());
+        return Ok(());
     }
+    if matches!(
+        node.kind(),
+        SyntaxKind::ActivationScope
+            | SyntaxKind::ContextDeclaration
+            | SyntaxKind::ContextSend
+            | SyntaxKind::EnumDefine
+            | SyntaxKind::ExportDeclaration
+            | SyntaxKind::Fsm
+            | SyntaxKind::FsmDeclare
+            | SyntaxKind::FsmImplementation
+            | SyntaxKind::FsmSpecification
+            | SyntaxKind::FunctionDefine
+            | SyntaxKind::InvariantDefine
+            | SyntaxKind::ImportDeclaration
+            | SyntaxKind::KindDefine
+            | SyntaxKind::MatchExpression
+            | SyntaxKind::ModuleImport
+            | SyntaxKind::OpAssign
+            | SyntaxKind::TupleDestructure
+            | SyntaxKind::VariableAssign
+    ) {
+        return Err(SourceSemanticError {
+            code: "source-semantics/unsupported-document-unit",
+            message: format!(
+                "canonical document unit {:?} has no engine semantic implementation",
+                node.kind()
+            ),
+            anchor: SourceSemanticAnchor::for_node(node),
+        });
+    }
+    for child in node.children() {
+        collect_document_units(&child, output)?;
+    }
+    Ok(())
 }
 
 fn collect_pattern_bindings(

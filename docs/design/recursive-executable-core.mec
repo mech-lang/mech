@@ -1,9 +1,9 @@
 Recursive Executable-Core Contract
 ===============================================================================
 
-Status: S6 recursive-core activation complete.
+Status: S6 recursive-core activation complete; S7 document root complete.
 
-Current canonical progress is 408 / 539. The component implements clean,
+Current canonical progress is 522 / 539. The component implements clean,
 lossless recognition, local malformed-input recovery, typed access, source
 semantics, and canonical certification for all 80 rules. All 80 productions are
 active as Phase 2I. The generated implementation boundary remains one strongly
@@ -140,8 +140,8 @@ Phase 2I-C created the parser directory above and implemented the complete clean
 recognizer. S2 added bounded local recovery, S3 added the typed syntax surface,
 S4 added engine-owned source semantics, and S5 closed their certification
 matrix. S6 activates all 80 recursive rules as one atomic registry component.
-Canonical document-root completion remains the S7 milestone; product cutover
-and removal are reserved for S8.
+S7 completes the canonical document root; product cutover and removal remain
+reserved for S8.
 
 `MATCH-001` records the canonical expression-match whitespace rule. The
 optional suffix owns that whitespace only when the following question mark
@@ -249,11 +249,12 @@ semantic reconstruction.
 9. Root boundary
 -------------------------------------------------------------------------------
 
-Phase 2I adds no public parser root. The public root surface remains:
+Phase 2I itself added no public parser root. S7 extends the current canonical
+root surface to:
 
 ```text
-Prototype + Document
 Canonical + Grammar
+Canonical + Document
 ```
 
 This is the complete current parser-root API.
@@ -287,5 +288,5 @@ comprehensions are not factor forms. Complete record candidates may fall
 through to maps, and that selection remains measured-linear for nested
 record-looking maps. Matrix nodes retain leading whitespace, physical newlines,
 and box borders. Every recursive repetition propagates a committed child
-without discarding its diagnostic or parent structure. No public parser root is
-added.
+without discarding its diagnostic or parent structure. The component remains
+independent of the canonical document root added by S7.
