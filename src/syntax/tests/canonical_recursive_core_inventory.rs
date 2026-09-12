@@ -604,6 +604,12 @@ fn recursive_core_has_exact_parser_and_typed_view_modules_and_is_activated() {
         })
         .collect::<BTreeSet<_>>();
     assert_eq!(actual_ast_files, expected_files);
+    assert!(
+        !root
+            .join("src/syntax/src/document/lower/legacy/recursive_core")
+            .exists(),
+        "the retired recursive lowerer must not be recreated"
+    );
 
     let generated_ports =
         fs::read_to_string(root.join("src/syntax/src/document/parser/canonical_ports.rs"))
