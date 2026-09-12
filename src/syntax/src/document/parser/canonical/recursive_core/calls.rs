@@ -120,7 +120,6 @@ pub(super) fn argument_list(parser: &mut Parser<'_>, rule: RuleId, kind: SyntaxK
                     }
                     Attempt::Committed => {
                         committed = true;
-                        break;
                     }
                 }
             }

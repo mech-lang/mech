@@ -3,8 +3,8 @@ use mech_syntax::document::parser::canonical::{
 };
 use mech_syntax::document::parser::{canonical_rule_name, rules};
 use mech_syntax::document::{
-    DocumentId, ExpectedSyntax, NodeFlags, ParseConfig, RecoveryAction, Revision, RuleId,
-    SyntaxKind, SyntaxNode, TextRange, TextSize, TextSnapshot, reconstruct_source_range,
+    DocumentId, ExpectedSyntax, NodeFlags, ParseConfig, ParseLimits, RecoveryAction, Revision,
+    RuleId, SyntaxKind, SyntaxNode, TextRange, TextSize, TextSnapshot, reconstruct_source_range,
     validate_lossless_range,
 };
 use std::collections::BTreeMap;
@@ -384,6 +384,85 @@ fn tuple_recovery_resumes_at_the_next_sibling_separator() {
             "{rule:?}"
         );
     }
+}
+
+#[test]
+fn call_recovery_resumes_at_the_next_sibling_separator() {
+    let text = "(1, 2 +, 3)";
+    let parsed = parse(rules::ARGUMENT_LIST, text);
+    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+    assert_eq!(parsed.consumed.end.0 as usize, text.len());
+    assert_eq!(count_kind(&parsed.syntax(), SyntaxKind::CallArgument), 3);
+    assert!(contains_kind(&parsed.syntax(), SyntaxKind::Missing));
+    assert!(!contains_kind(&parsed.syntax(), SyntaxKind::Error));
+}
+
+#[test]
+fn shared_brace_recovery_keeps_map_and_set_selection_exclusive() {
+    for (text, selected, rejected) in [
+        ("{1, 2 +}", SyntaxKind::Set, SyntaxKind::Map),
+        ("{1: 2, 3:}", SyntaxKind::Map, SyntaxKind::Set),
+    ] {
+        let parsed = parse(rules::EXPRESSION, text);
+        assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed, "{text:?}");
+        assert_eq!(parsed.consumed.end.0 as usize, text.len(), "{text:?}");
+        assert!(contains_kind(&parsed.syntax(), selected), "{text:?}");
+        assert!(!contains_kind(&parsed.syntax(), rejected), "{text:?}");
+        assert!(
+            contains_kind(&parsed.syntax(), SyntaxKind::Missing),
+            "{text:?}"
+        );
+    }
+}
+
+#[test]
+fn transpose_apostrophe_does_not_hide_an_owner_closer() {
+    let text = "(1 @ ')";
+    let parsed = parse(rules::ARGUMENT_LIST, text);
+    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+    assert_eq!(parsed.consumed.end.0 as usize, text.len());
+    assert!(contains_kind(&parsed.syntax(), SyntaxKind::Error));
+    assert!(!contains_kind(&parsed.syntax(), SyntaxKind::Missing));
+}
+
+#[test]
+fn speculative_record_selection_restores_the_recovery_budget() {
+    let text = "{a: 1, 2: @}";
+    let limits = ParseLimits {
+        max_recovery_bytes: 1,
+        ..ParseLimits::default()
+    };
+    let parsed = parse_canonical_phase_2i_rule_for_test(
+        source(text),
+        rules::STRUCTURE,
+        ParseConfig { limits },
+    )
+    .unwrap();
+    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+    assert_eq!(parsed.stats.recovery_bytes, 1);
+    assert!(contains_kind(&parsed.syntax(), SyntaxKind::Map));
+    assert!(!contains_kind(&parsed.syntax(), SyntaxKind::Record));
+}
+
+#[test]
+fn table_separator_recovery_preserves_the_next_row() {
+    let text = "|a<u8>|\n|1\n|2|";
+    let parsed = parse(rules::TABLE, text);
+    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+    assert_eq!(parsed.consumed.end.0 as usize, text.len());
+    assert!(contains_kind(&parsed.syntax(), SyntaxKind::RegularTable));
+    assert!(!contains_kind(&parsed.syntax(), SyntaxKind::InlineTable));
+    assert_eq!(count_kind(&parsed.syntax(), SyntaxKind::TableRow), 2);
+}
+
+#[test]
+fn table_selection_defers_inline_recovery_at_a_physical_newline() {
+    let text = "|a<u8>|\n|1|";
+    let parsed = parse(rules::TABLE, text);
+    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Matched);
+    assert_eq!(parsed.consumed.end.0 as usize, text.len());
+    assert!(contains_kind(&parsed.syntax(), SyntaxKind::RegularTable));
+    assert!(!contains_kind(&parsed.syntax(), SyntaxKind::InlineTable));
 }
 
 #[test]

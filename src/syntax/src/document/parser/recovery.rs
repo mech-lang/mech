@@ -175,7 +175,7 @@ fn abandon_until(
             continue;
         }
         match character {
-            '\'' | '"' => quoted = Some(character),
+            '"' => quoted = Some(character),
             '(' | '[' | '{' => delimiters.push(character),
             ')' | ']' | '}' => {
                 if delimiters

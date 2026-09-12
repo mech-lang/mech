@@ -251,6 +251,10 @@ pub(super) fn parse_inline_table(parser: &mut Parser<'_>) -> Attempt {
         match child {
             Attempt::Matched => {}
             Attempt::NoMatch => {
+                if parser.cursor().starts_with("\n") || parser.cursor().starts_with("\r") {
+                    node.abandon(parser);
+                    return Attempt::NoMatch;
+                }
                 recover_required_production(
                     parser,
                     rules::INLINE_TABLE,
@@ -351,6 +355,7 @@ pub(super) fn parse_regular_table(parser: &mut Parser<'_>) -> Attempt {
             node.abandon(parser);
             return Attempt::NoMatch;
         }
+        let mut committed = false;
         let child = parse_table_header(parser);
         match child {
             Attempt::Matched => {}
@@ -359,8 +364,7 @@ pub(super) fn parse_regular_table(parser: &mut Parser<'_>) -> Attempt {
                 return Attempt::NoMatch;
             }
             Attempt::Committed => {
-                node.complete(parser, SyntaxKind::RegularTable);
-                return Attempt::Committed;
+                committed = true;
             }
         }
         let first = parse_table_row(parser);
@@ -378,8 +382,7 @@ pub(super) fn parse_regular_table(parser: &mut Parser<'_>) -> Attempt {
                 return Attempt::Committed;
             }
             Attempt::Committed => {
-                node.complete(parser, SyntaxKind::RegularTable);
-                return Attempt::Committed;
+                committed = true;
             }
         }
         loop {
@@ -394,13 +397,16 @@ pub(super) fn parse_regular_table(parser: &mut Parser<'_>) -> Attempt {
                     break;
                 }
                 Attempt::Committed => {
-                    node.complete(parser, SyntaxKind::RegularTable);
-                    return Attempt::Committed;
+                    committed = true;
                 }
             }
         }
         node.complete(parser, SyntaxKind::RegularTable);
-        Attempt::Matched
+        if committed {
+            Attempt::Committed
+        } else {
+            Attempt::Matched
+        }
     })
 }
 
@@ -623,7 +629,7 @@ pub(super) fn parse_record(parser: &mut Parser<'_>) -> Attempt {
                 Attempt::Matched
             } else if parser.is_eof() {
                 recover_table_end(parser, rules::RECORD, delimiter)
-            } else if ahead(parser, parse_mapping) {
+            } else if has_mapping_separator(parser) {
                 Attempt::NoMatch
             } else {
                 recover_table_end(parser, rules::RECORD, delimiter)
@@ -1571,6 +1577,14 @@ fn brace_general(parser: &mut Parser<'_>, mode: BraceMode) -> FactAttempt<Expres
                     Attempt::Matched if parser.offset() > before => {}
                     Attempt::Matched | Attempt::NoMatch => break,
                     Attempt::Committed => {
+                        recover_closer(
+                            parser,
+                            rules::MAP,
+                            rules::RIGHT_BRACE,
+                            SyntaxKind::RightBrace,
+                            '}',
+                            "}",
+                        );
                         map.complete(parser, SyntaxKind::Map);
                         structure.complete(parser, SyntaxKind::Structure);
                         return FactAttempt::Committed;
@@ -1613,8 +1627,16 @@ fn brace_general(parser: &mut Parser<'_>, mode: BraceMode) -> FactAttempt<Expres
                     break;
                 }
                 Attempt::Committed => {
+                    recover_closer(
+                        parser,
+                        rules::SET,
+                        rules::RIGHT_BRACE,
+                        SyntaxKind::RightBrace,
+                        '}',
+                        "}",
+                    );
                     set.complete(parser, SyntaxKind::Set);
-                    map.complete(parser, SyntaxKind::Map);
+                    map.abandon(parser);
                     structure.complete(parser, SyntaxKind::Structure);
                     return FactAttempt::Committed;
                 }
@@ -1994,7 +2016,7 @@ fn recover_table_separator(parser: &mut Parser<'_>, target: RuleId) -> Attempt {
     recover_closer_set(
         parser,
         target,
-        &['|', '│', '┃', ')', ']', '}'],
+        &['|', '│', '┃', '\n', '\r', ')', ']', '}'],
         SyntaxKind::Bar,
         "|",
         |parser| structure_shell::parse_table_separator(parser) == Attempt::Matched,
@@ -2045,6 +2067,42 @@ fn ahead(parser: &mut Parser<'_>, parse: fn(&mut Parser<'_>) -> Attempt) -> bool
     let matched = parse(parser).accepted();
     parser.rewind(checkpoint);
     matched
+}
+
+fn has_mapping_separator(parser: &Parser<'_>) -> bool {
+    let mut cursor = parser.cursor().clone();
+    let mut delimiters = alloc::vec::Vec::new();
+    let mut quoted = false;
+    let mut escaped = false;
+
+    while let Some(character) = cursor.peek_char() {
+        if quoted {
+            let _ = cursor.bump_char();
+            if escaped {
+                escaped = false;
+            } else if character == '\\' {
+                escaped = true;
+            } else if character == '"' {
+                quoted = false;
+            }
+            continue;
+        }
+        match character {
+            '"' => quoted = true,
+            '(' | '[' | '{' => delimiters.push(character),
+            ')' | ']' | '}' => {
+                if delimiters.is_empty() {
+                    return false;
+                }
+                delimiters.pop();
+            }
+            ':' if delimiters.is_empty() => return true,
+            ',' if delimiters.is_empty() => return false,
+            _ => {}
+        }
+        let _ = cursor.bump_char();
+    }
+    false
 }
 
 fn finish_provisional_marker(
