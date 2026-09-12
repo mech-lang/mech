@@ -98,6 +98,56 @@ fn interactive_fixture_executes_and_retains_state_across_turns() {
 }
 
 #[test]
+fn document_bindings_preserve_empty_errors_and_contextual_optional_state() {
+    for source in [
+        "x := _\nx\n",
+        "~x := _\nx\n",
+        "~x := 1\nx = _\nx\n",
+        "_\n1\n",
+        "```mech\n_\n1\n```\n",
+    ] {
+        let error = CanonicalSourceFrontend
+            .compile_document(&document(source))
+            .err()
+            .expect("an unresolved binding must not become an executable value");
+        assert_eq!(error.code, "source-semantics/unresolved-empty-expression");
+        assert_eq!(error.anchor.document, DocumentId(0x570));
+        assert_eq!(error.anchor.revision, Revision(7));
+        assert_eq!(
+            &source[error.anchor.range.start.0 as usize..error.anchor.range.end.0 as usize],
+            "_",
+        );
+    }
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    for source in ["~x<u8?> := _\nx\n", "~x<u8?> := 1u8\nx = _\nx\n"] {
+        let program = compiled(source);
+        assert!(program.program().inputs.is_empty());
+        let artifact = program.compile_artifact().unwrap();
+        let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+        let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x578, 0),
+            &decoded,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        for _ in 0..2 {
+            instance.turn(&[]).unwrap();
+            assert!(
+                matches!(
+                    instance.copied_output(0).unwrap().data(),
+                    ValueData::Option(None)
+                ),
+                "{source}"
+            );
+        }
+    }
+}
+
+#[test]
 fn discarded_candidate_does_not_advance_document_state() {
     let compiled = compiled("~answer := 0\nanswer += 1\nanswer\n");
     let artifact = compiled.compile_artifact().unwrap();

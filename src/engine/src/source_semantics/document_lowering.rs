@@ -200,7 +200,7 @@ fn compile_document_units(
     for unit in units {
         match unit {
             DocumentUnit::Statement(unit) => {
-                last = Some(match unit.kind() {
+                let result = match unit.kind() {
                     SyntaxKind::VariableDefine => {
                         builder.definition(&VariableDefineSyntax::cast(unit).unwrap())?
                     }
@@ -211,13 +211,15 @@ fn compile_document_units(
                         builder.document_assignment(&unit)?
                     }
                     _ => unreachable!("document statement selection is closed"),
-                });
+                };
+                result.0.resolved()?;
+                last = Some(result);
             }
             DocumentUnit::Fence(fence, units) => {
                 if let Some((value, syntax)) = compile_document_units(builder, units, presentation)?
                 {
                     let value =
-                        builder.read_document_binding(PendingBinding::Value(value), &syntax);
+                        builder.read_document_binding(PendingBinding::Value(value), &syntax)?;
                     presentation.push((
                         SourceDocumentOutputKind::Fence,
                         value,
@@ -239,7 +241,7 @@ impl SemanticBuilder {
         &mut self,
         binding: PendingBinding,
         syntax: &SyntaxNode,
-    ) -> PendingValue {
+    ) -> Result<PendingValue, SourceSemanticError> {
         let value = match binding {
             PendingBinding::Value(value) => value,
             PendingBinding::MutableState(state) => self.current_state_value(state),
@@ -247,16 +249,16 @@ impl SemanticBuilder {
         if matches!(value, PendingValue::State(_)) {
             // A derived read preserves the value's source-order version even
             // when it is exported after the final state writer publishes.
-            self.emit_with_schema_draft(
+            Ok(self.emit_with_schema_draft(
                 "core/assign",
                 vec![value],
-                self.schema_draft_of(value),
+                self.schema_draft_of(value)?,
                 syntax,
                 "state-read",
                 None,
-            )
+            ))
         } else {
-            value
+            Ok(value)
         }
     }
 
@@ -356,7 +358,7 @@ impl SemanticBuilder {
             _ => unreachable!("the document collector selects assignment statements"),
         };
         let state = self.assignment_state(&target)?;
-        let expected = self.schema_draft_of(PendingValue::State(state));
+        let expected = self.schema_draft_of(PendingValue::State(state))?;
         let mut value = self.expression(&expression)?.0;
         if let Some(operation) = operation {
             let current = self.current_state_value(state);
