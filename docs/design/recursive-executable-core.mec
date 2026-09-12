@@ -137,9 +137,10 @@ not introduce a parser generator, boxed parser closures, a Nom-like combinator
 framework, or one monolithic `recursive_core.rs` module.
 
 Phase 2I-C created the parser directory above and implemented the complete clean
-recognizer. S2 adds bounded local recovery without adding a parser root or port
-activation. The typed-syntax directory and engine source-semantic handling
-remain absent.
+recognizer. S2 added bounded local recovery, S3 added the typed syntax surface,
+S4 added engine-owned source semantics, and S5 closed their certification
+matrix. S6 activates all 80 recursive rules as one atomic registry component.
+The production document-root cutover remains the S7 milestone.
 
 `MATCH-001` records the canonical expression-match whitespace rule. The
 optional suffix owns that whitespace only when the following question mark

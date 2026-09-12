@@ -18,9 +18,9 @@ Local recursive-core recovery, typed views, engine-owned source semantics, and
 canonical certification and atomic Phase 2I registry activation are complete.
 `docs/design/syntax-v0.4-continuation-plan.mec` replaces the old combined Phase
 2I-D/2I-E delivery assumption with independently gated milestones and an atomic
-document-root/product cutover that removes the Nom path and compatibility
-lowerers. This rebase does not activate the recursive registry or change the
-production parser entry point.
+document-root/product cutover that removes the Nom implementation and its
+lowerers. S6 activates the certified 80-rule recursive registry atomically. The
+production document-root cutover remains the S7 milestone.
 
 The 539 canonical rule IDs and Phase 0 inventory remain stable. Their live
 implementation audit records the intervening integration changes explicitly:
