@@ -6,8 +6,8 @@ use crate::document::{
 };
 
 use super::{
-    KindAnnotationSyntax, MatrixComprehensionSyntax, child, children, direct_token, direct_tokens,
-    nth_child,
+    KindAnnotationSyntax, MatrixComprehensionSyntax, SetComprehensionSyntax, child, children,
+    direct_token, direct_tokens, nth_child,
 };
 
 recursive_ast_node!(StructureSyntax, Structure);
@@ -116,7 +116,16 @@ impl AstNode for StructureValueSyntax {
 
 impl StructureSyntax {
     pub fn value(&self) -> Option<StructureValueSyntax> {
-        child(&self.0)
+        let value = child(&self.0)?;
+        // A selected set owns direct items; a provisional set around a map
+        // still contains the comprehension/entry owners instead.
+        if let StructureValueSyntax::Map(map) = &value
+            && let Some(set) = child::<SetSyntax>(map.syntax())
+            && child::<ExpressionSyntax>(set.syntax()).is_some()
+        {
+            return Some(StructureValueSyntax::Set(set));
+        }
+        Some(value)
     }
 }
 
@@ -267,14 +276,23 @@ named_field!(HeaderFieldSyntax);
 named_field!(TableFieldSyntax);
 
 impl MapSyntax {
+    fn role_owner(&self) -> SyntaxNode {
+        child::<SetSyntax>(&self.0)
+            .and_then(|set| child::<SetComprehensionSyntax>(set.syntax()))
+            .map(|owner| owner.syntax().clone())
+            .unwrap_or_else(|| self.0.clone())
+    }
+
     pub fn opening_brace(&self) -> Option<SyntaxToken> {
         direct_token(&self.0, SyntaxKind::LeftBrace, 0)
+            .or_else(|| direct_token(&self.role_owner(), SyntaxKind::LeftBrace, 0))
     }
     pub fn entries(&self) -> Vec<MapEntrySyntax> {
-        children(&self.0)
+        children(&self.role_owner())
     }
     pub fn closing_brace(&self) -> Option<SyntaxToken> {
         direct_token(&self.0, SyntaxKind::RightBrace, 0)
+            .or_else(|| direct_token(&self.role_owner(), SyntaxKind::RightBrace, 0))
     }
 }
 

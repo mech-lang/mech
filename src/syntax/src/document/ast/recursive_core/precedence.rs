@@ -9,8 +9,8 @@ use crate::document::{
 
 use super::{
     ExpressionBodySyntax, FormulaSyntax, FunctionCallSyntax, LiteralSyntax,
-    MatrixComprehensionSyntax, PatternSyntax, SliceSyntax, StructureSyntax, VariableSyntax, child,
-    children, direct_token,
+    MatrixComprehensionSyntax, PatternSyntax, SliceSyntax, StructureSyntax, TupleSyntax,
+    VariableSyntax, child, children, direct_token,
 };
 
 recursive_ast_node!(FactorSyntax, Factor);
@@ -92,7 +92,14 @@ impl AstNode for FactorValueSyntax {
 
 impl FactorSyntax {
     pub fn value(&self) -> Option<FactorValueSyntax> {
-        child(&self.0)
+        let value = child(&self.0)?;
+        if let FactorValueSyntax::Structure(structure) = &value
+            && let Some(tuple) = child::<TupleSyntax>(structure.syntax())
+            && let Some(parenthetical) = child::<ParentheticalExpressionSyntax>(tuple.syntax())
+        {
+            return Some(FactorValueSyntax::Parenthetical(parenthetical));
+        }
+        Some(value)
     }
 
     pub fn transpose(&self) -> Option<SyntaxToken> {

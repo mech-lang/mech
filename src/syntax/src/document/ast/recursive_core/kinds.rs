@@ -126,20 +126,26 @@ impl KindKindSyntax {
 }
 
 impl KindMapSyntax {
+    fn role_owner(&self) -> SyntaxNode {
+        child::<KindSetSyntax>(&self.0)
+            .map(|owner| owner.syntax().clone())
+            .unwrap_or_else(|| self.0.clone())
+    }
+
     pub fn opening_brace(&self) -> Option<SyntaxToken> {
-        direct_token(&self.0, SyntaxKind::LeftBrace, 0)
+        direct_token(&self.role_owner(), SyntaxKind::LeftBrace, 0)
     }
     pub fn key(&self) -> Option<KindSyntax> {
-        nth_child(&self.0, 0)
+        nth_child(&self.role_owner(), 0)
     }
     pub fn colon(&self) -> Option<SyntaxToken> {
-        direct_token(&self.0, SyntaxKind::Colon, 0)
+        direct_token(&self.role_owner(), SyntaxKind::Colon, 0)
     }
     pub fn value(&self) -> Option<KindSyntax> {
-        nth_child(&self.0, 1)
+        nth_child(&self.role_owner(), 1)
     }
     pub fn closing_brace(&self) -> Option<SyntaxToken> {
-        direct_token(&self.0, SyntaxKind::RightBrace, 0)
+        direct_token(&self.role_owner(), SyntaxKind::RightBrace, 0)
     }
 }
 
