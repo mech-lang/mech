@@ -61,6 +61,20 @@ pub(super) fn child<N: AstNode>(syntax: &SyntaxNode) -> Option<N> {
     syntax.children().find_map(N::cast)
 }
 
+/// Follow only wrappers explicitly marked unselected by the parser.
+pub(super) fn selected_child<N: AstNode>(syntax: &SyntaxNode) -> Option<N> {
+    syntax.children().find_map(|node| {
+        if node
+            .flags()
+            .contains(crate::document::NodeFlags::PROVISIONAL)
+        {
+            selected_child(&node)
+        } else {
+            N::cast(node)
+        }
+    })
+}
+
 pub(super) fn nth_child<N: AstNode>(syntax: &SyntaxNode, index: usize) -> Option<N> {
     syntax.children().filter_map(N::cast).nth(index)
 }

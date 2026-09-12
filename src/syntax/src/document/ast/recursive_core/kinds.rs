@@ -5,7 +5,9 @@ use crate::document::{
     SyntaxKind, SyntaxNode, SyntaxToken,
 };
 
-use super::{LiteralSyntax, RangeExpressionSyntax, child, children, direct_token, nth_child};
+use super::{
+    LiteralSyntax, RangeExpressionSyntax, child, children, direct_token, nth_child, selected_child,
+};
 
 recursive_ast_node!(KindSyntax, Kind);
 recursive_ast_node!(KindAnnotationSyntax, KindAnnotation);
@@ -88,7 +90,7 @@ impl AstNode for KindValueSyntax {
 
 impl KindSyntax {
     pub fn value(&self) -> Option<KindValueSyntax> {
-        child(&self.0)
+        selected_child(&self.0)
     }
 }
 

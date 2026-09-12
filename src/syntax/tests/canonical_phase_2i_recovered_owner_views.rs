@@ -192,7 +192,7 @@ fn recovered_maps_expose_entries_through_retained_owners() {
 fn recovered_parenthetical_factors_keep_the_inner_expression() {
     let mut witnessed = 0;
     for rule in [rules::FACTOR, rules::EXPRESSION] {
-        for text in ["(1 + 2)", "((1 + 2))"] {
+        for text in ["(1 + 2)", "((1 + 2))", "(1,2)", "(1,)", "([1,2],3)"] {
             sweep(rule, text, |p| {
                 for factor in nodes(&p.syntax(), SyntaxKind::Factor) {
                     let Some(structure) = direct(&factor, SyntaxKind::Structure) else {
@@ -206,6 +206,16 @@ fn recovered_parenthetical_factors_keep_the_inner_expression() {
                         continue;
                     };
                     if direct(&parenthetical, SyntaxKind::Expression).is_none() {
+                        continue;
+                    }
+                    if parenthetical
+                        .flags()
+                        .contains(mech_syntax::document::NodeFlags::PROVISIONAL)
+                    {
+                        assert!(matches!(
+                            FactorSyntax::cast(factor).unwrap().value(),
+                            Some(FactorValueSyntax::Structure(_))
+                        ));
                         continue;
                     }
                     let Some(FactorValueSyntax::Parenthetical(view)) =

@@ -7,7 +7,7 @@ use crate::document::{
 
 use super::{
     KindAnnotationSyntax, MatrixComprehensionSyntax, SetComprehensionSyntax, child, children,
-    direct_token, direct_tokens, nth_child,
+    direct_token, direct_tokens, nth_child, selected_child,
 };
 
 recursive_ast_node!(StructureSyntax, Structure);
@@ -116,16 +116,7 @@ impl AstNode for StructureValueSyntax {
 
 impl StructureSyntax {
     pub fn value(&self) -> Option<StructureValueSyntax> {
-        let value = child(&self.0)?;
-        // A selected set owns direct items; a provisional set around a map
-        // still contains the comprehension/entry owners instead.
-        if let StructureValueSyntax::Map(map) = &value
-            && let Some(set) = child::<SetSyntax>(map.syntax())
-            && child::<ExpressionSyntax>(set.syntax()).is_some()
-        {
-            return Some(StructureValueSyntax::Set(set));
-        }
-        Some(value)
+        selected_child(&self.0)
     }
 }
 
