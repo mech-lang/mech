@@ -156,14 +156,15 @@ fn recovered_map_value_keeps_later_mapping_in_direct_and_shared_paths() {
         let map = only(&parsed.syntax(), SyntaxKind::Map);
         assert!(nodes(&parsed.syntax(), SyntaxKind::Record).is_empty());
         let entries = direct(&map, SyntaxKind::MapEntry);
-        assert_eq!(texts(&entries), ["1: 2, ", "3:", "4: 5"]);
+        // Recovered values retain the same entry-owned comma/trivia suffix as clean values.
+        assert_eq!(texts(&entries), ["1: 2, ", "3:, ", "4: 5"]);
         assert_eq!(only(&entries[1], SyntaxKind::Missing).range(), range(9, 9));
         assert_eq!(
             texts(&direct(&entries[2], SyntaxKind::Expression)),
             ["4", "5"]
         );
         physical(&map, SyntaxKind::LeftBrace, "{", 0);
-        physical(&map, SyntaxKind::Comma, ",", 9);
+        physical(&entries[1], SyntaxKind::Comma, ",", 9);
         physical(&map, SyntaxKind::RightBrace, "}", 15);
         inserted(
             &parsed,
