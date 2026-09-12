@@ -93,7 +93,12 @@ they do not invoke strict source semantics.
 -------------------------------------------------------------------------------
 
 `source-parser-consumers.tsv` records current call counts at function granularity
-and assigns every caller a final boundary. Repository tests scan production Rust
+and assigns every caller a final boundary. Caller symbols include enclosing
+modules and implementation or trait headers, so identically named methods do
+not share a removal contract. Identical qualified paths in separate conditional
+items also include their physical body offset. The scanner excludes cfg items
+only when their condition is provably false outside tests and recognizes both
+the product crate's and syntax crate's parser re-exports. Repository tests scan production Rust
 sources and fail when an unlisted `parser::parse` call is added or an inventoried
 count changes.
 
