@@ -231,11 +231,12 @@ fn mutable_definition_publishes_its_resolved_initial_state() {
 
 #[test]
 fn unresolved_empty_and_unknown_calls_are_anchored_user_errors() {
-    for (source, expected) in [
-        ("x := _", "source-semantics/unresolved-empty-expression"),
+    for (source, expected, offending) in [
+        ("x := _", "source-semantics/unresolved-empty-expression", "_"),
         (
-            "x := nonexistent_function(1)",
+            "x := not-declared(1)",
             "source-semantics/unknown-function",
+            "not-declared",
         ),
     ] {
         let syntax = definition(source);
@@ -245,7 +246,11 @@ fn unresolved_empty_and_unknown_calls_are_anchored_user_errors() {
             .expect("invalid source cannot become a placeholder executable node");
         assert_eq!(error.code, expected, "{source}");
         assert_eq!(error.anchor.document, DocumentId(0x555));
-        assert!(error.anchor.range.start < error.anchor.range.end);
-        assert!(error.anchor.range.end <= syntax.syntax().range().end);
+        assert_eq!(error.anchor.revision, Revision(1));
+        assert_eq!(
+            &source[error.anchor.range.start.0 as usize..error.anchor.range.end.0 as usize],
+            offending,
+            "{source}",
+        );
     }
 }
