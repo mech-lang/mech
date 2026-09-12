@@ -128,16 +128,25 @@ fn comprehension(
                 return Attempt::NoMatch;
             }
             let expression = expressions::parse_expression(parser);
-            if expression != Attempt::Matched {
+            if expression == Attempt::NoMatch || parser.is_halted() {
                 return expression;
             }
             if !base::parse_rule(parser, rules::SPACE_TAB0)
                 || !base::parse_rule(parser, rules::BAR)
                 || !base::parse_rule(parser, rules::SPACE_TAB0)
             {
-                return Attempt::NoMatch;
+                return if expression == Attempt::Committed {
+                    Attempt::Committed
+                } else {
+                    Attempt::NoMatch
+                };
             }
-            finish_qualifiers(parser, close, require_generator_or_let)
+            let qualifiers = finish_qualifiers(parser, close, require_generator_or_let);
+            if expression == Attempt::Committed && qualifiers == Attempt::Matched {
+                Attempt::Committed
+            } else {
+                qualifiers
+            }
         }) else {
             let result = nesting_limit(parser);
             node.complete(parser, kind);
@@ -213,6 +222,10 @@ fn generator(parser: &mut Parser<'_>) -> FactAttempt<QualifierKind> {
                 && !base::parse_rule(parser, rules::GENERATOR_ARROW_U))
             || !base::parse_rule(parser, rules::SPACE_TAB0)
         {
+            if parser.is_halted() {
+                node.complete(parser, SyntaxKind::Generator);
+                return FactAttempt::Committed;
+            }
             node.abandon(parser);
             return FactAttempt::NoMatch;
         }

@@ -222,6 +222,19 @@ Diagnostic codes, canonical rule IDs, anchors, and recovery actions are stable
 across repeated parses. All 80 direct rules retain their configured partial
 node, or the configured child for a transparent rule, on committed failure.
 
+S2 qualification follow-up (2026-09-12): the nine review findings and the
+variable-range dispatch regression each have a named test in
+`src/syntax/tests/canonical_phase_2i_review_regressions.rs`. Review IDs are
+recorded beside their tests. Evidence includes direct/shared paths, selected
+owners, later children, physical delimiters, missing/error structure, diagnostic
+fields and anchors, and exact source reconstruction. The resource suite adds
+4,338 parses across every fuel/event budget from 16 through 256 in nine affected
+families. Both formerly unfinished resource tests hang on historical parent
+`0f846c680` (each stopped after five seconds); both now finish. Numeric and
+recursive parents retain resource failures, and finalized error envelopes
+cannot lose source through later lookahead. Descendants still require restacking
+and qualification at their resulting heads.
+
 8. Matrix presentation
 -------------------------------------------------------------------------------
 

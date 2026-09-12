@@ -422,7 +422,7 @@ fn factor_body(parser: &mut Parser<'_>) -> Attempt {
     };
     if local || context {
         let call = local && parser.cursor().starts_with("(");
-        let slice = parser.cursor().starts_with(".")
+        let slice = (parser.cursor().starts_with(".") && !parser.cursor().starts_with(".."))
             || parser.cursor().starts_with("[")
             || parser.cursor().starts_with("{");
         parser.rewind(stem);

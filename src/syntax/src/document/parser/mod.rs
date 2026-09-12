@@ -318,6 +318,20 @@ impl<'a> Parser<'a> {
 
     pub(crate) fn rewind(&mut self, checkpoint: ParserCheckpoint) {
         let rewinding_recovery = self.stats.recovery_bytes > checkpoint.recovery_bytes;
+        // Fuel/event finalization has already assigned the remaining source to
+        // an ERROR envelope. Later failed lookahead cannot discard that source
+        // or rewind its cursor while the parser remains halted. A speculative
+        // recovery may still roll back its own charged bytes when fuel remains.
+        if self.resource_finalizing && (!rewinding_recovery || self.fuel == 0) {
+            // The rejected candidate may have left provisional markers for its
+            // transaction to discard. Keep finalized children and source, but
+            // remove those unselected wrappers before its enclosing owner ends.
+            while self.open_markers.len() > checkpoint.open_markers {
+                let position = self.open_markers.pop().expect("marker above checkpoint");
+                self.events[position] = Event::Tombstone;
+            }
+            return;
+        }
         self.cursor.rewind(checkpoint.cursor);
         self.events.truncate(checkpoint.events);
         self.diagnostics.truncate(checkpoint.diagnostics);

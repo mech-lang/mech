@@ -147,9 +147,19 @@ pub(crate) fn parse_source_rule_prefix(
     let fragment = parser.start();
     let start = parser.offset();
     let outcome = parse(&mut parser);
+    fragment.complete(&mut parser, SyntaxKind::CanonicalFragment);
+    // Finalizing an exhausted parser owns the unparsed remainder. Capture the
+    // completed range and committed outcome after that resource envelope exists.
+    if parser.is_halted() {
+        parser.consume_resource_remainder();
+    }
+    let outcome = if parser.is_halted() {
+        Attempt::Committed
+    } else {
+        outcome
+    };
     let matched = outcome.accepted();
     let end = parser.offset();
-    fragment.complete(&mut parser, SyntaxKind::CanonicalFragment);
     let output = parser.finish();
     let sink_result = sink(&output.events, &source, &mut ids)
         .expect("canonical source-rule events must form one root");

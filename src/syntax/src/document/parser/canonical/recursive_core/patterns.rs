@@ -122,8 +122,7 @@ fn tuple_struct_with_facts(
             || !base::parse_rule(parser, rules::IDENTIFIER)
             || !base::parse_rule(parser, rules::LEFT_PARENTHESIS)
         {
-            node.abandon(parser);
-            return FactAttempt::NoMatch;
+            return finish_facts(node, parser, kind, FactAttempt::NoMatch);
         }
         let Some(interior) = parser.with_nesting(|parser| pattern_list(parser, rule, false)) else {
             nesting_limit(parser);
@@ -357,6 +356,10 @@ fn finish_facts(
     kind: SyntaxKind,
     result: FactAttempt<PatternFacts>,
 ) -> FactAttempt<PatternFacts> {
+    if parser.is_halted() {
+        node.complete(parser, kind);
+        return FactAttempt::Committed;
+    }
     match result {
         FactAttempt::Matched(facts) => {
             node.complete(parser, kind);

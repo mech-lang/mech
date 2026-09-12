@@ -49,7 +49,11 @@ pub(crate) fn transactional(
     if result == Attempt::NoMatch {
         parser.rewind(checkpoint);
     }
-    result
+    if parser.is_halted() {
+        Attempt::Committed
+    } else {
+        result
+    }
 }
 
 pub(crate) const fn is_grammar_ignored(character: char) -> bool {

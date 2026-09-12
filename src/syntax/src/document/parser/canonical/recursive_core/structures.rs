@@ -402,7 +402,7 @@ pub(super) fn parse_regular_table(parser: &mut Parser<'_>) -> Attempt {
                 committed = true;
             }
         }
-        loop {
+        while !parser.is_halted() {
             let pair = parser.checkpoint();
             if !base::parse_rule(parser, rules::WHITESPACE0) {
                 break;
@@ -676,7 +676,7 @@ fn binding_with_marker(parser: &mut Parser<'_>) -> FactAttempt<BindingCandidate>
             node.abandon(parser);
             return FactAttempt::NoMatch;
         }
-        if kinds::parse_kind_annotation(parser) == Attempt::Committed {
+        if parser.is_halted() || kinds::parse_kind_annotation(parser) == Attempt::Committed {
             node.complete(parser, SyntaxKind::RecordBinding);
             return FactAttempt::Committed;
         }
@@ -873,8 +873,7 @@ pub(super) fn parse_tuple_struct(parser: &mut Parser<'_>) -> Attempt {
             || !base::parse_rule(parser, rules::IDENTIFIER)
             || !base::parse_rule(parser, rules::LEFT_PARENTHESIS)
         {
-            node.abandon(parser);
-            return Attempt::NoMatch;
+            return finish(node, parser, SyntaxKind::TupleStruct, Attempt::NoMatch);
         }
         let Some(interior) = parser.with_nesting(|parser| {
             if !base::parse_rule(parser, rules::WHITESPACE0) {
@@ -937,7 +936,7 @@ pub(super) fn parenthesis_factor(parser: &mut Parser<'_>) -> Attempt {
             return Attempt::NoMatch;
         }
         if base::parse_rule(parser, rules::RIGHT_PARENTHESIS) {
-            parenthetical.abandon(parser);
+            finish_provisional_marker(parser, parenthetical, SyntaxKind::ParentheticalExpression);
             tuple.complete(parser, SyntaxKind::Tuple);
             structure.complete(parser, SyntaxKind::Structure);
             return Attempt::Matched;
@@ -981,8 +980,8 @@ pub(super) fn parenthesis_factor(parser: &mut Parser<'_>) -> Attempt {
                     {
                         expression.abandon(parser);
                         parenthetical.complete(parser, SyntaxKind::ParentheticalExpression);
-                        tuple.abandon(parser);
-                        structure.abandon(parser);
+                        finish_provisional_marker(parser, tuple, SyntaxKind::Tuple);
+                        finish_provisional_marker(parser, structure, SyntaxKind::Structure);
                         return Attempt::Matched;
                     }
                     parser.rewind(after_body);
@@ -1005,14 +1004,18 @@ pub(super) fn parenthesis_factor(parser: &mut Parser<'_>) -> Attempt {
         }
 
         if !parenthetical_selected {
-            parenthetical.abandon(parser);
+            finish_provisional_marker(parser, parenthetical, SyntaxKind::ParentheticalExpression);
         }
         while !parser.is_halted() {
             if !base::parse_rule(parser, rules::LIST_SEPARATOR) {
                 break;
             }
             if parenthetical_selected {
-                parenthetical.abandon(parser);
+                finish_provisional_marker(
+                    parser,
+                    parenthetical,
+                    SyntaxKind::ParentheticalExpression,
+                );
                 parenthetical_selected = false;
             }
             match expressions::parse_expression(parser) {
@@ -1051,8 +1054,8 @@ pub(super) fn parenthesis_factor(parser: &mut Parser<'_>) -> Attempt {
         }
         if parenthetical_selected {
             parenthetical.complete(parser, SyntaxKind::ParentheticalExpression);
-            tuple.abandon(parser);
-            structure.abandon(parser);
+            finish_provisional_marker(parser, tuple, SyntaxKind::Tuple);
+            finish_provisional_marker(parser, structure, SyntaxKind::Structure);
         } else {
             tuple.complete(parser, SyntaxKind::Tuple);
             structure.complete(parser, SyntaxKind::Structure);
@@ -1218,8 +1221,20 @@ fn bracket_body(parser: &mut Parser<'_>, mode: BracketMode) -> FactAttempt<Brack
 
                 let row = parser.start();
                 let column = parser.start();
-                match expressions::parse_expression(parser) {
-                    Attempt::Matched => {
+                let head = expressions::parse_expression(parser);
+                match head {
+                    Attempt::Matched | Attempt::Committed => {
+                        if parser.is_halted() {
+                            column.complete(parser, SyntaxKind::MatrixColumn);
+                            row.complete(parser, SyntaxKind::MatrixRow);
+                            return finish_matrix_body(
+                                parser,
+                                matrix,
+                                comprehension,
+                                ordinary_bracket,
+                                true,
+                            );
+                        }
                         let after_expression = parser.checkpoint();
                         let selected_comprehension = !leading_separator
                             && base::parse_rule(parser, rules::SPACE_TAB0)
@@ -1238,7 +1253,11 @@ fn bracket_body(parser: &mut Parser<'_>, mode: BracketMode) -> FactAttempt<Brack
                                 Attempt::Matched => {
                                     comprehension.complete(parser, SyntaxKind::MatrixComprehension);
                                     matrix.abandon(parser);
-                                    FactAttempt::Matched(BracketForm::Comprehension)
+                                    if head == Attempt::Committed {
+                                        FactAttempt::Committed
+                                    } else {
+                                        FactAttempt::Matched(BracketForm::Comprehension)
+                                    }
                                 }
                                 Attempt::NoMatch => FactAttempt::NoMatch,
                                 Attempt::Committed => {
@@ -1274,22 +1293,10 @@ fn bracket_body(parser: &mut Parser<'_>, mode: BracketMode) -> FactAttempt<Brack
                             matrix,
                             comprehension,
                             ordinary_bracket,
-                            false,
+                            head == Attempt::Committed,
                         );
                     }
                     Attempt::NoMatch => parser.rewind(after_open),
-                    Attempt::Committed => {
-                        column.complete(parser, SyntaxKind::MatrixColumn);
-                        matrix_row_suffix(parser);
-                        row.complete(parser, SyntaxKind::MatrixRow);
-                        return finish_matrix_body(
-                            parser,
-                            matrix,
-                            comprehension,
-                            ordinary_bracket,
-                            true,
-                        );
-                    }
                 }
             } else {
                 parser.rewind(after_open);
@@ -1338,6 +1345,11 @@ fn finish_matrix_body(
     mut committed: bool,
 ) -> FactAttempt<BracketForm> {
     loop {
+        if parser.is_halted() {
+            finish_provisional_marker(parser, comprehension, SyntaxKind::MatrixComprehension);
+            matrix.complete(parser, SyntaxKind::Matrix);
+            return FactAttempt::Committed;
+        }
         match consume_matrix_decoration(parser) {
             Attempt::Matched => {}
             Attempt::Committed => {
@@ -1362,6 +1374,16 @@ fn finish_matrix_body(
             }
             Attempt::Committed => {
                 committed = true;
+                if parser.offset() == before && !parser.is_halted() {
+                    recover_matrix_closer(parser, ordinary_bracket);
+                    finish_provisional_marker(
+                        parser,
+                        comprehension,
+                        SyntaxKind::MatrixComprehension,
+                    );
+                    matrix.complete(parser, SyntaxKind::Matrix);
+                    return FactAttempt::Committed;
+                }
             }
         }
     }
@@ -1499,13 +1521,13 @@ fn brace_general(parser: &mut Parser<'_>, mode: BraceMode) -> FactAttempt<Expres
                     "}",
                 );
                 record.complete(parser, SyntaxKind::Record);
-                comprehension.abandon(parser);
-                set.abandon(parser);
-                map.abandon(parser);
+                finish_provisional_marker(parser, comprehension, SyntaxKind::SetComprehension);
+                finish_provisional_marker(parser, set, SyntaxKind::Set);
+                finish_provisional_marker(parser, map, SyntaxKind::Map);
                 structure.complete(parser, SyntaxKind::Structure);
                 return FactAttempt::Committed;
             }
-            FactAttempt::NoMatch => record.abandon(parser),
+            FactAttempt::NoMatch => finish_provisional_marker(parser, record, SyntaxKind::Record),
         }
         let entry = parser.start();
         let head_committed = match expressions::parse_expression(parser) {
@@ -1513,19 +1535,27 @@ fn brace_general(parser: &mut Parser<'_>, mode: BraceMode) -> FactAttempt<Expres
             Attempt::NoMatch => return FactAttempt::NoMatch,
             Attempt::Committed => true,
         };
+        if parser.is_halted() {
+            entry.complete(parser, SyntaxKind::MapEntry);
+            comprehension.complete(parser, SyntaxKind::SetComprehension);
+            set.complete(parser, SyntaxKind::Set);
+            map.complete(parser, SyntaxKind::Map);
+            structure.complete(parser, SyntaxKind::Structure);
+            return FactAttempt::Committed;
+        }
 
         let after_expression = parser.checkpoint();
         if base::parse_rule(parser, rules::SPACE_TAB0) && base::parse_rule(parser, rules::BAR) {
             if mode == BraceMode::StructureOnly {
                 return FactAttempt::NoMatch;
             }
-            entry.abandon(parser);
+            finish_provisional_marker(parser, entry, SyntaxKind::MapEntry);
             match comprehensions::finish_qualifiers(parser, rules::RIGHT_BRACE, false) {
                 Attempt::Matched => {
                     comprehension.complete(parser, SyntaxKind::SetComprehension);
-                    set.abandon(parser);
-                    map.abandon(parser);
-                    structure.abandon(parser);
+                    finish_provisional_marker(parser, set, SyntaxKind::Set);
+                    finish_provisional_marker(parser, map, SyntaxKind::Map);
+                    finish_provisional_marker(parser, structure, SyntaxKind::Structure);
                     return if head_committed {
                         FactAttempt::Committed
                     } else {
@@ -1535,9 +1565,9 @@ fn brace_general(parser: &mut Parser<'_>, mode: BraceMode) -> FactAttempt<Expres
                 Attempt::NoMatch => return FactAttempt::NoMatch,
                 Attempt::Committed => {
                     comprehension.complete(parser, SyntaxKind::SetComprehension);
-                    set.abandon(parser);
-                    map.abandon(parser);
-                    structure.abandon(parser);
+                    finish_provisional_marker(parser, set, SyntaxKind::Set);
+                    finish_provisional_marker(parser, map, SyntaxKind::Map);
+                    finish_provisional_marker(parser, structure, SyntaxKind::Structure);
                     return FactAttempt::Committed;
                 }
             }
@@ -1545,8 +1575,8 @@ fn brace_general(parser: &mut Parser<'_>, mode: BraceMode) -> FactAttempt<Expres
         parser.rewind(after_expression);
 
         if head_committed {
-            entry.abandon(parser);
-            comprehension.abandon(parser);
+            finish_provisional_marker(parser, entry, SyntaxKind::MapEntry);
+            finish_provisional_marker(parser, comprehension, SyntaxKind::SetComprehension);
             recover_closer(
                 parser,
                 rules::SET,
@@ -1556,7 +1586,7 @@ fn brace_general(parser: &mut Parser<'_>, mode: BraceMode) -> FactAttempt<Expres
                 "}",
             );
             set.complete(parser, SyntaxKind::Set);
-            map.abandon(parser);
+            finish_provisional_marker(parser, map, SyntaxKind::Map);
             structure.complete(parser, SyntaxKind::Structure);
             return FactAttempt::Committed;
         }
@@ -1588,8 +1618,8 @@ fn brace_general(parser: &mut Parser<'_>, mode: BraceMode) -> FactAttempt<Expres
                 return FactAttempt::NoMatch;
             }
             entry.complete(parser, SyntaxKind::MapEntry);
-            comprehension.abandon(parser);
-            set.abandon(parser);
+            finish_provisional_marker(parser, comprehension, SyntaxKind::SetComprehension);
+            finish_provisional_marker(parser, set, SyntaxKind::Set);
             loop {
                 let before = parser.offset();
                 match parse_mapping(parser) {
@@ -1627,8 +1657,8 @@ fn brace_general(parser: &mut Parser<'_>, mode: BraceMode) -> FactAttempt<Expres
         }
         parser.rewind(after_expression);
 
-        entry.abandon(parser);
-        comprehension.abandon(parser);
+        finish_provisional_marker(parser, entry, SyntaxKind::MapEntry);
+        finish_provisional_marker(parser, comprehension, SyntaxKind::SetComprehension);
         let mut committed = false;
         loop {
             let pair = parser.checkpoint();
@@ -1659,12 +1689,12 @@ fn brace_general(parser: &mut Parser<'_>, mode: BraceMode) -> FactAttempt<Expres
                 "}",
             );
             set.complete(parser, SyntaxKind::Set);
-            map.abandon(parser);
+            finish_provisional_marker(parser, map, SyntaxKind::Map);
             structure.complete(parser, SyntaxKind::Structure);
             return FactAttempt::Committed;
         }
         set.complete(parser, SyntaxKind::Set);
-        map.abandon(parser);
+        finish_provisional_marker(parser, map, SyntaxKind::Map);
         structure.complete(parser, SyntaxKind::Structure);
         if committed {
             FactAttempt::Committed
@@ -1674,9 +1704,9 @@ fn brace_general(parser: &mut Parser<'_>, mode: BraceMode) -> FactAttempt<Expres
     }) else {
         nesting_limit(parser);
         record.complete(parser, SyntaxKind::Record);
-        comprehension.abandon(parser);
+        finish_provisional_marker(parser, comprehension, SyntaxKind::SetComprehension);
         set.complete(parser, SyntaxKind::Set);
-        map.abandon(parser);
+        finish_provisional_marker(parser, map, SyntaxKind::Map);
         structure.complete(parser, SyntaxKind::Structure);
         return FactAttempt::Committed;
     };
@@ -1724,9 +1754,9 @@ fn finish_shared_record_or_map(
     if base::parse_rule(parser, rules::WHITESPACE0) && base::parse_rule(parser, rules::RIGHT_BRACE)
     {
         record.complete(parser, SyntaxKind::Record);
-        comprehension.abandon(parser);
-        set.abandon(parser);
-        map.abandon(parser);
+        finish_provisional_marker(parser, comprehension, SyntaxKind::SetComprehension);
+        finish_provisional_marker(parser, set, SyntaxKind::Set);
+        finish_provisional_marker(parser, map, SyntaxKind::Map);
         structure.complete(parser, SyntaxKind::Structure);
         return FactAttempt::Matched(ExpressionForm::Formula);
     }
@@ -1738,9 +1768,9 @@ fn finish_shared_record_or_map(
         .collect::<Option<alloc::vec::Vec<_>>>();
 
     parser.rewind(interior);
-    record.abandon(parser);
-    comprehension.abandon(parser);
-    set.abandon(parser);
+    finish_provisional_marker(parser, record, SyntaxKind::Record);
+    finish_provisional_marker(parser, comprehension, SyntaxKind::SetComprehension);
+    finish_provisional_marker(parser, set, SyntaxKind::Set);
     let mut committed = false;
 
     if let Some(cached_values) = cached_values.as_ref() {
@@ -2206,6 +2236,10 @@ fn finish(
     kind: SyntaxKind,
     result: Attempt,
 ) -> Attempt {
+    if parser.is_halted() {
+        node.complete(parser, kind);
+        return Attempt::Committed;
+    }
     match result {
         Attempt::Matched => {
             node.complete(parser, kind);

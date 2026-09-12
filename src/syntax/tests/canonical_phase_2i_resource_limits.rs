@@ -261,3 +261,95 @@ fn adversarial_shared_prefix_recovery_stays_within_fuel_and_byte_limits() {
     assert!(parsed.stats.recovery_bytes <= u64::from(limits.max_recovery_bytes));
     assert!(!parsed.diagnostics.is_empty());
 }
+
+#[test]
+fn every_recovery_continuation_unwinds_at_each_fuel_and_event_boundary() {
+    // Sweep through child starts, tokens, finishes, and the resource envelope;
+    // sampling only powers of two missed speculative numeric and owner aborts.
+    let cases = [
+        (rules::EXPRESSION, "[1 + | x <- xs]"),
+        (rules::SET_COMPREHENSION, "{1 + | x <- xs}"),
+        (rules::EXPRESSION, "{1: 2, 3:, 4: 5}"),
+        (rules::EXPRESSION, "(1,,3)"),
+        (rules::EXPRESSION, "{a: 1, (2): 3}"),
+        (rules::EXPRESSION, "╭─\n│a<u8│\n│1│"),
+        (rules::FSM_PIPE, "# -> :next"),
+        (rules::MATCH_ARM, "| (1 +) => 2"),
+        (rules::PATTERN_ARRAY, "[1, 2 +, 3]"),
+    ];
+    for (rule, text) in cases {
+        for budget in 16..=256 {
+            for limits in [
+                ParseLimits {
+                    fuel: budget,
+                    ..ParseLimits::default()
+                },
+                ParseLimits {
+                    max_events: budget as u32,
+                    ..ParseLimits::default()
+                },
+            ] {
+                let parsed = std::panic::catch_unwind(|| {
+                    parse_canonical_phase_2i_rule_for_test(
+                        source(text),
+                        rule,
+                        ParseConfig { limits },
+                    )
+                    .unwrap()
+                })
+                .unwrap_or_else(|_| panic!("{rule:?}, {text:?}, {limits:?}"));
+                assert!(parsed.stats.parser_steps <= limits.fuel);
+                assert!(parsed.stats.events_emitted <= u64::from(limits.max_events));
+                assert_eq!(
+                    parsed.consumed,
+                    parsed.source.full_range(),
+                    "{rule:?} {limits:?}"
+                );
+                mech_syntax::document::validate_lossless_range(
+                    &parsed.root,
+                    &parsed.source,
+                    parsed.consumed,
+                )
+                .unwrap();
+                assert_eq!(
+                    mech_syntax::document::reconstruct_source_range(
+                        &parsed.root,
+                        &parsed.source,
+                        parsed.consumed
+                    )
+                    .unwrap(),
+                    text
+                );
+                let resources = parsed
+                    .diagnostics
+                    .iter()
+                    .filter(|diagnostic| diagnostic.code.as_str() == "syntax/recovery-limit")
+                    .collect::<Vec<_>>();
+                assert!(resources.len() <= 1, "{rule:?} {limits:?}");
+                for diagnostic in resources {
+                    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+                    assert!(parsed.matched);
+                    assert_eq!(
+                        diagnostic.phase,
+                        mech_syntax::document::DiagnosticPhase::Syntax
+                    );
+                    assert_eq!(diagnostic.severity, mech_syntax::document::Severity::Error);
+                    assert!(diagnostic.rule.is_some());
+                    assert_eq!(diagnostic.context, None);
+                    let Some(mech_syntax::document::RecoveryAction::ResourceLimit { range }) =
+                        diagnostic.recovery
+                    else {
+                        panic!("missing resource action");
+                    };
+                    assert!(parsed.consumed.contains_range(range));
+                    assert_eq!(
+                        diagnostic
+                            .primary
+                            .resolve(parsed.source.revision(), &parsed.nodes),
+                        Some(range)
+                    );
+                }
+            }
+        }
+    }
+}
