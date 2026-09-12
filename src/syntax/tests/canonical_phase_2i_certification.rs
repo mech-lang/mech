@@ -342,7 +342,10 @@ fn typed_access_hash(rule_name: &str, node: &SyntaxNode) -> u64 {
             node!("body", view.body());
             nodes!("match-arms", view.match_arms());
         }
-        RecursiveCoreSyntax::Factor(view) => node!("value", view.value()),
+        RecursiveCoreSyntax::Factor(view) => {
+            node!("value", view.value());
+            token!("transpose", view.transpose());
+        }
         RecursiveCoreSyntax::FancyTable(view) => {
             node!("header", view.header());
             nodes!("rows", view.rows());
@@ -850,9 +853,13 @@ fn assert_canonical_only(path: &Path, evidence: &str) {
             .chars()
             .filter(|character| !character.is_whitespace())
             .collect::<String>();
+        let import_path = compact_line
+            .strip_prefix("use")
+            .map(|path| path.strip_prefix("::").unwrap_or(path));
         if declaration.is_none()
-            && (compact_line.starts_with("usemech_syntax")
-                || compact_line.starts_with(concat!("usemech_", "core")))
+            && import_path.is_some_and(|path| {
+                path.starts_with("mech_syntax") || path.starts_with(concat!("mech_", "core"))
+            })
         {
             declaration = Some(String::new());
         }
@@ -903,6 +910,10 @@ fn assert_allowed_mech_import(path: &Path, declaration: &str) {
         .chars()
         .filter(|character| !character.is_whitespace())
         .collect::<String>();
+    let declaration = declaration
+        .strip_prefix("use::")
+        .map(|path| format!("use{path}"))
+        .unwrap_or(declaration);
     assert!(
         !declaration.contains("mech_core"),
         "{} imports forbidden certification authority mech_core",
@@ -982,6 +993,7 @@ fn assert_allowed_mech_import(path: &Path, declaration: &str) {
             "TextSize",
             "TextSnapshot",
             "TokenFlags",
+            "VariableDefineSyntax",
             "compact_debug_tree",
             "normalize_diagnostics",
             "phase_2i_node_kind",
@@ -1006,6 +1018,7 @@ fn assert_allowed_mech_import(path: &Path, declaration: &str) {
 fn canonical_authority_gate_rejects_glob_and_alias_routes() {
     for evidence in [
         concat!("use mech_syntax::document::", "lower::*;"),
+        concat!("use ::mech_syntax::document::", "*;"),
         concat!("use mech_syntax::document::{", "lower::*,", "};"),
         concat!("use mech_", "core::*;"),
         concat!("use mech_", "core::{Program};"),
@@ -1022,4 +1035,9 @@ fn canonical_authority_gate_rejects_glob_and_alias_routes() {
             "authority route was accepted: {evidence}"
         );
     }
+
+    assert_canonical_only(
+        Path::new("fixture.rs"),
+        "use ::mech_syntax::document::{AstNode};",
+    );
 }

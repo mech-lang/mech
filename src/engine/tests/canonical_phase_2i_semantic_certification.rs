@@ -9,7 +9,7 @@ use mech_syntax::document::parser::canonical::parse_canonical_phase_2i_rule_for_
 use mech_syntax::document::parser::rules;
 use mech_syntax::document::{
     AstNode, DocumentId, ExpressionSyntax, ParseConfig, Revision, SyntaxKind, SyntaxNode, TextSize,
-    TextSnapshot, phase_2i_node_kind,
+    TextSnapshot, VariableDefineSyntax, phase_2i_node_kind,
 };
 
 struct CertificationContract {
@@ -45,6 +45,24 @@ fn expression(source: &str) -> ExpressionSyntax {
     find(parsed.syntax(), SyntaxKind::Expression)
         .and_then(ExpressionSyntax::cast)
         .expect("canonical Expression")
+}
+
+fn variable_definition(source: &str) -> VariableDefineSyntax {
+    let parsed = parse_canonical_phase_2i_rule_for_test(
+        TextSnapshot::new(DocumentId(0x549), Revision(7), source).unwrap(),
+        rules::VARIABLE_DEFINE,
+        ParseConfig::default(),
+    )
+    .unwrap();
+    assert!(parsed.is_strictly_clean(), "{source:?}");
+    assert_eq!(
+        parsed.consumed.end,
+        TextSize(source.len() as u32),
+        "{source:?}"
+    );
+    find(parsed.syntax(), SyntaxKind::VariableDefine)
+        .and_then(VariableDefineSyntax::cast)
+        .expect("canonical VariableDefine")
 }
 
 fn certification_contracts() -> BTreeMap<String, CertificationContract> {
@@ -140,7 +158,7 @@ fn every_semantic_rule_has_specification_derived_program_evidence() {
         .iter()
         .filter(|rule| rule.disposition != Phase2iSemanticDisposition::Structural)
         .collect::<Vec<_>>();
-    assert_eq!(certified.len(), 52);
+    assert_eq!(certified.len(), 53);
 
     for rule in PHASE_2I_SEMANTIC_RULES {
         let expected = match rule.disposition {
@@ -164,19 +182,32 @@ fn every_semantic_rule_has_specification_derived_program_evidence() {
             .semantic_source
             .as_deref()
             .unwrap_or_else(|| panic!("missing semantic context for {}", rule.grammar_name));
-        let syntax = expression(semantic_source);
+        let (syntax, compiled) = if rule.grammar_name == "variable-define" {
+            let definition = variable_definition(semantic_source);
+            let syntax = definition.syntax().clone();
+            let compiled = CanonicalSourceFrontend
+                .compile_definition(&definition)
+                .unwrap_or_else(|error| {
+                    panic!("{} on {semantic_source:?}: {error}", rule.grammar_name)
+                });
+            (syntax, compiled)
+        } else {
+            let expression = expression(semantic_source);
+            let syntax = expression.syntax().clone();
+            let compiled = CanonicalSourceFrontend
+                .compile_expression(&expression)
+                .unwrap_or_else(|error| {
+                    panic!("{} on {semantic_source:?}: {error}", rule.grammar_name)
+                });
+            (syntax, compiled)
+        };
         if let Some(kind) = phase_2i_node_kind(rule.grammar_name) {
             assert!(
-                find(syntax.syntax().clone(), kind).is_some(),
+                find(syntax.clone(), kind).is_some(),
                 "{} semantic context does not contain {kind:?}",
                 rule.grammar_name
             );
         }
-        let compiled = CanonicalSourceFrontend
-            .compile_expression(&syntax)
-            .unwrap_or_else(|error| {
-                panic!("{} on {semantic_source:?}: {error}", rule.grammar_name)
-            });
         assert_eq!(compiled.program().outputs.len(), 1, "{}", rule.grammar_name);
         assert_eq!(
             compiled.program().nodes.len(),
@@ -186,7 +217,7 @@ fn every_semantic_rule_has_specification_derived_program_evidence() {
         );
         assert_eq!(
             compiled.source_map().outputs[0].range,
-            syntax.syntax().range(),
+            syntax.range(),
             "{}",
             rule.grammar_name
         );
