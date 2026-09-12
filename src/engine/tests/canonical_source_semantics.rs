@@ -518,6 +518,18 @@ fn canonical_numeric_kinds_annotations_strings_and_state_are_preserved() {
         ValueData::Type(_)
     ));
 
+    let constrained_optional = CanonicalSourceFrontend
+        .compile_expression(&expression("signal<u8:1..10?>"))
+        .unwrap();
+    assert!(matches!(
+        constrained_optional
+            .schemas()
+            .get(constrained_optional.program().inputs[0].schema)
+            .unwrap()
+            .body(),
+        SchemaBody::Option(payload) if matches!(payload.as_ref(), SchemaBody::Dynamic)
+    ));
+
     let promoted = CanonicalSourceFrontend
         .compile_expression(&expression("1u8 + 2u16"))
         .unwrap();

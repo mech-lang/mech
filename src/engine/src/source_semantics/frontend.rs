@@ -318,6 +318,7 @@ enum BuiltinSchema {
     F64,
     C64,
     R64,
+    OptionDynamic,
     OptionBool,
     OptionString,
     OptionU8,
@@ -369,6 +370,7 @@ impl BuiltinSchemas {
             BuiltinSchema::F64,
             BuiltinSchema::C64,
             BuiltinSchema::R64,
+            BuiltinSchema::OptionDynamic,
             BuiltinSchema::OptionBool,
             BuiltinSchema::OptionString,
             BuiltinSchema::OptionU8,
@@ -560,6 +562,7 @@ fn builtin_kind(schema: BuiltinSchema) -> Option<BuiltinScalarKind> {
         BuiltinSchema::C64 => BuiltinScalarKind::C64,
         BuiltinSchema::R64 => BuiltinScalarKind::R64,
         BuiltinSchema::Dynamic
+        | BuiltinSchema::OptionDynamic
         | BuiltinSchema::OptionBool
         | BuiltinSchema::OptionString
         | BuiltinSchema::OptionU8
@@ -581,6 +584,7 @@ fn builtin_kind(schema: BuiltinSchema) -> Option<BuiltinScalarKind> {
 
 fn option_schema(payload: BuiltinSchema) -> Option<BuiltinSchema> {
     Some(match payload {
+        BuiltinSchema::Dynamic => BuiltinSchema::OptionDynamic,
         BuiltinSchema::Bool => BuiltinSchema::OptionBool,
         BuiltinSchema::String => BuiltinSchema::OptionString,
         BuiltinSchema::U8 => BuiltinSchema::OptionU8,
@@ -603,6 +607,7 @@ fn option_schema(payload: BuiltinSchema) -> Option<BuiltinSchema> {
 
 fn option_payload_schema(option: BuiltinSchema) -> Option<BuiltinSchema> {
     Some(match option {
+        BuiltinSchema::OptionDynamic => BuiltinSchema::Dynamic,
         BuiltinSchema::OptionBool => BuiltinSchema::Bool,
         BuiltinSchema::OptionString => BuiltinSchema::String,
         BuiltinSchema::OptionU8 => BuiltinSchema::U8,
