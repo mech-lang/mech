@@ -197,11 +197,9 @@ fn pattern_list(
                     "pattern",
                 );
                 committed = true;
-                break;
             }
             FactAttempt::Committed => {
                 committed = true;
-                break;
             }
         }
     }

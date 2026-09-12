@@ -937,6 +937,7 @@ pub(super) fn parenthesis_factor(parser: &mut Parser<'_>) -> Attempt {
         }
         let expression = parser.start();
         let mut parenthetical_selected = false;
+        let mut committed = false;
         let mut body = expressions::expression_body(parser);
         if body == FactAttempt::NoMatch {
             parser.rewind(after_open);
@@ -946,14 +947,17 @@ pub(super) fn parenthesis_factor(parser: &mut Parser<'_>) -> Attempt {
             let expression = parser.start();
             body = expressions::expression_body(parser);
             match body {
-                FactAttempt::Matched(_) => expression.complete(parser, SyntaxKind::Expression),
+                FactAttempt::Matched(_) => {
+                    expression.complete(parser, SyntaxKind::Expression);
+                }
                 FactAttempt::NoMatch => return Attempt::NoMatch,
                 FactAttempt::Committed => {
                     expression.complete(parser, SyntaxKind::Expression);
-                    parenthetical.complete(parser, SyntaxKind::ParentheticalExpression);
-                    tuple.complete(parser, SyntaxKind::Tuple);
-                    structure.complete(parser, SyntaxKind::Structure);
-                    return Attempt::Committed;
+                    committed = true;
+                    let after_body = parser.checkpoint();
+                    let _ = base::parse_rule(parser, rules::WHITESPACE0);
+                    parenthetical_selected = parser.cursor().starts_with(")");
+                    parser.rewind(after_body);
                 }
             };
         } else {
@@ -978,10 +982,11 @@ pub(super) fn parenthesis_factor(parser: &mut Parser<'_>) -> Attempt {
                 }
                 FactAttempt::Committed => {
                     expression.complete(parser, SyntaxKind::Expression);
-                    parenthetical.complete(parser, SyntaxKind::ParentheticalExpression);
-                    tuple.complete(parser, SyntaxKind::Tuple);
-                    structure.complete(parser, SyntaxKind::Structure);
-                    return Attempt::Committed;
+                    committed = true;
+                    let after_body = parser.checkpoint();
+                    let _ = base::parse_rule(parser, rules::WHITESPACE0);
+                    parenthetical_selected = parser.cursor().starts_with(")");
+                    parser.rewind(after_body);
                 }
                 FactAttempt::NoMatch => return Attempt::NoMatch,
             }
@@ -990,7 +995,6 @@ pub(super) fn parenthesis_factor(parser: &mut Parser<'_>) -> Attempt {
         if !parenthetical_selected {
             parenthetical.abandon(parser);
         }
-        let mut committed = false;
         while !parser.is_halted() {
             if !base::parse_rule(parser, rules::LIST_SEPARATOR) {
                 break;
@@ -1336,6 +1340,7 @@ fn finish_matrix_body(
                 return FactAttempt::Committed;
             }
             Attempt::Committed => {
+                recover_matrix_closer(parser, ordinary_bracket);
                 finish_provisional_marker(parser, comprehension, SyntaxKind::MatrixComprehension);
                 matrix.complete(parser, SyntaxKind::Matrix);
                 return FactAttempt::Committed;
@@ -1626,6 +1631,7 @@ fn brace_general(parser: &mut Parser<'_>, mode: BraceMode) -> FactAttempt<Expres
 
         entry.abandon(parser);
         comprehension.abandon(parser);
+        let mut committed = false;
         loop {
             let pair = parser.checkpoint();
             if !base::parse_rule(parser, rules::LIST_SEPARATOR)
@@ -1640,18 +1646,7 @@ fn brace_general(parser: &mut Parser<'_>, mode: BraceMode) -> FactAttempt<Expres
                     break;
                 }
                 Attempt::Committed => {
-                    recover_closer(
-                        parser,
-                        rules::SET,
-                        rules::RIGHT_BRACE,
-                        SyntaxKind::RightBrace,
-                        '}',
-                        "}",
-                    );
-                    set.complete(parser, SyntaxKind::Set);
-                    map.abandon(parser);
-                    structure.complete(parser, SyntaxKind::Structure);
-                    return FactAttempt::Committed;
+                    committed = true;
                 }
             }
         }
@@ -1673,7 +1668,11 @@ fn brace_general(parser: &mut Parser<'_>, mode: BraceMode) -> FactAttempt<Expres
         set.complete(parser, SyntaxKind::Set);
         map.abandon(parser);
         structure.complete(parser, SyntaxKind::Structure);
-        FactAttempt::Matched(ExpressionForm::Formula)
+        if committed {
+            FactAttempt::Committed
+        } else {
+            FactAttempt::Matched(ExpressionForm::Formula)
+        }
     }) else {
         nesting_limit(parser);
         record.complete(parser, SyntaxKind::Record);
@@ -1751,6 +1750,14 @@ fn finish_shared_record_or_map(
                 Attempt::Matched => {}
                 Attempt::NoMatch => return FactAttempt::NoMatch,
                 Attempt::Committed => {
+                    recover_closer(
+                        parser,
+                        rules::MAP,
+                        rules::RIGHT_BRACE,
+                        SyntaxKind::RightBrace,
+                        '}',
+                        "}",
+                    );
                     map.complete(parser, SyntaxKind::Map);
                     structure.complete(parser, SyntaxKind::Structure);
                     return FactAttempt::Committed;
@@ -1762,6 +1769,14 @@ fn finish_shared_record_or_map(
             Attempt::Matched => {}
             Attempt::NoMatch => return FactAttempt::NoMatch,
             Attempt::Committed => {
+                recover_closer(
+                    parser,
+                    rules::MAP,
+                    rules::RIGHT_BRACE,
+                    SyntaxKind::RightBrace,
+                    '}',
+                    "}",
+                );
                 map.complete(parser, SyntaxKind::Map);
                 structure.complete(parser, SyntaxKind::Structure);
                 return FactAttempt::Committed;
@@ -1774,6 +1789,14 @@ fn finish_shared_record_or_map(
             Attempt::Matched if parser.offset() > before => {}
             Attempt::Matched | Attempt::NoMatch => break,
             Attempt::Committed => {
+                recover_closer(
+                    parser,
+                    rules::MAP,
+                    rules::RIGHT_BRACE,
+                    SyntaxKind::RightBrace,
+                    '}',
+                    "}",
+                );
                 map.complete(parser, SyntaxKind::Map);
                 structure.complete(parser, SyntaxKind::Structure);
                 return FactAttempt::Committed;
@@ -1982,7 +2005,11 @@ fn spaced_table_row(parser: &mut Parser<'_>, rule: RuleId, kind: SyntaxKind) -> 
             node.abandon(parser);
             return Attempt::NoMatch;
         }
-        if parser.cursor().starts_with("\n") || parser.cursor().starts_with("\r") {
+        let after_separator = parser.checkpoint();
+        let _ = base::parse_rule(parser, rules::SPACE_TAB0);
+        let row_is_empty = parser.cursor().starts_with("\n") || parser.cursor().starts_with("\r");
+        parser.rewind(after_separator);
+        if row_is_empty {
             missing_production(
                 parser,
                 "syntax/missing-table-cell",
@@ -2107,10 +2134,25 @@ fn has_mapping_separator(parser: &Parser<'_>) -> bool {
     let mut cursor = parser.cursor().clone();
     let mut delimiters = alloc::vec::Vec::new();
     let mut quoted = false;
+    let mut raw_triple = false;
     let mut escaped = false;
     let mut key_started = false;
 
     while let Some(character) = cursor.peek_char() {
+        if !quoted && cursor.starts_with("\"\"\"") {
+            for _ in 0..3 {
+                let _ = cursor.bump_char();
+            }
+            raw_triple = !raw_triple;
+            if delimiters.is_empty() {
+                key_started = true;
+            }
+            continue;
+        }
+        if raw_triple {
+            let _ = cursor.bump_char();
+            continue;
+        }
         if quoted {
             let _ = cursor.bump_char();
             if escaped {

@@ -154,11 +154,9 @@ fn delimited_subscript(
                             "formula-subscript",
                         );
                         committed = true;
-                        break;
                     }
                     Attempt::Committed => {
                         committed = true;
-                        break;
                     }
                 }
             }

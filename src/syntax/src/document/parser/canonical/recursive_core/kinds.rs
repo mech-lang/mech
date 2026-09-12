@@ -454,11 +454,9 @@ pub(super) fn parse_kind_tuple(parser: &mut Parser<'_>) -> Attempt {
                             "kind",
                         );
                         committed = true;
-                        break;
                     }
                     Attempt::Committed => {
                         committed = true;
-                        break;
                     }
                 }
             }

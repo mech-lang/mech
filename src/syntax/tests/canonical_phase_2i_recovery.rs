@@ -398,6 +398,56 @@ fn call_recovery_resumes_at_the_next_sibling_separator() {
 }
 
 #[test]
+fn recursive_list_recovery_resumes_at_later_siblings() {
+    for (rule, text, kind, expected) in [
+        (
+            rules::KIND_TUPLE,
+            "(u8, <u8, i8)",
+            SyntaxKind::KindScalar,
+            2,
+        ),
+        (
+            rules::BRACKET_SUBSCRIPT,
+            "[1, 2 +, 3]",
+            SyntaxKind::IntegerLiteral,
+            3,
+        ),
+        (
+            rules::PATTERN_TUPLE,
+            "(1, 2 +, 3)",
+            SyntaxKind::IntegerLiteral,
+            3,
+        ),
+        (
+            rules::SET_COMPREHENSION,
+            "{x | x <- xs, y <-, z <- zs}",
+            SyntaxKind::Generator,
+            3,
+        ),
+    ] {
+        let parsed = parse(rule, text);
+        assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed, "{rule:?}");
+        assert_eq!(parsed.consumed.end.0 as usize, text.len(), "{rule:?}");
+        assert_eq!(count_kind(&parsed.syntax(), kind), expected, "{rule:?}");
+        assert!(
+            contains_kind(&parsed.syntax(), SyntaxKind::Missing),
+            "{rule:?}"
+        );
+    }
+}
+
+#[test]
+fn shared_set_recovery_resumes_at_a_later_item() {
+    let text = "{1, 2 +, 3}";
+    let parsed = parse(rules::EXPRESSION, text);
+    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+    assert_eq!(parsed.consumed.end.0 as usize, text.len());
+    assert_eq!(count_kind(&parsed.syntax(), SyntaxKind::IntegerLiteral), 3);
+    assert!(contains_kind(&parsed.syntax(), SyntaxKind::Set));
+    assert!(!contains_kind(&parsed.syntax(), SyntaxKind::Error));
+}
+
+#[test]
 fn shared_brace_recovery_keeps_map_and_set_selection_exclusive() {
     for (text, selected, rejected) in [
         ("{1, 2 +}", SyntaxKind::Set, SyntaxKind::Map),
@@ -413,6 +463,49 @@ fn shared_brace_recovery_keeps_map_and_set_selection_exclusive() {
             "{text:?}"
         );
     }
+}
+
+#[test]
+fn recovered_parenthetical_selects_and_closes_one_owner() {
+    let text = "(1 +)";
+    let parsed = parse(rules::EXPRESSION, text);
+    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+    assert_eq!(parsed.consumed.end.0 as usize, text.len());
+    assert!(contains_kind(
+        &parsed.syntax(),
+        SyntaxKind::ParentheticalExpression
+    ));
+    assert!(!contains_kind(&parsed.syntax(), SyntaxKind::Tuple));
+}
+
+#[test]
+fn converted_shared_map_finishes_its_physical_closer() {
+    let text = "{a: 1, 2:}";
+    let parsed = parse(rules::EXPRESSION, text);
+    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+    assert_eq!(parsed.consumed.end.0 as usize, text.len());
+    assert!(contains_kind(&parsed.syntax(), SyntaxKind::Map));
+    assert!(!contains_kind(&parsed.syntax(), SyntaxKind::Record));
+}
+
+#[test]
+fn raw_triple_string_colons_do_not_select_a_shared_map() {
+    let text = "{a: 1, \"\"\"a\":b\"\"\"}";
+    let parsed = parse(rules::RECORD, text);
+    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+    assert_eq!(parsed.consumed.end.0 as usize, text.len());
+    assert!(contains_kind(&parsed.syntax(), SyntaxKind::Record));
+    assert!(!contains_kind(&parsed.syntax(), SyntaxKind::Map));
+}
+
+#[test]
+fn committed_matrix_row_finishes_its_physical_closer() {
+    let text = "[1; 2 +]";
+    let parsed = parse(rules::MATRIX, text);
+    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+    assert_eq!(parsed.consumed.end.0 as usize, text.len());
+    assert!(contains_kind(&parsed.syntax(), SyntaxKind::Matrix));
+    assert!(contains_kind(&parsed.syntax(), SyntaxKind::Missing));
 }
 
 #[test]
@@ -551,6 +644,16 @@ fn table_separator_recovery_preserves_the_next_row() {
 }
 
 #[test]
+fn whitespace_only_table_row_preserves_the_next_row() {
+    let text = "|a<u8>|\n|   \n|2|";
+    let parsed = parse(rules::TABLE, text);
+    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+    assert_eq!(parsed.consumed.end.0 as usize, text.len());
+    assert!(contains_kind(&parsed.syntax(), SyntaxKind::RegularTable));
+    assert_eq!(count_kind(&parsed.syntax(), SyntaxKind::TableRow), 2);
+}
+
+#[test]
 fn table_selection_defers_inline_recovery_at_a_physical_newline() {
     let text = "|a<u8>|\n|1|";
     let parsed = parse(rules::TABLE, text);
@@ -558,6 +661,23 @@ fn table_selection_defers_inline_recovery_at_a_physical_newline() {
     assert_eq!(parsed.consumed.end.0 as usize, text.len());
     assert!(contains_kind(&parsed.syntax(), SyntaxKind::RegularTable));
     assert!(!contains_kind(&parsed.syntax(), SyntaxKind::InlineTable));
+}
+
+#[test]
+fn deferred_inline_table_restores_speculative_recovery_state() {
+    let text = "|a<u8> @\n|1|";
+    let limits = ParseLimits {
+        max_recovery_bytes: 1,
+        ..ParseLimits::default()
+    };
+    let parsed =
+        parse_canonical_phase_2i_rule_for_test(source(text), rules::TABLE, ParseConfig { limits })
+            .unwrap();
+    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+    assert_eq!(parsed.consumed.end.0 as usize, text.len());
+    assert!(contains_kind(&parsed.syntax(), SyntaxKind::RegularTable));
+    assert!(!contains_kind(&parsed.syntax(), SyntaxKind::InlineTable));
+    assert_eq!(parsed.stats.recovery_bytes, 1);
 }
 
 #[test]

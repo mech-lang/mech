@@ -11,4 +11,8 @@ pub struct ParserCheckpoint {
     pub(crate) covered_end: TextSize,
     pub(crate) rule_depth: usize,
     pub(crate) nesting: u32,
+    pub(crate) recovery_bytes: u64,
+    pub(crate) halted: bool,
+    pub(crate) resource_diagnostic_emitted: bool,
+    pub(crate) resource_finalizing: bool,
 }

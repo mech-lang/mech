@@ -75,11 +75,9 @@ pub(super) fn finish_qualifiers(
                     "comprehension-qualifier",
                 );
                 committed = true;
-                break;
             }
             FactAttempt::Committed => {
                 committed = true;
-                break;
             }
         }
     }
