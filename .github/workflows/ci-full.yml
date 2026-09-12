@@ -401,7 +401,8 @@ jobs:
           # Direct package feature-boundary checks.
           cargo check -p mech-core --no-default-features --features mika
           cargo check -p mech-core --no-default-features --features "mika serde"
-          cargo check -p mech-syntax --no-default-features --features mika
+          cargo +nightly-2026-03-03 check --locked -p mech-syntax --no-default-features --features mika
+          cargo +nightly-2026-03-03 check --locked -p mech-syntax --no-default-features --features no_std
           cargo check -p mech-engine --no-default-features --features program
 
       - name: Run serve executable HTTP suite
@@ -1068,12 +1069,18 @@ jobs:
           python3 scripts/generate-canonical-port-registry.py --check
           python3 scripts/generate-canonical-dependencies.py --check
           python3 scripts/generate-canonical-scc-report.py --check
+          python3 scripts/generate-canonical-document-grammar.py --check
 
       - name: Run syntax grammar suites
         run: |
-          cargo test -p mech-syntax --tests --no-default-features --features full
-          cargo test -p mech-syntax --tests --no-default-features --features base
-          cargo test -p mech-syntax --test grammar_conformance --no-default-features --features "baselib pretty_print serde compiler program statements_default subscript_default mechdown"
+          cargo +nightly-2026-03-03 test --locked -p mech-syntax --tests --no-default-features --features full
+          cargo +nightly-2026-03-03 test --locked -p mech-syntax --tests --no-default-features --features base
+          cargo +nightly-2026-03-03 test --locked -p mech-syntax --test grammar_conformance --no-default-features --features "baselib pretty_print serde compiler program statements_default subscript_default mechdown"
+
+      - name: Verify canonical document syntax with optional features disabled
+        run: >-
+          cargo +nightly-2026-03-03 test --locked -p mech-syntax
+          --no-default-features --test canonical_document_feature_gates
 
       - name: Check reduced core feature boundaries
         run: |
