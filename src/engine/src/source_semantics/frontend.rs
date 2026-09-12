@@ -1944,26 +1944,6 @@ impl SemanticBuilder {
             }
         }
 
-        let has_c32 = [self.schema_body_of(lhs)?, self.schema_body_of(rhs)?].into_iter().any(|body| {
-            matches!(body, SchemaBody::Complex(FloatWidth::W32))
-                || matches!(body, SchemaBody::Matrix { element, .. } if matches!(element.as_ref(), SchemaBody::Complex(FloatWidth::W32)))
-        });
-        if matches!(
-            operator,
-            CanonicalOperator::Add
-                | CanonicalOperator::Subtract
-                | CanonicalOperator::Multiply
-                | CanonicalOperator::Divide
-                | CanonicalOperator::Power
-        ) && has_c32
-        {
-            return Err(SourceSemanticError {
-                code: "source-semantics/unsupported-resident-arithmetic-kind",
-                message: "resident arithmetic does not provide c32 kernels".to_owned(),
-                anchor: SourceSemanticAnchor::for_node(syntax),
-            });
-        }
-
         let resolved = self
             .resolve_maintained_call(name, vec![lhs, rhs], syntax)
             .map_err(|mut error| {
@@ -1989,13 +1969,7 @@ impl SemanticBuilder {
                     | CanonicalOperator::Subtract
                     | CanonicalOperator::Multiply
                     | CanonicalOperator::Divide
-                    | CanonicalOperator::Power => {
-                        if has_c32 {
-                            "source-semantics/unsupported-resident-arithmetic-kind"
-                        } else {
-                            "source-semantics/non-numeric-arithmetic-kind"
-                        }
-                    }
+                    | CanonicalOperator::Power => "source-semantics/non-numeric-arithmetic-kind",
                     _ => error.code,
                 };
                 error
@@ -2134,14 +2108,6 @@ impl SemanticBuilder {
                     SchemaBody::Matrix { element, .. } => builtin_schema_for_body(element),
                     _ => None,
                 };
-                if scalar == Some(BuiltinSchema::C32) || matrix_element == Some(BuiltinSchema::C32)
-                {
-                    return Err(SourceSemanticError {
-                        code: "source-semantics/unsupported-resident-arithmetic-kind",
-                        message: "resident arithmetic does not provide c32 negation".to_owned(),
-                        anchor: SourceSemanticAnchor::for_node(value.syntax()),
-                    });
-                }
                 let negatable = scalar.or(matrix_element).is_some_and(|schema| {
                     builtin_kind(schema).is_some_and(|kind| {
                         resolved_builtin_type(kind, value.syntax()).is_ok_and(|resolved| {
@@ -3059,7 +3025,7 @@ impl SemanticBuilder {
                 let value = lowered;
                 if !matches!(value, PendingValue::UnresolvedEmpty(_)) {
                     has_matrix_blocks |=
-                        matches!(self.schema_body_of(value)?, SchemaBody::Matrix { .. });
+                        matches!(&self.schema_draft(value)?.body, SchemaBody::Matrix { .. });
                 }
                 row_values
                     .push((!matches!(value, PendingValue::UnresolvedEmpty(_))).then_some(value));
@@ -4541,10 +4507,6 @@ impl SemanticBuilder {
             PendingValue::Node(index) => &self.nodes[index as usize].schema,
             PendingValue::UnresolvedEmpty(_) => unreachable!("resolved above"),
         })
-    }
-
-    fn schema_body_of(&self, value: PendingValue) -> Result<SchemaBody, SourceSemanticError> {
-        Ok(self.schema_draft(value)?.body.clone())
     }
 
     fn schema_draft_of(&self, value: PendingValue) -> Result<SchemaDraft, SourceSemanticError> {

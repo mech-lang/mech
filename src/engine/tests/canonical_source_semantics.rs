@@ -976,14 +976,6 @@ fn reviewed_source_kind_edges_match_operation_and_literal_contracts() {
         ("¬:ready", "source-semantics/non-boolean-negation-kind"),
         ("¬<u8>", "source-semantics/non-boolean-negation-kind"),
         (
-            "1<c32> + 2<c32>",
-            "source-semantics/unsupported-resident-arithmetic-kind",
-        ),
-        (
-            "-(1<c32>)",
-            "source-semantics/unsupported-resident-arithmetic-kind",
-        ),
-        (
             "true + true",
             "source-semantics/non-numeric-arithmetic-kind",
         ),
