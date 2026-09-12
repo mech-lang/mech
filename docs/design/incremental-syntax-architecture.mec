@@ -5,6 +5,11 @@ Status: Phase 1 experimental architecture.
 
 Integration branch: `feature/syntax`.
 
+The post-R1-R6 implementation sequence is defined by
+`docs/design/syntax-v0.4-continuation-plan.mec`. It supersedes the old combined
+Phase 2I-D/2I-E delivery assumption while retaining this architecture's
+lossless tree, recovery, incremental, and diagnostic contracts.
+
 The branch combines PR 650 at
 `45a8acf1d1ee457a40340f17b9dc009ae781dfce` with the completed Phase 0
 canonical-grammar merge at

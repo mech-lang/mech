@@ -14,9 +14,12 @@ R1–R6 Integration Rebase
 
 The unfinished syntax stack is rebased through Phase 2I-C onto
 `integration/v0.4` at `535e4b245` (R1–R6 plus the combined integration fixes).
-Phase 2I-D recovery, typed views, and lowering, followed by Phase 2I-E parity
-and atomic registry activation, remain unfinished. This rebase does not
-activate the recursive registry or change the production parser entry point.
+Recovery, typed views, lowering, certification, and atomic registry activation
+remain unfinished. `docs/design/syntax-v0.4-continuation-plan.mec` replaces the
+old combined Phase 2I-D/2I-E delivery assumption with independently gated
+milestones and adds the later document-root, production-cutover, and legacy
+retirement work. This rebase does not activate the recursive registry or change
+the production parser entry point.
 
 The 539 canonical rule IDs and Phase 0 inventory remain stable. Their live
 implementation audit records the intervening integration changes explicitly:

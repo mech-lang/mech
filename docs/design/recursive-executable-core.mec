@@ -6,6 +6,8 @@ Status: Phase 2I-C complete clean recursive recognizer.
 Current canonical progress remains 328 / 539. Phase 2I-C implements clean,
 lossless recognition for all 80 rules but activates zero productions. The
 generated implementation boundary remains one strongly connected component.
+`docs/design/syntax-v0.4-continuation-plan.mec` is the current delivery plan
+after the R1-R6 integration rebase.
 
 The authoritative member inventory is
 `docs/design/grammar-audit/phase-2i-recursive-core.tsv`. The generated count is
@@ -231,7 +233,7 @@ Canonical + Grammar
 
 This is the complete current parser-root API.
 
-10. Delivery sequence
+10. Historical delivery sequence
 -------------------------------------------------------------------------------
 
 ```text
@@ -241,6 +243,12 @@ This is the complete current parser-root API.
 2I-D  recovery, typed views, and lowering
 2I-E  parity and atomic registry activation
 ```
+
+This sequence records the plan used to reach Phase 2I-C. The combined 2I-D and
+2I-E steps are superseded by the independently gated S1-S6 milestones in
+`docs/design/syntax-v0.4-continuation-plan.mec`. That plan also separates
+recursive registry activation from document-root completion and the production
+parser cutover.
 
 Phase 2I-C implements clean, lossless recognition for all 80 mutually recursive
 productions against the frozen schema. All 80 rules remain unactivated. Local
