@@ -3,7 +3,9 @@
 use std::fs;
 use std::path::PathBuf;
 
-use mech_core::{ChangeDetectionPolicy, IntegerWidth, SchemaBody, ShapeRule, ValueData};
+use mech_core::{
+    ChangeDetectionPolicy, IntegerWidth, OutputConstruction, SchemaBody, ShapeRule, ValueData,
+};
 use mech_engine::{
     CanonicalSourceFrontend, PHASE_2I_SEMANTIC_RULES, Phase2iSemanticDisposition, SourceValue,
     phase_2i_semantic_disposition,
@@ -221,6 +223,16 @@ fn calls_ranges_subscripts_and_patterns_keep_their_canonical_roles() {
         range.source_map().nodes.last().unwrap().operation,
         "range/inclusive-increment"
     );
+    assert!(matches!(
+        range.contracts().last().unwrap().as_ref().unwrap().outputs[0].construction,
+        OutputConstruction::Build { ref postcondition }
+            if postcondition.module_path.as_ref() == ["range"]
+                && postcondition.contract_name == "inclusive-increment-output"
+    ));
+    assert_eq!(
+        range.contracts().last().unwrap().as_ref().unwrap().outputs[0].change_detection,
+        ChangeDetectionPolicy::KernelReported
+    );
 
     let slice = CanonicalSourceFrontend
         .compile_expression(&expression("x[1][2]"))
@@ -263,6 +275,25 @@ fn calls_ranges_subscripts_and_patterns_keep_their_canonical_roles() {
             .canonical_name()
             .starts_with("source/pattern")
     }));
+
+    let destructured = CanonicalSourceFrontend
+        .compile_expression(&expression("[a + b | (a, b) <- xs]"))
+        .unwrap();
+    let bindings = destructured
+        .source_map()
+        .nodes
+        .iter()
+        .filter(|node| node.operation == "source/bind")
+        .collect::<Vec<_>>();
+    assert_eq!(bindings.len(), 2);
+    assert_ne!(bindings[0].detail, bindings[1].detail);
+    let add = destructured
+        .program()
+        .nodes
+        .iter()
+        .find(|node| node.operation.canonical_name() == "math/add")
+        .unwrap();
+    assert_ne!(add.inputs[0], add.inputs[1]);
 }
 
 #[test]
@@ -270,6 +301,7 @@ fn canonical_numeric_kinds_annotations_strings_and_state_are_preserved() {
     for (source, expected) in [
         ("1u8", "u8"),
         ("0x10", "f64"),
+        ("0d42", "decimal"),
         ("1/2", "r64"),
         ("1+2i", "c64"),
         ("1<u8>", "u8"),
@@ -284,6 +316,7 @@ fn canonical_numeric_kinds_annotations_strings_and_state_are_preserved() {
         let actual = match value.data() {
             ValueData::U8(1) => "u8",
             ValueData::F64(value) if value.to_f64() == 16.0 => "f64",
+            ValueData::F64(value) if value.to_f64() == 42.0 => "decimal",
             ValueData::Rational64(value) if value.numerator() == 1 && value.denominator() == 2 => {
                 "r64"
             }
@@ -337,7 +370,7 @@ fn canonical_numeric_kinds_annotations_strings_and_state_are_preserved() {
     );
 
     let state = CanonicalSourceFrontend
-        .compile_definition(&definition("~state := 1"))
+        .compile_definition(&definition("~state<u8> := 1"))
         .unwrap();
     assert_eq!(state.program().states.len(), 1);
     assert!(state.program().states[0].initializer.is_some());
@@ -346,9 +379,107 @@ fn canonical_numeric_kinds_annotations_strings_and_state_are_preserved() {
         "core/assign"
     );
     assert_eq!(state.program().outputs[0].source, SourceValue::State(0));
+    assert_eq!(state.program().nodes[0].inputs[0], SourceValue::State(0));
+    assert!(matches!(
+        state
+            .schemas()
+            .get(state.program().states[0].schema)
+            .unwrap()
+            .body(),
+        SchemaBody::UnsignedInteger(IntegerWidth::W8)
+    ));
     state
         .compile_artifact()
         .expect("mutable definition has a resolved state contract");
+
+    let defined = CanonicalSourceFrontend
+        .compile_definition(&definition("x<u8> := 1"))
+        .unwrap();
+    let SourceValue::Constant(id) = defined.program().outputs[0].source else {
+        panic!("annotated definition did not produce a constant")
+    };
+    assert!(matches!(
+        defined.constants().get(id).unwrap().data(),
+        ValueData::U8(1)
+    ));
+
+    let promoted = CanonicalSourceFrontend
+        .compile_expression(&expression("1u8 + 2u16"))
+        .unwrap();
+    assert!(matches!(
+        promoted
+            .schemas()
+            .get(promoted.program().outputs[0].schema)
+            .unwrap()
+            .body(),
+        SchemaBody::UnsignedInteger(IntegerWidth::W16)
+    ));
+    let add = promoted.program().nodes.last().unwrap();
+    assert!(add.inputs.iter().all(|input| {
+        let SourceValue::Constant(id) = input else {
+            return false;
+        };
+        matches!(
+            promoted.constants().get(*id).unwrap().data(),
+            ValueData::U16(_)
+        )
+    }));
+
+    let atom = CanonicalSourceFrontend
+        .compile_expression(&expression(":ready"))
+        .unwrap();
+    let SourceValue::Constant(id) = atom.program().outputs[0].source else {
+        panic!("atom literal did not produce a constant")
+    };
+    assert!(matches!(
+        atom.constants().get(id).unwrap().data(),
+        ValueData::Atom
+    ));
+    assert!(matches!(
+        atom.schemas()
+            .get(atom.program().outputs[0].schema)
+            .unwrap()
+            .body(),
+        SchemaBody::Atom(_)
+    ));
+
+    let kind = CanonicalSourceFrontend
+        .compile_expression(&expression("<u8>"))
+        .unwrap();
+    let SourceValue::Constant(id) = kind.program().outputs[0].source else {
+        panic!("kind literal did not produce a constant")
+    };
+    assert!(matches!(
+        kind.constants().get(id).unwrap().data(),
+        ValueData::Type(_)
+    ));
+    assert!(matches!(
+        kind.schemas()
+            .get(kind.program().outputs[0].schema)
+            .unwrap()
+            .body(),
+        SchemaBody::ReifiedType
+    ));
+}
+
+#[test]
+fn match_and_fsm_metadata_preserve_source_argument_layouts() {
+    let matched = CanonicalSourceFrontend
+        .compile_expression(&expression("x ? | *, true => 1 | * => 2"))
+        .unwrap();
+    assert_eq!(matched.source_map().match_arms.len(), 2);
+    assert_eq!(matched.source_map().match_arms[0].guard_input, Some(1));
+    assert_eq!(matched.source_map().match_arms[0].result_input, 2);
+    assert_eq!(matched.source_map().match_arms[1].guard_input, None);
+    assert_eq!(matched.source_map().match_arms[1].result_input, 3);
+
+    let fsm = CanonicalSourceFrontend
+        .compile_expression(&expression("#controller(left: 1, 2) -> :ready"))
+        .unwrap();
+    assert_eq!(
+        fsm.source_map().nodes.last().unwrap().detail.as_deref(),
+        Some("controller(left,)")
+    );
 }
 
 #[test]
