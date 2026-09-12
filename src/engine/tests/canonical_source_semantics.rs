@@ -799,6 +799,100 @@ fn semantic_kind_edges_are_resolved_before_graph_emission() {
 }
 
 #[test]
+fn semantic_annotations_follow_value_roles_and_lexical_scope() {
+    let optional_atom = CanonicalSourceFrontend
+        .compile_definition(&definition("x<*?> := :ready"))
+        .unwrap();
+    let SourceValue::Constant(id) = optional_atom.program().outputs[0].source else {
+        panic!("optional atom definition did not produce a constant")
+    };
+    assert!(matches!(
+        optional_atom.constants().get(id).unwrap().data(),
+        ValueData::Option(Some(value))
+            if matches!(value.as_ref(), ValueData::Dynamic(dynamic)
+                if matches!(dynamic.value().map(|value| value.data()), Some(ValueData::Atom)))
+    ));
+    optional_atom
+        .compile_artifact()
+        .expect("an exact constant must finalize inside a dynamic option payload");
+
+    let local_annotations = CanonicalSourceFrontend
+        .compile_expression(&expression("([x | x<u8> := 1], [x | x<u16> := 2])"))
+        .unwrap();
+    assert!(local_annotations.program().inputs.is_empty());
+
+    let ternary_range = CanonicalSourceFrontend
+        .compile_expression(&expression("1..2..limit"))
+        .unwrap();
+    let range = ternary_range.program().nodes.last().unwrap();
+    assert!(matches!(
+        range.inputs[2],
+        SourceValue::NodeOutput {
+            node: _,
+            output_ordinal: 0
+        }
+    ));
+    ternary_range
+        .compile_artifact()
+        .expect("a dynamic third endpoint must be conformed before range emission");
+
+    let invalid_not = CanonicalSourceFrontend
+        .compile_expression(&expression("¬1"))
+        .err()
+        .expect("logical negation of a number must be rejected");
+    assert_eq!(
+        invalid_not.code,
+        "source-semantics/non-boolean-negation-kind"
+    );
+
+    let index_range = CanonicalSourceFrontend
+        .compile_expression(&expression("lo<ix>..hi<ix>"))
+        .unwrap();
+    assert!(index_range.program().inputs.iter().all(|input| matches!(
+        index_range.schemas().get(input.schema).unwrap().body(),
+        SchemaBody::Index
+    )));
+    let SchemaBody::Matrix { element, .. } = index_range
+        .schemas()
+        .get(index_range.program().outputs[0].schema)
+        .unwrap()
+        .body()
+    else {
+        panic!("index range did not produce a matrix")
+    };
+    assert!(matches!(element.as_ref(), SchemaBody::Index));
+    index_range
+        .compile_artifact()
+        .expect("index endpoints must satisfy the range contract");
+
+    let annotated_atom = CanonicalSourceFrontend
+        .compile_expression(&expression(":ready<u8>"))
+        .err()
+        .expect("an incompatible atom annotation must be rejected");
+    assert_eq!(
+        annotated_atom.code,
+        "source-semantics/incompatible-literal-kind"
+    );
+
+    let record = CanonicalSourceFrontend
+        .compile_expression(&expression("{ x<u8>: 1, y<bool>: true }"))
+        .unwrap();
+    let SchemaBody::Record(fields) = record
+        .schemas()
+        .get(record.program().outputs[0].schema)
+        .unwrap()
+        .body()
+    else {
+        panic!("annotated record did not retain a record schema")
+    };
+    assert!(matches!(
+        fields[0].schema,
+        SchemaBody::UnsignedInteger(IntegerWidth::W8)
+    ));
+    assert!(matches!(fields[1].schema, SchemaBody::Bool));
+}
+
+#[test]
 fn match_and_fsm_metadata_preserve_source_argument_layouts() {
     let matched = CanonicalSourceFrontend
         .compile_expression(&expression("x ? | *, true => 1 | * => 2"))
