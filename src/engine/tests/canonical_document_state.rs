@@ -36,6 +36,14 @@ fn compiled(source: &str) -> CanonicalSourceProgram {
 }
 
 fn turns(source: &str, expected: &[f64]) {
+    turns_for_output(
+        source,
+        expected,
+        mech_engine::SourceDocumentOutputKind::Program,
+    );
+}
+
+fn turns_for_output(source: &str, expected: &[f64], kind: mech_engine::SourceDocumentOutputKind) {
     let compiled = compiled(source);
     assert!(compiled.program().inputs.is_empty());
     for state in 0..compiled.program().states.len() as u32 {
@@ -64,11 +72,17 @@ fn turns(source: &str, expected: &[f64]) {
         &ActivationFacts::default(),
     )
     .expect("document must activate with the maintained resident catalog");
+    let output = compiled
+        .document_outputs()
+        .iter()
+        .find(|binding| binding.kind == kind)
+        .unwrap()
+        .output as usize;
     for expected in expected {
         instance
             .turn(&[])
             .expect("state update must execute and publish");
-        let output = instance.copied_output(0).unwrap();
+        let output = instance.copied_output(output).unwrap();
         let ValueData::F64(actual) = output.data() else {
             panic!("expected a scalar f64 result: {output:?}")
         };
@@ -211,8 +225,9 @@ fn document_display_and_child_scopes_do_not_execute_updates() {
         "~answer := 0\n~∘~⸢answer += 100\n⸥\nanswer += 1\nanswer\n",
         &[1.0, 2.0],
     );
-    turns(
+    turns_for_output(
         "~answer := 0\nanswer += 1\n\nEvaluated {answer + 10}.\n",
         &[11.0, 12.0],
+        mech_engine::SourceDocumentOutputKind::Inline,
     );
 }

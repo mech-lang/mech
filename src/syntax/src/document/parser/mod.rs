@@ -189,6 +189,23 @@ impl<'a> Parser<'a> {
         &self.cursor
     }
 
+    /// Parse an embedded body in the same source and event stream. The body
+    /// shares every resource budget with its enclosing document. Exhaustion
+    /// still finalizes the enclosing parse range, including the owned closer.
+    pub(crate) fn with_cursor_end<T>(
+        &mut self,
+        end: TextSize,
+        parse: impl FnOnce(&mut Self) -> T,
+    ) -> T {
+        let mut outer = self.cursor.clone();
+        let range = TextRange::new(self.offset(), end);
+        self.cursor = Cursor::for_range_with_context(self.source, range, end);
+        let result = parse(self);
+        outer.rewind(self.cursor.checkpoint());
+        self.cursor = outer;
+        result
+    }
+
     pub(crate) fn config(&self) -> ParseConfig {
         self.config
     }

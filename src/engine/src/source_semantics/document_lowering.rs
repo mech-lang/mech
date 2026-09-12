@@ -2,10 +2,234 @@
 //! slots as expression compilation. Each mutable binding retains one writer.
 
 use mech_syntax::document::{
-    CanonicalOpAssign, OpAssignSyntax, SliceRefSyntax, VariableAssignSyntax,
+    CanonicalOpAssign, CodeBlockSyntax, CodeFenceScope, EvalInlineMechCodeSyntax, OpAssignSyntax,
+    SliceRefSyntax, VariableAssignSyntax,
 };
 
 use super::*;
+
+enum DocumentUnit {
+    Statement(SyntaxNode),
+    Fence(CodeBlockSyntax, Vec<DocumentUnit>),
+}
+
+pub(super) fn compile_document(
+    document: &DocumentSyntax,
+) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+    let anchor = SourceSemanticAnchor::for_node(document.syntax());
+    let mut units = Vec::new();
+    let mut inline = Vec::new();
+    collect_document_units(document.syntax(), &mut units, &mut inline)?;
+    let mut builder = SemanticBuilder::new(anchor);
+    let mut bindings = BTreeSet::new();
+    declare_document_inputs(&mut builder, &units, &mut bindings)?;
+    for expression in &inline {
+        builder.declare_input_annotations(expression.syntax(), &bindings)?;
+    }
+    let mut presentation = Vec::new();
+    let last = compile_document_units(&mut builder, units, &mut presentation)?;
+    let mut last_inline = None;
+    for inline in inline {
+        let expression = builder.required(
+            inline.expression(),
+            inline.syntax(),
+            "an evaluated inline expression",
+        )?;
+        let value = builder.expression(&expression)?.0;
+        last_inline = Some((value, inline.syntax().clone()));
+        presentation.push((
+            SourceDocumentOutputKind::Inline,
+            value,
+            inline.syntax().clone(),
+        ));
+    }
+    let Some((value, syntax)) = last.or(last_inline) else {
+        return Err(SourceSemanticError {
+            code: "source-semantics/empty-document",
+            message: "canonical document contains no executable source unit".to_owned(),
+            anchor,
+        });
+    };
+    builder.publish("result", None, value, &syntax);
+    let mut output_bindings = vec![SourceDocumentOutput {
+        output: 0,
+        kind: SourceDocumentOutputKind::Program,
+    }];
+    presentation.sort_by_key(|(_, _, owner)| owner.range().start);
+    for (kind, value, owner) in presentation {
+        let role = match kind {
+            SourceDocumentOutputKind::Inline => "inline",
+            SourceDocumentOutputKind::Fence => "fence",
+            SourceDocumentOutputKind::Program => {
+                unreachable!("program output is published separately")
+            }
+        };
+        let name = format!("document:{role}:{}", owner.range().start.0);
+        output_bindings.push(SourceDocumentOutput {
+            output: builder.outputs.len() as u32,
+            kind,
+        });
+        builder.publish(&name, None, value, &owner);
+    }
+    builder.order_document_state_writers();
+    let mut program = builder.finish()?;
+    program.document_outputs = output_bindings.into_boxed_slice();
+    Ok(program)
+}
+
+fn collect_document_units(
+    node: &SyntaxNode,
+    output: &mut Vec<DocumentUnit>,
+    inline: &mut Vec<EvalInlineMechCodeSyntax>,
+) -> Result<(), SourceSemanticError> {
+    if matches!(
+        node.kind(),
+        SyntaxKind::InlineMechCode | SyntaxKind::MikaSection
+    ) {
+        return Ok(());
+    }
+    if let Some(expression) = EvalInlineMechCodeSyntax::cast(node.clone()) {
+        inline.push(expression);
+        return Ok(());
+    }
+    if let Some(fence) = CodeBlockSyntax::cast(node.clone()) {
+        let Some(info) = fence.info() else {
+            return Ok(());
+        };
+        if let CodeFenceScope::UnsupportedInfo(info) = &info.scope {
+            return Err(SourceSemanticError {
+                code: "source-semantics/unsupported-fence-info",
+                message: format!(
+                    "Mech fence information {info:?} does not select a documented execution scope"
+                ),
+                anchor: SourceSemanticAnchor {
+                    document: fence.syntax().source().document(),
+                    revision: fence.syntax().source().revision(),
+                    range: fence
+                        .info_range()
+                        .expect("classified fence has an information range"),
+                },
+            });
+        }
+        if !matches!(info.scope, CodeFenceScope::Root) {
+            return Ok(());
+        }
+        if let Some(options) = fence.options() {
+            return Err(SourceSemanticError {
+                code: "source-semantics/unsupported-fence-options",
+                message: "configured fence options need a typed document consumer".to_owned(),
+                anchor: SourceSemanticAnchor::for_node(options.syntax()),
+            });
+        }
+        let Some(body) = fence.mech_code() else {
+            return Err(internal(
+                SourceSemanticAnchor::for_node(fence.syntax()),
+                "executable fence has no canonical Mech body".to_owned(),
+            ));
+        };
+        let mut units = Vec::new();
+        collect_document_units(body.syntax(), &mut units, inline)?;
+        output.push(DocumentUnit::Fence(fence, units));
+        return Ok(());
+    }
+    if matches!(
+        node.kind(),
+        SyntaxKind::VariableDefine
+            | SyntaxKind::Expression
+            | SyntaxKind::OpAssign
+            | SyntaxKind::VariableAssign
+    ) {
+        output.push(DocumentUnit::Statement(node.clone()));
+        return Ok(());
+    }
+    if matches!(
+        node.kind(),
+        SyntaxKind::ActivationScope
+            | SyntaxKind::ContextDeclaration
+            | SyntaxKind::ContextSend
+            | SyntaxKind::EnumDefine
+            | SyntaxKind::ExportDeclaration
+            | SyntaxKind::Fsm
+            | SyntaxKind::FsmDeclare
+            | SyntaxKind::FsmImplementation
+            | SyntaxKind::FsmSpecification
+            | SyntaxKind::FunctionDefine
+            | SyntaxKind::InvariantDefine
+            | SyntaxKind::ImportDeclaration
+            | SyntaxKind::KindDefine
+            | SyntaxKind::ModuleImport
+            | SyntaxKind::TupleDestructure
+    ) {
+        return Err(SourceSemanticError {
+            code: "source-semantics/unsupported-document-unit",
+            message: format!(
+                "canonical document unit {:?} has no engine semantic implementation",
+                node.kind()
+            ),
+            anchor: SourceSemanticAnchor::for_node(node),
+        });
+    }
+    for child in node.children() {
+        collect_document_units(&child, output, inline)?;
+    }
+    Ok(())
+}
+
+fn declare_document_inputs(
+    builder: &mut SemanticBuilder,
+    units: &[DocumentUnit],
+    bindings: &mut BTreeSet<String>,
+) -> Result<(), SourceSemanticError> {
+    for unit in units {
+        match unit {
+            DocumentUnit::Statement(unit) => {
+                builder.declare_unit_input_annotations(unit, bindings)?
+            }
+            DocumentUnit::Fence(_, units) => declare_document_inputs(builder, units, bindings)?,
+        }
+    }
+    Ok(())
+}
+
+fn compile_document_units(
+    builder: &mut SemanticBuilder,
+    units: Vec<DocumentUnit>,
+    presentation: &mut Vec<(SourceDocumentOutputKind, PendingValue, SyntaxNode)>,
+) -> Result<Option<(PendingValue, SyntaxNode)>, SourceSemanticError> {
+    let mut last = None;
+    for unit in units {
+        match unit {
+            DocumentUnit::Statement(unit) => {
+                last = Some(match unit.kind() {
+                    SyntaxKind::VariableDefine => {
+                        builder.definition(&VariableDefineSyntax::cast(unit).unwrap())?
+                    }
+                    SyntaxKind::Expression => {
+                        builder.expression(&ExpressionSyntax::cast(unit).unwrap())?
+                    }
+                    SyntaxKind::OpAssign | SyntaxKind::VariableAssign => {
+                        builder.document_assignment(&unit)?
+                    }
+                    _ => unreachable!("document statement selection is closed"),
+                });
+            }
+            DocumentUnit::Fence(fence, units) => {
+                if let Some((value, syntax)) = compile_document_units(builder, units, presentation)?
+                {
+                    let value =
+                        builder.read_document_binding(PendingBinding::Value(value), &syntax);
+                    presentation.push((
+                        SourceDocumentOutputKind::Fence,
+                        value,
+                        fence.syntax().clone(),
+                    ));
+                    last = Some((value, syntax));
+                }
+            }
+        }
+    }
+    Ok(last)
+}
 
 impl SemanticBuilder {
     /// A state reference in a statement reads the latest candidate produced by
