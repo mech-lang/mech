@@ -12,13 +12,16 @@ mod structures;
 mod subscripts;
 mod variables;
 
-use crate::document::{RuleId, SyntaxKind};
+use alloc::string::String;
+
+use crate::document::{ExpectedSyntax, RuleId, SyntaxKind};
 
 use super::super::Parser;
 use super::super::marker::Marker;
 use super::super::recovery;
 use super::super::rule::rules;
 use super::combinator::Attempt;
+use super::{base, combinator};
 
 pub(crate) const PHASE_2I_RULES: &[RuleId; 80] = &[
     rules::ARGUMENT_LIST,
@@ -177,6 +180,142 @@ pub(super) fn child_result(
 
 pub(super) fn nesting_limit(parser: &mut Parser<'_>) -> Attempt {
     recovery::nesting_limit(parser);
+    Attempt::Committed
+}
+
+pub(super) fn missing_production(
+    parser: &mut Parser<'_>,
+    code: &str,
+    message: &str,
+    production: &str,
+) -> Attempt {
+    combinator::insert_missing(
+        parser,
+        code,
+        message,
+        ExpectedSyntax::Production(String::from(production)),
+        None,
+        None,
+    );
+    Attempt::Committed
+}
+
+pub(super) fn recover_required_production(
+    parser: &mut Parser<'_>,
+    target: RuleId,
+    code: &str,
+    message: &str,
+    production: &str,
+) -> Attempt {
+    combinator::consume_grammar_ignored_trivia(parser);
+    const RESTART_BOUNDARIES: &[char] = &[')', ']', '}', ',', ';', '|'];
+    if parser.is_eof()
+        || parser
+            .cursor()
+            .peek_char()
+            .is_some_and(|character| RESTART_BOUNDARIES.contains(&character))
+    {
+        return missing_production(parser, code, message, production);
+    }
+    let _ = recovery::abandon_to_restart(
+        parser,
+        target,
+        RESTART_BOUNDARIES,
+        "syntax/unexpected-production-source",
+        "unexpected source where a required production was expected",
+    );
+    Attempt::Committed
+}
+
+pub(super) fn recover_required_token(
+    parser: &mut Parser<'_>,
+    target: RuleId,
+    code: &str,
+    message: &str,
+    token: SyntaxKind,
+    text: &str,
+) -> Attempt {
+    combinator::consume_grammar_ignored_trivia(parser);
+    const RESTART_BOUNDARIES: &[char] = &[')', ']', '}', ',', ';', '|'];
+    if parser.is_eof()
+        || parser
+            .cursor()
+            .peek_char()
+            .is_some_and(|character| RESTART_BOUNDARIES.contains(&character))
+    {
+        combinator::insert_missing(
+            parser,
+            code,
+            message,
+            ExpectedSyntax::Token(token),
+            Some(token),
+            Some(text),
+        );
+    } else {
+        let _ = recovery::abandon_to_restart(
+            parser,
+            target,
+            RESTART_BOUNDARIES,
+            "syntax/unexpected-token-source",
+            "unexpected source where a required token was expected",
+        );
+    }
+    Attempt::Committed
+}
+
+pub(super) fn recover_closer(
+    parser: &mut Parser<'_>,
+    target: RuleId,
+    close_rule: RuleId,
+    close_kind: SyntaxKind,
+    close_character: char,
+    close_text: &str,
+) -> Attempt {
+    let _ = recovery::abandon_to_delimiter(
+        parser,
+        target,
+        close_character,
+        "syntax/unexpected-delimited-content",
+        "unexpected source before the closing delimiter",
+    );
+    if !base::parse_rule(parser, close_rule) {
+        combinator::insert_missing(
+            parser,
+            "syntax/missing-delimiter",
+            "missing closing delimiter",
+            ExpectedSyntax::Token(close_kind),
+            Some(close_kind),
+            Some(close_text),
+        );
+    }
+    Attempt::Committed
+}
+
+pub(super) fn recover_closer_set(
+    parser: &mut Parser<'_>,
+    target: RuleId,
+    close_characters: &[char],
+    close_kind: SyntaxKind,
+    close_text: &str,
+    consume_close: impl FnOnce(&mut Parser<'_>) -> bool,
+) -> Attempt {
+    let _ = recovery::abandon_to_restart(
+        parser,
+        target,
+        close_characters,
+        "syntax/unexpected-delimited-content",
+        "unexpected source before the closing delimiter",
+    );
+    if !consume_close(parser) {
+        combinator::insert_missing(
+            parser,
+            "syntax/missing-delimiter",
+            "missing closing delimiter",
+            ExpectedSyntax::Token(close_kind),
+            Some(close_kind),
+            Some(close_text),
+        );
+    }
     Attempt::Committed
 }
 

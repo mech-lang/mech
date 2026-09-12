@@ -3,7 +3,10 @@ use crate::document::{RuleId, SyntaxKind};
 use super::super::super::Parser;
 use super::super::super::rule::rules;
 use super::super::{base, combinator, paths, subscript_primitives};
-use super::{Attempt, child_result, expressions, nesting_limit, precedence};
+use super::{
+    Attempt, child_result, expressions, nesting_limit, precedence, recover_closer,
+    recover_required_production,
+};
 
 pub(super) fn parse_subscript(parser: &mut Parser<'_>) -> Attempt {
     combinator::transactional(parser, rules::SUBSCRIPT, |parser| {
@@ -120,12 +123,22 @@ fn delimited_subscript(
             return Attempt::NoMatch;
         }
         let Some(interior) = parser.with_nesting(|parser| {
-            let first = subscript_value(parser);
-            if first != Attempt::Matched {
-                return first;
+            let mut committed = false;
+            match subscript_value(parser) {
+                Attempt::Matched => {}
+                Attempt::NoMatch => {
+                    recover_required_production(
+                        parser,
+                        rule,
+                        "syntax/missing-subscript-value",
+                        "missing subscript value",
+                        "formula-subscript",
+                    );
+                    committed = true;
+                }
+                Attempt::Committed => committed = true,
             }
-            loop {
-                let pair = parser.checkpoint();
+            while !parser.is_halted() {
                 let before = parser.offset();
                 if !base::parse_rule(parser, rules::LIST_SEPARATOR) {
                     break;
@@ -133,16 +146,35 @@ fn delimited_subscript(
                 match subscript_value(parser) {
                     Attempt::Matched if parser.offset() > before => {}
                     Attempt::Matched | Attempt::NoMatch => {
-                        parser.rewind(pair);
+                        recover_required_production(
+                            parser,
+                            rule,
+                            "syntax/missing-subscript-value",
+                            "missing subscript value after separator",
+                            "formula-subscript",
+                        );
+                        committed = true;
                         break;
                     }
-                    Attempt::Committed => return Attempt::Committed,
+                    Attempt::Committed => {
+                        committed = true;
+                        break;
+                    }
                 }
             }
             if base::parse_rule(parser, close) {
-                Attempt::Matched
+                if committed {
+                    Attempt::Committed
+                } else {
+                    Attempt::Matched
+                }
             } else {
-                Attempt::NoMatch
+                let (close_kind, close_character, close_text) = if close == rules::RIGHT_BRACKET {
+                    (SyntaxKind::RightBracket, ']', "]")
+                } else {
+                    (SyntaxKind::RightBrace, '}', "}")
+                };
+                recover_closer(parser, rule, close, close_kind, close_character, close_text)
             }
         }) else {
             let result = nesting_limit(parser);

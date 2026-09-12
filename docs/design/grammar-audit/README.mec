@@ -12,10 +12,10 @@ crate at that baseline. It documents existing behavior, not a parser redesign.
 R1–R6 Integration Rebase
 -------------------------------------------------------------------------------
 
-The unfinished syntax stack is rebased through Phase 2I-C onto
+The unfinished syntax stack is rebased through S2 onto
 `integration/v0.4` at `535e4b245` (R1–R6 plus the combined integration fixes).
-Recovery, typed views, engine-owned source semantics, certification, and atomic
-registry activation remain unfinished.
+Local recursive-core recovery is complete. Typed views, engine-owned source
+semantics, certification, and atomic registry activation remain unfinished.
 `docs/design/syntax-v0.4-continuation-plan.mec` replaces the old combined Phase
 2I-D/2I-E delivery assumption with independently gated milestones and an atomic
 document-root/product cutover that removes the Nom path and compatibility

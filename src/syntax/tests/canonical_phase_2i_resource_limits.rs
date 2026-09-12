@@ -161,3 +161,103 @@ fn low_fuel_in_later_recursive_children_retains_each_parent() {
         assert!(contains_kind(&parsed.syntax(), parent), "{rule:?}");
     }
 }
+
+#[test]
+fn recovery_bytes_are_a_cumulative_hard_limit() {
+    let limits = ParseLimits {
+        max_recovery_bytes: 1,
+        ..ParseLimits::default()
+    };
+    let parsed = parse_canonical_phase_2i_rule_for_test(
+        source("(1 + @, 2 + @)"),
+        rules::TUPLE,
+        ParseConfig { limits },
+    )
+    .unwrap();
+    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+    assert_eq!(parsed.stats.recovery_bytes, 1);
+    assert!(!parsed.diagnostics.is_empty());
+    assert!(contains_kind(&parsed.syntax(), SyntaxKind::Tuple));
+}
+
+#[test]
+fn exact_recovery_budget_can_reach_a_restart_boundary() {
+    for (unexpected, maximum) in [("@", 1), ("😀", 4)] {
+        let text = format!("(1 {unexpected})");
+        let limits = ParseLimits {
+            max_recovery_bytes: maximum,
+            ..ParseLimits::default()
+        };
+        let parsed = parse_canonical_phase_2i_rule_for_test(
+            source(&text),
+            rules::PARENTHETICAL_TERM,
+            ParseConfig { limits },
+        )
+        .unwrap();
+        assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+        assert_eq!(parsed.consumed.end.0 as usize, text.len());
+        assert_eq!(parsed.stats.recovery_bytes, u64::from(maximum));
+        assert!(
+            parsed
+                .diagnostics
+                .iter()
+                .all(|diagnostic| diagnostic.code.as_str() != "syntax/recovery-limit")
+        );
+    }
+}
+
+#[test]
+fn recovery_never_splits_or_overcharges_a_utf8_scalar() {
+    let limits = ParseLimits {
+        max_recovery_bytes: 3,
+        ..ParseLimits::default()
+    };
+    let parsed = parse_canonical_phase_2i_rule_for_test(
+        source("(1 😀)"),
+        rules::PARENTHETICAL_TERM,
+        ParseConfig { limits },
+    )
+    .unwrap();
+    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+    assert!(parsed.stats.recovery_bytes <= u64::from(limits.max_recovery_bytes));
+    assert!(
+        parsed
+            .diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.code.as_str() == "syntax/recovery-limit")
+    );
+}
+
+#[test]
+fn diagnostic_limit_applies_to_recursive_recovery() {
+    let limits = ParseLimits {
+        max_diagnostics: 1,
+        ..ParseLimits::default()
+    };
+    let parsed = parse_canonical_phase_2i_rule_for_test(
+        source("(1 +, 2 +)"),
+        rules::TUPLE,
+        ParseConfig { limits },
+    )
+    .unwrap();
+    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+    assert_eq!(parsed.diagnostics.len(), 1);
+    assert!(parsed.stats.diagnostics_truncated);
+}
+
+#[test]
+fn adversarial_shared_prefix_recovery_stays_within_fuel_and_byte_limits() {
+    let limits = ParseLimits {
+        max_recovery_bytes: 128,
+        fuel: 1_024,
+        ..ParseLimits::default()
+    };
+    let text = format!("(1 + {})", "@".repeat(8_192));
+    let parsed =
+        parse_canonical_phase_2i_rule_for_test(source(&text), rules::TUPLE, ParseConfig { limits })
+            .unwrap();
+    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+    assert!(parsed.stats.parser_steps <= limits.fuel);
+    assert!(parsed.stats.recovery_bytes <= u64::from(limits.max_recovery_bytes));
+    assert!(!parsed.diagnostics.is_empty());
+}

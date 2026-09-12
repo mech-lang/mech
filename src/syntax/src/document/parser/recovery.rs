@@ -38,8 +38,16 @@ pub(crate) fn skip_error(
     let start = parser.offset();
     let marker = parser.start();
     let mut recovered = 0_u32;
-    while !parser.is_eof() && recovered < parser.config().limits.max_recovery_bytes {
+    let remaining = remaining_recovery_bytes(parser);
+    while !parser.is_eof() && recovered < remaining {
         if should_stop(parser, class, start) {
+            break;
+        }
+        let Some(character) = parser.cursor().peek_char() else {
+            break;
+        };
+        if character.len_utf8() as u32 > remaining.saturating_sub(recovered) {
+            parser.halt();
             break;
         }
         let Some((character, range)) = parser.bump_char_raw() else {
@@ -48,10 +56,7 @@ pub(crate) fn skip_error(
         recovered = recovered.saturating_add(range.len().0);
         parser.token_with_flags(token_kind_for_char(character), range, TokenFlags::ERROR);
     }
-    if recovered >= parser.config().limits.max_recovery_bytes
-        && !parser.is_eof()
-        && !should_stop(parser, class, start)
-    {
+    if recovered >= remaining && !parser.is_eof() && !should_stop(parser, class, start) {
         parser.halt();
     }
     if parser.offset() == start {
@@ -85,6 +90,149 @@ pub(crate) fn skip_error(
         fixes: alloc::vec![],
         related: alloc::vec![],
         recovery: Some(RecoveryAction::Skip { range }),
+        tags: DiagnosticTags::NONE,
+        message: String::from(message),
+    };
+    parser.push_diagnostic(
+        diagnostic,
+        Some(error.position()),
+        TextRange::new(crate::document::TextSize::ZERO, range.len()),
+    );
+    Some(error)
+}
+
+/// Preserve unexpected bytes until the delimiter owned by `target` can resume
+/// parsing. Nested `()`, `[]`, and `{}` pairs are skipped as one malformed
+/// region, so an inner closer cannot steal the owning rule's restart point.
+/// The delimiter itself is left for the caller to consume normally.
+pub(crate) fn abandon_to_delimiter(
+    parser: &mut Parser<'_>,
+    target: RuleId,
+    delimiter: char,
+    code: &str,
+    message: &str,
+) -> Option<CompletedMarker> {
+    abandon_until(parser, target, code, message, |character| {
+        is_owner_delimiter(character, delimiter) || is_unowned_closer(character, delimiter)
+    })
+}
+
+/// Preserve unexpected bytes until a sibling or ancestor production can
+/// restart. Boundary characters remain unconsumed for the owning production.
+pub(crate) fn abandon_to_restart(
+    parser: &mut Parser<'_>,
+    target: RuleId,
+    boundaries: &[char],
+    code: &str,
+    message: &str,
+) -> Option<CompletedMarker> {
+    abandon_until(parser, target, code, message, |character| {
+        boundaries.contains(&character)
+    })
+}
+
+fn abandon_until(
+    parser: &mut Parser<'_>,
+    target: RuleId,
+    code: &str,
+    message: &str,
+    should_stop: impl Fn(char) -> bool,
+) -> Option<CompletedMarker> {
+    let start = parser.offset();
+    let marker = parser.start();
+    let mut recovered = 0_u32;
+    let remaining = remaining_recovery_bytes(parser);
+    let mut parentheses = 0_u32;
+    let mut brackets = 0_u32;
+    let mut braces = 0_u32;
+    let mut quoted = None;
+    let mut escaped = false;
+
+    while !parser.is_eof() && !parser.is_halted() && recovered < remaining {
+        let Some(character) = parser.cursor().peek_char() else {
+            break;
+        };
+        let at_owner_depth = parentheses == 0 && brackets == 0 && braces == 0;
+        if quoted.is_none() && at_owner_depth && should_stop(character) {
+            break;
+        }
+        if character.len_utf8() as u32 > remaining.saturating_sub(recovered) {
+            parser.halt();
+            break;
+        }
+
+        let Some((character, range)) = parser.bump_char_raw() else {
+            break;
+        };
+        recovered = recovered.saturating_add(range.len().0);
+        parser.token_with_flags(token_kind_for_char(character), range, TokenFlags::ERROR);
+
+        if let Some(quote) = quoted {
+            if escaped {
+                escaped = false;
+            } else if character == '\\' {
+                escaped = true;
+            } else if character == quote {
+                quoted = None;
+            }
+            continue;
+        }
+        match character {
+            '\'' | '"' => quoted = Some(character),
+            '(' => parentheses = parentheses.saturating_add(1),
+            ')' => parentheses = parentheses.saturating_sub(1),
+            '[' => brackets = brackets.saturating_add(1),
+            ']' => brackets = brackets.saturating_sub(1),
+            '{' => braces = braces.saturating_add(1),
+            '}' => braces = braces.saturating_sub(1),
+            _ => {}
+        }
+    }
+
+    let stopped_at_boundary = quoted.is_none()
+        && parentheses == 0
+        && brackets == 0
+        && braces == 0
+        && parser.cursor().peek_char().is_some_and(&should_stop);
+    let exhausted = recovered >= remaining && !parser.is_eof() && !stopped_at_boundary;
+    if exhausted {
+        parser.halt();
+    }
+    if parser.offset() == start {
+        marker.abandon(parser);
+        return None;
+    }
+
+    parser.stats_mut().recovery_bytes = parser
+        .stats()
+        .recovery_bytes
+        .saturating_add(u64::from(recovered));
+    let error = marker.complete_with_flags(parser, SyntaxKind::Error, NodeFlags::ERROR);
+    let range = TextRange::new(start, parser.offset());
+    let found = parser.source().text(range).ok().map(|text| FoundSyntax {
+        kind: Some(SyntaxKind::Unknown),
+        text: Some(text),
+    });
+    let diagnostic = Diagnostic {
+        id: parser.next_diagnostic_id(),
+        code: DiagnosticCode::from(code),
+        phase: DiagnosticPhase::Syntax,
+        severity: Severity::Error,
+        rule: parser.current_rule(),
+        context: parser.current_context(),
+        primary: DiagnosticAnchor::Absolute {
+            revision: parser.source().revision(),
+            range,
+        },
+        labels: alloc::vec![],
+        expected: alloc::vec![],
+        found,
+        fixes: alloc::vec![],
+        related: alloc::vec![],
+        recovery: Some(RecoveryAction::Abandon {
+            rule: target,
+            at: parser.offset(),
+        }),
         tags: DiagnosticTags::NONE,
         message: String::from(message),
     };
@@ -189,15 +337,16 @@ pub(crate) fn nesting_limit(parser: &mut Parser<'_>) {
     let marker = parser.start();
     let mut recovered = 0_u32;
     let mut nested = 0_u32;
-    while !parser.is_eof() && recovered < parser.config().limits.max_recovery_bytes {
-        if nested == 0
-            && (parser.cursor().starts_with(")")
-                || parser.cursor().starts_with(";")
-                || parser.cursor().starts_with("--")
-                || parser.cursor().starts_with("//")
-                || is_newline_start(parser.cursor())
-                || parser.is_strong_document_boundary())
-        {
+    let remaining = remaining_recovery_bytes(parser);
+    while !parser.is_eof() && recovered < remaining {
+        if nesting_should_stop(parser, nested) {
+            break;
+        }
+        let Some(character) = parser.cursor().peek_char() else {
+            break;
+        };
+        if character.len_utf8() as u32 > remaining.saturating_sub(recovered) {
+            parser.halt();
             break;
         }
         let Some((character, range)) = parser.bump_char_raw() else {
@@ -211,7 +360,7 @@ pub(crate) fn nesting_limit(parser: &mut Parser<'_>) {
         recovered = recovered.saturating_add(range.len().0);
         parser.token_with_flags(token_kind_for_char(character), range, TokenFlags::ERROR);
     }
-    if recovered >= parser.config().limits.max_recovery_bytes && !parser.is_eof() {
+    if recovered >= remaining && !parser.is_eof() && !nesting_should_stop(parser, nested) {
         parser.halt();
     }
     if start == parser.offset() {
@@ -260,4 +409,31 @@ pub(crate) fn nesting_limit(parser: &mut Parser<'_>) {
         Some(error.position()),
         TextRange::new(crate::document::TextSize::ZERO, range.len()),
     );
+}
+
+fn remaining_recovery_bytes(parser: &Parser<'_>) -> u32 {
+    let used = parser.stats().recovery_bytes.min(u64::from(u32::MAX)) as u32;
+    parser
+        .config()
+        .limits
+        .max_recovery_bytes
+        .saturating_sub(used)
+}
+
+fn nesting_should_stop(parser: &Parser<'_>, nested: u32) -> bool {
+    nested == 0
+        && (parser.cursor().starts_with(")")
+            || parser.cursor().starts_with(";")
+            || parser.cursor().starts_with("--")
+            || parser.cursor().starts_with("//")
+            || is_newline_start(parser.cursor())
+            || parser.is_strong_document_boundary())
+}
+
+fn is_unowned_closer(character: char, owner: char) -> bool {
+    matches!(character, ')' | ']' | '}' | '>' | '⟩') && !is_owner_delimiter(character, owner)
+}
+
+fn is_owner_delimiter(character: char, owner: char) -> bool {
+    character == owner || (owner == '>' && character == '⟩')
 }

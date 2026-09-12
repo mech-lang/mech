@@ -3,7 +3,7 @@ use crate::document::SyntaxKind;
 use super::super::super::Parser;
 use super::super::super::rule::rules;
 use super::super::{base, combinator};
-use super::{Attempt, FactAttempt, calls, child_result, patterns};
+use super::{Attempt, FactAttempt, calls, child_result, patterns, recover_required_production};
 
 pub(super) fn parse_fsm_pipe(parser: &mut Parser<'_>) -> Attempt {
     combinator::transactional(parser, rules::FSM_PIPE, |parser| {
@@ -32,10 +32,20 @@ pub(super) fn parse_fsm_pipe(parser: &mut Parser<'_>) -> Attempt {
 pub(super) fn parse_fsm_instance(parser: &mut Parser<'_>) -> Attempt {
     combinator::transactional(parser, rules::FSM_INSTANCE, |parser| {
         let node = parser.start();
-        if !base::parse_rule(parser, rules::HASHTAG) || !base::parse_rule(parser, rules::IDENTIFIER)
-        {
+        if !base::parse_rule(parser, rules::HASHTAG) {
             node.abandon(parser);
             return Attempt::NoMatch;
+        }
+        if !base::parse_rule(parser, rules::IDENTIFIER) {
+            recover_required_production(
+                parser,
+                rules::FSM_INSTANCE,
+                "syntax/missing-fsm-name",
+                "missing state-machine name after hash sign",
+                "identifier",
+            );
+            node.complete(parser, SyntaxKind::FsmInstance);
+            return Attempt::Committed;
         }
         if parse_fsm_args(parser) == Attempt::Committed {
             node.complete(parser, SyntaxKind::FsmInstance);
@@ -126,8 +136,23 @@ fn transition(
             return Attempt::NoMatch;
         }
         let child = parse_fsm_value(parser);
-        if let Some(result) = child_result(parser, node, kind, child) {
-            return result;
+        match child {
+            Attempt::Matched => {}
+            Attempt::Committed => {
+                node.complete(parser, kind);
+                return Attempt::Committed;
+            }
+            Attempt::NoMatch => {
+                recover_required_production(
+                    parser,
+                    rule,
+                    "syntax/missing-fsm-transition-value",
+                    "missing state-machine value after transition operator",
+                    "fsm-value",
+                );
+                node.complete(parser, kind);
+                return Attempt::Committed;
+            }
         }
         node.complete(parser, kind);
         Attempt::Matched

@@ -47,10 +47,10 @@ progress remains 328 / 539 because every Phase 2I rule remains unactivated.
 `phase-2i-recursive-core.tsv` defines membership and dependencies.
 `phase-2i-syntax-schema.tsv` defines module ownership and concrete tree
 emission. Phase 2I-C adds the complete clean recognizer without a public parser
-root or port activation. Local malformed-input recovery, typed syntax,
-engine-owned source semantics, and canonical certification remain pending. Shared
-parenthesis, bracket, brace, colon, identifier, and kind prefixes are handled
-without exponential reparsing.
+root or port activation. S2 adds bounded local malformed-input recovery for all
+80 rules. Typed syntax, engine-owned source semantics, and canonical
+certification remain pending. Shared parenthesis, bracket, brace, colon,
+identifier, and kind prefixes are handled without exponential reparsing.
 
 `MATCH-001` records the canonical rule permitting whitespace before an
 expression match question mark. Expression-level set and
@@ -59,7 +59,8 @@ set comprehensions remain unavailable as factors. Complete record candidates
 may fall through to maps after clean failure with measured-linear nested-prefix
 growth. Matrix structure selection preserves leading whitespace, newlines, and
 box borders, and every recursive repetition propagates committed child
-recovery. The 80 rules remain unactivated and progress remains 328 / 539.
+recovery. Every direct rule now has a lossless malformed-input contract, and the
+80 rules remain unactivated with progress at 328 / 539.
 
 The current Nom source path remains unchanged while the canonical document root
 is incomplete. The final cutover removes that path atomically; this
