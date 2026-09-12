@@ -152,6 +152,25 @@ fn semantic_snapshot_hash(compiled: &mech_engine::CanonicalSourceProgram) -> u64
 }
 
 #[test]
+fn slice_semantic_evidence_reaches_the_select_all_operation() {
+    let contracts = certification_contracts();
+    let source = contracts["slice"]
+        .semantic_source
+        .as_deref()
+        .expect("slice semantic source");
+    let compiled = CanonicalSourceFrontend
+        .compile_expression(&expression(source))
+        .unwrap();
+    assert!(
+        compiled
+            .source_map()
+            .nodes
+            .iter()
+            .any(|node| node.operation == "source/select-all")
+    );
+}
+
+#[test]
 fn every_semantic_rule_has_specification_derived_program_evidence() {
     let contracts = certification_contracts();
     let certified = PHASE_2I_SEMANTIC_RULES

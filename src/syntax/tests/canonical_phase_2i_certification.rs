@@ -843,6 +843,23 @@ fn certification_variants_cover_empty_kinds_and_array_rest_accessors() {
             .count(),
         1
     );
+
+    let parsed = parse_canonical_phase_2i_rule_for_test(
+        source("[head, ..., tail]"),
+        rules::PATTERN_ARRAY,
+        ParseConfig::default(),
+    )
+    .unwrap();
+    assert!(parsed.is_strictly_clean());
+    let array = find_typed::<ArrayPatternSyntax>(&parsed.syntax()).expect("typed array pattern");
+    assert_eq!(
+        array
+            .elements()
+            .iter()
+            .filter(|element| element.spread().is_some())
+            .count(),
+        1
+    );
 }
 
 #[test]
@@ -898,7 +915,97 @@ fn certification_evidence_uses_only_canonical_authorities() {
     }
 }
 
+fn strip_rust_comments(source: &str) -> String {
+    let bytes = source.as_bytes();
+    let mut output = Vec::with_capacity(bytes.len());
+    let mut cursor = 0;
+    while cursor < bytes.len() {
+        let raw_start = if bytes[cursor] == b'r' {
+            Some(cursor)
+        } else if bytes[cursor] == b'b' && bytes.get(cursor + 1) == Some(&b'r') {
+            Some(cursor + 1)
+        } else {
+            None
+        };
+        if let Some(raw_start) = raw_start {
+            let mut quote = raw_start + 1;
+            while bytes.get(quote) == Some(&b'#') {
+                quote += 1;
+            }
+            if bytes.get(quote) == Some(&b'"') {
+                let hashes = quote - raw_start - 1;
+                let mut end = quote + 1;
+                while end < bytes.len() {
+                    if bytes[end] == b'"'
+                        && bytes.get(end + 1..end + 1 + hashes)
+                            == Some(&bytes[raw_start + 1..quote])
+                    {
+                        end += 1 + hashes;
+                        output.extend_from_slice(&bytes[cursor..end]);
+                        cursor = end;
+                        break;
+                    }
+                    end += 1;
+                }
+                if cursor == end {
+                    continue;
+                }
+            }
+        }
+        if bytes[cursor] == b'"' {
+            let start = cursor;
+            cursor += 1;
+            while cursor < bytes.len() {
+                if bytes[cursor] == b'\\' {
+                    cursor = (cursor + 2).min(bytes.len());
+                } else {
+                    let quote = bytes[cursor] == b'"';
+                    cursor += 1;
+                    if quote {
+                        break;
+                    }
+                }
+            }
+            output.extend_from_slice(&bytes[start..cursor]);
+            continue;
+        }
+        if bytes.get(cursor..cursor + 2) == Some(b"//") {
+            output.push(b' ');
+            cursor += 2;
+            while cursor < bytes.len() && bytes[cursor] != b'\n' {
+                cursor += 1;
+            }
+            continue;
+        }
+        if bytes.get(cursor..cursor + 2) == Some(b"/*") {
+            output.push(b' ');
+            cursor += 2;
+            let mut depth = 1usize;
+            while cursor < bytes.len() && depth != 0 {
+                if bytes.get(cursor..cursor + 2) == Some(b"/*") {
+                    depth += 1;
+                    cursor += 2;
+                } else if bytes.get(cursor..cursor + 2) == Some(b"*/") {
+                    depth -= 1;
+                    cursor += 2;
+                } else {
+                    if bytes[cursor] == b'\n' {
+                        output.push(b'\n');
+                    }
+                    cursor += 1;
+                }
+            }
+            continue;
+        }
+        output.push(bytes[cursor]);
+        cursor += 1;
+    }
+    String::from_utf8(output).expect("comment stripping preserves UTF-8 source bytes")
+}
+
 fn assert_canonical_only(path: &Path, evidence: &str) {
+    let uncommented = strip_rust_comments(evidence);
+    let evidence = uncommented.as_str();
     let mut declaration = None::<String>;
     for line in evidence.lines().map(str::trim) {
         let compact_line = line
@@ -1083,6 +1190,8 @@ fn canonical_authority_gate_rejects_glob_and_alias_routes() {
             "syntax_lower::",
             "lower_legacy_grammar();"
         ),
+        concat!("mech_syntax/* detached path comment */::", "parse(\"1\");"),
+        concat!("mech_syntax// detached path comment\n::", "parse(\"1\");"),
     ] {
         assert!(
             std::panic::catch_unwind(|| assert_canonical_only(Path::new("fixture.rs"), evidence))
