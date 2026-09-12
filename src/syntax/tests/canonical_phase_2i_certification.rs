@@ -1164,6 +1164,8 @@ fn assert_allowed_mech_import(path: &Path, declaration: &str) {
             "ParseConfig",
             "ParseLimits",
             "PatternArrayItemSyntax",
+            "RangeExpressionSyntax",
+            "RangeSubscriptSyntax",
             "RecordSyntax",
             "RecoveryAction",
             "RecursiveCoreSyntax",
