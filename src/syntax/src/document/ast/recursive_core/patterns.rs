@@ -94,7 +94,7 @@ impl ArrayPatternElementSyntax {
         direct_token(&self.0, SyntaxKind::SpreadOperator, 0)
     }
     pub fn rest(&self) -> Option<SyntaxToken> {
-        direct_token(&self.0, SyntaxKind::Semicolon, 0)
+        direct_token(&self.0, SyntaxKind::Bar, 0)
     }
 }
 

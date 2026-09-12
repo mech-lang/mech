@@ -291,10 +291,11 @@ impl RecordSyntax {
         direct_tokens(&self.0)
             .into_iter()
             .filter(|token| {
-                matches!(token.kind(), SyntaxKind::RightBrace | SyntaxKind::Bar)
+                token.kind() == SyntaxKind::RightBrace
                     || is_box_corner(token, &["╯", "┘", "┛"], true)
             })
             .last()
+            .or_else(|| direct_token(&self.0, SyntaxKind::Bar, 1))
     }
 }
 

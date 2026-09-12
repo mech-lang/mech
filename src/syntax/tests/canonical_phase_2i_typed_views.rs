@@ -8,13 +8,13 @@ use mech_syntax::document::parser::canonical::{
 };
 use mech_syntax::document::parser::rules;
 use mech_syntax::document::{
-    ArgumentListSyntax, AstNode, DocumentId, ExpressionSyntax, FactorSyntax, FactorValueSyntax,
-    FormulaSyntax, GreenElement, GreenNode, GreenToken, LiteralSyntax, LiteralValueSyntax,
-    MapSyntax, MatchArmSyntax, MatrixSyntax, NodeFlags, NodeId, ParentheticalExpressionSyntax,
-    ParseConfig, ParseLimits, PatternArrayItemSyntax, RecordSyntax, RecursiveCoreSyntax,
-    RecursiveSyntaxNode, Revision, StructureSyntax, StructureValueSyntax, SubscriptItemSyntax,
-    SyntaxKind, SyntaxNode, TableKindSyntax, TextSize, TextSnapshot, TokenFlags, TokenId,
-    phase_2i_node_kind, text_hash,
+    ArgumentListSyntax, ArrayPatternSyntax, AstNode, DocumentId, ExpressionSyntax, FactorSyntax,
+    FactorValueSyntax, FormulaSyntax, GreenElement, GreenNode, GreenToken, LiteralSyntax,
+    LiteralValueSyntax, MapSyntax, MatchArmSyntax, MatrixSyntax, NodeFlags, NodeId,
+    ParentheticalExpressionSyntax, ParseConfig, ParseLimits, PatternArrayItemSyntax, RecordSyntax,
+    RecursiveCoreSyntax, RecursiveSyntaxNode, Revision, StructureSyntax, StructureValueSyntax,
+    SubscriptItemSyntax, SyntaxKind, SyntaxNode, TableKindSyntax, TextSize, TextSnapshot,
+    TokenFlags, TokenId, phase_2i_node_kind, text_hash,
 };
 
 fn repository_root() -> PathBuf {
@@ -375,6 +375,45 @@ fn record_views_expose_physical_and_recovered_delimiters() {
             .flags()
             .contains(TokenFlags::MISSING)
     );
+}
+
+#[test]
+fn resource_limited_bar_record_has_no_closing_delimiter() {
+    let parsed = parse_canonical_phase_2i_rule_for_test(
+        source("|a: 1|"),
+        rules::RECORD,
+        ParseConfig {
+            limits: ParseLimits {
+                max_nesting: 0,
+                ..ParseLimits::default()
+            },
+        },
+    )
+    .unwrap();
+    let record =
+        RecordSyntax::cast(find_kind(&parsed.syntax(), SyntaxKind::Record).unwrap()).unwrap();
+    assert_eq!(record.opening_delimiter().unwrap().text().unwrap(), "|");
+    assert!(record.closing_delimiter().is_none());
+}
+
+#[test]
+fn array_pattern_rest_exposes_the_physical_bar() {
+    let parsed = parse_canonical_phase_2i_rule_for_test(
+        source("[x | y]"),
+        rules::PATTERN_ARRAY,
+        ParseConfig::default(),
+    )
+    .unwrap();
+    let array =
+        ArrayPatternSyntax::cast(find_kind(&parsed.syntax(), SyntaxKind::ArrayPattern).unwrap())
+            .unwrap();
+    let rest = array
+        .elements()
+        .into_iter()
+        .find_map(|element| element.rest())
+        .expect("array pattern keeps its rest marker");
+    assert_eq!(rest.kind(), SyntaxKind::Bar);
+    assert_eq!(rest.text().unwrap(), "|");
 }
 
 #[test]
