@@ -9,7 +9,7 @@ pub(super) fn parse_var(parser: &mut Parser<'_>) -> Attempt {
     variable(parser, false)
 }
 
-pub(super) fn parse_factor_var(parser: &mut Parser<'_>) -> Attempt {
+pub(super) fn factor_variable(parser: &mut Parser<'_>) -> Attempt {
     variable(parser, true)
 }
 
