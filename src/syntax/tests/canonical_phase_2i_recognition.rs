@@ -67,6 +67,28 @@ fn assert_transactional_nomatch(rule: RuleId, text: &str) {
     ));
 }
 
+fn assert_recovered(rule: RuleId, text: &str) -> CanonicalSourceRuleSnapshot {
+    let parsed = parse(rule, text);
+    assert_eq!(
+        parsed.outcome,
+        CanonicalRuleOutcome::Committed,
+        "{rule:?} on {text:?}"
+    );
+    assert_eq!(
+        parsed.consumed,
+        TextRange::new(TextSize::ZERO, TextSize(text.len() as u32)),
+        "{rule:?} on {text:?}"
+    );
+    assert!(!parsed.diagnostics.is_empty(), "{rule:?} on {text:?}");
+    assert!(parsed.root.flags.intersects(
+        NodeFlags::ERROR
+            | NodeFlags::MISSING
+            | NodeFlags::CONTAINS_ERROR
+            | NodeFlags::CONTAINS_MISSING
+    ));
+    parsed
+}
+
 #[test]
 fn precedence_nodes_are_conditional_and_nested_by_binding_strength() {
     let literal = assert_clean(rules::EXPRESSION, "1");
@@ -138,7 +160,7 @@ fn fsm_values_reject_matching_only_pattern_features_recursively() {
 }
 
 #[test]
-fn malformed_clean_candidates_remain_nondiagnostic() {
+fn committed_recursive_prefixes_recover_locally() {
     for (rule, text) in [
         (rules::EXPRESSION, "x +"),
         (rules::EXPRESSION, "x =="),
@@ -150,21 +172,21 @@ fn malformed_clean_candidates_remain_nondiagnostic() {
         (rules::RANGE_EXPRESSION, "1.."),
         (rules::EXPRESSION, "x ?"),
     ] {
-        assert_transactional_nomatch(rule, text);
+        assert_recovered(rule, text);
     }
 
     let subscript = parse(rules::SUBSCRIPT, "[1][");
-    assert_eq!(subscript.outcome, CanonicalRuleOutcome::Matched);
+    assert_eq!(subscript.outcome, CanonicalRuleOutcome::Committed);
     assert_eq!(
         subscript.consumed,
-        TextRange::new(TextSize::ZERO, TextSize(3))
+        TextRange::new(TextSize::ZERO, TextSize(4))
     );
-    assert!(subscript.diagnostics.is_empty());
+    assert!(!subscript.diagnostics.is_empty());
 
     let fsm = parse(rules::FSM_INSTANCE, "#machine(");
-    assert_eq!(fsm.outcome, CanonicalRuleOutcome::Matched);
-    assert_eq!(fsm.consumed, TextRange::new(TextSize::ZERO, TextSize(8)));
-    assert!(fsm.diagnostics.is_empty());
+    assert_eq!(fsm.outcome, CanonicalRuleOutcome::Committed);
+    assert_eq!(fsm.consumed, TextRange::new(TextSize::ZERO, TextSize(9)));
+    assert!(!fsm.diagnostics.is_empty());
 }
 
 #[test]
@@ -173,19 +195,19 @@ fn required_list_cardinalities_and_definition_lookahead_are_enforced() {
         (rules::MAP, "{}"),
         (rules::RECORD, "{}"),
         (rules::SET, "{}"),
-        (rules::KIND_TABLE, "||"),
         (rules::KIND_RECORD, "{}"),
-        (rules::KIND_TUPLE, "()"),
-        (rules::INLINE_TABLE, "|a<u8>||"),
-        (rules::REGULAR_TABLE, "|a<u8>|"),
     ] {
         assert_transactional_nomatch(rule, text);
     }
     assert_clean(rules::TUPLE, "()");
     assert_clean(rules::ARGUMENT_LIST, "()");
     assert_clean(rules::FSM_ARGS, "()");
+    assert_recovered(rules::KIND_TABLE, "||");
+    assert_recovered(rules::KIND_TUPLE, "()");
+    assert_recovered(rules::INLINE_TABLE, "|a<u8>||");
+    assert_recovered(rules::REGULAR_TABLE, "|a<u8>|");
     assert_transactional_nomatch(rules::VARIABLE_DEFINE, "x += 1");
-    assert_transactional_nomatch(rules::VARIABLE_DEFINE, "x :=");
+    assert_recovered(rules::VARIABLE_DEFINE, "x :=");
 }
 
 #[test]
@@ -193,21 +215,29 @@ fn incomplete_ranges_are_marker_safe_and_preserve_committed_children() {
     for text in ["1..", "1..="] {
         let parsed = std::panic::catch_unwind(|| parse(rules::EXPRESSION, text))
             .unwrap_or_else(|_| panic!("expression panicked on {text:?}"));
-        assert_eq!(parsed.outcome, CanonicalRuleOutcome::NoMatch, "{text:?}");
-        assert_eq!(parsed.consumed, TextRange::empty(TextSize::ZERO));
-        assert!(parsed.diagnostics.is_empty());
+        assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed, "{text:?}");
+        assert_eq!(parsed.consumed.end, TextSize(text.len() as u32));
+        assert!(!parsed.diagnostics.is_empty());
     }
 
     let trailing = std::panic::catch_unwind(|| parse(rules::EXPRESSION, "1..10.."))
         .expect("optional trailing range operator must not panic");
-    assert_eq!(trailing.outcome, CanonicalRuleOutcome::Matched);
-    assert_eq!(trailing.consumed.end, TextSize(5));
+    assert_eq!(trailing.outcome, CanonicalRuleOutcome::Committed);
+    assert_eq!(trailing.consumed.end, TextSize(7));
+    assert!(!trailing.diagnostics.is_empty());
 
     for rule in [rules::RANGE_EXPRESSION, rules::EXPRESSION] {
         let parsed = std::panic::catch_unwind(|| parse(rule, "\"unterminated"))
             .unwrap_or_else(|_| panic!("{rule:?} did not balance a committed literal"));
-        assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
-        assert!(!parsed.diagnostics.is_empty());
+        if rule == rules::RANGE_EXPRESSION {
+            assert_eq!(parsed.outcome, CanonicalRuleOutcome::NoMatch);
+            assert_eq!(parsed.consumed.end, TextSize(0));
+            assert!(parsed.diagnostics.is_empty());
+        } else {
+            assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+            assert_eq!(parsed.consumed.end, TextSize(13));
+            assert!(!parsed.diagnostics.is_empty());
+        }
         assert!(!contains_kind(
             &parsed.syntax(),
             SyntaxKind::RangeExpression
@@ -250,7 +280,7 @@ fn kind_and_inline_table_lists_follow_their_exact_cardinalities() {
     for text in ["|a|", "|a b<u8>|", "|a,b<u8>|"] {
         assert_clean(rules::KIND_TABLE, text);
     }
-    assert_transactional_nomatch(rules::KIND_TABLE, "||");
+    assert_recovered(rules::KIND_TABLE, "||");
 
     for (text, consumed) in [("[u8],1", 4), ("[u8]:,1", 5), ("[u8]:1,2", 8)] {
         let parsed = parse(rules::KIND_MATRIX, text);
@@ -334,7 +364,8 @@ fn record_candidates_fall_through_to_maps_after_complete_clean_failure() {
 
 #[test]
 fn set_comprehensions_cannot_become_formula_operands() {
-    assert_transactional_nomatch(rules::EXPRESSION, "1 + {x | x <- xs}");
+    let parsed = assert_recovered(rules::EXPRESSION, "1 + {x | x <- xs}");
+    assert!(contains_kind(&parsed.syntax(), SyntaxKind::Error));
 }
 
 #[test]
@@ -343,5 +374,5 @@ fn optional_match_suffix_rewinds_unclaimed_whitespace() {
     assert_eq!(trailing.outcome, CanonicalRuleOutcome::Matched);
     assert_eq!(trailing.consumed.end, TextSize(1));
 
-    assert_transactional_nomatch(rules::EXPRESSION, "x ?");
+    assert_recovered(rules::EXPRESSION, "x ?");
 }

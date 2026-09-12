@@ -1132,7 +1132,6 @@ fn canonical_phase_2i_sources_are_present_and_directly_isolated() {
             "to_contiguous_string",
             "full_range",
             "graphemes",
-            "insert_missing",
             "missing_token",
             "skip_error",
             "abandon_error",
@@ -1146,6 +1145,18 @@ fn canonical_phase_2i_sources_are_present_and_directly_isolated() {
             !contains_token_sequence(&source, &["crate", "::", "parse"]),
             "{relative} must not invoke the legacy public parser"
         );
+        if *relative != "recursive_core/mod.rs" {
+            for recovery_api in [
+                "insert_missing",
+                "abandon_to_delimiter",
+                "abandon_to_restart",
+            ] {
+                assert!(
+                    !contains_token(&source, recovery_api),
+                    "{relative} must use the recursive-core recovery boundary instead of {recovery_api} directly"
+                );
+            }
+        }
     }
 }
 

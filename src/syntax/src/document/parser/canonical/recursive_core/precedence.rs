@@ -5,7 +5,8 @@ use super::super::super::rule::rules;
 use super::super::super::{Parser, ParserCheckpoint};
 use super::super::{base, combinator, control_operators, operators};
 use super::{
-    Attempt, calls, child_result, expressions, literals, structures, subscripts, variables,
+    Attempt, calls, expressions, literals, recover_closer, recover_required_production, structures,
+    subscripts, variables,
 };
 
 pub(super) struct FormulaSeed {
@@ -53,7 +54,11 @@ impl FormulaSeed {
         Attempt::Committed
     }
 
-    pub(super) fn continue_from_factor(self, parser: &mut Parser<'_>) -> Attempt {
+    pub(super) fn continue_from_factor(
+        self,
+        parser: &mut Parser<'_>,
+        mut committed: bool,
+    ) -> Attempt {
         if operators::parse_transpose(parser) == Attempt::Committed {
             return self.commit(parser);
         }
@@ -105,19 +110,26 @@ impl FormulaSeed {
         ];
 
         for (index, (marker, kind, operand, operator)) in levels.into_iter().enumerate() {
-            match seeded_precedence_level(parser, marker, kind, operand, operator) {
+            match finish_precedence_level(parser, marker, kind, operand, operator, committed) {
                 Attempt::Matched => {}
                 Attempt::NoMatch => {
                     parser.rewind(self.checkpoint);
                     return Attempt::NoMatch;
                 }
                 Attempt::Committed => {
-                    complete_seeded_outer(self, parser, 6_usize.saturating_sub(index));
-                    return Attempt::Committed;
+                    if parser.is_halted() {
+                        complete_seeded_outer(self, parser, 6_usize.saturating_sub(index));
+                        return Attempt::Committed;
+                    }
+                    committed = true;
                 }
             }
         }
-        Attempt::Matched
+        if committed {
+            Attempt::Committed
+        } else {
+            Attempt::Matched
+        }
     }
 }
 
@@ -194,16 +206,21 @@ pub(super) fn parse_l7(parser: &mut Parser<'_>) -> Attempt {
 pub(super) fn parse_factor(parser: &mut Parser<'_>) -> Attempt {
     combinator::transactional(parser, rules::FACTOR, |parser| {
         let node = parser.start();
-        let selected = factor_body(parser);
-        if let Some(result) = child_result(parser, node, SyntaxKind::Factor, selected) {
-            return result;
-        }
-        if operators::parse_transpose(parser) == Attempt::Committed {
-            node.complete(parser, SyntaxKind::Factor);
-            return Attempt::Committed;
-        }
+        let committed = match factor_body(parser) {
+            Attempt::Matched => false,
+            Attempt::Committed => true,
+            Attempt::NoMatch => {
+                node.abandon(parser);
+                return Attempt::NoMatch;
+            }
+        };
+        let suffix = operators::parse_transpose(parser);
         node.complete(parser, SyntaxKind::Factor);
-        Attempt::Matched
+        if committed || suffix == Attempt::Committed {
+            Attempt::Committed
+        } else {
+            Attempt::Matched
+        }
     })
 }
 
@@ -218,16 +235,37 @@ pub(super) fn parse_parenthetical_term(parser: &mut Parser<'_>) -> Attempt {
             if !base::parse_rule(parser, rules::SPACE_TAB0) {
                 return Attempt::NoMatch;
             }
-            let formula = expressions::parse_formula(parser);
-            if formula != Attempt::Matched {
-                return formula;
+            let mut committed = false;
+            match expressions::parse_formula(parser) {
+                Attempt::Matched => {}
+                Attempt::NoMatch => {
+                    recover_required_production(
+                        parser,
+                        rules::PARENTHETICAL_TERM,
+                        "syntax/missing-parenthetical-expression",
+                        "missing expression after opening parenthesis",
+                        "formula",
+                    );
+                    committed = true;
+                }
+                Attempt::Committed => committed = true,
             }
-            if !base::parse_rule(parser, rules::SPACE_TAB0)
-                || !base::parse_rule(parser, rules::RIGHT_PARENTHESIS)
-            {
-                Attempt::NoMatch
+            let _ = base::parse_rule(parser, rules::SPACE_TAB0);
+            if base::parse_rule(parser, rules::RIGHT_PARENTHESIS) {
+                if committed {
+                    Attempt::Committed
+                } else {
+                    Attempt::Matched
+                }
             } else {
-                Attempt::Matched
+                recover_closer(
+                    parser,
+                    rules::PARENTHETICAL_TERM,
+                    rules::RIGHT_PARENTHESIS,
+                    SyntaxKind::RightParen,
+                    ')',
+                    ")",
+                )
             }
         }) else {
             super::nesting_limit(parser);
@@ -254,9 +292,26 @@ pub(super) fn parse_not_factor(parser: &mut Parser<'_>) -> Attempt {
             node.abandon(parser);
             return Attempt::NoMatch;
         }
-        let child = parse_factor(parser);
-        if let Some(result) = child_result(parser, node, SyntaxKind::NotFactor, child) {
-            return result;
+        let child = parser
+            .with_nesting(parse_factor)
+            .unwrap_or_else(|| super::nesting_limit(parser));
+        match child {
+            Attempt::Matched => {}
+            Attempt::Committed => {
+                node.complete(parser, SyntaxKind::NotFactor);
+                return Attempt::Committed;
+            }
+            Attempt::NoMatch => {
+                recover_required_production(
+                    parser,
+                    rules::NOT_FACTOR,
+                    "syntax/missing-unary-operand",
+                    "missing operand after unary operator",
+                    "factor",
+                );
+                node.complete(parser, SyntaxKind::NotFactor);
+                return Attempt::Committed;
+            }
         }
         node.complete(parser, SyntaxKind::NotFactor);
         Attempt::Matched
@@ -276,40 +331,81 @@ pub(super) fn parse_match_arm(parser: &mut Parser<'_>) -> Attempt {
             node.abandon(parser);
             return Attempt::NoMatch;
         }
-        let pattern = super::patterns::parse_pattern(parser);
-        if let Some(result) = child_result(parser, node, SyntaxKind::MatchArm, pattern) {
-            return result;
-        }
-        let guard = parser.checkpoint();
-        if base::parse_rule(parser, rules::LIST_SEPARATOR)
-            && base::parse_rule(parser, rules::WHITESPACE0)
-        {
-            match expressions::parse_expression(parser) {
-                Attempt::Matched => {}
-                Attempt::NoMatch => parser.rewind(guard),
-                Attempt::Committed => {
-                    node.complete(parser, SyntaxKind::MatchArm);
-                    return Attempt::Committed;
-                }
-            }
-        }
-        if !base::parse_rule(parser, rules::OUTPUT_OPERATOR) {
-            node.abandon(parser);
-            return Attempt::NoMatch;
-        }
-        let child = expressions::parse_expression(parser);
-        if let Some(result) = child_result(parser, node, SyntaxKind::MatchArm, child) {
-            return result;
-        }
-        let suffix = parser.checkpoint();
-        if !base::parse_rule(parser, rules::WHITESPACE1)
-            && control_operators::parse_statement_separator(parser) == Attempt::NoMatch
-        {
-            parser.rewind(suffix);
-        }
-        node.complete(parser, SyntaxKind::MatchArm);
-        Attempt::Matched
+        let result = parser
+            .with_nesting(match_arm_body)
+            .unwrap_or_else(|| super::nesting_limit(parser));
+        finish(node, parser, SyntaxKind::MatchArm, result)
     })
+}
+
+fn match_arm_body(parser: &mut Parser<'_>) -> Attempt {
+    let pattern = super::patterns::parse_pattern(parser);
+    let mut committed = match pattern {
+        Attempt::Matched => false,
+        Attempt::Committed => true,
+        Attempt::NoMatch => {
+            super::recover_required_production_with_prefixes(
+                parser,
+                rules::MATCH_ARM,
+                "syntax/missing-match-arm-pattern",
+                "missing pattern after match arm guard",
+                "pattern",
+                &["=>", "⇒"],
+            );
+            true
+        }
+    };
+    let guard = parser.checkpoint();
+    if base::parse_rule(parser, rules::LIST_SEPARATOR)
+        && base::parse_rule(parser, rules::WHITESPACE0)
+    {
+        match expressions::parse_expression(parser) {
+            Attempt::Matched => {}
+            Attempt::NoMatch => parser.rewind(guard),
+            Attempt::Committed => committed = true,
+        }
+    }
+    if !base::parse_rule(parser, rules::OUTPUT_OPERATOR) {
+        super::recover_required_token_with_prefixes(
+            parser,
+            rules::MATCH_ARM,
+            "syntax/missing-match-arm-output-operator",
+            "missing output operator after match arm pattern",
+            SyntaxKind::OutputOperator,
+            "=>",
+            &["=>", "⇒"],
+        );
+        committed = true;
+        if !base::parse_rule(parser, rules::OUTPUT_OPERATOR) {
+            return Attempt::Committed;
+        }
+    }
+    let child = expressions::parse_expression(parser);
+    match child {
+        Attempt::Matched => {}
+        Attempt::Committed => committed = true,
+        Attempt::NoMatch => {
+            recover_required_production(
+                parser,
+                rules::MATCH_ARM,
+                "syntax/missing-match-arm-value",
+                "missing expression after match arm output operator",
+                "expression",
+            );
+            return Attempt::Committed;
+        }
+    }
+    let suffix = parser.checkpoint();
+    if !base::parse_rule(parser, rules::WHITESPACE1)
+        && control_operators::parse_statement_separator(parser) == Attempt::NoMatch
+    {
+        parser.rewind(suffix);
+    }
+    if committed {
+        Attempt::Committed
+    } else {
+        Attempt::Matched
+    }
 }
 
 fn factor_body(parser: &mut Parser<'_>) -> Attempt {
@@ -353,7 +449,7 @@ fn factor_body(parser: &mut Parser<'_>) -> Attempt {
     };
     if local || context {
         let call = local && parser.cursor().starts_with("(");
-        let slice = parser.cursor().starts_with(".")
+        let slice = (parser.cursor().starts_with(".") && !parser.cursor().starts_with(".."))
             || parser.cursor().starts_with("[")
             || parser.cursor().starts_with("{");
         parser.rewind(stem);
@@ -363,7 +459,7 @@ fn factor_body(parser: &mut Parser<'_>) -> Attempt {
         if slice {
             return subscripts::parse_slice(parser);
         }
-        return variables::parse_var(parser);
+        return variables::factor_variable(parser);
     }
     parser.rewind(stem);
     Attempt::NoMatch
@@ -394,42 +490,97 @@ fn complete_seeded_outer(seed: FormulaSeed, parser: &mut Parser<'_>, count: usiz
     }
 }
 
-fn seeded_precedence_level(
+fn precedence_level(
+    parser: &mut Parser<'_>,
+    rule: RuleId,
+    kind: SyntaxKind,
+    operand: fn(&mut Parser<'_>) -> Attempt,
+    operator: fn(&mut Parser<'_>) -> Attempt,
+) -> Attempt {
+    combinator::transactional(parser, rule, |parser| {
+        let node = parser.start();
+        let committed = match operand(parser) {
+            Attempt::Matched => false,
+            Attempt::Committed => true,
+            Attempt::NoMatch => {
+                node.abandon(parser);
+                return Attempt::NoMatch;
+            }
+        };
+        finish_precedence_level(parser, node, kind, operand, operator, committed)
+    })
+}
+
+fn finish_precedence_level(
     parser: &mut Parser<'_>,
     marker: Marker,
     kind: SyntaxKind,
     operand: fn(&mut Parser<'_>) -> Attempt,
     operator: fn(&mut Parser<'_>) -> Attempt,
+    mut committed: bool,
 ) -> Attempt {
     let mut pairs = 0_u32;
-    loop {
+    while !parser.is_halted() {
         let before = parser.offset();
         match operator(parser) {
-            Attempt::NoMatch if parser.is_halted() => {
-                marker.complete(parser, kind);
-                return Attempt::Committed;
-            }
             Attempt::NoMatch => break,
             Attempt::Committed => {
-                marker.complete(parser, kind);
-                return Attempt::Committed;
+                committed = true;
+                break;
             }
             Attempt::Matched => {}
         }
+        pairs += 1;
         match operand(parser) {
-            Attempt::Matched if parser.offset() > before => pairs += 1,
-            Attempt::NoMatch if parser.is_halted() => {
-                marker.complete(parser, kind);
-                return Attempt::Committed;
-            }
-            Attempt::Matched | Attempt::NoMatch => return Attempt::NoMatch,
-            Attempt::Committed => {
-                marker.complete(parser, kind);
-                return Attempt::Committed;
+            Attempt::Matched if parser.offset() > before => {}
+            Attempt::Matched => return Attempt::NoMatch,
+            Attempt::Committed => committed = true,
+            Attempt::NoMatch => {
+                committed = true;
+                // Reuse the selected operator production at every recovery restart,
+                // including after skipped invalid source. Its transaction leaves the
+                // operator for the next pair and charges the shared parser budget.
+                let target = parser.current_rule().unwrap_or(rules::EXPRESSION);
+                let mut rejected_trivia_end = parser.offset();
+                let mut previous_probe = None;
+                super::recover_required_production_before(
+                    parser,
+                    target,
+                    "syntax/missing-operator-operand",
+                    "missing expression after operator",
+                    "expression",
+                    |parser| {
+                        let offset = parser.offset();
+                        if let Some((previous, found)) = previous_probe
+                            && previous == offset
+                        {
+                            return found;
+                        }
+                        if offset < rejected_trivia_end {
+                            return false;
+                        }
+                        let next = parser.checkpoint();
+                        let at_operator = operator(parser).accepted();
+                        parser.rewind(next);
+                        if !at_operator && !parser.is_halted() {
+                            // Use the actual SPACE_TAB grammar to bound a rejected
+                            // leading trivia run, including NBSP and thin space. Later
+                            // probes skip only that exact extent, never source beyond it.
+                            let _ = base::parse_rule(parser, rules::SPACE_TAB0);
+                            rejected_trivia_end = parser.offset();
+                            parser.rewind(next);
+                        }
+                        previous_probe = Some((offset, at_operator));
+                        at_operator
+                    },
+                );
             }
         }
+        if parser.offset() <= before {
+            break;
+        }
     }
-    if parser.is_halted() {
+    if committed || parser.is_halted() {
         marker.complete(parser, kind);
         Attempt::Committed
     } else {
@@ -440,70 +591,6 @@ fn seeded_precedence_level(
         }
         Attempt::Matched
     }
-}
-
-fn precedence_level(
-    parser: &mut Parser<'_>,
-    rule: RuleId,
-    kind: SyntaxKind,
-    operand: fn(&mut Parser<'_>) -> Attempt,
-    operator: fn(&mut Parser<'_>) -> Attempt,
-) -> Attempt {
-    combinator::transactional(parser, rule, |parser| {
-        let node = parser.start();
-        match operand(parser) {
-            Attempt::Matched => {}
-            Attempt::NoMatch if parser.is_halted() => {
-                node.complete(parser, kind);
-                return Attempt::Committed;
-            }
-            Attempt::NoMatch => {
-                node.abandon(parser);
-                return Attempt::NoMatch;
-            }
-            Attempt::Committed => {
-                node.complete(parser, kind);
-                return Attempt::Committed;
-            }
-        }
-        let mut pairs = 0_u32;
-        loop {
-            let before = parser.offset();
-            match operator(parser) {
-                Attempt::NoMatch if parser.is_halted() => {
-                    node.complete(parser, kind);
-                    return Attempt::Committed;
-                }
-                Attempt::NoMatch => break,
-                Attempt::Committed => {
-                    node.complete(parser, kind);
-                    return Attempt::Committed;
-                }
-                Attempt::Matched => {}
-            }
-            match operand(parser) {
-                Attempt::Matched if parser.offset() > before => pairs += 1,
-                Attempt::NoMatch if parser.is_halted() => {
-                    node.complete(parser, kind);
-                    return Attempt::Committed;
-                }
-                Attempt::Matched | Attempt::NoMatch => return Attempt::NoMatch,
-                Attempt::Committed => {
-                    node.complete(parser, kind);
-                    return Attempt::Committed;
-                }
-            }
-        }
-        if parser.is_halted() {
-            node.complete(parser, kind);
-            return Attempt::Committed;
-        } else if pairs == 0 {
-            node.abandon(parser);
-        } else {
-            node.complete(parser, kind);
-        }
-        Attempt::Matched
-    })
 }
 
 fn parse_l4_operator(parser: &mut Parser<'_>) -> Attempt {
@@ -527,9 +614,26 @@ fn unary_factor(
             node.abandon(parser);
             return Attempt::NoMatch;
         }
-        let child = parse_factor(parser);
-        if let Some(result) = child_result(parser, node, kind, child) {
-            return result;
+        let child = parser
+            .with_nesting(parse_factor)
+            .unwrap_or_else(|| super::nesting_limit(parser));
+        match child {
+            Attempt::Matched => {}
+            Attempt::Committed => {
+                node.complete(parser, kind);
+                return Attempt::Committed;
+            }
+            Attempt::NoMatch => {
+                recover_required_production(
+                    parser,
+                    rule,
+                    "syntax/missing-unary-operand",
+                    "missing operand after unary operator",
+                    "factor",
+                );
+                node.complete(parser, kind);
+                return Attempt::Committed;
+            }
         }
         node.complete(parser, kind);
         Attempt::Matched

@@ -313,6 +313,18 @@ impl<'a> Parser<'a> {
     }
 
     pub(crate) fn rewind(&mut self, checkpoint: ParserCheckpoint) {
+        // Resource finalization has assigned the remaining source to an ERROR
+        // envelope. Rejected lookahead cannot discard it or refund parser work.
+        if self.resource_finalizing {
+            // The rejected candidate may have left provisional markers for its
+            // transaction to discard. Keep finalized children and source, but
+            // remove those unselected wrappers before its enclosing owner ends.
+            while self.open_markers.len() > checkpoint.open_markers {
+                let position = self.open_markers.pop().expect("marker above checkpoint");
+                self.events[position] = Event::Tombstone;
+            }
+            return;
+        }
         self.cursor.rewind(checkpoint.cursor);
         self.events.truncate(checkpoint.events);
         self.diagnostics.truncate(checkpoint.diagnostics);
@@ -1200,5 +1212,43 @@ mod tests {
         let output = parser.finish();
         assert!(output.events.is_empty());
         assert!(output.diagnostics.is_empty());
+    }
+    #[test]
+    fn speculative_rewinds_do_not_refund_recovery_work() {
+        let source = TextSnapshot::new(DocumentId(1), Revision(0), "@]").unwrap();
+        let mut ids = IdGenerator::new();
+        let mut parser = Parser::new(
+            &source,
+            LexicalMode::CanonicalGrammar,
+            ParseConfig {
+                limits: ParseLimits {
+                    max_recovery_bytes: 1,
+                    ..ParseLimits::default()
+                },
+            },
+            &mut ids,
+        );
+        let checkpoint = parser.checkpoint();
+        recovery::abandon_to_restart(
+            &mut parser,
+            rules::EXPRESSION,
+            &[']'],
+            "test/recovery",
+            "test",
+        );
+        assert_eq!(parser.stats().recovery_bytes, 1);
+        parser.rewind(checkpoint);
+        assert_eq!(parser.offset(), TextSize::ZERO);
+        assert_eq!(parser.stats().recovery_bytes, 1);
+        recovery::abandon_to_restart(
+            &mut parser,
+            rules::EXPRESSION,
+            &[']'],
+            "test/recovery",
+            "test",
+        );
+        assert!(parser.is_halted());
+        assert_eq!(parser.stats().recovery_bytes, 1);
+        assert_eq!(parser.offset(), TextSize::ZERO);
     }
 }

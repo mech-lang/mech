@@ -3,9 +3,20 @@ use crate::document::SyntaxKind;
 use super::super::super::Parser;
 use super::super::super::rule::rules;
 use super::super::{base, combinator, kinds as leaves};
-use super::{Attempt, child_result, literals, nesting_limit, precedence};
+use super::{
+    Attempt, child_result, finish_provisional_marker, literals, nesting_limit, precedence,
+    recover_closer, recover_required_production,
+};
 
 pub(super) fn parse_kind_annotation(parser: &mut Parser<'_>) -> Attempt {
+    kind_annotation(parser, true)
+}
+
+pub(crate) fn parse_kind_annotation_candidate(parser: &mut Parser<'_>) -> Attempt {
+    kind_annotation(parser, false)
+}
+
+fn kind_annotation(parser: &mut Parser<'_>, recover: bool) -> Attempt {
     combinator::transactional(parser, rules::KIND_ANNOTATION, |parser| {
         let node = parser.start();
         if !base::parse_rule(parser, rules::LEFT_ANGLE) {
@@ -13,14 +24,39 @@ pub(super) fn parse_kind_annotation(parser: &mut Parser<'_>) -> Attempt {
             return Attempt::NoMatch;
         }
         let Some(interior) = parser.with_nesting(|parser| {
-            let kind = parse_kind_with_option(parser);
-            if kind != Attempt::Matched {
-                return kind;
+            let mut committed = false;
+            match parse_kind_with_option(parser) {
+                Attempt::Matched => {}
+                Attempt::NoMatch | Attempt::Committed if !recover => return Attempt::NoMatch,
+                Attempt::NoMatch => {
+                    recover_required_production(
+                        parser,
+                        rules::KIND_ANNOTATION,
+                        "syntax/missing-kind-annotation-kind",
+                        "missing kind inside annotation",
+                        "kind",
+                    );
+                    committed = true;
+                }
+                Attempt::Committed => committed = true,
             }
             if base::parse_rule(parser, rules::RIGHT_ANGLE) {
-                Attempt::Matched
-            } else {
+                if committed {
+                    Attempt::Committed
+                } else {
+                    Attempt::Matched
+                }
+            } else if !recover {
                 Attempt::NoMatch
+            } else {
+                recover_closer(
+                    parser,
+                    rules::KIND_ANNOTATION,
+                    rules::RIGHT_ANGLE,
+                    SyntaxKind::RightAngle,
+                    '>',
+                    ">",
+                )
             }
         }) else {
             let result = nesting_limit(parser);
@@ -31,18 +67,30 @@ pub(super) fn parse_kind_annotation(parser: &mut Parser<'_>) -> Attempt {
     })
 }
 
+#[derive(Clone, Copy)]
+enum KindPosition {
+    Ordinary,
+    MapKey,
+    BraceElement,
+}
+
 pub(super) fn parse_kind(parser: &mut Parser<'_>) -> Attempt {
+    kind(parser, KindPosition::Ordinary)
+}
+
+fn kind(parser: &mut Parser<'_>, position: KindPosition) -> Attempt {
     combinator::transactional(parser, rules::KIND, |parser| {
         let node = parser.start();
         let selected = if parser.cursor().starts_with("{") {
             kind_brace_selection(parser)
+        } else if parser.cursor().starts_with("[") {
+            kind_matrix(parser, position)
         } else {
             let mut selected = Attempt::NoMatch;
             for parse in [
                 leaves::parse_kind_any,
                 leaves::parse_kind_atom,
                 leaves::parse_kind_empty,
-                parse_kind_matrix,
                 parse_kind_scalar,
                 parse_kind_table,
                 parse_kind_tuple,
@@ -67,12 +115,15 @@ pub(super) fn parse_kind_with_option(parser: &mut Parser<'_>) -> Attempt {
     combinator::transactional(parser, rules::KIND_WITH_OPTION, |parser| {
         let node = parser.start();
         let child = parse_kind(parser);
-        if let Some(result) = child_result(parser, node, SyntaxKind::KindWithOption, child) {
-            return result;
+        if child == Attempt::NoMatch {
+            node.abandon(parser);
+            return child;
         }
-        let _ = base::parse_rule(parser, rules::QUESTION);
+        if !parser.is_halted() {
+            let _ = base::parse_rule(parser, rules::QUESTION);
+        }
         node.complete(parser, SyntaxKind::KindWithOption);
-        Attempt::Matched
+        child
     })
 }
 
@@ -94,19 +145,24 @@ pub(super) fn parse_kind_table(parser: &mut Parser<'_>) -> Attempt {
             node.abandon(parser);
             return Attempt::NoMatch;
         }
+        let mut committed = false;
         match kind_table_field(parser) {
             Attempt::Matched => {}
             Attempt::NoMatch => {
-                node.abandon(parser);
-                return Attempt::NoMatch;
+                recover_required_production(
+                    parser,
+                    rules::KIND_TABLE,
+                    "syntax/missing-kind-table-field",
+                    "missing table kind field",
+                    "kind-table-field",
+                );
+                committed = true;
             }
             Attempt::Committed => {
-                node.complete(parser, SyntaxKind::TableKind);
-                return Attempt::Committed;
+                committed = true;
             }
         }
-        loop {
-            let pair = parser.checkpoint();
+        while !parser.is_halted() {
             let separator = base::parse_rule(parser, rules::LIST_SEPARATOR)
                 || base::parse_rule(parser, rules::SPACE_TAB1);
             if !separator {
@@ -115,18 +171,31 @@ pub(super) fn parse_kind_table(parser: &mut Parser<'_>) -> Attempt {
             match kind_table_field(parser) {
                 Attempt::Matched => {}
                 Attempt::NoMatch => {
-                    parser.rewind(pair);
-                    break;
+                    recover_required_production(
+                        parser,
+                        rules::KIND_TABLE,
+                        "syntax/missing-kind-table-field",
+                        "missing table kind field after separator",
+                        "kind-table-field",
+                    );
+                    committed = true;
                 }
                 Attempt::Committed => {
-                    node.complete(parser, SyntaxKind::TableKind);
-                    return Attempt::Committed;
+                    committed = true;
                 }
             }
         }
         if !base::parse_rule(parser, rules::BAR) {
-            node.abandon(parser);
-            return Attempt::NoMatch;
+            recover_closer(
+                parser,
+                rules::KIND_TABLE,
+                rules::BAR,
+                SyntaxKind::Bar,
+                '|',
+                "|",
+            );
+            node.complete(parser, SyntaxKind::TableKind);
+            return Attempt::Committed;
         }
         let suffix = parser.checkpoint();
         if base::parse_rule(parser, rules::COLON) {
@@ -140,7 +209,11 @@ pub(super) fn parse_kind_table(parser: &mut Parser<'_>) -> Attempt {
             }
         }
         node.complete(parser, SyntaxKind::TableKind);
-        Attempt::Matched
+        if committed {
+            Attempt::Committed
+        } else {
+            Attempt::Matched
+        }
     })
 }
 
@@ -152,37 +225,48 @@ pub(super) fn parse_kind_set(parser: &mut Parser<'_>) -> Attempt {
             return Attempt::NoMatch;
         }
         let Some(interior) = parser.with_nesting(|parser| {
-            let key = parse_kind(parser);
-            if key != Attempt::Matched {
-                return key;
+            match parse_kind(parser) {
+                Attempt::Matched => {}
+                Attempt::NoMatch => return Attempt::NoMatch,
+                Attempt::Committed => {
+                    recover_closer(
+                        parser,
+                        rules::KIND_SET,
+                        rules::RIGHT_BRACE,
+                        SyntaxKind::RightBrace,
+                        '}',
+                        "}",
+                    );
+                    return Attempt::Committed;
+                }
             }
             if base::parse_rule(parser, rules::RIGHT_BRACE) {
                 Attempt::Matched
             } else {
-                Attempt::NoMatch
+                recover_closer(
+                    parser,
+                    rules::KIND_SET,
+                    rules::RIGHT_BRACE,
+                    SyntaxKind::RightBrace,
+                    '}',
+                    "}",
+                )
             }
         }) else {
             let result = nesting_limit(parser);
             node.complete(parser, SyntaxKind::KindSet);
             return result;
         };
-        if interior != Attempt::Matched {
+        if interior == Attempt::NoMatch || parser.is_halted() {
             return finish(node, parser, SyntaxKind::KindSet, interior);
         }
-        let literal_suffix = parser.checkpoint();
-        if base::parse_rule(parser, rules::COLON) {
-            match literals::parse_literal(parser) {
-                Attempt::Matched => {}
-                Attempt::Committed => {
-                    node.complete(parser, SyntaxKind::KindSet);
-                    return Attempt::Committed;
-                }
-                Attempt::NoMatch => parser.rewind(literal_suffix),
-            }
-        }
-        let _ = base::parse_exact_tag(parser, ":N", SyntaxKind::Text);
+        let suffix = kind_set_suffix(parser);
         node.complete(parser, SyntaxKind::KindSet);
-        Attempt::Matched
+        if interior == Attempt::Committed || suffix == Attempt::Committed {
+            Attempt::Committed
+        } else {
+            Attempt::Matched
+        }
     })
 }
 
@@ -194,24 +278,16 @@ pub(super) fn parse_kind_map(parser: &mut Parser<'_>) -> Attempt {
             return Attempt::NoMatch;
         }
         let Some(interior) = parser.with_nesting(|parser| {
-            for required in [parse_kind as fn(&mut Parser<'_>) -> Attempt] {
-                let result = required(parser);
-                if result != Attempt::Matched {
-                    return result;
-                }
-            }
+            let committed = match kind(parser, KindPosition::MapKey) {
+                Attempt::Matched => false,
+                Attempt::Committed if parser.is_halted() => return Attempt::Committed,
+                Attempt::Committed => true,
+                Attempt::NoMatch => return Attempt::NoMatch,
+            };
             if !base::parse_rule(parser, rules::COLON) {
                 return Attempt::NoMatch;
             }
-            let value = parse_kind(parser);
-            if value != Attempt::Matched {
-                return value;
-            }
-            if base::parse_rule(parser, rules::RIGHT_BRACE) {
-                Attempt::Matched
-            } else {
-                Attempt::NoMatch
-            }
+            finish_kind_map_value(parser, committed)
         }) else {
             let result = nesting_limit(parser);
             node.complete(parser, SyntaxKind::KindMap);
@@ -238,6 +314,10 @@ pub(super) fn parse_kind_record(parser: &mut Parser<'_>) -> Attempt {
 }
 
 pub(super) fn parse_kind_matrix(parser: &mut Parser<'_>) -> Attempt {
+    kind_matrix(parser, KindPosition::Ordinary)
+}
+
+fn kind_matrix(parser: &mut Parser<'_>, position: KindPosition) -> Attempt {
     combinator::transactional(parser, rules::KIND_MATRIX, |parser| {
         let node = parser.start();
         if !base::parse_rule(parser, rules::LEFT_BRACKET) {
@@ -245,24 +325,47 @@ pub(super) fn parse_kind_matrix(parser: &mut Parser<'_>) -> Attempt {
             return Attempt::NoMatch;
         }
         let Some(interior) = parser.with_nesting(|parser| {
-            let element = parse_kind_with_option(parser);
-            if element != Attempt::Matched {
-                return element;
+            let mut committed = false;
+            match parse_kind_with_option(parser) {
+                Attempt::Matched => {}
+                Attempt::NoMatch => {
+                    recover_required_production(
+                        parser,
+                        rules::KIND_MATRIX,
+                        "syntax/missing-kind-matrix-element",
+                        "missing matrix element kind",
+                        "kind",
+                    );
+                    committed = true;
+                }
+                Attempt::Committed => committed = true,
             }
             if base::parse_rule(parser, rules::RIGHT_BRACKET) {
-                Attempt::Matched
+                if committed {
+                    Attempt::Committed
+                } else {
+                    Attempt::Matched
+                }
             } else {
-                Attempt::NoMatch
+                recover_closer(
+                    parser,
+                    rules::KIND_MATRIX,
+                    rules::RIGHT_BRACKET,
+                    SyntaxKind::RightBracket,
+                    ']',
+                    "]",
+                )
             }
         }) else {
             let result = nesting_limit(parser);
             node.complete(parser, SyntaxKind::KindMatrix);
             return result;
         };
-        if interior != Attempt::Matched {
+        if interior == Attempt::NoMatch || parser.is_halted() {
             return finish(node, parser, SyntaxKind::KindMatrix, interior);
         }
-        let _ = base::parse_rule(parser, rules::COLON);
+        let suffix = parser.checkpoint();
+        let colon = base::parse_rule(parser, rules::COLON);
         match literals::parse_literal(parser) {
             Attempt::Matched => loop {
                 let pair = parser.checkpoint();
@@ -281,14 +384,29 @@ pub(super) fn parse_kind_matrix(parser: &mut Parser<'_>) -> Attempt {
                     }
                 }
             },
-            Attempt::NoMatch => {}
+            Attempt::NoMatch => {
+                // A bare colon is valid matrix syntax. Only an enclosing map
+                // candidate may reserve it as the key/value separator. Shared
+                // braces still accept a clean set containing `[u8]:`.
+                let map_separator = !parser.cursor().starts_with(":")
+                    && match position {
+                        KindPosition::Ordinary => false,
+                        KindPosition::MapKey => true,
+                        KindPosition::BraceElement => {
+                            interior == Attempt::Committed || !parser.cursor().starts_with("}")
+                        }
+                    };
+                if colon && map_separator {
+                    parser.rewind(suffix);
+                }
+            }
             Attempt::Committed => {
                 node.complete(parser, SyntaxKind::KindMatrix);
                 return Attempt::Committed;
             }
         }
         node.complete(parser, SyntaxKind::KindMatrix);
-        Attempt::Matched
+        interior
     })
 }
 
@@ -300,28 +418,57 @@ pub(super) fn parse_kind_tuple(parser: &mut Parser<'_>) -> Attempt {
             return Attempt::NoMatch;
         }
         let Some(interior) = parser.with_nesting(|parser| {
-            let first = parse_kind(parser);
-            if first != Attempt::Matched {
-                return first;
+            let mut committed = false;
+            match parse_kind(parser) {
+                Attempt::Matched => {}
+                Attempt::NoMatch => {
+                    recover_required_production(
+                        parser,
+                        rules::KIND_TUPLE,
+                        "syntax/missing-kind-tuple-item",
+                        "missing tuple kind item",
+                        "kind",
+                    );
+                    committed = true;
+                }
+                Attempt::Committed => committed = true,
             }
-            loop {
-                let pair = parser.checkpoint();
+            while !parser.is_halted() {
                 if !base::parse_rule(parser, rules::LIST_SEPARATOR) {
                     break;
                 }
                 match parse_kind(parser) {
                     Attempt::Matched => {}
                     Attempt::NoMatch => {
-                        parser.rewind(pair);
-                        break;
+                        recover_required_production(
+                            parser,
+                            rules::KIND_TUPLE,
+                            "syntax/missing-kind-tuple-item",
+                            "missing tuple kind item after separator",
+                            "kind",
+                        );
+                        committed = true;
                     }
-                    Attempt::Committed => return Attempt::Committed,
+                    Attempt::Committed => {
+                        committed = true;
+                    }
                 }
             }
             if base::parse_rule(parser, rules::RIGHT_PARENTHESIS) {
-                Attempt::Matched
+                if committed {
+                    Attempt::Committed
+                } else {
+                    Attempt::Matched
+                }
             } else {
-                Attempt::NoMatch
+                recover_closer(
+                    parser,
+                    rules::KIND_TUPLE,
+                    rules::RIGHT_PARENTHESIS,
+                    SyntaxKind::RightParen,
+                    ')',
+                    ")",
+                )
             }
         }) else {
             let result = nesting_limit(parser);
@@ -347,7 +494,9 @@ pub(super) fn parse_kind_scalar(parser: &mut Parser<'_>) -> Attempt {
                     node.complete(parser, SyntaxKind::KindScalar);
                     return Attempt::Committed;
                 }
-                Attempt::NoMatch => parser.rewind(suffix),
+                Attempt::NoMatch => {
+                    parser.rewind(suffix);
+                }
             }
         }
         node.complete(parser, SyntaxKind::KindScalar);
@@ -367,59 +516,113 @@ fn kind_brace_selection(parser: &mut Parser<'_>) -> Attempt {
     let Some(result) = parser.with_nesting(|parser| {
         let after_open = parser.checkpoint();
         if base::parse_rule(parser, rules::WHITESPACE1) {
-            match kind_record_field(parser) {
-                Attempt::Matched => {}
+            let committed = match kind_record_field(parser) {
+                Attempt::Matched => false,
                 Attempt::NoMatch => return Attempt::NoMatch,
-                Attempt::Committed => {
-                    record.complete(parser, SyntaxKind::KindRecord);
-                    set.complete(parser, SyntaxKind::KindSet);
-                    map.complete(parser, SyntaxKind::KindMap);
-                    return Attempt::Committed;
-                }
-            }
-            return finish_selected_kind_record(parser, record, set, map);
+                Attempt::Committed => true,
+            };
+            return finish_selected_kind_record(parser, record, set, map, committed);
         }
         parser.rewind(after_open);
 
         if base::parse_rule(parser, rules::IDENTIFIER) {
             match parse_kind_annotation(parser) {
-                Attempt::Matched => return finish_selected_kind_record(parser, record, set, map),
+                Attempt::Matched => {
+                    return finish_selected_kind_record(parser, record, set, map, false);
+                }
                 Attempt::Committed => {
-                    record.complete(parser, SyntaxKind::KindRecord);
-                    set.complete(parser, SyntaxKind::KindSet);
-                    map.complete(parser, SyntaxKind::KindMap);
-                    return Attempt::Committed;
+                    return finish_selected_kind_record(parser, record, set, map, true);
                 }
                 Attempt::NoMatch => {}
             }
         }
         parser.rewind(after_open);
-        record.abandon(parser);
+        finish_provisional_marker(parser, record, SyntaxKind::KindRecord);
 
-        match parse_kind(parser) {
-            Attempt::Matched => {}
-            Attempt::NoMatch => return Attempt::NoMatch,
-            Attempt::Committed => {
-                set.complete(parser, SyntaxKind::KindSet);
-                map.complete(parser, SyntaxKind::KindMap);
-                return Attempt::Committed;
-            }
-        }
-        if base::parse_rule(parser, rules::COLON) {
-            set.abandon(parser);
+        let scalar_map = parser.checkpoint();
+        if parse_plain_scalar_kind(parser) == Attempt::Matched
+            && base::parse_rule(parser, rules::COLON)
+        {
             match parse_kind(parser) {
-                Attempt::Matched => {}
-                Attempt::NoMatch => return Attempt::NoMatch,
+                Attempt::Matched => {
+                    if !base::parse_rule(parser, rules::RIGHT_BRACE) {
+                        recover_closer(
+                            parser,
+                            rules::KIND_MAP,
+                            rules::RIGHT_BRACE,
+                            SyntaxKind::RightBrace,
+                            '}',
+                            "}",
+                        );
+                        finish_provisional_marker(parser, set, SyntaxKind::KindSet);
+                        map.complete(parser, SyntaxKind::KindMap);
+                        return Attempt::Committed;
+                    }
+                    finish_provisional_marker(parser, set, SyntaxKind::KindSet);
+                    map.complete(parser, SyntaxKind::KindMap);
+                    return Attempt::Matched;
+                }
                 Attempt::Committed => {
+                    recover_closer(
+                        parser,
+                        rules::KIND_MAP,
+                        rules::RIGHT_BRACE,
+                        SyntaxKind::RightBrace,
+                        '}',
+                        "}",
+                    );
+                    finish_provisional_marker(parser, set, SyntaxKind::KindSet);
+                    map.complete(parser, SyntaxKind::KindMap);
+                    return Attempt::Committed;
+                }
+                Attempt::NoMatch => {
+                    recover_required_production(
+                        parser,
+                        rules::KIND_MAP,
+                        "syntax/missing-kind-map-value",
+                        "missing map value kind after colon",
+                        "kind",
+                    );
+                    recover_closer(
+                        parser,
+                        rules::KIND_MAP,
+                        rules::RIGHT_BRACE,
+                        SyntaxKind::RightBrace,
+                        '}',
+                        "}",
+                    );
+                    finish_provisional_marker(parser, set, SyntaxKind::KindSet);
                     map.complete(parser, SyntaxKind::KindMap);
                     return Attempt::Committed;
                 }
             }
-            if !base::parse_rule(parser, rules::RIGHT_BRACE) {
-                return Attempt::NoMatch;
-            }
+        }
+        parser.rewind(scalar_map);
+
+        let committed = match kind(parser, KindPosition::BraceElement) {
+            Attempt::Matched => false,
+            Attempt::NoMatch => return Attempt::NoMatch,
+            Attempt::Committed => true,
+        };
+        if !parser.is_halted() && base::parse_rule(parser, rules::COLON) {
+            finish_provisional_marker(parser, set, SyntaxKind::KindSet);
+            let result = finish_kind_map_value(parser, committed);
             map.complete(parser, SyntaxKind::KindMap);
-            return Attempt::Matched;
+            return result;
+        }
+        if committed {
+            recover_closer(
+                parser,
+                rules::KIND_SET,
+                rules::RIGHT_BRACE,
+                SyntaxKind::RightBrace,
+                '}',
+                "}",
+            );
+            let _ = kind_set_suffix(parser);
+            set.complete(parser, SyntaxKind::KindSet);
+            finish_provisional_marker(parser, map, SyntaxKind::KindMap);
+            return Attempt::Committed;
         }
         if !base::parse_rule(parser, rules::RIGHT_BRACE) {
             return Attempt::NoMatch;
@@ -427,12 +630,12 @@ fn kind_brace_selection(parser: &mut Parser<'_>) -> Attempt {
         match kind_set_suffix(parser) {
             Attempt::Matched => {
                 set.complete(parser, SyntaxKind::KindSet);
-                map.abandon(parser);
+                finish_provisional_marker(parser, map, SyntaxKind::KindMap);
                 Attempt::Matched
             }
             Attempt::Committed => {
                 set.complete(parser, SyntaxKind::KindSet);
-                map.complete(parser, SyntaxKind::KindMap);
+                finish_provisional_marker(parser, map, SyntaxKind::KindMap);
                 Attempt::Committed
             }
             Attempt::NoMatch => Attempt::NoMatch,
@@ -450,19 +653,75 @@ fn kind_brace_selection(parser: &mut Parser<'_>) -> Attempt {
     result
 }
 
+// The colon selects the map even when the key needed recovery. Shared brace
+// selection and the direct rule must preserve the same value and closer.
+fn finish_kind_map_value(parser: &mut Parser<'_>, mut committed: bool) -> Attempt {
+    match parse_kind(parser) {
+        Attempt::Matched => {}
+        Attempt::Committed => committed = true,
+        Attempt::NoMatch => {
+            recover_required_production(
+                parser,
+                rules::KIND_MAP,
+                "syntax/missing-kind-map-value",
+                "missing map value kind after colon",
+                "kind",
+            );
+            committed = true;
+        }
+    }
+    if !base::parse_rule(parser, rules::RIGHT_BRACE) {
+        return recover_closer(
+            parser,
+            rules::KIND_MAP,
+            rules::RIGHT_BRACE,
+            SyntaxKind::RightBrace,
+            '}',
+            "}",
+        );
+    }
+    if committed {
+        Attempt::Committed
+    } else {
+        Attempt::Matched
+    }
+}
+
+fn parse_plain_scalar_kind(parser: &mut Parser<'_>) -> Attempt {
+    combinator::transactional(parser, rules::KIND, |parser| {
+        let kind = parser.start();
+        let scalar = combinator::transactional(parser, rules::KIND_SCALAR, |parser| {
+            let scalar = parser.start();
+            if !base::parse_rule(parser, rules::IDENTIFIER) {
+                scalar.abandon(parser);
+                return Attempt::NoMatch;
+            }
+            scalar.complete(parser, SyntaxKind::KindScalar);
+            Attempt::Matched
+        });
+        if scalar == Attempt::NoMatch {
+            kind.abandon(parser);
+            return Attempt::NoMatch;
+        }
+        kind.complete(parser, SyntaxKind::Kind);
+        Attempt::Matched
+    })
+}
+
 fn kind_record_interior(parser: &mut Parser<'_>) -> Attempt {
     if !base::parse_rule(parser, rules::WHITESPACE0) {
         return Attempt::NoMatch;
     }
-    match kind_record_field(parser) {
-        Attempt::Matched => {}
-        other => return other,
-    }
-    finish_kind_record_fields(parser)
+    let committed = match kind_record_field(parser) {
+        Attempt::Matched => false,
+        Attempt::Committed => true,
+        Attempt::NoMatch => return Attempt::NoMatch,
+    };
+    finish_kind_record_fields(parser, committed)
 }
 
-fn finish_kind_record_fields(parser: &mut Parser<'_>) -> Attempt {
-    loop {
+fn finish_kind_record_fields(parser: &mut Parser<'_>, mut committed: bool) -> Attempt {
+    while !parser.is_halted() {
         let pair = parser.checkpoint();
         if !base::parse_rule(parser, rules::LIST_SEPARATOR)
             && !base::parse_rule(parser, rules::WHITESPACE1)
@@ -475,16 +734,26 @@ fn finish_kind_record_fields(parser: &mut Parser<'_>) -> Attempt {
                 parser.rewind(pair);
                 break;
             }
-            Attempt::Committed => return Attempt::Committed,
+            Attempt::Committed => committed = true,
         }
     }
     let _ = base::parse_exact_tag(parser, ",…", SyntaxKind::Text);
-    if !base::parse_rule(parser, rules::WHITESPACE0)
-        || !base::parse_rule(parser, rules::RIGHT_BRACE)
-    {
-        return Attempt::NoMatch;
+    let _ = base::parse_rule(parser, rules::WHITESPACE0);
+    if !base::parse_rule(parser, rules::RIGHT_BRACE) {
+        return recover_closer(
+            parser,
+            rules::KIND_RECORD,
+            rules::RIGHT_BRACE,
+            SyntaxKind::RightBrace,
+            '}',
+            "}",
+        );
     }
-    Attempt::Matched
+    if committed {
+        Attempt::Committed
+    } else {
+        Attempt::Matched
+    }
 }
 
 fn finish_selected_kind_record(
@@ -492,19 +761,20 @@ fn finish_selected_kind_record(
     record: super::super::super::marker::Marker,
     set: super::super::super::marker::Marker,
     map: super::super::super::marker::Marker,
+    committed: bool,
 ) -> Attempt {
-    match finish_kind_record_fields(parser) {
+    match finish_kind_record_fields(parser, committed) {
         Attempt::Matched => {
             record.complete(parser, SyntaxKind::KindRecord);
-            set.abandon(parser);
-            map.abandon(parser);
+            finish_provisional_marker(parser, set, SyntaxKind::KindSet);
+            finish_provisional_marker(parser, map, SyntaxKind::KindMap);
             Attempt::Matched
         }
         Attempt::NoMatch => Attempt::NoMatch,
         Attempt::Committed => {
             record.complete(parser, SyntaxKind::KindRecord);
-            set.complete(parser, SyntaxKind::KindSet);
-            map.complete(parser, SyntaxKind::KindMap);
+            finish_provisional_marker(parser, set, SyntaxKind::KindSet);
+            finish_provisional_marker(parser, map, SyntaxKind::KindMap);
             Attempt::Committed
         }
     }
@@ -555,14 +825,29 @@ fn delimited_kind(
             return Attempt::NoMatch;
         }
         let Some(interior) = parser.with_nesting(|parser| {
-            let content = content(parser);
-            if content != Attempt::Matched {
-                return content;
+            let mut committed = false;
+            match content(parser) {
+                Attempt::Matched => {}
+                Attempt::NoMatch => {
+                    recover_required_production(
+                        parser,
+                        rule,
+                        "syntax/missing-delimited-kind",
+                        "missing kind after opening delimiter",
+                        "kind",
+                    );
+                    committed = true;
+                }
+                Attempt::Committed => committed = true,
             }
             if base::parse_rule(parser, close) {
-                Attempt::Matched
+                if committed {
+                    Attempt::Committed
+                } else {
+                    Attempt::Matched
+                }
             } else {
-                Attempt::NoMatch
+                recover_closer(parser, rule, close, SyntaxKind::RightAngle, '>', ">")
             }
         }) else {
             let result = nesting_limit(parser);
@@ -579,6 +864,10 @@ fn finish(
     kind: SyntaxKind,
     result: Attempt,
 ) -> Attempt {
+    if parser.is_halted() {
+        node.complete(parser, kind);
+        return Attempt::Committed;
+    }
     match result {
         Attempt::Matched => {
             node.complete(parser, kind);

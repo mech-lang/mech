@@ -3,46 +3,65 @@ use crate::document::SyntaxKind;
 use super::super::super::Parser;
 use super::super::super::rule::rules;
 use super::super::{base, combinator};
-use super::{Attempt, FactAttempt, calls, child_result, patterns};
+use super::{Attempt, FactAttempt, calls, patterns, recover_required_production_with_prefixes};
 
 pub(super) fn parse_fsm_pipe(parser: &mut Parser<'_>) -> Attempt {
     combinator::transactional(parser, rules::FSM_PIPE, |parser| {
         let node = parser.start();
         let child = parse_fsm_instance(parser);
-        if let Some(result) = child_result(parser, node, SyntaxKind::FsmPipe, child) {
-            return result;
-        }
+        let mut committed = match child {
+            Attempt::Matched => false,
+            Attempt::Committed => true,
+            Attempt::NoMatch => {
+                node.abandon(parser);
+                return Attempt::NoMatch;
+            }
+        };
         loop {
             let before = parser.offset();
             let stage = stage(parser);
             match stage {
                 Attempt::Matched if parser.offset() > before => {}
                 Attempt::Matched | Attempt::NoMatch => break,
-                Attempt::Committed => {
-                    node.complete(parser, SyntaxKind::FsmPipe);
-                    return Attempt::Committed;
-                }
+                Attempt::Committed if parser.offset() > before => committed = true,
+                Attempt::Committed => break,
             }
         }
         node.complete(parser, SyntaxKind::FsmPipe);
-        Attempt::Matched
+        if committed {
+            Attempt::Committed
+        } else {
+            Attempt::Matched
+        }
     })
 }
 
 pub(super) fn parse_fsm_instance(parser: &mut Parser<'_>) -> Attempt {
     combinator::transactional(parser, rules::FSM_INSTANCE, |parser| {
         let node = parser.start();
-        if !base::parse_rule(parser, rules::HASHTAG) || !base::parse_rule(parser, rules::IDENTIFIER)
-        {
+        if !base::parse_rule(parser, rules::HASHTAG) {
             node.abandon(parser);
             return Attempt::NoMatch;
         }
-        if parse_fsm_args(parser) == Attempt::Committed {
-            node.complete(parser, SyntaxKind::FsmInstance);
-            return Attempt::Committed;
+        let mut committed = false;
+        if !base::parse_rule(parser, rules::IDENTIFIER) {
+            recover_required_production_with_prefixes(
+                parser,
+                rules::FSM_INSTANCE,
+                "syntax/missing-fsm-name",
+                "missing state-machine name after hash sign",
+                "identifier",
+                &["(", "->", "~>", "=>", "→", "⇒"],
+            );
+            committed = true;
         }
+        committed |= parse_fsm_args(parser) == Attempt::Committed;
         node.complete(parser, SyntaxKind::FsmInstance);
-        Attempt::Matched
+        if committed {
+            Attempt::Committed
+        } else {
+            Attempt::Matched
+        }
     })
 }
 
@@ -87,7 +106,17 @@ pub(super) fn parse_fsm_value(parser: &mut Parser<'_>) -> Attempt {
                 node.complete(parser, SyntaxKind::FsmValue);
                 Attempt::Matched
             }
-            FactAttempt::Matched(_) | FactAttempt::NoMatch => {
+            FactAttempt::Recovered(facts)
+                if !facts.contains_wildcard && !facts.contains_array_spread_or_rest =>
+            {
+                node.complete(parser, SyntaxKind::FsmValue);
+                Attempt::Committed
+            }
+            FactAttempt::Recovered(_) if parser.is_halted() => {
+                node.complete(parser, SyntaxKind::FsmValue);
+                Attempt::Committed
+            }
+            FactAttempt::Matched(_) | FactAttempt::Recovered(_) | FactAttempt::NoMatch => {
                 node.abandon(parser);
                 Attempt::NoMatch
             }
@@ -125,9 +154,27 @@ fn transition(
             node.abandon(parser);
             return Attempt::NoMatch;
         }
-        let child = parse_fsm_value(parser);
-        if let Some(result) = child_result(parser, node, kind, child) {
-            return result;
+        let child = parser
+            .with_nesting(parse_fsm_value)
+            .unwrap_or_else(|| super::nesting_limit(parser));
+        match child {
+            Attempt::Matched => {}
+            Attempt::Committed => {
+                node.complete(parser, kind);
+                return Attempt::Committed;
+            }
+            Attempt::NoMatch => {
+                recover_required_production_with_prefixes(
+                    parser,
+                    rule,
+                    "syntax/missing-fsm-transition-value",
+                    "missing state-machine value after transition operator",
+                    "fsm-value",
+                    &["->", "~>", "=>", "→", "⇒"],
+                );
+                node.complete(parser, kind);
+                return Attempt::Committed;
+            }
         }
         node.complete(parser, kind);
         Attempt::Matched

@@ -12,13 +12,18 @@ mod structures;
 mod subscripts;
 mod variables;
 
-use crate::document::{RuleId, SyntaxKind};
+pub(crate) use kinds::parse_kind_annotation_candidate;
+
+use alloc::string::String;
+
+use crate::document::{ExpectedSyntax, RuleId, SyntaxKind};
 
 use super::super::Parser;
 use super::super::marker::Marker;
 use super::super::recovery;
 use super::super::rule::rules;
 use super::combinator::Attempt;
+use super::{base, combinator};
 
 pub(crate) const PHASE_2I_RULES: &[RuleId; 80] = &[
     rules::ARGUMENT_LIST,
@@ -143,6 +148,9 @@ pub(super) enum BracketForm {
 pub(super) enum FactAttempt<T> {
     NoMatch,
     Matched(T),
+    /// The production recovered after retaining its discriminator facts.
+    Recovered(T),
+    /// The production committed without retaining discriminator facts.
     Committed,
 }
 
@@ -151,7 +159,7 @@ impl<T> FactAttempt<T> {
         match self {
             Self::NoMatch => Attempt::NoMatch,
             Self::Matched(_) => Attempt::Matched,
-            Self::Committed => Attempt::Committed,
+            Self::Recovered(_) | Self::Committed => Attempt::Committed,
         }
     }
 }
@@ -162,6 +170,10 @@ pub(super) fn child_result(
     kind: SyntaxKind,
     child: Attempt,
 ) -> Option<Attempt> {
+    if parser.is_halted() {
+        marker.complete(parser, kind);
+        return Some(Attempt::Committed);
+    }
     match child {
         Attempt::Matched => None,
         Attempt::NoMatch => {
@@ -175,8 +187,250 @@ pub(super) fn child_result(
     }
 }
 
+pub(super) fn finish_provisional_marker(parser: &mut Parser<'_>, marker: Marker, kind: SyntaxKind) {
+    if parser.is_halted() {
+        marker.complete(parser, kind);
+    } else {
+        marker.abandon(parser);
+    }
+}
+
 pub(super) fn nesting_limit(parser: &mut Parser<'_>) -> Attempt {
     recovery::nesting_limit(parser);
+    Attempt::Committed
+}
+
+pub(super) fn missing_production(
+    parser: &mut Parser<'_>,
+    code: &str,
+    message: &str,
+    production: &str,
+) -> Attempt {
+    combinator::insert_missing(
+        parser,
+        code,
+        message,
+        ExpectedSyntax::Production(String::from(production)),
+        None,
+        None,
+    );
+    Attempt::Committed
+}
+
+pub(super) fn recover_required_production(
+    parser: &mut Parser<'_>,
+    target: RuleId,
+    code: &str,
+    message: &str,
+    production: &str,
+) -> Attempt {
+    recover_required_production_with_boundaries(parser, target, code, message, production, &[])
+}
+
+pub(super) fn recover_required_production_with_boundaries(
+    parser: &mut Parser<'_>,
+    target: RuleId,
+    code: &str,
+    message: &str,
+    production: &str,
+    owner_boundaries: &[char],
+) -> Attempt {
+    recover_required_production_at_boundaries(
+        parser,
+        target,
+        code,
+        message,
+        production,
+        owner_boundaries,
+        &[],
+        |_| false,
+    )
+}
+
+pub(super) fn recover_required_production_with_prefixes(
+    parser: &mut Parser<'_>,
+    target: RuleId,
+    code: &str,
+    message: &str,
+    production: &str,
+    owner_prefixes: &[&str],
+) -> Attempt {
+    recover_required_production_at_boundaries(
+        parser,
+        target,
+        code,
+        message,
+        production,
+        &[],
+        owner_prefixes,
+        |_| false,
+    )
+}
+
+pub(super) fn recover_required_production_before(
+    parser: &mut Parser<'_>,
+    target: RuleId,
+    code: &str,
+    message: &str,
+    production: &str,
+    owner_restart: impl FnMut(&mut Parser<'_>) -> bool,
+) -> Attempt {
+    recover_required_production_at_boundaries(
+        parser,
+        target,
+        code,
+        message,
+        production,
+        &[],
+        &[],
+        owner_restart,
+    )
+}
+
+fn recover_required_production_at_boundaries(
+    parser: &mut Parser<'_>,
+    target: RuleId,
+    code: &str,
+    message: &str,
+    production: &str,
+    owner_boundaries: &[char],
+    owner_prefixes: &[&str],
+    mut owner_restart: impl FnMut(&mut Parser<'_>) -> bool,
+) -> Attempt {
+    combinator::consume_grammar_horizontal_trivia(parser);
+    const RESTART_BOUNDARIES: &[char] = &[
+        ')', ']', '}', '>', '⟩', '╯', '┘', '┛', ',', ';', '|', '│', '┃', '?', '\n', '\r',
+    ];
+    let mut boundaries = alloc::vec::Vec::from(RESTART_BOUNDARIES);
+    boundaries.extend_from_slice(owner_boundaries);
+    if parser.is_eof()
+        || parser
+            .cursor()
+            .peek_char()
+            .is_some_and(|character| boundaries.contains(&character))
+        || owner_prefixes
+            .iter()
+            .any(|prefix| parser.cursor().starts_with(prefix))
+        || owner_restart(parser)
+    {
+        return missing_production(parser, code, message, production);
+    }
+    let _ = recovery::abandon_until(
+        parser,
+        target,
+        "syntax/unexpected-production-source",
+        "unexpected source where a required production was expected",
+        |parser, character| {
+            boundaries.contains(&character)
+                || owner_prefixes
+                    .iter()
+                    .any(|prefix| parser.cursor().starts_with(prefix))
+                || owner_restart(parser)
+        },
+    );
+    Attempt::Committed
+}
+
+pub(super) fn recover_required_token_with_prefixes(
+    parser: &mut Parser<'_>,
+    target: RuleId,
+    code: &str,
+    message: &str,
+    token: SyntaxKind,
+    text: &str,
+    prefixes: &[&str],
+) -> Attempt {
+    combinator::consume_grammar_horizontal_trivia(parser);
+    const RESTART_BOUNDARIES: &[char] = &[
+        ')', ']', '}', '>', '⟩', '╯', '┘', '┛', ',', ';', '|', '│', '┃', '\n', '\r',
+    ];
+    if parser.is_eof()
+        || parser
+            .cursor()
+            .peek_char()
+            .is_some_and(|character| RESTART_BOUNDARIES.contains(&character))
+    {
+        combinator::insert_missing(
+            parser,
+            code,
+            message,
+            ExpectedSyntax::Token(token),
+            Some(token),
+            Some(text),
+        );
+    } else {
+        let _ = recovery::abandon_until(
+            parser,
+            target,
+            "syntax/unexpected-token-source",
+            "unexpected source where a required token was expected",
+            |parser, character| {
+                RESTART_BOUNDARIES.contains(&character)
+                    || prefixes
+                        .iter()
+                        .any(|prefix| parser.cursor().starts_with(prefix))
+            },
+        );
+    }
+    Attempt::Committed
+}
+
+pub(super) fn recover_closer(
+    parser: &mut Parser<'_>,
+    target: RuleId,
+    close_rule: RuleId,
+    close_kind: SyntaxKind,
+    _close_character: char,
+    close_text: &str,
+) -> Attempt {
+    const RESTART_BOUNDARIES: &[char] = &[
+        ')', ']', '}', '>', '⟩', '╯', '┘', '┛', ',', ';', '|', '│', '┃', '\n', '\r',
+    ];
+    let _ = recovery::abandon_to_restart(
+        parser,
+        target,
+        RESTART_BOUNDARIES,
+        "syntax/unexpected-delimited-content",
+        "unexpected source before the closing delimiter",
+    );
+    if !base::parse_rule(parser, close_rule) {
+        combinator::insert_missing(
+            parser,
+            "syntax/missing-delimiter",
+            "missing closing delimiter",
+            ExpectedSyntax::Token(close_kind),
+            Some(close_kind),
+            Some(close_text),
+        );
+    }
+    Attempt::Committed
+}
+
+pub(super) fn recover_closer_set(
+    parser: &mut Parser<'_>,
+    target: RuleId,
+    close_characters: &[char],
+    close_kind: SyntaxKind,
+    close_text: &str,
+    consume_close: impl FnOnce(&mut Parser<'_>) -> bool,
+) -> Attempt {
+    let _ = recovery::abandon_to_restart(
+        parser,
+        target,
+        close_characters,
+        "syntax/unexpected-delimited-content",
+        "unexpected source before the closing delimiter",
+    );
+    if !consume_close(parser) {
+        combinator::insert_missing(
+            parser,
+            "syntax/missing-delimiter",
+            "missing closing delimiter",
+            ExpectedSyntax::Token(close_kind),
+            Some(close_kind),
+            Some(close_text),
+        );
+    }
     Attempt::Committed
 }
 
@@ -190,7 +444,16 @@ pub(super) fn transactional_fact<T>(
     if matches!(result, FactAttempt::NoMatch) {
         parser.rewind(checkpoint);
     }
-    result
+    if parser.is_halted() {
+        match result {
+            FactAttempt::Matched(facts) | FactAttempt::Recovered(facts) => {
+                FactAttempt::Recovered(facts)
+            }
+            _ => FactAttempt::Committed,
+        }
+    } else {
+        result
+    }
 }
 
 pub(crate) fn supports(rule: RuleId) -> bool {
@@ -282,4 +545,96 @@ pub(crate) fn parse_rule(parser: &mut Parser<'_>, rule: RuleId) -> Option<Attemp
         _ => return None,
     };
     Some(result)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::document::parser::LexicalMode;
+    use crate::document::parser::event::sink;
+    use crate::document::{
+        DocumentId, IdGenerator, ParseConfig, ParseLimits, RecoveryAction, Revision, SyntaxNode,
+        TextRange, TextSize, TextSnapshot, reconstruct_source_range, validate_lossless_range,
+    };
+
+    fn finalize_rejected_candidate(parser: &mut Parser<'_>) {
+        let _unselected = parser.start();
+        let factor = parser.start();
+        while !parser.is_halted() && !parser.is_eof() {
+            let _ = parser.bump_bytes_token(1, SyntaxKind::Digit);
+        }
+        factor.complete(parser, SyntaxKind::Factor);
+        // Leave the provisional marker for the transaction to discard, as a
+        // failed production may normally rely on checkpoint rollback to do.
+    }
+
+    #[test]
+    fn halted_no_match_transactions_retain_finalized_children_under_their_owner() {
+        for limits in [
+            ParseLimits {
+                fuel: 1,
+                ..ParseLimits::default()
+            },
+            ParseLimits {
+                max_events: 12,
+                ..ParseLimits::default()
+            },
+        ] {
+            for with_facts in [false, true] {
+                let source =
+                    TextSnapshot::new(DocumentId(0x52), Revision(9), "1".repeat(64)).unwrap();
+                let mut ids = IdGenerator::new();
+                let mut parser = Parser::new(
+                    &source,
+                    LexicalMode::CanonicalSourceFragment,
+                    ParseConfig { limits },
+                    &mut ids,
+                );
+                let owner = parser.start();
+                let outcome = if with_facts {
+                    transactional_fact::<()>(&mut parser, rules::EXPRESSION, |parser| {
+                        finalize_rejected_candidate(parser);
+                        FactAttempt::NoMatch
+                    })
+                    .attempt()
+                } else {
+                    combinator::transactional(&mut parser, rules::EXPRESSION, |parser| {
+                        finalize_rejected_candidate(parser);
+                        Attempt::NoMatch
+                    })
+                };
+                assert_eq!(outcome, Attempt::Committed);
+                assert!(parser.is_halted());
+                assert_eq!(parser.offset(), source.byte_len());
+                owner.complete(&mut parser, SyntaxKind::Expression);
+                let output = parser.finish();
+                assert!(output.stats.parser_steps <= limits.fuel);
+                assert!(output.stats.events_emitted <= u64::from(limits.max_events));
+                let result = sink(&output.events, &source, &mut ids).unwrap();
+                let syntax = SyntaxNode::new_root(result.root.clone(), source.clone());
+                assert_eq!(syntax.kind(), SyntaxKind::Expression);
+                let children = syntax.children().collect::<alloc::vec::Vec<_>>();
+                assert_eq!(children.len(), 1);
+                assert_eq!(children[0].kind(), SyntaxKind::Factor);
+                assert!(
+                    children[0]
+                        .children()
+                        .any(|child| child.kind() == SyntaxKind::Error)
+                );
+                let expected_range = TextRange::new(TextSize::ZERO, TextSize(64));
+                validate_lossless_range(&result.root, &source, expected_range).unwrap();
+                assert_eq!(
+                    reconstruct_source_range(&result.root, &source, expected_range).unwrap(),
+                    "1".repeat(64)
+                );
+                assert_eq!(output.diagnostics.len(), 1);
+                let diagnostic = &output.diagnostics[0].diagnostic;
+                assert_eq!(diagnostic.code.as_str(), "syntax/recovery-limit");
+                assert_eq!(diagnostic.rule, Some(rules::EXPRESSION));
+                assert!(
+                    matches!(diagnostic.recovery, Some(RecoveryAction::ResourceLimit { range }) if range.end == source.byte_len())
+                );
+            }
+        }
+    }
 }
