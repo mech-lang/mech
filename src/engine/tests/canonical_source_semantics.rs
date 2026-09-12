@@ -105,14 +105,52 @@ fn typed_document_rejects_recovered_source_before_semantics() {
 }
 
 #[test]
-fn typed_document_rejects_unimplemented_executable_units() {
+fn typed_document_rejects_an_assignment_without_a_mutable_definition() {
     let document = document("answer += 1\n");
     let error = match CanonicalSourceFrontend.compile_document(&document) {
-        Ok(_) => panic!("unsupported document unit must not be skipped"),
+        Ok(_) => panic!("assignment without a mutable target must not be skipped"),
         Err(error) => error,
     };
-    assert_eq!(error.code, "source-semantics/unsupported-document-unit");
-    assert!(error.message.contains("OpAssign"));
+    assert_eq!(error.code, "source-semantics/unknown-assignment-target");
+    assert!(error.message.contains("answer"));
+}
+
+#[test]
+fn ordering_document_state_writers_preserves_semantic_node_references() {
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document(
+            "~answer := 0\nanswer += 1\nmatched := answer ? | *, true => 1 | * => 2\n",
+        ))
+        .unwrap();
+    let writer = compiled.program().states[0].producer_node as usize;
+    assert_eq!(writer, compiled.program().nodes.len() - 1);
+    assert_eq!(
+        compiled.program().nodes[writer].outputs.as_ref(),
+        &[SourceNodeOutput::State(0)]
+    );
+    assert_eq!(compiled.source_map().match_arms.len(), 2);
+    for arm in &compiled.source_map().match_arms {
+        let node = &compiled.program().nodes[arm.node as usize];
+        assert_eq!(node.operation.canonical_name(), "source/match");
+        assert!(arm.result_input < node.inputs.len() as u32);
+        assert!(arm.pattern < compiled.source_map().patterns.len() as u32);
+        assert_eq!(compiled.source_map().nodes[arm.node as usize].role, "match");
+    }
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document(
+            "~answer := 0\nanswer += 1\n[y | x <- xs, y := x, y > 0]\n",
+        ))
+        .unwrap();
+    assert_eq!(compiled.source_map().comprehension_qualifiers.len(), 3);
+    for qualifier in &compiled.source_map().comprehension_qualifiers {
+        let node = &compiled.program().nodes[qualifier.node as usize];
+        assert_eq!(node.operation.canonical_name(), "matrix/comprehension");
+        assert!(qualifier.input_ordinal < node.inputs.len() as u32);
+        assert_eq!(
+            compiled.source_map().nodes[qualifier.node as usize].role,
+            "comprehension"
+        );
+    }
 }
 
 #[test]
@@ -157,16 +195,10 @@ fn canonical_document_fixture_corpus_has_an_explicit_engine_disposition() {
     let cases = [
         ("compiler.mec", Ok(())),
         ("config.mec", Ok(())),
-        (
-            "document.mec",
-            Err("source-semantics/unsupported-document-unit"),
-        ),
+        ("document.mec", Ok(())),
         ("empty.mec", Err("source-semantics/empty-document")),
         ("executable.mec", Ok(())),
-        (
-            "interactive.mec",
-            Err("source-semantics/unsupported-document-unit"),
-        ),
+        ("interactive.mec", Ok(())),
         ("malformed.mec", Err("source-semantics/recovered-syntax")),
         ("resolver-index.mec", Err("source-semantics/empty-document")),
         ("wasm-document.mec", Ok(())),

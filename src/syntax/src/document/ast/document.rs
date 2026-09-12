@@ -5,8 +5,10 @@ use crate::document::red::{
     SyntaxToken,
 };
 use crate::document::{
-    BodySyntax, CodeBlockSyntax, MechCodeAltSyntax, MechCodeSyntax, ParagraphElementSyntax,
-    SectionElementSyntax, SyntaxKind, TitleFrontMatterSyntax, TitleSyntax, UlSubtitleSyntax,
+    BodySyntax, CodeBlockSyntax, ExpressionSyntax, MechCodeAltSyntax, MechCodeSyntax,
+    OpAssignOperatorSyntax, OpAssignSyntax, ParagraphElementSyntax, SectionElementSyntax,
+    SliceRefSyntax, SliceStemSyntax, SubscriptListSyntax, SyntaxKind, TitleFrontMatterSyntax,
+    TitleSyntax, UlSubtitleSyntax, VariableAssignSyntax,
 };
 
 impl DocumentSyntax {
@@ -113,6 +115,42 @@ impl MechCodeSyntax {
 impl MechCodeAltSyntax {
     pub fn value(&self) -> Option<SyntaxNode> {
         self.syntax().children().next()
+    }
+}
+
+impl SliceRefSyntax {
+    pub fn stem(&self) -> Option<SliceStemSyntax> {
+        self.syntax().children().find_map(SliceStemSyntax::cast)
+    }
+
+    pub fn subscripts(&self) -> Option<SubscriptListSyntax> {
+        self.syntax().children().find_map(SubscriptListSyntax::cast)
+    }
+}
+
+impl OpAssignSyntax {
+    pub fn target(&self) -> Option<SliceRefSyntax> {
+        self.syntax().children().find_map(SliceRefSyntax::cast)
+    }
+
+    pub fn operator(&self) -> Option<OpAssignOperatorSyntax> {
+        self.syntax()
+            .children()
+            .find_map(OpAssignOperatorSyntax::cast)
+    }
+
+    pub fn value(&self) -> Option<ExpressionSyntax> {
+        self.syntax().children().find_map(ExpressionSyntax::cast)
+    }
+}
+
+impl VariableAssignSyntax {
+    pub fn target(&self) -> Option<SliceRefSyntax> {
+        self.syntax().children().find_map(SliceRefSyntax::cast)
+    }
+
+    pub fn value(&self) -> Option<ExpressionSyntax> {
+        self.syntax().children().find_map(ExpressionSyntax::cast)
     }
 }
 
