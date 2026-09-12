@@ -629,37 +629,34 @@ fn parse_mapping_with_cached_value(
             }
             Attempt::Committed => true,
         };
-        if !base::parse_rule(parser, rules::WHITESPACE0)
-            || !base::parse_rule(parser, rules::COLON)
-            || !base::parse_rule(parser, rules::WHITESPACE0)
-        {
-            if committed || parser.is_halted() {
-                node.complete(parser, SyntaxKind::MapEntry);
-                return Attempt::Committed;
+        let has_colon = base::parse_rule(parser, rules::WHITESPACE0)
+            && base::parse_rule(parser, rules::COLON)
+            && base::parse_rule(parser, rules::WHITESPACE0);
+        if has_colon {
+            let child = if cached_value.is_some_and(|value| parser.reuse_clean_subtree(value)) {
+                Attempt::Matched
+            } else if parser.is_halted() {
+                Attempt::Committed
+            } else {
+                expressions::parse_expression(parser)
+            };
+            match child {
+                Attempt::Matched => {}
+                Attempt::Committed => committed = true,
+                Attempt::NoMatch => {
+                    recover_required_production(
+                        parser,
+                        rules::MAPPING,
+                        "syntax/missing-mapping-value",
+                        "missing value after mapping colon",
+                        "expression",
+                    );
+                    committed = true;
+                }
             }
+        } else if !committed && !parser.is_halted() {
             node.abandon(parser);
             return Attempt::NoMatch;
-        }
-        let child = if cached_value.is_some_and(|value| parser.reuse_clean_subtree(value)) {
-            Attempt::Matched
-        } else if parser.is_halted() {
-            Attempt::Committed
-        } else {
-            expressions::parse_expression(parser)
-        };
-        match child {
-            Attempt::Matched => {}
-            Attempt::Committed => committed = true,
-            Attempt::NoMatch => {
-                recover_required_production(
-                    parser,
-                    rules::MAPPING,
-                    "syntax/missing-mapping-value",
-                    "missing value after mapping colon",
-                    "expression",
-                );
-                committed = true;
-            }
         }
         if !base::parse_rule(parser, rules::WHITESPACE0) && !parser.is_halted() {
             node.abandon(parser);
@@ -1892,20 +1889,14 @@ fn finish_shared_record_or_map(
             match parse_mapping_with_cached_value(parser, Some(cached_value)) {
                 Attempt::Matched => {}
                 Attempt::NoMatch => return FactAttempt::NoMatch,
-                Attempt::Committed => {
-                    committed = true;
-                    let _ = base::parse_rule(parser, rules::LIST_SEPARATOR);
-                }
+                Attempt::Committed => committed = true,
             }
         }
     } else {
         match parse_mapping(parser) {
             Attempt::Matched => {}
             Attempt::NoMatch => return FactAttempt::NoMatch,
-            Attempt::Committed => {
-                committed = true;
-                let _ = base::parse_rule(parser, rules::LIST_SEPARATOR);
-            }
+            Attempt::Committed => committed = true,
         }
     }
     committed |= mapping_tail(parser, true) == Attempt::Committed;

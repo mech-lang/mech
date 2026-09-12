@@ -168,7 +168,17 @@ fn recovered_map_entries_diagnose_each_extra_separator() {
                 ("{1:(2 +), , 3:4}", 1),
                 ("{0:0,1:(2 +),,3:4}", 1),
                 ("{a:0,1:(2 +),,3:4}", 1),
+                ("{(1 +),3:4}", 0),
+                ("{(1 +),,3:4}", 1),
+                ("{(1 +),,,3:4}", 2),
+                ("{(1 +) , 3:4}", 0),
+                ("{0:0,(1 +),3:4}", 0),
+                ("{0:0,(1 +),,3:4}", 1),
             ] {
+                // Without a colon in the first entry, shared braces select a set.
+                if text.starts_with("{(") && rule != rules::MAP {
+                    continue;
+                }
                 let p = parse(rule, text, pieces);
                 assert_eq!(p.outcome, CanonicalRuleOutcome::Committed);
                 assert_eq!(p.consumed, p.source.full_range(), "{rule:?} {text}");
@@ -230,6 +240,8 @@ fn owner_restart_paths_preserve_shared_resource_limits() {
         (rules::RANGE_SUBSCRIPT, "1..@..3"),
         (rules::MAP, "{1:2,,3:4}"),
         (rules::MAP, "{1:(2 +),,3:4}"),
+        (rules::MAP, "{(1 +),,3:4}"),
+        (rules::EXPRESSION, "{0:0,(1 +),,3:4}"),
         (rules::EXPRESSION, "{0:0,1:(2 +),,3:4}"),
         (rules::EXPRESSION, "{a:2,,3:4}"),
     ] {
