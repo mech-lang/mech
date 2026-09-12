@@ -84,7 +84,7 @@ complete rule-level closure:
 parses
 recovers
 exposes typed syntax
-has a source-semantic disposition
+implements its specified semantic behavior
 passes canonical conformance
 passes ambiguity tests
 passes resource-limit tests

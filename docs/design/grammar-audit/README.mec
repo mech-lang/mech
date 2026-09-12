@@ -27,7 +27,7 @@ limits remain unfinished. The exact S6 registry candidate is staged here;
 activation and qualification remain gated on S4 completion.
 `docs/design/syntax-v0.4-continuation-plan.mec` replaces the old combined Phase
 2I-D/2I-E delivery assumption with independently gated milestones. This
-unmerged S6 branch materializes the atomic candidate transition for review; the
+unmerged stack materializes the atomic candidate transition for review; the
 registry is audit metadata and does not activate parser or runtime dispatch.
 S7
 completes the canonical Document root; S8 performs the production cutover and
@@ -65,6 +65,8 @@ Unfinished source or artifact lowering fails acceptance explicitly; an error
 fingerprint cannot satisfy it. Behavioral tests require execution and values
 independently of fingerprints. The S5 matrix and semantic gate pass; the
 separately documented S4 runtime limits remain activation blockers.
+Generated S7 examples prove minimal recognition and cast consistency. Actual
+consumer roles, recovery, and semantics require independent canonical evidence.
 
 `phase-2i-semantic-completion.tsv` is the machine-checked completion record. It
 distinguishes artifact readiness, behavior demonstrated on a named target,
