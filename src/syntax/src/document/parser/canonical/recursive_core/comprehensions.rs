@@ -122,11 +122,7 @@ fn comprehension(
                 || !base::parse_rule(parser, rules::BAR)
                 || !base::parse_rule(parser, rules::SPACE_TAB0)
             {
-                return if expression == Attempt::Committed {
-                    Attempt::Committed
-                } else {
-                    Attempt::NoMatch
-                };
+                return Attempt::NoMatch;
             }
             let qualifiers = finish_qualifiers(parser, close, require_generator_or_let);
             if expression == Attempt::Committed && qualifiers == Attempt::Matched {

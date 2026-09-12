@@ -58,22 +58,6 @@ pub(super) fn expression_body(parser: &mut Parser<'_>) -> FactAttempt<Expression
                 range.abandon(parser);
                 return FactAttempt::Matched(form);
             }
-            FactAttempt::Matched(ExpressionForm::Formula) => {
-                match seed.continue_from_factor(parser) {
-                    Attempt::Matched => {}
-                    Attempt::NoMatch => {
-                        range.abandon(parser);
-                        return FactAttempt::NoMatch;
-                    }
-                    Attempt::Committed => {
-                        if parser.is_halted() {
-                            finish_provisional_formula_marker(parser, range);
-                            return FactAttempt::Committed;
-                        }
-                        committed = true;
-                    }
-                }
-            }
             FactAttempt::Recovered(
                 form @ (ExpressionForm::SetComprehension | ExpressionForm::MatrixComprehension),
             ) if !parser.is_halted() => {
@@ -81,17 +65,35 @@ pub(super) fn expression_body(parser: &mut Parser<'_>) -> FactAttempt<Expression
                 range.abandon(parser);
                 return FactAttempt::Recovered(form);
             }
-            FactAttempt::Recovered(_) | FactAttempt::Committed => {
-                seed.commit(parser);
-                finish_provisional_formula_marker(parser, range);
-                return FactAttempt::Committed;
-            }
             FactAttempt::NoMatch => {
                 seed.abandon(parser);
                 range.abandon(parser);
                 return FactAttempt::NoMatch;
             }
+            FactAttempt::Matched(ExpressionForm::Formula) => {}
+            FactAttempt::Recovered(_) | FactAttempt::Committed => {
+                if parser.is_halted() {
+                    seed.commit(parser);
+                    finish_provisional_formula_marker(parser, range);
+                    return FactAttempt::Committed;
+                }
+                committed = true;
+            }
             FactAttempt::Matched(_) => unreachable!("delimited expression selection is closed"),
+        }
+        match seed.continue_from_factor(parser, committed) {
+            Attempt::Matched => {}
+            Attempt::NoMatch => {
+                range.abandon(parser);
+                return FactAttempt::NoMatch;
+            }
+            Attempt::Committed => {
+                if parser.is_halted() {
+                    finish_provisional_formula_marker(parser, range);
+                    return FactAttempt::Committed;
+                }
+                committed = true;
+            }
         }
     } else {
         match parse_formula(parser) {
@@ -144,15 +146,8 @@ fn finish_formula_expression(
             committed = true;
         }
         Attempt::NoMatch => {
-            recover_required_production(
-                parser,
-                rules::EXPRESSION,
-                "syntax/missing-range-bound",
-                "missing range bound after range operator",
-                "formula",
-            );
-            range.complete(parser, SyntaxKind::RangeExpression);
-            return FactAttempt::Committed;
+            recover_middle_range_bound(parser, rules::EXPRESSION);
+            committed = true;
         }
     }
     match operators::parse_range_operator(parser) {
@@ -188,6 +183,17 @@ fn finish_formula_expression(
     }
 }
 
+fn recover_middle_range_bound(parser: &mut Parser<'_>, owner: crate::document::RuleId) {
+    super::recover_required_production_with_prefixes(
+        parser,
+        owner,
+        "syntax/missing-range-bound",
+        "missing range bound after range operator",
+        "formula",
+        &[".."],
+    );
+}
+
 fn finish_match_suffix(parser: &mut Parser<'_>) -> FactAttempt<ExpressionForm> {
     let match_suffix = parser.checkpoint();
     if !base::parse_rule(parser, rules::WHITESPACE0) || !base::parse_rule(parser, rules::QUESTION) {
@@ -209,7 +215,7 @@ fn finish_match_suffix(parser: &mut Parser<'_>) -> FactAttempt<ExpressionForm> {
                 "missing match arm after question mark",
                 "match-arm",
             );
-            return FactAttempt::Committed;
+            committed = true;
         }
     }
     loop {
@@ -269,15 +275,8 @@ pub(super) fn formula_or_range(parser: &mut Parser<'_>, require_range: bool) -> 
                 Attempt::Matched => {}
                 Attempt::NoMatch => {
                     let target = parser.current_rule().unwrap_or(rules::RANGE_EXPRESSION);
-                    recover_required_production(
-                        parser,
-                        target,
-                        "syntax/missing-range-bound",
-                        "missing range bound after range operator",
-                        "formula",
-                    );
-                    range.complete(parser, SyntaxKind::RangeExpression);
-                    return Attempt::Committed;
+                    recover_middle_range_bound(parser, target);
+                    committed = true;
                 }
                 Attempt::Committed => {
                     if parser.is_halted() {

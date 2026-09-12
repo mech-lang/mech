@@ -101,67 +101,75 @@ pub(super) fn parse_fancy_table(parser: &mut Parser<'_>) -> Attempt {
             node.abandon(parser);
             return Attempt::NoMatch;
         }
-        let mut committed = false;
-        let child = parse_fancy_table_header(parser);
-        match child {
-            Attempt::Matched => {}
-            Attempt::NoMatch => {
-                recover_required_production(
-                    parser,
-                    rules::FANCY_TABLE,
-                    "syntax/missing-fancy-table-header",
-                    "missing framed table header",
-                    "fancy-table-header",
-                );
-                recover_table_separator(parser, rules::FANCY_TABLE);
-                committed = true;
-                let _ = base::parse_rule(parser, rules::WHITESPACE0);
-            }
-            Attempt::Committed => {
-                committed = true;
-                let _ = base::parse_rule(parser, rules::WHITESPACE0);
-            }
-        }
-        let first = fancy_row(parser);
-        match first {
-            Attempt::Matched => {}
-            Attempt::NoMatch => {
-                recover_required_production(
-                    parser,
-                    rules::FANCY_TABLE,
-                    "syntax/missing-fancy-table-row",
-                    "missing framed table row",
-                    "table-row2",
-                );
+        parser
+            .with_nesting(|parser| {
+                let mut committed = false;
+                let child = parse_fancy_table_header(parser);
+                match child {
+                    Attempt::Matched => {}
+                    Attempt::NoMatch => {
+                        recover_required_production(
+                            parser,
+                            rules::FANCY_TABLE,
+                            "syntax/missing-fancy-table-header",
+                            "missing framed table header",
+                            "fancy-table-header",
+                        );
+                        recover_table_separator(parser, rules::FANCY_TABLE);
+                        committed = true;
+                        let _ = base::parse_rule(parser, rules::WHITESPACE0);
+                    }
+                    Attempt::Committed => {
+                        committed = true;
+                        let _ = base::parse_rule(parser, rules::WHITESPACE0);
+                    }
+                }
+                let first = fancy_row(parser);
+                match first {
+                    Attempt::Matched => {}
+                    Attempt::NoMatch => {
+                        recover_required_production(
+                            parser,
+                            rules::FANCY_TABLE,
+                            "syntax/missing-fancy-table-row",
+                            "missing framed table row",
+                            "table-row2",
+                        );
+                        node.complete(parser, SyntaxKind::FancyTable);
+                        return Attempt::Committed;
+                    }
+                    Attempt::Committed => {
+                        committed = true;
+                    }
+                }
+                loop {
+                    let pair = parser.checkpoint();
+                    if !base::parse_rule(parser, rules::NEW_LINE) {
+                        break;
+                    }
+                    match fancy_row(parser) {
+                        Attempt::Matched => {}
+                        Attempt::NoMatch => {
+                            parser.rewind(pair);
+                            break;
+                        }
+                        Attempt::Committed => {
+                            committed = true;
+                        }
+                    }
+                }
                 node.complete(parser, SyntaxKind::FancyTable);
-                return Attempt::Committed;
-            }
-            Attempt::Committed => {
-                committed = true;
-            }
-        }
-        loop {
-            let pair = parser.checkpoint();
-            if !base::parse_rule(parser, rules::NEW_LINE) {
-                break;
-            }
-            match fancy_row(parser) {
-                Attempt::Matched => {}
-                Attempt::NoMatch => {
-                    parser.rewind(pair);
-                    break;
+                if committed {
+                    Attempt::Committed
+                } else {
+                    Attempt::Matched
                 }
-                Attempt::Committed => {
-                    committed = true;
-                }
-            }
-        }
-        node.complete(parser, SyntaxKind::FancyTable);
-        if committed {
-            Attempt::Committed
-        } else {
-            Attempt::Matched
-        }
+            })
+            .unwrap_or_else(|| {
+                nesting_limit(parser);
+                node.complete(parser, SyntaxKind::FancyTable);
+                Attempt::Committed
+            })
     })
 }
 
@@ -215,93 +223,101 @@ pub(super) fn parse_inline_table(parser: &mut Parser<'_>) -> Attempt {
             node.abandon(parser);
             return Attempt::NoMatch;
         }
-        let mut committed = false;
-        let child = parse_inline_table_header(parser);
-        match child {
-            Attempt::Matched => {}
-            Attempt::NoMatch => {
-                if !ahead(parser, structure_shell::parse_table_separator) {
-                    node.abandon(parser);
-                    return Attempt::NoMatch;
-                }
-                recover_required_production(
-                    parser,
-                    rules::INLINE_TABLE,
-                    "syntax/missing-inline-table-header",
-                    "missing inline table header",
-                    "inline-table-header",
-                );
-                recover_table_separator(parser, rules::INLINE_TABLE);
-                committed = true;
-            }
-            Attempt::Committed => {
-                if parser.cursor().starts_with("\n") || parser.cursor().starts_with("\r") {
-                    node.abandon(parser);
-                    return Attempt::NoMatch;
-                }
-                committed = true;
-            }
-        }
-        if parser.is_halted() {
-            node.complete(parser, SyntaxKind::InlineTable);
-            return Attempt::Committed;
-        }
-        if !base::parse_rule(parser, rules::SPACE_TAB0) {
-            node.abandon(parser);
-            return Attempt::NoMatch;
-        }
-        let child = parse_inline_table_row(parser);
-        match child {
-            Attempt::Matched => {}
-            Attempt::NoMatch => {
-                if parser.cursor().starts_with("\n") || parser.cursor().starts_with("\r") {
-                    node.abandon(parser);
-                    return Attempt::NoMatch;
-                }
-                recover_required_production(
-                    parser,
-                    rules::INLINE_TABLE,
-                    "syntax/missing-inline-table-row",
-                    "missing inline table row",
-                    "inline-table-row",
-                );
-                node.complete(parser, SyntaxKind::InlineTable);
-                return Attempt::Committed;
-            }
-            Attempt::Committed => committed = true,
-        }
-        while !parser.is_halted() {
-            let before = parser.offset();
-            let separator = ahead(parser, inline_table_separator);
-            if parser.is_halted() {
-                committed = true;
-                break;
-            }
-            let continuation = parser.checkpoint();
-            match parse_inline_table_row(parser) {
-                Attempt::Matched if parser.offset() > before => {}
-                Attempt::Matched | Attempt::NoMatch => break,
-                Attempt::Committed if separator && !parser.is_halted() => {
-                    // Once this table has a row, an enclosing row may own the
-                    // next separator. A recovered speculative extra row must
-                    // not steal that delimiter from a clean nested table.
-                    parser.rewind(continuation);
-                    break;
-                }
-                Attempt::Committed => {
-                    committed = true;
-                    if parser.offset() == before {
-                        break;
+        parser
+            .with_nesting(|parser| {
+                let mut committed = false;
+                let child = parse_inline_table_header(parser);
+                match child {
+                    Attempt::Matched => {}
+                    Attempt::NoMatch => {
+                        if !ahead(parser, structure_shell::parse_table_separator) {
+                            node.abandon(parser);
+                            return Attempt::NoMatch;
+                        }
+                        recover_required_production(
+                            parser,
+                            rules::INLINE_TABLE,
+                            "syntax/missing-inline-table-header",
+                            "missing inline table header",
+                            "inline-table-header",
+                        );
+                        recover_table_separator(parser, rules::INLINE_TABLE);
+                        committed = true;
+                    }
+                    Attempt::Committed => {
+                        if parser.cursor().starts_with("\n") || parser.cursor().starts_with("\r") {
+                            node.abandon(parser);
+                            return Attempt::NoMatch;
+                        }
+                        committed = true;
                     }
                 }
-            }
-        }
-        node.complete(parser, SyntaxKind::InlineTable);
-        if committed {
-            Attempt::Committed
-        } else {
-            Attempt::Matched
-        }
+                if parser.is_halted() {
+                    node.complete(parser, SyntaxKind::InlineTable);
+                    return Attempt::Committed;
+                }
+                if !base::parse_rule(parser, rules::SPACE_TAB0) {
+                    node.abandon(parser);
+                    return Attempt::NoMatch;
+                }
+                let child = parse_inline_table_row(parser);
+                match child {
+                    Attempt::Matched => {}
+                    Attempt::NoMatch => {
+                        if parser.cursor().starts_with("\n") || parser.cursor().starts_with("\r") {
+                            node.abandon(parser);
+                            return Attempt::NoMatch;
+                        }
+                        recover_required_production(
+                            parser,
+                            rules::INLINE_TABLE,
+                            "syntax/missing-inline-table-row",
+                            "missing inline table row",
+                            "inline-table-row",
+                        );
+                        node.complete(parser, SyntaxKind::InlineTable);
+                        return Attempt::Committed;
+                    }
+                    Attempt::Committed => committed = true,
+                }
+                while !parser.is_halted() {
+                    let before = parser.offset();
+                    let separator = ahead(parser, inline_table_separator);
+                    if parser.is_halted() {
+                        committed = true;
+                        break;
+                    }
+                    let continuation = parser.checkpoint();
+                    match parse_inline_table_row(parser) {
+                        Attempt::Matched if parser.offset() > before => {}
+                        Attempt::Matched | Attempt::NoMatch => break,
+                        Attempt::Committed if separator && !parser.is_halted() => {
+                            // Once this table has a row, an enclosing row may own the
+                            // next separator. A recovered speculative extra row must
+                            // not steal that delimiter from a clean nested table.
+                            parser.rewind(continuation);
+                            break;
+                        }
+                        Attempt::Committed => {
+                            committed = true;
+                            if parser.offset() == before {
+                                break;
+                            }
+                        }
+                    }
+                }
+                node.complete(parser, SyntaxKind::InlineTable);
+                if committed {
+                    Attempt::Committed
+                } else {
+                    Attempt::Matched
+                }
+            })
+            .unwrap_or_else(|| {
+                nesting_limit(parser);
+                node.complete(parser, SyntaxKind::InlineTable);
+                Attempt::Committed
+            })
     })
 }
 
@@ -388,59 +404,67 @@ pub(super) fn parse_regular_table(parser: &mut Parser<'_>) -> Attempt {
             node.abandon(parser);
             return Attempt::NoMatch;
         }
-        let mut committed = false;
-        let child = parse_table_header(parser);
-        match child {
-            Attempt::Matched => {}
-            Attempt::NoMatch => {
-                node.abandon(parser);
-                return Attempt::NoMatch;
-            }
-            Attempt::Committed => {
-                committed = true;
-                let _ = base::parse_rule(parser, rules::WHITESPACE0);
-            }
-        }
-        let first = parse_table_row(parser);
-        match first {
-            Attempt::Matched => {}
-            Attempt::NoMatch => {
-                recover_required_production(
-                    parser,
-                    rules::REGULAR_TABLE,
-                    "syntax/missing-regular-table-row",
-                    "missing regular table row",
-                    "table-row",
-                );
+        parser
+            .with_nesting(|parser| {
+                let mut committed = false;
+                let child = parse_table_header(parser);
+                match child {
+                    Attempt::Matched => {}
+                    Attempt::NoMatch => {
+                        node.abandon(parser);
+                        return Attempt::NoMatch;
+                    }
+                    Attempt::Committed => {
+                        committed = true;
+                        let _ = base::parse_rule(parser, rules::WHITESPACE0);
+                    }
+                }
+                let first = parse_table_row(parser);
+                match first {
+                    Attempt::Matched => {}
+                    Attempt::NoMatch => {
+                        recover_required_production(
+                            parser,
+                            rules::REGULAR_TABLE,
+                            "syntax/missing-regular-table-row",
+                            "missing regular table row",
+                            "table-row",
+                        );
+                        node.complete(parser, SyntaxKind::RegularTable);
+                        return Attempt::Committed;
+                    }
+                    Attempt::Committed => {
+                        committed = true;
+                    }
+                }
+                while !parser.is_halted() {
+                    let pair = parser.checkpoint();
+                    if !base::parse_rule(parser, rules::WHITESPACE0) {
+                        break;
+                    }
+                    match parse_table_row(parser) {
+                        Attempt::Matched => {}
+                        Attempt::NoMatch => {
+                            parser.rewind(pair);
+                            break;
+                        }
+                        Attempt::Committed => {
+                            committed = true;
+                        }
+                    }
+                }
                 node.complete(parser, SyntaxKind::RegularTable);
-                return Attempt::Committed;
-            }
-            Attempt::Committed => {
-                committed = true;
-            }
-        }
-        while !parser.is_halted() {
-            let pair = parser.checkpoint();
-            if !base::parse_rule(parser, rules::WHITESPACE0) {
-                break;
-            }
-            match parse_table_row(parser) {
-                Attempt::Matched => {}
-                Attempt::NoMatch => {
-                    parser.rewind(pair);
-                    break;
+                if committed {
+                    Attempt::Committed
+                } else {
+                    Attempt::Matched
                 }
-                Attempt::Committed => {
-                    committed = true;
-                }
-            }
-        }
-        node.complete(parser, SyntaxKind::RegularTable);
-        if committed {
-            Attempt::Committed
-        } else {
-            Attempt::Matched
-        }
+            })
+            .unwrap_or_else(|| {
+                nesting_limit(parser);
+                node.complete(parser, SyntaxKind::RegularTable);
+                Attempt::Committed
+            })
     })
 }
 
@@ -542,14 +566,45 @@ pub(super) fn parse_field(parser: &mut Parser<'_>) -> Attempt {
 }
 
 pub(super) fn parse_map(parser: &mut Parser<'_>) -> Attempt {
-    delimited_repeated(
-        parser,
-        rules::MAP,
-        SyntaxKind::Map,
-        rules::LEFT_BRACE,
-        rules::RIGHT_BRACE,
-        parse_mapping,
-    )
+    combinator::transactional(parser, rules::MAP, |parser| {
+        let node = parser.start();
+        if !base::parse_rule(parser, rules::LEFT_BRACE) {
+            node.abandon(parser);
+            return Attempt::NoMatch;
+        }
+        let Some(interior) = parser.with_nesting(|parser| {
+            if !base::parse_rule(parser, rules::WHITESPACE0) {
+                return Attempt::NoMatch;
+            }
+            let committed = match mapping_tail(parser, false) {
+                Attempt::Matched => false,
+                Attempt::Committed => true,
+                Attempt::NoMatch => return Attempt::NoMatch,
+            };
+            let _ = base::parse_rule(parser, rules::WHITESPACE0);
+            if base::parse_rule(parser, rules::RIGHT_BRACE) {
+                if committed {
+                    Attempt::Committed
+                } else {
+                    Attempt::Matched
+                }
+            } else {
+                recover_closer(
+                    parser,
+                    rules::MAP,
+                    rules::RIGHT_BRACE,
+                    SyntaxKind::RightBrace,
+                    '}',
+                    "}",
+                )
+            }
+        }) else {
+            let result = nesting_limit(parser);
+            node.complete(parser, SyntaxKind::Map);
+            return result;
+        };
+        finish(node, parser, SyntaxKind::Map, interior)
+    })
 }
 
 pub(super) fn parse_mapping(parser: &mut Parser<'_>) -> Attempt {
@@ -1675,20 +1730,7 @@ fn brace_general(parser: &mut Parser<'_>, mode: BraceMode) -> FactAttempt<Expres
             entry.complete(parser, SyntaxKind::MapEntry);
             finish_provisional_marker(parser, comprehension, SyntaxKind::SetComprehension);
             finish_provisional_marker(parser, set, SyntaxKind::Set);
-            loop {
-                let before = parser.offset();
-                match parse_mapping(parser) {
-                    Attempt::Matched if parser.offset() > before => {}
-                    Attempt::Matched | Attempt::NoMatch => break,
-                    Attempt::Committed => {
-                        committed = true;
-                        let _ = base::parse_rule(parser, rules::LIST_SEPARATOR);
-                        if parser.offset() == before {
-                            break;
-                        }
-                    }
-                }
-            }
+            committed |= mapping_tail(parser, true) == Attempt::Committed;
             let _ = base::parse_rule(parser, rules::WHITESPACE0);
             if !base::parse_rule(parser, rules::RIGHT_BRACE) {
                 recover_closer(
@@ -1866,20 +1908,7 @@ fn finish_shared_record_or_map(
             }
         }
     }
-    loop {
-        let before = parser.offset();
-        match parse_mapping(parser) {
-            Attempt::Matched if parser.offset() > before => {}
-            Attempt::Matched | Attempt::NoMatch => break,
-            Attempt::Committed => {
-                committed = true;
-                let _ = base::parse_rule(parser, rules::LIST_SEPARATOR);
-                if parser.offset() == before {
-                    break;
-                }
-            }
-        }
-    }
+    committed |= mapping_tail(parser, true) == Attempt::Committed;
     if !base::parse_rule(parser, rules::WHITESPACE0) {
         return FactAttempt::NoMatch;
     }
@@ -1967,60 +1996,43 @@ fn wrap_table_structure(parser: &mut Parser<'_>) -> Attempt {
     }
 }
 
-fn delimited_repeated(
-    parser: &mut Parser<'_>,
-    rule: RuleId,
-    kind: SyntaxKind,
-    open: RuleId,
-    close: RuleId,
-    item: fn(&mut Parser<'_>) -> Attempt,
-) -> Attempt {
-    combinator::transactional(parser, rule, |parser| {
-        let node = parser.start();
-        if !base::parse_rule(parser, open) {
-            node.abandon(parser);
-            return Attempt::NoMatch;
+fn mapping_tail(parser: &mut Parser<'_>, mut parsed_any: bool) -> Attempt {
+    let mut committed = false;
+    while !parser.is_halted() {
+        let before = parser.offset();
+        match parse_mapping(parser) {
+            Attempt::Matched if parser.offset() > before => parsed_any = true,
+            Attempt::Matched => break,
+            Attempt::NoMatch if !parsed_any => return Attempt::NoMatch,
+            Attempt::NoMatch if parser.cursor().starts_with(",") => {
+                let entry = parser.start();
+                missing_production(
+                    parser,
+                    "syntax/missing-map-entry",
+                    "missing map entry after separator",
+                    "mapping",
+                );
+                let _ = base::parse_rule(parser, rules::COMMA);
+                let _ = base::parse_rule(parser, rules::WHITESPACE0);
+                entry.complete(parser, SyntaxKind::MapEntry);
+                committed = true;
+            }
+            Attempt::NoMatch => break,
+            Attempt::Committed => {
+                parsed_any = true;
+                committed = true;
+                let _ = base::parse_rule(parser, rules::LIST_SEPARATOR);
+            }
         }
-        let Some(interior) = parser.with_nesting(|parser| {
-            if !base::parse_rule(parser, rules::WHITESPACE0) {
-                return Attempt::NoMatch;
-            }
-            let mut parsed_any = false;
-            let mut committed = false;
-            while !parser.is_halted() {
-                let before = parser.offset();
-                match item(parser) {
-                    Attempt::Matched if parser.offset() > before => parsed_any = true,
-                    Attempt::Matched => break,
-                    Attempt::NoMatch if !parsed_any => return Attempt::NoMatch,
-                    Attempt::NoMatch => break,
-                    Attempt::Committed => {
-                        parsed_any = true;
-                        committed = true;
-                        let _ = base::parse_rule(parser, rules::LIST_SEPARATOR);
-                        if parser.offset() == before {
-                            break;
-                        }
-                    }
-                }
-            }
-            let _ = base::parse_rule(parser, rules::WHITESPACE0);
-            if base::parse_rule(parser, close) {
-                if committed {
-                    Attempt::Committed
-                } else {
-                    Attempt::Matched
-                }
-            } else {
-                recover_closer(parser, rule, close, SyntaxKind::RightBrace, '}', "}")
-            }
-        }) else {
-            let result = nesting_limit(parser);
-            node.complete(parser, kind);
-            return result;
-        };
-        finish(node, parser, kind, interior)
-    })
+        if parser.offset() == before {
+            break;
+        }
+    }
+    if committed || parser.is_halted() {
+        Attempt::Committed
+    } else {
+        Attempt::Matched
+    }
 }
 
 fn inline_table_separator(parser: &mut Parser<'_>) -> Attempt {
@@ -2230,6 +2242,8 @@ fn has_mapping_separator(parser: &mut Parser<'_>) -> bool {
     // Speculation uses the same event/fuel budget. If resource finalization
     // prevents rewind, all probe source stays beneath this ERROR owner.
     let probe = parser.start();
+    // A selected entry owns its comma; extra separators precede the next key.
+    while base::parse_rule(parser, rules::LIST_SEPARATOR) {}
     let matched = mapping_separator_ahead(parser);
     if parser.is_halted() {
         probe.complete_with_flags(parser, SyntaxKind::Error, NodeFlags::ERROR);
