@@ -158,6 +158,57 @@ fn extra_map_separators_retain_later_entries_and_physical_closer() {
     }
 }
 #[test]
+fn recovered_map_entries_diagnose_each_extra_separator() {
+    for pieces in [false, true] {
+        for rule in [rules::MAP, rules::EXPRESSION, rules::STRUCTURE] {
+            for (text, missing_entries) in [
+                ("{1:(2 +),3:4}", 0),
+                ("{1:(2 +),,3:4}", 1),
+                ("{1:(2 +),,,3:4}", 2),
+                ("{1:(2 +), , 3:4}", 1),
+                ("{0:0,1:(2 +),,3:4}", 1),
+                ("{a:0,1:(2 +),,3:4}", 1),
+            ] {
+                let p = parse(rule, text, pieces);
+                assert_eq!(p.outcome, CanonicalRuleOutcome::Committed);
+                assert_eq!(p.consumed, p.source.full_range(), "{rule:?} {text}");
+                assert_eq!(
+                    p.diagnostics
+                        .iter()
+                        .filter(|d| d.code.as_str() == "syntax/missing-map-entry")
+                        .count(),
+                    missing_entries,
+                    "{rule:?} {text} {pieces}: {:?}",
+                    p.diagnostics
+                );
+                assert!(
+                    p.diagnostics
+                        .iter()
+                        .any(|d| d.code.as_str() == "syntax/missing-operator-operand")
+                );
+                let maps = nodes(&p.syntax(), SyntaxKind::Map);
+                assert_eq!(maps.len(), 1);
+                let entries = nodes(&maps[0], SyntaxKind::MapEntry);
+                assert_eq!(
+                    entries
+                        .iter()
+                        .filter(|entry| entry.text().unwrap().trim() == ","
+                            && entry
+                                .children()
+                                .any(|child| child.kind() == SyntaxKind::Missing))
+                        .count(),
+                    missing_entries,
+                    "{rule:?} {text}"
+                );
+                assert!(entries.iter().any(|entry| entry.text().unwrap() == "3:4"));
+                let closer = maps[0].tokens().into_iter().last().unwrap();
+                assert_eq!(closer.kind(), SyntaxKind::RightBrace);
+                assert!(!closer.flags().contains(TokenFlags::MISSING));
+            }
+        }
+    }
+}
+#[test]
 fn owner_restarts_preserve_clean_controls() {
     for (rule, text) in [
         (rules::SET_COMPREHENSION, "{x | x <- xs}"),
@@ -178,6 +229,8 @@ fn owner_restart_paths_preserve_shared_resource_limits() {
         (rules::EXPRESSION, "1..@..3"),
         (rules::RANGE_SUBSCRIPT, "1..@..3"),
         (rules::MAP, "{1:2,,3:4}"),
+        (rules::MAP, "{1:(2 +),,3:4}"),
+        (rules::EXPRESSION, "{0:0,1:(2 +),,3:4}"),
         (rules::EXPRESSION, "{a:2,,3:4}"),
     ] {
         let limits = (0..=240)

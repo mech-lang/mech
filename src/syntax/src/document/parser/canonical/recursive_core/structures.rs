@@ -2021,7 +2021,6 @@ fn mapping_tail(parser: &mut Parser<'_>, mut parsed_any: bool) -> Attempt {
             Attempt::Committed => {
                 parsed_any = true;
                 committed = true;
-                let _ = base::parse_rule(parser, rules::LIST_SEPARATOR);
             }
         }
         if parser.offset() == before {
