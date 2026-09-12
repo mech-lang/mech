@@ -4,7 +4,13 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::path::PathBuf;
 
-use mech_engine::{CanonicalSourceFrontend, PHASE_2I_SEMANTIC_RULES, Phase2iSemanticDisposition};
+use mech_engine::{
+    ArtifactBuildError, CanonicalSourceFrontend, CanonicalSourceProgram, CardinalitySpec,
+    DimensionExpr, FloatWidth, IntegerWidth, PHASE_2I_SEMANTIC_RULES, Phase2iSemanticDisposition,
+    SchemaBody, SourceNodeOutput, SourceSemanticAnchor, SourceSemanticComprehensionQualifierRole,
+    SourceStateInitializer, SourceValue, canonical_application_requirement_bytes,
+    encode_program_artifact_bytecode_v1,
+};
 use mech_syntax::document::parser::canonical::parse_canonical_phase_2i_rule_for_test;
 use mech_syntax::document::parser::rules;
 use mech_syntax::document::{
@@ -98,11 +104,29 @@ impl StableHash {
     }
 
     fn field(&mut self, value: &str) {
-        for byte in (value.len() as u64).to_le_bytes() {
-            self.byte(byte);
-        }
-        for byte in value.bytes() {
-            self.byte(byte);
+        self.bytes(value.as_bytes());
+    }
+
+    fn bytes(&mut self, value: &[u8]) {
+        self.raw(&(value.len() as u64).to_le_bytes());
+        self.raw(value);
+    }
+
+    fn u32(&mut self, value: u32) {
+        self.raw(&value.to_le_bytes());
+    }
+
+    fn u64(&mut self, value: u64) {
+        self.raw(&value.to_le_bytes());
+    }
+
+    fn usize(&mut self, value: usize) {
+        self.raw(&(value as u64).to_le_bytes());
+    }
+
+    fn raw(&mut self, value: &[u8]) {
+        for byte in value {
+            self.byte(*byte);
         }
     }
 
@@ -112,41 +136,224 @@ impl StableHash {
     }
 }
 
-fn semantic_snapshot_hash(compiled: &mech_engine::CanonicalSourceProgram) -> u64 {
+fn hash_source_value(hash: &mut StableHash, value: SourceValue) {
+    match value {
+        SourceValue::Constant(id) => {
+            hash.field("constant");
+            hash.u32(id.get());
+        }
+        SourceValue::Input(id) => {
+            hash.field("input");
+            hash.u32(id);
+        }
+        SourceValue::State(id) => {
+            hash.field("state");
+            hash.u32(id);
+        }
+        SourceValue::NodeOutput {
+            node,
+            output_ordinal,
+        } => {
+            hash.field("node-output");
+            hash.u32(node);
+            hash.u32(u32::from(output_ordinal));
+        }
+    }
+}
+
+fn hash_anchor(hash: &mut StableHash, anchor: SourceSemanticAnchor) {
+    hash.u64(anchor.document.0);
+    hash.u64(anchor.revision.0);
+    hash.u32(anchor.range.start.0);
+    hash.u32(anchor.range.end.0);
+}
+
+fn hash_optional_u32(hash: &mut StableHash, value: Option<u32>) {
+    match value {
+        Some(value) => {
+            hash.field("some");
+            hash.u32(value);
+        }
+        None => hash.field("none"),
+    }
+}
+
+fn semantic_snapshot_hash(compiled: &CanonicalSourceProgram) -> u64 {
     let mut hash = StableHash::new();
-    hash.field(&format!("program:{:#?}", compiled.program()));
-    hash.field(&format!("schemas:{:#?}", compiled.schemas()));
-    hash.field(&format!("constants:{:#?}", compiled.constants()));
-    hash.field(&format!("contracts:{:#?}", compiled.contracts()));
-    hash.field(&format!("source-map:{:#?}", compiled.source_map()));
+    let program = compiled.program();
+    hash.field("canonical-source-program-v1");
+    hash.usize(program.requirements.len());
+    for (_, requirement) in program.requirements.iter() {
+        hash.bytes(
+            &canonical_application_requirement_bytes(requirement)
+                .expect("canonical application requirement"),
+        );
+    }
+    hash.usize(program.inputs.len());
+    for input in &program.inputs {
+        hash.field(&input.name);
+        hash.u32(input.schema.get());
+    }
+    hash.usize(program.states.len());
+    for state in &program.states {
+        hash.u32(state.schema.get());
+        hash_optional_u32(&mut hash, state.initializer.map(|id| id.get()));
+        hash.u32(state.producer_node);
+        hash.u32(u32::from(state.producer_output_ordinal));
+    }
+    hash.usize(program.nodes.len());
+    for node in &program.nodes {
+        hash.usize(node.operation.module_path.len());
+        for segment in &node.operation.module_path {
+            hash.field(segment);
+        }
+        hash.field(&node.operation.operation_name);
+        hash_optional_u32(&mut hash, node.requirement.map(|id| id.get()));
+        hash.usize(node.inputs.len());
+        for input in &node.inputs {
+            hash_source_value(&mut hash, *input);
+        }
+        hash.usize(node.outputs.len());
+        for output in &node.outputs {
+            match output {
+                SourceNodeOutput::State(id) => {
+                    hash.field("state");
+                    hash.u32(*id);
+                }
+                SourceNodeOutput::Derived { schema } => {
+                    hash.field("derived");
+                    hash.u32(schema.get());
+                }
+            }
+        }
+    }
+    hash.usize(program.outputs.len());
+    for output in &program.outputs {
+        hash.field(&output.name);
+        match &output.interactive_symbol {
+            Some(symbol) => {
+                hash.field("interactive");
+                hash.field(symbol);
+            }
+            None => hash.field("ordinary"),
+        }
+        hash_source_value(&mut hash, output.source);
+        hash.u32(output.schema.get());
+    }
+    hash.usize(program.constraints.len());
+    for constraint in &program.constraints {
+        hash.field(&constraint.name);
+        hash.field(&constraint.operation.canonical_name());
+        hash.usize(constraint.inputs.len());
+        for input in &constraint.inputs {
+            hash_source_value(&mut hash, *input);
+        }
+    }
+    hash.usize(compiled.schemas().len());
+    for entry in compiled.schemas().entries() {
+        hash.bytes(entry.key().as_bytes());
+        hash.bytes(entry.canonical_bytes());
+    }
+    hash.usize(compiled.constants().len());
+    for raw in 0..compiled.constants().len() {
+        let entry = compiled
+            .constants()
+            .entry(mech_engine::ConstantId::new(raw as u32))
+            .expect("dense constant store");
+        hash.bytes(entry.hash().as_bytes());
+    }
+    hash.usize(compiled.contracts().len());
+    for contract in compiled.contracts() {
+        match contract {
+            Some(contract) => {
+                hash.field("contract");
+                hash.bytes(&serde_json::to_vec(contract).expect("serialized operation contract"));
+            }
+            None => hash.field("unresolved"),
+        }
+    }
+    let source_map = compiled.source_map();
+    hash.usize(source_map.inputs.len());
+    for anchor in &source_map.inputs {
+        hash_anchor(&mut hash, *anchor);
+    }
+    hash.usize(source_map.nodes.len());
+    for node in &source_map.nodes {
+        hash.field(&node.operation);
+        hash.field(node.role);
+        match &node.detail {
+            Some(detail) => {
+                hash.field("detail");
+                hash.field(detail);
+            }
+            None => hash.field("no-detail"),
+        }
+        hash_anchor(&mut hash, node.anchor);
+    }
+    hash.usize(source_map.patterns.len());
+    for pattern in &source_map.patterns {
+        hash.field(&pattern.source);
+        hash.usize(pattern.bindings.len());
+        for binding in &pattern.bindings {
+            hash.field(binding);
+        }
+        hash_anchor(&mut hash, pattern.anchor);
+    }
+    hash.usize(source_map.match_arms.len());
+    for arm in &source_map.match_arms {
+        hash.u32(arm.node);
+        hash.u32(arm.pattern);
+        hash_optional_u32(&mut hash, arm.guard_input);
+        hash.u32(arm.result_input);
+    }
+    hash.usize(source_map.comprehension_qualifiers.len());
+    for qualifier in &source_map.comprehension_qualifiers {
+        hash.u32(qualifier.node);
+        hash.u32(qualifier.input_ordinal);
+        match qualifier.role {
+            SourceSemanticComprehensionQualifierRole::Generator { pattern } => {
+                hash.field("generator");
+                hash.u32(pattern);
+            }
+            SourceSemanticComprehensionQualifierRole::Definition => hash.field("definition"),
+            SourceSemanticComprehensionQualifierRole::Filter => hash.field("filter"),
+        }
+    }
+    hash.usize(source_map.outputs.len());
+    for anchor in &source_map.outputs {
+        hash_anchor(&mut hash, *anchor);
+    }
+    hash.usize(compiled.state_initializers().len());
+    for initializer in compiled.state_initializers() {
+        match initializer {
+            SourceStateInitializer::Constant(id) => {
+                hash.field("constant-initializer");
+                hash.u32(id.get());
+            }
+            SourceStateInitializer::Deferred(value) => {
+                hash.field("deferred-initializer");
+                hash_source_value(&mut hash, *value);
+            }
+        }
+    }
     match compiled.compile_artifact() {
         Ok(artifact) => {
-            hash.field("artifact:ok");
-            hash.field(&format!("revision:{:?}", artifact.revision()));
-            hash.field(&format!("schemas:{:#?}", artifact.schemas()));
-            hash.field(&format!("constants:{:#?}", artifact.constants()));
-            hash.field(&format!("contracts:{:#?}", artifact.contracts()));
-            hash.field(&format!("requirements:{:#?}", artifact.requirements()));
-            hash.field(&format!("inputs:{:#?}", artifact.inputs()));
-            hash.field(&format!("slots:{:#?}", artifact.slots()));
-            hash.field(&format!(
-                "slot-shape-hints:{:#?}",
-                artifact
-                    .slots()
-                    .iter()
-                    .map(|slot| (slot.slot, artifact.slot_shape_hint(slot.slot)))
-                    .collect::<Vec<_>>()
-            ));
-            hash.field(&format!("nodes:{:#?}", artifact.nodes()));
-            hash.field(&format!("bindings:{:#?}", artifact.bindings()));
-            hash.field(&format!("outputs:{:#?}", artifact.outputs()));
-            hash.field(&format!("constraints:{:#?}", artifact.constraints()));
-            hash.field(&format!(
-                "compute-regions:{:#?}",
-                artifact.compute_regions()
-            ));
+            hash.field("artifact-bytecode-v1");
+            hash.bytes(
+                &encode_program_artifact_bytecode_v1(&artifact)
+                    .expect("canonical artifact bytecode v1"),
+            );
         }
-        Err(error) => hash.field(&format!("artifact:error:{error:?}")),
+        Err(ArtifactBuildError::MissingOperationContract { node, operation }) => {
+            hash.field("artifact-missing-operation-contract");
+            hash.u32(node.get());
+            hash.field(&operation.canonical_name());
+        }
+        Err(ArtifactBuildError::DeclaredSourceNodeLoweringUnsupported { source_node }) => {
+            hash.field("artifact-deferred-source-node");
+            hash.u32(source_node);
+        }
+        Err(_) => hash.field("artifact-build-error"),
     }
     hash.0
 }
@@ -168,6 +375,63 @@ fn slice_semantic_evidence_reaches_the_select_all_operation() {
             .iter()
             .any(|node| node.operation == "source/select-all")
     );
+}
+
+#[test]
+fn compound_kind_evidence_retains_each_resolved_schema() {
+    let schema = |source: &str| {
+        let compiled = CanonicalSourceFrontend
+            .compile_expression(&expression(source))
+            .unwrap_or_else(|error| panic!("{source:?}: {error}"));
+        compiled
+            .schemas()
+            .get(compiled.program().inputs[0].schema)
+            .expect("input schema")
+            .body()
+            .clone()
+    };
+
+    assert!(matches!(
+        schema("x<{u8:f64}>"),
+        SchemaBody::Map { key, value, cardinality }
+            if matches!(key.as_ref(), SchemaBody::UnsignedInteger(IntegerWidth::W8))
+                && matches!(value.as_ref(), SchemaBody::FloatingPoint(FloatWidth::W64))
+                && cardinality == CardinalitySpec::Dynamic { upper_bound: None }
+    ));
+    assert!(matches!(
+        schema("x<[u8]:1,2>"),
+        SchemaBody::Matrix { element, dimensions }
+            if matches!(element.as_ref(), SchemaBody::UnsignedInteger(IntegerWidth::W8))
+                && dimensions.as_ref()
+                    == [DimensionExpr::Constant(1), DimensionExpr::Constant(2)]
+    ));
+    assert!(matches!(
+        schema("x<{a<u8>}>"),
+        SchemaBody::Record(fields)
+            if fields.len() == 1
+                && fields[0].name == "a"
+                && matches!(fields[0].schema, SchemaBody::UnsignedInteger(IntegerWidth::W8))
+    ));
+    assert!(matches!(
+        schema("x<{u8}:10>"),
+        SchemaBody::Set { element, cardinality }
+            if matches!(element.as_ref(), SchemaBody::UnsignedInteger(IntegerWidth::W8))
+                && cardinality == CardinalitySpec::Exact(DimensionExpr::Constant(10))
+    ));
+    assert!(matches!(
+        schema("x<|a<u8>|:10>"),
+        SchemaBody::Table { columns, rows }
+            if columns.len() == 1
+                && columns[0].name == "a"
+                && matches!(columns[0].schema, SchemaBody::UnsignedInteger(IntegerWidth::W8))
+                && rows == CardinalitySpec::Exact(DimensionExpr::Constant(10))
+    ));
+    assert!(matches!(
+        schema("x<(u8,f64)>"),
+        SchemaBody::Tuple(items)
+            if matches!(items[0], SchemaBody::UnsignedInteger(IntegerWidth::W8))
+                && matches!(items[1], SchemaBody::FloatingPoint(FloatWidth::W64))
+    ));
 }
 
 #[test]
@@ -193,6 +457,7 @@ fn every_semantic_rule_has_specification_derived_program_evidence() {
         );
     }
 
+    let mut stale_hashes = Vec::new();
     for rule in certified {
         let contract = contracts
             .get(rule.grammar_name)
@@ -245,10 +510,13 @@ fn every_semantic_rule_has_specification_derived_program_evidence() {
             .semantic_snapshot_hash
             .parse::<u64>()
             .expect("semantic snapshot hash");
-        assert_eq!(
-            actual, expected,
-            "{} on {semantic_source:?}",
-            rule.grammar_name
-        );
+        if actual != expected {
+            stale_hashes.push(format!("{}\t{}\t{}", rule.grammar_name, expected, actual));
+        }
     }
+    assert!(
+        stale_hashes.is_empty(),
+        "semantic snapshot hashes changed:\n{}",
+        stale_hashes.join("\n")
+    );
 }

@@ -1012,7 +1012,7 @@ fn assert_canonical_only(path: &Path, evidence: &str) {
             .chars()
             .filter(|character| !character.is_whitespace())
             .collect::<String>();
-        if declaration.is_none() && compact_line.starts_with("use") {
+        if declaration.is_none() && strip_visibility_prefix(&compact_line).starts_with("use") {
             declaration = Some(String::new());
         }
         if let Some(current) = declaration.as_mut() {
@@ -1035,7 +1035,8 @@ fn assert_canonical_only(path: &Path, evidence: &str) {
     let compact = evidence
         .chars()
         .filter(|character| !character.is_whitespace())
-        .collect::<String>();
+        .collect::<String>()
+        .replace("r#", "");
     let normalized = compact.replace(['{', '}'], "");
     for forbidden in [
         concat!("mech_syntax::", "parser"),
@@ -1065,6 +1066,7 @@ fn assert_allowed_mech_import(path: &Path, declaration: &str) {
         .chars()
         .filter(|character| !character.is_whitespace())
         .collect::<String>();
+    let declaration = strip_visibility_prefix(&declaration).to_owned();
     let declaration = declaration
         .strip_prefix("use::")
         .map(|path| format!("use{path}"))
@@ -1172,6 +1174,22 @@ fn assert_allowed_mech_import(path: &Path, declaration: &str) {
     );
 }
 
+fn strip_visibility_prefix(declaration: &str) -> &str {
+    let Some(rest) = declaration.strip_prefix("pub") else {
+        return declaration;
+    };
+    if rest.starts_with("use") {
+        return rest;
+    }
+    let Some(rest) = rest.strip_prefix('(') else {
+        return declaration;
+    };
+    let Some(end) = rest.find(')') else {
+        return declaration;
+    };
+    &rest[end + 1..]
+}
+
 #[test]
 fn canonical_authority_gate_rejects_glob_and_alias_routes() {
     for evidence in [
@@ -1192,6 +1210,9 @@ fn canonical_authority_gate_rejects_glob_and_alias_routes() {
         ),
         concat!("mech_syntax/* detached path comment */::", "parse(\"1\");"),
         concat!("mech_syntax// detached path comment\n::", "parse(\"1\");"),
+        concat!("mech_syntax::r#", "parse(\"1\");"),
+        "pub use mech_syntax::document::*; lower_legacy_grammar();",
+        "pub(crate) use mech_syntax::document::*; lower_legacy_grammar();",
     ] {
         assert!(
             std::panic::catch_unwind(|| assert_canonical_only(Path::new("fixture.rs"), evidence))
