@@ -21,10 +21,10 @@ use mech_syntax::document::{
     KindAnnotationSyntax, KindSyntax, KindValueSyntax, LiteralSyntax, LiteralValueSyntax,
     MapSyntax, MatrixComprehensionSyntax, MatrixSyntax, NodeFlags, OperatorSyntax, PatternSyntax,
     PatternValueSyntax, RangeExpressionSyntax, RecordSyntax, RecursiveSyntaxNode, Revision,
-    SetComprehensionSyntax, SetSyntax, SliceStemSyntax, SliceSyntax,
-    StructureSyntax, StructureValueSyntax, SubscriptItemSyntax, SubscriptValueSyntax, SyntaxKind,
-    SyntaxNode, TableSyntax, TableValueSyntax, TextRange, TupleStructSyntax, TupleSyntax,
-    VariableDefineSyntax, VariableStemSyntax, VariableSyntax,
+    SetComprehensionSyntax, SetSyntax, SliceStemSyntax, SliceSyntax, StructureSyntax,
+    StructureValueSyntax, SubscriptItemSyntax, SubscriptValueSyntax, SyntaxKind, SyntaxNode,
+    TableSyntax, TableValueSyntax, TextRange, TupleStructSyntax, TupleSyntax, VariableDefineSyntax,
+    VariableStemSyntax, VariableSyntax,
 };
 
 use crate::{
