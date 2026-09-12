@@ -1,0 +1,29 @@
+{
+  "ast": {
+    "CodeBlock": {
+      "chars": [
+        "f",
+        "n",
+        " ",
+        "m",
+        "a",
+        "i",
+        "n",
+        "(",
+        ")",
+        " ",
+        "{",
+        "}",
+        "\n"
+      ],
+      "kind": "CodeBlock"
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 24,
+    "remaining_source": "",
+    "source_graphemes": 24
+  },
+  "entry_point": "code-block",
+  "rule": "code-block"
+}

@@ -4,7 +4,6 @@
 #![cfg_attr(all(feature = "no_std", not(feature = "std")), no_std)]
 
 extern crate mech_core;
-#[cfg(feature = "no_std")]
 #[macro_use]
 extern crate alloc;
 #[cfg(not(feature = "no_std"))]
@@ -43,6 +42,9 @@ use std::collections::HashMap as RangeMap;
 //#[cfg(feature = "mechdown")]
 pub mod activation;
 pub mod base;
+/// Experimental lossless document syntax. Production parsing remains on the
+/// legacy parser during migration.
+pub mod document;
 pub mod expressions;
 #[cfg(feature = "formatter")]
 pub mod formatter;

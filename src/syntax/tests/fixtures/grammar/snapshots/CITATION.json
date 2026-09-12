@@ -1,0 +1,51 @@
+{
+  "ast": {
+    "id": {
+      "chars": [
+        "r",
+        "e",
+        "f",
+        "1"
+      ],
+      "kind": "Alpha"
+    },
+    "text": {
+      "elements": [
+        {
+          "Text": {
+            "chars": [
+              "A",
+              " ",
+              "s",
+              "o",
+              "u",
+              "r",
+              "c",
+              "e",
+              " ",
+              "d",
+              "e",
+              "s",
+              "c",
+              "r",
+              "i",
+              "p",
+              "t",
+              "i",
+              "o",
+              "n"
+            ],
+            "kind": "Text"
+          }
+        }
+      ]
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 29,
+    "remaining_source": "",
+    "source_graphemes": 29
+  },
+  "entry_point": "normalized-citation",
+  "rule": "citation"
+}

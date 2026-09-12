@@ -1,0 +1,29 @@
+{
+  "ast": {
+    "Formula": {
+      "Negate": {
+        "Expression": {
+          "Var": {
+            "context": null,
+            "kind": null,
+            "name": {
+              "name": {
+                "chars": [
+                  "x"
+                ],
+                "kind": "Identifier"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 2,
+    "remaining_source": "",
+    "source_graphemes": 2
+  },
+  "entry_point": "expression",
+  "rule": "factor"
+}

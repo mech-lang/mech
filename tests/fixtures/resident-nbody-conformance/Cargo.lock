@@ -912,6 +912,7 @@ dependencies = [
  "paste",
  "serde",
  "serde_derive",
+ "serde_json",
  "tabled",
  "unicode-segmentation",
 ]

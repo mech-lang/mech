@@ -1,0 +1,14 @@
+Mixed Document
+==============
+author: Ada
+date: 2026
+==============
+A paragraph with **strong** text, [a link](https://example.com), and {{x + 1}}.
+
+x := 1
+
+```mech
+y := x + 1
+```
+
+(i)> Parsed as an information block.

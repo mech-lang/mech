@@ -1,0 +1,116 @@
+{
+  "ast": {
+    "CodeBlock": [
+      [
+        {
+          "Statement": {
+            "VariableDefine": {
+              "expression": {
+                "Literal": {
+                  "Number": {
+                    "Real": {
+                      "Integer": {
+                        "chars": [
+                          "1"
+                        ],
+                        "kind": "Number"
+                      }
+                    }
+                  }
+                }
+              },
+              "mutable": false,
+              "var": {
+                "context": null,
+                "kind": null,
+                "name": {
+                  "name": {
+                    "chars": [
+                      "x"
+                    ],
+                    "kind": "Identifier"
+                  }
+                }
+              }
+            }
+          }
+        },
+        null
+      ],
+      [
+        {
+          "Statement": {
+            "VariableDefine": {
+              "expression": {
+                "Formula": {
+                  "Term": {
+                    "lhs": {
+                      "Expression": {
+                        "Var": {
+                          "context": null,
+                          "kind": null,
+                          "name": {
+                            "name": {
+                              "chars": [
+                                "x"
+                              ],
+                              "kind": "Identifier"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "rhs": [
+                      [
+                        {
+                          "AddSub": "Add"
+                        },
+                        {
+                          "Expression": {
+                            "Literal": {
+                              "Number": {
+                                "Real": {
+                                  "Integer": {
+                                    "chars": [
+                                      "1"
+                                    ],
+                                    "kind": "Number"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    ]
+                  }
+                }
+              },
+              "mutable": false,
+              "var": {
+                "context": null,
+                "kind": null,
+                "name": {
+                  "name": {
+                    "chars": [
+                      "y"
+                    ],
+                    "kind": "Identifier"
+                  }
+                }
+              }
+            }
+          }
+        },
+        null
+      ]
+    ]
+  },
+  "consumption": {
+    "consumed_source_graphemes": 22,
+    "remaining_source": "",
+    "source_graphemes": 22
+  },
+  "entry_point": "fsm-block-transition",
+  "rule": "fsm-block-transition"
+}

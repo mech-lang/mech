@@ -1,0 +1,12 @@
+{
+  "ast": {
+    "Symbols": "value"
+  },
+  "consumption": {
+    "consumed_source_graphemes": 14,
+    "remaining_source": "",
+    "source_graphemes": 14
+  },
+  "entry_point": "repl",
+  "rule": "repl-command"
+}

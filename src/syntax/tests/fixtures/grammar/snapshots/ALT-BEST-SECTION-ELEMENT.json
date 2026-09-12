@@ -1,0 +1,44 @@
+{
+  "ast": {
+    "Image": {
+      "caption": {
+        "elements": [
+          {
+            "Text": {
+              "chars": [
+                "i",
+                "m",
+                "a",
+                "g",
+                "e"
+              ],
+              "kind": "Text"
+            }
+          }
+        ]
+      },
+      "src": {
+        "chars": [
+          "i",
+          "m",
+          "a",
+          "g",
+          "e",
+          ".",
+          "p",
+          "n",
+          "g"
+        ],
+        "kind": "Alpha"
+      },
+      "style": null
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 19,
+    "remaining_source": "",
+    "source_graphemes": 19
+  },
+  "entry_point": "section-element",
+  "rule": "image"
+}

@@ -1,0 +1,37 @@
+{
+  "ast": {
+    "alignment": [],
+    "header": [],
+    "rows": [
+      [
+        {
+          "elements": [
+            {
+              "Text": {
+                "chars": [
+                  "v",
+                  "a",
+                  "l",
+                  "u",
+                  "e",
+                  " "
+                ],
+                "kind": "Text"
+              }
+            }
+          ]
+        },
+        {
+          "elements": []
+        }
+      ]
+    ]
+  },
+  "consumption": {
+    "consumed_source_graphemes": 13,
+    "remaining_source": "",
+    "source_graphemes": 13
+  },
+  "entry_point": "mechdown-table",
+  "rule": "empty-paragraph"
+}

@@ -1059,8 +1059,21 @@ jobs:
       - name: Install Rust nightly-2026-03-03
         run: |
           rustup show
-          rustup toolchain install nightly-2026-03-03 --profile minimal
+          rustup toolchain install nightly-2026-03-03 --profile minimal --component rustfmt
           rustup default nightly-2026-03-03
+
+      - name: Check generated syntax inventories
+        run: |
+          python3 scripts/generate-canonical-rule-registry.py --check
+          python3 scripts/generate-canonical-port-registry.py --check
+          python3 scripts/generate-canonical-dependencies.py --check
+          python3 scripts/generate-canonical-scc-report.py --check
+
+      - name: Run syntax grammar suites
+        run: |
+          cargo test -p mech-syntax --tests --no-default-features --features full
+          cargo test -p mech-syntax --tests --no-default-features --features base
+          cargo test -p mech-syntax --test grammar_conformance --no-default-features --features "baselib pretty_print serde compiler program statements_default subscript_default mechdown"
 
       - name: Check reduced core feature boundaries
         run: |

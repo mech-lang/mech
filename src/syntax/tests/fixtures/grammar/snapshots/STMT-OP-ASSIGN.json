@@ -1,0 +1,40 @@
+{
+  "ast": {
+    "OpAssign": {
+      "expression": {
+        "Literal": {
+          "Number": {
+            "Real": {
+              "Integer": {
+                "chars": [
+                  "2"
+                ],
+                "kind": "Number"
+              }
+            }
+          }
+        }
+      },
+      "op": "Add",
+      "target": {
+        "context": null,
+        "name": {
+          "name": {
+            "chars": [
+              "x"
+            ],
+            "kind": "Identifier"
+          }
+        },
+        "subscript": null
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 6,
+    "remaining_source": "",
+    "source_graphemes": 6
+  },
+  "entry_point": "statement",
+  "rule": "statement"
+}

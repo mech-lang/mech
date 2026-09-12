@@ -1,0 +1,233 @@
+{
+  "ast": {
+    "input": [
+      {
+        "kind": {
+          "kind": {
+            "Scalar": {
+              "name": {
+                "chars": [
+                  "f",
+                  "6",
+                  "4"
+                ],
+                "kind": "Identifier"
+              }
+            }
+          }
+        },
+        "name": {
+          "name": {
+            "chars": [
+              "n"
+            ],
+            "kind": "Identifier"
+          }
+        }
+      }
+    ],
+    "match_arms": [
+      {
+        "expression": {
+          "Literal": {
+            "Number": {
+              "Real": {
+                "Integer": {
+                  "chars": [
+                    "1"
+                  ],
+                  "kind": "Number"
+                }
+              }
+            }
+          }
+        },
+        "pattern": {
+          "Expression": {
+            "Literal": {
+              "Number": {
+                "Real": {
+                  "Integer": {
+                    "chars": [
+                      "0"
+                    ],
+                    "kind": "Number"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "expression": {
+          "Formula": {
+            "Term": {
+              "lhs": {
+                "Expression": {
+                  "Var": {
+                    "context": null,
+                    "kind": null,
+                    "name": {
+                      "name": {
+                        "chars": [
+                          "n"
+                        ],
+                        "kind": "Identifier"
+                      }
+                    }
+                  }
+                }
+              },
+              "rhs": [
+                [
+                  {
+                    "MulDiv": "Mul"
+                  },
+                  {
+                    "Expression": {
+                      "FunctionCall": {
+                        "args": [
+                          [
+                            null,
+                            {
+                              "Formula": {
+                                "Term": {
+                                  "lhs": {
+                                    "Expression": {
+                                      "Var": {
+                                        "context": null,
+                                        "kind": null,
+                                        "name": {
+                                          "name": {
+                                            "chars": [
+                                              "n"
+                                            ],
+                                            "kind": "Identifier"
+                                          }
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "rhs": [
+                                    [
+                                      {
+                                        "AddSub": "Sub"
+                                      },
+                                      {
+                                        "Expression": {
+                                          "Literal": {
+                                            "Number": {
+                                              "Real": {
+                                                "Integer": {
+                                                  "chars": [
+                                                    "1"
+                                                  ],
+                                                  "kind": "Number"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  ]
+                                }
+                              }
+                            }
+                          ]
+                        ],
+                        "name": {
+                          "name": {
+                            "chars": [
+                              "f",
+                              "a",
+                              "c",
+                              "t",
+                              "o",
+                              "r",
+                              "i",
+                              "a",
+                              "l"
+                            ],
+                            "kind": "Identifier"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              ]
+            }
+          }
+        },
+        "pattern": {
+          "Expression": {
+            "Var": {
+              "context": null,
+              "kind": null,
+              "name": {
+                "name": {
+                  "chars": [
+                    "n"
+                  ],
+                  "kind": "Identifier"
+                }
+              }
+            }
+          }
+        }
+      }
+    ],
+    "name": {
+      "name": {
+        "chars": [
+          "f",
+          "a",
+          "c",
+          "t",
+          "o",
+          "r",
+          "i",
+          "a",
+          "l"
+        ],
+        "kind": "Identifier"
+      }
+    },
+    "output": [
+      {
+        "kind": {
+          "kind": {
+            "Scalar": {
+              "name": {
+                "chars": [
+                  "f",
+                  "6",
+                  "4"
+                ],
+                "kind": "Identifier"
+              }
+            }
+          }
+        },
+        "name": {
+          "name": {
+            "chars": [
+              "_"
+            ],
+            "kind": "Identifier"
+          }
+        }
+      }
+    ],
+    "statements": []
+  },
+  "consumption": {
+    "consumed_source_graphemes": 64,
+    "remaining_source": "",
+    "source_graphemes": 64
+  },
+  "entry_point": "function-define",
+  "rule": "function-match-arm"
+}

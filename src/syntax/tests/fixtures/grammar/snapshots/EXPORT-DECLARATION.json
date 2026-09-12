@@ -1,0 +1,25 @@
+{
+  "ast": {
+    "ExportDeclaration": {
+      "name": {
+        "name": {
+          "chars": [
+            "v",
+            "a",
+            "l",
+            "u",
+            "e"
+          ],
+          "kind": "Identifier"
+        }
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 8,
+    "remaining_source": "",
+    "source_graphemes": 8
+  },
+  "entry_point": "statement",
+  "rule": "statement"
+}

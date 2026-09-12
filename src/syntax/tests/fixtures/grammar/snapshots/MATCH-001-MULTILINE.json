@@ -1,0 +1,12 @@
+{
+  "ast": {
+    "syntax": "CanonicalFragment\n  Expression\n    Factor\n      Variable\n        Identifier\n          Alpha \"x\"\n    Tab \"\\t\"\n    Question \"?\"\n    Newline \"\\n\"\n    MatchArm\n      Bar \"|\"\n      Whitespace \" \"\n      Pattern\n        WildcardPattern\n          Asterisk \"*\"\n      Whitespace \" \"\n      OutputOperator \"=>\"\n      Whitespace \" \"\n      Expression\n        Factor\n          Literal\n            Number\n              RealNumber\n                IntegerLiteral\n                  UntypedInteger\n                    DigitSequence\n                      Digit \"1\"\n"
+  },
+  "consumption": {
+    "consumed_source_graphemes": 12,
+    "remaining_source": "",
+    "source_graphemes": 12
+  },
+  "entry_point": "canonical-phase-2i-expression",
+  "rule": "expression"
+}

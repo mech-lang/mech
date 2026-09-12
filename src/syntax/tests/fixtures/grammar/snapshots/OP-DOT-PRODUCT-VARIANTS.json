@@ -1,0 +1,75 @@
+{
+  "ast": {
+    "Formula": {
+      "Term": {
+        "lhs": {
+          "Expression": {
+            "Var": {
+              "context": null,
+              "kind": null,
+              "name": {
+                "name": {
+                  "chars": [
+                    "a"
+                  ],
+                  "kind": "Identifier"
+                }
+              }
+            }
+          }
+        },
+        "rhs": [
+          [
+            {
+              "Vec": "Dot"
+            },
+            {
+              "Expression": {
+                "Var": {
+                  "context": null,
+                  "kind": null,
+                  "name": {
+                    "name": {
+                      "chars": [
+                        "b"
+                      ],
+                      "kind": "Identifier"
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          [
+            {
+              "Vec": "Dot"
+            },
+            {
+              "Expression": {
+                "Var": {
+                  "context": null,
+                  "kind": null,
+                  "name": {
+                    "name": {
+                      "chars": [
+                        "c"
+                      ],
+                      "kind": "Identifier"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        ]
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 9,
+    "remaining_source": "",
+    "source_graphemes": 9
+  },
+  "entry_point": "expression",
+  "rule": "dot-product"
+}

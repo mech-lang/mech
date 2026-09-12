@@ -1,0 +1,75 @@
+{
+  "ast": {
+    "Formula": {
+      "Term": {
+        "lhs": {
+          "Expression": {
+            "Literal": {
+              "Number": {
+                "Real": {
+                  "Integer": {
+                    "chars": [
+                      "1"
+                    ],
+                    "kind": "Number"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "rhs": [
+          [
+            {
+              "Comparison": "Equal"
+            },
+            {
+              "Expression": {
+                "Literal": {
+                  "Number": {
+                    "Real": {
+                      "Integer": {
+                        "chars": [
+                          "2"
+                        ],
+                        "kind": "Number"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          [
+            {
+              "Comparison": "Equal"
+            },
+            {
+              "Expression": {
+                "Literal": {
+                  "Number": {
+                    "Real": {
+                      "Integer": {
+                        "chars": [
+                          "3"
+                        ],
+                        "kind": "Number"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        ]
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 10,
+    "remaining_source": "",
+    "source_graphemes": 10
+  },
+  "entry_point": "expression",
+  "rule": "equal-to"
+}

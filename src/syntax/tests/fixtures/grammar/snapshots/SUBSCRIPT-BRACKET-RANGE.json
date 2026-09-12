@@ -1,0 +1,53 @@
+{
+  "ast": [
+    {
+      "Bracket": [
+        {
+          "Range": {
+            "increment": null,
+            "operator": "Inclusive",
+            "start": {
+              "Expression": {
+                "Literal": {
+                  "Number": {
+                    "Real": {
+                      "Integer": {
+                        "chars": [
+                          "1"
+                        ],
+                        "kind": "Number"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "terminal": {
+              "Expression": {
+                "Literal": {
+                  "Number": {
+                    "Real": {
+                      "Integer": {
+                        "chars": [
+                          "3"
+                        ],
+                        "kind": "Number"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "consumption": {
+    "consumed_source_graphemes": 7,
+    "remaining_source": "",
+    "source_graphemes": 7
+  },
+  "entry_point": "subscript",
+  "rule": "subscript"
+}

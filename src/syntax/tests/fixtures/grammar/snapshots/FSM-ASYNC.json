@@ -1,0 +1,45 @@
+{
+  "ast": {
+    "Async": {
+      "TupleStruct": {
+        "name": {
+          "name": {
+            "chars": [
+              "L",
+              "a",
+              "t",
+              "e",
+              "r"
+            ],
+            "kind": "Identifier"
+          }
+        },
+        "patterns": [
+          {
+            "Expression": {
+              "Literal": {
+                "Number": {
+                  "Real": {
+                    "Integer": {
+                      "chars": [
+                        "1"
+                      ],
+                      "kind": "Number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 12,
+    "remaining_source": "",
+    "source_graphemes": 12
+  },
+  "entry_point": "fsm-async-transition",
+  "rule": "fsm-async-transition"
+}

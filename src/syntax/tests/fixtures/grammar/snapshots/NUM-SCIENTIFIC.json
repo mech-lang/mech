@@ -1,0 +1,42 @@
+{
+  "ast": {
+    "Real": {
+      "Scientific": [
+        [
+          {
+            "chars": [
+              "1"
+            ],
+            "kind": "Number"
+          },
+          {
+            "chars": [
+              "2"
+            ],
+            "kind": "Number"
+          }
+        ],
+        [
+          true,
+          {
+            "chars": [
+              "3"
+            ],
+            "kind": "Number"
+          },
+          {
+            "chars": [],
+            "kind": "Empty"
+          }
+        ]
+      ]
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 6,
+    "remaining_source": "",
+    "source_graphemes": 6
+  },
+  "entry_point": "number",
+  "rule": "number"
+}

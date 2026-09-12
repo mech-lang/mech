@@ -1,0 +1,19 @@
+{
+  "ast": {
+    "chars": [
+      "x",
+      " ",
+      "+",
+      " ",
+      "1"
+    ],
+    "kind": "Alpha"
+  },
+  "consumption": {
+    "consumed_source_graphemes": 7,
+    "remaining_source": "",
+    "source_graphemes": 7
+  },
+  "entry_point": "equation",
+  "rule": "equation"
+}

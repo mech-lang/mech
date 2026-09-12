@@ -1,0 +1,37 @@
+{
+  "ast": {
+    "Grammar": {
+      "rules": [
+        {
+          "expr": {
+            "Terminal": {
+              "chars": [
+                "x"
+              ],
+              "kind": "Any"
+            }
+          },
+          "name": {
+            "name": {
+              "chars": [
+                "v",
+                "a",
+                "l",
+                "u",
+                "e"
+              ],
+              "kind": "Alpha"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 25,
+    "remaining_source": "",
+    "source_graphemes": 25
+  },
+  "entry_point": "code-block",
+  "rule": "grammar"
+}

@@ -1,0 +1,40 @@
+{
+  "ast": {
+    "VariableDefine": {
+      "expression": {
+        "Literal": {
+          "Number": {
+            "Real": {
+              "Integer": {
+                "chars": [
+                  "1"
+                ],
+                "kind": "Number"
+              }
+            }
+          }
+        }
+      },
+      "mutable": true,
+      "var": {
+        "context": null,
+        "kind": null,
+        "name": {
+          "name": {
+            "chars": [
+              "x"
+            ],
+            "kind": "Identifier"
+          }
+        }
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 7,
+    "remaining_source": "",
+    "source_graphemes": 7
+  },
+  "entry_point": "statement",
+  "rule": "statement"
+}

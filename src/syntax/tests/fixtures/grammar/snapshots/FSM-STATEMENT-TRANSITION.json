@@ -1,0 +1,42 @@
+{
+  "ast": {
+    "Statement": {
+      "VariableDefine": {
+        "expression": {
+          "Literal": {
+            "Number": {
+              "Real": {
+                "Integer": {
+                  "chars": [
+                    "1"
+                  ],
+                  "kind": "Number"
+                }
+              }
+            }
+          }
+        },
+        "mutable": false,
+        "var": {
+          "context": null,
+          "kind": null,
+          "name": {
+            "name": {
+              "chars": [
+                "x"
+              ],
+              "kind": "Identifier"
+            }
+          }
+        }
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 9,
+    "remaining_source": "",
+    "source_graphemes": 9
+  },
+  "entry_point": "fsm-statement-transition",
+  "rule": "fsm-statement-transition"
+}

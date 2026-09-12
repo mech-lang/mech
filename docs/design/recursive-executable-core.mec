@@ -1,0 +1,258 @@
+Recursive Executable-Core Contract
+===============================================================================
+
+Status: Phase 2I-C complete clean recursive recognizer.
+
+Current canonical progress remains 328 / 539. Phase 2I-C implements clean,
+lossless recognition for all 80 rules but activates zero productions. The
+generated implementation boundary remains one strongly connected component.
+
+The authoritative member inventory is
+`docs/design/grammar-audit/phase-2i-recursive-core.tsv`. The generated count is
+authoritative; no manual 33-rule, 83-rule, family-total, or handwritten member
+assumption defines this phase.
+
+The authoritative representation inventory is
+`docs/design/grammar-audit/phase-2i-syntax-schema.tsv`. It freezes module
+ownership and concrete tree emission for the same 80 rules: 71 unconditional
+nodes, seven conditional precedence nodes, and two transparent aliases. It
+reserves 73 new append-only syntax kinds and reuses five existing kinds.
+
+1. Grammar and audit authority
+-------------------------------------------------------------------------------
+
+The exact `ebnf:canonical` fence in `docs/design/specification.mec` is the
+normative grammar graph. The deterministic
+`docs/design/grammar-audit/canonical-dependencies.tsv` report is generated from
+that grammar and records its direct child and reverse parent edges.
+
+`docs/design/grammar-audit/productions.tsv` records the canonical rule
+inventory, legacy implementation provenance, and audit notes. Its current
+`parent-rules` and `child-rules` columns are implementation-derived legacy call
+metadata. They are not normative EBNF dependency edges and do not define the
+canonical recursive closure.
+
+`docs/design/grammar-audit/ports.tsv` defines syntax migration and lowering
+status. The recursive-core closure starts at `expression`, follows generated
+canonical dependencies through complete unported strongly connected
+components, and stops only at rules whose syntax is already implemented.
+
+`phase-2i-recursive-core.tsv` defines membership and dependencies.
+`phase-2i-syntax-schema.tsv` defines module ownership and concrete tree
+emission. The schema does not replace or duplicate the dependency graph.
+
+The dependency extractor does not inspect legacy Rust parser calls. An
+independent repository test normalizes implementation-level descriptive
+primitives and the grammar meta-parser's whitespace-only terminal in memory,
+parses the complete grammar with the canonical grammar root, and requires the
+typed grammar syntax to reproduce every generated edge.
+
+2. Canonical parser only
+-------------------------------------------------------------------------------
+
+All Phase 2I production code uses the canonical event-based parser.
+
+Nom is frozen legacy infrastructure. Phase 2I production code uses only the
+canonical event-based parser kernel. The Phase 2I-C recognizer does not call,
+wrap, translate, or extend a Nom parser.
+
+`ParseString` and `ParseResult` do not appear in canonical recursive-core code.
+Legacy parser functions may later be invoked only by isolated test-oracle
+adapters. They are never production dependencies.
+
+No Phase 2I production code uses Nom. The dependency extractor does not inspect
+legacy Rust parser calls. The canonical grammar parser is the independent
+dependency oracle.
+
+3. Atomic activation
+-------------------------------------------------------------------------------
+
+No generated member is assigned Phase 2I until the complete closure:
+
+```text
+parses
+recovers
+exposes typed syntax
+lowers
+passes direct parity
+passes ambiguity tests
+passes resource-limit tests
+```
+
+Intermediate stacked PRs may add implementation while leaving `ports.tsv`
+unchanged. Phase 2I-E activates the complete reviewed closure atomically. There
+is no partial registry activation and no earlier phase count change.
+
+4. Module design
+-------------------------------------------------------------------------------
+
+Phase 2I-B freezes this exact ownership division:
+
+```text
+kinds             11
+literals           1
+variables          2
+subscripts         6
+structures        23
+calls               4
+patterns            7
+comprehensions      4
+fsm                 7
+precedence         13
+expressions          2
+                   --
+total               80
+```
+
+The planned parser layout is:
+
+```text
+parser/canonical/recursive_core/
+  mod.rs
+  kinds.rs
+  literals.rs
+  variables.rs
+  subscripts.rs
+  structures.rs
+  calls.rs
+  patterns.rs
+  comprehensions.rs
+  fsm.rs
+  precedence.rs
+  expressions.rs
+```
+
+The typed syntax and compatibility lowering layouts mirror it under:
+
+```text
+ast/recursive_core/
+lower/legacy/recursive_core/
+```
+
+The implementation uses ordinary mutually recursive Rust functions. It does
+not introduce a parser generator, boxed parser closures, a Nom-like combinator
+framework, or one monolithic `recursive_core.rs` module.
+
+Phase 2I-C creates the parser directory above and implements the complete clean
+recognizer. The typed-syntax and compatibility-lowering directories remain
+absent. No parser root or port activation is introduced.
+
+`MATCH-001` records the accepted-language correction that expression match
+suffixes permit whitespace before their question mark. The optional suffix
+owns that whitespace only when the following question mark matches.
+
+5. Complete-form selection
+-------------------------------------------------------------------------------
+
+Shared initial punctuation does not choose a construct. Candidates remain
+transactional and nondiagnostic. A construct owns recovery only after its
+complete distinctive signature has won.
+
+The required distinctions include:
+
+```text
+(1)               parenthetical expression
+(1, 2)            tuple
+
+[1 2]             matrix
+[x | x <- xs]     matrix comprehension
+
+{a: b}            record
+{1: b}            map
+{a: b, 1: c}      map after the complete record candidate fails cleanly
+{a, b}            set
+{a | a <- xs}     set comprehension
+{}                 empty set
+{:}                empty map
+
+foo                variable
+foo(x)             function call
+foo[1]             slice
+
+:some              atom
+:some(value)       tuple structure
+```
+
+6. Precedence syntax
+-------------------------------------------------------------------------------
+
+`l1` through `l7` remain canonical rules. A level with no operator adds no
+unconditional wrapper node. A level with one or more operators creates one
+chain node. The Phase 2D operator nodes remain authoritative.
+
+The planned chain nodes are:
+
+```text
+LogicExpression
+ComparisonExpression
+AdditiveExpression
+MultiplicativeExpression
+PowerExpression
+TableExpression
+SetExpression
+```
+
+`formula` and `pattern-array-item` are transparent aliases. The five reused
+kinds are `Expression`, `KindAnnotation`, `AdditiveExpression`,
+`ParentheticalExpression`, and `VariableDefine`; every other node-valued
+schema row uses one of the 73 new append-only kinds reserved by Phase 2I-B.
+
+7. Recovery ownership
+-------------------------------------------------------------------------------
+
+A recognized operator owns a missing right-hand side. An owned delimiter form
+owns a missing closer. Speculative alternatives emit no diagnostics.
+
+Unexpected physical source remains under `ERROR`. Absent required syntax
+becomes `MISSING`. Every recovery loop must consume physical source, insert
+once, return, or exhaust a hard resource limit.
+
+8. Matrix presentation
+-------------------------------------------------------------------------------
+
+There is one semantic `Matrix` and one lossless `Matrix` syntax node. Delimiter
+and layout presentation remain in concrete tokens. There is no `InlineMatrix`
+semantic variant, no `Matrix2d` semantic variant, no detached presentation
+metadata, and no formatter heuristic.
+
+Opening and closing delimiter styles are independently preserved. Any later
+normalization is an explicit syntax transformation rather than inferred
+semantic reconstruction.
+
+9. Root boundary
+-------------------------------------------------------------------------------
+
+Phase 2I adds no public parser root. The public root surface remains:
+
+```text
+Prototype + Document
+Canonical + Grammar
+```
+
+This is the complete current parser-root API.
+
+10. Delivery sequence
+-------------------------------------------------------------------------------
+
+```text
+2I-A  generated boundary and architecture
+2I-B  syntax schema and minimal kernel support
+2I-C  complete recursive parser
+2I-D  recovery, typed views, and lowering
+2I-E  parity and atomic registry activation
+```
+
+Phase 2I-C implements clean, lossless recognition for all 80 mutually recursive
+productions against the frozen schema. All 80 rules remain unactivated. Local
+malformed-input recovery, typed syntax, compatibility lowering, and parity
+certification remain pending.
+
+Shared parenthesis, bracket, brace, colon, identifier, and kind prefixes are
+handled without exponential reparsing. Expression-level set and matrix
+comprehensions retain their formal priority over formula parsing; set
+comprehensions are not factor forms. Complete record candidates may fall
+through to maps, and that selection remains measured-linear for nested
+record-looking maps. Matrix nodes retain leading whitespace, physical newlines,
+and box borders. Every recursive repetition propagates a committed child
+without discarding its diagnostic or parent structure. No public parser root is
+added.

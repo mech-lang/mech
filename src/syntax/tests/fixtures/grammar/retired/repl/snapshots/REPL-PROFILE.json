@@ -1,0 +1,12 @@
+{
+  "ast": {
+    "Profile": true
+  },
+  "consumption": {
+    "consumed_source_graphemes": 11,
+    "remaining_source": "",
+    "source_graphemes": 11
+  },
+  "entry_point": "repl",
+  "rule": "repl-command"
+}

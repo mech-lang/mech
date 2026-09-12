@@ -1,0 +1,51 @@
+{
+  "ast": {
+    "paragraph": {
+      "elements": [
+        {
+          "Text": {
+            "chars": [
+              " "
+            ],
+            "kind": "Text"
+          }
+        },
+        {
+          "Strong": {
+            "Text": {
+              "chars": [
+                "r",
+                "i",
+                "c",
+                "h"
+              ],
+              "kind": "Text"
+            }
+          }
+        },
+        {
+          "Text": {
+            "chars": [
+              " ",
+              "c",
+              "o",
+              "m",
+              "m",
+              "e",
+              "n",
+              "t"
+            ],
+            "kind": "Text"
+          }
+        }
+      ]
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 19,
+    "remaining_source": "",
+    "source_graphemes": 19
+  },
+  "entry_point": "comment",
+  "rule": "comment"
+}

@@ -27,7 +27,7 @@ pub struct TitleFrontMatter {
 // Mechdown
 // ============================================================================
 
-// title := +text, new-line, +equal, *(space|tab), *whitespace ;
+// Grammar: docs/design/specification.mec, `title`.
 pub fn title(input: ParseString) -> ParseResult<Title> {
     let (input, mut text) = many1(text)(input)?;
     let (input, _) = new_line(input)?;
@@ -210,7 +210,7 @@ pub fn empty_paragraph(input: ParseString) -> ParseResult<Paragraph> {
     ))
 }
 
-// mechdown_table_row := +(bar, paragraph), bar, *whitespace ;
+// Grammar: docs/design/specification.mec, `mechdown-table-row`.
 pub fn mechdown_table_row(input: ParseString) -> ParseResult<Vec<Paragraph>> {
     let (input, _) = whitespace0(input)?;
     let (input, _) = bar(input)?;
@@ -226,7 +226,7 @@ pub fn mechdown_table_row(input: ParseString) -> ParseResult<Vec<Paragraph>> {
     Ok((input, row))
 }
 
-// subtitle := +(digit | alpha), period, *space-tab, paragraph-newline, *space-tab, whitespace* ;
+// Grammar: docs/design/specification.mec, `ul-subtitle`.
 pub fn ul_subtitle(input: ParseString) -> ParseResult<Subtitle> {
     let (input, _) = many1(alt((digit_token, alpha_token)))(input)?;
     let (input, _) = period(input)?;
@@ -240,7 +240,7 @@ pub fn ul_subtitle(input: ParseString) -> ParseResult<Subtitle> {
     Ok((input, Subtitle { text, level: 2 }))
 }
 
-// section-annotation := "@", identifier, ?("(", atom, *(comma, atom), ")") ;
+// Parse the integration branch's section annotations and optional atom arguments.
 pub fn section_annotation(input: ParseString) -> ParseResult<SectionAnnotation> {
     let (input, _) = at(input)?;
     let (input, name) = identifier(input)?;
@@ -268,7 +268,7 @@ pub fn section_annotation(input: ParseString) -> ParseResult<SectionAnnotation> 
     ))
 }
 
-// annotated-subtitle := +(!"@", text), +space-tab, section-annotation,
+// Parse subtitle text followed by a section annotation,
 //                       *(+space-tab, section-annotation), newline, +dash, newline ;
 pub fn annotated_subtitle(input: ParseString) -> ParseResult<(Subtitle, Vec<SectionAnnotation>)> {
     let rest = input.rest();
@@ -355,7 +355,7 @@ pub fn annotated_subtitle(input: ParseString) -> ParseResult<(Subtitle, Vec<Sect
     ))
 }
 
-// subtitle := *(space-tab), "(", +(alpha | digit | period), ")", *(space-tab), paragraph-newline, *(space-tab), whitespace* ;
+// Grammar: docs/design/specification.mec, `subtitle`.
 pub fn subtitle(input: ParseString) -> ParseResult<Subtitle> {
     let (input, _) = peek(is_not(alt((error_sigil, info_sigil))))(input)?;
     let (input, _) = many0(space_tab)(input)?;
@@ -374,7 +374,7 @@ pub fn subtitle(input: ParseString) -> ParseResult<Subtitle> {
     Ok((input, Subtitle { text, level }))
 }
 
-// strong := (asterisk, asterisk), +paragraph-element, (asterisk, asterisk) ;
+// Grammar: docs/design/specification.mec, `strong`.
 pub fn strong(input: ParseString) -> ParseResult<ParagraphElement> {
     let (input, _) = nom_tuple((asterisk, asterisk))(input)?;
     let (input, text) = paragraph_element(input)?;
@@ -382,7 +382,7 @@ pub fn strong(input: ParseString) -> ParseResult<ParagraphElement> {
     Ok((input, ParagraphElement::Strong(Box::new(text))))
 }
 
-/// emphasis := asterisk, +paragraph-element, asterisk ;
+// Grammar: docs/design/specification.mec, `emphasis`.
 pub fn emphasis(input: ParseString) -> ParseResult<ParagraphElement> {
     let (input, _) = asterisk(input)?;
     let (input, text) = paragraph_element(input)?;
@@ -390,7 +390,7 @@ pub fn emphasis(input: ParseString) -> ParseResult<ParagraphElement> {
     Ok((input, ParagraphElement::Emphasis(Box::new(text))))
 }
 
-// strikethrough := tilde, +paragraph-element, tilde ;
+// Grammar: docs/design/specification.mec, `strikethrough`.
 pub fn strikethrough(input: ParseString) -> ParseResult<ParagraphElement> {
     let (input, _) = tilde(input)?;
     let (input, text) = paragraph_element(input)?;
@@ -398,7 +398,7 @@ pub fn strikethrough(input: ParseString) -> ParseResult<ParagraphElement> {
     Ok((input, ParagraphElement::Strikethrough(Box::new(text))))
 }
 
-/// underline := underscore, +paragraph-element, underscore ;
+// Grammar: docs/design/specification.mec, `underline`.
 pub fn underline(input: ParseString) -> ParseResult<ParagraphElement> {
     let (input, _) = underscore(input)?;
     let (input, text) = paragraph_element(input)?;
@@ -406,7 +406,7 @@ pub fn underline(input: ParseString) -> ParseResult<ParagraphElement> {
     Ok((input, ParagraphElement::Underline(Box::new(text))))
 }
 
-/// highlight := "!!", +paragraph-element, "!!" ;
+// Grammar: docs/design/specification.mec, `highlight`.
 pub fn highlight(input: ParseString) -> ParseResult<ParagraphElement> {
     let (input, _) = highlight_sigil(input)?;
     let (input, text) = paragraph_element(input)?;
@@ -414,7 +414,7 @@ pub fn highlight(input: ParseString) -> ParseResult<ParagraphElement> {
     Ok((input, ParagraphElement::Highlight(Box::new(text))))
 }
 
-// inline-code := grave, +text, grave ;
+// Grammar: docs/design/specification.mec, `inline-code`.
 pub fn inline_code(input: ParseString) -> ParseResult<ParagraphElement> {
     let (input, _) = is_not(grave_codeblock_sigil)(input)?; // prevent matching code fences
     let (input, _) = grave(input)?;
@@ -432,7 +432,7 @@ pub fn inline_code(input: ParseString) -> ParseResult<ParagraphElement> {
     Ok((input, ParagraphElement::InlineCode(text)))
 }
 
-// inline-equation := equation-sigil, +text, equation-sigil ;
+// Grammar: docs/design/specification.mec, `inline-equation`.
 pub fn inline_equation(input: ParseString) -> ParseResult<ParagraphElement> {
     let (input, _) = equation_sigil(input)?;
     let (input, txt) = many0(nom_tuple((is_not(equation_sigil), alt((backslash, text)))))(input)?;
@@ -443,7 +443,7 @@ pub fn inline_equation(input: ParseString) -> ParseResult<ParagraphElement> {
     Ok((input, ParagraphElement::InlineEquation(eqn)))
 }
 
-// hyperlink := "[", +text, "]", "(", +text, ")" ;
+// Grammar: docs/design/specification.mec, `hyperlink`.
 pub fn hyperlink(input: ParseString) -> ParseResult<ParagraphElement> {
     let (input, _) = left_bracket(input)?;
     let (input, link_text) = inline_paragraph(input)?;
@@ -456,7 +456,7 @@ pub fn hyperlink(input: ParseString) -> ParseResult<ParagraphElement> {
     Ok((input, ParagraphElement::Hyperlink((link_text, link_merged))))
 }
 
-// raw-hyperlink := http-prefix, +text ;
+// Grammar: docs/design/specification.mec, `raw-hyperlink`.
 pub fn raw_hyperlink(input: ParseString) -> ParseResult<ParagraphElement> {
     let (input, _) = peek(http_prefix)(input)?;
     let (input, address) = many1(nom_tuple((is_not(space), text)))(input)?;
@@ -472,7 +472,7 @@ pub fn raw_hyperlink(input: ParseString) -> ParseResult<ParagraphElement> {
     ))
 }
 
-// option-map := "{", whitespace*, mapping*, whitespace*, "}" ;
+// Grammar: docs/design/specification.mec, `option-map`.
 pub fn option_map(input: ParseString) -> ParseResult<OptionMap> {
     let msg = "Expects right bracket '}' to terminate map.";
     let (input, (_, r)) = range(left_brace)(input)?;
@@ -483,7 +483,7 @@ pub fn option_map(input: ParseString) -> ParseResult<OptionMap> {
     Ok((input, OptionMap { elements }))
 }
 
-// option-mapping :=  whitespace*, expression, whitespace*, ":", whitespace*, expression, comma?, whitespace* ;
+// Grammar: docs/design/specification.mec, `option-mapping`.
 pub fn option_mapping(input: ParseString) -> ParseResult<(Identifier, MechString)> {
     let (input, _) = whitespace0(input)?;
     let (input, key) = identifier(input)?;
@@ -497,7 +497,7 @@ pub fn option_mapping(input: ParseString) -> ParseResult<(Identifier, MechString
     Ok((input, (key, value)))
 }
 
-// option-value := string | identifier ;
+// Grammar: docs/design/specification.mec, `option-value`.
 pub fn option_value(input: ParseString) -> ParseResult<MechString> {
     if let Ok((input, value)) = string(input.clone()) {
         return Ok((input, value));
@@ -512,7 +512,7 @@ pub fn option_value(input: ParseString) -> ParseResult<MechString> {
     ))
 }
 
-// img := "![", *text, "]", "(", +text, ")" , ?option-map ;
+// Grammar: docs/design/specification.mec, `img`.
 pub fn img(input: ParseString) -> ParseResult<Image> {
     let (input, _) = img_prefix(input)?;
     let (input, caption_text) = opt(inline_paragraph)(input)?;
@@ -549,7 +549,7 @@ pub fn figure_item(input: ParseString) -> ParseResult<FigureItem> {
     ))
 }
 
-// figures-row := bar, +( *(space|tab), figure-item, *(space|tab), bar ), *whitespace ;
+// Grammar: docs/design/specification.mec, `figures-row`.
 pub fn figures_row(input: ParseString) -> ParseResult<Vec<FigureItem>> {
     let (input, _) = whitespace0(input)?;
     let (input, _) = bar(input)?;
@@ -564,13 +564,13 @@ pub fn figures_row(input: ParseString) -> ParseResult<Vec<FigureItem>> {
     Ok((input, row))
 }
 
-// figures := +figures-row ;
+// Grammar: docs/design/specification.mec, `figures`.
 pub fn figures(input: ParseString) -> ParseResult<FigureTable> {
     let (input, rows) = many1(figures_row)(input)?;
     Ok((input, FigureTable { rows }))
 }
 
-// paragraph-text := ¬(img-prefix | http-prefix | left-bracket | tilde | asterisk | underscore | grave | define-operator | bar), +text ;
+// Grammar: docs/design/specification.mec, `paragraph-text`.
 pub fn paragraph_text(input: ParseString) -> ParseResult<ParagraphElement> {
     let (input, elements) = match many1(nom_tuple((
         is_not(alt((
@@ -609,7 +609,7 @@ pub fn paragraph_text(input: ParseString) -> ParseResult<ParagraphElement> {
     Ok((input, elements))
 }
 
-// eval-inline-mech-code := "{", ws0, expression, ws0, "}" ;`
+// Grammar: docs/design/specification.mec, `eval-inline-mech-code`.
 pub fn eval_inline_mech_code(input: ParseString) -> ParseResult<ParagraphElement> {
     let (input, _) = left_brace(input)?;
     let (input, _) = whitespace0(input)?;
@@ -619,7 +619,7 @@ pub fn eval_inline_mech_code(input: ParseString) -> ParseResult<ParagraphElement
     Ok((input, ParagraphElement::EvalInlineMechCode(expr)))
 }
 
-// inline-mech-code := "{{", ws0, expression, ws0, "}}" ;`
+// Grammar: docs/design/specification.mec, `inline-mech-code`.
 pub fn inline_mech_code(input: ParseString) -> ParseResult<ParagraphElement> {
     let (input, _) = left_brace(input)?;
     let (input, _) = left_brace(input)?;
@@ -631,7 +631,7 @@ pub fn inline_mech_code(input: ParseString) -> ParseResult<ParagraphElement> {
     Ok((input, ParagraphElement::InlineMechCode(expr)))
 }
 
-// footnote-reference := "[^", +text, "]" ;
+// Grammar: docs/design/specification.mec, `footnote-reference`.
 pub fn footnote_reference(input: ParseString) -> ParseResult<ParagraphElement> {
     let (input, _) = footnote_prefix(input)?;
     let (input, text) = many1(nom_tuple((is_not(right_bracket), text)))(input)?;
@@ -641,7 +641,7 @@ pub fn footnote_reference(input: ParseString) -> ParseResult<ParagraphElement> {
     Ok((input, ParagraphElement::FootnoteReference(footnote_text)))
 }
 
-// reference := "[", +alphanumeric, "]" ;
+// Grammar: docs/design/specification.mec, `reference`.
 pub fn reference(input: ParseString) -> ParseResult<ParagraphElement> {
     let (input, _) = left_bracket(input)?;
     let (input, mut txt) = many1(alphanumeric)(input)?;
@@ -650,7 +650,7 @@ pub fn reference(input: ParseString) -> ParseResult<ParagraphElement> {
     Ok((input, ParagraphElement::Reference(ref_text)))
 }
 
-// section_ref := "§" , +(alphanumeric | period) ;
+// Grammar: docs/design/specification.mec, `section-reference`.
 pub fn section_reference(input: ParseString) -> ParseResult<ParagraphElement> {
     let (input, _) = section_sigil(input)?;
     let (input, mut txt) = many1(alt((alphanumeric, period)))(input)?;
@@ -658,7 +658,7 @@ pub fn section_reference(input: ParseString) -> ParseResult<ParagraphElement> {
     Ok((input, ParagraphElement::SectionReference(section_text)))
 }
 
-// paragraph-element := hyperlink | reference | section-ref | raw-hyperlink | highlight | footnote-reference | inline-mech-code | eval-inline-mech-code | inline-equation | paragraph-text | strong | highlight | emphasis | inline-code | strikethrough | underline ;
+// Grammar: docs/design/specification.mec, `paragraph-element`.
 pub fn paragraph_element(input: ParseString) -> ParseResult<ParagraphElement> {
     alt((
         hyperlink,
@@ -680,7 +680,7 @@ pub fn paragraph_element(input: ParseString) -> ParseResult<ParagraphElement> {
     ))(input)
 }
 
-// paragraph := +paragraph_element ;
+// Grammar: docs/design/specification.mec, `inline-paragraph`.
 pub fn inline_paragraph(input: ParseString) -> ParseResult<Paragraph> {
     let (input, _) = peek(paragraph_element)(input)?;
     let (input, elements) = many1(pair(is_not(new_line), paragraph_element))(input)?;
@@ -694,7 +694,7 @@ pub fn inline_paragraph(input: ParseString) -> ParseResult<Paragraph> {
     ))
 }
 
-// paragraph := +paragraph_element ;
+// Grammar: docs/design/specification.mec, `paragraph`.
 pub fn paragraph(input: ParseString) -> ParseResult<Paragraph> {
     let (input, _) = peek(paragraph_element)(input)?;
     let (input, elements) = many1(pair(
@@ -719,14 +719,14 @@ pub fn paragraph(input: ParseString) -> ParseResult<Paragraph> {
     ))
 }
 
-// paragraph-newline := +paragraph_element, new_line ;
+// Grammar: docs/design/specification.mec, `paragraph-newline`.
 pub fn paragraph_newline(input: ParseString) -> ParseResult<Paragraph> {
     let (input, elements) = paragraph(input)?;
     let (input, _) = new_line(input)?;
     Ok((input, elements))
 }
 
-// indented-ordered-list-item := ws, number, ".", +text, new_line*;
+// Grammar: docs/design/specification.mec, `ordered-list-item`.
 pub fn ordered_list_item(input: ParseString) -> ParseResult<(Number, Paragraph)> {
     let (input, number) = number(input)?;
     let (input, _) = period(input)?;
@@ -738,7 +738,7 @@ pub fn ordered_list_item(input: ParseString) -> ParseResult<(Number, Paragraph)>
     Ok((input, (number, list_item)))
 }
 
-// checked-item := "-", ("[", "x", "]"), paragraph ;
+// Grammar: docs/design/specification.mec, `checked-item`.
 pub fn checked_item(input: ParseString) -> ParseResult<(bool, Paragraph)> {
     let (input, _) = dash(input)?;
     let (input, _) = left_bracket(input)?;
@@ -752,7 +752,7 @@ pub fn checked_item(input: ParseString) -> ParseResult<(bool, Paragraph)> {
     Ok((input, (true, list_item)))
 }
 
-// unchecked-item := "-", ("[", whitespace0, "]"), paragraph ;
+// Grammar: docs/design/specification.mec, `unchecked-item`.
 pub fn unchecked_item(input: ParseString) -> ParseResult<(bool, Paragraph)> {
     let (input, _) = dash(input)?;
     let (input, _) = left_bracket(input)?;
@@ -766,7 +766,7 @@ pub fn unchecked_item(input: ParseString) -> ParseResult<(bool, Paragraph)> {
     Ok((input, (false, list_item)))
 }
 
-// check-list-item := checked-item | unchecked-item ;
+// Grammar: docs/design/specification.mec, `check-list-item`.
 pub fn check_list_item(input: ParseString) -> ParseResult<(bool, Paragraph)> {
     let (input, item) = alt((checked_item, unchecked_item))(input)?;
     Ok((input, item))
@@ -825,7 +825,7 @@ pub fn check_list(mut input: ParseString, level: usize) -> ParseResult<MDList> {
     Ok((input, MDList::Check(items)))
 }
 
-// unordered_list := +list_item, ?new_line, *whitespace ;
+// Grammar: docs/design/specification.mec, `unordered-list`.
 pub fn unordered_list(mut input: ParseString, level: usize) -> ParseResult<MDList> {
     let mut items = vec![];
     loop {
@@ -876,7 +876,7 @@ pub fn unordered_list(mut input: ParseString, level: usize) -> ParseResult<MDLis
     }
 }
 
-// ordered-list := +ordered-list-item, ?new-line, *whitespace ;
+// Grammar: docs/design/specification.mec, `ordered-list`.
 pub fn ordered_list(mut input: ParseString, level: usize) -> ParseResult<MDList> {
     let mut items = vec![];
     loop {
@@ -960,7 +960,7 @@ pub fn sublist(input: ParseString, level: usize) -> ParseResult<MDList> {
     Ok((input, list))
 }
 
-// mechdown-list := ordered-list | unordered-list ;
+// Grammar: docs/design/specification.mec, `mechdown-list`.
 pub fn mechdown_list(input: ParseString) -> ParseResult<MDList> {
     let (input, list) = match ordered_list(input.clone(), 0) {
         Ok((input, list)) => (input, list),
@@ -977,7 +977,7 @@ pub fn mechdown_list(input: ParseString) -> ParseResult<MDList> {
     Ok((input, list))
 }
 
-// list_item := dash, <space+>, <paragraph>, new_line* ;
+// Grammar: docs/design/specification.mec, `unordered-list-item`.
 pub fn unordered_list_item(input: ParseString) -> ParseResult<(Option<Token>, Paragraph)> {
     let msg1 = "Expects space after dash";
     let msg2 = "Expects paragraph as list item";
@@ -997,7 +997,7 @@ pub fn unordered_list_item(input: ParseString) -> ParseResult<(Option<Token>, Pa
     Ok((input, (bullet, list_item)))
 }
 
-// codeblock-sigil := "```" | "~~~" ;
+// Grammar: docs/design/specification.mec, `codeblock-sigil`.
 pub fn codeblock_sigil(input: ParseString) -> ParseResult<fn(ParseString) -> ParseResult<Token>> {
     let (input, sgl_tkn) = alt((grave_codeblock_sigil, tilde_codeblock_sigil))(input)?;
     let sgl_cmb = match sgl_tkn.kind {
@@ -1164,7 +1164,7 @@ pub fn thematic_break(input: ParseString) -> ParseResult<SectionElement> {
     Ok((input, SectionElement::ThematicBreak))
 }
 
-// footnote := "[^", +text, "]", ":", ws0, paragraph ;
+// Grammar: docs/design/specification.mec, `footnote`.
 pub fn footnote(input: ParseString) -> ParseResult<Footnote> {
     let (input, _) = footnote_prefix(input)?;
     let (input, text) = many1(nom_tuple((is_not(right_bracket), text)))(input)?;
@@ -1178,7 +1178,7 @@ pub fn footnote(input: ParseString) -> ParseResult<Footnote> {
     Ok((input, footnote))
 }
 
-// prompt := prompt-sigil, *space, +paragraph ;
+// Grammar: docs/design/specification.mec, `prompt`.
 pub fn prompt(input: ParseString) -> ParseResult<SectionElement> {
     let (input, _) = prompt_sigil(input)?;
     let (input, _) = many0(space_tab)(input)?;
@@ -1193,7 +1193,7 @@ pub fn blank_line(input: ParseString) -> ParseResult<Vec<Token>> {
     Ok((input, st))
 }
 
-// question-block := question-sigil, *space, +paragraph ;
+// Grammar: docs/design/specification.mec, `question-block`.
 pub fn question_block(input: ParseString) -> ParseResult<SectionElement> {
     let (input, _) = question_sigil(input)?;
     let (input, _) = many0(space_tab)(input)?;
@@ -1201,7 +1201,7 @@ pub fn question_block(input: ParseString) -> ParseResult<SectionElement> {
     Ok((input, SectionElement::QuestionBlock(paragraphs)))
 }
 
-// info-block := info-sigil, *space, +paragraph ;
+// Grammar: docs/design/specification.mec, `info-block`.
 pub fn info_block(input: ParseString) -> ParseResult<SectionElement> {
     let (input, _) = info_sigil(input)?;
     let (input, _) = many0(space_tab)(input)?;
@@ -1209,7 +1209,7 @@ pub fn info_block(input: ParseString) -> ParseResult<SectionElement> {
     Ok((input, SectionElement::InfoBlock(paragraphs)))
 }
 
-// quote-block := quote-sigil, *space, +paragraph ;
+// Grammar: docs/design/specification.mec, `quote-block`.
 pub fn quote_block(input: ParseString) -> ParseResult<SectionElement> {
     let (input, _) = peek(is_not(float_sigil))(input)?;
     let (input, _) = peek(is_not(prompt_sigil))(input)?;
@@ -1219,7 +1219,7 @@ pub fn quote_block(input: ParseString) -> ParseResult<SectionElement> {
     Ok((input, SectionElement::QuoteBlock(paragraphs)))
 }
 
-// warning-block := warning-sigil, *space, +paragraph ;
+// Grammar: docs/design/specification.mec, `warning-block`.
 pub fn warning_block(input: ParseString) -> ParseResult<SectionElement> {
     let (input, _) = peek(is_not(float_sigil))(input)?;
     let (input, _) = warning_sigil(input)?;
@@ -1228,7 +1228,7 @@ pub fn warning_block(input: ParseString) -> ParseResult<SectionElement> {
     Ok((input, SectionElement::WarningBlock(paragraphs)))
 }
 
-// success-block := success-sigil, *space, +paragraph ;
+// Grammar: docs/design/specification.mec, `success-block`.
 pub fn success_block(input: ParseString) -> ParseResult<SectionElement> {
     let (input, _) = peek(is_not(float_sigil))(input)?;
     let (input, _) = alt((success_sigil, success_check_sigil))(input)?;
@@ -1237,7 +1237,7 @@ pub fn success_block(input: ParseString) -> ParseResult<SectionElement> {
     Ok((input, SectionElement::SuccessBlock(paragraphs)))
 }
 
-// error-block := error-sigil, *space, +paragraph ;
+// Grammar: docs/design/specification.mec, `error-block`.
 pub fn error_block(input: ParseString) -> ParseResult<SectionElement> {
     let (input, _) = peek(is_not(float_sigil))(input)?;
     let (input, _) = alt((error_sigil, error_alt_sigil))(input)?;
@@ -1246,7 +1246,7 @@ pub fn error_block(input: ParseString) -> ParseResult<SectionElement> {
     Ok((input, SectionElement::ErrorBlock(paragraphs)))
 }
 
-// idea-block := idea-sigil, *space, +paragraph ;
+// Grammar: docs/design/specification.mec, `idea-block`.
 pub fn idea_block(input: ParseString) -> ParseResult<SectionElement> {
     let (input, _) = idea_sigil(input)?;
     let (input, _) = many0(space_tab)(input)?;
@@ -1254,7 +1254,7 @@ pub fn idea_block(input: ParseString) -> ParseResult<SectionElement> {
     Ok((input, SectionElement::IdeaBlock(paragraphs)))
 }
 
-// abstract-element := abstract-sigil, *space, +paragraph ;
+// Grammar: docs/design/specification.mec, `abstract-el`.
 pub fn abstract_el(input: ParseString) -> ParseResult<SectionElement> {
     let (input, _) = abstract_sigil(input)?;
     let (input, _) = many0(space_tab)(input)?;
@@ -1262,7 +1262,7 @@ pub fn abstract_el(input: ParseString) -> ParseResult<SectionElement> {
     Ok((input, SectionElement::Abstract(paragraphs)))
 }
 
-// equation := "$$" , +text ;
+// Grammar: docs/design/specification.mec, `equation`.
 pub fn equation(input: ParseString) -> ParseResult<Token> {
     let (input, _) = equation_sigil(input)?;
     let (input, mut txt) = many1(alt((backslash, text)))(input)?;
@@ -1270,7 +1270,7 @@ pub fn equation(input: ParseString) -> ParseResult<Token> {
     Ok((input, eqn))
 }
 
-// citation := "[", (identifier | number), "]", ":", ws0, paragraph, ws0, ?("(", +text, ")") ;
+// Grammar: docs/design/specification.mec, `citation`.
 pub fn citation(input: ParseString) -> ParseResult<Citation> {
     let (input, _) = left_bracket(input)?;
     let (input, mut id) = many1(alphanumeric)(input)?;
@@ -1283,7 +1283,7 @@ pub fn citation(input: ParseString) -> ParseResult<Citation> {
     Ok((input, Citation { id, text: txt }))
 }
 
-// float-sigil := ">>" | "<<" ;
+// Grammar: docs/design/specification.mec, `float-sigil`.
 pub fn float_sigil(input: ParseString) -> ParseResult<FloatDirection> {
     let (input, d) = alt((float_left, float_right))(input)?;
     let d = match d.kind {
@@ -1294,7 +1294,7 @@ pub fn float_sigil(input: ParseString) -> ParseResult<FloatDirection> {
     Ok((input, d))
 }
 
-// float := float-sigil, section-element ;
+// Grammar: docs/design/specification.mec, `float`.
 pub fn float(input: ParseString) -> ParseResult<(Box<SectionElement>, FloatDirection)> {
     let (input, direction) = float_sigil(input)?;
     let (input, _) = many0(space_tab)(input)?;
@@ -1302,7 +1302,7 @@ pub fn float(input: ParseString) -> ParseResult<(Box<SectionElement>, FloatDirec
     Ok((input, (Box::new(el), direction)))
 }
 
-// float := float-sigil, section-element ;
+// Grammar: docs/design/specification.mec, `not-mech-code`.
 pub fn not_mech_code(input: ParseString) -> ParseResult<()> {
     let (input, _) = alt((
         null(question_block),
@@ -1318,7 +1318,7 @@ pub fn not_mech_code(input: ParseString) -> ParseResult<()> {
     Ok((input, ()))
 }
 
-// section-element := mech-code | question-block | info-block | list | footnote | citation | abstract-element | img | figures | equation | table | float | quote-block | code-block | thematic-break | subtitle | paragraph ;
+// Grammar: docs/design/specification.mec, `section-element`.
 pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
     let parsers: Vec<(
         &'static str,
@@ -1383,7 +1383,7 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
     alt_best(input, &parsers)
 }
 
-// section := ?ul-subtitle, +section-element ;
+// Grammar: docs/design/specification.mec, `section`.
 pub fn section(input: ParseString) -> ParseResult<Section> {
     let (input, heading) = opt(alt((annotated_subtitle, |input| {
         ul_subtitle(input).map(|(input, title)| (input, (title, Vec::new())))
@@ -1444,8 +1444,7 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
                 continue;
             }
             Err(_) => {
-                // not mech code, try section_element
-                //return Err(e);
+                // Try a section element.
             }
         }
 
@@ -1473,7 +1472,7 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
     ))
 }
 
-// body := whitespace0, +(section, eof), eof ;
+// Grammar: docs/design/specification.mec, `body`.
 pub fn body(input: ParseString) -> ParseResult<Body> {
     let (input, _) = whitespace0(input)?;
     let mut sections = vec![];

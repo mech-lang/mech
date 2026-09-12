@@ -1,0 +1,41 @@
+{
+  "ast": {
+    "Abstract": [
+      {
+        "elements": [
+          {
+            "Text": {
+              "chars": [
+                "I",
+                "s",
+                "o",
+                "l",
+                "a",
+                "t",
+                "e",
+                "d",
+                " ",
+                "a",
+                "b",
+                "s",
+                "t",
+                "r",
+                "a",
+                "c",
+                "t"
+              ],
+              "kind": "Text"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "consumption": {
+    "consumed_source_graphemes": 21,
+    "remaining_source": "",
+    "source_graphemes": 21
+  },
+  "entry_point": "abstract-el",
+  "rule": "abstract-el"
+}

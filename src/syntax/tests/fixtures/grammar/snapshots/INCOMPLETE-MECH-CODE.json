@@ -1,0 +1,36 @@
+{
+  "ast": {
+    "code": [
+      [
+        {
+          "Error": [
+            {
+              "chars": [
+                "x",
+                " ",
+                ":",
+                "=",
+                " ",
+                "1",
+                " ",
+                "+"
+              ],
+              "kind": "Error"
+            },
+            null
+          ]
+        },
+        null
+      ]
+    ],
+    "exports": [],
+    "imports": []
+  },
+  "consumption": {
+    "consumed_source_graphemes": 8,
+    "remaining_source": "",
+    "source_graphemes": 8
+  },
+  "entry_point": "mech-code",
+  "rule": "mech-code"
+}

@@ -1,0 +1,16 @@
+{
+  "ast": {
+    "chars": [
+      "~",
+      "~"
+    ],
+    "kind": "StrikeSigil"
+  },
+  "consumption": {
+    "consumed_source_graphemes": 2,
+    "remaining_source": "",
+    "source_graphemes": 2
+  },
+  "entry_point": "strike-sigil",
+  "rule": "strike-sigil"
+}

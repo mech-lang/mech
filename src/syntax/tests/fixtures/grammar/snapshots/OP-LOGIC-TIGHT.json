@@ -1,0 +1,53 @@
+{
+  "ast": {
+    "Formula": {
+      "Term": {
+        "lhs": {
+          "Expression": {
+            "Literal": {
+              "Boolean": {
+                "chars": [
+                  "t",
+                  "r",
+                  "u",
+                  "e"
+                ],
+                "kind": "True"
+              }
+            }
+          }
+        },
+        "rhs": [
+          [
+            {
+              "Logic": "And"
+            },
+            {
+              "Expression": {
+                "Literal": {
+                  "Boolean": {
+                    "chars": [
+                      "f",
+                      "a",
+                      "l",
+                      "s",
+                      "e"
+                    ],
+                    "kind": "False"
+                  }
+                }
+              }
+            }
+          ]
+        ]
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 11,
+    "remaining_source": "",
+    "source_graphemes": 11
+  },
+  "entry_point": "expression",
+  "rule": "expression"
+}

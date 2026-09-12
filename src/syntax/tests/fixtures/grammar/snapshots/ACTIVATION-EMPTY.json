@@ -1,0 +1,38 @@
+{
+  "ast": {
+    "body": {
+      "Block": []
+    },
+    "operator": {
+      "chars": [
+        "~",
+        ">"
+      ],
+      "kind": "AsyncTransitionOperator"
+    },
+    "trigger": {
+      "Var": {
+        "context": null,
+        "kind": null,
+        "name": {
+          "name": {
+            "chars": [
+              "t",
+              "i",
+              "c",
+              "k"
+            ],
+            "kind": "Identifier"
+          }
+        }
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 10,
+    "remaining_source": "",
+    "source_graphemes": 10
+  },
+  "entry_point": "activation-scope",
+  "rule": "activation-scope"
+}

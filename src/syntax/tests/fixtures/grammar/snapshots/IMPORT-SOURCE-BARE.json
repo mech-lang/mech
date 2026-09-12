@@ -1,0 +1,27 @@
+{
+  "ast": {
+    "ImportDeclaration": {
+      "specifier": {
+        "text": {
+          "chars": [
+            "d",
+            "e",
+            "p",
+            ".",
+            "m",
+            "e",
+            "c"
+          ],
+          "kind": "Any"
+        }
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 10,
+    "remaining_source": "",
+    "source_graphemes": 10
+  },
+  "entry_point": "statement",
+  "rule": "import-declaration"
+}
