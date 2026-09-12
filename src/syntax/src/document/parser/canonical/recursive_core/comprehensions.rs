@@ -5,7 +5,7 @@ use super::super::super::rule::rules;
 use super::super::{base, combinator};
 use super::{
     Attempt, FactAttempt, QualifierKind, expressions, nesting_limit, patterns, recover_closer,
-    recover_required_production, transactional_fact, variables,
+    recover_required_production, variables,
 };
 
 pub(super) fn parse_set_comprehension(parser: &mut Parser<'_>) -> Attempt {
@@ -37,51 +37,38 @@ pub(super) fn finish_qualifiers(
         rules::SET_COMPREHENSION
     };
     let mut committed = false;
-    let first = qualifier(parser);
-    let mut has_generator_or_let = match first {
-        FactAttempt::Matched(QualifierKind::Generator | QualifierKind::Let) => true,
-        FactAttempt::Matched(QualifierKind::Filter) => false,
-        FactAttempt::NoMatch => {
-            recover_required_production(
-                parser,
-                owner,
-                "syntax/missing-comprehension-qualifier",
-                "missing comprehension qualifier after bar",
-                "comprehension-qualifier",
-            );
-            committed = true;
-            false
-        }
-        FactAttempt::Committed => {
-            committed = true;
-            false
-        }
-    };
-    while !parser.is_halted() {
-        if !base::parse_rule(parser, rules::LIST_SEPARATOR) {
-            break;
-        }
-        match qualifier(parser) {
-            FactAttempt::Matched(QualifierKind::Generator | QualifierKind::Let) => {
-                has_generator_or_let = true;
-            }
-            FactAttempt::Matched(QualifierKind::Filter) => {}
-            FactAttempt::NoMatch => {
+    let mut has_generator_or_let = false;
+    let mut after_separator = false;
+    loop {
+        let qualifier = qualifier(parser);
+        has_generator_or_let |= matches!(
+            qualifier.kind,
+            Some(QualifierKind::Generator | QualifierKind::Let)
+        );
+        match qualifier.attempt {
+            Attempt::Matched => {}
+            Attempt::NoMatch => {
                 recover_required_production(
                     parser,
                     owner,
                     "syntax/missing-comprehension-qualifier",
-                    "missing comprehension qualifier after separator",
+                    if after_separator {
+                        "missing comprehension qualifier after separator"
+                    } else {
+                        "missing comprehension qualifier after bar"
+                    },
                     "comprehension-qualifier",
                 );
                 committed = true;
             }
-            FactAttempt::Committed => {
-                committed = true;
-            }
+            Attempt::Committed => committed = true,
         }
+        if parser.is_halted() || !base::parse_rule(parser, rules::LIST_SEPARATOR) {
+            break;
+        }
+        after_separator = true;
     }
-    if require_generator_or_let && !has_generator_or_let && !committed {
+    if require_generator_or_let && !has_generator_or_let && !parser.is_halted() {
         return Attempt::NoMatch;
     }
     let _ = base::parse_rule(parser, rules::SPACE_TAB0);
@@ -102,11 +89,11 @@ pub(super) fn finish_qualifiers(
 }
 
 pub(super) fn parse_comprehension_qualifier(parser: &mut Parser<'_>) -> Attempt {
-    qualifier(parser).attempt()
+    qualifier(parser).attempt
 }
 
 pub(super) fn parse_generator(parser: &mut Parser<'_>) -> Attempt {
-    generator(parser).attempt()
+    generator(parser).attempt
 }
 
 fn comprehension(
@@ -169,54 +156,60 @@ fn comprehension(
     })
 }
 
-fn qualifier(parser: &mut Parser<'_>) -> FactAttempt<QualifierKind> {
-    transactional_fact(parser, rules::COMPREHENSION_QUALIFIER, |parser| {
-        let node = parser.start();
-        let selected = generator(parser);
-        let kind = match selected {
-            FactAttempt::Matched(kind) => kind,
-            FactAttempt::Committed => {
-                node.complete(parser, SyntaxKind::ComprehensionQualifier);
-                return FactAttempt::Committed;
-            }
-            FactAttempt::NoMatch => match variables::parse_variable_define(parser) {
-                Attempt::Matched => QualifierKind::Let,
-                Attempt::Committed => {
-                    node.complete(parser, SyntaxKind::ComprehensionQualifier);
-                    return FactAttempt::Committed;
-                }
-                Attempt::NoMatch => match expressions::parse_expression(parser) {
-                    Attempt::Matched => QualifierKind::Filter,
-                    Attempt::Committed => {
-                        node.complete(parser, SyntaxKind::ComprehensionQualifier);
-                        return FactAttempt::Committed;
-                    }
-                    Attempt::NoMatch => {
-                        node.abandon(parser);
-                        return FactAttempt::NoMatch;
-                    }
-                },
-            },
-        };
-        node.complete(parser, SyntaxKind::ComprehensionQualifier);
-        FactAttempt::Matched(kind)
-    })
+struct QualifierAttempt {
+    attempt: Attempt,
+    // Set only by recognition of the actual qualifier, never by recovery alone.
+    kind: Option<QualifierKind>,
 }
 
-fn generator(parser: &mut Parser<'_>) -> FactAttempt<QualifierKind> {
-    transactional_fact(parser, rules::GENERATOR, |parser| {
+fn qualifier(parser: &mut Parser<'_>) -> QualifierAttempt {
+    let mut kind = None;
+    let attempt = combinator::transactional(parser, rules::COMPREHENSION_QUALIFIER, |parser| {
+        let node = parser.start();
+        let selected = generator(parser);
+        let outcome = if selected.attempt != Attempt::NoMatch {
+            kind = selected.kind;
+            selected.attempt
+        } else {
+            let (definition, has_operator) = variables::variable_definition(parser);
+            if definition != Attempt::NoMatch {
+                if has_operator {
+                    kind = Some(QualifierKind::Let);
+                }
+                definition
+            } else {
+                let filter = expressions::parse_expression(parser);
+                if filter != Attempt::NoMatch {
+                    kind = Some(QualifierKind::Filter);
+                }
+                filter
+            }
+        };
+        if outcome == Attempt::NoMatch {
+            node.abandon(parser);
+        } else {
+            node.complete(parser, SyntaxKind::ComprehensionQualifier);
+        }
+        outcome
+    });
+    QualifierAttempt { attempt, kind }
+}
+
+fn generator(parser: &mut Parser<'_>) -> QualifierAttempt {
+    let mut kind = None;
+    let attempt = combinator::transactional(parser, rules::GENERATOR, |parser| {
         let node = parser.start();
         let mut committed = false;
         match patterns::pattern_with_facts(parser) {
             FactAttempt::Matched(_) => {}
             FactAttempt::NoMatch => {
                 node.abandon(parser);
-                return FactAttempt::NoMatch;
+                return Attempt::NoMatch;
             }
             FactAttempt::Committed => {
                 if parser.is_halted() {
                     node.complete(parser, SyntaxKind::Generator);
-                    return FactAttempt::Committed;
+                    return Attempt::Committed;
                 }
                 committed = true;
             }
@@ -228,18 +221,15 @@ fn generator(parser: &mut Parser<'_>) -> FactAttempt<QualifierKind> {
         {
             if parser.is_halted() {
                 node.complete(parser, SyntaxKind::Generator);
-                return FactAttempt::Committed;
+                return Attempt::Committed;
             }
             node.abandon(parser);
-            return FactAttempt::NoMatch;
+            return Attempt::NoMatch;
         }
-        let child = expressions::parse_expression(parser);
-        match child {
+        kind = Some(QualifierKind::Generator);
+        match expressions::parse_expression(parser) {
             Attempt::Matched => {}
-            Attempt::Committed => {
-                node.complete(parser, SyntaxKind::Generator);
-                return FactAttempt::Committed;
-            }
+            Attempt::Committed => committed = true,
             Attempt::NoMatch => {
                 recover_required_production(
                     parser,
@@ -248,15 +238,15 @@ fn generator(parser: &mut Parser<'_>) -> FactAttempt<QualifierKind> {
                     "missing source expression after generator arrow",
                     "expression",
                 );
-                node.complete(parser, SyntaxKind::Generator);
-                return FactAttempt::Committed;
+                committed = true;
             }
         }
         node.complete(parser, SyntaxKind::Generator);
         if committed {
-            FactAttempt::Committed
+            Attempt::Committed
         } else {
-            FactAttempt::Matched(QualifierKind::Generator)
+            Attempt::Matched
         }
-    })
+    });
+    QualifierAttempt { attempt, kind }
 }

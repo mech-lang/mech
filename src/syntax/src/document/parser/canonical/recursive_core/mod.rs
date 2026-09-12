@@ -240,6 +240,7 @@ pub(super) fn recover_required_production_with_boundaries(
         production,
         owner_boundaries,
         &[],
+        |_| false,
     )
 }
 
@@ -259,6 +260,27 @@ pub(super) fn recover_required_production_with_prefixes(
         production,
         &[],
         owner_prefixes,
+        |_| false,
+    )
+}
+
+pub(super) fn recover_required_production_before(
+    parser: &mut Parser<'_>,
+    target: RuleId,
+    code: &str,
+    message: &str,
+    production: &str,
+    owner_restart: impl FnMut(&mut Parser<'_>) -> bool,
+) -> Attempt {
+    recover_required_production_at_boundaries(
+        parser,
+        target,
+        code,
+        message,
+        production,
+        &[],
+        &[],
+        owner_restart,
     )
 }
 
@@ -270,6 +292,7 @@ fn recover_required_production_at_boundaries(
     production: &str,
     owner_boundaries: &[char],
     owner_prefixes: &[&str],
+    mut owner_restart: impl FnMut(&mut Parser<'_>) -> bool,
 ) -> Attempt {
     combinator::consume_grammar_horizontal_trivia(parser);
     const RESTART_BOUNDARIES: &[char] = &[
@@ -285,16 +308,22 @@ fn recover_required_production_at_boundaries(
         || owner_prefixes
             .iter()
             .any(|prefix| parser.cursor().starts_with(prefix))
+        || owner_restart(parser)
     {
         return missing_production(parser, code, message, production);
     }
-    let _ = recovery::abandon_to_restart_with_prefixes(
+    let _ = recovery::abandon_until(
         parser,
         target,
-        &boundaries,
-        owner_prefixes,
         "syntax/unexpected-production-source",
         "unexpected source where a required production was expected",
+        |parser, character| {
+            boundaries.contains(&character)
+                || owner_prefixes
+                    .iter()
+                    .any(|prefix| parser.cursor().starts_with(prefix))
+                || owner_restart(parser)
+        },
     );
     Attempt::Committed
 }

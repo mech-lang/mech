@@ -55,7 +55,14 @@ fn variable(parser: &mut Parser<'_>, allow_comparison: bool) -> Attempt {
 }
 
 pub(super) fn parse_variable_define(parser: &mut Parser<'_>) -> Attempt {
-    combinator::transactional(parser, rules::VARIABLE_DEFINE, |parser| {
+    variable_definition(parser).0
+}
+
+/// Return whether the definition operator was physically recognized, even when
+/// the surrounding variable or value needed recovery.
+pub(super) fn variable_definition(parser: &mut Parser<'_>) -> (Attempt, bool) {
+    let mut has_definition_operator = false;
+    let attempt = combinator::transactional(parser, rules::VARIABLE_DEFINE, |parser| {
         let node = parser.start();
         let _ = base::parse_rule(parser, rules::TILDE);
         let child = parse_var(parser);
@@ -76,6 +83,7 @@ pub(super) fn parse_variable_define(parser: &mut Parser<'_>) -> Attempt {
             return Attempt::NoMatch;
         }
 
+        has_definition_operator = true;
         match expressions::parse_expression(parser) {
             Attempt::Matched => {}
             Attempt::Committed => {
@@ -96,5 +104,9 @@ pub(super) fn parse_variable_define(parser: &mut Parser<'_>) -> Attempt {
         }
         node.complete(parser, SyntaxKind::VariableDefine);
         child
-    })
+    });
+    (
+        attempt,
+        has_definition_operator && attempt != Attempt::NoMatch,
+    )
 }

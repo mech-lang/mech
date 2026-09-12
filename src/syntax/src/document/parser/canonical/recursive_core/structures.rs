@@ -1276,29 +1276,40 @@ fn bracket_body(parser: &mut Parser<'_>, mode: BracketMode) -> FactAttempt<Brack
                             if mode == BracketMode::MatrixOnly {
                                 return FactAttempt::NoMatch;
                             }
-                            column.abandon(parser);
-                            row.abandon(parser);
-                            return match comprehensions::finish_qualifiers(
+                            match comprehensions::finish_qualifiers(
                                 parser,
                                 rules::RIGHT_BRACKET,
                                 true,
                             ) {
                                 Attempt::Matched => {
+                                    column.abandon(parser);
+                                    row.abandon(parser);
                                     comprehension.complete(parser, SyntaxKind::MatrixComprehension);
                                     matrix.abandon(parser);
-                                    if head == Attempt::Committed {
+                                    return if head == Attempt::Committed {
                                         FactAttempt::Committed
                                     } else {
                                         FactAttempt::Matched(BracketForm::Comprehension)
-                                    }
+                                    };
                                 }
-                                Attempt::NoMatch => FactAttempt::NoMatch,
+                                Attempt::NoMatch if mode == BracketMode::Either => {
+                                    // The common rewind below removes the rejected
+                                    // qualifier list while retaining the provisional row
+                                    // and the ordinary matrix's existing head.
+                                }
+                                Attempt::NoMatch => return FactAttempt::NoMatch,
                                 Attempt::Committed => {
+                                    finish_provisional_marker(
+                                        parser,
+                                        column,
+                                        SyntaxKind::MatrixColumn,
+                                    );
+                                    finish_provisional_marker(parser, row, SyntaxKind::MatrixRow);
                                     comprehension.complete(parser, SyntaxKind::MatrixComprehension);
                                     finish_provisional_marker(parser, matrix, SyntaxKind::Matrix);
-                                    FactAttempt::Committed
+                                    return FactAttempt::Committed;
                                 }
-                            };
+                            }
                         }
                         parser.rewind(after_expression);
                         if mode == BracketMode::ComprehensionOnly {

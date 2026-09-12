@@ -526,32 +526,43 @@ fn finish_precedence_level(
             Attempt::Committed => committed = true,
             Attempt::NoMatch => {
                 committed = true;
-                // The selected operator production is the authority for its next
-                // pair; a same-level operator cannot begin this missing operand.
-                let next = parser.checkpoint();
-                let at_operator = operator(parser).accepted();
-                parser.rewind(next);
-                if parser.is_halted() {
-                    break;
-                }
-                if at_operator {
-                    super::missing_production(
-                        parser,
-                        "syntax/missing-operator-operand",
-                        "missing expression after operator",
-                        "expression",
-                    );
-                } else {
-                    let target = parser.current_rule().unwrap_or(rules::EXPRESSION);
-                    recover_required_production(
-                        parser,
-                        target,
-                        "syntax/missing-operator-operand",
-                        "missing expression after operator",
-                        "expression",
-                    );
-                    break;
-                }
+                // Reuse the selected operator production at every recovery restart,
+                // including after skipped invalid source. Its transaction leaves the
+                // operator for the next pair and charges the shared parser budget.
+                let target = parser.current_rule().unwrap_or(rules::EXPRESSION);
+                let mut rejected_trivia_end = parser.offset();
+                let mut previous_probe = None;
+                super::recover_required_production_before(
+                    parser,
+                    target,
+                    "syntax/missing-operator-operand",
+                    "missing expression after operator",
+                    "expression",
+                    |parser| {
+                        let offset = parser.offset();
+                        if let Some((previous, found)) = previous_probe
+                            && previous == offset
+                        {
+                            return found;
+                        }
+                        if offset < rejected_trivia_end {
+                            return false;
+                        }
+                        let next = parser.checkpoint();
+                        let at_operator = operator(parser).accepted();
+                        parser.rewind(next);
+                        if !at_operator && !parser.is_halted() {
+                            // Use the actual SPACE_TAB grammar to bound a rejected
+                            // leading trivia run, including NBSP and thin space. Later
+                            // probes skip only that exact extent, never source beyond it.
+                            let _ = base::parse_rule(parser, rules::SPACE_TAB0);
+                            rejected_trivia_end = parser.offset();
+                            parser.rewind(next);
+                        }
+                        previous_probe = Some((offset, at_operator));
+                        at_operator
+                    },
+                );
             }
         }
         if parser.offset() <= before {

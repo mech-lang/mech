@@ -129,12 +129,12 @@ pub(crate) fn abandon_to_restart_with_prefixes(
     })
 }
 
-fn abandon_until(
+pub(crate) fn abandon_until(
     parser: &mut Parser<'_>,
     target: RuleId,
     code: &str,
     message: &str,
-    should_stop: impl Fn(&Parser<'_>, char) -> bool,
+    mut should_stop: impl FnMut(&mut Parser<'_>, char) -> bool,
 ) -> Option<CompletedMarker> {
     let start = parser.offset();
     let marker = parser.start();
