@@ -55,7 +55,7 @@ impl OperationReference {
             "scalar" if self.module_is(&["access"]) && selector_count == 1 => {
                 Some(ResolvedSelectionMode::LinearScalar)
             }
-            "range" if self.module_is(&["access"]) && selector_count == 1 => {
+            "range" if self.module_is(&["access"]) && selector_count <= 1 => {
                 Some(ResolvedSelectionMode::LinearGather)
             }
             "scalar" | "range" if self.module_is(&["access"]) && selector_count == 2 => {
@@ -124,9 +124,15 @@ mod operation_mode_tests {
             scalar.resolved_selection_mode(1),
             Some(ResolvedSelectionMode::LinearScalar)
         );
+        for selectors in [0, 1] {
+            assert_eq!(
+                operation(&["access"], "range").resolved_selection_mode(selectors),
+                Some(ResolvedSelectionMode::LinearGather)
+            );
+        }
         assert_eq!(
-            operation(&["access"], "range").resolved_selection_mode(1),
-            Some(ResolvedSelectionMode::LinearGather)
+            operation(&["access"], "range").resolved_selection_mode(3),
+            None
         );
         assert_eq!(
             scalar.resolved_selection_mode(2),

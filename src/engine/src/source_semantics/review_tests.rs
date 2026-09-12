@@ -40,7 +40,8 @@ fn selection_semantics_preserve_element_geometry_and_chaining() {
         ("a[[1 2]]", "access/range", vec![2, 1]),
         ("a[[1 2],[1 2]]", "access/rectangle", vec![2, 2]),
         ("a[:,2][1]", "access/scalar", vec![]),
-        ("a[:]", "matrix/vertcat", vec![2, 2]),
+        ("a[:]", "access/range", vec![4, 1]),
+        ("a[:,:]", "matrix/vertcat", vec![2, 2]),
     ] {
         let compiled = selected("a := [1 2; 3 4]", source);
         let node = compiled.program.nodes.last().unwrap();
@@ -103,7 +104,7 @@ fn selections_activate_and_return_selected_values() {
         ("a[[2 1],[1 2]]", vec![3.0, 4.0, 1.0, 2.0]),
         ("a[[1 2],[1 2]]", vec![1.0, 2.0, 3.0, 4.0]),
         ("a[:,2][1]", vec![2.0]),
-        ("a[:]", vec![1.0, 2.0, 3.0, 4.0]),
+        ("a[:]", vec![1.0, 3.0, 2.0, 4.0]),
     ] {
         let compiled = selected("a := [1 2; 3 4]", source);
         let artifact = compiled.compile_artifact().unwrap();
@@ -469,5 +470,184 @@ fn latest_review_selection_rejects_nonpositional_and_mismatched_map_keys() {
         ("a := {(true): 1}", "a{true}"),
     ] {
         selected(definition, source).compile_artifact().unwrap();
+    }
+}
+
+#[test]
+fn latest_review_select_all_roundtrips_linear_order_and_zero_extents() {
+    use crate::resident::{ActivationFacts, CapturedSignalInput, activate};
+    use mech_core::{FunctionCatalogBuilder, ReactiveInstanceId, ResidentValueRef};
+    let mut catalog = FunctionCatalogBuilder::new();
+    crate::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    for (kind, snapshot) in [("f64", false), ("u8", true)] {
+        for (rows, columns) in [(0, 3), (2, 0), (0, 0), (2, 3), (1, 3), (3, 1)] {
+            for suffix in ["[:]", "[:,:]"] {
+                let compiled = selected(
+                    &format!("a := signal<[{kind}]:{rows},{columns}>"),
+                    &format!("a{suffix}"),
+                );
+                let artifact = compiled.compile_artifact().unwrap();
+                let bytes = crate::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+                let decoded = crate::decode_program_artifact_bytecode_v1(&bytes).unwrap();
+                assert_eq!(
+                    crate::encode_program_artifact_bytecode_v1(&decoded).unwrap(),
+                    bytes
+                );
+                for (route, artifact) in [("direct", &artifact), ("decoded", &decoded)] {
+                    let witness = format!("{route} {kind} {rows}x{columns} {suffix}");
+                    let mut instance = activate(
+                        ReactiveInstanceId::new(0x54f, 0),
+                        artifact,
+                        &catalog,
+                        &ActivationFacts::default(),
+                    )
+                    .unwrap_or_else(|error| panic!("{witness}: {error:?}"));
+                    let body = artifact
+                        .schemas()
+                        .get(artifact.outputs()[0].schema)
+                        .unwrap()
+                        .body();
+                    let SchemaBody::Matrix { dimensions, .. } = body else {
+                        panic!("{body:?}")
+                    };
+                    let shape = if suffix == "[:]" {
+                        [rows * columns, 1]
+                    } else {
+                        [rows, columns]
+                    };
+                    assert_eq!(
+                        dimensions.as_ref(),
+                        &shape.map(DimensionExpr::Constant),
+                        "{witness}"
+                    );
+                    for offset in [0u8, 10] {
+                        let canonical = (1..=rows * columns)
+                            .map(|n| u8::try_from(n).unwrap() + offset)
+                            .collect::<Vec<_>>();
+                        let linear = (0..columns)
+                            .flat_map(|column| {
+                                (0..rows).map(move |row| {
+                                    u8::try_from(row * columns + column + 1).unwrap() + offset
+                                })
+                            })
+                            .collect::<Vec<_>>();
+                        let dense = linear.iter().map(|n| f64::from(*n)).collect::<Vec<_>>();
+                        let captured = if snapshot {
+                            vec![Some(
+                                ValueDraft {
+                                    schema: artifact.inputs()[0].schema,
+                                    shape_values: Box::new([]),
+                                    data: ValueDataDraft::Matrix(
+                                        canonical
+                                            .iter()
+                                            .map(|n| ValueDataDraft::U8(*n))
+                                            .collect::<Vec<_>>()
+                                            .into_boxed_slice(),
+                                    ),
+                                }
+                                .finalize(&SnapshotValidationContext::new(artifact.schemas()))
+                                .unwrap(),
+                            )]
+                        } else {
+                            vec![]
+                        };
+                        instance
+                            .turn(&[CapturedSignalInput {
+                                slot: instance.plan.inputs[0].slot,
+                                value: if snapshot {
+                                    ResidentValueRef::Snapshot(&captured)
+                                } else {
+                                    ResidentValueRef::F64(&dense)
+                                },
+                            }])
+                            .unwrap_or_else(|error| panic!("{witness}: {error:?}"));
+                        let expected = if suffix == "[:]" { linear } else { canonical };
+                        let expected = ValueDataDraft::Matrix(
+                            expected
+                                .into_iter()
+                                .map(|n| {
+                                    if snapshot {
+                                        ValueDataDraft::U8(n)
+                                    } else {
+                                        ValueDataDraft::F64(F64Bits::from_f64(f64::from(n)))
+                                    }
+                                })
+                                .collect::<Vec<_>>()
+                                .into_boxed_slice(),
+                        );
+                        assert_eq!(
+                            instance
+                                .copied_output(0)
+                                .unwrap()
+                                .canonical_data_draft()
+                                .unwrap(),
+                            expected,
+                            "{witness}"
+                        );
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn select_all_derives_its_shape_from_a_symbolic_selected_source() {
+    use crate::resident::{ActivationFacts, CapturedSignalInput, activate};
+    use mech_core::{FunctionCatalogBuilder, ReactiveInstanceId, ResidentValueRef};
+    let mut catalog = FunctionCatalogBuilder::new();
+    crate::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    for (mask, expected) in [
+        ("[false false]", vec![]),
+        ("[false true]", vec![4., 5., 6.]),
+        ("[true true]", vec![1., 4., 2., 5., 3., 6.]),
+    ] {
+        let compiled = selected("a := signal<[f64]:2,3>", &format!("a[{mask},:][:]"));
+        let artifact = compiled.compile_artifact().unwrap();
+        let bytes = crate::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+        let decoded = crate::decode_program_artifact_bytecode_v1(&bytes).unwrap();
+        for artifact in [&artifact, &decoded] {
+            assert!(
+                !artifact
+                    .schemas()
+                    .get(artifact.outputs()[0].schema)
+                    .unwrap()
+                    .dimension_parameters()
+                    .is_empty()
+            );
+            let mut instance = activate(
+                ReactiveInstanceId::new(0x550, 0),
+                artifact,
+                &catalog,
+                &ActivationFacts::default(),
+            )
+            .unwrap();
+            for offset in [0., 10.] {
+                let input = [1., 4., 2., 5., 3., 6.].map(|value| value + offset);
+                instance
+                    .turn(&[CapturedSignalInput {
+                        slot: instance.plan.inputs[0].slot,
+                        value: ResidentValueRef::F64(&input),
+                    }])
+                    .unwrap();
+                let output = instance.copied_output(0).unwrap();
+                assert!(
+                    matches!(output.schemas().unwrap().get(output.schema()).unwrap().closed_body(output.shape()).unwrap(), SchemaBody::Matrix { dimensions, .. } if dimensions.as_ref() == [DimensionExpr::Constant(expected.len() as u64), DimensionExpr::Constant(1)])
+                );
+                assert_eq!(
+                    output.canonical_data_draft().unwrap(),
+                    ValueDataDraft::Matrix(
+                        expected
+                            .iter()
+                            .map(|value| ValueDataDraft::F64(F64Bits::from_f64(value + offset)))
+                            .collect::<Vec<_>>()
+                            .into_boxed_slice()
+                    ),
+                    "{mask}"
+                );
+            }
+        }
     }
 }

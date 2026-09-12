@@ -89,6 +89,32 @@ impl SequenceView<'_> {
         self.len() == 0
     }
 
+    pub(super) fn value_at(self, index: usize) -> Option<ValueData> {
+        match self {
+            Self::U8(values) => values.get(index).cloned().map(ValueData::U8),
+            Self::U16(values) => values.get(index).cloned().map(ValueData::U16),
+            Self::U32(values) => values.get(index).cloned().map(ValueData::U32),
+            Self::U64(values) => values.get(index).cloned().map(ValueData::U64),
+            Self::U128(values) => values.get(index).cloned().map(ValueData::U128),
+            Self::I8(values) => values.get(index).cloned().map(ValueData::I8),
+            Self::I16(values) => values.get(index).cloned().map(ValueData::I16),
+            Self::I32(values) => values.get(index).cloned().map(ValueData::I32),
+            Self::I64(values) => values.get(index).cloned().map(ValueData::I64),
+            Self::I128(values) => values.get(index).cloned().map(ValueData::I128),
+            Self::F32(values) => values.get(index).cloned().map(ValueData::F32),
+            Self::F64(values) => values.get(index).cloned().map(ValueData::F64),
+            Self::Complex32(values) => values.get(index).cloned().map(ValueData::Complex32),
+            Self::Complex64(values) => values.get(index).cloned().map(ValueData::Complex64),
+            Self::Rational64(values) => values.get(index).cloned().map(ValueData::Rational64),
+            Self::Bool(values) => values.get(index).cloned().map(ValueData::Bool),
+            Self::String(values) => values.get(index).cloned().map(ValueData::String),
+            Self::Id(values) => values.get(index).cloned().map(ValueData::Id),
+            Self::Index(values) => values.get(index).cloned().map(ValueData::Index),
+            Self::Unit(count) => ((index as u64) < count).then_some(ValueData::Atom),
+            Self::Values(values) => values.get(index).cloned(),
+        }
+    }
+
     /// Materializes canonical sequence elements without changing their
     /// schema-directed representation.
     pub fn to_values(self) -> Vec<ValueData> {

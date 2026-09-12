@@ -2619,6 +2619,110 @@ impl CompositeSnapshotConstructor {
     }
 }
 
+/// A matrix projection bound to canonical input and output identities. Cells
+/// retain their existing immutable payload owners, including Dynamic arenas.
+/// Callers admit staging, packing, and publication before construction.
+#[doc(hidden)]
+#[derive(Clone, Debug)]
+pub struct MatrixSnapshotConstructor {
+    schema: SchemaId,
+    shape: ShapeInstance,
+    source_key: SchemaKey,
+    source_shape: ShapeInstance,
+    count: usize,
+    schemas: Arc<SchemaTable>,
+}
+
+impl MatrixSnapshotConstructor {
+    pub fn bind(
+        schema: SchemaId,
+        shape: ShapeInstance,
+        source: (SchemaId, ShapeInstance),
+        schemas: Arc<SchemaTable>,
+    ) -> Result<Self, SnapshotValueError> {
+        let entry = schemas
+            .entry(schema)
+            .ok_or(SnapshotValueError::UnknownSnapshotSchema { schema })?;
+        let mismatch = || SnapshotValueError::SnapshotSchemaDefinitionMismatch { key: entry.key() };
+        let source_entry = schemas
+            .entry(source.0)
+            .ok_or(SnapshotValueError::UnknownSnapshotSchema { schema: source.0 })?;
+        let SchemaBody::Matrix {
+            element,
+            dimensions,
+        } = entry.schema().closed_body(&shape).map_err(|_| mismatch())?
+        else {
+            return Err(mismatch());
+        };
+        let SchemaBody::Matrix {
+            element: source_element,
+            ..
+        } = source_entry
+            .schema()
+            .closed_body(&source.1)
+            .map_err(|_| mismatch())?
+        else {
+            return Err(mismatch());
+        };
+        if element != source_element {
+            return Err(mismatch());
+        }
+        let count = dimensions.iter().try_fold(1u64, |count, dimension| {
+            count
+                .checked_mul(shape.resolve_dimension(dimension)?)
+                .ok_or_else(mismatch)
+        })?;
+        let count = usize::try_from(count).map_err(|_| mismatch())?;
+        Ok(Self {
+            schema,
+            shape,
+            source_key: source_entry.key(),
+            source_shape: source.1,
+            count,
+            schemas,
+        })
+    }
+
+    pub fn construct(
+        &self,
+        source: &Value,
+        positions: impl IntoIterator<Item = usize>,
+    ) -> Result<Value, SnapshotValueError> {
+        let entry = self
+            .schemas
+            .entry(self.schema)
+            .expect("bound output schema");
+        let mismatch = || SnapshotValueError::SnapshotSchemaDefinitionMismatch { key: entry.key() };
+        if source.schema_key() != self.source_key || source.shape() != &self.source_shape {
+            return Err(mismatch());
+        }
+        let ValueData::Matrix(matrix) = source.data() else {
+            return Err(mismatch());
+        };
+        let SchemaBody::Matrix { element, .. } = entry.schema().body() else {
+            return Err(mismatch());
+        };
+        let sequence = matrix.elements();
+        let mut values = Vec::with_capacity(self.count);
+        for position in positions {
+            if values.len() == self.count {
+                return Err(mismatch());
+            }
+            values.push(sequence.value_at(position).ok_or_else(mismatch)?);
+        }
+        ensure_cardinality(&SnapshotPath::root(), self.count as u64, values.len())?;
+        Ok(finalized_value(
+            self.schema,
+            entry.key(),
+            self.shape.clone(),
+            ValueData::Matrix(MatrixValue {
+                elements: SequenceStorage::from_values(element, values),
+            }),
+            Some(Arc::clone(&self.schemas)),
+        ))
+    }
+}
+
 /// Rebuilds a canonical `set<f64>` snapshot from candidate values while
 /// preserving the output template's authoritative schema and shape.
 /// Duplicate candidates use the same normalized key equality as ordinary

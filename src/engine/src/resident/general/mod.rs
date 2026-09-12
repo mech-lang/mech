@@ -2674,10 +2674,18 @@ fn complete_activation_shape_facts(
             let extents = match mode {
                 ResolvedSelectionMode::Whole => vec![*source_rows, *source_columns],
                 ResolvedSelectionMode::LinearGather => {
-                    let [selector] = &inputs[1..] else {
-                        return Err(ResidentActivationError::InvalidDependency { node: node.node });
+                    let count = match &inputs[1..] {
+                        [] => source_rows
+                            .checked_mul(*source_columns)
+                            .ok_or(ResidentActivationError::RegionSizeOverflow)?,
+                        [selector] => selector_count(*selector)?,
+                        _ => {
+                            return Err(ResidentActivationError::InvalidDependency {
+                                node: node.node,
+                            });
+                        }
                     };
-                    vec![selector_count(*selector)?, 1]
+                    vec![count, 1]
                 }
                 ResolvedSelectionMode::Rows => {
                     let [selector] = &inputs[1..] else {

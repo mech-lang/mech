@@ -3629,7 +3629,7 @@ impl SemanticBuilder {
                 anchor: SourceSemanticAnchor::for_node(syntax),
             });
         }
-        if selectors.iter().all(Option::is_none) {
+        if selectors.len() == 2 && selectors.iter().all(Option::is_none) {
             return Ok(source);
         }
         let mut parameters = Vec::new();
@@ -3638,6 +3638,9 @@ impl SemanticBuilder {
             &mut parameters,
             SourceSemanticAnchor::for_node(syntax),
         )?;
+        if matches!(body, SchemaBody::String) && matches!(selectors.as_slice(), [None]) {
+            return Ok(source);
+        }
         let mut inputs = vec![source];
         let mut counts = Vec::new();
         let mut scalar = Vec::new();

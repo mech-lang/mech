@@ -37,12 +37,16 @@ pub use self::relations::{
 };
 pub use self::sequence::SequenceView;
 pub use self::validation::{
-    CompositeSnapshotConstructor, SnapshotCanonicalizationBudget, SnapshotValidationContext, Value,
-    build_f64_set_snapshot, build_f64_set_snapshot_after_remove, canonical_snapshot_data_draft,
-    f64_set_snapshot_contains, rebuild_f64_set_snapshot, wrap_resident_dynamic_data,
+    CompositeSnapshotConstructor, MatrixSnapshotConstructor, SnapshotCanonicalizationBudget,
+    SnapshotValidationContext, Value, build_f64_set_snapshot, build_f64_set_snapshot_after_remove,
+    canonical_snapshot_data_draft, f64_set_snapshot_contains, rebuild_f64_set_snapshot,
+    wrap_resident_dynamic_data,
 };
 pub use self::views::{EnumView, MapView, MatrixView, RecordView, SetView, TableView, TupleView};
 pub use crate::{ConstantId, KeyHash, ValueHash};
 
 #[cfg(test)]
 mod composite_constructor_tests;
+
+#[cfg(test)]
+mod matrix_constructor_tests;

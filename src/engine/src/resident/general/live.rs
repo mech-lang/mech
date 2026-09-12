@@ -38,7 +38,11 @@ pub(super) fn footprint(
             }
         }
         ResidentValueRef::Snapshot(values) => {
+            // Snapshot lanes are physical carriers. An unpublished None retains
+            // no semantic value, including when the declared extent is zero.
+            result.logical_elements = 0;
             for value in values.iter().flatten() {
+                result.logical_elements = add(result.logical_elements, 1)?;
                 let schema = schemas
                     .get(value.schema())
                     .ok_or(MemoryPlanError::DescriptorMismatch)?;
@@ -302,6 +306,61 @@ mod tests {
             assert_eq!(measured.logical_elements, 1);
             assert_eq!(measured.payload_bytes, value[0].capacity() as u64);
             assert_eq!(measured.encoded_bytes, text.len() as u64 + 8);
+        }
+    }
+
+    #[test]
+    fn unpublished_snapshot_lanes_have_no_logical_elements_or_payload() {
+        for (rows, columns) in [(0, 3), (2, 0), (0, 0), (2, 3)] {
+            let (descriptor, schemas, id) = schema(SchemaBody::Matrix {
+                element: Box::new(SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W8)),
+                dimensions: vec![
+                    mech_core::DimensionExpr::Constant(rows),
+                    mech_core::DimensionExpr::Constant(columns),
+                ]
+                .into_boxed_slice(),
+            });
+            let empty_lane = [None];
+            let unpublished = footprint(
+                ResidentValueRef::Snapshot(&empty_lane),
+                &descriptor,
+                &schemas,
+                &mut ResourceDemand::default(),
+            )
+            .unwrap();
+            assert_eq!(unpublished.logical_elements, 0, "{rows}x{columns}");
+            assert_eq!(unpublished.payload_bytes, 0);
+            assert_eq!(unpublished.encoded_bytes, 0);
+            assert_eq!(unpublished.retained_nodes, 0);
+            let published = ValueDraft {
+                schema: id,
+                shape_values: Box::new([]),
+                data: ValueDataDraft::Matrix(
+                    (0..rows * columns)
+                        .map(|_| ValueDataDraft::U8(7))
+                        .collect::<Vec<_>>()
+                        .into_boxed_slice(),
+                ),
+            }
+            .finalize(&SnapshotValidationContext::new(&schemas))
+            .unwrap();
+            let retained = published.retained_footprint(&schemas).unwrap();
+            let values = [Some(published)];
+            let measured = footprint(
+                ResidentValueRef::Snapshot(&values),
+                &descriptor,
+                &schemas,
+                &mut ResourceDemand::default(),
+            )
+            .unwrap();
+            assert_eq!(measured.logical_elements, rows * columns);
+            assert_eq!(measured.payload_bytes, retained.retained_bytes);
+            assert_eq!(measured.encoded_bytes, retained.encoded_bytes);
+            assert_eq!(measured.retained_nodes, retained.node_count);
+            assert!(
+                measured.payload_bytes > 0,
+                "materialized empty values still retain their value object"
+            );
         }
     }
 

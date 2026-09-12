@@ -198,8 +198,9 @@ pub fn maintained_operation_contract(
             },
         )),
         "matrix/solve" => Some(full(ShapeRule::SameAsInput { input: 1 })),
-        "access/column" | "access/swizzle" | "access/scalar" | "access/range" | "access/rows"
-        | "access/columns" | "access/rectangle" => Some(full(if input_count == 1 {
+        "access/range" => Some(full(ShapeRule::Declared)),
+        "access/column" | "access/swizzle" | "access/scalar" | "access/rows" | "access/columns"
+        | "access/rectangle" => Some(full(if input_count == 1 {
             ShapeRule::SameAsInput { input: 0 }
         } else {
             ShapeRule::Declared
