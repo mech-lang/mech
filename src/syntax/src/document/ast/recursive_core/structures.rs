@@ -5,7 +5,10 @@ use crate::document::{
     SyntaxNode, SyntaxToken,
 };
 
-use super::{KindAnnotationSyntax, child, children, direct_token, direct_tokens, nth_child};
+use super::{
+    KindAnnotationSyntax, MatrixComprehensionSyntax, child, children, direct_token, direct_tokens,
+    nth_child,
+};
 
 recursive_ast_node!(StructureSyntax, Structure);
 recursive_ast_node!(MatrixSyntax, Matrix);
@@ -34,6 +37,7 @@ recursive_ast_node!(TupleStructSyntax, TupleStruct);
 #[derive(Clone, Debug)]
 pub enum StructureValueSyntax {
     Matrix(MatrixSyntax),
+    MatrixComprehension(MatrixComprehensionSyntax),
     Table(TableSyntax),
     Map(MapSyntax),
     Record(RecordSyntax),
@@ -49,6 +53,7 @@ impl AstNode for StructureValueSyntax {
         matches!(
             kind,
             SyntaxKind::Matrix
+                | SyntaxKind::MatrixComprehension
                 | SyntaxKind::Table
                 | SyntaxKind::Map
                 | SyntaxKind::Record
@@ -63,6 +68,9 @@ impl AstNode for StructureValueSyntax {
     fn cast(syntax: SyntaxNode) -> Option<Self> {
         match syntax.kind() {
             SyntaxKind::Matrix => MatrixSyntax::cast(syntax).map(Self::Matrix),
+            SyntaxKind::MatrixComprehension => {
+                MatrixComprehensionSyntax::cast(syntax).map(Self::MatrixComprehension)
+            }
             SyntaxKind::Table => TableSyntax::cast(syntax).map(Self::Table),
             SyntaxKind::Map => MapSyntax::cast(syntax).map(Self::Map),
             SyntaxKind::Record => RecordSyntax::cast(syntax).map(Self::Record),
@@ -78,6 +86,7 @@ impl AstNode for StructureValueSyntax {
     fn syntax(&self) -> &SyntaxNode {
         match self {
             Self::Matrix(value) => value.syntax(),
+            Self::MatrixComprehension(value) => value.syntax(),
             Self::Table(value) => value.syntax(),
             Self::Map(value) => value.syntax(),
             Self::Record(value) => value.syntax(),

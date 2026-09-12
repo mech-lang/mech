@@ -94,6 +94,10 @@ impl FactorSyntax {
     pub fn value(&self) -> Option<FactorValueSyntax> {
         child(&self.0)
     }
+
+    pub fn transpose(&self) -> Option<SyntaxToken> {
+        direct_token(&self.0, SyntaxKind::Apostrophe, 0)
+    }
 }
 
 impl ParentheticalExpressionSyntax {

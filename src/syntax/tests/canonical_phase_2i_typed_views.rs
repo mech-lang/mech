@@ -11,8 +11,9 @@ use mech_syntax::document::{
     ArgumentListSyntax, AstNode, DocumentId, ExpressionSyntax, FactorSyntax, FactorValueSyntax,
     FormulaSyntax, GreenNode, LiteralSyntax, LiteralValueSyntax, MapSyntax, MatchArmSyntax,
     MatrixSyntax, NodeFlags, NodeId, ParentheticalExpressionSyntax, ParseConfig,
-    PatternArrayItemSyntax, RecursiveCoreSyntax, RecursiveSyntaxNode, Revision, SyntaxKind,
-    SyntaxNode, TableKindSyntax, TextSize, TextSnapshot, TokenFlags, phase_2i_node_kind,
+    PatternArrayItemSyntax, RecursiveCoreSyntax, RecursiveSyntaxNode, Revision, StructureSyntax,
+    StructureValueSyntax, SyntaxKind, SyntaxNode, TableKindSyntax, TextSize, TextSnapshot,
+    TokenFlags, phase_2i_node_kind,
 };
 
 fn repository_root() -> PathBuf {
@@ -244,6 +245,18 @@ fn typed_roles_follow_parser_boundaries_and_recovery_ownership() {
     ));
     assert!(literal.annotation().is_none());
 
+    let boolean = parse_canonical_phase_2i_rule_for_test(
+        source("true<u8>"),
+        rules::LITERAL,
+        ParseConfig::default(),
+    )
+    .unwrap();
+    let boolean =
+        LiteralSyntax::cast(find_kind(&boolean.syntax(), SyntaxKind::Literal).unwrap()).unwrap();
+    assert!(boolean.value().is_none());
+    assert!(boolean.true_token().is_some());
+    assert!(boolean.annotation().is_some());
+
     let parenthetical =
         parse_canonical_phase_2i_rule_for_test(source("(1"), rules::FACTOR, ParseConfig::default())
             .unwrap();
@@ -269,4 +282,28 @@ fn typed_roles_follow_parser_boundaries_and_recovery_ownership() {
         factor.value(),
         Some(FactorValueSyntax::MatrixComprehension(_))
     ));
+
+    let recovered = parse_canonical_phase_2i_rule_for_test(
+        source("[x | x <- xs"),
+        rules::FACTOR,
+        ParseConfig::default(),
+    )
+    .unwrap();
+    let structure =
+        StructureSyntax::cast(find_kind(&recovered.syntax(), SyntaxKind::Structure).unwrap())
+            .unwrap();
+    assert!(matches!(
+        structure.value(),
+        Some(StructureValueSyntax::MatrixComprehension(_))
+    ));
+
+    let transposed =
+        parse_canonical_phase_2i_rule_for_test(source("x'"), rules::FACTOR, ParseConfig::default())
+            .unwrap();
+    let transposed =
+        FactorSyntax::cast(find_kind(&transposed.syntax(), SyntaxKind::Factor).unwrap()).unwrap();
+    assert_eq!(
+        transposed.transpose().map(|token| token.kind()),
+        Some(SyntaxKind::Apostrophe)
+    );
 }

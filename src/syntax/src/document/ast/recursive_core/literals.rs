@@ -54,7 +54,11 @@ impl AstNode for LiteralValueSyntax {
 
 impl LiteralSyntax {
     pub fn value(&self) -> Option<LiteralValueSyntax> {
-        child(&self.0)
+        if self.true_token().is_some() || self.false_token().is_some() {
+            None
+        } else {
+            child(&self.0)
+        }
     }
     pub fn true_token(&self) -> Option<SyntaxToken> {
         direct_token(&self.0, SyntaxKind::True, 0)
@@ -65,7 +69,9 @@ impl LiteralSyntax {
 
     pub fn annotation(&self) -> Option<KindAnnotationSyntax> {
         let mut annotations = self.0.children().filter_map(KindAnnotationSyntax::cast);
-        if matches!(self.value(), Some(LiteralValueSyntax::KindAnnotation(_))) {
+        if self.true_token().is_some() || self.false_token().is_some() {
+            annotations.next()
+        } else if matches!(self.value(), Some(LiteralValueSyntax::KindAnnotation(_))) {
             annotations.nth(1)
         } else {
             annotations.next()
