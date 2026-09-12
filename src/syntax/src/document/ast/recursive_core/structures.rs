@@ -37,16 +37,16 @@ recursive_ast_node!(TupleStructSyntax, TupleStruct);
 fn is_box_corner(token: &SyntaxToken, physical: &[&str], allow_missing: bool) -> bool {
     token.kind() == SyntaxKind::BoxDrawing
         && ((allow_missing && token.flags().contains(TokenFlags::MISSING))
-            || token
-                .text()
-                .is_ok_and(|text| physical.contains(&text.as_str())))
+            || physical
+                .iter()
+                .any(|glyph| token.text_eq(glyph) == Ok(true)))
 }
 
 fn is_vertical_box_delimiter(token: &SyntaxToken) -> bool {
     token.kind() == SyntaxKind::BoxDrawing
-        && token
-            .text()
-            .is_ok_and(|text| matches!(text.as_str(), "│" | "┃"))
+        && ["│", "┃"]
+            .iter()
+            .any(|glyph| token.text_eq(glyph) == Ok(true))
 }
 
 #[derive(Clone, Debug)]
