@@ -149,7 +149,9 @@ is incomplete. It supplies no expected results to canonical tests.
 
 Exit gate:
 
-- all 29 current production calls are inventoried and no unlisted call exists;
+- all 29 current production calls are inventoried at their exact source path
+  and enclosing function, no unlisted call exists, and aliases cannot bypass
+  the census;
 - every caller has a final canonical target and cutover action;
 - every Phase 2I rule has a canonical typed-syntax disposition;
 - fixtures name their canonical rule/root and expected acceptance; and

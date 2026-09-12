@@ -128,25 +128,390 @@ fn production_prefix(source: &str) -> &str {
         .map_or(source, |end| &source[..end])
 }
 
-fn test_only_parse_calls(path: &str, source: &str) -> usize {
-    match path {
-        "src/engine/src/program/compiler_planning.rs" => {
-            assert!(source.contains("#[cfg(test)]\n    pub(crate) fn plan_source_for_test"));
-            1
+#[derive(Clone, Copy, Debug)]
+struct RustToken<'source> {
+    text: &'source str,
+    offset: usize,
+}
+
+#[derive(Debug, Default)]
+struct SourceScan {
+    calls: BTreeMap<String, usize>,
+    prohibited_aliases: Vec<String>,
+}
+
+fn quoted_literal_end(source: &str, start: usize, quote: u8) -> usize {
+    let bytes = source.as_bytes();
+    let mut cursor = start + 1;
+    while cursor < bytes.len() {
+        match bytes[cursor] {
+            b'\\' => cursor = (cursor + 2).min(bytes.len()),
+            found if found == quote => return cursor + 1,
+            _ => cursor += 1,
         }
-        "src/engine/src/structures.rs" => {
-            assert!(source.contains("fn wildcard_table_column_uses_the_canonical_dynamic_schema"));
-            1
+    }
+    bytes.len()
+}
+
+fn character_literal_end(source: &str, start: usize) -> Option<usize> {
+    let bytes = source.as_bytes();
+    let mut cursor = start + 1;
+    if bytes.get(cursor) == Some(&b'\\') {
+        cursor += 1;
+        match bytes.get(cursor).copied() {
+            Some(b'u') if bytes.get(cursor + 1) == Some(&b'{') => {
+                cursor += 2;
+                while cursor < bytes.len() && bytes[cursor] != b'}' {
+                    cursor += 1;
+                }
+                cursor = (cursor + 1).min(bytes.len());
+            }
+            Some(_) => cursor += 1,
+            None => return None,
         }
-        _ => 0,
+    } else {
+        let character = source.get(cursor..)?.chars().next()?;
+        cursor += character.len_utf8();
+    }
+    (bytes.get(cursor) == Some(&b'\'')).then_some(cursor + 1)
+}
+
+fn raw_string_end(source: &str, start: usize) -> Option<usize> {
+    let bytes = source.as_bytes();
+    let mut delimiter = if bytes.get(start..start + 2) == Some(b"br")
+        || bytes.get(start..start + 2) == Some(b"cr")
+    {
+        start + 2
+    } else if bytes.get(start) == Some(&b'r') {
+        start + 1
+    } else {
+        return None;
+    };
+    while bytes.get(delimiter) == Some(&b'#') {
+        delimiter += 1;
+    }
+    if bytes.get(delimiter) != Some(&b'"') {
+        return None;
+    }
+    let hashes = delimiter
+        - if bytes.get(start) == Some(&b'r') {
+            start + 1
+        } else {
+            start + 2
+        };
+    let mut cursor = delimiter + 1;
+    while cursor < bytes.len() {
+        if bytes[cursor] == b'"'
+            && bytes
+                .get(cursor + 1..cursor + 1 + hashes)
+                .is_some_and(|suffix| suffix.iter().all(|byte| *byte == b'#'))
+        {
+            return Some(cursor + 1 + hashes);
+        }
+        cursor += 1;
+    }
+    Some(bytes.len())
+}
+
+fn rust_tokens(source: &str) -> Vec<RustToken<'_>> {
+    let bytes = source.as_bytes();
+    let mut tokens = Vec::new();
+    let mut cursor = 0;
+    while cursor < bytes.len() {
+        if bytes[cursor].is_ascii_whitespace() {
+            cursor += 1;
+            continue;
+        }
+        if bytes.get(cursor..cursor + 2) == Some(b"//") {
+            cursor += 2;
+            while cursor < bytes.len() && bytes[cursor] != b'\n' {
+                cursor += 1;
+            }
+            continue;
+        }
+        if bytes.get(cursor..cursor + 2) == Some(b"/*") {
+            cursor += 2;
+            let mut depth = 1usize;
+            while cursor < bytes.len() && depth > 0 {
+                if bytes.get(cursor..cursor + 2) == Some(b"/*") {
+                    depth += 1;
+                    cursor += 2;
+                } else if bytes.get(cursor..cursor + 2) == Some(b"*/") {
+                    depth -= 1;
+                    cursor += 2;
+                } else {
+                    cursor += 1;
+                }
+            }
+            continue;
+        }
+        if let Some(end) = raw_string_end(source, cursor) {
+            cursor = end;
+            continue;
+        }
+        if bytes.get(cursor..cursor + 2) == Some(b"b\"")
+            || bytes.get(cursor..cursor + 2) == Some(b"c\"")
+        {
+            cursor = quoted_literal_end(source, cursor + 1, b'"');
+            continue;
+        }
+        if bytes.get(cursor) == Some(&b'"') {
+            cursor = quoted_literal_end(source, cursor, b'"');
+            continue;
+        }
+        if bytes.get(cursor..cursor + 2) == Some(b"b'")
+            && let Some(end) = character_literal_end(source, cursor + 1)
+        {
+            cursor = end;
+            continue;
+        }
+        if bytes.get(cursor) == Some(&b'\'')
+            && let Some(end) = character_literal_end(source, cursor)
+        {
+            cursor = end;
+            continue;
+        }
+        if bytes[cursor].is_ascii_alphabetic() || bytes[cursor] == b'_' {
+            let start = cursor;
+            cursor += 1;
+            while cursor < bytes.len()
+                && (bytes[cursor].is_ascii_alphanumeric() || bytes[cursor] == b'_')
+            {
+                cursor += 1;
+            }
+            tokens.push(RustToken {
+                text: &source[start..cursor],
+                offset: start,
+            });
+            continue;
+        }
+        let width = source[cursor..]
+            .chars()
+            .next()
+            .expect("cursor is inside source")
+            .len_utf8();
+        tokens.push(RustToken {
+            text: &source[cursor..cursor + width],
+            offset: cursor,
+        });
+        cursor += width;
+    }
+    tokens
+}
+
+fn matching_delimiter(
+    tokens: &[RustToken<'_>],
+    start: usize,
+    open: &str,
+    close: &str,
+) -> Option<usize> {
+    let mut depth = 0usize;
+    for (index, token) in tokens.iter().enumerate().skip(start) {
+        if token.text == open {
+            depth += 1;
+        } else if token.text == close {
+            depth = depth.checked_sub(1)?;
+            if depth == 0 {
+                return Some(index);
+            }
+        }
+    }
+    None
+}
+
+fn function_scopes(tokens: &[RustToken<'_>]) -> Vec<(String, usize, usize)> {
+    let mut scopes = Vec::new();
+    for (index, token) in tokens.iter().enumerate() {
+        if token.text != "fn" {
+            continue;
+        }
+        let Some(name) = tokens.get(index + 1) else {
+            continue;
+        };
+        if !name
+            .text
+            .as_bytes()
+            .first()
+            .is_some_and(|byte| byte.is_ascii_alphabetic() || *byte == b'_')
+        {
+            continue;
+        }
+        let Some(parameters) = tokens
+            .iter()
+            .enumerate()
+            .skip(index + 2)
+            .find_map(|(position, token)| match token.text {
+                "(" => Some(Some(position)),
+                ";" | "{" => Some(None),
+                _ => None,
+            })
+            .flatten()
+        else {
+            continue;
+        };
+        let Some(parameters_end) = matching_delimiter(tokens, parameters, "(", ")") else {
+            continue;
+        };
+        let Some(body) = tokens
+            .iter()
+            .enumerate()
+            .skip(parameters_end + 1)
+            .find_map(|(position, token)| match token.text {
+                "{" => Some(Some(position)),
+                ";" => Some(None),
+                _ => None,
+            })
+            .flatten()
+        else {
+            continue;
+        };
+        if let Some(body_end) = matching_delimiter(tokens, body, "{", "}") {
+            scopes.push((name.text.to_owned(), body, body_end));
+        }
+    }
+    scopes
+}
+
+fn parser_reference_len(tokens: &[RustToken<'_>], start: usize) -> Option<usize> {
+    let token = |offset: usize| tokens.get(start + offset).map(|token| token.text);
+    if token(0) == Some("mech_syntax")
+        && token(1) == Some(":")
+        && token(2) == Some(":")
+        && token(3) == Some("parser")
+        && token(4) == Some(":")
+        && token(5) == Some(":")
+        && token(6) == Some("parse")
+    {
+        Some(7)
+    } else if token(0) == Some("mech_syntax")
+        && token(1) == Some(":")
+        && token(2) == Some(":")
+        && token(3) == Some("parse")
+    {
+        Some(4)
+    } else if token(0) == Some("parser")
+        && token(1) == Some(":")
+        && token(2) == Some(":")
+        && token(3) == Some("parse")
+    {
+        Some(4)
+    } else {
+        None
     }
 }
 
-fn discovered_production_calls() -> BTreeMap<String, usize> {
+fn source_line(source: &str, offset: usize) -> usize {
+    source[..offset]
+        .bytes()
+        .filter(|byte| *byte == b'\n')
+        .count()
+        + 1
+}
+
+fn scan_rust_source(source: &str) -> SourceScan {
+    let tokens = rust_tokens(source);
+    let scopes = function_scopes(&tokens);
+    let mut scan = SourceScan::default();
+
+    for (index, token) in tokens.iter().enumerate() {
+        let public_item = index > 0 && tokens[index - 1].text == "pub";
+        if token.text == "use" && !public_item {
+            let end = tokens[index..]
+                .iter()
+                .position(|token| token.text == ";")
+                .map_or(tokens.len(), |offset| index + offset);
+            let import = &tokens[index..end];
+            if import.iter().any(|token| token.text == "mech_syntax")
+                && (import.iter().any(|token| token.text == "parse")
+                    || import.windows(2).any(|tokens| {
+                        matches!(tokens[0].text, "mech_syntax" | "parser" | "self")
+                            && tokens[1].text == "as"
+                    })
+                    || import.windows(4).any(|tokens| {
+                        matches!(tokens[0].text, "mech_syntax" | "parser")
+                            && tokens[1].text == ":"
+                            && tokens[2].text == ":"
+                            && tokens[3].text == "*"
+                    }))
+            {
+                scan.prohibited_aliases.push(format!(
+                    "line {} imports or aliases the retiring parser",
+                    source_line(source, token.offset)
+                ));
+            }
+        }
+        if token.text == "extern"
+            && !public_item
+            && tokens
+                .get(index + 1)
+                .is_some_and(|token| token.text == "crate")
+            && tokens
+                .get(index + 2)
+                .is_some_and(|token| token.text == "mech_syntax")
+            && tokens
+                .get(index + 3)
+                .is_some_and(|token| token.text == "as")
+        {
+            scan.prohibited_aliases.push(format!(
+                "line {} aliases the mech_syntax crate",
+                source_line(source, token.offset)
+            ));
+        }
+    }
+
+    let mut index = 0usize;
+    while index < tokens.len() {
+        let Some(path_len) = parser_reference_len(&tokens, index) else {
+            index += 1;
+            continue;
+        };
+        let reference = &tokens[index..index + path_len];
+        let is_import = tokens[..index]
+            .iter()
+            .rposition(|token| matches!(token.text, "use" | ";"))
+            .is_some_and(|start| tokens[start].text == "use");
+        if !is_import {
+            if tokens
+                .get(index + path_len)
+                .is_some_and(|token| token.text == "(")
+            {
+                let caller = scopes
+                    .iter()
+                    .filter(|(_, body, end)| *body < index && index < *end)
+                    .max_by_key(|(_, body, _)| *body)
+                    .map_or("<module>", |(name, _, _)| name.as_str());
+                *scan.calls.entry(caller.to_owned()).or_insert(0) += 1;
+            } else {
+                scan.prohibited_aliases.push(format!(
+                    "line {} takes or aliases a retiring parser function",
+                    source_line(source, reference[0].offset)
+                ));
+            }
+        }
+        index += path_len;
+    }
+    scan
+}
+
+fn is_test_only_caller(path: &str, caller: &str) -> bool {
+    matches!(
+        (path, caller),
+        (
+            "src/engine/src/program/compiler_planning.rs",
+            "plan_source_for_test"
+        ) | (
+            "src/engine/src/structures.rs",
+            "wildcard_table_column_uses_the_canonical_dynamic_schema"
+        )
+    )
+}
+
+fn discovered_production_calls() -> (BTreeMap<(String, String), usize>, Vec<String>) {
     let root = repository_root();
     let mut files = Vec::new();
     visit_rust_files(&root.join("src"), &mut files);
     let mut calls = BTreeMap::new();
+    let mut prohibited_aliases = Vec::new();
     for path in files {
         let relative = path
             .strip_prefix(&root)
@@ -155,16 +520,24 @@ fn discovered_production_calls() -> BTreeMap<String, usize> {
             .replace('\\', "/");
         let source = fs::read_to_string(&path).expect("read Rust source");
         let prefix = production_prefix(&source);
-        let count = prefix.matches("parser::parse(").count()
-            + prefix.matches("mech_syntax::parse(").count();
-        let count = count
-            .checked_sub(test_only_parse_calls(&relative, prefix))
-            .expect("test-only parse count exceeds file count");
-        if count > 0 {
-            calls.insert(relative, count);
+        let scan = scan_rust_source(prefix);
+        prohibited_aliases.extend(
+            scan.prohibited_aliases
+                .into_iter()
+                .map(|violation| format!("{relative}:{violation}")),
+        );
+        for (caller, count) in scan.calls {
+            if !is_test_only_caller(&relative, &caller) {
+                assert!(
+                    calls
+                        .insert((relative.clone(), caller.clone()), count)
+                        .is_none(),
+                    "duplicate source/caller scan result for {relative}::{caller}"
+                );
+            }
         }
     }
-    calls
+    (calls, prohibited_aliases)
 }
 
 #[test]
@@ -198,11 +571,72 @@ fn production_parser_callers_are_exactly_inventoried() {
                 && !row.cutover_action.contains("compat"),
             "noncanonical cutover target for {id}"
         );
-        *expected.entry(row.source_path.clone()).or_insert(0usize) += row.calls;
+        assert!(
+            expected
+                .insert((row.source_path.clone(), row.caller.clone()), row.calls)
+                .is_none(),
+            "duplicate source/caller contract for {id}"
+        );
         total += row.calls;
     }
     assert_eq!(total, EXPECTED_PRODUCTION_CALLS);
-    assert_eq!(discovered_production_calls(), expected);
+    let (discovered, prohibited_aliases) = discovered_production_calls();
+    assert!(
+        prohibited_aliases.is_empty(),
+        "production parser aliases are prohibited: {prohibited_aliases:#?}"
+    );
+    assert_eq!(discovered, expected);
+}
+
+#[test]
+fn source_scanner_binds_each_call_to_its_enclosing_function() {
+    let source = r##"
+fn first() {
+    let _ = "mech_syntax::parse(ignored)";
+    let _ = r#"parser::parse(ignored)"#;
+    // mech_syntax::parser::parse(ignored)
+    mech_syntax::parse("one");
+    parser::parse("two");
+}
+
+fn second() {
+    /* parser::parse(ignored) */
+    mech_syntax::parser::parse("three");
+}
+"##;
+    let scan = scan_rust_source(source);
+    assert!(scan.prohibited_aliases.is_empty());
+    assert_eq!(
+        scan.calls,
+        BTreeMap::from([("first".to_owned(), 2), ("second".to_owned(), 1)])
+    );
+}
+
+#[test]
+fn source_scanner_rejects_every_parser_alias_shape() {
+    for source in [
+        "use mech_syntax::parse;\nfn run() { parse(\"source\"); }",
+        "use mech_syntax::parser::parse as parse_source;\nfn run() { parse_source(\"source\"); }",
+        "use mech_syntax::parser as old_parser;\nfn run() { old_parser::parse(\"source\"); }",
+        "use mech_syntax::parser::*;\nfn run() { parse(\"source\"); }",
+        "use mech_syntax as syntax;\nfn run() { syntax::parse(\"source\"); }",
+        "extern crate mech_syntax as syntax;\nfn run() { syntax::parse(\"source\"); }",
+        "fn run() { let parse_source = mech_syntax::parse; parse_source(\"source\"); }",
+        "use mech_syntax::parser;\nfn run() { let parse_source = parser::parse; parse_source(\"source\"); }",
+    ] {
+        assert!(
+            !scan_rust_source(source).prohibited_aliases.is_empty(),
+            "alias escaped the parser census: {source}"
+        );
+    }
+}
+
+#[test]
+fn source_scanner_allows_declared_public_reexports() {
+    let source = "pub use mech_syntax::parse;\npub extern crate mech_syntax as syntax;";
+    let scan = scan_rust_source(source);
+    assert!(scan.prohibited_aliases.is_empty());
+    assert!(scan.calls.is_empty());
 }
 
 #[test]
