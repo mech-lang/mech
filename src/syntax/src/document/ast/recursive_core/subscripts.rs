@@ -47,7 +47,6 @@ impl AstNode for SliceStemSyntax {
 
 #[derive(Clone, Debug)]
 pub enum SubscriptItemSyntax {
-    SelectAll(SelectAllSubscriptSyntax),
     Swizzle(SwizzleSubscriptSyntax),
     Dot(DotSubscriptSyntax),
     DotInteger(DotSubscriptIntSyntax),
@@ -57,7 +56,7 @@ pub enum SubscriptItemSyntax {
 
 impl AstNode for SubscriptItemSyntax {
     fn can_cast(kind: SyntaxKind) -> bool {
-        SubscriptPrimitiveSyntax::can_cast(kind)
+        (SubscriptPrimitiveSyntax::can_cast(kind) && kind != SyntaxKind::SelectAllSubscript)
             || matches!(
                 kind,
                 SyntaxKind::BracketSubscript | SyntaxKind::BraceSubscript
@@ -65,9 +64,6 @@ impl AstNode for SubscriptItemSyntax {
     }
     fn cast(syntax: SyntaxNode) -> Option<Self> {
         match syntax.kind() {
-            SyntaxKind::SelectAllSubscript => {
-                SelectAllSubscriptSyntax::cast(syntax).map(Self::SelectAll)
-            }
             SyntaxKind::SwizzleSubscript => SwizzleSubscriptSyntax::cast(syntax).map(Self::Swizzle),
             SyntaxKind::DotSubscript => DotSubscriptSyntax::cast(syntax).map(Self::Dot),
             SyntaxKind::DotSubscriptInt => {
@@ -80,7 +76,6 @@ impl AstNode for SubscriptItemSyntax {
     }
     fn syntax(&self) -> &SyntaxNode {
         match self {
-            Self::SelectAll(value) => value.syntax(),
             Self::Swizzle(value) => value.syntax(),
             Self::Dot(value) => value.syntax(),
             Self::DotInteger(value) => value.syntax(),

@@ -9,11 +9,12 @@ use mech_syntax::document::parser::canonical::{
 use mech_syntax::document::parser::rules;
 use mech_syntax::document::{
     ArgumentListSyntax, AstNode, DocumentId, ExpressionSyntax, FactorSyntax, FactorValueSyntax,
-    FormulaSyntax, GreenNode, LiteralSyntax, LiteralValueSyntax, MapSyntax, MatchArmSyntax,
-    MatrixSyntax, NodeFlags, NodeId, ParentheticalExpressionSyntax, ParseConfig,
-    PatternArrayItemSyntax, RecursiveCoreSyntax, RecursiveSyntaxNode, Revision, StructureSyntax,
-    StructureValueSyntax, SyntaxKind, SyntaxNode, TableKindSyntax, TextSize, TextSnapshot,
-    TokenFlags, phase_2i_node_kind,
+    FormulaSyntax, GreenElement, GreenNode, GreenToken, LiteralSyntax, LiteralValueSyntax,
+    MapSyntax, MatchArmSyntax, MatrixSyntax, NodeFlags, NodeId, ParentheticalExpressionSyntax,
+    ParseConfig, ParseLimits, PatternArrayItemSyntax, RecordSyntax, RecursiveCoreSyntax,
+    RecursiveSyntaxNode, Revision, StructureSyntax, StructureValueSyntax, SubscriptItemSyntax,
+    SyntaxKind, SyntaxNode, TableKindSyntax, TextSize, TextSnapshot, TokenFlags, TokenId,
+    phase_2i_node_kind, text_hash,
 };
 
 fn repository_root() -> PathBuf {
@@ -54,6 +55,18 @@ fn find_kind(node: &SyntaxNode, kind: SyntaxKind) -> Option<SyntaxNode> {
         return Some(node.clone());
     }
     node.children().find_map(|child| find_kind(&child, kind))
+}
+
+fn find_recovery_wrapped_expression(node: &SyntaxNode) -> Option<ExpressionSyntax> {
+    if node.kind() == SyntaxKind::Expression
+        && node
+            .children()
+            .any(|child| child.kind() == SyntaxKind::Expression)
+    {
+        return ExpressionSyntax::cast(node.clone());
+    }
+    node.children()
+        .find_map(|child| find_recovery_wrapped_expression(&child))
 }
 
 fn find_matrix_comprehension_factor(node: &SyntaxNode) -> Option<FactorSyntax> {
@@ -306,4 +319,91 @@ fn typed_roles_follow_parser_boundaries_and_recovery_ownership() {
         transposed.transpose().map(|token| token.kind()),
         Some(SyntaxKind::Apostrophe)
     );
+}
+
+#[test]
+fn expression_body_descends_through_a_recovery_wrapper() {
+    let text = core::iter::repeat_n("1", 512)
+        .collect::<Vec<_>>()
+        .join(" + ");
+    let limits = ParseLimits {
+        fuel: 64,
+        ..ParseLimits::default()
+    };
+    let parsed = parse_canonical_phase_2i_rule_for_test(
+        source(&text),
+        rules::EXPRESSION,
+        ParseConfig { limits },
+    )
+    .unwrap();
+    let expression = find_recovery_wrapped_expression(&parsed.syntax())
+        .expect("resource recovery retains a nested Expression wrapper");
+    assert!(expression.body().is_some());
+}
+
+#[test]
+fn record_views_expose_physical_and_recovered_delimiters() {
+    for (text, opening, closing) in [
+        ("{a: 1}", "{", "}"),
+        ("|a: 1|", "|", "|"),
+        ("╭a: 1╯", "╭", "╯"),
+    ] {
+        let parsed = parse_canonical_phase_2i_rule_for_test(
+            source(text),
+            rules::RECORD,
+            ParseConfig::default(),
+        )
+        .unwrap();
+        let record =
+            RecordSyntax::cast(find_kind(&parsed.syntax(), SyntaxKind::Record).unwrap()).unwrap();
+        assert_eq!(record.opening_delimiter().unwrap().text().unwrap(), opening);
+        assert_eq!(record.closing_delimiter().unwrap().text().unwrap(), closing);
+    }
+
+    let parsed = parse_canonical_phase_2i_rule_for_test(
+        source("{a: 1"),
+        rules::RECORD,
+        ParseConfig::default(),
+    )
+    .unwrap();
+    let record =
+        RecordSyntax::cast(find_kind(&parsed.syntax(), SyntaxKind::Record).unwrap()).unwrap();
+    assert!(
+        record
+            .closing_delimiter()
+            .unwrap()
+            .flags()
+            .contains(TokenFlags::MISSING)
+    );
+}
+
+#[test]
+fn matrix_closer_rejects_opening_and_decoration_glyphs() {
+    let matrix = MatrixSyntax::cast(SyntaxNode::new_root(
+        Arc::new(GreenNode {
+            id: NodeId(0x44),
+            kind: SyntaxKind::Matrix,
+            text_len: TextSize(3),
+            children: Arc::from([GreenElement::Token(GreenToken {
+                id: TokenId(0x45),
+                kind: SyntaxKind::BoxDrawing,
+                text_len: TextSize(3),
+                flags: TokenFlags::NONE,
+                text_hash: text_hash("╭"),
+            })]),
+            flags: NodeFlags::NONE,
+            structural_hash: 0,
+        }),
+        source("╭"),
+    ))
+    .unwrap();
+    assert_eq!(matrix.opening_delimiter().unwrap().text().unwrap(), "╭");
+    assert!(matrix.closing_delimiter().is_none());
+}
+
+#[test]
+fn select_all_is_only_a_nested_subscript_value() {
+    assert!(!SubscriptItemSyntax::can_cast(
+        SyntaxKind::SelectAllSubscript
+    ));
 }

@@ -118,7 +118,9 @@ impl AstNode for ExpressionBodySyntax {
 
 impl ExpressionSyntax {
     pub fn body(&self) -> Option<ExpressionBodySyntax> {
-        child(self.syntax())
+        child(self.syntax()).or_else(|| {
+            child::<ExpressionSyntax>(self.syntax()).and_then(|expression| expression.body())
+        })
     }
 
     pub fn match_arms(&self) -> Vec<MatchArmSyntax> {

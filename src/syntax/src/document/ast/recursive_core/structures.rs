@@ -2,7 +2,7 @@ use alloc::vec::Vec;
 
 use crate::document::{
     AstNode, EmptyMapSyntax, EmptySetSyntax, ExpressionSyntax, IdentifierSyntax, SyntaxKind,
-    SyntaxNode, SyntaxToken,
+    SyntaxNode, SyntaxToken, TokenFlags,
 };
 
 use super::{
@@ -33,6 +33,14 @@ recursive_ast_node!(RecordBindingSyntax, RecordBinding);
 recursive_ast_node!(SetSyntax, Set);
 recursive_ast_node!(TupleSyntax, Tuple);
 recursive_ast_node!(TupleStructSyntax, TupleStruct);
+
+fn is_box_corner(token: &SyntaxToken, physical: &[&str], allow_missing: bool) -> bool {
+    token.kind() == SyntaxKind::BoxDrawing
+        && ((allow_missing && token.flags().contains(TokenFlags::MISSING))
+            || token
+                .text()
+                .is_ok_and(|text| physical.contains(&text.as_str())))
+}
 
 #[derive(Clone, Debug)]
 pub enum StructureValueSyntax {
@@ -111,20 +119,15 @@ impl MatrixSyntax {
     }
     pub fn opening_delimiter(&self) -> Option<SyntaxToken> {
         direct_tokens(&self.0).into_iter().find(|token| {
-            matches!(
-                token.kind(),
-                SyntaxKind::LeftBracket | SyntaxKind::BoxDrawing
-            )
+            token.kind() == SyntaxKind::LeftBracket || is_box_corner(token, &["╭", "┌", "┏"], false)
         })
     }
     pub fn closing_delimiter(&self) -> Option<SyntaxToken> {
         direct_tokens(&self.0)
             .into_iter()
             .filter(|token| {
-                matches!(
-                    token.kind(),
-                    SyntaxKind::RightBracket | SyntaxKind::BoxDrawing
-                )
+                token.kind() == SyntaxKind::RightBracket
+                    || is_box_corner(token, &["╯", "┘", "┛"], true)
             })
             .last()
     }
@@ -275,8 +278,23 @@ impl MapEntrySyntax {
 }
 
 impl RecordSyntax {
+    pub fn opening_delimiter(&self) -> Option<SyntaxToken> {
+        direct_tokens(&self.0).into_iter().find(|token| {
+            matches!(token.kind(), SyntaxKind::LeftBrace | SyntaxKind::Bar)
+                || is_box_corner(token, &["╭", "┌", "┏"], false)
+        })
+    }
     pub fn bindings(&self) -> Vec<RecordBindingSyntax> {
         children(&self.0)
+    }
+    pub fn closing_delimiter(&self) -> Option<SyntaxToken> {
+        direct_tokens(&self.0)
+            .into_iter()
+            .filter(|token| {
+                matches!(token.kind(), SyntaxKind::RightBrace | SyntaxKind::Bar)
+                    || is_box_corner(token, &["╯", "┘", "┛"], true)
+            })
+            .last()
     }
 }
 
