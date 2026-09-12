@@ -277,6 +277,9 @@ pub(super) fn parse_parenthetical_term(parser: &mut Parser<'_>) -> Attempt {
 }
 
 pub(super) fn parse_negate_factor(parser: &mut Parser<'_>) -> Attempt {
+    if parser.cursor().starts_with("--") {
+        return Attempt::NoMatch;
+    }
     unary_factor(
         parser,
         rules::NEGATE_FACTOR,

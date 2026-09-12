@@ -1,6 +1,6 @@
 //! Canonical document grammar interpreter.
 
-use crate::document::{NodeFlags, RuleId, SyntaxKind};
+use crate::document::{ExpectedSyntax, NodeFlags, RuleId, SyntaxKind};
 
 use super::super::Parser;
 use super::super::recovery;
@@ -65,6 +65,9 @@ pub(crate) fn parse_rule(parser: &mut Parser<'_>, rule: RuleId) -> Attempt {
 }
 
 fn parse_document_rule(parser: &mut Parser<'_>, specification: &DocumentRule) -> Attempt {
+    if specification.rule == rules::EVAL_INLINE_MECH_CODE && parser.cursor().starts_with("{{") {
+        return Attempt::NoMatch;
+    }
     let marker = specification.kind.map(|_| parser.start());
     let mut state = GrammarState::default();
     let mut result = parse_expression(parser, &specification.expression, &mut state);
@@ -155,58 +158,50 @@ fn parse_expression(
         GrammarExpression::Empty => Attempt::Matched,
         GrammarExpression::Sequence(items) => parse_sequence(parser, items, state),
         GrammarExpression::Choice(items) => {
-            let start = parser.checkpoint();
-            let initial_state = *state;
-            let mut recovered = None;
-            for (index, item) in items.iter().enumerate() {
-                parser.rewind(start);
-                *state = initial_state;
-                let result = parse_expression(parser, item, state);
-                if parser.is_halted() {
-                    return Attempt::Committed;
-                }
-                match result {
-                    Attempt::Matched => return Attempt::Matched,
-                    Attempt::Committed => {
-                        if recovered.is_none() {
-                            recovered = Some(index);
-                        }
-                    }
-                    Attempt::NoMatch => {}
-                }
-            }
-            parser.rewind(start);
-            *state = initial_state;
-            recovered
-                .map(|index| parse_expression(parser, &items[index], state))
-                .unwrap_or(Attempt::NoMatch)
-        }
-        GrammarExpression::BestChoice(items) => {
-            let start = parser.checkpoint();
-            let start_offset = parser.offset();
-            let initial_state = *state;
-            let mut selected = None::<(usize, bool, u32)>;
-            for (index, item) in items.iter().enumerate() {
-                parser.rewind(start);
-                *state = initial_state;
+            for item in *items {
+                let checkpoint = parser.checkpoint();
+                let initial_state = *state;
                 let result = parse_expression(parser, item, state);
                 if parser.is_halted() {
                     return Attempt::Committed;
                 }
                 if result.accepted() {
-                    let clean = result == Attempt::Matched;
+                    return result;
+                }
+                parser.rewind(checkpoint);
+                *state = initial_state;
+            }
+            Attempt::NoMatch
+        }
+        GrammarExpression::BestChoice(items) => {
+            let start = parser.checkpoint();
+            let start_offset = parser.offset();
+            let initial_state = *state;
+            let mut selected = None::<(usize, u32)>;
+            for (index, item) in items.iter().enumerate() {
+                parser.rewind(start);
+                *state = initial_state;
+                let result = parse_expression(parser, item, state);
+                if parser.is_halted() {
+                    return Attempt::Committed;
+                }
+                if result == Attempt::Committed {
+                    if selected.is_none() {
+                        return Attempt::Committed;
+                    }
+                    continue;
+                }
+                if result == Attempt::Matched {
                     let consumed = (parser.offset() - start_offset).0;
-                    if selected.is_none_or(|(_, selected_clean, selected_consumed)| {
-                        (clean, consumed) > (selected_clean, selected_consumed)
-                    }) {
-                        selected = Some((index, clean, consumed));
+                    if selected.is_none_or(|(_, selected_consumed)| consumed > selected_consumed) {
+                        selected = Some((index, consumed));
                     }
                 }
             }
             parser.rewind(start);
             *state = initial_state;
             selected
-                .map(|(index, _, _)| parse_expression(parser, &items[index], state))
+                .map(|(index, _)| parse_expression(parser, &items[index], state))
                 .unwrap_or(Attempt::NoMatch)
         }
         GrammarExpression::Optional(item) => {
@@ -292,11 +287,39 @@ fn parse_sequence(
     let checkpoint = parser.checkpoint();
     let initial_state = *state;
     let mut committed = false;
+    let mut distinctive_prefix = false;
     for item in items {
         match parse_expression(parser, item, state) {
-            Attempt::Matched => {}
+            Attempt::Matched => {
+                if matches!(item, GrammarExpression::Rule(rule) if *rule == rules::CODEBLOCK_SIGIL)
+                {
+                    distinctive_prefix = true;
+                }
+            }
             Attempt::Committed => committed = true,
-            Attempt::NoMatch if committed => return Attempt::Committed,
+            Attempt::NoMatch
+                if matches!(item, GrammarExpression::Builtin("matching-codeblock-sigil"))
+                    && state.codeblock_delimiter.is_some() =>
+            {
+                let token = match state.codeblock_delimiter {
+                    Some(rule) if rule == rules::GRAVE_CODEBLOCK_SIGIL => {
+                        SyntaxKind::GraveCodeBlockSigil
+                    }
+                    Some(rule) if rule == rules::TILDE_CODEBLOCK_SIGIL => {
+                        SyntaxKind::TildeCodeBlockSigil
+                    }
+                    _ => unreachable!("closed codeblock delimiter state"),
+                };
+                recovery::insert_missing(
+                    parser,
+                    "syntax/missing-codeblock-sigil",
+                    "expected a closing codeblock delimiter matching the opener",
+                    ExpectedSyntax::Token(token),
+                    Some(token),
+                );
+                committed = true;
+            }
+            Attempt::NoMatch if committed || distinctive_prefix => return Attempt::Committed,
             Attempt::NoMatch => {
                 parser.rewind(checkpoint);
                 *state = initial_state;

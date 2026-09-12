@@ -32,7 +32,7 @@ pub(crate) struct DocumentRule {
     pub(crate) root: bool,
 }
 
-pub(crate) const DOCUMENT_RULE_COUNT: usize = 114;
+pub(crate) const DOCUMENT_RULE_COUNT: usize = 112;
 
 pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
     DocumentRule {
@@ -791,18 +791,6 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         root: false,
     },
     DocumentRule {
-        rule: rules::MATCH_EXPRESSION,
-        expression: GrammarExpression::Sequence(&[
-            GrammarExpression::Rule(rules::FACTOR),
-            GrammarExpression::Rule(rules::QUESTION),
-            GrammarExpression::Rule(rules::WHITESPACE0),
-            GrammarExpression::OneOrMore(&GrammarExpression::Rule(rules::MATCH_ARM)),
-            GrammarExpression::Optional(&GrammarExpression::Rule(rules::PERIOD)),
-        ]),
-        kind: Some(SyntaxKind::MatchExpression),
-        root: false,
-    },
-    DocumentRule {
         rule: rules::MECH_CODE,
         expression: GrammarExpression::OneOrMore(&GrammarExpression::Sequence(&[
             GrammarExpression::Not(&GrammarExpression::Rule(rules::NOT_MECH_CODE)),
@@ -1448,21 +1436,6 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
             GrammarExpression::OneOrMore(&GrammarExpression::Rule(rules::PARAGRAPH_NEWLINE)),
         ]),
         kind: Some(SyntaxKind::SuccessBlock),
-        root: false,
-    },
-    DocumentRule {
-        rule: rules::TABLE_COLUMN,
-        expression: GrammarExpression::Sequence(&[
-            GrammarExpression::Rule(rules::SPACE_TAB0),
-            GrammarExpression::Rule(rules::EXPRESSION),
-            GrammarExpression::Rule(rules::SPACE_TAB0),
-            GrammarExpression::Optional(&GrammarExpression::Choice(&[
-                GrammarExpression::Rule(rules::COMMA),
-                GrammarExpression::Rule(rules::TABLE_SEPARATOR),
-            ])),
-            GrammarExpression::Rule(rules::SPACE_TAB0),
-        ]),
-        kind: Some(SyntaxKind::TableColumn),
         root: false,
     },
     DocumentRule {

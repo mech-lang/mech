@@ -291,7 +291,7 @@ ls-rpl	repl	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
 map	structures	certified	certified	candidate	node:Map	2I	Phase 2I canonical recursive core; semantic disposition: executable.
 mapping	structures	certified	certified	candidate	node:MapEntry	2I	Phase 2I canonical recursive core; semantic disposition: structural.
 match-arm	expressions	certified	certified	candidate	node:MatchArm	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-match-expression	expressions	certified	syntax-only	active	node:MatchExpression	S7	S7 canonical document closure generated from the specification.
+match-expression	expressions	unported	pending	inactive	undecided		Outside canonical Document reachability; not activated.
 matrix	structures	certified	certified	candidate	node:Matrix	2I	Phase 2I canonical recursive core; semantic disposition: executable.
 matrix-column	structures	certified	certified	candidate	node:MatrixColumn	2I	Phase 2I canonical recursive core; semantic disposition: structural.
 matrix-comprehension	expressions	certified	certified	candidate	node:MatrixComprehension	2I	Phase 2I canonical recursive core; semantic disposition: executable.
@@ -484,7 +484,7 @@ symmetric-difference	expressions	certified	certified	active	node:SymmetricDiffer
 synth-operator	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
 tab	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
 table	structures	certified	certified	candidate	node:Table	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-table-column	structures	certified	syntax-only	active	node:TableColumn	S7	S7 canonical document closure generated from the specification.
+table-column	structures	unported	pending	inactive	undecided		Outside canonical Document reachability; not activated.
 table-end	structures	certified	syntax-only	active	token	2H	Phase 2H closed structure shell
 table-header	structures	certified	certified	candidate	node:TableHeader	2I	Phase 2I canonical recursive core; semantic disposition: structural.
 table-horz	structures	certified	syntax-only	active	token	2H	Phase 2H closed structure shell

@@ -2,9 +2,9 @@ use std::fs;
 use std::path::PathBuf;
 
 use mech_syntax::document::{
-    AstNode, CodeBlockSyntax, DocumentId, DocumentSyntax, ParseConfig, ParseLimits, Revision,
-    SyntaxKind, SyntaxNode, TextSnapshot, compact_debug_tree, parse_canonical_document,
-    reconstruct_source, validate_lossless,
+    AstNode, CodeBlockSyntax, DocumentId, DocumentSyntax, ParseConfig, ParseLimits,
+    RecursiveSyntaxNode, Revision, SyntaxKind, SyntaxNode, TextSnapshot, compact_debug_tree,
+    parse_canonical_document, reconstruct_source, validate_lossless,
 };
 
 fn repository_root() -> PathBuf {
@@ -117,6 +117,25 @@ fn mismatched_fence_is_lossless_and_diagnostic() {
         text
     );
     assert!(!snapshot.diagnostics.is_empty());
+    let fence = find(snapshot.syntax(), SyntaxKind::CodeBlock)
+        .and_then(CodeBlockSyntax::cast)
+        .expect("mismatched fence must retain typed code-block structure");
+    assert_eq!(fence.delimiters().len(), 2);
+    let document = DocumentSyntax::cast(snapshot.syntax()).unwrap();
+    assert!(
+        document
+            .missing_tokens()
+            .iter()
+            .any(|token| token.kind() == SyntaxKind::GraveCodeBlockSigil)
+    );
+}
+
+#[test]
+fn committed_statement_recovery_is_not_replaced_by_a_short_expression() {
+    let snapshot = parse_canonical_document(source("x :=\n"), ParseConfig::default());
+    validate_lossless(&snapshot.root, &snapshot.source).unwrap();
+    assert!(!snapshot.diagnostics.is_empty());
+    assert!(find(snapshot.syntax(), SyntaxKind::VariableDefine).is_some());
 }
 
 #[test]

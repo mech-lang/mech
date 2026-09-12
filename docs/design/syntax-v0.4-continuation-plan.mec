@@ -372,10 +372,11 @@ Exit gate:
 
 Implementation record:
 
-- the specification generates the 114-rule document grammar, typed-node
+- the specification generates the 112-rule document grammar, typed-node
   inventory, accepted-source certification matrix, and registry activation;
-- all 114 document rules are certified, leaving only the 17 runtime-owned
-  interactive-command rows outside the document parser;
+- all 112 document rules are certified, leaving the 17 runtime-owned
+  interactive-command rows and two rules outside Document reachability
+  unported;
 - the canonical root preserves the complete source corpus, reports mismatched
   fences and malformed documents structurally, and behaves identically across
   contiguous and piece-backed source;

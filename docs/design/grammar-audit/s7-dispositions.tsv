@@ -64,7 +64,7 @@ kind-define	document-dependency	Generated member of the canonical Document closu
 left-alignment	document-dependency	Generated member of the canonical Document closure.
 load-rpl	historical-command	Runtime REPL requests own this command; it is not document syntax.
 ls-rpl	historical-command	Runtime REPL requests own this command; it is not document syntax.
-match-expression	document-dependency	Generated member of the canonical Document closure.
+match-expression	outside-document-closure	Not reachable from the canonical Document root and not activated.
 mech-code	document-dependency	Generated member of the canonical Document closure.
 mech-code-alt	document-dependency	Generated member of the canonical Document closure.
 mechdown-list	document-dependency	Generated member of the canonical Document closure.
@@ -118,7 +118,7 @@ sublist	document-dependency	Generated member of the canonical Document closure.
 subtitle	document-dependency	Generated member of the canonical Document closure.
 success-block	document-dependency	Generated member of the canonical Document closure.
 symbols-rpl	historical-command	Runtime REPL requests own this command; it is not document syntax.
-table-column	document-dependency	Generated member of the canonical Document closure.
+table-column	outside-document-closure	Not reachable from the canonical Document root and not activated.
 title	document-dependency	Generated member of the canonical Document closure.
 title-front-matter	document-dependency	Generated member of the canonical Document closure.
 tuple-destructure	document-dependency	Generated member of the canonical Document closure.
