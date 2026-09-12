@@ -458,10 +458,10 @@ Finding ledger:
 
 | Stage | Review or check | Reproducer / obligation | Correction and evidence status |
 | --- | --- | --- | --- |
-| S0 | Artifact closure (nbody) | Fixture lock graph omits syntax serde_json | One dependency edge corrected in 76162379e; locked metadata fails before, passes after, and passes on untouched integration base; artifact canary pending. |
-| S1 | 3996509176 | cfg(all(not(test), feature)) caller | Production cfg exclusion correction and negative test pending. |
-| S1 | 3996509180 | syntax crate crate::parse | Re-export census correction and bypass test pending. |
-| S1 | 3996509185 | distinct impl compile_source methods | Qualified function identity and call-movement negative test pending. |
+| S0 | Artifact closure (nbody) | Fixture lock graph omits syntax serde_json | One dependency edge corrected in 76162379e; locked metadata fails before, passes after, and passes on untouched integration base; 4096-turn artifact conformance passes with exact source/bytecode and raw results. |
+| S1 | 3996509176 | cfg(all(not(test), feature)) caller | Nested cfg evaluation corrected in 0d9141f9b; test-only exclusion requires cfg proof; all14 census tests pass at b743e8ab6. |
+| S1 | 3996509180 | syntax crate crate::parse | Syntax/product crate identity corrected in 0d9141f9b; grouped/glob and bare-reference bypass tests added in b743e8ab6; all14 pass. |
+| S1 | 3996509185 | distinct impl compile_source methods | Qualified impl/module/function identity corrected in 0d9141f9b; same-name call-movement negative tests pass at b743e8ab6; census27 contracts/29 calls. |
 | S2 | 3996399707 | [1, 2 +, 3] pattern array | Continuation fixed in 46744e186; stronger owner and diagnostic assertions pending. |
 | S2 | 3996399711 | {1: 2, 3:, 4: 5} expression | Shared-map continuation fixed in 46744e186; qualification pending. |
 | S2 | 3996399715 | recovered match pattern followed by output | MatchArm continuation fixed in 46744e186; qualification pending. |

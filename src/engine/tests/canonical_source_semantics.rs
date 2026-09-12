@@ -143,7 +143,7 @@ fn typed_document_executes_only_eval_inline_mech_code() {
 }
 
 #[test]
-fn typed_document_keeps_mika_sections_in_a_child_semantic_scope() {
+fn typed_document_excludes_mika_child_source_from_outer_execution() {
     let compiled = CanonicalSourceFrontend
         .compile_document(&document("~∘~⸢x := 1\n⸥\nx\n"))
         .expect("the enclosing document must compile independently of Mika contents");
