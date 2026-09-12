@@ -290,9 +290,22 @@ pub(super) fn parse_inline_table(parser: &mut Parser<'_>) -> Attempt {
         }
         while !parser.is_halted() {
             let before = parser.offset();
+            let separator = ahead(parser, inline_table_separator);
+            if parser.is_halted() {
+                committed = true;
+                break;
+            }
+            let continuation = parser.checkpoint();
             match parse_inline_table_row(parser) {
                 Attempt::Matched if parser.offset() > before => {}
                 Attempt::Matched | Attempt::NoMatch => break,
+                Attempt::Committed if separator && !parser.is_halted() => {
+                    // Once this table has a row, an enclosing row may own the
+                    // next separator. A recovered speculative extra row must
+                    // not steal that delimiter from a clean nested table.
+                    parser.rewind(continuation);
+                    break;
+                }
                 Attempt::Committed => {
                     committed = true;
                     if parser.offset() == before {
@@ -349,9 +362,22 @@ pub(super) fn parse_inline_table_row(parser: &mut Parser<'_>) -> Attempt {
         }
         loop {
             let before = parser.offset();
+            let separator = ahead(parser, inline_table_separator);
+            if parser.is_halted() {
+                node.complete(parser, SyntaxKind::InlineTableRow);
+                return Attempt::Committed;
+            }
+            let continuation = parser.checkpoint();
             match inline_table_item(parser) {
                 Attempt::Matched if parser.offset() > before => {}
                 Attempt::Matched | Attempt::NoMatch => break,
+                Attempt::Committed if separator && !parser.is_halted() => {
+                    // A clean nested table remains a cell. A speculative
+                    // recovered table beginning at this row's separator must
+                    // yield it back to the completed outer row.
+                    parser.rewind(continuation);
+                    break;
+                }
                 Attempt::Committed => {
                     recover_table_separator(parser, rules::INLINE_TABLE_ROW);
                     node.complete(parser, SyntaxKind::InlineTableRow);
@@ -1969,6 +1995,13 @@ fn delimited_repeated(
         };
         finish(node, parser, kind, interior)
     })
+}
+
+fn inline_table_separator(parser: &mut Parser<'_>) -> Attempt {
+    if !base::parse_rule(parser, rules::SPACE_TAB0) {
+        return Attempt::NoMatch;
+    }
+    structure_shell::parse_table_separator(parser)
 }
 
 fn inline_table_item(parser: &mut Parser<'_>) -> Attempt {

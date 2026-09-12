@@ -991,3 +991,124 @@ fn shared_prefix_recovery_preserves_complete_form_selection() {
         }
     }
 }
+
+#[test]
+fn inline_table_row_separator_wins_over_recovered_nested_header() {
+    for text in [
+        "x := (|value<*>|(signal<f64>, true)|payload<*>|)",
+        "x := (|value<*>|1|payload<*>|)",
+        "x := (│value<*>│1│payload<*>│)",
+    ] {
+        let parsed = parse(rules::VARIABLE_DEFINE, text);
+        assert!(
+            parsed.is_strictly_clean(),
+            "{text}: {:?}",
+            parsed.diagnostics
+        );
+        assert_eq!(parsed.consumed.end.0 as usize, text.len(), "{text}");
+        assert_eq!(
+            count_kind(&parsed.syntax(), SyntaxKind::InlineTable),
+            1,
+            "{text}"
+        );
+        assert_eq!(
+            count_kind(&parsed.syntax(), SyntaxKind::InlineTableRow),
+            2,
+            "{text}"
+        );
+    }
+}
+
+#[test]
+fn inline_table_separator_disambiguation_preserves_clean_nested_cells() {
+    for (rule, text, tables) in [
+        (rules::INLINE_TABLE_ROW, "1 |inner<f64>|2| |", 1),
+        (rules::INLINE_TABLE, "|a<f64> b<*>|1 |inner<f64>|2| |", 2),
+        (
+            rules::VARIABLE_DEFINE,
+            "x := (|a<f64> b<*>|1 |inner<f64>|2| |)",
+            2,
+        ),
+    ] {
+        let parsed = parse(rule, text);
+        assert!(
+            parsed.is_strictly_clean(),
+            "{text}: {:?}",
+            parsed.diagnostics
+        );
+        assert_eq!(parsed.consumed.end.0 as usize, text.len(), "{text}");
+        assert_eq!(
+            count_kind(&parsed.syntax(), SyntaxKind::InlineTable),
+            tables,
+            "{text}"
+        );
+    }
+}
+
+#[test]
+fn inline_table_separator_disambiguation_retains_resource_limits() {
+    for text in [
+        "x := (|value<*>|(signal<f64>, true)|payload<*>|)",
+        "x := (|a<f64> b<*>|1 |inner<f64>|2| |)",
+    ] {
+        let budgets = (0..=256)
+            .map(|fuel| ParseLimits {
+                fuel,
+                ..ParseLimits::default()
+            })
+            .chain(
+                (mech_syntax::document::parser::MIN_PREFIX_PRESERVING_EVENTS..=192).map(
+                    |max_events| ParseLimits {
+                        max_events,
+                        ..ParseLimits::default()
+                    },
+                ),
+            )
+            .chain((0..=12).map(|max_nesting| ParseLimits {
+                max_nesting,
+                ..ParseLimits::default()
+            }))
+            .chain((0..=4).map(|max_diagnostics| ParseLimits {
+                max_diagnostics,
+                ..ParseLimits::default()
+            }))
+            .chain((0..=16).map(|max_recovery_bytes| ParseLimits {
+                max_recovery_bytes,
+                ..ParseLimits::default()
+            }));
+        for limits in budgets {
+            let parsed = std::panic::catch_unwind(|| {
+                parse_canonical_phase_2i_rule_for_test(
+                    source(text),
+                    rules::VARIABLE_DEFINE,
+                    ParseConfig { limits },
+                )
+            })
+            .unwrap_or_else(|_| panic!("root failure for {text}: {limits:?}"))
+            .unwrap();
+            assert!(
+                parsed.stats.parser_steps <= limits.fuel,
+                "{text}: {limits:?}"
+            );
+            assert!(
+                parsed.stats.events_emitted <= u64::from(limits.max_events),
+                "{text}: {limits:?}"
+            );
+            assert!(
+                parsed.stats.diagnostics_emitted <= u64::from(limits.max_diagnostics),
+                "{text}: {limits:?}"
+            );
+            assert!(
+                parsed.stats.recovery_bytes <= u64::from(limits.max_recovery_bytes),
+                "{text}: {limits:?}"
+            );
+            validate_lossless_range(&parsed.root, &parsed.source, parsed.consumed)
+                .unwrap_or_else(|error| panic!("{text}: {limits:?}: {error:?}"));
+            assert_eq!(
+                reconstruct_source_range(&parsed.root, &parsed.source, parsed.consumed).unwrap(),
+                &text[..parsed.consumed.end.0 as usize],
+                "{limits:?}"
+            );
+        }
+    }
+}

@@ -188,8 +188,7 @@ fn parse_utf8_string_recovery(parser: &mut Parser<'_>) -> Attempt {
     let string = parser.start();
     let opening_start = parser.offset();
     if !base::parse_rule(parser, rules::QUOTE) {
-        string.abandon(parser);
-        return Attempt::NoMatch;
+        return failed_literal(parser, string, SyntaxKind::Utf8String);
     }
     let opening = TextRange::new(opening_start, parser.offset());
 
@@ -220,8 +219,7 @@ fn parse_raw_string_recovery(parser: &mut Parser<'_>) -> Attempt {
     let string = parser.start();
     let opening_start = parser.offset();
     if !consume_quotes(parser, 3) {
-        string.abandon(parser);
-        return Attempt::NoMatch;
+        return failed_literal(parser, string, SyntaxKind::RawString);
     }
     let opening = TextRange::new(opening_start, parser.offset());
 
