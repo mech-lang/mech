@@ -120,14 +120,6 @@ fn visit_rust_files(path: &Path, files: &mut Vec<PathBuf>) {
     }
 }
 
-fn production_prefix(source: &str) -> &str {
-    ["\nmod tests {", "\nmod tests;"]
-        .into_iter()
-        .filter_map(|marker| source.find(marker))
-        .min()
-        .map_or(source, |end| &source[..end])
-}
-
 #[derive(Clone, Copy, Debug)]
 struct RustToken<'source> {
     text: &'source str,
@@ -319,6 +311,65 @@ fn matching_delimiter(
     None
 }
 
+fn production_tokens(source: &str) -> Vec<RustToken<'_>> {
+    let tokens = rust_tokens(source);
+    let mut production = Vec::with_capacity(tokens.len());
+    let mut index = 0usize;
+    while index < tokens.len() {
+        let inline_test_module = tokens.get(index).is_some_and(|token| token.text == "mod")
+            && tokens.get(index + 2).is_some_and(|token| token.text == "{")
+            && (tokens
+                .get(index + 1)
+                .is_some_and(|token| token.text == "tests")
+                || has_test_cfg_attribute(&tokens, index));
+        if inline_test_module && let Some(end) = matching_delimiter(&tokens, index + 2, "{", "}") {
+            index = end + 1;
+            continue;
+        }
+        production.push(tokens[index]);
+        index += 1;
+    }
+    production
+}
+
+fn has_test_cfg_attribute(tokens: &[RustToken<'_>], item: usize) -> bool {
+    let mut cursor = item;
+    while cursor >= 2 && tokens[cursor - 1].text == "]" {
+        let close = cursor - 1;
+        let mut depth = 0usize;
+        let mut open = None;
+        for index in (0..=close).rev() {
+            match tokens[index].text {
+                "]" => depth += 1,
+                "[" => {
+                    depth -= 1;
+                    if depth == 0 {
+                        open = Some(index);
+                        break;
+                    }
+                }
+                _ => {}
+            }
+        }
+        let Some(open) = open else {
+            return false;
+        };
+        if open == 0 || tokens[open - 1].text != "#" {
+            return false;
+        }
+        let attribute = &tokens[open + 1..close];
+        if attribute.first().is_some_and(|token| token.text == "cfg")
+            && (attribute.get(2).is_some_and(|token| token.text == "test")
+                || attribute.get(2).is_some_and(|token| token.text == "all")
+                    && attribute.iter().any(|token| token.text == "test"))
+        {
+            return true;
+        }
+        cursor = open - 1;
+    }
+    false
+}
+
 fn function_scopes(tokens: &[RustToken<'_>]) -> Vec<(String, usize, usize)> {
     let mut scopes = Vec::new();
     for (index, token) in tokens.iter().enumerate() {
@@ -408,31 +459,115 @@ fn source_line(source: &str, offset: usize) -> usize {
         + 1
 }
 
-fn scan_rust_source(source: &str) -> SourceScan {
-    let tokens = rust_tokens(source);
+fn imports_retiring_parser(import: &[RustToken<'_>]) -> bool {
+    let Some(root) = import.iter().position(|token| token.text == "mech_syntax") else {
+        return false;
+    };
+    if import.get(root + 1).is_some_and(|token| token.text == "as") {
+        return true;
+    }
+    if !matches!(
+        (import.get(root + 1), import.get(root + 2)),
+        (Some(colon1), Some(colon2)) if colon1.text == ":" && colon2.text == ":"
+    ) {
+        return false;
+    }
+    match import.get(root + 3).map(|token| token.text) {
+        Some("parse") => true,
+        Some("parser") => import
+            .get(root + 4)
+            .is_some_and(|token| matches!(token.text, "as" | ":")),
+        Some("{") => {
+            let mut depth = 1usize;
+            let mut index = root + 4;
+            while index < import.len() && depth > 0 {
+                match import[index].text {
+                    "{" => depth += 1,
+                    "}" => depth -= 1,
+                    "parse" if depth == 1 => return true,
+                    "parser"
+                        if depth == 1
+                            && import
+                                .get(index + 1)
+                                .is_some_and(|token| matches!(token.text, "as" | ":")) =>
+                    {
+                        return true;
+                    }
+                    "self"
+                        if depth == 1
+                            && import
+                                .get(index + 1)
+                                .is_some_and(|token| token.text == "as") =>
+                    {
+                        return true;
+                    }
+                    _ => {}
+                }
+                index += 1;
+            }
+            false
+        }
+        _ => false,
+    }
+}
+
+fn is_declared_root_parser_reexport(
+    source_path: &str,
+    import: &[RustToken<'_>],
+    public_item: bool,
+) -> bool {
+    source_path == "src/lib.rs"
+        && public_item
+        && !import.iter().any(|token| token.text == "as")
+        && import.windows(4).any(|tokens| {
+            tokens
+                .iter()
+                .map(|token| token.text)
+                .eq(["mech_syntax", ":", ":", "{"])
+        })
+}
+
+fn is_declared_syntax_crate_reexport(
+    source_path: &str,
+    tokens: &[RustToken<'_>],
+    index: usize,
+) -> bool {
+    source_path == "src/lib.rs"
+        && index > 0
+        && tokens[index - 1].text == "pub"
+        && tokens
+            .get(index)
+            .is_some_and(|token| token.text == "extern")
+        && tokens
+            .get(index + 1)
+            .is_some_and(|token| token.text == "crate")
+        && tokens
+            .get(index + 2)
+            .is_some_and(|token| token.text == "mech_syntax")
+        && tokens
+            .get(index + 3)
+            .is_some_and(|token| token.text == "as")
+        && tokens
+            .get(index + 4)
+            .is_some_and(|token| token.text == "syntax")
+        && tokens.get(index + 5).is_some_and(|token| token.text == ";")
+}
+
+fn scan_rust_source(source: &str, source_path: &str) -> SourceScan {
+    let tokens = production_tokens(source);
     let scopes = function_scopes(&tokens);
     let mut scan = SourceScan::default();
 
     for (index, token) in tokens.iter().enumerate() {
         let public_item = index > 0 && tokens[index - 1].text == "pub";
-        if token.text == "use" && !public_item {
+        if token.text == "use" {
             let end = tokens[index..]
                 .iter()
                 .position(|token| token.text == ";")
                 .map_or(tokens.len(), |offset| index + offset);
             let import = &tokens[index..end];
-            if import.iter().any(|token| token.text == "mech_syntax")
-                && (import.iter().any(|token| token.text == "parse")
-                    || import.windows(2).any(|tokens| {
-                        matches!(tokens[0].text, "mech_syntax" | "parser" | "self")
-                            && tokens[1].text == "as"
-                    })
-                    || import.windows(4).any(|tokens| {
-                        matches!(tokens[0].text, "mech_syntax" | "parser")
-                            && tokens[1].text == ":"
-                            && tokens[2].text == ":"
-                            && tokens[3].text == "*"
-                    }))
+            if imports_retiring_parser(import)
+                && !is_declared_root_parser_reexport(source_path, import, public_item)
             {
                 scan.prohibited_aliases.push(format!(
                     "line {} imports or aliases the retiring parser",
@@ -441,7 +576,6 @@ fn scan_rust_source(source: &str) -> SourceScan {
             }
         }
         if token.text == "extern"
-            && !public_item
             && tokens
                 .get(index + 1)
                 .is_some_and(|token| token.text == "crate")
@@ -451,6 +585,7 @@ fn scan_rust_source(source: &str) -> SourceScan {
             && tokens
                 .get(index + 3)
                 .is_some_and(|token| token.text == "as")
+            && !is_declared_syntax_crate_reexport(source_path, &tokens, index)
         {
             scan.prohibited_aliases.push(format!(
                 "line {} aliases the mech_syntax crate",
@@ -519,8 +654,7 @@ fn discovered_production_calls() -> (BTreeMap<(String, String), usize>, Vec<Stri
             .to_string_lossy()
             .replace('\\', "/");
         let source = fs::read_to_string(&path).expect("read Rust source");
-        let prefix = production_prefix(&source);
-        let scan = scan_rust_source(prefix);
+        let scan = scan_rust_source(&source, &relative);
         prohibited_aliases.extend(
             scan.prohibited_aliases
                 .into_iter()
@@ -604,7 +738,7 @@ fn second() {
     mech_syntax::parser::parse("three");
 }
 "##;
-    let scan = scan_rust_source(source);
+    let scan = scan_rust_source(source, "fixture.rs");
     assert!(scan.prohibited_aliases.is_empty());
     assert_eq!(
         scan.calls,
@@ -625,18 +759,60 @@ fn source_scanner_rejects_every_parser_alias_shape() {
         "use mech_syntax::parser;\nfn run() { let parse_source = parser::parse; parse_source(\"source\"); }",
     ] {
         assert!(
-            !scan_rust_source(source).prohibited_aliases.is_empty(),
+            !scan_rust_source(source, "fixture.rs")
+                .prohibited_aliases
+                .is_empty(),
             "alias escaped the parser census: {source}"
         );
     }
 }
 
 #[test]
-fn source_scanner_allows_declared_public_reexports() {
-    let source = "pub use mech_syntax::parse;\npub extern crate mech_syntax as syntax;";
-    let scan = scan_rust_source(source);
+fn source_scanner_allows_only_the_declared_root_reexports() {
+    let source = "pub extern crate mech_syntax as syntax;\npub use mech_syntax::{parse, parser};";
+    let scan = scan_rust_source(source, "src/lib.rs");
     assert!(scan.prohibited_aliases.is_empty());
     assert!(scan.calls.is_empty());
+
+    for path in ["fixture.rs", "src/lib.rs"] {
+        let alias = scan_rust_source(
+            "pub use mech_syntax::parse as old_parse;\nfn run() { old_parse(\"source\"); }",
+            path,
+        );
+        assert!(!alias.prohibited_aliases.is_empty(), "{path}");
+    }
+}
+
+#[test]
+fn source_scanner_allows_the_canonical_document_parser_module() {
+    let source = "use mech_syntax::document::parser as canonical_parser;";
+    let scan = scan_rust_source(source, "fixture.rs");
+    assert!(scan.prohibited_aliases.is_empty());
+    assert!(scan.calls.is_empty());
+}
+
+#[test]
+fn source_scanner_excludes_only_the_actual_test_module() {
+    let external = scan_rust_source(
+        "mod tests;\nfn after_tests() { mech_syntax::parse(\"source\"); }",
+        "fixture.rs",
+    );
+    assert_eq!(
+        external.calls,
+        BTreeMap::from([("after_tests".to_owned(), 1)])
+    );
+
+    let inline = scan_rust_source(
+        "mod tests { fn ignored() { mech_syntax::parse(\"test\"); } }\n\
+         #[cfg(all(test, target_arch = \"wasm32\"))]\n\
+         mod browser_tests { fn ignored_too() { mech_syntax::parse(\"test\"); } }\n\
+         fn after_tests() { mech_syntax::parse(\"source\"); }",
+        "fixture.rs",
+    );
+    assert_eq!(
+        inline.calls,
+        BTreeMap::from([("after_tests".to_owned(), 1)])
+    );
 }
 
 #[test]
