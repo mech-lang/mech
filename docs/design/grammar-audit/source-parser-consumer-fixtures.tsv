@@ -1,5 +1,5 @@
 fixture-id	source-path	canonical-root	canonical-outcome	consumer-contracts	notes
-compiler	tests/fixtures/syntax-source-boundary/compiler.mec	document	accept	compiler-planning,program-artifact	Matrix selection reaches compiler and artifact consumers.
+compiler	tests/fixtures/syntax-source-boundary/compiler.mec	document	accept	compiler-planning,program-artifact,native-compute,browser-compute	Matrix selection reaches compiler, artifact, and mixed-compute consumers.
 config	tests/fixtures/syntax-source-boundary/config.mec	document	accept	config-profile	Nested records and paths reach the configuration profile.
 document	tests/fixtures/syntax-source-boundary/document.mec	document	accept	bundle-web,format,serve	Front matter, prose, inline evaluation, state, and fenced Mech share one document.
 empty	tests/fixtures/syntax-source-boundary/empty.mec	document	accept	interactive-reset	Empty input produces the canonical empty document.

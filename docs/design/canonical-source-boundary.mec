@@ -10,8 +10,8 @@ atomic cutover can remove every caller.
 
 The authoritative inventories are:
 
-- `grammar-audit/source-parser-consumers.tsv`: all 27 production calls grouped
-  into 25 caller contracts, with current behavior and final canonical target;
+- `grammar-audit/source-parser-consumers.tsv`: all 29 production calls grouped
+  into 27 caller contracts, with current behavior and final canonical target;
 - `grammar-audit/source-parser-consumer-fixtures.tsv`: whole-document canonical
   expectations shared by those caller contracts;
 - `grammar-audit/phase-2i-recursive-core.tsv`: the exact 80-rule component; and

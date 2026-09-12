@@ -7,8 +7,8 @@ feature-gate\tinput-policy\tfailure-policy\tcurrent-result-use\tcanonical-target
 cutover-action\tfixture-id\tnotes";
 const FIXTURE_HEADER: &str = "fixture-id\tsource-path\tcanonical-root\tcanonical-outcome\t\
 consumer-contracts\tnotes";
-const EXPECTED_CONSUMERS: usize = 25;
-const EXPECTED_PRODUCTION_CALLS: usize = 27;
+const EXPECTED_CONSUMERS: usize = 27;
+const EXPECTED_PRODUCTION_CALLS: usize = 29;
 const EXPECTED_FIXTURES: usize = 9;
 
 #[derive(Debug)]
@@ -155,7 +155,8 @@ fn discovered_production_calls() -> BTreeMap<String, usize> {
             .replace('\\', "/");
         let source = fs::read_to_string(&path).expect("read Rust source");
         let prefix = production_prefix(&source);
-        let count = prefix.matches("parser::parse(").count();
+        let count = prefix.matches("parser::parse(").count()
+            + prefix.matches("mech_syntax::parse(").count();
         let count = count
             .checked_sub(test_only_parse_calls(&relative, prefix))
             .expect("test-only parse count exceeds file count");

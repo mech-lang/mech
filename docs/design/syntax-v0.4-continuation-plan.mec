@@ -37,7 +37,7 @@ contracts, and atomic registry activation.
 The supported canonical roots are currently `Canonical + Grammar` and
 `Prototype + Document`. The shipping
 `mech_syntax::parser::parse(&str) -> MResult<mech_core::Program>` entry point
-still uses Nom. Twenty-seven production calls across the CLI, formatter,
+still uses Nom. Twenty-nine production calls across the CLI, formatter,
 resolver, runtime, engine, server, bundler, and WASM controller still select
 that path. S1 inventories them as removal targets.
 
@@ -131,7 +131,8 @@ adding parser behavior.
 
 Deliverables:
 
-- inventory every production call to `mech_syntax::parser::parse`, including
+- inventory every production call through `mech_syntax::parser::parse` or its
+  crate-root `mech_syntax::parse` re-export, including
   input normalization, feature gate, failure behavior, and result use;
 - assign each caller its final canonical boundary: snapshot, typed document,
   source index, or engine source semantics;
@@ -148,7 +149,7 @@ is incomplete. It supplies no expected results to canonical tests.
 
 Exit gate:
 
-- all 27 current production calls are inventoried and no unlisted call exists;
+- all 29 current production calls are inventoried and no unlisted call exists;
 - every caller has a final canonical target and cutover action;
 - every Phase 2I rule has a canonical typed-syntax disposition;
 - fixtures name their canonical rule/root and expected acceptance; and

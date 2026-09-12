@@ -1,7 +1,7 @@
 Syntax Boundary Fixture
 ===============================================================================
 author: Ada
-section: Compatibility
+section: Canonical
 ===============================================================================
 
 This paragraph preserves **formatted text** and evaluates {answer} inline.
