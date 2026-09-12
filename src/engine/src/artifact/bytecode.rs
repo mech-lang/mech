@@ -47,6 +47,10 @@ pub struct ArtifactDecodeLimits {
     pub max_operations: usize,
     pub max_contracts: usize,
     pub max_compute_regions: usize,
+    pub max_control_arms: usize,
+    pub max_control_blocks: usize,
+    pub max_control_operations: usize,
+    pub max_control_operands: usize,
     pub max_constant_canonicalization_work: u64,
 }
 
@@ -67,6 +71,10 @@ impl Default for ArtifactDecodeLimits {
             max_operations: 1_000_000,
             max_contracts: 100_000,
             max_compute_regions: 100_000,
+            max_control_arms: super::MAX_CONTROL_ARMS,
+            max_control_blocks: super::MAX_CONTROL_BLOCKS,
+            max_control_operations: super::MAX_CONTROL_OPERATIONS,
+            max_control_operands: super::MAX_CONTROL_OPERANDS,
             max_constant_canonicalization_work: DEFAULT_MAX_CONSTANT_CANONICALIZATION_WORK,
         }
     }
@@ -163,9 +171,7 @@ enum WireProducer {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct WireNode {
     node: u32,
-    operation: u32,
-    contract: u32,
-    requirement: Option<u32>,
+    body: WireNodeBody,
     input_start: u32,
     input_end: u32,
     output_start: u32,
@@ -173,7 +179,53 @@ struct WireNode {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+enum WireNodeBody {
+    Operation {
+        operation: u32,
+        contract: u32,
+        requirement: Option<u32>,
+    },
+    BooleanMatch {
+        scrutinee: u16,
+        captures: Box<[(u16, u32)]>,
+        arms: Box<[WireMatchArm]>,
+    },
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct WireMatchArm {
+    pattern: u8,
+    guard: Option<WireControlBlock>,
+    body: WireControlBlock,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct WireControlBlock {
+    id: u32,
+    parameters: Box<[(Option<u16>, u32)]>,
+    operations: Box<[WireControlOperation]>,
+    yield_value: WireControlValue,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct WireControlOperation {
+    node: u32,
+    operation: u32,
+    contract: u32,
+    inputs: Box<[WireControlValue]>,
+    schema: u32,
+}
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+enum WireControlValue {
+    Constant(u32),
+    Parameter { block: u32, ordinal: u16 },
+    Local { block: u32, node: u32 },
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 struct WireGraph {
+    revision: u32,
     requirements: Box<[WireRequirement]>,
     nodes: Box<[WireNode]>,
 }
@@ -334,6 +386,7 @@ pub fn encode_program_artifact_sections(
         slots: encode(&slots)?,
         producers: encode(&producers)?,
         nodes: encode(&WireGraph {
+            revision: 2,
             requirements: artifact
                 .requirements()
                 .iter()
@@ -345,9 +398,7 @@ pub fn encode_program_artifact_sections(
                 .iter()
                 .map(|node| WireNode {
                     node: node.node.get(),
-                    operation: operation_ids[&node.operation],
-                    contract: node.contract.get(),
-                    requirement: node.requirement.map(ApplicationRequirementId::get),
+                    body: wire_node_body(&node.body, &operation_ids),
                     input_start: node.input_bindings.start,
                     input_end: node.input_bindings.end,
                     output_start: node.output_bindings.start,
@@ -504,7 +555,14 @@ fn decode_program_artifact_sections_owned(
             tag: 0,
         });
     }
+    preflight_control_graph(&sections.nodes, &limits)?;
     let graph: WireGraph = serde_json::from_slice(&sections.nodes)?;
+    if graph.revision != 2 {
+        return Err(ArtifactBytecodeError::InvalidWireTag {
+            section: "graph revision",
+            tag: graph.revision.min(255) as u8,
+        });
+    }
     if graph.nodes.len() > limits.max_nodes {
         return Err(ArtifactBytecodeError::SectionItemLimit {
             section: "nodes",
@@ -610,9 +668,7 @@ fn decode_program_artifact_sections_owned(
             .map(|node| {
                 Ok(NodeDeclaration {
                     node: NodeId(node.node),
-                    operation: operation(node.operation)?,
-                    contract: OperationContractId::new(node.contract),
-                    requirement: node.requirement.map(ApplicationRequirementId::new),
+                    body: node_body_from_wire(node.body, &operation)?,
                     input_bindings: node.input_start..node.input_end,
                     output_bindings: node.output_start..node.output_end,
                 })
@@ -732,7 +788,7 @@ fn validate_operation_table(
 ) -> Result<(), ArtifactBytecodeError> {
     let mut canonical = nodes
         .iter()
-        .map(|node| node.operation)
+        .flat_map(|node| wire_operation_ids(&node.body))
         .chain(constraints.iter().map(|constraint| constraint.operation))
         .map(|id| {
             operations
@@ -878,7 +934,7 @@ fn operation_table(
     let mut references = artifact
         .nodes()
         .iter()
-        .map(|node| node.operation.clone())
+        .flat_map(|node| node_operation_references(&node.body))
         .chain(
             artifact
                 .constraints()
@@ -1290,4 +1346,375 @@ mod tests {
             5,
         );
     }
+}
+
+fn wire_control_value(value: super::ControlValue) -> WireControlValue {
+    match value {
+        super::ControlValue::Constant(id) => WireControlValue::Constant(id.get()),
+        super::ControlValue::Parameter { block, ordinal } => WireControlValue::Parameter {
+            block: block.0,
+            ordinal,
+        },
+        super::ControlValue::Local { block, node } => WireControlValue::Local {
+            block: block.0,
+            node,
+        },
+    }
+}
+
+fn control_value_from_wire(value: WireControlValue) -> super::ControlValue {
+    match value {
+        WireControlValue::Constant(id) => super::ControlValue::Constant(ConstantId::new(id)),
+        WireControlValue::Parameter { block, ordinal } => super::ControlValue::Parameter {
+            block: super::ControlBlockId(block),
+            ordinal,
+        },
+        WireControlValue::Local { block, node } => super::ControlValue::Local {
+            block: super::ControlBlockId(block),
+            node,
+        },
+    }
+}
+
+fn wire_control_block(
+    block: &super::ControlBlock,
+    operations: &BTreeMap<OperationReference, u32>,
+) -> WireControlBlock {
+    WireControlBlock {
+        id: block.id.0,
+        parameters: block
+            .parameters
+            .iter()
+            .map(|parameter| {
+                (
+                    match parameter.source {
+                        super::ControlParameterSource::Scrutinee => None,
+                        super::ControlParameterSource::Capture(index) => Some(index),
+                    },
+                    parameter.schema.get(),
+                )
+            })
+            .collect(),
+        operations: block
+            .operations
+            .iter()
+            .map(|operation| WireControlOperation {
+                node: operation.node,
+                operation: operations[&operation.operation],
+                contract: operation.contract.get(),
+                schema: operation.schema.get(),
+                inputs: operation
+                    .inputs
+                    .iter()
+                    .copied()
+                    .map(wire_control_value)
+                    .collect(),
+            })
+            .collect(),
+        yield_value: wire_control_value(block.yield_value),
+    }
+}
+
+fn wire_node_body(
+    body: &super::ExecutableNodeBody,
+    operations: &BTreeMap<OperationReference, u32>,
+) -> WireNodeBody {
+    match body {
+        super::ExecutableNodeBody::Operation(operation) => WireNodeBody::Operation {
+            operation: operations[&operation.operation],
+            contract: operation.contract.get(),
+            requirement: operation.requirement.map(ApplicationRequirementId::get),
+        },
+        super::ExecutableNodeBody::BooleanMatch(control) => WireNodeBody::BooleanMatch {
+            scrutinee: control.scrutinee,
+            captures: control
+                .captures
+                .iter()
+                .map(|capture| (capture.input, capture.schema.get()))
+                .collect(),
+            arms: control
+                .arms
+                .iter()
+                .map(|arm| WireMatchArm {
+                    pattern: match arm.pattern {
+                        super::BooleanPattern::Literal(false) => 0,
+                        super::BooleanPattern::Literal(true) => 1,
+                        super::BooleanPattern::Wildcard => 2,
+                        super::BooleanPattern::Bind => 3,
+                    },
+                    guard: arm
+                        .guard
+                        .as_ref()
+                        .map(|block| wire_control_block(block, operations)),
+                    body: wire_control_block(&arm.body, operations),
+                })
+                .collect(),
+        },
+    }
+}
+
+fn control_block_from_wire(
+    block: WireControlBlock,
+    operation: &impl Fn(u32) -> Result<OperationReference, ArtifactBytecodeError>,
+) -> Result<super::ControlBlock, ArtifactBytecodeError> {
+    Ok(super::ControlBlock {
+        id: super::ControlBlockId(block.id),
+        parameters: block
+            .parameters
+            .into_iter()
+            .map(|(capture, schema)| super::ControlParameter {
+                source: capture.map_or(
+                    super::ControlParameterSource::Scrutinee,
+                    super::ControlParameterSource::Capture,
+                ),
+                schema: SchemaId::new(schema),
+            })
+            .collect(),
+        operations: block
+            .operations
+            .into_iter()
+            .map(|node| {
+                Ok(super::ControlOperation {
+                    node: node.node,
+                    operation: operation(node.operation)?,
+                    contract: OperationContractId::new(node.contract),
+                    schema: SchemaId::new(node.schema),
+                    inputs: node
+                        .inputs
+                        .into_iter()
+                        .map(control_value_from_wire)
+                        .collect(),
+                })
+            })
+            .collect::<Result<Box<[_]>, ArtifactBytecodeError>>()?,
+        yield_value: control_value_from_wire(block.yield_value),
+    })
+}
+
+fn node_body_from_wire(
+    body: WireNodeBody,
+    operation: &impl Fn(u32) -> Result<OperationReference, ArtifactBytecodeError>,
+) -> Result<super::ExecutableNodeBody, ArtifactBytecodeError> {
+    Ok(match body {
+        WireNodeBody::Operation {
+            operation: id,
+            contract,
+            requirement,
+        } => super::ExecutableNodeBody::Operation(super::OperationNodeBody {
+            operation: operation(id)?,
+            contract: OperationContractId::new(contract),
+            requirement: requirement.map(ApplicationRequirementId::new),
+        }),
+        WireNodeBody::BooleanMatch {
+            scrutinee,
+            captures,
+            arms,
+        } => super::ExecutableNodeBody::BooleanMatch(super::BooleanMatchDeclaration {
+            scrutinee,
+            captures: captures
+                .into_iter()
+                .map(|(input, schema)| super::ControlCapture {
+                    input,
+                    schema: SchemaId::new(schema),
+                })
+                .collect(),
+            arms: arms
+                .into_iter()
+                .map(|arm| {
+                    Ok(super::BooleanMatchArm {
+                        pattern: match arm.pattern {
+                            0 => super::BooleanPattern::Literal(false),
+                            1 => super::BooleanPattern::Literal(true),
+                            2 => super::BooleanPattern::Wildcard,
+                            3 => super::BooleanPattern::Bind,
+                            tag => {
+                                return Err(ArtifactBytecodeError::InvalidWireTag {
+                                    section: "Boolean pattern",
+                                    tag,
+                                });
+                            }
+                        },
+                        guard: arm
+                            .guard
+                            .map(|block| control_block_from_wire(block, operation))
+                            .transpose()?,
+                        body: control_block_from_wire(arm.body, operation)?,
+                    })
+                })
+                .collect::<Result<Box<[_]>, ArtifactBytecodeError>>()?,
+        }),
+    })
+}
+
+fn node_operation_references(body: &super::ExecutableNodeBody) -> Vec<OperationReference> {
+    match body {
+        super::ExecutableNodeBody::Operation(operation) => vec![operation.operation.clone()],
+        super::ExecutableNodeBody::BooleanMatch(control) => control
+            .arms
+            .iter()
+            .flat_map(|arm| arm.guard.iter().chain(core::iter::once(&arm.body)))
+            .flat_map(|block| {
+                block
+                    .operations
+                    .iter()
+                    .map(|operation| operation.operation.clone())
+            })
+            .collect(),
+    }
+}
+
+fn wire_operation_ids(body: &WireNodeBody) -> Vec<u32> {
+    match body {
+        WireNodeBody::Operation { operation, .. } => vec![*operation],
+        WireNodeBody::BooleanMatch { arms, .. } => arms
+            .iter()
+            .flat_map(|arm| arm.guard.iter().chain(core::iter::once(&arm.body)))
+            .flat_map(|block| block.operations.iter().map(|operation| operation.operation))
+            .collect(),
+    }
+}
+
+/// First pass visits tokens without constructing graph arrays. The typed decode
+/// can allocate only after aggregate control counts and nesting are admitted.
+fn preflight_control_graph(
+    bytes: &[u8],
+    limits: &ArtifactDecodeLimits,
+) -> Result<(), ArtifactBytecodeError> {
+    #[derive(Clone, Copy)]
+    enum Field {
+        Other,
+        Nodes,
+        Requirements,
+        Arms,
+        Blocks,
+        Operations,
+        Operands,
+    }
+    struct Counts {
+        nodes: usize,
+        requirements: usize,
+        arms: usize,
+        blocks: usize,
+        operations: usize,
+        operands: usize,
+    }
+    struct Scan<'a> {
+        counts: &'a mut Counts,
+        limits: &'a ArtifactDecodeLimits,
+        field: Field,
+        depth: u8,
+    }
+    impl Scan<'_> {
+        fn charge<E: serde::de::Error>(&mut self) -> Result<(), E> {
+            let (count, limit) = match self.field {
+                Field::Other => return Ok(()),
+                Field::Nodes => (&mut self.counts.nodes, self.limits.max_nodes),
+                Field::Requirements => {
+                    (&mut self.counts.requirements, self.limits.max_requirements)
+                }
+                Field::Arms => (&mut self.counts.arms, self.limits.max_control_arms),
+                Field::Blocks => (&mut self.counts.blocks, self.limits.max_control_blocks),
+                Field::Operations => (
+                    &mut self.counts.operations,
+                    self.limits.max_control_operations,
+                ),
+                Field::Operands => (&mut self.counts.operands, self.limits.max_control_operands),
+            };
+            *count = count
+                .checked_add(1)
+                .ok_or_else(|| E::custom("control count overflow"))?;
+            if *count > limit {
+                return Err(E::custom("control graph item limit"));
+            }
+            Ok(())
+        }
+    }
+    impl<'de> DeserializeSeed<'de> for Scan<'_> {
+        type Value = ();
+        fn deserialize<D: serde::Deserializer<'de>>(self, deserializer: D) -> Result<(), D::Error> {
+            if self.depth > 32 {
+                return Err(D::Error::custom("control graph nesting limit"));
+            }
+            deserializer.deserialize_any(self)
+        }
+    }
+    impl<'de> Visitor<'de> for Scan<'_> {
+        type Value = ();
+        fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            f.write_str("bounded control graph")
+        }
+        fn visit_bool<E: serde::de::Error>(self, _: bool) -> Result<(), E> {
+            Ok(())
+        }
+        fn visit_i64<E: serde::de::Error>(self, _: i64) -> Result<(), E> {
+            Ok(())
+        }
+        fn visit_u64<E: serde::de::Error>(self, _: u64) -> Result<(), E> {
+            Ok(())
+        }
+        fn visit_f64<E: serde::de::Error>(self, _: f64) -> Result<(), E> {
+            Ok(())
+        }
+        fn visit_str<E: serde::de::Error>(self, _: &str) -> Result<(), E> {
+            Ok(())
+        }
+        fn visit_unit<E: serde::de::Error>(self) -> Result<(), E> {
+            Ok(())
+        }
+        fn visit_seq<A: SeqAccess<'de>>(mut self, mut seq: A) -> Result<(), A::Error> {
+            while seq
+                .next_element_seed(Scan {
+                    counts: self.counts,
+                    limits: self.limits,
+                    field: Field::Other,
+                    depth: self.depth + 1,
+                })?
+                .is_some()
+            {
+                self.charge::<A::Error>()?;
+            }
+            Ok(())
+        }
+        fn visit_map<A: serde::de::MapAccess<'de>>(mut self, mut map: A) -> Result<(), A::Error> {
+            while let Some(key) = map.next_key::<String>()? {
+                if key == "id" {
+                    self.field = Field::Blocks;
+                    self.charge::<A::Error>()?;
+                }
+                let field = match key.as_str() {
+                    "nodes" => Field::Nodes,
+                    "requirements" => Field::Requirements,
+                    "arms" => Field::Arms,
+                    "operations" => Field::Operations,
+                    "inputs" | "parameters" | "captures" => Field::Operands,
+                    _ => Field::Other,
+                };
+                map.next_value_seed(Scan {
+                    counts: self.counts,
+                    limits: self.limits,
+                    field,
+                    depth: self.depth + 1,
+                })?;
+            }
+            Ok(())
+        }
+    }
+    let mut counts = Counts {
+        nodes: 0,
+        requirements: 0,
+        arms: 0,
+        blocks: 0,
+        operations: 0,
+        operands: 0,
+    };
+    let mut decoder = serde_json::Deserializer::from_slice(bytes);
+    Scan {
+        counts: &mut counts,
+        limits,
+        field: Field::Other,
+        depth: 0,
+    }
+    .deserialize(&mut decoder)?;
+    decoder.end()?;
+    Ok(())
 }

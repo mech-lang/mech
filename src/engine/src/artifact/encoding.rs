@@ -51,6 +51,52 @@ impl CanonicalArtifactWriter {
         self.string(&operation.operation_name);
     }
 
+    fn control_value(&mut self, value: super::ControlValue) {
+        match value {
+            super::ControlValue::Constant(id) => {
+                self.u8(0);
+                self.u32(id.get());
+            }
+            super::ControlValue::Parameter { block, ordinal } => {
+                self.u8(1);
+                self.u32(block.0);
+                self.u16(ordinal);
+            }
+            super::ControlValue::Local { block, node } => {
+                self.u8(2);
+                self.u32(block.0);
+                self.u32(node);
+            }
+        }
+    }
+
+    fn control_block(&mut self, block: &super::ControlBlock) {
+        self.u32(block.id.0);
+        self.u64(block.parameters.len() as u64);
+        for parameter in &block.parameters {
+            self.u32(parameter.schema.get());
+            match parameter.source {
+                super::ControlParameterSource::Scrutinee => self.u8(0),
+                super::ControlParameterSource::Capture(index) => {
+                    self.u8(1);
+                    self.u16(index);
+                }
+            }
+        }
+        self.u64(block.operations.len() as u64);
+        for operation in &block.operations {
+            self.u32(operation.node);
+            self.operation(&operation.operation);
+            self.u32(operation.contract.get());
+            self.u32(operation.schema.get());
+            self.u64(operation.inputs.len() as u64);
+            for input in &operation.inputs {
+                self.control_value(*input);
+            }
+        }
+        self.control_value(block.yield_value);
+    }
+
     fn source(&mut self, source: ArtifactSource) {
         match source {
             ArtifactSource::Constant(constant) => {
@@ -157,13 +203,44 @@ pub(super) fn program_revision(
     writer.u32(draft.nodes.len() as u32);
     for node in &draft.nodes {
         writer.u32(node.node.get());
-        writer.operation(&node.operation);
-        writer.u32(node.contract.get());
-        match node.requirement {
-            None => writer.u8(0),
-            Some(requirement) => {
+        match &node.body {
+            super::ExecutableNodeBody::Operation(operation) => {
+                writer.u8(0);
+                writer.operation(&operation.operation);
+                writer.u32(operation.contract.get());
+                match operation.requirement {
+                    None => writer.u8(0),
+                    Some(requirement) => {
+                        writer.u8(1);
+                        writer.u32(requirement.get());
+                    }
+                }
+            }
+            super::ExecutableNodeBody::BooleanMatch(control) => {
                 writer.u8(1);
-                writer.u32(requirement.get());
+                writer.u16(control.scrutinee);
+                writer.u64(control.captures.len() as u64);
+                for capture in &control.captures {
+                    writer.u16(capture.input);
+                    writer.u32(capture.schema.get());
+                }
+                writer.u64(control.arms.len() as u64);
+                for arm in &control.arms {
+                    writer.u8(match arm.pattern {
+                        super::BooleanPattern::Literal(false) => 0,
+                        super::BooleanPattern::Literal(true) => 1,
+                        super::BooleanPattern::Wildcard => 2,
+                        super::BooleanPattern::Bind => 3,
+                    });
+                    match &arm.guard {
+                        None => writer.u8(0),
+                        Some(guard) => {
+                            writer.u8(1);
+                            writer.control_block(guard);
+                        }
+                    }
+                    writer.control_block(&arm.body);
+                }
             }
         }
         writer.u32(node.input_bindings.start);

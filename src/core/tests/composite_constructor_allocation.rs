@@ -12,15 +12,19 @@ thread_local! {
     static TOTAL: Cell<usize> = const { Cell::new(0) };
     static LARGEST: Cell<usize> = const { Cell::new(0) };
 }
+// SAFETY: This test-only observer delegates every allocation operation to System
+// with the original pointer and layout. Counters never inspect or retain pointers.
 unsafe impl GlobalAlloc for ObservedAllocator {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
         if TRACK.try_with(Cell::get).unwrap_or(false) {
             TOTAL.with(|value| value.set(value.get() + layout.size()));
             LARGEST.with(|value| value.set(value.get().max(layout.size())));
         }
+        // SAFETY: The caller supplies the GlobalAlloc allocation layout unchanged.
         unsafe { System.alloc(layout) }
     }
     unsafe fn dealloc(&self, pointer: *mut u8, layout: Layout) {
+        // SAFETY: The pointer and its original allocation layout are forwarded unchanged.
         unsafe { System.dealloc(pointer, layout) }
     }
     unsafe fn realloc(&self, pointer: *mut u8, layout: Layout, size: usize) -> *mut u8 {
@@ -28,6 +32,7 @@ unsafe impl GlobalAlloc for ObservedAllocator {
             TOTAL.with(|value| value.set(value.get() + size));
             LARGEST.with(|value| value.set(value.get().max(size)));
         }
+        // SAFETY: The caller's live allocation, original layout and requested size are forwarded.
         unsafe { System.realloc(pointer, layout, size) }
     }
 }

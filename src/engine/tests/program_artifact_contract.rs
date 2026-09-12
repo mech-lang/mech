@@ -285,8 +285,10 @@ fn node(
     outputs: Vec<SourceNodeOutput>,
 ) -> SourceNode {
     SourceNode {
-        operation,
-        requirement: None,
+        body: mech_engine::SourceNodeBody::Operation {
+            operation,
+            requirement: None,
+        },
         inputs: inputs.into_boxed_slice(),
         outputs: outputs.into_boxed_slice(),
     }
@@ -797,12 +799,12 @@ fn synthetic_ekf_contract_fixture_is_fully_declared_and_round_trips_contract_ids
         source
             .nodes()
             .iter()
-            .map(|node| node.contract)
+            .map(|node| node.as_operation().expect("ordinary fixture").contract)
             .collect::<Vec<_>>(),
         bytecode
             .nodes()
             .iter()
-            .map(|node| node.contract)
+            .map(|node| node.as_operation().expect("ordinary fixture").contract)
             .collect::<Vec<_>>()
     );
 }
@@ -1433,8 +1435,21 @@ fn compiler_state_hold_uses_the_complete_execution_schedule() {
     let [hold] = artifact.nodes() else {
         panic!("the mutable declaration must produce exactly one state-hold node");
     };
-    assert_eq!(hold.operation.module_path.as_ref(), ["core"]);
-    assert_eq!(hold.operation.operation_name, "assign");
+    assert_eq!(
+        hold.as_operation()
+            .expect("ordinary fixture")
+            .operation
+            .module_path
+            .as_ref(),
+        ["core"]
+    );
+    assert_eq!(
+        hold.as_operation()
+            .expect("ordinary fixture")
+            .operation
+            .operation_name,
+        "assign"
+    );
     assert!(
         compiled
             .instruction_source_nodes
@@ -1590,8 +1605,18 @@ fn compiled_matrix_sidecars_fold_static_literals_through_canonical_ir() {
     let artifact = compile_executable_program_artifact(&compiled, &empty_function_catalog())
         .expect("a valid static matrix sidecar must compile");
     assert!(artifact.nodes().iter().all(|node| {
-        node.operation.module_path.as_ref() != ["matrix"]
-            || node.operation.operation_name != "literal"
+        node.as_operation()
+            .expect("ordinary fixture")
+            .operation
+            .module_path
+            .as_ref()
+            != ["matrix"]
+            || node
+                .as_operation()
+                .expect("ordinary fixture")
+                .operation
+                .operation_name
+                != "literal"
     }));
     let output = &artifact.outputs()[0];
     let slot = &artifact.slots()[output.source.get() as usize];
@@ -1641,8 +1666,18 @@ fn compiled_matrix_sidecars_emit_fixed_row_major_dynamic_bindings() {
         .nodes()
         .iter()
         .find(|node| {
-            node.operation.module_path.as_ref() == ["matrix"]
-                && node.operation.operation_name == "literal"
+            node.as_operation()
+                .expect("ordinary fixture")
+                .operation
+                .module_path
+                .as_ref()
+                == ["matrix"]
+                && node
+                    .as_operation()
+                    .expect("ordinary fixture")
+                    .operation
+                    .operation_name
+                    == "literal"
         })
         .expect("dynamic matrix lowering must emit one matrix/literal node");
     let bindings =
@@ -1899,9 +1934,11 @@ fn malformed_artifacts_reject_reviewed_validation_gaps() {
         .into_boxed_slice(),
         nodes: vec![NodeDeclaration {
             node: NodeId(0),
-            operation: operation("test", "producer"),
-            contract: OperationContractId::new(0),
-            requirement: None,
+            body: mech_engine::ExecutableNodeBody::Operation(mech_engine::OperationNodeBody {
+                operation: operation("test", "producer"),
+                contract: OperationContractId::new(0),
+                requirement: None,
+            }),
             input_bindings: 0..0,
             output_bindings: 0..0,
         }]
@@ -2003,7 +2040,7 @@ fn bytecode_v1_rejects_pre_r1_experimental_schema_only_contracts() {
     let node = &artifact.nodes()[0];
     let ResolvedOperationContract::Declared(contract) = artifact
         .contracts()
-        .get(node.contract)
+        .get(node.as_operation().expect("ordinary fixture").contract)
         .expect("scalar-add contract")
     else {
         unreachable!()
@@ -2219,7 +2256,8 @@ fn decoded_artifact_sections_revalidate_structure_and_limits() {
 
     let mut unknown_contract = sections.clone();
     let mut nodes: serde_json::Value = serde_json::from_slice(&unknown_contract.nodes).unwrap();
-    nodes["nodes"].as_array_mut().unwrap()[0]["contract"] = serde_json::Value::from(u32::MAX);
+    nodes["nodes"].as_array_mut().unwrap()[0]["body"]["Operation"]["contract"] =
+        serde_json::Value::from(u32::MAX);
     unknown_contract.nodes = serde_json::to_vec(&nodes).unwrap();
     assert!(matches!(
         decode_program_artifact_sections(&unknown_contract),
@@ -2247,11 +2285,12 @@ fn decoded_artifact_sections_revalidate_structure_and_limits() {
     reordered_operation.operations = serde_json::to_vec(&operations).unwrap();
     let mut nodes: serde_json::Value = serde_json::from_slice(&reordered_operation.nodes).unwrap();
     for node in nodes["nodes"].as_array_mut().unwrap() {
-        node["operation"] = match node["operation"].as_u64().unwrap() {
-            0 => serde_json::Value::from(1),
-            1 => serde_json::Value::from(0),
-            operation => serde_json::Value::from(operation),
-        };
+        node["body"]["Operation"]["operation"] =
+            match node["body"]["Operation"]["operation"].as_u64().unwrap() {
+                0 => serde_json::Value::from(1),
+                1 => serde_json::Value::from(0),
+                operation => serde_json::Value::from(operation),
+            };
     }
     reordered_operation.nodes = serde_json::to_vec(&nodes).unwrap();
     assert!(matches!(
@@ -2378,8 +2417,10 @@ fn external_requirements_are_artifact_authority_and_round_trip_in_bytecode_v1() 
         requirements,
         nodes: vec![
             SourceNode {
-                operation: operation("resource", "read"),
-                requirement: Some(ApplicationRequirementId::new(0)),
+                body: mech_engine::SourceNodeBody::Operation {
+                    operation: operation("resource", "read"),
+                    requirement: Some(ApplicationRequirementId::new(0)),
+                },
                 inputs: Box::new([]),
                 outputs: vec![SourceNodeOutput::Derived {
                     schema: data.schema.f64_,
@@ -2387,8 +2428,10 @@ fn external_requirements_are_artifact_authority_and_round_trip_in_bytecode_v1() 
                 .into_boxed_slice(),
             },
             SourceNode {
-                operation: operation("resource", "write"),
-                requirement: Some(ApplicationRequirementId::new(1)),
+                body: mech_engine::SourceNodeBody::Operation {
+                    operation: operation("resource", "write"),
+                    requirement: Some(ApplicationRequirementId::new(1)),
+                },
                 inputs: vec![SourceValue::NodeOutput {
                     node: 0,
                     output_ordinal: 0,
@@ -2448,11 +2491,11 @@ fn external_requirements_are_artifact_authority_and_round_trip_in_bytecode_v1() 
     .unwrap();
     assert_eq!(artifact.requirements(), &graph.requirements);
     assert_eq!(
-        artifact.nodes()[0].requirement,
+        artifact.nodes()[0].as_operation().unwrap().requirement,
         Some(ApplicationRequirementId::new(0))
     );
     assert_eq!(
-        artifact.nodes()[1].requirement,
+        artifact.nodes()[1].as_operation().unwrap().requirement,
         Some(ApplicationRequirementId::new(1))
     );
     assert!(artifact.nodes()[1].output_bindings.is_empty());
@@ -2526,7 +2569,11 @@ fn artifact_with_declaration(
             }),
         ])
         .unwrap();
-        graph.nodes[0].requirement = Some(ApplicationRequirementId::new(0));
+        let mech_engine::SourceNodeBody::Operation { requirement, .. } = &mut graph.nodes[0].body
+        else {
+            panic!("ordinary fixture");
+        };
+        *requirement = Some(ApplicationRequirementId::new(0));
     }
     let declaration = Box::leak(Box::new(declaration));
     compile_source_program_with_contracts(
@@ -2591,7 +2638,10 @@ fn program_revision_commits_to_every_operation_contract_semantic() {
         vec![SourceValue::Constant(data.constant.one)],
         Vec::new(),
     );
-    effect_node.requirement = Some(ApplicationRequirementId::new(0));
+    let mech_engine::SourceNodeBody::Operation { requirement, .. } = &mut effect_node.body else {
+        panic!("ordinary fixture");
+    };
+    *requirement = Some(ApplicationRequirementId::new(0));
     let effect_source = SourceProgram {
         requirements: ApplicationRequirementTable::from_canonical_entries(vec![
             ApplicationRequirement::Resource(ExecutionResourceRequest {
@@ -2693,7 +2743,10 @@ fn contract_insertion_order_does_not_change_program_revision() {
     let base = build_both(&data, scalar_add(&data)).0;
     let make_draft = |contracts: OperationContractTable, contract: OperationContractId| {
         let mut nodes = base.nodes().to_vec();
-        nodes[0].contract = contract;
+        let mech_engine::ExecutableNodeBody::Operation(operation) = &mut nodes[0].body else {
+            panic!("ordinary fixture");
+        };
+        operation.contract = contract;
         ProgramArtifactDraft {
             schemas: base.schemas().clone(),
             constants: base.constants().clone(),

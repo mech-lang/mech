@@ -16,28 +16,28 @@ CORPUS = ROOT / "tests/architecture/bytecode-v1"
 MANIFEST = CORPUS / "manifest.json"
 # This manual seal covers only durable bytecode wire and semantic evidence.
 # Native-build plans have their own content-addressed contract and are excluded.
-EXPECTED_MANIFEST_SHA256 = "2a9e0d3f38dbfea1743a3b65535256d78325475f4044859d9d170289ff6d52b0"
+EXPECTED_MANIFEST_SHA256 = "9bcbdec09158e9cc345e4c374b77be5e88ddd670754f3a89d10f14a8caf1b1c7"
 EXPECTED_FIXTURE_SHA256 = {
     "canonical-scalars.mecb": "09f26317e73f9d8a6840cbb95de195b34fb0b77fdcfef18488490b51e130c551",
     "canonical-matrices.mecb": "1c73f8203dbe66f535b30b4e5ff80d0d6a1d7800b2e660a737caefdaffb7db90",
     "canonical-composites.mecb": "fc1aa5f79f3f4ad48de5ac73faa5e73564e0e231cbb83300461a8262bfcb8071",
-    "literal-f64.mecb": "ee2bb56ea808f5f0eb394e19c50c297a3f77c43c08238eae29e61112e481ee06",
-    "scalar-add-f64.mecb": "0ca719d6cbfeddf431b4e0e5a82408a5f63780f0d4d4b68a4d9eecf7405e824c",
-    "fixed-matrix-add-f64.mecb": "f58faf82972d24921c908251046d11a750c608ec43c0d339dbd89de8bfe345f2",
-    "dynamic-matrix-add-f64.mecb": "51feae0e363828cdde860c14c8969eb79a32382699f64f14a18e3f966b86ea9d",
-    "variadic-horzcat-f64.mecb": "4f1a78777c046c7da86db3b8394b5e712cd0838938d9aa3c27ea8fdaf724094a",
-    "string.mecb": "f1d6f944a4b17053219e3ddc3b387113ac51817576d2b8021ae91e9fc51b6989",
-    "unary.mecb": "06121a378e5e5e1881ff767b12017e5f1531e043626a692f117d4068af9c5026",
-    "ternary.mecb": "f6f3956e0e0ad1ac4dbfbe34501ab46ce758fc5808adfebc68c1651aa3df35cb",
-    "quaternary.mecb": "12fb2a340abaa236dbd726868656e5746e4b5f6ac34ae15b4688c05911123079",
-    "named-module-operation.mecb": "994a63985c5f0f36626603f55d8dc6b7a5e6b1f5a42a115ee9f48ae68a94fe6e",
-    "cli-stdout.mecb": "6e5456c54a93a98112694410027941a244122eb15b44fb144d68d67f342474e4",
-    "console.mecb": "01e2d267d7e48075a6785ba6030cf9fe5efaf9d9240cdb291ba8df3863ae59f2",
-    "time.mecb": "4151d91d2fa3765d4966f1e0045063b504788328fd4ea5fea4db5b4e965bf175",
-    "timer.mecb": "f3ecd5c2bed4f2ad1701424ec63e3e7ce62686962dcbafe6e4cd5b43bb8a70c5",
-    "scene.mecb": "c27893275f0f8d3fdc5c7a618b1fd9125870c97bb0cff6a1b4bf86e17f60e997",
-    "robot-arm.mecb": "ad2ddf30cc62963b96c75618204de5ad89aa41354f2cc59b72d7352028387ebe",
-    "synthetic-live-read.mecb": "5a91a7cf32e83297a4e2c119e6cf46d93b692c82c08cc24f77fe0c4153793139",
+    "literal-f64.mecb": "af6012c01565efd3ca3aa5219b6e9d602d7e034412d108e1beb0d7a98a0cd7c5",
+    "scalar-add-f64.mecb": "8227a4f87946a836f1923b89e945a8fb9f101e85216a94c6f30b84951c305aa4",
+    "fixed-matrix-add-f64.mecb": "ff3c96945432449e20f9db8e59552159f35d70718225c497b0df96066b57248c",
+    "dynamic-matrix-add-f64.mecb": "01fb39ddf69188b6910e8e8c9dd09d40f0fac5ea0e1650e12e7ac97a2ad967a1",
+    "variadic-horzcat-f64.mecb": "7c1882e4ac672db4afba1460e46c59995102e9c4f1caa083c513517892cd5717",
+    "string.mecb": "4ab5005bbfd4b9a4db37078fcf946a0d3ea2a6d0ae9522dc255a8210fdf845f8",
+    "unary.mecb": "c28fa93312b650baf2247818085b526878cb7228590281eec4f73108d4d09685",
+    "ternary.mecb": "57df56be63d6920c2ce824c86134f6f84aee9e0a770aeb4d1982ddbe16e615b5",
+    "quaternary.mecb": "6aaa07892d2f51a62e8a8b7ae0671314ca7575a418d077567d0d6852e843eece",
+    "named-module-operation.mecb": "08f25bf72c2abaec0fe8e32bdb7d1c8e2d14554a99311b3ba87b41013a5405f6",
+    "cli-stdout.mecb": "c5f80fd4b5b3b2bf996c1dba5aa25fba459e3e9f543d5f29af75d659b6a44cd9",
+    "console.mecb": "91bcfe96c194e963db7795a1a250c5798b05ce62fedc1e06291af0c79e4fd497",
+    "time.mecb": "f9697c3406791d9ce72ac9cfcb61f51f339861caebff4df65a9b762d509ea4ec",
+    "timer.mecb": "413fa041569ba1b5f386a319bca8dcd638ac71927631c639907740f80cda7d67",
+    "scene.mecb": "d924981e2119bec5b318d11c9e76581ff07f36c98b078a273174ac1a15c274cd",
+    "robot-arm.mecb": "089f53153729bc3b7b2493fbdbc0fcd7af02abae2d4667b9215767f44d81c581",
+    "synthetic-live-read.mecb": "77856a6c4d1849041bd8ff6ae85abe251ddc607397228c84b1f08797c1c1854f",
 }
 EXPECTED_FILES = [
     "canonical-scalars.mecb",

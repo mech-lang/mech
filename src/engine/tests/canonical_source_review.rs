@@ -79,7 +79,10 @@ fn shared_contracts_preserve_variadic_construction_and_matrix_geometry_in_every_
                 SchemaBody::Matrix { .. }
             );
             if let Some(expected) = mech_core::maintained_operation_contract(
-                &node.operation.canonical_name(),
+                &node
+                    .operation()
+                    .expect("ordinary operation fixture")
+                    .canonical_name(),
                 node.inputs.len(),
                 matrix,
             ) {
@@ -98,7 +101,8 @@ fn shared_contracts_preserve_variadic_construction_and_matrix_geometry_in_every_
                 .nodes
                 .last()
                 .unwrap()
-                .operation
+                .operation()
+                .expect("ordinary operation fixture")
                 .canonical_name(),
             operation
         );
@@ -126,7 +130,6 @@ fn shared_contracts_preserve_variadic_construction_and_matrix_geometry_in_every_
 #[test]
 fn bindings_inherit_actual_structural_projections_and_keep_local_scope() {
     for source in [
-        "x<u8> ? | y => y | * => 0u8",
         "{x | (x, *) <- {(1u8, true)}}",
         "{x | (*, (x, *)) <- {(true, (1u8, false))}}",
     ] {
@@ -135,7 +138,12 @@ fn bindings_inherit_actual_structural_projections_and_keep_local_scope() {
             .program()
             .nodes
             .iter()
-            .filter(|node| node.operation.canonical_name() == "source/bind")
+            .filter(|node| {
+                node.operation()
+                    .expect("ordinary operation fixture")
+                    .canonical_name()
+                    == "source/bind"
+            })
             .collect::<Vec<_>>();
         assert_eq!(bindings.len(), 1, "{source}");
         let SourceNodeOutput::Derived { schema } = bindings[0].outputs[0] else {
@@ -158,7 +166,7 @@ fn bindings_inherit_actual_structural_projections_and_keep_local_scope() {
         .unwrap();
     assert_eq!(
         explicit_dynamic.code,
-        "source-semantics/unsupported-dynamic-conversion"
+        "source-semantics/unsupported-boolean-match"
     );
     let inferred = compile("[y | x <- xs, y := x, y > 0]");
     assert_eq!(
@@ -174,7 +182,12 @@ fn bindings_inherit_actual_structural_projections_and_keep_local_scope() {
         .program()
         .nodes
         .iter()
-        .find(|node| node.operation.canonical_name() == "source/bind")
+        .find(|node| {
+            node.operation()
+                .expect("ordinary operation fixture")
+                .canonical_name()
+                == "source/bind"
+        })
         .unwrap();
     let SourceNodeOutput::Derived { schema } = binding.outputs[0] else {
         panic!()
@@ -192,7 +205,12 @@ fn bindings_inherit_actual_structural_projections_and_keep_local_scope() {
         .program()
         .nodes
         .iter()
-        .find(|node| node.operation.canonical_name() == "math/add")
+        .find(|node| {
+            node.operation()
+                .expect("ordinary operation fixture")
+                .canonical_name()
+                == "math/add"
+        })
         .unwrap();
     assert_ne!(add.inputs[0], add.inputs[1]);
     assert!(compiled.program().inputs.is_empty());
@@ -230,20 +248,24 @@ fn optional_cells_keep_runtime_dependencies_and_absence() {
             element.as_ref(),
             &SchemaBody::Option(Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)))
         );
-        assert!(
-            !compiled
-                .program()
-                .nodes
-                .iter()
-                .any(|node| node.operation.canonical_name() == "source/empty")
-        );
+        assert!(!compiled.program().nodes.iter().any(|node| {
+            node.operation()
+                .expect("ordinary operation fixture")
+                .canonical_name()
+                == "source/empty"
+        }));
         if source.contains("signal") {
             assert_eq!(compiled.program().inputs.len(), 1);
             let conversion = compiled
                 .program()
                 .nodes
                 .iter()
-                .find(|node| node.operation.canonical_name() == "option/some")
+                .find(|node| {
+                    node.operation()
+                        .expect("ordinary operation fixture")
+                        .canonical_name()
+                        == "option/some"
+                })
                 .unwrap();
             assert!(!matches!(conversion.inputs[0], SourceValue::Constant(_)));
         }
@@ -342,7 +364,13 @@ fn dynamic_range_peers_are_resolved_in_every_endpoint_position() {
             matches!(output(&compiled), SchemaBody::Matrix { element, .. } if element.as_ref() == &SchemaBody::FloatingPoint(FloatWidth::W64))
         );
         let range = compiled.program().nodes.last().unwrap();
-        assert_eq!(range.operation.canonical_name(), operation);
+        assert_eq!(
+            range
+                .operation()
+                .expect("ordinary operation fixture")
+                .canonical_name(),
+            operation
+        );
         assert_eq!(range.inputs[ordinal], SourceValue::Input(0));
         assert_eq!(
             compiled
@@ -352,13 +380,12 @@ fn dynamic_range_peers_are_resolved_in_every_endpoint_position() {
                 .body(),
             &SchemaBody::FloatingPoint(FloatWidth::W64)
         );
-        assert!(
-            compiled
-                .program()
-                .nodes
-                .iter()
-                .all(|node| node.operation.canonical_name() != "convert/kind")
-        );
+        assert!(compiled.program().nodes.iter().all(|node| {
+            node.operation()
+                .expect("ordinary operation fixture")
+                .canonical_name()
+                != "convert/kind"
+        }));
         for (input, expected) in range.inputs.iter().zip(expected_values) {
             if let Some(expected) = expected {
                 let SourceValue::Constant(id) = input else {
@@ -558,7 +585,12 @@ fn selected_operation_contracts_travel_with_conversions_and_exact_schemas() {
             .nodes
             .iter()
             .enumerate()
-            .find(|(_, node)| node.operation.canonical_name() == operation)
+            .find(|(_, node)| {
+                node.operation()
+                    .expect("ordinary operation fixture")
+                    .canonical_name()
+                    == operation
+            })
             .unwrap();
         let SourceNodeOutput::Derived { schema } = node.outputs[0] else {
             panic!("expected derived output");
@@ -598,7 +630,8 @@ fn selected_operation_contracts_travel_with_conversions_and_exact_schemas() {
             };
             assert_eq!(
                 compiled.program().nodes[conversion as usize]
-                    .operation
+                    .operation()
+                    .expect("ordinary operation fixture")
                     .canonical_name(),
                 "convert/kind"
             );
@@ -874,7 +907,12 @@ fn one_axis_select_all_has_a_declared_linear_gather_contract_in_every_profile() 
         .program()
         .nodes
         .iter()
-        .position(|node| node.operation.canonical_name() == "access/range")
+        .position(|node| {
+            node.operation()
+                .expect("ordinary source operation")
+                .canonical_name()
+                == "access/range"
+        })
         .unwrap();
     assert_eq!(compiled.program().nodes[gather].inputs.len(), 1);
     assert_eq!(
@@ -1078,13 +1116,12 @@ fn select_all_preserves_foreign_dynamic_payloads_after_artifact_roundtrip() {
 #[test]
 fn whole_string_select_all_preserves_its_source_schema() {
     let compiled = compile("(signal<string>, signal[:])");
-    assert!(
-        !compiled
-            .program()
-            .nodes
-            .iter()
-            .any(|node| node.operation.canonical_name() == "access/range")
-    );
+    assert!(!compiled.program().nodes.iter().any(|node| {
+        node.operation()
+            .expect("ordinary source operation")
+            .canonical_name()
+            == "access/range"
+    }));
     assert!(
         matches!(output(&compiled), SchemaBody::Tuple(items) if items.as_ref() == [SchemaBody::String, SchemaBody::String])
     );
@@ -1264,7 +1301,12 @@ fn c32_arithmetic_has_portable_source_schemas_and_maintained_contracts() {
         };
         assert_eq!(output(&compiled), &expected, "{source}");
         let node = compiled.program().nodes.last().unwrap();
-        assert_eq!(node.operation.canonical_name(), operation);
+        assert_eq!(
+            node.operation()
+                .expect("ordinary source operation")
+                .canonical_name(),
+            operation
+        );
         assert_eq!(
             compiled.contracts().last().unwrap().as_ref().unwrap(),
             &mech_core::maintained_operation_contract(operation, node.inputs.len(), matrix)
@@ -1287,7 +1329,14 @@ fn c32_arithmetic_has_portable_source_schemas_and_maintained_contracts() {
                 &expected
             );
             assert_eq!(
-                artifact.nodes().last().unwrap().operation.canonical_name(),
+                artifact
+                    .nodes()
+                    .last()
+                    .unwrap()
+                    .as_operation()
+                    .unwrap()
+                    .operation
+                    .canonical_name(),
                 operation
             );
         }

@@ -30,7 +30,6 @@ use mech_syntax::document::{
 use crate::{
     ArtifactBuildContext, ArtifactBuildError, OperationReference, ProgramArtifact, SourceInput,
     SourceNode, SourceNodeOutput, SourceOutput, SourceProgram, SourceState, SourceValue,
-    compile_source_program_with_contracts,
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -65,14 +64,6 @@ pub struct SourceSemanticPattern {
     pub anchor: SourceSemanticAnchor,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct SourceSemanticMatchArm {
-    pub node: u32,
-    pub pattern: u32,
-    pub guard_input: Option<u32>,
-    pub result_input: u32,
-}
-
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum SourceSemanticComprehensionQualifierRole {
     Generator { pattern: u32 },
@@ -92,7 +83,6 @@ pub struct SourceSemanticMap {
     pub inputs: Box<[SourceSemanticAnchor]>,
     pub nodes: Box<[SourceSemanticNode]>,
     pub patterns: Box<[SourceSemanticPattern]>,
-    pub match_arms: Box<[SourceSemanticMatchArm]>,
     pub comprehension_qualifiers: Box<[SourceSemanticComprehensionQualifier]>,
     pub outputs: Box<[SourceSemanticAnchor]>,
 }
@@ -162,20 +152,22 @@ impl CanonicalSourceProgram {
             .contracts
             .iter()
             .enumerate()
-            .map(|(index, contract)| {
-                contract
+            .map(|(index, contract)| match &self.program.nodes[index].body {
+                crate::SourceNodeBody::Operation { operation, .. } => contract
                     .as_ref()
+                    .map(Some)
                     .ok_or_else(|| ArtifactBuildError::MissingOperationContract {
                         node: NodeId(index as u32),
-                        operation: self.program.nodes[index].operation.clone(),
-                    })
+                        operation: operation.clone(),
+                    }),
+                crate::SourceNodeBody::BooleanMatch(_) => Ok(None),
             })
             .collect::<Result<Vec<_>, _>>()?;
         let mut artifact_program = self.program.clone();
         for input in &mut artifact_program.inputs {
             input.name = crate::encode_source_input_name(&input.name);
         }
-        compile_source_program_with_contracts(
+        crate::compile_source_program_with_control_contracts(
             &artifact_program,
             &mut ArtifactBuildContext::new(&self.schemas, &self.constants),
             &contracts,
@@ -461,6 +453,22 @@ impl SourceSchemas {
             .iter()
             .map(|value| insert(&value.schema))
             .collect::<Result<Vec<_>, _>>()?;
+        for node in nodes {
+            if let PendingNodeBody::BooleanMatch(control) = &node.body {
+                for block in control
+                    .arms
+                    .iter()
+                    .flat_map(|arm| arm.guard.iter().chain(core::iter::once(&arm.body)))
+                {
+                    for (_, schema) in &block.parameters {
+                        insert(schema)?;
+                    }
+                    for operation in &block.operations {
+                        insert(&operation.schema)?;
+                    }
+                }
+            }
+        }
         let constant_handles = constants
             .iter()
             .map(|value| insert(&value.schema))
@@ -1318,7 +1326,7 @@ fn builtin_kind_named(name: &str) -> Option<BuiltinScalarKind> {
     })
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 enum PendingValue {
     UnresolvedEmpty(SourceSemanticAnchor),
     Constant(usize),
@@ -1357,10 +1365,49 @@ struct PendingInput {
     anchor: SourceSemanticAnchor,
 }
 
-struct PendingNode {
-    contract: Option<OperationContractDeclaration>,
-    inferable_projection: bool,
+enum PendingNodeBody {
+    Operation {
+        operation: OperationReference,
+        contract: Option<OperationContractDeclaration>,
+    },
+    BooleanMatch(PendingBooleanMatch),
+}
+
+struct PendingBooleanMatch {
+    captures: Vec<(u16, SchemaDraft)>,
+    arms: Vec<PendingBooleanArm>,
+}
+
+struct PendingBooleanArm {
+    pattern: crate::BooleanPattern,
+    guard: Option<PendingControlBlock>,
+    body: PendingControlBlock,
+}
+
+#[derive(Clone, Copy)]
+enum PendingControlValue {
+    Constant(usize),
+    Parameter(u16),
+    Local(u32),
+}
+
+struct PendingControlOperation {
     operation: OperationReference,
+    contract: OperationContractDeclaration,
+    inputs: Vec<PendingControlValue>,
+    schema: SchemaDraft,
+}
+
+struct PendingControlBlock {
+    id: crate::ControlBlockId,
+    parameters: Vec<(crate::ControlParameterSource, SchemaDraft)>,
+    operations: Vec<PendingControlOperation>,
+    yield_value: PendingControlValue,
+}
+
+struct PendingNode {
+    body: PendingNodeBody,
+    inferable_projection: bool,
     inputs: Vec<PendingValue>,
     schema: SchemaDraft,
     state: Option<u32>,
@@ -1418,6 +1465,7 @@ impl NamedKindPathResolver for BuiltinKindPaths {
 }
 
 struct SemanticBuilder {
+    control_depth: usize,
     anchor: SourceSemanticAnchor,
     constants: Vec<PendingConstant>,
     inputs: Vec<PendingInput>,
@@ -1428,13 +1476,13 @@ struct SemanticBuilder {
     outputs: Vec<PendingOutput>,
     bindings: BTreeMap<String, PendingValue>,
     patterns: Vec<SourceSemanticPattern>,
-    match_arms: Vec<SourceSemanticMatchArm>,
     comprehension_qualifiers: Vec<SourceSemanticComprehensionQualifier>,
 }
 
 impl SemanticBuilder {
     fn new(anchor: SourceSemanticAnchor) -> Self {
         Self {
+            control_depth: 0,
             anchor,
             constants: Vec::new(),
             inputs: Vec::new(),
@@ -1445,7 +1493,6 @@ impl SemanticBuilder {
             outputs: Vec::new(),
             bindings: BTreeMap::new(),
             patterns: Vec::new(),
-            match_arms: Vec::new(),
             comprehension_qualifiers: Vec::new(),
         }
     }
@@ -1697,72 +1744,15 @@ impl SemanticBuilder {
         let mut value = self
             .expression_body_with_expected(&body, if arms.is_empty() { expected } else { None })?;
         if !arms.is_empty() {
-            let mut inputs = vec![value];
-            let mut layouts = Vec::with_capacity(arms.len());
-            let mut result_schema = None;
-            for arm in arms {
-                let pattern = self.required(arm.pattern(), arm.syntax(), "a match pattern")?;
-                let saved = self.bindings.clone();
-                let result = (|| {
-                    let pattern = self.record_pattern(&pattern)?;
-                    inputs.extend(pattern.dependencies.iter().copied());
-                    self.bind_pattern(&pattern, value, None)?;
-                    let guard_input = if let Some(guard) = arm.guard() {
-                        let ordinal = inputs.len() as u32;
-                        let guard_value = self.expression(&guard)?.0;
-                        inputs.push(self.require_boolean_operand(guard_value, guard.syntax())?);
-                        Some(ordinal)
-                    } else {
-                        None
-                    };
-                    let result = self.required(arm.value(), arm.syntax(), "a match result")?;
-                    let result_input = inputs.len() as u32;
-                    let result = self.expression_with_expected(&result, expected)?.0;
-                    let schema = self.schema_draft_of(result)?;
-                    if matches!(schema.body, SchemaBody::Dynamic) {
-                        return Err(SourceSemanticError {
-                            code: "source-semantics/unresolved-match-result-kind",
-                            message: "match arms require a concrete result schema".to_owned(),
-                            anchor: SourceSemanticAnchor::for_node(arm.syntax()),
-                        });
-                    }
-                    if result_schema
-                        .as_ref()
-                        .is_some_and(|expected| expected != &schema)
-                    {
-                        return Err(SourceSemanticError {
-                            code: "source-semantics/incompatible-match-result-kind",
-                            message: "match arms require one exact result schema".to_owned(),
-                            anchor: SourceSemanticAnchor::for_node(arm.syntax()),
-                        });
-                    }
-                    result_schema.get_or_insert(schema);
-                    inputs.push(result);
-                    layouts.push((pattern.index, guard_input, result_input));
-                    Ok::<_, SourceSemanticError>(())
-                })();
-                self.bindings = saved;
-                result?;
+            if self.control_depth != 0 {
+                return Err(SourceSemanticError {
+                    code: "source-semantics/unsupported-nested-control",
+                    message: "nested executable control is not lowered by this Boolean match slice"
+                        .to_owned(),
+                    anchor: SourceSemanticAnchor::for_node(expression.syntax()),
+                });
             }
-            value = self.emit_with_schema_draft(
-                "source/match",
-                inputs,
-                result_schema.expect("a nonempty match has a result schema"),
-                expression.syntax(),
-                "match",
-                None,
-            );
-            let PendingValue::Node(node) = value else {
-                unreachable!("emit always returns a node")
-            };
-            self.match_arms.extend(layouts.into_iter().map(
-                |(pattern, guard_input, result_input)| SourceSemanticMatchArm {
-                    node,
-                    pattern,
-                    guard_input,
-                    result_input,
-                },
-            ));
+            value = self.boolean_match(value, &arms, expression.syntax())?;
         }
         Ok((value, expression.syntax().clone()))
     }
@@ -2684,9 +2674,11 @@ impl SemanticBuilder {
                 producer_node: node,
             });
             self.nodes.push(PendingNode {
-                contract: mech_core::maintained_operation_contract("core/assign", 1, false),
+                body: PendingNodeBody::Operation {
+                    contract: mech_core::maintained_operation_contract("core/assign", 1, false),
+                    operation: operation_reference("core/assign"),
+                },
                 inferable_projection: false,
-                operation: operation_reference("core/assign"),
                 inputs: vec![PendingValue::State(state)],
                 schema: schema_draft,
                 state: Some(state),
@@ -4830,9 +4822,11 @@ impl SemanticBuilder {
             matches!(schema.body, SchemaBody::Matrix { .. }),
         );
         self.nodes.push(PendingNode {
-            contract,
+            body: PendingNodeBody::Operation {
+                contract,
+                operation: operation_reference(operation),
+            },
             inferable_projection: false,
-            operation: operation_reference(operation),
             inputs,
             schema,
             state: None,
@@ -4956,10 +4950,28 @@ impl SemanticBuilder {
             .iter()
             .enumerate()
             .map(|(index, node)| {
-                contracts.push(node.contract.clone());
+                let body = match &node.body {
+                    PendingNodeBody::Operation {
+                        operation,
+                        contract,
+                    } => {
+                        contracts.push(contract.clone());
+                        crate::SourceNodeBody::Operation {
+                            operation: operation.clone(),
+                            requirement: None,
+                        }
+                    }
+                    PendingNodeBody::BooleanMatch(control) => {
+                        contracts.push(None);
+                        crate::SourceNodeBody::BooleanMatch(resolve_pending_match(
+                            control,
+                            &schemas.table,
+                            &constant_ids,
+                        ))
+                    }
+                };
                 SourceNode {
-                    operation: node.operation.clone(),
-                    requirement: None,
+                    body,
                     inputs: node
                         .inputs
                         .iter()
@@ -5019,7 +5031,6 @@ impl SemanticBuilder {
                 .collect::<Vec<_>>()
                 .into_boxed_slice(),
             patterns: self.patterns.into_boxed_slice(),
-            match_arms: self.match_arms.into_boxed_slice(),
             comprehension_qualifiers: self.comprehension_qualifiers.into_boxed_slice(),
             outputs: self
                 .outputs
@@ -6199,3 +6210,379 @@ mod review_tests;
 #[cfg(test)]
 #[path = "mask_review_tests.rs"]
 mod mask_review_tests;
+
+impl SemanticBuilder {
+    fn boolean_match(
+        &mut self,
+        scrutinee: PendingValue,
+        arms: &[mech_syntax::document::MatchArmSyntax],
+        syntax: &SyntaxNode,
+    ) -> Result<PendingValue, SourceSemanticError> {
+        let error = |message: &str, syntax: &SyntaxNode| SourceSemanticError {
+            code: "source-semantics/unsupported-boolean-match",
+            message: message.to_owned(),
+            anchor: SourceSemanticAnchor::for_node(syntax),
+        };
+        if self.schema_draft_of(scrutinee)?.body != SchemaBody::Bool {
+            return Err(error(
+                "this executable match slice requires a Boolean scrutinee",
+                syntax,
+            ));
+        }
+        let mut inputs = vec![scrutinee];
+        let mut captures = Vec::new();
+        let mut lowered = Vec::new();
+        let mut coverage = [false; 2];
+        let mut result_schema = None;
+        let mut next_block = 0u32;
+        for arm in arms {
+            let pattern = self.required(arm.pattern(), arm.syntax(), "match pattern")?;
+            let value = self.required(pattern.value(), pattern.syntax(), "pattern value")?;
+            let mut binding = None;
+            let pattern = match value {
+                PatternValueSyntax::Wildcard(_) => crate::BooleanPattern::Wildcard,
+                PatternValueSyntax::Expression(expression) => {
+                    if let Some(variable) = standalone_pattern_variable(&expression) {
+                        let Some(VariableStemSyntax::Identifier(identifier)) = variable.stem()
+                        else {
+                            return Err(error(
+                                "match binding requires a lexical identifier",
+                                variable.syntax(),
+                            ));
+                        };
+                        if variable
+                            .annotation()
+                            .map(|annotation| annotation_schema_draft(&annotation))
+                            .transpose()?
+                            .is_some_and(|schema| schema.body != SchemaBody::Bool)
+                        {
+                            return Err(error(
+                                "Boolean match binding requires Boolean schema",
+                                variable.syntax(),
+                            ));
+                        }
+                        binding = Some(node_text(identifier.syntax())?);
+                        crate::BooleanPattern::Bind
+                    } else {
+                        let start = self.nodes.len();
+                        let literal = self.expression(&expression)?.0;
+                        let PendingValue::Constant(index) = literal else {
+                            return Err(error(
+                                "only Boolean literal, wildcard and bind patterns are lowered",
+                                expression.syntax(),
+                            ));
+                        };
+                        let ValueDataDraft::Bool(value) = self.constants[index].data else {
+                            return Err(error(
+                                "match literal pattern must be Boolean",
+                                expression.syntax(),
+                            ));
+                        };
+                        if self.nodes.len() != start {
+                            return Err(error(
+                                "match literal pattern cannot execute operations",
+                                expression.syntax(),
+                            ));
+                        }
+                        crate::BooleanPattern::Literal(value)
+                    }
+                }
+                _ => {
+                    return Err(error(
+                        "only Boolean literal, wildcard and bind patterns are lowered",
+                        pattern.syntax(),
+                    ));
+                }
+            };
+            let saved = self.bindings.clone();
+            if let Some(name) = binding {
+                self.bindings.insert(name, scrutinee);
+            }
+            let lowered_arm = (|| {
+                let guard = if let Some(guard) = arm.guard() {
+                    let (block, schema) = self.boolean_control_block(
+                        &guard,
+                        pattern,
+                        scrutinee,
+                        &mut inputs,
+                        &mut captures,
+                        next_block,
+                    )?;
+                    next_block += 1;
+                    if schema.body != SchemaBody::Bool {
+                        return Err(SourceSemanticError {
+                            code: "source-semantics/non-boolean-operator-kind",
+                            message: "match guard requires Boolean schema".to_owned(),
+                            anchor: SourceSemanticAnchor::for_node(guard.syntax()),
+                        });
+                    }
+                    Some(block)
+                } else {
+                    None
+                };
+                let result = self.required(arm.value(), arm.syntax(), "match result")?;
+                let (body, schema) = self.boolean_control_block(
+                    &result,
+                    pattern,
+                    scrutinee,
+                    &mut inputs,
+                    &mut captures,
+                    next_block,
+                )?;
+                next_block += 1;
+                if result_schema
+                    .as_ref()
+                    .is_some_and(|expected| expected != &schema)
+                {
+                    return Err(SourceSemanticError {
+                        code: "source-semantics/incompatible-match-result-kind",
+                        message: "match arms require one exact result schema".to_owned(),
+                        anchor: SourceSemanticAnchor::for_node(arm.syntax()),
+                    });
+                }
+                result_schema.get_or_insert(schema);
+                Ok(PendingBooleanArm {
+                    pattern,
+                    guard,
+                    body,
+                })
+            })();
+            self.bindings = saved;
+            let lowered_arm = lowered_arm?;
+            if lowered_arm.guard.is_none() {
+                match pattern {
+                    crate::BooleanPattern::Literal(value) => coverage[value as usize] = true,
+                    crate::BooleanPattern::Wildcard | crate::BooleanPattern::Bind => {
+                        coverage = [true; 2]
+                    }
+                }
+            }
+            lowered.push(lowered_arm);
+        }
+        if coverage != [true; 2] {
+            return Err(SourceSemanticError {
+                code: "source-semantics/non-exhaustive-boolean-match",
+                message: "Boolean match needs an unguarded arm for both Boolean values".to_owned(),
+                anchor: SourceSemanticAnchor::for_node(syntax),
+            });
+        }
+        let index = self.nodes.len() as u32;
+        self.nodes.push(PendingNode {
+            body: PendingNodeBody::BooleanMatch(PendingBooleanMatch {
+                captures,
+                arms: lowered,
+            }),
+            inferable_projection: false,
+            inputs,
+            schema: result_schema.expect("exhaustive match has arms"),
+            state: None,
+            semantic: SourceSemanticNode {
+                operation: "match".to_owned(),
+                role: "Boolean-match",
+                detail: None,
+                anchor: SourceSemanticAnchor::for_node(syntax),
+            },
+        });
+        Ok(PendingValue::Node(index))
+    }
+
+    fn boolean_control_block(
+        &mut self,
+        expression: &ExpressionSyntax,
+        pattern: crate::BooleanPattern,
+        scrutinee: PendingValue,
+        inputs: &mut Vec<PendingValue>,
+        captures: &mut Vec<(u16, SchemaDraft)>,
+        id: u32,
+    ) -> Result<(PendingControlBlock, SchemaDraft), SourceSemanticError> {
+        let unsupported = || SourceSemanticError {
+            code: "source-semantics/unsupported-match-block",
+            message: "match blocks require pure maintained operations and fixed scalar values"
+                .to_owned(),
+            anchor: SourceSemanticAnchor::for_node(expression.syntax()),
+        };
+        let start = self.nodes.len();
+        self.control_depth += 1;
+        let result = self
+            .expression(expression)
+            .and_then(|(value, _)| self.schema_draft_of(value).map(|schema| (value, schema)));
+        self.control_depth -= 1;
+        let nodes = self.nodes.split_off(start);
+        let (value, schema) = result?;
+        let scalar = |schema: &SchemaDraft| {
+            schema
+                .clone()
+                .finalize()
+                .is_ok_and(|schema| crate::is_control_scalar_schema(&schema))
+        };
+        if !scalar(&schema) {
+            return Err(unsupported());
+        }
+        let mut parameters = Vec::<(crate::ControlParameterSource, SchemaDraft)>::new();
+        let mut parameter_values = Vec::new();
+        let mut resolve =
+            |value: PendingValue| -> Result<PendingControlValue, SourceSemanticError> {
+                match value {
+                    PendingValue::Constant(index) => Ok(PendingControlValue::Constant(index)),
+                    PendingValue::Node(index) if index as usize >= start => {
+                        Ok(PendingControlValue::Local(index - start as u32))
+                    }
+                    PendingValue::UnresolvedEmpty(_) => Err(unsupported()),
+                    _ => {
+                        if let Some(index) = parameter_values
+                            .iter()
+                            .position(|existing| *existing == value)
+                        {
+                            return Ok(PendingControlValue::Parameter(index as u16));
+                        }
+                        let schema = self.schema_draft_of(value)?;
+                        if !scalar(&schema) {
+                            return Err(unsupported());
+                        }
+                        let source = if pattern == crate::BooleanPattern::Bind && value == scrutinee
+                        {
+                            crate::ControlParameterSource::Scrutinee
+                        } else {
+                            let input = match inputs.iter().position(|existing| *existing == value)
+                            {
+                                Some(index) => index,
+                                None => {
+                                    inputs.push(value);
+                                    inputs.len() - 1
+                                }
+                            };
+                            let input = u16::try_from(input).map_err(|_| unsupported())?;
+                            let capture = match captures
+                                .iter()
+                                .position(|(existing, _)| *existing == input)
+                            {
+                                Some(index) => index,
+                                None => {
+                                    captures.push((input, schema.clone()));
+                                    captures.len() - 1
+                                }
+                            };
+                            crate::ControlParameterSource::Capture(
+                                u16::try_from(capture).map_err(|_| unsupported())?,
+                            )
+                        };
+                        let ordinal = u16::try_from(parameters.len()).map_err(|_| unsupported())?;
+                        parameter_values.push(value);
+                        parameters.push((source, schema));
+                        Ok(PendingControlValue::Parameter(ordinal))
+                    }
+                }
+            };
+        let mut operations = Vec::new();
+        for node in nodes {
+            let PendingNodeBody::Operation {
+                operation,
+                contract: Some(contract),
+            } = node.body
+            else {
+                return Err(unsupported());
+            };
+            if node.state.is_some()
+                || contract.interaction != mech_core::ExternalInteraction::Pure
+                || !scalar(&node.schema)
+            {
+                return Err(unsupported());
+            }
+            operations.push(PendingControlOperation {
+                operation,
+                contract,
+                inputs: node
+                    .inputs
+                    .into_iter()
+                    .map(&mut resolve)
+                    .collect::<Result<Vec<_>, _>>()?,
+                schema: node.schema,
+            });
+        }
+        let yield_value = resolve(value)?;
+        Ok((
+            PendingControlBlock {
+                id: crate::ControlBlockId(id),
+                parameters,
+                operations,
+                yield_value,
+            },
+            schema,
+        ))
+    }
+}
+
+fn resolve_pending_match(
+    control: &PendingBooleanMatch,
+    schemas: &SchemaTable,
+    constants: &[mech_core::ConstantId],
+) -> crate::BooleanMatchDeclaration<OperationContractDeclaration> {
+    let schema = |draft: &SchemaDraft| {
+        schemas
+            .find_by_key(
+                draft
+                    .clone()
+                    .finalize()
+                    .expect("validated control schema")
+                    .key(),
+            )
+            .expect("retained control schema")
+    };
+    let block = |block: &PendingControlBlock| {
+        let value = |value| match value {
+            PendingControlValue::Constant(index) => crate::ControlValue::Constant(constants[index]),
+            PendingControlValue::Parameter(ordinal) => crate::ControlValue::Parameter {
+                block: block.id,
+                ordinal,
+            },
+            PendingControlValue::Local(node) => crate::ControlValue::Local {
+                block: block.id,
+                node,
+            },
+        };
+        crate::ControlBlock {
+            id: block.id,
+            parameters: block
+                .parameters
+                .iter()
+                .map(|(source, draft)| crate::ControlParameter {
+                    source: *source,
+                    schema: schema(draft),
+                })
+                .collect(),
+            operations: block
+                .operations
+                .iter()
+                .enumerate()
+                .map(|(index, operation)| crate::ControlOperation {
+                    node: index as u32,
+                    operation: operation.operation.clone(),
+                    contract: operation.contract.clone(),
+                    inputs: operation.inputs.iter().copied().map(value).collect(),
+                    schema: schema(&operation.schema),
+                })
+                .collect(),
+            yield_value: value(block.yield_value),
+        }
+    };
+    crate::BooleanMatchDeclaration {
+        scrutinee: 0,
+        captures: control
+            .captures
+            .iter()
+            .map(|(input, draft)| crate::ControlCapture {
+                input: *input,
+                schema: schema(draft),
+            })
+            .collect(),
+        arms: control
+            .arms
+            .iter()
+            .map(|arm| crate::BooleanMatchArm {
+                pattern: arm.pattern,
+                guard: arm.guard.as_ref().map(block),
+                body: block(&arm.body),
+            })
+            .collect(),
+    }
+}

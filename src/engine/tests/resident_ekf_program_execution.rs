@@ -135,6 +135,9 @@ fn with_resident_effect(artifact: &ProgramArtifact) -> ProgramArtifact {
     let contracts = builder.finish().unwrap();
     let mut nodes = artifact.nodes().to_vec();
     for node in &mut nodes {
+        let mech_engine::ExecutableNodeBody::Operation(node) = &mut node.body else {
+            panic!("ordinary fixture");
+        };
         node.contract = contracts
             .resolve(handles[node.contract.get() as usize])
             .unwrap();
@@ -156,12 +159,14 @@ fn with_resident_effect(artifact: &ProgramArtifact) -> ProgramArtifact {
     });
     nodes.push(NodeDeclaration {
         node,
-        operation: OperationReference {
-            module_path: vec!["resource".to_owned(), "send".to_owned()].into_boxed_slice(),
-            operation_name: "write".to_owned(),
-        },
-        contract: contracts.resolve(effect).unwrap(),
-        requirement: Some(effect_requirement),
+        body: mech_engine::ExecutableNodeBody::Operation(mech_engine::OperationNodeBody {
+            operation: OperationReference {
+                module_path: vec!["resource".to_owned(), "send".to_owned()].into_boxed_slice(),
+                operation_name: "write".to_owned(),
+            },
+            contract: contracts.resolve(effect).unwrap(),
+            requirement: Some(effect_requirement),
+        }),
         input_bindings: input_start..input_start + 1,
         output_bindings: input_start + 1..input_start + 1,
     });

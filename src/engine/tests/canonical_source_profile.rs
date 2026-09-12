@@ -34,7 +34,10 @@ fn maintained_source_types_do_not_depend_on_an_engine_feature_mirror() {
         .compile_expression(&expression("1 + 2"))
         .expect("the maintained arithmetic declaration must resolve");
     assert_eq!(
-        compiled.program().nodes[0].operation.canonical_name(),
+        compiled.program().nodes[0]
+            .operation()
+            .expect("ordinary source operation")
+            .canonical_name(),
         "math/add"
     );
     assert!(compiled.contracts()[0].is_some());

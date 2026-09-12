@@ -7,7 +7,7 @@ use mech_core::{
     ChangeDetectionPolicy, IntegerWidth, OutputConstruction, SchemaBody, ShapeRule, ValueData,
 };
 use mech_engine::{
-    CanonicalSourceFrontend, PHASE_2I_SEMANTIC_RULES, Phase2iSemanticDisposition, SourceNodeOutput,
+    CanonicalSourceFrontend, PHASE_2I_SEMANTIC_RULES, Phase2iSemanticDisposition,
     SourceSemanticComprehensionQualifierRole, SourceStateInitializer, SourceValue,
     phase_2i_semantic_disposition,
 };
@@ -170,7 +170,7 @@ fn structures_calls_comprehensions_and_fsm_enter_one_source_graph() {
         ("math/add(left: 1, 2)", "math/add"),
         ("x[1].field", "access/column"),
         ("1..10", "range/exclusive"),
-        ("x ? | * => 1", "source/match"),
+        ("x<bool> ? | * => 1", "match"),
         ("[x | x <- xs]", "matrix/comprehension"),
         ("{x | x <- xs}", "set/comprehension"),
         ("#controller() -> :ready", "source/fsm"),
@@ -206,7 +206,12 @@ fn calls_ranges_subscripts_and_patterns_keep_their_canonical_roles() {
         .compile_expression(&expression("math/add(left: 1, 2)"))
         .unwrap();
     let node = call.program().nodes.last().unwrap();
-    assert_eq!(node.operation.canonical_name(), "math/add");
+    assert_eq!(
+        node.operation()
+            .expect("ordinary operation fixture")
+            .canonical_name(),
+        "math/add"
+    );
     assert_eq!(
         call.source_map().nodes.last().unwrap().detail.as_deref(),
         Some("math/add(left,)")
@@ -259,7 +264,12 @@ fn calls_ranges_subscripts_and_patterns_keep_their_canonical_roles() {
         .program()
         .nodes
         .iter()
-        .filter(|node| node.operation.canonical_name() == "access/scalar")
+        .filter(|node| {
+            node.operation()
+                .expect("ordinary operation fixture")
+                .canonical_name()
+                == "access/scalar"
+        })
         .collect::<Vec<_>>();
     assert_eq!(accesses.len(), 2);
     assert!(matches!(
@@ -289,7 +299,8 @@ fn calls_ranges_subscripts_and_patterns_keep_their_canonical_roles() {
     );
     assert!(comprehension.program().nodes.iter().all(|node| {
         !node
-            .operation
+            .operation()
+            .expect("ordinary operation fixture")
             .canonical_name()
             .starts_with("source/pattern")
     }));
@@ -340,39 +351,39 @@ fn calls_ranges_subscripts_and_patterns_keep_their_canonical_roles() {
         .program()
         .nodes
         .iter()
-        .find(|node| node.operation.canonical_name() == "math/add")
+        .find(|node| {
+            node.operation()
+                .expect("ordinary operation fixture")
+                .canonical_name()
+                == "math/add"
+        })
         .unwrap();
     assert_ne!(add.inputs[0], add.inputs[1]);
 
     let typed_pattern = CanonicalSourceFrontend
-        .compile_expression(&expression("value ? | y<u8> => y + 1 | * => 0"))
+        .compile_expression(&expression("value<bool> ? | y<bool> => !y | * => false"))
         .unwrap();
-    let binding = typed_pattern
-        .program()
-        .nodes
-        .iter()
-        .find(|node| node.operation.canonical_name() == "source/bind")
-        .expect("typed pattern binding projection");
-    let SourceNodeOutput::Derived { schema } = binding.outputs[0] else {
-        panic!("pattern projection did not produce a derived value")
+    let mech_engine::SourceNodeBody::BooleanMatch(control) = &typed_pattern.program().nodes[0].body
+    else {
+        panic!("typed match");
     };
-    assert!(matches!(
-        typed_pattern.schemas().get(schema).unwrap().body(),
-        SchemaBody::UnsignedInteger(IntegerWidth::W8)
-    ));
-    let add = typed_pattern
-        .program()
-        .nodes
-        .iter()
-        .find(|node| node.operation.canonical_name() == "math/add")
-        .expect("typed pattern result addition");
-    let SourceNodeOutput::Derived { schema } = add.outputs[0] else {
-        panic!("pattern result addition did not produce a derived value")
-    };
-    assert!(matches!(
-        typed_pattern.schemas().get(schema).unwrap().body(),
-        SchemaBody::FloatingPoint(_)
-    ));
+    assert_eq!(control.arms[0].pattern, mech_engine::BooleanPattern::Bind);
+    let parameter = &control.arms[0].body.parameters[0];
+    assert_eq!(
+        parameter.source,
+        mech_engine::ControlParameterSource::Scrutinee
+    );
+    assert_eq!(
+        typed_pattern
+            .schemas()
+            .get(parameter.schema)
+            .unwrap()
+            .body(),
+        &SchemaBody::Bool
+    );
+    assert_eq!(control.arms[0].body.operations.len(), 1);
+    assert_eq!(typed_pattern.program().inputs.len(), 1);
+    typed_pattern.compile_artifact().unwrap();
 }
 
 #[test]
@@ -472,7 +483,10 @@ fn canonical_numeric_kinds_annotations_strings_and_state_are_preserved() {
     assert_eq!(state.program().states.len(), 1);
     assert!(state.program().states[0].initializer.is_some());
     assert_eq!(
-        state.program().nodes[0].operation.canonical_name(),
+        state.program().nodes[0]
+            .operation()
+            .expect("ordinary operation fixture")
+            .canonical_name(),
         "core/assign"
     );
     assert_eq!(state.program().outputs[0].source, SourceValue::State(0));
@@ -941,26 +955,11 @@ fn reviewed_source_kind_edges_match_operation_and_literal_contracts() {
         "source-semantics/incompatible-literal-kind"
     );
 
-    let matched = CanonicalSourceFrontend
-        .compile_expression(&expression("x ? | threshold + 1 => 2 | * => 3"))
-        .unwrap();
-    assert_eq!(
-        matched
-            .program()
-            .inputs
-            .iter()
-            .map(|input| input.name.as_str())
-            .collect::<Vec<_>>(),
-        ["x", "threshold"]
-    );
-    assert!(matched.source_map().patterns[0].bindings.is_empty());
-    assert!(
-        matched
-            .source_map()
-            .nodes
-            .iter()
-            .all(|node| node.operation != "source/bind")
-    );
+    let error = CanonicalSourceFrontend
+        .compile_expression(&expression("x<bool> ? | threshold + 1 => 2 | * => 3"))
+        .err()
+        .expect("expected rejection");
+    assert_eq!(error.code, "source-semantics/unsupported-boolean-match");
 
     for (source, code) in [
         ("1 && 2", "source-semantics/non-boolean-operator-kind"),
@@ -986,7 +985,7 @@ fn reviewed_source_kind_edges_match_operation_and_literal_contracts() {
         ("-:ready", "source-semantics/non-negatable-kind"),
         ("-<u8>", "source-semantics/non-negatable-kind"),
         (
-            "x ? | *, 1 => 2 | * => 3",
+            "x<bool> ? | *, 1 => 2 | * => 3",
             "source-semantics/non-boolean-operator-kind",
         ),
         ("{}", "source-semantics/unresolved-set-element-kind"),
@@ -1029,7 +1028,8 @@ fn reviewed_source_kind_edges_match_operation_and_literal_contracts() {
             .nodes
             .last()
             .unwrap()
-            .operation
+            .operation()
+            .expect("ordinary operation fixture")
             .canonical_name(),
         "string/concat"
     );
@@ -1075,7 +1075,12 @@ fn reviewed_source_kind_edges_match_operation_and_literal_contracts() {
         .program()
         .nodes
         .iter()
-        .position(|node| node.operation.canonical_name() == "matrix/transpose")
+        .position(|node| {
+            node.operation()
+                .expect("ordinary operation fixture")
+                .canonical_name()
+                == "matrix/transpose"
+        })
         .unwrap();
     let contract = transposed.contracts()[transpose_index].as_ref().unwrap();
     assert_eq!(
@@ -1193,7 +1198,7 @@ fn reviewed_source_kind_edges_match_operation_and_literal_contracts() {
 #[test]
 fn reviewed_exact_source_authorities_cover_matches_kinds_logic_and_matrices() {
     let matched = CanonicalSourceFrontend
-        .compile_expression(&expression("x ? | * => 1u8 | * => 2u8"))
+        .compile_expression(&expression("x<bool> ? | * => 1u8 | * => 2u8"))
         .unwrap();
     assert!(matches!(
         matched
@@ -1205,7 +1210,7 @@ fn reviewed_exact_source_authorities_cover_matches_kinds_logic_and_matrices() {
     ));
     assert_eq!(
         CanonicalSourceFrontend
-            .compile_expression(&expression("x ? | * => 1u8 | * => true"))
+            .compile_expression(&expression("x<bool> ? | * => 1u8 | * => true"))
             .err()
             .expect("incompatible match result schemas must fail")
             .code,
@@ -1296,7 +1301,8 @@ fn reviewed_exact_source_authorities_cover_matches_kinds_logic_and_matrices() {
             .nodes
             .last()
             .unwrap()
-            .operation
+            .operation()
+            .expect("ordinary operation fixture")
             .canonical_name(),
         "matrix/horzcat"
     );
@@ -1320,7 +1326,12 @@ fn reviewed_exact_source_authorities_cover_matches_kinds_logic_and_matrices() {
                     == [mech_core::DimensionExpr::Constant(1), mech_core::DimensionExpr::Constant(2)]
     ));
     let node = optional.program().nodes.last().unwrap();
-    assert_eq!(node.operation.canonical_name(), "matrix/literal");
+    assert_eq!(
+        node.operation()
+            .expect("ordinary operation fixture")
+            .canonical_name(),
+        "matrix/literal"
+    );
     assert_eq!(node.inputs.len(), 2);
     assert!(
         optional
@@ -1482,7 +1493,8 @@ fn exact_table_columns_and_c32_are_first_class_source_schemas() {
             .nodes
             .last()
             .unwrap()
-            .operation
+            .operation()
+            .expect("ordinary operation fixture")
             .canonical_name(),
         "matrix/horzcat"
     );
@@ -1777,15 +1789,18 @@ fn compound_and_maintained_operations_retain_exact_source_schemas() {
 }
 
 #[test]
-fn match_and_fsm_metadata_preserve_source_argument_layouts() {
+fn typed_match_blocks_and_fsm_diagnostics_preserve_owned_roles() {
     let matched = CanonicalSourceFrontend
-        .compile_expression(&expression("x ? | *, true => 1 | * => 2"))
+        .compile_expression(&expression("x<bool> ? | *, true => 1 | * => 2"))
         .unwrap();
-    assert_eq!(matched.source_map().match_arms.len(), 2);
-    assert_eq!(matched.source_map().match_arms[0].guard_input, Some(1));
-    assert_eq!(matched.source_map().match_arms[0].result_input, 2);
-    assert_eq!(matched.source_map().match_arms[1].guard_input, None);
-    assert_eq!(matched.source_map().match_arms[1].result_input, 3);
+    let mech_engine::SourceNodeBody::BooleanMatch(control) = &matched.program().nodes[0].body
+    else {
+        panic!("typed match body");
+    };
+    assert_eq!(control.arms.len(), 2);
+    assert!(control.arms[0].guard.is_some());
+    assert!(control.arms[1].guard.is_none());
+    matched.compile_artifact().unwrap();
 
     let fsm = CanonicalSourceFrontend
         .compile_expression(&expression("#controller(left: 1, 2) -> :ready"))

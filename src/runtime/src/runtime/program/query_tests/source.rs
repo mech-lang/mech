@@ -246,7 +246,7 @@ fn provider_transaction_contract_reaches_the_source_program_artifact() {
     let artifact = decode_program_artifact_sections(&parsed.artifact).unwrap();
     assert!(artifact.nodes().iter().any(|node| {
         matches!(
-            artifact.contracts().get(node.contract),
+            node.as_operation().and_then(|operation| artifact.contracts().get(operation.contract)),
             Some(ResolvedOperationContract::Declared(contract))
                 if matches!(
                     contract.interaction,

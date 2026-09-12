@@ -95,11 +95,11 @@ fn dynamic_options_preserve_live_matrix_payloads_and_canonical_element_order() {
 fn roundtrip(source: &str) -> mech_engine::ProgramArtifact {
     let compiled = definition(source);
     assert!(
-        compiled
-            .program()
-            .nodes
-            .iter()
-            .all(|node| !node.operation.canonical_name().starts_with("source/")),
+        compiled.program().nodes.iter().all(|node| !node
+            .operation()
+            .expect("ordinary operation fixture")
+            .canonical_name()
+            .starts_with("source/")),
         "{source}"
     );
     let artifact = compiled.compile_artifact().unwrap();
