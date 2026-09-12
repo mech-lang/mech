@@ -12,10 +12,10 @@ crate at that baseline. It documents existing behavior, not a parser redesign.
 R1–R6 Integration Rebase
 -------------------------------------------------------------------------------
 
-The unfinished syntax stack is rebased through S2 onto
+The syntax stack is rebased through S5 onto
 `integration/v0.4` at `535e4b245` (R1–R6 plus the combined integration fixes).
-Local recursive-core recovery is complete. Typed views, engine-owned source
-semantics, certification, and atomic registry activation remain unfinished.
+Local recursive-core recovery, typed views, engine-owned source semantics, and
+canonical certification are complete. Atomic registry activation remains.
 `docs/design/syntax-v0.4-continuation-plan.mec` replaces the old combined Phase
 2I-D/2I-E delivery assumption with independently gated milestones and an atomic
 document-root/product cutover that removes the Nom path and compatibility
@@ -30,6 +30,12 @@ and removal of `table_bottom`. REPL commands now belong to
 `src/syntax/tests/fixtures/grammar/retired/repl`. They are historical command
 syntax, not pending work for the lossless document parser. Runtime command
 registry and request tests enforce the current command contract.
+
+`phase-2i-certification.tsv` is the closed S5 evidence matrix. Every Phase 2I
+row has specification-linked accepted and recovery inputs, a direct rejection
+case, frozen lossless-tree and typed-access snapshots, stable recovery evidence,
+an explicit semantic disposition, and a canonical downstream consumer. The
+matrix and engine semantic fixtures use no old-parser result as an oracle.
 
 Canonical source-import parity now includes extensionless paths, percent
 characters, and whitespace around context capability groups. Canonical escape
