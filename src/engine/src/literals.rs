@@ -691,25 +691,9 @@ mech_core::declare_native_runtime_factory! {
 
 #[cfg(feature = "convert")]
 pub(crate) static PURE_TYPE_CONVERSION_CONTRACT: std::sync::LazyLock<OperationContractDeclaration> =
-    std::sync::LazyLock::new(|| OperationContractDeclaration {
-        inputs: InputPortLayout::Fixed(
-            vec![InputPortPolicy {
-                access: AccessMode::Read,
-                delivery: DeliveryMode::Signal,
-            }]
-            .into_boxed_slice(),
-        ),
-        outputs: vec![OutputPortPolicy {
-            access: AccessMode::Write,
-            delivery: DeliveryMode::Signal,
-            construction: OutputConstruction::FullWrite {
-                shape: ShapeRule::SameAsInput { input: 0 },
-            },
-            alias: AliasPolicy::NoAlias,
-            change_detection: ChangeDetectionPolicy::KernelReported,
-        }]
-        .into_boxed_slice(),
-        interaction: ExternalInteraction::Pure,
+    std::sync::LazyLock::new(|| {
+        mech_core::maintained_operation_contract("convert/kind", 1, false)
+            .expect("maintained operation contract")
     });
 
 #[cfg(feature = "convert")]

@@ -2368,6 +2368,29 @@ fn matrix_shape_for_extents(
         .map_err(|_| ResidentActivationError::RegionSizeOverflow)
 }
 
+fn logical_selector_population(
+    artifact: &ProgramArtifact,
+    source: ArtifactSource,
+    known: &BTreeMap<ArtifactSource, u64>,
+) -> Option<u64> {
+    if let Some(population) = known.get(&source) {
+        return Some(*population);
+    }
+    let ArtifactSource::Constant(id) = source else {
+        return None;
+    };
+    match artifact.constants().get(id)?.data() {
+        mech_core::ValueData::Bool(value) => Some(u64::from(*value)),
+        mech_core::ValueData::Matrix(matrix) => match matrix.elements() {
+            mech_core::snapshot::SequenceView::Bool(values) => {
+                u64::try_from(values.iter().filter(|value| **value).count()).ok()
+            }
+            _ => None,
+        },
+        _ => None,
+    }
+}
+
 fn complete_activation_shape_facts(
     artifact: &ProgramArtifact,
     supplied: &ActivationFacts,
@@ -2375,6 +2398,10 @@ fn complete_activation_shape_facts(
     schedule: &ActivationSchedule,
 ) -> Result<ActivationFacts, ResidentActivationError> {
     let mut facts = supplied.clone();
+    // Concatenation preserves the population of a logical selector. Track only
+    // statically known populations; live masks require an explicit output shape
+    // and are revalidated by the selection kernel on every turn.
+    let mut logical_populations = BTreeMap::<ArtifactSource, u64>::new();
     for node_id in &schedule.nodes {
         let node = &artifact.nodes()[node_id.get() as usize];
         let class = classes[node.node.get() as usize];
@@ -2382,6 +2409,29 @@ fn complete_activation_shape_facts(
             continue;
         }
         let output = node_output_slot(artifact, node.node)?;
+        if node.operation.module_path.as_ref() == ["matrix"]
+            && matches!(
+                node.operation.operation_name.as_str(),
+                "horzcat" | "vertcat"
+            )
+        {
+            let population = node_inputs(artifact, node.node)?.iter().try_fold(
+                Some(0_u64),
+                |total, source| match (
+                    total,
+                    logical_selector_population(artifact, *source, &logical_populations),
+                ) {
+                    (Some(total), Some(count)) => total
+                        .checked_add(count)
+                        .map(Some)
+                        .ok_or(ResidentActivationError::RegionSizeOverflow),
+                    _ => Ok(None),
+                },
+            )?;
+            if let Some(population) = population {
+                logical_populations.insert(ArtifactSource::Slot(output), population);
+            }
+        }
         if facts.slot_shapes.contains_key(&output) {
             continue;
         }
@@ -2566,6 +2616,23 @@ fn complete_activation_shape_facts(
                 continue;
             };
             let selector_count = |source: ArtifactSource| {
+                let schema = match source {
+                    ArtifactSource::Constant(id) => {
+                        artifact.constants().get(id).map(|value| value.schema())
+                    }
+                    ArtifactSource::Slot(id) => artifact
+                        .slots()
+                        .get(id.get() as usize)
+                        .map(|slot| slot.schema),
+                }
+                .and_then(|schema| artifact.schemas().get(schema))
+                .ok_or(ResidentActivationError::InvalidDependency { node: node.node })?;
+                if matches!(schema.body(), SchemaBody::Bool)
+                    || matches!(schema.body(), SchemaBody::Matrix { element, .. } if element.as_ref() == &SchemaBody::Bool)
+                {
+                    return logical_selector_population(artifact, source, &logical_populations)
+                        .ok_or(ResidentActivationError::UnresolvedShape { slot: output });
+                }
                 source_extents(artifact, source, &facts).and_then(|extents| {
                     if extents.is_empty() {
                         Ok(1)

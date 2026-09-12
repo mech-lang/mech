@@ -168,7 +168,7 @@ fn structures_calls_comprehensions_and_fsm_enter_one_source_graph() {
         ("[1 2]", "matrix/horzcat"),
         ("|a<u8>|1|", "source/table"),
         ("f(left: 1, 2)", "f"),
-        ("x[1].field", "access/index"),
+        ("x[1].field", "access/column"),
         ("1..10", "range/exclusive"),
         ("x ? | * => 1", "source/match"),
         ("[x | x <- xs]", "matrix/comprehension"),
@@ -262,7 +262,7 @@ fn calls_ranges_subscripts_and_patterns_keep_their_canonical_roles() {
         .program()
         .nodes
         .iter()
-        .filter(|node| node.operation.canonical_name() == "access/index")
+        .filter(|node| node.operation.canonical_name() == "access/scalar")
         .collect::<Vec<_>>();
     assert_eq!(accesses.len(), 2);
     assert!(matches!(
@@ -852,16 +852,18 @@ fn semantic_annotations_follow_value_roles_and_lexical_scope() {
         .compile_expression(&expression("1..2..limit"))
         .unwrap();
     let range = ternary_range.program().nodes.last().unwrap();
-    assert!(matches!(
-        range.inputs[2],
-        SourceValue::NodeOutput {
-            node: _,
-            output_ordinal: 0
-        }
-    ));
-    ternary_range
-        .compile_artifact()
-        .expect("a dynamic third endpoint must be conformed before range emission");
+    assert_eq!(range.inputs[2], SourceValue::Input(0));
+    assert_eq!(
+        ternary_range
+            .schemas()
+            .get(ternary_range.program().inputs[0].schema)
+            .unwrap()
+            .body(),
+        &SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)
+    );
+    ternary_range.compile_artifact().expect(
+        "an unannotated third endpoint must acquire its concrete peer kind before range emission",
+    );
 
     let invalid_not = CanonicalSourceFrontend
         .compile_expression(&expression("¬1"))
@@ -1517,9 +1519,7 @@ fn exact_table_columns_and_c32_are_first_class_source_schemas() {
             .body(),
         SchemaBody::Set { element, cardinality }
             if matches!(element.as_ref(), SchemaBody::UnsignedInteger(IntegerWidth::W8))
-                && *cardinality == mech_core::CardinalitySpec::Exact(
-                    mech_core::DimensionExpr::Constant(2)
-                )
+                && *cardinality == mech_core::CardinalitySpec::Exact(mech_core::DimensionExpr::Constant(2))
     ));
     assert_eq!(
         CanonicalSourceFrontend

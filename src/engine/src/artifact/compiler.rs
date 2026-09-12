@@ -704,11 +704,28 @@ pub const INTERACTIVE_SYMBOL_OUTPUT_PREFIX: &str = "mech-repl-symbol-";
 /// makes the mapping injective and keeps query identity independent from the
 /// artifact interface grammar.
 pub fn encode_interactive_symbol_output_name(name: &str) -> String {
+    encode_interface_symbol(INTERACTIVE_SYMBOL_OUTPUT_PREFIX, name)
+}
+
+/// Namespace for externally supplied canonical source inputs. This transports
+/// source identity only; it does not resolve context capabilities or paths.
+pub const SOURCE_INPUT_PREFIX: &str = "mech-source-input-";
+
+/// Encode every source input name injectively, preserving arbitrary UTF-8.
+pub fn encode_source_input_name(name: &str) -> String {
+    encode_interface_symbol(SOURCE_INPUT_PREFIX, name)
+}
+
+/// Recover the source name carried by a canonical artifact input interface.
+pub fn decode_source_input_name(name: &str) -> Option<String> {
+    decode_interface_symbol(SOURCE_INPUT_PREFIX, name)
+}
+
+fn encode_interface_symbol(prefix: &str, name: &str) -> String {
     const HEX: &[u8; 16] = b"0123456789abcdef";
 
-    let mut encoded =
-        String::with_capacity(INTERACTIVE_SYMBOL_OUTPUT_PREFIX.len() + name.len() * 2);
-    encoded.push_str(INTERACTIVE_SYMBOL_OUTPUT_PREFIX);
+    let mut encoded = String::with_capacity(prefix.len() + name.len() * 2);
+    encoded.push_str(prefix);
     for byte in name.bytes() {
         encoded.push(HEX[(byte >> 4) as usize] as char);
         encoded.push(HEX[(byte & 0x0f) as usize] as char);
@@ -718,7 +735,11 @@ pub fn encode_interactive_symbol_output_name(name: &str) -> String {
 
 /// Decode an interactive artifact output name back to its lexical query name.
 pub fn decode_interactive_symbol_output_name(name: &str) -> Option<String> {
-    let encoded = name.strip_prefix(INTERACTIVE_SYMBOL_OUTPUT_PREFIX)?;
+    decode_interface_symbol(INTERACTIVE_SYMBOL_OUTPUT_PREFIX, name)
+}
+
+fn decode_interface_symbol(prefix: &str, name: &str) -> Option<String> {
+    let encoded = name.strip_prefix(prefix)?;
     if encoded.len() % 2 != 0 {
         return None;
     }

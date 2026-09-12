@@ -10,121 +10,37 @@ use std::sync::LazyLock;
 
 #[cfg(feature = "matrix_comprehensions")]
 pub(crate) static PURE_MATRIX_COMPREHENSION_CONTRACT: LazyLock<OperationContractDeclaration> =
-    LazyLock::new(|| OperationContractDeclaration {
-        inputs: InputPortLayout::Variadic {
-            prefix: Box::new([]),
-            repeated: InputPortPolicy {
-                access: AccessMode::Read,
-                delivery: DeliveryMode::Signal,
-            },
-            min_repetitions: 0,
-        },
-        outputs: vec![OutputPortPolicy {
-            access: AccessMode::Write,
-            delivery: DeliveryMode::Signal,
-            construction: OutputConstruction::Build {
-                postcondition: ShapeContractReference {
-                    module_path: vec!["matrix".to_owned(), "concatenate".to_owned()]
-                        .into_boxed_slice(),
-                    contract_name: "horizontal-output".to_owned(),
-                },
-            },
-            alias: AliasPolicy::NoAlias,
-            change_detection: ChangeDetectionPolicy::KernelReported,
-        }]
-        .into_boxed_slice(),
-        interaction: ExternalInteraction::Pure,
+    LazyLock::new(|| {
+        mech_core::maintained_operation_contract("matrix/comprehension", 0, false)
+            .expect("maintained constructor contract")
     });
-
-#[cfg(any(feature = "matrix_horzcat", feature = "matrix_vertcat"))]
-fn matrix_concatenation_contract(contract_name: &str) -> OperationContractDeclaration {
-    OperationContractDeclaration {
-        inputs: InputPortLayout::Variadic {
-            prefix: Box::new([]),
-            repeated: InputPortPolicy {
-                access: AccessMode::Read,
-                delivery: DeliveryMode::Signal,
-            },
-            min_repetitions: 1,
-        },
-        outputs: vec![OutputPortPolicy {
-            access: AccessMode::Write,
-            delivery: DeliveryMode::Signal,
-            construction: OutputConstruction::Build {
-                postcondition: ShapeContractReference {
-                    module_path: vec!["matrix".to_owned(), "concatenate".to_owned()]
-                        .into_boxed_slice(),
-                    contract_name: contract_name.to_owned(),
-                },
-            },
-            alias: AliasPolicy::NoAlias,
-            change_detection: ChangeDetectionPolicy::KernelReported,
-        }]
-        .into_boxed_slice(),
-        interaction: ExternalInteraction::Pure,
-    }
-}
 
 #[cfg(feature = "matrix_horzcat")]
 pub(crate) static PURE_MATRIX_HORZCAT_CONTRACT: LazyLock<OperationContractDeclaration> =
-    LazyLock::new(|| matrix_concatenation_contract("horizontal-output"));
+    LazyLock::new(|| {
+        mech_core::maintained_operation_contract("matrix/horzcat", 0, false)
+            .expect("maintained constructor contract")
+    });
 
 #[cfg(feature = "matrix_vertcat")]
 pub(crate) static PURE_MATRIX_VERTCAT_CONTRACT: LazyLock<OperationContractDeclaration> =
-    LazyLock::new(|| matrix_concatenation_contract("vertical-output"));
+    LazyLock::new(|| {
+        mech_core::maintained_operation_contract("matrix/vertcat", 0, false)
+            .expect("maintained constructor contract")
+    });
 
 #[cfg(feature = "set")]
 pub(crate) static PURE_SET_DEFINE_CONTRACT: LazyLock<OperationContractDeclaration> =
-    LazyLock::new(|| OperationContractDeclaration {
-        inputs: InputPortLayout::Variadic {
-            prefix: Box::new([]),
-            repeated: InputPortPolicy {
-                access: AccessMode::Read,
-                delivery: DeliveryMode::Signal,
-            },
-            min_repetitions: 0,
-        },
-        outputs: vec![OutputPortPolicy {
-            access: AccessMode::Write,
-            delivery: DeliveryMode::Signal,
-            construction: OutputConstruction::Build {
-                postcondition: ShapeContractReference {
-                    module_path: vec!["set".to_owned()].into_boxed_slice(),
-                    contract_name: "define-output".to_owned(),
-                },
-            },
-            alias: AliasPolicy::NoAlias,
-            change_detection: ChangeDetectionPolicy::KernelReported,
-        }]
-        .into_boxed_slice(),
-        interaction: ExternalInteraction::Pure,
+    LazyLock::new(|| {
+        mech_core::maintained_operation_contract("set/define", 0, false)
+            .expect("maintained constructor contract")
     });
 
 #[cfg(feature = "set_comprehensions")]
 pub(crate) static PURE_SET_COMPREHENSION_CONTRACT: LazyLock<OperationContractDeclaration> =
-    LazyLock::new(|| OperationContractDeclaration {
-        inputs: InputPortLayout::Variadic {
-            prefix: Box::new([]),
-            repeated: InputPortPolicy {
-                access: AccessMode::Read,
-                delivery: DeliveryMode::Signal,
-            },
-            min_repetitions: 0,
-        },
-        outputs: vec![OutputPortPolicy {
-            access: AccessMode::Write,
-            delivery: DeliveryMode::Signal,
-            construction: OutputConstruction::Build {
-                postcondition: ShapeContractReference {
-                    module_path: vec!["set".to_owned()].into_boxed_slice(),
-                    contract_name: "comprehension-output".to_owned(),
-                },
-            },
-            alias: AliasPolicy::NoAlias,
-            change_detection: ChangeDetectionPolicy::KernelReported,
-        }]
-        .into_boxed_slice(),
-        interaction: ExternalInteraction::Pure,
+    LazyLock::new(|| {
+        mech_core::maintained_operation_contract("set/comprehension", 0, false)
+            .expect("maintained constructor contract")
     });
 
 #[cfg(any(

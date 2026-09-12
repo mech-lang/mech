@@ -511,6 +511,12 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     )?;
     register_no_additional_scratch(builder, &["access"], "index", bind_scalar_index)?;
     register_canonical_finalize(builder, &["access"], "range", bind_semantic_range_access)?;
+    register_canonical_finalize(
+        builder,
+        &["access"],
+        "rectangle",
+        bind_semantic_range_access,
+    )?;
     register_canonical_finalize(builder, &["matrix"], "horzcat", bind_horizontal)?;
     register_canonical_finalize(builder, &["matrix"], "vertcat", bind_vertical)?;
     register_canonical_finalize(
@@ -520,6 +526,7 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         bind_matrix_comprehension,
     )?;
     register_no_additional_scratch(builder, &["matrix"], "multiply", bind_matmul)?;
+    register_no_additional_scratch(builder, &["matrix"], "matmul", bind_matmul)?;
     register_no_additional_scratch(builder, &["matrix"], "dot", bind_matrix_dot)?;
     register_with_memory_class(
         builder,
@@ -4223,27 +4230,48 @@ pub(super) fn checked_combination_count(n: usize, k: usize) -> Option<usize> {
     usize::try_from(result).ok()
 }
 
-fn bind_gather_1d(
+fn validate_dense_gather(
     request: &ResidentKernelBindRequest<'_>,
-) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    mode: ResolvedSelectionMode,
+) -> Result<(), ResidentKernelBindError> {
+    let count = if mode == ResolvedSelectionMode::Rectangle {
+        3
+    } else {
+        2
+    };
     validate_full_write(
         request,
-        2,
+        count,
         ShapeRule::Declared,
         ChangeDetectionPolicy::KernelReported,
     )?;
-    let [source, selector] = request.inputs else {
-        return Err(ResidentKernelBindError::UnsupportedLayout);
-    };
-    let selected = declared_selector_cardinality(request, selector)?;
-    let expected_output = resident_shape_from_dimensions(selected, 1)?;
+    let source = &request.inputs[0];
     if source.kind != ResidentValueKind::F64
-        || !numeric_positional_selector_layout(request, selector)
         || request.output.kind != ResidentValueKind::F64
-        || request.output.shape != expected_output
+        || request.inputs[1..]
+            .iter()
+            .any(|selector| !positional_selector_layout(request, selector))
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
+    validate_snapshot_access_geometry(
+        request,
+        Some((source.shape.rows as usize, source.shape.columns as usize)),
+        Some((
+            request.output.shape.rows as usize,
+            request.output.shape.columns as usize,
+        )),
+        Some(mode),
+        &request.inputs[1..],
+        None,
+    )?;
+    Ok(())
+}
+
+fn bind_gather_1d(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_dense_gather(request, ResolvedSelectionMode::LinearGather)?;
     bound(gather_1d, Vec::<u64>::new().into_boxed_slice())
 }
 
@@ -4340,8 +4368,7 @@ fn bind_semantic_range_access(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_gather_1d(request)
-        .or_else(|_| bind_all_rows_columns(request))
-        .or_else(|_| bind_rows_all_columns(request))
+        .or_else(|_| bind_gather_rectangle(request))
         .or_else(|_| super::text::bind_string_gather(request))
         .or_else(|_| {
             let mode = if request.inputs.len() == 3 {
@@ -4351,6 +4378,56 @@ fn bind_semantic_range_access(
             };
             bind_snapshot_access_mode(request, Some(mode))
         })
+}
+
+fn bind_gather_rectangle(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_dense_gather(request, ResolvedSelectionMode::Rectangle)?;
+    let source = &request.inputs[0];
+    bound(
+        gather_rectangle,
+        vec![
+            u64::from(source.shape.rows),
+            u64::from(source.shape.columns),
+            u64::from(request.output.shape.rows),
+            u64::from(request.output.shape.columns),
+        ]
+        .into_boxed_slice(),
+    )
+}
+
+fn gather_rectangle(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let source = f64_input(inputs, 0)?;
+    let rows =
+        usize::try_from(kernel.parameters()[0]).map_err(|_| ResidentKernelError::InvalidShape)?;
+    let columns =
+        usize::try_from(kernel.parameters()[1]).map_err(|_| ResidentKernelError::InvalidShape)?;
+    let selected_rows = ValidatedPositions::new(input(inputs, 1)?, rows)?;
+    let selected_columns = ValidatedPositions::new(input(inputs, 2)?, columns)?;
+    let output = f64_output(output)?;
+    if rows.checked_mul(columns) != Some(source.len())
+        || selected_rows.len().checked_mul(selected_columns.len()) != Some(output.len())
+        || selected_rows.len() as u64 != kernel.parameters()[2]
+        || selected_columns.len() as u64 != kernel.parameters()[3]
+    {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let mut changed = false;
+    selected_columns.try_for_each(|out_column, column| {
+        selected_rows.try_for_each(|out_row, row| {
+            let next = source[column * rows + row];
+            let target = &mut output[out_column * selected_rows.len() + out_row];
+            changed |= target.to_bits() != next.to_bits();
+            *target = next;
+            Ok::<(), ResidentKernelError>(())
+        })
+    })?;
+    Ok(changed)
 }
 
 fn bind_semantic_rows_access(
@@ -4961,18 +5038,16 @@ fn bind_matrix_solve(
 fn bind_all_rows_columns(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    validate_selection_contract(request)?;
-    let [source, _] = request.inputs else {
-        return Err(ResidentKernelBindError::UnsupportedLayout);
-    };
-    let selected = declared_selector_cardinality(request, &request.inputs[1])?;
-    let expected = resident_shape_from_dimensions(source.shape.rows as usize, selected)?;
-    if request.output.shape != expected {
-        return Err(ResidentKernelBindError::UnsupportedLayout);
-    }
+    validate_dense_gather(request, ResolvedSelectionMode::Columns)?;
+    let source = &request.inputs[0];
     bound(
         all_rows_columns,
-        vec![source.shape.rows as u64, source.shape.columns as u64].into_boxed_slice(),
+        vec![
+            source.shape.rows as u64,
+            source.shape.columns as u64,
+            request.output.shape.columns as u64,
+        ]
+        .into_boxed_slice(),
     )
 }
 
@@ -4980,6 +5055,7 @@ fn bind_all_rows_column(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     if request.inputs.get(1).is_none()
+        || !numeric_positional_selector_layout(request, &request.inputs[1])
         || declared_selector_cardinality(request, &request.inputs[1])? != 1
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
@@ -4990,6 +5066,7 @@ fn bind_all_rows_column(
             vec![
                 request.inputs[0].shape.rows as u64,
                 request.inputs[0].shape.columns as u64,
+                1,
             ]
             .into_boxed_slice(),
         )
@@ -5018,18 +5095,16 @@ fn bind_row_all_columns(
 fn bind_rows_all_columns(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    validate_selection_contract(request)?;
-    let [source, _] = request.inputs else {
-        return Err(ResidentKernelBindError::UnsupportedLayout);
-    };
-    let selected = declared_selector_cardinality(request, &request.inputs[1])?;
-    let expected = resident_shape_from_dimensions(selected, source.shape.columns as usize)?;
-    if request.output.shape != expected {
-        return Err(ResidentKernelBindError::UnsupportedLayout);
-    }
+    validate_dense_gather(request, ResolvedSelectionMode::Rows)?;
+    let source = &request.inputs[0];
     bound(
         rows_all_columns,
-        vec![source.shape.rows as u64, source.shape.columns as u64].into_boxed_slice(),
+        vec![
+            source.shape.rows as u64,
+            source.shape.columns as u64,
+            request.output.shape.rows as u64,
+        ]
+        .into_boxed_slice(),
     )
 }
 
@@ -10558,12 +10633,12 @@ fn gather_1d(
     }
     let source_values = f64_input(inputs, 0)?;
     let output = f64_output(output)?;
-    let indices = ValidatedIndices::new(input(inputs, 1)?, source_values.len())?;
+    let indices = ValidatedPositions::new(input(inputs, 1)?, source_values.len())?;
     if output.len() != indices.len() {
         return Err(ResidentKernelError::InvalidShape);
     }
     let mut changed = false;
-    indices.try_for_each_position(|ordinal, index| {
+    indices.try_for_each(|ordinal, index| {
         let target = &mut output[ordinal];
         let next = source_values[index];
         changed |= target.to_bits() != next.to_bits();
@@ -13506,16 +13581,17 @@ fn all_rows_columns(
     let output = f64_output(output)?;
     let rows = kernel.parameters()[0] as usize;
     let source_columns = kernel.parameters()[1] as usize;
-    let selected_columns = ValidatedIndices::new(input(inputs, 1)?, source_columns)?;
-    if output.len()
-        != rows
-            .checked_mul(selected_columns.len())
-            .ok_or(ResidentKernelError::InvalidShape)?
+    let selected_columns = ValidatedPositions::new(input(inputs, 1)?, source_columns)?;
+    if selected_columns.len() as u64 != kernel.parameters()[2]
+        || output.len()
+            != rows
+                .checked_mul(selected_columns.len())
+                .ok_or(ResidentKernelError::InvalidShape)?
     {
         return Err(ResidentKernelError::InvalidShape);
     }
     let mut changed = false;
-    selected_columns.try_for_each_position(|ordinal, column| {
+    selected_columns.try_for_each(|ordinal, column| {
         let source = &source[column * rows..(column + 1) * rows];
         let target = &mut output[ordinal * rows..(ordinal + 1) * rows];
         changed |= target
@@ -13567,19 +13643,20 @@ fn rows_all_columns(
     let output = f64_output(output)?;
     let rows = kernel.parameters()[0] as usize;
     let columns = kernel.parameters()[1] as usize;
-    let selected_rows = ValidatedIndices::new(input(inputs, 1)?, rows)?;
-    if output.len()
-        != selected_rows
-            .len()
-            .checked_mul(columns)
-            .ok_or(ResidentKernelError::InvalidShape)?
+    let selected_rows = ValidatedPositions::new(input(inputs, 1)?, rows)?;
+    if selected_rows.len() as u64 != kernel.parameters()[2]
+        || output.len()
+            != selected_rows
+                .len()
+                .checked_mul(columns)
+                .ok_or(ResidentKernelError::InvalidShape)?
     {
         return Err(ResidentKernelError::InvalidShape);
     }
     let mut changed = false;
     let mut target_index = 0;
     for column in 0..columns {
-        selected_rows.try_for_each_position(|_, row| {
+        selected_rows.try_for_each(|_, row| {
             let next = source[row + column * rows];
             changed |= output[target_index].to_bits() != next.to_bits();
             output[target_index] = next;
@@ -14458,7 +14535,7 @@ mod tests {
 
     #[test]
     fn late_out_of_range_row_selector_rejects_before_output_mutation() {
-        let kernel = BoundResidentKernel::new(rows_all_columns, Box::new([2, 2]));
+        let kernel = BoundResidentKernel::new(rows_all_columns, Box::new([2, 2, 2]));
         let source = [10.0, 20.0, 30.0, 40.0];
         let indices = [1_u64, 3];
         let inputs = [
