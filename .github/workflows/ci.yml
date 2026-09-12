@@ -261,7 +261,7 @@ jobs:
     needs: impact
     if: needs.impact.outputs.windows_canary_required == 'true'
     runs-on: windows-latest
-    timeout-minutes: 12
+    timeout-minutes: 45
     env:
       CARGO_TERM_COLOR: always
       CARGO_INCREMENTAL: 0
@@ -269,15 +269,28 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
       - name: Install Rust nightly-2026-03-03
-        run: rustup toolchain install nightly-2026-03-03 --profile minimal
-      - name: Build the standard Windows command and exercise a source path
+        run: |
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          rustup default nightly-2026-03-03
+          rustup target add wasm32-unknown-unknown
+      - name: Install wasm-pack v0.15.0
         shell: pwsh
         run: |
-          cargo +nightly-2026-03-03 build --locked --bin mech
+          $archive = Join-Path $env:RUNNER_TEMP "wasm-pack.tar.gz"
+          $install = Join-Path $env:RUNNER_TEMP "wasm-pack"
+          Invoke-WebRequest `
+            -Uri "https://github.com/wasm-bindgen/wasm-pack/releases/download/v0.15.0/wasm-pack-v0.15.0-x86_64-pc-windows-msvc.tar.gz" `
+            -OutFile $archive
+          New-Item -ItemType Directory -Force $install | Out-Null
+          tar.exe -xzf $archive -C $install --strip-components=1
+          Add-Content $env:GITHUB_PATH $install
+      - name: Build the complete Windows product and exercise a source path
+        shell: pwsh
+        run: |
+          ./scripts/build-mech.ps1
+          target/release/mech.exe --version | Select-String -SimpleMatch '(standard)'
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          target/debug/mech.exe --version | Select-String -SimpleMatch '(standard)'
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          target/debug/mech.exe run tests/fixtures/standard-resident-scalar.mec
+          target/release/mech.exe run tests/fixtures/standard-resident-scalar.mec
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
   browser-standard-canary:

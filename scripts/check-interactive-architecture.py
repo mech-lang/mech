@@ -130,4 +130,17 @@ build_wasm = text("scripts/build-wasm.py")
 for profile in ("browser", "browser-compute", "browser-compute-canary"):
     if f'"{profile}"' not in build_wasm:
         fail(f"unified WASM builder is missing the `{profile}` profile")
+
+ci = text(".github/workflows/ci.yml")
+windows_job = re.search(
+    r"(?ms)^  standard-windows:\n(?P<body>.*?)(?=^  [a-z][a-z0-9-]*:\n)",
+    ci,
+)
+if windows_job is None:
+    fail("the required standard Windows job is missing")
+windows_body = windows_job.group("body")
+if "./scripts/build-mech.ps1" not in windows_body:
+    fail("the standard Windows gate must execute the complete product build script")
+if "target/release/mech.exe" not in windows_body:
+    fail("the standard Windows gate must exercise the release product artifact")
 print("interactive architecture contract passed")
