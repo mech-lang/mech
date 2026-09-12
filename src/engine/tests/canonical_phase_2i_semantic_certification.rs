@@ -343,6 +343,21 @@ fn semantic_snapshot_hash(compiled: &CanonicalSourceProgram) -> u64 {
                 &encode_program_artifact_bytecode_v1(&artifact)
                     .expect("canonical artifact bytecode v1"),
             );
+            let slot_shape_hints = artifact
+                .slots()
+                .iter()
+                .filter_map(|slot| {
+                    artifact
+                        .slot_shape_hint(slot.slot)
+                        .map(|shape| (slot.slot, shape))
+                })
+                .collect::<Vec<_>>();
+            hash.field("artifact-slot-shape-hints-v1");
+            hash.usize(slot_shape_hints.len());
+            for (slot, shape) in slot_shape_hints {
+                hash.u32(slot.get());
+                hash.bytes(&shape.canonical_bytes());
+            }
         }
         Err(ArtifactBuildError::MissingOperationContract { node, operation }) => {
             hash.field("artifact-missing-operation-contract");
