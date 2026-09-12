@@ -5,10 +5,11 @@ use crate::document::red::{
     SyntaxToken,
 };
 use crate::document::{
-    BodySyntax, CodeBlockSyntax, ExpressionSyntax, MechCodeAltSyntax, MechCodeSyntax,
-    OpAssignOperatorSyntax, OpAssignSyntax, ParagraphElementSyntax, SectionElementSyntax,
-    SliceRefSyntax, SliceStemSyntax, SubscriptListSyntax, SyntaxKind, TitleFrontMatterSyntax,
-    TitleSyntax, UlSubtitleSyntax, VariableAssignSyntax,
+    BodySyntax, CodeBlockSyntax, CodeFenceInfo, EvalInlineMechCodeSyntax, ExpressionSyntax,
+    MechCodeAltSyntax, MechCodeSyntax, OpAssignOperatorSyntax, OpAssignSyntax, OptionMapSyntax,
+    ParagraphElementSyntax, SectionElementSyntax, SliceRefSyntax, SliceStemSyntax,
+    SubscriptListSyntax, SyntaxKind, TextRange, TitleFrontMatterSyntax, TitleSyntax,
+    UlSubtitleSyntax, VariableAssignSyntax,
 };
 
 impl DocumentSyntax {
@@ -89,6 +90,32 @@ impl ParagraphSyntax {
 }
 
 impl CodeBlockSyntax {
+    pub fn info_range(&self) -> Option<TextRange> {
+        let start = self.delimiters().first()?.range().end;
+        let end = self
+            .syntax()
+            .tokens()
+            .into_iter()
+            .find(|token| token.kind() == SyntaxKind::Newline)?
+            .range()
+            .start;
+        Some(TextRange::new(start, end))
+    }
+
+    pub fn info(&self) -> Option<CodeFenceInfo> {
+        let text = self.syntax().source().text(self.info_range()?).ok()?;
+        let info = text.split_once('{').map_or(text.as_str(), |(info, _)| info);
+        Some(CodeFenceInfo::from_info_string(info))
+    }
+
+    pub fn options(&self) -> Option<OptionMapSyntax> {
+        self.syntax().children().find_map(OptionMapSyntax::cast)
+    }
+
+    pub fn mech_code(&self) -> Option<MechCodeSyntax> {
+        self.syntax().children().find_map(MechCodeSyntax::cast)
+    }
+
     pub fn delimiters(&self) -> Vec<SyntaxToken> {
         self.syntax()
             .tokens()
@@ -100,6 +127,12 @@ impl CodeBlockSyntax {
                 )
             })
             .collect()
+    }
+}
+
+impl EvalInlineMechCodeSyntax {
+    pub fn expression(&self) -> Option<ExpressionSyntax> {
+        self.syntax().children().find_map(ExpressionSyntax::cast)
     }
 }
 

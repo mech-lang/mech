@@ -1082,6 +1082,12 @@ jobs:
           cargo +nightly-2026-03-03 test --locked -p mech-syntax
           --no-default-features --test canonical_document_feature_gates
 
+      - name: Verify canonical document execution and rendered outputs
+        run: >-
+          cargo +nightly-2026-03-03 test --locked -p mech-runtime
+          --no-default-features --features full_source,resident-routing-source
+          --test canonical_document_outputs
+
       - name: Check reduced core feature boundaries
         run: |
           cargo check --locked \

@@ -58,7 +58,26 @@ pub(crate) fn parse_rule(parser: &mut Parser<'_>, rule: RuleId) -> Attempt {
     let Some(result) = parser.with_nesting(|parser| {
         parser.with_canonical_rule(rule, |parser| parse_document_rule(parser, specification))
     }) else {
-        recovery::nesting_limit(parser);
+        parser.with_canonical_rule(rule, |parser| {
+            let root = specification.root.then(|| parser.start());
+            recovery::nesting_limit(parser);
+            if let Some(root) = root {
+                if !parser.is_eof() && !parser.is_halted() {
+                    let _ = recovery::abandon_to_restart(
+                        parser,
+                        rule,
+                        &[],
+                        "syntax/unexpected-document-source",
+                        "source exceeds the canonical document nesting limit",
+                    );
+                }
+                root.complete_with_flags(
+                    parser,
+                    specification.kind.expect("root rule has a node kind"),
+                    NodeFlags::REPARSE_ROOT,
+                );
+            }
+        });
         return Attempt::Committed;
     };
     if result == Attempt::NoMatch {
@@ -384,7 +403,16 @@ fn parse_sequence(
         ) if *left == rules::LEFT_BRACE && *right == rules::LEFT_BRACE
     );
     for (index, item) in items.iter().enumerate() {
-        match parse_expression(parser, item, state) {
+        let result = if index == 6
+            && items.len() == 9
+            && matches!(items.first(), Some(GrammarExpression::Rule(rule)) if *rule == rules::CODEBLOCK_SIGIL)
+            && is_mech_fence_header(parser, checkpoint.cursor.offset)
+        {
+            parse_mech_fence_body(parser, state)
+        } else {
+            parse_expression(parser, item, state)
+        };
+        match result {
             Attempt::Matched => {
                 if matches!(item, GrammarExpression::Rule(rule) if *rule == rules::CODEBLOCK_SIGIL || *rule == rules::MIKA_SECTION_OPEN)
                     || inline_mech_sequence && index == 1
@@ -433,6 +461,72 @@ fn parse_sequence(
     } else {
         Attempt::Matched
     }
+}
+
+fn is_mech_fence_header(parser: &Parser<'_>, start: crate::document::TextSize) -> bool {
+    let range =
+        crate::document::TextRange::new(start + crate::document::TextSize(3), parser.offset());
+    parser.source().text(range).ok().is_some_and(|header| {
+        let info = header
+            .split_once('{')
+            .map_or(header.as_str(), |(info, _)| info);
+        crate::document::CodeFenceInfo::from_info_string(info).is_mech()
+    })
+}
+
+fn parse_mech_fence_body(parser: &mut Parser<'_>, state: &GrammarState) -> Attempt {
+    let delimiter = match state.codeblock_delimiter {
+        Some(rule) if rule == rules::GRAVE_CODEBLOCK_SIGIL => "```",
+        Some(rule) if rule == rules::TILDE_CODEBLOCK_SIGIL => "~~~",
+        _ => unreachable!("fence body requires an opening delimiter"),
+    };
+    let checkpoint = parser.checkpoint();
+    while !parser.is_eof()
+        && !parser.is_halted()
+        && parser.cursor().grapheme_literal_end(delimiter).is_none()
+    {
+        let _ = parser.bump_grapheme_raw();
+    }
+    let end = parser.offset();
+    parser.rewind(checkpoint);
+    if parser.is_halted() {
+        return Attempt::Committed;
+    }
+    parser.with_cursor_end(end, |parser| {
+        let result = parse_rule(parser, rules::MECH_CODE);
+        if parser.is_halted() {
+            return Attempt::Committed;
+        }
+        if result == Attempt::NoMatch {
+            let body = parser.start();
+            let _ = parse_any_rule(parser, rules::WHITESPACE0);
+            let result = if parser.is_eof() {
+                Attempt::Matched
+            } else {
+                let _ = recovery::abandon_to_restart(
+                    parser,
+                    rules::MECH_CODE,
+                    &[],
+                    "syntax/invalid-fenced-mech",
+                    "expected canonical Mech code in the executable fence",
+                );
+                Attempt::Committed
+            };
+            body.complete(parser, SyntaxKind::MechCode);
+            result
+        } else if !parser.is_eof() {
+            let _ = recovery::abandon_to_restart(
+                parser,
+                rules::MECH_CODE,
+                &[],
+                "syntax/unexpected-fenced-mech-source",
+                "unexpected source after executable fence code",
+            );
+            Attempt::Committed
+        } else {
+            result
+        }
+    })
 }
 
 fn recover_required_sequence_item(parser: &mut Parser<'_>, item: &GrammarExpression) -> bool {

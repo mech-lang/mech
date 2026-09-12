@@ -200,7 +200,10 @@ fn canonical_document_fixture_corpus_has_an_explicit_engine_disposition() {
         ("executable.mec", Ok(())),
         ("interactive.mec", Ok(())),
         ("malformed.mec", Err("source-semantics/recovered-syntax")),
-        ("resolver-index.mec", Err("source-semantics/empty-document")),
+        (
+            "resolver-index.mec",
+            Err("source-semantics/unsupported-document-unit"),
+        ),
         ("wasm-document.mec", Ok(())),
     ];
     for (name, expected) in cases {

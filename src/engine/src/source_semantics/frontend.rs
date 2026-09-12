@@ -98,6 +98,22 @@ pub struct CanonicalSourceProgram {
     contracts: Box<[Option<OperationContractDeclaration>]>,
     source_map: SourceSemanticMap,
     state_initializers: Box<[SourceStateInitializer]>,
+    document_outputs: Box<[SourceDocumentOutput]>,
+}
+
+/// A typed route from document presentation to an existing artifact output.
+/// Source anchors are held once in `SourceSemanticMap::outputs[output]`.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct SourceDocumentOutput {
+    pub output: u32,
+    pub kind: SourceDocumentOutputKind,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SourceDocumentOutputKind {
+    Program,
+    Inline,
+    Fence,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -138,6 +154,10 @@ impl CanonicalSourceProgram {
             .inputs
             .get(ordinal)
             .map(|input| crate::encode_source_input_name(&input.name))
+    }
+
+    pub const fn document_outputs(&self) -> &[SourceDocumentOutput] {
+        &self.document_outputs
     }
 
     pub fn compile_artifact(&self) -> Result<ProgramArtifact, ArtifactBuildError> {
@@ -224,105 +244,15 @@ impl CanonicalSourceFrontend {
         builder.finish()
     }
 
-    /// Compile every outermost canonical definition or expression in physical
-    /// document order. S7 completes the canonical document parser; keeping the
-    /// typed document entry point here fixes the engine boundary now.
+    /// Compile root program statements in source order and bind document
+    /// presentation expressions to that program's completed root scope.
     pub fn compile_document(
         &self,
         document: &DocumentSyntax,
     ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
         reject_recovered_syntax(document)?;
-        let anchor = SourceSemanticAnchor::for_node(document.syntax());
-        let mut units = Vec::new();
-        collect_document_units(document.syntax(), &mut units)?;
-        let mut builder = SemanticBuilder::new(anchor);
-        let mut declared_bindings = BTreeSet::new();
-        for unit in &units {
-            builder.declare_unit_input_annotations(unit, &mut declared_bindings)?;
-        }
-        let mut last = None;
-        for unit in units {
-            match unit.kind() {
-                SyntaxKind::VariableDefine => {
-                    let definition = VariableDefineSyntax::cast(unit)
-                        .expect("kind-checked variable definition cast");
-                    last = Some(builder.definition(&definition)?);
-                }
-                SyntaxKind::Expression => {
-                    let expression =
-                        ExpressionSyntax::cast(unit).expect("kind-checked expression cast");
-                    last = Some(builder.expression(&expression)?);
-                }
-                SyntaxKind::OpAssign | SyntaxKind::VariableAssign => {
-                    last = Some(builder.document_assignment(&unit)?);
-                }
-                _ => unreachable!("document unit collector is closed"),
-            }
-        }
-        let Some((value, syntax)) = last else {
-            return Err(SourceSemanticError {
-                code: "source-semantics/empty-document",
-                message: "canonical document contains no executable source unit".to_owned(),
-                anchor,
-            });
-        };
-        builder.publish("result", None, value, &syntax);
-        builder.order_document_state_writers();
-        builder.finish()
+        document_lowering::compile_document(document)
     }
-}
-
-fn collect_document_units(
-    node: &SyntaxNode,
-    output: &mut Vec<SyntaxNode>,
-) -> Result<(), SourceSemanticError> {
-    if matches!(
-        node.kind(),
-        SyntaxKind::InlineMechCode | SyntaxKind::MikaSection
-    ) {
-        return Ok(());
-    }
-    if matches!(
-        node.kind(),
-        SyntaxKind::VariableDefine
-            | SyntaxKind::Expression
-            | SyntaxKind::OpAssign
-            | SyntaxKind::VariableAssign
-    ) {
-        output.push(node.clone());
-        return Ok(());
-    }
-    if matches!(
-        node.kind(),
-        SyntaxKind::ActivationScope
-            | SyntaxKind::ContextDeclaration
-            | SyntaxKind::ContextSend
-            | SyntaxKind::EnumDefine
-            | SyntaxKind::ExportDeclaration
-            | SyntaxKind::Fsm
-            | SyntaxKind::FsmDeclare
-            | SyntaxKind::FsmImplementation
-            | SyntaxKind::FsmSpecification
-            | SyntaxKind::FunctionDefine
-            | SyntaxKind::InvariantDefine
-            | SyntaxKind::ImportDeclaration
-            | SyntaxKind::KindDefine
-            | SyntaxKind::ModuleImport
-            | SyntaxKind::TupleDestructure
-    ) {
-        return Err(SourceSemanticError {
-            code: "source-semantics/unsupported-document-unit",
-            message: format!(
-                "canonical document unit {:?} has no engine semantic implementation",
-                node.kind()
-            ),
-            anchor: SourceSemanticAnchor::for_node(node),
-        });
-    }
-    for child in node.children() {
-        collect_document_units(&child, output)?;
-    }
-    Ok(())
 }
 
 fn collect_pattern_bindings(
@@ -5128,6 +5058,7 @@ impl SemanticBuilder {
             contracts: contracts.into_boxed_slice(),
             source_map,
             state_initializers,
+            document_outputs: Box::new([]),
         })
     }
 }
