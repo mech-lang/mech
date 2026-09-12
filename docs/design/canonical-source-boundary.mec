@@ -100,8 +100,8 @@ items also include their physical body offset. The census uses Rust syntax nodes
 for conditional exclusion, including match arms, inner attributes and nested
 `cfg_attr`. An exclusion requires proof that the node is unavailable without
 tests; unknown feature and target predicates remain production possibilities.
-Cargo's locked metadata and declared production dependencies supply local library
-and binary targets. The initial graph starts at workspace packages and follows
+Cargo's locked metadata and declared production dependencies supply local library,
+binary and build-script targets. The initial graph starts at workspace packages and follows
 non-development edges, including external intermediaries. Packages reached only
 through development dependencies supply no production source root.
 Discovery follows optional dependencies across separate workspaces, including
@@ -109,7 +109,8 @@ eligible local patches, until no packages remain to visit.
 Cargo supplies package identities and version eligibility; discovery changes no
 repository manifests or lockfiles.
 Rust module declarations supply external files and `#[path]` module identities;
-each file retains the compiling package's Cargo dependency names.
+each file retains the compiling package's Cargo dependency names. Physical call
+offsets are unioned across those namespaces, counting shared calls exactly once.
 A `tests.rs` filename or `tests` directory never proves a test-only module.
 
 The reference scan retains macro bodies and invocations, normalizes raw Rust
@@ -118,6 +119,8 @@ modules. It recognizes Cargo-renamed dependencies and guards both `extern crate
 self` and standalone `use self` aliases. Opaque relative imports in macros are
 rejected inside parser-exporting crates. Public and restricted crate-wide
 re-exports and unrenamed parser-module re-exports receive no nested exemption.
+Allowed parser-module imports cannot hide subsequent function aliases. Conditional
+bindings in one lexical scope retain every possible retiring-parser reference.
 Only the existing top-level root declarations are exempt; `document::parser`
 remains distinct. Tests reject unlisted retiring
 parser calls, aliases, alternate source entry points such as `parse_mech`, and
