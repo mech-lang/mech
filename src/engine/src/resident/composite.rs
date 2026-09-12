@@ -38,7 +38,10 @@ struct CompositePackPlan {
     table: Option<CompositeTablePlan>,
     output: mech_core::ResidentPortLayout,
     schemas: Arc<mech_core::SchemaTable>,
+    // Only the shape-independent allocation containers are read from this
+    // activation binding. Current values use a newly witnessed constructor.
     constructor: mech_core::snapshot::CompositeSnapshotConstructor,
+    normalization: mech_core::snapshot::CompositeBindingCost,
 }
 
 #[derive(Clone, Debug)]
@@ -239,7 +242,17 @@ fn composite_pack_plan(request: &ResidentKernelBindRequest<'_>) -> Option<Compos
         Arc::new(request.schemas.clone()),
     )
     .ok()?;
+    let normalization = mech_core::snapshot::CompositeSnapshotConstructor::binding_cost(
+        request.output.schema_id,
+        &request
+            .inputs
+            .iter()
+            .map(|input| input.schema_id)
+            .collect::<Vec<_>>(),
+        request.schemas,
+    )?;
     Some(CompositePackPlan {
+        normalization,
         children,
         table,
         constructor,
@@ -372,6 +385,11 @@ fn construct_empty_matrix(
 
 fn composite_shapes_match_declared_output(shape: &ShapeInstance, plan: &CompositePackPlan) -> bool {
     let matrices_match = plan.children.iter().all(|child| {
+        // Canonical Snapshot children carry current logical geometry. The
+        // shared constructor checks their complete current closed schemas.
+        if child.snapshot_backed_matrix {
+            return true;
+        }
         let Some(dimensions) = &child.matrix_dimensions else {
             return true;
         };
@@ -567,6 +585,63 @@ fn resident_child_clone_cost(
     ))
 }
 
+fn current_constructor(
+    plan: &CompositePackPlan,
+    inputs: &dyn ResidentKernelInputs,
+) -> Result<mech_core::snapshot::CompositeSnapshotConstructor, ResidentKernelError> {
+    let children = plan
+        .children
+        .iter()
+        .enumerate()
+        .map(|(index, child)| {
+            let shape = match inputs.get(index).ok_or(ResidentKernelError::InvalidInput)? {
+                ResidentValueRef::Snapshot([Some(value)]) => {
+                    if value.schema_key() != child.source.schema_key {
+                        return Err(ResidentKernelError::InvalidInput);
+                    }
+                    let schema = plan
+                        .schemas
+                        .get(child.source.schema_id)
+                        .ok_or(ResidentKernelError::InvalidInput)?;
+                    if !mech_core::shape_change_allowed(
+                        schema,
+                        &child.source.shape_instance,
+                        value.shape(),
+                    ) {
+                        return Err(ResidentKernelError::InvalidShape);
+                    }
+                    value.shape()
+                }
+                ResidentValueRef::Snapshot(_) => return Err(ResidentKernelError::InvalidInput),
+                _ => &child.source.shape_instance,
+            };
+            Ok((child.source.schema_id, shape.clone()))
+        })
+        .collect::<Result<Vec<_>, ResidentKernelError>>()?;
+    let shape = mech_core::snapshot::CompositeSnapshotConstructor::shape_for_children(
+        plan.output.schema_id,
+        &children,
+        &plan.schemas,
+    )
+    .map_err(|_| ResidentKernelError::InvalidShape)?;
+    let output_schema = plan
+        .schemas
+        .get(plan.output.schema_id)
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    if !mech_core::shape_change_allowed(output_schema, &plan.output.shape_instance, &shape)
+        || !composite_shapes_match_declared_output(&shape, plan)
+    {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    mech_core::snapshot::CompositeSnapshotConstructor::bind(
+        plan.output.schema_id,
+        shape,
+        &children,
+        Arc::clone(&plan.schemas),
+    )
+    .map_err(|_| ResidentKernelError::InvalidShape)
+}
+
 fn composite_pack(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -578,11 +653,12 @@ fn composite_pack(
     let plan = kernel
         .retained_state::<CompositePackPlan>()
         .ok_or(ResidentKernelError::InvalidInput)?;
-    if plan.children.len() != inputs.len()
-        || !composite_shapes_match_declared_output(&plan.output.shape_instance, plan)
-    {
+    if plan.children.len() != inputs.len() {
         return Err(ResidentKernelError::InvalidShape);
     }
+    let normalization_bytes = checked_cost_usize(plan.normalization.temporary_bytes)?;
+    let normalization_nodes = plan.normalization.metadata_nodes;
+    let normalization_work = plan.normalization.compute_work;
     let mut footprint_meter = super::budget::ResidentBudgetMeter::default();
     let mut child_bytes = 0usize;
     let mut native_draft_bytes = 0usize;
@@ -664,8 +740,9 @@ fn composite_pack(
         .checked_add(output_containers)
         .ok_or(ResidentKernelError::InvalidShape)?;
     // These phases can coexist: typed native children, cloned canonical output,
-    // native drafts, and key normalization / table packing scratch. Schema
-    // labels are retained in the bound arena and have no turn allocation.
+    // native drafts, and key normalization / table packing scratch. Payload
+    // construction retains schema labels; current schema closure temporarily
+    // clones them, covered separately by normalization_bytes.
     let temporary_bytes = [
         native_value_bytes,
         output_bytes,
@@ -673,6 +750,7 @@ fn composite_pack(
         key_bytes,
         table_scratch,
         child_containers,
+        normalization_bytes,
     ]
     .into_iter()
     .try_fold(0usize, |total, bytes| total.checked_add(bytes))
@@ -683,6 +761,7 @@ fn composite_pack(
         native_draft_bytes,
         key_bytes,
         table_scratch,
+        normalization_bytes,
     ]
     .into_iter()
     .try_fold(0usize, |total, bytes| total.checked_add(bytes))
@@ -729,7 +808,17 @@ fn composite_pack(
         )?;
         footprint_meter.charge_comparison_work(equality_work)?;
     }
+    footprint_meter.charge_compute_work(normalization_work)?;
     let measured = footprint_meter.estimate();
+    let cloned_bytes = [
+        child_bytes,
+        native_value_bytes,
+        key_bytes,
+        normalization_bytes,
+    ]
+    .into_iter()
+    .try_fold(0usize, |total, bytes| total.checked_add(bytes))
+    .ok_or(ResidentKernelError::InvalidShape)?;
     let admitted_children = super::budget::PreparedKernel::new(
         plan.children.len(),
         super::budget::resident_cost! {
@@ -744,16 +833,18 @@ fn composite_pack(
             output_elements: plan.children.len(),
             output_bytes: output_bytes,
             temporary_bytes: temporary_bytes,
-            cloned_bytes: child_bytes.checked_add(native_value_bytes).and_then(|bytes|bytes.checked_add(key_bytes)).ok_or(ResidentKernelError::InvalidShape)?,
+            cloned_bytes: cloned_bytes,
             container_bytes: container_bytes,
             retained_nodes: measured.retained_nodes()
                 .checked_add(final_output_nodes)
+                .and_then(|nodes| nodes.checked_add(normalization_nodes))
                 .ok_or(ResidentKernelError::InvalidShape)?,
             ..super::budget::KernelCostEstimate::default()
         },
     )
     .admit()?
     .into_plan();
+    let constructor = current_constructor(plan, inputs)?;
     let context =
         mech_core::snapshot::SnapshotValidationContext::with_shared_schemas(&plan.schemas);
     let children = (0..admitted_children)
@@ -787,8 +878,7 @@ fn composite_pack(
         .collect::<Result<Vec<_>, _>>()?
         .into_boxed_slice();
     let budget = mech_core::snapshot::SnapshotCanonicalizationBudget::new(finalization_work);
-    let next = plan
-        .constructor
+    let next = constructor
         .construct(children, Some(&budget))
         .map_err(|error| match error {
             mech_core::snapshot::SnapshotValueError::CanonicalizationWorkLimitExceededV1 {
@@ -1286,6 +1376,7 @@ mod tests {
         .into_boxed_slice();
 
         let mismatched = CompositePackPlan {
+            normalization: mech_core::snapshot::CompositeBindingCost::default(),
             children: vec![CompositeChildPlan {
                 matrix_dimensions: Some(dimensions.clone()),
                 input_is_matrix: true,
@@ -1315,6 +1406,7 @@ mod tests {
         ));
 
         let matching = CompositePackPlan {
+            normalization: mech_core::snapshot::CompositeBindingCost::default(),
             children: vec![CompositeChildPlan {
                 matrix_dimensions: Some(dimensions),
                 input_is_matrix: true,

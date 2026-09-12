@@ -1083,21 +1083,11 @@ fn assign_dimension_witnesses(
     loop {
         let mut progress = false;
         for (expression, target) in witnesses {
-            let mut references = Vec::new();
-            crate::collect_dimension_references(expression, &mut references);
-            let unknown = references
-                .into_iter()
-                .filter(|parameter| {
-                    !fixed
-                        .get(parameter.get() as usize)
-                        .copied()
-                        .unwrap_or(false)
-                })
-                .collect::<BTreeSet<_>>();
-            if unknown.len() != 1 {
+            let mut parameter = None;
+            if !unique_unfixed_dimension_parameter(expression, &fixed, &mut parameter) {
                 continue;
             }
-            let parameter = *unknown.first().expect("one unresolved parameter");
+            let Some(parameter) = parameter else { continue };
             if dimension_is_injective(expression, parameter, values)? {
                 assign_unique_dimension_witness(expression, *target, parameter, values)?;
                 *fixed
@@ -1115,6 +1105,53 @@ fn assign_dimension_witnesses(
         assign_dimension_witness_preserving(expression, *target, values, &fixed)?;
     }
     Ok(())
+}
+
+// The unique-witness pass needs only zero/one/many distinct unresolved
+// parameters. Visiting the existing expression avoids a temporary reference
+// Vec and BTreeSet without changing candidate order or constraint semantics.
+fn unique_unfixed_dimension_parameter(
+    expression: &DimensionExpr,
+    fixed: &[bool],
+    selected: &mut Option<DimensionParameterId>,
+) -> bool {
+    match expression {
+        DimensionExpr::Parameter(parameter)
+            if !fixed
+                .get(parameter.get() as usize)
+                .copied()
+                .unwrap_or(false) =>
+        {
+            if selected.is_some_and(|previous| previous != *parameter) {
+                return false;
+            }
+            *selected = Some(*parameter);
+            true
+        }
+        DimensionExpr::Add(children)
+        | DimensionExpr::Multiply(children)
+        | DimensionExpr::Min(children)
+        | DimensionExpr::Max(children) => children
+            .iter()
+            .all(|child| unique_unfixed_dimension_parameter(child, fixed, selected)),
+        _ => true,
+    }
+}
+
+fn dimension_contains_parameter(
+    expression: &DimensionExpr,
+    parameter: DimensionParameterId,
+) -> bool {
+    match expression {
+        DimensionExpr::Parameter(actual) => *actual == parameter,
+        DimensionExpr::Add(children)
+        | DimensionExpr::Multiply(children)
+        | DimensionExpr::Min(children)
+        | DimensionExpr::Max(children) => children
+            .iter()
+            .any(|child| dimension_contains_parameter(child, parameter)),
+        _ => false,
+    }
 }
 
 /// All dimension operators are monotone over natural numbers. A sum with an
@@ -1137,9 +1174,7 @@ fn dimension_is_injective(
                 if dimension_is_injective(operand, parameter, values)? {
                     injective = true;
                 } else {
-                    let mut references = Vec::new();
-                    crate::collect_dimension_references(operand, &mut references);
-                    if references.contains(&parameter)
+                    if dimension_contains_parameter(operand, parameter)
                         || crate::evaluate_dimension(operand, values)
                             .map_err(TypeResolutionError::semantic)?
                             == 0
@@ -1252,16 +1287,15 @@ fn assign_dimension_witness_preserving(
             {
                 return Ok(());
             }
-            let adjustable = operands
+            let Some(selected_index) = operands
                 .iter()
-                .enumerate()
-                .filter(|(_, operand)| dimension_has_unfixed_parameter(operand, fixed))
-                .map(|(index, _)| index)
-                .collect::<Vec<_>>();
-            let Some(selected_index) = adjustable.first().copied() else {
+                .position(|operand| dimension_has_unfixed_parameter(operand, fixed))
+            else {
                 return dimension_witness_mismatch(expression, target, values);
             };
-            for index in adjustable.into_iter().skip(1) {
+            for index in (selected_index + 1..operands.len())
+                .filter(|index| dimension_has_unfixed_parameter(&operands[*index], fixed))
+            {
                 if crate::evaluate_dimension(&operands[index], values)
                     .map_err(TypeResolutionError::semantic)?
                     == 0

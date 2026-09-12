@@ -17,7 +17,7 @@ fn add(left: u64, right: u64) -> Result<u64, MemoryPlanError> {
 pub(super) fn footprint(
     value: ResidentValueRef<'_>,
     descriptor: &mech_core::ResolvedValueDescriptor,
-    schemas: &mech_core::SchemaTable,
+    _schemas: &mech_core::SchemaTable,
     work: &mut ResourceDemand,
 ) -> Result<CurrentMemoryFootprint, MemoryPlanError> {
     let mut result = CurrentMemoryFootprint {
@@ -43,9 +43,22 @@ pub(super) fn footprint(
             result.logical_elements = 0;
             for value in values.iter().flatten() {
                 result.logical_elements = add(result.logical_elements, 1)?;
-                let schema = schemas
-                    .get(value.schema())
+                // Schema IDs belong to the value's retained arena. Validate
+                // its declared contract before using that arena for payload work.
+                let owner = value.schemas().ok_or(MemoryPlanError::DescriptorMismatch)?;
+                let entry = owner
+                    .entry(value.schema())
                     .ok_or(MemoryPlanError::DescriptorMismatch)?;
+                work.work.compute = add(work.work.compute, entry.canonical_bytes().len() as u64)?;
+                check_measurement(result, *work)?;
+                let schema = value
+                    .validate_against(&owner)
+                    .map_err(|_| MemoryPlanError::DescriptorMismatch)?;
+                if schema != descriptor.schema()
+                    || !mech_core::shape_change_allowed(schema, descriptor.shape(), value.shape())
+                {
+                    return Err(MemoryPlanError::DescriptorMismatch);
+                }
                 let shape_bytes = (value.shape().parameter_values().len() as u64)
                     .checked_mul(8)
                     .ok_or(MemoryPlanError::TargetAddressOverflow)?;
@@ -287,6 +300,93 @@ mod tests {
         let built = builder.finish().unwrap();
         let id = built.resolve(handle).unwrap();
         (descriptor, built.into_parts().0, id)
+    }
+
+    #[test]
+    fn live_snapshot_contract_checks_schema_identity_and_dimension_lifetime() {
+        let (descriptor, schemas, _) = schema(SchemaBody::String);
+        let (_, other, id) = schema(SchemaBody::Bool);
+        let wrong = ValueDraft {
+            schema: id,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Bool(true),
+        }
+        .finalize(&SnapshotValidationContext::new(&other))
+        .unwrap();
+        assert!(matches!(
+            footprint(
+                ResidentValueRef::Snapshot(&[Some(wrong)]),
+                &descriptor,
+                &schemas,
+                &mut ResourceDemand::default()
+            ),
+            Err(MemoryPlanError::DescriptorMismatch)
+        ));
+        for (lifetime, allowed) in [
+            (mech_core::DimensionLifetime::Activation, false),
+            (mech_core::DimensionLifetime::Turn, true),
+        ] {
+            let parameter = mech_core::DimensionParameterId::new(0);
+            let schema = SchemaDraft {
+                body: SchemaBody::Table {
+                    columns: vec![mech_core::SchemaField {
+                        name: "a".into(),
+                        schema: SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W8),
+                    }]
+                    .into_boxed_slice(),
+                    rows: mech_core::CardinalitySpec::Exact(mech_core::DimensionExpr::Parameter(
+                        parameter,
+                    )),
+                },
+                dimension_parameters: vec![mech_core::DimensionParameterDeclaration {
+                    id: parameter,
+                    origin: mech_core::DimensionParameterOrigin::Explicit,
+                    lifetime,
+                    lower_bound: mech_core::DimensionExpr::Constant(0),
+                    upper_bound: None,
+                }]
+                .into_boxed_slice(),
+            }
+            .finalize()
+            .unwrap();
+            let descriptor = mech_core::ResolvedValueDescriptor::from_schema(
+                schema.clone(),
+                schema
+                    .instantiate_shape(vec![1].into_boxed_slice())
+                    .unwrap(),
+            )
+            .unwrap();
+            let mut builder = SchemaTableBuilder::new();
+            let handle = builder.insert(schema).unwrap();
+            let built = builder.finish().unwrap();
+            let id = built.resolve(handle).unwrap();
+            let (schemas, _) = built.into_parts();
+            let value = ValueDraft {
+                schema: id,
+                shape_values: vec![2].into_boxed_slice(),
+                data: ValueDataDraft::Table(
+                    vec![mech_core::snapshot::TableColumnDraft {
+                        name: "a".into(),
+                        values: vec![ValueDataDraft::U8(1), ValueDataDraft::U8(2)]
+                            .into_boxed_slice(),
+                    }]
+                    .into_boxed_slice(),
+                ),
+            }
+            .finalize(&SnapshotValidationContext::new(&schemas))
+            .unwrap();
+            let result = footprint(
+                ResidentValueRef::Snapshot(&[Some(value)]),
+                &descriptor,
+                &schemas,
+                &mut ResourceDemand::default(),
+            );
+            if allowed {
+                assert_eq!(result.unwrap().logical_elements, 2);
+            } else {
+                assert!(matches!(result, Err(MemoryPlanError::DescriptorMismatch)));
+            }
+        }
     }
 
     #[test]

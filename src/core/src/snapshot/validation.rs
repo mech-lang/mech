@@ -2478,6 +2478,23 @@ fn composite_schema_components(
 }
 
 impl CompositeSnapshotConstructor {
+    /// Shape-independent allocation/work witness for current binding. Compute
+    /// once during activation, then admit it before per-turn normalization.
+    pub fn binding_cost(
+        schema: SchemaId,
+        children: &[SchemaId],
+        schemas: &SchemaTable,
+    ) -> Option<super::CompositeBindingCost> {
+        let output = schemas.get(schema)?;
+        let layout = composite_schema_components(output.body(), children.len())?;
+        let components = layout
+            .children
+            .into_iter()
+            .zip(children)
+            .map(|(expected, child)| Some((expected, schemas.get(*child)?)))
+            .collect::<Option<Vec<_>>>()?;
+        super::composite_cost::binding_cost(output, &components)
+    }
     /// Derives the aggregate's shape from the canonical child schemas in
     /// constructor order. Each child shape belongs to its own parameter arena.
     pub fn shape_for_children(

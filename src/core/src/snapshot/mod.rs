@@ -1,3 +1,4 @@
+mod composite_cost;
 mod constants;
 mod data;
 mod draft;
@@ -8,6 +9,7 @@ mod sequence;
 pub(crate) mod validation;
 mod views;
 
+pub use self::composite_cost::CompositeBindingCost;
 pub use self::constants::{
     ConstantEntry, ConstantHandle, ConstantStore, ConstantStoreBuild, ConstantStoreBuilder,
 };
