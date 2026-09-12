@@ -25,15 +25,15 @@ historical command rules    17
 total                      539
 ```
 
-The completed phases cover 522 / 539 rules. The other 17 inventory rows are
-runtime-owned interactive commands rather than document syntax. The generated
-Phase 2I recursive component contains 80 rules and is active as one certified
-component.
+The completed phases cover 520 / 539 rules. The other 19 inventory rows are 17
+runtime-owned interactive commands and two rules outside canonical Document
+reachability. The generated Phase 2I recursive component contains 80 rules and
+is active as one certified component.
 
 The component has local malformed-input recovery, complete typed red-tree views,
 engine-owned source semantics, and canonical certification for all 80 direct
 roots. S6 applied the registry transition atomically. S7 adds the generated
-114-rule document closure, typed document views, whole-source recovery, and the
+112-rule document closure, typed document views, whole-source recovery, and the
 public canonical `Document` root.
 
 The supported canonical roots are `Canonical + Grammar` and
@@ -345,10 +345,11 @@ Exit gate:
 
 Implementation record:
 
-- the specification generates the 114-rule document grammar, typed-node
+- the specification generates the 112-rule document grammar, typed-node
   inventory, accepted-source certification matrix, and registry activation;
-- all 114 document rules are certified, leaving only the 17 runtime-owned
-  interactive-command rows outside the document parser;
+- all 112 document rules are certified, leaving the 17 runtime-owned
+  interactive-command rows and two rules outside Document reachability
+  unported;
 - the canonical root preserves the complete source corpus, reports mismatched
   fences and malformed documents structurally, and behaves identically across
   contiguous and piece-backed source;

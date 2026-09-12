@@ -20,14 +20,16 @@ canonical certification and atomic Phase 2I registry activation are complete.
 2I-D/2I-E delivery assumption with independently gated milestones: canonical
 document-root completion, followed by the atomic product cutover that removes
 the Nom implementation and its lowerers. S6 activates the certified 80-rule
-recursive registry atomically. The S7 canonical document closure adds 114
-certified rules and leaves only 17 runtime-owned interactive-command rows
-outside document syntax. Product cutover and removal remain reserved for S8.
+recursive registry atomically. The S7 canonical document closure adds 112
+certified rules. Seventeen runtime-owned interactive-command rows and two rules
+outside Document reachability remain unported. Product cutover and removal
+remain reserved for S8.
 
 `s7-document-certification.tsv` records a specification-derived clean source,
 typed node policy, semantic status, and stable specification location for every
 document rule. `s7-dispositions.tsv` accounts for all 131 rows that entered S7:
-112 document dependencies, two maintained roots, and 17 historical commands.
+110 document dependencies, two maintained roots, 17 historical commands, and
+two rules outside the canonical Document closure.
 
 The 539 canonical rule IDs and Phase 0 inventory remain stable. Their live
 implementation audit records the intervening integration changes explicitly:

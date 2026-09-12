@@ -15,6 +15,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SPECIFICATION = ROOT / "docs/design/specification.mec"
 PORTS = ROOT / "docs/design/grammar-audit/ports.tsv"
+DEPENDENCIES = ROOT / "docs/design/grammar-audit/canonical-dependencies.tsv"
 OUTPUT = (
     ROOT
     / "src/syntax/src/document/parser/canonical/document_grammar.rs"
@@ -24,6 +25,7 @@ CERTIFICATION_OUTPUT = (
     ROOT / "docs/design/grammar-audit/s7-document-certification.tsv"
 )
 DISPOSITIONS_OUTPUT = ROOT / "docs/design/grammar-audit/s7-dispositions.tsv"
+EXPECTED_DOCUMENT_RULES = 112
 
 
 def rust_constant(name: str) -> str:
@@ -34,14 +36,54 @@ def rust_kind(name: str) -> str:
     return "".join(part.capitalize() for part in name.split("-"))
 
 
+def document_reachability() -> set[str]:
+    with DEPENDENCIES.open(newline="", encoding="utf-8") as source:
+        rows = list(csv.DictReader(source, delimiter="\t"))
+    children = {
+        row["grammar-name"]: (
+            []
+            if row["direct-children"] == "none"
+            else row["direct-children"].split("|")
+        )
+        for row in rows
+    }
+    reachable: set[str] = set()
+    pending = ["parse"]
+    while pending:
+        name = pending.pop()
+        if name in reachable:
+            continue
+        reachable.add(name)
+        pending.extend(children.get(name, []))
+    return reachable
+
+
+def s7_candidates(rows: list[dict[str, str]]) -> set[str]:
+    return {
+        row["grammar-name"]
+        for row in rows
+        if row["phase"] == "S7" or row["syntax-status"] == "unported"
+    }
+
+
 def document_rules() -> list[str]:
     with PORTS.open(newline="", encoding="utf-8") as source:
         rows = list(csv.DictReader(source, delimiter="\t"))
-    return [
+    reachable = document_reachability()
+    candidates = s7_candidates(rows)
+    names = [
         row["grammar-name"]
         for row in rows
-        if row["phase"] == "S7"
+        if row["grammar-name"] in candidates & reachable
     ]
+    activated = {
+        row["grammar-name"] for row in rows if row["phase"] == "S7"
+    }
+    if activated != set(names):
+        raise SystemExit(
+            "S7 activation must equal the candidate closure reachable from parse"
+        )
+    return names
 
 
 def grammar_definitions() -> dict[str, str]:
@@ -208,7 +250,7 @@ def choice_count(expression: Expression) -> int:
     kind = expression[0]
     if kind == "choice":
         return 1 + sum(choice_count(item) for item in expression[1])
-    if kind in {"sequence"}:
+    if kind == "sequence":
         return sum(choice_count(item) for item in expression[1])
     if kind == "separated":
         return choice_count(expression[1]) + choice_count(expression[2])
@@ -614,13 +656,15 @@ def render_certification(names: list[str], parsed: dict[str, Expression]) -> str
     return "\n".join(rows) + "\n"
 
 
-def render_dispositions() -> str:
+def render_dispositions(document_names: list[str]) -> str:
     with PORTS.open(newline="", encoding="utf-8") as source:
         ports = list(csv.DictReader(source, delimiter="\t"))
     rows = ["grammar-name\tdisposition\trationale"]
+    candidates = s7_candidates(ports)
+    document_names = set(document_names)
     for port in ports:
         name = port["grammar-name"]
-        if port["phase"] == "S7":
+        if name in document_names:
             if name in {"parse", "parse-mech"}:
                 disposition = "maintained-root"
                 rationale = "Public canonical Document root and its direct grammar alias."
@@ -631,6 +675,11 @@ def render_dispositions() -> str:
             disposition = "historical-command"
             rationale = (
                 "Runtime REPL requests own this command; it is not document syntax."
+            )
+        elif name in candidates:
+            disposition = "outside-document-closure"
+            rationale = (
+                "Not reachable from the canonical Document root and not activated."
             )
         else:
             continue
@@ -653,11 +702,16 @@ def main() -> None:
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
     names, parsed = load_rules()
+    if len(names) != EXPECTED_DOCUMENT_RULES:
+        raise SystemExit(
+            f"expected {EXPECTED_DOCUMENT_RULES} canonical Document rules, "
+            f"found {len(names)}"
+        )
     generated = {
         OUTPUT: format_rust(render_grammar(names, parsed)),
         AST_OUTPUT: format_rust(render_ast(names)),
         CERTIFICATION_OUTPUT: render_certification(names, parsed),
-        DISPOSITIONS_OUTPUT: render_dispositions(),
+        DISPOSITIONS_OUTPUT: render_dispositions(names),
     }
     if args.check:
         stale = [

@@ -84,7 +84,6 @@ document_ast_node!(InlineParagraphSyntax, InlineParagraph);
 document_ast_node!(InvariantDefineSyntax, InvariantDefine);
 document_ast_node!(KindDefineSyntax, KindDefine);
 document_ast_node!(LeftAlignmentSyntax, LeftAlignment);
-document_ast_node!(MatchExpressionSyntax, MatchExpression);
 document_ast_node!(MechCodeSyntax, MechCode);
 document_ast_node!(MechCodeAltSyntax, MechCodeAlt);
 document_ast_node!(MechdownListSyntax, MechdownList);
@@ -125,7 +124,6 @@ document_ast_node!(StrongSyntax, Strong);
 document_ast_node!(SublistSyntax, Sublist);
 document_ast_node!(SubtitleSyntax, Subtitle);
 document_ast_node!(SuccessBlockSyntax, SuccessBlock);
-document_ast_node!(TableColumnSyntax, TableColumn);
 document_ast_node!(TitleSyntax, Title);
 document_ast_node!(TitleFrontMatterSyntax, TitleFrontMatter);
 document_ast_node!(TupleDestructureSyntax, TupleDestructure);
@@ -196,7 +194,6 @@ pub enum CanonicalDocumentNode {
     InvariantDefine(InvariantDefineSyntax),
     KindDefine(KindDefineSyntax),
     LeftAlignment(LeftAlignmentSyntax),
-    MatchExpression(MatchExpressionSyntax),
     MechCode(MechCodeSyntax),
     MechCodeAlt(MechCodeAltSyntax),
     MechdownList(MechdownListSyntax),
@@ -237,7 +234,6 @@ pub enum CanonicalDocumentNode {
     Sublist(SublistSyntax),
     Subtitle(SubtitleSyntax),
     SuccessBlock(SuccessBlockSyntax),
-    TableColumn(TableColumnSyntax),
     Title(TitleSyntax),
     TitleFrontMatter(TitleFrontMatterSyntax),
     TupleDestructure(TupleDestructureSyntax),
@@ -354,9 +350,6 @@ impl CanonicalDocumentNode {
             }
             SyntaxKind::KindDefine => KindDefineSyntax::cast(node).map(Self::KindDefine),
             SyntaxKind::LeftAlignment => LeftAlignmentSyntax::cast(node).map(Self::LeftAlignment),
-            SyntaxKind::MatchExpression => {
-                MatchExpressionSyntax::cast(node).map(Self::MatchExpression)
-            }
             SyntaxKind::MechCode => MechCodeSyntax::cast(node).map(Self::MechCode),
             SyntaxKind::MechCodeAlt => MechCodeAltSyntax::cast(node).map(Self::MechCodeAlt),
             SyntaxKind::MechdownList => MechdownListSyntax::cast(node).map(Self::MechdownList),
@@ -417,7 +410,6 @@ impl CanonicalDocumentNode {
             SyntaxKind::Sublist => SublistSyntax::cast(node).map(Self::Sublist),
             SyntaxKind::Subtitle => SubtitleSyntax::cast(node).map(Self::Subtitle),
             SyntaxKind::SuccessBlock => SuccessBlockSyntax::cast(node).map(Self::SuccessBlock),
-            SyntaxKind::TableColumn => TableColumnSyntax::cast(node).map(Self::TableColumn),
             SyntaxKind::Title => TitleSyntax::cast(node).map(Self::Title),
             SyntaxKind::TitleFrontMatter => {
                 TitleFrontMatterSyntax::cast(node).map(Self::TitleFrontMatter)
@@ -499,7 +491,6 @@ impl CanonicalDocumentNode {
             Self::InvariantDefine(node) => node.syntax(),
             Self::KindDefine(node) => node.syntax(),
             Self::LeftAlignment(node) => node.syntax(),
-            Self::MatchExpression(node) => node.syntax(),
             Self::MechCode(node) => node.syntax(),
             Self::MechCodeAlt(node) => node.syntax(),
             Self::MechdownList(node) => node.syntax(),
@@ -540,7 +531,6 @@ impl CanonicalDocumentNode {
             Self::Sublist(node) => node.syntax(),
             Self::Subtitle(node) => node.syntax(),
             Self::SuccessBlock(node) => node.syntax(),
-            Self::TableColumn(node) => node.syntax(),
             Self::Title(node) => node.syntax(),
             Self::TitleFrontMatter(node) => node.syntax(),
             Self::TupleDestructure(node) => node.syntax(),

@@ -56,7 +56,6 @@ inline-paragraph	"x"	node:InlineParagraph	syntax-only	docs/design/specification.
 invariant-define	"x!:=1 + 2"	node:InvariantDefine	syntax-only	docs/design/specification.mec::invariant-define
 kind-define	"<x>:=<u8>"	node:KindDefine	syntax-only	docs/design/specification.mec::kind-define
 left-alignment	":-"	node:LeftAlignment	syntax-only	docs/design/specification.mec::left-alignment
-match-expression	"1'?| * => 1"	node:MatchExpression	syntax-only	docs/design/specification.mec::match-expression
 mech-code	"--"	node:MechCode	syntax-only	docs/design/specification.mec::mech-code
 mech-code-alt	"--"	node:MechCodeAlt	syntax-only	docs/design/specification.mec::mech-code-alt
 mechdown-list	"- x\n"	node:MechdownList	syntax-only	docs/design/specification.mec::mechdown-list
@@ -102,7 +101,6 @@ strong	"**x**"	node:Strong	syntax-only	docs/design/specification.mec::strong
 sublist	"- x\n"	node:Sublist	syntax-only	docs/design/specification.mec::sublist
 subtitle	"(1)x\n"	node:Subtitle	syntax-only	docs/design/specification.mec::subtitle
 success-block	"(+)>x\n"	node:SuccessBlock	syntax-only	docs/design/specification.mec::success-block
-table-column	"1 + 2"	node:TableColumn	syntax-only	docs/design/specification.mec::table-column
 title	"x\n="	node:Title	syntax-only	docs/design/specification.mec::title
 title-front-matter	"="	node:TitleFrontMatter	syntax-only	docs/design/specification.mec::title-front-matter
 tuple-destructure	"(x):=1 + 2"	node:TupleDestructure	syntax-only	docs/design/specification.mec::tuple-destructure

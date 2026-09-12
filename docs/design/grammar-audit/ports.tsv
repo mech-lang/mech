@@ -291,7 +291,7 @@ ls-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
 map	structures	certified	certified	node:Map	2I	Phase 2I canonical recursive core; semantic disposition: executable.
 mapping	structures	certified	certified	node:MapEntry	2I	Phase 2I canonical recursive core; semantic disposition: structural.
 match-arm	expressions	certified	certified	node:MatchArm	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-match-expression	expressions	certified	syntax-only	node:MatchExpression	S7	S7 canonical document closure generated from the specification.
+match-expression	expressions	unported	pending	undecided		Outside canonical Document reachability; not activated.
 matrix	structures	certified	certified	node:Matrix	2I	Phase 2I canonical recursive core; semantic disposition: executable.
 matrix-column	structures	certified	certified	node:MatrixColumn	2I	Phase 2I canonical recursive core; semantic disposition: structural.
 matrix-comprehension	expressions	certified	certified	node:MatrixComprehension	2I	Phase 2I canonical recursive core; semantic disposition: executable.
@@ -484,7 +484,7 @@ symmetric-difference	expressions	certified	certified	node:SymmetricDifferenceOpe
 synth-operator	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 tab	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 table	structures	certified	certified	node:Table	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-table-column	structures	certified	syntax-only	node:TableColumn	S7	S7 canonical document closure generated from the specification.
+table-column	structures	unported	pending	undecided		Outside canonical Document reachability; not activated.
 table-end	structures	certified	syntax-only	token	2H	Phase 2H closed structure shell
 table-header	structures	certified	certified	node:TableHeader	2I	Phase 2I canonical recursive core; semantic disposition: structural.
 table-horz	structures	certified	syntax-only	token	2H	Phase 2H closed structure shell

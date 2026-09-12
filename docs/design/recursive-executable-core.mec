@@ -3,7 +3,7 @@ Recursive Executable-Core Contract
 
 Status: S6 recursive-core activation complete; S7 document root complete.
 
-Current canonical progress is 522 / 539. The component implements clean,
+Current canonical progress is 520 / 539. The component implements clean,
 lossless recognition, local malformed-input recovery, typed access, source
 semantics, and canonical certification for all 80 rules. All 80 productions are
 active as Phase 2I. The generated implementation boundary remains one strongly

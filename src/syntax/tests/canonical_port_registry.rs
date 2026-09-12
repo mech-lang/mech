@@ -17,9 +17,9 @@ const EXPECTED_PHASE_2F: usize = 21;
 const EXPECTED_PHASE_2G: usize = 15;
 const EXPECTED_PHASE_2H: usize = 10;
 const EXPECTED_PHASE_2I: usize = 80;
-const EXPECTED_S7: usize = 114;
-const EXPECTED_CERTIFIED: usize = 522;
-const EXPECTED_UNPORTED: usize = 17;
+const EXPECTED_S7: usize = 112;
+const EXPECTED_CERTIFIED: usize = 520;
+const EXPECTED_UNPORTED: usize = 19;
 
 fn repository_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -547,7 +547,7 @@ fn phase_2b_registry_accounting_and_policies_are_exact() {
             .iter()
             .filter(|port| port.semantic == SemanticPortStatus::SyntaxOnly)
             .count(),
-        284
+        282
     );
 }
 
@@ -1342,7 +1342,6 @@ fn s7_activates_the_rich_document_parent_closure() {
 #[test]
 fn s7_activates_the_remaining_document_boundaries() {
     let remaining = [
-        "match-expression",
         "slice-ref",
         "context-send",
         "op-assign",
@@ -1353,9 +1352,8 @@ fn s7_activates_the_remaining_document_boundaries() {
         "fsm-state-definition",
         "fsm-transition",
         "activation-arm",
-        "table-column",
     ];
-    assert_eq!(remaining.len(), 12);
+    assert_eq!(remaining.len(), 10);
     for name in remaining {
         let port = CANONICAL_PORTS
             .iter()
@@ -1365,5 +1363,19 @@ fn s7_activates_the_remaining_document_boundaries() {
         assert_eq!(port.phase, Some(PortPhase::S7), "{name}");
         assert_ne!(port.node_policy, NodePolicy::Undecided, "{name}");
         assert_ne!(port.semantic, SemanticPortStatus::Pending, "{name}");
+    }
+}
+
+#[test]
+fn s7_does_not_activate_rules_outside_document_reachability() {
+    for name in ["match-expression", "table-column"] {
+        let port = CANONICAL_PORTS
+            .iter()
+            .find(|port| port.name == name)
+            .unwrap_or_else(|| panic!("missing canonical port entry {name}"));
+        assert_eq!(port.syntax, SyntaxPortStatus::Unported, "{name}");
+        assert_eq!(port.semantic, SemanticPortStatus::Pending, "{name}");
+        assert_eq!(port.node_policy, NodePolicy::Undecided, "{name}");
+        assert_eq!(port.phase, None, "{name}");
     }
 }

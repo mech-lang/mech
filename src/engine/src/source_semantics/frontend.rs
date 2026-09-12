@@ -269,6 +269,9 @@ fn collect_document_units(
     node: &SyntaxNode,
     output: &mut Vec<SyntaxNode>,
 ) -> Result<(), SourceSemanticError> {
+    if node.kind() == SyntaxKind::InlineMechCode {
+        return Ok(());
+    }
     if matches!(
         node.kind(),
         SyntaxKind::VariableDefine | SyntaxKind::Expression
@@ -291,7 +294,6 @@ fn collect_document_units(
             | SyntaxKind::InvariantDefine
             | SyntaxKind::ImportDeclaration
             | SyntaxKind::KindDefine
-            | SyntaxKind::MatchExpression
             | SyntaxKind::ModuleImport
             | SyntaxKind::OpAssign
             | SyntaxKind::TupleDestructure

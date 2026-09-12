@@ -116,6 +116,33 @@ fn typed_document_rejects_unimplemented_executable_units() {
 }
 
 #[test]
+fn typed_document_executes_only_eval_inline_mech_code() {
+    let display_only = CanonicalSourceFrontend
+        .compile_document(&document("Displayed {{x<u8> := 1}}.\n\ny := x\n"))
+        .expect("display-only inline Mech must be ignored by execution");
+    assert_eq!(display_only.program().inputs.len(), 1);
+    assert_eq!(display_only.program().inputs[0].name, "x");
+    assert_eq!(
+        display_only.program().outputs[0].source,
+        SourceValue::Input(0)
+    );
+    assert!(matches!(
+        display_only
+            .schemas()
+            .get(display_only.program().inputs[0].schema)
+            .unwrap()
+            .body(),
+        SchemaBody::Dynamic
+    ));
+
+    let evaluated = CanonicalSourceFrontend
+        .compile_document(&document("Evaluated {1 + 2}.\n"))
+        .expect("eval inline Mech must enter document execution");
+    assert_eq!(evaluated.source_map().nodes.len(), 1);
+    assert_eq!(evaluated.source_map().nodes[0].operation, "math/add");
+}
+
+#[test]
 fn canonical_document_fixture_corpus_has_an_explicit_engine_disposition() {
     let cases = [
         ("compiler.mec", Ok(())),

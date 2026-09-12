@@ -7,6 +7,7 @@ SCC-0095	1	false	docs-rpl	none	none
 SCC-0168	1	false	help-rpl	none	none
 SCC-0208	1	false	load-rpl	none	none
 SCC-0210	1	false	ls-rpl	none	none
+SCC-0211	1	false	match-expression	none	factor|match-arm|period|question|whitespace0
 SCC-0269	1	false	parse-repl-command	SCC-0057|SCC-0060|SCC-0061|SCC-0063|SCC-0095|SCC-0168|SCC-0208|SCC-0210|SCC-0272|SCC-0277|SCC-0285|SCC-0309|SCC-0336|SCC-0350|SCC-0391	colon
 SCC-0272	1	false	plan-rpl	none	none
 SCC-0277	1	false	profile-rpl	none	none
@@ -15,4 +16,5 @@ SCC-0299	1	false	repl-identifier	none	none
 SCC-0309	1	false	save-rpl	none	none
 SCC-0336	1	false	step-rpl	none	hashtag
 SCC-0350	1	false	symbols-rpl	none	none
+SCC-0354	1	false	table-column	none	comma|expression|space-tab0|table-separator
 SCC-0391	1	false	whos-rpl	SCC-0299	none

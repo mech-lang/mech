@@ -70,7 +70,7 @@ fn every_s7_rule_has_a_clean_specification_derived_source() {
         Some("grammar-name\taccepted-source-json\tnode-policy\tsemantic-status\tspec-location")
     );
     let rows = lines.collect::<Vec<_>>();
-    assert_eq!(rows.len(), 114);
+    assert_eq!(rows.len(), 112);
 
     for line in rows {
         let fields = line.split('\t').collect::<Vec<_>>();
@@ -168,7 +168,7 @@ fn s7_dispositions_cover_the_exact_remaining_inventory() {
         rows.iter()
             .filter(|row| row[1] == "document-dependency")
             .count(),
-        112
+        110
     );
     assert_eq!(
         rows.iter()
@@ -181,6 +181,13 @@ fn s7_dispositions_cover_the_exact_remaining_inventory() {
             .filter(|row| row[1] == "historical-command")
             .count(),
         17
+    );
+    assert_eq!(
+        rows.iter()
+            .filter(|row| row[1] == "outside-document-closure")
+            .map(|row| row[0])
+            .collect::<BTreeSet<_>>(),
+        BTreeSet::from(["match-expression", "table-column"])
     );
     assert_eq!(
         rows.iter()

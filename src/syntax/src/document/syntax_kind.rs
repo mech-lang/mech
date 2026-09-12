@@ -465,7 +465,6 @@ define_syntax_kinds! {
   InvariantDefine => node,
   KindDefine => node,
   LeftAlignment => node,
-  MatchExpression => node,
   MechCode => node,
   MechCodeAlt => node,
   MechdownList => node,
@@ -503,7 +502,6 @@ define_syntax_kinds! {
   Strong => node,
   Sublist => node,
   SuccessBlock => node,
-  TableColumn => node,
   TitleFrontMatter => node,
   TupleDestructure => node,
   UncheckedItem => node,
@@ -823,10 +821,10 @@ mod tests {
     #[test]
     fn s7_document_kinds_are_append_only() {
         assert_eq!(SyntaxKind::AbstractEl as u16, 341);
-        assert_eq!(SyntaxKind::WarningBlock as u16, 443);
+        assert_eq!(SyntaxKind::WarningBlock as u16, 441);
         assert_eq!(
             SyntaxKind::WarningBlock as u16 - SyntaxKind::AbstractEl as u16 + 1,
-            103
+            101
         );
         assert!(!SyntaxKind::AbstractEl.is_token());
         assert!(!SyntaxKind::WarningBlock.is_token());
