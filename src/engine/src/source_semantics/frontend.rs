@@ -1,7 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use mech_core::snapshot::{
-    Complex64Bits, F32Bits, F64Bits, OptionDraft, ReifiedKind, ReifiedTypeDraft,
+    Complex32Bits, Complex64Bits, F32Bits, F64Bits, OptionDraft, ReifiedKind, ReifiedTypeDraft,
     SnapshotValidationContext,
 };
 use mech_core::{
@@ -20,7 +20,7 @@ use mech_syntax::document::{
     DocumentId, DocumentSyntax, ExpressionBodySyntax, ExpressionSyntax, FactorSyntax,
     FactorValueSyntax, FormulaSyntax, FsmPipeSyntax, FsmStageSyntax, KindAnnotationSyntax,
     LiteralSyntax, LiteralValueSyntax, MapSyntax, MatrixComprehensionSyntax, MatrixSyntax,
-    MultiplicativeExpressionSyntax, NodeFlags, OperatorSyntax, PatternSyntax,
+    MultiplicativeExpressionSyntax, NodeFlags, OperatorSyntax, PatternSyntax, PatternValueSyntax,
     RangeExpressionSyntax, RecordSyntax, RecursiveSyntaxNode, Revision, SetComprehensionSyntax,
     SetSyntax, SliceStemSyntax, SliceSyntax, StructureSyntax, StructureValueSyntax,
     SubscriptItemSyntax, SubscriptValueSyntax, SyntaxKind, SyntaxNode, TableSyntax,
@@ -257,20 +257,58 @@ fn collect_document_units(node: &SyntaxNode, output: &mut Vec<SyntaxNode>) {
 }
 
 fn collect_pattern_bindings(
-    node: &SyntaxNode,
+    pattern: &PatternSyntax,
     output: &mut Vec<String>,
 ) -> Result<(), SourceSemanticError> {
-    if node.kind() == SyntaxKind::Variable {
-        let variable = VariableSyntax::cast(node.clone()).expect("kind-checked variable cast");
-        if let Some(VariableStemSyntax::Identifier(identifier)) = variable.stem() {
-            output.push(node_text(identifier.syntax())?);
+    let value = pattern.value().ok_or_else(|| SourceSemanticError {
+        code: "source-semantics/missing-typed-child",
+        message: "pattern requires a pattern body".to_owned(),
+        anchor: SourceSemanticAnchor::for_node(pattern.syntax()),
+    })?;
+    match value {
+        PatternValueSyntax::Expression(expression) => {
+            if let Some(variable) = standalone_pattern_variable(&expression)
+                && let Some(VariableStemSyntax::Identifier(identifier)) = variable.stem()
+            {
+                output.push(node_text(identifier.syntax())?);
+            }
         }
-        return Ok(());
-    }
-    for child in node.children() {
-        collect_pattern_bindings(&child, output)?;
+        PatternValueSyntax::Array(array) => {
+            for element in array.elements() {
+                if let Some(pattern) = element.pattern() {
+                    collect_pattern_bindings(&pattern, output)?;
+                }
+            }
+        }
+        PatternValueSyntax::Tuple(tuple) => {
+            for pattern in tuple.items() {
+                collect_pattern_bindings(&pattern, output)?;
+            }
+        }
+        PatternValueSyntax::AtomStruct(tuple) => {
+            for pattern in tuple.items() {
+                collect_pattern_bindings(&pattern, output)?;
+            }
+        }
+        PatternValueSyntax::TupleStruct(tuple) => {
+            for pattern in tuple.items() {
+                collect_pattern_bindings(&pattern, output)?;
+            }
+        }
+        PatternValueSyntax::Wildcard(_) => {}
     }
     Ok(())
+}
+
+fn standalone_pattern_variable(expression: &ExpressionSyntax) -> Option<VariableSyntax> {
+    fn find(node: &SyntaxNode, range: TextRange) -> Option<VariableSyntax> {
+        if node.kind() == SyntaxKind::Variable && node.range() == range {
+            return VariableSyntax::cast(node.clone());
+        }
+        node.children().find_map(|child| find(&child, range))
+    }
+
+    find(expression.syntax(), expression.syntax().range())
 }
 
 fn reject_recovered_syntax<N: RecursiveSyntaxNode>(node: &N) -> Result<(), SourceSemanticError> {
@@ -326,6 +364,7 @@ enum BuiltinSchema {
     I128,
     F32,
     F64,
+    C32,
     C64,
     R64,
     OptionDynamic,
@@ -344,6 +383,7 @@ enum BuiltinSchema {
     OptionI128,
     OptionF32,
     OptionF64,
+    OptionC32,
     OptionC64,
     OptionR64,
 }
@@ -381,6 +421,7 @@ impl BuiltinSchemas {
             BuiltinSchema::I128,
             BuiltinSchema::F32,
             BuiltinSchema::F64,
+            BuiltinSchema::C32,
             BuiltinSchema::C64,
             BuiltinSchema::R64,
             BuiltinSchema::OptionDynamic,
@@ -399,6 +440,7 @@ impl BuiltinSchemas {
             BuiltinSchema::OptionI128,
             BuiltinSchema::OptionF32,
             BuiltinSchema::OptionF64,
+            BuiltinSchema::OptionC32,
             BuiltinSchema::OptionC64,
             BuiltinSchema::OptionR64,
         ] {
@@ -602,6 +644,7 @@ fn schema_body(schema: BuiltinSchema) -> SchemaBody {
         BuiltinSchema::I128 => SchemaBody::SignedInteger(IntegerWidth::W128),
         BuiltinSchema::F32 => SchemaBody::FloatingPoint(FloatWidth::W32),
         BuiltinSchema::F64 => SchemaBody::FloatingPoint(FloatWidth::W64),
+        BuiltinSchema::C32 => SchemaBody::Complex(FloatWidth::W32),
         BuiltinSchema::C64 => SchemaBody::Complex(FloatWidth::W64),
         BuiltinSchema::R64 => SchemaBody::Rational64,
         option => SchemaBody::Option(Box::new(schema_body(
@@ -626,6 +669,7 @@ fn builtin_kind(schema: BuiltinSchema) -> Option<BuiltinScalarKind> {
         BuiltinSchema::I128 => BuiltinScalarKind::I128,
         BuiltinSchema::F32 => BuiltinScalarKind::F32,
         BuiltinSchema::F64 => BuiltinScalarKind::F64,
+        BuiltinSchema::C32 => BuiltinScalarKind::C32,
         BuiltinSchema::C64 => BuiltinScalarKind::C64,
         BuiltinSchema::R64 => BuiltinScalarKind::R64,
         BuiltinSchema::Dynamic
@@ -646,6 +690,7 @@ fn builtin_kind(schema: BuiltinSchema) -> Option<BuiltinScalarKind> {
         | BuiltinSchema::OptionI128
         | BuiltinSchema::OptionF32
         | BuiltinSchema::OptionF64
+        | BuiltinSchema::OptionC32
         | BuiltinSchema::OptionC64
         | BuiltinSchema::OptionR64 => return None,
     })
@@ -669,6 +714,7 @@ fn option_schema(payload: BuiltinSchema) -> Option<BuiltinSchema> {
         BuiltinSchema::I128 => BuiltinSchema::OptionI128,
         BuiltinSchema::F32 => BuiltinSchema::OptionF32,
         BuiltinSchema::F64 => BuiltinSchema::OptionF64,
+        BuiltinSchema::C32 => BuiltinSchema::OptionC32,
         BuiltinSchema::C64 => BuiltinSchema::OptionC64,
         BuiltinSchema::R64 => BuiltinSchema::OptionR64,
         _ => return None,
@@ -693,6 +739,7 @@ fn option_payload_schema(option: BuiltinSchema) -> Option<BuiltinSchema> {
         BuiltinSchema::OptionI128 => BuiltinSchema::I128,
         BuiltinSchema::OptionF32 => BuiltinSchema::F32,
         BuiltinSchema::OptionF64 => BuiltinSchema::F64,
+        BuiltinSchema::OptionC32 => BuiltinSchema::C32,
         BuiltinSchema::OptionC64 => BuiltinSchema::C64,
         BuiltinSchema::OptionR64 => BuiltinSchema::R64,
         _ => return None,
@@ -715,9 +762,9 @@ fn builtin_schema(kind: BuiltinScalarKind) -> Option<BuiltinSchema> {
         BuiltinScalarKind::I128 => BuiltinSchema::I128,
         BuiltinScalarKind::F32 => BuiltinSchema::F32,
         BuiltinScalarKind::F64 => BuiltinSchema::F64,
+        BuiltinScalarKind::C32 => BuiltinSchema::C32,
         BuiltinScalarKind::C64 => BuiltinSchema::C64,
         BuiltinScalarKind::R64 => BuiltinSchema::R64,
-        BuiltinScalarKind::C32 => return None,
     })
 }
 
@@ -849,6 +896,7 @@ struct PendingOutput {
 struct RecordedPattern {
     index: u32,
     bindings: Vec<String>,
+    dependencies: Vec<PendingValue>,
     syntax: SyntaxNode,
 }
 
@@ -942,7 +990,8 @@ impl SemanticBuilder {
             return Ok(());
         }
         if node.kind() == SyntaxKind::Pattern {
-            return Ok(());
+            let pattern = PatternSyntax::cast(node.clone()).expect("kind-checked pattern cast");
+            return self.declare_pattern_input_annotations(&pattern, bindings);
         }
         if node.kind() == SyntaxKind::VariableDefine {
             let definition = VariableDefineSyntax::cast(node.clone())
@@ -957,9 +1006,10 @@ impl SemanticBuilder {
             self.declare_input_annotations(body.syntax(), bindings)?;
             for arm in expression.match_arms() {
                 let pattern = self.required(arm.pattern(), arm.syntax(), "a match pattern")?;
+                self.declare_pattern_input_annotations(&pattern, bindings)?;
                 let mut arm_bindings = bindings.clone();
                 let mut names = Vec::new();
-                collect_pattern_bindings(pattern.syntax(), &mut names)?;
+                collect_pattern_bindings(&pattern, &mut names)?;
                 arm_bindings.extend(names);
                 if let Some(guard) = arm.guard() {
                     self.declare_input_annotations(guard.syntax(), &arm_bindings)?;
@@ -1060,8 +1110,9 @@ impl SemanticBuilder {
                         generator.syntax(),
                         "a generator pattern",
                     )?;
+                    self.declare_pattern_input_annotations(&pattern, &bindings)?;
                     let mut names = Vec::new();
-                    collect_pattern_bindings(pattern.syntax(), &mut names)?;
+                    collect_pattern_bindings(&pattern, &mut names)?;
                     bindings.extend(names);
                 }
                 ComprehensionQualifierValueSyntax::Definition(definition) => {
@@ -1082,6 +1133,45 @@ impl SemanticBuilder {
         }
         let result = self.required(result, syntax, "a comprehension result")?;
         self.declare_input_annotations(result.syntax(), &bindings)
+    }
+
+    fn declare_pattern_input_annotations(
+        &mut self,
+        pattern: &PatternSyntax,
+        bindings: &BTreeSet<String>,
+    ) -> Result<(), SourceSemanticError> {
+        let value = self.required(pattern.value(), pattern.syntax(), "a pattern body")?;
+        match value {
+            PatternValueSyntax::Expression(expression) => {
+                if standalone_pattern_variable(&expression).is_none() {
+                    self.declare_input_annotations(expression.syntax(), bindings)?;
+                }
+            }
+            PatternValueSyntax::Array(array) => {
+                for element in array.elements() {
+                    if let Some(pattern) = element.pattern() {
+                        self.declare_pattern_input_annotations(&pattern, bindings)?;
+                    }
+                }
+            }
+            PatternValueSyntax::Tuple(tuple) => {
+                for pattern in tuple.items() {
+                    self.declare_pattern_input_annotations(&pattern, bindings)?;
+                }
+            }
+            PatternValueSyntax::AtomStruct(tuple) => {
+                for pattern in tuple.items() {
+                    self.declare_pattern_input_annotations(&pattern, bindings)?;
+                }
+            }
+            PatternValueSyntax::TupleStruct(tuple) => {
+                for pattern in tuple.items() {
+                    self.declare_pattern_input_annotations(&pattern, bindings)?;
+                }
+            }
+            PatternValueSyntax::Wildcard(_) => {}
+        }
+        Ok(())
     }
 
     fn required<T>(
@@ -1112,6 +1202,7 @@ impl SemanticBuilder {
                 let saved = self.bindings.clone();
                 let result = (|| {
                     let pattern = self.record_pattern(&pattern)?;
+                    inputs.extend(pattern.dependencies.iter().copied());
                     self.bind_pattern(&pattern, value)?;
                     let guard_input = if let Some(guard) = arm.guard() {
                         let ordinal = inputs.len() as u32;
@@ -1245,7 +1336,7 @@ impl SemanticBuilder {
         let (name, fixed_schema) = operator_name(operator);
         let lhs_schema = self.schema_of(lhs);
         let rhs_schema = self.schema_of(rhs);
-        let (lhs, rhs, promoted) = match operator {
+        let (mut lhs, mut rhs, promoted) = match operator {
             CanonicalOperator::Add
             | CanonicalOperator::Subtract
             | CanonicalOperator::Multiply
@@ -1265,6 +1356,29 @@ impl SemanticBuilder {
             CanonicalOperator::Power => self.promote_operands(lhs, rhs, syntax)?,
             _ => (lhs, rhs, None),
         };
+        match operator {
+            CanonicalOperator::Or | CanonicalOperator::And | CanonicalOperator::Xor => {
+                lhs = self.require_boolean_operand(lhs, syntax)?;
+                rhs = self.require_boolean_operand(rhs, syntax)?;
+            }
+            CanonicalOperator::Modulus => {
+                self.require_modulus_operand(lhs, syntax)?;
+                self.require_modulus_operand(rhs, syntax)?;
+            }
+            CanonicalOperator::NotEqual
+            | CanonicalOperator::EqualTo
+            | CanonicalOperator::StrictNotEqual
+            | CanonicalOperator::StrictEqual
+            | CanonicalOperator::GreaterThan
+            | CanonicalOperator::LessThan
+            | CanonicalOperator::GreaterThanEqual
+            | CanonicalOperator::LessThanEqual => {
+                self.validate_comparison_operands(operator, lhs, rhs, syntax)?;
+            }
+            _ => {}
+        }
+        let lhs_schema = self.schema_of(lhs);
+        let rhs_schema = self.schema_of(rhs);
         let schema = fixed_schema.unwrap_or_else(|| {
             promoted.unwrap_or_else(|| {
                 if lhs_schema == rhs_schema {
@@ -1275,6 +1389,101 @@ impl SemanticBuilder {
             })
         });
         Ok(self.emit(name, vec![lhs, rhs], schema, syntax, "operator", None))
+    }
+
+    fn require_boolean_operand(
+        &mut self,
+        operand: PendingValue,
+        syntax: &SyntaxNode,
+    ) -> Result<PendingValue, SourceSemanticError> {
+        match self.schema_of(operand) {
+            BuiltinSchema::Bool => Ok(operand),
+            BuiltinSchema::Dynamic
+                if matches!(self.schema_body_of(operand), SchemaBody::Dynamic) =>
+            {
+                Ok(self.emit(
+                    "convert/kind",
+                    vec![operand],
+                    BuiltinSchema::Bool,
+                    syntax,
+                    "declared-conversion",
+                    Some("target=bool".to_owned()),
+                ))
+            }
+            _ => Err(SourceSemanticError {
+                code: "source-semantics/non-boolean-operator-kind",
+                message: "logical binary operators require boolean operands".to_owned(),
+                anchor: SourceSemanticAnchor::for_node(syntax),
+            }),
+        }
+    }
+
+    fn require_modulus_operand(
+        &self,
+        operand: PendingValue,
+        syntax: &SyntaxNode,
+    ) -> Result<(), SourceSemanticError> {
+        let schema = self.schema_of(operand);
+        if schema == BuiltinSchema::Dynamic
+            && matches!(self.schema_body_of(operand), SchemaBody::Dynamic)
+        {
+            return Ok(());
+        }
+        if let Some(kind) = builtin_kind(schema) {
+            let resolved = resolved_builtin_type(kind, syntax)?;
+            if resolved.satisfies(BuiltinKindPredicate::Integer)
+                || resolved.satisfies(BuiltinKindPredicate::FloatingPoint)
+            {
+                return Ok(());
+            }
+        }
+        Err(SourceSemanticError {
+            code: "source-semantics/invalid-modulus-kind",
+            message: "modulus requires integer or floating-point operands".to_owned(),
+            anchor: SourceSemanticAnchor::for_node(syntax),
+        })
+    }
+
+    fn validate_comparison_operands(
+        &self,
+        operator: CanonicalOperator,
+        lhs: PendingValue,
+        rhs: PendingValue,
+        syntax: &SyntaxNode,
+    ) -> Result<(), SourceSemanticError> {
+        let lhs_body = self.schema_body_of(lhs);
+        let rhs_body = self.schema_body_of(rhs);
+        if matches!(lhs_body, SchemaBody::Dynamic) || matches!(rhs_body, SchemaBody::Dynamic) {
+            return Ok(());
+        }
+        let lhs_schema = self.schema_of(lhs);
+        let rhs_schema = self.schema_of(rhs);
+        let ordered = if lhs_schema == BuiltinSchema::String {
+            true
+        } else if let Some(kind) = builtin_kind(lhs_schema) {
+            resolved_builtin_type(kind, syntax)?.satisfies(BuiltinKindPredicate::Ordered)
+        } else {
+            false
+        };
+        let valid = match operator {
+            CanonicalOperator::NotEqual
+            | CanonicalOperator::EqualTo
+            | CanonicalOperator::StrictNotEqual
+            | CanonicalOperator::StrictEqual => lhs_body == rhs_body,
+            CanonicalOperator::GreaterThan
+            | CanonicalOperator::LessThan
+            | CanonicalOperator::GreaterThanEqual
+            | CanonicalOperator::LessThanEqual => lhs_schema == rhs_schema && ordered,
+            _ => unreachable!("comparison validation called for a non-comparison operator"),
+        };
+        if valid {
+            return Ok(());
+        }
+        Err(SourceSemanticError {
+            code: "source-semantics/incompatible-comparison-kinds",
+            message: "comparison operands do not satisfy the operation kind predicate".to_owned(),
+            anchor: SourceSemanticAnchor::for_node(syntax),
+        })
     }
 
     fn factor(&mut self, factor: &FactorSyntax) -> Result<PendingValue, SourceSemanticError> {
@@ -1548,14 +1757,22 @@ impl SemanticBuilder {
                 (node_text(value.syntax())?, value.syntax().clone())
             }
         };
-        if let Some(value) = self.bindings.get(&name) {
-            return Ok(*value);
-        }
-        let schema = variable
+        let annotation = variable
             .annotation()
             .map(|annotation| annotation_schema(&annotation))
-            .transpose()?
-            .unwrap_or(BuiltinSchema::Dynamic);
+            .transpose()?;
+        if let Some(value) = self.bindings.get(&name).copied() {
+            return annotation.map_or(Ok(value), |expected| {
+                self.conform_value(
+                    value,
+                    expected,
+                    variable.syntax(),
+                    "source-semantics/incompatible-local-kind",
+                    "local value does not satisfy its occurrence annotation",
+                )
+            });
+        }
+        let schema = annotation.unwrap_or(BuiltinSchema::Dynamic);
         let declared = self
             .input_declarations
             .get(&name)
@@ -1775,7 +1992,7 @@ impl SemanticBuilder {
                     value.syntax(),
                 )
             }
-            LiteralValueSyntax::KindAnnotation(value) => self.kind_value(&value),
+            LiteralValueSyntax::KindAnnotation(value) => self.kind_value(&value, annotation),
         }
     }
 
@@ -1816,6 +2033,7 @@ impl SemanticBuilder {
     fn kind_value(
         &mut self,
         kind: &KindAnnotationSyntax,
+        annotation: Option<BuiltinSchema>,
     ) -> Result<PendingValue, SourceSemanticError> {
         let source = node_text(kind.syntax())?;
         let kind_expr = annotation_kind_expr(&source).ok_or_else(|| SourceSemanticError {
@@ -1830,12 +2048,14 @@ impl SemanticBuilder {
                 format!("unable to canonicalize kind value: {error:?}"),
             )
         })?;
-        Ok(self.constant_exact(
+        self.exact_literal_constant(
+            annotation,
             SchemaBody::ReifiedType,
             ValueDataDraft::Type(ReifiedTypeDraft::CanonicalKind(
                 reified.canonical_bytes().to_vec().into_boxed_slice(),
             )),
-        ))
+            kind.syntax(),
+        )
     }
 
     fn structure(
@@ -1896,7 +2116,7 @@ impl SemanticBuilder {
     fn table(&mut self, table: &TableSyntax) -> Result<PendingValue, SourceSemanticError> {
         let value = self.required(table.value(), table.syntax(), "a table presentation")?;
         let (mut headers, rows, syntax): (
-            Vec<(String, BuiltinSchema)>,
+            Vec<(String, BuiltinSchema, Option<SchemaBody>)>,
             Vec<Vec<ExpressionSyntax>>,
             SyntaxNode,
         ) = match value {
@@ -1913,7 +2133,7 @@ impl SemanticBuilder {
                             .map(|annotation| annotation_schema(&annotation))
                             .transpose()?
                             .unwrap_or(BuiltinSchema::Dynamic);
-                        Ok((node_text(name.syntax())?, schema))
+                        Ok((node_text(name.syntax())?, schema, None))
                     })
                     .collect::<Result<Vec<_>, SourceSemanticError>>()?,
                 value.rows().into_iter().map(|row| row.cells()).collect(),
@@ -1932,7 +2152,11 @@ impl SemanticBuilder {
                             field.syntax(),
                             "a table field kind",
                         )?;
-                        Ok((node_text(name.syntax())?, annotation_schema(&annotation)?))
+                        Ok((
+                            node_text(name.syntax())?,
+                            annotation_schema(&annotation)?,
+                            None,
+                        ))
                     })
                     .collect::<Result<Vec<_>, SourceSemanticError>>()?,
                 value.rows().into_iter().map(|row| row.cells()).collect(),
@@ -1951,7 +2175,11 @@ impl SemanticBuilder {
                             field.syntax(),
                             "a table field kind",
                         )?;
-                        Ok((node_text(name.syntax())?, annotation_schema(&annotation)?))
+                        Ok((
+                            node_text(name.syntax())?,
+                            annotation_schema(&annotation)?,
+                            None,
+                        ))
                     })
                     .collect::<Result<Vec<_>, SourceSemanticError>>()?,
                 value.rows().into_iter().map(|row| row.cells()).collect(),
@@ -1979,11 +2207,18 @@ impl SemanticBuilder {
             });
         }
         for index in 0..headers.len() {
-            if headers[index].1 == BuiltinSchema::Dynamic {
-                headers[index].1 = compiled_rows
+            if headers[index].1 == BuiltinSchema::Dynamic && headers[index].2.is_none() {
+                let inferred = compiled_rows
                     .iter()
-                    .map(|row| self.schema_of(row[index].0))
-                    .find(|schema| *schema != BuiltinSchema::Dynamic)
+                    .map(|row| {
+                        (
+                            self.schema_of(row[index].0),
+                            self.schema_body_of(row[index].0),
+                        )
+                    })
+                    .find(|(schema, body)| {
+                        *schema != BuiltinSchema::Dynamic || !matches!(body, SchemaBody::Dynamic)
+                    })
                     .ok_or_else(|| SourceSemanticError {
                         code: "source-semantics/unresolved-table-column-kind",
                         message: format!(
@@ -1992,11 +2227,19 @@ impl SemanticBuilder {
                         ),
                         anchor: SourceSemanticAnchor::for_node(&syntax),
                     })?;
+                if inferred.0 == BuiltinSchema::Dynamic {
+                    headers[index].2 = Some(inferred.1);
+                } else {
+                    headers[index].1 = inferred.0;
+                }
             }
-            let (name, expected) = headers[index].clone();
+            let (name, expected, exact) = headers[index].clone();
             for row in &mut compiled_rows {
-                row[index].0 =
-                    self.conform_table_value(row[index].0, expected, &name, &row[index].1)?;
+                row[index].0 = if let Some(expected) = exact.as_ref() {
+                    self.conform_exact_table_value(row[index].0, expected, &name, &row[index].1)?
+                } else {
+                    self.conform_table_value(row[index].0, expected, &name, &row[index].1)?
+                };
             }
         }
         let inputs = compiled_rows
@@ -2007,9 +2250,9 @@ impl SemanticBuilder {
         let schema_body = SchemaBody::Table {
             columns: headers
                 .iter()
-                .map(|(name, schema)| SchemaField {
+                .map(|(name, schema, exact)| SchemaField {
                     name: name.clone(),
-                    schema: schema_body(*schema),
+                    schema: exact.clone().unwrap_or_else(|| schema_body(*schema)),
                 })
                 .collect::<Vec<_>>()
                 .into_boxed_slice(),
@@ -2017,7 +2260,7 @@ impl SemanticBuilder {
         };
         let names = headers
             .iter()
-            .map(|(name, _)| name.as_str())
+            .map(|(name, _, _)| name.as_str())
             .collect::<Vec<_>>();
         Ok(self.emit_with_schema_body(
             "source/table",
@@ -2291,6 +2534,7 @@ impl SemanticBuilder {
                             },
                         ));
                         inputs.push(source);
+                        inputs.extend(pattern.dependencies.iter().copied());
                     }
                     ComprehensionQualifierValueSyntax::Definition(definition) => {
                         qualifier_layouts.push((
@@ -2341,9 +2585,10 @@ impl SemanticBuilder {
     ) -> Result<RecordedPattern, SourceSemanticError> {
         self.required(pattern.value(), pattern.syntax(), "a pattern body")?;
         let mut bindings = Vec::new();
-        collect_pattern_bindings(pattern.syntax(), &mut bindings)?;
+        collect_pattern_bindings(pattern, &mut bindings)?;
         let mut seen = BTreeSet::new();
         bindings.retain(|name| seen.insert(name.clone()));
+        let dependencies = self.compile_pattern_dependencies(pattern)?;
         let index = self.patterns.len() as u32;
         self.patterns.push(SourceSemanticPattern {
             source: node_text(pattern.syntax())?,
@@ -2353,8 +2598,48 @@ impl SemanticBuilder {
         Ok(RecordedPattern {
             index,
             bindings,
+            dependencies,
             syntax: pattern.syntax().clone(),
         })
+    }
+
+    fn compile_pattern_dependencies(
+        &mut self,
+        pattern: &PatternSyntax,
+    ) -> Result<Vec<PendingValue>, SourceSemanticError> {
+        let value = self.required(pattern.value(), pattern.syntax(), "a pattern body")?;
+        let mut dependencies = Vec::new();
+        match value {
+            PatternValueSyntax::Expression(expression) => {
+                if standalone_pattern_variable(&expression).is_none() {
+                    dependencies.push(self.expression(&expression)?.0);
+                }
+            }
+            PatternValueSyntax::Array(array) => {
+                for element in array.elements() {
+                    if let Some(pattern) = element.pattern() {
+                        dependencies.extend(self.compile_pattern_dependencies(&pattern)?);
+                    }
+                }
+            }
+            PatternValueSyntax::Tuple(tuple) => {
+                for pattern in tuple.items() {
+                    dependencies.extend(self.compile_pattern_dependencies(&pattern)?);
+                }
+            }
+            PatternValueSyntax::AtomStruct(tuple) => {
+                for pattern in tuple.items() {
+                    dependencies.extend(self.compile_pattern_dependencies(&pattern)?);
+                }
+            }
+            PatternValueSyntax::TupleStruct(tuple) => {
+                for pattern in tuple.items() {
+                    dependencies.extend(self.compile_pattern_dependencies(&pattern)?);
+                }
+            }
+            PatternValueSyntax::Wildcard(_) => {}
+        }
+        Ok(dependencies)
     }
 
     fn bind_pattern(
@@ -2428,7 +2713,8 @@ impl SemanticBuilder {
                 ),
             };
             let pattern = self.required(value.pattern(), value.syntax(), "an FSM value pattern")?;
-            self.record_pattern(&pattern)?;
+            let pattern = self.record_pattern(&pattern)?;
+            inputs.extend(pattern.dependencies);
             inputs.push(self.emit(
                 "source/fsm-stage",
                 Vec::new(),
@@ -2632,6 +2918,13 @@ impl SemanticBuilder {
             ));
         }
         if actual == BuiltinSchema::Dynamic {
+            if !matches!(self.schema_body_of(value), SchemaBody::Dynamic) {
+                return Err(SourceSemanticError {
+                    code,
+                    message: message.to_owned(),
+                    anchor: SourceSemanticAnchor::for_node(syntax),
+                });
+            }
             return Ok(self.emit(
                 "convert/kind",
                 vec![value],
@@ -2685,6 +2978,23 @@ impl SemanticBuilder {
             "source-semantics/incompatible-table-field-kind",
             &format!("table field {field} does not satisfy its kind annotation"),
         )
+    }
+
+    fn conform_exact_table_value(
+        &self,
+        value: PendingValue,
+        expected: &SchemaBody,
+        field: &str,
+        syntax: &SyntaxNode,
+    ) -> Result<PendingValue, SourceSemanticError> {
+        if self.schema_body_of(value) == *expected {
+            return Ok(value);
+        }
+        Err(SourceSemanticError {
+            code: "source-semantics/incompatible-table-field-kind",
+            message: format!("table field {field} does not have one exact inferred kind"),
+            anchor: SourceSemanticAnchor::for_node(syntax),
+        })
     }
 
     fn constant(&mut self, schema: BuiltinSchema, data: ValueDataDraft) -> PendingValue {
@@ -3058,10 +3368,11 @@ fn resolved_operation_contract(
         }
         "convert/kind" => Some(conversion_contract()),
         "math/neg" => Some(negation_contract(output_schema)),
+        "matrix/transpose" => Some(transpose_contract()),
         "math/add" | "math/sub" | "math/mul" | "math/div" | "math/mod" | "math/pow"
         | "compare/neq" | "compare/eq" | "compare/sneq" | "compare/seq" | "compare/gt"
         | "compare/lt" | "compare/gte" | "compare/lte" | "logic/or" | "logic/and" | "logic/not"
-        | "logic/xor" | "matrix/transpose" | "core/assign" => {
+        | "logic/xor" | "core/assign" => {
             Some(operation_contract(input_count, output_schema, state_output))
         }
         _ => None,
@@ -3126,6 +3437,23 @@ fn negation_contract(output_schema: BuiltinSchema) -> OperationContractDeclarati
     }
 }
 
+fn transpose_contract() -> OperationContractDeclaration {
+    OperationContractDeclaration {
+        inputs: read_inputs(1),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::FullWrite {
+                shape: ShapeRule::TransposeOf { input: 0 },
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    }
+}
+
 fn is_scalar_schema(schema: BuiltinSchema) -> bool {
     matches!(
         schema,
@@ -3142,6 +3470,7 @@ fn is_scalar_schema(schema: BuiltinSchema) -> bool {
             | BuiltinSchema::I128
             | BuiltinSchema::F32
             | BuiltinSchema::F64
+            | BuiltinSchema::C32
             | BuiltinSchema::C64
             | BuiltinSchema::R64
     )
@@ -3264,6 +3593,7 @@ fn annotation_schema(
         "i128" => BuiltinSchema::I128,
         "f32" => BuiltinSchema::F32,
         "f64" => BuiltinSchema::F64,
+        "c32" => BuiltinSchema::C32,
         "c64" => BuiltinSchema::C64,
         "r64" => BuiltinSchema::R64,
         "*" | "_" => BuiltinSchema::Dynamic,
@@ -3309,6 +3639,7 @@ fn numeric_suffix(source: &str) -> (&str, Option<BuiltinSchema>) {
         ("u16", BuiltinSchema::U16),
         ("i16", BuiltinSchema::I16),
         ("f64", BuiltinSchema::F64),
+        ("c32", BuiltinSchema::C32),
         ("c64", BuiltinSchema::C64),
         ("r64", BuiltinSchema::R64),
         ("u8", BuiltinSchema::U8),
@@ -3322,7 +3653,7 @@ fn numeric_suffix(source: &str) -> (&str, Option<BuiltinSchema>) {
     (source, None)
 }
 
-fn integer_value(source: &str) -> Option<i128> {
+fn integer_parts(source: &str) -> Option<(bool, u128)> {
     let (negative, magnitude) = source
         .strip_prefix('-')
         .map_or((false, source), |value| (true, value));
@@ -3337,30 +3668,50 @@ fn integer_value(source: &str) -> Option<i128> {
     } else {
         (10, magnitude)
     };
-    let magnitude = i128::from_str_radix(digits, radix).ok()?;
-    Some(if negative { -magnitude } else { magnitude })
+    Some((negative, u128::from_str_radix(digits, radix).ok()?))
+}
+
+fn signed_integer_value(source: &str) -> Option<i128> {
+    let (negative, magnitude) = integer_parts(source)?;
+    if !negative {
+        return i128::try_from(magnitude).ok();
+    }
+    if magnitude == i128::MAX as u128 + 1 {
+        return Some(i128::MIN);
+    }
+    i128::try_from(magnitude).ok()?.checked_neg()
 }
 
 fn real_value(source: &str) -> Option<f64> {
-    integer_value(source)
-        .map(|value| value as f64)
+    integer_parts(source)
+        .map(|(negative, magnitude)| {
+            if negative {
+                -(magnitude as f64)
+            } else {
+                magnitude as f64
+            }
+        })
         .or_else(|| source.parse::<f64>().ok())
 }
 
 fn scalar_data(schema: BuiltinSchema, source: &str) -> Option<ValueDataDraft> {
-    let integer = || integer_value(source);
+    let signed = || signed_integer_value(source);
+    let unsigned = || {
+        let (negative, magnitude) = integer_parts(source)?;
+        (!negative).then_some(magnitude)
+    };
     let float = || real_value(source);
     Some(match schema {
-        BuiltinSchema::U8 => ValueDataDraft::U8(u8::try_from(integer()?).ok()?),
-        BuiltinSchema::U16 => ValueDataDraft::U16(u16::try_from(integer()?).ok()?),
-        BuiltinSchema::U32 => ValueDataDraft::U32(u32::try_from(integer()?).ok()?),
-        BuiltinSchema::U64 => ValueDataDraft::U64(u64::try_from(integer()?).ok()?),
-        BuiltinSchema::U128 => ValueDataDraft::U128(u128::try_from(integer()?).ok()?),
-        BuiltinSchema::I8 => ValueDataDraft::I8(i8::try_from(integer()?).ok()?),
-        BuiltinSchema::I16 => ValueDataDraft::I16(i16::try_from(integer()?).ok()?),
-        BuiltinSchema::I32 => ValueDataDraft::I32(i32::try_from(integer()?).ok()?),
-        BuiltinSchema::I64 => ValueDataDraft::I64(i64::try_from(integer()?).ok()?),
-        BuiltinSchema::I128 => ValueDataDraft::I128(integer()?),
+        BuiltinSchema::U8 => ValueDataDraft::U8(u8::try_from(unsigned()?).ok()?),
+        BuiltinSchema::U16 => ValueDataDraft::U16(u16::try_from(unsigned()?).ok()?),
+        BuiltinSchema::U32 => ValueDataDraft::U32(u32::try_from(unsigned()?).ok()?),
+        BuiltinSchema::U64 => ValueDataDraft::U64(u64::try_from(unsigned()?).ok()?),
+        BuiltinSchema::U128 => ValueDataDraft::U128(unsigned()?),
+        BuiltinSchema::I8 => ValueDataDraft::I8(i8::try_from(signed()?).ok()?),
+        BuiltinSchema::I16 => ValueDataDraft::I16(i16::try_from(signed()?).ok()?),
+        BuiltinSchema::I32 => ValueDataDraft::I32(i32::try_from(signed()?).ok()?),
+        BuiltinSchema::I64 => ValueDataDraft::I64(i64::try_from(signed()?).ok()?),
+        BuiltinSchema::I128 => ValueDataDraft::I128(signed()?),
         BuiltinSchema::F32 => {
             let value = float()?;
             let narrowed = value as f32;
@@ -3370,12 +3721,23 @@ fn scalar_data(schema: BuiltinSchema, source: &str) -> Option<ValueDataDraft> {
             ValueDataDraft::F32(F32Bits::from_f32(narrowed))
         }
         BuiltinSchema::F64 => ValueDataDraft::F64(F64Bits::from_f64(float()?)),
+        BuiltinSchema::C32 => {
+            let value = float()?;
+            let narrowed = value as f32;
+            if value.is_finite() && !narrowed.is_finite() {
+                return None;
+            }
+            ValueDataDraft::Complex32(Complex32Bits::new(
+                F32Bits::from_f32(narrowed),
+                F32Bits::from_f32(0.0),
+            ))
+        }
         BuiltinSchema::C64 => ValueDataDraft::Complex64(Complex64Bits::new(
             F64Bits::from_f64(float()?),
             F64Bits::from_f64(0.0),
         )),
         BuiltinSchema::R64 => ValueDataDraft::Rational64 {
-            numerator: i64::try_from(integer()?).ok()?,
+            numerator: i64::try_from(signed()?).ok()?,
             denominator: 1,
         },
         _ => return None,
@@ -3403,17 +3765,27 @@ fn decode_number(
         let schema = annotation
             .filter(|schema| *schema != BuiltinSchema::Dynamic)
             .unwrap_or(BuiltinSchema::C64);
-        if schema != BuiltinSchema::C64 {
-            return None;
-        }
-        return wrap_optional_number(
-            option,
-            schema,
-            ValueDataDraft::Complex64(Complex64Bits::new(
-                F64Bits::from_f64(real_value(real)?),
-                F64Bits::from_f64(real_value(imaginary)?),
+        let real = real_value(real)?;
+        let imaginary = real_value(imaginary)?;
+        let data = match schema {
+            BuiltinSchema::C32 => {
+                let real = real as f32;
+                let imaginary = imaginary as f32;
+                if !real.is_finite() || !imaginary.is_finite() {
+                    return None;
+                }
+                ValueDataDraft::Complex32(Complex32Bits::new(
+                    F32Bits::from_f32(real),
+                    F32Bits::from_f32(imaginary),
+                ))
+            }
+            BuiltinSchema::C64 => ValueDataDraft::Complex64(Complex64Bits::new(
+                F64Bits::from_f64(real),
+                F64Bits::from_f64(imaginary),
             )),
-        );
+            _ => return None,
+        };
+        return wrap_optional_number(option, schema, data);
     }
     if let Some((numerator, denominator)) = source.split_once('/') {
         let (numerator, _) = numeric_suffix(numerator);
@@ -3424,8 +3796,11 @@ fn decode_number(
         if schema != BuiltinSchema::R64 {
             return None;
         }
-        let numerator = integer_value(numerator)?;
-        let denominator = u128::try_from(integer_value(denominator)?).ok()?;
+        let numerator = signed_integer_value(numerator)?;
+        let (negative_denominator, denominator) = integer_parts(denominator)?;
+        if negative_denominator {
+            return None;
+        }
         if denominator == 0 {
             return None;
         }

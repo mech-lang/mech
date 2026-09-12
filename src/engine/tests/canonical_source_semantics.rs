@@ -552,32 +552,14 @@ fn canonical_numeric_kinds_annotations_strings_and_state_are_preserved() {
         )
     }));
 
-    let strict = CanonicalSourceFrontend
-        .compile_expression(&expression("1u8 === 2u16"))
-        .unwrap();
-    let strict_inputs = &strict.program().nodes.last().unwrap().inputs;
-    assert!(matches!(
-        strict
-            .constants()
-            .get(match strict_inputs[0] {
-                SourceValue::Constant(id) => id,
-                _ => panic!(),
-            })
-            .unwrap()
-            .data(),
-        ValueData::U8(1)
-    ));
-    assert!(matches!(
-        strict
-            .constants()
-            .get(match strict_inputs[1] {
-                SourceValue::Constant(id) => id,
-                _ => panic!(),
-            })
-            .unwrap()
-            .data(),
-        ValueData::U16(2)
-    ));
+    assert_eq!(
+        CanonicalSourceFrontend
+            .compile_expression(&expression("1u8 === 2u16"))
+            .err()
+            .expect("strict equality requires identical kinds")
+            .code,
+        "source-semantics/incompatible-comparison-kinds"
+    );
 
     let rational_power = CanonicalSourceFrontend
         .compile_expression(&expression("1/2 ^ 2<i32>"))
@@ -905,6 +887,211 @@ fn semantic_annotations_follow_value_roles_and_lexical_scope() {
         SchemaBody::UnsignedInteger(IntegerWidth::W8)
     ));
     assert!(matches!(fields[1].schema, SchemaBody::Bool));
+}
+
+#[test]
+fn reviewed_source_kind_edges_match_operation_and_literal_contracts() {
+    let optional_kind = CanonicalSourceFrontend
+        .compile_expression(&expression("<u8><*?>"))
+        .unwrap();
+    let SourceValue::Constant(id) = optional_kind.program().outputs[0].source else {
+        panic!("annotated kind literal did not produce a constant")
+    };
+    assert!(matches!(
+        optional_kind.constants().get(id).unwrap().data(),
+        ValueData::Option(Some(value))
+            if matches!(value.as_ref(), ValueData::Dynamic(dynamic)
+                if matches!(dynamic.value().map(|value| value.data()), Some(ValueData::Type(_))))
+    ));
+    assert_eq!(
+        CanonicalSourceFrontend
+            .compile_expression(&expression("<u8><f64>"))
+            .err()
+            .expect("incompatible reified annotation must fail")
+            .code,
+        "source-semantics/incompatible-literal-kind"
+    );
+
+    let matched = CanonicalSourceFrontend
+        .compile_expression(&expression("x ? | threshold + 1 => 2 | * => 3"))
+        .unwrap();
+    assert_eq!(
+        matched
+            .program()
+            .inputs
+            .iter()
+            .map(|input| input.name.as_str())
+            .collect::<Vec<_>>(),
+        ["x", "threshold"]
+    );
+    assert!(matched.source_map().patterns[0].bindings.is_empty());
+    assert!(
+        matched
+            .source_map()
+            .nodes
+            .iter()
+            .all(|node| node.operation != "source/bind")
+    );
+
+    for (source, code) in [
+        ("1 && 2", "source-semantics/non-boolean-operator-kind"),
+        ("1/2 % 1/3", "source-semantics/invalid-modulus-kind"),
+        (
+            "true == \"true\"",
+            "source-semantics/incompatible-comparison-kinds",
+        ),
+        (
+            "true < false",
+            "source-semantics/incompatible-comparison-kinds",
+        ),
+    ] {
+        assert_eq!(
+            CanonicalSourceFrontend
+                .compile_expression(&expression(source))
+                .err()
+                .expect("invalid operator operands must fail")
+                .code,
+            code,
+            "{source:?}"
+        );
+    }
+    for source in [
+        "true && false",
+        "left && right",
+        "1u8 % 2u8",
+        "\"a\" < \"b\"",
+        ":ready == :ready",
+    ] {
+        let compiled = CanonicalSourceFrontend
+            .compile_expression(&expression(source))
+            .unwrap_or_else(|error| panic!("{source:?}: {error}"));
+        compiled
+            .compile_artifact()
+            .unwrap_or_else(|error| panic!("{source:?}: {error:?}"));
+    }
+
+    let maximum = CanonicalSourceFrontend
+        .compile_expression(&expression("340282366920938463463374607431768211455u128"))
+        .unwrap();
+    let SourceValue::Constant(id) = maximum.program().outputs[0].source else {
+        panic!("U128 maximum did not produce a constant")
+    };
+    assert!(matches!(
+        maximum.constants().get(id).unwrap().data(),
+        ValueData::U128(value) if *value == u128::MAX
+    ));
+
+    let local = CanonicalSourceFrontend
+        .compile_expression(&expression("[x<u8> | x := 1]"))
+        .unwrap();
+    assert!(local.program().inputs.is_empty());
+    assert!((0..local.constants().len()).any(|index| {
+        matches!(
+            local
+                .constants()
+                .get(mech_core::ConstantId::new(index as u32))
+                .unwrap()
+                .data(),
+            ValueData::U8(1)
+        )
+    }));
+    assert_eq!(
+        CanonicalSourceFrontend
+            .compile_expression(&expression("[x<u8> | x := :ready]"))
+            .err()
+            .expect("incompatible local occurrence annotation must fail")
+            .code,
+        "source-semantics/incompatible-local-kind"
+    );
+
+    let transposed = CanonicalSourceFrontend
+        .compile_expression(&expression("[1 2]'"))
+        .unwrap();
+    let transpose_index = transposed
+        .program()
+        .nodes
+        .iter()
+        .position(|node| node.operation.canonical_name() == "matrix/transpose")
+        .unwrap();
+    let contract = transposed.contracts()[transpose_index].as_ref().unwrap();
+    assert_eq!(
+        contract.outputs[0].construction,
+        OutputConstruction::FullWrite {
+            shape: ShapeRule::TransposeOf { input: 0 }
+        }
+    );
+    assert_eq!(
+        contract.outputs[0].change_detection,
+        ChangeDetectionPolicy::KernelReported
+    );
+}
+
+#[test]
+fn exact_table_columns_and_c32_are_first_class_source_schemas() {
+    for (source, expected) in [
+        (
+            "╭─────────╮\n│ state   │\n├─────────┤\n│ :ready  │\n╰─────────╯",
+            "atom",
+        ),
+        (
+            "╭─────────╮\n│ kind    │\n├─────────┤\n│ <u8>    │\n╰─────────╯",
+            "kind",
+        ),
+    ] {
+        let table = CanonicalSourceFrontend
+            .compile_expression(&expression(source))
+            .unwrap_or_else(|error| panic!("{source:?}: {error}"));
+        let SchemaBody::Table { columns, .. } = table
+            .schemas()
+            .get(table.program().outputs[0].schema)
+            .unwrap()
+            .body()
+        else {
+            panic!("fancy table did not produce a table schema")
+        };
+        assert!(
+            matches!(
+                (&columns[0].schema, expected),
+                (SchemaBody::Atom(_), "atom") | (SchemaBody::ReifiedType, "kind")
+            ),
+            "{source:?}: {:?}",
+            columns[0].schema
+        );
+    }
+
+    for source in ["1<c32>", "1+2i<c32>"] {
+        let value = CanonicalSourceFrontend
+            .compile_expression(&expression(source))
+            .unwrap_or_else(|error| panic!("{source:?}: {error}"));
+        let SourceValue::Constant(id) = value.program().outputs[0].source else {
+            panic!("{source:?} did not produce a constant")
+        };
+        assert!(matches!(
+            value.constants().get(id).unwrap().data(),
+            ValueData::Complex32(_)
+        ));
+        assert!(matches!(
+            value
+                .schemas()
+                .get(value.program().outputs[0].schema)
+                .unwrap()
+                .body(),
+            SchemaBody::Complex(mech_core::FloatWidth::W32)
+        ));
+    }
+
+    let optional = CanonicalSourceFrontend
+        .compile_expression(&expression("signal<c32?>"))
+        .unwrap();
+    assert!(matches!(
+        optional
+            .schemas()
+            .get(optional.program().inputs[0].schema)
+            .unwrap()
+            .body(),
+        SchemaBody::Option(payload)
+            if matches!(payload.as_ref(), SchemaBody::Complex(mech_core::FloatWidth::W32))
+    ));
 }
 
 #[test]
