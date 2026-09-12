@@ -19,9 +19,9 @@ and the S7 document-root implementation are under correction and qualification.
 `docs/design/syntax-v0.4-continuation-plan.mec` replaces the old combined Phase
 2I-D/2I-E delivery assumption with independently gated milestones: canonical
 document-root completion, followed by the atomic product cutover that removes
-the Nom implementation and its lowerers. S6 activates the certified 80-rule
-recursive registry atomically. The S7 canonical document closure adds 112
-certified rules. Seventeen runtime-owned interactive-command rows and two rules
+the Nom implementation and its lowerers. S6 activates the 80-rule recursive registry atomically. The S7 canonical
+document closure adds 112 grammar rows. These are inventory counts; S4/S5/S7
+semantic and consumer completion remains open. Seventeen runtime-owned interactive-command rows and two rules
 outside Document reachability remain unported. Product cutover and removal
 remain reserved for S8.
 
@@ -53,6 +53,8 @@ program, schemas, constants, contracts, source map and shape hints are checked.
 Unfinished source or artifact lowering fails acceptance explicitly; an error
 fingerprint cannot satisfy it. Behavioral tests require execution and values
 independently of fingerprints. S4 and S5 semantic completion remains open.
+Generated S7 examples prove minimal recognition and cast consistency. Actual
+consumer roles, recovery, and semantics require independent canonical evidence.
 
 Canonical source-import parity now includes extensionless paths, percent
 characters, and whitespace around context capability groups. Canonical escape

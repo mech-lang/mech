@@ -1,12 +1,13 @@
 Recursive Executable-Core Contract
 ===============================================================================
 
-Status: S6 activation and S7 document-root implementations are under qualification.
+Status: syntax activation is implemented; semantic lowering, behavioral certification, and document consumer completion remain open.
 
 The S7 registry implements 520 / 539 rows. The continuation-plan qualification
-ledger tracks review corrections and validation still required. The component implements clean,
-lossless recognition, local malformed-input recovery, typed access, source
-semantics, and canonical certification for all 80 rules. All 80 productions are
+ledger tracks implementation obligations and validation still required. The
+component implements lossless recognition, local malformed-input recovery, and
+typed access. Its 80-row certification matrix does not yet establish complete
+source-to-execution behavior; unfinished lowering cannot satisfy that gate. All 80 productions are
 active as Phase 2I. The generated implementation boundary remains one strongly
 connected component.
 `docs/design/syntax-v0.4-continuation-plan.mec` is the current delivery plan
@@ -69,20 +70,22 @@ grammar graph is the only dependency authority.
 3. Atomic activation
 -------------------------------------------------------------------------------
 
-S6 assigned every generated member to Phase 2I only after the complete closure:
+S6 assigned every generated member to Phase 2I as one registry transition. The
+required complete closure must still demonstrate:
 
 ```text
 parses
 recovers
 exposes typed syntax
-has a source-semantic disposition
+implements its specified semantic behavior
 passes canonical conformance
 passes ambiguity tests
 passes resource-limit tests
 ```
 
 S6 of `docs/design/syntax-v0.4-continuation-plan.mec` activated the complete
-reviewed closure atomically. No partial registry state exists.
+closure atomically. No partial registry state exists. This inventory transition
+is not evidence that the still-open semantic completion gate passed.
 
 4. Module design
 -------------------------------------------------------------------------------

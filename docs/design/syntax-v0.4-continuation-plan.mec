@@ -1,7 +1,7 @@
 Syntax v0.4 Continuation Plan
 ===============================================================================
 
-Status: S0-S7 implementation is under correction and qualification; S8 has not started.
+Status: S1-S3 corrections continue; S4 semantic completion, S5 acceptance gates, and S7 consumer behavior remain unfinished. S8 is closed.
 
 Historical planning baseline: `feature/syntax` at `4560e5e6c`, rebased onto
 `integration/v0.4` after the R1-R6 stack. Pull request 812 is green at this
@@ -29,11 +29,16 @@ total                      539
 The implemented registry covers 520 / 539 rules. The other 19 inventory rows are 17
 runtime-owned interactive commands and two rules outside canonical Document
 reachability. The generated Phase 2I recursive component contains 80 rules and
-is active as one certified component.
+is active as one registry component. These counts describe grammar inventory,
+not executable frontend completion.
 
 The component has local malformed-input recovery, typed red-tree views,
 engine-owned source semantics, and an 80-row certification matrix. Review fixes
-and renewed validation are required before those gates can be called complete. S6 applied the registry transition atomically. S7 adds the generated
+and renewed validation are required before those gates can be called complete.
+S4 still needs executable lowering for several structured/control forms; S5 must
+reject unfinished lowering instead of accepting its fingerprint. S6 applied the
+registry transition atomically, but its prerequisite semantic gate remains open.
+S7 adds the generated
 112-rule document closure, typed document views, whole-source recovery, and the
 public canonical `Document` root.
 
@@ -63,15 +68,15 @@ document inspection, and semantic compilation. Canonical rule contracts are
 expressed only in terms of grammar rules, syntax kinds, tokens, typed accessors,
 ranges, diagnostics, and recovery.
 
-Execution follows this ownership chain:
+The required completed execution path is:
 
 ```text
 UTF-8 source
   -> canonical SyntaxSnapshot
   -> strict validation
   -> typed canonical document
-  -> engine-owned source semantics
-  -> SourceProgram / ProgramArtifact
+  -> engine-owned resolved semantics and control lowering
+  -> artifact-ready SourceProgram / ProgramArtifact
   -> Type System v1 and memory planning
   -> runtime activation
 ```
@@ -441,6 +446,25 @@ from production dependencies.
 
 8. S0-S7 qualification ledger (2026-09-12)
 -------------------------------------------------------------------------------
+
+Course correction: zero open review comments is not milestone completion. The
+semantic gate must demonstrate canonical source, typed roles, resolved semantics,
+artifact construction, activation on the advertised target, and expected values
+or state transitions. Fingerprints follow that evidence; they cannot certify
+MissingOperationContract or unfinished lowering as executable behavior.
+
+S4 must use full canonical schemas as the value-type authority and preserve
+structured control semantics through engine-owned lowering. Source-map text and
+source/* placeholder nodes cannot substitute for executable semantics. S5 must
+distinguish supported execution, compile-time behavior, specified user errors,
+and unfinished implementation. S7 must perform the shared consumers' actual jobs,
+including the interactive fixture's state mutation and role-specific imports,
+scopes, displayed/evaluated source, and child-scope handling. Generated minimal
+recognition examples remain smoke tests, not complete consumer certification.
+
+These are existing S4-S7 obligations. They are not reassigned to S8. S8 remains
+limited to replacing the production caller inventory and removing the retiring
+parser/lowering path after the required behaviors and qualification pass.
 
 This pass keeps all eight PRs draft and preserves their existing bases:
 S0 #812 -> integration/v0.4; S1 #818 -> S0; S2 #820 -> S1;
