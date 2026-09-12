@@ -28,20 +28,24 @@ pub(super) fn parse_variable_define(parser: &mut Parser<'_>) -> Attempt {
         let node = parser.start();
         let _ = base::parse_rule(parser, rules::TILDE);
         let child = parse_var(parser);
-        if let Some(result) = child_result(parser, node, SyntaxKind::VariableDefine, child) {
-            return result;
+        if child == Attempt::NoMatch || parser.is_halted() {
+            return child_result(parser, node, SyntaxKind::VariableDefine, child)
+                .expect("an absent or halted variable finalizes its owner");
         }
 
         let lookahead = parser.checkpoint();
         let assign = base::parse_rule(parser, rules::ASSIGN_OPERATOR);
         parser.rewind(lookahead);
         if assign || !base::parse_rule(parser, rules::DEFINE_OPERATOR) {
+            if child == Attempt::Committed || parser.is_halted() {
+                node.complete(parser, SyntaxKind::VariableDefine);
+                return Attempt::Committed;
+            }
             node.abandon(parser);
             return Attempt::NoMatch;
         }
 
-        let child = expressions::parse_expression(parser);
-        match child {
+        match expressions::parse_expression(parser) {
             Attempt::Matched => {}
             Attempt::Committed => {
                 node.complete(parser, SyntaxKind::VariableDefine);
@@ -60,6 +64,6 @@ pub(super) fn parse_variable_define(parser: &mut Parser<'_>) -> Attempt {
             }
         }
         node.complete(parser, SyntaxKind::VariableDefine);
-        Attempt::Matched
+        child
     })
 }

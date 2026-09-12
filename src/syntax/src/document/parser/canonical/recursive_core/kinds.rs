@@ -374,7 +374,7 @@ pub(super) fn parse_kind_matrix(parser: &mut Parser<'_>) -> Attempt {
             node.complete(parser, SyntaxKind::KindMatrix);
             return result;
         };
-        if interior != Attempt::Matched {
+        if interior == Attempt::NoMatch || parser.is_halted() {
             return finish(node, parser, SyntaxKind::KindMatrix, interior);
         }
         let _ = base::parse_rule(parser, rules::COLON);
@@ -403,7 +403,7 @@ pub(super) fn parse_kind_matrix(parser: &mut Parser<'_>) -> Attempt {
             }
         }
         node.complete(parser, SyntaxKind::KindMatrix);
-        Attempt::Matched
+        interior
     })
 }
 

@@ -206,6 +206,7 @@ fn qualifier(parser: &mut Parser<'_>) -> FactAttempt<QualifierKind> {
 fn generator(parser: &mut Parser<'_>) -> FactAttempt<QualifierKind> {
     transactional_fact(parser, rules::GENERATOR, |parser| {
         let node = parser.start();
+        let mut committed = false;
         match patterns::pattern_with_facts(parser) {
             FactAttempt::Matched(_) => {}
             FactAttempt::NoMatch => {
@@ -213,8 +214,11 @@ fn generator(parser: &mut Parser<'_>) -> FactAttempt<QualifierKind> {
                 return FactAttempt::NoMatch;
             }
             FactAttempt::Committed => {
-                node.complete(parser, SyntaxKind::Generator);
-                return FactAttempt::Committed;
+                if parser.is_halted() {
+                    node.complete(parser, SyntaxKind::Generator);
+                    return FactAttempt::Committed;
+                }
+                committed = true;
             }
         }
         if !base::parse_rule(parser, rules::SPACE_TAB0)
@@ -249,6 +253,10 @@ fn generator(parser: &mut Parser<'_>) -> FactAttempt<QualifierKind> {
             }
         }
         node.complete(parser, SyntaxKind::Generator);
-        FactAttempt::Matched(QualifierKind::Generator)
+        if committed {
+            FactAttempt::Committed
+        } else {
+            FactAttempt::Matched(QualifierKind::Generator)
+        }
     })
 }
