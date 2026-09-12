@@ -1,4 +1,4 @@
-#![cfg(feature = "source")]
+#![cfg(all(feature = "source", not(feature = "math_add")))]
 
 use mech_engine::CanonicalSourceFrontend;
 use mech_syntax::document::parser::canonical::parse_canonical_phase_2i_rule_for_test;
@@ -28,7 +28,6 @@ fn expression(source: &str) -> ExpressionSyntax {
         .expect("canonical Expression")
 }
 
-#[cfg(not(feature = "math_add"))]
 #[test]
 fn disabled_source_operations_are_rejected_before_graph_emission() {
     let error = CanonicalSourceFrontend

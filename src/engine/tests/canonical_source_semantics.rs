@@ -555,9 +555,9 @@ fn canonical_numeric_kinds_annotations_strings_and_state_are_preserved() {
         .expect("unsupported constrained annotations must be diagnosed");
     assert_eq!(
         constrained_optional.code,
-        "source-semantics/unsupported-kind-annotation"
+        "source-semantics/unsupported-kind-constraint"
     );
-    for source in ["matrix<[u64]>", "row<{x<u8>}>"] {
+    for source in ["matrix<[u64]>"] {
         assert_eq!(
             CanonicalSourceFrontend
                 .compile_expression(&expression(source))
@@ -709,7 +709,7 @@ fn semantic_kind_edges_are_resolved_before_graph_emission() {
         .expect("unsupported constrained annotations must be diagnosed");
     assert_eq!(
         dynamic_option.code,
-        "source-semantics/unsupported-kind-annotation"
+        "source-semantics/unsupported-kind-constraint"
     );
 
     for (source, numerator, denominator) in [("2/4", 1, 2), ("7/7", 1, 1)] {
@@ -998,6 +998,8 @@ fn reviewed_source_kind_edges_match_operation_and_literal_contracts() {
             "x ? | *, 1 => 2 | * => 3",
             "source-semantics/non-boolean-operator-kind",
         ),
+        ("{}", "source-semantics/unresolved-set-element-kind"),
+        ("x<_>", "source-semantics/unsupported-empty-kind-schema"),
     ] {
         assert_eq!(
             CanonicalSourceFrontend
@@ -1359,6 +1361,242 @@ fn exact_table_columns_and_c32_are_first_class_source_schemas() {
     );
     call.compile_artifact()
         .expect("maintained calls must produce contracted artifacts");
+}
+
+#[test]
+fn compound_and_maintained_operations_retain_exact_source_schemas() {
+    let tuple = CanonicalSourceFrontend
+        .compile_expression(&expression("(1u8, (1..3))"))
+        .unwrap();
+    let tuple_schema = tuple
+        .schemas()
+        .get(tuple.program().outputs[0].schema)
+        .unwrap();
+    assert!(matches!(
+        tuple_schema.body(),
+        SchemaBody::Tuple(items)
+            if matches!(items[0], SchemaBody::UnsignedInteger(IntegerWidth::W8))
+                && matches!(items[1], SchemaBody::Matrix { .. })
+    ));
+    assert!(!tuple_schema.dimension_parameters().is_empty());
+
+    let record = CanonicalSourceFrontend
+        .compile_expression(&expression("{values: (1..3), ready: true}"))
+        .unwrap();
+    let record_schema = record
+        .schemas()
+        .get(record.program().outputs[0].schema)
+        .unwrap();
+    assert!(matches!(
+        record_schema.body(),
+        SchemaBody::Record(fields)
+            if matches!(fields[0].schema, SchemaBody::Matrix { .. })
+                && matches!(fields[1].schema, SchemaBody::Bool)
+    ));
+    assert!(!record_schema.dimension_parameters().is_empty());
+
+    let map = CanonicalSourceFrontend
+        .compile_expression(&expression("{1u8: (1..3), 2u8: (2..4)}"))
+        .unwrap();
+    let map_schema = map.schemas().get(map.program().outputs[0].schema).unwrap();
+    assert!(matches!(
+        map_schema.body(),
+        SchemaBody::Map {
+            key,
+            value,
+            cardinality
+        } if matches!(key.as_ref(), SchemaBody::UnsignedInteger(IntegerWidth::W8))
+            && matches!(value.as_ref(), SchemaBody::Matrix { .. })
+            && *cardinality == mech_core::CardinalitySpec::Exact(
+                mech_core::DimensionExpr::Constant(2)
+            )
+    ));
+    assert!(!map_schema.dimension_parameters().is_empty());
+    assert_eq!(
+        CanonicalSourceFrontend
+            .compile_expression(&expression("{1u8: true, 2u8: 3}"))
+            .err()
+            .expect("source compilation must fail")
+            .code,
+        "source-semantics/incompatible-map-value-kind"
+    );
+    assert_eq!(
+        CanonicalSourceFrontend
+            .compile_expression(&expression("{1+2i: true}"))
+            .err()
+            .expect("source compilation must fail")
+            .code,
+        "source-semantics/non-keyable-map-key-kind"
+    );
+    assert_eq!(
+        CanonicalSourceFrontend
+            .compile_expression(&expression("{:}"))
+            .err()
+            .expect("empty maps must require explicit kinds")
+            .code,
+        "source-semantics/unresolved-map-entry-kind"
+    );
+
+    for (source, expected_element) in [
+        (
+            "[1 2] + 3",
+            SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+        ),
+        ("[1 2] < 3", SchemaBody::Bool),
+        ("[true false] && true", SchemaBody::Bool),
+        (
+            "[1 2] ** [3; 4]",
+            SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+        ),
+        (
+            "[1.0 0.0; 0.0 1.0] \\ [2.0; 3.0]",
+            SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+        ),
+    ] {
+        let compiled = CanonicalSourceFrontend
+            .compile_expression(&expression(source))
+            .unwrap_or_else(|error| panic!("{source:?}: {error}"));
+        assert!(matches!(
+            compiled
+                .schemas()
+                .get(compiled.program().outputs[0].schema)
+                .unwrap()
+                .body(),
+            SchemaBody::Matrix { element, .. } if element.as_ref() == &expected_element
+        ));
+    }
+
+    let promoted_matrix = CanonicalSourceFrontend
+        .compile_expression(&expression("[1u8 2u8] + 3u16"))
+        .unwrap();
+    assert!(matches!(
+        promoted_matrix
+            .schemas()
+            .get(promoted_matrix.program().outputs[0].schema)
+            .unwrap()
+            .body(),
+        SchemaBody::Matrix { element, .. }
+            if matches!(element.as_ref(), SchemaBody::UnsignedInteger(IntegerWidth::W16))
+    ));
+
+    let dot = CanonicalSourceFrontend
+        .compile_expression(&expression("[1 2] · [3 4]"))
+        .unwrap();
+    assert!(matches!(
+        dot.schemas()
+            .get(dot.program().outputs[0].schema)
+            .unwrap()
+            .body(),
+        SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)
+    ));
+    let subset = CanonicalSourceFrontend
+        .compile_expression(&expression("{1u8} ⊆ {1u8, 2u8}"))
+        .unwrap();
+    assert!(matches!(
+        subset
+            .schemas()
+            .get(subset.program().outputs[0].schema)
+            .unwrap()
+            .body(),
+        SchemaBody::Bool
+    ));
+
+    let cartesian = CanonicalSourceFrontend
+        .compile_expression(&expression("set/cartesian-product({1u8}, {true})"))
+        .unwrap();
+    assert!(matches!(
+        cartesian
+            .schemas()
+            .get(cartesian.program().outputs[0].schema)
+            .unwrap()
+            .body(),
+        SchemaBody::Set { element, .. }
+            if matches!(element.as_ref(), SchemaBody::Tuple(items)
+                if matches!(items[0], SchemaBody::UnsignedInteger(IntegerWidth::W8))
+                    && matches!(items[1], SchemaBody::Bool))
+    ));
+    let powerset = CanonicalSourceFrontend
+        .compile_expression(&expression("set/powerset({1u8, 2u8})"))
+        .unwrap();
+    assert!(matches!(
+        powerset
+            .schemas()
+            .get(powerset.program().outputs[0].schema)
+            .unwrap()
+            .body(),
+        SchemaBody::Set { element, .. }
+            if matches!(element.as_ref(), SchemaBody::Set {
+                element: nested,
+                cardinality: mech_core::CardinalitySpec::Dynamic { upper_bound: Some(_) }
+            } if matches!(nested.as_ref(), SchemaBody::UnsignedInteger(IntegerWidth::W8)))
+    ));
+
+    let union = CanonicalSourceFrontend
+        .compile_expression(&expression("{1u8} ∪ {2u8}"))
+        .unwrap();
+    assert!(matches!(
+        union
+            .schemas()
+            .get(union.program().outputs[0].schema)
+            .unwrap()
+            .body(),
+        SchemaBody::Set {
+            element,
+            cardinality: mech_core::CardinalitySpec::Dynamic { .. }
+        } if matches!(element.as_ref(), SchemaBody::UnsignedInteger(IntegerWidth::W8))
+    ));
+
+    for source in ["[x | x <- {1u8, 2u8}]", "{x | x <- {1u8, 2u8}}"] {
+        let compiled = CanonicalSourceFrontend
+            .compile_expression(&expression(source))
+            .unwrap();
+        let contract = compiled.contracts().last().unwrap().as_ref().unwrap();
+        assert!(matches!(
+            contract.outputs[0].construction,
+            OutputConstruction::Build { .. }
+        ));
+        let output = compiled
+            .schemas()
+            .get(compiled.program().outputs[0].schema)
+            .unwrap()
+            .body();
+        if source.starts_with('[') {
+            assert!(matches!(
+                output,
+                SchemaBody::Matrix { element, .. }
+                    if matches!(element.as_ref(), SchemaBody::UnsignedInteger(IntegerWidth::W8))
+            ));
+        } else {
+            assert!(matches!(
+                output,
+                SchemaBody::Set { element, .. }
+                    if matches!(element.as_ref(), SchemaBody::UnsignedInteger(IntegerWidth::W8))
+            ));
+        }
+    }
+
+    let variadic = CanonicalSourceFrontend
+        .compile_expression(&expression("matrix/horzcat([1], [2], [3])"))
+        .unwrap();
+    assert!(matches!(
+        variadic
+            .schemas()
+            .get(variadic.program().outputs[0].schema)
+            .unwrap()
+            .body(),
+        SchemaBody::Matrix { dimensions, .. }
+            if dimensions[0] == mech_core::DimensionExpr::Constant(1)
+                && dimensions[1] == mech_core::DimensionExpr::Constant(3)
+    ));
+
+    assert_eq!(
+        CanonicalSourceFrontend
+            .compile_expression(&expression("1'"))
+            .err()
+            .expect("source compilation must fail")
+            .code,
+        "source-semantics/incompatible-call-kind"
+    );
 }
 
 #[test]

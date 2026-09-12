@@ -8,24 +8,25 @@ use mech_core::{
     AccessMode, AliasPolicy, BuiltinKindPredicate, BuiltinScalarKind, CanonicalNominalPath,
     CardinalitySpec, ChangeDetectionPolicy, ConstantStore, ConstantStoreBuilder, DeliveryMode,
     DimensionExpr, DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
-    DimensionParameterOrigin, ExternalInteraction, FloatWidth, InputPortLayout, InputPortPolicy,
-    IntegerWidth, KindExpr, KindId, NamedKindPathResolver, NodeId, NominalKey, NominalKind,
-    OperationContractDeclaration, OutputConstruction, OutputPortPolicy, ResolvedType, SchemaBody,
-    SchemaDraft, SchemaField, SchemaId, SchemaTable, SchemaTableBuilder, ShapeContractReference,
-    ShapeRule, SourceInputKind, TypeConstraintOrigin, TypeOverloadCandidate, ValueDataDraft,
-    ValueDraft, execute_conversion_draft, plan_explicit_cast, plan_numeric_promotion,
+    DimensionParameterOrigin, ExternalInteraction, FloatWidth, InputKindScheme, InputPortLayout,
+    InputPortPolicy, IntegerWidth, KindExpr, KindId, NamedKindPathResolver, NodeId, NominalKey,
+    NominalKind, OperationContractDeclaration, OutputConstruction, OutputPortPolicy,
+    ResolvedOutputSchemaRule, ResolvedType, SchemaBody, SchemaDraft, SchemaField, SchemaId,
+    SchemaTable, SchemaTableBuilder, ShapeContractReference, ShapeRule, SourceInputKind,
+    TypeConstraintOrigin, TypeOverloadCandidate, ValueDataDraft, ValueDraft,
+    execute_conversion_draft, plan_explicit_cast, plan_numeric_promotion,
 };
 use mech_syntax::document::{
     AnyCallArgumentSyntax, AstNode, CanonicalOperator, ComprehensionQualifierValueSyntax,
     DocumentId, DocumentSyntax, ExpressionBodySyntax, ExpressionSyntax, FactorSyntax,
     FactorValueSyntax, FormulaSyntax, FsmPipeSyntax, FsmStageSyntax, IntegerLiteralSyntax,
-    KindAnnotationSyntax, LiteralSyntax, LiteralValueSyntax, MapSyntax, MatrixComprehensionSyntax,
-    MatrixSyntax, MultiplicativeExpressionSyntax, NodeFlags, OperatorSyntax, PatternSyntax,
-    PatternValueSyntax, RangeExpressionSyntax, RecordSyntax, RecursiveSyntaxNode, Revision,
-    ScientificLiteralSyntax, SetComprehensionSyntax, SetSyntax, SliceStemSyntax, SliceSyntax,
-    StructureSyntax, StructureValueSyntax, SubscriptItemSyntax, SubscriptValueSyntax, SyntaxKind,
-    SyntaxNode, TableSyntax, TableValueSyntax, TextRange, TupleStructSyntax, TupleSyntax,
-    VariableDefineSyntax, VariableStemSyntax, VariableSyntax,
+    KindAnnotationSyntax, KindSyntax, KindValueSyntax, LiteralSyntax, LiteralValueSyntax,
+    MapSyntax, MatrixComprehensionSyntax, MatrixSyntax, MultiplicativeExpressionSyntax, NodeFlags,
+    OperatorSyntax, PatternSyntax, PatternValueSyntax, RangeExpressionSyntax, RecordSyntax,
+    RecursiveSyntaxNode, Revision, ScientificLiteralSyntax, SetComprehensionSyntax, SetSyntax,
+    SliceStemSyntax, SliceSyntax, StructureSyntax, StructureValueSyntax, SubscriptItemSyntax,
+    SubscriptValueSyntax, SyntaxKind, SyntaxNode, TableSyntax, TableValueSyntax, TextRange,
+    TupleStructSyntax, TupleSyntax, VariableDefineSyntax, VariableStemSyntax, VariableSyntax,
 };
 
 use crate::{
@@ -420,6 +421,7 @@ enum BuiltinSchema {
 struct BuiltinSchemas {
     table: SchemaTable,
     ids: BTreeMap<BuiltinSchema, SchemaId>,
+    input_ids: BTreeMap<usize, SchemaId>,
     node_ids: BTreeMap<usize, SchemaId>,
     constant_ids: BTreeMap<usize, SchemaId>,
     dynamic_payload_ids: BTreeMap<usize, SchemaId>,
@@ -428,6 +430,7 @@ struct BuiltinSchemas {
 impl BuiltinSchemas {
     fn build(
         anchor: SourceSemanticAnchor,
+        inputs: &[PendingInput],
         nodes: &[PendingNode],
         constants: &[PendingConstant],
     ) -> Result<Self, SourceSemanticError> {
@@ -484,6 +487,21 @@ impl BuiltinSchemas {
                 .map_err(|error| internal(anchor, format!("unable to retain schema: {error:?}")))?;
             handles.push((builtin, handle));
         }
+        let input_handles = inputs
+            .iter()
+            .enumerate()
+            .map(|(index, input)| {
+                let schema = input.schema.clone().finalize().map_err(|error| {
+                    internal(anchor, format!("invalid input schema: {error:?}"))
+                })?;
+                builder
+                    .insert(schema)
+                    .map(|handle| (index, handle))
+                    .map_err(|error| {
+                        internal(anchor, format!("unable to retain input schema: {error:?}"))
+                    })
+            })
+            .collect::<Result<Vec<_>, _>>()?;
         let node_handles = nodes
             .iter()
             .enumerate()
@@ -577,6 +595,17 @@ impl BuiltinSchemas {
                     })
             })
             .collect::<Result<BTreeMap<_, _>, _>>()?;
+        let input_ids = input_handles
+            .into_iter()
+            .map(|(index, handle)| {
+                build
+                    .resolve(handle)
+                    .map(|id| (index, id))
+                    .map_err(|error| {
+                        internal(anchor, format!("unable to resolve input schema: {error:?}"))
+                    })
+            })
+            .collect::<Result<BTreeMap<_, _>, _>>()?;
         let node_ids = node_handles
             .into_iter()
             .map(|(index, handle)| {
@@ -623,6 +652,7 @@ impl BuiltinSchemas {
         Ok(Self {
             table,
             ids,
+            input_ids,
             node_ids,
             constant_ids,
             dynamic_payload_ids,
@@ -631,6 +661,10 @@ impl BuiltinSchemas {
 
     fn id(&self, schema: BuiltinSchema) -> SchemaId {
         self.ids[&schema]
+    }
+
+    fn input_id(&self, index: usize) -> SchemaId {
+        self.input_ids[&index]
     }
 
     fn node_id(&self, index: usize, fallback: BuiltinSchema) -> SchemaId {
@@ -680,6 +714,17 @@ fn schema_body(schema: BuiltinSchema) -> SchemaBody {
             option_payload_schema(option).expect("closed optional builtin schema"),
         ))),
     }
+}
+
+fn dynamic_schema_draft() -> SchemaDraft {
+    SchemaDraft {
+        dimension_parameters: Box::new([]),
+        body: SchemaBody::Dynamic,
+    }
+}
+
+fn is_dynamic_schema_draft(schema: &SchemaDraft) -> bool {
+    schema.dimension_parameters.is_empty() && matches!(schema.body, SchemaBody::Dynamic)
 }
 
 fn builtin_kind(schema: BuiltinSchema) -> Option<BuiltinScalarKind> {
@@ -865,20 +910,6 @@ fn builtin_schema_for_body(body: &SchemaBody) -> Option<BuiltinSchema> {
         SchemaBody::Rational64 => BuiltinSchema::R64,
         _ => return None,
     })
-}
-
-fn ordered_schema_body(
-    body: &SchemaBody,
-    syntax: &SyntaxNode,
-) -> Result<bool, SourceSemanticError> {
-    let Some(schema) = builtin_schema_for_body(body) else {
-        return Ok(false);
-    };
-    if schema == BuiltinSchema::String {
-        return Ok(true);
-    }
-    Ok(resolved_schema_type(schema, syntax)?
-        .is_some_and(|kind| kind.satisfies(BuiltinKindPredicate::Ordered)))
 }
 
 fn embed_schema_draft(
@@ -1183,6 +1214,216 @@ fn schema_draft_from_resolved(
     })
 }
 
+fn materialize_source_output_draft(
+    resolved: &ResolvedType,
+    rule: &ResolvedOutputSchemaRule,
+    inputs: &[SchemaDraft],
+    anchor: SourceSemanticAnchor,
+) -> Result<SchemaDraft, SourceSemanticError> {
+    match rule {
+        ResolvedOutputSchemaRule::FromResolvedType => schema_draft_from_resolved(resolved, anchor),
+        ResolvedOutputSchemaRule::FromInput(index) => {
+            let input = inputs.get(*index).ok_or_else(|| {
+                internal(
+                    anchor,
+                    format!("output schema input {index} is unavailable"),
+                )
+            })?;
+            let draft = schema_draft_from_resolved(resolved, anchor)?;
+            let (
+                SchemaBody::Set {
+                    element,
+                    cardinality,
+                },
+                SchemaBody::Set {
+                    cardinality: template_cardinality,
+                    ..
+                },
+            ) = (&draft.body, &input.body)
+            else {
+                return Ok(draft);
+            };
+            let dynamic_parameter = match cardinality {
+                CardinalitySpec::Exact(DimensionExpr::Parameter(id))
+                    if matches!(template_cardinality, CardinalitySpec::Dynamic { .. })
+                        || draft
+                            .dimension_parameters
+                            .iter()
+                            .find(|declaration| declaration.id == *id)
+                            .is_some_and(|declaration| {
+                                declaration.lifetime == DimensionLifetime::Turn
+                            }) =>
+                {
+                    Some(*id)
+                }
+                _ => None,
+            };
+            let Some(dynamic_parameter) = dynamic_parameter else {
+                return Ok(draft);
+            };
+            let declaration = draft
+                .dimension_parameters
+                .iter()
+                .find(|declaration| declaration.id == dynamic_parameter)
+                .ok_or_else(|| {
+                    internal(
+                        anchor,
+                        "set output references an unknown dimension".to_owned(),
+                    )
+                })?;
+            let mut replacements = BTreeMap::new();
+            for declaration in draft
+                .dimension_parameters
+                .iter()
+                .filter(|declaration| declaration.id != dynamic_parameter)
+            {
+                replacements.insert(
+                    declaration.id,
+                    DimensionParameterId::new(replacements.len() as u32),
+                );
+            }
+            let upper_bound = declaration
+                .upper_bound
+                .as_ref()
+                .map(|bound| remap_dimension_expr(bound, &replacements))
+                .transpose()
+                .map_err(|_| internal(anchor, "set output bound is not closed".to_owned()))?;
+            let dimension_parameters = draft
+                .dimension_parameters
+                .iter()
+                .filter(|declaration| declaration.id != dynamic_parameter)
+                .map(|declaration| {
+                    Ok(DimensionParameterDeclaration {
+                        id: replacements[&declaration.id],
+                        origin: declaration.origin,
+                        lifetime: declaration.lifetime,
+                        lower_bound: remap_dimension_expr(&declaration.lower_bound, &replacements)
+                            .map_err(|_| {
+                                internal(anchor, "set output bound is not closed".to_owned())
+                            })?,
+                        upper_bound: declaration
+                            .upper_bound
+                            .as_ref()
+                            .map(|bound| remap_dimension_expr(bound, &replacements))
+                            .transpose()
+                            .map_err(|_| {
+                                internal(anchor, "set output bound is not closed".to_owned())
+                            })?,
+                    })
+                })
+                .collect::<Result<Vec<_>, SourceSemanticError>>()?;
+            let element = remap_schema_body(element, &replacements)
+                .map_err(|_| internal(anchor, "set output element is not closed".to_owned()))?;
+            Ok(SchemaDraft {
+                dimension_parameters: dimension_parameters.into_boxed_slice(),
+                body: SchemaBody::Set {
+                    element: Box::new(element),
+                    cardinality: CardinalitySpec::Dynamic { upper_bound },
+                },
+            })
+        }
+        ResolvedOutputSchemaRule::TransposeOfInput(index) => {
+            let input = inputs.get(*index).ok_or_else(|| {
+                internal(
+                    anchor,
+                    format!("transpose schema input {index} is unavailable"),
+                )
+            })?;
+            let SchemaBody::Matrix {
+                element,
+                dimensions,
+            } = &input.body
+            else {
+                return Err(SourceSemanticError {
+                    code: "source-semantics/non-matrix-transpose-kind",
+                    message: "matrix transpose requires a matrix operand".to_owned(),
+                    anchor,
+                });
+            };
+            let [rows, columns] = dimensions.as_ref() else {
+                return Err(SourceSemanticError {
+                    code: "source-semantics/invalid-transpose-shape",
+                    message: "matrix transpose requires exactly two dimensions".to_owned(),
+                    anchor,
+                });
+            };
+            Ok(SchemaDraft {
+                dimension_parameters: input.dimension_parameters.clone(),
+                body: SchemaBody::Matrix {
+                    element: element.clone(),
+                    dimensions: vec![columns.clone(), rows.clone()].into_boxed_slice(),
+                },
+            })
+        }
+        ResolvedOutputSchemaRule::Declared(body) => Ok(SchemaDraft {
+            dimension_parameters: resolved.dimension_parameters().to_vec().into_boxed_slice(),
+            body: body.clone(),
+        }),
+        ResolvedOutputSchemaRule::DynamicSetCartesianProduct => {
+            let [left, right] = inputs else {
+                return Err(internal(
+                    anchor,
+                    format!(
+                        "set Cartesian product requires two inputs, received {}",
+                        inputs.len()
+                    ),
+                ));
+            };
+            let set_element = |input: &SchemaDraft| {
+                let SchemaBody::Set { element, .. } = &input.body else {
+                    return Err(internal(
+                        anchor,
+                        "set operation input is not a set".to_owned(),
+                    ));
+                };
+                Ok(SchemaDraft {
+                    dimension_parameters: input.dimension_parameters.clone(),
+                    body: element.as_ref().clone(),
+                })
+            };
+            let mut parameters = Vec::new();
+            let left = embed_schema_draft(&set_element(left)?, &mut parameters, anchor)?;
+            let right = embed_schema_draft(&set_element(right)?, &mut parameters, anchor)?;
+            Ok(SchemaDraft {
+                dimension_parameters: parameters.into_boxed_slice(),
+                body: SchemaBody::Set {
+                    element: Box::new(SchemaBody::Tuple(vec![left, right].into_boxed_slice())),
+                    cardinality: CardinalitySpec::Dynamic { upper_bound: None },
+                },
+            })
+        }
+        ResolvedOutputSchemaRule::DynamicSetPowerset => {
+            let input = inputs
+                .first()
+                .ok_or_else(|| internal(anchor, "set powerset requires one input".to_owned()))?;
+            let SchemaBody::Set {
+                element,
+                cardinality,
+            } = &input.body
+            else {
+                return Err(internal(
+                    anchor,
+                    "set powerset input is not a set".to_owned(),
+                ));
+            };
+            let upper_bound = match cardinality {
+                CardinalitySpec::Exact(cardinality) => Some(cardinality.clone()),
+                CardinalitySpec::Dynamic { upper_bound } => upper_bound.clone(),
+            };
+            Ok(SchemaDraft {
+                dimension_parameters: input.dimension_parameters.clone(),
+                body: SchemaBody::Set {
+                    element: Box::new(SchemaBody::Set {
+                        element: element.clone(),
+                        cardinality: CardinalitySpec::Dynamic { upper_bound },
+                    }),
+                    cardinality: CardinalitySpec::Dynamic { upper_bound: None },
+                },
+            })
+        }
+    }
+}
+
 fn builtin_kind_named(name: &str) -> Option<BuiltinScalarKind> {
     Some(match name {
         "bool" => BuiltinScalarKind::Bool,
@@ -1238,6 +1479,13 @@ struct PendingConstant {
     schema_parameters: Box<[DimensionParameterDeclaration]>,
     data: ValueDataDraft,
     dynamic_payload: Option<(BuiltinSchema, Option<SchemaBody>, ValueDataDraft)>,
+}
+
+#[derive(Clone)]
+struct PendingInput {
+    name: String,
+    schema: SchemaDraft,
+    anchor: SourceSemanticAnchor,
 }
 
 struct PendingNode {
@@ -1303,9 +1551,9 @@ impl NamedKindPathResolver for BuiltinKindPaths {
 struct SemanticBuilder {
     anchor: SourceSemanticAnchor,
     constants: Vec<PendingConstant>,
-    inputs: Vec<(String, BuiltinSchema, SourceSemanticAnchor)>,
+    inputs: Vec<PendingInput>,
     input_by_name: BTreeMap<String, u32>,
-    input_declarations: BTreeMap<String, BuiltinSchema>,
+    input_declarations: BTreeMap<String, SchemaDraft>,
     nodes: Vec<PendingNode>,
     states: Vec<PendingState>,
     outputs: Vec<PendingOutput>,
@@ -1345,10 +1593,10 @@ impl SemanticBuilder {
             if !bindings.contains(&name)
                 && let Some(annotation) = variable.annotation()
             {
-                let schema = annotation_schema(&annotation)?;
+                let schema = annotation_schema_draft(&annotation)?;
                 if let Some(existing) = self.input_declarations.get(&name) {
-                    if *existing != BuiltinSchema::Dynamic
-                        && schema != BuiltinSchema::Dynamic
+                    if !is_dynamic_schema_draft(existing)
+                        && !is_dynamic_schema_draft(&schema)
                         && *existing != schema
                     {
                         return Err(SourceSemanticError {
@@ -1358,7 +1606,7 @@ impl SemanticBuilder {
                         });
                     }
                 }
-                if schema != BuiltinSchema::Dynamic || !self.input_declarations.contains_key(&name)
+                if !is_dynamic_schema_draft(&schema) || !self.input_declarations.contains_key(&name)
                 {
                     self.input_declarations.insert(name, schema);
                 }
@@ -1579,7 +1827,7 @@ impl SemanticBuilder {
                 let result = (|| {
                     let pattern = self.record_pattern(&pattern)?;
                     inputs.extend(pattern.dependencies.iter().copied());
-                    self.bind_pattern(&pattern, value)?;
+                    self.bind_pattern(&pattern, value, None)?;
                     let guard_input = if let Some(guard) = arm.guard() {
                         let ordinal = inputs.len() as u32;
                         let guard_value = self.expression(&guard)?.0;
@@ -1706,74 +1954,34 @@ impl SemanticBuilder {
     fn emit_operator(
         &mut self,
         operator: CanonicalOperator,
-        lhs: PendingValue,
-        rhs: PendingValue,
+        mut lhs: PendingValue,
+        mut rhs: PendingValue,
         syntax: &SyntaxNode,
     ) -> Result<PendingValue, SourceSemanticError> {
-        let (mut name, fixed_schema) = operator_name(operator);
-        let lhs_schema = self.schema_of(lhs);
-        let rhs_schema = self.schema_of(rhs);
-        let (mut lhs, mut rhs, promoted) = match operator {
-            CanonicalOperator::Add
-            | CanonicalOperator::Subtract
-            | CanonicalOperator::Multiply
-            | CanonicalOperator::Divide
-            | CanonicalOperator::Modulus
-            | CanonicalOperator::NotEqual
-            | CanonicalOperator::EqualTo
-            | CanonicalOperator::GreaterThan
-            | CanonicalOperator::LessThan
-            | CanonicalOperator::GreaterThanEqual
-            | CanonicalOperator::LessThanEqual => self.promote_operands(lhs, rhs, syntax)?,
-            CanonicalOperator::Power
-                if lhs_schema == BuiltinSchema::R64 && rhs_schema == BuiltinSchema::I32 =>
-            {
-                (lhs, rhs, Some(BuiltinSchema::R64))
-            }
-            CanonicalOperator::Power => self.promote_operands(lhs, rhs, syntax)?,
-            _ => (lhs, rhs, None),
-        };
-        let mut arithmetic_schema = None;
-        match operator {
-            CanonicalOperator::Or | CanonicalOperator::And | CanonicalOperator::Xor => {
-                lhs = self.require_boolean_operand(lhs, syntax)?;
-                rhs = self.require_boolean_operand(rhs, syntax)?;
-            }
-            CanonicalOperator::Modulus => {
-                (lhs, rhs) = self.resolve_modulus_operands(lhs, rhs, syntax)?;
-                self.require_modulus_operand(lhs, syntax)?;
-                self.require_modulus_operand(rhs, syntax)?;
-            }
-            CanonicalOperator::Add
-                if (self.schema_of(lhs) == BuiltinSchema::String
-                    || self.schema_of(rhs) == BuiltinSchema::String)
-                    && self.is_string_or_dynamic(lhs)
-                    && self.is_string_or_dynamic(rhs) =>
-            {
-                lhs = self.conform_dynamic_operand(lhs, BuiltinSchema::String, syntax)?;
-                rhs = self.conform_dynamic_operand(rhs, BuiltinSchema::String, syntax)?;
-                name = "string/concat";
-            }
-            CanonicalOperator::Add
-            | CanonicalOperator::Subtract
-            | CanonicalOperator::Multiply
-            | CanonicalOperator::Divide
-            | CanonicalOperator::Power => {
-                (lhs, rhs) = self.resolve_arithmetic_operands(lhs, rhs, syntax)?;
-                arithmetic_schema =
-                    self.validate_arithmetic_operands(operator, lhs, rhs, syntax)?;
-            }
-            CanonicalOperator::GreaterThan
-            | CanonicalOperator::LessThan
-            | CanonicalOperator::GreaterThanEqual
-            | CanonicalOperator::LessThanEqual => {
-                (lhs, rhs) = self.resolve_ordered_comparison_operands(lhs, rhs, syntax)?;
-            }
-            _ => {}
+        let (mut name, _) = operator_name(operator);
+        if operator == CanonicalOperator::Add
+            && (self.schema_of(lhs) == BuiltinSchema::String
+                || self.schema_of(rhs) == BuiltinSchema::String)
+        {
+            name = "string/concat";
         }
-        let comparison_schema = if matches!(
+        if matches!(
             operator,
-            CanonicalOperator::NotEqual
+            CanonicalOperator::Or | CanonicalOperator::And | CanonicalOperator::Xor
+        ) {
+            lhs = self.conform_dynamic_operand(lhs, BuiltinSchema::Bool, syntax)?;
+            rhs = self.conform_dynamic_operand(rhs, BuiltinSchema::Bool, syntax)?;
+        }
+
+        let same_kind_inputs = matches!(
+            operator,
+            CanonicalOperator::Add
+                | CanonicalOperator::Subtract
+                | CanonicalOperator::Multiply
+                | CanonicalOperator::Divide
+                | CanonicalOperator::Modulus
+                | CanonicalOperator::Power
+                | CanonicalOperator::NotEqual
                 | CanonicalOperator::EqualTo
                 | CanonicalOperator::StrictNotEqual
                 | CanonicalOperator::StrictEqual
@@ -1781,30 +1989,138 @@ impl SemanticBuilder {
                 | CanonicalOperator::LessThan
                 | CanonicalOperator::GreaterThanEqual
                 | CanonicalOperator::LessThanEqual
-        ) {
-            self.validate_comparison_operands(operator, lhs, rhs, syntax)?
-        } else {
-            None
-        };
-        self.ensure_source_operation_enabled(name, syntax)?;
-        let lhs_schema = self.schema_of(lhs);
-        let rhs_schema = self.schema_of(rhs);
-        let schema = fixed_schema.unwrap_or_else(|| {
-            promoted.unwrap_or_else(|| {
-                if lhs_schema == rhs_schema {
-                    lhs_schema
-                } else {
-                    BuiltinSchema::Dynamic
+                | CanonicalOperator::Or
+                | CanonicalOperator::And
+                | CanonicalOperator::Xor
+                | CanonicalOperator::Union
+                | CanonicalOperator::Intersection
+                | CanonicalOperator::Difference
+                | CanonicalOperator::Subset
+                | CanonicalOperator::Superset
+                | CanonicalOperator::ProperSubset
+                | CanonicalOperator::ProperSuperset
+                | CanonicalOperator::SymmetricDifference
+        );
+        if same_kind_inputs {
+            match (
+                self.is_genuinely_dynamic(lhs),
+                self.is_genuinely_dynamic(rhs),
+            ) {
+                (true, false) => {
+                    lhs =
+                        self.conform_dynamic_to_schema(lhs, &self.schema_draft_of(rhs), syntax)?;
                 }
-            })
-        });
-        Ok(
-            if let Some(schema) = comparison_schema.or(arithmetic_schema) {
-                self.emit_with_schema_draft(name, vec![lhs, rhs], schema, syntax, "operator", None)
-            } else {
-                self.emit(name, vec![lhs, rhs], schema, syntax, "operator", None)
-            },
-        )
+                (false, true) => {
+                    rhs =
+                        self.conform_dynamic_to_schema(rhs, &self.schema_draft_of(lhs), syntax)?;
+                }
+                _ => {}
+            }
+        }
+
+        if matches!(
+            operator,
+            CanonicalOperator::Add
+                | CanonicalOperator::Subtract
+                | CanonicalOperator::Multiply
+                | CanonicalOperator::Divide
+                | CanonicalOperator::Power
+        ) && [lhs, rhs].into_iter().any(|value| {
+            let body = self.schema_body_of(value);
+            matches!(body, SchemaBody::Complex(FloatWidth::W32))
+                || matches!(
+                    body,
+                    SchemaBody::Matrix { element, .. }
+                        if matches!(element.as_ref(), SchemaBody::Complex(FloatWidth::W32))
+                )
+        }) {
+            return Err(SourceSemanticError {
+                code: "source-semantics/unsupported-resident-arithmetic-kind",
+                message: "resident arithmetic does not provide c32 kernels".to_owned(),
+                anchor: SourceSemanticAnchor::for_node(syntax),
+            });
+        }
+
+        let resolved = self
+            .resolve_maintained_call(name, vec![lhs, rhs], syntax)
+            .map_err(|mut error| {
+                if error.code != "source-semantics/incompatible-call-kind" {
+                    return error;
+                }
+                error.code = match operator {
+                    CanonicalOperator::Or
+                    | CanonicalOperator::And
+                    | CanonicalOperator::Xor => "source-semantics/non-boolean-operator-kind",
+                    CanonicalOperator::NotEqual
+                    | CanonicalOperator::EqualTo
+                    | CanonicalOperator::StrictNotEqual
+                    | CanonicalOperator::StrictEqual
+                    | CanonicalOperator::GreaterThan
+                    | CanonicalOperator::LessThan
+                    | CanonicalOperator::GreaterThanEqual
+                    | CanonicalOperator::LessThanEqual => {
+                        "source-semantics/incompatible-comparison-kinds"
+                    }
+                    CanonicalOperator::Modulus => "source-semantics/invalid-modulus-kind",
+                    CanonicalOperator::Add
+                    | CanonicalOperator::Subtract
+                    | CanonicalOperator::Multiply
+                    | CanonicalOperator::Divide
+                    | CanonicalOperator::Power => {
+                        let has_c32 = [lhs, rhs].into_iter().any(|value| {
+                            let body = self.schema_body_of(value);
+                            matches!(body, SchemaBody::Complex(FloatWidth::W32))
+                                || matches!(
+                                    body,
+                                    SchemaBody::Matrix { element, .. }
+                                        if matches!(element.as_ref(), SchemaBody::Complex(FloatWidth::W32))
+                                )
+                        });
+                        if has_c32 {
+                            "source-semantics/unsupported-resident-arithmetic-kind"
+                        } else {
+                            "source-semantics/non-numeric-arithmetic-kind"
+                        }
+                    }
+                    _ => error.code,
+                };
+                error
+            })?;
+        let Some((inputs, output)) = resolved else {
+            return Err(SourceSemanticError {
+                code: "source-semantics/unsupported-operator-type-authority",
+                message: format!("operator {name} has no maintained type declaration"),
+                anchor: SourceSemanticAnchor::for_node(syntax),
+            });
+        };
+        Ok(self.emit_with_schema_draft(name, inputs, output, syntax, "operator", None))
+    }
+
+    fn conform_dynamic_to_schema(
+        &mut self,
+        value: PendingValue,
+        target: &SchemaDraft,
+        syntax: &SyntaxNode,
+    ) -> Result<PendingValue, SourceSemanticError> {
+        if !self.is_genuinely_dynamic(value) {
+            return Ok(value);
+        }
+        if matches!(target.body, SchemaBody::Dynamic) {
+            return Err(SourceSemanticError {
+                code: "source-semantics/unresolved-operator-kind",
+                message: "operator operands require at least one concrete kind".to_owned(),
+                anchor: SourceSemanticAnchor::for_node(syntax),
+            });
+        }
+        self.ensure_source_operation_enabled("convert/kind", syntax)?;
+        Ok(self.emit_with_schema_draft(
+            "convert/kind",
+            vec![value],
+            target.clone(),
+            syntax,
+            "declared-conversion",
+            Some("target=peer-schema".to_owned()),
+        ))
     }
 
     fn require_boolean_operand(
@@ -1835,39 +2151,9 @@ impl SemanticBuilder {
         }
     }
 
-    fn require_modulus_operand(
-        &self,
-        operand: PendingValue,
-        syntax: &SyntaxNode,
-    ) -> Result<(), SourceSemanticError> {
-        let schema = self.schema_of(operand);
-        if schema == BuiltinSchema::Dynamic
-            && matches!(self.schema_body_of(operand), SchemaBody::Dynamic)
-        {
-            return Ok(());
-        }
-        if let Some(kind) = builtin_kind(schema) {
-            let resolved = resolved_builtin_type(kind, syntax)?;
-            if resolved.satisfies(BuiltinKindPredicate::Integer)
-                || resolved.satisfies(BuiltinKindPredicate::FloatingPoint)
-            {
-                return Ok(());
-            }
-        }
-        Err(SourceSemanticError {
-            code: "source-semantics/invalid-modulus-kind",
-            message: "modulus requires integer or floating-point operands".to_owned(),
-            anchor: SourceSemanticAnchor::for_node(syntax),
-        })
-    }
-
     fn is_genuinely_dynamic(&self, value: PendingValue) -> bool {
         self.schema_of(value) == BuiltinSchema::Dynamic
             && matches!(self.schema_body_of(value), SchemaBody::Dynamic)
-    }
-
-    fn is_string_or_dynamic(&self, value: PendingValue) -> bool {
-        self.schema_of(value) == BuiltinSchema::String || self.is_genuinely_dynamic(value)
     }
 
     fn conform_dynamic_operand(
@@ -1887,307 +2173,6 @@ impl SemanticBuilder {
         } else {
             Ok(value)
         }
-    }
-
-    fn resolve_arithmetic_operands(
-        &mut self,
-        mut lhs: PendingValue,
-        mut rhs: PendingValue,
-        syntax: &SyntaxNode,
-    ) -> Result<(PendingValue, PendingValue), SourceSemanticError> {
-        let lhs_dynamic = self.is_genuinely_dynamic(lhs);
-        let rhs_dynamic = self.is_genuinely_dynamic(rhs);
-        let target = match (lhs_dynamic, rhs_dynamic) {
-            (true, false) => Some((true, self.schema_of(rhs))),
-            (false, true) => Some((false, self.schema_of(lhs))),
-            (true, true) => {
-                return Err(SourceSemanticError {
-                    code: "source-semantics/unresolved-arithmetic-kind",
-                    message: "arithmetic requires at least one concrete numeric operand kind"
-                        .to_owned(),
-                    anchor: SourceSemanticAnchor::for_node(syntax),
-                });
-            }
-            (false, false) => None,
-        };
-        if let Some((left, target)) = target {
-            let numeric = builtin_kind(target).is_some_and(is_numeric);
-            if !numeric {
-                return Err(SourceSemanticError {
-                    code: "source-semantics/non-numeric-arithmetic-kind",
-                    message: "arithmetic requires numeric operands".to_owned(),
-                    anchor: SourceSemanticAnchor::for_node(syntax),
-                });
-            }
-            if left {
-                lhs = self.conform_dynamic_operand(lhs, target, syntax)?;
-            } else {
-                rhs = self.conform_dynamic_operand(rhs, target, syntax)?;
-            }
-        }
-        Ok((lhs, rhs))
-    }
-
-    fn validate_arithmetic_operands(
-        &self,
-        operator: CanonicalOperator,
-        lhs: PendingValue,
-        rhs: PendingValue,
-        syntax: &SyntaxNode,
-    ) -> Result<Option<SchemaDraft>, SourceSemanticError> {
-        let lhs_body = self.schema_body_of(lhs);
-        let rhs_body = self.schema_body_of(rhs);
-        if operator == CanonicalOperator::Power
-            && self.schema_of(lhs) == BuiltinSchema::R64
-            && self.schema_of(rhs) == BuiltinSchema::I32
-        {
-            return Ok(None);
-        }
-        if let (
-            SchemaBody::Matrix {
-                element: lhs_element,
-                dimensions: lhs_dimensions,
-            },
-            SchemaBody::Matrix {
-                element: rhs_element,
-                dimensions: rhs_dimensions,
-            },
-        ) = (&lhs_body, &rhs_body)
-        {
-            let numeric = lhs_element == rhs_element
-                && lhs_dimensions == rhs_dimensions
-                && builtin_schema_for_body(lhs_element).is_some_and(|schema| {
-                    builtin_kind(schema).is_some_and(is_numeric) && schema != BuiltinSchema::C32
-                });
-            if numeric {
-                return Ok(Some(self.schema_draft_of(lhs)));
-            }
-        } else if lhs_body == rhs_body {
-            if let Some(schema) = builtin_schema_for_body(&lhs_body)
-                && builtin_kind(schema).is_some_and(is_numeric)
-            {
-                if schema == BuiltinSchema::C32 {
-                    return Err(SourceSemanticError {
-                        code: "source-semantics/unsupported-resident-arithmetic-kind",
-                        message: "resident arithmetic does not provide c32 kernels".to_owned(),
-                        anchor: SourceSemanticAnchor::for_node(syntax),
-                    });
-                }
-                return Ok(None);
-            }
-        }
-        Err(SourceSemanticError {
-            code: "source-semantics/non-numeric-arithmetic-kind",
-            message: "arithmetic requires compatible numeric operands".to_owned(),
-            anchor: SourceSemanticAnchor::for_node(syntax),
-        })
-    }
-
-    fn resolve_modulus_operands(
-        &mut self,
-        mut lhs: PendingValue,
-        mut rhs: PendingValue,
-        syntax: &SyntaxNode,
-    ) -> Result<(PendingValue, PendingValue), SourceSemanticError> {
-        let lhs_dynamic = self.is_genuinely_dynamic(lhs);
-        let rhs_dynamic = self.is_genuinely_dynamic(rhs);
-        let target = match (lhs_dynamic, rhs_dynamic) {
-            (true, false) => Some((true, self.schema_of(rhs))),
-            (false, true) => Some((false, self.schema_of(lhs))),
-            (true, true) => {
-                return Err(SourceSemanticError {
-                    code: "source-semantics/unresolved-modulus-kind",
-                    message: "modulus operands require one concrete integer or floating-point kind"
-                        .to_owned(),
-                    anchor: SourceSemanticAnchor::for_node(syntax),
-                });
-            }
-            (false, false) => None,
-        };
-        if let Some((left, target)) = target {
-            let supported = builtin_kind(target)
-                .map(|kind| resolved_builtin_type(kind, syntax))
-                .transpose()?
-                .is_some_and(|kind| {
-                    kind.satisfies(BuiltinKindPredicate::Integer)
-                        || kind.satisfies(BuiltinKindPredicate::FloatingPoint)
-                });
-            if !supported {
-                return Err(SourceSemanticError {
-                    code: "source-semantics/invalid-modulus-kind",
-                    message: "modulus requires integer or floating-point operands".to_owned(),
-                    anchor: SourceSemanticAnchor::for_node(syntax),
-                });
-            }
-            if left {
-                lhs = self.conform_value(
-                    lhs,
-                    target,
-                    syntax,
-                    "source-semantics/invalid-modulus-kind",
-                    "modulus requires matching concrete operand kinds",
-                )?;
-            } else {
-                rhs = self.conform_value(
-                    rhs,
-                    target,
-                    syntax,
-                    "source-semantics/invalid-modulus-kind",
-                    "modulus requires matching concrete operand kinds",
-                )?;
-            }
-        }
-        Ok((lhs, rhs))
-    }
-
-    fn resolve_ordered_comparison_operands(
-        &mut self,
-        mut lhs: PendingValue,
-        mut rhs: PendingValue,
-        syntax: &SyntaxNode,
-    ) -> Result<(PendingValue, PendingValue), SourceSemanticError> {
-        let lhs_dynamic = self.is_genuinely_dynamic(lhs);
-        let rhs_dynamic = self.is_genuinely_dynamic(rhs);
-        let target = match (lhs_dynamic, rhs_dynamic) {
-            (true, false) => Some((true, self.schema_of(rhs))),
-            (false, true) => Some((false, self.schema_of(lhs))),
-            (true, true) => {
-                return Err(SourceSemanticError {
-                    code: "source-semantics/unresolved-comparison-kind",
-                    message: "ordered comparison requires at least one concrete operand kind"
-                        .to_owned(),
-                    anchor: SourceSemanticAnchor::for_node(syntax),
-                });
-            }
-            (false, false) => None,
-        };
-        if let Some((left, target)) = target {
-            let ordered = target == BuiltinSchema::String
-                || builtin_kind(target)
-                    .map(|kind| resolved_builtin_type(kind, syntax))
-                    .transpose()?
-                    .is_some_and(|kind| kind.satisfies(BuiltinKindPredicate::Ordered));
-            if !ordered {
-                return Err(SourceSemanticError {
-                    code: "source-semantics/incompatible-comparison-kinds",
-                    message: "comparison operands do not satisfy the operation kind predicate"
-                        .to_owned(),
-                    anchor: SourceSemanticAnchor::for_node(syntax),
-                });
-            }
-            if left {
-                lhs = self.conform_value(
-                    lhs,
-                    target,
-                    syntax,
-                    "source-semantics/incompatible-comparison-kinds",
-                    "ordered comparison operands require matching kinds",
-                )?;
-            } else {
-                rhs = self.conform_value(
-                    rhs,
-                    target,
-                    syntax,
-                    "source-semantics/incompatible-comparison-kinds",
-                    "ordered comparison operands require matching kinds",
-                )?;
-            }
-        }
-        Ok((lhs, rhs))
-    }
-
-    fn validate_comparison_operands(
-        &self,
-        operator: CanonicalOperator,
-        lhs: PendingValue,
-        rhs: PendingValue,
-        syntax: &SyntaxNode,
-    ) -> Result<Option<SchemaDraft>, SourceSemanticError> {
-        let lhs_body = self.schema_body_of(lhs);
-        let rhs_body = self.schema_body_of(rhs);
-        if matches!(lhs_body, SchemaBody::Dynamic) || matches!(rhs_body, SchemaBody::Dynamic) {
-            return Err(SourceSemanticError {
-                code: "source-semantics/unresolved-comparison-kind",
-                message: "comparison operands require concrete compatible kinds".to_owned(),
-                anchor: SourceSemanticAnchor::for_node(syntax),
-            });
-        }
-        let ordered_operator = matches!(
-            operator,
-            CanonicalOperator::GreaterThan
-                | CanonicalOperator::LessThan
-                | CanonicalOperator::GreaterThanEqual
-                | CanonicalOperator::LessThanEqual
-        );
-        if matches!(lhs_body, SchemaBody::Matrix { .. })
-            || matches!(rhs_body, SchemaBody::Matrix { .. })
-        {
-            let (
-                SchemaBody::Matrix {
-                    element: lhs_element,
-                    dimensions: lhs_dimensions,
-                },
-                SchemaBody::Matrix {
-                    element: rhs_element,
-                    dimensions: rhs_dimensions,
-                },
-            ) = (&lhs_body, &rhs_body)
-            else {
-                return Err(SourceSemanticError {
-                    code: "source-semantics/incompatible-comparison-kinds",
-                    message: "matrix comparisons require two compatible matrix operands".to_owned(),
-                    anchor: SourceSemanticAnchor::for_node(syntax),
-                });
-            };
-            let element_valid = if ordered_operator {
-                lhs_element == rhs_element && ordered_schema_body(lhs_element, syntax)?
-            } else {
-                lhs_element == rhs_element
-            };
-            if !element_valid || lhs_dimensions != rhs_dimensions {
-                return Err(SourceSemanticError {
-                    code: "source-semantics/incompatible-comparison-kinds",
-                    message:
-                        "matrix comparison operands require compatible elements and dimensions"
-                            .to_owned(),
-                    anchor: SourceSemanticAnchor::for_node(syntax),
-                });
-            }
-            let mut output = self.schema_draft_of(lhs);
-            output.body = SchemaBody::Matrix {
-                element: Box::new(SchemaBody::Bool),
-                dimensions: lhs_dimensions.clone(),
-            };
-            return Ok(Some(output));
-        }
-        let lhs_schema = self.schema_of(lhs);
-        let rhs_schema = self.schema_of(rhs);
-        let ordered = if lhs_schema == BuiltinSchema::String {
-            true
-        } else if let Some(kind) = builtin_kind(lhs_schema) {
-            resolved_builtin_type(kind, syntax)?.satisfies(BuiltinKindPredicate::Ordered)
-        } else {
-            false
-        };
-        let valid = match operator {
-            CanonicalOperator::NotEqual
-            | CanonicalOperator::EqualTo
-            | CanonicalOperator::StrictNotEqual
-            | CanonicalOperator::StrictEqual => lhs_body == rhs_body,
-            CanonicalOperator::GreaterThan
-            | CanonicalOperator::LessThan
-            | CanonicalOperator::GreaterThanEqual
-            | CanonicalOperator::LessThanEqual => lhs_schema == rhs_schema && ordered,
-            _ => unreachable!("comparison validation called for a non-comparison operator"),
-        };
-        if valid {
-            return Ok(None);
-        }
-        Err(SourceSemanticError {
-            code: "source-semantics/incompatible-comparison-kinds",
-            message: "comparison operands do not satisfy the operation kind predicate".to_owned(),
-            anchor: SourceSemanticAnchor::for_node(syntax),
-        })
     }
 
     fn factor(&mut self, factor: &FactorSyntax) -> Result<PendingValue, SourceSemanticError> {
@@ -2361,40 +2346,32 @@ impl SemanticBuilder {
             FactorValueSyntax::Variable(value) => self.variable(&value)?,
         };
         if factor.transpose().is_some() {
-            self.ensure_source_operation_enabled("matrix/transpose", factor.syntax())?;
-            let input_schema = self.schema_draft_of(result);
-            result = if let SchemaBody::Matrix {
-                element,
-                dimensions,
-            } = input_schema.body
-            {
-                if dimensions.len() != 2 {
-                    return Err(SourceSemanticError {
-                        code: "source-semantics/invalid-transpose-shape",
-                        message: "matrix transpose requires exactly two dimensions".to_owned(),
-                        anchor: SourceSemanticAnchor::for_node(factor.syntax()),
-                    });
-                }
-                self.emit_with_schema_draft(
+            result = if self.is_genuinely_dynamic(result) {
+                self.ensure_source_operation_enabled("matrix/transpose", factor.syntax())?;
+                self.emit(
                     "matrix/transpose",
                     vec![result],
-                    SchemaDraft {
-                        dimension_parameters: input_schema.dimension_parameters,
-                        body: SchemaBody::Matrix {
-                            element,
-                            dimensions: vec![dimensions[1].clone(), dimensions[0].clone()]
-                                .into_boxed_slice(),
-                        },
-                    },
+                    BuiltinSchema::Dynamic,
                     factor.syntax(),
                     "postfix",
                     None,
                 )
             } else {
-                self.emit(
+                let Some((inputs, schema)) = self.resolve_maintained_call(
                     "matrix/transpose",
                     vec![result],
-                    self.schema_of(result),
+                    factor.syntax(),
+                )?
+                else {
+                    return Err(internal(
+                        SourceSemanticAnchor::for_node(factor.syntax()),
+                        "matrix transpose has no maintained type declaration".to_owned(),
+                    ));
+                };
+                self.emit_with_schema_draft(
+                    "matrix/transpose",
+                    inputs,
+                    schema,
                     factor.syntax(),
                     "postfix",
                     None,
@@ -2451,7 +2428,15 @@ impl SemanticBuilder {
             .overloads
             .iter()
             .filter(|overload| {
-                overload.input_layout.len() == inputs.len()
+                let accepts_arity = match overload.scheme.inputs() {
+                    InputKindScheme::Fixed(expected) => expected.len() == inputs.len(),
+                    InputKindScheme::Variadic {
+                        prefix,
+                        min_repetitions,
+                        ..
+                    } => inputs.len() >= prefix.len().saturating_add(*min_repetitions as usize),
+                };
+                accepts_arity
                     && overload
                         .input_layout
                         .iter()
@@ -2491,16 +2476,8 @@ impl SemanticBuilder {
             if actual == &conversion.target {
                 continue;
             }
-            let target = builtin_kind_from_resolved(&conversion.target)
-                .and_then(builtin_schema)
-                .ok_or_else(|| SourceSemanticError {
-                    code: "source-semantics/unsupported-call-conversion",
-                    message: format!(
-                        "maintained function {name} requires a non-scalar source conversion"
-                    ),
-                    anchor: SourceSemanticAnchor::for_node(syntax),
-                })?;
-            *input = self.apply_conversion(*input, target, conversion, syntax)?;
+            *input =
+                self.apply_resolved_conversion(*input, &conversion.target, conversion, syntax)?;
         }
         let [output] = resolved.outputs.as_ref() else {
             return Err(SourceSemanticError {
@@ -2509,9 +2486,49 @@ impl SemanticBuilder {
                 anchor: SourceSemanticAnchor::for_node(syntax),
             });
         };
+        let output_rule = resolved
+            .candidate_ids
+            .iter()
+            .map(|candidate| {
+                overloads
+                    .iter()
+                    .find(|overload| u64::from(overload.id) == *candidate)
+                    .and_then(|overload| overload.output_schema_rules.first())
+                    .cloned()
+                    .ok_or_else(|| {
+                        internal(
+                            SourceSemanticAnchor::for_node(syntax),
+                            format!(
+                                "maintained function {name} selected an unknown output-schema rule"
+                            ),
+                        )
+                    })
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        let Some(first_rule) = output_rule.first() else {
+            return Err(internal(
+                SourceSemanticAnchor::for_node(syntax),
+                format!("maintained function {name} selected no overload"),
+            ));
+        };
+        if output_rule.iter().any(|rule| rule != first_rule) {
+            return Err(internal(
+                SourceSemanticAnchor::for_node(syntax),
+                format!("maintained function {name} selected conflicting output-schema rules"),
+            ));
+        }
+        let input_schemas = inputs
+            .iter()
+            .map(|input| self.schema_draft_of(*input))
+            .collect::<Vec<_>>();
         Ok(Some((
             inputs,
-            schema_draft_from_resolved(output, SourceSemanticAnchor::for_node(syntax))?,
+            materialize_source_output_draft(
+                output,
+                first_rule,
+                &input_schemas,
+                SourceSemanticAnchor::for_node(syntax),
+            )?,
         )))
     }
 
@@ -2650,27 +2667,27 @@ impl SemanticBuilder {
         };
         let annotation = variable
             .annotation()
-            .map(|annotation| annotation_schema(&annotation))
+            .map(|annotation| annotation_schema_draft(&annotation))
             .transpose()?;
         if let Some(value) = self.bindings.get(&name).copied() {
             return annotation.map_or(Ok(value), |expected| {
-                self.conform_value(
+                self.conform_schema_draft(
                     value,
-                    expected,
+                    &expected,
                     variable.syntax(),
                     "source-semantics/incompatible-local-kind",
                     "local value does not satisfy its occurrence annotation",
                 )
             });
         }
-        let schema = annotation.unwrap_or(BuiltinSchema::Dynamic);
+        let schema = annotation.unwrap_or_else(dynamic_schema_draft);
         let declared = self
             .input_declarations
             .get(&name)
-            .copied()
-            .unwrap_or(schema);
-        if schema != BuiltinSchema::Dynamic
-            && declared != BuiltinSchema::Dynamic
+            .cloned()
+            .unwrap_or_else(|| schema.clone());
+        if !is_dynamic_schema_draft(&schema)
+            && !is_dynamic_schema_draft(&declared)
             && schema != declared
         {
             return Err(SourceSemanticError {
@@ -2680,9 +2697,9 @@ impl SemanticBuilder {
             });
         }
         if let Some(index) = self.input_by_name.get(&name) {
-            let (_, existing, _) = &self.inputs[*index as usize];
-            if schema != BuiltinSchema::Dynamic
-                && *existing != BuiltinSchema::Dynamic
+            let existing = &self.inputs[*index as usize].schema;
+            if !is_dynamic_schema_draft(&schema)
+                && !is_dynamic_schema_draft(existing)
                 && schema != *existing
             {
                 return Err(SourceSemanticError {
@@ -2699,8 +2716,11 @@ impl SemanticBuilder {
             anchor: SourceSemanticAnchor::for_node(&syntax),
         })?;
         self.input_by_name.insert(name.clone(), index);
-        self.inputs
-            .push((name, declared, SourceSemanticAnchor::for_node(&syntax)));
+        self.inputs.push(PendingInput {
+            name,
+            schema: declared,
+            anchor: SourceSemanticAnchor::for_node(&syntax),
+        });
         Ok(PendingValue::Input(index))
     }
 
@@ -2979,27 +2999,18 @@ impl SemanticBuilder {
             StructureValueSyntax::Set(value) => self.set(&value),
             StructureValueSyntax::Tuple(value) => self.tuple(&value),
             StructureValueSyntax::TupleStruct(value) => self.tuple_struct(&value),
-            StructureValueSyntax::EmptyMap(value) => Ok(self.emit(
-                "source/map",
-                Vec::new(),
-                BuiltinSchema::Dynamic,
-                value.syntax(),
-                "map",
-                Some("0 entries".to_owned()),
-            )),
+            StructureValueSyntax::EmptyMap(value) => Err(SourceSemanticError {
+                code: "source-semantics/unresolved-map-entry-kind",
+                message: "empty map literals require explicit key and value kinds".to_owned(),
+                anchor: SourceSemanticAnchor::for_node(value.syntax()),
+            }),
             StructureValueSyntax::EmptySet(value) => {
                 self.ensure_source_operation_enabled("set/define", value.syntax())?;
-                Ok(self.emit_with_schema_body(
-                    "set/define",
-                    Vec::new(),
-                    SchemaBody::Set {
-                        element: Box::new(SchemaBody::Dynamic),
-                        cardinality: CardinalitySpec::Exact(DimensionExpr::Constant(0)),
-                    },
-                    value.syntax(),
-                    "set",
-                    Some("0 items".to_owned()),
-                ))
+                Err(SourceSemanticError {
+                    code: "source-semantics/unresolved-set-element-kind",
+                    message: "empty set literals require an explicit element kind".to_owned(),
+                    anchor: SourceSemanticAnchor::for_node(value.syntax()),
+                })
             }
         }
     }
@@ -3254,17 +3265,92 @@ impl SemanticBuilder {
     }
 
     fn map(&mut self, map: &MapSyntax) -> Result<PendingValue, SourceSemanticError> {
-        let mut inputs = Vec::new();
+        let mut entries = Vec::new();
         for entry in map.entries() {
             let key = self.required(entry.key(), entry.syntax(), "a map key")?;
             let value = self.required(entry.value(), entry.syntax(), "a map value")?;
-            inputs.push(self.expression(&key)?.0);
-            inputs.push(self.expression(&value)?.0);
+            entries.push((self.expression(&key)?.0, self.expression(&value)?.0));
         }
-        Ok(self.emit(
+        let key_schema = entries
+            .iter()
+            .map(|(key, _)| self.schema_draft_of(*key))
+            .find(|schema| !matches!(schema.body, SchemaBody::Dynamic))
+            .ok_or_else(|| SourceSemanticError {
+                code: "source-semantics/unresolved-map-key-kind",
+                message: "map literals require a concrete key kind".to_owned(),
+                anchor: SourceSemanticAnchor::for_node(map.syntax()),
+            })?;
+        let value_schema = entries
+            .iter()
+            .map(|(_, value)| self.schema_draft_of(*value))
+            .find(|schema| !matches!(schema.body, SchemaBody::Dynamic))
+            .ok_or_else(|| SourceSemanticError {
+                code: "source-semantics/unresolved-map-value-kind",
+                message: "map literals require a concrete value kind".to_owned(),
+                anchor: SourceSemanticAnchor::for_node(map.syntax()),
+            })?;
+
+        for (key, value) in &mut entries {
+            *key = self.conform_dynamic_to_schema(*key, &key_schema, map.syntax())?;
+            *value = self.conform_dynamic_to_schema(*value, &value_schema, map.syntax())?;
+            if self.schema_draft_of(*key) != key_schema {
+                return Err(SourceSemanticError {
+                    code: "source-semantics/incompatible-map-key-kind",
+                    message: "map literal keys require one exact kind".to_owned(),
+                    anchor: SourceSemanticAnchor::for_node(map.syntax()),
+                });
+            }
+            if self.schema_draft_of(*value) != value_schema {
+                return Err(SourceSemanticError {
+                    code: "source-semantics/incompatible-map-value-kind",
+                    message: "map literal values require one exact kind".to_owned(),
+                    anchor: SourceSemanticAnchor::for_node(map.syntax()),
+                });
+            }
+        }
+        let resolved_key =
+            ResolvedType::from_schema_body(&key_schema.body, &key_schema.dimension_parameters)
+                .map_err(|error| {
+                    internal(
+                        SourceSemanticAnchor::for_node(map.syntax()),
+                        format!("invalid map key schema: {error}"),
+                    )
+                })?;
+        if !resolved_key.satisfies(BuiltinKindPredicate::Keyable) {
+            return Err(SourceSemanticError {
+                code: "source-semantics/non-keyable-map-key-kind",
+                message: "map literal keys require a keyable kind".to_owned(),
+                anchor: SourceSemanticAnchor::for_node(map.syntax()),
+            });
+        }
+        let mut parameters = Vec::new();
+        let key = embed_schema_draft(
+            &key_schema,
+            &mut parameters,
+            SourceSemanticAnchor::for_node(map.syntax()),
+        )?;
+        let value = embed_schema_draft(
+            &value_schema,
+            &mut parameters,
+            SourceSemanticAnchor::for_node(map.syntax()),
+        )?;
+        let inputs = entries
+            .into_iter()
+            .flat_map(|(key, value)| [key, value])
+            .collect();
+        Ok(self.emit_with_schema_draft(
             "source/map",
             inputs,
-            BuiltinSchema::Dynamic,
+            SchemaDraft {
+                dimension_parameters: parameters.into_boxed_slice(),
+                body: SchemaBody::Map {
+                    key: Box::new(key),
+                    value: Box::new(value),
+                    cardinality: CardinalitySpec::Exact(DimensionExpr::Constant(
+                        map.entries().len() as u64,
+                    )),
+                },
+            },
             map.syntax(),
             "map",
             None,
@@ -3274,6 +3360,7 @@ impl SemanticBuilder {
     fn record(&mut self, record: &RecordSyntax) -> Result<PendingValue, SourceSemanticError> {
         let mut inputs = Vec::new();
         let mut fields = Vec::new();
+        let mut parameters = Vec::new();
         for binding in record.bindings() {
             let name = self.required(binding.name(), binding.syntax(), "a record field name")?;
             let value = self.required(binding.value(), binding.syntax(), "a record field value")?;
@@ -3291,7 +3378,11 @@ impl SemanticBuilder {
             }
             fields.push(SchemaField {
                 name,
-                schema: self.schema_body_of(value),
+                schema: embed_schema_draft(
+                    &self.schema_draft_of(value),
+                    &mut parameters,
+                    SourceSemanticAnchor::for_node(record.syntax()),
+                )?,
             });
             inputs.push(value);
         }
@@ -3300,10 +3391,13 @@ impl SemanticBuilder {
             .map(|field| field.name.as_str())
             .collect::<Vec<_>>()
             .join(",");
-        Ok(self.emit_with_schema_body(
+        Ok(self.emit_with_schema_draft(
             "source/record",
             inputs,
-            SchemaBody::Record(fields.into_boxed_slice()),
+            SchemaDraft {
+                dimension_parameters: parameters.into_boxed_slice(),
+                body: SchemaBody::Record(fields.into_boxed_slice()),
+            },
             record.syntax(),
             "record",
             Some(detail),
@@ -3392,10 +3486,24 @@ impl SemanticBuilder {
         if let [value] = inputs.as_slice() {
             return Ok(*value);
         }
-        Ok(self.emit(
+        let mut parameters = Vec::new();
+        let items = inputs
+            .iter()
+            .map(|value| {
+                embed_schema_draft(
+                    &self.schema_draft_of(*value),
+                    &mut parameters,
+                    SourceSemanticAnchor::for_node(tuple.syntax()),
+                )
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(self.emit_with_schema_draft(
             "source/tuple",
             inputs,
-            BuiltinSchema::Dynamic,
+            SchemaDraft {
+                dimension_parameters: parameters.into_boxed_slice(),
+                body: SchemaBody::Tuple(items.into_boxed_slice()),
+            },
             tuple.syntax(),
             "tuple",
             None,
@@ -3568,7 +3676,18 @@ impl SemanticBuilder {
                         )?;
                         let source = self.expression(&source)?.0;
                         let pattern = self.record_pattern(&pattern)?;
-                        self.bind_pattern(&pattern, source)?;
+                        let item_schema = match self.schema_draft_of(source) {
+                            SchemaDraft {
+                                dimension_parameters,
+                                body:
+                                    SchemaBody::Set { element, .. } | SchemaBody::Matrix { element, .. },
+                            } => Some(SchemaDraft {
+                                dimension_parameters,
+                                body: *element,
+                            }),
+                            _ => None,
+                        };
+                        self.bind_pattern(&pattern, source, item_schema.as_ref())?;
                         qualifier_layouts.push((
                             inputs.len() as u32,
                             SourceSemanticComprehensionQualifierRole::Generator {
@@ -3596,15 +3715,36 @@ impl SemanticBuilder {
                 }
             }
             let result = self.required(result, syntax, "a comprehension result")?;
-            inputs.push(self.expression(&result)?.0);
-            let value = self.emit(
-                operation,
-                inputs,
-                BuiltinSchema::Dynamic,
-                syntax,
-                "comprehension",
-                None,
-            );
+            let result = self.expression(&result)?.0;
+            let value = if self.is_genuinely_dynamic(result) {
+                inputs.push(result);
+                self.emit(
+                    operation,
+                    inputs,
+                    BuiltinSchema::Dynamic,
+                    syntax,
+                    "comprehension",
+                    None,
+                )
+            } else {
+                let Some((resolved_inputs, schema)) =
+                    self.resolve_maintained_call(operation, vec![result], syntax)?
+                else {
+                    return Err(internal(
+                        SourceSemanticAnchor::for_node(syntax),
+                        format!("{operation} has no maintained type declaration"),
+                    ));
+                };
+                inputs.push(resolved_inputs[0]);
+                self.emit_with_schema_draft(
+                    operation,
+                    inputs,
+                    schema,
+                    syntax,
+                    "comprehension",
+                    None,
+                )
+            };
             let PendingValue::Node(node) = value else {
                 unreachable!("emit always returns a node")
             };
@@ -3693,6 +3833,7 @@ impl SemanticBuilder {
         &mut self,
         pattern: &RecordedPattern,
         source: PendingValue,
+        single_binding_schema: Option<&SchemaDraft>,
     ) -> Result<(), SourceSemanticError> {
         let pattern_index = pattern.index;
         for (binding_index, binding) in pattern.bindings.iter().enumerate() {
@@ -3701,17 +3842,49 @@ impl SemanticBuilder {
                 message: "pattern binding count exceeds semantic identity space".to_owned(),
                 anchor: self.anchor,
             })?;
-            let projection = self.emit(
-                "source/bind",
-                vec![source],
-                binding.schema,
-                &pattern.syntax,
-                "pattern-binding",
-                Some(format!(
-                    "pattern={pattern_index};binding={binding_index};name={}",
-                    binding.name
-                )),
-            );
+            let detail = Some(format!(
+                "pattern={pattern_index};binding={binding_index};name={}",
+                binding.name
+            ));
+            let projection = if pattern.bindings.len() == 1
+                && let Some(inferred) = single_binding_schema
+            {
+                let annotated = if binding.schema == BuiltinSchema::Dynamic {
+                    None
+                } else {
+                    Some(schema_body(binding.schema))
+                };
+                if annotated
+                    .as_ref()
+                    .is_some_and(|annotated| annotated != &inferred.body)
+                {
+                    return Err(SourceSemanticError {
+                        code: "source-semantics/incompatible-local-kind",
+                        message: format!(
+                            "generator binding {} does not satisfy its kind annotation",
+                            binding.name
+                        ),
+                        anchor: SourceSemanticAnchor::for_node(&pattern.syntax),
+                    });
+                }
+                self.emit_with_schema_draft(
+                    "source/bind",
+                    vec![source],
+                    inferred.clone(),
+                    &pattern.syntax,
+                    "pattern-binding",
+                    detail,
+                )
+            } else {
+                self.emit(
+                    "source/bind",
+                    vec![source],
+                    binding.schema,
+                    &pattern.syntax,
+                    "pattern-binding",
+                    detail,
+                )
+            };
             self.bindings.insert(binding.name.clone(), projection);
         }
         Ok(())
@@ -3802,11 +3975,14 @@ impl SemanticBuilder {
         let schema = self
             .input_declarations
             .get(&name)
-            .copied()
-            .unwrap_or(BuiltinSchema::Dynamic);
+            .cloned()
+            .unwrap_or_else(dynamic_schema_draft);
         self.input_by_name.insert(name.clone(), index);
-        self.inputs
-            .push((name, schema, SourceSemanticAnchor::for_node(node)));
+        self.inputs.push(PendingInput {
+            name,
+            schema,
+            anchor: SourceSemanticAnchor::for_node(node),
+        });
         Ok(PendingValue::Input(index))
     }
 
@@ -3820,7 +3996,10 @@ impl SemanticBuilder {
     fn schema_of(&self, value: PendingValue) -> BuiltinSchema {
         match value {
             PendingValue::Constant(index) => self.constants[index].schema,
-            PendingValue::Input(index) => self.inputs[index as usize].1,
+            PendingValue::Input(index) => {
+                builtin_schema_for_annotation_body(&self.inputs[index as usize].schema.body)
+                    .unwrap_or(BuiltinSchema::Dynamic)
+            }
             PendingValue::State(index) => self.states[index as usize].schema,
             PendingValue::Node(index) => self.nodes[index as usize].schema,
         }
@@ -3832,7 +4011,7 @@ impl SemanticBuilder {
                 .schema_body
                 .clone()
                 .unwrap_or_else(|| schema_body(self.constants[index].schema)),
-            PendingValue::Input(index) => schema_body(self.inputs[index as usize].1),
+            PendingValue::Input(index) => self.inputs[index as usize].schema.body.clone(),
             PendingValue::State(index) => self
                 .nodes
                 .iter()
@@ -3855,10 +4034,7 @@ impl SemanticBuilder {
                     .clone()
                     .unwrap_or_else(|| schema_body(self.constants[index].schema)),
             },
-            PendingValue::Input(index) => SchemaDraft {
-                dimension_parameters: Box::new([]),
-                body: schema_body(self.inputs[index as usize].1),
-            },
+            PendingValue::Input(index) => self.inputs[index as usize].schema.clone(),
             PendingValue::State(index) => self
                 .nodes
                 .iter()
@@ -3967,6 +4143,31 @@ impl SemanticBuilder {
         ))
     }
 
+    fn apply_resolved_conversion(
+        &mut self,
+        value: PendingValue,
+        target: &ResolvedType,
+        plan: &mech_core::ConversionPlan,
+        syntax: &SyntaxNode,
+    ) -> Result<PendingValue, SourceSemanticError> {
+        if let Some(target_schema) = builtin_kind_from_resolved(target).and_then(builtin_schema) {
+            return self.apply_conversion(value, target_schema, plan, syntax);
+        }
+        let target = schema_draft_from_resolved(target, SourceSemanticAnchor::for_node(syntax))?;
+        if self.schema_draft_of(value) == target {
+            return Ok(value);
+        }
+        self.ensure_source_operation_enabled("convert/kind", syntax)?;
+        Ok(self.emit_with_schema_draft(
+            "convert/kind",
+            vec![value],
+            target,
+            syntax,
+            "implicit-conversion",
+            Some(format!("target={}", plan.target.semantic_name())),
+        ))
+    }
+
     fn conform_value(
         &mut self,
         value: PendingValue,
@@ -4012,6 +4213,7 @@ impl SemanticBuilder {
                     anchor: SourceSemanticAnchor::for_node(syntax),
                 });
             }
+            self.ensure_source_operation_enabled("convert/kind", syntax)?;
             return Ok(self.emit(
                 "convert/kind",
                 vec![value],
@@ -4049,6 +4251,27 @@ impl SemanticBuilder {
                 message: message.to_owned(),
                 anchor: SourceSemanticAnchor::for_node(syntax),
             })
+    }
+
+    fn conform_schema_draft(
+        &mut self,
+        value: PendingValue,
+        expected: &SchemaDraft,
+        syntax: &SyntaxNode,
+        code: &'static str,
+        message: &str,
+    ) -> Result<PendingValue, SourceSemanticError> {
+        if is_dynamic_schema_draft(expected) || self.schema_draft_of(value) == *expected {
+            return Ok(value);
+        }
+        if let Some(expected) = builtin_schema_for_annotation_body(&expected.body) {
+            return self.conform_value(value, expected, syntax, code, message);
+        }
+        Err(SourceSemanticError {
+            code,
+            message: message.to_owned(),
+            anchor: SourceSemanticAnchor::for_node(syntax),
+        })
     }
 
     fn conform_table_value(
@@ -4155,28 +4378,6 @@ impl SemanticBuilder {
         PendingValue::Node(index)
     }
 
-    fn emit_with_schema_body(
-        &mut self,
-        operation: &str,
-        inputs: Vec<PendingValue>,
-        schema_body: SchemaBody,
-        syntax: &SyntaxNode,
-        role: &'static str,
-        detail: Option<String>,
-    ) -> PendingValue {
-        self.emit_with_schema_draft(
-            operation,
-            inputs,
-            SchemaDraft {
-                dimension_parameters: Box::new([]),
-                body: schema_body,
-            },
-            syntax,
-            role,
-            detail,
-        )
-    }
-
     fn emit_with_schema_draft(
         &mut self,
         operation: &str,
@@ -4186,14 +4387,8 @@ impl SemanticBuilder {
         role: &'static str,
         detail: Option<String>,
     ) -> PendingValue {
-        let value = self.emit(
-            operation,
-            inputs,
-            BuiltinSchema::Dynamic,
-            syntax,
-            role,
-            detail,
-        );
+        let builtin = builtin_schema_for_body(&schema.body).unwrap_or(BuiltinSchema::Dynamic);
+        let value = self.emit(operation, inputs, builtin, syntax, role, detail);
         let PendingValue::Node(index) = value else {
             unreachable!("emit always returns a node")
         };
@@ -4233,7 +4428,8 @@ impl SemanticBuilder {
     }
 
     fn finish(self) -> Result<CanonicalSourceProgram, SourceSemanticError> {
-        let schemas = BuiltinSchemas::build(self.anchor, &self.nodes, &self.constants)?;
+        let schemas =
+            BuiltinSchemas::build(self.anchor, &self.inputs, &self.nodes, &self.constants)?;
         let constant_schema_ids = self
             .constants
             .iter()
@@ -4297,9 +4493,10 @@ impl SemanticBuilder {
         let inputs = self
             .inputs
             .iter()
-            .map(|(name, schema, _)| SourceInput {
-                name: name.clone(),
-                schema: schemas.id(*schema),
+            .enumerate()
+            .map(|(index, input)| SourceInput {
+                name: input.name.clone(),
+                schema: schemas.input_id(index),
             })
             .collect::<Vec<_>>()
             .into_boxed_slice();
@@ -4367,7 +4564,7 @@ impl SemanticBuilder {
             inputs: self
                 .inputs
                 .into_iter()
-                .map(|(_, _, anchor)| anchor)
+                .map(|input| input.anchor)
                 .collect::<Vec<_>>()
                 .into_boxed_slice(),
             nodes: self
@@ -4420,7 +4617,7 @@ impl SemanticBuilder {
 fn pending_schema(
     value: PendingValue,
     constants: &[SchemaId],
-    inputs: &[(String, BuiltinSchema, SourceSemanticAnchor)],
+    inputs: &[PendingInput],
     nodes: &[PendingNode],
     schemas: &BuiltinSchemas,
 ) -> SchemaId {
@@ -4431,7 +4628,7 @@ fn pending_schema(
             .unwrap_or_else(|| schemas.id(BuiltinSchema::Dynamic)),
         PendingValue::Input(index) => inputs
             .get(index as usize)
-            .map(|(_, schema, _)| schemas.id(*schema))
+            .map(|_| schemas.input_id(index as usize))
             .unwrap_or_else(|| schemas.id(BuiltinSchema::Dynamic)),
         PendingValue::State(index) => nodes
             .iter()
@@ -4588,6 +4785,14 @@ fn resolved_operation_contract(
         "matrix/literal" => Some(crate::matrix_literal_contract(input_count)),
         #[cfg(feature = "set")]
         "set/define" => Some((*crate::intrinsics::constructors::PURE_SET_DEFINE_CONTRACT).clone()),
+        #[cfg(feature = "set_comprehensions")]
+        "set/comprehension" => {
+            Some((*crate::intrinsics::constructors::PURE_SET_COMPREHENSION_CONTRACT).clone())
+        }
+        #[cfg(feature = "matrix_comprehensions")]
+        "matrix/comprehension" => {
+            Some((*crate::intrinsics::constructors::PURE_MATRIX_COMPREHENSION_CONTRACT).clone())
+        }
         "string/concat" => Some(operation_contract(input_count, output_schema, state_output)),
         #[cfg(feature = "assign")]
         "core/assign" => Some((*crate::intrinsics::assign::PURE_STATE_REGISTER_CONTRACT).clone()),
@@ -4808,51 +5013,222 @@ fn operator_name(operator: CanonicalOperator) -> (&'static str, Option<BuiltinSc
 fn annotation_schema(
     annotation: &KindAnnotationSyntax,
 ) -> Result<BuiltinSchema, SourceSemanticError> {
-    let source = node_text(annotation.syntax())?;
-    let name = source
-        .strip_prefix('<')
-        .and_then(|source| source.strip_suffix('>'))
-        .unwrap_or(source.as_str());
-    let (name, optional) = name
-        .strip_suffix('?')
-        .map_or((name, false), |name| (name, true));
-    let mut schema = match name {
-        "bool" => BuiltinSchema::Bool,
-        "string" => BuiltinSchema::String,
-        "ix" | "index" => BuiltinSchema::Index,
-        "u8" => BuiltinSchema::U8,
-        "u16" => BuiltinSchema::U16,
-        "u32" => BuiltinSchema::U32,
-        "u64" => BuiltinSchema::U64,
-        "u128" => BuiltinSchema::U128,
-        "i8" => BuiltinSchema::I8,
-        "i16" => BuiltinSchema::I16,
-        "i32" => BuiltinSchema::I32,
-        "i64" => BuiltinSchema::I64,
-        "i128" => BuiltinSchema::I128,
-        "f32" => BuiltinSchema::F32,
-        "f64" => BuiltinSchema::F64,
-        "c32" => BuiltinSchema::C32,
-        "c64" => BuiltinSchema::C64,
-        "r64" => BuiltinSchema::R64,
-        "*" | "_" => BuiltinSchema::Dynamic,
-        _ => {
+    let draft = annotation_schema_draft(annotation)?;
+    builtin_schema_for_annotation_body(&draft.body).ok_or_else(|| SourceSemanticError {
+        code: "source-semantics/unsupported-kind-annotation",
+        message: "this value position requires a builtin scalar kind annotation".to_owned(),
+        anchor: SourceSemanticAnchor::for_node(annotation.syntax()),
+    })
+}
+
+fn builtin_schema_for_annotation_body(body: &SchemaBody) -> Option<BuiltinSchema> {
+    match body {
+        SchemaBody::Dynamic => Some(BuiltinSchema::Dynamic),
+        SchemaBody::Option(payload) => option_schema(builtin_schema_for_annotation_body(payload)?),
+        _ => builtin_schema_for_body(body),
+    }
+}
+
+fn annotation_schema_draft(
+    annotation: &KindAnnotationSyntax,
+) -> Result<SchemaDraft, SourceSemanticError> {
+    let kind = annotation
+        .kind()
+        .ok_or_else(|| missing_kind_child(annotation.syntax(), "kind annotation"))?;
+    let inner = kind
+        .kind()
+        .ok_or_else(|| missing_kind_child(kind.syntax(), "optional kind"))?;
+    let mut body = kind_schema_body(&inner)?;
+    if kind.question_mark().is_some() {
+        body = SchemaBody::Option(Box::new(body));
+    }
+    Ok(SchemaDraft {
+        dimension_parameters: Box::new([]),
+        body,
+    })
+}
+
+fn kind_schema_body(kind: &KindSyntax) -> Result<SchemaBody, SourceSemanticError> {
+    let value = kind
+        .value()
+        .ok_or_else(|| missing_kind_child(kind.syntax(), "kind"))?;
+    let anchor = SourceSemanticAnchor::for_node(value.syntax());
+    Ok(match value {
+        KindValueSyntax::Any(_) => SchemaBody::Dynamic,
+        KindValueSyntax::Empty(empty) => {
             return Err(SourceSemanticError {
-                code: "source-semantics/unsupported-kind-annotation",
-                message: "this canonical kind annotation is not yet representable by the source schema builder"
-                    .to_owned(),
-                anchor: SourceSemanticAnchor::for_node(annotation.syntax()),
+                code: "source-semantics/unsupported-empty-kind-schema",
+                message: "the empty kind cannot describe a materialized source input".to_owned(),
+                anchor: SourceSemanticAnchor::for_node(empty.syntax()),
             });
         }
-    };
-    if optional {
-        schema = option_schema(schema).ok_or_else(|| SourceSemanticError {
-            code: "source-semantics/unsupported-option-kind",
-            message: "optional annotations require a concrete scalar payload kind".to_owned(),
-            anchor: SourceSemanticAnchor::for_node(annotation.syntax()),
-        })?;
+        KindValueSyntax::Nested(_) => SchemaBody::ReifiedType,
+        KindValueSyntax::Atom(atom) => {
+            let name = atom
+                .name()
+                .ok_or_else(|| missing_kind_child(atom.syntax(), "atom kind name"))?;
+            let source = node_text(name.syntax())?;
+            let path = CanonicalNominalPath::new(
+                source
+                    .trim_start_matches(':')
+                    .split('/')
+                    .filter(|segment| !segment.is_empty())
+                    .map(str::to_owned)
+                    .collect::<Vec<_>>(),
+            )
+            .map_err(|error| internal(anchor, format!("invalid atom kind path: {error:?}")))?;
+            SchemaBody::Atom(NominalKey::from_path(NominalKind::Atom, &path))
+        }
+        KindValueSyntax::Scalar(scalar) => {
+            if scalar.constraint().is_some() {
+                return Err(SourceSemanticError {
+                    code: "source-semantics/unsupported-kind-constraint",
+                    message: "scalar range constraints require a first-class constrained schema"
+                        .to_owned(),
+                    anchor,
+                });
+            }
+            let name = scalar
+                .name()
+                .ok_or_else(|| missing_kind_child(scalar.syntax(), "scalar kind name"))?;
+            let name = node_text(name.syntax())?;
+            match name.as_str() {
+                "ix" | "index" => SchemaBody::Index,
+                _ => builtin_kind_named(&name)
+                    .map(BuiltinScalarKind::schema_body)
+                    .ok_or_else(|| SourceSemanticError {
+                        code: "source-semantics/unsupported-kind-annotation",
+                        message: format!("unknown builtin scalar kind {name:?}"),
+                        anchor,
+                    })?,
+            }
+        }
+        KindValueSyntax::Map(map) => SchemaBody::Map {
+            key: Box::new(kind_schema_body(
+                &map.key()
+                    .ok_or_else(|| missing_kind_child(map.syntax(), "map key kind"))?,
+            )?),
+            value: Box::new(kind_schema_body(
+                &map.value()
+                    .ok_or_else(|| missing_kind_child(map.syntax(), "map value kind"))?,
+            )?),
+            cardinality: CardinalitySpec::Dynamic { upper_bound: None },
+        },
+        KindValueSyntax::Set(set) => SchemaBody::Set {
+            element: Box::new(kind_schema_body(
+                &set.element()
+                    .ok_or_else(|| missing_kind_child(set.syntax(), "set element kind"))?,
+            )?),
+            cardinality: kind_extent(set.literal_constraint().as_ref())?,
+        },
+        KindValueSyntax::Matrix(matrix) => {
+            let element = matrix
+                .element()
+                .ok_or_else(|| missing_kind_child(matrix.syntax(), "matrix element kind"))?;
+            let element_kind = element
+                .kind()
+                .ok_or_else(|| missing_kind_child(element.syntax(), "matrix element kind"))?;
+            let mut element = kind_schema_body(&element_kind)?;
+            if matrix
+                .element()
+                .is_some_and(|element| element.question_mark().is_some())
+            {
+                element = SchemaBody::Option(Box::new(element));
+            }
+            let dimensions = matrix
+                .dimensions()
+                .iter()
+                .map(kind_dimension)
+                .collect::<Result<Vec<_>, _>>()?;
+            if dimensions.is_empty() {
+                return Err(SourceSemanticError {
+                    code: "source-semantics/unsupported-kind-annotation",
+                    message: "matrix kind annotations require explicit dimensions".to_owned(),
+                    anchor,
+                });
+            }
+            SchemaBody::Matrix {
+                element: Box::new(element),
+                dimensions: dimensions.into_boxed_slice(),
+            }
+        }
+        KindValueSyntax::Tuple(tuple) => SchemaBody::Tuple(
+            tuple
+                .items()
+                .iter()
+                .map(kind_schema_body)
+                .collect::<Result<Vec<_>, _>>()?
+                .into_boxed_slice(),
+        ),
+        KindValueSyntax::Record(record) => {
+            let names = record.fields();
+            let kinds = record.field_kinds();
+            if names.len() != kinds.len() {
+                return Err(missing_kind_child(record.syntax(), "record field kind"));
+            }
+            SchemaBody::Record(
+                names
+                    .iter()
+                    .zip(&kinds)
+                    .map(|(name, kind)| {
+                        Ok(SchemaField {
+                            name: node_text(name.syntax())?,
+                            schema: annotation_schema_draft(kind)?.body,
+                        })
+                    })
+                    .collect::<Result<Vec<_>, SourceSemanticError>>()?
+                    .into_boxed_slice(),
+            )
+        }
+        KindValueSyntax::Table(table) => {
+            let names = table.field_names();
+            let kinds = table.field_kinds();
+            if names.len() != kinds.len() {
+                return Err(missing_kind_child(table.syntax(), "table field kind"));
+            }
+            SchemaBody::Table {
+                columns: names
+                    .iter()
+                    .zip(&kinds)
+                    .map(|(name, kind)| {
+                        Ok(SchemaField {
+                            name: node_text(name.syntax())?,
+                            schema: annotation_schema_draft(kind)?.body,
+                        })
+                    })
+                    .collect::<Result<Vec<_>, SourceSemanticError>>()?
+                    .into_boxed_slice(),
+                rows: kind_extent(table.constraint().as_ref())?,
+            }
+        }
+    })
+}
+
+fn kind_extent(literal: Option<&LiteralSyntax>) -> Result<CardinalitySpec, SourceSemanticError> {
+    literal.map_or(
+        Ok(CardinalitySpec::Dynamic { upper_bound: None }),
+        |literal| Ok(CardinalitySpec::Exact(kind_dimension(literal)?)),
+    )
+}
+
+fn kind_dimension(literal: &LiteralSyntax) -> Result<DimensionExpr, SourceSemanticError> {
+    let source = node_text(literal.syntax())?;
+    source
+        .parse::<u64>()
+        .map(DimensionExpr::Constant)
+        .map_err(|_| SourceSemanticError {
+            code: "source-semantics/unsupported-kind-dimension",
+            message: "kind extents require unsigned integer constants".to_owned(),
+            anchor: SourceSemanticAnchor::for_node(literal.syntax()),
+        })
+}
+
+fn missing_kind_child(syntax: &SyntaxNode, child: &str) -> SourceSemanticError {
+    SourceSemanticError {
+        code: "source-semantics/missing-typed-child",
+        message: format!("canonical {child} is missing"),
+        anchor: SourceSemanticAnchor::for_node(syntax),
     }
-    Ok(schema)
 }
 
 fn require_literal_schema(
