@@ -12,69 +12,10 @@ use mech_syntax::document::{
     TextSnapshot,
 };
 
-struct SemanticCase {
-    rule: &'static str,
-    source: &'static str,
-    final_operation: Option<&'static str>,
-}
-
-const SEMANTIC_CASES: &[SemanticCase] = &[
-    case("expression", "1 + 2", Some("math/add")),
-    case("factor", "1", None),
-    case("fancy-table", "╭─\n│a│\n│1│", Some("source/table")),
-    case("formula", "1 + 2", Some("math/add")),
-    case(
-        "fsm-pipe",
-        "#machine -> :next => :value",
-        Some("source/fsm"),
-    ),
-    case("function-call", "foo(1)", Some("source/call")),
-    case("inline-table", "|a<u8>|1|", Some("source/table")),
-    case("l1", "true && false", Some("logic/and")),
-    case("l2", "1 == 2", Some("compare/eq")),
-    case("l3", "1 + 2", Some("math/add")),
-    case("l4", "2 * 3", Some("math/mul")),
-    case("l5", "2 ^ 3", Some("math/pow")),
-    case("l6", "a ⋈ b", Some("table/join")),
-    case("l7", "{1} ∪ {2}", Some("set/union")),
-    case("literal", "1", None),
-    case("map", "{1:2}", Some("source/map")),
-    case("matrix", "[1 2]", Some("source/matrix")),
-    case(
-        "matrix-comprehension",
-        "[x | x <- xs]",
-        Some("matrix/comprehension"),
-    ),
-    case("negate-factor", "-1", Some("math/neg")),
-    case("not-factor", "!true", Some("logic/not")),
-    case("parenthetical-term", "(1 + 2)", Some("math/add")),
-    case("range-expression", "1..10", Some("range/exclusive")),
-    case("record", "{a:1}", Some("source/record")),
-    case("regular-table", "|a<u8>|\n|1|", Some("source/table")),
-    case("set", "{1,2}", Some("set/define")),
-    case(
-        "set-comprehension",
-        "{x | x <- xs}",
-        Some("set/comprehension"),
-    ),
-    case("slice", "x[1]", Some("access/index")),
-    case("structure", "[1]", Some("source/matrix")),
-    case("table", "|a<u8>|1|", Some("source/table")),
-    case("tuple", "(1,2)", Some("source/tuple")),
-    case("tuple-struct", ":some(1)", Some("source/tuple-struct")),
-    case("var", "x<u8>", None),
-];
-
-const fn case(
-    rule: &'static str,
-    source: &'static str,
-    final_operation: Option<&'static str>,
-) -> SemanticCase {
-    SemanticCase {
-        rule,
-        source,
-        final_operation,
-    }
+struct CertificationContract {
+    accepted: String,
+    disposition: String,
+    semantic_snapshot_hash: String,
 }
 
 fn repository_root() -> PathBuf {
@@ -106,7 +47,7 @@ fn expression(source: &str) -> ExpressionSyntax {
         .expect("canonical Expression")
 }
 
-fn certification_dispositions() -> BTreeMap<String, String> {
+fn certification_contracts() -> BTreeMap<String, CertificationContract> {
     let table = fs::read_to_string(
         repository_root().join("docs/design/grammar-audit/phase-2i-certification.tsv"),
     )
@@ -116,25 +57,81 @@ fn certification_dispositions() -> BTreeMap<String, String> {
         .skip(1)
         .map(|line| {
             let fields = line.split('\t').collect::<Vec<_>>();
-            assert_eq!(fields.len(), 12);
-            (fields[0].to_owned(), fields[8].to_owned())
+            assert_eq!(fields.len(), 14);
+            (
+                fields[0].to_owned(),
+                CertificationContract {
+                    accepted: serde_json::from_str(fields[1]).expect("accepted source JSON"),
+                    disposition: fields[9].to_owned(),
+                    semantic_snapshot_hash: fields[12].to_owned(),
+                },
+            )
         })
         .collect()
 }
 
+#[derive(Clone, Copy)]
+struct StableHash(u64);
+
+impl StableHash {
+    const fn new() -> Self {
+        Self(0xcbf29ce484222325)
+    }
+
+    fn field(&mut self, value: &str) {
+        for byte in (value.len() as u64).to_le_bytes() {
+            self.byte(byte);
+        }
+        for byte in value.bytes() {
+            self.byte(byte);
+        }
+    }
+
+    fn byte(&mut self, byte: u8) {
+        self.0 ^= u64::from(byte);
+        self.0 = self.0.wrapping_mul(0x100000001b3);
+    }
+}
+
+fn semantic_snapshot_hash(compiled: &mech_engine::CanonicalSourceProgram) -> u64 {
+    let mut hash = StableHash::new();
+    hash.field(&format!("program:{:#?}", compiled.program()));
+    hash.field(&format!("schemas:{:#?}", compiled.schemas()));
+    hash.field(&format!("constants:{:#?}", compiled.constants()));
+    hash.field(&format!("contracts:{:#?}", compiled.contracts()));
+    hash.field(&format!("source-map:{:#?}", compiled.source_map()));
+    match compiled.compile_artifact() {
+        Ok(artifact) => {
+            hash.field("artifact:ok");
+            hash.field(&format!("revision:{:?}", artifact.revision()));
+            hash.field(&format!("schemas:{:#?}", artifact.schemas()));
+            hash.field(&format!("constants:{:#?}", artifact.constants()));
+            hash.field(&format!("contracts:{:#?}", artifact.contracts()));
+            hash.field(&format!("requirements:{:#?}", artifact.requirements()));
+            hash.field(&format!("inputs:{:#?}", artifact.inputs()));
+            hash.field(&format!("slots:{:#?}", artifact.slots()));
+            hash.field(&format!("nodes:{:#?}", artifact.nodes()));
+            hash.field(&format!("bindings:{:#?}", artifact.bindings()));
+            hash.field(&format!("outputs:{:#?}", artifact.outputs()));
+            hash.field(&format!("constraints:{:#?}", artifact.constraints()));
+            hash.field(&format!(
+                "compute-regions:{:#?}",
+                artifact.compute_regions()
+            ));
+        }
+        Err(error) => hash.field(&format!("artifact:error:{error:?}")),
+    }
+    hash.0
+}
+
 #[test]
 fn every_executable_rule_has_specification_derived_program_evidence() {
-    let dispositions = certification_dispositions();
-    let cases = SEMANTIC_CASES
-        .iter()
-        .map(|case| (case.rule, case))
-        .collect::<BTreeMap<_, _>>();
+    let contracts = certification_contracts();
     let executable = PHASE_2I_SEMANTIC_RULES
         .iter()
         .filter(|rule| rule.disposition == Phase2iSemanticDisposition::Executable)
         .collect::<Vec<_>>();
     assert_eq!(executable.len(), 32);
-    assert_eq!(cases.len(), executable.len());
 
     for rule in PHASE_2I_SEMANTIC_RULES {
         let expected = match rule.disposition {
@@ -143,45 +140,45 @@ fn every_executable_rule_has_specification_derived_program_evidence() {
             Phase2iSemanticDisposition::CompileTime => "compile-time",
         };
         assert_eq!(
-            dispositions.get(rule.grammar_name).map(String::as_str),
+            contracts
+                .get(rule.grammar_name)
+                .map(|contract| contract.disposition.as_str()),
             Some(expected)
         );
     }
 
     for rule in executable {
-        let case = cases
+        let contract = contracts
             .get(rule.grammar_name)
-            .unwrap_or_else(|| panic!("missing semantic case for {}", rule.grammar_name));
-        let syntax = expression(case.source);
+            .unwrap_or_else(|| panic!("missing certification row for {}", rule.grammar_name));
+        let syntax = expression(&contract.accepted);
         let compiled = CanonicalSourceFrontend
             .compile_expression(&syntax)
-            .unwrap_or_else(|error| panic!("{} on {:?}: {error}", case.rule, case.source));
-        assert_eq!(compiled.program().outputs.len(), 1, "{}", case.rule);
+            .unwrap_or_else(|error| {
+                panic!("{} on {:?}: {error}", rule.grammar_name, contract.accepted)
+            });
+        assert_eq!(compiled.program().outputs.len(), 1, "{}", rule.grammar_name);
         assert_eq!(
             compiled.program().nodes.len(),
             compiled.contracts().len(),
             "{}",
-            case.rule
-        );
-        assert_eq!(
-            compiled
-                .source_map()
-                .nodes
-                .last()
-                .map(|node| node.operation.as_str()),
-            case.final_operation,
-            "{} on {:?}",
-            case.rule,
-            case.source
+            rule.grammar_name
         );
         assert_eq!(
             compiled.source_map().outputs[0].range,
             syntax.syntax().range(),
             "{}",
-            case.rule
+            rule.grammar_name
         );
-        compiled
-            .compile_artifact()
-            .unwrap_or_else(|error| panic!("{} artifact: {error:?}", case.rule));
+        let expected = contract
+            .semantic_snapshot_hash
+            .parse::<u64>()
+            .expect("executable semantic snapshot hash");
+        let actual = semantic_snapshot_hash(&compiled);
+        assert_eq!(
+            actual, expected,
+            "{} on {:?}",
+            rule.grammar_name, contract.accepted
+        );
     }
 }
