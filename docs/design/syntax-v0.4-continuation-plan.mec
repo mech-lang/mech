@@ -51,8 +51,8 @@ The machine-checked `grammar-audit/phase-2i-semantic-completion.tsv` record keep
 artifact readiness distinct from behavior demonstrated on a named target, so
 the FSM artifact cannot satisfy its unavailable resident-runtime obligation.
 
-The supported canonical roots are currently `Canonical + Grammar` and
-`Prototype + Document`. The shipping
+The supported canonical roots are `Canonical + Grammar` and
+`Canonical + Document`. The shipping
 `mech_syntax::parser::parse(&str) -> MResult<mech_core::Program>` entry point
 still uses Nom. Twenty-nine production calls across the CLI, formatter,
 resolver, runtime, engine, server, bundler, and WASM controller still select
@@ -369,6 +369,22 @@ Exit gate:
 - tools and engine source semantics cover the complete canonical fixture corpus;
 - malformed documents produce total snapshots and structured diagnostics; and
 - no product caller has switched early.
+
+Implementation record:
+
+- the specification generates the 114-rule document grammar, typed-node
+  inventory, accepted-source certification matrix, and registry activation;
+- all 114 document rules are certified, leaving only the 17 runtime-owned
+  interactive-command rows outside the document parser;
+- the canonical root preserves the complete source corpus, reports mismatched
+  fences and malformed documents structurally, and behaves identically across
+  contiguous and piece-backed source;
+- typed document views expose title front matter, sections, paragraphs, inline
+  Mech, and fenced blocks without copying source text;
+- engine document compilation handles canonical definitions and expressions in
+  source order, rejects recovered syntax, and returns an explicit error for
+  executable document units whose engine behavior is not implemented; and
+- product callers remain unchanged for the coordinated S8 source-path cutover.
 
 S8. Atomic product cutover and removal
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

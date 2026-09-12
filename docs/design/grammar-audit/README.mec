@@ -12,7 +12,7 @@ crate at that baseline. It documents existing behavior, not a parser redesign.
 R1–R6 Integration Rebase
 -------------------------------------------------------------------------------
 
-The syntax stack is rebased through S6 onto
+The syntax stack is rebased through S7 onto
 `integration/v0.4` at `535e4b245` (R1–R6 plus the combined integration fixes).
 S0-S3 recovery and typed-view gates and the S5 certification implementation
 are complete. S4 source semantics remains open. Comprehension, pattern, and FSM
@@ -33,6 +33,13 @@ registry is audit metadata and does not activate parser or runtime dispatch.
 S7
 completes the canonical Document root; S8 performs the production cutover and
 removes the Nom implementation and its lowerers.
+The S7 implementation adds 114 document rules and leaves 17 runtime-owned
+interactive-command rows outside document syntax.
+
+`s7-document-certification.tsv` records a specification-derived clean source,
+typed node policy, semantic status, and stable specification location for every
+document rule. `s7-dispositions.tsv` accounts for all 131 rows that entered S7:
+112 document dependencies, two maintained roots, and 17 historical commands.
 
 The 539 canonical rule IDs and Phase 0 inventory remain stable. Their live
 implementation audit records the intervening integration changes explicitly:

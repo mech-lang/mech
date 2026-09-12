@@ -1,0 +1,132 @@
+grammar-name	disposition	rationale
+abstract-el	document-dependency	Generated member of the canonical Document closure.
+activation-arm	document-dependency	Generated member of the canonical Document closure.
+activation-scope	document-dependency	Generated member of the canonical Document closure.
+alignment-separator	document-dependency	Generated member of the canonical Document closure.
+body	document-dependency	Generated member of the canonical Document closure.
+cd-rpl	historical-command	Runtime REPL requests own this command; it is not document syntax.
+center-alignment	document-dependency	Generated member of the canonical Document closure.
+check-list	document-dependency	Generated member of the canonical Document closure.
+check-list-item	document-dependency	Generated member of the canonical Document closure.
+checked-item	document-dependency	Generated member of the canonical Document closure.
+citation	document-dependency	Generated member of the canonical Document closure.
+clc-rpl	historical-command	Runtime REPL requests own this command; it is not document syntax.
+clear-rpl	historical-command	Runtime REPL requests own this command; it is not document syntax.
+code-block	document-dependency	Generated member of the canonical Document closure.
+code-rpl	historical-command	Runtime REPL requests own this command; it is not document syntax.
+code-terminal	document-dependency	Generated member of the canonical Document closure.
+context-send	document-dependency	Generated member of the canonical Document closure.
+docs-rpl	historical-command	Runtime REPL requests own this command; it is not document syntax.
+emphasis	document-dependency	Generated member of the canonical Document closure.
+empty-paragraph	document-dependency	Generated member of the canonical Document closure.
+enum-define	document-dependency	Generated member of the canonical Document closure.
+enum-variant	document-dependency	Generated member of the canonical Document closure.
+enum-variant-inline-kind	document-dependency	Generated member of the canonical Document closure.
+enum-variant-kind	document-dependency	Generated member of the canonical Document closure.
+error-block	document-dependency	Generated member of the canonical Document closure.
+eval-inline-mech-code	document-dependency	Generated member of the canonical Document closure.
+figure-item	document-dependency	Generated member of the canonical Document closure.
+figures	document-dependency	Generated member of the canonical Document closure.
+figures-row	document-dependency	Generated member of the canonical Document closure.
+float	document-dependency	Generated member of the canonical Document closure.
+float-sigil	document-dependency	Generated member of the canonical Document closure.
+footnote	document-dependency	Generated member of the canonical Document closure.
+fsm	document-dependency	Generated member of the canonical Document closure.
+fsm-arm	document-dependency	Generated member of the canonical Document closure.
+fsm-block-transition	document-dependency	Generated member of the canonical Document closure.
+fsm-comment-arm	document-dependency	Generated member of the canonical Document closure.
+fsm-declare	document-dependency	Generated member of the canonical Document closure.
+fsm-guard	document-dependency	Generated member of the canonical Document closure.
+fsm-guard-arm	document-dependency	Generated member of the canonical Document closure.
+fsm-implementation	document-dependency	Generated member of the canonical Document closure.
+fsm-specification	document-dependency	Generated member of the canonical Document closure.
+fsm-state-definition	document-dependency	Generated member of the canonical Document closure.
+fsm-state-definition-variables	document-dependency	Generated member of the canonical Document closure.
+fsm-statement-transition	document-dependency	Generated member of the canonical Document closure.
+fsm-transition	document-dependency	Generated member of the canonical Document closure.
+function-arg	document-dependency	Generated member of the canonical Document closure.
+function-define	document-dependency	Generated member of the canonical Document closure.
+function-define-match-arms	document-dependency	Generated member of the canonical Document closure.
+function-define-statements	document-dependency	Generated member of the canonical Document closure.
+function-match-arm	document-dependency	Generated member of the canonical Document closure.
+function-out-arg	document-dependency	Generated member of the canonical Document closure.
+function-out-args	document-dependency	Generated member of the canonical Document closure.
+help-rpl	historical-command	Runtime REPL requests own this command; it is not document syntax.
+highlight	document-dependency	Generated member of the canonical Document closure.
+hyperlink	document-dependency	Generated member of the canonical Document closure.
+idea-block	document-dependency	Generated member of the canonical Document closure.
+img	document-dependency	Generated member of the canonical Document closure.
+info-block	document-dependency	Generated member of the canonical Document closure.
+inline-mech-code	document-dependency	Generated member of the canonical Document closure.
+inline-paragraph	document-dependency	Generated member of the canonical Document closure.
+invariant-define	document-dependency	Generated member of the canonical Document closure.
+kind-define	document-dependency	Generated member of the canonical Document closure.
+left-alignment	document-dependency	Generated member of the canonical Document closure.
+load-rpl	historical-command	Runtime REPL requests own this command; it is not document syntax.
+ls-rpl	historical-command	Runtime REPL requests own this command; it is not document syntax.
+match-expression	document-dependency	Generated member of the canonical Document closure.
+mech-code	document-dependency	Generated member of the canonical Document closure.
+mech-code-alt	document-dependency	Generated member of the canonical Document closure.
+mechdown-list	document-dependency	Generated member of the canonical Document closure.
+mechdown-table	document-dependency	Generated member of the canonical Document closure.
+mechdown-table-header	document-dependency	Generated member of the canonical Document closure.
+mechdown-table-no-header	document-dependency	Generated member of the canonical Document closure.
+mechdown-table-row	document-dependency	Generated member of the canonical Document closure.
+mechdown-table-with-header	document-dependency	Generated member of the canonical Document closure.
+micro-mika	document-dependency	Generated member of the canonical Document closure.
+mika	document-dependency	Generated member of the canonical Document closure.
+mika-arm-left	document-dependency	Generated member of the canonical Document closure.
+mika-arm-right	document-dependency	Generated member of the canonical Document closure.
+mika-expression-inner	document-dependency	Generated member of the canonical Document closure.
+mika-eye-left	document-dependency	Generated member of the canonical Document closure.
+mika-eye-right	document-dependency	Generated member of the canonical Document closure.
+mika-nose	document-dependency	Generated member of the canonical Document closure.
+mika-section	document-dependency	Generated member of the canonical Document closure.
+mini-mika	document-dependency	Generated member of the canonical Document closure.
+no-alignment	document-dependency	Generated member of the canonical Document closure.
+not-mech-code	document-dependency	Generated member of the canonical Document closure.
+op-assign	document-dependency	Generated member of the canonical Document closure.
+option-map	document-dependency	Generated member of the canonical Document closure.
+option-mapping	document-dependency	Generated member of the canonical Document closure.
+option-value	document-dependency	Generated member of the canonical Document closure.
+ordered-list	document-dependency	Generated member of the canonical Document closure.
+ordered-list-item	document-dependency	Generated member of the canonical Document closure.
+paragraph	document-dependency	Generated member of the canonical Document closure.
+paragraph-element	document-dependency	Generated member of the canonical Document closure.
+paragraph-newline	document-dependency	Generated member of the canonical Document closure.
+parse	maintained-root	Public canonical Document root and its direct grammar alias.
+parse-mech	maintained-root	Public canonical Document root and its direct grammar alias.
+parse-repl-command	historical-command	Runtime REPL requests own this command; it is not document syntax.
+plan-rpl	historical-command	Runtime REPL requests own this command; it is not document syntax.
+profile-rpl	historical-command	Runtime REPL requests own this command; it is not document syntax.
+program	document-dependency	Generated member of the canonical Document closure.
+prompt	document-dependency	Generated member of the canonical Document closure.
+question-block	document-dependency	Generated member of the canonical Document closure.
+quit-rpl	historical-command	Runtime REPL requests own this command; it is not document syntax.
+quote-block	document-dependency	Generated member of the canonical Document closure.
+repl-identifier	historical-command	Runtime REPL requests own this command; it is not document syntax.
+right-alignment	document-dependency	Generated member of the canonical Document closure.
+save-rpl	historical-command	Runtime REPL requests own this command; it is not document syntax.
+section	document-dependency	Generated member of the canonical Document closure.
+section-element	document-dependency	Generated member of the canonical Document closure.
+slice-ref	document-dependency	Generated member of the canonical Document closure.
+statement	document-dependency	Generated member of the canonical Document closure.
+step-rpl	historical-command	Runtime REPL requests own this command; it is not document syntax.
+strikethrough	document-dependency	Generated member of the canonical Document closure.
+strong	document-dependency	Generated member of the canonical Document closure.
+sublist	document-dependency	Generated member of the canonical Document closure.
+subtitle	document-dependency	Generated member of the canonical Document closure.
+success-block	document-dependency	Generated member of the canonical Document closure.
+symbols-rpl	historical-command	Runtime REPL requests own this command; it is not document syntax.
+table-column	document-dependency	Generated member of the canonical Document closure.
+title	document-dependency	Generated member of the canonical Document closure.
+title-front-matter	document-dependency	Generated member of the canonical Document closure.
+tuple-destructure	document-dependency	Generated member of the canonical Document closure.
+ul-subtitle	document-dependency	Generated member of the canonical Document closure.
+unchecked-item	document-dependency	Generated member of the canonical Document closure.
+underline	document-dependency	Generated member of the canonical Document closure.
+unordered-list	document-dependency	Generated member of the canonical Document closure.
+unordered-list-item	document-dependency	Generated member of the canonical Document closure.
+variable-assign	document-dependency	Generated member of the canonical Document closure.
+warning-block	document-dependency	Generated member of the canonical Document closure.
+whos-rpl	historical-command	Runtime REPL requests own this command; it is not document syntax.
