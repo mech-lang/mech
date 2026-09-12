@@ -435,6 +435,7 @@ fn typed_access_hash(rule_name: &str, node: &SyntaxNode) -> u64 {
         RecursiveCoreSyntax::KindScalar(view) => {
             node!("name", view.name());
             node!("constraint", view.constraint());
+            node!("recovered-expression", view.recovered_expression());
         }
         RecursiveCoreSyntax::KindSet(view) => {
             token!("opening-brace", view.opening_brace());
@@ -1151,6 +1152,7 @@ fn assert_allowed_mech_import(path: &Path, declaration: &str) {
             "GreenElement",
             "GreenNode",
             "GreenToken",
+            "KindScalarSyntax",
             "KindSyntax",
             "KindValueSyntax",
             "LiteralSyntax",

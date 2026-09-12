@@ -410,7 +410,7 @@ fn slice_semantic_evidence_preserves_selection_roles_and_select_all_identity() {
         .collect::<Vec<_>>();
     assert_eq!(operations, ["access/scalar", "access/range"]);
     let tuple = compiled.program().nodes.last().expect("tuple result");
-    assert_eq!(tuple.operation.canonical_name(), "source/tuple");
+    assert_eq!(tuple.operation.canonical_name(), "core/composite-pack");
     assert_eq!(tuple.inputs.len(), 3);
     assert_eq!(tuple.inputs[2], SourceValue::Input(0));
     let identity = CanonicalSourceFrontend
