@@ -100,14 +100,17 @@ items also include their physical body offset. The census uses Rust syntax nodes
 for conditional exclusion, including match arms, inner attributes and nested
 `cfg_attr`. An exclusion requires proof that the node is unavailable without
 tests; unknown feature and target predicates remain production possibilities.
-Cargo's locked workspace metadata supplies library and binary targets, and Rust
-module declarations supply external files and `#[path]` module identities.
+Cargo's locked, all-feature dependency metadata supplies repository-local
+library and binary targets, including separate workspaces and optional packages.
+Rust module declarations supply external files and `#[path]` module identities;
+each file retains the compiling package's Cargo dependency names.
 A `tests.rs` filename or `tests` directory never proves a test-only module.
 
 The reference scan retains macro bodies and invocations, normalizes raw Rust
 identifiers and resolves relative `self`/`super` imports against declaring
-modules. It recognizes the product and syntax crate root re-exports while
-keeping `document::parser` distinct. Repository tests reject unlisted retiring
+modules. It recognizes Cargo-renamed dependencies and guards `extern crate self`
+aliases. Only the existing top-level root declarations receive re-export
+exemptions; `document::parser` remains distinct. Repository tests reject unlisted retiring
 parser calls, aliases, alternate source entry points such as `parse_mech`, and
 changes to the frozen 27 caller contracts and 29 calls. Existing declarations
 are removal evidence, not permission for additional entry points. Macro token

@@ -688,26 +688,43 @@ fn module_at(tokens: &[RustToken<'_>], index: usize, file_module: &[String]) -> 
     module
 }
 
-// Return a path relative to mech_syntax, resolving self/super against the
-// declaring Rust module (including #[path] modules supplied by the graph).
+type CrateNames = BTreeMap<String, ParserReexports>;
+
+fn default_crate_names() -> CrateNames {
+    BTreeMap::from([
+        ("mech_syntax".to_owned(), ParserReexports::SyntaxCrate),
+        ("mech".to_owned(), ParserReexports::RootCrate),
+    ])
+}
+
+// The syntax crate exports its parser module in full. The product exports a
+// smaller root surface plus the complete syntax crate under `syntax`.
+fn syntax_root_path(path: &[String], surface: ParserReexports) -> Option<Vec<String>> {
+    match surface {
+        ParserReexports::SyntaxCrate => Some(path.to_vec()),
+        ParserReexports::RootCrate => match path.first().map(String::as_str) {
+            Some("syntax") => Some(path[1..].to_vec()),
+            None | Some("parse" | "parse_mech" | "parser" | "*") => Some(path.to_vec()),
+            _ => None,
+        },
+        ParserReexports::None => None,
+    }
+}
+
+// Resolve external Cargo names and self/super against the declaring Rust
+// module. This preserves crate identity when a dependency is renamed.
 fn syntax_path(
     path: &[String],
     reexports: ParserReexports,
     module: &[String],
+    crate_names: &CrateNames,
 ) -> Option<Vec<String>> {
-    if path.first().is_some_and(|name| name == "mech_syntax") {
-        return Some(path[1..].to_vec());
+    if let Some(surface) = path.first().and_then(|name| crate_names.get(name)) {
+        return syntax_root_path(&path[1..], *surface);
     }
     if reexports == ParserReexports::RootCrate && path.first().is_some_and(|name| name == "syntax")
     {
         return Some(path[1..].to_vec());
-    }
-    if path.first().is_some_and(|name| name == "mech") {
-        let mut resolved = path[1..].to_vec();
-        if resolved.first().is_some_and(|name| name == "syntax") {
-            resolved.remove(0);
-        }
-        return Some(resolved);
     }
     if reexports == ParserReexports::None {
         return None;
@@ -730,12 +747,7 @@ fn syntax_path(
         _ => return None,
     }
     resolved.extend_from_slice(&path[cursor..]);
-    if reexports == ParserReexports::RootCrate
-        && resolved.first().is_some_and(|name| name == "syntax")
-    {
-        resolved.remove(0);
-    }
-    Some(resolved)
+    syntax_root_path(&resolved, reexports)
 }
 
 fn source_entrypoint(name: &str) -> bool {
@@ -751,6 +763,7 @@ fn parser_reference_len(
     reexports: ParserReexports,
     module: &[String],
     imported_parser: bool,
+    crate_names: &CrateNames,
 ) -> Option<usize> {
     // Never reinterpret a suffix of document::parser (or any other path) as
     // the retiring root parser module.
@@ -790,13 +803,10 @@ fn parser_reference_len(
     let resolved = if path.first().is_some_and(|name| name == "parser") && imported_parser {
         Some(path)
     } else {
-        syntax_path(&path, reexports, module)
+        syntax_path(&path, reexports, module, crate_names)
     }?;
     let entry = match resolved.as_slice() {
-        [name] => {
-            matches!(name.as_str(), "parse" | "parse_mech")
-                || reexports == ParserReexports::SyntaxCrate && source_entrypoint(name)
-        }
+        [name] => source_entrypoint(name),
         [parser, name] if parser == "parser" => source_entrypoint(name),
         _ => false,
     };
@@ -851,6 +861,7 @@ fn imports_retiring_parser(
     import: &[RustToken<'_>],
     reexports: ParserReexports,
     module: &[String],
+    crate_names: &CrateNames,
 ) -> bool {
     let source = compact_rust_header(import) + ";";
     let Ok(item) = syn::parse_str::<syn::ItemUse>(&source) else {
@@ -858,23 +869,18 @@ fn imports_retiring_parser(
         // metavariables). They cannot introduce an unreviewed syntax import.
         return import
             .iter()
-            .any(|token| matches!(token.text, "mech_syntax" | "mech"));
+            .any(|token| crate_names.contains_key(token.text));
     };
     let mut imports = Vec::new();
     flattened_imports(&item.tree, &[], &mut imports);
     imports.iter().any(|(path, alias)| {
-        let Some(resolved) = syntax_path(path, reexports, module) else {
+        let Some(resolved) = syntax_path(path, reexports, module, crate_names) else {
             return false;
         };
         match resolved.as_slice() {
             [] => alias.is_some(),
             [name] if name == "*" => path != &["crate".to_owned(), "*".to_owned()],
-            [name]
-                if matches!(name.as_str(), "parse" | "parse_mech")
-                    || reexports == ParserReexports::SyntaxCrate && source_entrypoint(name) =>
-            {
-                true
-            }
+            [name] if source_entrypoint(name) => true,
             [name] if name == "parser" => alias.is_some(),
             [name, ..] if name == "parser" => true,
             _ => false,
@@ -886,8 +892,9 @@ fn is_declared_root_parser_reexport(
     source_path: &str,
     import: &[RustToken<'_>],
     public_item: bool,
+    root_declaration: bool,
 ) -> bool {
-    if source_path != "src/lib.rs" || !public_item {
+    if source_path != "src/lib.rs" || !public_item || !root_declaration {
         return false;
     }
     let Ok(item) = syn::parse_str::<syn::ItemUse>(&(compact_rust_header(import) + ";")) else {
@@ -906,22 +913,29 @@ fn is_existing_syntax_parser_import(
     source_path: &str,
     import: &[RustToken<'_>],
     public_item: bool,
+    file_top_level: bool,
+    file_module: &[String],
 ) -> bool {
-    matches!(
-        (source_path, public_item),
-        ("src/syntax/src/lib.rs", true) | ("src/syntax/src/base.rs", false)
-    ) && import
-        .iter()
-        .map(|token| token.text)
-        .eq(["use", "crate", ":", ":", "parser", ":", ":", "*"])
+    file_top_level
+        && match (source_path, public_item) {
+            ("src/syntax/src/lib.rs", true) => file_module.is_empty(),
+            ("src/syntax/src/base.rs", false) => file_module == ["base"],
+            _ => false,
+        }
+        && import
+            .iter()
+            .map(|token| token.text)
+            .eq(["use", "crate", ":", ":", "parser", ":", ":", "*"])
 }
 
 fn is_declared_syntax_crate_reexport(
     source_path: &str,
     tokens: &[RustToken<'_>],
     index: usize,
+    root_declaration: bool,
 ) -> bool {
-    source_path == "src/lib.rs"
+    root_declaration
+        && source_path == "src/lib.rs"
         && index > 0
         && tokens[index - 1].text == "pub"
         && tokens
@@ -965,6 +979,7 @@ fn parser_import_bindings(
     tokens: &[RustToken<'_>],
     reexports: ParserReexports,
     file_module: &[String],
+    crate_names: &CrateNames,
 ) -> Vec<(usize, usize, bool)> {
     let mut bindings = Vec::new();
     let mut blocks = Vec::new();
@@ -992,9 +1007,13 @@ fn parser_import_bindings(
                         .or(path.last())
                         .is_some_and(|name| name == "parser")
                     {
-                        let retiring =
-                            syntax_path(&path, reexports, &module_at(tokens, index, file_module))
-                                .is_some_and(|path| path == ["parser".to_owned()]);
+                        let retiring = syntax_path(
+                            &path,
+                            reexports,
+                            &module_at(tokens, index, file_module),
+                            crate_names,
+                        )
+                        .is_some_and(|path| path == ["parser".to_owned()]);
                         let start = blocks.last().copied().unwrap_or(0);
                         let end = blocks
                             .last()
@@ -1016,6 +1035,7 @@ fn scan_rust_source(source: &str, source_path: &str, reexports: ParserReexports)
         source_path,
         reexports,
         &file_module_path(source_path, reexports),
+        &default_crate_names(),
     )
 }
 
@@ -1024,15 +1044,24 @@ fn scan_rust_source_in_module(
     source_path: &str,
     reexports: ParserReexports,
     file_module: &[String],
+    crate_names: &CrateNames,
 ) -> SourceScan {
     let tokens = production_tokens(source);
     let scopes = function_scopes(&tokens);
     let bare_parser = bare_parser_available(&tokens, source_path, reexports);
-    let parser_bindings = parser_import_bindings(&tokens, reexports, file_module);
+    let parser_bindings = parser_import_bindings(&tokens, reexports, file_module, crate_names);
     let mut scan = SourceScan::default();
     let mut imports = Vec::new();
 
+    let mut brace_depth = 0usize;
     for (index, token) in tokens.iter().enumerate() {
+        let file_top_level = brace_depth == 0;
+        let root_declaration = file_top_level && file_module.is_empty();
+        match token.text {
+            "{" => brace_depth += 1,
+            "}" => brace_depth = brace_depth.saturating_sub(1),
+            _ => {}
+        }
         let public_item = index > 0 && tokens[index - 1].text == "pub";
         if token.text == "use"
             && !token.raw
@@ -1044,10 +1073,23 @@ fn scan_rust_source_in_module(
                 .map_or(tokens.len(), |offset| index + offset);
             imports.push(index..end);
             let import = &tokens[index..end];
-            if imports_retiring_parser(import, reexports, &module_at(&tokens, index, file_module))
-                && !is_declared_root_parser_reexport(source_path, import, public_item)
-                && !is_existing_syntax_parser_import(source_path, import, public_item)
-            {
+            if imports_retiring_parser(
+                import,
+                reexports,
+                &module_at(&tokens, index, file_module),
+                crate_names,
+            ) && !is_declared_root_parser_reexport(
+                source_path,
+                import,
+                public_item,
+                root_declaration,
+            ) && !is_existing_syntax_parser_import(
+                source_path,
+                import,
+                public_item,
+                file_top_level,
+                file_module,
+            ) {
                 scan.prohibited_aliases.push(format!(
                     "line {} imports or aliases the retiring parser",
                     source_line(source, token.offset)
@@ -1055,16 +1097,18 @@ fn scan_rust_source_in_module(
             }
         }
         if token.text == "extern"
+            && !token.raw
             && tokens
                 .get(index + 1)
                 .is_some_and(|token| token.text == "crate")
-            && tokens
-                .get(index + 2)
-                .is_some_and(|token| matches!(token.text, "mech_syntax" | "mech"))
+            && tokens.get(index + 2).is_some_and(|token| {
+                crate_names.contains_key(token.text)
+                    || token.text == "self" && reexports != ParserReexports::None
+            })
             && tokens
                 .get(index + 3)
                 .is_some_and(|token| token.text == "as")
-            && !is_declared_syntax_crate_reexport(source_path, &tokens, index)
+            && !is_declared_syntax_crate_reexport(source_path, &tokens, index, root_declaration)
         {
             scan.prohibited_aliases.push(format!(
                 "line {} aliases the mech_syntax crate",
@@ -1079,25 +1123,29 @@ fn scan_rust_source_in_module(
             && (tokens[index].text == "parse"
                 || tokens[index].text == "parse_mech" && source_path != "src/syntax/src/parser.rs")
             && (index == 0 || !matches!(tokens[index - 1].text, "fn" | "." | ":"));
-        let Some(path_len) = matches!(
-            tokens[index].text,
-            "mech_syntax" | "mech" | "syntax" | "crate" | "self" | "super" | "parser"
-        )
-        .then(|| {
-            parser_reference_len(
-                &tokens,
-                index,
-                reexports,
-                &module_at(&tokens, index, file_module),
-                parser_bindings
-                    .iter()
-                    .filter(|(start, end, _)| *start <= index && index < *end)
-                    .max_by_key(|(start, _, _)| *start)
-                    .map_or(bare_parser, |(_, _, retiring)| *retiring),
-            )
-        })
-        .flatten()
-        .or_else(|| bare_reference.then_some(1)) else {
+        let qualified = crate_names.contains_key(tokens[index].text)
+            || matches!(
+                tokens[index].text,
+                "syntax" | "crate" | "self" | "super" | "parser"
+            );
+        let Some(path_len) = qualified
+            .then(|| {
+                parser_reference_len(
+                    &tokens,
+                    index,
+                    reexports,
+                    &module_at(&tokens, index, file_module),
+                    parser_bindings
+                        .iter()
+                        .filter(|(start, end, _)| *start <= index && index < *end)
+                        .max_by_key(|(start, _, _)| *start)
+                        .map_or(bare_parser, |(_, _, retiring)| *retiring),
+                    crate_names,
+                )
+            })
+            .flatten()
+            .or_else(|| bare_reference.then_some(1))
+        else {
             index += 1;
             continue;
         };
@@ -1132,51 +1180,59 @@ fn scan_rust_source_in_module(
     scan
 }
 
+fn cargo_metadata(root: &Path) -> serde_json::Value {
+    let output = std::process::Command::new(env!("CARGO"))
+        .args([
+            "metadata",
+            "--format-version",
+            "1",
+            "--all-features",
+            "--offline",
+            "--locked",
+        ])
+        .current_dir(root)
+        .output()
+        .expect("run locked dependency metadata");
+    assert!(
+        output.status.success(),
+        "dependency metadata failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    serde_json::from_slice(&output.stdout).expect("dependency metadata JSON")
+}
+
 fn workspace_metadata(root: &Path) -> &'static serde_json::Value {
     static METADATA: std::sync::OnceLock<serde_json::Value> = std::sync::OnceLock::new();
-    METADATA.get_or_init(|| {
-        let output = std::process::Command::new(env!("CARGO"))
-            .args([
-                "metadata",
-                "--format-version",
-                "1",
-                "--no-deps",
-                "--offline",
-                "--locked",
-            ])
-            .current_dir(root)
-            .output()
-            .expect("run locked workspace metadata");
-        assert!(
-            output.status.success(),
-            "workspace metadata failed: {}",
-            String::from_utf8_lossy(&output.stderr)
-        );
-        serde_json::from_slice(&output.stdout).expect("workspace metadata JSON")
-    })
+    METADATA.get_or_init(|| cargo_metadata(root))
 }
 
-fn workspace_source_roots(root: &Path) -> BTreeSet<PathBuf> {
-    workspace_metadata(root)["packages"]
+fn local_packages<'a>(
+    root: &Path,
+    metadata: &'a serde_json::Value,
+) -> impl Iterator<Item = &'a serde_json::Value> {
+    let root = root.to_owned();
+    metadata["packages"]
         .as_array()
-        .expect("workspace packages")
+        .expect("resolved packages")
         .iter()
-        .filter_map(|package| {
-            let source = Path::new(package["manifest_path"].as_str().expect("manifest path"))
-                .parent()
-                .expect("package directory")
-                .join("src");
-            source.is_dir().then_some(source)
+        .filter(move |package| {
+            Path::new(package["manifest_path"].as_str().expect("manifest path")).starts_with(&root)
         })
-        .collect()
 }
 
-fn production_target_roots(root: &Path) -> BTreeSet<PathBuf> {
-    workspace_metadata(root)["packages"]
+fn package_source_roots(package: &serde_json::Value) -> BTreeSet<PathBuf> {
+    let source = Path::new(package["manifest_path"].as_str().expect("manifest path"))
+        .parent()
+        .expect("package directory")
+        .join("src");
+    source.is_dir().then_some(source).into_iter().collect()
+}
+
+fn package_target_roots(package: &serde_json::Value) -> BTreeSet<PathBuf> {
+    package["targets"]
         .as_array()
-        .expect("workspace packages")
+        .expect("package targets")
         .iter()
-        .flat_map(|package| package["targets"].as_array().expect("package targets"))
         .filter(|target| {
             target["kind"]
                 .as_array()
@@ -1198,6 +1254,42 @@ fn production_target_roots(root: &Path) -> BTreeSet<PathBuf> {
                 })
         })
         .map(|target| PathBuf::from(target["src_path"].as_str().expect("target source")))
+        .collect()
+}
+
+fn package_crate_names(package: &serde_json::Value) -> CrateNames {
+    // Metadata resolves workspace dependency inheritance, target conditions,
+    // renamed package keys and optional dependencies without source spelling
+    // guesses. Keep every production configuration in the census.
+    package["dependencies"]
+        .as_array()
+        .expect("package dependencies")
+        .iter()
+        .filter(|dependency| dependency["kind"].as_str() != Some("dev"))
+        .filter_map(|dependency| {
+            let surface = match dependency["name"].as_str()? {
+                "mech-syntax" => ParserReexports::SyntaxCrate,
+                "mech" => ParserReexports::RootCrate,
+                _ => return None,
+            };
+            let name = dependency["rename"]
+                .as_str()
+                .or(dependency["name"].as_str())
+                .expect("dependency name");
+            Some((name.replace('-', "_"), surface))
+        })
+        .collect()
+}
+
+fn workspace_source_roots(root: &Path) -> BTreeSet<PathBuf> {
+    local_packages(root, workspace_metadata(root))
+        .flat_map(package_source_roots)
+        .collect()
+}
+
+fn production_target_roots(root: &Path) -> BTreeSet<PathBuf> {
+    local_packages(root, workspace_metadata(root))
+        .flat_map(package_target_roots)
         .collect()
 }
 
@@ -1436,51 +1528,56 @@ fn parser_reexports(root: &Path, path: &Path) -> ParserReexports {
     ParserReexports::None
 }
 
-fn discovered_production_calls() -> (BTreeMap<(String, String), usize>, Vec<String>) {
-    let root = repository_root();
-    let files = production_source_modules(
-        &workspace_source_roots(&root),
-        &production_target_roots(&root),
-    );
+fn discovered_calls_in_packages(
+    root: &Path,
+    metadata: &serde_json::Value,
+) -> (BTreeMap<(String, String), usize>, Vec<String>) {
     let mut calls = BTreeMap::new();
-    let mut prohibited_aliases = Vec::new();
-    for (path, modules) in files {
-        let relative = path
-            .strip_prefix(&root)
-            .expect("source path is below repository root")
-            .to_string_lossy()
-            .replace('\\', "/");
-        let source = fs::read_to_string(&path).expect("read Rust source");
-        let mut scan = SourceScan::default();
-        for module in modules {
-            let contextual = scan_rust_source_in_module(
-                &source,
-                &relative,
-                parser_reexports(&root, &path),
-                &module,
-            );
-            scan.prohibited_aliases
-                .extend(contextual.prohibited_aliases);
-            for (caller, count) in contextual.calls {
-                let current = scan.calls.entry(caller).or_insert(0);
-                *current = (*current).max(count);
+    let mut prohibited_aliases = BTreeSet::new();
+    for package in local_packages(root, metadata) {
+        let manifest = Path::new(package["manifest_path"].as_str().expect("manifest path"));
+        let reexports = parser_reexports(root, manifest);
+        let crate_names = package_crate_names(package);
+        let files = production_source_modules(
+            &package_source_roots(package),
+            &package_target_roots(package),
+        );
+        for (path, modules) in files {
+            let relative = path
+                .strip_prefix(root)
+                .expect("source path is below repository root")
+                .to_string_lossy()
+                .replace('\\', "/");
+            let source = fs::read_to_string(&path).expect("read Rust source");
+            // #[path] source inherits the crate that compiles it, not the
+            // nearest manifest to the physical source file. A shared module is
+            // checked in each compiling crate's namespace; physical calls count once.
+            for module in modules {
+                let scan = scan_rust_source_in_module(
+                    &source,
+                    &relative,
+                    reexports,
+                    &module,
+                    &crate_names,
+                );
+                prohibited_aliases.extend(
+                    scan.prohibited_aliases
+                        .into_iter()
+                        .map(|violation| format!("{relative}:{violation}")),
+                );
+                for (caller, count) in scan.calls {
+                    let current = calls.entry((relative.clone(), caller)).or_insert(0);
+                    *current = (*current).max(count);
+                }
             }
         }
-        prohibited_aliases.extend(
-            scan.prohibited_aliases
-                .into_iter()
-                .map(|violation| format!("{relative}:{violation}")),
-        );
-        for (caller, count) in scan.calls {
-            assert!(
-                calls
-                    .insert((relative.clone(), caller.clone()), count)
-                    .is_none(),
-                "duplicate source/caller scan result for {relative}::{caller}"
-            );
-        }
     }
-    (calls, prohibited_aliases)
+    (calls, prohibited_aliases.into_iter().collect())
+}
+
+fn discovered_production_calls() -> (BTreeMap<(String, String), usize>, Vec<String>) {
+    let root = repository_root();
+    discovered_calls_in_packages(&root, workspace_metadata(&root))
 }
 
 #[test]
@@ -2218,6 +2315,19 @@ impl CensusFixture {
         fs::write(&path, source).unwrap();
         path
     }
+    fn metadata(&self) -> serde_json::Value {
+        let output = std::process::Command::new(env!("CARGO"))
+            .args(["generate-lockfile", "--offline"])
+            .current_dir(&self.0)
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        cargo_metadata(&self.0)
+    }
     fn modules(&self) -> BTreeMap<PathBuf, BTreeSet<Vec<String>>> {
         production_source_modules(
             &BTreeSet::from([self.0.clone()]),
@@ -2308,7 +2418,8 @@ fn production_module_graph_follows_path_attributes_and_rust_module_names() {
                 &fs::read_to_string(&renamed).unwrap(),
                 "tests/renamed.rs",
                 ParserReexports::RootCrate,
-                module
+                module,
+                &default_crate_names(),
             )
             .prohibited_aliases
             .is_empty()
@@ -2440,4 +2551,204 @@ fn path_attributed_files_resolve_descendants_from_their_owned_directory() {
         "#![cfg(test)]\nfn hidden() { mech_syntax::parse(source); }",
     );
     assert!(!fixture.modules().contains_key(&child));
+}
+
+#[test]
+fn new_review_root_alternate_entrypoints_are_guarded() {
+    for entry in ["program", "mech_code", "mech_code_alt"] {
+        for source in [
+            format!("fn run() {{ mech_syntax::{entry}(source); }}"),
+            format!("use mech_syntax::{entry}; fn run() {{ {entry}(source); }}"),
+        ] {
+            let scan = scan_rust_source(&source, "src/consumer.rs", ParserReexports::None);
+            assert!(!scan.prohibited_aliases.is_empty(), "{source}");
+        }
+    }
+}
+
+#[test]
+fn new_review_cargo_dependency_aliases_are_guarded() {
+    let fixture = CensusFixture::new();
+    fixture.write(
+        "Cargo.toml",
+        r#"
+[package]
+name = "consumer"
+version = "0.0.0"
+edition = "2024"
+[workspace]
+members = ["syntax", "product"]
+[dependencies]
+legacy-syntax = { package = "mech-syntax", path = "syntax" }
+product = { package = "mech", path = "product" }
+"#,
+    );
+    fixture.write(
+        "syntax/Cargo.toml",
+        "[package]\nname = \"mech-syntax\"\nversion = \"0.0.0\"\nedition = \"2024\"\n",
+    );
+    fixture.write(
+        "syntax/src/lib.rs",
+        "pub fn parse(_: &str) {} pub mod document { pub mod parser {} }",
+    );
+    fixture.write(
+        "product/Cargo.toml",
+        "[package]\nname = \"mech\"\nversion = \"0.0.0\"\nedition = \"2024\"\n",
+    );
+    fixture.write("product/src/lib.rs", "");
+    fixture.write(
+        "src/lib.rs",
+        "#[path = \"../syntax/shared.rs\"] mod shared;",
+    );
+    fixture.write(
+        "syntax/shared.rs",
+        "fn run() { legacy_syntax::parse(source); product::parse(source); }",
+    );
+    let metadata = fixture.metadata();
+    let (calls, aliases) = discovered_calls_in_packages(&fixture.0, &metadata);
+    assert_eq!(
+        calls,
+        BTreeMap::from([(("syntax/shared.rs".to_owned(), "run".to_owned()), 2)])
+    );
+    assert!(aliases.is_empty(), "{aliases:?}");
+    let package = local_packages(&fixture.0, &metadata)
+        .find(|package| package["name"] == "consumer")
+        .unwrap();
+    let names = package_crate_names(package);
+    for source in [
+        "use legacy_syntax::parse; fn run() { parse(source); }",
+        "extern crate legacy_syntax as old; fn run() { old::parse(source); }",
+        "fn run() { legacy_syntax::program(source); }",
+        "fn run() { product::syntax::mech_code(source); }",
+        "use product::parser as old; fn run() { old::parse(source); }",
+    ] {
+        let scan =
+            scan_rust_source_in_module(source, "src/lib.rs", ParserReexports::None, &[], &names);
+        assert!(!scan.prohibited_aliases.is_empty(), "{source}");
+    }
+    for source in [
+        "use legacy_syntax::document::parser as canonical; fn run() { canonical::parse(source); }",
+        "use product::syntax::document::parser as canonical; fn run() { canonical::parse(source); }",
+        "fn run() { product::program(source); }",
+    ] {
+        let scan =
+            scan_rust_source_in_module(source, "src/lib.rs", ParserReexports::None, &[], &names);
+        assert!(scan.calls.is_empty(), "{source}");
+        assert!(scan.prohibited_aliases.is_empty(), "{source}");
+    }
+}
+
+#[test]
+fn new_review_current_crate_aliases_are_guarded() {
+    for (path, reexports) in [
+        ("src/lib.rs", ParserReexports::RootCrate),
+        ("src/syntax/src/lib.rs", ParserReexports::SyntaxCrate),
+    ] {
+        let scan = scan_rust_source(
+            "extern crate self as legacy; fn run() { legacy::parse(source); }",
+            path,
+            reexports,
+        );
+        assert!(!scan.prohibited_aliases.is_empty(), "{path}");
+    }
+}
+
+#[test]
+fn new_review_local_production_dependencies_are_discovered() {
+    let root = repository_root();
+    let roots = workspace_source_roots(&root);
+    let targets = production_target_roots(&root);
+    for package in [
+        "math",
+        "compare",
+        "logic",
+        "range",
+        "matrix",
+        "set",
+        "string",
+        "stats",
+        "combinatorics",
+    ] {
+        assert!(
+            roots.contains(&root.join(format!("machines/{package}/src"))),
+            "{package}"
+        );
+        assert!(
+            targets.contains(&root.join(format!("machines/{package}/src/lib.rs"))),
+            "{package}"
+        );
+    }
+}
+
+#[test]
+fn new_review_reexport_exemptions_require_root_declarations() {
+    for (path, reexports, declaration) in [
+        (
+            "src/lib.rs",
+            ParserReexports::RootCrate,
+            "pub use mech_syntax::parse;",
+        ),
+        (
+            "src/lib.rs",
+            ParserReexports::RootCrate,
+            "pub extern crate mech_syntax as syntax;",
+        ),
+        (
+            "src/syntax/src/lib.rs",
+            ParserReexports::SyntaxCrate,
+            "pub use crate::parser::*;",
+        ),
+    ] {
+        let source = format!("mod nested {{ {declaration} fn run() {{ parse(source); }} }}");
+        let scan = scan_rust_source(&source, path, reexports);
+        assert!(!scan.prohibited_aliases.is_empty(), "{path}: {source}");
+    }
+}
+
+#[test]
+fn production_discovery_includes_inactive_optional_local_workspaces() {
+    let fixture = CensusFixture::new();
+    fixture.write(
+        "Cargo.toml",
+        r#"
+[package]
+name = "consumer"
+version = "0.0.0"
+edition = "2024"
+[workspace]
+exclude = ["machine", "syntax"]
+[dependencies]
+optional-machine = { package = "local-machine", path = "machine", optional = true }
+"#,
+    );
+    fixture.write("src/lib.rs", "");
+    fixture.write(
+        "machine/Cargo.toml",
+        r#"
+[package]
+name = "local-machine"
+version = "0.0.0"
+edition = "2024"
+[workspace]
+[dependencies]
+renamed = { package = "mech-syntax", path = "../syntax" }
+"#,
+    );
+    fixture.write(
+        "machine/src/lib.rs",
+        "#[cfg(feature = \"future\")] fn added() { renamed::parse(source); }",
+    );
+    fixture.write(
+        "syntax/Cargo.toml",
+        "[package]\nname = \"mech-syntax\"\nversion = \"0.0.0\"\nedition = \"2024\"\n[workspace]\n",
+    );
+    fixture.write("syntax/src/lib.rs", "pub fn parse(_: &str) {}");
+    let metadata = fixture.metadata();
+    assert_eq!(local_packages(&fixture.0, &metadata).count(), 3);
+    let (calls, aliases) = discovered_calls_in_packages(&fixture.0, &metadata);
+    assert_eq!(
+        calls,
+        BTreeMap::from([(("machine/src/lib.rs".to_owned(), "added".to_owned()), 1)])
+    );
+    assert!(aliases.is_empty(), "{aliases:?}");
 }
