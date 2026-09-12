@@ -210,7 +210,7 @@ impl RuntimeResidentProviderBinding {
         )
     }
 
-    #[cfg(any(test, feature = "resident-routing-source"))]
+    #[cfg(any(test, feature = "resident-routing"))]
     pub(crate) fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         invoke_extension(
             format!("resource provider `{}`", self.scheme),
