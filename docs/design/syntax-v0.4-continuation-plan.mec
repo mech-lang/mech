@@ -1,12 +1,12 @@
 Syntax v0.4 Continuation Plan
 ===============================================================================
 
-Status: S0-S5 complete; S6 atomic Phase 2I activation is next.
+Status: S0-S6 complete; S7 canonical document-root completion is next.
 
 Planning baseline: `feature/syntax` at `4560e5e6c`, rebased onto
 `integration/v0.4` after the R1-R6 stack. Pull request 812 is green at this
-baseline. This document changes the delivery plan only; it does not activate a
-rule or change the shipping parser.
+baseline. This document records the current staged delivery plan and completed
+gates.
 
 This plan supersedes the old Phase 2I-D/2I-E sequence. The refactor has one
 language authority and one final source path. Recovery, typed syntax, source
@@ -19,21 +19,18 @@ the atomic product cutover have independent gates.
 The canonical inventory contains exactly 539 rules:
 
 ```text
-canonical syntax complete  328
-not yet implemented        211
+canonical syntax certified 408
+not yet implemented        131
                            ---
 total                      539
 ```
 
-The completed phases cover 328 / 539 rules. The generated Phase 2I recursive
-component contains 80 of the 211 unported rules. Phase 2I-C recognizes clean
-input for all 80 rules with the canonical event parser, but activates none of
-them. Those rows remain `unported` with no phase assignment.
+The completed phases cover 408 / 539 rules. The generated Phase 2I recursive
+component contains 80 rules and is active as one certified component.
 
-The component now has local malformed-input recovery, complete typed red-tree
-views, engine-owned source semantics, and canonical certification for all 80
-direct roots. The registry remains inactive until S6 performs the atomic status
-transition.
+The component has local malformed-input recovery, complete typed red-tree views,
+engine-owned source semantics, and canonical certification for all 80 direct
+roots. S6 applied the registry transition atomically.
 
 The supported canonical roots are currently `Canonical + Grammar` and
 `Prototype + Document`. The shipping
@@ -88,9 +85,9 @@ CLI classification               -> typed document structure
 incremental/editor consumers     -> SyntaxSnapshot and diagnostics
 ```
 
-There is no rule-by-rule translation to `mech_core::Program`, no compatibility
-lowering tree, and no second parser authority. The final product cutover removes
-the old route instead of retaining a fallback or shadow implementation.
+There is no rule-by-rule translation to `mech_core::Program`, no parallel
+syntax-to-value tree, and no second parser authority. The final product cutover
+removes the old route without retaining a fallback or shadow implementation.
 
 3. Non-goals
 -------------------------------------------------------------------------------
@@ -290,11 +287,9 @@ Update `ports.tsv` for all 80 rules in one change and regenerate the canonical
 port registry. Each member becomes Phase 2I with certified syntax, typed views,
 recovery, and source-semantic disposition.
 
-Replace the registry's pre-plan `lowering-status` field with an explicit
-`semantic-status` field before assigning Phase 2I. Replace the ambiguous
-`parity-verified` syntax label with `certified`. Existing closed phases are
-reclassified from their canonical evidence; the retiring lowerers are not a
-status source.
+The registry now exposes `semantic-status` and the single `certified` syntax
+state for implemented rules. Existing closed phases are classified from their
+canonical evidence, and Phase 2I is assigned as one complete component.
 
 Expected inventory after activation:
 
@@ -419,5 +414,5 @@ exposes two selectable source paths.
 The syntax continuation is complete when the canonical document parser is the
 only production source parser, all 539 canonical rules have a current reviewed
 disposition, tools consume canonical typed syntax, execution consumes the
-engine-owned source-semantic path, and Nom plus compatibility lowering are
-absent from production dependencies.
+engine-owned source-semantic path, and the old parser implementation is absent
+from production dependencies.

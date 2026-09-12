@@ -106,7 +106,7 @@ fn port_names() -> BTreeSet<String> {
     assert_eq!(
         lines.next(),
         Some(
-            "grammar-name\tfamily\tsyntax-status\tlowering-status\t\
+            "grammar-name\tfamily\tsyntax-status\tsemantic-status\t\
              node-policy\tphase\tnotes"
         )
     );

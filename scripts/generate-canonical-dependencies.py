@@ -43,7 +43,7 @@ PORT_COLUMNS = [
     "grammar-name",
     "family",
     "syntax-status",
-    "lowering-status",
+    "semantic-status",
     "node-policy",
     "phase",
     "notes",

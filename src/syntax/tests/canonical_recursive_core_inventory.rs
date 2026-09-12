@@ -7,10 +7,10 @@ const EXPECTED_PHASE_2I_RULES: usize = 80;
 const EXPECTED_PHASE_2I_COMPONENTS: usize = 1;
 const DEPENDENCY_HEADER: &str = "grammar-name\tdirect-children\tdirect-parents";
 const SCC_HEADER: &str = "component-id\tcomponent-size\trecursive\tmembers\t\
-                          outgoing-unported-components\toutgoing-ported-rules";
+                          outgoing-unported-components\toutgoing-certified-rules";
 const PHASE_HEADER: &str = "grammar-name\tfamily\tcomponent-id\tcomponent-size\t\
                             recursive-component\tsame-component-children\tclosure-children\t\
-                            ported-external-children";
+                            certified-external-children";
 
 const ANCHORS: &[&str] = &[
     "expression",
@@ -39,7 +39,7 @@ const ANCHORS: &[&str] = &[
 struct Port {
     family: String,
     syntax: String,
-    lowering: String,
+    semantic: String,
     policy: String,
     phase: String,
 }
@@ -51,7 +51,7 @@ struct SccRow {
     recursive: bool,
     members: BTreeSet<String>,
     outgoing_unported: BTreeSet<String>,
-    outgoing_ported: BTreeSet<String>,
+    outgoing_certified: BTreeSet<String>,
 }
 
 #[derive(Clone, Debug)]
@@ -62,7 +62,7 @@ struct PhaseRow {
     recursive: bool,
     same_component: BTreeSet<String>,
     closure_children: BTreeSet<String>,
-    ported_external: BTreeSet<String>,
+    certified_external: BTreeSet<String>,
 }
 
 fn repository_root() -> PathBuf {
@@ -168,7 +168,7 @@ fn ports() -> BTreeMap<String, Port> {
     assert_eq!(
         lines.next(),
         Some(
-            "grammar-name\tfamily\tsyntax-status\tlowering-status\t\
+            "grammar-name\tfamily\tsyntax-status\tsemantic-status\t\
              node-policy\tphase\tnotes"
         )
     );
@@ -187,7 +187,7 @@ fn ports() -> BTreeMap<String, Port> {
                     Port {
                         family: row[1].to_owned(),
                         syntax: row[2].to_owned(),
-                        lowering: row[3].to_owned(),
+                        semantic: row[3].to_owned(),
                         policy: row[4].to_owned(),
                         phase: row[5].to_owned(),
                     },
@@ -226,7 +226,7 @@ fn scc_report() -> BTreeMap<String, SccRow> {
             recursive: parse_bool(row[2]),
             members,
             outgoing_unported: parse_name_list(row[4]),
-            outgoing_ported: parse_name_list(row[5]),
+            outgoing_certified: parse_name_list(row[5]),
         };
         assert!(rows.insert(row[0].to_owned(), value).is_none());
     }
@@ -255,7 +255,7 @@ fn phase_report() -> BTreeMap<String, PhaseRow> {
             recursive: parse_bool(row[4]),
             same_component: parse_name_list(row[5]),
             closure_children: parse_name_list(row[6]),
-            ported_external: parse_name_list(row[7]),
+            certified_external: parse_name_list(row[7]),
         };
         assert!(rows.insert(row[0].to_owned(), value).is_none());
     }
@@ -338,32 +338,8 @@ fn is_unported(port: &Port) -> bool {
     port.syntax == "unported"
 }
 
-fn is_implemented(port: &Port) -> bool {
-    matches!(port.syntax.as_str(), "syntax-ported" | "parity-verified")
-}
-
-fn ordinary_closure(
-    graph: &BTreeMap<String, BTreeSet<String>>,
-    ports: &BTreeMap<String, Port>,
-) -> (BTreeSet<String>, BTreeSet<String>) {
-    let mut closure = BTreeSet::new();
-    let mut external = BTreeSet::new();
-    let mut pending = vec!["expression".to_owned()];
-    while let Some(node) = pending.pop() {
-        if is_implemented(&ports[&node]) {
-            external.insert(node);
-            continue;
-        }
-        assert!(
-            is_unported(&ports[&node]),
-            "invalid syntax status for {node}"
-        );
-        if !closure.insert(node.clone()) {
-            continue;
-        }
-        pending.extend(graph[&node].iter().cloned());
-    }
-    (closure, external)
+fn is_certified(port: &Port) -> bool {
+    port.syntax == "certified"
 }
 
 #[test]
@@ -374,7 +350,8 @@ fn report_schemas_ordering_and_uniqueness_are_exact() {
     assert_eq!(graph.keys().cloned().collect::<BTreeSet<_>>(), inventory);
     assert_eq!(ports.keys().cloned().collect::<BTreeSet<_>>(), inventory);
 
-    let sccs = scc_report();
+    let components = components(&graph);
+    let by_rule = component_by_rule(&components);
     let phase = phase_report();
     assert_eq!(phase.len(), EXPECTED_PHASE_2I_RULES);
     let phase_components = phase
@@ -383,10 +360,15 @@ fn report_schemas_ordering_and_uniqueness_are_exact() {
         .collect::<BTreeSet<_>>();
     assert_eq!(phase_components.len(), EXPECTED_PHASE_2I_COMPONENTS);
     for (name, row) in &phase {
-        let component = &sccs[&row.component_id];
-        assert!(component.members.contains(name));
-        assert_eq!(row.component_size, component.size);
-        assert_eq!(row.recursive, component.recursive);
+        let component_index = by_rule[name];
+        let component = &components[component_index];
+        assert!(component.contains(name));
+        assert_eq!(row.component_id, format!("SCC-{:04}", component_index + 1));
+        assert_eq!(row.component_size, component.len());
+        assert_eq!(
+            row.recursive,
+            component.len() > 1 || graph[name].contains(name)
+        );
     }
 }
 
@@ -430,13 +412,14 @@ fn kosaraju_independently_recomputes_every_unported_component() {
         let component = &components[by_rule[name]];
         let row = reported_by_member[name];
         assert_eq!(&row.members, component, "SCC membership for {name}");
+        assert_eq!(row.size, component.len(), "SCC size for {name}");
         let recursive = component.len() > 1 || graph[name].contains(name);
         assert_eq!(row.recursive, recursive, "recursive flag for {name}");
     }
 
     for row in report.values() {
         let mut outgoing_unported = BTreeSet::new();
-        let mut outgoing_ported = BTreeSet::new();
+        let mut outgoing_certified = BTreeSet::new();
         for member in &row.members {
             for child in &graph[member] {
                 if row.members.contains(child) {
@@ -446,8 +429,8 @@ fn kosaraju_independently_recomputes_every_unported_component() {
                     let target = &components[by_rule[child]];
                     outgoing_unported.insert(reported_id_by_component[target].clone());
                 } else {
-                    assert!(is_implemented(&ports[child]));
-                    outgoing_ported.insert(child.clone());
+                    assert!(is_certified(&ports[child]));
+                    outgoing_certified.insert(child.clone());
                 }
             }
         }
@@ -457,55 +440,35 @@ fn kosaraju_independently_recomputes_every_unported_component() {
             row.id
         );
         assert_eq!(
-            row.outgoing_ported, outgoing_ported,
-            "ported dependencies for {}",
+            row.outgoing_certified, outgoing_certified,
+            "certified dependencies for {}",
             row.id
         );
     }
 }
 
 #[test]
-fn expression_root_closure_is_exact_and_dependency_closed() {
+fn expression_root_certification_is_exact_and_dependency_closed() {
     let graph = dependencies();
     let ports = ports();
     let phase = phase_report();
     let phase_names = phase.keys().cloned().collect::<BTreeSet<_>>();
-    let (closure, external) = ordinary_closure(&graph, &ports);
-    assert_eq!(closure, phase_names);
-
     let components = components(&graph);
     let by_rule = component_by_rule(&components);
     let root_component = by_rule["expression"];
-    let mut included_components = BTreeSet::new();
-    let mut pending = vec![root_component];
-    while let Some(index) = pending.pop() {
-        if !included_components.insert(index) {
-            continue;
-        }
-        assert!(
-            components[index]
-                .iter()
-                .all(|name| is_unported(&ports[name]))
-        );
-        for member in &components[index] {
-            for child in &graph[member] {
-                let target = by_rule[child];
-                if target != index && is_unported(&ports[child]) {
-                    pending.push(target);
-                }
-            }
-        }
-    }
-    let scc_closure = included_components
+    assert_eq!(components[root_component], phase_names);
+    assert!(phase_names.iter().all(|name| is_certified(&ports[name])));
+
+    let external = phase_names
         .iter()
-        .flat_map(|index| components[*index].iter().cloned())
+        .flat_map(|name| graph[name].iter())
+        .filter(|child| !phase_names.contains(*child))
+        .cloned()
         .collect::<BTreeSet<_>>();
-    assert_eq!(scc_closure, phase_names);
-    assert_eq!(included_components.len(), EXPECTED_PHASE_2I_COMPONENTS);
 
     let reported_external = phase
         .values()
-        .flat_map(|row| row.ported_external.iter().cloned())
+        .flat_map(|row| row.certified_external.iter().cloned())
         .collect::<BTreeSet<_>>();
     assert_eq!(external, reported_external);
     assert_eq!(external.len(), 74);
@@ -531,14 +494,14 @@ fn phase_boundary_rows_preserve_all_port_and_edge_invariants() {
     for (name, row) in &phase {
         let port = &ports[name];
         assert_eq!(row.family, port.family);
-        assert!(is_unported(port));
-        assert!(port.phase.is_empty());
-        assert_eq!(port.policy, "undecided");
-        assert_eq!(port.lowering, "pending");
+        assert!(is_certified(port));
+        assert_eq!(port.phase, "2I");
+        assert_ne!(port.policy, "undecided");
+        assert_eq!(port.semantic, "certified");
 
         let mut same_component = BTreeSet::new();
         let mut closure_children = BTreeSet::new();
-        let mut ported_external = BTreeSet::new();
+        let mut certified_external = BTreeSet::new();
         for child in &graph[name] {
             if by_component[&row.component_id].contains(child) {
                 same_component.insert(child.clone());
@@ -546,10 +509,10 @@ fn phase_boundary_rows_preserve_all_port_and_edge_invariants() {
                 closure_children.insert(child.clone());
             } else {
                 assert!(
-                    is_implemented(&ports[child]),
+                    is_certified(&ports[child]),
                     "unported outgoing child {child}"
                 );
-                ported_external.insert(child.clone());
+                certified_external.insert(child.clone());
             }
         }
         assert_eq!(
@@ -561,7 +524,7 @@ fn phase_boundary_rows_preserve_all_port_and_edge_invariants() {
             "closure children for {name}"
         );
         assert_eq!(
-            row.ported_external, ported_external,
+            row.certified_external, certified_external,
             "external children for {name}"
         );
     }
@@ -595,7 +558,7 @@ fn reviewed_count_anchors_and_families_are_frozen() {
 }
 
 #[test]
-fn recursive_core_has_exact_parser_and_typed_view_shells_and_remains_unactivated() {
+fn recursive_core_has_exact_parser_and_typed_view_modules_and_is_activated() {
     let root = repository_root();
     let parser_directory = root.join("src/syntax/src/document/parser/canonical/recursive_core");
     assert!(parser_directory.is_dir());
@@ -642,25 +605,20 @@ fn recursive_core_has_exact_parser_and_typed_view_shells_and_remains_unactivated
         .collect::<BTreeSet<_>>();
     assert_eq!(actual_ast_files, expected_files);
 
-    assert!(
-        !root
-            .join("src/syntax/src/document/lower/legacy/recursive_core")
-            .exists()
-    );
     let generated_ports =
         fs::read_to_string(root.join("src/syntax/src/document/parser/canonical_ports.rs"))
             .expect("read canonical_ports.rs");
-    assert!(!generated_ports.contains("Phase2I"));
+    assert!(generated_ports.contains("Phase2I"));
 
     let phase = phase_report();
     let ports = ports();
     assert_eq!(phase.len(), EXPECTED_PHASE_2I_RULES);
     for name in phase.keys() {
         let port = &ports[name];
-        assert!(is_unported(port), "{name}");
-        assert_eq!(port.lowering, "pending", "{name}");
-        assert_eq!(port.policy, "undecided", "{name}");
-        assert!(port.phase.is_empty(), "{name}");
+        assert!(is_certified(port), "{name}");
+        assert_eq!(port.semantic, "certified", "{name}");
+        assert_ne!(port.policy, "undecided", "{name}");
+        assert_eq!(port.phase, "2I", "{name}");
     }
 }
 

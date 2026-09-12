@@ -1,12 +1,13 @@
 Recursive Executable-Core Contract
 ===============================================================================
 
-Status: S2 recursive-core recovery complete; registry inactive.
+Status: S6 recursive-core activation complete.
 
-Current canonical progress remains 328 / 539. The component implements clean,
-lossless recognition and local malformed-input recovery for all 80 rules but
-activates zero productions. The generated implementation boundary remains one
-strongly connected component.
+Current canonical progress is 408 / 539. The component implements clean,
+lossless recognition, local malformed-input recovery, typed access, source
+semantics, and canonical certification for all 80 rules. All 80 productions are
+active as Phase 2I. The generated implementation boundary remains one strongly
+connected component.
 `docs/design/syntax-v0.4-continuation-plan.mec` is the current delivery plan
 after the R1-R6 integration rebase.
 
@@ -35,12 +36,10 @@ inventory, retiring implementation provenance, and audit notes. Its current
 metadata. They are not normative EBNF dependency edges and do not define the
 canonical recursive closure.
 
-`docs/design/grammar-audit/ports.tsv` defines syntax migration status. Its
-existing `lowering-status` column predates the single-authority plan and is
-replaced by an explicit source-semantic disposition before Phase 2I activation.
-The recursive-core closure starts at `expression`, follows generated canonical
-dependencies through complete unported strongly connected components, and
-stops only at rules whose syntax is already implemented.
+`docs/design/grammar-audit/ports.tsv` defines canonical syntax and semantic
+certification status. The recursive-core component is the exact Phase 2I set:
+it starts at `expression`, follows the generated canonical dependencies, and
+contains one complete strongly connected component.
 
 `phase-2i-recursive-core.tsv` defines membership and dependencies.
 `phase-2i-syntax-schema.tsv` defines module ownership and concrete tree
@@ -69,7 +68,7 @@ grammar graph is the only dependency authority.
 3. Atomic activation
 -------------------------------------------------------------------------------
 
-No generated member is assigned Phase 2I until the complete closure:
+S6 assigned every generated member to Phase 2I only after the complete closure:
 
 ```text
 parses
@@ -81,10 +80,8 @@ passes ambiguity tests
 passes resource-limit tests
 ```
 
-Intermediate stacked PRs may add implementation while leaving `ports.tsv`
-unchanged. S6 of `docs/design/syntax-v0.4-continuation-plan.mec` activates the
-complete reviewed closure atomically. There is no partial registry activation
-and no earlier phase count change.
+S6 of `docs/design/syntax-v0.4-continuation-plan.mec` activated the complete
+reviewed closure atomically. No partial registry state exists.
 
 4. Module design
 -------------------------------------------------------------------------------
@@ -133,7 +130,7 @@ ast/recursive_core/
 
 Executable typed forms enter through the engine-owned source frontend defined
 by `docs/design/syntax-v0.4-continuation-plan.mec`. No recursive-core
-compatibility-lowering tree is added to the syntax crate.
+parallel syntax-to-value tree is added to the syntax crate.
 
 The implementation uses ordinary mutually recursive Rust functions. It does
 not introduce a parser generator, boxed parser closures, a Nom-like combinator
@@ -266,20 +263,20 @@ This is the complete current parser-root API.
 2I-A  generated boundary and architecture
 2I-B  syntax schema and minimal kernel support
 2I-C  complete recursive parser
-2I-D  recovery, typed views, and lowering
-2I-E  parity and atomic registry activation
+2I-D  recovery, typed views, and source semantics
+2I-E  canonical certification and atomic registry activation
 ```
 
 This sequence records the plan used to reach Phase 2I-C. The combined 2I-D and
 2I-E steps are superseded by the independently gated S1-S6 milestones in
-`docs/design/syntax-v0.4-continuation-plan.mec`. The current plan replaces
-compatibility lowering and cross-parser parity with canonical typed syntax,
-engine-owned source semantics, and specification-derived certification.
+`docs/design/syntax-v0.4-continuation-plan.mec`. The current plan uses canonical
+typed syntax, engine-owned source semantics, and specification-derived
+certification.
 
 The component implements clean recognition, local lossless recovery, typed
 views, engine-owned source semantics, and canonical certification for all 80
-mutually recursive productions against the frozen schema. All 80 rules remain
-unactivated until the atomic S6 registry change.
+mutually recursive productions against the frozen schema. S6 activated all 80
+rules in one registry change.
 
 Shared parenthesis, bracket, brace, colon, identifier, and kind prefixes are
 handled without exponential reparsing. Expression-level set and matrix
