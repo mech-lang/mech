@@ -185,14 +185,15 @@ fn comment_selection_preserves_whitespace_and_committed_expression_recovery() {
 
 #[test]
 fn distinctive_document_openers_recover_required_closers() {
-    let mika = parse_canonical_document(source("~∘~⸢text\n"), ParseConfig::default());
-    assert!(!mika.is_strictly_clean());
-    assert!(find(mika.syntax(), SyntaxKind::MikaSection).is_some());
-    assert!(
-        mika.diagnostics
-            .iter()
-            .any(|diagnostic| { diagnostic.code.as_str() == "syntax/missing-mika-section-closer" })
-    );
+    #[cfg(feature = "mika")]
+    {
+        let mika = parse_canonical_document(source("~∘~⸢text\n"), ParseConfig::default());
+        assert!(!mika.is_strictly_clean());
+        assert!(find(mika.syntax(), SyntaxKind::MikaSection).is_some());
+        assert!(mika.diagnostics.iter().any(|diagnostic| {
+            diagnostic.code.as_str() == "syntax/missing-mika-section-closer"
+        }));
+    }
 
     let inline = parse_canonical_document(source("Text {{x := 1}\n"), ParseConfig::default());
     assert!(!inline.is_strictly_clean());
@@ -204,6 +205,16 @@ fn distinctive_document_openers_recover_required_closers() {
             .any(|diagnostic| { diagnostic.code.as_str() == "syntax/missing-inline-mech-closer" })
     );
 
+    let empty_inline = parse_canonical_document(source("Text {{"), ParseConfig::default());
+    assert!(!empty_inline.is_strictly_clean());
+    assert!(find(empty_inline.syntax(), SyntaxKind::InlineMechCode).is_some());
+    assert!(
+        empty_inline
+            .diagnostics
+            .iter()
+            .any(|diagnostic| { diagnostic.code.as_str() == "syntax/missing-inline-mech-body" })
+    );
+
     for text in ["```", "```mech"] {
         let fence = parse_canonical_document(source(text), ParseConfig::default());
         assert!(!fence.is_strictly_clean(), "{text:?}");
@@ -212,6 +223,24 @@ fn distinctive_document_openers_recover_required_closers() {
             diagnostic.code.as_str() == "syntax/missing-codeblock-header-newline"
         }));
     }
+}
+
+#[cfg(feature = "mika")]
+#[test]
+fn mika_glyph_roles_are_determined_by_position() {
+    let micro = parse_canonical_document(source("╭◉╮\n"), ParseConfig::default());
+    assert!(micro.is_strictly_clean(), "{:#?}", micro.diagnostics);
+    assert!(find(micro.syntax(), SyntaxKind::MicroMika).is_some());
+    assert_eq!(count(&micro.syntax(), SyntaxKind::MikaNose), 1);
+    assert_eq!(count(&micro.syntax(), SyntaxKind::MikaEyeLeft), 0);
+    assert_eq!(count(&micro.syntax(), SyntaxKind::MikaEyeRight), 0);
+
+    let mini = parse_canonical_document(source("(◉◯◉)\n"), ParseConfig::default());
+    assert!(mini.is_strictly_clean(), "{:#?}", mini.diagnostics);
+    assert!(find(mini.syntax(), SyntaxKind::MiniMika).is_some());
+    assert_eq!(count(&mini.syntax(), SyntaxKind::MikaNose), 1);
+    assert_eq!(count(&mini.syntax(), SyntaxKind::MikaEyeLeft), 1);
+    assert_eq!(count(&mini.syntax(), SyntaxKind::MikaEyeRight), 1);
 }
 
 #[test]

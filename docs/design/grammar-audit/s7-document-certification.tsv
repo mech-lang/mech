@@ -64,16 +64,16 @@ mechdown-table-header	"|x||-|"	node:MechdownTableHeader	syntax-only	docs/design/
 mechdown-table-no-header	"| |"	node:MechdownTableNoHeader	syntax-only	docs/design/specification.mec::mechdown-table-no-header
 mechdown-table-row	"| |"	node:MechdownTableRow	syntax-only	docs/design/specification.mec::mechdown-table-row
 mechdown-table-with-header	"|x||-|| |"	node:MechdownTableWithHeader	syntax-only	docs/design/specification.mec::mechdown-table-with-header
-micro-mika	"~∘~"	node:MicroMika	syntax-only	docs/design/specification.mec::micro-mika
-mika	"~∘~"	node:Mika	syntax-only	docs/design/specification.mec::mika
+micro-mika	"╭◉╮"	node:MicroMika	syntax-only	docs/design/specification.mec::micro-mika
+mika	"╭◉╮"	node:Mika	syntax-only	docs/design/specification.mec::mika
 mika-arm-left	"~"	node:MikaArmLeft	syntax-only	docs/design/specification.mec::mika-arm-left
 mika-arm-right	"~"	node:MikaArmRight	syntax-only	docs/design/specification.mec::mika-arm-right
 mika-expression-inner	"¬◯¬"	node:MikaExpressionInner	syntax-only	docs/design/specification.mec::mika-expression-inner
 mika-eye-left	"¬"	node:MikaEyeLeft	syntax-only	docs/design/specification.mec::mika-eye-left
 mika-eye-right	"¬"	node:MikaEyeRight	syntax-only	docs/design/specification.mec::mika-eye-right
-mika-nose	"∘"	node:MikaNose	syntax-only	docs/design/specification.mec::mika-nose
+mika-nose	"◉"	node:MikaNose	syntax-only	docs/design/specification.mec::mika-nose
 mika-section	"⸢⸥"	node:MikaSection	syntax-only	docs/design/specification.mec::mika-section
-mini-mika	"(¬◯¬)"	node:MiniMika	syntax-only	docs/design/specification.mec::mini-mika
+mini-mika	"(◉◯◉)"	node:MiniMika	syntax-only	docs/design/specification.mec::mini-mika
 no-alignment	"-"	node:NoAlignment	syntax-only	docs/design/specification.mec::no-alignment
 not-mech-code	"⸥"	node:NotMechCode	syntax-only	docs/design/specification.mec::not-mech-code
 op-assign	"x += 1 + 2"	node:OpAssign	syntax-only	docs/design/specification.mec::op-assign

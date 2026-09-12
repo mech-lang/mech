@@ -439,6 +439,16 @@ fn recover_required_sequence_item(parser: &mut Parser<'_>, item: &GrammarExpress
     let GrammarExpression::Rule(rule) = item else {
         return false;
     };
+    if *rule == rules::MECH_CODE_ALT {
+        recovery::insert_missing(
+            parser,
+            "syntax/missing-inline-mech-body",
+            "expected a body after the inline Mech opener",
+            ExpectedSyntax::Production(alloc::string::String::from("inline Mech body")),
+            None,
+        );
+        return true;
+    }
     let (code, message, token) = if *rule == rules::NEW_LINE {
         (
             "syntax/missing-codeblock-header-newline",

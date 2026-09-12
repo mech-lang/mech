@@ -286,17 +286,28 @@ def mika_expression_triples() -> tuple[tuple[str, str, str], ...]:
         raise SystemExit(
             f"expected 25 registered Mika expression triples, found {len(values)}"
         )
-    noses = re.findall(r'"([^"]+)"', grammar_definitions()["mika-nose"])
+    definitions = grammar_definitions()
+    left_eyes = re.findall(r'"([^"]+)"', definitions["mika-eye-left"])
+    noses = re.findall(r'"([^"]+)"', definitions["mika-nose"])
+    right_eyes = set(re.findall(r'"([^"]+)"', definitions["mika-eye-right"]))
     triples = []
     for value in values:
-        matches = [nose for nose in noses if nose in value]
-        if len(matches) != 1:
-            raise SystemExit(f"registered Mika expression has no unique nose: {value!r}")
-        nose = matches[0]
-        left, right = value.split(nose, 1)
-        if not left or not right:
-            raise SystemExit(f"registered Mika expression has an empty eye: {value!r}")
-        triples.append((left, nose, right))
+        candidates = []
+        for left in left_eyes:
+            if not value.startswith(left):
+                continue
+            remainder = value[len(left) :]
+            for nose in noses:
+                if not remainder.startswith(nose):
+                    continue
+                right = remainder[len(nose) :]
+                if right in right_eyes:
+                    candidates.append((left, nose, right))
+        if len(candidates) != 1:
+            raise SystemExit(
+                f"registered Mika expression has {len(candidates)} positional parses: {value!r}"
+            )
+        triples.append(candidates[0])
     return tuple(triples)
 
 
@@ -376,7 +387,11 @@ SAMPLE_OVERRIDES = {
     "fsm-transition": "42 ->{}",
     "function-define-statements": "=out<u8>:=value:=1.",
     "inline-mech-code": "{{1}}",
+    "micro-mika": "╭◉╮",
+    "mika": "╭◉╮",
     "mika-expression-inner": "¬◯¬",
+    "mika-nose": "◉",
+    "mini-mika": "(◉◯◉)",
     "op-assign": "x += 1 + 2",
 }
 
