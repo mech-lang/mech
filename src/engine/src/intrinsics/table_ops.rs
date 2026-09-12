@@ -145,7 +145,7 @@ fn sequence_draft_at(
     draft.ok_or_else(|| table_join_error("table row index exceeds its canonical column"))
 }
 
-fn sequence_language_eq_at(
+pub(crate) fn sequence_language_eq_at(
     schema: &SchemaBody,
     lhs: SequenceView<'_>,
     lhs_row: usize,

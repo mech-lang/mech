@@ -746,7 +746,8 @@ pub fn shape_for_resolved_extents(
 /// Resolves embedded component schemas using the same dimension witnesses as
 /// top-level outputs. Component bodies on the right are already closed against
 /// their own schema arenas; parameter indices never cross those arenas.
-pub(crate) fn shape_for_schema_components(
+#[doc(hidden)]
+pub fn shape_for_schema_components(
     schema: &Schema,
     components: &[(&SchemaBody, SchemaBody)],
     cardinality: Option<(&CardinalitySpec, usize)>,

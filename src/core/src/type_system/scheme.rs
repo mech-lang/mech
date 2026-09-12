@@ -1207,7 +1207,9 @@ fn instantiate_table_join_scheme(
         });
     }
 
-    let optional = |kind: &KindExpr| match kind {
+    // The template fields below are kind parameters; inspect the resolved
+    // input field before wrapping so an existing optional is not nested.
+    let optional = |kind: &KindExpr, input: &KindExpr| match input {
         KindExpr::Option(_) => kind.clone(),
         _ => KindExpr::Option(Box::new(kind.clone())),
     };
@@ -1216,14 +1218,15 @@ fn instantiate_table_join_scheme(
     let left_only = matches!(mode, TableJoinMode::LeftSemi | TableJoinMode::LeftAnti);
     let mut output_fields = left_fields
         .iter()
-        .map(|field| crate::KindField {
+        .enumerate()
+        .map(|(index, field)| crate::KindField {
             name: field.name.clone(),
             kind: if left_outer
                 && !right_fields
                     .iter()
                     .any(|candidate| candidate.name == field.name)
             {
-                optional(&field.kind)
+                optional(&field.kind, &left_columns[index].kind)
             } else {
                 field.kind.clone()
             },
@@ -1233,15 +1236,16 @@ fn instantiate_table_join_scheme(
         output_fields.extend(
             right_fields
                 .iter()
-                .filter(|field| {
+                .enumerate()
+                .filter(|(_, field)| {
                     !left_fields
                         .iter()
                         .any(|candidate| candidate.name == field.name)
                 })
-                .map(|field| crate::KindField {
+                .map(|(index, field)| crate::KindField {
                     name: field.name.clone(),
                     kind: if right_outer {
-                        optional(&field.kind)
+                        optional(&field.kind, &right_columns[index].kind)
                     } else {
                         field.kind.clone()
                     },

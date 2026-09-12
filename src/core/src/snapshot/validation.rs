@@ -2274,6 +2274,151 @@ pub fn wrap_resident_dynamic_data(
     })
 }
 
+/// Builds a table from certified canonical cells. Callers admit the complete
+/// staging and output allocation before binding. Cell copies retain Dynamic
+/// payloads' own schema arenas; they never translate arena-local draft IDs.
+#[doc(hidden)]
+pub struct TableSnapshotBuilder<'a> {
+    schema: SchemaId,
+    shape: ShapeInstance,
+    schemas: Arc<SchemaTable>,
+    sources: &'a [&'a Value],
+    source_columns: Box<[Box<[crate::SchemaField]>]>,
+    columns: Box<[crate::SchemaField]>,
+    values: Vec<Vec<ValueData>>,
+    rows: usize,
+}
+
+impl<'a> TableSnapshotBuilder<'a> {
+    pub fn bind(
+        schema: SchemaId,
+        shape: ShapeInstance,
+        rows: usize,
+        schemas: Arc<SchemaTable>,
+        sources: &'a [&'a Value],
+    ) -> Result<Self, SnapshotValueError> {
+        let entry = schemas
+            .entry(schema)
+            .ok_or(SnapshotValueError::UnknownSnapshotSchema { schema })?;
+        let mismatch = || SnapshotValueError::SnapshotSchemaDefinitionMismatch { key: entry.key() };
+        let SchemaBody::Table {
+            columns,
+            rows: cardinality,
+        } = entry.schema().closed_body(&shape).map_err(|_| mismatch())?
+        else {
+            return Err(mismatch());
+        };
+        ensure_collection_cardinality(&SnapshotPath::root(), &cardinality, &shape, rows)?;
+        if columns.is_empty() && rows != 0 {
+            return Err(SnapshotValueError::PayloadCardinalityMismatchV1 {
+                path: SnapshotPath::root(),
+                expected: u64::try_from(rows).map_err(|_| mismatch())?,
+                actual: 0,
+            });
+        }
+        let source_columns = sources
+            .iter()
+            .map(|source| {
+                let context = source.schemas().ok_or_else(mismatch)?;
+                let body = source
+                    .validate_against(&context)?
+                    .closed_body(source.shape())
+                    .map_err(|_| mismatch())?;
+                let (SchemaBody::Table { columns, .. }, ValueData::Table(_)) =
+                    (body, source.data())
+                else {
+                    return Err(mismatch());
+                };
+                Ok(columns)
+            })
+            .collect::<Result<Vec<_>, SnapshotValueError>>()?
+            .into_boxed_slice();
+        let values = columns.iter().map(|_| Vec::with_capacity(rows)).collect();
+        Ok(Self {
+            schema,
+            shape,
+            schemas,
+            sources,
+            source_columns,
+            columns,
+            values,
+            rows,
+        })
+    }
+
+    /// Appends a selected source cell, or an absent optional cell. Output
+    /// schema compatibility is checked before cloning any payload.
+    pub fn push(
+        &mut self,
+        output_column: usize,
+        source: Option<(usize, usize, usize)>,
+    ) -> Result<(), SnapshotValueError> {
+        let mismatch = || SnapshotValueError::SnapshotSchemaDefinitionMismatch {
+            key: self.schemas.entry(self.schema).expect("bound schema").key(),
+        };
+        let expected = &self.columns.get(output_column).ok_or_else(mismatch)?.schema;
+        let values = self.values.get_mut(output_column).ok_or_else(mismatch)?;
+        if values.len() >= self.rows {
+            return Err(mismatch());
+        }
+        let data = if let Some((input, column, row)) = source {
+            let actual = &self
+                .source_columns
+                .get(input)
+                .and_then(|columns| columns.get(column))
+                .ok_or_else(mismatch)?
+                .schema;
+            let wrap = if actual == expected {
+                false
+            } else if matches!(expected, SchemaBody::Option(inner) if inner.as_ref() == actual) {
+                true
+            } else {
+                return Err(mismatch());
+            };
+            let ValueData::Table(table) = self.sources.get(input).ok_or_else(mismatch)?.data()
+            else {
+                return Err(mismatch());
+            };
+            let data = table
+                .column(column)
+                .and_then(|sequence| sequence.value_at(row))
+                .ok_or_else(mismatch)?;
+            if wrap {
+                ValueData::Option(Some(Box::new(data)))
+            } else {
+                data
+            }
+        } else if matches!(expected, SchemaBody::Option(_)) {
+            ValueData::Option(None)
+        } else {
+            return Err(mismatch());
+        };
+        values.push(data);
+        Ok(())
+    }
+
+    pub fn finish(self) -> Result<Value, SnapshotValueError> {
+        let entry = self.schemas.entry(self.schema).expect("bound schema");
+        if self.values.iter().any(|values| values.len() != self.rows) {
+            return Err(SnapshotValueError::SnapshotSchemaDefinitionMismatch { key: entry.key() });
+        }
+        let columns = self
+            .columns
+            .iter()
+            .zip(self.values)
+            .map(|(field, values)| SequenceStorage::from_values(&field.schema, values))
+            .collect::<Vec<_>>()
+            .into_boxed_slice();
+        Ok(finalized_value(
+            self.schema,
+            entry.key(),
+            self.shape,
+            ValueData::Table(TableValue { columns }),
+            Some(self.schemas),
+        ))
+    }
+}
+
 /// A canonical aggregate constructor bound to one schema arena and exact
 /// child identities. Binding validates nominal kinds and resolved dimensions;
 /// construction rechecks those identities before cloning any child payload.
@@ -3604,6 +3749,146 @@ mod tests {
         DimensionParameterOrigin, NominalKey, SchemaDraft, SchemaField, SchemaTableBuilder,
     };
     use core::cell::{Cell, RefCell};
+
+    #[test]
+    fn canonical_table_builder_zero_columns_cannot_claim_nonzero_rows() {
+        for cardinality in [
+            crate::CardinalitySpec::Exact(DimensionExpr::Constant(0)),
+            crate::CardinalitySpec::Exact(DimensionExpr::Constant(1)),
+            crate::CardinalitySpec::Dynamic { upper_bound: None },
+        ] {
+            let accepts_zero = !matches!(
+                cardinality,
+                crate::CardinalitySpec::Exact(DimensionExpr::Constant(1))
+            );
+            let mut builder = SchemaTableBuilder::new();
+            let schema = builder
+                .insert(
+                    SchemaDraft {
+                        body: SchemaBody::Table {
+                            columns: Box::new([]),
+                            rows: cardinality,
+                        },
+                        dimension_parameters: Box::new([]),
+                    }
+                    .finalize()
+                    .unwrap(),
+                )
+                .unwrap();
+            let built = builder.finish().unwrap();
+            let schema = built.resolve(schema).unwrap();
+            let (schemas, _) = built.into_parts();
+            let schemas = Arc::new(schemas);
+            let shape = schemas
+                .get(schema)
+                .unwrap()
+                .instantiate_shape(Box::new([]))
+                .unwrap();
+            assert!(
+                TableSnapshotBuilder::bind(schema, shape.clone(), 1, Arc::clone(&schemas), &[])
+                    .is_err()
+            );
+            let zero = TableSnapshotBuilder::bind(schema, shape, 0, Arc::clone(&schemas), &[]);
+            if accepts_zero {
+                let value = zero.unwrap().finish().unwrap();
+                let canonical = value.canonical_data_draft().unwrap();
+                let restored = ValueDraft {
+                    schema,
+                    shape_values: Box::new([]),
+                    data: canonical,
+                }
+                .finalize(&SnapshotValidationContext::new(&schemas))
+                .unwrap();
+                assert!(value.language_eq(&schemas, &restored, &schemas).unwrap());
+            } else {
+                assert!(zero.is_err());
+            }
+        }
+    }
+
+    #[test]
+    fn canonical_table_builder_rejects_invalid_projection_and_incomplete_rows() {
+        let mut schemas = SchemaTableBuilder::new();
+        let table = |field| {
+            SchemaDraft {
+                body: SchemaBody::Table {
+                    columns: vec![SchemaField {
+                        name: "a".into(),
+                        schema: field,
+                    }]
+                    .into_boxed_slice(),
+                    rows: crate::CardinalitySpec::Exact(DimensionExpr::Constant(1)),
+                },
+                dimension_parameters: Box::new([]),
+            }
+            .finalize()
+            .unwrap()
+        };
+        let source = schemas
+            .insert(table(SchemaBody::UnsignedInteger(IntegerWidth::W8)))
+            .unwrap();
+        let wrong = schemas
+            .insert(table(SchemaBody::UnsignedInteger(IntegerWidth::W16)))
+            .unwrap();
+        let optional = schemas
+            .insert(table(SchemaBody::Option(Box::new(
+                SchemaBody::UnsignedInteger(IntegerWidth::W8),
+            ))))
+            .unwrap();
+        let build = schemas.finish().unwrap();
+        let (source, wrong, optional) = (
+            build.resolve(source).unwrap(),
+            build.resolve(wrong).unwrap(),
+            build.resolve(optional).unwrap(),
+        );
+        let (schemas, _) = build.into_parts();
+        let schemas = Arc::new(schemas);
+        let value = ValueDraft {
+            schema: source,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Table(
+                vec![TableColumnDraft {
+                    name: "a".into(),
+                    values: vec![ValueDataDraft::U8(7)].into_boxed_slice(),
+                }]
+                .into_boxed_slice(),
+            ),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        let sources = [&value];
+        let bind = |schema, rows| {
+            TableSnapshotBuilder::bind(
+                schema,
+                schemas
+                    .get(schema)
+                    .unwrap()
+                    .instantiate_shape(Box::new([]))
+                    .unwrap(),
+                rows,
+                Arc::clone(&schemas),
+                &sources,
+            )
+        };
+        assert!(bind(source, 2).is_err());
+        let mut output = bind(source, 1).unwrap();
+        assert!(output.push(0, None).is_err());
+        assert!(output.push(1, Some((0, 0, 0))).is_err());
+        assert!(output.push(0, Some((0, 1, 0))).is_err());
+        assert!(output.push(0, Some((0, 0, 1))).is_err());
+        assert!(output.finish().is_err());
+        assert!(bind(wrong, 1).unwrap().push(0, Some((0, 0, 0))).is_err());
+        let mut output = bind(optional, 1).unwrap();
+        output.push(0, Some((0, 0, 0))).unwrap();
+        assert!(output.push(0, None).is_err());
+        let output = output.finish().unwrap();
+        let ValueData::Table(table) = output.data() else {
+            panic!()
+        };
+        assert!(
+            matches!(table.column(0).unwrap(), SequenceView::Values([ValueData::Option(Some(value))]) if matches!(value.as_ref(), ValueData::U8(7)))
+        );
+    }
 
     #[derive(Default)]
     struct RecordingConstructionAuthority {

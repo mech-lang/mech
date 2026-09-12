@@ -3331,11 +3331,17 @@ fn schema_layout(
     slot: Option<CellSlotId>,
 ) -> Result<(ResidentValueKind, ResidentShape), ResidentActivationError> {
     let schema_entry = artifact.schemas().entry(schema).unwrap();
-    if schema_entry
-        .schema()
-        .dimension_parameters()
-        .iter()
-        .any(|parameter| parameter.lifetime() == DimensionLifetime::Turn)
+    // Only dense storage needs turn-invariant geometry in the arena. A
+    // snapshot occupies one scalar slot and carries its own per-turn shape.
+    let needs_dense_shape = matches!(schema_entry.schema().body(),
+        SchemaBody::Matrix { element, dimensions }
+            if dimensions.len() == 2 && dense_resident_kind(element).is_some());
+    if needs_dense_shape
+        && schema_entry
+            .schema()
+            .dimension_parameters()
+            .iter()
+            .any(|parameter| parameter.lifetime() == DimensionLifetime::Turn)
         && !has_activation_shape_fact
     {
         return Err(ResidentActivationError::TurnDimension { schema, slot });

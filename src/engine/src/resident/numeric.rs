@@ -11472,7 +11472,7 @@ fn checked_footprint_add(
     Ok(())
 }
 
-fn selected_sequence_footprint(
+pub(crate) fn selected_sequence_footprint(
     total: &mut ValueFootprint,
     meter: &mut super::budget::ResidentBudgetMeter,
     schema: &SchemaBody,

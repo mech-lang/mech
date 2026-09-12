@@ -89,6 +89,7 @@ impl SequenceView<'_> {
         self.len() == 0
     }
 
+    /// Copies one certified canonical element, retaining nested snapshot owners.
     pub(super) fn value_at(self, index: usize) -> Option<ValueData> {
         match self {
             Self::U8(values) => values.get(index).cloned().map(ValueData::U8),
