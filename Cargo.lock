@@ -2905,11 +2905,13 @@ dependencies = [
  "nom-unicode",
  "num-traits",
  "paste",
+ "proc-macro2",
  "proptest",
  "rlibc",
  "serde",
  "serde_derive",
  "serde_json",
+ "syn 3.0.3",
  "tabled",
  "unicode-segmentation",
 ]

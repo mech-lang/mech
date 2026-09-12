@@ -96,11 +96,22 @@ they do not invoke strict source semantics.
 and assigns every caller a final boundary. Caller symbols include enclosing
 modules and implementation or trait headers, so identically named methods do
 not share a removal contract. Identical qualified paths in separate conditional
-items also include their physical body offset. The scanner excludes cfg items
-only when their condition is provably false outside tests and recognizes both
-the product crate's and syntax crate's parser re-exports. Repository tests scan production Rust
-sources and fail when an unlisted `parser::parse` call is added or an inventoried
-count changes.
+items also include their physical body offset. The census uses Rust syntax nodes
+for conditional exclusion, including match arms, inner attributes and nested
+`cfg_attr`. An exclusion requires proof that the node is unavailable without
+tests; unknown feature and target predicates remain production possibilities.
+Cargo's locked workspace metadata supplies library and binary targets, and Rust
+module declarations supply external files and `#[path]` module identities.
+A `tests.rs` filename or `tests` directory never proves a test-only module.
+
+The reference scan retains macro bodies and invocations, normalizes raw Rust
+identifiers and resolves relative `self`/`super` imports against declaring
+modules. It recognizes the product and syntax crate root re-exports while
+keeping `document::parser` distinct. Repository tests reject unlisted retiring
+parser calls, aliases, alternate source entry points such as `parse_mech`, and
+changes to the frozen 27 caller contracts and 29 calls. Existing declarations
+are removal evidence, not permission for additional entry points. Macro token
+streams are scanned conservatively; the census does not execute macro expansion.
 
 The census describes current code only. Its current result-use and failure
 columns do not grant authority to old AST shapes or behavior. The canonical
