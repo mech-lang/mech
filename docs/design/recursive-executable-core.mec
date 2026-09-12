@@ -1,9 +1,10 @@
 Recursive Executable-Core Contract
 ===============================================================================
 
-Status: S6 recursive-core activation complete; S7 document root complete.
+Status: S6 activation and S7 document-root implementations are under qualification.
 
-Current canonical progress is 520 / 539. The component implements clean,
+The S7 registry implements 520 / 539 rows. The continuation-plan qualification
+ledger tracks review corrections and validation still required. The component implements clean,
 lossless recognition, local malformed-input recovery, typed access, source
 semantics, and canonical certification for all 80 rules. All 80 productions are
 active as Phase 2I. The generated implementation boundary remains one strongly
@@ -138,8 +139,8 @@ framework, or one monolithic `recursive_core.rs` module.
 
 Phase 2I-C created the parser directory above and implemented the complete clean
 recognizer. S2 added bounded local recovery, S3 added the typed syntax surface,
-S4 added engine-owned source semantics, and S5 closed their certification
-matrix. S6 activates all 80 recursive rules as one atomic registry component.
+S4 added engine-owned source semantics, and S5 introduced their certification
+matrix. That matrix must be revalidated after owning-stage corrections. S6 activates all 80 recursive rules as one atomic registry component.
 S7 completes the canonical document root; product cutover and removal remain
 reserved for S8.
 

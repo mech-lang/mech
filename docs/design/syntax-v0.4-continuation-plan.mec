@@ -1,12 +1,12 @@
 Syntax v0.4 Continuation Plan
 ===============================================================================
 
-Status: S0-S7 complete; S8 atomic product cutover is next.
+Status: S0-S7 implementation is under correction and qualification; S8 has not started.
 
-Planning baseline: `feature/syntax` at `4560e5e6c`, rebased onto
+Historical planning baseline: `feature/syntax` at `4560e5e6c`, rebased onto
 `integration/v0.4` after the R1-R6 stack. Pull request 812 is green at this
-baseline. This document records the current staged delivery plan and completed
-gates.
+historical baseline. That result does not qualify subsequent heads. This document
+records the staged delivery plan; the qualification ledger below records open work.
 
 This plan supersedes the old Phase 2I-D/2I-E sequence. The refactor has one
 language authority and one final source path. Recovery, typed syntax, source
@@ -26,14 +26,14 @@ outside Document closure     2
 total                      539
 ```
 
-The completed phases cover 520 / 539 rules. The other 19 inventory rows are 17
+The implemented registry covers 520 / 539 rules. The other 19 inventory rows are 17
 runtime-owned interactive commands and two rules outside canonical Document
 reachability. The generated Phase 2I recursive component contains 80 rules and
 is active as one certified component.
 
-The component has local malformed-input recovery, complete typed red-tree views,
-engine-owned source semantics, and canonical certification for all 80 direct
-roots. S6 applied the registry transition atomically. S7 adds the generated
+The component has local malformed-input recovery, typed red-tree views,
+engine-owned source semantics, and an 80-row certification matrix. Review fixes
+and renewed validation are required before those gates can be called complete. S6 applied the registry transition atomically. S7 adds the generated
 112-rule document closure, typed document views, whole-source recovery, and the
 public canonical `Document` root.
 
@@ -438,3 +438,79 @@ only production source parser, all 539 canonical rules have a current reviewed
 disposition, tools consume canonical typed syntax, execution consumes the
 engine-owned source-semantic path, and the old parser implementation is absent
 from production dependencies.
+
+8. S0-S7 qualification ledger (2026-09-12)
+-------------------------------------------------------------------------------
+
+This pass keeps all eight PRs draft and preserves their existing bases:
+S0 #812 -> integration/v0.4; S1 #818 -> S0; S2 #820 -> S1;
+S3 #821 -> S2; S4 #822 -> S3; S5 #823 -> S4; S6 #824 -> S5; S7 #825 -> S6.
+The observed integration base was `1ee1a6a94d1fffc80d685f4a2dd3e8f456204513`.
+All SHA references in this ledger describe the stated observation, not a claim
+that later rebased heads have inherited completed validation.
+
+The review baseline contained 21 findings: nine in S2, two in S3, and ten in S4.
+A subsequent live audit found three new S1 findings. The original S2 fixes were
+published in `46744e186`; further qualification exposed a matrix resource-limit
+loop and incomplete direct-comprehension continuation. Those remain S2 work.
+
+Finding ledger:
+
+| Stage | Review or check | Reproducer / obligation | Correction and evidence status |
+| --- | --- | --- | --- |
+| S0 | Artifact closure (nbody) | Fixture lock graph omits syntax serde_json | One dependency edge corrected in 76162379e; locked metadata fails before, passes after, and passes on untouched integration base; artifact canary pending. |
+| S1 | 3996509176 | cfg(all(not(test), feature)) caller | Production cfg exclusion correction and negative test pending. |
+| S1 | 3996509180 | syntax crate crate::parse | Re-export census correction and bypass test pending. |
+| S1 | 3996509185 | distinct impl compile_source methods | Qualified function identity and call-movement negative test pending. |
+| S2 | 3996399707 | [1, 2 +, 3] pattern array | Continuation fixed in 46744e186; stronger owner and diagnostic assertions pending. |
+| S2 | 3996399711 | {1: 2, 3:, 4: 5} expression | Shared-map continuation fixed in 46744e186; qualification pending. |
+| S2 | 3996399715 | recovered match pattern followed by output | MatchArm continuation fixed in 46744e186; qualification pending. |
+| S2 | 3996399719 | (1,,3) expression | Shared tuple continuation fixed in 46744e186; qualification pending. |
+| S2 | 3996399720 | recovered comprehension head before bar | Shared expression fixed in 46744e186; direct-rule correction pending. |
+| S2 | 3996399722 | # -> :next | Missing identifier and stage continuation fixed in 46744e186; qualification pending. |
+| S2 | 3996399725 | recovered framed header followed by row | FancyTable continuation fixed in 46744e186; qualification pending. |
+| S2 | 3996399727 | {a: 1, (2): 3} | Delimited-key lookahead fixed in 46744e186; qualification pending. |
+| S2 | 3996399728 | unmatched nested opener before framed closer | Physical owner closer preserved in 46744e186; qualification pending. |
+| S2 | resource qualification | exhausted matrix row repeats without progress | Reproduced on untouched 0f846c680; bounded owner completion correction pending. |
+| S3 | 3996396180 | vertical record delimiters and single opener | Corrected in 239b914ab; typed tests cover both verticals, other families, mixed forms, synthetic and resource-limited closers. |
+| S3 | 3996396183 | interrupted first range-subscript formula | recovered_expression exposes actual retained Expression in 239b914ab; strict range cast remains exact; actual fuel/event and shared-storage tests pass. |
+| S4 | 3996409393 / 3996409400 | source-only concatenation and matrix contracts | Authoritative shared declarations and isolated producer/provider tests pending. |
+| S4 | 3996409411 / 3996409415 | standalone and destructured pattern bindings | Scrutinee/projection schema correction and scope tests pending. |
+| S4 | 3996409403 / 3996409421 | runtime optional matrix and absent set elements | Presence/absence construction and value tests pending. |
+| S4 | 3996409424 | recursive definition annotation | Recursive conformance and dimension tests pending. |
+| S4 | 3996409406 | 300u8 typed extent | Typed literal representability and dimension decoding tests pending. |
+| S4 | 3996409428 | slices use scalar-to-index conversion | Actual selection operations, schemas, and executable result tests pending. |
+| S4 | 3996409430 | Dynamic first or middle range bound | Peer-kind conformance, conversions and contract tests pending. |
+
+S3 local evidence at 239b914ab: pinned nightly-2026-03-03, locked dependencies,
+12 typed-view tests and five schema tests passed. S2 local evidence at 46744e186
+included 37 recovery tests and 11 recognition tests, but two interrupted resource
+tests were not passes. The renewed resource investigation is part of this gate.
+S5 must recertify the corrected S2-S4 heads, including actual accessor calls,
+semantic meaning, operation contracts, activation/results where executable, and
+slot-shape hints. S6 requires completed full integration CI; the final accumulated
+S7 candidate also requires completed full integration coverage. Pending, skipped,
+old-head and zero-test runs are not passing qualification evidence.
+
+Execution boundary under review:
+
+- Outer canonical definitions and expressions are collected in source order.
+  Artifact construction additionally requires executable initializers and
+  authoritative contracts for every emitted operation.
+- Deferred state initializers are represented but rejected at artifact build;
+  unresolved/custom operation contracts are also rejected there. Structured
+  source forms are not executable merely because their graph or hash exists.
+- Seventeen document-unit kinds currently report unsupported-document-unit:
+  activation scopes, context declarations/sends, enums, exports, FSM declaration/
+  specification/implementation units, functions, invariants, imports, kind
+  definitions, module imports, compound assignments, tuple destructuring, and
+  assignments. Their syntax/typed coverage does not establish engine execution.
+- Display-only inline Mech and Mika-local sections are excluded from outer
+  execution collection. Their exclusion does not implement child-scope execution.
+  Function or Mika-local bodies must never be flattened into the outer scope.
+
+These boundaries require explicit review against S0-S7 obligations before a
+completion claim. They are not automatically deferred to S8. The reserved S8
+work remains production consumer replacement and removal of Nom, the remaining
+legacy lowering tree, and the old source path. The pre-cutover census must still
+account for 29 production calls; no product caller switches during this pass.

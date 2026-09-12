@@ -1,7 +1,7 @@
 Incremental Syntax Architecture
 ===============================================================================
 
-Status: S6 recursive-core activation complete.
+Status: S0-S7 implementation is under correction and qualification.
 
 Integration branch: `feature/syntax`.
 
@@ -23,10 +23,11 @@ package builds read only that package-local registry; a repository test
 recomputes and verifies every ordered `(name, RuleId)` entry against the
 inventory.
 
-Current canonical syntax progress is 408 / 539 productions. The closed
-Phase 2H structure-shell layer and the complete 80-rule Phase 2I recursive
-component are included in that active total. The canonical document root is the
-remaining S7 boundary.
+Stage-local registry totals are 328 before S6, 408 after its atomic 80-rule
+activation, and 520 after S7 adds 112 document-closure rules. The remaining rows
+are 17 runtime-owned commands and match-expression/table-column outside Document
+reachability. Implementation counts do not replace the qualification gates in
+the continuation plan.
 
 The exact next executable implementation boundary is generated from the
 normative `ebnf:canonical` grammar graph in `docs/design/specification.mec` and
@@ -64,8 +65,8 @@ box borders, and every recursive repetition propagates committed child
 recovery. Every direct rule now has a lossless malformed-input contract, and all
 80 rules are active with progress at 408 / 539.
 
-The current Nom source path remains unchanged while the canonical document root
-is incomplete. The final cutover removes that path atomically; this
+The current Nom source path remains inventoried throughout pre-cutover
+qualification. The final cutover removes that path atomically; this
 architecture does not introduce a compatibility lowering layer or selectable
 fallback.
 

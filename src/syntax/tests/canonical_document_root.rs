@@ -149,6 +149,88 @@ fn committed_statement_recovery_is_not_replaced_by_a_short_expression() {
 }
 
 #[test]
+fn recursive_recovery_retains_owned_children_and_later_document_units() {
+    for (first, owner_kind, child_kind, children, closer, code) in [
+        (
+            "(1,,3)",
+            SyntaxKind::Tuple,
+            SyntaxKind::IntegerLiteral,
+            2,
+            Some(")"),
+            "syntax/missing-tuple-item",
+        ),
+        (
+            "{1: 2, 3:, 4: 5}",
+            SyntaxKind::Map,
+            SyntaxKind::MapEntry,
+            3,
+            Some("}"),
+            "syntax/missing-mapping-value",
+        ),
+        (
+            "{1 + | x <- xs}",
+            SyntaxKind::SetComprehension,
+            SyntaxKind::Generator,
+            1,
+            Some("}"),
+            "syntax/missing-operator-operand",
+        ),
+        (
+            "# -> :next",
+            SyntaxKind::FsmPipe,
+            SyntaxKind::FsmStateTransition,
+            1,
+            None,
+            "syntax/missing-fsm-name",
+        ),
+    ] {
+        let text = format!("{first}\nafter := 9\n");
+        let parsed = parse_canonical_document(source(&text), ParseConfig::default());
+        validate_lossless(&parsed.root, &parsed.source).unwrap();
+        assert_eq!(
+            reconstruct_source(&parsed.root, &parsed.source).unwrap(),
+            text
+        );
+        let owner = find(parsed.syntax(), owner_kind)
+            .unwrap_or_else(|| panic!("{first}: {}", compact_debug_tree(&parsed.syntax())));
+        assert_eq!(owner.text().unwrap().trim(), first, "{first}");
+        assert_eq!(count(&owner, child_kind), children, "{first}");
+        assert!(
+            find(owner.clone(), SyntaxKind::Missing).is_some(),
+            "{first}"
+        );
+        if let Some(closer) = closer {
+            let token = owner
+                .children_with_tokens()
+                .into_iter()
+                .filter_map(|element| match element {
+                    mech_syntax::document::SyntaxElement::Token(token) => Some(token),
+                    _ => None,
+                })
+                .find(|token| token.text().is_ok_and(|text| text == closer))
+                .expect("physical closer remains a direct token of the recovered owner");
+            assert!(
+                !token
+                    .flags()
+                    .contains(mech_syntax::document::TokenFlags::MISSING)
+            );
+        }
+        assert!(
+            parsed
+                .diagnostics
+                .iter()
+                .any(|diagnostic| diagnostic.code.as_str() == code && diagnostic.rule.is_some()),
+            "{first}: {:?}",
+            parsed.diagnostics
+        );
+        let later = find(parsed.syntax(), SyntaxKind::VariableDefine)
+            .expect("later document definition survives recovery");
+        assert_eq!(later.text().unwrap().trim(), "after := 9", "{first}");
+        assert!(later.range().start >= owner.range().end);
+    }
+}
+
+#[test]
 fn comment_selection_preserves_complete_recursive_negation() {
     let expression = parse_canonical_document(source("--x\n"), ParseConfig::default());
     assert!(
