@@ -115,7 +115,7 @@ fn visit_rust_files(path: &Path, files: &mut BTreeSet<PathBuf>) {
     {
         let path = entry.expect("read source-tree entry").path();
         if path.is_dir() {
-            // Each workspace package supplies its own source root. Test module
+            // Each discovered package supplies its own source root. Test module
             // names have no meaning here; only Rust cfg can exclude their code.
             if !path.join("Cargo.toml").is_file() && path.file_name().unwrap() != "target" {
                 visit_rust_files(&path, files);
@@ -834,13 +834,13 @@ fn flattened_imports(
             flattened_imports(&tree.tree, &path, result);
         }
         syn::UseTree::Name(tree) => {
-            if tree.ident != "self" {
+            if tree.ident != "self" || path.is_empty() {
                 path.push(identifier(&tree.ident));
             }
             result.push((path, None));
         }
         syn::UseTree::Rename(tree) => {
-            if tree.ident != "self" {
+            if tree.ident != "self" || path.is_empty() {
                 path.push(identifier(&tree.ident));
             }
             result.push((path, Some(identifier(&tree.rename))));
@@ -862,6 +862,7 @@ fn imports_retiring_parser(
     reexports: ParserReexports,
     module: &[String],
     crate_names: &CrateNames,
+    reexport_item: bool,
 ) -> bool {
     let source = compact_rust_header(import) + ";";
     let Ok(item) = syn::parse_str::<syn::ItemUse>(&source) else {
@@ -879,7 +880,7 @@ fn imports_retiring_parser(
         };
         match resolved.as_slice() {
             [] => alias.is_some(),
-            [name] if name == "*" => path != &["crate".to_owned(), "*".to_owned()],
+            [name] if name == "*" => reexport_item || path != &["crate".to_owned(), "*".to_owned()],
             [name] if source_entrypoint(name) => true,
             [name] if name == "parser" => alias.is_some(),
             [name, ..] if name == "parser" => true,
@@ -1039,6 +1040,28 @@ fn scan_rust_source(source: &str, source_path: &str, reexports: ParserReexports)
     )
 }
 
+fn restricted_visibility_before(tokens: &[RustToken<'_>], index: usize) -> bool {
+    if index == 0 || tokens[index - 1].text != ")" {
+        return false;
+    }
+    let mut depth = 0usize;
+    for cursor in (0..index).rev() {
+        match tokens[cursor].text {
+            ")" => depth += 1,
+            "(" => {
+                depth -= 1;
+                if depth == 0 {
+                    return cursor > 0
+                        && tokens[cursor - 1].text == "pub"
+                        && !tokens[cursor - 1].raw;
+                }
+            }
+            _ => {}
+        }
+    }
+    false
+}
+
 fn scan_rust_source_in_module(
     source: &str,
     source_path: &str,
@@ -1063,6 +1086,7 @@ fn scan_rust_source_in_module(
             _ => {}
         }
         let public_item = index > 0 && tokens[index - 1].text == "pub";
+        let restricted_item = token.text == "use" && restricted_visibility_before(&tokens, index);
         if token.text == "use"
             && !token.raw
             && !tokens.get(index + 1).is_some_and(|token| token.text == "<")
@@ -1078,18 +1102,21 @@ fn scan_rust_source_in_module(
                 reexports,
                 &module_at(&tokens, index, file_module),
                 crate_names,
+                public_item || restricted_item,
             ) && !is_declared_root_parser_reexport(
                 source_path,
                 import,
                 public_item,
                 root_declaration,
-            ) && !is_existing_syntax_parser_import(
-                source_path,
-                import,
-                public_item,
-                file_top_level,
-                file_module,
-            ) {
+            ) && (restricted_item
+                || !is_existing_syntax_parser_import(
+                    source_path,
+                    import,
+                    public_item,
+                    file_top_level,
+                    file_module,
+                ))
+            {
                 scan.prohibited_aliases.push(format!(
                     "line {} imports or aliases the retiring parser",
                     source_line(source, token.offset)
@@ -1180,44 +1207,282 @@ fn scan_rust_source_in_module(
     scan
 }
 
-fn cargo_metadata(root: &Path) -> serde_json::Value {
-    let output = std::process::Command::new(env!("CARGO"))
-        .args([
-            "metadata",
-            "--format-version",
-            "1",
-            "--all-features",
-            "--offline",
-            "--locked",
-        ])
+fn cargo_metadata(root: &Path, no_dependencies: bool) -> serde_json::Value {
+    let mut command = std::process::Command::new(env!("CARGO"));
+    command.args([
+        "metadata",
+        "--format-version",
+        "1",
+        "--all-features",
+        "--offline",
+        "--locked",
+    ]);
+    if no_dependencies {
+        command.arg("--no-deps");
+    }
+    let output = command
         .current_dir(root)
         .output()
         .expect("run locked dependency metadata");
     assert!(
         output.status.success(),
-        "dependency metadata failed: {}",
+        "dependency metadata for {} failed: {}",
+        root.display(),
         String::from_utf8_lossy(&output.stderr)
     );
     serde_json::from_slice(&output.stdout).expect("dependency metadata JSON")
 }
 
-fn workspace_metadata(root: &Path) -> &'static serde_json::Value {
-    static METADATA: std::sync::OnceLock<serde_json::Value> = std::sync::OnceLock::new();
-    METADATA.get_or_init(|| cargo_metadata(root))
+fn manifest_declarations(manifest: &Path) -> serde_json::Value {
+    // Cargo supplies the TOML parser only. Isolate config loading completely:
+    // manifest-relative paths and patch-source matching are handled below,
+    // never by Cargo config precedence or config-relative path rules.
+    let scratch = CensusFixture::new();
+    let output = std::process::Command::new(env!("CARGO"))
+        .env_clear()
+        .env("CARGO_HOME", scratch.0.join("cargo-home"))
+        .current_dir(&scratch.0)
+        .args(["-Z", "unstable-options", "--config"])
+        .arg(manifest)
+        .args(["config", "get", "--format", "json", "--locked", "--offline"])
+        .output()
+        .expect("read manifest declarations with Cargo");
+    assert!(
+        output.status.success(),
+        "Cargo manifest extraction failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    serde_json::from_slice(&output.stdout).expect("Cargo manifest declaration JSON")
+}
+
+#[derive(Debug)]
+struct LocalPatch {
+    source: String,
+    package: String,
+    manifest: PathBuf,
+}
+
+fn declared_local_patches(root: &Path) -> Vec<LocalPatch> {
+    let declarations = manifest_declarations(&root.join("Cargo.toml"));
+    let mut patches = Vec::new();
+    for (source, entries) in declarations["patch"].as_object().into_iter().flatten() {
+        for (alias, patch) in entries.as_object().expect("patch entries") {
+            let Some(path) = patch["path"].as_str() else {
+                continue;
+            };
+            let manifest = root
+                .join(path)
+                .join("Cargo.toml")
+                .canonicalize()
+                .expect("local patch manifest");
+            if manifest.starts_with(root) {
+                patches.push(LocalPatch {
+                    source: source.clone(),
+                    package: patch["package"].as_str().unwrap_or(alias).to_owned(),
+                    manifest,
+                });
+            }
+        }
+    }
+    patches
+}
+
+fn patch_matches_dependency(patch: &LocalPatch, dependency: &serde_json::Value) -> bool {
+    if dependency["name"].as_str() != Some(patch.package.as_str()) {
+        return false;
+    }
+    let Some(source) = dependency["source"].as_str() else {
+        return false;
+    };
+    if patch.source == "crates-io" {
+        return source == "registry+https://github.com/rust-lang/crates.io-index";
+    }
+    source
+        .strip_prefix("registry+")
+        .is_some_and(|source| source == patch.source)
+        || source
+            .strip_prefix("git+")
+            .is_some_and(|source| source.split(['?', '#']).next() == Some(patch.source.as_str()))
+}
+
+fn include_local_packages(
+    root: &Path,
+    metadata: &serde_json::Value,
+    packages: &mut BTreeMap<PathBuf, serde_json::Value>,
+    pending: &mut Vec<PathBuf>,
+) {
+    for package in metadata["packages"].as_array().expect("Cargo packages") {
+        let manifest = Path::new(package["manifest_path"].as_str().expect("manifest path"))
+            .canonicalize()
+            .expect("canonical package manifest");
+        if manifest.starts_with(root) && !packages.contains_key(&manifest) {
+            pending.push(manifest.clone());
+            packages.insert(manifest, package.clone());
+        }
+    }
+}
+
+fn declared_package(manifest: &Path) -> serde_json::Value {
+    // --no-deps reads inherited declarations without resolving this independent
+    // workspace or creating its lockfile. Only the requested package is part of
+    // this dependency edge; unrelated workspace members do not become callers.
+    cargo_metadata(manifest.parent().expect("package directory"), true)["packages"]
+        .as_array()
+        .expect("Cargo packages")
+        .iter()
+        .find(|package| {
+            Path::new(package["manifest_path"].as_str().expect("manifest path"))
+                .canonicalize()
+                .expect("canonical manifest")
+                == manifest
+        })
+        .unwrap_or_else(|| panic!("Cargo metadata omitted {}", manifest.display()))
+        .clone()
+}
+
+fn cargo_version_matches(name: &str, requirement: &str, version: &str) -> bool {
+    // Cargo remains the version authority. This disposable, fully locked
+    // two-package graph asks only whether the declared requirement admits the
+    // actual candidate version; it cannot resolve or change repository inputs.
+    let scratch = CensusFixture::new();
+    let probe_name = format!("{name}-census-requirement-probe");
+    scratch.write("Cargo.toml", &format!(
+        "[package]\nname = {probe_name:?}\nversion = \"0.0.0\"\nedition = \"2024\"\n[workspace]\n[dependencies]\ncandidate = {{ package = {name:?}, version = {requirement:?}, path = \"candidate\" }}\n"
+    ));
+    scratch.write("src/lib.rs", "");
+    scratch.write(
+        "candidate/Cargo.toml",
+        &format!("[package]\nname = {name:?}\nversion = {version:?}\nedition = \"2024\"\n"),
+    );
+    scratch.write("candidate/src/lib.rs", "");
+    let lock = format!(
+        "version = 4\n[[package]]\nname = {probe_name:?}\nversion = \"0.0.0\"\ndependencies = [{name:?}]\n[[package]]\nname = {name:?}\nversion = {version:?}\n"
+    );
+    scratch.write("Cargo.lock", &lock);
+    let output = std::process::Command::new(env!("CARGO"))
+        .env_clear()
+        .env("CARGO_HOME", scratch.0.join("cargo-home"))
+        .env("RUSTC", Path::new(env!("CARGO")).with_file_name("rustc"))
+        .current_dir(&scratch.0)
+        .args(["metadata", "--format-version", "1", "--locked", "--offline"])
+        .output()
+        .expect("Cargo version eligibility probe");
+    assert_eq!(
+        fs::read_to_string(scratch.0.join("Cargo.lock")).unwrap(),
+        lock
+    );
+    if output.status.success() {
+        let metadata: serde_json::Value =
+            serde_json::from_slice(&output.stdout).expect("probe metadata");
+        assert!(
+            metadata["packages"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|package| package["name"] == name && package["version"] == version)
+        );
+        true
+    } else {
+        let error = String::from_utf8_lossy(&output.stderr);
+        assert!(
+            error.contains("failed to select a version for the requirement")
+                && error.contains(name)
+                && error.contains("candidate versions found which didn't match")
+                && error.contains(version),
+            "unexpected Cargo requirement failure: {error}"
+        );
+        false
+    }
+}
+
+fn production_package_metadata(root: &Path) -> Vec<serde_json::Value> {
+    let mut packages = BTreeMap::<PathBuf, serde_json::Value>::new();
+    let mut pending = Vec::new();
+    include_local_packages(
+        root,
+        &cargo_metadata(root, false),
+        &mut packages,
+        &mut pending,
+    );
+    let patches = declared_local_patches(root);
+    let mut declarations = packages.clone();
+    let mut version_matches = BTreeMap::new();
+    while let Some(manifest) = pending.pop() {
+        // Root --all-features does not activate every feature of dependencies
+        // belonging to independent workspaces. Cargo's declaration metadata
+        // includes their inactive optional and target-specific dependencies.
+        let dependencies = packages[&manifest]["dependencies"]
+            .as_array()
+            .expect("package dependencies")
+            .clone();
+        for dependency in dependencies
+            .iter()
+            .filter(|dependency| dependency["kind"].as_str() != Some("dev"))
+        {
+            let mut candidates = Vec::new();
+            if let Some(path) = dependency["path"].as_str() {
+                candidates.push((
+                    Path::new(path)
+                        .join("Cargo.toml")
+                        .canonicalize()
+                        .expect("local dependency manifest"),
+                    false,
+                ));
+            } else {
+                candidates.extend(
+                    patches
+                        .iter()
+                        .filter(|patch| patch_matches_dependency(patch, dependency))
+                        .map(|patch| (patch.manifest.clone(), true)),
+                );
+            }
+            for (manifest, patched) in candidates {
+                if !manifest.starts_with(root) {
+                    continue;
+                }
+                let package = declarations
+                    .entry(manifest.clone())
+                    .or_insert_with(|| declared_package(&manifest));
+                let name = package["name"].as_str().expect("package name");
+                assert_eq!(
+                    Some(name),
+                    dependency["name"].as_str(),
+                    "local dependency package identity"
+                );
+                if patched {
+                    let requirement = dependency["req"].as_str().expect("dependency requirement");
+                    let version = package["version"].as_str().expect("package version");
+                    let key = (name.to_owned(), requirement.to_owned(), version.to_owned());
+                    if !*version_matches
+                        .entry(key)
+                        .or_insert_with(|| cargo_version_matches(name, requirement, version))
+                    {
+                        continue;
+                    }
+                }
+                if !packages.contains_key(&manifest) {
+                    pending.push(manifest.clone());
+                    packages.insert(manifest, package.clone());
+                }
+            }
+        }
+    }
+    packages.into_values().collect()
+}
+
+fn workspace_metadata(root: &Path) -> &'static [serde_json::Value] {
+    static METADATA: std::sync::OnceLock<Vec<serde_json::Value>> = std::sync::OnceLock::new();
+    METADATA.get_or_init(|| production_package_metadata(root))
 }
 
 fn local_packages<'a>(
     root: &Path,
-    metadata: &'a serde_json::Value,
+    metadata: &'a [serde_json::Value],
 ) -> impl Iterator<Item = &'a serde_json::Value> {
     let root = root.to_owned();
-    metadata["packages"]
-        .as_array()
-        .expect("resolved packages")
-        .iter()
-        .filter(move |package| {
-            Path::new(package["manifest_path"].as_str().expect("manifest path")).starts_with(&root)
-        })
+    metadata.iter().filter(move |package| {
+        Path::new(package["manifest_path"].as_str().expect("manifest path")).starts_with(&root)
+    })
 }
 
 fn package_source_roots(package: &serde_json::Value) -> BTreeSet<PathBuf> {
@@ -1530,7 +1795,7 @@ fn parser_reexports(root: &Path, path: &Path) -> ParserReexports {
 
 fn discovered_calls_in_packages(
     root: &Path,
-    metadata: &serde_json::Value,
+    metadata: &[serde_json::Value],
 ) -> (BTreeMap<(String, String), usize>, Vec<String>) {
     let mut calls = BTreeMap::new();
     let mut prohibited_aliases = BTreeSet::new();
@@ -2315,7 +2580,7 @@ impl CensusFixture {
         fs::write(&path, source).unwrap();
         path
     }
-    fn metadata(&self) -> serde_json::Value {
+    fn metadata(&self) -> Vec<serde_json::Value> {
         let output = std::process::Command::new(env!("CARGO"))
             .args(["generate-lockfile", "--offline"])
             .current_dir(&self.0)
@@ -2326,7 +2591,29 @@ impl CensusFixture {
             "{}",
             String::from_utf8_lossy(&output.stderr)
         );
-        cargo_metadata(&self.0)
+        fn manifest_bytes(path: &Path, bytes: &mut BTreeMap<PathBuf, Vec<u8>>) {
+            for entry in fs::read_dir(path).unwrap() {
+                let path = entry.unwrap().path();
+                if path.is_dir() {
+                    manifest_bytes(&path, bytes);
+                } else if matches!(
+                    path.file_name().and_then(|name| name.to_str()),
+                    Some("Cargo.toml" | "Cargo.lock")
+                ) {
+                    bytes.insert(path.clone(), fs::read(&path).unwrap());
+                }
+            }
+        }
+        let mut before = BTreeMap::new();
+        manifest_bytes(&self.0, &mut before);
+        let metadata = production_package_metadata(&self.0);
+        let mut after = BTreeMap::new();
+        manifest_bytes(&self.0, &mut after);
+        assert_eq!(
+            after, before,
+            "discovery changed or created a manifest or lockfile"
+        );
+        metadata
     }
     fn modules(&self) -> BTreeMap<PathBuf, BTreeSet<Vec<String>>> {
         production_source_modules(
@@ -2751,4 +3038,235 @@ renamed = { package = "mech-syntax", path = "../syntax" }
         BTreeMap::from([(("machine/src/lib.rs".to_owned(), "added".to_owned()), 1)])
     );
     assert!(aliases.is_empty(), "{aliases:?}");
+}
+
+#[test]
+fn latest_review_standalone_self_aliases_are_guarded() {
+    for (path, reexports) in [
+        ("src/lib.rs", ParserReexports::RootCrate),
+        ("src/syntax/src/lib.rs", ParserReexports::SyntaxCrate),
+    ] {
+        for import in ["use self as legacy;", "use {self as legacy};"] {
+            let source = format!(
+                "pub fn parse(_: &str) {{}} {import} fn run(source: &str) {{ legacy::parse(source); }}"
+            );
+            let scan = scan_rust_source(&source, path, reexports);
+            assert!(!scan.prohibited_aliases.is_empty(), "{path}: {source}");
+        }
+    }
+}
+
+#[test]
+fn latest_review_public_crate_globs_cannot_create_parser_namespaces() {
+    for (path, reexports) in [
+        ("src/lib.rs", ParserReexports::RootCrate),
+        ("src/syntax/src/lib.rs", ParserReexports::SyntaxCrate),
+    ] {
+        for visibility in ["pub", "pub(crate)", "pub(super)", "pub(in crate)"] {
+            for root in ["crate::*", "crate::{*}", "super::*", "super::{*}"] {
+                let source = format!(
+                    "pub fn parse(_: &str) {{}} mod legacy {{ {visibility} use {root}; }} fn run(source: &str) {{ legacy::parse(source); }}"
+                );
+                let scan = scan_rust_source(&source, path, reexports);
+                assert!(!scan.prohibited_aliases.is_empty(), "{path}: {source}");
+            }
+        }
+        let source = "pub fn parse(_: &str) {} mod local { use crate::*; fn run(source: &str) { parse(source); } }";
+        let scan = scan_rust_source(source, path, reexports);
+        assert!(
+            scan.prohibited_aliases.is_empty(),
+            "{path}: {:?}",
+            scan.prohibited_aliases
+        );
+        assert_eq!(scan.calls.values().sum::<usize>(), 1, "{path}");
+    }
+}
+
+#[test]
+fn latest_review_discovery_follows_each_local_workspaces_optional_dependencies() {
+    let fixture = CensusFixture::new();
+    fixture.write(
+        "Cargo.toml",
+        r#"
+[package]
+name = "consumer"
+version = "0.0.0"
+edition = "2024"
+[workspace]
+exclude = ["first", "second", "leaf", "syntax", "dev-only"]
+[dependencies]
+first = { path = "first" }
+"#,
+    );
+    fixture.write("src/lib.rs", "");
+    for (name, next, feature) in [("first", "second", "future"), ("second", "leaf", "later")] {
+        fixture.write(
+            &format!("{name}/Cargo.toml"),
+            &format!(
+                r#"
+[package]
+name = "{name}"
+version = "0.0.0"
+edition = "2024"
+[workspace]
+[features]
+{feature} = ["dep:{next}"]
+[target.'cfg(unix)'.dependencies]
+{next} = {{ path = "../{next}", optional = true }}
+[dev-dependencies]
+dev-only = {{ path = "../dev-only" }}
+"#
+            ),
+        );
+        fixture.write(&format!("{name}/src/lib.rs"), "");
+    }
+    fixture.write(
+        "dev-only/Cargo.toml",
+        "[package]\nname = \"dev-only\"\nversion = \"0.0.0\"\nedition = \"2024\"\n[workspace]\n",
+    );
+    fixture.write("dev-only/src/lib.rs", "");
+    fixture.write(
+        "leaf/Cargo.toml",
+        r#"
+[package]
+name = "leaf"
+version = "0.0.0"
+edition = "2024"
+[workspace]
+[dependencies]
+renamed = { package = "mech-syntax", path = "../syntax" }
+"#,
+    );
+    fixture.write(
+        "leaf/src/lib.rs",
+        "fn hidden(source: &str) { renamed::parse(source); }",
+    );
+    fixture.write(
+        "syntax/Cargo.toml",
+        "[package]\nname = \"mech-syntax\"\nversion = \"0.0.0\"\nedition = \"2024\"\n[workspace]\n",
+    );
+    fixture.write("syntax/src/lib.rs", "pub fn parse(_: &str) {}");
+    let metadata = fixture.metadata();
+    let (calls, aliases) = discovered_calls_in_packages(&fixture.0, &metadata);
+    assert_eq!(
+        calls,
+        BTreeMap::from([(("leaf/src/lib.rs".to_owned(), "hidden".to_owned()), 1)])
+    );
+    assert_eq!(local_packages(&fixture.0, &metadata).count(), 5);
+    assert!(aliases.is_empty(), "{aliases:?}");
+    for name in ["first", "second", "leaf", "syntax", "dev-only"] {
+        assert!(!fixture.0.join(name).join("Cargo.lock").exists(), "{name}");
+    }
+}
+
+#[test]
+fn latest_review_discovery_follows_root_patched_optional_local_dependencies() {
+    for patch_source in ["crates-io", "\"https://example.invalid/not-the-index\""] {
+        let fixture = CensusFixture::new();
+        fixture.write(
+            "Cargo.toml",
+            &r#"
+[package]
+name = "consumer"
+version = "0.0.0"
+edition = "2024"
+[workspace]
+exclude = ["first", "leaf", "syntax", "wrong-source", "unused", "incompatible", "prerelease"]
+[dependencies]
+first = { path = "first" }
+[patch.PATCH_SOURCE]
+renamed-patch-entry = { package = "census-patched-leaf", path = "leaf" }
+incompatible = { package = "census-patched-leaf", path = "incompatible" }
+prerelease = { package = "census-patched-leaf", path = "prerelease" }
+unrelated = { package = "census-unrelated", path = "unused" }
+"#
+            .replace("PATCH_SOURCE", patch_source),
+        );
+        fixture.write("src/lib.rs", "");
+        fixture.write(
+            "first/Cargo.toml",
+            r#"
+[package]
+name = "first"
+version = "0.0.0"
+edition = "2024"
+[workspace]
+[features]
+future = ["dep:leaf"]
+[dependencies]
+leaf = { package = "census-patched-leaf", version = "^0.1", optional = true }
+"#,
+        );
+        fixture.write("first/src/lib.rs", "");
+        fixture.write(
+            "leaf/Cargo.toml",
+            r#"
+[package]
+name = "census-patched-leaf"
+version = "0.1.0"
+edition = "2024"
+[workspace]
+[dependencies]
+renamed = { package = "mech-syntax", path = "../syntax" }
+"#,
+        );
+        fixture.write(
+            "leaf/src/lib.rs",
+            "fn hidden(source: &str) { renamed::parse(source); }",
+        );
+        fixture.write(
+        "syntax/Cargo.toml",
+        "[package]\nname = \"mech-syntax\"\nversion = \"0.0.0\"\nedition = \"2024\"\n[workspace]\n",
+    );
+        fixture.write("syntax/src/lib.rs", "pub fn parse(_: &str) {}");
+        for (directory, name, version) in [
+            ("wrong-source", "census-patched-leaf", "0.1.1"),
+            ("unused", "census-unrelated", "0.0.0"),
+            ("incompatible", "census-patched-leaf", "9.0.0"),
+            ("prerelease", "census-patched-leaf", "0.1.2-alpha.1"),
+        ] {
+            fixture.write(&format!("{directory}/Cargo.toml"), &format!(
+            "[package]\nname = {name:?}\nversion = {version:?}\nedition = \"2024\"\n[workspace]\n[dependencies]\nrenamed = {{ package = \"mech-syntax\", path = \"../syntax\" }}\n"
+        ));
+            fixture.write(
+                &format!("{directory}/src/lib.rs"),
+                "fn unrelated(source: &str) { renamed::parse(source); }",
+            );
+        }
+        let metadata = fixture.metadata();
+        let (calls, aliases) = discovered_calls_in_packages(&fixture.0, &metadata);
+        if patch_source == "crates-io" {
+            assert_eq!(
+                calls,
+                BTreeMap::from([(("leaf/src/lib.rs".to_owned(), "hidden".to_owned()), 1)])
+            );
+            assert_eq!(local_packages(&fixture.0, &metadata).count(), 4);
+        } else {
+            assert!(
+                calls.is_empty(),
+                "a patch for another source must not supply this registry dependency"
+            );
+            assert_eq!(local_packages(&fixture.0, &metadata).count(), 2);
+        }
+        assert!(aliases.is_empty(), "{aliases:?}");
+    }
+}
+
+#[test]
+fn latest_review_local_patch_version_matching_uses_cargo_requirements() {
+    for (requirement, version, expected) in [
+        ("^1.2", "1.3.0", true),
+        (">=1.2, <2", "1.9.7", true),
+        ("~1.2", "1.3.0", false),
+        ("^0.1", "0.2.0", false),
+        ("*", "1.2.3-alpha.1", false),
+        ("^1.2.3-alpha.1", "1.2.3-alpha.2", true),
+        ("^1.2.3-alpha.1", "1.2.4-alpha.1", false),
+    ] {
+        assert_eq!(
+            cargo_version_matches("census-candidate", requirement, version),
+            expected,
+            "{requirement} against {version}"
+        );
+    }
 }
