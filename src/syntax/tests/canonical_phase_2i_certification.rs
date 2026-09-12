@@ -1166,6 +1166,7 @@ fn assert_allowed_mech_import(path: &Path, declaration: &str) {
             "FactorSyntax",
             "FactorValueSyntax",
             "FormulaSyntax",
+            "FunctionCallSyntax",
             "GreenElement",
             "GreenNode",
             "GreenToken",
