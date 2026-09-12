@@ -1,0 +1,178 @@
+use std::collections::BTreeSet;
+use std::fs;
+use std::path::PathBuf;
+use std::sync::Arc;
+
+use mech_syntax::document::parser::canonical::{
+    CanonicalRuleOutcome, parse_canonical_phase_2i_rule_for_test,
+};
+use mech_syntax::document::parser::rules;
+use mech_syntax::document::{
+    ArgumentListSyntax, AstNode, DocumentId, ExpressionSyntax, FormulaSyntax, GreenNode, MapSyntax,
+    NodeFlags, NodeId, ParseConfig, PatternArrayItemSyntax, RecursiveCoreSyntax,
+    RecursiveSyntaxNode, Revision, SyntaxKind, SyntaxNode, TextSize, TextSnapshot,
+    phase_2i_node_kind,
+};
+
+fn repository_root() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
+}
+
+fn schema_rows() -> Vec<Vec<String>> {
+    fs::read_to_string(
+        repository_root().join("docs/design/grammar-audit/phase-2i-syntax-schema.tsv"),
+    )
+    .expect("read Phase 2I syntax schema")
+    .lines()
+    .skip(1)
+    .map(|line| line.split('\t').map(str::to_owned).collect())
+    .collect()
+}
+
+fn source(text: &str) -> TextSnapshot {
+    TextSnapshot::new(DocumentId(0x2c7), Revision(3), text).unwrap()
+}
+
+fn empty_node(kind: SyntaxKind) -> SyntaxNode {
+    SyntaxNode::new_root(
+        Arc::new(GreenNode {
+            id: NodeId(kind as u64 + 1),
+            kind,
+            text_len: TextSize::ZERO,
+            children: Arc::from([]),
+            flags: NodeFlags::NONE,
+            structural_hash: 0,
+        }),
+        source(""),
+    )
+}
+
+fn find_kind(node: &SyntaxNode, kind: SyntaxKind) -> Option<SyntaxNode> {
+    if node.kind() == kind {
+        return Some(node.clone());
+    }
+    node.children().find_map(|child| find_kind(&child, kind))
+}
+
+#[test]
+fn schema_and_typed_surface_have_one_complete_authority() {
+    let rows = schema_rows();
+    assert_eq!(rows.len(), 80);
+    let mut node_kinds = BTreeSet::new();
+    let mut transparent = BTreeSet::new();
+
+    for row in rows {
+        assert_eq!(row.len(), 6);
+        let name = &row[0];
+        match row[2].as_str() {
+            "node" | "conditional-node" => {
+                let kind = phase_2i_node_kind(name)
+                    .unwrap_or_else(|| panic!("missing typed view for {name}"));
+                assert_eq!(format!("{kind:?}"), row[3]);
+                assert!(node_kinds.insert(kind), "duplicate typed kind {kind:?}");
+                let syntax = empty_node(kind);
+                let view = RecursiveCoreSyntax::cast(syntax.clone())
+                    .unwrap_or_else(|| panic!("typed cast rejected {kind:?}"));
+                assert_eq!(view.syntax().kind(), kind);
+                assert!(Arc::ptr_eq(view.syntax().green(), syntax.green()));
+            }
+            "transparent" => {
+                assert!(phase_2i_node_kind(name).is_none());
+                transparent.insert(name.clone());
+            }
+            policy => panic!("unknown emission policy {policy}"),
+        }
+    }
+
+    assert_eq!(node_kinds.len(), 78);
+    assert_eq!(
+        transparent,
+        BTreeSet::from(["formula".to_owned(), "pattern-array-item".to_owned()])
+    );
+    assert!(!RecursiveCoreSyntax::can_cast(SyntaxKind::Document));
+    assert!(RecursiveCoreSyntax::cast(empty_node(SyntaxKind::Document)).is_none());
+    assert!(FormulaSyntax::can_cast(SyntaxKind::Factor));
+    assert!(!FormulaSyntax::can_cast(SyntaxKind::Expression));
+    assert!(PatternArrayItemSyntax::can_cast(SyntaxKind::Pattern));
+    assert!(!PatternArrayItemSyntax::can_cast(
+        SyntaxKind::ArrayPatternElement
+    ));
+}
+
+#[test]
+fn ordered_children_delimiters_and_trivia_are_available_without_source_copies() {
+    let parsed = parse_canonical_phase_2i_rule_for_test(
+        source("(1, x: 2)"),
+        rules::ARGUMENT_LIST,
+        ParseConfig::default(),
+    )
+    .unwrap();
+    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Matched);
+    let syntax = find_kind(&parsed.syntax(), SyntaxKind::ArgumentList).unwrap();
+    let view = ArgumentListSyntax::cast(syntax.clone()).unwrap();
+
+    assert_eq!(view.arguments().len(), 2);
+    assert!(view.opening_parenthesis().is_some());
+    assert!(view.closing_parenthesis().is_some());
+    assert!(!view.trivia_tokens().is_empty());
+    assert!(Arc::ptr_eq(view.syntax().green(), syntax.green()));
+    assert_eq!(
+        view.syntax().source().document(),
+        syntax.source().document()
+    );
+    assert_eq!(
+        view.syntax().source().revision(),
+        syntax.source().revision()
+    );
+    assert_eq!(
+        view.syntax().source().chunks().next().unwrap().as_ptr(),
+        syntax.source().chunks().next().unwrap().as_ptr()
+    );
+
+    let parsed = parse_canonical_phase_2i_rule_for_test(
+        source("{1:2, 3:4}"),
+        rules::MAP,
+        ParseConfig::default(),
+    )
+    .unwrap();
+    let map = MapSyntax::cast(find_kind(&parsed.syntax(), SyntaxKind::Map).unwrap()).unwrap();
+    let entries = map.entries();
+    assert_eq!(entries.len(), 2);
+    assert!(
+        entries
+            .iter()
+            .all(|entry| entry.key().is_some() && entry.value().is_some())
+    );
+    assert!(entries[0].syntax().range().start < entries[1].syntax().range().start);
+}
+
+#[test]
+fn typed_access_survives_missing_and_error_recovery() {
+    let missing = parse_canonical_phase_2i_rule_for_test(
+        source("(1"),
+        rules::ARGUMENT_LIST,
+        ParseConfig::default(),
+    )
+    .unwrap();
+    assert_eq!(missing.outcome, CanonicalRuleOutcome::Committed);
+    let view =
+        ArgumentListSyntax::cast(find_kind(&missing.syntax(), SyntaxKind::ArgumentList).unwrap())
+            .unwrap();
+    assert_eq!(view.arguments().len(), 1);
+    assert!(view.closing_parenthesis().is_some());
+    assert_eq!(view.missing_tokens().len(), 1);
+
+    let unexpected = parse_canonical_phase_2i_rule_for_test(
+        source("1 + @"),
+        rules::EXPRESSION,
+        ParseConfig::default(),
+    )
+    .unwrap();
+    assert_eq!(unexpected.outcome, CanonicalRuleOutcome::Committed);
+    let expression =
+        ExpressionSyntax::cast(find_kind(&unexpected.syntax(), SyntaxKind::Expression).unwrap())
+            .unwrap();
+    assert!(expression.body().is_some());
+    assert_eq!(expression.error_nodes().len(), 1);
+    assert!(expression.missing_nodes().is_empty());
+}
