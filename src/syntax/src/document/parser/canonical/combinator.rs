@@ -56,7 +56,7 @@ pub(crate) const fn is_grammar_ignored(character: char) -> bool {
     matches!(character, ' ' | '\t' | '\r' | '\n')
 }
 
-/// Preserve the bytes discarded by legacy grammar preprocessing as trivia.
+/// Preserve grammar-ignored source bytes as trivia.
 pub(crate) fn consume_grammar_ignored_trivia(parser: &mut Parser<'_>) {
     while !parser.is_halted() {
         match (parser.cursor().byte(), parser.cursor().byte_at(1)) {
@@ -73,23 +73,30 @@ pub(crate) fn consume_grammar_ignored_trivia(parser: &mut Parser<'_>) {
                 parser.token_with_flags(SyntaxKind::Newline, range, TokenFlags::TRIVIA);
             }
             (Some(b' ' | b'\t'), _) => {
-                let start = parser.offset();
-                while matches!(parser.cursor().byte(), Some(b' ' | b'\t')) {
-                    if parser.bump_char_raw().is_none() {
-                        break;
-                    }
-                }
-                if parser.offset() == start {
-                    break;
-                }
-                parser.token_with_flags(
-                    SyntaxKind::Whitespace,
-                    TextRange::new(start, parser.offset()),
-                    TokenFlags::TRIVIA,
-                );
+                consume_grammar_horizontal_trivia(parser);
             }
             _ => break,
         }
+    }
+}
+
+/// Preserve horizontal grammar trivia without consuming a physical row boundary.
+pub(crate) fn consume_grammar_horizontal_trivia(parser: &mut Parser<'_>) {
+    while !parser.is_halted() && matches!(parser.cursor().byte(), Some(b' ' | b'\t')) {
+        let start = parser.offset();
+        while matches!(parser.cursor().byte(), Some(b' ' | b'\t')) {
+            if parser.bump_char_raw().is_none() {
+                break;
+            }
+        }
+        if parser.offset() == start {
+            break;
+        }
+        parser.token_with_flags(
+            SyntaxKind::Whitespace,
+            TextRange::new(start, parser.offset()),
+            TokenFlags::TRIVIA,
+        );
     }
 }
 

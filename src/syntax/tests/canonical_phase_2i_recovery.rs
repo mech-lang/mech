@@ -404,7 +404,7 @@ fn recursive_list_recovery_resumes_at_later_siblings() {
             rules::KIND_TUPLE,
             "(u8, <u8, i8)",
             SyntaxKind::KindScalar,
-            2,
+            3,
         ),
         (
             rules::BRACKET_SUBSCRIPT,
@@ -434,6 +434,110 @@ fn recursive_list_recovery_resumes_at_later_siblings() {
             "{rule:?}"
         );
     }
+}
+
+#[test]
+fn direct_collection_recovery_retains_later_siblings() {
+    for (rule, text, kind, expected) in [
+        (rules::SET, "{1, 2 +, 3}", SyntaxKind::IntegerLiteral, 3),
+        (rules::MAP, "{1: 2, 3:, 4: 5}", SyntaxKind::MapEntry, 3),
+        (
+            rules::RECORD,
+            "{a: 1, b:, c: 3}",
+            SyntaxKind::RecordBinding,
+            3,
+        ),
+        (rules::TUPLE, "(1,,3)", SyntaxKind::IntegerLiteral, 2),
+        (rules::KIND_TABLE, "|a,,c|", SyntaxKind::Identifier, 2),
+    ] {
+        let parsed = parse(rule, text);
+        assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed, "{text:?}");
+        assert_eq!(parsed.consumed.end.0 as usize, text.len(), "{text:?}");
+        assert_eq!(count_kind(&parsed.syntax(), kind), expected, "{text:?}");
+        assert!(
+            contains_kind(&parsed.syntax(), SyntaxKind::Missing),
+            "{text:?}"
+        );
+    }
+}
+
+#[test]
+fn recovered_table_cells_preserve_physical_row_boundaries() {
+    let regular = "|a<u8>|\n|1 +\n|2|";
+    let parsed = parse(rules::REGULAR_TABLE, regular);
+    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+    assert_eq!(parsed.consumed.end.0 as usize, regular.len());
+    assert_eq!(count_kind(&parsed.syntax(), SyntaxKind::TableRow), 2);
+    assert!(contains_kind(&parsed.syntax(), SyntaxKind::Missing));
+
+    let framed = "│1 +│";
+    let parsed = parse(rules::TABLE_ROW2, framed);
+    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+    assert_eq!(parsed.consumed.end.0 as usize, framed.len());
+    assert_eq!(
+        parsed
+            .syntax()
+            .tokens()
+            .into_iter()
+            .filter(|token| token.kind() == SyntaxKind::BoxDrawing)
+            .count(),
+        2
+    );
+}
+
+#[test]
+fn recovered_matrix_row_retains_later_rows() {
+    let text = "[1; 2 +; 3]";
+    let parsed = parse(rules::MATRIX, text);
+    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+    assert_eq!(parsed.consumed.end.0 as usize, text.len());
+    assert_eq!(count_kind(&parsed.syntax(), SyntaxKind::IntegerLiteral), 3);
+    assert_eq!(count_kind(&parsed.syntax(), SyntaxKind::MatrixRow), 3);
+}
+
+#[test]
+fn recovered_kind_owners_consume_their_physical_braces() {
+    for (text, selected) in [
+        ("{u8:<u8}", SyntaxKind::KindMap),
+        ("{a<u8>, b<u8}", SyntaxKind::KindRecord),
+    ] {
+        let parsed = parse(rules::KIND, text);
+        assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed, "{text:?}");
+        assert_eq!(parsed.consumed.end.0 as usize, text.len(), "{text:?}");
+        assert!(contains_kind(&parsed.syntax(), selected), "{text:?}");
+        let right_braces = parsed
+            .syntax()
+            .tokens()
+            .into_iter()
+            .filter(|token| token.kind() == SyntaxKind::RightBrace)
+            .collect::<Vec<_>>();
+        assert_eq!(right_braces.len(), 1, "{text:?}");
+        assert!(
+            !right_braces[0]
+                .flags()
+                .contains(mech_syntax::document::TokenFlags::MISSING),
+            "{text:?}"
+        );
+    }
+}
+
+#[test]
+fn match_and_fsm_recovery_resume_at_later_stages() {
+    let match_text = "x ? | * => 1 | * => | * => 3";
+    let parsed = parse(rules::EXPRESSION, match_text);
+    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+    assert_eq!(parsed.consumed.end.0 as usize, match_text.len());
+    assert_eq!(count_kind(&parsed.syntax(), SyntaxKind::MatchArm), 3);
+
+    let fsm_text = "#m -> => :next";
+    let parsed = parse(rules::FSM_PIPE, fsm_text);
+    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+    assert_eq!(parsed.consumed.end.0 as usize, fsm_text.len());
+    assert_eq!(
+        count_kind(&parsed.syntax(), SyntaxKind::FsmStateTransition),
+        1
+    );
+    assert_eq!(count_kind(&parsed.syntax(), SyntaxKind::FsmOutput), 1);
 }
 
 #[test]

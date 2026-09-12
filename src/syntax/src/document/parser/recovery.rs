@@ -101,22 +101,6 @@ pub(crate) fn skip_error(
     Some(error)
 }
 
-/// Preserve unexpected bytes until the delimiter owned by `target` can resume
-/// parsing. Nested `()`, `[]`, and `{}` pairs are skipped as one malformed
-/// region, so an inner closer cannot steal the owning rule's restart point.
-/// The delimiter itself is left for the caller to consume normally.
-pub(crate) fn abandon_to_delimiter(
-    parser: &mut Parser<'_>,
-    target: RuleId,
-    delimiter: char,
-    code: &str,
-    message: &str,
-) -> Option<CompletedMarker> {
-    abandon_until(parser, target, code, message, |character| {
-        is_owner_delimiter(character, delimiter) || is_unowned_closer(character, delimiter)
-    })
-}
-
 /// Preserve unexpected bytes until a sibling or ancestor production can
 /// restart. Boundary characters remain unconsumed for the owning production.
 pub(crate) fn abandon_to_restart(
@@ -474,12 +458,4 @@ fn nesting_should_stop(parser: &Parser<'_>, nested: u32) -> bool {
             || parser.cursor().starts_with("//")
             || is_newline_start(parser.cursor())
             || parser.is_strong_document_boundary())
-}
-
-fn is_unowned_closer(character: char, owner: char) -> bool {
-    matches!(character, ')' | ']' | '}' | '>' | '⟩') && !is_owner_delimiter(character, owner)
-}
-
-fn is_owner_delimiter(character: char, owner: char) -> bool {
-    character == owner || (owner == '>' && character == '⟩')
 }

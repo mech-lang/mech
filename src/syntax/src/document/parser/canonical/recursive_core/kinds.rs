@@ -153,11 +153,9 @@ pub(super) fn parse_kind_table(parser: &mut Parser<'_>) -> Attempt {
                         "kind-table-field",
                     );
                     committed = true;
-                    break;
                 }
                 Attempt::Committed => {
                     committed = true;
-                    break;
                 }
             }
         }
@@ -567,6 +565,66 @@ fn kind_brace_selection(parser: &mut Parser<'_>) -> Attempt {
         parser.rewind(after_open);
         record.abandon(parser);
 
+        let scalar_map = parser.checkpoint();
+        if parse_plain_scalar_kind(parser) == Attempt::Matched
+            && base::parse_rule(parser, rules::COLON)
+        {
+            match parse_kind(parser) {
+                Attempt::Matched => {
+                    if !base::parse_rule(parser, rules::RIGHT_BRACE) {
+                        recover_closer(
+                            parser,
+                            rules::KIND_MAP,
+                            rules::RIGHT_BRACE,
+                            SyntaxKind::RightBrace,
+                            '}',
+                            "}",
+                        );
+                        set.abandon(parser);
+                        map.complete(parser, SyntaxKind::KindMap);
+                        return Attempt::Committed;
+                    }
+                    set.abandon(parser);
+                    map.complete(parser, SyntaxKind::KindMap);
+                    return Attempt::Matched;
+                }
+                Attempt::Committed => {
+                    recover_closer(
+                        parser,
+                        rules::KIND_MAP,
+                        rules::RIGHT_BRACE,
+                        SyntaxKind::RightBrace,
+                        '}',
+                        "}",
+                    );
+                    set.abandon(parser);
+                    map.complete(parser, SyntaxKind::KindMap);
+                    return Attempt::Committed;
+                }
+                Attempt::NoMatch => {
+                    recover_required_production(
+                        parser,
+                        rules::KIND_MAP,
+                        "syntax/missing-kind-map-value",
+                        "missing map value kind after colon",
+                        "kind",
+                    );
+                    recover_closer(
+                        parser,
+                        rules::KIND_MAP,
+                        rules::RIGHT_BRACE,
+                        SyntaxKind::RightBrace,
+                        '}',
+                        "}",
+                    );
+                    set.abandon(parser);
+                    map.complete(parser, SyntaxKind::KindMap);
+                    return Attempt::Committed;
+                }
+            }
+        }
+        parser.rewind(scalar_map);
+
         match parse_kind(parser) {
             Attempt::Matched => {}
             Attempt::NoMatch => return Attempt::NoMatch,
@@ -590,6 +648,14 @@ fn kind_brace_selection(parser: &mut Parser<'_>) -> Attempt {
                 Attempt::Matched => {}
                 Attempt::NoMatch => return Attempt::NoMatch,
                 Attempt::Committed => {
+                    recover_closer(
+                        parser,
+                        rules::KIND_MAP,
+                        rules::RIGHT_BRACE,
+                        SyntaxKind::RightBrace,
+                        '}',
+                        "}",
+                    );
                     map.complete(parser, SyntaxKind::KindMap);
                     return Attempt::Committed;
                 }
@@ -629,6 +695,27 @@ fn kind_brace_selection(parser: &mut Parser<'_>) -> Attempt {
     result
 }
 
+fn parse_plain_scalar_kind(parser: &mut Parser<'_>) -> Attempt {
+    combinator::transactional(parser, rules::KIND, |parser| {
+        let kind = parser.start();
+        let scalar = combinator::transactional(parser, rules::KIND_SCALAR, |parser| {
+            let scalar = parser.start();
+            if !base::parse_rule(parser, rules::IDENTIFIER) {
+                scalar.abandon(parser);
+                return Attempt::NoMatch;
+            }
+            scalar.complete(parser, SyntaxKind::KindScalar);
+            Attempt::Matched
+        });
+        if scalar == Attempt::NoMatch {
+            kind.abandon(parser);
+            return Attempt::NoMatch;
+        }
+        kind.complete(parser, SyntaxKind::Kind);
+        Attempt::Matched
+    })
+}
+
 fn kind_record_interior(parser: &mut Parser<'_>) -> Attempt {
     if !base::parse_rule(parser, rules::WHITESPACE0) {
         return Attempt::NoMatch;
@@ -641,6 +728,7 @@ fn kind_record_interior(parser: &mut Parser<'_>) -> Attempt {
 }
 
 fn finish_kind_record_fields(parser: &mut Parser<'_>) -> Attempt {
+    let mut committed = false;
     loop {
         let pair = parser.checkpoint();
         if !base::parse_rule(parser, rules::LIST_SEPARATOR)
@@ -654,7 +742,7 @@ fn finish_kind_record_fields(parser: &mut Parser<'_>) -> Attempt {
                 parser.rewind(pair);
                 break;
             }
-            Attempt::Committed => return Attempt::Committed,
+            Attempt::Committed => committed = true,
         }
     }
     let _ = base::parse_exact_tag(parser, ",…", SyntaxKind::Text);
@@ -669,7 +757,11 @@ fn finish_kind_record_fields(parser: &mut Parser<'_>) -> Attempt {
             "}",
         );
     }
-    Attempt::Matched
+    if committed {
+        Attempt::Committed
+    } else {
+        Attempt::Matched
+    }
 }
 
 fn finish_selected_kind_record(

@@ -3,7 +3,10 @@ use crate::document::SyntaxKind;
 use super::super::super::Parser;
 use super::super::super::rule::rules;
 use super::super::{base, combinator};
-use super::{Attempt, FactAttempt, calls, child_result, patterns, recover_required_production};
+use super::{
+    Attempt, FactAttempt, calls, child_result, patterns, recover_required_production,
+    recover_required_production_with_boundaries,
+};
 
 pub(super) fn parse_fsm_pipe(parser: &mut Parser<'_>) -> Attempt {
     combinator::transactional(parser, rules::FSM_PIPE, |parser| {
@@ -12,20 +15,23 @@ pub(super) fn parse_fsm_pipe(parser: &mut Parser<'_>) -> Attempt {
         if let Some(result) = child_result(parser, node, SyntaxKind::FsmPipe, child) {
             return result;
         }
+        let mut committed = false;
         loop {
             let before = parser.offset();
             let stage = stage(parser);
             match stage {
                 Attempt::Matched if parser.offset() > before => {}
                 Attempt::Matched | Attempt::NoMatch => break,
-                Attempt::Committed => {
-                    node.complete(parser, SyntaxKind::FsmPipe);
-                    return Attempt::Committed;
-                }
+                Attempt::Committed if parser.offset() > before => committed = true,
+                Attempt::Committed => break,
             }
         }
         node.complete(parser, SyntaxKind::FsmPipe);
-        Attempt::Matched
+        if committed {
+            Attempt::Committed
+        } else {
+            Attempt::Matched
+        }
     })
 }
 
@@ -143,12 +149,13 @@ fn transition(
                 return Attempt::Committed;
             }
             Attempt::NoMatch => {
-                recover_required_production(
+                recover_required_production_with_boundaries(
                     parser,
                     rule,
                     "syntax/missing-fsm-transition-value",
                     "missing state-machine value after transition operator",
                     "fsm-value",
+                    &['-', '~', '='],
                 );
                 node.complete(parser, kind);
                 return Attempt::Committed;

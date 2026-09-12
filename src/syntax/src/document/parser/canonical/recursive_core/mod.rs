@@ -207,20 +207,34 @@ pub(super) fn recover_required_production(
     message: &str,
     production: &str,
 ) -> Attempt {
-    combinator::consume_grammar_ignored_trivia(parser);
-    const RESTART_BOUNDARIES: &[char] = &[')', ']', '}', '>', '⟩', ',', ';', '|'];
+    recover_required_production_with_boundaries(parser, target, code, message, production, &[])
+}
+
+pub(super) fn recover_required_production_with_boundaries(
+    parser: &mut Parser<'_>,
+    target: RuleId,
+    code: &str,
+    message: &str,
+    production: &str,
+    owner_boundaries: &[char],
+) -> Attempt {
+    combinator::consume_grammar_horizontal_trivia(parser);
+    const RESTART_BOUNDARIES: &[char] =
+        &[')', ']', '}', '>', '⟩', ',', ';', '|', '│', '┃', '\n', '\r'];
+    let mut boundaries = alloc::vec::Vec::from(RESTART_BOUNDARIES);
+    boundaries.extend_from_slice(owner_boundaries);
     if parser.is_eof()
         || parser
             .cursor()
             .peek_char()
-            .is_some_and(|character| RESTART_BOUNDARIES.contains(&character))
+            .is_some_and(|character| boundaries.contains(&character))
     {
         return missing_production(parser, code, message, production);
     }
     let _ = recovery::abandon_to_restart(
         parser,
         target,
-        RESTART_BOUNDARIES,
+        &boundaries,
         "syntax/unexpected-production-source",
         "unexpected source where a required production was expected",
     );
@@ -235,8 +249,9 @@ pub(super) fn recover_required_token(
     token: SyntaxKind,
     text: &str,
 ) -> Attempt {
-    combinator::consume_grammar_ignored_trivia(parser);
-    const RESTART_BOUNDARIES: &[char] = &[')', ']', '}', '>', '⟩', ',', ';', '|'];
+    combinator::consume_grammar_horizontal_trivia(parser);
+    const RESTART_BOUNDARIES: &[char] =
+        &[')', ']', '}', '>', '⟩', ',', ';', '|', '│', '┃', '\n', '\r'];
     if parser.is_eof()
         || parser
             .cursor()
@@ -268,13 +283,15 @@ pub(super) fn recover_closer(
     target: RuleId,
     close_rule: RuleId,
     close_kind: SyntaxKind,
-    close_character: char,
+    _close_character: char,
     close_text: &str,
 ) -> Attempt {
-    let _ = recovery::abandon_to_delimiter(
+    const RESTART_BOUNDARIES: &[char] =
+        &[')', ']', '}', '>', '⟩', ',', ';', '|', '│', '┃', '\n', '\r'];
+    let _ = recovery::abandon_to_restart(
         parser,
         target,
-        close_character,
+        RESTART_BOUNDARIES,
         "syntax/unexpected-delimited-content",
         "unexpected source before the closing delimiter",
     );
