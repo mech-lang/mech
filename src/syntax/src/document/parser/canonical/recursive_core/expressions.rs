@@ -66,8 +66,11 @@ pub(super) fn expression_body(parser: &mut Parser<'_>) -> FactAttempt<Expression
                         return FactAttempt::NoMatch;
                     }
                     Attempt::Committed => {
-                        finish_provisional_formula_marker(parser, range);
-                        return FactAttempt::Committed;
+                        if parser.is_halted() {
+                            finish_provisional_formula_marker(parser, range);
+                            return FactAttempt::Committed;
+                        }
+                        committed = true;
                     }
                 }
             }
@@ -241,11 +244,11 @@ pub(super) fn formula_or_range(parser: &mut Parser<'_>, require_range: bool) -> 
     match operators::parse_range_operator(parser) {
         Attempt::NoMatch => {
             range.abandon(parser);
-            if committed {
-                Attempt::Committed
-            } else if require_range {
+            if require_range {
                 parser.rewind(checkpoint);
                 Attempt::NoMatch
+            } else if committed {
+                Attempt::Committed
             } else {
                 Attempt::Matched
             }

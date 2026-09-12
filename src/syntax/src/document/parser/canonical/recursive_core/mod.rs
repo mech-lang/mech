@@ -12,6 +12,8 @@ mod structures;
 mod subscripts;
 mod variables;
 
+pub(crate) use kinds::parse_kind_annotation_candidate;
+
 use alloc::string::String;
 
 use crate::document::{ExpectedSyntax, RuleId, SyntaxKind};
@@ -271,7 +273,7 @@ fn recover_required_production_at_boundaries(
 ) -> Attempt {
     combinator::consume_grammar_horizontal_trivia(parser);
     const RESTART_BOUNDARIES: &[char] = &[
-        ')', ']', '}', '>', '⟩', '╯', '┘', '┛', ',', ';', '|', '│', '┃', '\n', '\r',
+        ')', ']', '}', '>', '⟩', '╯', '┘', '┛', ',', ';', '|', '│', '┃', '?', '\n', '\r',
     ];
     let mut boundaries = alloc::vec::Vec::from(RESTART_BOUNDARIES);
     boundaries.extend_from_slice(owner_boundaries);

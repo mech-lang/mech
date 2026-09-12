@@ -2,10 +2,18 @@ use crate::document::SyntaxKind;
 
 use super::super::super::Parser;
 use super::super::super::rule::rules;
-use super::super::{base, combinator, paths};
+use super::super::{base, combinator, operators, paths};
 use super::{Attempt, child_result, expressions, kinds, recover_required_production};
 
 pub(super) fn parse_var(parser: &mut Parser<'_>) -> Attempt {
+    variable(parser, false)
+}
+
+pub(super) fn parse_factor_var(parser: &mut Parser<'_>) -> Attempt {
+    variable(parser, true)
+}
+
+fn variable(parser: &mut Parser<'_>, allow_comparison: bool) -> Attempt {
     combinator::transactional(parser, rules::VAR, |parser| {
         let node = parser.start();
         let stem = paths::parse_prefixed_context_path(parser).accepted()
@@ -13,6 +21,29 @@ pub(super) fn parse_var(parser: &mut Parser<'_>) -> Attempt {
         if !stem {
             node.abandon(parser);
             return Attempt::NoMatch;
+        }
+        if allow_comparison {
+            // Complete annotations retain grammar precedence. A rejected
+            // optional annotation leaves the canonical comparison operator to
+            // select its operand, without recursively probing the whole chain.
+            match kinds::parse_kind_annotation_candidate(parser) {
+                Attempt::Matched => {
+                    node.complete(parser, SyntaxKind::Variable);
+                    return Attempt::Matched;
+                }
+                Attempt::Committed => {
+                    node.complete(parser, SyntaxKind::Variable);
+                    return Attempt::Committed;
+                }
+                Attempt::NoMatch => {}
+            }
+            let suffix = parser.checkpoint();
+            let comparison = operators::parse_comparison_operator(parser) == Attempt::Matched;
+            parser.rewind(suffix);
+            if comparison && !parser.is_halted() {
+                node.complete(parser, SyntaxKind::Variable);
+                return Attempt::Matched;
+            }
         }
         if kinds::parse_kind_annotation(parser) == Attempt::Committed {
             node.complete(parser, SyntaxKind::Variable);

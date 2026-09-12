@@ -285,9 +285,8 @@ fn opens_kind_annotation(parser: &mut Parser<'_>) -> bool {
     // Reuse the canonical candidate transaction and its shared resource limits;
     // failed recovery is rewound while fuel remains charged.
     let checkpoint = parser.checkpoint();
-    let matched =
-        super::canonical::recursive_core::parse_rule(parser, super::rule::rules::KIND_ANNOTATION)
-            == Some(super::canonical::combinator::Attempt::Matched);
+    let matched = super::canonical::recursive_core::parse_kind_annotation_candidate(parser)
+        == super::canonical::combinator::Attempt::Matched;
     parser.rewind(checkpoint);
     matched
 }
