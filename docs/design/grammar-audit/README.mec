@@ -31,16 +31,18 @@ and removal of `table_bottom`. REPL commands now belong to
 syntax, not pending work for the lossless document parser. Runtime command
 registry and request tests enforce the current command contract.
 
-`phase-2i-certification.tsv` is the closed S5 evidence matrix. Every Phase 2I
+`phase-2i-certification.tsv` records the S5 acceptance obligations. Every Phase 2I
 row has specification-linked accepted and recovery inputs, a direct rejection
 case formed by placing a forbidden closing delimiter before that rule's accepted
 form, frozen lossless-tree and rule-specific typed-accessor snapshots, stable
 recovery evidence, an explicit semantic disposition, and a canonical downstream
-consumer. Executable and compile-time rows provide one canonical expression or
-definition context and freeze the complete source program, schemas, constants,
-operation contracts, source map, artifact result, and per-slot shape hints. The
-matrix and engine semantic fixtures derive expectations only from canonical
-source.
+consumer. Each semantic witness requires an executable result, compile-time
+meaning, or an exact anchored user error. Expected user errors have no artifact
+fingerprint. Positive witnesses must produce valid artifacts before their source
+program, schemas, constants, contracts, source map and shape hints are checked.
+Unfinished source or artifact lowering fails acceptance explicitly; an error
+fingerprint cannot satisfy it. Behavioral tests require execution and values
+independently of fingerprints. S4 and S5 semantic completion remains open.
 
 Canonical source-import parity now includes extensionless paths, percent
 characters, and whitespace around context capability groups. Canonical escape

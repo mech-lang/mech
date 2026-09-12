@@ -108,6 +108,18 @@ fn promoted_arithmetic_executes_with_live_operands() {
 }
 
 #[test]
+fn expected_error_families_also_have_positive_call_and_literal_execution() {
+    execute(
+        "x := math/add(signal<f64>, 2)",
+        [
+            (vec![ResidentValueRef::F64(&[1.0])], f(3.0)),
+            (vec![ResidentValueRef::F64(&[7.0])], f(9.0)),
+        ],
+    );
+    execute("x := 1", [(Vec::new(), f(1.0)), (Vec::new(), f(1.0))]);
+}
+
+#[test]
 fn nested_structured_values_execute_and_preserve_field_column_and_key_order() {
     for value in [3.0, 7.0] {
         let input = [value];

@@ -30,6 +30,7 @@ struct CertificationRow {
     conformance_cases: String,
     semantic_snapshot_hash: String,
     canonical_consumer: String,
+    required_semantic_outcome: String,
 }
 
 fn repository_root() -> PathBuf {
@@ -49,13 +50,13 @@ fn certification_rows() -> Vec<CertificationRow> {
     assert_eq!(
         lines.next(),
         Some(
-            "grammar-name\taccepted-source-json\trejected-source-json\trecovery-source-json\temission-policy\tsyntax-kind\tclean-tree-hash\ttyped-access-hash\trecovery-snapshot-hash\tsemantic-disposition\tsemantic-source-json\tspec-location\tconformance-cases\tsemantic-snapshot-hash\tcanonical-consumer"
+            "grammar-name\taccepted-source-json\trejected-source-json\trecovery-source-json\temission-policy\tsyntax-kind\tclean-tree-hash\ttyped-access-hash\trecovery-snapshot-hash\tsemantic-disposition\tsemantic-source-json\tspec-location\tconformance-cases\tsemantic-snapshot-hash\tcanonical-consumer\trequired-semantic-outcome"
         )
     );
     lines
         .map(|line| {
             let fields = line.split('\t').collect::<Vec<_>>();
-            assert_eq!(fields.len(), 15, "invalid certification row: {line}");
+            assert_eq!(fields.len(), 16, "invalid certification row: {line}");
             CertificationRow {
                 name: fields[0].to_owned(),
                 accepted: serde_json::from_str(fields[1]).expect("accepted source JSON"),
@@ -73,6 +74,7 @@ fn certification_rows() -> Vec<CertificationRow> {
                 conformance_cases: fields[12].to_owned(),
                 semantic_snapshot_hash: fields[13].to_owned(),
                 canonical_consumer: fields[14].to_owned(),
+                required_semantic_outcome: fields[15].to_owned(),
             }
         })
         .collect()
@@ -798,7 +800,6 @@ fn certification_table_executes_every_direct_accept_reject_and_recovery_case() {
             "executable" => {
                 assert_eq!(row.canonical_consumer, "engine/source-semantics");
                 assert!(row.semantic_source.is_some());
-                assert!(row.semantic_snapshot_hash.parse::<u64>().is_ok());
             }
             "structural" => {
                 assert!(row.canonical_consumer.starts_with("syntax/typed-"));
@@ -811,9 +812,25 @@ fn certification_table_executes_every_direct_accept_reject_and_recovery_case() {
                     "engine/source-semantics/compile-time"
                 );
                 assert!(row.semantic_source.is_some());
-                assert!(row.semantic_snapshot_hash.parse::<u64>().is_ok());
             }
             _ => unreachable!("closed semantic disposition"),
+        }
+        if let Some(code) = row
+            .required_semantic_outcome
+            .strip_prefix("expected-user-error:")
+        {
+            assert!(row.semantic_source.is_some());
+            assert!(code.starts_with("source-semantics/"));
+            assert_eq!(row.semantic_snapshot_hash, "none");
+        } else {
+            assert_eq!(
+                row.required_semantic_outcome, row.semantic_disposition,
+                "{}",
+                row.name
+            );
+            if row.semantic_disposition != "structural" {
+                assert!(row.semantic_snapshot_hash.parse::<u64>().is_ok());
+            }
         }
     }
     assert!(
