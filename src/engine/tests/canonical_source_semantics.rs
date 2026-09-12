@@ -607,7 +607,7 @@ fn canonical_numeric_kinds_annotations_strings_and_state_are_preserved() {
     ));
 
     let negated = CanonicalSourceFrontend
-        .compile_expression(&expression("-1u8"))
+        .compile_expression(&expression("-1<i8>"))
         .unwrap();
     assert!(matches!(
         negated
@@ -672,6 +672,130 @@ fn canonical_numeric_kinds_annotations_strings_and_state_are_preserved() {
             .body(),
         SchemaBody::ReifiedType
     ));
+}
+
+#[test]
+fn semantic_kind_edges_are_resolved_before_graph_emission() {
+    let dynamic_option = CanonicalSourceFrontend
+        .compile_expression(&expression("1<u8:1..10?>"))
+        .unwrap();
+    let SourceValue::Constant(id) = dynamic_option.program().outputs[0].source else {
+        panic!("constrained optional number did not produce a constant")
+    };
+    assert!(matches!(
+        dynamic_option
+            .schemas()
+            .get(dynamic_option.program().outputs[0].schema)
+            .unwrap()
+            .body(),
+        SchemaBody::Option(payload) if matches!(payload.as_ref(), SchemaBody::Dynamic)
+    ));
+    assert!(matches!(
+        dynamic_option.constants().get(id).unwrap().data(),
+        ValueData::Option(Some(value))
+            if matches!(value.as_ref(), ValueData::Dynamic(dynamic)
+                if matches!(dynamic.value().map(|value| value.data()), Some(ValueData::F64(_))))
+    ));
+    dynamic_option
+        .compile_artifact()
+        .expect("a constrained optional number must finalize as a dynamic payload");
+
+    for (source, numerator, denominator) in [("2/4", 1, 2), ("7/7", 1, 1)] {
+        let compiled = CanonicalSourceFrontend
+            .compile_expression(&expression(source))
+            .unwrap();
+        let SourceValue::Constant(id) = compiled.program().outputs[0].source else {
+            panic!("{source:?} did not produce a constant")
+        };
+        assert!(matches!(
+            compiled.constants().get(id).unwrap().data(),
+            ValueData::Rational64(value)
+                if value.numerator() == numerator && value.denominator() == denominator
+        ));
+        compiled
+            .compile_artifact()
+            .expect("reduced rationals must finalize");
+    }
+
+    let empty = CanonicalSourceFrontend
+        .compile_expression(&expression("_<u8?>"))
+        .unwrap();
+    let SourceValue::Constant(id) = empty.program().outputs[0].source else {
+        panic!("typed empty did not produce a constant")
+    };
+    assert!(matches!(
+        empty.constants().get(id).unwrap().data(),
+        ValueData::Option(None)
+    ));
+    assert!(matches!(
+        empty
+            .schemas()
+            .get(empty.program().outputs[0].schema)
+            .unwrap()
+            .body(),
+        SchemaBody::Option(payload)
+            if matches!(payload.as_ref(), SchemaBody::UnsignedInteger(IntegerWidth::W8))
+    ));
+    empty
+        .compile_artifact()
+        .expect("typed empty must be an absent optional constant");
+
+    let late_annotation = CanonicalSourceFrontend
+        .compile_expression(&expression("(signal + 1) + signal<u8>"))
+        .unwrap();
+    assert!(matches!(
+        late_annotation
+            .schemas()
+            .get(late_annotation.program().inputs[0].schema)
+            .unwrap()
+            .body(),
+        SchemaBody::UnsignedInteger(IntegerWidth::W8)
+    ));
+    assert!(late_annotation.program().nodes.iter().all(|node| {
+        node.outputs.iter().all(|output| match output {
+            mech_engine::SourceNodeOutput::Derived { schema } => matches!(
+                late_annotation.schemas().get(*schema).unwrap().body(),
+                SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)
+            ),
+            mech_engine::SourceNodeOutput::State(_) => false,
+        })
+    }));
+    late_annotation
+        .compile_artifact()
+        .expect("input declarations must be resolved before consumer nodes");
+
+    let unsigned_negation = CanonicalSourceFrontend
+        .compile_expression(&expression("-1u8"))
+        .err()
+        .expect("unsigned negation must be rejected");
+    assert_eq!(
+        unsigned_negation.code,
+        "source-semantics/non-negatable-kind"
+    );
+
+    let atom_state = CanonicalSourceFrontend
+        .compile_definition(&definition("~state := :ready"))
+        .unwrap();
+    assert!(matches!(
+        atom_state
+            .schemas()
+            .get(atom_state.program().states[0].schema)
+            .unwrap()
+            .body(),
+        SchemaBody::Atom(_)
+    ));
+    atom_state
+        .compile_artifact()
+        .expect("an exact atom initializer must retain its state schema");
+
+    let rational_range = CanonicalSourceFrontend
+        .compile_expression(&expression("1/2..3/4"))
+        .err()
+        .expect("rational range endpoints must be rejected");
+    assert_eq!(
+        rational_range.code,
+        "source-semantics/invalid-range-endpoint-kind"
+    );
 }
 
 #[test]
