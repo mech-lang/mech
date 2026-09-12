@@ -528,6 +528,14 @@ fn kind_brace_selection(parser: &mut Parser<'_>) -> Attempt {
                 Attempt::Matched => {}
                 Attempt::NoMatch => return Attempt::NoMatch,
                 Attempt::Committed => {
+                    recover_closer(
+                        parser,
+                        rules::KIND_RECORD,
+                        rules::RIGHT_BRACE,
+                        SyntaxKind::RightBrace,
+                        '}',
+                        "}",
+                    );
                     record.complete(parser, SyntaxKind::KindRecord);
                     set.abandon(parser);
                     map.abandon(parser);
@@ -542,6 +550,14 @@ fn kind_brace_selection(parser: &mut Parser<'_>) -> Attempt {
             match parse_kind_annotation(parser) {
                 Attempt::Matched => return finish_selected_kind_record(parser, record, set, map),
                 Attempt::Committed => {
+                    recover_closer(
+                        parser,
+                        rules::KIND_RECORD,
+                        rules::RIGHT_BRACE,
+                        SyntaxKind::RightBrace,
+                        '}',
+                        "}",
+                    );
                     record.complete(parser, SyntaxKind::KindRecord);
                     set.abandon(parser);
                     map.abandon(parser);
@@ -557,8 +573,16 @@ fn kind_brace_selection(parser: &mut Parser<'_>) -> Attempt {
             Attempt::Matched => {}
             Attempt::NoMatch => return Attempt::NoMatch,
             Attempt::Committed => {
+                recover_closer(
+                    parser,
+                    rules::KIND_SET,
+                    rules::RIGHT_BRACE,
+                    SyntaxKind::RightBrace,
+                    '}',
+                    "}",
+                );
                 set.complete(parser, SyntaxKind::KindSet);
-                map.complete(parser, SyntaxKind::KindMap);
+                map.abandon(parser);
                 return Attempt::Committed;
             }
         }

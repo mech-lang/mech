@@ -144,13 +144,33 @@ fn abandon_until(
     let remaining = remaining_recovery_bytes(parser);
     let mut delimiters = Vec::new();
     let mut quoted = None;
+    let mut raw_triple = false;
     let mut escaped = false;
 
     while !parser.is_eof() && !parser.is_halted() && recovered < remaining {
+        if quoted.is_none() && parser.cursor().starts_with("\"\"\"") {
+            if remaining.saturating_sub(recovered) < 3 {
+                parser.halt();
+                break;
+            }
+            for _ in 0..3 {
+                let Some((character, range)) = parser.bump_char_raw() else {
+                    parser.halt();
+                    break;
+                };
+                recovered = recovered.saturating_add(range.len().0);
+                parser.token_with_flags(token_kind_for_char(character), range, TokenFlags::ERROR);
+            }
+            raw_triple = !raw_triple;
+            continue;
+        }
         let Some(character) = parser.cursor().peek_char() else {
             break;
         };
-        if quoted.is_none() && recovery_boundary(character, &delimiters, &should_stop) {
+        if quoted.is_none()
+            && !raw_triple
+            && recovery_boundary(character, &delimiters, &should_stop)
+        {
             break;
         }
         if character.len_utf8() as u32 > remaining.saturating_sub(recovered) {
@@ -164,6 +184,9 @@ fn abandon_until(
         recovered = recovered.saturating_add(range.len().0);
         parser.token_with_flags(token_kind_for_char(character), range, TokenFlags::ERROR);
 
+        if raw_triple {
+            continue;
+        }
         if let Some(quote) = quoted {
             if escaped {
                 escaped = false;
@@ -190,6 +213,7 @@ fn abandon_until(
     }
 
     let stopped_at_boundary = quoted.is_none()
+        && !raw_triple
         && parser
             .cursor()
             .peek_char()

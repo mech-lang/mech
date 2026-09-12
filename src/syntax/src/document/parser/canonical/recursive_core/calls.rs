@@ -116,7 +116,6 @@ pub(super) fn argument_list(parser: &mut Parser<'_>, rule: RuleId, kind: SyntaxK
                             "call-arg",
                         );
                         committed = true;
-                        break;
                     }
                     Attempt::Committed => {
                         committed = true;

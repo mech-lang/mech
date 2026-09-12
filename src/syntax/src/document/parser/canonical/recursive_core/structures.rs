@@ -5,8 +5,8 @@ use super::super::super::{CleanSubtree, Parser, ParserCheckpoint};
 use super::super::{base, combinator, structure_shell};
 use super::{
     Attempt, BracketForm, ExpressionForm, FactAttempt, child_result, comprehensions, expressions,
-    kinds, nesting_limit, recover_closer, recover_closer_set, recover_required_production,
-    transactional_fact,
+    kinds, missing_production, nesting_limit, recover_closer, recover_closer_set,
+    recover_required_production, transactional_fact,
 };
 
 pub(super) fn parse_structure(parser: &mut Parser<'_>) -> Attempt {
@@ -239,6 +239,10 @@ pub(super) fn parse_inline_table(parser: &mut Parser<'_>) -> Attempt {
                 return Attempt::NoMatch;
             }
             Attempt::Committed => {
+                if parser.cursor().starts_with("\n") || parser.cursor().starts_with("\r") {
+                    node.abandon(parser);
+                    return Attempt::NoMatch;
+                }
                 node.complete(parser, SyntaxKind::InlineTable);
                 return Attempt::Committed;
             }
@@ -365,6 +369,7 @@ pub(super) fn parse_regular_table(parser: &mut Parser<'_>) -> Attempt {
             }
             Attempt::Committed => {
                 committed = true;
+                let _ = base::parse_rule(parser, rules::WHITESPACE0);
             }
         }
         let first = parse_table_row(parser);
@@ -1480,10 +1485,18 @@ fn brace_general(parser: &mut Parser<'_>, mode: BraceMode) -> FactAttempt<Expres
             Attempt::Matched => {}
             Attempt::NoMatch => return FactAttempt::NoMatch,
             Attempt::Committed => {
-                entry.complete(parser, SyntaxKind::MapEntry);
-                comprehension.complete(parser, SyntaxKind::SetComprehension);
+                entry.abandon(parser);
+                comprehension.abandon(parser);
+                recover_closer(
+                    parser,
+                    rules::SET,
+                    rules::RIGHT_BRACE,
+                    SyntaxKind::RightBrace,
+                    '}',
+                    "}",
+                );
                 set.complete(parser, SyntaxKind::Set);
-                map.complete(parser, SyntaxKind::Map);
+                map.abandon(parser);
                 structure.complete(parser, SyntaxKind::Structure);
                 return FactAttempt::Committed;
             }
@@ -1691,6 +1704,14 @@ fn finish_shared_record_or_map(
         match binding_with_marker(parser) {
             FactAttempt::Matched(binding) => bindings.push(binding),
             FactAttempt::Committed => {
+                recover_closer(
+                    parser,
+                    rules::RECORD,
+                    rules::RIGHT_BRACE,
+                    SyntaxKind::RightBrace,
+                    '}',
+                    "}",
+                );
                 record.complete(parser, SyntaxKind::Record);
                 finish_provisional_marker(parser, comprehension, SyntaxKind::SetComprehension);
                 finish_provisional_marker(parser, set, SyntaxKind::Set);
@@ -1961,10 +1982,23 @@ fn spaced_table_row(parser: &mut Parser<'_>, rule: RuleId, kind: SyntaxKind) -> 
             node.abandon(parser);
             return Attempt::NoMatch;
         }
+        if parser.cursor().starts_with("\n") || parser.cursor().starts_with("\r") {
+            missing_production(
+                parser,
+                "syntax/missing-table-cell",
+                "missing table row cell after separator",
+                "expression",
+            );
+            recover_table_separator(parser, rule);
+            node.complete(parser, kind);
+            return Attempt::Committed;
+        }
+        let cell = parser.checkpoint();
         let first = expressions::parse_expression(parser);
         match first {
             Attempt::Matched => {}
             Attempt::NoMatch => {
+                parser.rewind(cell);
                 recover_required_production(
                     parser,
                     rule,
@@ -2074,6 +2108,7 @@ fn has_mapping_separator(parser: &Parser<'_>) -> bool {
     let mut delimiters = alloc::vec::Vec::new();
     let mut quoted = false;
     let mut escaped = false;
+    let mut key_started = false;
 
     while let Some(character) = cursor.peek_char() {
         if quoted {
@@ -2088,7 +2123,12 @@ fn has_mapping_separator(parser: &Parser<'_>) -> bool {
             continue;
         }
         match character {
-            '"' => quoted = true,
+            '"' => {
+                quoted = true;
+                if delimiters.is_empty() {
+                    key_started = true;
+                }
+            }
             '(' | '[' | '{' => delimiters.push(character),
             ')' | ']' | '}' => {
                 if delimiters.is_empty() {
@@ -2096,8 +2136,12 @@ fn has_mapping_separator(parser: &Parser<'_>) -> bool {
                 }
                 delimiters.pop();
             }
-            ':' if delimiters.is_empty() => return true,
+            ':' if delimiters.is_empty() && key_started => return true,
+            ':' if delimiters.is_empty() => key_started = true,
             ',' if delimiters.is_empty() => return false,
+            character if delimiters.is_empty() && !character.is_whitespace() => {
+                key_started = true;
+            }
             _ => {}
         }
         let _ = cursor.bump_char();

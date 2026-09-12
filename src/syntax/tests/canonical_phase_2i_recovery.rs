@@ -416,6 +416,101 @@ fn shared_brace_recovery_keeps_map_and_set_selection_exclusive() {
 }
 
 #[test]
+fn first_item_recovery_finishes_one_shared_brace_owner() {
+    let set = parse(rules::EXPRESSION, "{1 +}");
+    assert_eq!(set.outcome, CanonicalRuleOutcome::Committed);
+    assert_eq!(set.consumed.end.0 as usize, "{1 +}".len());
+    assert!(contains_kind(&set.syntax(), SyntaxKind::Set));
+    for rejected in [
+        SyntaxKind::Map,
+        SyntaxKind::Record,
+        SyntaxKind::SetComprehension,
+    ] {
+        assert!(!contains_kind(&set.syntax(), rejected));
+    }
+
+    let kind_set = parse(rules::KIND, "{<u8}");
+    assert_eq!(kind_set.outcome, CanonicalRuleOutcome::Committed);
+    assert_eq!(kind_set.consumed.end.0 as usize, "{<u8}".len());
+    assert!(contains_kind(&kind_set.syntax(), SyntaxKind::KindSet));
+    assert!(!contains_kind(&kind_set.syntax(), SyntaxKind::KindMap));
+}
+
+#[test]
+fn committed_record_children_finish_the_physical_owner_brace() {
+    for (rule, text, kind) in [
+        (rules::EXPRESSION, "{a: 1, b:}", SyntaxKind::Record),
+        (rules::KIND, "{a<u8}", SyntaxKind::KindRecord),
+    ] {
+        let parsed = parse(rule, text);
+        assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed, "{text:?}");
+        assert_eq!(parsed.consumed.end.0 as usize, text.len(), "{text:?}");
+        assert!(contains_kind(&parsed.syntax(), kind), "{text:?}");
+        let closers = parsed
+            .syntax()
+            .tokens()
+            .into_iter()
+            .filter(|token| token.kind() == SyntaxKind::RightBrace)
+            .collect::<Vec<_>>();
+        assert_eq!(closers.len(), 1, "{text:?}");
+        assert!(
+            !closers[0]
+                .flags()
+                .contains(mech_syntax::document::TokenFlags::MISSING),
+            "{text:?}"
+        );
+    }
+}
+
+#[test]
+fn table_recovery_preserves_the_regular_owner_and_following_rows() {
+    for (rule, text, expected_rows) in [
+        (rules::TABLE, "|a<u8>\n|1|", 1),
+        (rules::REGULAR_TABLE, "|a<u8>\n|1|", 1),
+        (rules::TABLE, "|a<u8>|\n|\n|2|", 2),
+    ] {
+        let parsed = parse(rule, text);
+        assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed, "{text:?}");
+        assert_eq!(parsed.consumed.end.0 as usize, text.len(), "{text:?}");
+        assert!(
+            contains_kind(&parsed.syntax(), SyntaxKind::RegularTable),
+            "{text:?}"
+        );
+        assert!(
+            !contains_kind(&parsed.syntax(), SyntaxKind::InlineTable),
+            "{text:?}"
+        );
+        assert_eq!(
+            count_kind(&parsed.syntax(), SyntaxKind::TableRow),
+            expected_rows,
+            "{text:?}"
+        );
+    }
+}
+
+#[test]
+fn recovery_distinguishes_raw_triples_atoms_and_empty_call_arguments() {
+    let raw = r#"(1 @ """abc\""")"#;
+    let parsed = parse(rules::ARGUMENT_LIST, raw);
+    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+    assert_eq!(parsed.consumed.end.0 as usize, raw.len());
+    assert!(contains_kind(&parsed.syntax(), SyntaxKind::Error));
+    assert!(!contains_kind(&parsed.syntax(), SyntaxKind::Missing));
+
+    let record = parse(rules::RECORD, "{a: 1, :foo}");
+    assert_eq!(record.outcome, CanonicalRuleOutcome::Committed);
+    assert_eq!(record.consumed.end.0 as usize, "{a: 1, :foo}".len());
+    assert!(contains_kind(&record.syntax(), SyntaxKind::Record));
+
+    let arguments = parse(rules::ARGUMENT_LIST, "(1,,3)");
+    assert_eq!(arguments.outcome, CanonicalRuleOutcome::Committed);
+    assert_eq!(arguments.consumed.end.0 as usize, "(1,,3)".len());
+    assert_eq!(count_kind(&arguments.syntax(), SyntaxKind::CallArgument), 2);
+    assert!(contains_kind(&arguments.syntax(), SyntaxKind::Missing));
+    assert!(!contains_kind(&arguments.syntax(), SyntaxKind::Error));
+}
+
+#[test]
 fn transpose_apostrophe_does_not_hide_an_owner_closer() {
     let text = "(1 @ ')";
     let parsed = parse(rules::ARGUMENT_LIST, text);
