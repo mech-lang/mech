@@ -82,10 +82,9 @@ analysis.
 The persisted canonical artifact remains UTF-8 `.mec` text. The parsed form is
 revisioned derived state.
 
-This phase deliberately implements a narrow prototype grammar slice. Partial
-productions use `prototype-*` `ParserContextId` values rather than claiming
-canonical `RuleId` identities. It does not port or change the complete
-canonical grammar.
+Canonical document parsing and `DocumentSession` use the activated canonical
+grammar and its rule-owned recovery. The initial infrastructure's prototype
+entry points do not participate in session editing or qualify that path.
 
 2. Documents, not a host/guest format
 -------------------------------------------------------------------------------
@@ -106,7 +105,7 @@ selects document mode.
 -------------------------------------------------------------------------------
 
 ```rust
-pub fn parse_document(
+pub fn parse_canonical_document(
   source: TextSnapshot,
   config: ParseConfig,
 ) -> SyntaxSnapshot;
@@ -129,7 +128,7 @@ is not used merely because the parser exhausts its event budget.
 Strict validation and typed access are later consumers:
 
 ```rust
-parse_document(source, config)
+parse_canonical_document(source, config)
 validate_strict(&snapshot)
 typed_document(&snapshot)
 ```
@@ -252,48 +251,46 @@ context before parsing the fragment's own opening delimiter.
 8. Incremental reparsing
 -------------------------------------------------------------------------------
 
-Edits create a `ChangeMap`, locate the smallest intersecting restart root, and
-expand when boundaries, newlines, composite sigils, delimiters, fence prefixes,
-headings, or relevant indentation change.
+`DocumentSession` initializes with the canonical document parser. Every edit
+creates a `ChangeMap` and invokes that same canonical document root once over
+the complete updated `TextSnapshot`, with the session's resource limits. The
+session does not invoke prototype document or fragment parsers. Canonical
+fragment restart optimization remains future work; the current restart extent
+is always the full document, including after diagnostic-budget exhaustion.
 
-A fragment parser operates on a bounded global range of the original
-`TextSnapshot`. It never copies source into a second snapshot with the same
-document identity. `FragmentKind` selects the exact production entry point, and
-`ParseContext` carries mode, delimiter depth, line-start state, indentation, and
-an enclosing fence delimiter. Fragment tokens and diagnostics retain global
-source ranges. Non-consuming right-context lookahead lets a fragment ending
-immediately before a heading or fence report the same found syntax and recovery
-data as a containing full-document parse without relaxing its consumption
-boundary.
+The fresh canonical result alone decides syntax, recovery and diagnostics.
+Identity reconciliation then maps old, untouched byte ranges into the new
+revision. An old green subtree is reused only when its mapped range and every
+structural field match the fresh subtree; hashes select candidates but do not
+prove equality. Reusing the original `Arc` retains all descendant node and token
+IDs. Changed parents keep newly minted IDs while unchanged children may retain
+theirs. Missing zero-width syntax at an edited boundary receives fresh IDs.
 
-A fragment splice is accepted only when that entry point matches, consumes the
-complete mapped range, preserves the ending boundary, and retains parser mode.
-For a non-section splice, the implementation conservatively reparses the
-containing section after constructing the candidate snapshot and merging
-retained and fragment diagnostics. Acceptance requires both the section tree
-and flags and the complete normalized diagnostics whose primary ranges belong
-to that section to match. Normalization includes code, phase, severity,
-canonical rule, parser context, primary and label ranges, expected and found
-syntax, fixes and edits, related diagnostics, recovery, and tags; related
-indices are rebuilt within the filtered section result.
+Reconciliation indexes candidates by mapped range and structure, using sorted
+edit prefix sums for logarithmic offset lookup. Tree comparisons and diagnostic
+candidate matching have an explicit linear-size work allowance; exhaustion
+keeps the fresh canonical identities. Mandatory indexing, remapping and delta
+construction are bounded by the old and new element and diagnostic counts;
+ordered-map operations add logarithmic lookup cost. Candidate queues contain
+at most one entry per old element; identity mappings and rebuilt child slots
+contain at most one entry per fresh element. Diagnostic storage is linear in
+the old and new metadata, and related-edge propagation visits each edge once.
+There is no allocation proportional to the product of candidate counts.
+Diagnostic IDs are retained
+only when the complete mapped finding, including related diagnostic identities,
+is unchanged. Diagnostic anchors always resolve against the resulting tree.
 
-Otherwise the reparser ascends. Document-root reparsing is the final fallback.
-Snapshots whose diagnostic budget was exhausted also use the document fallback,
-because a local fragment cannot reconstruct diagnostics suppressed outside its
-range.
+Every edited revision is compared with a fresh canonical parse in qualification:
+full tree structure, token text and flags, diagnostics, anchors, losslessness,
+and resource counters. Unchanged-subtree pointer and ID reuse are checked
+separately from parse equality.
 
-Unaffected green subtrees are reused with their IDs. Full and incremental parses
-are compared after normalization that ignores minted IDs.
-
-Incremental statistics account for every parser invocation performed by an
-operation. They report selected fragment work, containing-section validation
-work, rejected fragment or parent-root attempts, and document fallback work
-separately. `total_parser_steps` and `total_events_emitted` are their sums;
-the legacy `parser_steps` and `events_emitted` fields are aliases for those
-totals. Because section-envelope validation is intentionally conservative, a
-one-section local edit may perform as much or more parser work than a full
-parse. Multi-section edits should still demonstrate less total work when
-unchanged sections are reused.
+Incremental statistics report the actual single full-document invocation in
+`fallback_parser_steps` and `fallback_events_emitted`; fragment, validation and
+rejected-attempt counters are zero. `total_parser_steps` and
+`total_events_emitted` include all parser work, and `parser_steps` and
+`events_emitted` alias those totals. Reconciliation work and its allowance are
+reported separately. Reuse does not imply a reduction in parsing extent.
 
 9. Annotation substrate and future analysis
 -------------------------------------------------------------------------------

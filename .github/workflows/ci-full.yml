@@ -1081,6 +1081,8 @@ jobs:
         run: >-
           cargo +nightly-2026-03-03 test --locked -p mech-syntax
           --no-default-features --test canonical_document_feature_gates
+          --test canonical_document_incremental --test document_incremental
+          --test document_incremental_properties --test document_change_map
 
       - name: Verify canonical document execution and rendered outputs
         run: >-
