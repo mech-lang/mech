@@ -463,3 +463,299 @@ fn dynamic_table_children_preserve_nested_values_and_wrap_existing_dynamic_once(
         }
     }
 }
+
+#[test]
+fn composed_selection_shapes_survive_artifact_roundtrip_and_changing_inputs() {
+    use mech_core::snapshot::SequenceView;
+    let source = "x := (signal<[f64]:2,2>, signal[[false true],:])";
+    let direct = definition(source).compile_artifact().unwrap();
+    let decoded = roundtrip(source);
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let activations = [&direct, &decoded].map(|artifact| {
+        activate(
+            ReactiveInstanceId::new(0x556, 0),
+            artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+    });
+    assert!(
+        activations.iter().all(Result::is_ok),
+        "direct/decoded activation: {:?}",
+        activations
+            .iter()
+            .map(|result| result.as_ref().err())
+            .collect::<Vec<_>>()
+    );
+    for (artifact, activation) in [&direct, &decoded].into_iter().zip(activations) {
+        let mut instance = activation.unwrap();
+        for offset in [0.0, 10.0] {
+            let data = [1.0 + offset, 3.0 + offset, 2.0 + offset, 4.0 + offset];
+            instance
+                .turn(&[CapturedSignalInput {
+                    slot: instance.plan.inputs[0].slot,
+                    value: ResidentValueRef::F64(&data),
+                }])
+                .unwrap();
+            let output = instance.copied_output(0).unwrap();
+            let ValueData::Tuple(items) = output.data() else {
+                panic!("{output:?}")
+            };
+            let SchemaBody::Tuple(schemas) = artifact
+                .schemas()
+                .get(output.schema())
+                .unwrap()
+                .closed_body(output.shape())
+                .unwrap()
+            else {
+                panic!()
+            };
+            for (index, expected, rows) in [
+                (
+                    0,
+                    vec![1.0 + offset, 2.0 + offset, 3.0 + offset, 4.0 + offset],
+                    2,
+                ),
+                (1, vec![3.0 + offset, 4.0 + offset], 1),
+            ] {
+                let ValueData::Matrix(matrix) = &items[index] else {
+                    panic!()
+                };
+                let SequenceView::F64(values) = matrix.elements() else {
+                    panic!()
+                };
+                assert_eq!(
+                    values
+                        .iter()
+                        .map(|value| value.to_f64())
+                        .collect::<Vec<_>>(),
+                    expected
+                );
+                assert!(
+                    matches!(&schemas[index], SchemaBody::Matrix { dimensions, .. } if dimensions.as_ref() == [mech_core::DimensionExpr::Constant(rows), mech_core::DimensionExpr::Constant(2)])
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn composed_live_mask_shapes_require_facts_and_reject_extent_changes_atomically() {
+    use mech_core::snapshot::SequenceView;
+    use mech_engine::__resident::{ResidentActivationError, ResidentExecutionError};
+    let source = "x := (signal<[f64]:2,2>, signal[mask<[bool]:1,2>,:])";
+    let direct = definition(source).compile_artifact().unwrap();
+    let decoded = roundtrip(source);
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    for artifact in [&direct, &decoded] {
+        let selected = artifact
+            .slots()
+            .iter()
+            .find(|slot| {
+                let schema = artifact.schemas().get(slot.schema).unwrap();
+                matches!(schema.body(), SchemaBody::Matrix { .. })
+                    && !schema.dimension_parameters().is_empty()
+            })
+            .unwrap();
+        assert!(
+            matches!(activate(ReactiveInstanceId::new(0x557, 0), artifact, &catalog, &ActivationFacts::default()),
+            Err(ResidentActivationError::UnresolvedShape { slot }) if slot == selected.slot)
+        );
+        let mut facts = ActivationFacts::default();
+        facts.slot_shapes.insert(
+            selected.slot,
+            artifact
+                .schemas()
+                .get(selected.schema)
+                .unwrap()
+                .instantiate_shape(Box::new([1]))
+                .unwrap(),
+        );
+        // Only the selected child has a supplied fact. The tuple must derive
+        // its independently numbered parameters from that concrete child.
+        assert_eq!(facts.slot_shapes.len(), 1);
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x557, 0),
+            artifact,
+            &catalog,
+            &facts,
+        )
+        .unwrap();
+        let slot = |name: &str| {
+            let declaration = artifact
+                .inputs()
+                .iter()
+                .find(|input| input.name == mech_engine::encode_source_input_name(name))
+                .unwrap();
+            instance
+                .plan
+                .inputs
+                .iter()
+                .find(|input| input.artifact_slot == declaration.slot)
+                .unwrap()
+                .slot
+        };
+        let signal_slot = slot("signal");
+        let mask_slot = slot("mask");
+        let source_data = [1.0, 3.0, 2.0, 4.0];
+        let selected_values = |value: &mech_core::Value| {
+            let ValueData::Tuple(children) = value.data() else {
+                panic!()
+            };
+            let ValueData::Matrix(selected) = &children[1] else {
+                panic!()
+            };
+            let SequenceView::F64(values) = selected.elements() else {
+                panic!()
+            };
+            values
+                .iter()
+                .map(|value| value.to_f64())
+                .collect::<Vec<_>>()
+        };
+        for (mask, offset, expected) in [([1u8, 0], 0.0, [1.0, 2.0]), ([0, 1], 10.0, [13.0, 14.0])]
+        {
+            let data = source_data.map(|value| value + offset);
+            instance
+                .turn(&[
+                    CapturedSignalInput {
+                        slot: signal_slot,
+                        value: ResidentValueRef::F64(&data),
+                    },
+                    CapturedSignalInput {
+                        slot: mask_slot,
+                        value: ResidentValueRef::Bool(&mask),
+                    },
+                ])
+                .unwrap();
+            assert_eq!(
+                selected_values(&instance.copied_output(0).unwrap()),
+                expected
+            );
+        }
+        let previous = instance.copied_output(0).unwrap();
+        for mask in [[1u8, 1], [0, 0]] {
+            assert!(matches!(
+                instance.turn(&[
+                    CapturedSignalInput {
+                        slot: signal_slot,
+                        value: ResidentValueRef::F64(&source_data)
+                    },
+                    CapturedSignalInput {
+                        slot: mask_slot,
+                        value: ResidentValueRef::Bool(&mask)
+                    },
+                ]),
+                Err(ResidentExecutionError::Kernel {
+                    error: mech_core::ResidentKernelError::InvalidShape,
+                    ..
+                })
+            ));
+            assert!(
+                previous
+                    .language_eq(
+                        artifact.schemas(),
+                        &instance.copied_output(0).unwrap(),
+                        artifact.schemas()
+                    )
+                    .unwrap()
+            );
+        }
+        instance
+            .turn(&[
+                CapturedSignalInput {
+                    slot: signal_slot,
+                    value: ResidentValueRef::F64(&source_data),
+                },
+                CapturedSignalInput {
+                    slot: mask_slot,
+                    value: ResidentValueRef::Bool(&[1, 0]),
+                },
+            ])
+            .unwrap();
+        assert_eq!(
+            selected_values(&instance.copied_output(0).unwrap()),
+            [1.0, 2.0]
+        );
+    }
+}
+
+#[test]
+fn nested_constructors_preserve_selected_child_dimensions_and_values() {
+    use mech_core::ValueDataDraft as D;
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let cases = [
+        "x := (signal<[f64]:2,2>, {row: signal[[false true],:]})",
+        "x := (signal<[f64]:2,2>, {1: signal[[false true],:]})",
+        "x := (signal<[f64]:2,2>, :some(signal[[false true],:]))",
+        "x := (signal<[f64]:2,2>, ╭─────────╮\n│ value │\n├─────────┤\n│ (signal[[false true],:]) │\n╰─────────╯)",
+    ];
+    for (case, source) in cases.into_iter().enumerate() {
+        let artifact = roundtrip(source);
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x558, case as u32),
+            &artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap_or_else(|error| panic!("{source}: {error:?}"));
+        for offset in [0.0, 10.0] {
+            let data = [1.0 + offset, 3.0 + offset, 2.0 + offset, 4.0 + offset];
+            instance
+                .turn(&[CapturedSignalInput {
+                    slot: instance.plan.inputs[0].slot,
+                    value: ResidentValueRef::F64(&data),
+                }])
+                .unwrap_or_else(|error| panic!("{source}: {error:?}"));
+            let output = instance.copied_output(0).unwrap();
+            let D::Tuple(children) = output.canonical_data_draft().unwrap() else {
+                panic!()
+            };
+            let matrix = match &children[1] {
+                D::Record(fields) => &fields[0].value,
+                D::Map(entries) => &entries[0].items[1],
+                D::Tuple(items) => &items[1],
+                D::Table(columns) => &columns[0].values[0],
+                other => panic!("{other:?}"),
+            };
+            let D::Matrix(values) = matrix else {
+                panic!("{matrix:?}")
+            };
+            assert_eq!(
+                values
+                    .iter()
+                    .map(|value| match value {
+                        D::F64(value) => value.to_f64(),
+                        _ => panic!(),
+                    })
+                    .collect::<Vec<_>>(),
+                [3.0 + offset, 4.0 + offset]
+            );
+            let SchemaBody::Tuple(schemas) = artifact
+                .schemas()
+                .get(output.schema())
+                .unwrap()
+                .closed_body(output.shape())
+                .unwrap()
+            else {
+                panic!()
+            };
+            let selected = match &schemas[1] {
+                SchemaBody::Record(fields) => &fields[0].schema,
+                SchemaBody::Map { value, .. } => value.as_ref(),
+                SchemaBody::Tuple(items) => &items[1],
+                SchemaBody::Table { columns, .. } => &columns[0].schema,
+                _ => panic!(),
+            };
+            assert!(
+                matches!(selected,SchemaBody::Matrix {dimensions,..} if dimensions.as_ref()==[mech_core::DimensionExpr::Constant(1),mech_core::DimensionExpr::Constant(2)])
+            );
+        }
+    }
+}

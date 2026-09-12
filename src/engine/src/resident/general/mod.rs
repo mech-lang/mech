@@ -2327,11 +2327,11 @@ fn operation_requires_activation_fixed_range_shape(operation: &OperationReferenc
         )
 }
 
-fn source_extents(
+fn source_schema_and_shape(
     artifact: &ProgramArtifact,
     source: ArtifactSource,
     facts: &ActivationFacts,
-) -> Result<Box<[u64]>, ResidentActivationError> {
+) -> Result<(mech_core::SchemaId, ShapeInstance), ResidentActivationError> {
     let (schema_id, shape) = match source {
         ArtifactSource::Constant(constant) => {
             let value = artifact
@@ -2345,6 +2345,15 @@ fn source_extents(
             (declaration.schema, slot_shape(artifact, slot, facts)?)
         }
     };
+    Ok((schema_id, shape))
+}
+
+fn source_extents(
+    artifact: &ProgramArtifact,
+    source: ArtifactSource,
+    facts: &ActivationFacts,
+) -> Result<Box<[u64]>, ResidentActivationError> {
+    let (schema_id, shape) = source_schema_and_shape(artifact, source, facts)?;
     let schema = artifact
         .schemas()
         .entry(schema_id)
@@ -2494,6 +2503,23 @@ fn complete_activation_shape_facts(
             continue;
         }
         let inputs = node_inputs(artifact, node.node)?;
+        if node.operation.module_path.as_ref() == ["core"]
+            && node.operation.operation_name == "composite-pack"
+            && !matches!(output_schema.body(), SchemaBody::Matrix { .. })
+        {
+            let children = inputs
+                .iter()
+                .map(|source| source_schema_and_shape(artifact, *source, &facts))
+                .collect::<Result<Vec<_>, _>>()?;
+            let shape = mech_core::snapshot::CompositeSnapshotConstructor::shape_for_children(
+                artifact.slots()[output.get() as usize].schema,
+                &children,
+                artifact.schemas(),
+            )
+            .map_err(|_| ResidentActivationError::UnresolvedShape { slot: output })?;
+            facts.slot_shapes.insert(output, shape);
+            continue;
+        }
         if node.operation.module_path.as_ref() == ["access"]
             && node.operation.operation_name == "column"
         {

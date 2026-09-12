@@ -729,9 +729,11 @@ pub fn shape_for_resolved_extents(
             current_extents.len()
         )));
     }
-    for (dimension, extent) in declared.iter().zip(current_extents.iter().copied()) {
-        assign_dimension_witness(dimension, extent, &mut values)?;
-    }
+    let witnesses = declared
+        .iter()
+        .zip(current_extents.iter().copied())
+        .collect::<Vec<_>>();
+    assign_dimension_witnesses(&witnesses, &mut values)?;
     let shape = schema
         .instantiate_shape(values.into_boxed_slice())
         .map_err(TypeResolutionError::semantic)?;
@@ -739,6 +741,196 @@ pub fn shape_for_resolved_extents(
         dimension_witness_mismatch(dimension, extent, shape.parameter_values())?;
     }
     Ok(shape)
+}
+
+/// Resolves embedded component schemas using the same dimension witnesses as
+/// top-level outputs. Component bodies on the right are already closed against
+/// their own schema arenas; parameter indices never cross those arenas.
+pub(crate) fn shape_for_schema_components(
+    schema: &Schema,
+    components: &[(&SchemaBody, SchemaBody)],
+    cardinality: Option<(&CardinalitySpec, usize)>,
+) -> Result<ShapeInstance, TypeResolutionError> {
+    let mut witnesses = Vec::new();
+    for (expected, actual) in components {
+        // A Dynamic component retains the child's independent schema and shape.
+        if !matches!(expected, SchemaBody::Dynamic) {
+            collect_schema_extent_witnesses(expected, actual, &mut witnesses)?;
+        }
+    }
+    if let Some((CardinalitySpec::Exact(dimension), count)) = cardinality {
+        witnesses.push((dimension, count as u64));
+    }
+    let mut values = shape_for_declared_lower_bounds(schema)?
+        .parameter_values()
+        .to_vec();
+    assign_dimension_witnesses(&witnesses, &mut values)?;
+    if let Some((extent, count)) = cardinality {
+        assign_extent_witness(extent, count as u64, &mut values)?;
+    }
+    let shape = schema
+        .instantiate_shape(values.into_boxed_slice())
+        .map_err(TypeResolutionError::semantic)?;
+    // One parameter may constrain several children. Check every witness again
+    // after assignment, so later children cannot silently replace earlier ones.
+    for (dimension, extent) in witnesses {
+        dimension_witness_mismatch(dimension, extent, shape.parameter_values())?;
+    }
+    for (expected, actual) in components {
+        if !matches!(expected, SchemaBody::Dynamic)
+            && crate::cell_binding::close_schema_body(expected, &shape)
+                .map_err(|_| invalid_rule("invalid component shape"))?
+                != *actual
+        {
+            return Err(invalid_rule(
+                "component schema does not match its declared output",
+            ));
+        }
+    }
+    Ok(shape)
+}
+
+fn collect_schema_extent_witnesses<'a>(
+    expected: &'a SchemaBody,
+    actual: &SchemaBody,
+    witnesses: &mut Vec<(&'a DimensionExpr, u64)>,
+) -> Result<(), TypeResolutionError> {
+    let extent = |expected: &'a CardinalitySpec,
+                  actual: &CardinalitySpec,
+                  witnesses: &mut Vec<(&'a DimensionExpr, u64)>| {
+        match (expected, actual) {
+            (CardinalitySpec::Exact(expected), CardinalitySpec::Exact(actual))
+            | (
+                CardinalitySpec::Dynamic {
+                    upper_bound: Some(expected),
+                },
+                CardinalitySpec::Dynamic {
+                    upper_bound: Some(actual),
+                },
+            ) => {
+                witnesses.push((
+                    expected,
+                    crate::evaluate_dimension(actual, &[])
+                        .map_err(TypeResolutionError::semantic)?,
+                ));
+                Ok(())
+            }
+            (
+                CardinalitySpec::Dynamic { upper_bound: None },
+                CardinalitySpec::Dynamic { upper_bound: None },
+            ) => Ok(()),
+            _ => Err(invalid_rule(
+                "component cardinality differs from its declaration",
+            )),
+        }
+    };
+    match (expected, actual) {
+        (SchemaBody::Option(expected), SchemaBody::Option(actual)) => {
+            collect_schema_extent_witnesses(expected, actual, witnesses)?
+        }
+        (SchemaBody::Tuple(expected), SchemaBody::Tuple(actual))
+            if expected.len() == actual.len() =>
+        {
+            for (expected, actual) in expected.iter().zip(actual) {
+                collect_schema_extent_witnesses(expected, actual, witnesses)?;
+            }
+        }
+        (SchemaBody::Record(expected), SchemaBody::Record(actual))
+            if expected.len() == actual.len() =>
+        {
+            for (expected, actual) in expected.iter().zip(actual) {
+                collect_schema_extent_witnesses(&expected.schema, &actual.schema, witnesses)?;
+            }
+        }
+        (
+            SchemaBody::Matrix {
+                element: expected,
+                dimensions,
+            },
+            SchemaBody::Matrix {
+                element: actual,
+                dimensions: actual_dimensions,
+            },
+        ) if dimensions.len() == actual_dimensions.len() => {
+            for (expected, actual) in dimensions.iter().zip(actual_dimensions) {
+                witnesses.push((
+                    expected,
+                    crate::evaluate_dimension(actual, &[])
+                        .map_err(TypeResolutionError::semantic)?,
+                ));
+            }
+            collect_schema_extent_witnesses(expected, actual, witnesses)?;
+        }
+        (
+            SchemaBody::Set {
+                element: expected,
+                cardinality,
+            },
+            SchemaBody::Set {
+                element: actual,
+                cardinality: actual_cardinality,
+            },
+        ) => {
+            extent(cardinality, actual_cardinality, witnesses)?;
+            collect_schema_extent_witnesses(expected, actual, witnesses)?;
+        }
+        (
+            SchemaBody::Map {
+                key,
+                value,
+                cardinality,
+            },
+            SchemaBody::Map {
+                key: actual_key,
+                value: actual_value,
+                cardinality: actual_cardinality,
+            },
+        ) => {
+            extent(cardinality, actual_cardinality, witnesses)?;
+            collect_schema_extent_witnesses(key, actual_key, witnesses)?;
+            collect_schema_extent_witnesses(value, actual_value, witnesses)?;
+        }
+        (
+            SchemaBody::Table { columns, rows },
+            SchemaBody::Table {
+                columns: actual_columns,
+                rows: actual_rows,
+            },
+        ) if columns.len() == actual_columns.len() => {
+            extent(rows, actual_rows, witnesses)?;
+            for (expected, actual) in columns.iter().zip(actual_columns) {
+                collect_schema_extent_witnesses(&expected.schema, &actual.schema, witnesses)?;
+            }
+        }
+        (
+            SchemaBody::Enum { variants, .. },
+            SchemaBody::Enum {
+                variants: actual_variants,
+                ..
+            },
+        ) if variants.len() == actual_variants.len() => {
+            for (expected, actual) in variants.iter().zip(actual_variants) {
+                match (&expected.payload, &actual.payload) {
+                    (Some(expected), Some(actual)) => {
+                        collect_schema_extent_witnesses(expected, actual, witnesses)?
+                    }
+                    (None, None) => {}
+                    _ => {
+                        return Err(invalid_rule(
+                            "component enum payload differs from its declaration",
+                        ));
+                    }
+                }
+            }
+        }
+        _ if expected == actual => {}
+        _ => {
+            return Err(invalid_rule(
+                "component schema differs from its declaration",
+            ));
+        }
+    }
+    Ok(())
 }
 
 /// Instantiates a schema using the declared lower bound of every dimension.
@@ -879,14 +1071,143 @@ fn assign_extent_witness(
     }
 }
 
+/// Solve uniquely determined dimensions first. Compound witnesses can become
+/// uniquely solvable as other axes or components establish their parameters.
+/// Ambiguous min/max witnesses do not freeze an arbitrary candidate value.
+fn assign_dimension_witnesses(
+    witnesses: &[(&DimensionExpr, u64)],
+    values: &mut [u64],
+) -> Result<(), TypeResolutionError> {
+    let mut fixed = vec![false; values.len()];
+    loop {
+        let mut progress = false;
+        for (expression, target) in witnesses {
+            let mut references = Vec::new();
+            crate::collect_dimension_references(expression, &mut references);
+            let unknown = references
+                .into_iter()
+                .filter(|parameter| {
+                    !fixed
+                        .get(parameter.get() as usize)
+                        .copied()
+                        .unwrap_or(false)
+                })
+                .collect::<BTreeSet<_>>();
+            if unknown.len() != 1 {
+                continue;
+            }
+            let parameter = *unknown.first().expect("one unresolved parameter");
+            if dimension_is_injective(expression, parameter, values)? {
+                assign_unique_dimension_witness(expression, *target, parameter, values)?;
+                *fixed
+                    .get_mut(parameter.get() as usize)
+                    .ok_or_else(|| invalid_rule(format!("unknown dimension {parameter:?}")))? =
+                    true;
+                progress = true;
+            }
+        }
+        if !progress {
+            break;
+        }
+    }
+    for (expression, target) in witnesses {
+        assign_dimension_witness_preserving(expression, *target, values, &fixed)?;
+    }
+    Ok(())
+}
+
+/// All dimension operators are monotone over natural numbers. A sum with an
+/// injective operand is injective; a product of positive constant factors and
+/// injective factors is injective. Clamping with min/max is not a uniqueness
+/// proof and remains part of the ordinary candidate-and-verification path.
+fn dimension_is_injective(
+    expression: &DimensionExpr,
+    parameter: DimensionParameterId,
+    values: &[u64],
+) -> Result<bool, TypeResolutionError> {
+    match expression {
+        DimensionExpr::Parameter(actual) => Ok(*actual == parameter),
+        DimensionExpr::Add(operands) => operands.iter().try_fold(false, |injective, operand| {
+            Ok(injective || dimension_is_injective(operand, parameter, values)?)
+        }),
+        DimensionExpr::Multiply(operands) => {
+            let mut injective = false;
+            for operand in operands {
+                if dimension_is_injective(operand, parameter, values)? {
+                    injective = true;
+                } else {
+                    let mut references = Vec::new();
+                    crate::collect_dimension_references(operand, &mut references);
+                    if references.contains(&parameter)
+                        || crate::evaluate_dimension(operand, values)
+                            .map_err(TypeResolutionError::semantic)?
+                            == 0
+                    {
+                        return Ok(false);
+                    }
+                }
+            }
+            Ok(injective)
+        }
+        _ => Ok(false),
+    }
+}
+
+fn assign_unique_dimension_witness(
+    expression: &DimensionExpr,
+    target: u64,
+    parameter: DimensionParameterId,
+    values: &mut [u64],
+) -> Result<(), TypeResolutionError> {
+    let index = parameter.get() as usize;
+    if index >= values.len() {
+        return Err(invalid_rule(format!("unknown dimension {parameter:?}")));
+    }
+    // A strictly increasing natural-valued expression has f(n) >= n. Search
+    // the bounded interval using the canonical evaluator; overflow lies above
+    // every representable target, and never becomes a fabricated witness.
+    let mut lower = 0u64;
+    let mut upper = target;
+    while lower < upper {
+        let candidate = lower + (upper - lower) / 2;
+        values[index] = candidate;
+        match crate::evaluate_dimension(expression, values) {
+            Ok(actual) if actual < target => lower = candidate + 1,
+            Ok(_) | Err(SemanticModelError::DimensionOverflowV1) => upper = candidate,
+            Err(error) => return Err(TypeResolutionError::semantic(error)),
+        }
+    }
+    values[index] = lower;
+    dimension_witness_mismatch(expression, target, values)
+}
+
 fn assign_dimension_witness(
     expression: &DimensionExpr,
     target: u64,
     values: &mut [u64],
 ) -> Result<(), TypeResolutionError> {
+    assign_dimension_witness_preserving(expression, target, values, &[])
+}
+
+fn assign_dimension_witness_preserving(
+    expression: &DimensionExpr,
+    target: u64,
+    values: &mut [u64],
+    fixed: &[bool],
+) -> Result<(), TypeResolutionError> {
+    if crate::evaluate_dimension(expression, values).is_ok_and(|actual| actual == target) {
+        return Ok(());
+    }
     match expression {
         DimensionExpr::Constant(expected) if *expected == target => Ok(()),
         DimensionExpr::Parameter(parameter) => {
+            if fixed
+                .get(parameter.get() as usize)
+                .copied()
+                .unwrap_or(false)
+            {
+                return dimension_witness_mismatch(expression, target, values);
+            }
             let value = values
                 .get_mut(parameter.get() as usize)
                 .ok_or_else(|| invalid_rule(format!("unknown dimension {parameter:?}")))?;
@@ -897,7 +1218,7 @@ fn assign_dimension_witness(
             let Some((selected_index, selected)) = operands
                 .iter()
                 .enumerate()
-                .find(|(_, operand)| dimension_has_parameter(operand))
+                .find(|(_, operand)| dimension_has_unfixed_parameter(operand, fixed))
             else {
                 return dimension_witness_mismatch(expression, target, values);
             };
@@ -919,7 +1240,7 @@ fn assign_dimension_witness(
             let selected_target = target.checked_sub(rest).ok_or_else(|| {
                 TypeResolutionError::semantic(SemanticModelError::DimensionOverflowV1)
             })?;
-            assign_dimension_witness(selected, selected_target, values)?;
+            assign_dimension_witness_preserving(selected, selected_target, values, fixed)?;
             dimension_witness_mismatch(expression, target, values)
         }
         DimensionExpr::Multiply(operands) => {
@@ -933,7 +1254,7 @@ fn assign_dimension_witness(
             let adjustable = operands
                 .iter()
                 .enumerate()
-                .filter(|(_, operand)| dimension_has_parameter(operand))
+                .filter(|(_, operand)| dimension_has_unfixed_parameter(operand, fixed))
                 .map(|(index, _)| index)
                 .collect::<Vec<_>>();
             let Some(selected_index) = adjustable.first().copied() else {
@@ -944,7 +1265,7 @@ fn assign_dimension_witness(
                     .map_err(TypeResolutionError::semantic)?
                     == 0
                 {
-                    assign_dimension_witness(&operands[index], 1, values)?;
+                    assign_dimension_witness_preserving(&operands[index], 1, values, fixed)?;
                 }
             }
             let rest = operands
@@ -965,7 +1286,12 @@ fn assign_dimension_witness(
             if rest == 0 || target % rest != 0 {
                 return dimension_witness_mismatch(expression, target, values);
             }
-            assign_dimension_witness(&operands[selected_index], target / rest, values)?;
+            assign_dimension_witness_preserving(
+                &operands[selected_index],
+                target / rest,
+                values,
+                fixed,
+            )?;
             dimension_witness_mismatch(expression, target, values)
         }
         DimensionExpr::Min(operands) => {
@@ -973,7 +1299,7 @@ fn assign_dimension_witness(
                 let actual = crate::evaluate_dimension(operand, values)
                     .map_err(TypeResolutionError::semantic)?;
                 if actual < target {
-                    assign_dimension_witness(operand, target, values)?;
+                    assign_dimension_witness_preserving(operand, target, values, fixed)?;
                 }
             }
             dimension_witness_mismatch(expression, target, values)
@@ -986,11 +1312,11 @@ fn assign_dimension_witness(
             }
             let Some(selected) = operands
                 .iter()
-                .find(|operand| dimension_has_parameter(operand))
+                .find(|operand| dimension_has_unfixed_parameter(operand, fixed))
             else {
                 return dimension_witness_mismatch(expression, target, values);
             };
-            assign_dimension_witness(selected, target, values)?;
+            assign_dimension_witness_preserving(selected, target, values, fixed)?;
             dimension_witness_mismatch(expression, target, values)
         }
         _ => dimension_witness_mismatch(expression, target, values),
@@ -1017,13 +1343,18 @@ fn dimension_witness_mismatch(
     }
 }
 
-fn dimension_has_parameter(expression: &DimensionExpr) -> bool {
+fn dimension_has_unfixed_parameter(expression: &DimensionExpr, fixed: &[bool]) -> bool {
     match expression {
-        DimensionExpr::Parameter(_) => true,
+        DimensionExpr::Parameter(parameter) => !fixed
+            .get(parameter.get() as usize)
+            .copied()
+            .unwrap_or(false),
         DimensionExpr::Add(operands)
         | DimensionExpr::Multiply(operands)
         | DimensionExpr::Min(operands)
-        | DimensionExpr::Max(operands) => operands.iter().any(dimension_has_parameter),
+        | DimensionExpr::Max(operands) => operands
+            .iter()
+            .any(|operand| dimension_has_unfixed_parameter(operand, fixed)),
         DimensionExpr::Hole | DimensionExpr::Constant(_) => false,
     }
 }

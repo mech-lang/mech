@@ -2285,7 +2285,99 @@ pub struct CompositeSnapshotConstructor {
     schemas: Arc<SchemaTable>,
 }
 
+struct CompositeSchemaComponents<'a> {
+    children: Vec<&'a SchemaBody>,
+    cardinality: Option<(&'a crate::CardinalitySpec, usize)>,
+}
+
+fn composite_schema_components(
+    body: &SchemaBody,
+    child_count: usize,
+) -> Option<CompositeSchemaComponents<'_>> {
+    let (children, cardinality) = match body {
+        SchemaBody::Tuple(items) if items.len() == child_count => (items.iter().collect(), None),
+        SchemaBody::Record(fields) if fields.len() == child_count => {
+            (fields.iter().map(|field| &field.schema).collect(), None)
+        }
+        SchemaBody::Map {
+            key,
+            value,
+            cardinality,
+        } if child_count % 2 == 0 => (
+            (0..child_count / 2)
+                .flat_map(|_| [key.as_ref(), value.as_ref()])
+                .collect(),
+            Some((cardinality, child_count / 2)),
+        ),
+        SchemaBody::Table { columns, .. } if columns.is_empty() && child_count == 0 => {
+            (Vec::new(), None)
+        }
+        SchemaBody::Table { columns, rows }
+            if !columns.is_empty() && child_count % columns.len() == 0 =>
+        {
+            let rows_count = child_count / columns.len();
+            (
+                columns
+                    .iter()
+                    .flat_map(|column| core::iter::repeat_n(&column.schema, rows_count))
+                    .collect(),
+                Some((rows, rows_count)),
+            )
+        }
+        _ => return None,
+    };
+    Some(CompositeSchemaComponents {
+        children,
+        cardinality,
+    })
+}
+
 impl CompositeSnapshotConstructor {
+    /// Derives the aggregate's shape from the canonical child schemas in
+    /// constructor order. Each child shape belongs to its own parameter arena.
+    pub fn shape_for_children(
+        schema: SchemaId,
+        children: &[(SchemaId, ShapeInstance)],
+        schemas: &SchemaTable,
+    ) -> Result<ShapeInstance, SnapshotValueError> {
+        let entry = schemas
+            .entry(schema)
+            .ok_or(SnapshotValueError::UnknownSnapshotSchema { schema })?;
+        let mismatch = || SnapshotValueError::SnapshotSchemaDefinitionMismatch { key: entry.key() };
+        // An empty column list gives no row-count witness. Preserve binding
+        // support for explicitly shaped tables, but do not infer a Turn fact
+        // from an absent child or a lower-bound placeholder.
+        if matches!(entry.schema().body(), SchemaBody::Table { columns, .. } if columns.is_empty())
+            && !entry.schema().dimension_parameters().is_empty()
+        {
+            return Err(mismatch());
+        }
+        let layout = composite_schema_components(entry.schema().body(), children.len())
+            .ok_or_else(mismatch)?;
+        let components = layout
+            .children
+            .into_iter()
+            .zip(children)
+            .map(|(expected, (schema, shape))| {
+                let actual = schemas
+                    .get(*schema)
+                    .ok_or(SnapshotValueError::UnknownSnapshotSchema { schema: *schema })?
+                    .closed_body(shape)
+                    .map_err(|_| mismatch())?;
+                Ok((expected, actual))
+            })
+            .collect::<Result<Vec<_>, SnapshotValueError>>()?;
+        let shape = crate::type_system::resolved_value::shape_for_schema_components(
+            entry.schema(),
+            &components,
+            layout.cardinality,
+        )
+        .map_err(|_| mismatch())?;
+        if let Some((cardinality, count)) = layout.cardinality {
+            ensure_collection_cardinality(&SnapshotPath::root(), cardinality, &shape, count)?;
+        }
+        Ok(shape)
+    }
     pub fn bind(
         schema: SchemaId,
         shape: ShapeInstance,
@@ -2297,54 +2389,23 @@ impl CompositeSnapshotConstructor {
             .ok_or(SnapshotValueError::UnknownSnapshotSchema { schema })?;
         let mismatch = || SnapshotValueError::SnapshotSchemaDefinitionMismatch { key: entry.key() };
         let body = entry.schema().closed_body(&shape).map_err(|_| mismatch())?;
-        let expected = match body {
-            SchemaBody::Tuple(items) => items.into_vec(),
-            SchemaBody::Record(fields) => fields
-                .into_vec()
-                .into_iter()
-                .map(|field| field.schema)
-                .collect(),
-            SchemaBody::Map {
-                key,
-                value,
-                cardinality,
-            } if children.len() % 2 == 0 => {
-                ensure_collection_cardinality(
-                    &SnapshotPath::root(),
-                    &cardinality,
-                    &shape,
-                    children.len() / 2,
-                )?;
-                (0..children.len() / 2)
-                    .flat_map(|_| [*key.clone(), *value.clone()])
-                    .collect()
+        let expected = if let SchemaBody::Matrix {
+            element,
+            dimensions,
+        } = &body
+        {
+            let expected = dimensions.iter().try_fold(1u64, |size, dimension| {
+                size.checked_mul(shape.resolve_dimension(dimension).map_err(|_| mismatch())?)
+                    .ok_or_else(mismatch)
+            })?;
+            ensure_cardinality(&SnapshotPath::root(), expected, children.len())?;
+            core::iter::repeat_n(element.as_ref(), children.len()).collect::<Vec<_>>()
+        } else {
+            let layout = composite_schema_components(&body, children.len()).ok_or_else(mismatch)?;
+            if let Some((cardinality, count)) = layout.cardinality {
+                ensure_collection_cardinality(&SnapshotPath::root(), cardinality, &shape, count)?;
             }
-            SchemaBody::Table { columns, .. } if columns.is_empty() && children.is_empty() => {
-                Vec::new()
-            }
-            SchemaBody::Table { columns, rows }
-                if !columns.is_empty() && children.len() % columns.len() == 0 =>
-            {
-                let row_count = children.len() / columns.len();
-                ensure_collection_cardinality(&SnapshotPath::root(), &rows, &shape, row_count)?;
-                columns
-                    .into_vec()
-                    .into_iter()
-                    .flat_map(|column| core::iter::repeat_n(column.schema, row_count))
-                    .collect()
-            }
-            SchemaBody::Matrix {
-                element,
-                dimensions,
-            } => {
-                let expected = dimensions.iter().try_fold(1u64, |size, dimension| {
-                    size.checked_mul(shape.resolve_dimension(dimension).map_err(|_| mismatch())?)
-                        .ok_or_else(mismatch)
-                })?;
-                ensure_cardinality(&SnapshotPath::root(), expected, children.len())?;
-                core::iter::repeat_n(*element, children.len()).collect()
-            }
-            _ => return Err(mismatch()),
+            layout.children
         };
         if expected.len() != children.len() {
             return Err(mismatch());
@@ -2358,7 +2419,7 @@ impl CompositeSnapshotConstructor {
                     .ok_or(SnapshotValueError::UnknownSnapshotSchema { schema: *schema })?;
                 let dynamic = matches!(expected, SchemaBody::Dynamic);
                 let actual = entry.schema().closed_body(shape).map_err(|_| mismatch())?;
-                if !dynamic && actual != expected {
+                if !dynamic && &actual != expected {
                     return Err(mismatch());
                 }
                 Ok((entry.key(), shape.clone(), dynamic))
