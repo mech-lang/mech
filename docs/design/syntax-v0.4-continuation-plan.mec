@@ -1,7 +1,7 @@
 Syntax v0.4 Continuation Plan
 ===============================================================================
 
-Status: S1-S3 corrections continue; S4 semantic completion, S5 acceptance gates, and S7 consumer behavior remain unfinished. S8 is closed.
+Status: S1 is closed. S2-S3 await final-stack qualification; S4 semantic completion, S5 acceptance gates, and remaining S7 consumer behavior are unfinished. S8 is closed.
 
 Historical planning baseline: `feature/syntax` at `4560e5e6c`, rebased onto
 `integration/v0.4` after the R1-R6 stack. Pull request 812 is green at this
