@@ -7,10 +7,10 @@ use mech_syntax::document::parser::canonical::{
 };
 use mech_syntax::document::parser::{canonical_rule_id, canonical_rule_name, rules};
 use mech_syntax::document::{
-    AstNode, DocumentId, FormulaSyntax, NodeFlags, ParseConfig, PatternArrayItemSyntax,
-    RecursiveCoreSyntax, Revision, SyntaxNode, SyntaxToken, TextRange, TextSize, TextSnapshot,
-    compact_debug_tree, normalize_diagnostics, phase_2i_node_kind, reconstruct_source_range,
-    validate_lossless_range,
+    ArrayPatternSyntax, AstNode, DocumentId, FormulaSyntax, KindSyntax, KindValueSyntax, NodeFlags,
+    ParseConfig, PatternArrayItemSyntax, RecursiveCoreSyntax, Revision, SyntaxKind, SyntaxNode,
+    SyntaxToken, TextRange, TextSize, TextSnapshot, compact_debug_tree, normalize_diagnostics,
+    phase_2i_node_kind, reconstruct_source_range, validate_lossless_range,
 };
 
 #[derive(Debug)]
@@ -710,6 +710,11 @@ fn certification_table_executes_every_direct_accept_reject_and_recovery_case() {
         assert!(!row.rejected.is_empty(), "{}", row.name);
         assert_ne!(row.rejected, row.accepted, "{}", row.name);
         assert_ne!(row.rejected, row.recovery, "{}", row.name);
+        assert!(
+            row.rejected.ends_with(&row.accepted),
+            "{} rejection must prefix its current accepted fixture",
+            row.name
+        );
         let rejected = parse_canonical_phase_2i_rule_for_test(
             source(&row.rejected),
             rule,
@@ -794,6 +799,53 @@ fn certification_table_executes_every_direct_accept_reject_and_recovery_case() {
 }
 
 #[test]
+fn certification_variants_cover_empty_kinds_and_array_rest_accessors() {
+    for (text, expected) in [("*", SyntaxKind::KindAny), ("_", SyntaxKind::KindEmpty)] {
+        let parsed = parse_canonical_phase_2i_rule_for_test(
+            source(text),
+            rules::KIND,
+            ParseConfig::default(),
+        )
+        .unwrap();
+        assert!(parsed.is_strictly_clean(), "{text:?}");
+        let kind = find_typed::<KindSyntax>(&parsed.syntax()).expect("typed kind evidence");
+        assert!(
+            matches!(
+                kind.value(),
+                Some(KindValueSyntax::Any(_)) if expected == SyntaxKind::KindAny
+            ) || matches!(
+                kind.value(),
+                Some(KindValueSyntax::Empty(_)) if expected == SyntaxKind::KindEmpty
+            )
+        );
+    }
+
+    let parsed = parse_canonical_phase_2i_rule_for_test(
+        source("[head | tail]"),
+        rules::PATTERN_ARRAY,
+        ParseConfig::default(),
+    )
+    .unwrap();
+    assert!(parsed.is_strictly_clean());
+    let array = find_typed::<ArrayPatternSyntax>(&parsed.syntax()).expect("typed array pattern");
+    let elements = array.elements();
+    assert_eq!(
+        elements
+            .iter()
+            .filter(|element| element.pattern().is_some())
+            .count(),
+        2
+    );
+    assert_eq!(
+        elements
+            .iter()
+            .filter(|element| element.rest().is_some())
+            .count(),
+        1
+    );
+}
+
+#[test]
 fn match_001_is_a_positive_canonical_conformance_case() {
     for text in ["x? | * => 1", "x ? | * => 1", "x\t?\n| * => 1"] {
         let parsed = parse_canonical_phase_2i_rule_for_test(
@@ -853,21 +905,17 @@ fn assert_canonical_only(path: &Path, evidence: &str) {
             .chars()
             .filter(|character| !character.is_whitespace())
             .collect::<String>();
-        let import_path = compact_line
-            .strip_prefix("use")
-            .map(|path| path.strip_prefix("::").unwrap_or(path));
-        if declaration.is_none()
-            && import_path.is_some_and(|path| {
-                path.starts_with("mech_syntax") || path.starts_with(concat!("mech_", "core"))
-            })
-        {
+        if declaration.is_none() && compact_line.starts_with("use") {
             declaration = Some(String::new());
         }
         if let Some(current) = declaration.as_mut() {
             current.push_str(line);
             if line.ends_with(';') {
-                assert_allowed_mech_import(path, current);
-                declaration = None;
+                let completed = declaration.take().expect("active import declaration");
+                if completed.contains("mech_syntax") || completed.contains(concat!("mech_", "core"))
+                {
+                    assert_allowed_mech_import(path, &completed);
+                }
             }
         }
     }
@@ -959,6 +1007,7 @@ fn assert_allowed_mech_import(path: &Path, declaration: &str) {
     {
         let allowed = [
             "ArgumentListSyntax",
+            "ArrayPatternSyntax",
             "AstNode",
             "DocumentId",
             "ExpectedSyntax",
@@ -967,6 +1016,8 @@ fn assert_allowed_mech_import(path: &Path, declaration: &str) {
             "FactorValueSyntax",
             "FormulaSyntax",
             "GreenNode",
+            "KindSyntax",
+            "KindValueSyntax",
             "LiteralSyntax",
             "LiteralValueSyntax",
             "MapSyntax",
@@ -1020,6 +1071,10 @@ fn canonical_authority_gate_rejects_glob_and_alias_routes() {
         concat!("use mech_syntax::document::", "lower::*;"),
         concat!("use ::mech_syntax::document::", "*;"),
         concat!("use mech_syntax::document::{", "lower::*,", "};"),
+        concat!(
+            "use {::mech_syntax as syntax_alias};",
+            "syntax_alias::parse(\"1\");"
+        ),
         concat!("use mech_", "core::*;"),
         concat!("use mech_", "core::{Program};"),
         concat!(
