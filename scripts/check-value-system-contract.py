@@ -20,7 +20,6 @@ DEFAULT_CANONICAL_ENCODING = CONTRACT_ROOT / "canonical-encoding-v1.json"
 DEFAULT_CANONICAL_ENCODING_SCHEMA = CONTRACT_ROOT / "canonical-encoding-v1-schema.json"
 DEFAULT_CANONICAL_VECTORS = CONTRACT_ROOT / "canonical-encoding-v1-vectors.json"
 DEFAULT_CANONICAL_VECTORS_SCHEMA = CONTRACT_ROOT / "canonical-encoding-v1-vectors-schema.json"
-DEFAULT_GATE_B = CONTRACT_ROOT / "gate-b-regression.json"
 CANONICAL_REFERENCE_PATH = ROOT / "scripts/tests/canonical_encoding_v1_reference.py"
 
 EXPECTED_HASH_CONTRACTS_V1 = {
@@ -212,157 +211,6 @@ def load_json(path: Path) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise ValueError(f"{path} must contain a JSON object")
     return value
-
-def select_lane(
-    report: dict[str, Any],
-    name: str,
-    *,
-    history: int = 0,
-    next_epoch: int = 1,
-) -> dict[str, Any] | None:
-    matches = [
-        lane
-        for lane in report["lanes"]
-        if lane["lane"] == name
-        and lane["instances"] == 1
-        and lane.get("retained_history", 0) == history
-        and lane.get("next_epoch", 1) == next_epoch
-    ]
-    return matches[0] if len(matches) == 1 else None
-
-def gate_b_failures(
-    root: Path,
-    contract: dict[str, Any],
-    contract_path: Path,
-) -> list[Failure]:
-    failures: list[Failure] = []
-    evidence_path = root / contract["evidence_path"]
-    try:
-        evidence_bytes = evidence_path.read_bytes()
-        report = json.loads(evidence_bytes)
-    except (OSError, json.JSONDecodeError) as error:
-        return [
-            failure(
-                "C0-GATE-B-REGRESSION",
-                "evidence",
-                contract["evidence_path"],
-                "readable exact B2 JSON evidence",
-                str(error),
-                str(contract_path),
-            )
-        ]
-    expected_hash = contract["evidence_sha256"]
-    actual_hash = hashlib.sha256(evidence_bytes).hexdigest()
-    checks: list[tuple[str, Any, Any]] = [
-        ("evidence sha256", actual_hash, expected_hash),
-        ("evidence commit", report.get("git_commit"), contract["evidence_commit"]),
-        ("phase", report.get("phase"), "B2-resident-turn"),
-        ("decision", report.get("b2_decision", {}).get("decision"), "Pass"),
-    ]
-    thresholds = contract["thresholds"]
-    decision = report.get("b2_decision", {})
-    numeric_checks = [
-        ("raw_epoch_ratio", decision.get("raw_epoch_ratio"), "<=", thresholds["raw_epoch_ratio_max"]),
-        ("legacy_gap_closure", decision.get("legacy_gap_closure"), ">=", thresholds["legacy_gap_closure_min"]),
-        ("history_1k", decision.get("history_1k_over_history_0_median_ratio"), "<=", thresholds["history_1k_ratio_max"]),
-        ("history_100k", decision.get("history_100k_over_history_0_median_ratio"), "<=", thresholds["history_100k_ratio_max"]),
-        ("high_epoch", decision.get("high_epoch_over_low_epoch_median_ratio"), "<=", thresholds["high_epoch_ratio_max"]),
-    ]
-    for subject, actual, expected in checks:
-        if actual != expected:
-            failures.append(
-                failure(
-                    "C0-GATE-B-REGRESSION",
-                    subject,
-                    contract["evidence_path"],
-                    repr(expected),
-                    repr(actual),
-                    str(contract_path),
-                )
-            )
-    for subject, actual, operator, limit in numeric_checks:
-        valid = isinstance(actual, (int, float)) and not isinstance(actual, bool)
-        valid = valid and ((actual <= limit) if operator == "<=" else (actual >= limit))
-        if not valid:
-            failures.append(
-                failure(
-                    "C0-GATE-B-REGRESSION",
-                    subject,
-                    contract["evidence_path"],
-                    f"{operator} {limit}",
-                    repr(actual),
-                    str(contract_path),
-                )
-            )
-    turn = select_lane(report, "mech-resident-turn")
-    full = select_lane(report, "mech-resident-turn-full-write")
-    if turn is None or full is None:
-        failures.append(
-            failure(
-                "C0-GATE-B-REGRESSION",
-                "resident lanes",
-                contract["evidence_path"],
-                "one primary and one full-write complete resident lane",
-                "missing or duplicate",
-                str(contract_path),
-            )
-        )
-        return failures
-    resident_lanes = [
-        lane
-        for lane in report["lanes"]
-        if lane["lane"].startswith("mech-resident-")
-    ]
-    if any(
-        lane["allocation"].get("episode_allocation_count")
-        != thresholds["steady_state_allocation_count"]
-        for lane in resident_lanes
-    ):
-        failures.append(
-            failure(
-                "C0-GATE-B-REGRESSION",
-                "steady-state allocations",
-                contract["evidence_path"],
-                str(thresholds["steady_state_allocation_count"]),
-                "one or more resident lanes allocate",
-                str(contract_path),
-            )
-        )
-    structural_checks = (
-        ("primary publication", turn["structural"].get("publication_store_count"), thresholds["publication_store_count"]),
-        ("full publication", full["structural"].get("publication_store_count"), thresholds["publication_store_count"]),
-        ("full candidate seed bytes", full["structural"].get("candidate_seed_bytes"), thresholds["full_write_candidate_seed_bytes"]),
-        ("primary published copy bytes", turn["structural"].get("published_buffer_copy_bytes"), thresholds["published_buffer_copy_bytes"]),
-        ("full published copy bytes", full["structural"].get("published_buffer_copy_bytes"), thresholds["published_buffer_copy_bytes"]),
-        ("primary append infallible", turn["structural"].get("post_publication_append_infallible"), thresholds["post_publication_append_infallible"]),
-        ("full append infallible", full["structural"].get("post_publication_append_infallible"), thresholds["post_publication_append_infallible"]),
-    )
-    for subject, actual, expected in structural_checks:
-        if actual != expected:
-            failures.append(
-                failure(
-                    "C0-GATE-B-REGRESSION",
-                    subject,
-                    contract["evidence_path"],
-                    repr(expected),
-                    repr(actual),
-                    str(contract_path),
-                )
-            )
-    required_lanes = set(contract["validation_policy"]["required_evidence_lanes"])
-    report_lanes = {lane.get("lane") for lane in report["lanes"]}
-    if not required_lanes.issubset(report_lanes):
-        failures.append(
-            failure(
-                "C0-GATE-B-REGRESSION",
-                "controlled-session lanes",
-                contract["evidence_path"],
-                repr(sorted(required_lanes)),
-                repr(sorted(required_lanes - report_lanes)),
-                str(contract_path),
-            )
-        )
-    return failures
 
 def canonical_encoding_failures(
     canonical: dict[str, Any], canonical_path: Path
@@ -1037,7 +885,6 @@ def audit(
     canonical_schema_path: Path,
     vectors_path: Path,
     vectors_schema_path: Path,
-    gate_b_path: Path,
 ) -> list[Failure]:
     canonical = load_json(canonical_path)
     canonical_schema = load_json(canonical_schema_path)
@@ -1063,7 +910,6 @@ def audit(
         return sorted_failures(failures)
     failures.extend(canonical_encoding_failures(canonical, canonical_path))
     failures.extend(canonical_vector_failures(vectors, vectors_path, canonical))
-    failures.extend(gate_b_failures(root, load_json(gate_b_path), gate_b_path))
     failures.extend(permanent_boundary_failures(root))
     return sorted_failures(failures)
 
@@ -1075,7 +921,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--canonical-encoding-schema", type=Path, default=DEFAULT_CANONICAL_ENCODING_SCHEMA)
     parser.add_argument("--canonical-vectors", type=Path, default=DEFAULT_CANONICAL_VECTORS)
     parser.add_argument("--canonical-vectors-schema", type=Path, default=DEFAULT_CANONICAL_VECTORS_SCHEMA)
-    parser.add_argument("--gate-b", type=Path, default=DEFAULT_GATE_B)
     return parser.parse_args()
 
 
@@ -1088,7 +933,6 @@ def main() -> int:
             args.canonical_encoding_schema,
             args.canonical_vectors,
             args.canonical_vectors_schema,
-            args.gate_b,
         )
     except (OSError, ValueError, KeyError, json.JSONDecodeError) as error:
         print(f"value-system contract checker failed internally: {error}", file=sys.stderr)

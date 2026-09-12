@@ -1125,7 +1125,7 @@ impl ReactiveInstance {
         self.validate_constraints(working_epoch)
     }
 
-    /// Preserve the D2 recorded-turn lane for plans whose activation proves
+    /// Preserve the recorded-turn lane for plans whose activation proves
     /// that every topological step is a resident kernel. Effectful plans use
     /// `execute_candidate` and its unified kernel/external dispatcher.
     fn execute_pure_candidate(

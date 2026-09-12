@@ -13,10 +13,6 @@ readme = "README.md"
 edition = "2024"
 rust-version = "1.92"
 
-[badges]
-gitlab = { repository = "mech-lang/mech", branch = "main" }
-maintenance = { status = "actively-developed" }
-
 [lib]
 crate-type = ["cdylib", "rlib"]
 

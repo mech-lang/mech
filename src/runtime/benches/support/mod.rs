@@ -1,2 +1,2 @@
-#[cfg(feature = "runtime_bench_gate_b")]
-pub mod gate_b;
+#[cfg(feature = "resident_ekf_benchmarks")]
+pub mod resident_ekf;

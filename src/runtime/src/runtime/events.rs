@@ -5,7 +5,7 @@ use mech_core::MResult;
 impl MechRuntime {
     #[cfg(feature = "runtime_bench_probes")]
     #[doc(hidden)]
-    pub fn gate_a_emit_representative_event(
+    pub fn emit_representative_event_for_benchmark(
         &mut self,
         context: &mut RuntimeContext,
     ) -> MResult<EventId> {
@@ -14,7 +14,7 @@ impl MechRuntime {
 
     #[cfg(feature = "runtime_bench_probes")]
     #[doc(hidden)]
-    pub fn gate_a_seed_context_event_history(
+    pub fn seed_context_event_history_for_benchmark(
         &mut self,
         context: &mut RuntimeContext,
         count: usize,
@@ -30,7 +30,7 @@ impl MechRuntime {
 
     #[cfg(feature = "runtime_bench_probes")]
     #[doc(hidden)]
-    pub fn gate_a_context_event_lengths(
+    pub fn context_event_lengths_for_benchmark(
         &self,
         context: &RuntimeContext,
     ) -> MResult<(usize, usize)> {

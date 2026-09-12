@@ -74,7 +74,7 @@ pub mod resident;
 mod resident_value_adapter;
 #[cfg(feature = "resident-ekf")]
 #[doc(hidden)]
-pub mod __gate_b_resident {
+pub mod __resident_ekf {
     pub use crate::resident::ResidentCandidateExecutionError as ResidentExecutionError;
     #[cfg(feature = "runtime_bench_probes")]
     pub use crate::resident::bench::ResidentTurnProbe;

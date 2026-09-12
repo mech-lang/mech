@@ -41,9 +41,9 @@ Authority is ordered and non-overlapping:
   scratch, and bounded turn-local bookkeeping.
 - The turn ledger is the retained transition-history authority.
 
-The Gate B control is not semantic authority and is now named
-`GateBControlFixture`. The finalized public artifact is the only
-`ProgramArtifact` authority used by D1 activation and execution.
+The resident EKF control is not semantic authority and is named
+`ResidentEkfControlFixture`. The finalized public artifact is the only
+`ProgramArtifact` authority used by resident activation and execution.
 
 ## Identity map
 
@@ -159,9 +159,10 @@ No full-write output is seeded from the published version.
 
 The artifact-derived engine path returns a typed `ResidentTurnSummary`
 containing the instance and program identities, before/after epochs, candidate
-hash, and bounded touched/changed/dirty counts. The private runtime Gate B
-coordinator converts that summary into the existing benchmark-only
-`GateBFixedReceipt`; D1 does not introduce a new canonical receipt format.
+hash, and bounded touched/changed/dirty counts. The private resident EKF
+coordinator converts that summary into the benchmark-only
+`ResidentEkfReceipt`; this path does not introduce a new canonical receipt
+format.
 
 The sole normative D1 sequence remains the D0 sequence:
 

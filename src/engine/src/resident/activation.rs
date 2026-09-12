@@ -1,6 +1,6 @@
 use mech_core::CellSlotId;
 
-use super::artifact::{GateBControlFixture, LOGICAL_SLOTS_PER_EKF, NODES_PER_EKF, SlotRole};
+use super::artifact::{LOGICAL_SLOTS_PER_EKF, NODES_PER_EKF, ResidentEkfControlFixture, SlotRole};
 use crate::efficacy::ekf::operation::{EkfConstants, EkfKernel};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -64,7 +64,7 @@ impl DependencyTopology {
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct GateBPlan {
+pub(crate) struct ResidentEkfPlan {
     pub(crate) instances: usize,
     pub(crate) slot_count: usize,
     #[cfg(test)]
@@ -86,8 +86,8 @@ fn flatten<T: Copy>(lists: &[Vec<T>]) -> (Box<[u32]>, Box<[T]>) {
     (offsets.into_boxed_slice(), values.into_boxed_slice())
 }
 
-impl GateBPlan {
-    pub(crate) fn from_control_fixture(artifact: GateBControlFixture) -> Self {
+impl ResidentEkfPlan {
+    pub(crate) fn from_control_fixture(artifact: ResidentEkfControlFixture) -> Self {
         let logical_slot_count = artifact.slots.len();
         for (index, slot) in artifact.slots.iter().enumerate() {
             assert_eq!(slot.id.0 as usize, index, "logical slot IDs are dense");
@@ -231,10 +231,11 @@ mod tests {
     #[test]
     fn scaled_activation_is_deterministic_and_topologically_complete() {
         for instances in [1, 8, 64] {
-            let artifact = GateBControlFixture::new(instances);
+            let artifact = ResidentEkfControlFixture::new(instances);
             let declarations = artifact.nodes.clone();
-            let left = GateBPlan::from_control_fixture(artifact);
-            let right = GateBPlan::from_control_fixture(GateBControlFixture::new(instances));
+            let left = ResidentEkfPlan::from_control_fixture(artifact);
+            let right =
+                ResidentEkfPlan::from_control_fixture(ResidentEkfControlFixture::new(instances));
             assert_eq!(left.nodes.len(), NODES_PER_EKF * instances);
             assert_eq!(left.slots.len(), LOGICAL_SLOTS_PER_EKF as usize * instances);
             assert_eq!(left.topology.linear_node_order.len(), left.nodes.len());

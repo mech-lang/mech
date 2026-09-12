@@ -43,7 +43,7 @@ fn ordinary_source_and_bytecode_close_the_same_frozen_artifact() -> MResult<()> 
     assert_eq!(
         compilation.resource_request,
         ExecutionResourceRequest {
-            base_uri: "gate-d://ekf/frame".to_string(),
+            base_uri: "test-resource://ekf/frame".to_string(),
             path: "sample".to_string(),
             context_name: "frame".to_string(),
             operation: "read".to_string(),

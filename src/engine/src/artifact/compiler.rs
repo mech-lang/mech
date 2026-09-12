@@ -170,7 +170,7 @@ pub struct ArtifactBuildContext<'a> {
 /// requirement contributes to an immutable compiler artifact.
 ///
 /// The source interpreter can discover resource requests without knowing a
-/// host provider. D3 supplies this resolver only at the explicit resident
+/// host provider. External execution supplies this resolver only at the explicit resident
 /// compilation boundary; ordinary compilation retains its existing behavior.
 #[cfg(feature = "semantic-compiler")]
 pub trait ExternalRequirementContractResolver {

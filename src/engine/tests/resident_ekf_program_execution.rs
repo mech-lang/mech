@@ -8,13 +8,13 @@ use mech_core::{
     ResidentKernelInputs, ResidentValueMut, ResidentValueRef, ResolvedInputPort,
     ResolvedOperationContract, ResourceDelivery, ResourceIntent,
 };
-use mech_engine::__gate_b_resident::ResidentEkfBatch;
 use mech_engine::__resident::{
     ActivationFacts, CapturedSignalInput, FrozenEkfCompilationServices, ReactiveInstance,
     ResidentActivationOptions, ResidentExecutionError, ResidentIntegrityMode, ResidentStorageClass,
     ResidentTurnSummary, ResidentValueBorrow, activate, activate_with_options,
     compile_frozen_ekf_source, frozen_ekf_compiler_catalog,
 };
+use mech_engine::__resident_ekf::ResidentEkfBatch;
 use mech_engine::{
     ApplicationRequirementTable, ArtifactSource, BindingDeclaration, NodeDeclaration,
     OperationReference, ProgramArtifact, ProgramArtifactDraft,
@@ -25,7 +25,7 @@ const SOURCE: &str =
     include_str!("../../../tests/architecture/resident-activation/ekf-source-v1.mec");
 const TRACE: &[u8] = include_bytes!(concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../../benchmarks/runtime/gate-b/ekf-input-v1.bin"
+    "/../../tests/fixtures/resident-ekf/ekf-input-v1.bin"
 ));
 const TURNS: usize = 4_096;
 const EXPECTED_HASH: &str = "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758";
@@ -175,7 +175,7 @@ fn with_resident_effect(artifact: &ProgramArtifact) -> ProgramArtifact {
                 .iter()
                 .map(|(_, requirement)| requirement.clone())
                 .chain([ApplicationRequirement::Resource(ExecutionResourceRequest {
-                    base_uri: "gate-d3://scene/output".to_owned(),
+                    base_uri: "test-resource://scene/output".to_owned(),
                     path: "frame".to_owned(),
                     context_name: "output".to_owned(),
                     operation: "write".to_owned(),
@@ -325,7 +325,7 @@ fn source_and_bytecode_artifacts_execute_the_complete_frozen_trace() -> MResult<
     for (turn, frame) in frames().enumerate() {
         let source_receipt = execute_turn(&mut source, &frame).expect("source artifact turn");
         let decoded_receipt = execute_turn(&mut decoded, &frame).expect("bytecode artifact turn");
-        control.turn(frame).expect("Gate B control turn");
+        control.turn(frame).expect("resident EKF control turn");
         assert_eq!(state(&source), state(&decoded), "turn {turn}");
         let control_state = control.state(0);
         assert_eq!(&state(&source)[..3], &control_state.state, "turn {turn}");

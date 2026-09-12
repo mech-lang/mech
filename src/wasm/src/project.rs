@@ -2436,8 +2436,15 @@ fn document_source_resolver(
         ResolvedSource::new(
             &source.root_specifier,
             format!("memory:{}", source.root_specifier),
-            MechSourceCode::Tree(tree),
+            MechSourceCode::String(
+                source
+                    .source_map
+                    .get(&source.root_specifier)
+                    .expect("document root presence is checked above")
+                    .clone(),
+            ),
         )
+        .with_syntax_tree(tree)
         .with_kind(SourceKind::Mech),
     )?;
     Ok(resolver)

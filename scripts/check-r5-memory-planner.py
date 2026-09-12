@@ -648,8 +648,8 @@ def failures(root: Path) -> list[str]:
         if "scripts/tests/test_check_r5_memory_planner.py" not in source:
             found.append(f"{workflow}: does not run the R5 checker mutation suite")
     full = sources.get(".github/workflows/ci-full.yml", "")
-    if "name: R5 memory planner" not in full:
-        found.append("Full CI omits the R5 memory planner job")
+    if "name: Memory planner contract" not in full:
+        found.append("Full CI omits the memory planner contract job")
 
     return sorted(set(found))
 

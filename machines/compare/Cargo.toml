@@ -11,10 +11,6 @@ license = "Apache-2.0"
 readme = "README.md"
 edition = "2024"
 
-[badges]
-gitlab = { repository = "mech-lang/machines/compare", branch = "main" }
-maintenance = { status = "actively-developed" }
-
 [lib]
 crate-type = ["rlib"]
 

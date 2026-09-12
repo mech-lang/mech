@@ -13,10 +13,6 @@ readme = "README.md"
 edition = "2024"
 rust-version = "1.92"
 
-[badges]
-gitlab = { repository = "mech-lang/mech", branch = "main" }
-maintenance = { status = "actively-developed" }
-
 [[bin]]
 name = "mech"
 path = "src/bin/mech.rs"
@@ -506,5 +502,3 @@ mech-range = { path = "machines/range" }
 mech-set = { path = "machines/set" }
 mech-stats = { path = "machines/stats" }
 mech-string = { path = "machines/string" }
-
-#mech-utilities = { path = 'src/utilities', version = '0.2.44' }

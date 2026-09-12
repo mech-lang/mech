@@ -275,17 +275,23 @@ impl ResolvedSource {
     /// Replace the authoritative source and invalidate every projection that
     /// was derived from its previous contents.
     ///
-    /// Resolvers may cache a parsed tree alongside textual source, while the
-    /// compiler may replace a resolved root with a generated partition. Those
-    /// two representations must change as one unit: retaining either the old
-    /// syntax tree or its declaration index would execute a different program
-    /// from the source stored here.
+    /// Resolvers may cache a parsed tree alongside textual source. Replacing
+    /// the source invalidates that cache and every declaration index.
     pub fn replace_source(&mut self, source: MechSourceCode) {
-        self.syntax_tree = match &source {
-            MechSourceCode::Tree(tree) => Some(Arc::new(tree.clone())),
-            _ => None,
-        };
+        self.syntax_tree = None;
         self.source = source;
+        self.clear_source_projections();
+    }
+
+    /// Replace the typed compiler projection while retaining the source used
+    /// for module identity and presentation.
+    #[cfg(feature = "compute")]
+    pub(crate) fn replace_syntax_tree(&mut self, syntax_tree: Program) {
+        self.syntax_tree = Some(Arc::new(syntax_tree));
+        self.clear_source_projections();
+    }
+
+    fn clear_source_projections(&mut self) {
         self.imports.clear();
         self.exports.clear();
         self.contexts.clear();
@@ -426,7 +432,6 @@ impl ResolvedSource {
             && matches!(
                 self.source,
                 MechSourceCode::String(_)
-                    | MechSourceCode::Tree(_)
                     | MechSourceCode::ByteCode(_)
                     | MechSourceCode::Program(_)
             )

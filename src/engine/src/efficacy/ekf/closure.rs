@@ -21,7 +21,7 @@ use super::operation::{
     FrozenEkfValueShape,
 };
 
-const TRACE: &[u8] = include_bytes!("../../../../../benchmarks/runtime/gate-b/ekf-input-v1.bin");
+const TRACE: &[u8] = include_bytes!("../../../../../tests/fixtures/resident-ekf/ekf-input-v1.bin");
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct FrozenEkfInputClosure {
@@ -889,7 +889,7 @@ fn validate_resource_request(request: &ExecutionResourceRequest) -> Result<(), (
         && request.delivery == ResourceDelivery::Live
         && request.operation == "read"
         && request.context_name == "frame"
-        && request.base_uri == "gate-d://ekf/frame"
+        && request.base_uri == "test-resource://ekf/frame"
         && request.path == "sample"
     {
         Ok(())
@@ -1295,7 +1295,7 @@ mod tests {
     fn second_observation_root_is_rejected_before_activation() {
         let source = SOURCE.replacen(
             "frame := @trace/sample",
-            "frame := @trace/sample\n@trace-2 := gate-d://ekf/frame{:read(sample)}\nframe-2 := @trace-2/sample",
+            "frame := @trace/sample\n@trace-2 := test-resource://ekf/frame{:read(sample)}\nframe-2 := @trace-2/sample",
             1,
         );
         let mut services = FrozenEkfCompilationServices::default();

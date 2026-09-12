@@ -520,7 +520,7 @@ fn validate_node_requirement(
     };
     let ResolvedOperationContract::Declared(contract) = contract else {
         // Host calls remain valid generic artifact data until their explicit
-        // resident contract is declared. D3 resident admission rejects them.
+        // resident contract is declared. Resident external admission rejects them.
         return Ok(());
     };
     match (&contract.interaction, requirement) {

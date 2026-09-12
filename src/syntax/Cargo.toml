@@ -14,10 +14,6 @@ edition = "2024"
 rust-version = "1.92"
 autobenches = false
 
-[badges]
-gitlab = { repository = "mech-lang/syntax", branch = "main" }
-maintenance = { status = "actively-developed" }
-
 [features]
 std = ["mech-core/std"]
 no_std = ["mech-core/no_std"]

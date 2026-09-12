@@ -19,11 +19,36 @@ LINT_BODY = re.compile(
 UNSUPPORTED_DYLIB = re.compile(r'^\s*crate-type\s*=\s*\[[^\]]*"dylib"', re.MULTILINE)
 RAW_LITERAL = re.compile(r'(?:br|r)(?P<hashes>#{0,255})"')
 CHARACTER_LITERAL = re.compile(r"'(?:\\.|[^\\'])'")
+RELEASE = re.compile(r"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$")
 
 
 def fail(message: str) -> None:
     print(f"warning policy failed: {message}", file=sys.stderr)
     raise SystemExit(1)
+
+
+def release(value: object, field: str) -> tuple[int, int, int]:
+    if not isinstance(value, str) or (matched := RELEASE.fullmatch(value)) is None:
+        fail(f"{field} must be a semantic release in major.minor.patch form")
+    return tuple(int(component) for component in matched.groups())
+
+
+def validate_exception_lifecycle(
+    exception: dict[str, object], policy_release: tuple[int, int, int]
+) -> None:
+    introduced = release(exception["introduced_release"], "introduced_release")
+    expires = release(exception["expires_release"], "expires_release")
+    if introduced > policy_release:
+        fail("warning exception cannot be introduced after the policy release")
+    if expires <= introduced:
+        fail("warning exception expiry must follow its introduced release")
+    if exception["production_or_test"] not in {"production", "test"}:
+        fail("warning exception production_or_test must be production or test")
+    if exception["production_or_test"] == "production" and expires <= policy_release:
+        fail(
+            f"expired production warning exception in {exception['path']}: "
+            f"expired at {exception['expires_release']}"
+        )
 
 
 def skip_non_code(source: str, offset: int) -> int | None:
@@ -248,18 +273,22 @@ def repository_rust_sources() -> list[Path]:
 
 
 contracts = json.loads(EXCEPTIONS.read_text(encoding="utf-8"))
-if contracts.get("schema_version") != 1:
+if contracts.get("schema_version") != 2:
     fail("warning exception contract has an unsupported schema version")
+policy_release = release(contracts.get("policy_release"), "policy_release")
 
 expected_lints = {}
 for exception in contracts.get("lint_exceptions", []):
     required = {
         "directive",
+        "expires_release",
         "expiry_condition",
+        "introduced_release",
         "lint",
         "occurrences",
         "owner",
         "path",
+        "production_or_test",
         "reason",
     }
     if set(exception) != required:
@@ -270,6 +299,7 @@ for exception in contracts.get("lint_exceptions", []):
         fail("lint exception has an invalid directive")
     if not isinstance(exception["occurrences"], int) or exception["occurrences"] < 1:
         fail("lint exception occurrences must be a positive integer")
+    validate_exception_lifecycle(exception, policy_release)
     key = (
         exception["path"],
         exception["directive"],
@@ -282,13 +312,24 @@ for exception in contracts.get("lint_exceptions", []):
 
 expected_deprecations = {}
 for exception in contracts.get("deprecated_apis", []):
-    required = {"attribute", "expiry_condition", "occurrences", "owner", "path", "reason"}
+    required = {
+        "attribute",
+        "expires_release",
+        "expiry_condition",
+        "introduced_release",
+        "occurrences",
+        "owner",
+        "path",
+        "production_or_test",
+        "reason",
+    }
     if set(exception) != required:
         fail("deprecation exception fields do not match the reviewed schema")
     if not all(exception[field] for field in required - {"occurrences"}):
         fail("deprecation exception contains an empty reviewed field")
     if not isinstance(exception["occurrences"], int) or exception["occurrences"] < 1:
         fail("deprecation exception occurrences must be a positive integer")
+    validate_exception_lifecycle(exception, policy_release)
     key = (exception["path"], " ".join(exception["attribute"].split()))
     if key in expected_deprecations:
         fail(f"duplicate deprecation exception for {exception['path']}")

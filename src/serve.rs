@@ -2041,6 +2041,7 @@ impl MechErrorKind for Utf8ConversionError {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use mech_core::{Program, decode_and_decompress};
     use mech_runtime::MECH_TOOL_SUBJECT;
     use std::time::{SystemTime, UNIX_EPOCH};
 

@@ -48,7 +48,7 @@ impl<R> RetainedTurnLedger<R> {
     #[cfg(any(
         test,
         feature = "runtime_bench_probes",
-        feature = "runtime_bench_gate_b"
+        feature = "resident_ekf_benchmarks"
     ))]
     pub fn len(&self) -> usize {
         self.records.len()
@@ -70,7 +70,7 @@ impl<R> RetainedTurnLedger<R> {
             .map(|(sequence, record)| (*sequence, record))
     }
 
-    #[cfg(feature = "runtime_bench_gate_b")]
+    #[cfg(feature = "resident_ekf_benchmarks")]
     pub fn last(&self) -> Option<(LedgerSequence, &R)> {
         self.records
             .back()

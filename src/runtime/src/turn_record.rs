@@ -8,10 +8,10 @@ use serde::{Deserialize, Serialize};
 
 #[cfg(all(
     test,
-    any(feature = "runtime_bench_gate_b", feature = "resident-external")
+    any(feature = "resident_ekf_benchmarks", feature = "resident-external")
 ))]
 use crate::RuntimeEventKind;
-#[cfg(any(feature = "runtime_bench_gate_b", feature = "resident-external"))]
+#[cfg(any(feature = "resident_ekf_benchmarks", feature = "resident-external"))]
 use crate::TransactionId;
 
 macro_rules! sequence_id {
@@ -69,11 +69,11 @@ macro_rules! sequence_id {
 }
 
 sequence_id!(TurnId);
-#[cfg(any(feature = "runtime_bench_gate_b", feature = "resident-external"))]
+#[cfg(any(feature = "resident_ekf_benchmarks", feature = "resident-external"))]
 sequence_id!(InputSequence);
 sequence_id!(LedgerSequence);
 
-#[cfg(any(feature = "runtime_bench_gate_b", feature = "resident-external"))]
+#[cfg(any(feature = "resident_ekf_benchmarks", feature = "resident-external"))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct InputSequenceRange {
@@ -81,7 +81,7 @@ pub struct InputSequenceRange {
     pub last: InputSequence,
 }
 
-#[cfg(any(feature = "runtime_bench_gate_b", feature = "resident-external"))]
+#[cfg(any(feature = "resident_ekf_benchmarks", feature = "resident-external"))]
 impl InputSequenceRange {
     pub fn new(first: InputSequence, last: InputSequence) -> MResult<Self> {
         if first > last {
@@ -99,7 +99,7 @@ impl InputSequenceRange {
     }
 }
 
-#[cfg(any(feature = "runtime_bench_gate_b", feature = "resident-external"))]
+#[cfg(any(feature = "resident_ekf_benchmarks", feature = "resident-external"))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum TurnRecordStatus {
@@ -108,7 +108,7 @@ pub enum TurnRecordStatus {
     Staged,
 }
 
-#[cfg(any(feature = "runtime_bench_gate_b", feature = "resident-external"))]
+#[cfg(any(feature = "resident_ekf_benchmarks", feature = "resident-external"))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum TurnFailurePhase {
@@ -126,7 +126,7 @@ pub enum TurnFailurePhase {
     Recording,
 }
 
-#[cfg(any(feature = "runtime_bench_gate_b", feature = "resident-external"))]
+#[cfg(any(feature = "resident_ekf_benchmarks", feature = "resident-external"))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct TurnFailureRecord {
@@ -135,7 +135,7 @@ pub struct TurnFailureRecord {
     pub message: String,
 }
 
-#[cfg(any(feature = "runtime_bench_gate_b", feature = "resident-external"))]
+#[cfg(any(feature = "resident_ekf_benchmarks", feature = "resident-external"))]
 impl TurnFailureRecord {
     pub fn validate(&self) -> MResult<()> {
         if self.kind.is_empty() {
@@ -167,7 +167,7 @@ impl TurnFailureRecord {
     }
 }
 
-#[cfg(any(feature = "runtime_bench_gate_b", feature = "resident-external"))]
+#[cfg(any(feature = "resident_ekf_benchmarks", feature = "resident-external"))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct TurnRecordHeader {
@@ -181,7 +181,7 @@ pub struct TurnRecordHeader {
 /// Projects only the existing standalone transaction lifecycle for compatibility tests.
 #[cfg(all(
     test,
-    any(feature = "runtime_bench_gate_b", feature = "resident-external")
+    any(feature = "resident_ekf_benchmarks", feature = "resident-external")
 ))]
 pub(crate) fn project_transaction_lifecycle_events(
     header: &TurnRecordHeader,
@@ -204,7 +204,7 @@ pub(crate) fn project_transaction_lifecycle_events(
     Ok([Some(started), completed].into_iter().flatten())
 }
 
-#[cfg(any(feature = "runtime_bench_gate_b", feature = "resident-external"))]
+#[cfg(any(feature = "resident_ekf_benchmarks", feature = "resident-external"))]
 impl TurnRecordHeader {
     pub fn validate(&self) -> MResult<()> {
         if self.transaction_id.is_zero() {
@@ -276,19 +276,19 @@ impl AccountedRecord for Box<[u8]> {
     }
 }
 
-/// Fixed private receipt used only by the Gate B efficacy benchmark.
+/// Fixed private receipt used only by the resident EKF efficacy benchmark.
 ///
 /// The payload is inline so binding and retained append require no turn-time
 /// heap allocation. It is not the canonical resident receipt model.
 #[doc(hidden)]
-#[cfg(feature = "runtime_bench_gate_b")]
+#[cfg(feature = "resident_ekf_benchmarks")]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct GateBFixedReceipt {
+pub struct ResidentEkfReceipt {
     words: [u64; 8],
 }
 
-#[cfg(feature = "runtime_bench_gate_b")]
-impl GateBFixedReceipt {
+#[cfg(feature = "resident_ekf_benchmarks")]
+impl ResidentEkfReceipt {
     pub const RETAINED_BYTES: usize = core::mem::size_of::<Self>();
 
     pub fn accepted(
@@ -352,11 +352,11 @@ impl GateBFixedReceipt {
     }
 }
 
-#[cfg(feature = "runtime_bench_gate_b")]
-impl sealed::Sealed for GateBFixedReceipt {}
+#[cfg(feature = "resident_ekf_benchmarks")]
+impl sealed::Sealed for ResidentEkfReceipt {}
 
-#[cfg(feature = "runtime_bench_gate_b")]
-impl AccountedRecord for GateBFixedReceipt {
+#[cfg(feature = "resident_ekf_benchmarks")]
+impl AccountedRecord for ResidentEkfReceipt {
     fn retained_bytes(&self) -> usize {
         Self::RETAINED_BYTES
     }
@@ -368,7 +368,7 @@ impl sealed::Sealed for crate::ledger::PooledRecordBuffer {}
 #[cfg(any(test, feature = "runtime_bench_probes", feature = "resident-external"))]
 impl<P: AccountedRecord> sealed::Sealed for crate::outbox::OwnedEffectIntent<P> {}
 
-#[cfg(any(feature = "runtime_bench_gate_b", feature = "resident-external"))]
+#[cfg(any(feature = "resident_ekf_benchmarks", feature = "resident-external"))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OwnedTurnRecord<B> {
@@ -376,7 +376,7 @@ pub struct OwnedTurnRecord<B> {
     pub body: B,
 }
 
-#[cfg(any(feature = "runtime_bench_gate_b", feature = "resident-external"))]
+#[cfg(any(feature = "resident_ekf_benchmarks", feature = "resident-external"))]
 impl<B: AccountedRecord> OwnedTurnRecord<B> {
     pub fn validate(&self) -> MResult<()> {
         self.header.validate()?;
@@ -396,10 +396,10 @@ impl<B: AccountedRecord> OwnedTurnRecord<B> {
     }
 }
 
-#[cfg(any(feature = "runtime_bench_gate_b", feature = "resident-external"))]
+#[cfg(any(feature = "resident_ekf_benchmarks", feature = "resident-external"))]
 impl<B: AccountedRecord> sealed::Sealed for OwnedTurnRecord<B> {}
 
-#[cfg(any(feature = "runtime_bench_gate_b", feature = "resident-external"))]
+#[cfg(any(feature = "resident_ekf_benchmarks", feature = "resident-external"))]
 impl<B: AccountedRecord> AccountedRecord for OwnedTurnRecord<B> {
     fn validate_for_recording(&self) -> MResult<()> {
         self.validate()
@@ -426,7 +426,7 @@ impl CheckedSequence for TurnId {
     }
 }
 
-#[cfg(any(feature = "runtime_bench_gate_b", feature = "resident-external"))]
+#[cfg(any(feature = "resident_ekf_benchmarks", feature = "resident-external"))]
 impl CheckedSequence for InputSequence {
     const NAME: &'static str = "InputSequence";
 
@@ -513,7 +513,7 @@ impl MechErrorKind for SequenceExhausted {
     }
 }
 
-#[cfg(any(feature = "runtime_bench_gate_b", feature = "resident-external"))]
+#[cfg(any(feature = "resident_ekf_benchmarks", feature = "resident-external"))]
 fn invalid_turn_record<T>(field: &'static str, reason: impl Into<String>) -> MResult<T> {
     Err(MechError::new(
         InvalidTurnRecord {
@@ -536,7 +536,7 @@ mod tests {
         assert_eq!(error.kind_name(), "SequenceExhausted");
     }
 
-    #[cfg(any(feature = "runtime_bench_gate_b", feature = "resident-external"))]
+    #[cfg(any(feature = "resident_ekf_benchmarks", feature = "resident-external"))]
     mod turn_records {
         use super::*;
 

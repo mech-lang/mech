@@ -1,4 +1,4 @@
-@trace := gate-d://ekf/frame{:read(sample)}
+@trace := test-resource://ekf/frame{:read(sample)}
 frame := @trace/sample
 
 dt := 0.05

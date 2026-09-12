@@ -951,7 +951,7 @@ impl InMemoryStore {
     }
 
     #[cfg(test)]
-    fn gate_a_cloned_record_count(&self) -> usize {
+    fn cloned_record_count_for_cost_probe(&self) -> usize {
         self.modules.len()
             + self.module_versions.len()
             + self.active_module_versions.len()
@@ -1518,7 +1518,7 @@ impl MechStore for InMemoryStore {
 
     fn commit_runtime(&mut self, commit: RuntimeStoreCommit) -> MResult<TransactionId> {
         #[cfg(any(test, feature = "runtime_bench_probes"))]
-        crate::runtime::gate_a_probe::record_commit_runtime_call();
+        crate::runtime::cost_probe::record_commit_runtime_call();
         #[cfg(all(test, feature = "source"))]
         if let Some(counter) = &self.commit_runtime_calls {
             counter.fetch_add(1, Ordering::SeqCst);
@@ -1531,7 +1531,7 @@ impl MechStore for InMemoryStore {
         let prepare_started = std::time::Instant::now();
         let prepared = prepared_commit::PreparedInMemoryCommit::prepare(self, commit);
         #[cfg(any(test, feature = "runtime_bench_probes"))]
-        crate::runtime::gate_a_probe::record_in_memory_store_prepare_duration(
+        crate::runtime::cost_probe::record_in_memory_store_prepare_duration(
             prepare_started.elapsed(),
         );
         let prepared = prepared?;
@@ -1540,9 +1540,7 @@ impl MechStore for InMemoryStore {
         let apply_started = std::time::Instant::now();
         let id = self.apply_prepared_runtime_commit(prepared);
         #[cfg(any(test, feature = "runtime_bench_probes"))]
-        crate::runtime::gate_a_probe::record_in_memory_store_apply_duration(
-            apply_started.elapsed(),
-        );
+        crate::runtime::cost_probe::record_in_memory_store_apply_duration(apply_started.elapsed());
         Ok(id)
     }
 
@@ -1563,7 +1561,7 @@ impl MechStore for InMemoryStore {
         self.transactions.insert(id, tx);
         self.transaction_order.push(id);
         #[cfg(any(test, feature = "runtime_bench_probes"))]
-        crate::runtime::gate_a_probe::record_transaction_committed();
+        crate::runtime::cost_probe::record_transaction_committed();
         Ok(id)
     }
 
@@ -1716,7 +1714,7 @@ mod tests {
     }
 
     #[test]
-    fn gate_a_store_clone_count_sums_logical_records_and_indexes() {
+    fn runtime_cost_probe_store_clone_count_sums_logical_records_and_indexes() {
         let mut store = InMemoryStore::new();
         store
             .modules
@@ -1770,10 +1768,10 @@ mod tests {
         );
         store.transaction_order.push(TransactionId(9));
 
-        // The module-name index is deliberately excluded by the frozen Gate A
+        // The module-name index is deliberately excluded by the frozen runtime cost
         // diagnostic definition; all requested record and index families sum
         // to sixteen logical retained items here.
-        assert_eq!(store.gate_a_cloned_record_count(), 16);
+        assert_eq!(store.cloned_record_count_for_cost_probe(), 16);
     }
 
     #[test]

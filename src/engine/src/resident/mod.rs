@@ -32,7 +32,7 @@ pub(crate) use activation::*;
 pub(crate) use arena::*;
 pub(crate) use artifact::*;
 pub use candidate::ResidentExecutionError as ResidentCandidateExecutionError;
-pub(crate) use candidate::{Candidate, GateBInstance, publish_epoch};
+pub(crate) use candidate::{Candidate, ResidentEkfInstance, publish_epoch};
 pub use full_write::{FULL_WRITE_ELEMENTS, PreparedResidentFullWrite, ResidentFullWrite};
 pub(crate) use kernel::*;
 pub(crate) use workspace::*;

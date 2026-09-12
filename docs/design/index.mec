@@ -7,7 +7,7 @@ Design Documents
 - [Syntax Design Notes](/design/syntax-design.html) `todo`
 - [History](/design/history.html)  `todo`
 - [Roadmap](/design/ROADMAP.html)
-- [Value-resident execution architecture](/design/value-resident-execution.html)
+- [Archived value-resident execution gate plan](/design/archive/value-resident-execution-gate-plan.html)
 - [Immutable value semantics and migration contract](/design/value-semantics-and-migration.html)
 - [Program artifact resident activation contract](/design/program-artifact-resident-activation.html)
 - [Type-memory boundary](/design/type-memory-boundary.html)

@@ -46,7 +46,7 @@ pub struct Interpreter {
     #[cfg(feature = "functions")]
     pub(crate) persistent_user_function_plan_depth: Ref<usize>,
     pub(crate) deferred_expression_solve_depth: Ref<usize>,
-    pub code: Vec<MechSourceCode>,
+    pub code: Vec<Program>,
     pub out: Option<ValueCell>,
     pub out_values: Ref<HashMap<u64, Option<ValueCell>>>,
     #[cfg(feature = "subscript_formula")]
@@ -614,7 +614,7 @@ struct InterpreterStructureCheckpoint {
     #[cfg(feature = "functions")]
     persistent_user_function_plan_depth: RefPayloadCheckpoint<usize>,
     deferred_expression_solve_depth: RefPayloadCheckpoint<usize>,
-    code: Vec<MechSourceCode>,
+    code: Vec<Program>,
     out: Option<ValueCell>,
     out_values: RefPayloadCheckpoint<HashMap<u64, Option<ValueCell>>>,
     #[cfg(feature = "subscript_formula")]
@@ -1571,7 +1571,7 @@ impl Interpreter {
         tree: &Program,
         services: &mut dyn MechExecutionServices,
     ) -> MResult<Option<ValueCell>> {
-        self.code.push(MechSourceCode::Tree(tree.clone()));
+        self.code.push(tree.clone());
         let result = catch_unwind(AssertUnwindSafe(|| {
             let execution = InterpreterExecution::new(self, services);
             program(tree, &execution)

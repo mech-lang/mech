@@ -1480,7 +1480,7 @@ fn source_declared_compute_outputs(tree: &Program) -> MResult<BTreeSet<String>> 
 #[cfg(feature = "compute")]
 fn replace_root_tree(module: &mut CompilerModule, tree: Program) -> MResult<()> {
     let inherited_contexts = module.source.contexts.clone();
-    module.source.replace_source(MechSourceCode::Tree(tree));
+    module.source.replace_syntax_tree(tree);
     index_source(&mut module.source)?;
     for context in inherited_contexts {
         if !module
@@ -1830,7 +1830,6 @@ fn executable_resolved_tree(source: &ResolvedSource) -> MResult<mech_core::Progr
 fn source_tree(source: &MechSourceCode) -> MResult<Option<mech_core::Program>> {
     match source {
         MechSourceCode::String(source) => Ok(Some(mech_syntax::parser::parse(source.trim())?)),
-        MechSourceCode::Tree(tree) => Ok(Some(tree.clone())),
         MechSourceCode::Program(_) => Ok(None),
         MechSourceCode::ByteCode(_) | MechSourceCode::Html(_) => Ok(None),
         MechSourceCode::Image(_, _) => Err(unsupported_route(
@@ -1843,7 +1842,6 @@ fn source_tree(source: &MechSourceCode) -> MResult<Option<mech_core::Program>> {
 fn declaration_tree(source: &MechSourceCode) -> MResult<Program> {
     match source {
         MechSourceCode::String(source) => mech_syntax::parser::parse(source.trim()),
-        MechSourceCode::Tree(tree) => Ok(tree.clone()),
         MechSourceCode::Program(sources) => {
             let mut sections = Vec::new();
             for source in sources {
@@ -1866,7 +1864,6 @@ fn declaration_tree(source: &MechSourceCode) -> MResult<Program> {
 fn executable_tree(source: &MechSourceCode) -> MResult<mech_core::Program> {
     match source {
         MechSourceCode::String(source) => sanitize_tree(mech_syntax::parser::parse(source.trim())?),
-        MechSourceCode::Tree(tree) => sanitize_tree(tree.clone()),
         MechSourceCode::Program(sources) => {
             let mut sections = Vec::new();
             for source in sources {

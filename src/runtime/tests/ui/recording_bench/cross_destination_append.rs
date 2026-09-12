@@ -1,4 +1,4 @@
-use mech_runtime::__gate_a_recording::{
+use mech_runtime::__recording_bench::{
     AccountedRecord, OwnedTurnRecordQueue, RecordEstimate, prepare_queue, reserve_queue,
 };
 

@@ -1,5 +1,5 @@
 //! Allocation-free mathematics shared by the ordinary-source efficacy fixture
-//! and the Gate B resident control.
+//! and the resident EKF resident control.
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum EkfMathError {

@@ -88,7 +88,7 @@ impl RuntimeTransaction {
     }
 
     #[cfg(any(test, feature = "runtime_bench_probes"))]
-    pub(crate) fn gate_a_staged_item_count(&self) -> usize {
+    pub(crate) fn staged_item_count_for_cost_probe(&self) -> usize {
         self.read_set.len()
             + self.write_set.len()
             + self.events.len()
@@ -734,7 +734,7 @@ mod tests {
     }
 
     #[test]
-    fn gate_a_savepoint_item_count_sums_staged_collections() {
+    fn runtime_cost_probe_savepoint_item_count_sums_staged_collections() {
         let mut tx = RuntimeTransaction::new(TransactionId(1), "task:1");
         tx.read_set.push(ObjectId(1));
         tx.write_set.push(ObjectId(2));
@@ -768,6 +768,6 @@ mod tests {
         tx.task_updates.push(TaskId(15));
         tx.actor_updates.push(ActorId(16));
 
-        assert_eq!(tx.gate_a_staged_item_count(), 18);
+        assert_eq!(tx.staged_item_count_for_cost_probe(), 18);
     }
 }
