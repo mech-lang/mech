@@ -260,3 +260,110 @@ fn complete_and_recovered_comprehensions_keep_direct_roles() {
     assert_eq!(view.qualifiers().len(), 2);
     assert_eq!(view.closing_delimiter().unwrap().text().unwrap(), "}");
 }
+
+#[test]
+fn resource_retained_matrix_roles_use_the_original_physical_owner() {
+    let mut retained_rows = 0;
+    let mut retained_openers = 0;
+    for text in ["[1 2 3]", "[[1] 2]", "╭1 2 3╯"] {
+        for pieces in [false, true] {
+            for rule in [rules::MATRIX, rules::EXPRESSION] {
+                let budgets = (0..=260)
+                    .map(|fuel| ParseLimits {
+                        fuel,
+                        ..Default::default()
+                    })
+                    .chain(
+                        (mech_syntax::document::parser::MIN_PREFIX_PRESERVING_EVENTS..=180).map(
+                            |max_events| ParseLimits {
+                                max_events,
+                                ..Default::default()
+                            },
+                        ),
+                    );
+                for limits in budgets {
+                    let parsed = parse_canonical_phase_2i_rule_for_test(
+                        snapshot(text, pieces),
+                        rule,
+                        ParseConfig { limits },
+                    )
+                    .unwrap();
+                    validate_lossless_range(&parsed.root, &parsed.source, parsed.consumed).unwrap();
+                    assert!(parsed.stats.parser_steps <= limits.fuel);
+                    assert!(parsed.stats.events_emitted <= u64::from(limits.max_events));
+                    let Some(matrix) = find(&parsed.syntax(), SyntaxKind::Matrix) else {
+                        continue;
+                    };
+                    let Some(owner) = matrix
+                        .children()
+                        .find(|n| n.kind() == SyntaxKind::MatrixComprehension)
+                    else {
+                        continue;
+                    };
+                    let view = mech_syntax::document::MatrixSyntax::cast(matrix).unwrap();
+                    let rows: Vec<_> = owner
+                        .children()
+                        .filter(|n| n.kind() == SyntaxKind::MatrixRow)
+                        .collect();
+                    let typed = view.rows();
+                    assert_eq!(typed.len(), rows.len(), "{text} {limits:?}");
+                    for (typed, actual) in typed.iter().zip(&rows) {
+                        same_node(typed.syntax(), actual);
+                        retained_rows += 1;
+                    }
+                    let opener = owner
+                        .children_with_tokens()
+                        .into_iter()
+                        .filter_map(|e| match e {
+                            SyntaxElement::Token(t) => Some(t),
+                            _ => None,
+                        })
+                        .find(|t| {
+                            t.range().start == TextSize::ZERO
+                                && t.text().is_ok_and(|s| s == "[" || s == "╭")
+                        });
+                    if let Some(opener) = opener {
+                        let typed = view.opening_delimiter().expect(
+                            "matrix retains its physical opener under the provisional owner",
+                        );
+                        assert_eq!(typed.id(), opener.id());
+                        assert_eq!(typed.range(), opener.range());
+                        retained_openers += 1;
+                    }
+                    if let Some(closer) = view.closing_delimiter() {
+                        assert!(!closer.flags().contains(TokenFlags::ERROR));
+                        if !closer.flags().contains(TokenFlags::MISSING) {
+                            assert_eq!(closer.range().end, TextSize(text.len() as u32));
+                        }
+                    }
+                }
+            }
+        }
+    }
+    assert!(retained_rows > 0 && retained_openers > 0);
+}
+
+#[test]
+fn ordinary_matrix_views_keep_direct_and_recovered_delimiters() {
+    for text in ["[1 2]", "[[1] 2]", "[1 +]", "╭1 2╯"] {
+        let parsed = parse_canonical_phase_2i_rule_for_test(
+            snapshot(text, true),
+            rules::MATRIX,
+            ParseConfig::default(),
+        )
+        .unwrap();
+        let view = mech_syntax::document::MatrixSyntax::cast(
+            find(&parsed.syntax(), SyntaxKind::Matrix).unwrap(),
+        )
+        .unwrap();
+        assert!(!view.rows().is_empty());
+        assert_eq!(
+            view.opening_delimiter().unwrap().range().start,
+            TextSize::ZERO
+        );
+        assert_eq!(
+            view.closing_delimiter().unwrap().range().end,
+            TextSize(text.len() as u32)
+        );
+    }
+}

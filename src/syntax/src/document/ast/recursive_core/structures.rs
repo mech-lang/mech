@@ -121,16 +121,22 @@ impl StructureSyntax {
 }
 
 impl MatrixSyntax {
+    fn role_owner(&self) -> SyntaxNode {
+        child::<MatrixComprehensionSyntax>(&self.0)
+            .map(|owner| owner.syntax().clone())
+            .unwrap_or_else(|| self.0.clone())
+    }
+
     pub fn rows(&self) -> Vec<MatrixRowSyntax> {
-        children(&self.0)
+        children(&self.role_owner())
     }
     pub fn opening_delimiter(&self) -> Option<SyntaxToken> {
-        direct_tokens(&self.0).into_iter().find(|token| {
+        direct_tokens(&self.role_owner()).into_iter().find(|token| {
             token.kind() == SyntaxKind::LeftBracket || is_box_corner(token, &["╭", "┌", "┏"], false)
         })
     }
     pub fn closing_delimiter(&self) -> Option<SyntaxToken> {
-        direct_tokens(&self.0)
+        direct_tokens(&self.role_owner())
             .into_iter()
             .filter(|token| {
                 token.kind() == SyntaxKind::RightBracket
