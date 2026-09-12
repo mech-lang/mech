@@ -759,3 +759,55 @@ fn nested_constructors_preserve_selected_child_dimensions_and_values() {
         }
     }
 }
+
+#[test]
+fn hexadecimal_and_large_rational_values_survive_artifact_roundtrip_and_execution() {
+    use mech_core::ValueDataDraft as D;
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    for (source, expected) in [
+        ("x := 0xf64", D::I64(0xf64)),
+        ("x := 0xf32", D::I64(0xf32)),
+        ("x := 0xc32", D::I64(0xc32)),
+        ("x := -0xf64", D::I64(-0xf64)),
+        (
+            "x := -170141183460469231731687303715884105728/170141183460469231731687303715884105728",
+            D::Rational64 {
+                numerator: -1,
+                denominator: 1,
+            },
+        ),
+        (
+            "x := 340282366920938463463374607431768211455/340282366920938463463374607431768211455",
+            D::Rational64 {
+                numerator: 1,
+                denominator: 1,
+            },
+        ),
+    ] {
+        let artifact = roundtrip(source);
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x55b, 0),
+            &artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap_or_else(|error| panic!("{source}: {error:?}"));
+        assert!(instance.plan.inputs.is_empty());
+        for _ in 0..2 {
+            instance
+                .turn(&[])
+                .unwrap_or_else(|error| panic!("{source}: {error:?}"));
+            assert_eq!(
+                instance
+                    .copied_output(0)
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                expected,
+                "{source}"
+            );
+        }
+    }
+}

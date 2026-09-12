@@ -21,10 +21,10 @@ use mech_syntax::document::{
     KindAnnotationSyntax, KindSyntax, KindValueSyntax, LiteralSyntax, LiteralValueSyntax,
     MapSyntax, MatrixComprehensionSyntax, MatrixSyntax, MultiplicativeExpressionSyntax, NodeFlags,
     OperatorSyntax, PatternSyntax, PatternValueSyntax, RangeExpressionSyntax, RecordSyntax,
-    RecursiveSyntaxNode, Revision, ScientificLiteralSyntax, SetComprehensionSyntax, SetSyntax,
-    SliceStemSyntax, SliceSyntax, StructureSyntax, StructureValueSyntax, SubscriptItemSyntax,
-    SubscriptValueSyntax, SyntaxKind, SyntaxNode, TableSyntax, TableValueSyntax, TextRange,
-    TupleStructSyntax, TupleSyntax, VariableDefineSyntax, VariableStemSyntax, VariableSyntax,
+    RecursiveSyntaxNode, Revision, SetComprehensionSyntax, SetSyntax, SliceStemSyntax, SliceSyntax,
+    StructureSyntax, StructureValueSyntax, SubscriptItemSyntax, SubscriptValueSyntax, SyntaxKind,
+    SyntaxNode, TableSyntax, TableValueSyntax, TextRange, TupleStructSyntax, TupleSyntax,
+    VariableDefineSyntax, VariableStemSyntax, VariableSyntax,
 };
 
 use crate::{
@@ -2714,12 +2714,14 @@ impl SemanticBuilder {
                     && annotation.is_some_and(|schema| schema != BuiltinSchema::Dynamic)
                 {
                     let (schema, data) =
-                        decode_number(&source, None).ok_or_else(|| SourceSemanticError {
-                            code: "source-semantics/invalid-number-literal",
-                            message: format!(
-                                "canonical number {source:?} could not be represented"
-                            ),
-                            anchor: SourceSemanticAnchor::for_node(value.syntax()),
+                        decode_number(&source, None, selected_suffix).ok_or_else(|| {
+                            SourceSemanticError {
+                                code: "source-semantics/invalid-number-literal",
+                                message: format!(
+                                    "canonical number {source:?} could not be represented"
+                                ),
+                                anchor: SourceSemanticAnchor::for_node(value.syntax()),
+                            }
                         })?;
                     if dynamic_option {
                         return Ok(self.constant_dynamic_option(builtin_schema_draft(schema), data));
@@ -2733,15 +2735,16 @@ impl SemanticBuilder {
                         "numeric literal does not satisfy its outer kind annotation",
                     );
                 }
-                let (schema, data) =
-                    decode_number(&source, if dynamic_option { None } else { annotation })
-                        .ok_or_else(|| SourceSemanticError {
-                            code: "source-semantics/invalid-number-literal",
-                            message: format!(
-                                "canonical number {source:?} could not be represented"
-                            ),
-                            anchor: SourceSemanticAnchor::for_node(value.syntax()),
-                        })?;
+                let (schema, data) = decode_number(
+                    &source,
+                    if dynamic_option { None } else { annotation },
+                    selected_suffix,
+                )
+                .ok_or_else(|| SourceSemanticError {
+                    code: "source-semantics/invalid-number-literal",
+                    message: format!("canonical number {source:?} could not be represented"),
+                    anchor: SourceSemanticAnchor::for_node(value.syntax()),
+                })?;
                 Ok(if dynamic_option {
                     self.constant_dynamic_option(builtin_schema_draft(schema), data)
                 } else {
@@ -3575,8 +3578,9 @@ impl SemanticBuilder {
             SubscriptItemSyntax::DotInteger(value) => {
                 let integer =
                     self.required(value.integer(), value.syntax(), "a selected ordinal")?;
-                let text = node_text(integer.syntax())?;
-                let (schema, data) = decode_number(&text, None).ok_or_else(|| {
+                let text = canonical_numeric_text(integer.syntax())?;
+                let suffix = integer_literal_suffix(&integer)?;
+                let (schema, data) = decode_number(&text, None, suffix).ok_or_else(|| {
                     missing_kind_child(value.syntax(), "a valid selected ordinal")
                 })?;
                 let selector = self.constant(schema, data);
@@ -3649,9 +3653,36 @@ impl SemanticBuilder {
                         &mut parameters,
                         SourceSemanticAnchor::for_node(syntax),
                     )?;
-                    let logical = matches!(&selector, SchemaBody::Bool)
-                        || matches!(&selector, SchemaBody::Matrix { element, .. } if element.as_ref() == &SchemaBody::Bool);
+                    let positional = |schema: &SchemaBody| {
+                        mech_core::is_positional_selector_schema(schema)
+                            || matches!(schema, SchemaBody::Bool)
+                            || matches!(schema, SchemaBody::Matrix { element, .. }
+                                if mech_core::is_positional_selector_schema(element)
+                                    || element.as_ref() == &SchemaBody::Bool)
+                    };
+                    let compatible = match &body {
+                        SchemaBody::Matrix { .. } | SchemaBody::String => positional(&selector),
+                        SchemaBody::Tuple(_) => mech_core::is_positional_selector_schema(&selector),
+                        SchemaBody::Map { key, .. } => {
+                            selectors.len() == 1 && key.as_ref() == &selector
+                        }
+                        SchemaBody::Dynamic => true,
+                        _ => false,
+                    };
+                    if !compatible {
+                        return Err(SourceSemanticError {
+                            code: "source-semantics/incompatible-selection-kind",
+                            message: "selector kind does not support this source selection"
+                                .to_owned(),
+                            anchor: SourceSemanticAnchor::for_node(syntax),
+                        });
+                    }
+                    let map_key = matches!(&body, SchemaBody::Map { .. });
+                    let logical = !map_key
+                        && (matches!(&selector, SchemaBody::Bool)
+                            || matches!(&selector, SchemaBody::Matrix { element, .. } if element.as_ref() == &SchemaBody::Bool));
                     let (count, is_scalar) = match selector {
+                        _ if map_key => (DimensionExpr::Constant(1), true),
                         SchemaBody::Matrix { dimensions, .. } => {
                             (DimensionExpr::Multiply(dimensions), false)
                         }
@@ -5152,6 +5183,7 @@ fn kind_schema_body(kind: &KindSyntax) -> Result<SchemaBody, SourceSemanticError
             let name = node_text(name.syntax())?;
             match name.as_str() {
                 "ix" | "index" => SchemaBody::Index,
+                "id" => SchemaBody::Id,
                 _ => builtin_kind_named(&name)
                     .map(BuiltinScalarKind::schema_body)
                     .ok_or_else(|| SourceSemanticError {
@@ -5304,8 +5336,8 @@ fn kind_dimension(literal: &LiteralSyntax) -> Result<DimensionExpr, SourceSemant
         });
     }
     let source = canonical_number_source(&number)?.replace('_', "");
-    if (suffix.is_some() && decode_number(&source, None).is_none())
-        || (annotation.is_some() && decode_number(&source, annotation).is_none())
+    if (suffix.is_some() && decode_number(&source, None, suffix).is_none())
+        || (annotation.is_some() && decode_number(&source, annotation, suffix).is_none())
     {
         return Err(SourceSemanticError {
             code: "source-semantics/unsupported-kind-dimension",
@@ -5313,8 +5345,7 @@ fn kind_dimension(literal: &LiteralSyntax) -> Result<DimensionExpr, SourceSemant
             anchor: SourceSemanticAnchor::for_node(literal.syntax()),
         });
     }
-    let (source, _) = numeric_suffix(&source);
-    let (negative, magnitude) = integer_parts(source).ok_or_else(|| SourceSemanticError {
+    let (negative, magnitude) = integer_parts(&source).ok_or_else(|| SourceSemanticError {
         code: "source-semantics/unsupported-kind-dimension",
         message: "kind extents require unsigned integer constants".to_owned(),
         anchor: SourceSemanticAnchor::for_node(literal.syntax()),
@@ -5441,31 +5472,6 @@ fn require_literal_schema(
     })
 }
 
-fn numeric_suffix(source: &str) -> (&str, Option<BuiltinSchema>) {
-    for (suffix, schema) in [
-        ("u128", BuiltinSchema::U128),
-        ("i128", BuiltinSchema::I128),
-        ("u64", BuiltinSchema::U64),
-        ("i64", BuiltinSchema::I64),
-        ("u32", BuiltinSchema::U32),
-        ("i32", BuiltinSchema::I32),
-        ("u16", BuiltinSchema::U16),
-        ("i16", BuiltinSchema::I16),
-        ("f64", BuiltinSchema::F64),
-        ("c32", BuiltinSchema::C32),
-        ("c64", BuiltinSchema::C64),
-        ("r64", BuiltinSchema::R64),
-        ("u8", BuiltinSchema::U8),
-        ("i8", BuiltinSchema::I8),
-        ("f32", BuiltinSchema::F32),
-    ] {
-        if let Some(number) = source.strip_suffix(suffix) {
-            return (number, Some(schema));
-        }
-    }
-    (source, None)
-}
-
 fn selected_integer_suffix(
     number: &mech_syntax::document::NumberSyntax,
 ) -> Result<Option<BuiltinSchema>, SourceSemanticError> {
@@ -5482,6 +5488,12 @@ fn selected_integer_suffix(
     let Some(integer) = IntegerLiteralSyntax::cast(value) else {
         return Ok(None);
     };
+    integer_literal_suffix(&integer)
+}
+
+fn integer_literal_suffix(
+    integer: &IntegerLiteralSyntax,
+) -> Result<Option<BuiltinSchema>, SourceSemanticError> {
     let Some(typed) = integer.typed() else {
         return Ok(None);
     };
@@ -5505,30 +5517,41 @@ fn selected_integer_suffix(
 fn canonical_number_source(
     number: &mech_syntax::document::NumberSyntax,
 ) -> Result<String, SourceSemanticError> {
-    let source = node_text(number.syntax())?;
-    let Some(real) = number.real().and_then(|real| real.value()) else {
-        return Ok(source);
-    };
-    let Some(scientific) = ScientificLiteralSyntax::cast(real) else {
-        return Ok(source);
-    };
-    let Some(exponent) = scientific
-        .exponent()
-        .and_then(IntegerLiteralSyntax::cast)
-        .and_then(|integer| integer.typed())
-        .and_then(|typed| typed.suffix())
-    else {
-        return Ok(source);
-    };
-    let suffix = node_text(exponent.syntax())?;
-    source
-        .strip_suffix(&suffix)
-        .map(str::to_owned)
-        .ok_or_else(|| SourceSemanticError {
-            code: "source-semantics/invalid-number-literal",
-            message: "scientific exponent suffix is not a terminal source component".to_owned(),
-            anchor: SourceSemanticAnchor::for_node(number.syntax()),
-        })
+    canonical_numeric_text(number.syntax())
+}
+
+fn canonical_numeric_text(syntax: &SyntaxNode) -> Result<String, SourceSemanticError> {
+    fn suffix_ranges(
+        node: &SyntaxNode,
+        ranges: &mut Vec<TextRange>,
+    ) -> Result<(), SourceSemanticError> {
+        if let Some(integer) = IntegerLiteralSyntax::cast(node.clone()) {
+            integer_literal_suffix(&integer)?;
+        }
+        if let Some(typed) = mech_syntax::document::TypedIntegerSyntax::cast(node.clone()) {
+            if let Some(suffix) = typed.suffix() {
+                ranges.push(suffix.syntax().range());
+            }
+            return Ok(());
+        }
+        for child in node.children() {
+            suffix_ranges(&child, ranges)?;
+        }
+        Ok(())
+    }
+    // Only typed suffix nodes select a numeric kind. Hexadecimal digits and
+    // scientific/rational component text never create an alternate suffix rule.
+    let mut source = node_text(syntax)?;
+    let start = syntax.range().start.0;
+    let mut ranges = Vec::new();
+    suffix_ranges(syntax, &mut ranges)?;
+    for range in ranges.into_iter().rev() {
+        source.replace_range(
+            (range.start.0 - start) as usize..(range.end.0 - start) as usize,
+            "",
+        );
+    }
+    Ok(source)
 }
 
 fn integer_parts(source: &str) -> Option<(bool, u128)> {
@@ -5625,6 +5648,7 @@ fn scalar_data(schema: BuiltinSchema, source: &str) -> Option<ValueDataDraft> {
 fn decode_number(
     source: &str,
     annotation: Option<BuiltinSchema>,
+    suffix: Option<BuiltinSchema>,
 ) -> Option<(BuiltinSchema, ValueDataDraft)> {
     let source = source.replace('_', "");
     let option = annotation.filter(|schema| option_payload_schema(*schema).is_some());
@@ -5666,15 +5690,13 @@ fn decode_number(
         return wrap_optional_number(option, schema, data);
     }
     if let Some((numerator, denominator)) = source.split_once('/') {
-        let (numerator, _) = numeric_suffix(numerator);
-        let (denominator, _) = numeric_suffix(denominator);
         let schema = annotation
             .filter(|schema| *schema != BuiltinSchema::Dynamic)
             .unwrap_or(BuiltinSchema::R64);
         if schema != BuiltinSchema::R64 {
             return None;
         }
-        let numerator = signed_integer_value(numerator)?;
+        let (negative_numerator, numerator) = integer_parts(numerator)?;
         let (negative_denominator, denominator) = integer_parts(denominator)?;
         if negative_denominator {
             return None;
@@ -5682,8 +5704,15 @@ fn decode_number(
         if denominator == 0 {
             return None;
         }
-        let divisor = gcd_u128(numerator.unsigned_abs(), denominator);
-        let numerator = i64::try_from(numerator / i128::try_from(divisor).ok()?).ok()?;
+        let divisor = gcd_u128(numerator, denominator);
+        let magnitude = numerator / divisor;
+        let reduced = i128::try_from(magnitude).ok()?;
+        let numerator = i64::try_from(if negative_numerator {
+            -reduced
+        } else {
+            reduced
+        })
+        .ok()?;
         let denominator = u64::try_from(denominator / divisor).ok()?;
         return wrap_optional_number(
             option,
@@ -5694,7 +5723,7 @@ fn decode_number(
             },
         );
     }
-    let (number, suffix) = numeric_suffix(&source);
+    let number = source.as_str();
     let annotated = annotation.filter(|schema| *schema != BuiltinSchema::Dynamic);
     let magnitude = number.strip_prefix('-').unwrap_or(number);
     let explicitly_based = ["0d", "0x", "0o", "0b"]

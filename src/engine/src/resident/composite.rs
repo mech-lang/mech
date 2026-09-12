@@ -641,13 +641,16 @@ fn composite_pack(
             .checked_add(nodes)
             .ok_or(ResidentKernelError::InvalidShape)?;
     }
-    if let Some(previous) = target.as_ref() {
-        super::budget::measure_canonical_value_footprint(
-            &mut footprint_meter,
-            previous,
-            &plan.schemas,
-        )?;
-    }
+    let previous_footprint = target
+        .as_ref()
+        .map(|previous| {
+            super::budget::measure_canonical_value_footprint(
+                &mut footprint_meter,
+                previous,
+                &plan.schemas,
+            )
+        })
+        .transpose()?;
     let (output_containers, table_scratch) = plan
         .constructor
         .allocation_containers()
@@ -706,10 +709,27 @@ fn composite_pack(
         0
     };
     footprint_meter.charge_comparison_work(finalization_work)?;
-    let measured = footprint_meter.estimate();
     let final_output_nodes = super::budget::checked_u64(staged_child_nodes)?
         .checked_add(2)
         .ok_or(ResidentKernelError::InvalidShape)?;
+    if let (Some(previous), Some(previous_footprint)) = (target.as_ref(), previous_footprint) {
+        // Output containers and child storage bound its complete payload walk;
+        // cached schema bytes and both value shapes are charged separately.
+        let equality_work = super::budget::projected_language_equality_work(
+            &plan.schemas,
+            previous,
+            previous_footprint,
+            plan.output.schema_id,
+            plan.output.shape_instance.parameter_values().len(),
+            mech_core::snapshot::ValueFootprint {
+                encoded_bytes: super::budget::checked_u64(output_bytes)?,
+                retained_bytes: super::budget::checked_u64(output_bytes)?,
+                node_count: final_output_nodes,
+            },
+        )?;
+        footprint_meter.charge_comparison_work(equality_work)?;
+    }
+    let measured = footprint_meter.estimate();
     let admitted_children = super::budget::PreparedKernel::new(
         plan.children.len(),
         super::budget::resident_cost! {
@@ -776,8 +796,14 @@ fn composite_pack(
             } => ResidentKernelError::InvalidShape,
             _ => ResidentKernelError::InvalidInput,
         })?;
+    let changed = match target.as_ref() {
+        Some(previous) => !previous
+            .language_eq(&plan.schemas, &next, &plan.schemas)
+            .map_err(|_| ResidentKernelError::InvalidOutput)?,
+        None => true,
+    };
     *target = Some(next);
-    Ok(true)
+    Ok(changed)
 }
 
 #[cfg(test)]
@@ -831,6 +857,98 @@ mod tests {
                 .instantiate_shape(Box::new([]))
                 .unwrap(),
             resolved_selector: None,
+        }
+    }
+
+    #[test]
+    fn latest_review_composite_change_reports_follow_canonical_language_equality() {
+        let f64_body = SchemaBody::FloatingPoint(mech_core::FloatWidth::W64);
+        let field = mech_core::SchemaField {
+            name: "a".to_owned(),
+            schema: f64_body.clone(),
+        };
+        for body in [
+            SchemaBody::Tuple(vec![f64_body.clone()].into_boxed_slice()),
+            SchemaBody::Record(vec![field.clone()].into_boxed_slice()),
+            SchemaBody::Map {
+                key: Box::new(f64_body.clone()),
+                value: Box::new(f64_body.clone()),
+                cardinality: CardinalitySpec::Exact(DimensionExpr::Constant(1)),
+            },
+            SchemaBody::Table {
+                columns: vec![field].into_boxed_slice(),
+                rows: CardinalitySpec::Exact(DimensionExpr::Constant(1)),
+            },
+        ] {
+            let count = if matches!(&body, SchemaBody::Map { .. }) {
+                2
+            } else {
+                1
+            };
+            let mut builder = mech_core::SchemaTableBuilder::new();
+            let scalar = builder.insert(schema(f64_body.clone())).unwrap();
+            let output = builder.insert(schema(body)).unwrap();
+            let built = builder.finish().unwrap();
+            let scalar = built.resolve(scalar).unwrap();
+            let output = built.resolve(output).unwrap();
+            let (schemas, _) = built.into_parts();
+            let contract =
+                ResolvedOperationContract::Declared(mech_core::DeclaredOperationContract {
+                    inputs: vec![
+                        mech_core::ResolvedInputPort {
+                            schema: scalar,
+                            access: AccessMode::Read,
+                            delivery: DeliveryMode::Signal
+                        };
+                        count
+                    ]
+                    .into_boxed_slice(),
+                    outputs: vec![mech_core::ResolvedOutputPort {
+                        schema: output,
+                        access: AccessMode::Write,
+                        delivery: DeliveryMode::Signal,
+                        construction: OutputConstruction::FullWrite {
+                            shape: ShapeRule::Declared,
+                        },
+                        alias: AliasPolicy::NoAlias,
+                        change_detection: ChangeDetectionPolicy::KernelReported,
+                    }]
+                    .into_boxed_slice(),
+                    interaction: ExternalInteraction::Pure,
+                });
+            let input_layouts = vec![layout(&schemas, scalar, ResidentValueKind::F64); count];
+            let kernel = bind_composite_pack(&ResidentKernelBindRequest {
+                contract: &contract,
+                schemas: &schemas,
+                inputs: &input_layouts,
+                output: layout(&schemas, output, ResidentValueKind::Snapshot),
+            })
+            .unwrap();
+            let mut output = [None];
+            for (value, expected) in [
+                (3.0, true),
+                (3.0, false),
+                (7.0, true),
+                (7.0, false),
+                (0.0, true),
+                (-0.0, false),
+                (f64::NAN, true),
+                (f64::NAN, true),
+            ] {
+                let value = [value];
+                let key = [1.0];
+                let inputs = if count == 2 {
+                    vec![ResidentValueRef::F64(&key), ResidentValueRef::F64(&value)]
+                } else {
+                    vec![ResidentValueRef::F64(&value)]
+                };
+                assert_eq!(
+                    kernel
+                        .execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut output))
+                        .unwrap(),
+                    expected
+                );
+            }
         }
     }
 

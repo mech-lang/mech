@@ -807,3 +807,62 @@ fn resolved_optional_absence_executes_without_empty_operation_nodes() {
         }
     }
 }
+
+#[test]
+fn latest_review_hexadecimal_suffix_digits_and_large_rational_reductions_compile() {
+    for (source, expected) in [
+        ("0xf64", mech_core::ValueDataDraft::I64(0xf64)),
+        ("0xf32", mech_core::ValueDataDraft::I64(0xf32)),
+        ("0xc32", mech_core::ValueDataDraft::I64(0xc32)),
+        ("0xc64", mech_core::ValueDataDraft::I64(0xc64)),
+        (
+            "12f64",
+            mech_core::ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(12.0)),
+        ),
+        (
+            "170141183460469231731687303715884105728/170141183460469231731687303715884105728",
+            mech_core::ValueDataDraft::Rational64 {
+                numerator: 1,
+                denominator: 1,
+            },
+        ),
+    ] {
+        let compiled = compile(source);
+        let artifact = compiled.compile_artifact().unwrap();
+        let SourceValue::Constant(id) = compiled.program().outputs[0].source else {
+            panic!("{source}")
+        };
+        let value = artifact.constants().get(id).unwrap();
+        assert_eq!(value.canonical_data_draft().unwrap(), expected, "{source}");
+    }
+}
+
+#[test]
+fn latest_review_id_annotations_use_the_canonical_id_schema() {
+    let compiled = compile("signal<id>");
+    assert_eq!(output(&compiled), &SchemaBody::Id);
+    compiled.compile_artifact().unwrap();
+    let compiled = CanonicalSourceFrontend
+        .compile_definition(&definition("x<id> := signal<id>"))
+        .unwrap();
+    assert_eq!(output(&compiled), &SchemaBody::Id);
+    compiled.compile_artifact().unwrap();
+}
+
+#[test]
+fn nested_numeric_suffixes_require_a_known_kind() {
+    for (source, start, end) in [("1.0e3units", 4, 10), ("1/0xf64", 2, 7)] {
+        let error = CanonicalSourceFrontend
+            .compile_expression(&expression(source))
+            .err()
+            .unwrap();
+        assert_eq!(
+            error.code,
+            "source-semantics/unsupported-number-kind-suffix"
+        );
+        assert_eq!(error.anchor.document, DocumentId(0x544));
+        assert_eq!(error.anchor.revision, Revision(1));
+        assert_eq!(error.anchor.range.start.0, start);
+        assert_eq!(error.anchor.range.end.0, end);
+    }
+}

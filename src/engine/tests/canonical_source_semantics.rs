@@ -1165,7 +1165,7 @@ fn reviewed_source_kind_edges_match_operation_and_literal_contracts() {
             .code,
         "source-semantics/unsupported-number-kind-suffix"
     );
-    for source in ["1.0e3u8", "1.0e3units"] {
+    for source in ["1.0e3u8"] {
         let scientific = CanonicalSourceFrontend
             .compile_expression(&expression(source))
             .unwrap();

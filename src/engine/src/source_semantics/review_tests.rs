@@ -436,3 +436,38 @@ fn optional_runtime_peers_preserve_existing_layers_and_box_dynamic_payloads() {
         );
     }
 }
+
+#[test]
+fn latest_review_selection_rejects_nonpositional_and_mismatched_map_keys() {
+    for (definition, source) in [
+        ("a := [1 2]", "a[\"x\"]"),
+        ("a := [1 2]", "a[[\"x\"]]"),
+        ("a := (1,2)", "a[\"x\"]"),
+        ("a := {1: true}", "a{\"x\"}"),
+    ] {
+        let definition: VariableDefineSyntax = parse(definition, rules::VARIABLE_DEFINE);
+        let expression: ExpressionSyntax = parse(source, rules::EXPRESSION);
+        let mut builder = SemanticBuilder::new(SourceSemanticAnchor::for_node(expression.syntax()));
+        builder.definition(&definition).unwrap();
+        let error = builder
+            .expression(&expression)
+            .err()
+            .unwrap_or_else(|| panic!("{source} accepted an incompatible selector"));
+        assert_eq!(
+            error.code, "source-semantics/incompatible-selection-kind",
+            "{source}: {error}"
+        );
+        assert_eq!(error.anchor.document, DocumentId(0x544));
+        assert_eq!(error.anchor.revision, Revision(1));
+    }
+    for (definition, source) in [
+        ("a := [1 2]", "a[1]"),
+        ("a := [1 2]", "a[[1u8 2u8]]"),
+        ("a := [1 2]", "a[[true false]]"),
+        ("a := (1,true)", "a[1u8]"),
+        ("a := {\"x\": true}", "a{\"x\"}"),
+        ("a := {(true): 1}", "a{true}"),
+    ] {
+        selected(definition, source).compile_artifact().unwrap();
+    }
+}
