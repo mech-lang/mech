@@ -7,7 +7,7 @@ use mech_core::{
     ChangeDetectionPolicy, IntegerWidth, OutputConstruction, SchemaBody, ShapeRule, ValueData,
 };
 use mech_engine::{
-    CanonicalSourceFrontend, PHASE_2I_SEMANTIC_RULES, Phase2iSemanticDisposition,
+    CanonicalSourceFrontend, PHASE_2I_SEMANTIC_RULES, Phase2iSemanticDisposition, SourceNodeOutput,
     SourceSemanticComprehensionQualifierRole, SourceValue, phase_2i_semantic_disposition,
 };
 use mech_syntax::document::parser::canonical::parse_canonical_phase_2i_rule_for_test;
@@ -345,6 +345,36 @@ fn calls_ranges_subscripts_and_patterns_keep_their_canonical_roles() {
         .find(|node| node.operation.canonical_name() == "math/add")
         .unwrap();
     assert_ne!(add.inputs[0], add.inputs[1]);
+
+    let typed_pattern = CanonicalSourceFrontend
+        .compile_expression(&expression("value ? | y<u8> => y + 1 | * => 0"))
+        .unwrap();
+    let binding = typed_pattern
+        .program()
+        .nodes
+        .iter()
+        .find(|node| node.operation.canonical_name() == "source/bind")
+        .expect("typed pattern binding projection");
+    let SourceNodeOutput::Derived { schema } = binding.outputs[0] else {
+        panic!("pattern projection did not produce a derived value")
+    };
+    assert!(matches!(
+        typed_pattern.schemas().get(schema).unwrap().body(),
+        SchemaBody::UnsignedInteger(IntegerWidth::W8)
+    ));
+    let add = typed_pattern
+        .program()
+        .nodes
+        .iter()
+        .find(|node| node.operation.canonical_name() == "math/add")
+        .expect("typed pattern result addition");
+    let SourceNodeOutput::Derived { schema } = add.outputs[0] else {
+        panic!("pattern result addition did not produce a derived value")
+    };
+    assert!(matches!(
+        typed_pattern.schemas().get(schema).unwrap().body(),
+        SchemaBody::FloatingPoint(_)
+    ));
 }
 
 #[test]
@@ -944,6 +974,16 @@ fn reviewed_source_kind_edges_match_operation_and_literal_contracts() {
             "true < false",
             "source-semantics/incompatible-comparison-kinds",
         ),
+        ("¬:ready", "source-semantics/non-boolean-negation-kind"),
+        ("¬<u8>", "source-semantics/non-boolean-negation-kind"),
+        (
+            "1<c32> + 2<c32>",
+            "source-semantics/unsupported-resident-arithmetic-kind",
+        ),
+        (
+            "-(1<c32>)",
+            "source-semantics/unsupported-resident-arithmetic-kind",
+        ),
     ] {
         assert_eq!(
             CanonicalSourceFrontend
@@ -961,6 +1001,8 @@ fn reviewed_source_kind_edges_match_operation_and_literal_contracts() {
         "1u8 % 2u8",
         "\"a\" < \"b\"",
         ":ready == :ready",
+        "limit < 1",
+        "value % 2",
     ] {
         let compiled = CanonicalSourceFrontend
             .compile_expression(&expression(source))
@@ -1024,6 +1066,61 @@ fn reviewed_source_kind_edges_match_operation_and_literal_contracts() {
         contract.outputs[0].change_detection,
         ChangeDetectionPolicy::KernelReported
     );
+
+    let transposed_range = CanonicalSourceFrontend
+        .compile_expression(&expression("(1..3)'"))
+        .unwrap();
+    let SchemaBody::Matrix { dimensions, .. } = transposed_range
+        .schemas()
+        .get(transposed_range.program().outputs[0].schema)
+        .unwrap()
+        .body()
+    else {
+        panic!("transposed range did not retain a matrix schema")
+    };
+    assert!(matches!(
+        dimensions[0],
+        mech_core::DimensionExpr::Parameter(_)
+    ));
+    assert_eq!(dimensions[1], mech_core::DimensionExpr::Constant(1));
+    transposed_range
+        .compile_artifact()
+        .expect("transposed range must satisfy the resident matrix contract");
+
+    let ordered_matrices = CanonicalSourceFrontend
+        .compile_expression(&expression("(1..3) < (2..4)"))
+        .unwrap();
+    let SchemaBody::Matrix { element, .. } = ordered_matrices
+        .schemas()
+        .get(ordered_matrices.program().outputs[0].schema)
+        .unwrap()
+        .body()
+    else {
+        panic!("ordered matrix comparison did not retain matrix shape")
+    };
+    assert!(matches!(element.as_ref(), SchemaBody::Bool));
+    ordered_matrices
+        .compile_artifact()
+        .expect("ordered matrix comparison must satisfy its matrix scheme");
+
+    assert_eq!(
+        CanonicalSourceFrontend
+            .compile_expression(&expression("300u8<i16>"))
+            .err()
+            .expect("an out-of-range typed literal must fail before outer conversion")
+            .code,
+        "source-semantics/invalid-number-literal"
+    );
+    let converted = CanonicalSourceFrontend
+        .compile_expression(&expression("1u8<i16>"))
+        .unwrap();
+    let SourceValue::Constant(id) = converted.program().outputs[0].source else {
+        panic!("converted typed literal did not remain constant")
+    };
+    assert!(matches!(
+        converted.constants().get(id).unwrap().data(),
+        ValueData::I16(1)
+    ));
 }
 
 #[test]
@@ -1059,6 +1156,19 @@ fn exact_table_columns_and_c32_are_first_class_source_schemas() {
         );
     }
 
+    for source in ["<c32>", "<c32?>"] {
+        let reified = CanonicalSourceFrontend
+            .compile_expression(&expression(source))
+            .unwrap_or_else(|error| panic!("{source:?}: {error}"));
+        let SourceValue::Constant(id) = reified.program().outputs[0].source else {
+            panic!("{source:?} did not produce a reified kind constant")
+        };
+        assert!(matches!(
+            reified.constants().get(id).unwrap().data(),
+            ValueData::Type(_)
+        ));
+    }
+
     for source in ["1<c32>", "1+2i<c32>"] {
         let value = CanonicalSourceFrontend
             .compile_expression(&expression(source))
@@ -1092,6 +1202,21 @@ fn exact_table_columns_and_c32_are_first_class_source_schemas() {
         SchemaBody::Option(payload)
             if matches!(payload.as_ref(), SchemaBody::Complex(mech_core::FloatWidth::W32))
     ));
+
+    let parameterized_table = CanonicalSourceFrontend
+        .compile_expression(&expression(
+            "╭──────────╮\n│ values   │\n├──────────┤\n│ (1..3)   │\n╰──────────╯",
+        ))
+        .unwrap();
+    let table_schema = parameterized_table
+        .schemas()
+        .get(parameterized_table.program().outputs[0].schema)
+        .unwrap();
+    let SchemaBody::Table { columns, .. } = table_schema.body() else {
+        panic!("parameterized fancy table did not produce a table schema")
+    };
+    assert!(matches!(columns[0].schema, SchemaBody::Matrix { .. }));
+    assert!(!table_schema.dimension_parameters().is_empty());
 }
 
 #[test]
