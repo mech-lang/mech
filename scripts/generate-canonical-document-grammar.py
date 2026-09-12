@@ -259,6 +259,36 @@ def choice_count(expression: Expression) -> int:
     return 0
 
 
+def mika_expression_triples() -> tuple[tuple[str, str, str], ...]:
+    source = SPECIFICATION.read_text(encoding="utf-8")
+    paragraph = next(
+        block
+        for block in source.split("\n\n")
+        if "At the baseline the accepted" in block and "triples are" in block
+    )
+    values = [
+        value
+        for value in re.findall(r"`([^`]+)`", paragraph)
+        if value != "mika-expression-inner"
+    ]
+    if len(values) != 25:
+        raise SystemExit(
+            f"expected 25 registered Mika expression triples, found {len(values)}"
+        )
+    noses = re.findall(r'"([^"]+)"', grammar_definitions()["mika-nose"])
+    triples = []
+    for value in values:
+        matches = [nose for nose in noses if nose in value]
+        if len(matches) != 1:
+            raise SystemExit(f"registered Mika expression has no unique nose: {value!r}")
+        nose = matches[0]
+        left, right = value.split(nose, 1)
+        if not left or not right:
+            raise SystemExit(f"registered Mika expression has an empty eye: {value!r}")
+        triples.append((left, nose, right))
+    return tuple(triples)
+
+
 def rust_expression(
     expression: Expression,
     known_rules: set[str],
@@ -273,6 +303,12 @@ def rust_expression(
         return f"GrammarExpression::Literal({json.dumps(expression[1], ensure_ascii=False)})"
     if kind == "empty":
         return "GrammarExpression::Empty"
+    if kind == "mika_expression_triples":
+        triples = ", ".join(
+            "(" + ", ".join(json.dumps(part, ensure_ascii=False) for part in triple) + ")"
+            for triple in expression[1]
+        )
+        return f"GrammarExpression::MikaExpressionTriples(&[{triples}])"
     if kind in {"sequence", "choice"}:
         if kind == "sequence":
             variant = "Sequence"
@@ -321,9 +357,15 @@ EXISTING_KINDS = {
 }
 
 SAMPLE_OVERRIDES = {
-    "fsm-implementation": "#machine(x) -> :start\n:start -> {}\n.",
+    "context-send": "x<u8><-1 + 2",
+    "fsm-arm": "42 |42 ->+> x",
+    "fsm-guard": "|42 ->+> x",
+    "fsm-implementation": "#machine(x) -> :start\n:start |42 ->+> x\n.",
+    "fsm-state-definition-variables": "(x<u8>)",
+    "fsm-transition": "42 ->{}",
     "function-define-statements": "=out<u8>:=value:=1.",
     "inline-mech-code": "{{1}}",
+    "mika-expression-inner": "¬◯¬",
     "op-assign": "x += 1 + 2",
 }
 
@@ -335,9 +377,14 @@ def load_rules() -> tuple[list[str], dict[str, Expression]]:
     if missing:
         raise SystemExit(f"missing canonical definitions: {', '.join(missing)}")
 
-    return names, {
+    parsed = {
         name: GrammarParser(tokenize(definitions[name])).parse() for name in names
     }
+    parsed["mika-expression-inner"] = (
+        "mika_expression_triples",
+        mika_expression_triples(),
+    )
+    return names, parsed
 
 
 def render_grammar(names: list[str], parsed: dict[str, Expression]) -> str:
@@ -355,6 +402,7 @@ def render_grammar(names: list[str], parsed: dict[str, Expression]) -> str:
         "    Rule(RuleId),",
         "    Builtin(&'static str),",
         "    Literal(&'static str),",
+        "    MikaExpressionTriples(&'static [(&'static str, &'static str, &'static str)]),",
         "    Empty,",
         "    Sequence(&'static [GrammarExpression]),",
         "    Choice(&'static [GrammarExpression]),",

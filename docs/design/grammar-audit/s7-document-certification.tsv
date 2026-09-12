@@ -1,6 +1,6 @@
 grammar-name	accepted-source-json	node-policy	semantic-status	spec-location
 abstract-el	"%%x\n"	node:AbstractEl	syntax-only	docs/design/specification.mec::abstract-el
-activation-arm	"|*=>{}"	node:ActivationArm	syntax-only	docs/design/specification.mec::activation-arm
+activation-arm	"|42=>{}"	node:ActivationArm	syntax-only	docs/design/specification.mec::activation-arm
 activation-scope	"~>1 + 2{}"	node:ActivationScope	syntax-only	docs/design/specification.mec::activation-scope
 alignment-separator	"-"	node:AlignmentSeparator	syntax-only	docs/design/specification.mec::alignment-separator
 body	""	node:Body	syntax-only	docs/design/specification.mec::body
@@ -27,18 +27,18 @@ float	":>>x"	node:Float	syntax-only	docs/design/specification.mec::float
 float-sigil	":>>"	node:FloatSigil	syntax-only	docs/design/specification.mec::float-sigil
 footnote	"[^x]:x\n"	node:Footnote	syntax-only	docs/design/specification.mec::footnote
 fsm	"#x"	node:Fsm	syntax-only	docs/design/specification.mec::fsm
-fsm-arm	"--"	node:FsmArm	syntax-only	docs/design/specification.mec::fsm-arm
+fsm-arm	"42 |42 ->+> x"	node:FsmArm	syntax-only	docs/design/specification.mec::fsm-arm
 fsm-block-transition	"->{}"	node:FsmBlockTransition	syntax-only	docs/design/specification.mec::fsm-block-transition
 fsm-comment-arm	"--"	node:FsmCommentArm	syntax-only	docs/design/specification.mec::fsm-comment-arm
 fsm-declare	"#x:=#machine -> :next => :value"	node:FsmDeclare	syntax-only	docs/design/specification.mec::fsm-declare
-fsm-guard	"|*->{}"	node:FsmGuard	syntax-only	docs/design/specification.mec::fsm-guard
-fsm-guard-arm	"*|*->{}"	node:FsmGuardArm	syntax-only	docs/design/specification.mec::fsm-guard-arm
-fsm-implementation	"#machine(x) -> :start\n:start -> {}\n."	node:FsmImplementation	syntax-only	docs/design/specification.mec::fsm-implementation
+fsm-guard	"|42 ->+> x"	node:FsmGuard	syntax-only	docs/design/specification.mec::fsm-guard
+fsm-guard-arm	"42|42 ->+> x"	node:FsmGuardArm	syntax-only	docs/design/specification.mec::fsm-guard-arm
+fsm-implementation	"#machine(x) -> :start\n:start |42 ->+> x\n."	node:FsmImplementation	syntax-only	docs/design/specification.mec::fsm-implementation
 fsm-specification	"#x()|:state."	node:FsmSpecification	syntax-only	docs/design/specification.mec::fsm-specification
 fsm-state-definition	"|:state"	node:FsmStateDefinition	syntax-only	docs/design/specification.mec::fsm-state-definition
 fsm-state-definition-variables	"(x<u8>)"	node:FsmStateDefinitionVariables	syntax-only	docs/design/specification.mec::fsm-state-definition-variables
 fsm-statement-transition	"->+> x"	node:FsmStatementTransition	syntax-only	docs/design/specification.mec::fsm-statement-transition
-fsm-transition	"*->{}"	node:FsmTransition	syntax-only	docs/design/specification.mec::fsm-transition
+fsm-transition	"42 ->{}"	node:FsmTransition	syntax-only	docs/design/specification.mec::fsm-transition
 function-arg	"x<u8>"	node:FunctionArg	syntax-only	docs/design/specification.mec::function-arg
 function-define	"x()=><u8> |1 + 2"	node:FunctionDefine	syntax-only	docs/design/specification.mec::function-define
 function-define-match-arms	"=><u8> |1 + 2"	node:FunctionDefineMatchArms	syntax-only	docs/design/specification.mec::function-define-match-arms
@@ -68,12 +68,12 @@ micro-mika	"~∘~"	node:MicroMika	syntax-only	docs/design/specification.mec::mic
 mika	"~∘~"	node:Mika	syntax-only	docs/design/specification.mec::mika
 mika-arm-left	"~"	node:MikaArmLeft	syntax-only	docs/design/specification.mec::mika-arm-left
 mika-arm-right	"~"	node:MikaArmRight	syntax-only	docs/design/specification.mec::mika-arm-right
-mika-expression-inner	"¬∘¬"	node:MikaExpressionInner	syntax-only	docs/design/specification.mec::mika-expression-inner
+mika-expression-inner	"¬◯¬"	node:MikaExpressionInner	syntax-only	docs/design/specification.mec::mika-expression-inner
 mika-eye-left	"¬"	node:MikaEyeLeft	syntax-only	docs/design/specification.mec::mika-eye-left
 mika-eye-right	"¬"	node:MikaEyeRight	syntax-only	docs/design/specification.mec::mika-eye-right
 mika-nose	"∘"	node:MikaNose	syntax-only	docs/design/specification.mec::mika-nose
 mika-section	"⸢⸥"	node:MikaSection	syntax-only	docs/design/specification.mec::mika-section
-mini-mika	"(¬∘¬)"	node:MiniMika	syntax-only	docs/design/specification.mec::mini-mika
+mini-mika	"(¬◯¬)"	node:MiniMika	syntax-only	docs/design/specification.mec::mini-mika
 no-alignment	"-"	node:NoAlignment	syntax-only	docs/design/specification.mec::no-alignment
 not-mech-code	"⸥"	node:NotMechCode	syntax-only	docs/design/specification.mec::not-mech-code
 op-assign	"x += 1 + 2"	node:OpAssign	syntax-only	docs/design/specification.mec::op-assign

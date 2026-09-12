@@ -3522,7 +3522,8 @@ section-element := mechdown-list
                  | idea-block
                  | paragraph ;
 section := ?ul-subtitle,
-           *(mika | mech-code | (section-element, *blank-line)) ;
+           *(¬ul-subtitle, ¬mika-section-close,
+             (mika | mech-code | (section-element, *blank-line))) ;
 body := whitespace0, *section ;
 
 mika-section := mika-section-open, section, mika-section-close ;

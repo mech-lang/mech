@@ -22,10 +22,12 @@ unmerged S6 candidate are distinct:
 
 ```text
 canonical syntax qualified 328
-staged Phase 2I candidate   80
-not yet implemented        131
-                            ---
-total                       539
+staged Phase 2I candidate    80
+S7 document implementation 112
+runtime command rules       17
+outside Document closure     2
+                           ---
+total                      539
 ```
 
 The completed, qualified phases cover 328 / 539 rules. This unmerged branch
