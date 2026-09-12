@@ -56,7 +56,7 @@ inline-paragraph	"x"	node:InlineParagraph	syntax-only	docs/design/specification.
 invariant-define	"x!:=1 + 2"	node:InvariantDefine	syntax-only	docs/design/specification.mec::invariant-define
 kind-define	"<x>:=<u8>"	node:KindDefine	syntax-only	docs/design/specification.mec::kind-define
 left-alignment	":-"	node:LeftAlignment	syntax-only	docs/design/specification.mec::left-alignment
-match-expression	"1?| * => 1"	node:MatchExpression	syntax-only	docs/design/specification.mec::match-expression
+match-expression	"1'?| * => 1"	node:MatchExpression	syntax-only	docs/design/specification.mec::match-expression
 mech-code	"--"	node:MechCode	syntax-only	docs/design/specification.mec::mech-code
 mech-code-alt	"--"	node:MechCodeAlt	syntax-only	docs/design/specification.mec::mech-code-alt
 mechdown-list	"- x\n"	node:MechdownList	syntax-only	docs/design/specification.mec::mechdown-list
