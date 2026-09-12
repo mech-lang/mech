@@ -25,6 +25,7 @@ struct CertificationRow {
     typed_access_hash: u64,
     recovery_snapshot_hash: u64,
     semantic_disposition: String,
+    semantic_source: Option<String>,
     spec_location: String,
     conformance_cases: String,
     semantic_snapshot_hash: String,
@@ -48,13 +49,13 @@ fn certification_rows() -> Vec<CertificationRow> {
     assert_eq!(
         lines.next(),
         Some(
-            "grammar-name\taccepted-source-json\trejected-source-json\trecovery-source-json\temission-policy\tsyntax-kind\tclean-tree-hash\ttyped-access-hash\trecovery-snapshot-hash\tsemantic-disposition\tspec-location\tconformance-cases\tsemantic-snapshot-hash\tcanonical-consumer"
+            "grammar-name\taccepted-source-json\trejected-source-json\trecovery-source-json\temission-policy\tsyntax-kind\tclean-tree-hash\ttyped-access-hash\trecovery-snapshot-hash\tsemantic-disposition\tsemantic-source-json\tspec-location\tconformance-cases\tsemantic-snapshot-hash\tcanonical-consumer"
         )
     );
     lines
         .map(|line| {
             let fields = line.split('\t').collect::<Vec<_>>();
-            assert_eq!(fields.len(), 14, "invalid certification row: {line}");
+            assert_eq!(fields.len(), 15, "invalid certification row: {line}");
             CertificationRow {
                 name: fields[0].to_owned(),
                 accepted: serde_json::from_str(fields[1]).expect("accepted source JSON"),
@@ -66,10 +67,12 @@ fn certification_rows() -> Vec<CertificationRow> {
                 typed_access_hash: fields[7].parse().expect("typed access hash"),
                 recovery_snapshot_hash: fields[8].parse().expect("recovery snapshot hash"),
                 semantic_disposition: fields[9].to_owned(),
-                spec_location: fields[10].to_owned(),
-                conformance_cases: fields[11].to_owned(),
-                semantic_snapshot_hash: fields[12].to_owned(),
-                canonical_consumer: fields[13].to_owned(),
+                semantic_source: (fields[10] != "none")
+                    .then(|| serde_json::from_str(fields[10]).expect("semantic source JSON")),
+                spec_location: fields[11].to_owned(),
+                conformance_cases: fields[12].to_owned(),
+                semantic_snapshot_hash: fields[13].to_owned(),
+                canonical_consumer: fields[14].to_owned(),
             }
         })
         .collect()
@@ -498,6 +501,7 @@ fn typed_access_hash(rule_name: &str, node: &SyntaxNode) -> u64 {
         }
         RecursiveCoreSyntax::MatchArm(view) => {
             node!("pattern", view.pattern());
+            nodes!("expressions", view.expressions());
             node!("guard", view.guard());
             token!("output-operator", view.output_operator());
             node!("value", view.value());
@@ -765,10 +769,12 @@ fn certification_table_executes_every_direct_accept_reject_and_recovery_case() {
         match row.semantic_disposition.as_str() {
             "executable" => {
                 assert_eq!(row.canonical_consumer, "engine/source-semantics");
+                assert!(row.semantic_source.is_some());
                 assert!(row.semantic_snapshot_hash.parse::<u64>().is_ok());
             }
             "structural" => {
                 assert!(row.canonical_consumer.starts_with("syntax/typed-"));
+                assert!(row.semantic_source.is_none());
                 assert_eq!(row.semantic_snapshot_hash, "none");
             }
             "compile-time" => {
@@ -776,7 +782,8 @@ fn certification_table_executes_every_direct_accept_reject_and_recovery_case() {
                     row.canonical_consumer,
                     "engine/source-semantics/compile-time"
                 );
-                assert_eq!(row.semantic_snapshot_hash, "none");
+                assert!(row.semantic_source.is_some());
+                assert!(row.semantic_snapshot_hash.parse::<u64>().is_ok());
             }
             _ => unreachable!("closed semantic disposition"),
         }
@@ -837,21 +844,182 @@ fn certification_evidence_uses_only_canonical_authorities() {
 }
 
 fn assert_canonical_only(path: &Path, evidence: &str) {
+    let mut declaration = None::<String>;
+    for line in evidence.lines().map(str::trim) {
+        let compact_line = line
+            .chars()
+            .filter(|character| !character.is_whitespace())
+            .collect::<String>();
+        if declaration.is_none()
+            && (compact_line.starts_with("usemech_syntax")
+                || compact_line.starts_with(concat!("usemech_", "core")))
+        {
+            declaration = Some(String::new());
+        }
+        if let Some(current) = declaration.as_mut() {
+            current.push_str(line);
+            if line.ends_with(';') {
+                assert_allowed_mech_import(path, current);
+                declaration = None;
+            }
+        }
+    }
+    assert!(
+        declaration.is_none(),
+        "unterminated import in {}",
+        path.display()
+    );
+
+    let compact = evidence
+        .chars()
+        .filter(|character| !character.is_whitespace())
+        .collect::<String>();
+    let normalized = compact.replace(['{', '}'], "");
     for forbidden in [
         concat!("mech_syntax::", "parser"),
         concat!("mech_syntax::", "parse"),
-        concat!("use mech_syntax", " as "),
+        concat!("usemech_syntax", "as"),
         concat!("mech_syntax::", "{"),
         concat!("mech_syntax::", "*"),
-        concat!("extern crate mech_", "syntax"),
-        concat!("document::lower::", "legacy"),
+        concat!("externcratemech_", "syntax"),
+        concat!("mech_syntax::document::", "lower"),
+        concat!("::", "lower"),
+        concat!("document::", "lower::", "legacy"),
+        concat!("usemech_", "core"),
+        concat!("externcratemech_", "core"),
         concat!("mech_core::", "Program"),
     ] {
         assert!(
-            !evidence.contains(forbidden),
+            !compact.contains(forbidden) && !normalized.contains(forbidden),
             "{} imports forbidden certification authority {forbidden}",
             path.display()
         );
     }
-    assert!(!evidence.contains(concat!("lower/", "legacy")));
+    assert!(!compact.contains(concat!("lower/", "legacy")));
+}
+
+fn assert_allowed_mech_import(path: &Path, declaration: &str) {
+    let declaration = declaration
+        .chars()
+        .filter(|character| !character.is_whitespace())
+        .collect::<String>();
+    assert!(
+        !declaration.contains("mech_core"),
+        "{} imports forbidden certification authority mech_core",
+        path.display()
+    );
+
+    let allowed = if let Some(items) = declaration
+        .strip_prefix("usemech_syntax::document::parser::canonical::{")
+        .and_then(|items| items.strip_suffix("};"))
+    {
+        let allowed = [
+            "CanonicalRuleOutcome",
+            "CanonicalSourceRuleSnapshot",
+            "parse_canonical_phase_2c_rule_for_test",
+            "parse_canonical_phase_2i_rule_for_test",
+        ];
+        items
+            .split(',')
+            .filter(|item| !item.is_empty())
+            .all(|item| allowed.contains(&item))
+    } else if let Some(item) = declaration
+        .strip_prefix("usemech_syntax::document::parser::canonical::")
+        .and_then(|item| item.strip_suffix(';'))
+    {
+        matches!(
+            item,
+            "parse_canonical_phase_2c_rule_for_test" | "parse_canonical_phase_2i_rule_for_test"
+        )
+    } else if let Some(items) = declaration
+        .strip_prefix("usemech_syntax::document::parser::{")
+        .and_then(|items| items.strip_suffix("};"))
+    {
+        let allowed = ["canonical_rule_id", "canonical_rule_name", "rules"];
+        items
+            .split(',')
+            .filter(|item| !item.is_empty())
+            .all(|item| allowed.contains(&item))
+    } else if declaration == "usemech_syntax::document::parser::rules;" {
+        true
+    } else if let Some(items) = declaration
+        .strip_prefix("usemech_syntax::document::{")
+        .and_then(|items| items.strip_suffix("};"))
+    {
+        let allowed = [
+            "ArgumentListSyntax",
+            "AstNode",
+            "DocumentId",
+            "ExpectedSyntax",
+            "ExpressionSyntax",
+            "FactorSyntax",
+            "FactorValueSyntax",
+            "FormulaSyntax",
+            "GreenNode",
+            "LiteralSyntax",
+            "LiteralValueSyntax",
+            "MapSyntax",
+            "MatchArmSyntax",
+            "MatrixSyntax",
+            "NodeFlags",
+            "NodeId",
+            "ParentheticalExpressionSyntax",
+            "ParseConfig",
+            "ParseLimits",
+            "PatternArrayItemSyntax",
+            "RecoveryAction",
+            "RecursiveCoreSyntax",
+            "RecursiveSyntaxNode",
+            "Revision",
+            "RuleId",
+            "StructureSyntax",
+            "StructureValueSyntax",
+            "SyntaxKind",
+            "SyntaxNode",
+            "SyntaxToken",
+            "TableKindSyntax",
+            "TextRange",
+            "TextSize",
+            "TextSnapshot",
+            "TokenFlags",
+            "compact_debug_tree",
+            "normalize_diagnostics",
+            "phase_2i_node_kind",
+            "reconstruct_source_range",
+            "validate_lossless_range",
+        ];
+        items
+            .split(',')
+            .filter(|item| !item.is_empty())
+            .all(|item| allowed.contains(&item))
+    } else {
+        false
+    };
+    assert!(
+        allowed,
+        "{} imports outside the enumerated canonical surface: {declaration}",
+        path.display()
+    );
+}
+
+#[test]
+fn canonical_authority_gate_rejects_glob_and_alias_routes() {
+    for evidence in [
+        concat!("use mech_syntax::document::", "lower::*;"),
+        concat!("use mech_syntax::document::{", "lower::*,", "};"),
+        concat!("use mech_", "core::*;"),
+        concat!("use mech_", "core::{Program};"),
+        concat!(
+            "use mech_syntax::document::",
+            "lower as syntax_lower;",
+            "syntax_lower::",
+            "lower_legacy_grammar();"
+        ),
+    ] {
+        assert!(
+            std::panic::catch_unwind(|| assert_canonical_only(Path::new("fixture.rs"), evidence))
+                .is_err(),
+            "authority route was accepted: {evidence}"
+        );
+    }
 }

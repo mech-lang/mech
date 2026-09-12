@@ -9,11 +9,11 @@ use mech_syntax::document::parser::canonical::parse_canonical_phase_2i_rule_for_
 use mech_syntax::document::parser::rules;
 use mech_syntax::document::{
     AstNode, DocumentId, ExpressionSyntax, ParseConfig, Revision, SyntaxKind, SyntaxNode, TextSize,
-    TextSnapshot,
+    TextSnapshot, phase_2i_node_kind,
 };
 
 struct CertificationContract {
-    accepted: String,
+    semantic_source: Option<String>,
     disposition: String,
     semantic_snapshot_hash: String,
 }
@@ -57,13 +57,14 @@ fn certification_contracts() -> BTreeMap<String, CertificationContract> {
         .skip(1)
         .map(|line| {
             let fields = line.split('\t').collect::<Vec<_>>();
-            assert_eq!(fields.len(), 14);
+            assert_eq!(fields.len(), 15);
             (
                 fields[0].to_owned(),
                 CertificationContract {
-                    accepted: serde_json::from_str(fields[1]).expect("accepted source JSON"),
+                    semantic_source: (fields[10] != "none")
+                        .then(|| serde_json::from_str(fields[10]).expect("semantic source JSON")),
                     disposition: fields[9].to_owned(),
-                    semantic_snapshot_hash: fields[12].to_owned(),
+                    semantic_snapshot_hash: fields[13].to_owned(),
                 },
             )
         })
@@ -110,6 +111,14 @@ fn semantic_snapshot_hash(compiled: &mech_engine::CanonicalSourceProgram) -> u64
             hash.field(&format!("requirements:{:#?}", artifact.requirements()));
             hash.field(&format!("inputs:{:#?}", artifact.inputs()));
             hash.field(&format!("slots:{:#?}", artifact.slots()));
+            hash.field(&format!(
+                "slot-shape-hints:{:#?}",
+                artifact
+                    .slots()
+                    .iter()
+                    .map(|slot| (slot.slot, artifact.slot_shape_hint(slot.slot)))
+                    .collect::<Vec<_>>()
+            ));
             hash.field(&format!("nodes:{:#?}", artifact.nodes()));
             hash.field(&format!("bindings:{:#?}", artifact.bindings()));
             hash.field(&format!("outputs:{:#?}", artifact.outputs()));
@@ -125,13 +134,13 @@ fn semantic_snapshot_hash(compiled: &mech_engine::CanonicalSourceProgram) -> u64
 }
 
 #[test]
-fn every_executable_rule_has_specification_derived_program_evidence() {
+fn every_semantic_rule_has_specification_derived_program_evidence() {
     let contracts = certification_contracts();
-    let executable = PHASE_2I_SEMANTIC_RULES
+    let certified = PHASE_2I_SEMANTIC_RULES
         .iter()
-        .filter(|rule| rule.disposition == Phase2iSemanticDisposition::Executable)
+        .filter(|rule| rule.disposition != Phase2iSemanticDisposition::Structural)
         .collect::<Vec<_>>();
-    assert_eq!(executable.len(), 32);
+    assert_eq!(certified.len(), 52);
 
     for rule in PHASE_2I_SEMANTIC_RULES {
         let expected = match rule.disposition {
@@ -147,15 +156,26 @@ fn every_executable_rule_has_specification_derived_program_evidence() {
         );
     }
 
-    for rule in executable {
+    for rule in certified {
         let contract = contracts
             .get(rule.grammar_name)
             .unwrap_or_else(|| panic!("missing certification row for {}", rule.grammar_name));
-        let syntax = expression(&contract.accepted);
+        let semantic_source = contract
+            .semantic_source
+            .as_deref()
+            .unwrap_or_else(|| panic!("missing semantic context for {}", rule.grammar_name));
+        let syntax = expression(semantic_source);
+        if let Some(kind) = phase_2i_node_kind(rule.grammar_name) {
+            assert!(
+                find(syntax.syntax().clone(), kind).is_some(),
+                "{} semantic context does not contain {kind:?}",
+                rule.grammar_name
+            );
+        }
         let compiled = CanonicalSourceFrontend
             .compile_expression(&syntax)
             .unwrap_or_else(|error| {
-                panic!("{} on {:?}: {error}", rule.grammar_name, contract.accepted)
+                panic!("{} on {semantic_source:?}: {error}", rule.grammar_name)
             });
         assert_eq!(compiled.program().outputs.len(), 1, "{}", rule.grammar_name);
         assert_eq!(
@@ -170,15 +190,15 @@ fn every_executable_rule_has_specification_derived_program_evidence() {
             "{}",
             rule.grammar_name
         );
+        let actual = semantic_snapshot_hash(&compiled);
         let expected = contract
             .semantic_snapshot_hash
             .parse::<u64>()
-            .expect("executable semantic snapshot hash");
-        let actual = semantic_snapshot_hash(&compiled);
+            .expect("semantic snapshot hash");
         assert_eq!(
             actual, expected,
-            "{} on {:?}",
-            rule.grammar_name, contract.accepted
+            "{} on {semantic_source:?}",
+            rule.grammar_name
         );
     }
 }
