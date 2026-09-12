@@ -7,8 +7,8 @@ use mech_core::{
     ChangeDetectionPolicy, IntegerWidth, OutputConstruction, SchemaBody, ShapeRule, ValueData,
 };
 use mech_engine::{
-    CanonicalSourceFrontend, PHASE_2I_SEMANTIC_RULES, Phase2iSemanticDisposition, SourceValue,
-    phase_2i_semantic_disposition,
+    CanonicalSourceFrontend, PHASE_2I_SEMANTIC_RULES, Phase2iSemanticDisposition,
+    SourceSemanticComprehensionQualifierRole, SourceValue, phase_2i_semantic_disposition,
 };
 use mech_syntax::document::parser::canonical::parse_canonical_phase_2i_rule_for_test;
 use mech_syntax::document::parser::rules;
@@ -233,6 +233,26 @@ fn calls_ranges_subscripts_and_patterns_keep_their_canonical_roles() {
         range.contracts().last().unwrap().as_ref().unwrap().outputs[0].change_detection,
         ChangeDetectionPolicy::KernelReported
     );
+    let SchemaBody::Matrix {
+        element,
+        dimensions,
+    } = range
+        .schemas()
+        .get(range.program().outputs[0].schema)
+        .unwrap()
+        .body()
+    else {
+        panic!("range did not produce a matrix schema")
+    };
+    assert!(matches!(element.as_ref(), SchemaBody::FloatingPoint(_)));
+    assert_eq!(dimensions[0], mech_core::DimensionExpr::Constant(1));
+    assert!(matches!(
+        dimensions[1],
+        mech_core::DimensionExpr::Parameter(_)
+    ));
+    range
+        .compile_artifact()
+        .expect("typed range must be a canonical artifact input");
 
     let slice = CanonicalSourceFrontend
         .compile_expression(&expression("x[1][2]"))
@@ -275,6 +295,37 @@ fn calls_ranges_subscripts_and_patterns_keep_their_canonical_roles() {
             .canonical_name()
             .starts_with("source/pattern")
     }));
+    assert_eq!(comprehension.source_map().comprehension_qualifiers.len(), 1);
+    assert!(matches!(
+        comprehension.source_map().comprehension_qualifiers[0].role,
+        SourceSemanticComprehensionQualifierRole::Generator { pattern: 0 }
+    ));
+
+    let qualified = CanonicalSourceFrontend
+        .compile_expression(&expression("[y | x <- xs, y := x, y > 0]"))
+        .unwrap();
+    assert_eq!(qualified.source_map().comprehension_qualifiers.len(), 3);
+    assert!(matches!(
+        qualified.source_map().comprehension_qualifiers[0].role,
+        SourceSemanticComprehensionQualifierRole::Generator { pattern: 0 }
+    ));
+    assert_eq!(
+        qualified.source_map().comprehension_qualifiers[1].role,
+        SourceSemanticComprehensionQualifierRole::Definition
+    );
+    assert_eq!(
+        qualified.source_map().comprehension_qualifiers[2].role,
+        SourceSemanticComprehensionQualifierRole::Filter
+    );
+    assert_eq!(
+        qualified
+            .source_map()
+            .comprehension_qualifiers
+            .iter()
+            .map(|qualifier| qualifier.input_ordinal)
+            .collect::<Vec<_>>(),
+        vec![0, 1, 2]
+    );
 
     let destructured = CanonicalSourceFrontend
         .compile_expression(&expression("[a + b | (a, b) <- xs]"))
@@ -300,8 +351,8 @@ fn calls_ranges_subscripts_and_patterns_keep_their_canonical_roles() {
 fn canonical_numeric_kinds_annotations_strings_and_state_are_preserved() {
     for (source, expected) in [
         ("1u8", "u8"),
-        ("0x10", "f64"),
-        ("0d42", "decimal"),
+        ("0x10", "hex-i64"),
+        ("0d42", "decimal-i64"),
         ("1/2", "r64"),
         ("1+2i", "c64"),
         ("1<u8>", "u8"),
@@ -315,8 +366,8 @@ fn canonical_numeric_kinds_annotations_strings_and_state_are_preserved() {
         let value = compiled.constants().get(id).unwrap();
         let actual = match value.data() {
             ValueData::U8(1) => "u8",
-            ValueData::F64(value) if value.to_f64() == 16.0 => "f64",
-            ValueData::F64(value) if value.to_f64() == 42.0 => "decimal",
+            ValueData::I64(16) => "hex-i64",
+            ValueData::I64(42) => "decimal-i64",
             ValueData::Rational64(value) if value.numerator() == 1 && value.denominator() == 2 => {
                 "r64"
             }
@@ -358,6 +409,24 @@ fn canonical_numeric_kinds_annotations_strings_and_state_are_preserved() {
         rows,
         &mech_core::CardinalitySpec::Exact(mech_core::DimensionExpr::Constant(1))
     );
+
+    let inferred_table = CanonicalSourceFrontend
+        .compile_expression(&expression(
+            "╭─────────╮\n│ count   │\n├─────────┤\n│   1     │\n╰─────────╯",
+        ))
+        .unwrap();
+    let SchemaBody::Table { columns, .. } = inferred_table
+        .schemas()
+        .get(inferred_table.program().outputs[0].schema)
+        .unwrap()
+        .body()
+    else {
+        panic!("inferred table did not produce a table schema")
+    };
+    assert!(matches!(
+        columns[0].schema,
+        SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)
+    ));
 
     let string = CanonicalSourceFrontend
         .compile_expression(&expression("\"\\0\\u{41}\""))
@@ -403,6 +472,52 @@ fn canonical_numeric_kinds_annotations_strings_and_state_are_preserved() {
         ValueData::U8(1)
     ));
 
+    let optional_input = CanonicalSourceFrontend
+        .compile_expression(&expression("signal<u8?>"))
+        .unwrap();
+    assert!(matches!(
+        optional_input
+            .schemas()
+            .get(optional_input.program().inputs[0].schema)
+            .unwrap()
+            .body(),
+        SchemaBody::Option(payload)
+            if matches!(payload.as_ref(), SchemaBody::UnsignedInteger(IntegerWidth::W8))
+    ));
+
+    let optional_definition = CanonicalSourceFrontend
+        .compile_definition(&definition("x<u8?> := 1"))
+        .unwrap();
+    let SourceValue::Constant(id) = optional_definition.program().outputs[0].source else {
+        panic!("optional definition did not produce a constant")
+    };
+    assert!(matches!(
+        optional_definition.constants().get(id).unwrap().data(),
+        ValueData::Option(Some(value)) if matches!(value.as_ref(), ValueData::U8(1))
+    ));
+
+    let optional_literal = CanonicalSourceFrontend
+        .compile_expression(&expression("1<u8?>"))
+        .unwrap();
+    let SourceValue::Constant(id) = optional_literal.program().outputs[0].source else {
+        panic!("optional literal did not produce a constant")
+    };
+    assert!(matches!(
+        optional_literal.constants().get(id).unwrap().data(),
+        ValueData::Option(Some(value)) if matches!(value.as_ref(), ValueData::U8(1))
+    ));
+
+    let optional_kind = CanonicalSourceFrontend
+        .compile_expression(&expression("<u8?>"))
+        .unwrap();
+    let SourceValue::Constant(id) = optional_kind.program().outputs[0].source else {
+        panic!("optional kind did not produce a constant")
+    };
+    assert!(matches!(
+        optional_kind.constants().get(id).unwrap().data(),
+        ValueData::Type(_)
+    ));
+
     let promoted = CanonicalSourceFrontend
         .compile_expression(&expression("1u8 + 2u16"))
         .unwrap();
@@ -424,6 +539,91 @@ fn canonical_numeric_kinds_annotations_strings_and_state_are_preserved() {
             ValueData::U16(_)
         )
     }));
+
+    let strict = CanonicalSourceFrontend
+        .compile_expression(&expression("1u8 === 2u16"))
+        .unwrap();
+    let strict_inputs = &strict.program().nodes.last().unwrap().inputs;
+    assert!(matches!(
+        strict
+            .constants()
+            .get(match strict_inputs[0] {
+                SourceValue::Constant(id) => id,
+                _ => panic!(),
+            })
+            .unwrap()
+            .data(),
+        ValueData::U8(1)
+    ));
+    assert!(matches!(
+        strict
+            .constants()
+            .get(match strict_inputs[1] {
+                SourceValue::Constant(id) => id,
+                _ => panic!(),
+            })
+            .unwrap()
+            .data(),
+        ValueData::U16(2)
+    ));
+
+    let rational_power = CanonicalSourceFrontend
+        .compile_expression(&expression("1/2 ^ 2<i32>"))
+        .unwrap();
+    let power_inputs = &rational_power.program().nodes.last().unwrap().inputs;
+    assert!(matches!(
+        rational_power
+            .constants()
+            .get(match power_inputs[0] {
+                SourceValue::Constant(id) => id,
+                _ => panic!(),
+            })
+            .unwrap()
+            .data(),
+        ValueData::Rational64(_)
+    ));
+    assert!(matches!(
+        rational_power
+            .constants()
+            .get(match power_inputs[1] {
+                SourceValue::Constant(id) => id,
+                _ => panic!(),
+            })
+            .unwrap()
+            .data(),
+        ValueData::I32(2)
+    ));
+
+    let negated = CanonicalSourceFrontend
+        .compile_expression(&expression("-1u8"))
+        .unwrap();
+    assert!(matches!(
+        negated
+            .contracts()
+            .last()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .outputs[0]
+            .construction,
+        OutputConstruction::FullWrite {
+            shape: ShapeRule::SameAsInput { input: 0 }
+        }
+    ));
+
+    for source in ["~state := signal", "~state := 1 + 2"] {
+        let error = CanonicalSourceFrontend
+            .compile_definition(&definition(source))
+            .err()
+            .expect("nonconstant state initializer must be rejected");
+        assert_eq!(error.code, "source-semantics/nonconstant-state-initializer");
+    }
+
+    let overflow = CanonicalSourceFrontend
+        .compile_expression(&expression("1e100<f32>"))
+        .err()
+        .expect("finite f64 values that overflow f32 must be rejected");
+    assert_eq!(overflow.code, "source-semantics/invalid-number-literal");
 
     let atom = CanonicalSourceFrontend
         .compile_expression(&expression(":ready"))
