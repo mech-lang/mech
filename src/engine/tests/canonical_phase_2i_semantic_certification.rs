@@ -5,9 +5,9 @@ use std::fs;
 use std::path::PathBuf;
 
 use mech_engine::{
-    ArtifactBuildError, CanonicalSourceFrontend, CanonicalSourceProgram, CardinalitySpec,
-    DimensionExpr, FloatWidth, IntegerWidth, PHASE_2I_SEMANTIC_RULES, Phase2iSemanticDisposition,
-    SchemaBody, SourceNodeOutput, SourceSemanticAnchor, SourceSemanticComprehensionQualifierRole,
+    CanonicalSourceFrontend, CanonicalSourceProgram, CardinalitySpec, DimensionExpr, FloatWidth,
+    IntegerWidth, PHASE_2I_SEMANTIC_RULES, Phase2iSemanticDisposition, ProgramArtifact, SchemaBody,
+    SourceNodeOutput, SourceSemanticAnchor, SourceSemanticComprehensionQualifierRole,
     SourceStateInitializer, SourceValue, canonical_application_requirement_bytes,
     encode_program_artifact_bytecode_v1,
 };
@@ -190,7 +190,7 @@ fn hash_slot_shapes(
     }
 }
 
-fn semantic_snapshot_hash(compiled: &CanonicalSourceProgram) -> u64 {
+fn semantic_snapshot_hash(compiled: &CanonicalSourceProgram, artifact: &ProgramArtifact) -> u64 {
     let mut hash = StableHash::new();
     let program = compiled.program();
     hash.field("canonical-source-program-v1");
@@ -348,35 +348,20 @@ fn semantic_snapshot_hash(compiled: &CanonicalSourceProgram) -> u64 {
             }
         }
     }
-    match compiled.compile_artifact() {
-        Ok(artifact) => {
-            hash.field("artifact-bytecode-v1");
-            hash.bytes(
-                &encode_program_artifact_bytecode_v1(&artifact)
-                    .expect("canonical artifact bytecode v1"),
-            );
-            let slot_shape_hints = artifact
-                .slots()
-                .iter()
-                .filter_map(|slot| {
-                    artifact
-                        .slot_shape_hint(slot.slot)
-                        .map(|shape| (slot.slot, shape))
-                })
-                .collect::<Vec<_>>();
-            hash_slot_shapes(&mut hash, &slot_shape_hints);
-        }
-        Err(ArtifactBuildError::MissingOperationContract { node, operation }) => {
-            hash.field("artifact-missing-operation-contract");
-            hash.u32(node.get());
-            hash.field(&operation.canonical_name());
-        }
-        Err(ArtifactBuildError::DeclaredSourceNodeLoweringUnsupported { source_node }) => {
-            hash.field("artifact-deferred-source-node");
-            hash.u32(source_node);
-        }
-        Err(error) => panic!("unclassified semantic certification artifact failure: {error:?}"),
-    }
+    hash.field("artifact-bytecode-v1");
+    hash.bytes(
+        &encode_program_artifact_bytecode_v1(artifact).expect("canonical artifact bytecode v1"),
+    );
+    let slot_shape_hints = artifact
+        .slots()
+        .iter()
+        .filter_map(|slot| {
+            artifact
+                .slot_shape_hint(slot.slot)
+                .map(|shape| (slot.slot, shape))
+        })
+        .collect::<Vec<_>>();
+    hash_slot_shapes(&mut hash, &slot_shape_hints);
     hash.0
 }
 
@@ -516,6 +501,7 @@ fn every_semantic_rule_has_specification_derived_program_evidence() {
     }
 
     let mut stale_hashes = Vec::new();
+    let mut unfinished_witnesses = Vec::new();
     for rule in certified {
         let contract = contracts
             .get(rule.grammar_name)
@@ -563,7 +549,17 @@ fn every_semantic_rule_has_specification_derived_program_evidence() {
             "{}",
             rule.grammar_name
         );
-        let actual = semantic_snapshot_hash(&compiled);
+        let artifact = match compiled.compile_artifact() {
+            Ok(artifact) => artifact,
+            Err(error) => {
+                unfinished_witnesses.push(format!(
+                    "{} on {semantic_source:?}: {error:?}",
+                    rule.grammar_name,
+                ));
+                continue;
+            }
+        };
+        let actual = semantic_snapshot_hash(&compiled, &artifact);
         let expected = contract
             .semantic_snapshot_hash
             .parse::<u64>()
@@ -572,6 +568,11 @@ fn every_semantic_rule_has_specification_derived_program_evidence() {
             stale_hashes.push(format!("{}\t{}\t{}", rule.grammar_name, expected, actual));
         }
     }
+    assert!(
+        unfinished_witnesses.is_empty(),
+        "semantic completion requires artifact-ready witnesses; unfinished lowering cannot be certified:\n{}",
+        unfinished_witnesses.join("\n"),
+    );
     assert!(
         stale_hashes.is_empty(),
         "semantic snapshot hashes changed:\n{}",
