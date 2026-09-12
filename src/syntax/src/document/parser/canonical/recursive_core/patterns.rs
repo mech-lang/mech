@@ -256,6 +256,7 @@ fn array_with_facts(parser: &mut Parser<'_>) -> FactAttempt<PatternFacts> {
                         committed = true;
                         break;
                     }
+                    FactAttempt::Committed if parser.offset() > before => committed = true,
                     FactAttempt::Committed => {
                         recover_closer(
                             parser,

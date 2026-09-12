@@ -314,12 +314,9 @@ pub(super) fn parse_match_arm(parser: &mut Parser<'_>) -> Attempt {
             return Attempt::NoMatch;
         }
         let pattern = super::patterns::parse_pattern(parser);
-        match pattern {
-            Attempt::Matched => {}
-            Attempt::Committed => {
-                node.complete(parser, SyntaxKind::MatchArm);
-                return Attempt::Committed;
-            }
+        let mut committed = match pattern {
+            Attempt::Matched => false,
+            Attempt::Committed => true,
             Attempt::NoMatch => {
                 recover_required_production(
                     parser,
@@ -328,10 +325,9 @@ pub(super) fn parse_match_arm(parser: &mut Parser<'_>) -> Attempt {
                     "missing pattern after match arm guard",
                     "pattern",
                 );
-                node.complete(parser, SyntaxKind::MatchArm);
-                return Attempt::Committed;
+                true
             }
-        }
+        };
         let guard = parser.checkpoint();
         if base::parse_rule(parser, rules::LIST_SEPARATOR)
             && base::parse_rule(parser, rules::WHITESPACE0)
@@ -339,10 +335,7 @@ pub(super) fn parse_match_arm(parser: &mut Parser<'_>) -> Attempt {
             match expressions::parse_expression(parser) {
                 Attempt::Matched => {}
                 Attempt::NoMatch => parser.rewind(guard),
-                Attempt::Committed => {
-                    node.complete(parser, SyntaxKind::MatchArm);
-                    return Attempt::Committed;
-                }
+                Attempt::Committed => committed = true,
             }
         }
         if !base::parse_rule(parser, rules::OUTPUT_OPERATOR) {
@@ -360,10 +353,7 @@ pub(super) fn parse_match_arm(parser: &mut Parser<'_>) -> Attempt {
         let child = expressions::parse_expression(parser);
         match child {
             Attempt::Matched => {}
-            Attempt::Committed => {
-                node.complete(parser, SyntaxKind::MatchArm);
-                return Attempt::Committed;
-            }
+            Attempt::Committed => committed = true,
             Attempt::NoMatch => {
                 recover_required_production(
                     parser,
@@ -383,7 +373,11 @@ pub(super) fn parse_match_arm(parser: &mut Parser<'_>) -> Attempt {
             parser.rewind(suffix);
         }
         node.complete(parser, SyntaxKind::MatchArm);
-        Attempt::Matched
+        if committed {
+            Attempt::Committed
+        } else {
+            Attempt::Matched
+        }
     })
 }
 

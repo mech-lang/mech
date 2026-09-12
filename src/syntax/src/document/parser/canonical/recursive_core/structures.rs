@@ -126,6 +126,7 @@ pub(super) fn parse_fancy_table(parser: &mut Parser<'_>) -> Attempt {
             node.abandon(parser);
             return Attempt::NoMatch;
         }
+        let mut committed = false;
         let child = parse_fancy_table_header(parser);
         match child {
             Attempt::Matched => {}
@@ -141,8 +142,8 @@ pub(super) fn parse_fancy_table(parser: &mut Parser<'_>) -> Attempt {
                 return Attempt::Committed;
             }
             Attempt::Committed => {
-                node.complete(parser, SyntaxKind::FancyTable);
-                return Attempt::Committed;
+                committed = true;
+                let _ = base::parse_rule(parser, rules::WHITESPACE0);
             }
         }
         let first = fancy_row(parser);
@@ -160,8 +161,7 @@ pub(super) fn parse_fancy_table(parser: &mut Parser<'_>) -> Attempt {
                 return Attempt::Committed;
             }
             Attempt::Committed => {
-                node.complete(parser, SyntaxKind::FancyTable);
-                return Attempt::Committed;
+                committed = true;
             }
         }
         loop {
@@ -176,13 +176,16 @@ pub(super) fn parse_fancy_table(parser: &mut Parser<'_>) -> Attempt {
                     break;
                 }
                 Attempt::Committed => {
-                    node.complete(parser, SyntaxKind::FancyTable);
-                    return Attempt::Committed;
+                    committed = true;
                 }
             }
         }
         node.complete(parser, SyntaxKind::FancyTable);
-        Attempt::Matched
+        if committed {
+            Attempt::Committed
+        } else {
+            Attempt::Matched
+        }
     })
 }
 
@@ -1023,7 +1026,7 @@ pub(super) fn parenthesis_factor(parser: &mut Parser<'_>) -> Attempt {
                         "expression",
                     );
                     committed = true;
-                    break;
+                    continue;
                 }
                 Attempt::Committed => {
                     committed = true;
@@ -1505,26 +1508,11 @@ fn brace_general(parser: &mut Parser<'_>, mode: BraceMode) -> FactAttempt<Expres
             FactAttempt::NoMatch => record.abandon(parser),
         }
         let entry = parser.start();
-        match expressions::parse_expression(parser) {
-            Attempt::Matched => {}
+        let head_committed = match expressions::parse_expression(parser) {
+            Attempt::Matched => false,
             Attempt::NoMatch => return FactAttempt::NoMatch,
-            Attempt::Committed => {
-                entry.abandon(parser);
-                comprehension.abandon(parser);
-                recover_closer(
-                    parser,
-                    rules::SET,
-                    rules::RIGHT_BRACE,
-                    SyntaxKind::RightBrace,
-                    '}',
-                    "}",
-                );
-                set.complete(parser, SyntaxKind::Set);
-                map.abandon(parser);
-                structure.complete(parser, SyntaxKind::Structure);
-                return FactAttempt::Committed;
-            }
-        }
+            Attempt::Committed => true,
+        };
 
         let after_expression = parser.checkpoint();
         if base::parse_rule(parser, rules::SPACE_TAB0) && base::parse_rule(parser, rules::BAR) {
@@ -1538,7 +1526,11 @@ fn brace_general(parser: &mut Parser<'_>, mode: BraceMode) -> FactAttempt<Expres
                     set.abandon(parser);
                     map.abandon(parser);
                     structure.abandon(parser);
-                    return FactAttempt::Matched(ExpressionForm::SetComprehension);
+                    return if head_committed {
+                        FactAttempt::Committed
+                    } else {
+                        FactAttempt::Matched(ExpressionForm::SetComprehension)
+                    };
                 }
                 Attempt::NoMatch => return FactAttempt::NoMatch,
                 Attempt::Committed => {
@@ -1552,10 +1544,28 @@ fn brace_general(parser: &mut Parser<'_>, mode: BraceMode) -> FactAttempt<Expres
         }
         parser.rewind(after_expression);
 
+        if head_committed {
+            entry.abandon(parser);
+            comprehension.abandon(parser);
+            recover_closer(
+                parser,
+                rules::SET,
+                rules::RIGHT_BRACE,
+                SyntaxKind::RightBrace,
+                '}',
+                "}",
+            );
+            set.complete(parser, SyntaxKind::Set);
+            map.abandon(parser);
+            structure.complete(parser, SyntaxKind::Structure);
+            return FactAttempt::Committed;
+        }
+
         if base::parse_rule(parser, rules::WHITESPACE0)
             && base::parse_rule(parser, rules::COLON)
             && base::parse_rule(parser, rules::WHITESPACE0)
         {
+            let mut committed = false;
             match expressions::parse_expression(parser) {
                 Attempt::Matched => {}
                 Attempt::NoMatch => {
@@ -1566,37 +1576,9 @@ fn brace_general(parser: &mut Parser<'_>, mode: BraceMode) -> FactAttempt<Expres
                         "missing value after mapping colon",
                         "expression",
                     );
-                    recover_closer(
-                        parser,
-                        rules::MAP,
-                        rules::RIGHT_BRACE,
-                        SyntaxKind::RightBrace,
-                        '}',
-                        "}",
-                    );
-                    entry.complete(parser, SyntaxKind::MapEntry);
-                    comprehension.abandon(parser);
-                    set.abandon(parser);
-                    map.complete(parser, SyntaxKind::Map);
-                    structure.complete(parser, SyntaxKind::Structure);
-                    return FactAttempt::Committed;
+                    committed = true;
                 }
-                Attempt::Committed => {
-                    recover_closer(
-                        parser,
-                        rules::MAP,
-                        rules::RIGHT_BRACE,
-                        SyntaxKind::RightBrace,
-                        '}',
-                        "}",
-                    );
-                    entry.complete(parser, SyntaxKind::MapEntry);
-                    comprehension.abandon(parser);
-                    set.abandon(parser);
-                    map.complete(parser, SyntaxKind::Map);
-                    structure.complete(parser, SyntaxKind::Structure);
-                    return FactAttempt::Committed;
-                }
+                Attempt::Committed => committed = true,
             }
             if !base::parse_rule(parser, rules::WHITESPACE0) {
                 return FactAttempt::NoMatch;
@@ -1614,17 +1596,10 @@ fn brace_general(parser: &mut Parser<'_>, mode: BraceMode) -> FactAttempt<Expres
                     Attempt::Matched if parser.offset() > before => {}
                     Attempt::Matched | Attempt::NoMatch => break,
                     Attempt::Committed => {
-                        recover_closer(
-                            parser,
-                            rules::MAP,
-                            rules::RIGHT_BRACE,
-                            SyntaxKind::RightBrace,
-                            '}',
-                            "}",
-                        );
-                        map.complete(parser, SyntaxKind::Map);
-                        structure.complete(parser, SyntaxKind::Structure);
-                        return FactAttempt::Committed;
+                        committed = true;
+                        if !base::parse_rule(parser, rules::LIST_SEPARATOR) {
+                            break;
+                        }
                     }
                 }
             }
@@ -1644,7 +1619,11 @@ fn brace_general(parser: &mut Parser<'_>, mode: BraceMode) -> FactAttempt<Expres
             }
             map.complete(parser, SyntaxKind::Map);
             structure.complete(parser, SyntaxKind::Structure);
-            return FactAttempt::Matched(ExpressionForm::Formula);
+            return if committed {
+                FactAttempt::Committed
+            } else {
+                FactAttempt::Matched(ExpressionForm::Formula)
+            };
         }
         parser.rewind(after_expression);
 
@@ -1762,6 +1741,7 @@ fn finish_shared_record_or_map(
     record.abandon(parser);
     comprehension.abandon(parser);
     set.abandon(parser);
+    let mut committed = false;
 
     if let Some(cached_values) = cached_values.as_ref() {
         for cached_value in cached_values {
@@ -1769,17 +1749,8 @@ fn finish_shared_record_or_map(
                 Attempt::Matched => {}
                 Attempt::NoMatch => return FactAttempt::NoMatch,
                 Attempt::Committed => {
-                    recover_closer(
-                        parser,
-                        rules::MAP,
-                        rules::RIGHT_BRACE,
-                        SyntaxKind::RightBrace,
-                        '}',
-                        "}",
-                    );
-                    map.complete(parser, SyntaxKind::Map);
-                    structure.complete(parser, SyntaxKind::Structure);
-                    return FactAttempt::Committed;
+                    committed = true;
+                    let _ = base::parse_rule(parser, rules::LIST_SEPARATOR);
                 }
             }
         }
@@ -1788,17 +1759,8 @@ fn finish_shared_record_or_map(
             Attempt::Matched => {}
             Attempt::NoMatch => return FactAttempt::NoMatch,
             Attempt::Committed => {
-                recover_closer(
-                    parser,
-                    rules::MAP,
-                    rules::RIGHT_BRACE,
-                    SyntaxKind::RightBrace,
-                    '}',
-                    "}",
-                );
-                map.complete(parser, SyntaxKind::Map);
-                structure.complete(parser, SyntaxKind::Structure);
-                return FactAttempt::Committed;
+                committed = true;
+                let _ = base::parse_rule(parser, rules::LIST_SEPARATOR);
             }
         }
     }
@@ -1808,28 +1770,36 @@ fn finish_shared_record_or_map(
             Attempt::Matched if parser.offset() > before => {}
             Attempt::Matched | Attempt::NoMatch => break,
             Attempt::Committed => {
-                recover_closer(
-                    parser,
-                    rules::MAP,
-                    rules::RIGHT_BRACE,
-                    SyntaxKind::RightBrace,
-                    '}',
-                    "}",
-                );
-                map.complete(parser, SyntaxKind::Map);
-                structure.complete(parser, SyntaxKind::Structure);
-                return FactAttempt::Committed;
+                committed = true;
+                if !base::parse_rule(parser, rules::LIST_SEPARATOR) {
+                    break;
+                }
             }
         }
     }
-    if !base::parse_rule(parser, rules::WHITESPACE0)
-        || !base::parse_rule(parser, rules::RIGHT_BRACE)
-    {
+    if !base::parse_rule(parser, rules::WHITESPACE0) {
         return FactAttempt::NoMatch;
+    }
+    if !base::parse_rule(parser, rules::RIGHT_BRACE) {
+        if !committed {
+            return FactAttempt::NoMatch;
+        }
+        recover_closer(
+            parser,
+            rules::MAP,
+            rules::RIGHT_BRACE,
+            SyntaxKind::RightBrace,
+            '}',
+            "}",
+        );
     }
     map.complete(parser, SyntaxKind::Map);
     structure.complete(parser, SyntaxKind::Structure);
-    FactAttempt::Matched(ExpressionForm::Formula)
+    if committed {
+        FactAttempt::Committed
+    } else {
+        FactAttempt::Matched(ExpressionForm::Formula)
+    }
 }
 
 fn structure_body(parser: &mut Parser<'_>) -> Attempt {
@@ -2193,7 +2163,12 @@ fn has_mapping_separator(parser: &Parser<'_>) -> bool {
                     key_started = true;
                 }
             }
-            '(' | '[' | '{' => delimiters.push(character),
+            '(' | '[' | '{' => {
+                if delimiters.is_empty() {
+                    key_started = true;
+                }
+                delimiters.push(character);
+            }
             ')' | ']' | '}' => {
                 if delimiters.is_empty() {
                     return false;

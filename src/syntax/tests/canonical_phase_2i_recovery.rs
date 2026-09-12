@@ -768,6 +768,123 @@ fn table_selection_defers_inline_recovery_at_a_physical_newline() {
 }
 
 #[test]
+fn committed_shared_collections_resume_at_physical_separators() {
+    for (rule, text, owner, child, expected_children) in [
+        (
+            rules::PATTERN_ARRAY,
+            "[1, 2 +, 3]",
+            SyntaxKind::ArrayPattern,
+            SyntaxKind::IntegerLiteral,
+            3,
+        ),
+        (
+            rules::EXPRESSION,
+            "(1,,3)",
+            SyntaxKind::Tuple,
+            SyntaxKind::IntegerLiteral,
+            2,
+        ),
+        (
+            rules::EXPRESSION,
+            "{1: 2, 3:, 4: 5}",
+            SyntaxKind::Map,
+            SyntaxKind::MapEntry,
+            3,
+        ),
+    ] {
+        let parsed = parse(rule, text);
+        assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed, "{text:?}");
+        assert_eq!(parsed.consumed.end.0 as usize, text.len(), "{text:?}");
+        assert!(contains_kind(&parsed.syntax(), owner), "{text:?}");
+        assert_eq!(
+            count_kind(&parsed.syntax(), child),
+            expected_children,
+            "{text:?}"
+        );
+        assert!(contains_kind(&parsed.syntax(), SyntaxKind::Missing));
+    }
+}
+
+#[test]
+fn committed_prefixes_finish_their_selected_recursive_owner() {
+    for (rule, text, owner, child, expected_children) in [
+        (
+            rules::MATCH_ARM,
+            "| (1 +) => 2",
+            SyntaxKind::MatchArm,
+            SyntaxKind::IntegerLiteral,
+            2,
+        ),
+        (
+            rules::EXPRESSION,
+            "{1 + | x <- xs}",
+            SyntaxKind::SetComprehension,
+            SyntaxKind::Generator,
+            1,
+        ),
+        (
+            rules::FSM_PIPE,
+            "# -> :next",
+            SyntaxKind::FsmPipe,
+            SyntaxKind::FsmStateTransition,
+            1,
+        ),
+    ] {
+        let parsed = parse(rule, text);
+        assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed, "{text:?}");
+        assert_eq!(parsed.consumed.end.0 as usize, text.len(), "{text:?}");
+        assert!(contains_kind(&parsed.syntax(), owner), "{text:?}");
+        assert_eq!(
+            count_kind(&parsed.syntax(), child),
+            expected_children,
+            "{text:?}"
+        );
+        assert!(contains_kind(&parsed.syntax(), SyntaxKind::Missing));
+    }
+}
+
+#[test]
+fn recovered_fancy_header_retains_the_first_data_row() {
+    let text = "╭─\n│a<u8│\n│1│";
+    let parsed = parse(rules::FANCY_TABLE, text);
+    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+    assert_eq!(parsed.consumed.end.0 as usize, text.len());
+    assert!(contains_kind(&parsed.syntax(), SyntaxKind::FancyTable));
+    assert_eq!(count_kind(&parsed.syntax(), SyntaxKind::FancyTableRow), 1);
+    assert!(contains_kind(&parsed.syntax(), SyntaxKind::Missing));
+}
+
+#[test]
+fn delimited_mapping_keys_and_box_closers_preserve_owner_selection() {
+    let map_text = "{a: 1, (2): 3}";
+    let parsed = parse(rules::EXPRESSION, map_text);
+    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Matched);
+    assert_eq!(parsed.consumed.end.0 as usize, map_text.len());
+    assert!(contains_kind(&parsed.syntax(), SyntaxKind::Map));
+    assert!(!contains_kind(&parsed.syntax(), SyntaxKind::Record));
+    assert_eq!(count_kind(&parsed.syntax(), SyntaxKind::MapEntry), 2);
+
+    let matrix_text = "╭1 @ (2╯";
+    let parsed = parse(rules::MATRIX, matrix_text);
+    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+    assert_eq!(parsed.consumed.end.0 as usize, matrix_text.len());
+    assert!(contains_kind(&parsed.syntax(), SyntaxKind::Error));
+    assert!(!contains_kind(&parsed.syntax(), SyntaxKind::Missing));
+    let closers = parsed
+        .syntax()
+        .tokens()
+        .into_iter()
+        .filter(|token| token.kind() == SyntaxKind::BoxDrawing)
+        .collect::<Vec<_>>();
+    assert_eq!(closers.len(), 2);
+    assert!(
+        !closers[1]
+            .flags()
+            .contains(mech_syntax::document::TokenFlags::MISSING)
+    );
+}
+
+#[test]
 fn deferred_inline_table_restores_speculative_recovery_state() {
     let text = "|a<u8> @\n|1|";
     let limits = ParseLimits {

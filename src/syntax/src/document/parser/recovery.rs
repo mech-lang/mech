@@ -267,7 +267,7 @@ fn recovery_boundary(
 }
 
 fn is_recovery_closer(character: char) -> bool {
-    matches!(character, ')' | ']' | '}' | '>' | '⟩')
+    matches!(character, ')' | ']' | '}' | '>' | '⟩' | '╯' | '┘' | '┛')
 }
 
 fn delimiters_match(opener: char, closer: char) -> bool {
