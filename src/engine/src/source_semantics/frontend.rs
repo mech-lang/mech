@@ -796,7 +796,7 @@ fn annotation_kind_expr(source: &str) -> Option<KindExpr> {
         .map_or((name, false), |name| (name, true));
     let kind = match name {
         "*" => Some(KindExpr::Wildcard),
-        "_" => Some(KindExpr::Hole),
+        "_" => Some(KindExpr::Never),
         "ix" | "index" => Some(KindExpr::Index),
         _ => builtin_kind_named(name).map(BuiltinScalarKind::kind_expr),
     }?;

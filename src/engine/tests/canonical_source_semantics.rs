@@ -800,6 +800,21 @@ fn semantic_kind_edges_are_resolved_before_graph_emission() {
 
 #[test]
 fn semantic_annotations_follow_value_roles_and_lexical_scope() {
+    for source in ["<*>", "<_>"] {
+        let kind = CanonicalSourceFrontend
+            .compile_expression(&expression(source))
+            .unwrap();
+        let SourceValue::Constant(id) = kind.program().outputs[0].source else {
+            panic!("{source:?} did not produce a reified kind constant")
+        };
+        assert!(matches!(
+            kind.constants().get(id).unwrap().data(),
+            ValueData::Type(_)
+        ));
+        kind.compile_artifact()
+            .expect("wildcard and empty kinds must have canonical reified values");
+    }
+
     let optional_atom = CanonicalSourceFrontend
         .compile_definition(&definition("x<*?> := :ready"))
         .unwrap();
