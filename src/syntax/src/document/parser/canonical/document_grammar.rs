@@ -1145,6 +1145,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
     DocumentRule {
         rule: rules::MIKA_NOSE,
         expression: GrammarExpression::Choice(&[
+            GrammarExpression::Literal("◉"),
             GrammarExpression::Literal("⦿"),
             GrammarExpression::Literal("◯"),
             GrammarExpression::Literal("⊕"),
