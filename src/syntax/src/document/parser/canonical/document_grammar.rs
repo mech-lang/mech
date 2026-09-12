@@ -31,6 +31,7 @@ pub(crate) struct DocumentRule {
     pub(crate) expression: GrammarExpression,
     pub(crate) kind: Option<SyntaxKind>,
     pub(crate) root: bool,
+    pub(crate) feature: Option<&'static str>,
 }
 
 pub(crate) const DOCUMENT_RULE_COUNT: usize = 112;
@@ -45,6 +46,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::AbstractEl),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::ACTIVATION_ARM,
@@ -76,6 +78,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::ActivationArm),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::ACTIVATION_SCOPE,
@@ -98,6 +101,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::ActivationScope),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::ALIGNMENT_SEPARATOR,
@@ -113,6 +117,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::AlignmentSeparator),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::BODY,
@@ -122,6 +127,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::Body),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::CENTER_ALIGNMENT,
@@ -132,6 +138,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::CenterAlignment),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::CHECK_LIST,
@@ -144,6 +151,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::CheckList),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::CHECK_LIST_ITEM,
@@ -153,6 +161,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::CheckListItem),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::CHECKED_ITEM,
@@ -170,6 +179,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::CheckedItem),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::CITATION,
@@ -184,6 +194,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::Citation),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::CODE_BLOCK,
@@ -206,6 +217,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::CodeBlock),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::CODE_TERMINAL,
@@ -227,6 +239,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::CodeTerminal),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::CONTEXT_SEND,
@@ -237,6 +250,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::ContextSend),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::EMPHASIS,
@@ -247,12 +261,14 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::Emphasis),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::EMPTY_PARAGRAPH,
         expression: GrammarExpression::Empty,
         kind: Some(SyntaxKind::EmptyParagraph),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::ENUM_DEFINE,
@@ -268,6 +284,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::EnumDefine),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::ENUM_VARIANT,
@@ -282,12 +299,14 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::EnumVariant),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::ENUM_VARIANT_INLINE_KIND,
         expression: GrammarExpression::Rule(rules::KIND_ANNOTATION),
         kind: Some(SyntaxKind::EnumVariantInlineKind),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::ENUM_VARIANT_KIND,
@@ -298,6 +317,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::EnumVariantKind),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::ERROR_BLOCK,
@@ -312,6 +332,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::ErrorBlock),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::EVAL_INLINE_MECH_CODE,
@@ -324,18 +345,21 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::EvalInlineMechCode),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::FIGURE_ITEM,
         expression: GrammarExpression::Rule(rules::IMG),
         kind: Some(SyntaxKind::FigureItem),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::FIGURES,
         expression: GrammarExpression::OneOrMore(&GrammarExpression::Rule(rules::FIGURES_ROW)),
         kind: Some(SyntaxKind::Figures),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::FIGURES_ROW,
@@ -352,6 +376,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::FiguresRow),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::FLOAT,
@@ -362,6 +387,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::Float),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::FLOAT_SIGIL,
@@ -371,6 +397,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::FloatSigil),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::FOOTNOTE,
@@ -387,6 +414,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::Footnote),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::FSM,
@@ -398,6 +426,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::Fsm),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::FSM_ARM,
@@ -411,6 +440,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::FsmArm),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::FSM_BLOCK_TRANSITION,
@@ -427,12 +457,14 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::FsmBlockTransition),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::FSM_COMMENT_ARM,
         expression: GrammarExpression::Rule(rules::COMMENT),
         kind: Some(SyntaxKind::FsmCommentArm),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::FSM_DECLARE,
@@ -443,6 +475,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::FsmDeclare),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::FSM_GUARD,
@@ -459,6 +492,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::FsmGuard),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::FSM_GUARD_ARM,
@@ -468,6 +502,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::FsmGuardArm),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::FSM_IMPLEMENTATION,
@@ -488,6 +523,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::FsmImplementation),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::FSM_SPECIFICATION,
@@ -508,6 +544,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::FsmSpecification),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::FSM_STATE_DEFINITION,
@@ -521,6 +558,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::FsmStateDefinition),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::FSM_STATE_DEFINITION_VARIABLES,
@@ -534,6 +572,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::FsmStateDefinitionVariables),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::FSM_STATEMENT_TRANSITION,
@@ -543,6 +582,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::FsmStatementTransition),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::FSM_TRANSITION,
@@ -558,6 +598,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::FsmTransition),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::FUNCTION_ARG,
@@ -567,6 +608,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::FunctionArg),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::FUNCTION_DEFINE,
@@ -586,6 +628,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::FunctionDefine),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::FUNCTION_DEFINE_MATCH_ARMS,
@@ -602,6 +645,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::FunctionDefineMatchArms),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::FUNCTION_DEFINE_STATEMENTS,
@@ -624,6 +668,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::FunctionDefineStatements),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::FUNCTION_MATCH_ARM,
@@ -652,12 +697,14 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::FunctionMatchArm),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::FUNCTION_OUT_ARG,
         expression: GrammarExpression::Rule(rules::FUNCTION_ARG),
         kind: Some(SyntaxKind::FunctionOutArg),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::FUNCTION_OUT_ARGS,
@@ -671,6 +718,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::FunctionOutArgs),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::HIGHLIGHT,
@@ -681,6 +729,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::Highlight),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::HYPERLINK,
@@ -697,6 +746,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::Hyperlink),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::IDEA_BLOCK,
@@ -707,6 +757,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::IdeaBlock),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::IMG,
@@ -724,6 +775,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::Img),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::INFO_BLOCK,
@@ -734,6 +786,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::InfoBlock),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::INLINE_MECH_CODE,
@@ -748,6 +801,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::InlineMechCode),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::INLINE_PARAGRAPH,
@@ -757,6 +811,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ])),
         kind: Some(SyntaxKind::InlineParagraph),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::INVARIANT_DEFINE,
@@ -769,6 +824,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::InvariantDefine),
         root: false,
+        feature: Some("invariant_define"),
     },
     DocumentRule {
         rule: rules::KIND_DEFINE,
@@ -781,6 +837,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::KindDefine),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::LEFT_ALIGNMENT,
@@ -790,6 +847,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::LeftAlignment),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::MECH_CODE,
@@ -800,6 +858,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ])),
         kind: Some(SyntaxKind::MechCode),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::MECH_CODE_ALT,
@@ -818,6 +877,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::MechCodeAlt),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::MECHDOWN_LIST,
@@ -828,6 +888,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::MechdownList),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::MECHDOWN_TABLE,
@@ -840,6 +901,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::MechdownTable),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::MECHDOWN_TABLE_HEADER,
@@ -862,6 +924,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::MechdownTableHeader),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::MECHDOWN_TABLE_NO_HEADER,
@@ -870,6 +933,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         )),
         kind: Some(SyntaxKind::MechdownTableNoHeader),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::MECHDOWN_TABLE_ROW,
@@ -893,6 +957,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::MechdownTableRow),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::MECHDOWN_TABLE_WITH_HEADER,
@@ -902,6 +967,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::MechdownTableWithHeader),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::MICRO_MIKA,
@@ -912,6 +978,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::MicroMika),
         root: false,
+        feature: Some("mika"),
     },
     DocumentRule {
         rule: rules::MIKA,
@@ -926,6 +993,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::Mika),
         root: false,
+        feature: Some("mika"),
     },
     DocumentRule {
         rule: rules::MIKA_ARM_LEFT,
@@ -949,6 +1017,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::MikaArmLeft),
         root: false,
+        feature: Some("mika"),
     },
     DocumentRule {
         rule: rules::MIKA_ARM_RIGHT,
@@ -972,6 +1041,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::MikaArmRight),
         root: false,
+        feature: Some("mika"),
     },
     DocumentRule {
         rule: rules::MIKA_EXPRESSION_INNER,
@@ -1004,6 +1074,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::MikaExpressionInner),
         root: false,
+        feature: Some("mika"),
     },
     DocumentRule {
         rule: rules::MIKA_EYE_LEFT,
@@ -1036,6 +1107,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::MikaEyeLeft),
         root: false,
+        feature: Some("mika"),
     },
     DocumentRule {
         rule: rules::MIKA_EYE_RIGHT,
@@ -1068,6 +1140,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::MikaEyeRight),
         root: false,
+        feature: Some("mika"),
     },
     DocumentRule {
         rule: rules::MIKA_NOSE,
@@ -1089,6 +1162,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::MikaNose),
         root: false,
+        feature: Some("mika"),
     },
     DocumentRule {
         rule: rules::MIKA_SECTION,
@@ -1099,6 +1173,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::MikaSection),
         root: false,
+        feature: Some("mika"),
     },
     DocumentRule {
         rule: rules::MINI_MIKA,
@@ -1113,12 +1188,14 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::MiniMika),
         root: false,
+        feature: Some("mika"),
     },
     DocumentRule {
         rule: rules::NO_ALIGNMENT,
         expression: GrammarExpression::OneOrMore(&GrammarExpression::Rule(rules::DASH)),
         kind: Some(SyntaxKind::NoAlignment),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::NOT_MECH_CODE,
@@ -1135,6 +1212,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::NotMechCode),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::OP_ASSIGN,
@@ -1146,6 +1224,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::OpAssign),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::OPTION_MAP,
@@ -1158,6 +1237,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::OptionMap),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::OPTION_MAPPING,
@@ -1174,6 +1254,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::OptionMapping),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::OPTION_VALUE,
@@ -1183,6 +1264,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::OptionValue),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::ORDERED_LIST,
@@ -1195,6 +1277,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::OrderedList),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::ORDERED_LIST_ITEM,
@@ -1205,6 +1288,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::OrderedListItem),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::PARAGRAPH,
@@ -1218,6 +1302,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ])),
         kind: Some(SyntaxKind::Paragraph),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::PARAGRAPH_ELEMENT,
@@ -1240,6 +1325,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::ParagraphElement),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::PARAGRAPH_NEWLINE,
@@ -1249,18 +1335,21 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::ParagraphNewline),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::PARSE,
         expression: GrammarExpression::Rule(rules::PARSE_MECH),
         kind: Some(SyntaxKind::Document),
         root: true,
+        feature: None,
     },
     DocumentRule {
         rule: rules::PARSE_MECH,
         expression: GrammarExpression::Rule(rules::PROGRAM),
         kind: None,
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::PROGRAM,
@@ -1272,6 +1361,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: None,
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::PROMPT,
@@ -1282,6 +1372,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::Prompt),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::QUESTION_BLOCK,
@@ -1292,6 +1383,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::QuestionBlock),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::QUOTE_BLOCK,
@@ -1304,6 +1396,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::QuoteBlock),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::RIGHT_ALIGNMENT,
@@ -1313,6 +1406,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::RightAlignment),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::SECTION,
@@ -1333,6 +1427,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::Section),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::SECTION_ELEMENT,
@@ -1361,6 +1456,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::SectionElement),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::SLICE_REF,
@@ -1376,6 +1472,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::SliceRef),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::STATEMENT,
@@ -1395,6 +1492,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::Statement),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::STRIKETHROUGH,
@@ -1405,6 +1503,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::Strikethrough),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::STRONG,
@@ -1415,6 +1514,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::Strong),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::SUBLIST,
@@ -1425,6 +1525,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::Sublist),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::SUBTITLE,
@@ -1450,6 +1551,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::Subtitle),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::SUCCESS_BLOCK,
@@ -1464,6 +1566,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::SuccessBlock),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::TITLE,
@@ -1476,6 +1579,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::Title),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::TITLE_FRONT_MATTER,
@@ -1504,6 +1608,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::TitleFrontMatter),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::TUPLE_DESTRUCTURE,
@@ -1519,6 +1624,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::TupleDestructure),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::UL_SUBTITLE,
@@ -1538,6 +1644,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::UlSubtitle),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::UNCHECKED_ITEM,
@@ -1550,6 +1657,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::UncheckedItem),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::UNDERLINE,
@@ -1560,6 +1668,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::Underline),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::UNORDERED_LIST,
@@ -1572,6 +1681,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::UnorderedList),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::UNORDERED_LIST_ITEM,
@@ -1588,6 +1698,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::UnorderedListItem),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::VARIABLE_ASSIGN,
@@ -1599,6 +1710,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::VariableAssign),
         root: false,
+        feature: None,
     },
     DocumentRule {
         rule: rules::WARNING_BLOCK,
@@ -1610,5 +1722,6 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
         ]),
         kind: Some(SyntaxKind::WarningBlock),
         root: false,
+        feature: None,
     },
 ];

@@ -15,6 +15,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SPECIFICATION = ROOT / "docs/design/specification.mec"
 PORTS = ROOT / "docs/design/grammar-audit/ports.tsv"
+PRODUCTIONS = ROOT / "docs/design/grammar-audit/productions.tsv"
 DEPENDENCIES = ROOT / "docs/design/grammar-audit/canonical-dependencies.tsv"
 OUTPUT = (
     ROOT
@@ -84,6 +85,16 @@ def document_rules() -> list[str]:
             "S7 activation must equal the candidate closure reachable from parse"
         )
     return names
+
+
+def rule_feature_gates() -> dict[str, str]:
+    with PRODUCTIONS.open(newline="", encoding="utf-8") as source:
+        rows = csv.DictReader(source, delimiter="\t")
+        return {
+            row["grammar-name"]: row["feature-gate"]
+            for row in rows
+            if row["feature-gate"] != "always"
+        }
 
 
 def grammar_definitions() -> dict[str, str]:
@@ -389,6 +400,7 @@ def load_rules() -> tuple[list[str], dict[str, Expression]]:
 
 def render_grammar(names: list[str], parsed: dict[str, Expression]) -> str:
     known_rules = set(grammar_definitions())
+    feature_gates = rule_feature_gates()
     lines = [
         "// Generated from docs/design/specification.mec and grammar-audit/ports.tsv.",
         "// Do not edit by hand.",
@@ -423,6 +435,7 @@ def render_grammar(names: list[str], parsed: dict[str, Expression]) -> str:
         "    pub(crate) expression: GrammarExpression,",
         "    pub(crate) kind: Option<SyntaxKind>,",
         "    pub(crate) root: bool,",
+        "    pub(crate) feature: Option<&'static str>,",
         "}",
         "",
         f"pub(crate) const DOCUMENT_RULE_COUNT: usize = {len(names)};",
@@ -446,6 +459,7 @@ def render_grammar(names: list[str], parsed: dict[str, Expression]) -> str:
                 f"        expression: {rust_expression(parsed[name], known_rules, name in BEST_CHOICE_RULES)},",
                 f"        kind: {kind},",
                 f"        root: {'true' if name in ROOT_KINDS else 'false'},",
+                f"        feature: {'Some(' + json.dumps(feature_gates[name]) + ')' if name in feature_gates else 'None'},",
                 "    },",
             ]
         )

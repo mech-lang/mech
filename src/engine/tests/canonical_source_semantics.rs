@@ -143,6 +143,16 @@ fn typed_document_executes_only_eval_inline_mech_code() {
 }
 
 #[test]
+fn typed_document_keeps_mika_sections_in_a_child_semantic_scope() {
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document("~∘~⸢x := 1\n⸥\nx\n"))
+        .expect("the enclosing document must compile independently of Mika contents");
+    assert_eq!(compiled.program().inputs.len(), 1);
+    assert_eq!(compiled.program().inputs[0].name, "x");
+    assert_eq!(compiled.program().outputs[0].source, SourceValue::Input(0));
+}
+
+#[test]
 fn canonical_document_fixture_corpus_has_an_explicit_engine_disposition() {
     let cases = [
         ("compiler.mec", Ok(())),

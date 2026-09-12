@@ -269,7 +269,10 @@ fn collect_document_units(
     node: &SyntaxNode,
     output: &mut Vec<SyntaxNode>,
 ) -> Result<(), SourceSemanticError> {
-    if node.kind() == SyntaxKind::InlineMechCode {
+    if matches!(
+        node.kind(),
+        SyntaxKind::InlineMechCode | SyntaxKind::MikaSection
+    ) {
         return Ok(());
     }
     if matches!(
