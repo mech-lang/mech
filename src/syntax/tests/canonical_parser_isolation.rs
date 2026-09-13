@@ -3,53 +3,112 @@ use std::path::{Path, PathBuf};
 
 const REQUIRED_CANONICAL_SOURCES: &[&str] = &[
     "mod.rs",
-    "base.rs",
+    "base/mod.rs",
+    "base/continuation.rs",
     "terminal_spec.rs",
     "combinator.rs",
-    "found.rs",
+    "found/mod.rs",
+    "found/source.rs",
     "grammar.rs",
     "roots.rs",
     "ports.rs",
-    "mechdown.rs",
+    "mechdown/mod.rs",
+    "mechdown/continuation.rs",
+    "prose.rs",
     "statements.rs",
     "test_support.rs",
-    "literals.rs",
+    "literals/mod.rs",
+    "literals/continuation.rs",
+    "strings.rs",
     "paths.rs",
     "kinds.rs",
-    "operators.rs",
-    "imports.rs",
-    "source_imports.rs",
-    "declarations.rs",
-    "document.rs",
+    "operators/mod.rs",
+    "operators/spec.rs",
+    "operators/continuation.rs",
+    "imports/mod.rs",
+    "imports/continuation.rs",
+    "source_imports/mod.rs",
+    "source_imports/continuation.rs",
+    "declarations/mod.rs",
+    "declarations/continuation.rs",
+    "document/mod.rs",
+    "document/continuation.rs",
     "document_grammar.rs",
     "subscript_primitives.rs",
     "pattern_primitives.rs",
     "control_operators.rs",
-    "structure_shell.rs",
+    "primitives.rs",
+    "structure_shell/mod.rs",
+    "structure_shell/continuation.rs",
 ];
 
-const PHASE_2B_PRODUCTION_SOURCES: &[&str] = &["mechdown.rs", "statements.rs"];
-const PHASE_2C_PRODUCTION_SOURCES: &[&str] = &["literals.rs", "paths.rs", "kinds.rs"];
-const PHASE_2D_PRODUCTION_SOURCES: &[&str] = &["operators.rs"];
-const PHASE_2E_PRODUCTION_SOURCES: &[&str] = &["imports.rs"];
-const PHASE_2F_PRODUCTION_SOURCES: &[&str] = &["source_imports.rs", "declarations.rs"];
+const PHASE_2B_PRODUCTION_SOURCES: &[&str] = &[
+    "mechdown/mod.rs",
+    "mechdown/continuation.rs",
+    "prose.rs",
+    "statements.rs",
+];
+const PHASE_2C_PRODUCTION_SOURCES: &[&str] = &[
+    "literals/mod.rs",
+    "literals/continuation.rs",
+    "strings.rs",
+    "paths.rs",
+    "kinds.rs",
+];
+const PHASE_2D_PRODUCTION_SOURCES: &[&str] = &[
+    "operators/mod.rs",
+    "operators/spec.rs",
+    "operators/continuation.rs",
+];
+const PHASE_2E_PRODUCTION_SOURCES: &[&str] = &["imports/mod.rs", "imports/continuation.rs"];
+const PHASE_2F_PRODUCTION_SOURCES: &[&str] = &[
+    "source_imports/mod.rs",
+    "source_imports/continuation.rs",
+    "declarations/mod.rs",
+    "declarations/continuation.rs",
+];
 const PHASE_2G_PRODUCTION_SOURCES: &[&str] = &[
     "subscript_primitives.rs",
     "pattern_primitives.rs",
     "control_operators.rs",
+    "primitives.rs",
 ];
-const PHASE_2H_PRODUCTION_SOURCES: &[&str] = &["structure_shell.rs"];
+const PHASE_2H_PRODUCTION_SOURCES: &[&str] =
+    &["structure_shell/mod.rs", "structure_shell/continuation.rs"];
 const PHASE_2I_PRODUCTION_SOURCES: &[&str] = &[
     "recursive_core/calls.rs",
     "recursive_core/comprehensions.rs",
     "recursive_core/expressions.rs",
     "recursive_core/fsm.rs",
-    "recursive_core/kinds.rs",
+    "recursive_core/kinds/continuation.rs",
+    "recursive_core/kinds/mod.rs",
     "recursive_core/literals.rs",
     "recursive_core/mod.rs",
     "recursive_core/patterns.rs",
-    "recursive_core/precedence.rs",
-    "recursive_core/structures.rs",
+    "recursive_core/precedence/continuation/brace.rs",
+    "recursive_core/precedence/continuation/bracket.rs",
+    "recursive_core/precedence/continuation/collection.rs",
+    "recursive_core/precedence/continuation/comprehension.rs",
+    "recursive_core/precedence/continuation/definition.rs",
+    "recursive_core/precedence/continuation/entry.rs",
+    "recursive_core/precedence/continuation/expression.rs",
+    "recursive_core/precedence/continuation/fsm.rs",
+    "recursive_core/precedence/continuation/inline.rs",
+    "recursive_core/precedence/continuation/map.rs",
+    "recursive_core/precedence/continuation/mapping_probe.rs",
+    "recursive_core/precedence/continuation/match_arm.rs",
+    "recursive_core/precedence/continuation/matrix_row.rs",
+    "recursive_core/precedence/continuation/mod.rs",
+    "recursive_core/precedence/continuation/parenthesis.rs",
+    "recursive_core/precedence/continuation/pattern.rs",
+    "recursive_core/precedence/continuation/postfix.rs",
+    "recursive_core/precedence/continuation/record.rs",
+    "recursive_core/precedence/continuation/table.rs",
+    "recursive_core/precedence/continuation/table_row.rs",
+    "recursive_core/precedence/mod.rs",
+    "recursive_core/required.rs",
+    "recursive_core/structures/continuation.rs",
+    "recursive_core/structures/mod.rs",
     "recursive_core/subscripts.rs",
     "recursive_core/variables.rs",
 ];
@@ -583,11 +642,30 @@ fn canonical_phase_2d_operator_source_is_present_and_directly_isolated() {
                 (window[0] == "statements" && window[1] == "::").then_some(window[2].as_str())
             })
             .collect::<Vec<_>>();
-        assert_eq!(
-            statement_calls,
-            vec!["parse_comment_sigil"],
-            "{relative} may depend on the Phase 2B canonical comment-sigil only"
+        assert!(
+            statement_calls
+                .iter()
+                .all(|name| matches!(*name, "Continuation" | "Progress")),
+            "{relative} may use only the retained canonical comment-sigil owner"
         );
+        if *relative == "operators/continuation.rs" {
+            let constructors = tokens
+                .windows(10)
+                .filter(|window| {
+                    window[..6] == ["statements", "::", "Continuation", "::", "new", "("]
+                })
+                .collect::<Vec<_>>();
+            assert_eq!(constructors.len(), 1, "one canonical sigil guard owner");
+            assert_eq!(
+                &constructors[0][6..10],
+                ["rules", "::", "COMMENT_SIGIL", ")"]
+            );
+        } else {
+            assert!(
+                statement_calls.is_empty(),
+                "{relative} must not select comment rules"
+            );
+        }
     }
 }
 
@@ -748,107 +826,107 @@ fn phase_2f_entry_points_bind_their_exact_generated_rule_ids() {
     let canonical = canonical_root();
     let expected = [
         (
-            "source_imports.rs",
+            "source_imports/mod.rs",
             "parse_source_import_tail",
             "SOURCE_IMPORT_TAIL",
         ),
         (
-            "source_imports.rs",
+            "source_imports/mod.rs",
             "parse_source_path_component_token",
             "SOURCE_PATH_COMPONENT_TOKEN",
         ),
         (
-            "source_imports.rs",
+            "source_imports/mod.rs",
             "parse_source_path_component",
             "SOURCE_PATH_COMPONENT",
         ),
         (
-            "source_imports.rs",
+            "source_imports/mod.rs",
             "parse_source_mec_path",
             "SOURCE_MEC_PATH",
         ),
         (
-            "source_imports.rs",
+            "source_imports/mod.rs",
             "parse_source_mec_path_wildcard_suffix",
             "SOURCE_MEC_PATH_WILDCARD_SUFFIX",
         ),
         (
-            "source_imports.rs",
+            "source_imports/mod.rs",
             "parse_relative_source_import_specifier",
             "RELATIVE_SOURCE_IMPORT_SPECIFIER",
         ),
         (
-            "source_imports.rs",
+            "source_imports/mod.rs",
             "parse_absolute_source_import_specifier",
             "ABSOLUTE_SOURCE_IMPORT_SPECIFIER",
         ),
         (
-            "source_imports.rs",
+            "source_imports/mod.rs",
             "parse_bare_source_import_specifier",
             "BARE_SOURCE_IMPORT_SPECIFIER",
         ),
         (
-            "source_imports.rs",
+            "source_imports/mod.rs",
             "parse_uri_scheme_part",
             "URI_SCHEME_PART",
         ),
         (
-            "source_imports.rs",
+            "source_imports/mod.rs",
             "parse_source_import_uri_scheme",
             "SOURCE_IMPORT_URI_SCHEME",
         ),
         (
-            "source_imports.rs",
+            "source_imports/mod.rs",
             "parse_uri_source_import_specifier",
             "URI_SOURCE_IMPORT_SPECIFIER",
         ),
         (
-            "source_imports.rs",
+            "source_imports/mod.rs",
             "parse_source_import_specifier",
             "SOURCE_IMPORT_SPECIFIER",
         ),
         (
-            "source_imports.rs",
+            "source_imports/mod.rs",
             "parse_import_declaration",
             "IMPORT_DECLARATION",
         ),
         (
-            "declarations.rs",
+            "declarations/mod.rs",
             "parse_export_declaration",
             "EXPORT_DECLARATION",
         ),
         (
-            "declarations.rs",
+            "declarations/mod.rs",
             "parse_context_declaration",
             "CONTEXT_DECLARATION",
         ),
         (
-            "declarations.rs",
+            "declarations/mod.rs",
             "parse_context_base_context",
             "CONTEXT_BASE_CONTEXT",
         ),
         (
-            "declarations.rs",
+            "declarations/mod.rs",
             "parse_context_base_resource_uri",
             "CONTEXT_BASE_RESOURCE_URI",
         ),
         (
-            "declarations.rs",
+            "declarations/mod.rs",
             "parse_context_capability_declaration",
             "CONTEXT_CAPABILITY_DECLARATION",
         ),
         (
-            "declarations.rs",
+            "declarations/mod.rs",
             "parse_context_capability_path_token",
             "CONTEXT_CAPABILITY_PATH_TOKEN",
         ),
         (
-            "declarations.rs",
+            "declarations/mod.rs",
             "parse_context_capability_path",
             "CONTEXT_CAPABILITY_PATH",
         ),
         (
-            "declarations.rs",
+            "declarations/mod.rs",
             "parse_context_capability_scope",
             "CONTEXT_CAPABILITY_SCOPE",
         ),
@@ -1086,20 +1164,28 @@ fn canonical_phase_2h_source_is_present_and_directly_isolated() {
 fn phase_2h_entry_points_bind_their_exact_generated_rule_ids() {
     let canonical = canonical_root();
     let expected = [
-        ("structure_shell.rs", "parse_matrix_start", "MATRIX_START"),
-        ("structure_shell.rs", "parse_matrix_end", "MATRIX_END"),
-        ("structure_shell.rs", "parse_table_start", "TABLE_START"),
-        ("structure_shell.rs", "parse_table_end", "TABLE_END"),
         (
-            "structure_shell.rs",
+            "structure_shell/mod.rs",
+            "parse_matrix_start",
+            "MATRIX_START",
+        ),
+        ("structure_shell/mod.rs", "parse_matrix_end", "MATRIX_END"),
+        ("structure_shell/mod.rs", "parse_table_start", "TABLE_START"),
+        ("structure_shell/mod.rs", "parse_table_end", "TABLE_END"),
+        (
+            "structure_shell/mod.rs",
             "parse_table_separator",
             "TABLE_SEPARATOR",
         ),
-        ("structure_shell.rs", "parse_table_horz", "TABLE_HORZ"),
-        ("structure_shell.rs", "parse_table_top", "TABLE_TOP"),
-        ("structure_shell.rs", "parse_row_separator", "ROW_SEPARATOR"),
-        ("structure_shell.rs", "parse_empty_map", "EMPTY_MAP"),
-        ("structure_shell.rs", "parse_empty_set", "EMPTY_SET"),
+        ("structure_shell/mod.rs", "parse_table_horz", "TABLE_HORZ"),
+        ("structure_shell/mod.rs", "parse_table_top", "TABLE_TOP"),
+        (
+            "structure_shell/mod.rs",
+            "parse_row_separator",
+            "ROW_SEPARATOR",
+        ),
+        ("structure_shell/mod.rs", "parse_empty_map", "EMPTY_MAP"),
+        ("structure_shell/mod.rs", "parse_empty_set", "EMPTY_SET"),
     ];
     assert_eq!(expected.len(), 10);
     for (file, function, rule) in expected {
@@ -1168,25 +1254,33 @@ fn phase_2b_entry_points_bind_their_exact_generated_rule_ids() {
     let expected = [
         ("statements.rs", "parse_comment_sigil", "COMMENT_SIGIL"),
         ("statements.rs", "parse_comment", "COMMENT"),
-        ("mechdown.rs", "parse_codeblock_sigil", "CODEBLOCK_SIGIL"),
-        ("mechdown.rs", "parse_inline_code", "INLINE_CODE"),
-        ("mechdown.rs", "parse_inline_equation", "INLINE_EQUATION"),
-        ("mechdown.rs", "parse_raw_hyperlink", "RAW_HYPERLINK"),
         (
-            "mechdown.rs",
+            "mechdown/mod.rs",
+            "parse_codeblock_sigil",
+            "CODEBLOCK_SIGIL",
+        ),
+        ("mechdown/mod.rs", "parse_inline_code", "INLINE_CODE"),
+        (
+            "mechdown/mod.rs",
+            "parse_inline_equation",
+            "INLINE_EQUATION",
+        ),
+        ("mechdown/mod.rs", "parse_raw_hyperlink", "RAW_HYPERLINK"),
+        (
+            "mechdown/mod.rs",
             "parse_footnote_reference",
             "FOOTNOTE_REFERENCE",
         ),
-        ("mechdown.rs", "parse_reference", "REFERENCE"),
+        ("mechdown/mod.rs", "parse_reference", "REFERENCE"),
         (
-            "mechdown.rs",
+            "mechdown/mod.rs",
             "parse_section_reference",
             "SECTION_REFERENCE",
         ),
-        ("mechdown.rs", "parse_paragraph_text", "PARAGRAPH_TEXT"),
-        ("mechdown.rs", "parse_thematic_break", "THEMATIC_BREAK"),
-        ("mechdown.rs", "parse_blank_line", "BLANK_LINE"),
-        ("mechdown.rs", "parse_equation", "EQUATION"),
+        ("mechdown/mod.rs", "parse_paragraph_text", "PARAGRAPH_TEXT"),
+        ("mechdown/mod.rs", "parse_thematic_break", "THEMATIC_BREAK"),
+        ("mechdown/mod.rs", "parse_blank_line", "BLANK_LINE"),
+        ("mechdown/mod.rs", "parse_equation", "EQUATION"),
     ];
 
     for (file, function, rule) in expected {
@@ -1205,46 +1299,62 @@ fn phase_2b_entry_points_bind_their_exact_generated_rule_ids() {
 fn phase_2c_entry_points_bind_their_exact_generated_rule_ids() {
     let canonical = canonical_root();
     let expected = [
-        ("literals.rs", "parse_empty", "EMPTY"),
-        ("literals.rs", "parse_atom", "ATOM"),
-        ("literals.rs", "parse_string", "STRING"),
-        ("literals.rs", "parse_utf8_string", "UTF8_STRING"),
-        ("literals.rs", "parse_raw_string", "RAW_STRING"),
-        ("literals.rs", "parse_boolean", "BOOLEAN"),
-        ("literals.rs", "parse_true_literal", "TRUE_LITERAL"),
-        ("literals.rs", "parse_false_literal", "FALSE_LITERAL"),
-        ("literals.rs", "parse_number", "NUMBER"),
-        ("literals.rs", "parse_complex_number", "COMPLEX_NUMBER"),
-        ("literals.rs", "parse_real_number", "REAL_NUMBER"),
+        ("literals/mod.rs", "parse_empty", "EMPTY"),
+        ("literals/mod.rs", "parse_atom", "ATOM"),
+        ("literals/mod.rs", "parse_string", "STRING"),
+        ("literals/mod.rs", "parse_utf8_string", "UTF8_STRING"),
+        ("literals/mod.rs", "parse_raw_string", "RAW_STRING"),
+        ("literals/mod.rs", "parse_boolean", "BOOLEAN"),
+        ("literals/mod.rs", "parse_true_literal", "TRUE_LITERAL"),
+        ("literals/mod.rs", "parse_false_literal", "FALSE_LITERAL"),
+        ("literals/mod.rs", "parse_number", "NUMBER"),
+        ("literals/mod.rs", "parse_complex_number", "COMPLEX_NUMBER"),
+        ("literals/mod.rs", "parse_real_number", "REAL_NUMBER"),
         (
-            "literals.rs",
+            "literals/mod.rs",
             "parse_untyped_real_number",
             "UNTYPED_REAL_NUMBER",
         ),
-        ("literals.rs", "parse_rational_literal", "RATIONAL_LITERAL"),
         (
-            "literals.rs",
+            "literals/mod.rs",
+            "parse_rational_literal",
+            "RATIONAL_LITERAL",
+        ),
+        (
+            "literals/mod.rs",
             "parse_scientific_literal",
             "SCIENTIFIC_LITERAL",
         ),
         (
-            "literals.rs",
+            "literals/mod.rs",
             "parse_float_decimal_start",
             "FLOAT_DECIMAL_START",
         ),
-        ("literals.rs", "parse_float_full", "FLOAT_FULL"),
-        ("literals.rs", "parse_float_literal", "FLOAT_LITERAL"),
-        ("literals.rs", "parse_integer_literal", "INTEGER_LITERAL"),
-        ("literals.rs", "parse_typed_integer", "TYPED_INTEGER"),
-        ("literals.rs", "parse_untyped_integer", "UNTYPED_INTEGER"),
-        ("literals.rs", "parse_decimal_literal", "DECIMAL_LITERAL"),
+        ("literals/mod.rs", "parse_float_full", "FLOAT_FULL"),
+        ("literals/mod.rs", "parse_float_literal", "FLOAT_LITERAL"),
         (
-            "literals.rs",
+            "literals/mod.rs",
+            "parse_integer_literal",
+            "INTEGER_LITERAL",
+        ),
+        ("literals/mod.rs", "parse_typed_integer", "TYPED_INTEGER"),
+        (
+            "literals/mod.rs",
+            "parse_untyped_integer",
+            "UNTYPED_INTEGER",
+        ),
+        (
+            "literals/mod.rs",
+            "parse_decimal_literal",
+            "DECIMAL_LITERAL",
+        ),
+        (
+            "literals/mod.rs",
             "parse_hexadecimal_literal",
             "HEXADECIMAL_LITERAL",
         ),
-        ("literals.rs", "parse_octal_literal", "OCTAL_LITERAL"),
-        ("literals.rs", "parse_binary_literal", "BINARY_LITERAL"),
+        ("literals/mod.rs", "parse_octal_literal", "OCTAL_LITERAL"),
+        ("literals/mod.rs", "parse_binary_literal", "BINARY_LITERAL"),
         (
             "paths.rs",
             "parse_context_address_path_token",
@@ -1282,68 +1392,108 @@ fn phase_2c_entry_points_bind_their_exact_generated_rule_ids() {
 fn phase_2d_entry_points_bind_their_exact_generated_rule_ids() {
     let canonical = canonical_root();
     let expected = [
-        ("operators.rs", "parse_add_sub_operator", "ADD_SUB_OPERATOR"),
-        ("operators.rs", "parse_mul_div_operator", "MUL_DIV_OPERATOR"),
-        ("operators.rs", "parse_power_operator", "POWER_OPERATOR"),
-        ("operators.rs", "parse_matrix_operator", "MATRIX_OPERATOR"),
-        ("operators.rs", "parse_range_operator", "RANGE_OPERATOR"),
         (
-            "operators.rs",
+            "operators/mod.rs",
+            "parse_add_sub_operator",
+            "ADD_SUB_OPERATOR",
+        ),
+        (
+            "operators/mod.rs",
+            "parse_mul_div_operator",
+            "MUL_DIV_OPERATOR",
+        ),
+        ("operators/mod.rs", "parse_power_operator", "POWER_OPERATOR"),
+        (
+            "operators/mod.rs",
+            "parse_matrix_operator",
+            "MATRIX_OPERATOR",
+        ),
+        ("operators/mod.rs", "parse_range_operator", "RANGE_OPERATOR"),
+        (
+            "operators/mod.rs",
             "parse_comparison_operator",
             "COMPARISON_OPERATOR",
         ),
-        ("operators.rs", "parse_logic_operator", "LOGIC_OPERATOR"),
-        ("operators.rs", "parse_table_operator", "TABLE_OPERATOR"),
-        ("operators.rs", "parse_set_operator", "SET_OPERATOR"),
-        ("operators.rs", "parse_add", "ADD"),
-        ("operators.rs", "parse_subtract", "SUBTRACT"),
-        ("operators.rs", "parse_raw_subtract", "RAW_SUBTRACT"),
-        ("operators.rs", "parse_spaced_subtract", "SPACED_SUBTRACT"),
-        ("operators.rs", "parse_multiply", "MULTIPLY"),
-        ("operators.rs", "parse_divide", "DIVIDE"),
-        ("operators.rs", "parse_modulus", "MODULUS"),
-        ("operators.rs", "parse_power", "POWER"),
-        ("operators.rs", "parse_matrix_multiply", "MATRIX_MULTIPLY"),
-        ("operators.rs", "parse_matrix_solve", "MATRIX_SOLVE"),
-        ("operators.rs", "parse_dot_product", "DOT_PRODUCT"),
-        ("operators.rs", "parse_cross_product", "CROSS_PRODUCT"),
-        ("operators.rs", "parse_transpose", "TRANSPOSE"),
-        ("operators.rs", "parse_range_inclusive", "RANGE_INCLUSIVE"),
-        ("operators.rs", "parse_range_exclusive", "RANGE_EXCLUSIVE"),
-        ("operators.rs", "parse_not_equal", "NOT_EQUAL"),
-        ("operators.rs", "parse_equal_to", "EQUAL_TO"),
-        ("operators.rs", "parse_strict_not_equal", "STRICT_NOT_EQUAL"),
-        ("operators.rs", "parse_strict_equal", "STRICT_EQUAL"),
-        ("operators.rs", "parse_greater_than", "GREATER_THAN"),
-        ("operators.rs", "parse_less_than", "LESS_THAN"),
+        ("operators/mod.rs", "parse_logic_operator", "LOGIC_OPERATOR"),
+        ("operators/mod.rs", "parse_table_operator", "TABLE_OPERATOR"),
+        ("operators/mod.rs", "parse_set_operator", "SET_OPERATOR"),
+        ("operators/mod.rs", "parse_add", "ADD"),
+        ("operators/mod.rs", "parse_subtract", "SUBTRACT"),
+        ("operators/mod.rs", "parse_raw_subtract", "RAW_SUBTRACT"),
         (
-            "operators.rs",
+            "operators/mod.rs",
+            "parse_spaced_subtract",
+            "SPACED_SUBTRACT",
+        ),
+        ("operators/mod.rs", "parse_multiply", "MULTIPLY"),
+        ("operators/mod.rs", "parse_divide", "DIVIDE"),
+        ("operators/mod.rs", "parse_modulus", "MODULUS"),
+        ("operators/mod.rs", "parse_power", "POWER"),
+        (
+            "operators/mod.rs",
+            "parse_matrix_multiply",
+            "MATRIX_MULTIPLY",
+        ),
+        ("operators/mod.rs", "parse_matrix_solve", "MATRIX_SOLVE"),
+        ("operators/mod.rs", "parse_dot_product", "DOT_PRODUCT"),
+        ("operators/mod.rs", "parse_cross_product", "CROSS_PRODUCT"),
+        ("operators/mod.rs", "parse_transpose", "TRANSPOSE"),
+        (
+            "operators/mod.rs",
+            "parse_range_inclusive",
+            "RANGE_INCLUSIVE",
+        ),
+        (
+            "operators/mod.rs",
+            "parse_range_exclusive",
+            "RANGE_EXCLUSIVE",
+        ),
+        ("operators/mod.rs", "parse_not_equal", "NOT_EQUAL"),
+        ("operators/mod.rs", "parse_equal_to", "EQUAL_TO"),
+        (
+            "operators/mod.rs",
+            "parse_strict_not_equal",
+            "STRICT_NOT_EQUAL",
+        ),
+        ("operators/mod.rs", "parse_strict_equal", "STRICT_EQUAL"),
+        ("operators/mod.rs", "parse_greater_than", "GREATER_THAN"),
+        ("operators/mod.rs", "parse_less_than", "LESS_THAN"),
+        (
+            "operators/mod.rs",
             "parse_greater_than_equal",
             "GREATER_THAN_EQUAL",
         ),
-        ("operators.rs", "parse_less_than_equal", "LESS_THAN_EQUAL"),
-        ("operators.rs", "parse_or", "OR"),
-        ("operators.rs", "parse_and", "AND"),
-        ("operators.rs", "parse_not", "NOT"),
-        ("operators.rs", "parse_xor", "XOR"),
-        ("operators.rs", "parse_join", "JOIN"),
-        ("operators.rs", "parse_left_join", "LEFT_JOIN"),
-        ("operators.rs", "parse_right_join", "RIGHT_JOIN"),
-        ("operators.rs", "parse_full_join", "FULL_JOIN"),
-        ("operators.rs", "parse_left_semi_join", "LEFT_SEMI_JOIN"),
-        ("operators.rs", "parse_left_anti_join", "LEFT_ANTI_JOIN"),
-        ("operators.rs", "parse_union_op", "UNION_OP"),
-        ("operators.rs", "parse_intersection", "INTERSECTION"),
-        ("operators.rs", "parse_difference", "DIFFERENCE"),
-        ("operators.rs", "parse_complement", "COMPLEMENT"),
-        ("operators.rs", "parse_subset", "SUBSET"),
-        ("operators.rs", "parse_superset", "SUPERSET"),
-        ("operators.rs", "parse_proper_subset", "PROPER_SUBSET"),
-        ("operators.rs", "parse_proper_superset", "PROPER_SUPERSET"),
-        ("operators.rs", "parse_element_of", "ELEMENT_OF"),
-        ("operators.rs", "parse_not_element_of", "NOT_ELEMENT_OF"),
         (
-            "operators.rs",
+            "operators/mod.rs",
+            "parse_less_than_equal",
+            "LESS_THAN_EQUAL",
+        ),
+        ("operators/mod.rs", "parse_or", "OR"),
+        ("operators/mod.rs", "parse_and", "AND"),
+        ("operators/mod.rs", "parse_not", "NOT"),
+        ("operators/mod.rs", "parse_xor", "XOR"),
+        ("operators/mod.rs", "parse_join", "JOIN"),
+        ("operators/mod.rs", "parse_left_join", "LEFT_JOIN"),
+        ("operators/mod.rs", "parse_right_join", "RIGHT_JOIN"),
+        ("operators/mod.rs", "parse_full_join", "FULL_JOIN"),
+        ("operators/mod.rs", "parse_left_semi_join", "LEFT_SEMI_JOIN"),
+        ("operators/mod.rs", "parse_left_anti_join", "LEFT_ANTI_JOIN"),
+        ("operators/mod.rs", "parse_union_op", "UNION_OP"),
+        ("operators/mod.rs", "parse_intersection", "INTERSECTION"),
+        ("operators/mod.rs", "parse_difference", "DIFFERENCE"),
+        ("operators/mod.rs", "parse_complement", "COMPLEMENT"),
+        ("operators/mod.rs", "parse_subset", "SUBSET"),
+        ("operators/mod.rs", "parse_superset", "SUPERSET"),
+        ("operators/mod.rs", "parse_proper_subset", "PROPER_SUBSET"),
+        (
+            "operators/mod.rs",
+            "parse_proper_superset",
+            "PROPER_SUPERSET",
+        ),
+        ("operators/mod.rs", "parse_element_of", "ELEMENT_OF"),
+        ("operators/mod.rs", "parse_not_element_of", "NOT_ELEMENT_OF"),
+        (
+            "operators/mod.rs",
             "parse_symmetric_difference",
             "SYMMETRIC_DIFFERENCE",
         ),
@@ -1367,88 +1517,92 @@ fn phase_2e_entry_points_bind_their_exact_generated_rule_ids() {
     let canonical = canonical_root();
     let expected = [
         (
-            "imports.rs",
+            "imports/mod.rs",
             "parse_module_import_name_segment",
             "MODULE_IMPORT_NAME_SEGMENT",
         ),
         (
-            "imports.rs",
+            "imports/mod.rs",
             "parse_module_import_intrinsic_segment",
             "MODULE_IMPORT_INTRINSIC_SEGMENT",
         ),
         (
-            "imports.rs",
+            "imports/mod.rs",
             "parse_module_import_path_segment",
             "MODULE_IMPORT_PATH_SEGMENT",
         ),
         (
-            "imports.rs",
+            "imports/mod.rs",
             "parse_module_import_path",
             "MODULE_IMPORT_PATH",
         ),
         (
-            "imports.rs",
+            "imports/mod.rs",
             "parse_module_import_alias_segment",
             "MODULE_IMPORT_ALIAS_SEGMENT",
         ),
         (
-            "imports.rs",
+            "imports/mod.rs",
             "parse_module_import_alias_path",
             "MODULE_IMPORT_ALIAS_PATH",
         ),
         (
-            "imports.rs",
+            "imports/mod.rs",
             "parse_module_import_value_alias",
             "MODULE_IMPORT_VALUE_ALIAS",
         ),
         (
-            "imports.rs",
+            "imports/mod.rs",
             "parse_context_import_alias_segment",
             "CONTEXT_IMPORT_ALIAS_SEGMENT",
         ),
         (
-            "imports.rs",
+            "imports/mod.rs",
             "parse_module_import_context_alias",
             "MODULE_IMPORT_CONTEXT_ALIAS",
         ),
         (
-            "imports.rs",
+            "imports/mod.rs",
             "parse_module_import_alias",
             "MODULE_IMPORT_ALIAS",
         ),
-        ("imports.rs", "parse_module_root", "MODULE_ROOT"),
+        ("imports/mod.rs", "parse_module_root", "MODULE_ROOT"),
         (
-            "imports.rs",
+            "imports/mod.rs",
             "parse_import_alias_operator",
             "IMPORT_ALIAS_OPERATOR",
         ),
         (
-            "imports.rs",
+            "imports/mod.rs",
             "parse_import_group_separator",
             "IMPORT_GROUP_SEPARATOR",
         ),
-        ("imports.rs", "parse_import_group_item", "IMPORT_GROUP_ITEM"),
         (
-            "imports.rs",
+            "imports/mod.rs",
+            "parse_import_group_item",
+            "IMPORT_GROUP_ITEM",
+        ),
+        (
+            "imports/mod.rs",
             "parse_import_group_items",
             "IMPORT_GROUP_ITEMS",
         ),
         (
-            "imports.rs",
+            "imports/mod.rs",
             "parse_aliased_item_import",
             "ALIASED_ITEM_IMPORT",
         ),
         (
-            "imports.rs",
+            "imports/mod.rs",
             "parse_module_suffix_import",
             "MODULE_SUFFIX_IMPORT",
         ),
         (
-            "imports.rs",
+            "imports/mod.rs",
             "parse_module_only_import",
             "MODULE_ONLY_IMPORT",
         ),
-        ("imports.rs", "parse_module_import", "MODULE_IMPORT"),
+        ("imports/mod.rs", "parse_module_import", "MODULE_IMPORT"),
     ];
     assert_eq!(expected.len(), 19);
 
@@ -1626,7 +1780,7 @@ fn removed_migration_state_and_document_skeleton_types_stay_absent() {
     for relative in [
         "src/document/mod.rs",
         "src/document/parser/mod.rs",
-        "src/document/parser/canonical/mechdown.rs",
+        "src/document/parser/canonical/mechdown/mod.rs",
         "src/document/parser/canonical/statements.rs",
     ] {
         let path = manifest.join(relative);
@@ -1669,7 +1823,7 @@ fn removed_migration_state_and_document_skeleton_types_stay_absent() {
 
 #[test]
 fn direct_leaf_parsers_do_not_materialize_source_root_newlines() {
-    let path = canonical_root().join("mechdown.rs");
+    let path = canonical_root().join("mechdown/mod.rs");
     let source = fs::read_to_string(&path)
         .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display()));
     for function in ["parse_blank_line", "parse_thematic_break"] {

@@ -14,10 +14,13 @@ pub(crate) mod operators;
 pub(crate) mod paths;
 pub(crate) mod pattern_primitives;
 mod ports;
+mod primitives;
+pub(crate) mod prose;
 pub(crate) mod recursive_core;
 pub(crate) mod roots;
 pub(crate) mod source_imports;
 pub(crate) mod statements;
+pub(crate) mod strings;
 pub(crate) mod structure_shell;
 pub(crate) mod subscript_primitives;
 pub mod terminal_spec;
@@ -41,3 +44,6 @@ pub use test_support::{
 
 #[cfg(test)]
 pub(crate) use test_support::{PHASE_2G_RULES, PHASE_2H_RULES};
+
+#[cfg(test)]
+mod continuation_test_support;

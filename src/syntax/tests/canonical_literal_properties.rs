@@ -307,3 +307,28 @@ fn long_closed_literals_and_paths_grow_linearly() {
         sizes.into_iter().map(|size| "a/".repeat(size)),
     ));
 }
+
+#[test]
+fn context_prefix_rejection_preserves_finalized_resource_children() {
+    for text in [
+        "@ctx",
+        "@ctx/",
+        "@context/path",
+        "@e\u{301}/path",
+        "@💡/path",
+    ] {
+        for fuel in 0..=64 {
+            for max_events in [8, 16, 64, 1_024] {
+                let config = ParseConfig {
+                    limits: ParseLimits {
+                        fuel,
+                        max_events,
+                        ..ParseLimits::default()
+                    },
+                };
+                let parsed = parse(source(text), rules::PREFIXED_CONTEXT_PATH, config);
+                assert_snapshot_invariants(&parsed, rules::PREFIXED_CONTEXT_PATH, config);
+            }
+        }
+    }
+}

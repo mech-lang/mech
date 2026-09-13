@@ -6,11 +6,15 @@ use unicode_segmentation::{GraphemeCursor, GraphemeIncomplete};
 /// Scalar access only; Unicode recognition remains in the pinned cursor.
 pub(crate) trait ScanSource {
     fn len_bytes(&self) -> usize;
+    fn scan_byte_at(&self, offset: usize) -> Option<u8>;
     fn boundary(&self, offset: usize) -> bool;
     fn scalar_at(&self, offset: usize) -> Option<&str>;
     fn scalar_before(&self, offset: usize) -> Option<&str>;
 }
 impl ScanSource for str {
+    fn scan_byte_at(&self, offset: usize) -> Option<u8> {
+        self.as_bytes().get(offset).copied()
+    }
     fn len_bytes(&self) -> usize {
         self.len()
     }
@@ -27,6 +31,9 @@ impl ScanSource for str {
     }
 }
 impl ScanSource for TextSnapshot {
+    fn scan_byte_at(&self, offset: usize) -> Option<u8> {
+        self.byte_at(TextSize::checked_from_usize(offset).ok()?)
+    }
     fn len_bytes(&self) -> usize {
         self.byte_len().to_usize()
     }

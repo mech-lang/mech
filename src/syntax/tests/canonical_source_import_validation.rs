@@ -141,3 +141,76 @@ fn legacy_statement_selection_retains_source_import_and_paragraph_boundaries() {
         [mech_core::nodes::Statement::ContextDeclaration(_)]
     ));
 }
+
+#[test]
+fn wildcard_diagnostics_keep_physical_unicode_ranges_and_all_labels() {
+    use mech_syntax::document::{DiagnosticAnchor, TextRange, TextSize};
+    let input = "+> x://é/*/💡*\u{a0}\u{2009}";
+    let parsed = parse_canonical_phase_2f_rule_for_test(
+        source(input),
+        rules::IMPORT_DECLARATION,
+        ParseConfig::default(),
+    )
+    .unwrap();
+    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+    let diagnostics: Vec<_> = parsed.diagnostics.iter().collect();
+    assert_eq!(diagnostics.len(), 1);
+    let diagnostic = diagnostics[0];
+    assert_eq!(
+        diagnostic.primary,
+        DiagnosticAnchor::Absolute {
+            revision: Revision(0),
+            range: TextRange::new(TextSize(10), TextSize(11)),
+        }
+    );
+    assert_eq!(diagnostic.labels.len(), 1);
+    assert_eq!(
+        diagnostic.labels[0].anchor,
+        DiagnosticAnchor::Absolute {
+            revision: Revision(0),
+            range: TextRange::new(TextSize(16), TextSize(17)),
+        }
+    );
+    assert_eq!(diagnostic.labels[0].message, "additional wildcard");
+    for suffix in ["\u{a0}\u{2009}", "\t ", "\u{3000}"] {
+        let text = format!("+> x://é/*{suffix}");
+        let parsed = parse_canonical_phase_2f_rule_for_test(
+            source(&text),
+            rules::IMPORT_DECLARATION,
+            ParseConfig::default(),
+        )
+        .unwrap();
+        assert!(parsed.is_strictly_clean(), "{text:?}");
+    }
+}
+
+#[test]
+fn source_import_resource_finalization_preserves_lossless_enclosing_owners() {
+    use mech_syntax::document::validate_lossless_range;
+    for input in [
+        "+> ./dep.mec",
+        "+> ../lib/dep.mec",
+        "+> x://é/*",
+        "+> x://é/**",
+        "+> x://é/a*b.mec",
+        "+> x:// ",
+    ] {
+        for fuel in 0..=80 {
+            for max_events in [8, 16, 64, 1024] {
+                let mut config = ParseConfig::default();
+                config.limits.fuel = fuel;
+                config.limits.max_events = max_events;
+                let parsed = parse_canonical_phase_2f_rule_for_test(
+                    source(input),
+                    rules::IMPORT_DECLARATION,
+                    config,
+                )
+                .unwrap();
+                validate_lossless_range(&parsed.root, &parsed.source, parsed.consumed)
+                    .unwrap_or_else(|error| {
+                        panic!("{input:?}, fuel {fuel}, events {max_events}: {error:?}")
+                    });
+            }
+        }
+    }
+}

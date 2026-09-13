@@ -16,9 +16,11 @@ pub struct CodeFenceInfo {
 }
 
 impl CodeFenceInfo {
+    pub(crate) const MECH_PREFIXES: [&'static str; 3] = ["mech", "mec", "🤖"];
+
     pub fn from_info_string(info: &str) -> Self {
         let info = info.trim();
-        if !["mech", "mec", "🤖"]
+        if !Self::MECH_PREFIXES
             .into_iter()
             .any(|prefix| info.starts_with(prefix))
         {
