@@ -1,6 +1,6 @@
 //! Canonical pattern primitives introduced in Phase 2G.
 //!
-//! The active Phase 2I pattern parents compose these wildcard and spread leaves
+//! The candidate Phase 2I pattern parents compose these wildcard and spread leaves
 //! through `recursive_core::patterns`.
 
 use crate::document::{RuleId, SyntaxKind};
