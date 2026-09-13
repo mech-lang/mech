@@ -303,9 +303,6 @@ impl SemanticBuilder {
                 remap(value);
             }
         }
-        for arm in &mut self.match_arms {
-            arm.node = indices[arm.node as usize];
-        }
         for qualifier in &mut self.comprehension_qualifiers {
             qualifier.node = indices[qualifier.node as usize];
         }

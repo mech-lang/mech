@@ -6558,7 +6558,7 @@ impl SemanticBuilder {
             }
             let saved = self.bindings.clone();
             if let Some(name) = binding {
-                self.bindings.insert(name, scrutinee);
+                self.bindings.insert(name, PendingBinding::Value(scrutinee));
             }
             let lowered_arm = (|| {
                 let guard = if let Some(guard) = arm.guard() {
