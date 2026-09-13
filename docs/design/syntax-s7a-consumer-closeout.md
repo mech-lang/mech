@@ -7,8 +7,8 @@ replacement and removal step; unfinished consumer behavior below belongs to S7A.
 
 | Consumer | Demonstrated canonical behavior | Remaining completion work |
 | --- | --- | --- |
-| Document execution | Root and named-fence scope execution, repeated named-fence bindings, retained mutable state, whole and indexed assignment, compound assignment, nested record/tuple/matrix updates, serial statement versions, candidate discard and failed-turn rollback. Bytecode round-trip and resident execution are exercised by `canonical_document_state`. | Declaration and Mika/configured-scope execution still need their canonical owners and implemented handoffs; the document collector's explicit unsupported-unit errors are not completion. |
-| Indexing and resolution | `SourceIndex::from_document` projects imports, aliases/groups, exports, context capabilities and addressed references into the existing resolver facts. Root and repeated named fences retain their scopes. Tests exercise dependency resolution, conflict validation, nested reads and reindexing edited snapshots. | Mika-local scopes and configured fence options need their document owner. The index returns an anchored error for these instead of publishing incomplete facts. Resolver facts alone do not implement declaration execution. |
+| Document execution | Root and named-fence scope execution, repeated named-fence bindings, typed fence presentation options (output suppression preserves execution), retained mutable state, whole and indexed assignment, compound assignment, nested record/tuple/matrix updates, serial statement versions, candidate discard and failed-turn rollback. Bytecode round-trip and resident execution are exercised by `canonical_document_state`. | Declaration and Mika-scope execution still need their canonical owners and implemented handoffs; the document collector's explicit unsupported-unit errors are not completion. |
+| Indexing and resolution | `SourceIndex::from_document` projects imports, aliases/groups, exports, context capabilities and addressed references into the existing resolver facts. Root and repeated named fences retain their scopes. Tests exercise dependency resolution, conflict validation, nested reads and reindexing edited snapshots. | Mika-local scopes need their document owner. The index returns an anchored error for these instead of publishing incomplete facts. Configured fence options use the same typed presentation owner as execution. Resolver facts alone do not implement declaration execution. |
 | Rendering and classification | Typed fence classification distinguishes root, named, hidden, disabled and inert fences. `DocumentSyntax::contains_executable_source` classifies canonical source while excluding display-only code, comments and recovered documents. `canonical_document_outputs` checks actual inline/fence result bindings and formatted values. | Complete formatter/HTML consumer behavior and child-scope presentation still require qualification. Excluding display-only code from execution is not a complete rendering implementation. |
 | Editing | Canonical document sessions and edit-versus-fresh-parse tests preserve source, diagnostics, structural equivalence and unaffected identity. Indexing tests consume edited snapshots with updated scopes and positions. | Keep these regressions in the final-head qualification. S7B's resumable streaming optimization is a separate paused stage. |
 
@@ -48,3 +48,13 @@ before indexing or source classification, and preserved the document collector's
 rejection of a bare FSM pipe outside its expression owner. The full R6 static
 checker mutation suite passed all 136 tests; its new shared-planner bypass test
 passed separately.
+
+The subsequent fence/resolver review corrected optional-colon namespace selection,
+extended-grapheme source coordinates, and source/module import occurrence spans.
+Typed option values and string literals now share canonical decoding; an `output`
+option suppresses the fence result binding without suppressing its state updates.
+The targeted validation passed 17 document-state tests, 46 source-review tests,
+26 source-semantics tests, 12 resolver-index tests, 6 document-output tests, and
+22 syntax fence/classification/edit/import/literal tests. The five canonical
+registry/grammar generator checks passed. These focused results do not replace
+final-head Full CI or complete the remaining consumer handoffs.

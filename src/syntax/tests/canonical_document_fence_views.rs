@@ -297,6 +297,13 @@ fn fence_information_normalizes_optional_colon_and_repeated_prefixes() {
                 ("worker", CodeFenceScope::Named("worker".into()), false),
             ] {
                 let info = format!("{prefix}{separator}{name}");
+                // `mec` + `hidden` spells `mechidden`: the longer `mech`
+                // language prefix wins, leaving the namespace `idden`.
+                let (scope, hidden) = if info == "mechidden" {
+                    (CodeFenceScope::Named("idden".into()), false)
+                } else {
+                    (scope, hidden)
+                };
                 assert_eq!(
                     CodeFenceInfo::from_info_string(&info),
                     CodeFenceInfo {
