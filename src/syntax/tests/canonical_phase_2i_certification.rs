@@ -1414,6 +1414,26 @@ fn assert_allowed_qualified_syntax_paths(path: &Path, source: &str) {
         }
     }
     for (index, token) in tokens.iter().enumerate() {
+        if *token == "include" && tokens.get(index + 1) == Some(&"!") {
+            panic!(
+                "{} includes transitive certification evidence",
+                path.display()
+            );
+        }
+        if *token == "mod"
+            && tokens.get(index + 1).is_some_and(|name| {
+                name.bytes()
+                    .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_')
+            })
+            && tokens.get(index + 2) == Some(&";")
+        {
+            panic!(
+                "{} declares an unscanned certification evidence module",
+                path.display()
+            );
+        }
+    }
+    for (index, token) in tokens.iter().enumerate() {
         if *token == "use" {
             let end = tokens[index..]
                 .iter()
@@ -1797,6 +1817,9 @@ fn canonical_authority_gate_rejects_glob_and_alias_routes() {
         ),
         "pub use mech_syntax::document::*; lower_legacy_grammar();",
         "pub(crate) use mech_syntax::document::*; lower_legacy_grammar();",
+        "mod helper;",
+        "#[path = \"alternate.rs\"] mod helper;",
+        "include!(\"generated_evidence.rs\");",
     ] {
         assert!(
             std::panic::catch_unwind(|| assert_canonical_only(Path::new("fixture.rs"), evidence))
