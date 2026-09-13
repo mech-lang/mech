@@ -1,0 +1,227 @@
+Canonical Retained-Document Streaming — S7B
+===============================================================================
+
+Status: B1 contract and S7A baseline. Streaming implementation and acceptance open.
+Baseline: S7A PR #825, 34cb58ad3e676723d7161ae52906395cdfaa83c0.
+Branch: codex/syntax-s7b-streaming, targeting codex/syntax-s7-document-root.
+
+1. Ownership and scope
+-------------------------------------------------------------------------------
+
+S7A completes document recognition, rule-owned recovery, typed consumers, existing
+semantics, and correct edits. S7B retains parsing state as source arrives. S8
+switches production consumers and removes the retiring paths. S7A obligations
+stay on S7A; beginning this draft does not certify its base as complete.
+
+One canonical grammar, recognition/recovery implementation, and typed syntax
+model remain authoritative. Shared execution changes belong in the S7B diff;
+S2/S3 remain frozen. Inventory coverage remains 520/539: no productions added.
+No new semantics, FSM scheduling, runtime activation, production caller switch,
+compatibility AST, parser library, streaming grammar, or legacy fallback.
+Production machinery stays safe, deterministic, platform independent core/alloc;
+I/O, transports, clocks, threads, and async scheduling remain external.
+
+This is retained-document streaming, not constant-memory consumption. Accepted
+source and syntax remain inspectable. Historical snapshots retained by callers
+are counted separately from the active session's storage.
+
+2. Lifecycle and API responsibilities
+-------------------------------------------------------------------------------
+
+Open -> Finishing -> Finished
+Open/Finishing -> Cancelled
+Open/Finishing -> Limited (explicit hard-resource outcome)
+
+Start owns document identity, parser configuration, hard limits, and counters.
+Append accepts valid UTF-8 text without final EOF. It reports accepted bytes,
+progress, and compact syntax/diagnostic changes. Advance processes accepted input
+under a caller-provided work allowance. NeedInput and NeedsProcessing are distinct
+from syntax errors and hard limits. Empty append changes no revision or counters.
+
+Finish declares final EOF once; advance may drain its pending bounded work.
+Repeated finish preserves the same completion state/result and does not repeat
+work. Finished/cancelled/limited streams reject appends with defined API errors.
+Cancel stops processing, retains accepted source, and never implies final EOF.
+When an append exceeds retained-source capacity, reject that append atomically;
+previously accepted source remains available. Other hard limits preserve every
+accepted byte, including the unparsed suffix, in the explicitly limited view.
+
+Preview yields an explicitly provisional view of current source. Finite-prefix
+recovery in that view must not mutate the live delimiter/alternative continuation.
+An open clean preview never authorizes execution. Finish may change diagnostics
+without changing text: cache identity includes source revision AND interpretation
+state/generation. Source revision alone cannot validate open/final cached output.
+
+For x := "hel, the live string remains unfinished. Appending lo" completes it.
+Only finish commits EOF recovery for any remaining unfinished construct. Errors
+already established before the frontier still receive canonical S2 recovery.
+
+3. Canonical continuation ownership
+-------------------------------------------------------------------------------
+
+Recognition (NoMatch/Match/Committed) remains separate from progress
+(Continue/NeedInput/NeedsProcessing/Halted). Committed recovery is not suspension.
+Internal frames retain owning rule and phase, source offset, delimiter/fence
+ownership, alternatives and lookahead dependencies, scanner state, event/builder
+state, and cumulative resources. A parent that would lose state on unwind needs
+an explicit continuation, not a restart of the growing production.
+
+Scanners retain escapes, partial delimiter matches, CRLF state, Unicode-sensitive
+boundaries, and the examined frontier. Test :, :=, ., .., ..=, -, ->, ~, and ~>
+as split prefixes using canonical selection rules. Long identifiers, strings,
+comments, prose, and fenced bodies cannot rescan from their opening byte on each
+append. A newline, closer, or successful prefix parse alone proves no universal
+commitment boundary. Heading lookbehind, brace classification, and longer-token
+alternatives retain their unresolved context. Replay is allowed only where its
+bound is established and counted. Completed children may remain shared while
+the enclosing document/section grows.
+
+One-shot parsing must use this same recognition/recovery implementation with
+final input. Frozen S7A fixtures are an independent regression reference in
+addition to differential tests against the current one-shot entry point.
+
+4. Source, tree, and publication ownership
+-------------------------------------------------------------------------------
+
+Preserve TextSnapshot identity, exact bytes, sharing, logical child order,
+canonical shapes, and typed access. Appends must not copy all historical pieces,
+scan old chunks for each range lookup, or rebuild the complete line index.
+Do not normalize newlines/Unicode. Growing child arrays and structural hashes
+also require bounded persistent updates, without artificial grammar nodes.
+
+Ordinary updates publish progress, changed regions, and diagnostic deltas with a
+shared/lazy provisional view. They must not enumerate every reused node or rebuild
+all indexes. Full materialization, serialization, and explicitly requested whole
+source/tree traversal are separate, visibly metered export operations. Merely
+moving an unconditional full parse into ordinary preview does not meet the gate.
+
+A non-append edit may invalidate continuations and use S7A's full canonical reparse.
+Invalidate suspended frames and provisional caches explicitly; establish valid
+streaming state before subsequent appends. Charge that restart and its reason.
+Arbitrary edits need correctness and accounting, not a sublinear guarantee.
+
+5. Limits and deterministic accounting
+-------------------------------------------------------------------------------
+
+Per-call allowance yields NeedsProcessing and preserves resumable state.
+Hard session limits cap retained bytes, nesting/frames, events, diagnostics,
+recovery work, and total work. Chunk boundaries do not reset these limits;
+rewinding speculative alternatives never refunds work. Preview/export work is
+separately attributed AND included in total charged work. Repeated provisional
+recovery cannot escape metering. Saturation cannot silently wrap a counter.
+Hard exhaustion is Limited, never NeedInput, and cannot discard accepted source.
+
+Instrument at the owning operation, not by inferring work from reused IDs:
+
+- accepted source bytes; scanner/parser steps; replayed bytes/steps;
+- continuation resumes; emitted events; changed tree elements;
+- source and child-array bytes copied; source/index maintenance work;
+- diagnostic and ordinary publication work; preview/export work;
+- full-document restart count and explicit reasons;
+- peak live continuation/storage usage, separate from historical snapshots.
+
+No-limit final results must agree across streamed and one-shot execution.
+At limits, require the documented bounded, lossless result and correct reporting;
+different strategies need not exhaust fuel at the same byte or have equal costs.
+
+6. B1 baseline and performance gates
+-------------------------------------------------------------------------------
+
+The S7A DocumentSession always calls full canonical reparse for nonempty edits.
+TextSnapshot append copies the piece descriptors; range lookup walks pieces.
+Reparse builds fresh syntax/indexes and reconciles the old and new trees.
+The baseline driver in document_streaming_complexity exercises that real API;
+it is test-only and is not a proposed streaming wrapper or implementation.
+
+The B1 counters are PARTIAL ACCOUNTING: parser steps, events, reserved
+reconciliation allowance/work, and full-document restarts exposed by S7A.
+Reconciliation includes reservations, so their sum is not an exact measurement
+or a lower bound on executed CPU instructions.
+Source copying, scanner internals, index maintenance, and exports are not fully
+instrumented yet. Do not claim end-to-end cost from these counters. B2-B4 must
+replace the driver with the real lifecycle and complete the owner-level metrics.
+The positive acceptance assertions intentionally fail on this S7A baseline.
+No ignored tests or special passing baseline mode qualify streaming.
+
+Test fixed chunk sizes at N, 2N, 4N, 8N for a long unfinished token, growing nested
+Mech expression, and fenced body. Compare each doubling with a <=3x work bound,
+allowing linear/logarithmic overhead but rejecting repeated-prefix quadratic cost.
+Audit both ingestion and ingestion plus normal view publication. Test one small
+append to increasingly large settled prefixes with a separately bounded cost.
+All tests must verify complete accepted source, final canonical structure and
+normalized diagnostics, and absence of fuel/event/recovery/diagnostic truncation.
+Explicit export is measured separately. Timings support, but do not replace,
+deterministic counters. These selected workload bounds are not a universal
+linear-time claim about every canonical grammar/input combination.
+
+Measured B1 baseline (nightly-2026-03-03, locked/offline, no default features):
+
+| Family | N=64 | N=128 | N=256 | N=512 |
+| --- | ---: | ---: | ---: | ---: |
+| string | 8910 | 23214 | 68718 | 227310 |
+| nested | 33036 | 86300 | 256572 | 852092 |
+| fence | 8627 | 22505 | 67757 | 228245 |
+| settled | 25303 | 50455 | 100759 | 201367 |
+
+Values sum the three exposed accounting counters, including reconciliation
+reservations; they are not elapsed time or executed instruction counts. Ingestion-only and
+normal-view totals agree because S7A eagerly constructs the snapshot during edits.
+The settled case appends six bytes to N repeated paragraphs. All four positive
+performance gates fail after completing source/equivalence and cap checks.
+The exact sample/counter record is `s7b-streaming-baseline.json`. B2-B4 must add
+missing accounting; this table does not certify any streaming implementation.
+
+7. Qualification and internal checkpoints
+-------------------------------------------------------------------------------
+
+B1: contract, scope/stack index, measured S7A failing performance baselines.
+B2: amortized append storage and resumable scanners with accurate counters.
+B3: canonical frames, alternatives, final EOF, and existing recovery integration.
+B4: normal snapshots/deltas, indexes, identity, finality, edit/stream transition.
+B5: full correctness/resource/complexity/consumer and CI qualification.
+B6: exact-head closeout, API limits and supported bounds, S8 handoff.
+
+Begin B2/B3 with the three different unfinished families, not only independent
+terminated statements. Keep all checkpoints in this single draft PR.
+
+Focused integration targets:
+
+- document_streaming_lifecycle: empty append, work yield, repeat finish,
+  terminal API errors, cancellation, and finality/cache transitions;
+- document_streaming_equivalence: tree/tokens/flags/losslessness, normalized
+  diagnostic fields, typed roles, and supported semantic consumer canaries;
+- document_streaming_boundaries: operators, strings/escapes, CRLF, graphemes,
+  headings/fences, comprehensions, brace/shared prefixes, late disambiguation;
+- document_streaming_recovery: provisional vs live state, established errors,
+  physical closer ownership, later children, and canonical final EOF recovery;
+- document_streaming_resources: every hard limit, resumable allowances,
+  repeated previews, accepted suffix preservation, and suspended cancellation;
+- document_streaming_complexity: deterministic cumulative gates described above;
+- document_incremental: append/edit/append, identity and annotation invalidation.
+
+Short fixtures use every UTF-8 character-boundary split and selected multipart
+partitions; long fixtures use deterministic random, character, line, and large
+chunks. Include combining characters and joined emoji. A test-only byte adapter
+buffers incomplete UTF-8 suffixes and rejects malformed bytes, exercising every
+byte split without transporting bytes inside the parser. Preview tests compare
+the finite-prefix canonical result AND ensure the eventual final result is
+unchanged. Ignore generated IDs/English wording in structural comparisons;
+verify identity continuity separately.
+
+CI's full/base mech-syntax --tests commands execute new integration targets.
+Reduced-feature explicit streaming targets are added as they exist; --lib alone
+is insufficient. Run pinned nightly-2026-03-03 with locked dependencies, explicit
+grammar, reduced/no-std, architecture/generator, affected native/WASM, and complete
+accumulated-stack consumers. Attribute results to exact heads/merge candidates.
+Do not refresh grammar rows, generated files, or certification hashes for naming.
+
+8. Closeout and S8 handoff
+-------------------------------------------------------------------------------
+
+Keep S7B open until correctness, actual resumability, efficient full update cost,
+explicit lifecycle/resource behavior, architecture preservation, and observed
+final-head qualification all pass. Known failing acceptance cannot be relabelled.
+
+S8 uses append/advance for arriving text, provisional views for tools, and finish
+at the consumer's explicit completion boundary. Only finalized validated syntax
+is handed to semantic consumers. Production migration/removal stays in S8.
