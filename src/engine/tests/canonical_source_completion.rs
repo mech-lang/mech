@@ -292,3 +292,55 @@ fn unresolved_empty_and_unknown_calls_are_anchored_user_errors() {
         );
     }
 }
+
+#[test]
+fn structured_patterns_read_live_components_and_reject_partial_matches() {
+    let tuple = |a, b| Data::Tuple(vec![f(a), f(b)].into_boxed_slice());
+    for (source, inputs, expected) in [
+        (
+            "out := [x + y | (x,y) <- signal<[(f64,f64)]:1,2>]",
+            [
+                vec![tuple(1.0, 2.0), tuple(3.0, 4.0)],
+                vec![tuple(8.0, 2.0), tuple(3.0, 4.0)],
+            ],
+            [vec![3.0, 7.0], vec![10.0, 7.0]],
+        ),
+        (
+            "out := [x | (x,x) <- signal<[(f64,f64)]:1,2>]",
+            [
+                vec![tuple(2.0, 2.0), tuple(3.0, 3.0)],
+                vec![tuple(8.0, 2.0), tuple(3.0, 3.0)],
+            ],
+            [vec![2.0, 3.0], vec![3.0]],
+        ),
+        (
+            "out := [x | [x,x] <- signal<[[f64]:1,2]:1,2>]",
+            [
+                vec![matrix(&[2.0, 2.0]), matrix(&[3.0, 3.0])],
+                vec![matrix(&[8.0, 2.0]), matrix(&[3.0, 3.0])],
+            ],
+            [vec![2.0, 3.0], vec![3.0]],
+        ),
+    ] {
+        let artifact = compile(source).compile_artifact().unwrap();
+        let inputs = inputs.map(|items| {
+            [Some(
+                mech_core::ValueDraft {
+                    schema: artifact.inputs()[0].schema,
+                    shape_values: Box::new([]),
+                    data: Data::Matrix(items.into_boxed_slice()),
+                }
+                .finalize(&mech_core::snapshot::SnapshotValidationContext::new(
+                    artifact.schemas(),
+                ))
+                .unwrap(),
+            )]
+        });
+        execute(
+            source,
+            inputs.iter().zip(expected).map(|(input, expected)| {
+                (vec![ResidentValueRef::Snapshot(input)], matrix(&expected))
+            }),
+        );
+    }
+}

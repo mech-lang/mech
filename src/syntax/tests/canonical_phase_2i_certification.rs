@@ -1248,6 +1248,8 @@ fn assert_canonical_only(path: &Path, evidence: &str) {
         concat!("mech_syntax::document::", "parse_document"),
         concat!("mech_syntax::document::", "parse_syntax"),
         concat!("mech_syntax::document::", "parse_fragment"),
+        concat!("mech_syntax::document::", "DocumentSession"),
+        concat!("mech_syntax::document::", "incremental"),
         concat!("mech_syntax::document::parser::", "parse_document"),
         concat!("mech_syntax::document::parser::", "parse_syntax"),
         concat!("mech_syntax::document::parser::", "parse_fragment"),
@@ -1509,6 +1511,22 @@ fn canonical_authority_gate_rejects_glob_and_alias_routes() {
         concat!(
             "mech_syntax::document::parser::fragment::",
             "parse_fragment(source, FragmentKind::Expression, config);"
+        ),
+        concat!(
+            "mech_syntax::document::",
+            "DocumentSession::new(source, config);"
+        ),
+        concat!(
+            "mech_syntax::document::",
+            "incremental::DocumentSession::new_with_document(document, source, config);"
+        ),
+        concat!(
+            "mech_syntax::document::",
+            "incremental::session::DocumentSession::new(source, config);"
+        ),
+        concat!(
+            "mech_syntax::document/* path gap */::r#incremental::reparse::",
+            "reparse(snapshot, edits, config, ids);"
         ),
         "pub use mech_syntax::document::*; lower_legacy_grammar();",
         "pub(crate) use mech_syntax::document::*; lower_legacy_grammar();",

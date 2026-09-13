@@ -17,8 +17,9 @@ The syntax stack is rebased through S5 onto
 S0-S3 recovery and typed-view gates are complete. S4 source semantics and S5
 certification remain open. Comprehension and pattern witnesses now reach validated
 artifacts, and all source-completion behavior tests pass. FSM lowering still
-blocks artifact-ready acceptance; structured-pattern resident execution and other
-S4 control limits remain unfinished. S6 activation depends on both gates.
+blocks artifact-ready acceptance. Borrowed tuple, array, and tagged-pattern
+projection now executes with primitive bindings; composite bindings/yields,
+computed pattern blocks, nested control, and other S4 limits remain unfinished. S6 activation depends on both gates.
 `docs/design/syntax-v0.4-continuation-plan.mec` replaces the old combined Phase
 2I-D/2I-E delivery assumption with independently gated milestones and an atomic
 document-root/product cutover that removes the Nom path and compatibility
