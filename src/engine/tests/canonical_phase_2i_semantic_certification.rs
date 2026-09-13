@@ -217,12 +217,24 @@ fn semantic_snapshot_hash(compiled: &CanonicalSourceProgram, artifact: &ProgramA
     }
     hash.usize(program.nodes.len());
     for node in &program.nodes {
-        hash.usize(node.operation.module_path.len());
-        for segment in &node.operation.module_path {
-            hash.field(segment);
+        match &node.body {
+            mech_engine::SourceNodeBody::Operation {
+                operation,
+                requirement,
+            } => {
+                hash.usize(operation.module_path.len());
+                for segment in &operation.module_path {
+                    hash.field(segment);
+                }
+                hash.field(&operation.operation_name);
+                hash_optional_u32(&mut hash, requirement.map(|id| id.get()));
+            }
+            mech_engine::SourceNodeBody::BooleanMatch(_) => {
+                // The complete typed control body is sealed by the artifact
+                // bytecode below, including captures, guards, operations and yields.
+                hash.field("BooleanMatch");
+            }
         }
-        hash.field(&node.operation.operation_name);
-        hash_optional_u32(&mut hash, node.requirement.map(|id| id.get()));
         hash.usize(node.inputs.len());
         for input in &node.inputs {
             hash_source_value(&mut hash, *input);
@@ -415,7 +427,10 @@ fn slice_semantic_evidence_preserves_linear_gathers_and_whole_identity() {
         ["access/scalar", "access/range", "access/range"]
     );
     let tuple = compiled.program().nodes.last().expect("tuple result");
-    assert_eq!(tuple.operation.canonical_name(), "core/composite-pack");
+    assert_eq!(
+        tuple.operation().unwrap().canonical_name(),
+        "core/composite-pack"
+    );
     assert_eq!(tuple.inputs.len(), 3);
     let SourceValue::NodeOutput {
         node,
@@ -425,7 +440,7 @@ fn slice_semantic_evidence_preserves_linear_gathers_and_whole_identity() {
         panic!("one-axis all must retain its gather output")
     };
     let gather = &compiled.program().nodes[node as usize];
-    assert_eq!(gather.operation.canonical_name(), "access/range");
+    assert_eq!(gather.operation().unwrap().canonical_name(), "access/range");
     assert_eq!(gather.inputs.as_ref(), &[SourceValue::Input(0)]);
     compiled.compile_artifact().unwrap();
 
@@ -437,7 +452,9 @@ fn slice_semantic_evidence_preserves_linear_gathers_and_whole_identity() {
             .program()
             .nodes
             .iter()
-            .filter(|node| node.operation.canonical_name() == "access/range")
+            .filter(|node| node
+                .operation()
+                .is_some_and(|operation| operation.canonical_name() == "access/range"))
             .count(),
         2
     );
@@ -459,7 +476,10 @@ fn slice_semantic_evidence_preserves_linear_gathers_and_whole_identity() {
         .unwrap();
     assert_eq!(identity.program().nodes.len(), 1);
     assert_eq!(
-        identity.program().nodes[0].operation.canonical_name(),
+        identity.program().nodes[0]
+            .operation()
+            .unwrap()
+            .canonical_name(),
         "core/composite-pack"
     );
     assert_eq!(
