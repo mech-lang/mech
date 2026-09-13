@@ -7,10 +7,10 @@ use mech_syntax::document::parser::canonical::{
 };
 use mech_syntax::document::parser::{canonical_rule_id, canonical_rule_name, rules};
 use mech_syntax::document::{
-    ArrayPatternSyntax, AstNode, DocumentId, FormulaSyntax, KindSyntax, KindValueSyntax, NodeFlags,
-    ParseConfig, PatternArrayItemSyntax, RecursiveCoreSyntax, Revision, SyntaxKind, SyntaxNode,
-    SyntaxToken, TextRange, TextSize, TextSnapshot, compact_debug_tree, normalize_diagnostics,
-    phase_2i_node_kind, reconstruct_source_range, validate_lossless_range,
+    ArrayPatternSyntax, AstNode, DocumentId, ExpectedSyntax, FormulaSyntax, KindSyntax,
+    KindValueSyntax, NodeFlags, ParseConfig, PatternArrayItemSyntax, RecursiveCoreSyntax, Revision,
+    SyntaxElement, SyntaxKind, SyntaxNode, SyntaxToken, TextRange, TextSize, TextSnapshot,
+    normalize_diagnostics, phase_2i_node_kind, reconstruct_source_range, validate_lossless_range,
 };
 
 #[derive(Debug)]
@@ -633,36 +633,193 @@ fn typed_access_hash(rule_name: &str, node: &SyntaxNode) -> u64 {
     hash.0
 }
 
+fn range_evidence(range: Option<TextRange>) -> serde_json::Value {
+    serde_json::json!(range.map(|range| [range.start.0, range.end.0]))
+}
+
+fn expected_evidence(expected: &mech_syntax::document::ExpectedSyntax) -> serde_json::Value {
+    match expected {
+        ExpectedSyntax::Token(kind) => serde_json::json!(["token", kind.name()]),
+        ExpectedSyntax::Production(name) => serde_json::json!(["production", name]),
+    }
+}
+
+fn diagnostic_evidence(
+    diagnostic: &mech_syntax::document::NormalizedDiagnostic,
+) -> serde_json::Value {
+    use mech_syntax::document::{DiagnosticPhase, FixApplicability, RecoveryAction, Severity};
+    let phase = match diagnostic.phase {
+        DiagnosticPhase::Syntax => "syntax",
+        DiagnosticPhase::SyntaxValidation => "syntax-validation",
+        DiagnosticPhase::Lowering => "lowering",
+        DiagnosticPhase::Kind => "kind",
+        DiagnosticPhase::Dimension => "dimension",
+        DiagnosticPhase::Effect => "effect",
+        DiagnosticPhase::Coeffect => "coeffect",
+        DiagnosticPhase::Refinement => "refinement",
+        DiagnosticPhase::Liveness => "liveness",
+        DiagnosticPhase::Document => "document",
+        DiagnosticPhase::Runtime => "runtime",
+    };
+    let severity = match diagnostic.severity {
+        Severity::Error => "error",
+        Severity::Warning => "warning",
+        Severity::Information => "information",
+        Severity::Hint => "hint",
+    };
+    let recovery = diagnostic.recovery.as_ref().map(|action| match action {
+        RecoveryAction::Insert { syntax, at } => {
+            serde_json::json!(["insert", expected_evidence(syntax), at.0])
+        }
+        RecoveryAction::Skip { range } => serde_json::json!(["skip", range_evidence(Some(*range))]),
+        RecoveryAction::Abandon { rule, at } => serde_json::json!(["abandon", rule.0, at.0]),
+        RecoveryAction::ResourceLimit { range } => {
+            serde_json::json!(["resource-limit", range_evidence(Some(*range))])
+        }
+    });
+    let fixes = diagnostic
+        .fixes
+        .iter()
+        .map(|fix| {
+            let applicability = match fix.applicability {
+                FixApplicability::MachineApplicable => "machine-applicable",
+                FixApplicability::MaybeIncorrect => "maybe-incorrect",
+                FixApplicability::HasPlaceholders => "has-placeholders",
+            };
+            serde_json::json!([
+                fix.title,
+                applicability,
+                fix.edits
+                    .iter()
+                    .map(|edit| serde_json::json!([range_evidence(Some(edit.delete)), edit.insert]))
+                    .collect::<Vec<_>>()
+            ])
+        })
+        .collect::<Vec<_>>();
+    serde_json::json!({
+        "code": diagnostic.code.as_str(), "phase": phase, "severity": severity,
+        "rule": diagnostic.rule.map(|rule| rule.0), "context": diagnostic.context.map(|context| context.0),
+        "primary": range_evidence(diagnostic.primary),
+        "expected": diagnostic.expected.iter().map(expected_evidence).collect::<Vec<_>>(),
+        "found": diagnostic.found.as_ref().map(|found| serde_json::json!([found.kind.map(SyntaxKind::name), found.text])),
+        "related": diagnostic.related, "recovery": recovery, "tags": diagnostic.tags.0,
+        "labels": diagnostic.labels.iter().map(|label| serde_json::json!([range_evidence(label.range), label.message])).collect::<Vec<_>>(),
+        "fixes": fixes,
+    })
+}
+
+fn recovery_tree_evidence(node: &SyntaxNode) -> serde_json::Value {
+    let children = node
+        .children_with_tokens()
+        .into_iter()
+        .map(|child| match child {
+            SyntaxElement::Node(node) => recovery_tree_evidence(&node),
+            SyntaxElement::Token(token) => serde_json::json!([
+                "token",
+                token.kind().name(),
+                range_evidence(Some(token.range())),
+                token.flags().0,
+                token.text().unwrap()
+            ]),
+        })
+        .collect::<Vec<_>>();
+    serde_json::json!([
+        "node",
+        node.kind().name(),
+        range_evidence(Some(node.range())),
+        node.flags().0,
+        children
+    ])
+}
+
 fn recovery_snapshot_hash(
     parsed: &mech_syntax::document::parser::canonical::CanonicalSourceRuleSnapshot,
 ) -> u64 {
     let mut hash = StableHash::new();
-    hash.field(&compact_debug_tree(&parsed.syntax()));
-    for diagnostic in
-        normalize_diagnostics(&parsed.diagnostics, parsed.source.revision(), &parsed.nodes)
-    {
-        hash.field(&format!(
-            "diagnostic:{:?}:{:?}:{:?}:{:?}:{:?}:{:?}:{:?}:{:?}:{:?}:{:?}:{:?}",
-            diagnostic.code,
-            diagnostic.phase,
-            diagnostic.severity,
-            diagnostic.rule,
-            diagnostic.context,
-            diagnostic.primary,
-            diagnostic.expected,
-            diagnostic.found,
-            diagnostic.related,
-            diagnostic.recovery,
-            diagnostic.tags,
-        ));
-        for label in diagnostic.labels {
-            hash.field(&format!("label:{:?}", label.range));
-        }
-        for fix in diagnostic.fixes {
-            hash.field(&format!("fix:{:?}:{:?}", fix.applicability, fix.edits));
-        }
-    }
+    hash.field("canonical-recovery-v2");
+    hash.field(&serde_json::to_string(&recovery_tree_evidence(&parsed.syntax())).unwrap());
+    let diagnostics =
+        normalize_diagnostics(&parsed.diagnostics, parsed.source.revision(), &parsed.nodes);
+    hash.field(
+        &serde_json::to_string(
+            &diagnostics
+                .iter()
+                .map(diagnostic_evidence)
+                .collect::<Vec<_>>(),
+        )
+        .unwrap(),
+    );
     hash.0
+}
+
+#[test]
+fn recovery_evidence_uses_normalized_identity_and_preserves_structured_changes() {
+    use mech_syntax::document::{
+        ExpectedSyntax, FixApplicability, FoundSyntax, NormalizedDiagnosticFix,
+        NormalizedDiagnosticLabel, RecoveryAction, TextEdit,
+    };
+    let parse = |document, revision| {
+        parse_canonical_phase_2i_rule_for_test(
+            TextSnapshot::new(DocumentId(document), Revision(revision), "[1").unwrap(),
+            rules::MATRIX,
+            ParseConfig::default(),
+        )
+        .unwrap()
+    };
+    let first = parse(1, 2);
+    let second = parse(99, 100);
+    assert_eq!(
+        recovery_snapshot_hash(&first),
+        recovery_snapshot_hash(&second)
+    );
+    let mut diagnostic =
+        normalize_diagnostics(&first.diagnostics, first.source.revision(), &first.nodes).remove(0);
+    diagnostic.expected = vec![
+        ExpectedSyntax::Token(SyntaxKind::RightBracket),
+        ExpectedSyntax::Production("expression".into()),
+    ];
+    diagnostic.found = Some(FoundSyntax {
+        kind: Some(SyntaxKind::LeftBracket),
+        text: Some("[".into()),
+    });
+    diagnostic.labels = vec![NormalizedDiagnosticLabel {
+        range: Some(TextRange::empty(TextSize(2))),
+        message: "closing delimiter".into(),
+    }];
+    diagnostic.fixes = vec![NormalizedDiagnosticFix {
+        title: "close matrix".into(),
+        applicability: FixApplicability::MachineApplicable,
+        edits: vec![TextEdit::insert(TextSize(2), "]")],
+    }];
+    diagnostic.recovery = Some(RecoveryAction::Insert {
+        syntax: ExpectedSyntax::Token(SyntaxKind::RightBracket),
+        at: TextSize(2),
+    });
+    let evidence = diagnostic_evidence(&diagnostic);
+    assert_eq!(
+        evidence["expected"][0],
+        serde_json::json!(["token", "RightBracket"])
+    );
+    assert_eq!(evidence["fixes"][0][1], "machine-applicable");
+    for change in 0..8 {
+        let mut changed = diagnostic.clone();
+        match change {
+            0 => changed.code = "syntax/different".into(),
+            1 => changed.primary = Some(TextRange::empty(TextSize(1))),
+            2 => changed.expected.reverse(),
+            3 => changed.found.as_mut().unwrap().text = Some("]".into()),
+            4 => changed.related.push(0),
+            5 => {
+                changed.recovery = Some(RecoveryAction::Skip {
+                    range: TextRange::new(TextSize(0), TextSize(1)),
+                })
+            }
+            6 => changed.fixes[0].edits[0].insert = ")".into(),
+            7 => changed.labels[0].range = None,
+            _ => unreachable!(),
+        }
+        assert_ne!(evidence, diagnostic_evidence(&changed), "change {change}");
+    }
 }
 
 #[test]
@@ -1090,8 +1247,10 @@ fn assert_canonical_only(path: &Path, evidence: &str) {
         concat!("mech_syntax::document::", "lower"),
         concat!("mech_syntax::document::", "parse_document"),
         concat!("mech_syntax::document::", "parse_syntax"),
+        concat!("mech_syntax::document::", "parse_fragment"),
         concat!("mech_syntax::document::parser::", "parse_document"),
         concat!("mech_syntax::document::parser::", "parse_syntax"),
+        concat!("mech_syntax::document::parser::", "parse_fragment"),
         concat!("::", "lower"),
         concat!("document::", "lower::", "legacy"),
         concat!("usemech_", "core"),
@@ -1208,6 +1367,14 @@ fn assert_allowed_mech_import(path: &Path, declaration: &str) {
         .and_then(|items| items.strip_suffix("};"))
     {
         let allowed = [
+            "DiagnosticPhase",
+            "FixApplicability",
+            "FoundSyntax",
+            "NormalizedDiagnosticFix",
+            "NormalizedDiagnosticLabel",
+            "Severity",
+            "SyntaxElement",
+            "TextEdit",
             "ArgumentListSyntax",
             "ArrayPatternSyntax",
             "AstNode",
@@ -1326,6 +1493,14 @@ fn canonical_authority_gate_rejects_glob_and_alias_routes() {
         concat!(
             "mech_syntax::document/* path gap */::parser::r#",
             "parse_syntax(source, root, config);"
+        ),
+        concat!(
+            "mech_syntax::document::",
+            "parse_fragment(source, FragmentKind::Expression, config);"
+        ),
+        concat!(
+            "mech_syntax::document::parser::",
+            "parse_fragment(source, FragmentKind::VariableDefine, config);"
         ),
         "pub use mech_syntax::document::*; lower_legacy_grammar();",
         "pub(crate) use mech_syntax::document::*; lower_legacy_grammar();",

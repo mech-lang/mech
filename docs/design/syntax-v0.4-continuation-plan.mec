@@ -32,9 +32,11 @@ them. Those rows remain `unported` with no phase assignment.
 
 The component has local malformed-input recovery and complete typed red-tree
 views. S4 source semantics and S5 certification are implemented in part, with
-comprehension/pattern projection and FSM witnesses still blocking artifact-ready
-acceptance. S6 activation remains gated on completion of S4 and S5; the registry
-remains inactive in this stage.
+comprehension and pattern witnesses now artifact-ready and all source-completion
+behavior tests passing. FSM lowering remains the artifact-certification blocker;
+structured-pattern resident execution and other S4 control limits remain open.
+S6 activation remains gated on completion of S4 and S5; the registry remains
+inactive in this stage.
 
 The supported canonical roots are currently `Canonical + Grammar` and
 `Prototype + Document`. The shipping

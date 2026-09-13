@@ -279,9 +279,11 @@ engine-owned source semantics, and specification-derived certification.
 Clean recognition, local lossless recovery, and typed views cover all 80
 mutually recursive productions against the frozen schema. S4 engine-owned
 source semantics and S5 canonical certification remain partially implemented:
-comprehension/pattern projection and FSM witnesses still block artifact-ready
-and behavioral acceptance. S6 activation prerequisites are not yet satisfied;
-the 80-rule registry remains inactive on S5 until those gates are complete.
+comprehension and pattern witnesses now produce validated artifacts, and the
+source-completion behavior suite passes. FSM lowering still blocks artifact
+certification. Structured-pattern resident execution and other S4 control limits
+remain unfinished. S6 activation prerequisites are not yet satisfied; the 80-rule
+registry remains inactive on S5 until those gates are complete.
 
 Shared parenthesis, bracket, brace, colon, identifier, and kind prefixes are
 handled without exponential reparsing. Expression-level set and matrix
