@@ -159,6 +159,7 @@ pub struct ActivatedMatchNode {
     pub scrutinee: ResidentReadLocation,
     pub write: ResidentWriteLocation,
     pub arms: Box<[ActivatedMatchArm]>,
+    pub locals: Box<[ResidentRegion]>,
 }
 
 #[derive(Clone, Debug)]
@@ -833,6 +834,12 @@ impl TypedResidentArena {
             owner
                 .discard(region, self.write(region))
                 .expect("resident payload ownership must balance during candidate abort");
+        } else {
+            match self.write(region) {
+                ResidentValueMut::String(values) => values.fill_with(String::new),
+                ResidentValueMut::Snapshot(values) => values.fill(None),
+                _ => unreachable!("payload kind checked above"),
+            }
         }
     }
 
@@ -3963,6 +3970,21 @@ fn build_plan(
                     region: output.region,
                 },
                 arms: Box::new([]),
+                locals: control
+                    .arms
+                    .iter()
+                    .flat_map(|arm| arm.guard.iter().chain(core::iter::once(&arm.body)))
+                    .flat_map(|block| {
+                        block
+                            .operations
+                            .iter()
+                            .map(move |operation| (block.id.0, operation.node))
+                    })
+                    .map(|(block, local)| {
+                        let (slot, _) = layout.control_locals[&(node.node, block, local)];
+                        layout.slots[slot.get() as usize].region
+                    })
+                    .collect(),
             }));
             continue;
         };
