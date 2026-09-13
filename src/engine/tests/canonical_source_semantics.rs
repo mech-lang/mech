@@ -125,31 +125,51 @@ fn ordering_document_state_writers_preserves_semantic_node_references() {
     assert_eq!(writer, compiled.program().nodes.len() - 1);
     assert_eq!(
         compiled.program().nodes[writer].outputs.as_ref(),
-        &[SourceNodeOutput::State(0)]
+        &[mech_engine::SourceNodeOutput::State(0)]
     );
-    assert_eq!(compiled.source_map().match_arms.len(), 2);
-    for arm in &compiled.source_map().match_arms {
-        let node = &compiled.program().nodes[arm.node as usize];
-        assert_eq!(node.operation.canonical_name(), "source/match");
-        assert!(arm.result_input < node.inputs.len() as u32);
-        assert!(arm.pattern < compiled.source_map().patterns.len() as u32);
-        assert_eq!(compiled.source_map().nodes[arm.node as usize].role, "match");
-    }
+    let (index, node) = compiled
+        .program()
+        .nodes
+        .iter()
+        .enumerate()
+        .find(|(_, node)| matches!(node.body, mech_engine::SourceNodeBody::Match(_)))
+        .unwrap();
+    let mech_engine::SourceNodeBody::Match(control) = &node.body else {
+        unreachable!()
+    };
+    assert_eq!(control.arms.len(), 2);
+    assert!(usize::from(control.scrutinee) < node.inputs.len());
+    assert_eq!(compiled.source_map().nodes[index].role, "match");
+    compiled.compile_artifact().unwrap();
     let compiled = CanonicalSourceFrontend
         .compile_document(&document(
-            "~answer := 0\nanswer += 1\n[y | x <- xs, y := x, y > 0]\n",
+            "~answer := 0\nanswer += 1\n[answer + x | x <- [1 2]]\n",
         ))
         .unwrap();
-    assert_eq!(compiled.source_map().comprehension_qualifiers.len(), 3);
-    for qualifier in &compiled.source_map().comprehension_qualifiers {
-        let node = &compiled.program().nodes[qualifier.node as usize];
-        assert_eq!(node.operation.canonical_name(), "matrix/comprehension");
-        assert!(qualifier.input_ordinal < node.inputs.len() as u32);
-        assert_eq!(
-            compiled.source_map().nodes[qualifier.node as usize].role,
-            "comprehension"
-        );
-    }
+    let (index, node) = compiled
+        .program()
+        .nodes
+        .iter()
+        .enumerate()
+        .find(|(_, node)| matches!(node.body, mech_engine::SourceNodeBody::Comprehension(_)))
+        .unwrap();
+    let mech_engine::SourceNodeBody::Comprehension(control) = &node.body else {
+        unreachable!()
+    };
+    assert_eq!(
+        control
+            .steps
+            .iter()
+            .filter(|step| matches!(step, mech_engine::ComprehensionStep::Generator { .. }))
+            .count(),
+        1
+    );
+    assert!(
+        !node.inputs.is_empty(),
+        "the collection captures the current state candidate"
+    );
+    assert_eq!(compiled.source_map().nodes[index].role, "comprehension");
+    compiled.compile_artifact().unwrap();
 }
 
 #[test]

@@ -303,9 +303,6 @@ impl SemanticBuilder {
                 remap(value);
             }
         }
-        for qualifier in &mut self.comprehension_qualifiers {
-            qualifier.node = indices[qualifier.node as usize];
-        }
     }
 
     fn current_state_value(&self, state: u32) -> PendingValue {

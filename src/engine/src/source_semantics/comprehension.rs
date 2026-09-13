@@ -360,7 +360,7 @@ impl SemanticBuilder {
                                 },
                             });
                             names.insert(name.clone(), value);
-                            self.bindings.insert(name, value);
+                            self.bindings.insert(name, PendingBinding::Value(value));
                             CollectionPattern::Bind {
                                 local: node - start as u32,
                                 schema: value,

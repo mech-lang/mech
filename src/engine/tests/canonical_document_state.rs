@@ -281,3 +281,45 @@ fn document_display_and_child_scopes_do_not_execute_updates() {
         mech_engine::SourceDocumentOutputKind::Inline,
     );
 }
+
+#[test]
+fn comprehension_reads_the_source_order_state_candidate_after_writer_reordering() {
+    let compiled = compiled("~answer := 0\nanswer += 1\n[answer + x | x <- [1 2]]\n");
+    let bytes =
+        mech_engine::encode_program_artifact_bytecode_v1(&compiled.compile_artifact().unwrap())
+            .unwrap();
+    let artifact = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x571, 0),
+        &artifact,
+        &catalog.build().unwrap(),
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    let output = compiled
+        .document_outputs()
+        .iter()
+        .find(|binding| binding.kind == mech_engine::SourceDocumentOutputKind::Program)
+        .unwrap()
+        .output as usize;
+    for expected in [[2.0, 3.0], [3.0, 4.0]] {
+        instance.turn(&[]).unwrap();
+        assert_eq!(
+            instance
+                .copied_output(output)
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            mech_core::ValueDataDraft::Matrix(
+                expected
+                    .into_iter()
+                    .map(|value| mech_core::ValueDataDraft::F64(
+                        mech_core::snapshot::F64Bits::from_f64(value)
+                    ))
+                    .collect()
+            )
+        );
+    }
+}
