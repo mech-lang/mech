@@ -1123,8 +1123,24 @@ impl MechFunctionImpl for Bypass {
         )
         self.assert_failure(
             root,
-            "Resident effect payload omits its typed arena slot",
+            "Resident saved value omits its typed arena slot",
         )
+
+    def test_102b_resident_saved_value_entries_must_use_the_shared_planner(self):
+        for entry in ["plan_resident_effect_payload", "plan_resident_rmw_previous"]:
+            with self.subTest(entry=entry):
+                root = self.fixture()
+                path = root / "src/engine/src/memory_planner/resident.rs"
+                source = path.read_text(encoding="utf-8")
+                start = source.index(f"pub fn {entry}(")
+                call = source.index("plan_resident_saved_value(", start)
+                source = source[:call] + source[call:].replace(
+                    "plan_resident_saved_value(", "unplanned_saved_value(", 1
+                )
+                path.write_text(source, encoding="utf-8")
+                self.assert_failure(
+                    root, f"Resident saved-value entry {entry} bypasses its shared planner"
+                )
 
     def test_103_resident_projection_must_require_one_exact_slot_kind(self):
         root = self.fixture()

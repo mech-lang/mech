@@ -861,6 +861,13 @@ impl ReactiveInstance {
                 self.workspace.effect_payloads.discard_payload_write(region);
             }
         }
+        for step in &self.plan.steps {
+            if let ActivatedTurnStep::Kernel(node) = step
+                && let Some(previous) = node.rmw_previous
+            {
+                self.workspace.rmw_previous.discard_payload_write(previous);
+            }
+        }
         self.state.abort(working_epoch);
         self.workspace.initialized_output_bits.fill(0);
         self.workspace.all_outputs_initialized = false;
@@ -1700,73 +1707,43 @@ impl ReactiveInstance {
         };
         match node.write.storage {
             ResidentStorageClass::Scratch => {
-                let base_changed = if let Some(base) = node.rmw_base {
-                    let destination = node.write.region;
-                    let (changed, result) = match base {
-                        ResidentReadLocation::Constant(region) => (
-                            !regions_equal(
-                                &self.workspace.scratch,
-                                destination,
-                                &self.activation,
-                                region,
-                            ),
-                            self.workspace.scratch.copy_region_from(
-                                destination,
-                                &self.activation,
-                                region,
-                            ),
-                        ),
-                        ResidentReadLocation::Input(region) => (
-                            !regions_equal(
-                                &self.workspace.scratch,
-                                destination,
-                                &self.workspace.input,
-                                region,
-                            ),
-                            self.workspace.scratch.copy_region_from(
-                                destination,
-                                &self.workspace.input,
-                                region,
-                            ),
-                        ),
-                        ResidentReadLocation::State { slot, region } => {
-                            let buffer = self.state.select_buffer(slot, working_epoch);
-                            (
-                                !regions_equal(
-                                    &self.workspace.scratch,
-                                    destination,
-                                    &self.state.buffers[buffer],
-                                    region,
-                                ),
-                                self.workspace.scratch.copy_region_from(
-                                    destination,
-                                    &self.state.buffers[buffer],
-                                    region,
-                                ),
-                            )
-                        }
-                        ResidentReadLocation::Scratch(region) => (
-                            !regions_equal(
-                                &self.workspace.scratch,
-                                destination,
-                                &self.workspace.scratch,
-                                region,
-                            ),
-                            self.workspace
-                                .scratch
-                                .copy_region_within(destination, region),
-                        ),
-                    };
-                    result.map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
-                    changed
-                } else {
-                    false
-                };
                 let before_scalar = if node.change_detection == ChangeDetectionPolicy::ExactScalar {
                     scalar_token(self.workspace.scratch.read(node.write.region))
                 } else {
                     None
                 };
+                if let Some(previous) = node.rmw_previous {
+                    self.workspace
+                        .rmw_previous
+                        .copy_region_from(previous, &self.workspace.scratch, node.write.region)
+                        .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+                }
+                if let Some(base) = node.rmw_base {
+                    let destination = node.write.region;
+                    let result = match base {
+                        ResidentReadLocation::Constant(region) => self
+                            .workspace
+                            .scratch
+                            .copy_region_from(destination, &self.activation, region),
+                        ResidentReadLocation::Input(region) => self
+                            .workspace
+                            .scratch
+                            .copy_region_from(destination, &self.workspace.input, region),
+                        ResidentReadLocation::State { slot, region } => {
+                            let buffer = self.state.select_buffer(slot, working_epoch);
+                            self.workspace.scratch.copy_region_from(
+                                destination,
+                                &self.state.buffers[buffer],
+                                region,
+                            )
+                        }
+                        ResidentReadLocation::Scratch(region) => self
+                            .workspace
+                            .scratch
+                            .copy_region_within(destination, region),
+                    };
+                    result.map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+                }
                 let kernel_changed = if node.scratch_prefix_reads
                     && node.kernel.has_direct_f64_output()
                 {
@@ -1847,7 +1824,19 @@ impl ReactiveInstance {
                     error,
                 })?;
                 let policy_changed = match node.change_detection {
-                    ChangeDetectionPolicy::KernelReported => base_changed || kernel_changed,
+                    ChangeDetectionPolicy::KernelReported => {
+                        if let Some(previous) = node.rmw_previous {
+                            !rmw_outputs_equal(
+                                &self.workspace.rmw_previous,
+                                previous,
+                                &self.workspace.scratch,
+                                node.write.region,
+                                &self.plan.schemas,
+                            )
+                        } else {
+                            kernel_changed
+                        }
+                    }
                     ChangeDetectionPolicy::ExactScalar => {
                         before_scalar
                             != scalar_token(self.workspace.scratch.read(node.write.region))
@@ -1857,6 +1846,9 @@ impl ReactiveInstance {
                         "semantic-hash resident outputs are rejected during activation"
                     ),
                 };
+                if let Some(previous) = node.rmw_previous {
+                    self.workspace.rmw_previous.discard_payload_write(previous);
+                }
                 if self.workspace.all_outputs_initialized {
                     Ok(policy_changed)
                 } else {
@@ -2894,6 +2886,39 @@ fn regions_equal(
         (ResidentValueRef::Snapshot(_), ResidentValueRef::Snapshot(_)) => false,
         _ => false,
     }
+}
+
+fn rmw_outputs_equal(
+    left: &TypedResidentArena,
+    left_region: ResidentRegion,
+    right: &TypedResidentArena,
+    right_region: ResidentRegion,
+    schemas: &mech_core::SchemaTable,
+) -> bool {
+    if let (ResidentValueRef::Snapshot(left), ResidentValueRef::Snapshot(right)) =
+        (left.read(left_region), right.read(right_region))
+    {
+        return left.len() == right.len()
+            && left
+                .iter()
+                .zip(right)
+                .all(|(left, right)| match (left, right) {
+                    (None, None) => true,
+                    (Some(left), Some(right)) => {
+                        left.schema() == right.schema()
+                            && left.shape() == right.shape()
+                            && schemas.get(left.schema()).is_some_and(|schema| {
+                                mech_core::snapshot::schema_data_language_eq(
+                                    schema.body(),
+                                    left.data(),
+                                    right.data(),
+                                )
+                            })
+                    }
+                    _ => false,
+                });
+    }
+    regions_equal(left, left_region, right, right_region)
 }
 
 fn scalar_token(value: ResidentValueRef<'_>) -> Option<u64> {

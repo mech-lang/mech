@@ -127,6 +127,14 @@ fn indexed_document_updates_use_canonical_assignment_and_preserve_state_order() 
             [23.0, 23.0],
         ),
         (
+            "~numbers := [1, 2; 3, 4]\nnumbers[:] = [5, 6; 7, 8]\nnumbers[2,2]\n",
+            [8.0, 8.0],
+        ),
+        (
+            "~numbers := [1, 2; 3, 4]\nnumbers[:] = 9\nnumbers[1,1] + numbers[2,2]\n",
+            [18.0, 18.0],
+        ),
+        (
             "~numbers := [1, 2; 3, 4]\nnumbers[2,1] = 10\nnumbers[2,1]\n",
             [10.0, 10.0],
         ),
@@ -465,4 +473,143 @@ fn absent_named_scopes_never_fall_back_to_the_root_program() {
             .expect("missing scope has no executable units");
         assert_eq!(error.code, "source-semantics/empty-document");
     }
+}
+
+#[test]
+fn derived_updates_compare_final_output_to_the_value_before_seeding() {
+    use mech_core::{
+        BoundResidentKernel, ChangeDetectionPolicy, OutputConstruction, ResidentKernelError,
+        ResidentKernelInputs, ResidentValueMut,
+    };
+    use mech_engine::resident::ActivatedTurnStep;
+
+    fn leave_seed_unchanged(
+        _: &BoundResidentKernel,
+        _: &dyn ResidentKernelInputs,
+        _: ResidentValueMut<'_>,
+    ) -> Result<bool, ResidentKernelError> {
+        Ok(false)
+    }
+
+    for (exact_scalar, source) in [
+        (
+            false,
+            "~tick := 0\ntick += 1\n~values := [0]\nvalues[1] = tick\nvalues[1] = 0\nvalues[1]\n",
+        ),
+        (
+            false,
+            "~tick := 0\ntick += 1\n~values := {value: 0}\nvalues.value = tick\nvalues.value = 0\nvalues.value\n",
+        ),
+        (
+            true,
+            "~values := [0]\nvalues[1] += 1\nvalues[1] += 1\nvalues[1]\n",
+        ),
+    ] {
+        let artifact = compiled(source).compile_artifact().unwrap();
+        let mut catalog = FunctionCatalogBuilder::new();
+        mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+        let catalog = catalog.build().unwrap();
+        let mut instances = (0..2)
+            .map(|id| {
+                activate(
+                    ReactiveInstanceId::new(0x580, id),
+                    &artifact,
+                    &catalog,
+                    &ActivationFacts::default(),
+                )
+                .unwrap()
+            })
+            .collect::<Vec<_>>();
+        let mut summaries = Vec::new();
+        for (forced, instance) in instances.iter_mut().enumerate() {
+            instance.turn(&[]).unwrap();
+            let update = instance
+                .plan
+                .steps
+                .iter()
+                .enumerate()
+                .filter_map(|(index, step)| match step {
+                    ActivatedTurnStep::Kernel(node)
+                        if artifact.slots()[node.write.slot.get() as usize].role
+                            == mech_engine::SlotRole::Derived
+                            && matches!(
+                                node.construction,
+                                OutputConstruction::ReadModifyWrite { .. }
+                            ) =>
+                    {
+                        Some(index)
+                    }
+                    _ => None,
+                })
+                .last()
+                .unwrap();
+            if exact_scalar {
+                instance.plan.replace_kernel_for_test(
+                    update,
+                    BoundResidentKernel::new(leave_seed_unchanged, Box::new([])),
+                );
+            }
+            instance.plan.set_change_detection_for_test(
+                update,
+                if forced == 1 {
+                    ChangeDetectionPolicy::AlwaysChanged
+                } else if exact_scalar {
+                    ChangeDetectionPolicy::ExactScalar
+                } else {
+                    ChangeDetectionPolicy::KernelReported
+                },
+            );
+            summaries.push(instance.turn(&[]).unwrap());
+            let output = instance.copied_output(0).unwrap();
+            let ValueData::F64(value) = output.data() else {
+                panic!("scalar result")
+            };
+            assert_eq!(value.to_f64(), if exact_scalar { 3.0 } else { 0.0 });
+        }
+        if !exact_scalar {
+            assert!(
+                summaries[0].dirty_nodes < summaries[1].dirty_nodes,
+                "an unchanged final update must not dirty its consumers"
+            );
+        }
+    }
+}
+
+#[test]
+fn derived_snapshot_updates_release_budgeted_prior_outputs_on_abort_and_drop() {
+    use mech_engine::resident::{ResidentActivationOptions, activate_with_options};
+    let artifact =
+        compiled("~record := {values: [1, 2]}\nrecord.values[2] += 1\nrecord.values[2]\n")
+            .compile_artifact()
+            .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let budget = mech_core::ManagedMemoryBudget::new(1 << 24);
+    let mut instance = activate_with_options(
+        ReactiveInstanceId::new(0x581, 0),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+        ResidentActivationOptions {
+            memory_budget: Some(budget.clone()),
+            ..Default::default()
+        },
+    )
+    .unwrap();
+    let before = instance.published_state_hash();
+    for _ in 0..3 {
+        drop(instance.prepare_turn(&[]).unwrap());
+        assert_eq!(instance.published_state_hash(), before);
+    }
+    for expected in [3.0, 4.0, 5.0] {
+        instance.turn_without_summary(&[]).unwrap();
+        let output = instance.copied_output(0).unwrap();
+        let ValueData::F64(value) = output.data() else {
+            panic!("scalar result")
+        };
+        assert_eq!(value.to_f64(), expected);
+    }
+    drop(instance);
+    assert_eq!(budget.used_bytes(), 0);
 }

@@ -315,6 +315,7 @@ pub(super) fn bind(
                     },
                     construction: policy.construction.clone(),
                     rmw_base: None,
+                    rmw_previous: None,
                     change_detection: policy.change_detection,
                     reads_state: reads[start as usize..]
                         .iter()

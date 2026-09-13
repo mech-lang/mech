@@ -148,6 +148,13 @@ impl SemanticBuilder {
         syntax: &SyntaxNode,
     ) -> Result<(PendingValue, Vec<PendingValue>, &'static str), SourceSemanticError> {
         let selected = self.select_values(base, selectors.clone(), syntax)?;
+        // Whole-value writes retain the base geometry even though the read
+        // spelling matrix[:] exposes a flattened selection view.
+        let selected = if matches!(selectors.as_slice(), [None] | [None, None]) {
+            base
+        } else {
+            selected
+        };
         let operation = match selectors.as_slice() {
             [None] | [None, None] => "core/assign/whole-value",
             [Some(_), None] => "core/assign/indexed-rows",

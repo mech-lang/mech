@@ -116,6 +116,7 @@ pub struct ActivatedKernelNode {
     pub write: ResidentWriteLocation,
     pub construction: OutputConstruction,
     pub(crate) rmw_base: Option<ResidentReadLocation>,
+    pub(crate) rmw_previous: Option<ResidentRegion>,
     pub change_detection: ChangeDetectionPolicy,
     pub(crate) reads_state: bool,
     pub(crate) scratch_prefix_reads: bool,
@@ -1127,6 +1128,7 @@ pub struct TurnWorkspace {
     pub(crate) changed_slots: Vec<SlotIndex>,
     pub(crate) effect_intents: Vec<ResidentEffectIntent>,
     pub(crate) effect_payloads: TypedResidentArena,
+    pub(crate) rmw_previous: TypedResidentArena,
     state_f64_arena_by_slot: Box<[u8]>,
     // Only activation-invariant fixed-width plans are cached. Payload-bearing
     // values and deferred regions still supply live facts on every execution.
@@ -1166,6 +1168,12 @@ impl TurnWorkspace {
                 &plan.memory_plan,
                 ResidentStorageClass::Scratch,
                 1,
+                memory,
+            )?,
+            rmw_previous: TypedResidentArena::allocate_from_plan_buffer(
+                &plan.memory_plan,
+                ResidentStorageClass::Scratch,
+                2,
                 memory,
             )?,
             state_f64_arena_by_slot: vec![0; plan.slots.len()].into_boxed_slice(),
@@ -2157,6 +2165,7 @@ fn audit_resident_backings(
         (PlannedValueClass::State, 1, &state.buffers[1]),
         (PlannedValueClass::Scratch, 0, &workspace.scratch),
         (PlannedValueClass::Scratch, 1, &workspace.effect_payloads),
+        (PlannedValueClass::Scratch, 2, &workspace.rmw_previous),
     ];
     for (class, buffer, backing) in arenas {
         for kind in [
@@ -4060,7 +4069,7 @@ fn build_plan(
             continue;
         }
         let output_slot = node_output_slot(artifact, node.node)?;
-        let output = &layout.slots[output_slot.get() as usize];
+        let output = layout.slots[output_slot.get() as usize].clone();
         let output_contract = &contract.outputs[0];
         if output_contract.change_detection == ChangeDetectionPolicy::SemanticHash
             || (output_contract.change_detection == ChangeDetectionPolicy::ExactScalar
@@ -4089,7 +4098,7 @@ fn build_plan(
             .iter()
             .map(|source| source_port_layout(artifact, &layout, *source, static_selectors))
             .collect::<Result<Vec<_>, _>>()?;
-        let output_layout = slot_port_layout(output);
+        let output_layout = slot_port_layout(&output);
         let (kernel, memory_plan) = bind_resident_operation(
             artifact,
             catalog,
@@ -4121,6 +4130,24 @@ fn build_plan(
         } else {
             None
         };
+        let rmw_previous = if rmw_base.is_some()
+            && output_contract.change_detection == ChangeDetectionPolicy::KernelReported
+        {
+            Some(ResidentRegion {
+                offset: crate::memory_planner::plan_resident_rmw_previous(
+                    &mut layout.memory_plan,
+                    node.node,
+                    positions[&node.node],
+                    output.region.kind,
+                    output.region.len as u64,
+                )
+                .map_err(|error| ResidentActivationError::ResidentMemoryPlanRejected { error })?,
+                ..output.region
+            })
+        } else {
+            None
+        };
+        ensure_resident_plan_admitted(&layout.memory_plan)?;
         let mut reads_state = false;
         for (ordinal, source) in input_sources.iter().enumerate() {
             if Some(ordinal) != base {
@@ -4147,6 +4174,7 @@ fn build_plan(
             },
             construction: output_contract.construction.clone(),
             rmw_base,
+            rmw_previous,
             change_detection: output_contract.change_detection,
             reads_state,
             scratch_prefix_reads,
@@ -6114,6 +6142,7 @@ fn bind_control_block(
             },
             construction: policy.construction.clone(),
             rmw_base: None,
+            rmw_previous: None,
             change_detection: policy.change_detection,
             reads_state: reads[read_start as usize..]
                 .iter()
