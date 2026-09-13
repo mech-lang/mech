@@ -191,6 +191,9 @@ impl ReactiveInstance {
             .and_then(|work| work.checked_add(64))
             .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
         meter.charge_compute_work(canonical_work).map_err(fail)?;
+        if control.kind == crate::ComprehensionKind::Set {
+            meter.charge_comparison_work(canonical_work).map_err(fail)?;
+        }
         if let ResidentValueRef::Snapshot([Some(current)]) =
             self.workspace.scratch.read(control.write.region)
         {
@@ -363,7 +366,7 @@ impl ReactiveInstance {
             .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
         admit_output(next, *meter).map_err(fail)?;
         values
-            .try_reserve_exact(1)
+            .try_reserve(1)
             .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
         values.push(item);
         Ok(())

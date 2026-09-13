@@ -249,7 +249,9 @@ pub(super) fn validate_comprehension(
                 };
                 pattern_counts(pattern)
                     .ok_or_else(|| invalid("collection pattern admission limit"))?;
-                validate_pattern(draft, pattern, element, inputs, &mut locals)
+                let element = component_schema(source, element)
+                    .ok_or_else(|| invalid("invalid generator component schema"))?;
+                validate_pattern(draft, pattern, &element, inputs, &mut locals)
                     .ok_or_else(|| invalid("invalid collection pattern or binding"))?;
             }
             ComprehensionStep::Filter(value) => {
@@ -335,33 +337,57 @@ pub(super) fn validate_comprehension(
     Ok(())
 }
 
+fn component_schema(
+    parent: &mech_core::Schema,
+    body: &mech_core::SchemaBody,
+) -> Option<mech_core::Schema> {
+    mech_core::SchemaDraft {
+        body: body.clone(),
+        dimension_parameters: parent
+            .dimension_parameters()
+            .iter()
+            .enumerate()
+            .map(|(id, parameter)| mech_core::DimensionParameterDeclaration {
+                id: mech_core::DimensionParameterId::new(id as u32),
+                origin: mech_core::DimensionParameterOrigin::Explicit,
+                lifetime: parameter.lifetime(),
+                lower_bound: parameter.lower_bound().clone(),
+                upper_bound: parameter.upper_bound().cloned(),
+            })
+            .collect(),
+    }
+    .finalize()
+    .ok()
+}
+
 fn validate_pattern(
     draft: &super::ProgramArtifactDraft,
     pattern: &CollectionPattern,
-    expected: &mech_core::SchemaBody,
+    expected: &mech_core::Schema,
     inputs: &[SchemaId],
     locals: &mut Vec<SchemaId>,
 ) -> Option<()> {
     use mech_core::SchemaBody;
-    let compatible =
-        |body: &SchemaBody| matches!(expected, SchemaBody::Dynamic) || body == expected;
+    let compatible = |schema: &mech_core::Schema| {
+        matches!(expected.body(), SchemaBody::Dynamic) || schema == expected
+    };
     match pattern {
         CollectionPattern::Wildcard => {}
         CollectionPattern::Bind { local, schema } => {
             let definition = draft.schemas.get(*schema)?;
-            if *local as usize != locals.len() || !compatible(definition.body()) {
+            if *local as usize != locals.len() || !compatible(definition) {
                 return None;
             }
             locals.push(*schema);
         }
         CollectionPattern::Equal(value) => {
             let schema = value_schema(*value, &draft.constants, inputs, locals)?;
-            if !compatible(draft.schemas.get(schema)?.body()) {
+            if !compatible(draft.schemas.get(schema)?) {
                 return None;
             }
         }
         CollectionPattern::Tuple(items) => {
-            let fields = match expected {
+            let fields = match expected.body() {
                 SchemaBody::Tuple(fields) if fields.len() == items.len() => Some(fields),
                 SchemaBody::Dynamic => None,
                 _ => return None,
@@ -370,7 +396,10 @@ fn validate_pattern(
                 validate_pattern(
                     draft,
                     item,
-                    fields.map_or(&SchemaBody::Dynamic, |fields| &fields[index]),
+                    &component_schema(
+                        expected,
+                        fields.map_or(&SchemaBody::Dynamic, |fields| &fields[index]),
+                    )?,
                     inputs,
                     locals,
                 )?;
@@ -381,19 +410,37 @@ fn validate_pattern(
             rest,
             suffix,
         } => {
-            let element = match expected {
+            let element = match expected.body() {
                 SchemaBody::Matrix { element, .. } => element.as_ref(),
-                SchemaBody::Dynamic => expected,
+                SchemaBody::Dynamic => expected.body(),
                 _ => return None,
             };
             for item in prefix.iter() {
-                validate_pattern(draft, item, element, inputs, locals)?;
+                validate_pattern(
+                    draft,
+                    item,
+                    &component_schema(expected, element)?,
+                    inputs,
+                    locals,
+                )?;
             }
             if let Some(rest) = rest {
-                validate_pattern(draft, rest, &SchemaBody::Dynamic, inputs, locals)?;
+                validate_pattern(
+                    draft,
+                    rest,
+                    &component_schema(expected, &SchemaBody::Dynamic)?,
+                    inputs,
+                    locals,
+                )?;
             }
             for item in suffix.iter() {
-                validate_pattern(draft, item, element, inputs, locals)?;
+                validate_pattern(
+                    draft,
+                    item,
+                    &component_schema(expected, element)?,
+                    inputs,
+                    locals,
+                )?;
             }
         }
     }
@@ -451,6 +498,153 @@ impl<S, V> CollectionPattern<S, V> {
                 }
             }
             _ => {}
+        }
+    }
+}
+
+#[cfg(test)]
+mod schema_tests {
+    use super::*;
+    use mech_core::{
+        CardinalitySpec, ConstantStoreBuilder, DimensionExpr, DimensionLifetime,
+        DimensionParameterDeclaration, DimensionParameterId, DimensionParameterOrigin, FloatWidth,
+        NodeId, OperationContractTableBuilder, SchemaBody, SchemaDraft, SchemaTableBuilder,
+        ValueDataDraft, ValueDraft,
+    };
+
+    #[test]
+    fn lexical_collection_pattern_schemas_preserve_component_bounds_and_lifetimes() {
+        let matrix = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+            dimensions: vec![
+                DimensionExpr::Constant(1),
+                DimensionExpr::Parameter(DimensionParameterId::new(0)),
+            ]
+            .into_boxed_slice(),
+        };
+        let schema = |body, lifetime, upper| {
+            SchemaDraft {
+                body,
+                dimension_parameters: vec![DimensionParameterDeclaration {
+                    id: DimensionParameterId::new(0),
+                    origin: DimensionParameterOrigin::Explicit,
+                    lifetime,
+                    lower_bound: DimensionExpr::Constant(0),
+                    upper_bound: Some(DimensionExpr::Constant(upper)),
+                }]
+                .into_boxed_slice(),
+            }
+            .finalize()
+            .unwrap()
+        };
+        let expected = schema(matrix.clone(), DimensionLifetime::Activation, 10);
+        let mut builder = SchemaTableBuilder::new();
+        let correct = builder.insert(expected.clone()).unwrap();
+        let wrong_bound = builder
+            .insert(schema(matrix.clone(), DimensionLifetime::Activation, 20))
+            .unwrap();
+        let wrong_lifetime = builder
+            .insert(schema(matrix.clone(), DimensionLifetime::Turn, 10))
+            .unwrap();
+        let input = builder
+            .insert(schema(
+                SchemaBody::Matrix {
+                    element: Box::new(SchemaBody::Tuple(vec![matrix].into_boxed_slice())),
+                    dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Constant(2)]
+                        .into_boxed_slice(),
+                },
+                DimensionLifetime::Activation,
+                10,
+            ))
+            .unwrap();
+        let boolean = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Bool,
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let output = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Set {
+                        element: Box::new(SchemaBody::Bool),
+                        cardinality: CardinalitySpec::Dynamic { upper_bound: None },
+                    },
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let built = builder.finish().unwrap();
+        let (correct, wrong_bound, wrong_lifetime, input, boolean, output) = (
+            built.resolve(correct).unwrap(),
+            built.resolve(wrong_bound).unwrap(),
+            built.resolve(wrong_lifetime).unwrap(),
+            built.resolve(input).unwrap(),
+            built.resolve(boolean).unwrap(),
+            built.resolve(output).unwrap(),
+        );
+        let schemas = built.into_parts().0;
+        let mut constants = ConstantStoreBuilder::new(&schemas);
+        let value = constants
+            .insert(
+                ValueDraft {
+                    schema: boolean,
+                    shape_values: Box::new([]),
+                    data: ValueDataDraft::Bool(true),
+                }
+                .finalize(&mech_core::snapshot::SnapshotValidationContext::new(
+                    &schemas,
+                ))
+                .unwrap(),
+            )
+            .unwrap();
+        let constants = constants.finish().unwrap();
+        let value = constants.resolve(value).unwrap();
+        let draft = crate::ProgramArtifactDraft {
+            schemas,
+            constants: constants.into_parts().0,
+            contracts: OperationContractTableBuilder::new()
+                .finish()
+                .unwrap()
+                .into_parts()
+                .0,
+            requirements: Default::default(),
+            inputs: Box::new([]),
+            slots: Box::new([]),
+            nodes: Box::new([]),
+            bindings: Box::new([]),
+            outputs: Box::new([]),
+            constraints: Box::new([]),
+            compute_regions: Box::new([]),
+        };
+        for local_schema in [correct, wrong_bound, wrong_lifetime] {
+            let control = ComprehensionDeclaration {
+                kind: ComprehensionKind::Set,
+                steps: vec![ComprehensionStep::Generator {
+                    source: ComprehensionValue::Input(0),
+                    pattern: CollectionPattern::Tuple(
+                        vec![CollectionPattern::Bind {
+                            local: 0,
+                            schema: local_schema,
+                        }]
+                        .into_boxed_slice(),
+                    ),
+                }]
+                .into_boxed_slice(),
+                yield_value: ComprehensionValue::Constant(value),
+            };
+            let result = validate_comprehension(&draft, NodeId::new(0), &control, &[input], output);
+            assert_eq!(
+                result.is_ok(),
+                local_schema == correct,
+                "{local_schema:?}: {result:?}"
+            );
         }
     }
 }

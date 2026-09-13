@@ -108,7 +108,15 @@ impl SemanticBuilder {
                             "collection definitions are immutable lexical values",
                         ));
                     }
-                    self.definition(&definition)?;
+                    let (value, _) = self.definition(&definition)?;
+                    let variable = self.required(
+                        definition.variable(),
+                        definition.syntax(),
+                        "a lexical definition",
+                    )?;
+                    let stem =
+                        self.required(variable.stem(), variable.syntax(), "a lexical name")?;
+                    names.insert(node_text(stem.syntax())?, value);
                 }
                 ComprehensionQualifierValueSyntax::Filter(filter) => {
                     let value = self.expression(&filter)?.0;
@@ -692,6 +700,55 @@ mod tests {
         }
     }
     #[test]
+    fn lexical_collection_aggregate_step_limits_match_default_decode() {
+        let artifact = compile("[1 | x <- signal<[f64]:1,1>, true]")
+            .compile_artifact()
+            .unwrap();
+        for count in [
+            crate::MAX_CONTROL_OPERATIONS,
+            crate::MAX_CONTROL_OPERATIONS + 1,
+        ] {
+            let mut draft = crate::ProgramArtifactDraft {
+                schemas: artifact.schemas().clone(),
+                constants: artifact.constants().clone(),
+                contracts: artifact.contracts().clone(),
+                requirements: artifact.requirements().clone(),
+                inputs: artifact.inputs().into(),
+                slots: artifact.slots().into(),
+                nodes: artifact.nodes().into(),
+                bindings: artifact.bindings().into(),
+                outputs: artifact.outputs().into(),
+                constraints: artifact.constraints().into(),
+                compute_regions: artifact.compute_regions().into(),
+            };
+            let crate::ExecutableNodeBody::Comprehension(control) = &mut draft.nodes[0].body else {
+                panic!("collection")
+            };
+            let mut steps = control.steps.to_vec();
+            steps.resize(count, steps.last().unwrap().clone());
+            control.steps = steps.into_boxed_slice();
+            if count > crate::MAX_CONTROL_OPERATIONS {
+                assert!(matches!(
+                    draft.finalize(),
+                    Err(crate::ArtifactBuildError::InvalidControl {
+                        reason: "control graph admission limit",
+                        ..
+                    })
+                ));
+            } else {
+                let artifact = draft.finalize().unwrap();
+                let bytes = crate::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+                assert_eq!(
+                    artifact.revision(),
+                    crate::decode_program_artifact_bytecode_v1(&bytes)
+                        .unwrap()
+                        .revision()
+                );
+            }
+        }
+    }
+
+    #[test]
     fn lexical_collection_rejects_malformed_executable_declarations() {
         let artifact = compile("[x + 1 | x <- signal<[f64]:2,3>, x > 1]")
             .compile_artifact()
@@ -880,6 +937,16 @@ mod tests {
         };
         for (source, inputs, expected) in [
             (
+                "[x | x := 1, x <- [1 2]]",
+                vec![vec![], vec![]],
+                vec![data(false, &[1.0]); 2],
+            ),
+            (
+                "[x | x := signal<f64>, x <- [1 2]]",
+                vec![vec![1.0], vec![2.0], vec![3.0]],
+                vec![data(false, &[1.0]), data(false, &[2.0]), data(false, &[])],
+            ),
+            (
                 "[item + 1 | item <- [1 2 3], item > 1]",
                 vec![vec![], vec![]],
                 vec![data(false, &[3.0, 4.0]); 2],
@@ -977,6 +1044,82 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[cfg(feature = "resident-artifact")]
+    #[test]
+    fn lexical_collection_set_sorting_admits_comparison_work_before_publication() {
+        use crate::resident::{ActivationFacts, CapturedSignalInput, activate};
+        use mech_core::{ReactiveInstanceId, ResidentValueRef};
+        let artifact = compile("{x | x <- signal<[f64]:1,8192>, x > 0}")
+            .compile_artifact()
+            .unwrap();
+        let mut catalog = mech_core::FunctionCatalogBuilder::new();
+        crate::install_intrinsic_resident(&mut catalog).unwrap();
+        let mut instance = activate(
+            ReactiveInstanceId::new(822, 76),
+            &artifact,
+            &catalog.build().unwrap(),
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        let slot = instance.plan.inputs[0].slot;
+        let mut values = vec![0.0; 8192];
+        instance
+            .turn(&[CapturedSignalInput {
+                slot,
+                value: ResidentValueRef::F64(&values),
+            }])
+            .unwrap();
+        let before = instance
+            .copied_output(0)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap();
+        let epoch = instance.published_epoch();
+        for (index, value) in values.iter_mut().enumerate() {
+            *value = (8192 - index) as f64;
+        }
+        assert!(
+            instance
+                .turn(&[CapturedSignalInput {
+                    slot,
+                    value: ResidentValueRef::F64(&values)
+                }])
+                .is_err()
+        );
+        assert_eq!(instance.published_epoch(), epoch);
+        assert_eq!(
+            instance
+                .copied_output(0)
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            before
+        );
+        values.fill(0.0);
+        values[0] = 2.0;
+        values[1] = 1.0;
+        instance
+            .turn(&[CapturedSignalInput {
+                slot,
+                value: ResidentValueRef::F64(&values),
+            }])
+            .unwrap();
+        assert_eq!(
+            instance
+                .copied_output(0)
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            ValueDataDraft::Set(
+                vec![
+                    ValueDataDraft::F64(F64Bits::from_f64(1.0)),
+                    ValueDataDraft::F64(F64Bits::from_f64(2.0))
+                ]
+                .into_boxed_slice()
+            )
+        );
     }
 
     #[cfg(feature = "resident-artifact")]
