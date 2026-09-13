@@ -264,44 +264,52 @@ fn fsm_pipe_owns_typed_arguments_stages_and_artifact_roundtrip() {
     // Canonical identifier classes are defined over extended grapheme clusters.
     // U+0600 joins the following '=' into one emoji grapheme whose first scalar
     // admits it in machine, named-argument, and structured-value roles.
-    let clustered_identifier = "\u{0600}=";
-    let clustered_source = format!(
-        "#{clustered_identifier}({clustered_identifier}: 1) -> :{clustered_identifier}(:x)"
-    );
-    CanonicalSourceFrontend
-        .compile_expression(&expression(&clustered_source))
-        .unwrap()
-        .compile_artifact()
-        .unwrap();
-    for (original, replacement) in [
-        (
-            "\"machine\":\"machine\"",
-            format!("\"machine\":\"{clustered_identifier}\""),
-        ),
-        (
-            "\"arguments\":[[\"left\",0]",
-            format!("\"arguments\":[[\"{clustered_identifier}\",0]"),
-        ),
-        (
-            "\"name\":\"some\"",
-            format!("\"name\":\"{clustered_identifier}\""),
-        ),
-    ] {
-        let mutated = graph.replacen(original, &replacement, 1);
-        assert_ne!(mutated, graph, "missing FSM wire fixture {original}");
-        let mut valid = sections.clone();
-        valid.nodes = mutated.into_bytes();
-        mech_engine::decode_program_artifact_sections(&valid)
-            .unwrap_or_else(|error| panic!("canonical FSM identifier {replacement}: {error:?}"));
+    // The bottom-right box terminals are not in the canonical parser's
+    // BOX_DRAWING_EMOJI_RULES, so they remain valid identifier emoji too.
+    for canonical_identifier in ["\u{0600}=", "┛", "┘"] {
+        let canonical_source = format!(
+            "#{canonical_identifier}({canonical_identifier}: 1) -> :{canonical_identifier}(:x)"
+        );
+        CanonicalSourceFrontend
+            .compile_expression(&expression(&canonical_source))
+            .unwrap()
+            .compile_artifact()
+            .unwrap();
+        for (original, replacement) in [
+            (
+                "\"machine\":\"machine\"",
+                format!("\"machine\":\"{canonical_identifier}\""),
+            ),
+            (
+                "\"arguments\":[[\"left\",0]",
+                format!("\"arguments\":[[\"{canonical_identifier}\",0]"),
+            ),
+            (
+                "\"name\":\"some\"",
+                format!("\"name\":\"{canonical_identifier}\""),
+            ),
+        ] {
+            let mutated = graph.replacen(original, &replacement, 1);
+            assert_ne!(mutated, graph, "missing FSM wire fixture {original}");
+            let mut valid = sections.clone();
+            valid.nodes = mutated.into_bytes();
+            mech_engine::decode_program_artifact_sections(&valid).unwrap_or_else(|error| {
+                panic!("canonical FSM identifier {replacement}: {error:?}")
+            });
+        }
     }
     let mut revision_five = sections.clone();
     revision_five.nodes = graph
         .replacen("\"revision\":6", "\"revision\":5", 1)
         .into_bytes();
     assert!(mech_engine::decode_program_artifact_sections(&revision_five).is_err());
-    // Artifact admission must enforce both canonical angle terminals in all
-    // three identifier roles, including a forbidden scalar after a valid prefix.
-    for glyph in ['⟨', '⟩'] {
+    // Artifact admission must enforce the complete canonical forbidden-emoji
+    // terminal set in all three identifier roles, including a forbidden
+    // grapheme after a valid prefix.
+    for glyph in [
+        '\u{00a0}', '\u{2009}', '\u{27e8}', '\u{27e9}', '\u{2e22}', '\u{2e25}', '╭', '╮', '╰', '╯',
+        '┏', '┓', '┗', '┌', '┐', '└', '┼', '─', '├', '┤', '┬', '┴', '│', '┃',
+    ] {
         for name in [
             format!("{glyph}bad"),
             format!("bad{glyph}"),
@@ -321,7 +329,7 @@ fn fsm_pipe_owns_typed_arguments_stages_and_artifact_roundtrip() {
                 invalid.nodes = mutated.into_bytes();
                 assert!(
                     mech_engine::decode_program_artifact_sections(&invalid).is_err(),
-                    "forbidden canonical angle in FSM identifier: {replacement}"
+                    "forbidden canonical grapheme in FSM identifier: {replacement}"
                 );
             }
         }
