@@ -62,6 +62,8 @@ fn turns_for_output(source: &str, expected: &[f64], kind: mech_engine::SourceDoc
     let artifact = compiled
         .compile_artifact()
         .expect("document must construct a canonical artifact");
+    let bytecode = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let artifact = mech_engine::decode_program_artifact_bytecode_v1(&bytecode).unwrap();
     let mut catalog = FunctionCatalogBuilder::new();
     mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
     let catalog = catalog.build().unwrap();
@@ -71,7 +73,7 @@ fn turns_for_output(source: &str, expected: &[f64], kind: mech_engine::SourceDoc
         &catalog,
         &ActivationFacts::default(),
     )
-    .expect("document must activate with the maintained resident catalog");
+    .unwrap_or_else(|error| panic!("{source:?}: document activation: {error:?}"));
     let output = compiled
         .document_outputs()
         .iter()
@@ -95,6 +97,59 @@ fn interactive_fixture_executes_and_retains_state_across_turns() {
     let source = include_str!("../../../tests/fixtures/syntax-source-boundary/interactive.mec");
     assert_eq!(source, "~answer := 0\nanswer += 1\nanswer\n");
     turns(source, &[1.0, 2.0]);
+}
+
+#[test]
+fn indexed_document_updates_use_canonical_assignment_and_preserve_state_order() {
+    for (source, expected) in [
+        (
+            "~numbers := [1, 2, 3, 4, 5]\nnumbers[2] = 10\nnumbers[2]\n",
+            [10.0, 10.0],
+        ),
+        (
+            "~numbers := [1, 2, 3]\nnumbers[2] += 1\nnumbers[2]\n",
+            [3.0, 4.0],
+        ),
+        (
+            "~numbers := [1, 2, 3]\nnumbers[2] = 10\nbefore := numbers[2]\nnumbers[2] += 2\nbefore + numbers[2]\n",
+            [22.0, 22.0],
+        ),
+        (
+            "~numbers := [1, 2, 3]\nnumbers[1..=2] = 10\nnumbers[1] + numbers[2] + numbers[3]\n",
+            [23.0, 23.0],
+        ),
+        (
+            "~numbers := [1, 2; 3, 4]\nnumbers[2,1] = 10\nnumbers[2,1]\n",
+            [10.0, 10.0],
+        ),
+        (
+            "~record := {value: 1}\nrecord.value += 1\nrecord.value\n",
+            [2.0, 3.0],
+        ),
+        (
+            "~record := {values: [1, 2]}\nrecord.values[2] += 1\nrecord.values[2]\n",
+            [3.0, 4.0],
+        ),
+        (
+            "~numbers := [1, 2]\nnumbers[1] += 1\nnumbers[2] = 2\nnumbers[1] + numbers[2]\n",
+            [4.0, 5.0],
+        ),
+        ("~pair := (1, 2)\npair.2 += 1\npair.2\n", [3.0, 4.0]),
+        (
+            "~record := {a: 1, b: 2}\nrecord.b,a = (3, 4)\nrecord.a + record.b\n",
+            [7.0, 7.0],
+        ),
+        (
+            "~numbers := [1, 2; 3, 4]\nnumbers[2,:] = 10\nnumbers[2,1] + numbers[2,2]\n",
+            [20.0, 20.0],
+        ),
+        (
+            "~numbers := [1, 2; 3, 4]\nnumbers[:,2] += 1\nnumbers[1,2] + numbers[2,2]\n",
+            [8.0, 10.0],
+        ),
+    ] {
+        turns(source, &expected);
+    }
 }
 
 #[test]
@@ -176,6 +231,55 @@ fn discarded_candidate_does_not_advance_document_state() {
             panic!("scalar published output")
         };
         assert_eq!(value.to_f64(), expected);
+    }
+}
+
+#[test]
+fn indexed_candidates_abort_without_mutating_published_state() {
+    for failing in [false, true] {
+        let source = if failing {
+            "~numbers := [1, 2]\nnumbers[2] += 1\nnumbers[0] = 9\nnumbers[2]\n"
+        } else {
+            "~numbers := [1, 2]\nnumbers[2] += 1\nnumbers[2]\n"
+        };
+        let compiled = compiled(source);
+        let bytes =
+            mech_engine::encode_program_artifact_bytecode_v1(&compiled.compile_artifact().unwrap())
+                .unwrap();
+        let artifact = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
+        let mut catalog = FunctionCatalogBuilder::new();
+        mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+        let catalog = catalog.build().unwrap();
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x572, 0),
+            &artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        let before = instance.published_state_hash();
+        if failing {
+            assert!(instance.turn(&[]).is_err());
+            assert_eq!(instance.published_state_hash(), before);
+            assert!(instance.turn_without_summary(&[]).is_err());
+            assert_eq!(instance.published_state_hash(), before);
+        } else {
+            {
+                let candidate = instance.prepare_turn(&[]).unwrap();
+                let output = candidate.copied_output(0).unwrap();
+                let ValueData::F64(value) = output.data() else {
+                    panic!("scalar candidate")
+                };
+                assert_eq!(value.to_f64(), 3.0);
+            }
+            assert_eq!(instance.published_state_hash(), before);
+            instance.turn_without_summary(&[]).unwrap();
+            let output = instance.copied_output(0).unwrap();
+            let ValueData::F64(value) = output.data() else {
+                panic!("scalar output")
+            };
+            assert_eq!(value.to_f64(), 3.0);
+        }
     }
 }
 

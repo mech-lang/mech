@@ -4176,14 +4176,21 @@ impl SemanticBuilder {
                 ));
             }
         };
-        let selectors = selectors
+        let selectors = self.subscript_values(&selectors)?;
+        self.select_values(source, selectors, item.syntax())
+    }
+
+    fn subscript_values(
+        &mut self,
+        selectors: &[SubscriptValueSyntax],
+    ) -> Result<Vec<Option<PendingValue>>, SourceSemanticError> {
+        selectors
             .iter()
             .map(|selector| match selector {
                 SubscriptValueSyntax::SelectAll(_) => Ok(None),
                 _ => self.subscript_value(selector).map(Some),
             })
-            .collect::<Result<Vec<_>, _>>()?;
-        self.select_values(source, selectors, item.syntax())
+            .collect()
     }
 
     fn select_field(

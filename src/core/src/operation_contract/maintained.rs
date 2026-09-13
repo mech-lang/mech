@@ -70,6 +70,34 @@ pub fn maintained_operation_contract(
     } else {
         ChangeDetectionPolicy::ExactScalar
     };
+    let assignment = match name {
+        "core/assign/whole-value" => Some((2, RegionPolicy::WholeValue)),
+        "core/assign/indexed-axis" | "core/assign/indexed-rows" => {
+            Some((3, RegionPolicy::IndexedAxis { axis: 0 }))
+        }
+        "core/assign/indexed-columns" => Some((3, RegionPolicy::IndexedAxis { axis: 1 })),
+        "core/assign/indexed-rectangle" => Some((4, RegionPolicy::RectangularRegion)),
+        "core/assign/collection-entry" => Some((3, RegionPolicy::CollectionEntry)),
+        "core/assign/single-element" => Some((3, RegionPolicy::SingleElement)),
+        _ => None,
+    };
+    if let Some((arity, regions)) = assignment {
+        return (input_count == arity).then(|| OperationContractDeclaration {
+            inputs: InputPortLayout::Fixed(vec![read(); arity].into_boxed_slice()),
+            outputs: vec![OutputPortPolicy {
+                access: AccessMode::ReadWrite,
+                delivery: DeliveryMode::Signal,
+                construction: OutputConstruction::ReadModifyWrite {
+                    base_input: 0,
+                    regions,
+                },
+                alias: AliasPolicy::MayAlias { input: 0 },
+                change_detection: ChangeDetectionPolicy::KernelReported,
+            }]
+            .into_boxed_slice(),
+            interaction: ExternalInteraction::Pure,
+        });
+    }
     if let Some(operation) = crate::maintained_math_operation(name) {
         if operation.input_count() != input_count {
             return None;

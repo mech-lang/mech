@@ -408,7 +408,7 @@ impl ReactiveInstance {
         let inputs = (0..call.inputs.len())
             .map(|ordinal| {
                 let location = if Some(ordinal) == base {
-                    output_location
+                    node.rmw_base.unwrap_or(output_location)
                 } else {
                     *reads.next().ok_or_else(fail)?
                 };
@@ -1700,6 +1700,68 @@ impl ReactiveInstance {
         };
         match node.write.storage {
             ResidentStorageClass::Scratch => {
+                let base_changed = if let Some(base) = node.rmw_base {
+                    let destination = node.write.region;
+                    let (changed, result) = match base {
+                        ResidentReadLocation::Constant(region) => (
+                            !regions_equal(
+                                &self.workspace.scratch,
+                                destination,
+                                &self.activation,
+                                region,
+                            ),
+                            self.workspace.scratch.copy_region_from(
+                                destination,
+                                &self.activation,
+                                region,
+                            ),
+                        ),
+                        ResidentReadLocation::Input(region) => (
+                            !regions_equal(
+                                &self.workspace.scratch,
+                                destination,
+                                &self.workspace.input,
+                                region,
+                            ),
+                            self.workspace.scratch.copy_region_from(
+                                destination,
+                                &self.workspace.input,
+                                region,
+                            ),
+                        ),
+                        ResidentReadLocation::State { slot, region } => {
+                            let buffer = self.state.select_buffer(slot, working_epoch);
+                            (
+                                !regions_equal(
+                                    &self.workspace.scratch,
+                                    destination,
+                                    &self.state.buffers[buffer],
+                                    region,
+                                ),
+                                self.workspace.scratch.copy_region_from(
+                                    destination,
+                                    &self.state.buffers[buffer],
+                                    region,
+                                ),
+                            )
+                        }
+                        ResidentReadLocation::Scratch(region) => (
+                            !regions_equal(
+                                &self.workspace.scratch,
+                                destination,
+                                &self.workspace.scratch,
+                                region,
+                            ),
+                            self.workspace
+                                .scratch
+                                .copy_region_within(destination, region),
+                        ),
+                    };
+                    result.map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+                    changed
+                } else {
+                    false
+                };
                 let before_scalar = if node.change_detection == ChangeDetectionPolicy::ExactScalar {
                     scalar_token(self.workspace.scratch.read(node.write.region))
                 } else {
@@ -1785,7 +1847,7 @@ impl ReactiveInstance {
                     error,
                 })?;
                 let policy_changed = match node.change_detection {
-                    ChangeDetectionPolicy::KernelReported => kernel_changed,
+                    ChangeDetectionPolicy::KernelReported => base_changed || kernel_changed,
                     ChangeDetectionPolicy::ExactScalar => {
                         before_scalar
                             != scalar_token(self.workspace.scratch.read(node.write.region))

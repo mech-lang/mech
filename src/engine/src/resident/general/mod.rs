@@ -115,6 +115,7 @@ pub struct ActivatedKernelNode {
     pub reads: Range<u32>,
     pub write: ResidentWriteLocation,
     pub construction: OutputConstruction,
+    pub(crate) rmw_base: Option<ResidentReadLocation>,
     pub change_detection: ChangeDetectionPolicy,
     pub(crate) reads_state: bool,
     pub(crate) scratch_prefix_reads: bool,
@@ -176,6 +177,7 @@ struct ActivatedMemorySite {
     reads: Range<u32>,
     write: ResidentWriteLocation,
     construction: OutputConstruction,
+    rmw_base: Option<ResidentReadLocation>,
 }
 
 impl ActivatedTurnStep {
@@ -187,6 +189,7 @@ impl ActivatedTurnStep {
                 reads: node.reads.clone(),
                 write: node.write,
                 construction: node.construction.clone(),
+                rmw_base: node.rmw_base,
             },
             Self::Comprehension(node) => ActivatedMemorySite {
                 artifact_node: node.artifact_node,
@@ -194,6 +197,7 @@ impl ActivatedTurnStep {
                 reads: node.reads.clone(),
                 write: node.write,
                 construction: comprehension::materialization_construction(),
+                rmw_base: None,
             },
             _ => return None,
         })
@@ -2550,14 +2554,20 @@ fn classify_nodes(
                         }
                     }
                     OutputConstruction::ReadModifyWrite { base_input, .. } => {
-                        if output_role != SlotRole::State
+                        let base = node_inputs(artifact, node.node)?
+                            .get(base_input as usize)
+                            .copied();
+                        let valid_destination = match output_role {
+                            SlotRole::State => matches!(base,
+                                Some(ArtifactSource::Slot(base)) if output_slot == base),
+                            SlotRole::Derived => {
+                                base.is_some() && base != Some(ArtifactSource::Slot(output_slot))
+                            }
+                            _ => false,
+                        };
+                        if !valid_destination
                             || output.access != AccessMode::ReadWrite
                             || output.alias != (AliasPolicy::MayAlias { input: base_input })
-                            || !matches!(
-                                node_inputs(artifact, node.node)?.get(base_input as usize),
-                                Some(ArtifactSource::Slot(base))
-                                    if node_output_slot(artifact, node.node)? == *base
-                            )
                         {
                             return Err(ResidentActivationError::InvalidAlias { node: node.node });
                         }
@@ -4103,6 +4113,14 @@ fn build_plan(
             continue;
         }
         let read_start = reads.len() as u32;
+        // Derived RMW updates seed fresh scratch from their explicit base;
+        // state RMW continues to seed its own candidate buffer.
+        let rmw_base = if output.storage == ResidentStorageClass::Scratch {
+            base.map(|index| resolve_read(&layout, input_sources[index]))
+                .transpose()?
+        } else {
+            None
+        };
         let mut reads_state = false;
         for (ordinal, source) in input_sources.iter().enumerate() {
             if Some(ordinal) != base {
@@ -4128,6 +4146,7 @@ fn build_plan(
                 region: output.region,
             },
             construction: output_contract.construction.clone(),
+            rmw_base,
             change_detection: output_contract.change_detection,
             reads_state,
             scratch_prefix_reads,
@@ -6094,6 +6113,7 @@ fn bind_control_block(
                 region: output.region,
             },
             construction: policy.construction.clone(),
+            rmw_base: None,
             change_detection: policy.change_detection,
             reads_state: reads[read_start as usize..]
                 .iter()

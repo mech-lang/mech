@@ -8,6 +8,9 @@ use mech_syntax::document::{
 
 use super::*;
 
+#[path = "document_assignment.rs"]
+mod document_assignment;
+
 enum DocumentUnit {
     Statement(SyntaxNode),
     Fence(CodeBlockSyntax, Vec<DocumentUnit>),
@@ -354,6 +357,19 @@ impl SemanticBuilder {
         let state = self.assignment_state(&target)?;
         let expected = self.schema_draft_of(PendingValue::State(state))?;
         let mut value = self.expression(&expression)?.0;
+        if let Some(subscripts) = target.subscripts() {
+            value = self.document_selected_update(
+                self.current_state_value(state),
+                &subscripts.items(),
+                value,
+                operation,
+                syntax,
+                expression.syntax(),
+            )?;
+            let writer = self.states[state as usize].producer_node as usize;
+            self.nodes[writer].inputs[0] = value;
+            return Ok((value, syntax.clone()));
+        }
         if let Some(operation) = operation {
             let current = self.current_state_value(state);
             let Some((inputs, schema)) =
@@ -386,13 +402,6 @@ impl SemanticBuilder {
     }
 
     fn assignment_state(&self, target: &SliceRefSyntax) -> Result<u32, SourceSemanticError> {
-        if let Some(subscripts) = target.subscripts() {
-            return Err(SourceSemanticError {
-                code: "source-semantics/unsupported-assignment-target",
-                message: "indexed assignment requires a maintained update operation".to_owned(),
-                anchor: SourceSemanticAnchor::for_node(subscripts.syntax()),
-            });
-        }
         let stem = self.required(target.stem(), target.syntax(), "an assignment target stem")?;
         let name = node_text(stem.syntax())?;
         match self.bindings.get(&name) {

@@ -314,6 +314,7 @@ pub(super) fn bind(
                         region: output.region,
                     },
                     construction: policy.construction.clone(),
+                    rmw_base: None,
                     change_detection: policy.change_detection,
                     reads_state: reads[start as usize..]
                         .iter()
