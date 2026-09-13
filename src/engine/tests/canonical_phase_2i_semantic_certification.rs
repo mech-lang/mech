@@ -7,9 +7,8 @@ use std::path::PathBuf;
 use mech_engine::{
     CanonicalSourceFrontend, CanonicalSourceProgram, CardinalitySpec, DimensionExpr, FloatWidth,
     IntegerWidth, PHASE_2I_SEMANTIC_RULES, Phase2iSemanticDisposition, ProgramArtifact, SchemaBody,
-    SourceNodeOutput, SourceSemanticAnchor, SourceSemanticComprehensionQualifierRole,
-    SourceStateInitializer, SourceValue, canonical_application_requirement_bytes,
-    encode_program_artifact_bytecode_v1,
+    SourceNodeOutput, SourceSemanticAnchor, SourceSemanticComprehensionQualifierRole, SourceValue,
+    canonical_application_requirement_bytes, encode_program_artifact_bytecode_v1,
 };
 use mech_syntax::document::parser::canonical::parse_canonical_phase_2i_rule_for_test;
 use mech_syntax::document::parser::rules;
@@ -211,7 +210,13 @@ fn semantic_snapshot_hash(compiled: &CanonicalSourceProgram, artifact: &ProgramA
     hash.usize(program.states.len());
     for state in &program.states {
         hash.u32(state.schema.get());
-        hash_optional_u32(&mut hash, state.initializer.map(|id| id.get()));
+        match state.initializer {
+            Some(value) => {
+                hash.field("initializer");
+                hash_source_value(&mut hash, value);
+            }
+            None => hash.field("no-initializer"),
+        }
         hash.u32(state.producer_node);
         hash.u32(u32::from(state.producer_output_ordinal));
     }
@@ -229,10 +234,10 @@ fn semantic_snapshot_hash(compiled: &CanonicalSourceProgram, artifact: &ProgramA
                 hash.field(&operation.operation_name);
                 hash_optional_u32(&mut hash, requirement.map(|id| id.get()));
             }
-            mech_engine::SourceNodeBody::BooleanMatch(_) => {
+            mech_engine::SourceNodeBody::Match(_) => {
                 // The complete typed control body is sealed by the artifact
                 // bytecode below, including captures, guards, operations and yields.
-                hash.field("BooleanMatch");
+                hash.field("Match");
             }
         }
         hash.usize(node.inputs.len());
@@ -341,19 +346,6 @@ fn semantic_snapshot_hash(compiled: &CanonicalSourceProgram, artifact: &ProgramA
     hash.usize(source_map.outputs.len());
     for anchor in &source_map.outputs {
         hash_anchor(&mut hash, *anchor);
-    }
-    hash.usize(compiled.state_initializers().len());
-    for initializer in compiled.state_initializers() {
-        match initializer {
-            SourceStateInitializer::Constant(id) => {
-                hash.field("constant-initializer");
-                hash.u32(id.get());
-            }
-            SourceStateInitializer::Deferred(value) => {
-                hash.field("deferred-initializer");
-                hash_source_value(&mut hash, *value);
-            }
-        }
     }
     hash.field("artifact-bytecode-v1");
     hash.bytes(
