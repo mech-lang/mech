@@ -244,6 +244,44 @@ fn matching_executes_patterns_guards_and_bound_arm_results() {
 }
 
 #[test]
+fn match_publishes_the_selected_compound_result_across_turns() {
+    execute(
+        "x := signal<f64> ? | 0 => (1, true) | * => (2, false)",
+        [
+            (
+                vec![ResidentValueRef::F64(&[0.0])],
+                Data::Tuple(vec![f(1.0), Data::Bool(true)].into_boxed_slice()),
+            ),
+            (
+                vec![ResidentValueRef::F64(&[4.0])],
+                Data::Tuple(vec![f(2.0), Data::Bool(false)].into_boxed_slice()),
+            ),
+            (
+                vec![ResidentValueRef::F64(&[0.0])],
+                Data::Tuple(vec![f(1.0), Data::Bool(true)].into_boxed_slice()),
+            ),
+        ],
+    );
+}
+
+#[test]
+fn identical_key_tables_join_after_artifact_roundtrip() {
+    execute(
+        "x := (|a<u8>|1u8|) ⋈ (|a<u8>|1u8|)",
+        [(
+            Vec::new(),
+            Data::Table(
+                vec![TableColumnDraft {
+                    name: "a".to_owned(),
+                    values: vec![Data::U8(1)].into_boxed_slice(),
+                }]
+                .into_boxed_slice(),
+            ),
+        )],
+    );
+}
+
+#[test]
 fn comprehension_executes_generator_filter_and_yield() {
     execute(
         "x := [item + 1 | item <- [1 2 3], item > 1]",
