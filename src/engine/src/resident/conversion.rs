@@ -613,6 +613,17 @@ fn preflight_present_option(
     Ok(())
 }
 
+fn conversion_adds_presence(step: &mech_core::ConversionStep) -> bool {
+    use mech_core::ConversionStep;
+    match step {
+        ConversionStep::OptionPresent(_) => true,
+        ConversionStep::MatrixElements(inner) | ConversionStep::OptionPayload(inner) => {
+            conversion_adds_presence(&inner.step)
+        }
+        ConversionStep::Identity | ConversionStep::Scalar(_) => false,
+    }
+}
+
 fn execute_kind_conversion(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -628,10 +639,10 @@ fn execute_kind_conversion(
         .retained_state::<ResidentConversionPlan>()
         .ok_or(ResidentKernelError::InvalidInput)?;
     preflight_string_conversion(kernel, input, &output, &plan.target)?;
-    if plan.wrap_present {
+    if plan.wrap_present || conversion_adds_presence(&plan.conversion.step) {
         preflight_present_option(kernel, input, &output)?;
     }
-    let source = if plan.wrap_present
+    let source = if matches!(output, ResidentValueMut::Snapshot(_))
         && matches!(plan.source, SchemaBody::Matrix { .. })
         && !matches!(input, ResidentValueRef::Snapshot(_))
     {

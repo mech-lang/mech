@@ -1573,3 +1573,265 @@ fn named_arguments_reject_unknown_duplicate_missing_and_undeclared_bindings() {
         assert_eq!(error.code, code, "{source}: {error}");
     }
 }
+
+#[test]
+fn review_simple_string_escapes_preserve_canonical_values() {
+    use mech_core::ValueData;
+    for (source, expected) in [
+        (r#""\a\!\u""#, "a!u"),
+        (r#""\n\t\r\0\\\"""#, "\n\t\r\0\\\""),
+        (r#""\é\👩🏽‍💻""#, "é👩🏽‍💻"),
+    ] {
+        let artifact = compile(source).compile_artifact().unwrap();
+        let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+        let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
+        assert!((0..decoded.constants().len()).filter_map(|index| decoded.constants().get(mech_core::ConstantId::new(index as u32))).any(|value| matches!(value.data(), ValueData::String(value) if value.as_ref() == expected)), "{source}");
+    }
+}
+
+#[test]
+fn review_atom_annotations_keep_exact_nominal_identity() {
+    for source in [":ready<:ready>", ":ready<:ready?>", ":ready<*?>"] {
+        let compiled = compile(source);
+        let expected = output(&compiled);
+        assert!(
+            matches!(expected, SchemaBody::Atom(_) | SchemaBody::Option(_)),
+            "{source}: {expected:?}"
+        );
+        let artifact = compiled.compile_artifact().unwrap();
+        let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+        let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
+        assert_eq!(
+            mech_engine::encode_program_artifact_bytecode_v1(&decoded).unwrap(),
+            bytes
+        );
+    }
+    for source in [":ready<:other>", ":ready<:other?>", ":ready<u8>"] {
+        let error = CanonicalSourceFrontend
+            .compile_expression(&expression(source))
+            .err()
+            .unwrap();
+        assert_eq!(
+            error.code, "source-semantics/incompatible-literal-kind",
+            "{source}"
+        );
+    }
+}
+
+#[test]
+fn review_duplicate_definitions_fail_at_the_second_name() {
+    use mech_syntax::document::{DocumentSyntax, GreenBuilder, IdGenerator};
+    for second in ["x := 2", "~x := 2", "x<u8> := 2"] {
+        let first = definition("x := 1");
+        let later = definition(second);
+        let mut ids = IdGenerator::default();
+        let mut builder = GreenBuilder::new(&mut ids);
+        builder.start_node(SyntaxKind::Document);
+        builder.start_node(SyntaxKind::Body);
+        builder.reuse_node(first.syntax().green().clone()).unwrap();
+        builder.token(SyntaxKind::Newline, "\n").unwrap();
+        builder.reuse_node(later.syntax().green().clone()).unwrap();
+        builder.finish_node().unwrap();
+        builder.finish_node().unwrap();
+        let source = format!("x := 1\n{second}");
+        let document = DocumentSyntax::cast(SyntaxNode::new_root(
+            builder.finish().unwrap(),
+            TextSnapshot::new(DocumentId(822), Revision(6), source.as_str()).unwrap(),
+        ))
+        .unwrap();
+        let error = CanonicalSourceFrontend
+            .compile_document(&document)
+            .err()
+            .unwrap();
+        assert_eq!(error.code, "source-semantics/variable-already-defined");
+        assert_eq!(error.anchor.document, DocumentId(822));
+        assert!(error.anchor.range.start.0 >= 7);
+    }
+}
+
+#[test]
+fn review_remaining_set_calls_have_provider_independent_contracts() {
+    for source in [
+        "set/subset({1}, {1,2})",
+        "{1} ⊂ {1,2}",
+        "set/superset({1,2}, {1})",
+        "set/proper-superset({1,2}, {1})",
+        "set/disjoint({1}, {2})",
+        "set/equals({1}, {1})",
+        "{1} ≠ {2}",
+        "set/element-of(1, {1,2})",
+        "set/not-element-of(3, {1,2})",
+        "set/powerset({1,2})",
+        "set/size({1,2})",
+        "set/insert({1}, 2)",
+        "set/remove({1,2}, 1)",
+    ] {
+        let artifact = compile(source)
+            .compile_artifact()
+            .unwrap_or_else(|error| panic!("{source}: {error:?}"));
+        let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+        let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
+        assert_eq!(
+            mech_engine::encode_program_artifact_bytecode_v1(&decoded).unwrap(),
+            bytes
+        );
+        #[cfg(feature = "resident-artifact")]
+        {
+            let mut catalog = mech_core::FunctionCatalogBuilder::new();
+            mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+            let mut instance = mech_engine::__resident::activate(
+                mech_core::ReactiveInstanceId::new(822, 0),
+                &decoded,
+                &catalog.build().unwrap(),
+                &mech_engine::__resident::ActivationFacts::default(),
+            )
+            .unwrap_or_else(|error| panic!("{source}: {error:?}"));
+            instance.turn(&[]).unwrap();
+            assert!(instance.copied_output(0).is_ok());
+        }
+    }
+}
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn review_optional_matrix_blocks_and_compound_sets_execute() {
+    use mech_core::{
+        ValueDataDraft as Data,
+        snapshot::{F64Bits, OptionDraft},
+    };
+    let some = |value| {
+        Data::Option(OptionDraft {
+            present: true,
+            value: Some(Box::new(value)),
+        })
+    };
+    let absent = Data::Option(OptionDraft {
+        present: false,
+        value: None,
+    });
+    let f = |value| Data::F64(F64Bits::from_f64(value));
+    for (source, expected) in [
+        (
+            "[(1..3) _]",
+            Data::Matrix(vec![some(f(1.)), some(f(2.)), absent.clone()].into_boxed_slice()),
+        ),
+        (
+            "[_ (1..3)]",
+            Data::Matrix(vec![absent.clone(), some(f(1.)), some(f(2.))].into_boxed_slice()),
+        ),
+        (
+            "[(1..3)' ; _]",
+            Data::Matrix(vec![some(f(1.)), some(f(2.)), absent.clone()].into_boxed_slice()),
+        ),
+        (
+            "[(1..3) _; (4..6) _]",
+            Data::Matrix(
+                vec![
+                    some(f(1.)),
+                    some(f(2.)),
+                    absent.clone(),
+                    some(f(4.)),
+                    some(f(5.)),
+                    absent.clone(),
+                ]
+                .into_boxed_slice(),
+            ),
+        ),
+        (
+            "{(1u8, 2u8) _}",
+            Data::Set(
+                vec![
+                    absent.clone(),
+                    some(Data::Tuple(
+                        vec![Data::U8(1), Data::U8(2)].into_boxed_slice(),
+                    )),
+                ]
+                .into_boxed_slice(),
+            ),
+        ),
+    ] {
+        let artifact = compile(source).compile_artifact().unwrap();
+        let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+        let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
+        let mut catalog = mech_core::FunctionCatalogBuilder::new();
+        mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+        let mut instance = mech_engine::__resident::activate(
+            mech_core::ReactiveInstanceId::new(822, 0),
+            &decoded,
+            &catalog.build().unwrap(),
+            &mech_engine::__resident::ActivationFacts::default(),
+        )
+        .unwrap_or_else(|error| panic!("{source}: {error:?}"));
+        for _ in 0..2 {
+            instance.turn(&[]).unwrap();
+            assert_eq!(
+                instance
+                    .copied_output(0)
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                expected,
+                "{source}"
+            );
+        }
+    }
+}
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn review_live_optional_matrix_blocks_preserve_rectangular_order() {
+    use mech_core::{
+        ResidentValueRef, ValueDataDraft as Data,
+        snapshot::{F64Bits, OptionDraft},
+    };
+    let source = "[signal<[f64]:2,2>; _ _]";
+    let artifact = compile(source).compile_artifact().unwrap();
+    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
+    let mut catalog = mech_core::FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let mut instance = mech_engine::__resident::activate(
+        mech_core::ReactiveInstanceId::new(822, 0),
+        &decoded,
+        &catalog.build().unwrap(),
+        &mech_engine::__resident::ActivationFacts::default(),
+    )
+    .unwrap();
+    for offset in [0., 10.] {
+        let input = [1. + offset, 3. + offset, 2. + offset, 4. + offset];
+        instance
+            .turn(&[mech_engine::__resident::CapturedSignalInput {
+                slot: instance.plan.inputs[0].slot,
+                value: ResidentValueRef::F64(&input),
+            }])
+            .unwrap();
+        let mut expected = (1..=4)
+            .map(|n| {
+                Data::Option(OptionDraft {
+                    present: true,
+                    value: Some(Box::new(Data::F64(F64Bits::from_f64(
+                        f64::from(n) + offset,
+                    )))),
+                })
+            })
+            .collect::<Vec<_>>();
+        expected.extend([
+            Data::Option(OptionDraft {
+                present: false,
+                value: None,
+            }),
+            Data::Option(OptionDraft {
+                present: false,
+                value: None,
+            }),
+        ]);
+        assert_eq!(
+            instance
+                .copied_output(0)
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            Data::Matrix(expected.into_boxed_slice())
+        );
+    }
+}

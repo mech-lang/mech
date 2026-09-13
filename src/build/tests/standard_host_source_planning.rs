@@ -208,8 +208,10 @@ fn robot_custom_send_operation_survives_source_artifact_and_bytecode() {
             })
     );
     assert!(product.artifact().nodes().iter().any(|node| {
-        node.operation.module_path.as_ref() == ["resource", "send"]
-            && node.operation.operation_name == "move"
+        node.as_operation().is_some_and(|node| {
+            node.operation.module_path.as_ref() == ["resource", "send"]
+                && node.operation.operation_name == "move"
+        })
     }));
 
     let decoded = ParsedProgram::from_bytes(product.bytecode()).unwrap();

@@ -121,6 +121,40 @@ pub fn maintained_operation_contract(
                 ChangeDetectionPolicy::AlwaysChanged,
             ))
         }
+        "set/powerset" if input_count == 1 => Some(declaration(
+            fixed(),
+            OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            ChangeDetectionPolicy::AlwaysChanged,
+        )),
+        "set/disjoint"
+        | "set/equals"
+        | "set/not_equals"
+        | "set/proper_subset"
+        | "set/proper-superset"
+        | "set/subset"
+        | "set/superset"
+        | "set/element-of"
+        | "set/not-element-of"
+            if input_count == 2 =>
+        {
+            Some(declaration(
+                fixed(),
+                OutputConstruction::FullWrite {
+                    shape: ShapeRule::Declared,
+                },
+                ChangeDetectionPolicy::ExactScalar,
+            ))
+        }
+        "set/size" if input_count == 1 => Some(declaration(
+            fixed(),
+            OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            ChangeDetectionPolicy::ExactScalar,
+        )),
+        "set/insert" | "set/remove" if input_count == 2 => Some(full(ShapeRule::Declared)),
         "logic/not" if input_count == 1 => {
             Some(elementwise_operation_contract(1, change_detection))
         }

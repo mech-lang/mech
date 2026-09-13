@@ -1464,6 +1464,7 @@ struct SemanticBuilder {
     states: Vec<PendingState>,
     outputs: Vec<PendingOutput>,
     bindings: BTreeMap<String, PendingValue>,
+    scope_definitions: BTreeSet<String>,
     patterns: Vec<SourceSemanticPattern>,
     comprehension_qualifiers: Vec<SourceSemanticComprehensionQualifier>,
 }
@@ -1481,6 +1482,7 @@ impl SemanticBuilder {
             states: Vec::new(),
             outputs: Vec::new(),
             bindings: BTreeMap::new(),
+            scope_definitions: BTreeSet::new(),
             patterns: Vec::new(),
             comprehension_qualifiers: Vec::new(),
         }
@@ -2681,6 +2683,13 @@ impl SemanticBuilder {
         )?;
         let stem = self.required(variable.stem(), variable.syntax(), "a variable stem")?;
         let name = node_text(stem.syntax())?;
+        if self.scope_definitions.contains(&name) {
+            return Err(SourceSemanticError {
+                code: "source-semantics/variable-already-defined",
+                message: format!("variable {name:?} is already defined in this scope"),
+                anchor: SourceSemanticAnchor::for_node(variable.syntax()),
+            });
+        }
         let expression = self.required(
             definition.value(),
             definition.syntax(),
@@ -2735,6 +2744,7 @@ impl SemanticBuilder {
         } else {
             value
         };
+        self.scope_definitions.insert(name.clone());
         self.bindings.insert(name, bound);
         Ok((bound, definition.syntax().clone()))
     }
@@ -2765,6 +2775,35 @@ impl SemanticBuilder {
                     )
                 }
                 None => Ok(empty),
+            };
+        }
+        if let Some(LiteralValueSyntax::Atom(value)) = literal.value() {
+            let source = node_text(value.syntax())?;
+            let path = CanonicalNominalPath::new(
+                source
+                    .trim_start_matches(':')
+                    .split('/')
+                    .filter(|segment| !segment.is_empty())
+                    .map(str::to_owned)
+                    .collect::<Vec<_>>(),
+            )
+            .map_err(|error| {
+                internal(
+                    SourceSemanticAnchor::for_node(value.syntax()),
+                    format!("invalid atom path: {error:?}"),
+                )
+            })?;
+            let key = NominalKey::from_path(NominalKind::Atom, &path);
+            let atom = self.constant_exact(SchemaBody::Atom(key), ValueDataDraft::Atom);
+            return match literal.annotation() {
+                Some(annotation) => self.conform_schema_draft(
+                    atom,
+                    &annotation_schema_draft(&annotation)?,
+                    value.syntax(),
+                    "source-semantics/incompatible-literal-kind",
+                    "atom literal does not satisfy its exact kind annotation",
+                ),
+                None => Ok(atom),
             };
         }
         let annotation = literal
@@ -2851,29 +2890,8 @@ impl SemanticBuilder {
             LiteralValueSyntax::Empty(_) => {
                 unreachable!("source empty handled before literal typing")
             }
-            LiteralValueSyntax::Atom(value) => {
-                let source = node_text(value.syntax())?;
-                let path = CanonicalNominalPath::new(
-                    source
-                        .trim_start_matches(':')
-                        .split('/')
-                        .filter(|segment| !segment.is_empty())
-                        .map(str::to_owned)
-                        .collect::<Vec<_>>(),
-                )
-                .map_err(|error| {
-                    internal(
-                        SourceSemanticAnchor::for_node(value.syntax()),
-                        format!("invalid atom path: {error:?}"),
-                    )
-                })?;
-                let key = NominalKey::from_path(NominalKind::Atom, &path);
-                self.exact_literal_constant(
-                    annotation,
-                    SchemaBody::Atom(key),
-                    ValueDataDraft::Atom,
-                    value.syntax(),
-                )
+            LiteralValueSyntax::Atom(_) => {
+                unreachable!("atom handled before scalar literal typing")
             }
             LiteralValueSyntax::KindAnnotation(value) => self.kind_value(&value, annotation),
         }
@@ -3151,21 +3169,109 @@ impl SemanticBuilder {
                                 .to_owned(),
                         anchor: SourceSemanticAnchor::for_node(syntax),
                     })?;
-                let Some(payload) = builtin_schema_for_annotation_body(&element.body) else {
-                    return Err(SourceSemanticError {
-                        code: "source-semantics/incompatible-matrix-element-kind",
-                        message: "absent matrix cells require a concrete scalar peer".to_owned(),
-                        anchor: SourceSemanticAnchor::for_node(syntax),
-                    });
+                let mut element = match &element.body {
+                    SchemaBody::Matrix {
+                        element: payload, ..
+                    } => schema_component(&element, payload),
+                    _ => element,
                 };
-                let option = if option_payload_schema(payload).is_some() {
-                    payload
-                } else {
-                    option_schema(payload).expect("builtin scalar schemas have option schemas")
-                };
-                builtin_schema_draft(option)
+                if !matches!(element.body, SchemaBody::Option(_)) {
+                    element.body = SchemaBody::Option(Box::new(element.body));
+                }
+                element
             }
         };
+        if values
+            .iter()
+            .flatten()
+            .filter_map(|value| *value)
+            .any(|value| {
+                self.schema_draft(value)
+                    .is_ok_and(|schema| matches!(schema.body, SchemaBody::Matrix { .. }))
+            })
+        {
+            let mut rows = Vec::new();
+            for row in values {
+                let mut inputs = Vec::new();
+                for value in row {
+                    let value = match value {
+                        None => self.constant_draft(
+                            option.clone(),
+                            ValueDataDraft::Option(OptionDraft {
+                                present: false,
+                                value: None,
+                            }),
+                        ),
+                        Some(value) => {
+                            let actual = self.schema_draft_of(value)?;
+                            let target = match actual.body {
+                                SchemaBody::Matrix { dimensions, .. } => {
+                                    let mut parameters = actual.dimension_parameters.into_vec();
+                                    let element = embed_schema_draft(
+                                        &option,
+                                        &mut parameters,
+                                        SourceSemanticAnchor::for_node(syntax),
+                                    )?;
+                                    SchemaDraft {
+                                        dimension_parameters: parameters.into_boxed_slice(),
+                                        body: SchemaBody::Matrix {
+                                            element: Box::new(element),
+                                            dimensions,
+                                        },
+                                    }
+                                }
+                                _ => option.clone(),
+                            };
+                            self.conform_schema_draft(
+                                value,
+                                &target,
+                                syntax,
+                                "source-semantics/incompatible-matrix-element-kind",
+                                "optional matrix blocks require one exact element kind",
+                            )?
+                        }
+                    };
+                    inputs.push(value);
+                }
+                let (inputs, output) = self
+                    .resolve_maintained_call("matrix/horzcat", inputs, syntax)?
+                    .ok_or_else(|| {
+                        internal(
+                            SourceSemanticAnchor::for_node(syntax),
+                            "horizontal matrix concatenation has no maintained type declaration"
+                                .to_owned(),
+                        )
+                    })?;
+                rows.push(self.emit_with_schema_draft(
+                    "matrix/horzcat",
+                    inputs,
+                    output,
+                    syntax,
+                    "matrix-row",
+                    None,
+                ));
+            }
+            if rows.len() == 1 {
+                return Ok(rows[0]);
+            }
+            let (inputs, output) = self
+                .resolve_maintained_call("matrix/vertcat", rows, syntax)?
+                .ok_or_else(|| {
+                    internal(
+                        SourceSemanticAnchor::for_node(syntax),
+                        "vertical matrix concatenation has no maintained type declaration"
+                            .to_owned(),
+                    )
+                })?;
+            return Ok(self.emit_with_schema_draft(
+                "matrix/vertcat",
+                inputs,
+                output,
+                syntax,
+                "matrix",
+                None,
+            ));
+        }
         let mut inputs = Vec::new();
         let mut row_width = None;
         for row in &values {
@@ -3599,46 +3705,30 @@ impl SemanticBuilder {
                 anchor: SourceSemanticAnchor::for_node(set.syntax()),
             })?;
         let absent = values.iter().any(Option::is_none);
-        let optional = if absent {
-            let payload = builtin_schema_for_annotation_body(&element.body)
-                .and_then(|kind| {
-                    if option_payload_schema(kind).is_some() {
-                        Some(kind)
-                    } else {
-                        option_schema(kind)
-                    }
-                })
-                .ok_or_else(|| SourceSemanticError {
-                    code: "source-semantics/incompatible-set-element-kind",
-                    message: "absent set elements require a concrete scalar peer".to_owned(),
-                    anchor: SourceSemanticAnchor::for_node(set.syntax()),
-                })?;
-            element.body = schema_body(payload);
-            Some(payload)
-        } else {
-            None
-        };
+        if absent && !matches!(element.body, SchemaBody::Option(_)) {
+            element.body = SchemaBody::Option(Box::new(element.body));
+        }
         let mut inputs = Vec::new();
         for value in values {
-            let input = match (value, optional) {
-                (Some(value), Some(optional)) => self.conform_value(
+            let input = match (value, absent) {
+                (Some(value), true) => self.conform_schema_draft(
                     value,
-                    optional,
+                    &element,
                     set.syntax(),
                     "source-semantics/incompatible-set-element-kind",
                     "optional set elements require one exact kind",
                 )?,
-                (None, Some(optional)) => self.constant(
-                    optional,
+                (None, true) => self.constant_draft(
+                    element.clone(),
                     ValueDataDraft::Option(OptionDraft {
                         present: false,
                         value: None,
                     }),
                 ),
-                (Some(value), None) => {
+                (Some(value), false) => {
                     self.conform_dynamic_to_schema(value, &element, set.syntax())?
                 }
-                (None, None) => unreachable!("absence selects an optional element"),
+                (None, false) => unreachable!("absence selects an optional element"),
             };
             if self.schema_draft_of(input)? != element {
                 return Err(SourceSemanticError {
@@ -4162,6 +4252,7 @@ impl SemanticBuilder {
         operation: &'static str,
     ) -> Result<PendingValue, SourceSemanticError> {
         let saved = self.bindings.clone();
+        let saved_definitions = core::mem::take(&mut self.scope_definitions);
         let compiled = (|| {
             let mut inputs = Vec::new();
             let mut qualifier_layouts = Vec::new();
@@ -4268,6 +4359,7 @@ impl SemanticBuilder {
             Ok(value)
         })();
         self.bindings = saved;
+        self.scope_definitions = saved_definitions;
         compiled
     }
 
@@ -6085,7 +6177,7 @@ fn decode_string(source: &str) -> Option<String> {
     }
     let body = source.strip_prefix('"')?.strip_suffix('"')?;
     let mut output = String::with_capacity(body.len());
-    let mut chars = body.chars();
+    let mut chars = body.chars().peekable();
     while let Some(character) = chars.next() {
         if character != '\\' {
             output.push(character);
@@ -6099,10 +6191,8 @@ fn decode_string(source: &str) -> Option<String> {
             't' => '\t',
             '\\' => '\\',
             '"' => '"',
-            'u' => {
-                if chars.next()? != '{' {
-                    return None;
-                }
+            'u' if chars.peek() == Some(&'{') => {
+                chars.next();
                 let mut digits = String::new();
                 loop {
                     let next = chars.next()?;
@@ -6117,7 +6207,7 @@ fn decode_string(source: &str) -> Option<String> {
                 let scalar = u32::from_str_radix(&digits, 16).ok()?;
                 char::from_u32(scalar)?
             }
-            _ => return None,
+            other => other,
         });
     }
     Some(output)

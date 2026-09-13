@@ -379,6 +379,9 @@ fn conversion_target_schema(
                 dimensions: dimensions.clone(),
             }
         }
+        ConversionStep::OptionPresent(payload_plan) => SchemaBody::Option(Box::new(
+            conversion_target_schema(source, &payload_plan.step)?,
+        )),
         ConversionStep::OptionPayload(payload_plan) => {
             let SchemaBody::Option(payload) = source else {
                 return Err(ConversionExecutionError::ConversionPlanSourceMismatch);
@@ -455,7 +458,9 @@ fn conversion_string_payload_bound(step: &ConversionStep) -> Option<u64> {
             target: BuiltinScalarKind::String,
             ..
         }) => *source,
-        ConversionStep::MatrixElements(inner) | ConversionStep::OptionPayload(inner) => {
+        ConversionStep::MatrixElements(inner)
+        | ConversionStep::OptionPayload(inner)
+        | ConversionStep::OptionPresent(inner) => {
             return conversion_string_payload_bound(&inner.step);
         }
         ConversionStep::Identity | ConversionStep::Scalar(_) => return None,
