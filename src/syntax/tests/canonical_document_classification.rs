@@ -21,6 +21,8 @@ fn canonical_classification_distinguishes_run_source_from_presentation() {
         "@ui/message <- \"hello\"\n",
         "```mech\nx := 1\n```\n",
         "```mech:worker\nx := 1\n```\n",
+        "```mechworker\nx := 1\n```\n",
+        "```mech unknown\nx := 1\n```\n",
         "Evaluated {1 + 2}.\n",
         include_str!("../../../tests/fixtures/syntax-source-boundary/executable.mec"),
         include_str!("../../../tests/fixtures/syntax-source-boundary/document.mec"),
@@ -52,5 +54,4 @@ fn canonical_classification_distinguishes_run_source_from_presentation() {
 fn recovery_cannot_promote_a_valid_prefix_to_executable_input() {
     assert!(!classify("x := 1\ny := [1,,2]\n"));
     assert!(classify("// comment\nx := 1\n"));
-    assert!(!classify("```mech unknown\nx := 1\n```\n"));
 }
