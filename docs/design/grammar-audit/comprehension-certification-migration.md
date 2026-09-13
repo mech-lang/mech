@@ -22,9 +22,10 @@ These artifact witnesses do not establish resident support for every structured
 pattern. S4 executes borrowed tuple, array, and tagged-pattern projections with
 primitive Bool/Index/F64 bindings and yields. Live matrix/set inputs, repeated
 bindings, generator/filter/join behavior, normalization, work admission, and failed
-publication recovery have execution regressions. Composite bindings/yields,
-composite construction inside control, computed pattern blocks, nested control,
-and FSM lowering remain unfinished. The FSM witness retains its required
+publication recovery have execution regressions. Compound match results and nested
+match bodies/guards now use the same ordinary construction and memory providers.
+Comprehension composite bindings/yields, computed pattern blocks, composition with
+nested comprehensions, and FSM lowering remain unfinished. The FSM witness retains its required
 executable outcome; the completion gate continues to fail until that implementation
 exists.
 

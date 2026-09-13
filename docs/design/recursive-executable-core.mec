@@ -283,7 +283,10 @@ comprehension and pattern witnesses now produce validated artifacts, and the
 source-completion behavior suite passes. FSM lowering still blocks artifact
 certification. Resident comprehensions now borrow tuple, array, and tagged-pattern
 components for primitive bindings, including repeated-binding checks. Composite
-bindings/yields, computed pattern blocks, and nested control remain unfinished. S6 activation prerequisites are not yet satisfied; the 80-rule
+comprehension bindings/yields, computed pattern blocks, and composition with nested
+comprehensions remain unfinished. Compound match results and nested match bodies
+and guards execute through typed control and ordinary construction providers.
+S6 activation prerequisites are not yet satisfied; the 80-rule
 registry remains inactive on S5 until those gates are complete.
 
 Shared parenthesis, bracket, brace, colon, identifier, and kind prefixes are

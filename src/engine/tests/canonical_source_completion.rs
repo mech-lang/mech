@@ -282,6 +282,19 @@ fn identical_key_tables_join_after_artifact_roundtrip() {
 }
 
 #[test]
+fn nested_matches_keep_outer_bindings_and_publish_selected_structures() {
+    let result = |value| Data::Tuple(vec![f(value), Data::Bool(true)].into_boxed_slice());
+    execute(
+        "x := signal<f64> ? | item => ((item + 1) ? | inner => (inner + item, true))",
+        [
+            (vec![ResidentValueRef::F64(&[0.0])], result(1.0)),
+            (vec![ResidentValueRef::F64(&[4.0])], result(9.0)),
+            (vec![ResidentValueRef::F64(&[0.0])], result(1.0)),
+        ],
+    );
+}
+
+#[test]
 fn comprehension_executes_generator_filter_and_yield() {
     execute(
         "x := [item + 1 | item <- [1 2 3], item > 1]",
