@@ -35,7 +35,7 @@ fn compile(source: &str) -> CanonicalSourceProgram {
 }
 
 fn fixture() -> ProgramArtifactDraft {
-    let base = compile("(flag<bool>, -11,22,true,false)")
+    let base = compile("(flag<bool>, math/neg(11),22,true,false)")
         .compile_artifact()
         .unwrap();
     let boolean = base.inputs()[0].schema;
@@ -293,7 +293,7 @@ fn typed_match_codec_admits_exact_bounds_and_rejects_unknown_tags() {
 
 #[test]
 fn every_local_operation_requires_its_exact_ordinary_contract() {
-    let base = compile("-11").compile_artifact().unwrap();
+    let base = compile("math/neg(11)").compile_artifact().unwrap();
     let operation = base.nodes()[0].as_operation().unwrap().operation.clone();
     for mutation in 0..5 {
         let mut draft = fixture();

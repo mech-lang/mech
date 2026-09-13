@@ -794,6 +794,27 @@ fn require_keyable_map_key(
     Ok(())
 }
 
+fn require_keyable_set_element(
+    body: &SchemaBody,
+    parameters: &[DimensionParameterDeclaration],
+    syntax: &SyntaxNode,
+) -> Result<(), SourceSemanticError> {
+    let resolved = ResolvedType::from_schema_body(body, parameters).map_err(|error| {
+        internal(
+            SourceSemanticAnchor::for_node(syntax),
+            format!("invalid set element schema: {error}"),
+        )
+    })?;
+    if !resolved.satisfies(BuiltinKindPredicate::Keyable) {
+        return Err(SourceSemanticError {
+            code: "source-semantics/non-keyable-set-element-kind",
+            message: "set literal elements require a keyable kind".to_owned(),
+            anchor: SourceSemanticAnchor::for_node(syntax),
+        });
+    }
+    Ok(())
+}
+
 fn schema_component(schema: &SchemaDraft, body: &SchemaBody) -> SchemaDraft {
     SchemaDraft {
         body: body.clone(),
@@ -1900,51 +1921,6 @@ impl SemanticBuilder {
             rhs = self.conform_dynamic_operand(rhs, BuiltinSchema::Bool, syntax)?;
         }
 
-        let same_kind_inputs = matches!(
-            operator,
-            CanonicalOperator::Add
-                | CanonicalOperator::Subtract
-                | CanonicalOperator::Multiply
-                | CanonicalOperator::Divide
-                | CanonicalOperator::Modulus
-                | CanonicalOperator::Power
-                | CanonicalOperator::NotEqual
-                | CanonicalOperator::EqualTo
-                | CanonicalOperator::StrictNotEqual
-                | CanonicalOperator::StrictEqual
-                | CanonicalOperator::GreaterThan
-                | CanonicalOperator::LessThan
-                | CanonicalOperator::GreaterThanEqual
-                | CanonicalOperator::LessThanEqual
-                | CanonicalOperator::Or
-                | CanonicalOperator::And
-                | CanonicalOperator::Xor
-                | CanonicalOperator::Union
-                | CanonicalOperator::Intersection
-                | CanonicalOperator::Difference
-                | CanonicalOperator::Subset
-                | CanonicalOperator::Superset
-                | CanonicalOperator::ProperSubset
-                | CanonicalOperator::ProperSuperset
-                | CanonicalOperator::SymmetricDifference
-        );
-        if same_kind_inputs {
-            match (
-                self.is_genuinely_dynamic(lhs)?,
-                self.is_genuinely_dynamic(rhs)?,
-            ) {
-                (true, false) => {
-                    lhs =
-                        self.conform_dynamic_to_schema(lhs, &self.schema_draft_of(rhs)?, syntax)?;
-                }
-                (false, true) => {
-                    rhs =
-                        self.conform_dynamic_to_schema(rhs, &self.schema_draft_of(lhs)?, syntax)?;
-                }
-                _ => {}
-            }
-        }
-
         let resolved = self
             .resolve_maintained_call(name, vec![lhs, rhs], syntax)
             .map_err(|mut error| {
@@ -2101,50 +2077,55 @@ impl SemanticBuilder {
                 self.expression_body_with_expected(&expression, expected)?
             }
             FactorValueSyntax::Negate(value) => {
-                let operand = self.required(value.operand(), value.syntax(), "a unary operand")?;
-                let operand = self.factor(&operand)?;
-                let schema = self.schema_draft_of(operand)?;
-                let scalar = builtin_schema_for_body(&schema.body);
-                let matrix_element = match &schema.body {
-                    SchemaBody::Matrix { element, .. } => builtin_schema_for_body(element),
-                    _ => None,
-                };
-                let negatable = scalar.or(matrix_element).is_some_and(|schema| {
-                    builtin_kind(schema).is_some_and(|kind| {
-                        resolved_builtin_type(kind, value.syntax()).is_ok_and(|resolved| {
-                            resolved.satisfies(BuiltinKindPredicate::Negatable)
-                        })
-                    })
-                });
-                if !negatable {
-                    return Err(SourceSemanticError {
-                        code: if matches!(schema.body, SchemaBody::Dynamic) {
-                            "source-semantics/unresolved-negation-kind"
-                        } else {
-                            "source-semantics/non-negatable-kind"
-                        },
-                        message: "unary negation requires a concrete negatable kind".to_owned(),
-                        anchor: SourceSemanticAnchor::for_node(value.syntax()),
-                    });
-                }
-                if matches!(schema.body, SchemaBody::Matrix { .. }) {
-                    self.emit_with_schema_draft(
-                        "math/neg",
-                        vec![operand],
-                        schema,
-                        value.syntax(),
-                        "unary",
-                        None,
-                    )
+                if let Some(literal) = self.negated_number_literal(&value)? {
+                    literal
                 } else {
-                    self.emit(
-                        "math/neg",
-                        vec![operand],
-                        scalar.expect("validated scalar negation"),
-                        value.syntax(),
-                        "unary",
-                        None,
-                    )
+                    let operand =
+                        self.required(value.operand(), value.syntax(), "a unary operand")?;
+                    let operand = self.factor(&operand)?;
+                    let schema = self.schema_draft_of(operand)?;
+                    let scalar = builtin_schema_for_body(&schema.body);
+                    let matrix_element = match &schema.body {
+                        SchemaBody::Matrix { element, .. } => builtin_schema_for_body(element),
+                        _ => None,
+                    };
+                    let negatable = scalar.or(matrix_element).is_some_and(|schema| {
+                        builtin_kind(schema).is_some_and(|kind| {
+                            resolved_builtin_type(kind, value.syntax()).is_ok_and(|resolved| {
+                                resolved.satisfies(BuiltinKindPredicate::Negatable)
+                            })
+                        })
+                    });
+                    if !negatable {
+                        return Err(SourceSemanticError {
+                            code: if matches!(schema.body, SchemaBody::Dynamic) {
+                                "source-semantics/unresolved-negation-kind"
+                            } else {
+                                "source-semantics/non-negatable-kind"
+                            },
+                            message: "unary negation requires a concrete negatable kind".to_owned(),
+                            anchor: SourceSemanticAnchor::for_node(value.syntax()),
+                        });
+                    }
+                    if matches!(schema.body, SchemaBody::Matrix { .. }) {
+                        self.emit_with_schema_draft(
+                            "math/neg",
+                            vec![operand],
+                            schema,
+                            value.syntax(),
+                            "unary",
+                            None,
+                        )
+                    } else {
+                        self.emit(
+                            "math/neg",
+                            vec![operand],
+                            scalar.expect("validated scalar negation"),
+                            value.syntax(),
+                            "unary",
+                            None,
+                        )
+                    }
                 }
             }
             FactorValueSyntax::Not(value) => {
@@ -2354,6 +2335,60 @@ impl SemanticBuilder {
         syntax: &SyntaxNode,
         mut declaration: mech_core::FunctionTypeDeclaration,
     ) -> Result<(Vec<PendingValue>, SchemaDraft), SourceSemanticError> {
+        // Both operator and call syntax enter this inference boundary. These
+        // peer operations infer an undeclared input from the other operand;
+        // the maintained schemes still validate exact kinds and conversions.
+        let peer_inputs = matches!(
+            name,
+            "math/add"
+                | "math/sub"
+                | "math/mul"
+                | "math/div"
+                | "math/mod"
+                | "math/pow"
+                | "string/concat"
+                | "compare/neq"
+                | "compare/eq"
+                | "compare/sneq"
+                | "compare/seq"
+                | "compare/gt"
+                | "compare/lt"
+                | "compare/gte"
+                | "compare/lte"
+                | "logic/or"
+                | "logic/and"
+                | "logic/xor"
+                | "set/union"
+                | "set/intersection"
+                | "set/difference"
+                | "set/subset"
+                | "set/superset"
+                | "set/proper_subset"
+                | "set/proper-superset"
+                | "set/symmetric-difference"
+        );
+        if peer_inputs && inputs.len() == 2 {
+            match (
+                self.is_genuinely_dynamic(inputs[0])?,
+                self.is_genuinely_dynamic(inputs[1])?,
+            ) {
+                (true, false) => {
+                    inputs[0] = self.conform_dynamic_to_schema(
+                        inputs[0],
+                        &self.schema_draft_of(inputs[1])?,
+                        syntax,
+                    )?;
+                }
+                (false, true) => {
+                    inputs[1] = self.conform_dynamic_to_schema(
+                        inputs[1],
+                        &self.schema_draft_of(inputs[0])?,
+                        syntax,
+                    )?;
+                }
+                _ => {}
+            }
+        }
         let input_types = inputs
             .iter()
             .map(|input| {
@@ -2925,9 +2960,9 @@ impl SemanticBuilder {
         })
     }
 
-    fn signed_pattern_literal(
+    fn negated_number_literal(
         &mut self,
-        expression: &ExpressionSyntax,
+        negate: &mech_syntax::document::NegateFactorSyntax,
     ) -> Result<Option<PendingValue>, SourceSemanticError> {
         fn find<N: AstNode>(node: &SyntaxNode, range: TextRange) -> Option<N> {
             if node.range() == range {
@@ -2943,12 +2978,6 @@ impl SemanticBuilder {
             }
             node.children().find_map(|child| find(&child, range))
         }
-        let Some(negate) = find::<mech_syntax::document::NegateFactorSyntax>(
-            expression.syntax(),
-            expression.syntax().range(),
-        ) else {
-            return Ok(None);
-        };
         let Some(operand) = negate.operand() else {
             return Ok(None);
         };
@@ -2963,7 +2992,25 @@ impl SemanticBuilder {
             .annotation()
             .map(|annotation| annotation_schema(&annotation))
             .transpose()?;
-        let source = format!("-{}", canonical_number_source(&number)?);
+        let suffix = selected_integer_suffix(&number)?;
+        for schema in [annotation, suffix].into_iter().flatten() {
+            if schema == BuiltinSchema::Dynamic {
+                continue;
+            }
+            let negatable = builtin_kind(schema).is_some_and(|kind| {
+                resolved_builtin_type(kind, negate.syntax())
+                    .is_ok_and(|resolved| resolved.satisfies(BuiltinKindPredicate::Negatable))
+            });
+            if !negatable {
+                return Ok(None);
+            }
+        }
+        let source = canonical_number_source(&number)?;
+        // A complex literal needs both components negated by its operation.
+        if source.ends_with(['i', 'j']) {
+            return Ok(None);
+        }
+        let source = format!("-{source}");
         self.number_literal(&number, annotation, source).map(Some)
     }
 
@@ -3114,11 +3161,30 @@ impl SemanticBuilder {
                     None,
                 ))
             }
-            StructureValueSyntax::EmptySet(value) => Err(SourceSemanticError {
-                code: "source-semantics/unresolved-set-element-kind",
-                message: "empty set literals require an explicit element kind".to_owned(),
-                anchor: SourceSemanticAnchor::for_node(value.syntax()),
-            }),
+            StructureValueSyntax::EmptySet(value) => {
+                let Some(SchemaDraft {
+                    dimension_parameters,
+                    body: SchemaBody::Set { element, .. },
+                }) = expected
+                else {
+                    return Err(SourceSemanticError {
+                        code: "source-semantics/unresolved-set-element-kind",
+                        message: "empty set literals require an explicit element kind".to_owned(),
+                        anchor: SourceSemanticAnchor::for_node(value.syntax()),
+                    });
+                };
+                require_keyable_set_element(element, dimension_parameters, value.syntax())?;
+                Ok(self.constant_draft(
+                    SchemaDraft {
+                        dimension_parameters: dimension_parameters.clone(),
+                        body: SchemaBody::Set {
+                            element: element.clone(),
+                            cardinality: CardinalitySpec::Exact(DimensionExpr::Constant(0)),
+                        },
+                    },
+                    ValueDataDraft::Set(Box::new([])),
+                ))
+            }
         }
     }
 
@@ -3829,20 +3895,7 @@ impl SemanticBuilder {
             }
             inputs.push(input);
         }
-        let resolved = ResolvedType::from_schema_body(&element.body, &element.dimension_parameters)
-            .map_err(|error| {
-                internal(
-                    SourceSemanticAnchor::for_node(set.syntax()),
-                    format!("invalid set element schema: {error}"),
-                )
-            })?;
-        if !resolved.satisfies(BuiltinKindPredicate::Keyable) {
-            return Err(SourceSemanticError {
-                code: "source-semantics/non-keyable-set-element-kind",
-                message: "set literal elements require a keyable kind".to_owned(),
-                anchor: SourceSemanticAnchor::for_node(set.syntax()),
-            });
-        }
+        require_keyable_set_element(&element.body, &element.dimension_parameters, set.syntax())?;
         let mut parameters = Vec::new();
         let element = embed_schema_draft(
             &element,
@@ -6085,6 +6138,7 @@ fn signed_integer_value(source: &str) -> Option<i128> {
 }
 
 fn real_value(source: &str) -> Option<f64> {
+    let source = source.strip_prefix('+').unwrap_or(source);
     integer_parts(source)
         .map(|(negative, magnitude)| {
             if negative {
@@ -6162,15 +6216,23 @@ fn decode_number(
     let option = annotation.filter(|schema| option_payload_schema(*schema).is_some());
     let annotation = annotation.map(|schema| option_payload_schema(schema).unwrap_or(schema));
     if let Some(complex) = source.strip_suffix(['i', 'j']) {
-        let split = complex
-            .char_indices()
-            .skip(1)
-            .filter_map(|(index, character)| {
-                matches!(character, '+' | '-')
-                    .then_some(index)
-                    .filter(|index| !matches!(complex.as_bytes()[index - 1], b'e' | b'E'))
-            })
-            .last();
+        let mut split = None;
+        let mut component_start = 0;
+        for (index, character) in complex.char_indices().skip(1) {
+            if !matches!(character, '+' | '-') {
+                continue;
+            }
+            let component = &complex[component_start..index];
+            let magnitude = component.trim_start_matches(['+', '-']);
+            let based = ["0d", "0x", "0o", "0b"]
+                .iter()
+                .any(|prefix| magnitude.starts_with(prefix));
+            if !based && component.ends_with(['e', 'E']) {
+                continue;
+            }
+            split = Some(index);
+            component_start = index + 1;
+        }
         let (real, imaginary) = split.map_or(("0", complex), |index| complex.split_at(index));
         let schema = annotation
             .filter(|schema| *schema != BuiltinSchema::Dynamic)
@@ -6490,10 +6552,7 @@ impl SemanticBuilder {
                         crate::MatchPattern::Bind
                     } else {
                         let start = self.nodes.len();
-                        let literal = match self.signed_pattern_literal(&expression)? {
-                            Some(literal) => literal,
-                            None => self.expression(&expression)?.0,
-                        };
+                        let literal = self.expression(&expression)?.0;
                         let PendingValue::Constant(index) = literal else {
                             return Err(error(
                                 "only scalar literal, wildcard and bind patterns are lowered",

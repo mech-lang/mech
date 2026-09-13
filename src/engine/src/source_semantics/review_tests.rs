@@ -750,3 +750,24 @@ fn review_swizzles_use_field_ids_and_preserve_heterogeneous_order() {
         );
     }
 }
+
+#[test]
+fn complex_decoder_preserves_decimal_exponent_signs_and_based_component_separators() {
+    for (source, real, imaginary) in [
+        ("0xE+2e-3i", 14.0, 0.002),
+        ("1e-2+3e-4i", 0.01, 0.0003),
+        ("0xFE-0xEi", 254.0, -14.0),
+        ("0xE+0xAi", 14.0, 10.0),
+    ] {
+        let (schema, value) = decode_number(source, None, None).unwrap();
+        assert_eq!(schema, BuiltinSchema::C64);
+        assert_eq!(
+            value,
+            ValueDataDraft::Complex64(Complex64Bits::new(
+                F64Bits::from_f64(real),
+                F64Bits::from_f64(imaginary),
+            )),
+            "{source}"
+        );
+    }
+}
