@@ -246,6 +246,15 @@ fn fsm_pipe_owns_typed_arguments_stages_and_artifact_roundtrip() {
     assert_eq!(fsm.stages[2].value, mech_engine::FsmValue::Input(9));
     assert_eq!(compiled.program().nodes[0].inputs.len(), 10);
     assert_eq!(compiled.contracts(), &[None]);
+    assert_eq!(compiled.source_map().patterns.len(), 3);
+    assert!(
+        compiled
+            .source_map()
+            .patterns
+            .iter()
+            .all(|pattern| pattern.bindings.is_empty()),
+        "FSM value-role patterns must not report declaration bindings"
+    );
 
     let artifact = compiled.compile_artifact().unwrap();
     let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
@@ -351,6 +360,22 @@ fn fsm_pipe_owns_typed_arguments_stages_and_artifact_roundtrip() {
             "noncanonical FSM identifier {replacement}"
         );
     }
+}
+
+#[test]
+fn maximum_depth_structured_fsm_values_roundtrip() {
+    let mut value = ":x".to_owned();
+    for _ in 0..31 {
+        value = format!(":some({value})");
+    }
+    let compiled = CanonicalSourceFrontend
+        .compile_expression(&expression(&format!("#machine -> {value}")))
+        .unwrap();
+    let artifact = compiled.compile_artifact().unwrap();
+    let sections = mech_engine::encode_program_artifact_sections(&artifact).unwrap();
+    mech_engine::decode_program_artifact_sections(&sections).unwrap();
+    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
 }
 
 #[test]
@@ -2040,7 +2065,9 @@ fn the_source_semantic_module_has_no_aggregate_program_boundary() {
     let source =
         fs::read_to_string(repository_root().join("src/engine/src/source_semantics/frontend.rs"))
             .unwrap();
-    assert!(!source.contains("mech_core::Program"));
-    assert!(!source.contains("document::lower"));
+    let aggregate_program_path = ["mech_core", "Program"].join("::");
+    assert!(!source.contains(&aggregate_program_path));
+    let legacy_lower_path = ["document", "lower"].join("::");
+    assert!(!source.contains(&legacy_lower_path));
     assert!(!source.contains("parser::parse("));
 }

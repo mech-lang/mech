@@ -1196,6 +1196,7 @@ fn certification_evidence_uses_only_canonical_authorities() {
         "src/syntax/tests/canonical_phase_2i_certification.rs",
         "src/engine/tests/canonical_phase_2i_semantic_certification.rs",
         "src/engine/tests/canonical_source_completion.rs",
+        "src/engine/tests/canonical_source_semantics.rs",
     ] {
         let path = repository_root().join(relative);
         let evidence = fs::read_to_string(&path).unwrap_or_else(|error| {
@@ -1462,6 +1463,11 @@ fn assert_canonical_only(path: &Path, evidence: &str) {
 
 fn behavioral_evidence(path: &Path) -> bool {
     path.ends_with("src/engine/tests/canonical_source_completion.rs")
+        || path.ends_with("src/engine/tests/canonical_source_semantics.rs")
+}
+
+fn source_semantic_evidence(path: &Path) -> bool {
+    path.ends_with("src/engine/tests/canonical_source_semantics.rs")
 }
 
 fn assert_allowed_mech_import(path: &Path, declaration: &str) {
@@ -1483,17 +1489,32 @@ fn assert_allowed_mech_import(path: &Path, declaration: &str) {
                 .split(',')
                 .filter(|item| !item.is_empty())
                 .all(|item| {
-                    matches!(
-                        item,
-                        "FunctionCatalogBuilder"
-                            | "ReactiveInstanceId"
-                            | "ResidentValueRef"
-                            | "ValueDataDraftasData"
-                    )
+                    if source_semantic_evidence(path) {
+                        matches!(
+                            item,
+                            "ChangeDetectionPolicy"
+                                | "FunctionCatalogBuilder"
+                                | "IntegerWidth"
+                                | "OutputConstruction"
+                                | "ReactiveInstanceId"
+                                | "SchemaBody"
+                                | "ShapeRule"
+                                | "ValueData"
+                        )
+                    } else {
+                        matches!(
+                            item,
+                            "FunctionCatalogBuilder"
+                                | "ReactiveInstanceId"
+                                | "ResidentValueRef"
+                                | "ValueDataDraftasData"
+                        )
+                    }
                 })
-        } else if let Some(items) = declaration
-            .strip_prefix(concat!("usemech_", "core::snapshot::{"))
-            .and_then(|items| items.strip_suffix("};"))
+        } else if !source_semantic_evidence(path)
+            && let Some(items) = declaration
+                .strip_prefix(concat!("usemech_", "core::snapshot::{"))
+                .and_then(|items| items.strip_suffix("};"))
         {
             items
                 .split(',')
@@ -1819,6 +1840,25 @@ fn behavioral_authority_allowance_excludes_parser_routes_and_unrelated_core_type
     ] {
         assert!(
             std::panic::catch_unwind(|| assert_canonical_only(path, evidence)).is_err(),
+            "{evidence}"
+        );
+    }
+
+    let semantic_path = Path::new("src/engine/tests/canonical_source_semantics.rs");
+    assert_canonical_only(
+        semantic_path,
+        concat!(
+            "use mech_",
+            "core::{ChangeDetectionPolicy, FunctionCatalogBuilder, IntegerWidth, OutputConstruction, ReactiveInstanceId, SchemaBody, ShapeRule, ValueData};"
+        ),
+    );
+    for evidence in [
+        concat!("use mech_", "core::{Program};"),
+        concat!("use mech_", "core::*;"),
+        concat!("use mech_", "core::{SchemaBody, Program};"),
+    ] {
+        assert!(
+            std::panic::catch_unwind(|| assert_canonical_only(semantic_path, evidence)).is_err(),
             "{evidence}"
         );
     }

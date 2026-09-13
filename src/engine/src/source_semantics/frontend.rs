@@ -4597,17 +4597,11 @@ impl SemanticBuilder {
     }
 
     fn record_fsm_pattern(&mut self, pattern: &PatternSyntax) -> Result<(), SourceSemanticError> {
-        let mut bindings = Vec::new();
-        collect_pattern_bindings(pattern, &mut bindings)?;
-        let mut seen = BTreeSet::new();
-        bindings.retain(|binding| seen.insert(binding.name.clone()));
         self.patterns.push(SourceSemanticPattern {
             source: node_text(pattern.syntax())?,
-            bindings: bindings
-                .into_iter()
-                .map(|binding| binding.name)
-                .collect::<Vec<_>>()
-                .into_boxed_slice(),
+            // FSM stage syntax reuses the pattern shape, but its leaves are
+            // value reads rather than declarations.
+            bindings: Box::new([]),
             anchor: SourceSemanticAnchor::for_node(pattern.syntax()),
         });
         Ok(())

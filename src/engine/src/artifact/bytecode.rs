@@ -2103,6 +2103,11 @@ fn preflight_control_graph(
     bytes: &[u8],
     limits: &ArtifactDecodeLimits,
 ) -> Result<(), ArtifactBytecodeError> {
+    // A structured FSM value adds an enum object, a struct object, and an
+    // items array at each admitted semantic layer. The remaining allowance
+    // covers the graph, node, FSM body, stage, and leaf containers.
+    const MAX_CONTROL_GRAPH_WIRE_DEPTH: usize = super::fsm::MAX_FSM_VALUE_DEPTH * 3 + 16;
+
     #[derive(Clone, Copy)]
     enum Field {
         Other,
@@ -2129,7 +2134,7 @@ fn preflight_control_graph(
         counts: &'a mut Counts,
         limits: &'a ArtifactDecodeLimits,
         field: Field,
-        depth: u8,
+        depth: usize,
         control_depth: usize,
     }
     impl Scan<'_> {
@@ -2165,9 +2170,11 @@ fn preflight_control_graph(
             mut self,
             deserializer: D,
         ) -> Result<(), D::Error> {
-            // A pattern layer can add an enum object and an array. Keep the
-            // complete declared pattern depth below serde_json's own bound.
-            if self.depth > 96 || self.control_depth > super::MAX_CONTROL_DEPTH {
+            // Keep the complete declared control depth below serde_json's own
+            // recursion bound while admitting every valid FSM value depth.
+            if self.depth > MAX_CONTROL_GRAPH_WIRE_DEPTH
+                || self.control_depth > super::MAX_CONTROL_DEPTH
+            {
                 return Err(D::Error::custom("control graph nesting limit"));
             }
             if matches!(self.field, Field::SingleOperand) {
