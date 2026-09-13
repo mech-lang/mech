@@ -560,6 +560,10 @@ fn expand_output_source(
         });
         return;
     };
+    let Some(producer) = producer.as_operation() else {
+        outputs.push((name, slot));
+        return;
+    };
     if producer.operation.module_path.as_ref() != ["core"]
         || producer.operation.operation_name != "composite-pack"
     {

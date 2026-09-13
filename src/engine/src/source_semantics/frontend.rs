@@ -222,8 +222,8 @@ impl CanonicalSourceFrontend {
     }
 
     /// Compile every outermost canonical definition or expression in physical
-    /// document order. S7 completes the canonical document parser; keeping the
-    /// typed document entry point here fixes the engine boundary now.
+    /// document order. This S4 subset rejects all other document units with
+    /// their source anchor; S7 owns the complete document language.
     pub fn compile_document(
         &self,
         document: &DocumentSyntax,
@@ -231,7 +231,7 @@ impl CanonicalSourceFrontend {
         reject_recovered_syntax(document)?;
         let anchor = SourceSemanticAnchor::for_node(document.syntax());
         let mut units = Vec::new();
-        collect_document_units(document.syntax(), &mut units);
+        collect_document_units(document.syntax(), &mut units)?;
         let mut builder = SemanticBuilder::new(anchor);
         let mut declared_bindings = BTreeSet::new();
         for unit in &units {
@@ -265,7 +265,10 @@ impl CanonicalSourceFrontend {
     }
 }
 
-fn collect_document_units(node: &SyntaxNode, output: &mut Vec<SyntaxNode>) {
+fn collect_document_units(
+    node: &SyntaxNode,
+    output: &mut Vec<SyntaxNode>,
+) -> Result<(), SourceSemanticError> {
     match node.kind() {
         SyntaxKind::VariableDefine | SyntaxKind::Expression => output.push(node.clone()),
         SyntaxKind::Document
@@ -274,11 +277,18 @@ fn collect_document_units(node: &SyntaxNode, output: &mut Vec<SyntaxNode>) {
         | SyntaxKind::SectionElement
         | SyntaxKind::MechItem => {
             for child in node.children() {
-                collect_document_units(&child, output);
+                collect_document_units(&child, output)?;
             }
         }
-        _ => {}
+        _ => {
+            return Err(SourceSemanticError {
+                code: "source-semantics/unsupported-document-unit",
+                message: format!("the S4 document subset does not support {:?}", node.kind()),
+                anchor: SourceSemanticAnchor::for_node(node),
+            });
+        }
     }
+    Ok(())
 }
 
 fn collect_pattern_bindings(

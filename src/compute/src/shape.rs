@@ -44,6 +44,9 @@ pub fn resolve_compute_slot_dimensions(
     loop {
         let mut changed = false;
         for node in artifact.nodes() {
+            let Some(node) = node.as_operation() else {
+                continue;
+            };
             let outputs = node
                 .output_bindings
                 .clone()
@@ -90,7 +93,7 @@ pub fn resolve_compute_slot_dimensions(
                 }
                 continue;
             }
-            changed |= propagate_contract_dimensions(artifact, &mut resolved, node);
+            changed |= propagate_contract_dimensions(artifact, &mut resolved, &node);
             let Some(lowering) = elementwise_lowering(&node.operation) else {
                 continue;
             };
@@ -135,6 +138,9 @@ fn propagate_contract_dimensions(
     resolved: &mut BTreeMap<CellSlotId, Box<[u64]>>,
     node: &mech_engine::NodeDeclaration,
 ) -> bool {
+    let Some(node) = node.as_operation() else {
+        return false;
+    };
     let inputs = node
         .input_bindings
         .clone()
@@ -295,7 +301,7 @@ fn static_range_endpoint(artifact: &ProgramArtifact, source: ArtifactSource) -> 
                 let ProducerReference::NodeOutput { node, .. } = declaration.producer else {
                     return None;
                 };
-                let node = artifact.nodes().get(node.get() as usize)?;
+                let node = artifact.nodes().get(node.get() as usize)?.as_operation()?;
                 if node.operation.canonical_name() != "access/index" {
                     return None;
                 }

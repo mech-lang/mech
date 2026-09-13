@@ -1064,9 +1064,20 @@ fn particle_arithmetic_reaches_artifact_with_declared_contracts() {
     let artifact = compile_source(PARTICLE_SOURCE, particle_inputs());
     assert!(!artifact.nodes().is_empty());
     for node in artifact.nodes() {
-        assert_ne!(node.operation.module_path.as_ref(), ["runtime"]);
+        assert_ne!(
+            node.as_operation()
+                .expect("ordinary fixture operation")
+                .operation
+                .module_path
+                .as_ref(),
+            ["runtime"]
+        );
         assert!(matches!(
-            artifact.contracts().get(node.contract),
+            artifact.contracts().get(
+                node.as_operation()
+                    .expect("ordinary fixture operation")
+                    .contract
+            ),
             Some(ResolvedOperationContract::Declared(_))
         ));
     }
@@ -1097,10 +1108,18 @@ result
         .nodes()
         .iter()
         .map(|node| {
-            node.operation
+            node.as_operation()
+                .expect("ordinary fixture operation")
+                .operation
                 .module_path
                 .iter()
-                .chain(std::iter::once(&node.operation.operation_name))
+                .chain(std::iter::once(
+                    &node
+                        .as_operation()
+                        .expect("ordinary fixture operation")
+                        .operation
+                        .operation_name,
+                ))
                 .map(String::as_str)
                 .collect::<Vec<_>>()
                 .join("/")

@@ -1508,3 +1508,35 @@ fn resident_supports_c32_literal_storage_and_c64_arithmetic_execution() {
         }
     }
 }
+
+#[test]
+fn document_subset_never_silently_discards_an_unsupported_semantic_unit() {
+    use mech_syntax::document::{DocumentSyntax, GreenBuilder, IdGenerator};
+    let first = expression("1");
+    let later = expression("#machine(left: 1, 2) ~> :next -> :ready => :value");
+    let unsupported = find(later.syntax().clone(), SyntaxKind::FsmPipe).unwrap();
+    let mut ids = IdGenerator::default();
+    let mut builder = GreenBuilder::new(&mut ids);
+    builder.start_node(SyntaxKind::Document);
+    builder.start_node(SyntaxKind::Body);
+    builder.reuse_node(first.syntax().green().clone()).unwrap();
+    builder.token(SyntaxKind::Newline, "\n").unwrap();
+    builder.reuse_node(unsupported.green().clone()).unwrap();
+    builder.finish_node().unwrap();
+    builder.finish_node().unwrap();
+    let source = "1\n#machine(left: 1, 2) ~> :next -> :ready => :value";
+    let document = DocumentSyntax::cast(SyntaxNode::new_root(
+        builder.finish().unwrap(),
+        TextSnapshot::new(DocumentId(822), Revision(4), source).unwrap(),
+    ))
+    .unwrap();
+    let error = CanonicalSourceFrontend
+        .compile_document(&document)
+        .err()
+        .expect("unsupported document unit must be rejected");
+    assert_eq!(error.code, "source-semantics/unsupported-document-unit");
+    assert_eq!(error.anchor.document, DocumentId(822));
+    assert_eq!(error.anchor.revision, Revision(4));
+    assert_eq!(error.anchor.range.start.0, 2);
+    assert_eq!(error.anchor.range.end.0 as usize, source.len());
+}

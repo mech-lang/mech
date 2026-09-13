@@ -1102,6 +1102,15 @@ impl<'a> Compiler<'a> {
     fn lower_nodes(&mut self) {
         let turn_nodes = turn_required_nodes(self.artifact);
         for node in self.artifact.nodes() {
+            let Some(node) = node.as_operation() else {
+                self.reject(
+                    GpuDiagnosticCode::OperationUnsupported,
+                    Some(node.node),
+                    None,
+                    "Boolean control requires resident execution",
+                );
+                continue;
+            };
             if !turn_nodes.contains(&node.node) {
                 continue;
             }
@@ -1162,7 +1171,7 @@ impl<'a> Compiler<'a> {
                 })
                 .collect::<Vec<_>>();
             if !state_targets.is_empty() {
-                self.lower_state_commit(node, &operation_name, &state_targets);
+                self.lower_state_commit(&node, &operation_name, &state_targets);
                 continue;
             }
             let Some(lowering) = elementwise_lowering(&node.operation) else {
@@ -1325,7 +1334,7 @@ impl<'a> Compiler<'a> {
 
     fn lower_state_commit(
         &mut self,
-        node: &mech_engine::NodeDeclaration,
+        node: &mech_engine::OperationNodeView<'_>,
         operation_name: &str,
         state_targets: &[CellSlotId],
     ) {
@@ -1481,6 +1490,7 @@ impl<'a> Compiler<'a> {
         self.artifact
             .nodes()
             .get(node.get() as usize)
+            .and_then(mech_engine::NodeDeclaration::as_operation)
             .is_some_and(|node| {
                 node.operation.module_path.as_ref() == ["core"]
                     && node.operation.operation_name == "composite-pack"

@@ -409,8 +409,18 @@ result
         .unwrap()
         .into_artifact();
     assert!(artifact.nodes().iter().any(|node| {
-        node.operation.module_path.as_ref() == ["matrix"]
-            && node.operation.operation_name == "solve"
+        node.as_operation()
+            .expect("ordinary fixture operation")
+            .operation
+            .module_path
+            .as_ref()
+            == ["matrix"]
+            && node
+                .as_operation()
+                .expect("ordinary fixture operation")
+                .operation
+                .operation_name
+                == "solve"
     }));
     let activation_inputs = BTreeMap::from([
         ("coefficients".to_owned(), vec![4.0, 2.0, 1.0, 3.0]),
@@ -779,10 +789,18 @@ fn high_level_ekf_source_evaluation_matches_generic_lowering() {
         .nodes()
         .iter()
         .map(|node| {
-            node.operation
+            node.as_operation()
+                .expect("ordinary fixture operation")
+                .operation
                 .module_path
                 .iter()
-                .chain(std::iter::once(&node.operation.operation_name))
+                .chain(std::iter::once(
+                    &node
+                        .as_operation()
+                        .expect("ordinary fixture operation")
+                        .operation
+                        .operation_name,
+                ))
                 .map(String::as_str)
                 .collect::<Vec<_>>()
                 .join("/")
@@ -1058,7 +1076,11 @@ fn fixed_shape_source_and_bytecode_lower_to_the_same_resident_program() {
     assert!(source.concrete_execution_cases().iter().all(|case| {
         case.targets.contains(mech_core::ExecutionTarget::GpuBatch)
             && case.targets.iter().count() == 1
-            && artifact.nodes()[case.node.get() as usize].operation == case.operation
+            && artifact.nodes()[case.node.get() as usize]
+                .as_operation()
+                .unwrap()
+                .operation
+                == &case.operation
     }));
     assert!(source.concrete_execution_cases().iter().any(|case| {
         case.operation.module_path.as_ref() == ["core"] && case.operation.operation_name == "assign"
