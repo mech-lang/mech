@@ -1650,6 +1650,7 @@ fn assert_allowed_mech_import(path: &Path, declaration: &str) {
             "ArrayPatternSyntax",
             "AstNode",
             "DocumentId",
+            "DocumentSyntax",
             "ExpectedSyntax",
             "ExpressionSyntax",
             "FactorSyntax",
@@ -1697,6 +1698,7 @@ fn assert_allowed_mech_import(path: &Path, declaration: &str) {
             "compact_debug_tree",
             "normalize_diagnostics",
             "phase_2i_node_kind",
+            "parse_canonical_document",
             "reconstruct_source_range",
             "text_hash",
             "validate_lossless_range",
@@ -1901,6 +1903,10 @@ fn behavioral_authority_allowance_excludes_parser_routes_and_unrelated_core_type
     }
 
     let semantic_path = Path::new("src/engine/tests/canonical_source_semantics.rs");
+    assert_canonical_only(
+        semantic_path,
+        "use mech_syntax::document::{DocumentSyntax, parse_canonical_document};",
+    );
     assert_canonical_only(
         semantic_path,
         concat!(
