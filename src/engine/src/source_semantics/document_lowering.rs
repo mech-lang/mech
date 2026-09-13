@@ -23,6 +23,58 @@ pub(super) fn compile_document(
     let mut units = Vec::new();
     let mut inline = Vec::new();
     collect_document_units(document.syntax(), &mut units, &mut inline)?;
+    compile_collected_document(anchor, units, inline)
+}
+
+pub(super) fn compile_named_document_scope(
+    document: &DocumentSyntax,
+    name: &str,
+) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+    let anchor = SourceSemanticAnchor::for_node(document.syntax());
+    let mut units = Vec::new();
+    let mut inline = Vec::new();
+    let mut pending = vec![document.syntax().clone()];
+    while let Some(node) = pending.pop() {
+        if matches!(
+            node.kind(),
+            SyntaxKind::MikaSection | SyntaxKind::InlineMechCode
+        ) {
+            continue;
+        }
+        if let Some(fence) = CodeBlockSyntax::cast(node.clone()) {
+            if !matches!(fence.info().map(|info| info.scope), Some(CodeFenceScope::Named(scope)) if scope == name)
+            {
+                continue;
+            }
+            if let Some(options) = fence.options() {
+                return Err(SourceSemanticError {
+                    code: "source-semantics/unsupported-fence-options",
+                    message: "configured fence options need a typed document consumer".to_owned(),
+                    anchor: SourceSemanticAnchor::for_node(options.syntax()),
+                });
+            }
+            let body = fence.mech_code().ok_or_else(|| {
+                internal(
+                    SourceSemanticAnchor::for_node(fence.syntax()),
+                    "executable fence has no canonical Mech body".to_owned(),
+                )
+            })?;
+            let mut body_units = Vec::new();
+            collect_document_units(body.syntax(), &mut body_units, &mut inline)?;
+            units.push(DocumentUnit::Fence(fence, body_units));
+            continue;
+        }
+        let children: Vec<_> = node.children().collect();
+        pending.extend(children.into_iter().rev());
+    }
+    compile_collected_document(anchor, units, inline)
+}
+
+fn compile_collected_document(
+    anchor: SourceSemanticAnchor,
+    units: Vec<DocumentUnit>,
+    inline: Vec<EvalInlineMechCodeSyntax>,
+) -> Result<CanonicalSourceProgram, SourceSemanticError> {
     let mut builder = SemanticBuilder::new(anchor);
     let mut bindings = BTreeSet::new();
     declare_document_inputs(&mut builder, &units, &mut bindings)?;

@@ -44,7 +44,15 @@ fn turns(source: &str, expected: &[f64]) {
 }
 
 fn turns_for_output(source: &str, expected: &[f64], kind: mech_engine::SourceDocumentOutputKind) {
-    let compiled = compiled(source);
+    compiled_turns(compiled(source), source, expected, kind);
+}
+
+fn compiled_turns(
+    compiled: CanonicalSourceProgram,
+    source: &str,
+    expected: &[f64],
+    kind: mech_engine::SourceDocumentOutputKind,
+) {
     assert!(compiled.program().inputs.is_empty());
     for state in 0..compiled.program().states.len() as u32 {
         assert_eq!(
@@ -425,5 +433,36 @@ fn comprehension_reads_the_source_order_state_candidate_after_writer_reordering(
                     .collect()
             )
         );
+    }
+}
+
+#[test]
+fn named_document_scopes_execute_separately_and_share_repeated_fences() {
+    let source = "~counter := 100\ncounter += 10\ncounter\n\n```mech:left\n~counter := 0\ncounter += 1\ncounter\n```\n\n```mech:right\n~counter := 10\ncounter += 5\ncounter\n```\n\n```mech:left\ncounter += 2\ncounter\n```\n";
+    turns(source, &[110.0, 120.0]);
+    for (name, expected, fences) in [("left", [3.0, 6.0], 2), ("right", [15.0, 20.0], 1)] {
+        let program = CanonicalSourceFrontend
+            .compile_named_document_scope(&document(source), name)
+            .unwrap();
+        assert_eq!(program.document_outputs().len(), fences + 1);
+        assert_eq!(program.program().states.len(), 1);
+        compiled_turns(
+            program,
+            source,
+            &expected,
+            mech_engine::SourceDocumentOutputKind::Program,
+        );
+    }
+}
+
+#[test]
+fn absent_named_scopes_never_fall_back_to_the_root_program() {
+    let source = "answer := 42\n\n```mech:disabled\nanswer := 99\n```\n";
+    for name in ["missing", "disabled", "hidden", ""] {
+        let error = CanonicalSourceFrontend
+            .compile_named_document_scope(&document(source), name)
+            .err()
+            .expect("missing scope has no executable units");
+        assert_eq!(error.code, "source-semantics/empty-document");
     }
 }

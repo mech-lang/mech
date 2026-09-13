@@ -224,6 +224,18 @@ impl CanonicalSourceFrontend {
         reject_recovered_syntax(document)?;
         document_lowering::compile_document(document)
     }
+
+    /// Compile the ordered fences belonging to one named interpreter scope.
+    /// Root statements and other named scopes do not enter its binding environment.
+    /// The resulting artifact owns its own state and fence output bindings.
+    pub fn compile_named_document_scope(
+        &self,
+        document: &DocumentSyntax,
+        name: &str,
+    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+        reject_recovered_syntax(document)?;
+        document_lowering::compile_named_document_scope(document, name)
+    }
 }
 
 fn collect_pattern_bindings(
