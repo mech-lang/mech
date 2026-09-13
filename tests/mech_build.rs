@@ -93,6 +93,9 @@ fn assert_bytecode_artifact_is_fully_declared(bytecode: &Path) {
     let artifact = decode_program_artifact_sections(&parsed.artifact).unwrap();
     assert!(!artifact.nodes().is_empty());
     for node in artifact.nodes() {
+        let node = node
+            .as_operation()
+            .expect("build witness emits ordinary operations");
         assert!(matches!(
             artifact.contracts().get(node.contract),
             Some(ResolvedOperationContract::Declared(_))
