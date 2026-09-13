@@ -479,6 +479,7 @@ fn latest_review_selection_rejects_nonpositional_and_mismatched_map_keys() {
 }
 
 #[test]
+#[cfg(feature = "resident-artifact")]
 fn latest_review_select_all_roundtrips_linear_order_and_zero_extents() {
     use crate::resident::{ActivationFacts, CapturedSignalInput, activate};
     use mech_core::{FunctionCatalogBuilder, ReactiveInstanceId, ResidentValueRef};
@@ -598,6 +599,7 @@ fn latest_review_select_all_roundtrips_linear_order_and_zero_extents() {
 }
 
 #[test]
+#[cfg(feature = "resident-artifact")]
 fn select_all_derives_its_shape_from_a_symbolic_selected_source() {
     use crate::resident::{ActivationFacts, CapturedSignalInput, activate};
     use mech_core::{FunctionCatalogBuilder, ReactiveInstanceId, ResidentValueRef};
