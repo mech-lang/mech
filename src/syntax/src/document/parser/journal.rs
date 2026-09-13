@@ -54,6 +54,10 @@ impl<T> Journal<T> {
     pub fn get(&self, index: usize) -> Option<&T> {
         self.items.get(index).map(|entry| &entry.0)
     }
+    pub(crate) fn get_with_work(&self, index: usize) -> (Option<&T>, u64) {
+        let (entry, steps) = self.items.at_measure_with_work(index);
+        (entry.map(|(_, entry)| &entry.0), steps)
+    }
     pub fn iter(&self) -> impl Iterator<Item = &T> {
         self.items.iter().map(|entry| &entry.0)
     }

@@ -92,28 +92,37 @@ impl<T: Measured> Node<T> {
             }
         }
     }
-    fn at_measure(&self, offset: usize, base: usize) -> Option<(usize, &T)> {
+    fn at_measure(&self, offset: usize, base: usize, steps: &mut u64) -> Option<(usize, &T)> {
+        *steps += 1;
         match self {
             Self::Leaf(value) => (offset < value.measure()).then_some((base, value)),
             Self::Branch { left, right, .. } => {
                 let width = left.measure();
                 if offset < width {
-                    left.at_measure(offset, base)
+                    left.at_measure(offset, base, steps)
                 } else {
-                    right.at_measure(offset - width, base + width)
+                    right.at_measure(offset - width, base + width, steps)
                 }
             }
         }
     }
-    fn visit(&self, start: usize, end: usize, base: usize, f: &mut impl FnMut(usize, &T)) {
+    fn visit(
+        &self,
+        start: usize,
+        end: usize,
+        base: usize,
+        f: &mut impl FnMut(usize, &T),
+        steps: &mut u64,
+    ) {
+        *steps += 1;
         if start >= base + self.measure() || end <= base {
             return;
         }
         match self {
             Self::Leaf(value) => f(base, value),
             Self::Branch { left, right, .. } => {
-                left.visit(start, end, base, f);
-                right.visit(start, end, base + left.measure(), f);
+                left.visit(start, end, base, f, steps);
+                right.visit(start, end, base + left.measure(), f, steps);
             }
         }
     }
@@ -153,6 +162,16 @@ impl<T: Measured> RetainedSequence<T> {
         }
         iter
     }
+    pub(crate) fn iter_with_work(&self) -> impl Iterator<Item = (&T, u64)> {
+        let mut iter = SequenceIter {
+            stack: [None; usize::BITS as usize + 1],
+            len: 0,
+        };
+        if let Some(root) = &self.root {
+            iter.push(root);
+        }
+        core::iter::from_fn(move || iter.next_counted())
+    }
     pub(crate) fn appended(&self, value: T) -> (Self, u64) {
         let leaf = Arc::new(Node::Leaf(value));
         let mut allocations = 1;
@@ -171,13 +190,25 @@ impl<T: Measured> RetainedSequence<T> {
         };
         (Self { root: Some(root) }, allocations)
     }
-    pub(crate) fn at_measure(&self, offset: usize) -> Option<(usize, &T)> {
-        self.root.as_ref()?.at_measure(offset, 0)
+    pub(crate) fn at_measure_with_work(&self, offset: usize) -> (Option<(usize, &T)>, u64) {
+        let mut steps = 0;
+        let value = self
+            .root
+            .as_ref()
+            .and_then(|root| root.at_measure(offset, 0, &mut steps));
+        (value, steps)
     }
-    pub(crate) fn visit_range(&self, start: usize, end: usize, mut f: impl FnMut(usize, &T)) {
+    pub(crate) fn visit_range_with_work(
+        &self,
+        start: usize,
+        end: usize,
+        mut f: impl FnMut(usize, &T),
+    ) -> u64 {
+        let mut steps = 0;
         if let Some(root) = &self.root {
-            root.visit(start, end, 0, &mut f);
+            root.visit(start, end, 0, &mut f, &mut steps);
         }
+        steps
     }
     pub(crate) fn truncated(&self, len: usize) -> (Self, u64) {
         if len == 0 {
@@ -307,13 +338,20 @@ impl<'a, T> SequenceIter<'a, T> {
 impl<'a, T> Iterator for SequenceIter<'a, T> {
     type Item = &'a T;
     fn next(&mut self) -> Option<Self::Item> {
+        self.next_counted().map(|(value, _)| value)
+    }
+}
+impl<'a, T> SequenceIter<'a, T> {
+    fn next_counted(&mut self) -> Option<(&'a T, u64)> {
+        let mut steps = 0;
         while self.len > 0 {
+            steps += 1;
             self.len -= 1;
             match self.stack[self.len]
                 .take()
                 .expect("retained traversal frame")
             {
-                Node::Leaf(value) => return Some(value),
+                Node::Leaf(value) => return Some((value, steps)),
                 Node::Branch { left, right, .. } => {
                     self.push(right);
                     self.push(left);

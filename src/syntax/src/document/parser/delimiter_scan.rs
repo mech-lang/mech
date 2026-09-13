@@ -13,12 +13,13 @@ pub(crate) enum DelimiterProgress {
 }
 enum Phase {
     Probe(LiteralScan<'static>),
-    Grapheme(GraphemeScan),
+    Grapheme,
     Found,
     End,
 }
 pub(crate) struct DelimiterScan {
     delimiter: &'static str,
+    graphemes: GraphemeScan,
     offset: TextSize,
     phase: Phase,
     final_end: Option<TextSize>,
@@ -32,6 +33,7 @@ impl DelimiterScan {
     ) -> Option<Self> {
         Some(Self {
             delimiter,
+            graphemes: GraphemeScan::new(start, final_end),
             offset: start,
             phase: Phase::Probe(LiteralScan::new(delimiter, start, final_end)?),
             final_end,
@@ -73,8 +75,7 @@ impl DelimiterScan {
                     match progress {
                         LiteralProgress::Complete(Some(_)) => self.phase = Phase::Found,
                         LiteralProgress::Complete(None) => {
-                            self.phase =
-                                Phase::Grapheme(GraphemeScan::new(self.offset, self.final_end))
+                            self.phase = Phase::Grapheme;
                         }
                         LiteralProgress::NeedInput => return DelimiterProgress::NeedInput,
                         LiteralProgress::NeedsProcessing => {
@@ -83,9 +84,11 @@ impl DelimiterScan {
                         LiteralProgress::InvalidSource => return DelimiterProgress::InvalidSource,
                     }
                 }
-                Phase::Grapheme(scan) => {
+                Phase::Grapheme => {
                     let before = *allowance;
-                    let progress = scan.advance(source, end, self.final_end.is_some(), allowance);
+                    let progress =
+                        self.graphemes
+                            .advance(source, end, self.final_end.is_some(), allowance);
                     self.work += before - *allowance;
                     match progress {
                         ScanProgress::Grapheme(range) => {

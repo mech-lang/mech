@@ -98,6 +98,10 @@ impl GraphemeScan {
         }
     }
 
+    pub(crate) fn resumes_at(&self, start: TextSize, final_end: Option<TextSize>) -> bool {
+        self.start == start && self.final_end.is_none_or(|end| Some(end) == final_end)
+    }
+
     /// One allowance unit permits one Unicode-library call with at most one
     /// forward scalar and one preceding scalar (eight bytes). Context requests
     /// are suspended and charged too.

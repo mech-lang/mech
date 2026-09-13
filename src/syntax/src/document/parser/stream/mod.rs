@@ -3,6 +3,7 @@
 use super::*;
 use crate::document::{DocumentId, Revision};
 use canonical::document::continuation::{Continuation, Progress};
+use core::sync::atomic::{AtomicU64, Ordering};
 mod edit;
 mod types;
 mod view;
@@ -11,6 +12,8 @@ pub use view::StreamView;
 
 pub struct DocumentStream {
     source: TextSnapshot,
+    parser_source: TextSnapshot,
+    lookup_work: Arc<AtomicU64>,
     ids: IdGenerator,
     parser: Option<ParserState>,
     continuation: Continuation<'static>,
@@ -35,17 +38,26 @@ impl DocumentStream {
         Self::from_source(source, config, limits)
     }
     fn from_source(source: TextSnapshot, config: ParseConfig, limits: StreamLimits) -> Self {
+        let lookup_work = Arc::new(AtomicU64::new(0));
+        let parser_source = source.with_lookup_work(lookup_work.clone());
         let mut ids = IdGenerator::new();
         let mut parser = Parser::new(
-            &source,
+            &parser_source,
             LexicalMode::CanonicalSourceFragment,
             config,
             &mut ids,
         );
         parser.set_resource_rule(rules::PARSE);
         let parser = Some(parser.suspend());
+        let work = StreamWork {
+            retained_source_bytes: source.byte_len().0,
+            peak_source_pieces: source.piece_count(),
+            ..StreamWork::default()
+        };
         Self {
             source,
+            parser_source,
+            lookup_work,
             ids,
             parser,
             continuation: Continuation::document_root(),
@@ -54,7 +66,7 @@ impl DocumentStream {
             limits,
             config,
             interpretation: 0,
-            work: StreamWork::default(),
+            work,
             work_base: StreamWork::default(),
             published_events: 0,
             published_diagnostics: 0,
@@ -66,7 +78,9 @@ impl DocumentStream {
         self.state
     }
     pub fn work(&self) -> StreamWork {
-        self.work
+        let mut work = self.work;
+        work.source_lookup_steps = self.lookup_work.load(Ordering::Relaxed);
+        work
     }
     pub fn source(&self) -> &TextSnapshot {
         &self.source
@@ -105,10 +119,11 @@ impl DocumentStream {
             return Err(StreamError::SourceLimit);
         }
         let (source, work) = self
-            .source
+            .parser_source
             .append_with_work(text)
             .map_err(StreamError::Source)?;
-        self.source = source;
+        self.source = source.without_lookup_work();
+        self.parser_source = source;
         self.work.accepted_bytes += work.accepted_bytes;
         self.work.source_bytes_copied += work.source_bytes_copied;
         self.work.source_index_bytes += work.index_bytes_scanned;
@@ -155,7 +170,8 @@ impl DocumentStream {
         let remaining = self
             .limits
             .max_parser_work
-            .saturating_sub(self.work.parser_work);
+            .saturating_sub(self.work.parser_work)
+            .saturating_sub(self.work.preview_parser_work);
         if remaining == 0 {
             self.state = StreamState::Limited;
             self.invalidate();
@@ -167,7 +183,7 @@ impl DocumentStream {
         }
         let before = allowance;
         let parser_state = self.parser.take().expect("retained parser state");
-        let mut parser = Parser::resume(&self.source, parser_state, &mut self.ids);
+        let mut parser = Parser::resume(&self.parser_source, parser_state, &mut self.ids);
         let progress = self.continuation.advance(
             &mut parser,
             self.state == StreamState::Finishing,
@@ -271,6 +287,7 @@ impl DocumentStream {
     }
     fn observe_work(&mut self) {
         let parser = self.parser.as_ref().expect("retained work state");
+        self.work.source_lookup_steps = self.lookup_work.load(Ordering::Relaxed);
         self.work.retained_source_bytes = self.source.byte_len().0;
         self.work.peak_source_pieces = self.work.peak_source_pieces.max(self.source.piece_count());
         self.work.journal_nodes_allocated = self.work_base.journal_nodes_allocated
@@ -308,7 +325,15 @@ impl DocumentStream {
         if let Some(preview) = &self.preview {
             return preview.clone();
         }
-        let mut preview = Self::from_source(self.source.clone(), self.config, self.limits);
+        let limits = StreamLimits {
+            max_parser_work: self
+                .limits
+                .max_parser_work
+                .saturating_sub(self.work.parser_work)
+                .saturating_sub(self.work.preview_parser_work),
+            ..self.limits
+        };
+        let mut preview = Self::from_source(self.source.clone(), self.config, limits);
         preview.ids = self.ids.clone();
         loop {
             let update = preview.finish(u64::MAX);
@@ -320,6 +345,7 @@ impl DocumentStream {
             .materialize()
             .expect("sealed preview or limited envelope");
         self.work.preview_work += preview.work.total();
+        self.work.preview_parser_work += preview.work.parser_work;
         // Preview allocates from the session identity sequence without touching
         // the live parser's grammar, events, fuel, or recovery state.
         self.ids = preview.ids;
@@ -343,7 +369,7 @@ impl DocumentStream {
             return Ok(snapshot.clone());
         }
         let state = self.parser.take().expect("retained materialization state");
-        let mut parser = Parser::resume(&self.source, state, &mut self.ids);
+        let mut parser = Parser::resume(&self.parser_source, state, &mut self.ids);
         if self.state == StreamState::Limited {
             parser.halt();
             loop {
@@ -371,12 +397,20 @@ impl DocumentStream {
             + self.source.byte_len().0 as u64
             + output.diagnostics.len() as u64;
         self.parser = Some(state);
-        let snapshot = Arc::new(finish_snapshot(
-            self.source.clone(),
+        if self.state == StreamState::Limited {
+            // Resource finalization changes the retained journals. Publish its
+            // new interpretation and baseline before exposing subsequent views.
+            self.invalidate();
+            self.publish(StreamProgress::Limited, 0);
+        }
+        let mut snapshot = finish_snapshot(
+            self.parser_source.clone(),
             output,
             &mut self.ids,
             SyntaxKind::Document,
-        ));
+        );
+        snapshot.source = self.source.clone();
+        let snapshot = Arc::new(snapshot);
         self.work.export_work += snapshot.nodes.node_count() as u64
             + snapshot.nodes.token_count() as u64
             + snapshot.restarts.as_slice().len() as u64;
