@@ -1124,6 +1124,153 @@ mod tests {
 
     #[cfg(feature = "resident-artifact")]
     #[test]
+    fn lexical_collection_projects_borrowed_structures_and_repeated_bindings() {
+        use crate::resident::{ActivationFacts, CapturedSignalInput, activate};
+        use mech_core::{ReactiveInstanceId, ResidentValueRef};
+        let f = |value| ValueDataDraft::F64(F64Bits::from_f64(value));
+        let tuple = |a, b| ValueDataDraft::Tuple(vec![f(a), f(b)].into_boxed_slice());
+        let nested = |a, b, c| ValueDataDraft::Tuple(vec![tuple(a, b), f(c)].into_boxed_slice());
+        let tagged = |a, b| {
+            ValueDataDraft::Tuple(vec![ValueDataDraft::Atom, tuple(a, b)].into_boxed_slice())
+        };
+        let row =
+            |values: &[f64]| ValueDataDraft::Matrix(values.iter().map(|value| f(*value)).collect());
+        let mut catalog = mech_core::FunctionCatalogBuilder::new();
+        crate::install_intrinsic_resident(&mut catalog).unwrap();
+        let catalog = catalog.build().unwrap();
+        for (source, turns) in [
+            (
+                "[x + y | (x,y) <- signal<[(f64,f64)]:1,2>]",
+                vec![
+                    (vec![tuple(1.0, 2.0), tuple(3.0, 4.0)], vec![3.0, 7.0]),
+                    (vec![tuple(5.0, 6.0), tuple(7.0, 8.0)], vec![11.0, 15.0]),
+                ],
+            ),
+            (
+                "[x | (x,x) <- signal<[(f64,f64)]:1,3>]",
+                vec![
+                    (
+                        vec![tuple(1.0, 1.0), tuple(2.0, 3.0), tuple(4.0, 4.0)],
+                        vec![1.0, 4.0],
+                    ),
+                    (
+                        vec![tuple(6.0, 6.0), tuple(7.0, 8.0), tuple(9.0, 10.0)],
+                        vec![6.0],
+                    ),
+                ],
+            ),
+            (
+                "[head + tail | [head, ..., tail] <- signal<[[f64]:1,3]:1,2>]",
+                vec![
+                    (
+                        vec![row(&[1.0, 2.0, 3.0]), row(&[4.0, 5.0, 6.0])],
+                        vec![4.0, 10.0],
+                    ),
+                    (
+                        vec![row(&[7.0, 8.0, 9.0]), row(&[10.0, 11.0, 12.0])],
+                        vec![16.0, 22.0],
+                    ),
+                ],
+            ),
+            (
+                "[x + y + z | ((x,y),z) <- signal<[((f64,f64),f64)]:1,2>]",
+                vec![
+                    (
+                        vec![nested(1.0, 2.0, 3.0), nested(4.0, 5.0, 6.0)],
+                        vec![6.0, 15.0],
+                    ),
+                    (
+                        vec![nested(7.0, 8.0, 9.0), nested(10.0, 11.0, 12.0)],
+                        vec![24.0, 33.0],
+                    ),
+                ],
+            ),
+            (
+                "[x + y | :Point(x,y) <- signal<[(:Point,(f64,f64))]:1,2>]",
+                vec![
+                    (vec![tagged(1.0, 2.0), tagged(3.0, 4.0)], vec![3.0, 7.0]),
+                    (vec![tagged(5.0, 6.0), tagged(7.0, 8.0)], vec![11.0, 15.0]),
+                ],
+            ),
+            (
+                "[x | `Point(x,x) <- signal<[(:Point,(f64,f64))]:1,2>]",
+                vec![
+                    (vec![tagged(1.0, 1.0), tagged(2.0, 3.0)], vec![1.0]),
+                    (vec![tagged(7.0, 8.0), tagged(10.0, 10.0)], vec![10.0]),
+                ],
+            ),
+            (
+                "[x + y | (x,y) <- signal<{(f64,f64)}>]",
+                vec![
+                    (vec![tuple(3.0, 4.0), tuple(1.0, 2.0)], vec![3.0, 7.0]),
+                    (vec![tuple(7.0, 8.0), tuple(5.0, 6.0)], vec![11.0, 15.0]),
+                ],
+            ),
+            (
+                "[1 | :Point <- signal<[:Point]:1,2>]",
+                vec![(
+                    vec![ValueDataDraft::Atom, ValueDataDraft::Atom],
+                    vec![1.0, 1.0],
+                )],
+            ),
+            (
+                "[x | [x,x] <- signal<[[f64]:1,3]:1,2>]",
+                vec![(vec![row(&[1.0, 1.0, 1.0]), row(&[2.0, 2.0, 2.0])], vec![])],
+            ),
+            (
+                "[x | [x,x] <- signal<[[f64]:1,2]:1,2>]",
+                vec![
+                    (vec![row(&[1.0, 1.0]), row(&[2.0, 3.0])], vec![1.0]),
+                    (vec![row(&[7.0, 8.0]), row(&[10.0, 10.0])], vec![10.0]),
+                ],
+            ),
+        ] {
+            let original = compile(source).compile_artifact().unwrap();
+            let artifact = crate::decode_program_artifact_bytecode_v1(
+                &crate::encode_program_artifact_bytecode_v1(&original).unwrap(),
+            )
+            .unwrap();
+            let mut instance = activate(
+                ReactiveInstanceId::new(822, 75),
+                &artifact,
+                &catalog,
+                &ActivationFacts::default(),
+            )
+            .unwrap_or_else(|error| panic!("{source}: {error:?}"));
+            let slot = instance.plan.inputs[0].slot;
+            for (items, expected) in turns {
+                let input = ValueDraft {
+                    schema: artifact.slots()[slot.get() as usize].schema,
+                    shape_values: Box::new([]),
+                    data: if source.contains("signal<{") {
+                        ValueDataDraft::Set(items.into_boxed_slice())
+                    } else {
+                        ValueDataDraft::Matrix(items.into_boxed_slice())
+                    },
+                }
+                .finalize(&SnapshotValidationContext::new(artifact.schemas()))
+                .unwrap();
+                instance
+                    .turn(&[CapturedSignalInput {
+                        slot,
+                        value: ResidentValueRef::Snapshot(&[Some(input)]),
+                    }])
+                    .unwrap_or_else(|error| panic!("{source}: {error:?}"));
+                assert_eq!(
+                    instance
+                        .copied_output(0)
+                        .unwrap()
+                        .canonical_data_draft()
+                        .unwrap(),
+                    row(&expected),
+                    "{source}"
+                );
+            }
+        }
+    }
+
+    #[cfg(feature = "resident-artifact")]
+    #[test]
     fn lexical_collection_admission_failure_preserves_publication_and_recovers() {
         use crate::resident::{ActivationFacts, CapturedSignalInput, activate};
         use mech_core::{ReactiveInstanceId, ResidentValueRef};

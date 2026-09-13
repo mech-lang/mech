@@ -66,29 +66,57 @@ fn collection_len(value: ResidentValueRef<'_>) -> Option<usize> {
     }
 }
 
+#[derive(Clone, Copy)]
+enum PatternItem<'a> {
+    Atom,
+    Scalar(Item),
+    Data(&'a ValueData),
+}
+
+impl<'a> PatternItem<'a> {
+    fn scalar(self) -> Option<Item> {
+        match self {
+            Self::Scalar(item) => Some(item),
+            Self::Data(data) => Item::from_data(data),
+            Self::Atom => None,
+        }
+    }
+    fn child(self, index: usize) -> Option<Self> {
+        match self {
+            Self::Data(ValueData::Tuple(items)) => items.get(index).map(Self::Data),
+            Self::Data(ValueData::Matrix(matrix)) => sequence_item(matrix.elements(), index),
+            _ => None,
+        }
+    }
+}
+
+fn sequence_item(
+    sequence: mech_core::snapshot::SequenceView<'_>,
+    index: usize,
+) -> Option<PatternItem<'_>> {
+    use mech_core::snapshot::SequenceView;
+    Some(match sequence {
+        SequenceView::F64(values) => PatternItem::Scalar(Item::F64(values.get(index)?.to_f64())),
+        SequenceView::Bool(values) => PatternItem::Scalar(Item::Bool(*values.get(index)?)),
+        SequenceView::Index(values) => PatternItem::Scalar(Item::Index(*values.get(index)?)),
+        SequenceView::Values(values) => PatternItem::Data(values.get(index)?),
+        SequenceView::Unit(count) if (index as u64) < count => PatternItem::Atom,
+        _ => return None,
+    })
+}
+
 fn collection_item(
     value: ResidentValueRef<'_>,
     region: ResidentRegion,
     ordinal: usize,
-) -> Option<Item> {
+) -> Option<PatternItem<'_>> {
     if let ResidentValueRef::Snapshot([Some(value)]) = value {
         return match value.data() {
-            ValueData::Set(set) => Item::from_data(set.elements().get(ordinal)?.data()),
-            ValueData::Matrix(matrix) => match matrix.elements() {
-                mech_core::snapshot::SequenceView::F64(values) => {
-                    Some(Item::F64(values.get(ordinal)?.to_f64()))
-                }
-                mech_core::snapshot::SequenceView::Bool(values) => {
-                    Some(Item::Bool(*values.get(ordinal)?))
-                }
-                mech_core::snapshot::SequenceView::Index(values) => {
-                    Some(Item::Index(*values.get(ordinal)?))
-                }
-                mech_core::snapshot::SequenceView::Values(values) => {
-                    Item::from_data(values.get(ordinal)?)
-                }
-                _ => None,
-            },
+            ValueData::Set(set) => set
+                .elements()
+                .get(ordinal)
+                .map(|item| PatternItem::Data(item.data())),
+            ValueData::Matrix(matrix) => sequence_item(matrix.elements(), ordinal),
             _ => None,
         };
     }
@@ -104,12 +132,14 @@ fn collection_item(
         .checked_add(ordinal / columns)?;
     match value {
         ResidentValueRef::Bool(value) => match *value.get(offset)? {
-            0 => Some(Item::Bool(false)),
-            1 => Some(Item::Bool(true)),
+            0 => Some(PatternItem::Scalar(Item::Bool(false))),
+            1 => Some(PatternItem::Scalar(Item::Bool(true))),
             _ => None,
         },
-        ResidentValueRef::Index(value) => Some(Item::Index(*value.get(offset)?)),
-        ResidentValueRef::F64(value) => Some(Item::F64(*value.get(offset)?)),
+        ResidentValueRef::Index(value) => {
+            Some(PatternItem::Scalar(Item::Index(*value.get(offset)?)))
+        }
+        ResidentValueRef::F64(value) => Some(PatternItem::Scalar(Item::F64(*value.get(offset)?))),
         _ => None,
     }
 }
@@ -274,6 +304,154 @@ impl ReactiveInstance {
         Ok(changed)
     }
 
+    fn collection_pattern_item<'a>(
+        &'a self,
+        source: ResidentReadLocation,
+        ordinal: usize,
+        path: &[usize],
+        working: InstanceEpoch,
+    ) -> Option<PatternItem<'a>> {
+        let mut item = collection_item(
+            self.read_location(source, working)?,
+            region(source),
+            ordinal,
+        )?;
+        for index in path {
+            item = item.child(*index)?;
+        }
+        Some(item)
+    }
+
+    fn match_collection_pattern(
+        &mut self,
+        source: ResidentReadLocation,
+        ordinal: usize,
+        pattern: &crate::CollectionPattern<ResidentRegion, ResidentReadLocation>,
+        path: &mut [usize; crate::MAX_COLLECTION_PATTERN_DEPTH],
+        depth: usize,
+        working: InstanceEpoch,
+        meter: &mut ResidentBudgetMeter,
+    ) -> Result<bool, ResidentKernelError> {
+        meter.charge_compute_work(1 + depth as u64)?;
+        match pattern {
+            crate::CollectionPattern::Wildcard => Ok(true),
+            crate::CollectionPattern::Bind { schema: target, .. } => {
+                let item = self
+                    .collection_pattern_item(source, ordinal, &path[..depth], working)
+                    .and_then(PatternItem::scalar)
+                    .ok_or(ResidentKernelError::InvalidInput)?;
+                // Partial writes on a failed pattern are private lexical locals.
+                // Dominance requires a fresh binding before any later equality read.
+                match (item, self.workspace.scratch.write(*target)) {
+                    (Item::Bool(value), ResidentValueMut::Bool([target])) => {
+                        *target = u8::from(value)
+                    }
+                    (Item::Index(value), ResidentValueMut::Index([target])) => *target = value,
+                    (Item::F64(value), ResidentValueMut::F64([target])) => *target = value,
+                    _ => return Err(ResidentKernelError::InvalidOutput),
+                }
+                Ok(true)
+            }
+            crate::CollectionPattern::Equal(peer) => {
+                meter.charge_comparison_work(1)?;
+                let item = self
+                    .collection_pattern_item(source, ordinal, &path[..depth], working)
+                    .ok_or(ResidentKernelError::InvalidInput)?;
+                let peer = self
+                    .read_location(*peer, working)
+                    .ok_or(ResidentKernelError::InvalidInput)?;
+                if let (Some(item), Some(peer)) = (item.scalar(), Item::from_scalar(peer)) {
+                    return Ok(item.equals(peer));
+                }
+                // Atom identity is owned by the exact schema validated at binding.
+                Ok(
+                    matches!((item, peer), (PatternItem::Atom | PatternItem::Data(ValueData::Atom), ResidentValueRef::Snapshot([Some(peer)])) if matches!(peer.data(), ValueData::Atom)),
+                )
+            }
+            crate::CollectionPattern::Tuple(items) => {
+                let Some(PatternItem::Data(ValueData::Tuple(values))) =
+                    self.collection_pattern_item(source, ordinal, &path[..depth], working)
+                else {
+                    return Ok(false);
+                };
+                if values.len() != items.len() {
+                    return Ok(false);
+                }
+                for (index, item) in items.iter().enumerate() {
+                    path[depth] = index;
+                    if !self.match_collection_pattern(
+                        source,
+                        ordinal,
+                        item,
+                        path,
+                        depth + 1,
+                        working,
+                        meter,
+                    )? {
+                        return Ok(false);
+                    }
+                }
+                Ok(true)
+            }
+            crate::CollectionPattern::Array {
+                prefix,
+                rest,
+                suffix,
+            } => {
+                let Some(PatternItem::Data(ValueData::Matrix(values))) =
+                    self.collection_pattern_item(source, ordinal, &path[..depth], working)
+                else {
+                    return Ok(false);
+                };
+                let count = values.elements().len();
+                let required = prefix
+                    .len()
+                    .checked_add(suffix.len())
+                    .ok_or(ResidentKernelError::InvalidShape)?;
+                if count < required || (rest.is_none() && count != required) {
+                    return Ok(false);
+                }
+                for (index, item) in prefix.iter().enumerate() {
+                    path[depth] = index;
+                    if !self.match_collection_pattern(
+                        source,
+                        ordinal,
+                        item,
+                        path,
+                        depth + 1,
+                        working,
+                        meter,
+                    )? {
+                        return Ok(false);
+                    }
+                }
+                // Binding a middle slice needs admitted composite storage; the
+                // current target accepts only an ignored wildcard middle.
+                if rest
+                    .as_deref()
+                    .is_some_and(|rest| !matches!(rest, crate::CollectionPattern::Wildcard))
+                {
+                    return Err(ResidentKernelError::InvalidInput);
+                }
+                for (index, item) in suffix.iter().enumerate() {
+                    path[depth] = count - suffix.len() + index;
+                    if !self.match_collection_pattern(
+                        source,
+                        ordinal,
+                        item,
+                        path,
+                        depth + 1,
+                        working,
+                        meter,
+                    )? {
+                        return Ok(false);
+                    }
+                }
+                Ok(true)
+            }
+        }
+    }
+
     fn collection_from(
         &mut self,
         control: &ActivatedComprehensionNode,
@@ -309,37 +487,17 @@ impl ReactiveInstance {
                         .ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
                     for ordinal in 0..count {
                         meter.charge_compute_work(1).map_err(fail)?;
-                        let item = self
-                            .read_location(*source, working)
-                            .and_then(|value| collection_item(value, region(*source), ordinal))
-                            .ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
-                        let matched = match pattern {
-                            crate::CollectionPattern::Wildcard => true,
-                            crate::CollectionPattern::Equal(source) => {
-                                meter.charge_comparison_work(1).map_err(fail)?;
-                                let peer = self
-                                    .read_location(*source, working)
-                                    .and_then(Item::from_scalar)
-                                    .ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
-                                item.equals(peer)
-                            }
-                            crate::CollectionPattern::Bind { schema: region, .. } => {
-                                match (item, self.workspace.scratch.write(*region)) {
-                                    (Item::Bool(value), ResidentValueMut::Bool([target])) => {
-                                        *target = u8::from(value)
-                                    }
-                                    (Item::Index(value), ResidentValueMut::Index([target])) => {
-                                        *target = value
-                                    }
-                                    (Item::F64(value), ResidentValueMut::F64([target])) => {
-                                        *target = value
-                                    }
-                                    _ => return Err(fail(ResidentKernelError::InvalidOutput)),
-                                }
-                                true
-                            }
-                            _ => return Err(fail(ResidentKernelError::InvalidInput)),
-                        };
+                        let matched = self
+                            .match_collection_pattern(
+                                *source,
+                                ordinal,
+                                pattern,
+                                &mut [0; crate::MAX_COLLECTION_PATTERN_DEPTH],
+                                0,
+                                working,
+                                meter,
+                            )
+                            .map_err(fail)?;
                         if matched {
                             self.collection_from(
                                 control,

@@ -72,14 +72,79 @@ fn primitive(body: &SchemaBody) -> bool {
     )
 }
 
-fn scalar_pattern(pattern: &crate::CollectionPattern, schemas: &mech_core::SchemaTable) -> bool {
+fn supported_pattern(pattern: &crate::CollectionPattern, schemas: &mech_core::SchemaTable) -> bool {
     match pattern {
         crate::CollectionPattern::Wildcard | crate::CollectionPattern::Equal(_) => true,
         crate::CollectionPattern::Bind { schema, .. } => schemas
             .get(*schema)
             .is_some_and(|schema| primitive(schema.body())),
-        _ => false,
+        crate::CollectionPattern::Tuple(items) => {
+            items.iter().all(|item| supported_pattern(item, schemas))
+        }
+        crate::CollectionPattern::Array {
+            prefix,
+            rest,
+            suffix,
+        } => {
+            prefix
+                .iter()
+                .chain(suffix.iter())
+                .all(|item| supported_pattern(item, schemas))
+                && rest
+                    .as_deref()
+                    .is_none_or(|rest| matches!(rest, crate::CollectionPattern::Wildcard))
+        }
     }
+}
+
+fn supported_element(body: &SchemaBody) -> bool {
+    primitive(body)
+        || match body {
+            SchemaBody::Atom(_) => true,
+            SchemaBody::Tuple(fields) => fields.iter().all(supported_element),
+            SchemaBody::Matrix { element, .. } => supported_element(element),
+            _ => false,
+        }
+}
+
+fn activate_pattern(
+    pattern: &crate::CollectionPattern,
+    binding: &impl Fn(u32) -> ResidentRegion,
+    value: &impl Fn(crate::ComprehensionValue) -> Result<ResidentReadLocation, ResidentActivationError>,
+) -> Result<crate::CollectionPattern<ResidentRegion, ResidentReadLocation>, ResidentActivationError>
+{
+    Ok(match pattern {
+        crate::CollectionPattern::Wildcard => crate::CollectionPattern::Wildcard,
+        crate::CollectionPattern::Bind { local, .. } => crate::CollectionPattern::Bind {
+            local: *local,
+            schema: binding(*local),
+        },
+        crate::CollectionPattern::Equal(peer) => crate::CollectionPattern::Equal(value(*peer)?),
+        crate::CollectionPattern::Tuple(items) => crate::CollectionPattern::Tuple(
+            items
+                .iter()
+                .map(|item| activate_pattern(item, binding, value))
+                .collect::<Result<_, _>>()?,
+        ),
+        crate::CollectionPattern::Array {
+            prefix,
+            rest,
+            suffix,
+        } => crate::CollectionPattern::Array {
+            prefix: prefix
+                .iter()
+                .map(|item| activate_pattern(item, binding, value))
+                .collect::<Result<_, _>>()?,
+            rest: rest
+                .as_deref()
+                .map(|item| activate_pattern(item, binding, value).map(Box::new))
+                .transpose()?,
+            suffix: suffix
+                .iter()
+                .map(|item| activate_pattern(item, binding, value))
+                .collect::<Result<_, _>>()?,
+        },
+    })
 }
 
 type ControlCall = (
@@ -157,33 +222,36 @@ pub(super) fn bind(
             } => {
                 let source = source(*value);
                 let input = port(source)?;
-                if !scalar_pattern(pattern, artifact.schemas())
+                if !supported_pattern(pattern, artifact.schemas())
                     || !artifact
                         .schemas()
                         .get(input.schema_id)
                         .is_some_and(|schema| match schema.body() {
                             SchemaBody::Matrix { element, .. }
-                            | SchemaBody::Set { element, .. } => primitive(element),
+                            | SchemaBody::Set { element, .. } => supported_element(element),
                             _ => false,
                         })
                 {
                     return Err(unsupported());
                 }
-                let pattern = match pattern {
-                    crate::CollectionPattern::Bind { local, .. } => {
-                        crate::CollectionPattern::Bind {
-                            local: *local,
-                            schema: layout.slots
-                                [layout.control_locals[&(owner, 0, *local)].0.get() as usize]
-                                .region,
+                let pattern = activate_pattern(
+                    pattern,
+                    &|local| {
+                        layout.slots[layout.control_locals[&(owner, 0, local)].0.get() as usize]
+                            .region
+                    },
+                    &|value| {
+                        let source = source_for_value(value, &captures, owner, layout);
+                        let peer = port(source)?;
+                        let schema = artifact.schemas().get(peer.schema_id).unwrap();
+                        if !primitive(schema.body())
+                            && !matches!(schema.body(), SchemaBody::Atom(_))
+                        {
+                            return Err(unsupported());
                         }
-                    }
-                    crate::CollectionPattern::Equal(value) => crate::CollectionPattern::Equal(
-                        resolve_read(layout, source_for_value(*value, &captures, owner, layout))?,
-                    ),
-                    crate::CollectionPattern::Wildcard => crate::CollectionPattern::Wildcard,
-                    _ => return Err(unsupported()),
-                };
+                        resolve_read(layout, source)
+                    },
+                )?;
                 instructions.push(ActivatedCollectionStep::Generator {
                     source: resolve_read(layout, source)?,
                     pattern,
