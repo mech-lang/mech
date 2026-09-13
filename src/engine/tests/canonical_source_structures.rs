@@ -1455,3 +1455,206 @@ fn wide_composites_admit_actual_metadata_and_preserve_changed_values() {
         }
     }
 }
+
+#[test]
+fn computed_mutable_initializers_roundtrip_and_publish_activation_values_once() {
+    use mech_engine::__resident::ResidentValueBorrow;
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    for (source, expected) in [
+        ("~state := 1 + 2", vec![3.0]),
+        ("~state := [1 2]", vec![1.0, 2.0]),
+        ("~state := [1 + 2, 3 + 4]", vec![3.0, 7.0]),
+    ] {
+        let artifact = roundtrip(source);
+        let state = artifact
+            .slots()
+            .iter()
+            .find(|slot| slot.role == mech_engine::SlotRole::State)
+            .unwrap();
+        assert!(
+            matches!(
+                state.initializer,
+                Some(mech_engine::InitializerReference::Activation(_))
+            ),
+            "{source}"
+        );
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x553, 0),
+            &artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap_or_else(|error| panic!("{source}: {error:?}"));
+        for turn in 0..3 {
+            if turn != 0 {
+                instance.turn(&[]).unwrap();
+            }
+            let ResidentValueBorrow::F64 { values, .. } =
+                instance.state_borrow(state.slot).unwrap()
+            else {
+                panic!("{source}")
+            };
+            assert_eq!(values, expected, "{source}, turn {turn}");
+        }
+    }
+}
+
+#[test]
+fn live_mutable_initializer_is_artifact_complete_but_rejected_before_activation() {
+    let artifact = roundtrip("~state := signal<f64> + 2");
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let error = activate(
+        ReactiveInstanceId::new(0x554, 0),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .err()
+    .expect("live input is unavailable before capture");
+    assert!(
+        matches!(
+            error,
+            mech_engine::__resident::ResidentActivationError::InitializerUnavailableAtActivation { .. }
+        ),
+        "{error:?}"
+    );
+}
+
+#[test]
+fn mutable_initialization_uses_a_previously_computed_binding() {
+    use mech_engine::__resident::ResidentValueBorrow;
+    use mech_syntax::document::{DocumentSyntax, GreenBuilder, IdGenerator, SyntaxKind};
+    let sources = ["value := 1 + 2", "~state := value * 4"];
+    let mut ids = IdGenerator::default();
+    let mut builder = GreenBuilder::new(&mut ids);
+    builder.start_node(SyntaxKind::Document);
+    builder.start_node(SyntaxKind::Body);
+    for (index, source) in sources.iter().enumerate() {
+        if index > 0 {
+            builder.token(SyntaxKind::Newline, "\n").unwrap();
+        }
+        let parsed = parse_canonical_phase_2i_rule_for_test(
+            TextSnapshot::new(DocumentId(0x555), Revision(1), *source).unwrap(),
+            rules::VARIABLE_DEFINE,
+            ParseConfig::default(),
+        )
+        .unwrap();
+        assert!(parsed.is_strictly_clean());
+        fn find(node: SyntaxNode) -> Option<VariableDefineSyntax> {
+            VariableDefineSyntax::cast(node.clone()).or_else(|| node.children().find_map(find))
+        }
+        builder
+            .reuse_node(find(parsed.syntax()).unwrap().syntax().green().clone())
+            .unwrap();
+    }
+    builder.finish_node().unwrap();
+    builder.finish_node().unwrap();
+    let document = DocumentSyntax::cast(SyntaxNode::new_root(
+        builder.finish().unwrap(),
+        TextSnapshot::new(DocumentId(0x555), Revision(1), sources.join("\n")).unwrap(),
+    ))
+    .unwrap();
+    let compiled = CanonicalSourceFrontend.compile_document(&document).unwrap();
+    let artifact = compiled.compile_artifact().unwrap();
+    let artifact = mech_engine::decode_program_artifact_bytecode_v1(
+        &mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+    )
+    .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let instance = activate(
+        ReactiveInstanceId::new(0x555, 0),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    let state = artifact
+        .slots()
+        .iter()
+        .find(|slot| slot.role == mech_engine::SlotRole::State)
+        .unwrap()
+        .slot;
+    assert!(matches!(
+        instance.state_borrow(state),
+        Some(ResidentValueBorrow::F64 { values: [12.0], .. })
+    ));
+}
+
+#[test]
+fn artifact_initializers_validate_identity_and_schema_without_recursive_state_sources() {
+    let artifact = roundtrip("~state := 1 + 2");
+    let state = artifact
+        .slots()
+        .iter()
+        .find(|slot| slot.role == mech_engine::SlotRole::State)
+        .unwrap()
+        .slot;
+    let draft = || mech_engine::ProgramArtifactDraft {
+        schemas: artifact.schemas().clone(),
+        constants: artifact.constants().clone(),
+        contracts: artifact.contracts().clone(),
+        requirements: artifact.requirements().clone(),
+        inputs: artifact.inputs().into(),
+        slots: artifact.slots().into(),
+        nodes: artifact.nodes().into(),
+        bindings: artifact.bindings().into(),
+        outputs: artifact.outputs().into(),
+        constraints: artifact.constraints().into(),
+        compute_regions: artifact.compute_regions().into(),
+    };
+    for source in [state, mech_core::CellSlotId(u32::MAX)] {
+        let mut draft = draft();
+        draft.slots[state.get() as usize].initializer =
+            Some(mech_engine::InitializerReference::Activation(source));
+        assert!(draft.finalize().is_err());
+    }
+    let mut draft = draft();
+    let source = match draft.slots[state.get() as usize].initializer.unwrap() {
+        mech_engine::InitializerReference::Activation(source) => source,
+        _ => panic!(),
+    };
+    // An initializer is not an ordinary producer or a mutable alias.
+    draft.slots[source.get() as usize].initializer =
+        Some(mech_engine::InitializerReference::Activation(state));
+    assert!(draft.finalize().is_err());
+}
+
+#[test]
+fn named_arguments_bind_noncommutative_calls_before_resolution_and_roundtrip() {
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    for source in [
+        "result := math/sub(right: 3, left: signal<f64>)",
+        "result := math/sub(right: 3, signal<f64>)",
+        "result := math/sub(signal<f64>, right: 3)",
+    ] {
+        let artifact = roundtrip(source);
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x556, 0),
+            &artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        for input in [10.0, 1.0, -2.0] {
+            instance
+                .turn(&[CapturedSignalInput {
+                    slot: instance.plan.inputs[0].slot,
+                    value: ResidentValueRef::F64(&[input]),
+                }])
+                .unwrap();
+            let output = instance.copied_output(0).unwrap();
+            let ValueData::F64(value) = output.data() else {
+                panic!("{source}: {output:?}")
+            };
+            assert_eq!(value.to_f64(), input - 3.0, "{source}");
+        }
+    }
+}

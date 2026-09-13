@@ -158,7 +158,7 @@ struct WireSlot {
     slot: u32,
     schema: u32,
     role: u8,
-    initializer: Option<u32>,
+    initializer: Option<WireSource>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -346,7 +346,8 @@ pub fn encode_program_artifact_sections(
                 SlotRole::Output => 4,
             },
             initializer: slot.initializer.map(|initializer| match initializer {
-                InitializerReference::Constant(constant) => constant.get(),
+                InitializerReference::Constant(constant) => WireSource::Constant(constant.get()),
+                InitializerReference::Activation(slot) => WireSource::Slot(slot.get()),
             }),
         })
         .collect::<Vec<_>>();
@@ -386,7 +387,7 @@ pub fn encode_program_artifact_sections(
         slots: encode(&slots)?,
         producers: encode(&producers)?,
         nodes: encode(&WireGraph {
-            revision: 2,
+            revision: 3,
             requirements: artifact
                 .requirements()
                 .iter()
@@ -557,7 +558,7 @@ fn decode_program_artifact_sections_owned(
     }
     preflight_control_graph(&sections.nodes, &limits)?;
     let graph: WireGraph = serde_json::from_slice(&sections.nodes)?;
-    if graph.revision != 2 {
+    if graph.revision != 3 {
         return Err(ArtifactBytecodeError::InvalidWireTag {
             section: "graph revision",
             tag: graph.revision.min(255) as u8,
@@ -656,9 +657,14 @@ fn decode_program_artifact_sections_owned(
                             source: source_from_wire(source),
                         },
                     },
-                    initializer: slot
-                        .initializer
-                        .map(|constant| InitializerReference::Constant(ConstantId::new(constant))),
+                    initializer: slot.initializer.map(|source| match source {
+                        WireSource::Constant(constant) => {
+                            InitializerReference::Constant(ConstantId::new(constant))
+                        }
+                        WireSource::Slot(slot) => {
+                            InitializerReference::Activation(CellSlotId(slot))
+                        }
+                    }),
                 })
             })
             .collect::<Result<Vec<_>, ArtifactBytecodeError>>()?

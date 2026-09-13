@@ -8,8 +8,7 @@ use mech_core::{
 };
 use mech_engine::{
     CanonicalSourceFrontend, PHASE_2I_SEMANTIC_RULES, Phase2iSemanticDisposition,
-    SourceSemanticComprehensionQualifierRole, SourceStateInitializer, SourceValue,
-    phase_2i_semantic_disposition,
+    SourceSemanticComprehensionQualifierRole, SourceValue, phase_2i_semantic_disposition,
 };
 use mech_syntax::document::parser::canonical::parse_canonical_phase_2i_rule_for_test;
 use mech_syntax::document::parser::rules;
@@ -659,14 +658,8 @@ fn canonical_numeric_kinds_annotations_strings_and_state_are_preserved() {
         let compiled = CanonicalSourceFrontend
             .compile_definition(&definition(source))
             .unwrap_or_else(|error| panic!("{source:?}: {error}"));
-        assert!(matches!(
-            compiled.state_initializers(),
-            [SourceStateInitializer::Deferred(_)]
-        ));
-        assert!(matches!(
-            compiled.compile_artifact(),
-            Err(mech_engine::ArtifactBuildError::DeclaredSourceNodeLoweringUnsupported { .. })
-        ));
+        assert!(compiled.program().states[0].initializer.is_some());
+        compiled.compile_artifact().unwrap();
     }
 
     let overflow = CanonicalSourceFrontend

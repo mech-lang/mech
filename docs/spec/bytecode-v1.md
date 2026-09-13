@@ -406,9 +406,9 @@ only then allocate and decode typed values.
 | Artifact schemas | Canonical C0 `SchemaDraft` (`dimension_parameters`, `body`) |
 | Artifact constants | Canonical C2 `ValueDraft` (`schema`, `shape_values`, `data`) |
 | Artifact inputs | `{input,name,slot,schema}` |
-| Artifact slots | `{slot,schema,role,initializer}`; role 1 input, 2 state, 3 derived |
+| Artifact slots | `{slot,schema,role,initializer}`; role 1 input, 2 state, 3 derived, 4 output; initializer is null, `{Constant:id}`, or `{Slot:id}` |
 | Artifact producers | `{"Input":input}` or `{"NodeOutput":{"node":n,"output_ordinal":p}}` |
-| Artifact nodes | `{revision:2,requirements:[...],nodes:[...]}`; each node is `{node,body,input_start,input_end,output_start,output_end}` |
+| Artifact nodes | `{revision:3,requirements:[...],nodes:[...]}`; each node is `{node,body,input_start,input_end,output_start,output_end}` |
 | Artifact bindings | tagged `Input`/`Output` records containing ID, node, port, and source/target |
 | Artifact outputs | `{output,name,source,schema}` |
 | Artifact integrity constraints | `{constraint,operation,contract,inputs}` |
@@ -424,11 +424,11 @@ zero-based `contract`. The engine reconstructs
 bijections, recomputes `ProgramRevision`, and exposes only the finalized
 read-only artifact.
 
-### Typed graph bodies (graph revision 2)
+### Typed graph bodies (graph revision 3)
 
 An ordinary body is `{"Operation":{"operation":id,"contract":id,"requirement":id_or_null}}`.
 A control body is `{"BooleanMatch":{"scrutinee":input_ordinal,"captures":[[input_ordinal,schema_id]],"arms":[...]}}`.
-The decoder requires revision 2 and typed bodies; earlier graph representations
+The decoder requires revision 3 and typed bodies; earlier graph representations
 must be regenerated with the current producer. The outer bytecode container
 remains version 1. There is one graph representation and no compatibility reader.
 
@@ -605,3 +605,17 @@ compatibility promise for earlier prerelease v1 layouts. At launch, bytecode
 v1 freezes as the first supported public format; after that boundary, an
 incompatible wire-format change requires bytecode v2. A language/runtime ABI
 change is a separate explicit decision and must update the header authority.
+
+### Computed state initialization
+
+State initializers reference canonical constants or artifact slots. A slot initializer
+is evaluated once by the activation graph, before state is published. It must have
+the state's exact schema and cannot name another state or published output. Its
+meaning belongs to the artifact and participates in bytecode encoding and revision
+identity; there is no deferred source-semantic initializer sidecar.
+
+The resident target admits slot initializers only when their producers belong to
+the pure activation graph. A live-input-dependent initializer returns
+`InitializerUnavailableAtActivation` before allocation/execution/publication. Pure
+computed initializers reuse the ordinary resident operations and managed state-copy
+path. No frontend constant evaluator or parser execution is involved.

@@ -94,13 +94,6 @@ pub struct CanonicalSourceProgram {
     constants: ConstantStore,
     contracts: Box<[Option<OperationContractDeclaration>]>,
     source_map: SourceSemanticMap,
-    state_initializers: Box<[SourceStateInitializer]>,
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum SourceStateInitializer {
-    Constant(mech_core::ConstantId),
-    Deferred(SourceValue),
 }
 
 impl CanonicalSourceProgram {
@@ -124,10 +117,6 @@ impl CanonicalSourceProgram {
         &self.source_map
     }
 
-    pub const fn state_initializers(&self) -> &[SourceStateInitializer] {
-        &self.state_initializers
-    }
-
     /// Artifact transport identity for the source input at the same ordinal.
     /// Source names and anchors remain available through `program` and `source_map`.
     pub fn artifact_input_name(&self, ordinal: usize) -> Option<String> {
@@ -138,16 +127,6 @@ impl CanonicalSourceProgram {
     }
 
     pub fn compile_artifact(&self) -> Result<ProgramArtifact, ArtifactBuildError> {
-        if let Some((state, _)) = self
-            .state_initializers
-            .iter()
-            .enumerate()
-            .find(|(_, initializer)| matches!(initializer, SourceStateInitializer::Deferred(_)))
-        {
-            return Err(ArtifactBuildError::DeclaredSourceNodeLoweringUnsupported {
-                source_node: self.program.states[state].producer_node,
-            });
-        }
         let contracts = self
             .contracts
             .iter()
@@ -2223,6 +2202,60 @@ impl SemanticBuilder {
                             inputs.push(self.expression(&value)?.0);
                         }
                     }
+                }
+                if names.iter().any(|name| !name.is_empty()) {
+                    let parameters = declaration.parameter_names.as_ref().ok_or_else(|| {
+                        SourceSemanticError {
+                            code: "source-semantics/named-arguments-unavailable",
+                            message: format!(
+                                "function {function_name} does not declare parameter names"
+                            ),
+                            anchor: SourceSemanticAnchor::for_node(value.syntax()),
+                        }
+                    })?;
+                    let mut bound = vec![None; parameters.len()];
+                    for (name, input) in names.iter().zip(inputs) {
+                        let ordinal = if name.is_empty() {
+                            bound.iter().position(Option::is_none).ok_or_else(|| {
+                                SourceSemanticError {
+                                    code: "source-semantics/too-many-call-arguments",
+                                    message: format!(
+                                        "function {function_name} has no unbound parameter"
+                                    ),
+                                    anchor: SourceSemanticAnchor::for_node(value.syntax()),
+                                }
+                            })?
+                        } else {
+                            parameters
+                                .iter()
+                                .position(|parameter| parameter == name)
+                                .ok_or_else(|| SourceSemanticError {
+                                    code: "source-semantics/unknown-call-argument",
+                                    message: format!(
+                                        "function {function_name} has no parameter named {name}"
+                                    ),
+                                    anchor: SourceSemanticAnchor::for_node(value.syntax()),
+                                })?
+                        };
+                        if bound[ordinal].replace(input).is_some() {
+                            return Err(SourceSemanticError {
+                                code: "source-semantics/duplicate-call-argument",
+                                message: format!(
+                                    "parameter {} is bound more than once",
+                                    parameters[ordinal]
+                                ),
+                                anchor: SourceSemanticAnchor::for_node(value.syntax()),
+                            });
+                        }
+                    }
+                    inputs = bound
+                        .into_iter()
+                        .collect::<Option<Vec<_>>>()
+                        .ok_or_else(|| SourceSemanticError {
+                            code: "source-semantics/missing-call-argument",
+                            message: format!("function {function_name} has an unbound parameter"),
+                            anchor: SourceSemanticAnchor::for_node(value.syntax()),
+                        })?;
                 }
                 let detail = Some(format!("{function_name}({})", names.join(",")));
                 let (inputs, output) = self.resolve_declared_call(
@@ -5016,17 +5049,6 @@ impl SemanticBuilder {
             })
             .collect::<Vec<_>>()
             .into_boxed_slice();
-        let state_initializers = self
-            .states
-            .iter()
-            .map(|state| match state.initializer {
-                PendingValue::Constant(index) => {
-                    SourceStateInitializer::Constant(constant_ids[index])
-                }
-                value => SourceStateInitializer::Deferred(resolve_value(value, &constant_ids)),
-            })
-            .collect::<Vec<_>>()
-            .into_boxed_slice();
         let source_map = SourceSemanticMap {
             inputs: self
                 .inputs
@@ -5058,10 +5080,7 @@ impl SemanticBuilder {
                     .iter()
                     .map(|state| SourceState {
                         schema: schemas.node_id(state.producer_node as usize),
-                        initializer: match state.initializer {
-                            PendingValue::Constant(index) => Some(constant_ids[index]),
-                            _ => None,
-                        },
+                        initializer: Some(resolve_value(state.initializer, &constant_ids)),
                         producer_node: state.producer_node,
                         producer_output_ordinal: 0,
                     })
@@ -5075,7 +5094,6 @@ impl SemanticBuilder {
             constants: constant_build.store,
             contracts: contracts.into_boxed_slice(),
             source_map,
-            state_initializers,
         })
     }
 }

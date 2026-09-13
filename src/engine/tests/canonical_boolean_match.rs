@@ -251,7 +251,7 @@ fn typed_match_codec_admits_exact_bounds_and_rejects_unknown_tags() {
         let mut sections = sections.clone();
         let text = String::from_utf8(sections.nodes.clone()).unwrap();
         let text = if key == "revision" {
-            text.replace("\"revision\":2", "\"revision\":9")
+            text.replace("\"revision\":3", "\"revision\":9")
         } else {
             text.replace("\"pattern\":1", "\"pattern\":9")
         };
@@ -472,7 +472,7 @@ mod lazy_execution {
             .unwrap();
         graph.states = vec![SourceState {
             schema,
-            initializer: Some(initial),
+            initializer: Some(SourceValue::Constant(initial)),
             producer_node: 1,
             producer_output_ordinal: 0,
         }]
@@ -916,7 +916,7 @@ fn match_integrity_failure_preserves_state_and_published_epoch() {
         .unwrap();
     graph.states = vec![SourceState {
         schema,
-        initializer: Some(initial),
+        initializer: Some(SourceValue::Constant(initial)),
         producer_node: 1,
         producer_output_ordinal: 0,
     }]

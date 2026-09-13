@@ -1234,6 +1234,9 @@ fn slot_descriptor(
                 .constants()
                 .get(constant)
                 .map(|value| value.shape().clone()),
+            crate::InitializerReference::Activation(source) => {
+                artifact.slot_shape_hint(source).cloned()
+            }
         })
         .or_else(|| artifact.slot_shape_hint(slot).cloned())?;
     let schema = artifact.schemas().entry(schema)?.schema().clone();

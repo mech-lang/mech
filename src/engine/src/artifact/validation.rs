@@ -284,11 +284,7 @@ fn validate_slots(draft: &ProgramArtifactDraft) -> Result<(), ArtifactBuildError
         match (slot.role, slot.producer, slot.initializer) {
             (SlotRole::Input, ProducerReference::Input(_), None)
             | (SlotRole::State, ProducerReference::NodeOutput { .. }, None)
-            | (
-                SlotRole::State,
-                ProducerReference::NodeOutput { .. },
-                Some(InitializerReference::Constant(_)),
-            )
+            | (SlotRole::State, ProducerReference::NodeOutput { .. }, Some(_))
             | (SlotRole::Derived, ProducerReference::NodeOutput { .. }, None)
             | (SlotRole::Output, ProducerReference::Output { .. }, None)
             | (
@@ -297,6 +293,18 @@ fn validate_slots(draft: &ProgramArtifactDraft) -> Result<(), ArtifactBuildError
                 Some(InitializerReference::Constant(_)),
             ) => {}
             _ => return Err(ArtifactBuildError::InvalidSlotRole { slot: slot.slot }),
+        }
+        if let Some(InitializerReference::Activation(source)) = slot.initializer {
+            let source = draft
+                .slots
+                .get(source.get() as usize)
+                .filter(|source_slot| source_slot.slot == source)
+                .ok_or(ArtifactBuildError::UnknownSlot { slot: source })?;
+            if source.schema != slot.schema
+                || !matches!(source.role, SlotRole::Input | SlotRole::Derived)
+            {
+                return Err(ArtifactBuildError::InvalidSlotRole { slot: slot.slot });
+            }
         }
         if let Some(InitializerReference::Constant(constant)) = slot.initializer {
             require_constant(draft, constant)?;

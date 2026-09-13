@@ -1523,6 +1523,12 @@ pub enum ResidentActivationError {
     MissingStateInitializer {
         slot: CellSlotId,
     },
+    /// The artifact declares an initializer that this target cannot evaluate
+    /// without live inputs or state. No state has been published.
+    InitializerUnavailableAtActivation {
+        slot: CellSlotId,
+        source: CellSlotId,
+    },
     UnsupportedConstruction {
         node: NodeId,
     },
@@ -1641,8 +1647,8 @@ pub fn preflight_activation(
     facts: &ActivationFacts,
     options: ResidentActivationOptions,
 ) -> Result<ResidentActivationPreflight, ResidentActivationError> {
-    preflight_state_initializers(artifact)?;
     let classification = classify_nodes(artifact, options.external)?;
+    preflight_state_initializers(artifact, &classification)?;
     let schedule = build_activation_schedule(artifact, &classification)?;
     let facts_fingerprint = activation_facts_fingerprint(facts);
     let facts = complete_activation_shape_facts(artifact, facts, &classification, &schedule)?;
@@ -1868,8 +1874,8 @@ fn activate_internal(
     options: ResidentActivationOptions,
 ) -> Result<ReactiveInstance, ResidentActivationError> {
     let memory_budget = options.memory_budget.clone();
-    preflight_state_initializers(artifact)?;
     let classification = classify_nodes(artifact, options.external)?;
+    preflight_state_initializers(artifact, &classification)?;
     let schedule = build_activation_schedule(artifact, &classification)?;
     // Reactivation identity belongs to the caller-supplied activation facts.
     // Shapes completed deterministically from the artifact are derived plan
@@ -1925,17 +1931,33 @@ fn activate_internal(
         .filter(|slot| slot.role == SlotRole::State)
     {
         let declaration = &artifact.slots()[slot.artifact_id.get() as usize];
-        let Some(InitializerReference::Constant(constant)) = declaration.initializer else {
-            return Err(ResidentActivationError::MissingStateInitializer {
-                slot: slot.artifact_id,
-            });
-        };
-        let value = artifact.constants().get(constant).ok_or(
-            ResidentActivationError::MissingStateInitializer {
-                slot: slot.artifact_id,
-            },
-        )?;
-        state.initialize(slot.artifact_id, value)?;
+        match declaration.initializer {
+            Some(InitializerReference::Constant(constant)) => {
+                let value = artifact.constants().get(constant).ok_or(
+                    ResidentActivationError::MissingStateInitializer {
+                        slot: slot.artifact_id,
+                    },
+                )?;
+                state.initialize(slot.artifact_id, value)?;
+            }
+            Some(InitializerReference::Activation(source)) => {
+                let source = &plan.slots[source.get() as usize];
+                if source.storage != ResidentStorageClass::Constant {
+                    return Err(
+                        ResidentActivationError::InitializerUnavailableAtActivation {
+                            slot: slot.artifact_id,
+                            source: source.artifact_id,
+                        },
+                    );
+                }
+                state.initialize_from_arena(slot.artifact_id, &activation, source.region)?;
+            }
+            None => {
+                return Err(ResidentActivationError::MissingStateInitializer {
+                    slot: slot.artifact_id,
+                });
+            }
+        }
     }
     for materialization in plan.output_materializations.iter().copied() {
         let declaration = &artifact.slots()[materialization.target.get() as usize];
@@ -2198,17 +2220,33 @@ fn resident_value_observed_footprint(
     Ok(footprint)
 }
 
-fn preflight_state_initializers(artifact: &ProgramArtifact) -> Result<(), ResidentActivationError> {
+fn preflight_state_initializers(
+    artifact: &ProgramArtifact,
+    classes: &[NodeClass],
+) -> Result<(), ResidentActivationError> {
     for slot in artifact
         .slots()
         .iter()
         .filter(|slot| slot.role == SlotRole::State)
     {
-        let Some(InitializerReference::Constant(constant)) = slot.initializer else {
-            return Err(ResidentActivationError::MissingStateInitializer { slot: slot.slot });
-        };
-        if artifact.constants().get(constant).is_none() {
-            return Err(ResidentActivationError::MissingStateInitializer { slot: slot.slot });
+        match slot.initializer {
+            Some(InitializerReference::Constant(constant))
+                if artifact.constants().get(constant).is_some() => {}
+            Some(InitializerReference::Activation(source)) => {
+                let declaration = &artifact.slots()[source.get() as usize];
+                if declaration.role != SlotRole::Derived
+                    || !matches!(declaration.producer,
+                    ProducerReference::NodeOutput { node, .. } if classes[node.get() as usize] == NodeClass::Activation)
+                {
+                    return Err(
+                        ResidentActivationError::InitializerUnavailableAtActivation {
+                            slot: slot.slot,
+                            source,
+                        },
+                    );
+                }
+            }
+            _ => return Err(ResidentActivationError::MissingStateInitializer { slot: slot.slot }),
         }
     }
     Ok(())
@@ -3159,6 +3197,7 @@ fn build_layout(
             .initializer
             .and_then(|initializer| match initializer {
                 InitializerReference::Constant(constant) => artifact.constants().get(constant),
+                InitializerReference::Activation(_) => None,
             })
             .map(|value| resident_value_footprint(artifact, value, kind, len))
             .transpose()?
@@ -3393,8 +3432,14 @@ fn slot_shape(
     facts: &ActivationFacts,
 ) -> Result<ShapeInstance, ResidentActivationError> {
     let declaration = &artifact.slots()[slot.get() as usize];
-    if let Some(InitializerReference::Constant(constant)) = declaration.initializer {
-        return Ok(artifact.constants().get(constant).unwrap().shape().clone());
+    match declaration.initializer {
+        Some(InitializerReference::Constant(constant)) => {
+            return Ok(artifact.constants().get(constant).unwrap().shape().clone());
+        }
+        Some(InitializerReference::Activation(source)) => {
+            return slot_shape(artifact, source, facts);
+        }
+        None => {}
     }
     if let ProducerReference::Output { source, .. } = declaration.producer {
         return match source {

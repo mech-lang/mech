@@ -9,7 +9,7 @@ coverage and one exact scalar result schema.
 The engine artifact owns control blocks, captures, scoped parameters, local
 ordinary operations and yields. Source text and diagnostic strings are not
 execution operands. The artifact uses one tagged node body for ordinary
-operations or Boolean matches. The bytecode-v1 graph payload uses revision 2;
+operations or Boolean matches. The bytecode-v1 graph payload uses revision 3;
 all durable fixtures are regenerated with that producer.
 
 Resident activation currently admits Bool, Index and F64 control values. Each

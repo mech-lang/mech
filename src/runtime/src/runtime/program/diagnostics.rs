@@ -21,6 +21,7 @@ pub(crate) fn activation_failure(error: ResidentActivationError) -> mech_core::M
         | UnsupportedInteraction { .. }
         | UnsupportedDelivery { .. }
         | UnsupportedValue { .. }
+        | InitializerUnavailableAtActivation { .. }
         | TurnDimension { .. }
         | UnresolvedShape { .. }
         | UnsupportedConstruction { .. }

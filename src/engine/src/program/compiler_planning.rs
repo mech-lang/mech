@@ -1172,7 +1172,10 @@ mod tests {
             .expect("mutable matrix must retain a state slot");
         let InitializerReference::Constant(initializer) = state
             .initializer
-            .expect("mutable matrix state must retain its declaration initializer");
+            .expect("mutable matrix state must retain its declaration initializer")
+        else {
+            panic!("compiler fixture requires a constant initializer")
+        };
         let ValueData::Matrix(initializer) = matrix.constants().get(initializer).unwrap().data()
         else {
             panic!("mutable matrix initializer must remain a matrix")

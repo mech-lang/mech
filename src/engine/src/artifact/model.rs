@@ -181,6 +181,9 @@ pub enum ProducerReference {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum InitializerReference {
     Constant(ConstantId),
+    /// Read once from this slot after the activation graph has completed.
+    /// Targets must reject an initializer unavailable during activation.
+    Activation(CellSlotId),
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]

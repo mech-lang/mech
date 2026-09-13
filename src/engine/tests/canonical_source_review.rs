@@ -1540,3 +1540,39 @@ fn document_subset_never_silently_discards_an_unsupported_semantic_unit() {
     assert_eq!(error.anchor.range.start.0, 2);
     assert_eq!(error.anchor.range.end.0 as usize, source.len());
 }
+
+#[test]
+fn named_arguments_reject_unknown_duplicate_missing_and_undeclared_bindings() {
+    for (source, code) in [
+        (
+            "math/sub(unknown: 10, unknown: 3)",
+            "source-semantics/unknown-call-argument",
+        ),
+        (
+            "math/sub(left: 10, left: 3)",
+            "source-semantics/duplicate-call-argument",
+        ),
+        (
+            "math/sub(10, left: 3)",
+            "source-semantics/duplicate-call-argument",
+        ),
+        (
+            "math/sub(right: 3)",
+            "source-semantics/missing-call-argument",
+        ),
+        (
+            "math/sub(left: 10, 3, 4)",
+            "source-semantics/too-many-call-arguments",
+        ),
+        (
+            "math/sin(value: 1)",
+            "source-semantics/named-arguments-unavailable",
+        ),
+    ] {
+        let error = CanonicalSourceFrontend
+            .compile_expression(&expression(source))
+            .err()
+            .expect(source);
+        assert_eq!(error.code, code, "{source}: {error}");
+    }
+}

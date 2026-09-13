@@ -67,7 +67,8 @@ pub struct SourceInput {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SourceState {
     pub schema: SchemaId,
-    pub initializer: Option<ConstantId>,
+    /// Initial value, evaluated once by activation before state publication.
+    pub initializer: Option<SourceValue>,
     pub producer_node: u32,
     pub producer_output_ordinal: u16,
 }
@@ -342,7 +343,19 @@ fn compile_source_program_with_metadata(
                 node: NodeId(state.producer_node),
                 output_ordinal: state.producer_output_ordinal,
             },
-            initializer: state.initializer.map(InitializerReference::Constant),
+            initializer: state
+                .initializer
+                .map(|value| {
+                    resolve_source(value, &input_slots, &state_slots, &output_slots).map(|source| {
+                        match source {
+                            ArtifactSource::Constant(constant) => {
+                                InitializerReference::Constant(constant)
+                            }
+                            ArtifactSource::Slot(slot) => InitializerReference::Activation(slot),
+                        }
+                    })
+                })
+                .transpose()?,
         });
     }
     for (node, declaration) in graph.nodes.iter().enumerate() {
@@ -1637,7 +1650,7 @@ fn compile_executable_program_artifact_from_semantics(
         register_state_indexes[register] = Some(state);
         states.push(SourceState {
             schema,
-            initializer: Some(initializer),
+            initializer: Some(SourceValue::Constant(initializer)),
             producer_node: u32::MAX,
             producer_output_ordinal: 0,
         });
@@ -2364,7 +2377,7 @@ fn prune_unused_constants(
 ) -> Result<ConstantStore, ArtifactBuildError> {
     let mut used = std::collections::BTreeSet::<ConstantId>::new();
     for state in states.iter() {
-        if let Some(constant) = state.initializer {
+        if let Some(SourceValue::Constant(constant)) = state.initializer {
             used.insert(constant);
         }
     }
@@ -2408,7 +2421,7 @@ fn prune_unused_constants(
         }
     };
     for state in states {
-        if let Some(constant) = &mut state.initializer {
+        if let Some(SourceValue::Constant(constant)) = &mut state.initializer {
             *constant = remap[constant];
         }
     }

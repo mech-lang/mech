@@ -197,6 +197,10 @@ pub(super) fn program_revision(
                 writer.u8(1);
                 writer.u32(constant.get());
             }
+            Some(InitializerReference::Activation(slot)) => {
+                writer.u8(2);
+                writer.u32(slot.get());
+            }
         }
     }
 

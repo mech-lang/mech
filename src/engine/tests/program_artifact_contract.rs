@@ -359,7 +359,7 @@ fn stateful_register(data: &FixtureData) -> SourceProgram {
         .into_boxed_slice(),
         states: vec![SourceState {
             schema: data.schema.f64_,
-            initializer: Some(data.constant.one),
+            initializer: Some(SourceValue::Constant(data.constant.one)),
             producer_node: 0,
             producer_output_ordinal: 0,
         }]
@@ -498,13 +498,13 @@ fn ekf(data: &FixtureData) -> SourceProgram {
         states: vec![
             SourceState {
                 schema: data.schema.vector3,
-                initializer: Some(data.constant.vector3),
+                initializer: Some(SourceValue::Constant(data.constant.vector3)),
                 producer_node: 14,
                 producer_output_ordinal: 0,
             },
             SourceState {
                 schema: data.schema.matrix3,
-                initializer: Some(data.constant.matrix3),
+                initializer: Some(SourceValue::Constant(data.constant.matrix3)),
                 producer_node: 14,
                 producer_output_ordinal: 1,
             },
@@ -911,7 +911,7 @@ fn state_reads_depend_on_the_latest_preceding_writer() {
     let graph = SourceProgram {
         states: vec![SourceState {
             schema: data.schema.f64_,
-            initializer: Some(data.constant.one),
+            initializer: Some(SourceValue::Constant(data.constant.one)),
             producer_node: 0,
             producer_output_ordinal: 0,
         }]
@@ -1883,7 +1883,7 @@ fn malformed_artifacts_reject_reviewed_validation_gaps() {
     let mismatched_initializer = SourceProgram {
         states: vec![SourceState {
             schema: data.schema.f64_,
-            initializer: Some(data.constant.false_),
+            initializer: Some(SourceValue::Constant(data.constant.false_)),
             producer_node: 0,
             producer_output_ordinal: 0,
         }]
@@ -2209,7 +2209,7 @@ fn decoded_artifact_sections_revalidate_structure_and_limits() {
         .iter_mut()
         .find(|slot| slot["role"] == 2)
         .unwrap();
-    state["initializer"] = serde_json::Value::from(data.constant.false_.get());
+    state["initializer"] = serde_json::json!({"Constant": data.constant.false_.get()});
     mismatch.slots = serde_json::to_vec(&slots).unwrap();
     assert!(matches!(
         decode_program_artifact_sections(&mismatch),

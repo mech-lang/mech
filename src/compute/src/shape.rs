@@ -32,7 +32,9 @@ pub fn resolve_compute_slot_dimensions(
                     .and_then(|shape| closed_schema_dimensions(schema, shape))
             })
             .or_else(|| {
-                let InitializerReference::Constant(constant) = slot.initializer?;
+                let InitializerReference::Constant(constant) = slot.initializer? else {
+                    return None;
+                };
                 let value = artifact.constants().get(constant)?;
                 value_dimensions(artifact, value)
             });

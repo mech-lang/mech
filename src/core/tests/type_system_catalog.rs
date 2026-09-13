@@ -105,6 +105,7 @@ fn malformed_and_duplicate_overloads_are_rejected() {
         }]
         .into_boxed_slice(),
         template: None,
+        parameter_names: None,
     };
     let mut builder = FunctionCatalogBuilder::new();
     let error = builder
@@ -126,6 +127,7 @@ fn malformed_and_duplicate_overloads_are_rejected() {
     let duplicate = FunctionTypeDeclaration {
         overloads: vec![overload.clone(), overload].into_boxed_slice(),
         template: None,
+        parameter_names: None,
     };
     let error = builder
         .insert_canonical_specializer_with_contract(
@@ -992,4 +994,22 @@ fn rational_power_selects_its_exact_integral_exponent() {
             .iter()
             .all(|plan| matches!(plan.step, mech_core::ConversionStep::Identity))
     );
+}
+
+#[test]
+fn parameter_metadata_cannot_disagree_with_the_catalog_input_authority() {
+    for names in [vec!["left", "left"], vec!["left"], vec!["", "right"]] {
+        let mut declaration = maintained_source_type_declaration("math/sub").unwrap();
+        declaration.parameter_names = Some(names.into_iter().map(String::from).collect());
+        let mut builder = FunctionCatalogBuilder::new();
+        let error = builder
+            .insert_canonical_specializer_with_contract(
+                "math/sub",
+                declaration,
+                TEST_CONTRACT.clone(),
+                Arc::new(NeverSpecialize),
+            )
+            .unwrap_err();
+        assert_eq!(error.kind_name(), "FunctionCatalogInvalidTypeDeclaration");
+    }
 }

@@ -472,6 +472,8 @@ fn particle_program_is_lowered_from_mech_to_fused_wgsl() {
             .all(|initializer| match initializer {
                 mech_engine::InitializerReference::Constant(constant) =>
                     artifact.constants().get(*constant).is_some(),
+                mech_engine::InitializerReference::Activation(_) =>
+                    panic!("fixture requires constant state"),
             })
     );
     let placement = ComputeLowerer.plan(&artifact);

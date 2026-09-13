@@ -242,7 +242,10 @@ impl FrozenEkfArtifactClosure {
                     .ok_or(FrozenEkfArtifactClosureError::InvalidStateUpdate)?;
                 let crate::InitializerReference::Constant(initializer) = target_declaration
                     .initializer
-                    .ok_or(FrozenEkfArtifactClosureError::InvalidInitializer)?;
+                    .ok_or(FrozenEkfArtifactClosureError::InvalidInitializer)?
+                else {
+                    return Err(FrozenEkfArtifactClosureError::InvalidInitializer);
+                };
                 state_updates.push(FrozenEkfStateUpdate {
                     node: node.node,
                     target,
@@ -1209,7 +1212,10 @@ mod tests {
             .filter(|slot| slot.role == crate::SlotRole::State)
             .map(|slot| {
                 let crate::InitializerReference::Constant(initializer) =
-                    slot.initializer.expect("state initializer");
+                    slot.initializer.expect("state initializer")
+                else {
+                    panic!("EKF requires a constant initializer")
+                };
                 value_f64s(artifact, initializer).expect("numeric state initializer")
             })
             .collect::<Vec<_>>();
