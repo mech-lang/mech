@@ -401,6 +401,7 @@ fn validate_pattern(
 }
 
 impl<S, V> CollectionPattern<S, V> {
+    #[cfg(feature = "source")]
     pub(crate) fn map<T, W>(
         &self,
         schema: &impl Fn(&S) -> T,
