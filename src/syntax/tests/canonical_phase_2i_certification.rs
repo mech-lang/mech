@@ -1251,6 +1251,10 @@ fn assert_canonical_only(path: &Path, evidence: &str) {
         concat!("mech_syntax::document::parser::", "parse_document"),
         concat!("mech_syntax::document::parser::", "parse_syntax"),
         concat!("mech_syntax::document::parser::", "parse_fragment"),
+        concat!(
+            "mech_syntax::document::parser::fragment::",
+            "parse_fragment"
+        ),
         concat!("::", "lower"),
         concat!("document::", "lower::", "legacy"),
         concat!("usemech_", "core"),
@@ -1501,6 +1505,10 @@ fn canonical_authority_gate_rejects_glob_and_alias_routes() {
         concat!(
             "mech_syntax::document::parser::",
             "parse_fragment(source, FragmentKind::VariableDefine, config);"
+        ),
+        concat!(
+            "mech_syntax::document::parser::fragment::",
+            "parse_fragment(source, FragmentKind::Expression, config);"
         ),
         "pub use mech_syntax::document::*; lower_legacy_grammar();",
         "pub(crate) use mech_syntax::document::*; lower_legacy_grammar();",
