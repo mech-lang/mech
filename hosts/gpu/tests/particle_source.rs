@@ -472,6 +472,8 @@ fn particle_program_is_lowered_from_mech_to_fused_wgsl() {
             .all(|initializer| match initializer {
                 mech_engine::InitializerReference::Constant(constant) =>
                     artifact.constants().get(*constant).is_some(),
+                mech_engine::InitializerReference::Activation(_) =>
+                    panic!("fixture requires constant state"),
             })
     );
     let placement = ComputeLowerer.plan(&artifact);
@@ -1064,6 +1066,7 @@ fn particle_arithmetic_reaches_artifact_with_declared_contracts() {
     let artifact = compile_source(PARTICLE_SOURCE, particle_inputs());
     assert!(!artifact.nodes().is_empty());
     for node in artifact.nodes() {
+        let node = node.as_operation().expect("ordinary fixture operation");
         assert_ne!(node.operation.module_path.as_ref(), ["runtime"]);
         assert!(matches!(
             artifact.contracts().get(node.contract),
@@ -1097,10 +1100,18 @@ result
         .nodes()
         .iter()
         .map(|node| {
-            node.operation
+            node.as_operation()
+                .expect("ordinary fixture operation")
+                .operation
                 .module_path
                 .iter()
-                .chain(std::iter::once(&node.operation.operation_name))
+                .chain(std::iter::once(
+                    &node
+                        .as_operation()
+                        .expect("ordinary fixture operation")
+                        .operation
+                        .operation_name,
+                ))
                 .map(String::as_str)
                 .collect::<Vec<_>>()
                 .join("/")

@@ -1034,3 +1034,123 @@ fn stream_and_future_types_exist_but_cannot_use_signal_bindings() {
         })
     ));
 }
+
+#[test]
+fn maintained_math_identity_selects_types_arity_and_shape_contract_together() {
+    use mech_core::{
+        maintained_math_operation, maintained_operation_contract, maintained_source_schemes,
+    };
+    for (name, arity, shape) in [
+        ("math/add", 2, ShapeRule::Declared),
+        ("math/atan2", 2, ShapeRule::Declared),
+        ("math/bessel/jn", 2, ShapeRule::Declared),
+        ("math/neg", 1, ShapeRule::SameAsInput { input: 0 }),
+        ("math/abs", 1, ShapeRule::SameAsInput { input: 0 }),
+        ("math/sin", 1, ShapeRule::SameAsInput { input: 0 }),
+    ] {
+        assert_eq!(
+            maintained_math_operation(name).unwrap().input_count(),
+            arity
+        );
+        assert!(maintained_source_schemes(name).unwrap().is_some());
+        for (matrix, detection) in [
+            (false, ChangeDetectionPolicy::ExactScalar),
+            (true, ChangeDetectionPolicy::KernelReported),
+        ] {
+            let contract = maintained_operation_contract(name, arity, matrix).unwrap();
+            assert_eq!(
+                contract.inputs,
+                InputPortLayout::Fixed(
+                    vec![
+                        InputPortPolicy {
+                            access: AccessMode::Read,
+                            delivery: DeliveryMode::Signal
+                        };
+                        arity
+                    ]
+                    .into_boxed_slice()
+                )
+            );
+            assert_eq!(
+                contract.outputs.as_ref(),
+                &[OutputPortPolicy {
+                    access: AccessMode::Write,
+                    delivery: DeliveryMode::Signal,
+                    construction: OutputConstruction::FullWrite {
+                        shape: shape.clone()
+                    },
+                    alias: AliasPolicy::NoAlias,
+                    change_detection: detection,
+                }]
+            );
+            assert_eq!(contract.interaction, ExternalInteraction::Pure);
+            validate_declaration(&contract).unwrap();
+            assert!(maintained_operation_contract(name, arity + 1, matrix).is_none());
+        }
+    }
+    for name in ["math/not-declared", "math/sin/other", "math/atan2/other"] {
+        assert!(maintained_math_operation(name).is_none());
+        assert!(maintained_source_schemes(name).unwrap().is_none());
+        assert!(maintained_operation_contract(name, 1, false).is_none());
+    }
+}
+
+#[test]
+fn maintained_structural_and_unary_contracts_preserve_distinct_provider_shapes() {
+    use mech_core::maintained_operation_contract;
+    for (name, count, construction, detection) in [
+        (
+            "logic/not",
+            1,
+            OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            ChangeDetectionPolicy::ExactScalar,
+        ),
+        (
+            "matrix/transpose",
+            1,
+            OutputConstruction::FullWrite {
+                shape: ShapeRule::TransposeOf { input: 0 },
+            },
+            ChangeDetectionPolicy::KernelReported,
+        ),
+        (
+            "matrix/literal",
+            3,
+            OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            ChangeDetectionPolicy::AlwaysChanged,
+        ),
+    ] {
+        let contract = maintained_operation_contract(name, count, false).unwrap();
+        assert_eq!(contract.outputs[0].construction, construction, "{name}");
+        assert_eq!(contract.outputs[0].change_detection, detection, "{name}");
+        assert!(
+            matches!(&contract.inputs, InputPortLayout::Fixed(inputs) if inputs.len() == count)
+        );
+    }
+    for (name, count, postcondition) in [
+        ("range/inclusive", 2, "inclusive-output"),
+        ("range/exclusive", 2, "exclusive-output"),
+        ("range/inclusive-increment", 3, "inclusive-increment-output"),
+        ("range/exclusive-increment", 3, "exclusive-increment-output"),
+    ] {
+        let contract = maintained_operation_contract(name, count, true).unwrap();
+        assert_eq!(
+            contract.outputs[0].construction,
+            OutputConstruction::Build {
+                postcondition: ShapeContractReference {
+                    module_path: vec!["range".to_owned()].into_boxed_slice(),
+                    contract_name: postcondition.to_owned(),
+                }
+            }
+        );
+        assert_eq!(
+            contract.outputs[0].change_detection,
+            ChangeDetectionPolicy::KernelReported
+        );
+        assert!(maintained_operation_contract(name, count + 1, true).is_none());
+    }
+}

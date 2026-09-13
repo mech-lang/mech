@@ -498,6 +498,9 @@ fn artifact_with_effect(artifact: &ProgramArtifact, protocol: ProviderProtocol) 
     let contracts = builder.finish().unwrap();
     let mut nodes = artifact.nodes().to_vec();
     for node in &mut nodes {
+        let mech_engine::ExecutableNodeBody::Operation(node) = &mut node.body else {
+            panic!("ordinary fixture");
+        };
         node.contract = contracts
             .resolve(handles[node.contract.get() as usize])
             .unwrap();
@@ -519,12 +522,14 @@ fn artifact_with_effect(artifact: &ProgramArtifact, protocol: ProviderProtocol) 
     });
     nodes.push(NodeDeclaration {
         node,
-        operation: OperationReference {
-            module_path: vec!["resource".to_owned()].into_boxed_slice(),
-            operation_name: "write".to_owned(),
-        },
-        contract: contracts.resolve(effect).unwrap(),
-        requirement: Some(requirement),
+        body: mech_engine::ExecutableNodeBody::Operation(mech_engine::OperationNodeBody {
+            operation: OperationReference {
+                module_path: vec!["resource".to_owned()].into_boxed_slice(),
+                operation_name: "write".to_owned(),
+            },
+            contract: contracts.resolve(effect).unwrap(),
+            requirement: Some(requirement),
+        }),
         input_bindings: binding..binding + 1,
         output_bindings: binding + 1..binding + 1,
     });
@@ -618,7 +623,11 @@ fn artifact_with_duplicate_observation(artifact: &ProgramArtifact) -> ProgramArt
     let original = artifact
         .nodes()
         .iter()
-        .find(|node| node.requirement == Some(requirement))
+        .find(|node| {
+            node.as_operation()
+                .and_then(|operation| operation.requirement)
+                == Some(requirement)
+        })
         .expect("observation node");
     let original_slot = artifact.bindings()[original.output_bindings.start as usize].clone();
     let BindingDeclaration::Output {
@@ -635,9 +644,7 @@ fn artifact_with_duplicate_observation(artifact: &ProgramArtifact) -> ProgramArt
     let mut nodes = artifact.nodes().to_vec();
     nodes.push(NodeDeclaration {
         node,
-        operation: original.operation.clone(),
-        contract: original.contract,
-        requirement: original.requirement,
+        body: original.body.clone(),
         input_bindings: binding.get()..binding.get(),
         output_bindings: binding.get()..binding.get() + 1,
     });
@@ -680,7 +687,12 @@ fn artifact_with_duplicate_effect(
     let original = artifact
         .nodes()
         .iter()
-        .find(|node| node.requirement == Some(requirement) && node.output_bindings.is_empty())
+        .find(|node| {
+            node.as_operation()
+                .and_then(|operation| operation.requirement)
+                == Some(requirement)
+                && node.output_bindings.is_empty()
+        })
         .expect("effect node");
     let original_binding = artifact.bindings()[original.input_bindings.start as usize].clone();
     let BindingDeclaration::Input { source, .. } = original_binding else {
@@ -691,9 +703,7 @@ fn artifact_with_duplicate_effect(
     let mut nodes = artifact.nodes().to_vec();
     nodes.push(NodeDeclaration {
         node,
-        operation: original.operation.clone(),
-        contract: original.contract,
-        requirement: original.requirement,
+        body: original.body.clone(),
         input_bindings: binding.get()..binding.get() + 1,
         output_bindings: binding.get() + 1..binding.get() + 1,
     });
@@ -2386,13 +2396,15 @@ fn ordinary_source_and_bytecode_freeze_equivalent_external_artifacts() -> MResul
             artifact
                 .nodes()
                 .iter()
-                .filter(|node| node.requirement.is_some())
+                .filter(|node| node
+                    .as_operation()
+                    .is_some_and(|operation| operation.requirement.is_some()))
                 .count(),
             2
         );
         assert!(artifact.nodes().iter().any(|node| {
             matches!(
-                artifact.contracts().get(node.contract),
+                node.as_operation().and_then(|operation| artifact.contracts().get(operation.contract)),
                 Some(ResolvedOperationContract::Declared(contract))
                     if contract.interaction == expected_effect && contract.outputs.is_empty()
             )

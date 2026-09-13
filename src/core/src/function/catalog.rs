@@ -583,6 +583,9 @@ pub struct FunctionTypeOverload {
 pub struct FunctionTypeDeclaration {
     pub overloads: Box<[FunctionTypeOverload]>,
     pub template: Option<SourceSchemeTemplate>,
+    /// Semantic input names shared by all fixed-arity overloads. Absence means
+    /// callers must use positional arguments, never guessed parameter names.
+    pub parameter_names: Option<Box<[String]>>,
 }
 
 impl FunctionTypeDeclaration {
@@ -611,6 +614,7 @@ impl FunctionTypeDeclaration {
         Self {
             overloads,
             template: None,
+            parameter_names: None,
         }
     }
 
@@ -618,6 +622,7 @@ impl FunctionTypeDeclaration {
         Self {
             overloads: Box::new([]),
             template: Some(template),
+            parameter_names: None,
         }
     }
 
@@ -670,6 +675,13 @@ pub fn maintained_source_type_declaration(
         .with_compiler_loc());
     };
     let mut declaration = FunctionTypeDeclaration::from_schemes(schemes);
+    if matches!(
+        canonical_name,
+        "math/add" | "math/sub" | "math/mul" | "math/div" | "math/mod" | "math/pow"
+    ) {
+        declaration.parameter_names = Some(vec!["left".into(), "right".into()].into_boxed_slice());
+    }
+    validate_type_declaration(canonical_name, &declaration)?;
     let output_rule = match canonical_name {
         "matrix/transpose" => Some(ResolvedOutputSchemaRule::TransposeOfInput(0)),
         "set/cartesian-product" => Some(ResolvedOutputSchemaRule::DynamicSetCartesianProduct),
@@ -2121,6 +2133,16 @@ fn validate_type_declaration(
             canonical_name,
             "a declaration cannot combine fixed overloads with a source scheme template",
         ));
+    }
+    if let Some(names) = &declaration.parameter_names {
+        let unique = names.iter().collect::<BTreeSet<_>>();
+        if declaration.template.is_some() || unique.len() != names.len() || names.iter().any(|name| name.is_empty())
+            || declaration.overloads.iter().any(|overload| {
+                !matches!(overload.scheme.inputs(), InputKindScheme::Fixed(inputs) if inputs.len() == names.len())
+                    || overload.input_layout.iter().any(|input| *input != SourceInputKind::Value)
+            }) {
+            return Err(invalid_type_declaration(canonical_name, "parameter names require unique nonempty names and equal fixed value arity"));
+        }
     }
     let mut ids = BTreeSet::new();
     for (index, overload) in declaration.overloads.iter().enumerate() {

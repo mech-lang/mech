@@ -392,8 +392,9 @@ adapter and not a second bytecode version. Constructed runtime-only programs
 may leave all eleven sections absent. Source compiler output includes all eleven;
 partial presence is invalid.
 
-Sections 8 through 17 are compact UTF-8 JSON arrays with no insignificant
-whitespace; section 18 is the canonical binary contract table described
+Sections 8 through 17 use compact UTF-8 JSON with no insignificant
+whitespace. The artifact-nodes section is a graph object; the other sections
+are arrays. Section 18 is the canonical binary contract table described
 below. The JSON arrays use the field order below, decimal JSON integers, JSON
 strings, `null` for an absent optional value, and Serde's externally tagged
 form for sum types. Decoders first enforce the raw section and aggregate byte
@@ -405,9 +406,9 @@ only then allocate and decode typed values.
 | Artifact schemas | Canonical C0 `SchemaDraft` (`dimension_parameters`, `body`) |
 | Artifact constants | Canonical C2 `ValueDraft` (`schema`, `shape_values`, `data`) |
 | Artifact inputs | `{input,name,slot,schema}` |
-| Artifact slots | `{slot,schema,role,initializer}`; role 1 input, 2 state, 3 derived |
+| Artifact slots | `{slot,schema,role,initializer}`; role 1 input, 2 state, 3 derived, 4 output; initializer is null, `{Constant:id}`, or `{Slot:id}` |
 | Artifact producers | `{"Input":input}` or `{"NodeOutput":{"node":n,"output_ordinal":p}}` |
-| Artifact nodes | `{node,operation,contract,requirement,input_start,input_end,output_start,output_end}`; `requirement` is a dense application-requirement ID or `null` |
+| Artifact nodes | `{revision:5,requirements:[...],nodes:[...]}`; each node is `{node,body,input_start,input_end,output_start,output_end}` |
 | Artifact bindings | tagged `Input`/`Output` records containing ID, node, port, and source/target |
 | Artifact outputs | `{output,name,source,schema}` |
 | Artifact integrity constraints | `{constraint,operation,contract,inputs}` |
@@ -422,6 +423,59 @@ zero-based `contract`. The engine reconstructs
 `ProgramArtifactDraft`, validates all references and producer/binding
 bijections, recomputes `ProgramRevision`, and exposes only the finalized
 read-only artifact.
+
+### Typed graph bodies (graph revision 5)
+
+An ordinary body is `{"Operation":{"operation":id,"contract":id,"requirement":id_or_null}}`.
+A control body is `{"Match":{"scrutinee":input_ordinal,"captures":[[input_ordinal,schema_id]],"arms":[...]}}`.
+The decoder requires revision 5 and typed bodies; earlier graph representations
+must be regenerated with the current producer. The outer bytecode container
+remains version 1. There is one graph representation and no compatibility reader.
+
+An arm has `pattern`, `guard`, and `body`. Patterns are `{"Literal":constant_id}`, `"Wildcard"`, or `"Bind"`.
+Literal constants must have the scrutinee's exact schema. A guard is a block or null. A block has
+`id`, `parameters`, `operations`, and `yield_value`. Parameters are
+`[capture_ordinal_or_null,schema_id]`; null denotes the bound scrutinee.
+Each local operation has `node`, `body`, `inputs`, and `schema`. Its body is
+`{"Operation":{"operation":id,"contract":id}}` or a recursively owned `Match`
+declaration with the same fields as a root match. Nested scrutinee and capture
+ordinals address that local operation's inputs; descendant blocks cannot directly
+reference enclosing block locals.
+Values are externally tagged `Constant(id)`, `Parameter {block,ordinal}`, or
+`Local {block,node}`. Block IDs are dense preorder identities within the root match, including nested
+blocks. Local IDs are dense within their own block.
+Global schema, constant, operation, and contract IDs refer to the enclosing
+artifact tables.
+
+Finalization checks scope and dominance, closed value schemas, pure ordinary
+operation contracts, Boolean guard yields, identical arm result schemas, and
+an unguarded wildcard/binding or coverage of both Boolean values. It rejects cross-block references
+and undeclared captures. Decoder admission counts nested control arrays before
+allocating them: defaults allow 4,096 arms, 8,192 blocks, 65,536 local operations,
+and 262,144 operands across the artifact. Match nesting is limited to eight
+declarations on a path, checked before source-graph contract mapping and before
+wire arrays are allocated. Literal comparison still requires a scalar scrutinee.
+Existing section and aggregate byte
+limits also apply. Every control field participates in the artifact revision.
+
+A collection body is `{"Comprehension":{"kind":0_or_1,"steps":[...],"yield_value":value}}`.
+Kind 0 constructs a row matrix; kind 1 constructs a canonical set. Values are
+`Constant(id)`, `Input(ordinal)`, or `Local(id)`. Steps are tagged `Generator`
+(`source`, `pattern`), `Operation` (`local`, `operation`, `contract`, `inputs`,
+`schema`), or `Filter(value)`. Generators enumerate their current collection
+for each preceding lexical binding; a failed pattern or false filter skips that
+binding. Immutable definitions resolve to lexical values. The final yield runs
+once per surviving binding. Repeated pattern names become equality against
+previously defined locals, including across generators.
+
+Collection patterns are `Wildcard`, `Bind {local,schema}`, `Equal(value)`,
+`Tuple([...])`, or `Array {prefix,rest,suffix}`. An absent rest requires exact
+length; a wildcard rest ignores the middle elements. Local IDs are dense and
+single-writer across all steps. Finalization checks dominance, collection
+sources, pattern projection schemas, Boolean filters, pure ordinary operation
+contracts and the declared yield element. Pattern depth is bounded at 32 and generator nesting at 64; step and operand populations share the artifact-wide
+control limits above. All of these fields participate in artifact identity.
+Source maps contain diagnostics only and are not serialized as execution data.
 
 ### Operation-contract binary encoding
 
@@ -578,3 +632,17 @@ compatibility promise for earlier prerelease v1 layouts. At launch, bytecode
 v1 freezes as the first supported public format; after that boundary, an
 incompatible wire-format change requires bytecode v2. A language/runtime ABI
 change is a separate explicit decision and must update the header authority.
+
+### Computed state initialization
+
+State initializers reference canonical constants or artifact slots. A slot initializer
+is evaluated once by the activation graph, before state is published. It must have
+the state's exact schema and cannot name another state or published output. Its
+meaning belongs to the artifact and participates in bytecode encoding and revision
+identity; there is no deferred source-semantic initializer sidecar.
+
+The resident target admits slot initializers only when their producers belong to
+the pure activation graph. A live-input-dependent initializer returns
+`InitializerUnavailableAtActivation` before allocation/execution/publication. Pure
+computed initializers reuse the ordinary resident operations and managed state-copy
+path. No frontend constant evaluator or parser execution is involved.

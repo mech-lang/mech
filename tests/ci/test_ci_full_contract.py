@@ -378,6 +378,14 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn(fetch, block)
         self.assertLess(block.index(fetch), block.index(closure))
 
+    def test_language_census_prefetches_before_offline_metadata_tests(self):
+        block = job_block(FULL, "cargo-language")
+        self.assertLess(
+            block.index("cargo fetch --locked"),
+            block.index("cargo test -p mech-syntax --tests"),
+        )
+        self.assertNotIn("continue-on-error", block)
+
     def test_function_system_job_provisions_ripgrep_for_both_slices(self):
         block = job_block(FULL, "function-system-contracts")
         install = "sudo apt-get install --yes ripgrep"

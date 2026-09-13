@@ -16,10 +16,12 @@ pub(crate) fn activation_failure(error: ResidentActivationError) -> mech_core::M
     use ResidentActivationError::*;
 
     let class = match &error {
-        LegacyOpaque { .. }
+        UnsupportedControlLayout { .. }
+        | LegacyOpaque { .. }
         | UnsupportedInteraction { .. }
         | UnsupportedDelivery { .. }
         | UnsupportedValue { .. }
+        | InitializerUnavailableAtActivation { .. }
         | TurnDimension { .. }
         | UnresolvedShape { .. }
         | UnsupportedConstruction { .. }
@@ -53,7 +55,8 @@ pub(crate) fn activation_failure_for_artifact(
     error: ResidentActivationError,
 ) -> mech_core::MechError {
     let operation_node = match &error {
-        ResidentActivationError::LegacyOpaque { node }
+        ResidentActivationError::UnsupportedControlLayout { node }
+        | ResidentActivationError::LegacyOpaque { node }
         | ResidentActivationError::MissingResidentFactory { node }
         | ResidentActivationError::UnsupportedConstruction { node }
         | ResidentActivationError::KernelBind { node, .. } => Some(*node),
@@ -64,9 +67,19 @@ pub(crate) fn activation_failure_for_artifact(
             return route_failure(
                 ResidentRouteFailureClass::SemanticUnsupported,
                 format!(
-                    "resident activation failed at {node:?} ({}/{}): {error:?}",
-                    declaration.operation.module_path.join("/"),
-                    declaration.operation.operation_name,
+                    "resident activation failed at {node:?} ({}): {error:?}",
+                    match &declaration.body {
+                        mech_engine::ExecutableNodeBody::Operation(operation) =>
+                            operation.operation.canonical_name(),
+                        mech_engine::ExecutableNodeBody::Match(_) => "Typed match".to_owned(),
+                        mech_engine::ExecutableNodeBody::Comprehension(control) => match control
+                            .kind
+                        {
+                            mech_engine::ComprehensionKind::Matrix =>
+                                "Matrix comprehension".to_owned(),
+                            mech_engine::ComprehensionKind::Set => "Set comprehension".to_owned(),
+                        },
+                    },
                 ),
             );
         }

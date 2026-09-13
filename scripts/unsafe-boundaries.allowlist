@@ -28,3 +28,4 @@ src/runtime/src/runtime/program/external/coordinator.rs|resident-publication-aut
 src/wasm/src/websocket.rs|ffi|mech-wasm|foreign pointers and symbols remain valid only for the documented call or library lifetime|existing native ABI boundary
 tests/fixtures/resident-nbody-conformance/src/main.rs|test-probe|mech-engine|the counting allocator forwards the exact pointer and layout to System and retains no allocation pointer|resident n-body steady-state allocation accounting
 tests/fixtures/dynamic-status-module/src/lib.rs|ffi|repository-tests|foreign pointers and symbols remain valid only for the documented call or library lifetime|existing native ABI boundary
+src/core/tests/composite_constructor_allocation.rs|test-probe|mech-core|the test-only allocator forwards the exact pointer and layout to System and retains no allocation pointer|S4 bound-constructor schema-label allocation regression instrumentation

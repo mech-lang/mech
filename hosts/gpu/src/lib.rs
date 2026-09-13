@@ -998,7 +998,11 @@ impl<'a> Compiler<'a> {
                 "integrity constraints require transactional validation and are not admitted",
             );
         }
+        let required_slots = self.required_slots();
         for slot in self.artifact.slots() {
+            if slot.role != SlotRole::State && !required_slots.contains(&slot.slot) {
+                continue;
+            }
             if slot.role == SlotRole::Output {
                 continue;
             }
@@ -1041,7 +1045,7 @@ impl<'a> Compiler<'a> {
         }
     }
 
-    fn lower_inputs(&mut self) {
+    fn required_slots(&self) -> BTreeSet<CellSlotId> {
         let turn_nodes = turn_required_nodes(self.artifact);
         let mut required_slots = BTreeSet::new();
         for node in self
@@ -1050,6 +1054,13 @@ impl<'a> Compiler<'a> {
             .iter()
             .filter(|node| turn_nodes.contains(&node.node))
         {
+            for binding in node.output_bindings.clone() {
+                if let Some(BindingDeclaration::Output { target, .. }) =
+                    self.artifact.bindings().get(binding as usize)
+                {
+                    required_slots.insert(*target);
+                }
+            }
             for binding in node.input_bindings.clone() {
                 if let Some(BindingDeclaration::Input {
                     source: ArtifactSource::Slot(slot),
@@ -1066,6 +1077,11 @@ impl<'a> Compiler<'a> {
                 ArtifactSource::Slot(slot) => Some(slot),
             }
         }));
+        required_slots
+    }
+
+    fn lower_inputs(&mut self) {
+        let required_slots = self.required_slots();
         for input in self.artifact.inputs() {
             if !required_slots.contains(&input.slot) {
                 continue;
@@ -1105,6 +1121,15 @@ impl<'a> Compiler<'a> {
             if !turn_nodes.contains(&node.node) {
                 continue;
             }
+            let Some(node) = node.as_operation() else {
+                self.reject(
+                    GpuDiagnosticCode::OperationUnsupported,
+                    Some(node.node),
+                    None,
+                    "Typed match control requires resident execution",
+                );
+                continue;
+            };
             let operation_name = display_operation(&node.operation);
             if node.operation.module_path.as_ref() == ["core"]
                 && node.operation.operation_name == "composite-pack"
@@ -1162,7 +1187,7 @@ impl<'a> Compiler<'a> {
                 })
                 .collect::<Vec<_>>();
             if !state_targets.is_empty() {
-                self.lower_state_commit(node, &operation_name, &state_targets);
+                self.lower_state_commit(&node, &operation_name, &state_targets);
                 continue;
             }
             let Some(lowering) = elementwise_lowering(&node.operation) else {
@@ -1325,7 +1350,7 @@ impl<'a> Compiler<'a> {
 
     fn lower_state_commit(
         &mut self,
-        node: &mech_engine::NodeDeclaration,
+        node: &mech_engine::OperationNodeView<'_>,
         operation_name: &str,
         state_targets: &[CellSlotId],
     ) {
@@ -1481,6 +1506,7 @@ impl<'a> Compiler<'a> {
         self.artifact
             .nodes()
             .get(node.get() as usize)
+            .and_then(mech_engine::NodeDeclaration::as_operation)
             .is_some_and(|node| {
                 node.operation.module_path.as_ref() == ["core"]
                     && node.operation.operation_name == "composite-pack"

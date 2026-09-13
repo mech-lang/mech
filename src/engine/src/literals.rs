@@ -379,6 +379,9 @@ fn conversion_target_schema(
                 dimensions: dimensions.clone(),
             }
         }
+        ConversionStep::OptionPresent(payload_plan) => SchemaBody::Option(Box::new(
+            conversion_target_schema(source, &payload_plan.step)?,
+        )),
         ConversionStep::OptionPayload(payload_plan) => {
             let SchemaBody::Option(payload) = source else {
                 return Err(ConversionExecutionError::ConversionPlanSourceMismatch);
@@ -455,7 +458,9 @@ fn conversion_string_payload_bound(step: &ConversionStep) -> Option<u64> {
             target: BuiltinScalarKind::String,
             ..
         }) => *source,
-        ConversionStep::MatrixElements(inner) | ConversionStep::OptionPayload(inner) => {
+        ConversionStep::MatrixElements(inner)
+        | ConversionStep::OptionPayload(inner)
+        | ConversionStep::OptionPresent(inner) => {
             return conversion_string_payload_bound(&inner.step);
         }
         ConversionStep::Identity | ConversionStep::Scalar(_) => return None,
@@ -691,25 +696,9 @@ mech_core::declare_native_runtime_factory! {
 
 #[cfg(feature = "convert")]
 pub(crate) static PURE_TYPE_CONVERSION_CONTRACT: std::sync::LazyLock<OperationContractDeclaration> =
-    std::sync::LazyLock::new(|| OperationContractDeclaration {
-        inputs: InputPortLayout::Fixed(
-            vec![InputPortPolicy {
-                access: AccessMode::Read,
-                delivery: DeliveryMode::Signal,
-            }]
-            .into_boxed_slice(),
-        ),
-        outputs: vec![OutputPortPolicy {
-            access: AccessMode::Write,
-            delivery: DeliveryMode::Signal,
-            construction: OutputConstruction::FullWrite {
-                shape: ShapeRule::SameAsInput { input: 0 },
-            },
-            alias: AliasPolicy::NoAlias,
-            change_detection: ChangeDetectionPolicy::KernelReported,
-        }]
-        .into_boxed_slice(),
-        interaction: ExternalInteraction::Pure,
+    std::sync::LazyLock::new(|| {
+        mech_core::maintained_operation_contract("convert/kind", 1, false)
+            .expect("maintained operation contract")
     });
 
 #[cfg(feature = "convert")]

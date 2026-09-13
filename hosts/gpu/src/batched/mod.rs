@@ -1682,9 +1682,12 @@ impl<'a> BatchCompiler<'a> {
                 continue;
             }
             if let ProducerReference::NodeOutput { node, .. } = slot.producer {
-                let producer = &self.artifact.nodes()[node.get() as usize].operation;
-                if producer.module_path.as_ref() == ["core"]
-                    && producer.operation_name == "composite-pack"
+                if self.artifact.nodes()[node.get() as usize]
+                    .as_operation()
+                    .is_some_and(|producer| {
+                        producer.operation.module_path.as_ref() == ["core"]
+                            && producer.operation.operation_name == "composite-pack"
+                    })
                 {
                     continue;
                 }
@@ -1762,6 +1765,14 @@ impl<'a> BatchCompiler<'a> {
             if !required.contains(&node.node) {
                 continue;
             }
+            let Some(node) = node.as_operation() else {
+                self.reject(
+                    Some(node.node),
+                    None,
+                    "Typed match control requires resident execution".to_owned(),
+                );
+                continue;
+            };
             let operation = display_operation(&node.operation);
             if operation == "core/composite-pack" {
                 continue;
@@ -1795,7 +1806,7 @@ impl<'a> BatchCompiler<'a> {
             }
             if outputs.iter().any(|slot| self.states.contains_key(slot)) {
                 match self.lower_state(&operation, &inputs, &outputs) {
-                    Ok(output) => match self.concrete_execution_case(node, &inputs, output) {
+                    Ok(output) => match self.concrete_execution_case(&node, &inputs, output) {
                         Ok(case) => self.concrete_cases.push(case),
                         Err(detail) => self.reject(
                             Some(node.node),
@@ -1853,7 +1864,7 @@ impl<'a> BatchCompiler<'a> {
                 ))
             };
             match result {
-                Ok(()) => match self.concrete_execution_case(node, &inputs, output) {
+                Ok(()) => match self.concrete_execution_case(&node, &inputs, output) {
                     Ok(case) => self.concrete_cases.push(case),
                     Err(detail) => self.reject(
                         Some(node.node),
@@ -1872,7 +1883,7 @@ impl<'a> BatchCompiler<'a> {
 
     fn concrete_execution_case(
         &self,
-        node: &mech_engine::NodeDeclaration,
+        node: &mech_engine::OperationNodeView<'_>,
         inputs: &[ArtifactSource],
         output: CellSlotId,
     ) -> Result<ConcreteGpuExecutionCase, String> {
@@ -2129,7 +2140,11 @@ impl<'a> BatchCompiler<'a> {
         let ProducerReference::NodeOutput { node, .. } = slot.producer else {
             return None;
         };
-        let node = self.artifact.nodes().get(node.get() as usize)?;
+        let node = self
+            .artifact
+            .nodes()
+            .get(node.get() as usize)?
+            .as_operation()?;
         if display_operation(&node.operation) != "math/abs" {
             return None;
         }
@@ -2647,6 +2662,9 @@ impl<'a> BatchCompiler<'a> {
                             node.get()
                         ));
                     };
+                    let Some(node) = node.as_operation() else {
+                        return Ok(None);
+                    };
                     let inputs = node
                         .input_bindings
                         .clone()
@@ -2792,6 +2810,9 @@ impl<'a> BatchCompiler<'a> {
                             node.get()
                         ));
                     };
+                    let Some(node) = node.as_operation() else {
+                        return Ok(None);
+                    };
                     if display_operation(&node.operation) != "access/index" {
                         return Ok(None);
                     }
@@ -2833,6 +2854,9 @@ impl<'a> BatchCompiler<'a> {
         let Some(producer) = self.artifact.nodes().get(node.get() as usize) else {
             return false;
         };
+        let Some(producer) = producer.as_operation() else {
+            return false;
+        };
         if display_operation(&producer.operation) == "access/index" {
             return true;
         }
@@ -2854,6 +2878,7 @@ impl<'a> BatchCompiler<'a> {
                 self.artifact
                     .nodes()
                     .get(consumer.get() as usize)
+                    .and_then(mech_engine::NodeDeclaration::as_operation)
                     .is_some_and(|node| display_operation(&node.operation) == "access/index")
             })
     }

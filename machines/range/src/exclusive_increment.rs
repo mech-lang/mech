@@ -2,38 +2,9 @@ use mech_core::*;
 use std::sync::LazyLock;
 
 static PURE_EXCLUSIVE_INCREMENT_RANGE_CONTRACT: LazyLock<OperationContractDeclaration> =
-    LazyLock::new(|| OperationContractDeclaration {
-        inputs: InputPortLayout::Fixed(
-            vec![
-                InputPortPolicy {
-                    access: AccessMode::Read,
-                    delivery: DeliveryMode::Signal,
-                },
-                InputPortPolicy {
-                    access: AccessMode::Read,
-                    delivery: DeliveryMode::Signal,
-                },
-                InputPortPolicy {
-                    access: AccessMode::Read,
-                    delivery: DeliveryMode::Signal,
-                },
-            ]
-            .into_boxed_slice(),
-        ),
-        outputs: vec![OutputPortPolicy {
-            access: AccessMode::Write,
-            delivery: DeliveryMode::Signal,
-            construction: OutputConstruction::Build {
-                postcondition: ShapeContractReference {
-                    module_path: vec!["range".to_owned()].into_boxed_slice(),
-                    contract_name: "exclusive-increment-output".to_owned(),
-                },
-            },
-            alias: AliasPolicy::NoAlias,
-            change_detection: ChangeDetectionPolicy::KernelReported,
-        }]
-        .into_boxed_slice(),
-        interaction: ExternalInteraction::Pure,
+    LazyLock::new(|| {
+        mech_core::maintained_operation_contract("range/exclusive-increment", 3, true)
+            .expect("maintained range operation contract")
     });
 
 // Exclusive ------------------------------------------------------------------

@@ -51,6 +51,186 @@ impl CanonicalArtifactWriter {
         self.string(&operation.operation_name);
     }
 
+    fn control_value(&mut self, value: super::ControlValue) {
+        match value {
+            super::ControlValue::Constant(id) => {
+                self.u8(0);
+                self.u32(id.get());
+            }
+            super::ControlValue::Parameter { block, ordinal } => {
+                self.u8(1);
+                self.u32(block.0);
+                self.u16(ordinal);
+            }
+            super::ControlValue::Local { block, node } => {
+                self.u8(2);
+                self.u32(block.0);
+                self.u32(node);
+            }
+        }
+    }
+
+    fn control_block(&mut self, block: &super::ControlBlock) {
+        self.u32(block.id.0);
+        self.u64(block.parameters.len() as u64);
+        for parameter in &block.parameters {
+            self.u32(parameter.schema.get());
+            match parameter.source {
+                super::ControlParameterSource::Scrutinee => self.u8(0),
+                super::ControlParameterSource::Capture(index) => {
+                    self.u8(1);
+                    self.u16(index);
+                }
+            }
+        }
+        self.u64(block.operations.len() as u64);
+        for operation in &block.operations {
+            self.u32(operation.node);
+            match &operation.body {
+                super::ControlOperationBody::Operation {
+                    operation,
+                    contract,
+                } => {
+                    self.u8(0);
+                    self.operation(operation);
+                    self.u32(contract.get());
+                }
+                super::ControlOperationBody::Match(control) => {
+                    self.u8(1);
+                    self.match_declaration(control);
+                }
+            }
+            self.u32(operation.schema.get());
+            self.u64(operation.inputs.len() as u64);
+            for input in &operation.inputs {
+                self.control_value(*input);
+            }
+        }
+        self.control_value(block.yield_value);
+    }
+
+    fn match_declaration(&mut self, control: &super::MatchDeclaration) {
+        self.u16(control.scrutinee);
+        self.u64(control.captures.len() as u64);
+        for capture in &control.captures {
+            self.u16(capture.input);
+            self.u32(capture.schema.get());
+        }
+        self.u64(control.arms.len() as u64);
+        for arm in &control.arms {
+            match arm.pattern {
+                super::MatchPattern::Literal(constant) => {
+                    self.u8(0);
+                    self.u32(constant.get());
+                }
+                super::MatchPattern::Wildcard => self.u8(1),
+                super::MatchPattern::Bind => self.u8(2),
+            };
+            match &arm.guard {
+                None => self.u8(0),
+                Some(guard) => {
+                    self.u8(1);
+                    self.control_block(guard);
+                }
+            }
+            self.control_block(&arm.body);
+        }
+    }
+
+    fn comprehension_value(&mut self, value: super::ComprehensionValue) {
+        match value {
+            super::ComprehensionValue::Constant(id) => {
+                self.u8(0);
+                self.u32(id.get());
+            }
+            super::ComprehensionValue::Input(ordinal) => {
+                self.u8(1);
+                self.u16(ordinal);
+            }
+            super::ComprehensionValue::Local(local) => {
+                self.u8(2);
+                self.u32(local);
+            }
+        }
+    }
+
+    fn collection_pattern(&mut self, pattern: &super::CollectionPattern) {
+        match pattern {
+            super::CollectionPattern::Wildcard => self.u8(0),
+            super::CollectionPattern::Bind { local, schema } => {
+                self.u8(1);
+                self.u32(*local);
+                self.u32(schema.get());
+            }
+            super::CollectionPattern::Equal(value) => {
+                self.u8(2);
+                self.comprehension_value(*value);
+            }
+            super::CollectionPattern::Tuple(items) => {
+                self.u8(3);
+                self.u64(items.len() as u64);
+                for item in items {
+                    self.collection_pattern(item);
+                }
+            }
+            super::CollectionPattern::Array {
+                prefix,
+                rest,
+                suffix,
+            } => {
+                self.u8(4);
+                self.u64(prefix.len() as u64);
+                for item in prefix {
+                    self.collection_pattern(item);
+                }
+                match rest {
+                    None => self.u8(0),
+                    Some(rest) => {
+                        self.u8(1);
+                        self.collection_pattern(rest);
+                    }
+                }
+                self.u64(suffix.len() as u64);
+                for item in suffix {
+                    self.collection_pattern(item);
+                }
+            }
+        }
+    }
+
+    fn comprehension(&mut self, control: &super::ComprehensionDeclaration) {
+        self.u8(match control.kind {
+            super::ComprehensionKind::Matrix => 0,
+            super::ComprehensionKind::Set => 1,
+        });
+        self.u64(control.steps.len() as u64);
+        for step in &control.steps {
+            match step {
+                super::ComprehensionStep::Generator { source, pattern } => {
+                    self.u8(0);
+                    self.comprehension_value(*source);
+                    self.collection_pattern(pattern);
+                }
+                super::ComprehensionStep::Filter(value) => {
+                    self.u8(1);
+                    self.comprehension_value(*value);
+                }
+                super::ComprehensionStep::Operation(operation) => {
+                    self.u8(2);
+                    self.u32(operation.local);
+                    self.operation(&operation.operation);
+                    self.u32(operation.contract.get());
+                    self.u32(operation.schema.get());
+                    self.u64(operation.inputs.len() as u64);
+                    for value in &operation.inputs {
+                        self.comprehension_value(*value);
+                    }
+                }
+            }
+        }
+        self.comprehension_value(control.yield_value);
+    }
+
     fn source(&mut self, source: ArtifactSource) {
         match source {
             ArtifactSource::Constant(constant) => {
@@ -151,19 +331,36 @@ pub(super) fn program_revision(
                 writer.u8(1);
                 writer.u32(constant.get());
             }
+            Some(InitializerReference::Activation(slot)) => {
+                writer.u8(2);
+                writer.u32(slot.get());
+            }
         }
     }
 
     writer.u32(draft.nodes.len() as u32);
     for node in &draft.nodes {
         writer.u32(node.node.get());
-        writer.operation(&node.operation);
-        writer.u32(node.contract.get());
-        match node.requirement {
-            None => writer.u8(0),
-            Some(requirement) => {
+        match &node.body {
+            super::ExecutableNodeBody::Operation(operation) => {
+                writer.u8(0);
+                writer.operation(&operation.operation);
+                writer.u32(operation.contract.get());
+                match operation.requirement {
+                    None => writer.u8(0),
+                    Some(requirement) => {
+                        writer.u8(1);
+                        writer.u32(requirement.get());
+                    }
+                }
+            }
+            super::ExecutableNodeBody::Comprehension(control) => {
+                writer.u8(2);
+                writer.comprehension(control);
+            }
+            super::ExecutableNodeBody::Match(control) => {
                 writer.u8(1);
-                writer.u32(requirement.get());
+                writer.match_declaration(control);
             }
         }
         writer.u32(node.input_bindings.start);

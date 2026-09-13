@@ -47,6 +47,7 @@ pub enum ConversionStep {
     Scalar(ScalarConversion),
     MatrixElements(Box<ConversionPlan>),
     OptionPayload(Box<ConversionPlan>),
+    OptionPresent(Box<ConversionPlan>),
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -226,6 +227,13 @@ fn plan_conversion(
                 mode,
             )?))
         }
+        (_, KindExpr::Option(target_payload)) if mode == ConversionMode::Explicit => {
+            let target_payload = ResolvedType::new(
+                *target_payload.clone(),
+                target.dimension_parameters().to_vec().into_boxed_slice(),
+            )?;
+            ConversionStep::OptionPresent(Box::new(plan_conversion(source, &target_payload, mode)?))
+        }
         _ => return Err(fail()),
     };
     let cost = conversion_step_cost(&step)?;
@@ -247,16 +255,16 @@ fn conversion_step_cost(step: &ConversionStep) -> Result<u32, TypeResolutionErro
                 scalar_conversion_cost(*source, *target)
             })
         }
-        ConversionStep::MatrixElements(inner) | ConversionStep::OptionPayload(inner) => {
-            inner.cost.checked_add(1).ok_or_else(|| {
-                TypeResolutionError::incompatible(
-                    "conversion",
-                    TypeConstraintFailure::InvalidScheme {
-                        reason: "conversion-plan cost overflow".into(),
-                    },
-                )
-            })
-        }
+        ConversionStep::MatrixElements(inner)
+        | ConversionStep::OptionPayload(inner)
+        | ConversionStep::OptionPresent(inner) => inner.cost.checked_add(1).ok_or_else(|| {
+            TypeResolutionError::incompatible(
+                "conversion",
+                TypeConstraintFailure::InvalidScheme {
+                    reason: "conversion-plan cost overflow".into(),
+                },
+            )
+        }),
     }
 }
 
@@ -506,6 +514,13 @@ pub fn execute_conversion_draft(
                 .collect::<Result<Vec<_>, _>>()?;
             Ok(ValueDataDraft::Matrix(converted.into_boxed_slice()))
         }
+        ConversionStep::OptionPresent(payload_plan) => Ok(ValueDataDraft::Option(OptionDraft {
+            present: true,
+            value: Some(Box::new(execute_conversion_draft(
+                draft,
+                &payload_plan.step,
+            )?)),
+        })),
         ConversionStep::OptionPayload(payload_plan) => {
             let ValueDataDraft::Option(option) = draft else {
                 return Err(ConversionExecutionError::ConversionPlanSourceMismatch);
