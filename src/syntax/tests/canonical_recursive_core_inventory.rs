@@ -203,8 +203,8 @@ fn ports() -> BTreeMap<String, Port> {
 
 fn scc_report() -> BTreeMap<String, SccRow> {
     let source =
-        fs::read_to_string(repository_root().join("docs/design/grammar-audit/unported-sccs.tsv"))
-            .expect("read unported-sccs.tsv");
+        fs::read_to_string(repository_root().join("docs/design/grammar-audit/inactive-sccs.tsv"))
+            .expect("read inactive-sccs.tsv");
     let mut lines = source.lines();
     assert_eq!(lines.next(), Some(SCC_HEADER));
     let mut rows = BTreeMap::new();
@@ -336,7 +336,7 @@ fn component_by_rule(components: &[BTreeSet<String>]) -> BTreeMap<String, usize>
         .collect()
 }
 
-fn is_unported(port: &Port) -> bool {
+fn is_inactive(port: &Port) -> bool {
     port.activation != "active"
 }
 
@@ -375,7 +375,7 @@ fn report_schemas_ordering_and_uniqueness_are_exact() {
 }
 
 #[test]
-fn kosaraju_independently_recomputes_every_unported_component() {
+fn kosaraju_independently_recomputes_every_inactive_component() {
     let graph = dependencies();
     let ports = ports();
     let components = components(&graph);
@@ -387,30 +387,30 @@ fn kosaraju_independently_recomputes_every_unported_component() {
         .collect::<BTreeMap<_, _>>();
 
     for component in &components {
-        let unported = component
+        let inactive = component
             .iter()
-            .filter(|member| is_unported(&ports[*member]))
+            .filter(|member| is_inactive(&ports[*member]))
             .count();
         assert!(
-            unported == 0 || unported == component.len(),
-            "mixed port-status SCC: {component:?}"
+            inactive == 0 || inactive == component.len(),
+            "mixed activation-status SCC: {component:?}"
         );
     }
 
-    let unported_names = ports
+    let inactive_names = ports
         .iter()
-        .filter_map(|(name, port)| is_unported(port).then_some(name.clone()))
+        .filter_map(|(name, port)| is_inactive(port).then_some(name.clone()))
         .collect::<BTreeSet<_>>();
     assert_eq!(
         reported_by_member.keys().cloned().collect::<BTreeSet<_>>(),
-        unported_names
+        inactive_names
     );
 
     let reported_id_by_component = report
         .values()
         .map(|row| (row.members.clone(), row.id.clone()))
         .collect::<BTreeMap<_, _>>();
-    for name in &unported_names {
+    for name in &inactive_names {
         let component = &components[by_rule[name]];
         let row = reported_by_member[name];
         assert_eq!(&row.members, component, "SCC membership for {name}");
@@ -427,7 +427,7 @@ fn kosaraju_independently_recomputes_every_unported_component() {
                 if row.members.contains(child) {
                     continue;
                 }
-                if is_unported(&ports[child]) {
+                if is_inactive(&ports[child]) {
                     let target = &components[by_rule[child]];
                     outgoing_inactive.insert(reported_id_by_component[target].clone());
                 } else {
@@ -513,7 +513,7 @@ fn phase_boundary_rows_preserve_all_port_and_edge_invariants() {
             } else {
                 assert!(
                     is_certified(&ports[child]),
-                    "unported outgoing child {child}"
+                    "inactive outgoing child {child}"
                 );
                 assert_eq!(ports[child].activation, "active");
                 active_external.insert(child.clone());
