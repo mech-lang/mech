@@ -87,6 +87,7 @@ pub enum SourceNodeBody {
     },
     Match(super::MatchDeclaration<OperationContractDeclaration>),
     Comprehension(super::ComprehensionDeclaration<OperationContractDeclaration>),
+    Fsm(super::FsmDeclaration),
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -100,7 +101,9 @@ impl SourceNode {
     pub fn operation(&self) -> Option<&OperationReference> {
         match &self.body {
             SourceNodeBody::Operation { operation, .. } => Some(operation),
-            SourceNodeBody::Match(_) | SourceNodeBody::Comprehension(_) => None,
+            SourceNodeBody::Match(_)
+            | SourceNodeBody::Comprehension(_)
+            | SourceNodeBody::Fsm(_) => None,
         }
     }
 }
@@ -472,6 +475,7 @@ fn compile_source_program_with_metadata(
                         Ok::<_, ArtifactBuildError>(OperationContractId::new(0))
                     })?)
                 }
+                SourceNodeBody::Fsm(control) => crate::ExecutableNodeBody::Fsm(control.clone()),
             },
             input_bindings: input_start..input_end,
             output_bindings: output_start..output_end,

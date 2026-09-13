@@ -2397,6 +2397,9 @@ fn classify_nodes(
     let mut classes = vec![NodeClass::Turn; artifact.nodes().len()];
     let mut activation = BTreeSet::<NodeId>::new();
     for node in artifact.nodes() {
+        if matches!(&node.body, crate::ExecutableNodeBody::Fsm(_)) {
+            return Err(ResidentActivationError::UnsupportedControlLayout { node: node.node });
+        }
         let Some(node) = node.as_operation() else {
             continue;
         };

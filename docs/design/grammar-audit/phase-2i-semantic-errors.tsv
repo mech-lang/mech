@@ -1,0 +1,3 @@
+case-id	grammar-name	syntax-kind	source-json	error-code
+STRUCT-EMPTY-SET	structure	EmptySet	"(:ready, {})"	source-semantics/unresolved-set-element-kind
+STRUCT-EMPTY-MAP	structure	EmptyMap	"(1, {:})"	source-semantics/unresolved-map-entry-kind

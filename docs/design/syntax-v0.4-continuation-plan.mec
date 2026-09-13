@@ -1,7 +1,8 @@
 Syntax v0.4 Continuation Plan
 ===============================================================================
 
-Status: S0-S2 complete; S3 typed recursive syntax is next.
+Status: S0-S3 and the S5 certification implementation complete; S4 semantic
+completion remains open.
 
 Planning baseline: `feature/syntax` at `4560e5e6c`, rebased onto
 `integration/v0.4` after the R1-R6 stack. Pull request 812 is green at this
@@ -30,9 +31,21 @@ component contains 80 of the 211 unported rules. Phase 2I-C recognizes clean
 input for all 80 rules with the canonical event parser, but activates none of
 them. Those rows remain `unported` with no phase assignment.
 
-The component now has local malformed-input recovery for all 80 direct roots.
-It still lacks complete typed red-tree views, source-semantic handling,
-certification against the canonical contracts, and atomic registry activation.
+The component has local malformed-input recovery and complete typed red-tree
+views. The S5 certification implementation is complete: comprehension, pattern, and FSM witnesses
+are artifact-ready and all thirteen source-completion behavior tests pass. FSM
+machine identity, argument roles, ordered stage kinds, and recursively typed
+values survive artifact bytecode without source-string reconstruction. Borrowed
+tuple, array, and tagged-pattern projection executes with primitive bindings,
+and matches support compound results and nested match bodies and guards.
+Comprehension composite bindings/yields, computed pattern blocks, composition
+with nested comprehensions, the FSM resident continuation owner, and other S4
+limits remain open. FSM continuations follow the next-eligible internally
+scheduled turn contract in the normative specification. S6 activation remains
+gated on S4 completion; the registry remains inactive in this stage. The
+machine-checked `grammar-audit/phase-2i-semantic-completion.tsv` record keeps
+artifact readiness distinct from behavior demonstrated on a named target, so
+the FSM artifact cannot satisfy its unavailable resident-runtime obligation.
 
 The supported canonical roots are currently `Canonical + Grammar` and
 `Prototype + Document`. The shipping
@@ -277,10 +290,14 @@ Exit gate:
 
 - the 80-rule matrix passes under full and base syntax profiles;
 - ambiguity, recovery, and resource suites pass;
-- semantic fixtures produce the specified canonical program behavior; and
+- semantic fixtures produce the specified canonical source program and validated artifact;
+- implemented behavior fixtures demonstrate the specified values on a named target;
+- the semantic completion record prevents required unavailable or unfinished behavior from satisfying S6; and
 - no test imports the old parser to establish an expected result.
 
-All 80 registry rows remain inactive until this gate is complete.
+Passing S5 freezes the certification implementation. All 80 registry rows remain
+inactive until every S6-required completion row is `behavior-demonstrated` and S4
+is complete.
 
 S6. Atomic Phase 2I activation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
