@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -161,13 +161,11 @@ fn hash_node<N: AstNode>(hash: &mut StableHash, role: &str, value: Option<N>) {
     match value {
         Some(value) => {
             hash.field(&value.syntax().text().expect("typed accessor source text"));
-            hash.field(&format!(
-                "some:{:?}:{}:{}:{}",
-                value.syntax().kind(),
-                value.syntax().range().start.0,
-                value.syntax().range().end.0,
-                value.syntax().flags().0,
-            ));
+            hash.field("some");
+            hash.field(value.syntax().kind().name());
+            hash.field(&value.syntax().range().start.0.to_string());
+            hash.field(&value.syntax().range().end.0.to_string());
+            hash.field(&value.syntax().flags().0.to_string());
         }
         None => hash.field("none"),
     }
@@ -185,20 +183,21 @@ fn hash_nodes<N: AstNode>(hash: &mut StableHash, role: &str, values: Vec<N>) {
 fn hash_token(hash: &mut StableHash, role: &str, value: Option<SyntaxToken>) {
     hash.field(role);
     match value {
-        Some(value) => hash.field(&format!(
-            "some:{:?}:{}:{}:{}:{}",
-            value.kind(),
-            value.range().start.0,
-            value.range().end.0,
-            value.flags().0,
-            value.text().expect("clean source token text"),
-        )),
+        Some(value) => {
+            hash.field("some");
+            hash.field(value.kind().name());
+            hash.field(&value.range().start.0.to_string());
+            hash.field(&value.range().end.0.to_string());
+            hash.field(&value.flags().0.to_string());
+            hash.field(&value.text().expect("clean source token text"));
+        }
         None => hash.field("none"),
     }
 }
 
 fn typed_access_hash(rule_name: &str, node: &SyntaxNode) -> u64 {
     let mut hash = StableHash::new();
+    hash.field("canonical-typed-access-v2");
     hash.field(rule_name);
     if rule_name == "formula" {
         let view = find_typed::<FormulaSyntax>(node).expect("transparent formula typed view");
@@ -708,12 +707,12 @@ fn diagnostic_evidence(
     })
 }
 
-fn recovery_tree_evidence(node: &SyntaxNode) -> serde_json::Value {
+fn canonical_tree_evidence(node: &SyntaxNode) -> serde_json::Value {
     let children = node
         .children_with_tokens()
         .into_iter()
         .map(|child| match child {
-            SyntaxElement::Node(node) => recovery_tree_evidence(&node),
+            SyntaxElement::Node(node) => canonical_tree_evidence(&node),
             SyntaxElement::Token(token) => serde_json::json!([
                 "token",
                 token.kind().name(),
@@ -732,12 +731,19 @@ fn recovery_tree_evidence(node: &SyntaxNode) -> serde_json::Value {
     ])
 }
 
+fn clean_tree_hash(node: &SyntaxNode) -> u64 {
+    let mut hash = StableHash::new();
+    hash.field("canonical-clean-tree-v2");
+    hash.field(&serde_json::to_string(&canonical_tree_evidence(node)).unwrap());
+    hash.0
+}
+
 fn recovery_snapshot_hash(
     parsed: &mech_syntax::document::parser::canonical::CanonicalSourceRuleSnapshot,
 ) -> u64 {
     let mut hash = StableHash::new();
     hash.field("canonical-recovery-v2");
-    hash.field(&serde_json::to_string(&recovery_tree_evidence(&parsed.syntax())).unwrap());
+    hash.field(&serde_json::to_string(&canonical_tree_evidence(&parsed.syntax())).unwrap());
     let diagnostics =
         normalize_diagnostics(&parsed.diagnostics, parsed.source.revision(), &parsed.nodes);
     hash.field(
@@ -822,12 +828,99 @@ fn recovery_evidence_uses_normalized_identity_and_preserves_structured_changes()
     }
 }
 
+fn assert_certified_inventory<'a>(
+    names: impl IntoIterator<Item = &'a str>,
+    contracts: &BTreeMap<String, (String, String, String, String)>,
+) {
+    let names = names.into_iter().collect::<Vec<_>>();
+    let unique = names.iter().copied().collect::<BTreeSet<_>>();
+    assert_eq!(names.len(), unique.len(), "duplicate certification rule");
+    let expected = contracts
+        .keys()
+        .map(String::as_str)
+        .collect::<BTreeSet<_>>();
+    assert_eq!(
+        unique, expected,
+        "certification must cover the exact inventory"
+    );
+}
+
+#[test]
+fn certification_inventory_rejects_duplicate_missing_and_unknown_rules() {
+    let rows = certification_rows();
+    let contracts = inventory_contracts();
+    let names = rows.iter().map(|row| row.name.as_str()).collect::<Vec<_>>();
+    assert_certified_inventory(names.iter().copied(), &contracts);
+    for case in 0..3 {
+        let mut changed = names.clone();
+        match case {
+            0 => changed[0] = changed[1],
+            1 => {
+                changed.pop();
+            }
+            2 => changed[0] = "not-an-inventory-rule",
+            _ => unreachable!(),
+        }
+        assert!(
+            std::panic::catch_unwind(|| assert_certified_inventory(changed, &contracts)).is_err()
+        );
+    }
+}
+
+#[test]
+fn clean_tree_evidence_covers_flags_and_ignores_snapshot_identity() {
+    use mech_syntax::document::{GreenElement, GreenNode, TokenFlags};
+    use std::sync::Arc;
+    fn change_token(node: &GreenNode) -> GreenNode {
+        let mut changed = node.clone();
+        let mut children = changed.children.to_vec();
+        match &mut children[0] {
+            GreenElement::Node(child) => *child = Arc::new(change_token(child)),
+            GreenElement::Token(token) => token.flags.0 ^= TokenFlags::TRIVIA.0,
+        }
+        changed.children = children.into();
+        changed
+    }
+    let parse = |document, revision| {
+        parse_canonical_phase_2i_rule_for_test(
+            TextSnapshot::new(DocumentId(document), Revision(revision), "[1 2]").unwrap(),
+            rules::MATRIX,
+            ParseConfig::default(),
+        )
+        .unwrap()
+    };
+    let parsed = parse(1, 2);
+    let baseline = clean_tree_hash(&parsed.syntax());
+    assert_eq!(baseline, clean_tree_hash(&parse(9, 10).syntax()));
+    for flag in [NodeFlags::REPARSE_ROOT, NodeFlags::PROVISIONAL] {
+        let mut changed = (*parsed.root).clone();
+        changed.flags.0 ^= flag.0;
+        assert_eq!(changed.structural_hash, parsed.root.structural_hash);
+        assert_ne!(
+            baseline,
+            clean_tree_hash(&SyntaxNode::new_root(
+                Arc::new(changed),
+                parsed.source.clone()
+            ))
+        );
+    }
+    let changed = change_token(&parsed.root);
+    assert_eq!(changed.structural_hash, parsed.root.structural_hash);
+    assert_ne!(
+        baseline,
+        clean_tree_hash(&SyntaxNode::new_root(
+            Arc::new(changed),
+            parsed.source.clone()
+        ))
+    );
+}
+
 #[test]
 fn certification_table_executes_every_direct_accept_reject_and_recovery_case() {
     let rows = certification_rows();
     let contracts = inventory_contracts();
-    assert_eq!(rows.len(), 80);
-    assert_eq!(contracts.len(), rows.len());
+    assert_eq!(contracts.len(), 80);
+    assert_certified_inventory(rows.iter().map(|row| row.name.as_str()), &contracts);
     let mut stale_hashes = Vec::new();
     for row in rows {
         let contract = contracts
@@ -859,10 +952,11 @@ fn certification_table_executes_every_direct_accept_reject_and_recovery_case() {
             "{}",
             row.name
         );
-        if accepted.root.structural_hash != row.clean_tree_hash {
+        let clean_hash = clean_tree_hash(&accepted.syntax());
+        if clean_hash != row.clean_tree_hash {
             stale_hashes.push(format!(
                 "{}\tclean-tree\t{}\t{}",
-                row.name, row.clean_tree_hash, accepted.root.structural_hash
+                row.name, row.clean_tree_hash, clean_hash
             ));
         }
         validate_lossless_range(&accepted.root, &accepted.source, accepted.consumed).unwrap();
@@ -1115,6 +1209,42 @@ fn certification_evidence_uses_only_canonical_authorities() {
 }
 
 fn strip_rust_comments(source: &str) -> String {
+    mask_rust_source(source, true)
+}
+
+fn rust_character_end(source: &str, start: usize) -> Option<usize> {
+    let bytes = source.as_bytes();
+    let mut end = start + 1;
+    if bytes.get(end) == Some(&b'\\') {
+        end += 1;
+        match bytes.get(end)? {
+            b'u' if bytes.get(end + 1) == Some(&b'{') => {
+                end += 2;
+                while bytes
+                    .get(end)
+                    .is_some_and(|byte| byte.is_ascii_hexdigit() || *byte == b'_')
+                {
+                    end += 1;
+                }
+                if bytes.get(end) != Some(&b'}') {
+                    return None;
+                }
+                end += 1;
+            }
+            b'x' => end += 3,
+            _ => end += 1,
+        }
+    } else {
+        let character = source.get(end..)?.chars().next()?;
+        if matches!(character, '\'' | '\n' | '\r') {
+            return None;
+        }
+        end += character.len_utf8();
+    }
+    (bytes.get(end) == Some(&b'\'')).then_some(end + 1)
+}
+
+fn mask_rust_source(source: &str, preserve_literals: bool) -> String {
     let bytes = source.as_bytes();
     let mut output = Vec::with_capacity(bytes.len());
     let mut cursor = 0;
@@ -1140,7 +1270,11 @@ fn strip_rust_comments(source: &str) -> String {
                             == Some(&bytes[raw_start + 1..quote])
                     {
                         end += 1 + hashes;
-                        output.extend_from_slice(&bytes[cursor..end]);
+                        if preserve_literals {
+                            output.extend_from_slice(&bytes[cursor..end]);
+                        } else {
+                            output.push(b' ');
+                        }
                         cursor = end;
                         break;
                     }
@@ -1150,6 +1284,17 @@ fn strip_rust_comments(source: &str) -> String {
                     continue;
                 }
             }
+        }
+        if bytes[cursor] == b'\''
+            && let Some(end) = rust_character_end(source, cursor)
+        {
+            if preserve_literals {
+                output.extend_from_slice(&bytes[cursor..end]);
+            } else {
+                output.push(b' ');
+            }
+            cursor = end;
+            continue;
         }
         if bytes[cursor] == b'"' {
             let start = cursor;
@@ -1165,7 +1310,11 @@ fn strip_rust_comments(source: &str) -> String {
                     }
                 }
             }
-            output.extend_from_slice(&bytes[start..cursor]);
+            if preserve_literals {
+                output.extend_from_slice(&bytes[start..cursor]);
+            } else {
+                output.push(b' ');
+            }
             continue;
         }
         if bytes.get(cursor..cursor + 2) == Some(b"//") {
@@ -1202,35 +1351,91 @@ fn strip_rust_comments(source: &str) -> String {
     String::from_utf8(output).expect("comment stripping preserves UTF-8 source bytes")
 }
 
-fn assert_canonical_only(path: &Path, evidence: &str) {
-    let uncommented = strip_rust_comments(evidence);
-    let evidence = uncommented.as_str();
-    let mut declaration = None::<String>;
-    for line in evidence.lines().map(str::trim) {
-        let compact_line = line
-            .chars()
-            .filter(|character| !character.is_whitespace())
-            .collect::<String>();
-        if declaration.is_none() && strip_visibility_prefix(&compact_line).starts_with("use") {
-            declaration = Some(String::new());
-        }
-        if let Some(current) = declaration.as_mut() {
-            current.push_str(line);
-            if line.ends_with(';') {
-                let completed = declaration.take().expect("active import declaration");
-                if completed.contains("mech_syntax") || completed.contains(concat!("mech_", "core"))
-                {
-                    assert_allowed_mech_import(path, &completed);
-                }
+fn assert_allowed_qualified_syntax_paths(path: &Path, source: &str) {
+    let code = mask_rust_source(source, false).replace("r#", "");
+    let bytes = code.as_bytes();
+    let mut tokens = Vec::new();
+    let mut cursor = 0;
+    while cursor < bytes.len() {
+        let start = cursor;
+        if bytes[cursor].is_ascii_alphabetic() || bytes[cursor] == b'_' {
+            cursor += 1;
+            while cursor < bytes.len()
+                && (bytes[cursor].is_ascii_alphanumeric() || bytes[cursor] == b'_')
+            {
+                cursor += 1;
             }
+            tokens.push(&code[start..cursor]);
+        } else if bytes.get(cursor..cursor + 2) == Some(b"::") {
+            tokens.push("::");
+            cursor += 2;
+        } else {
+            if !bytes[cursor].is_ascii_whitespace() {
+                tokens.push(if bytes[cursor].is_ascii() {
+                    &code[cursor..cursor + 1]
+                } else {
+                    "#"
+                });
+            }
+            cursor += 1;
         }
     }
-    assert!(
-        declaration.is_none(),
-        "unterminated import in {}",
-        path.display()
-    );
+    for (index, token) in tokens.iter().enumerate() {
+        if *token == "use" {
+            let end = tokens[index..]
+                .iter()
+                .position(|token| *token == ";")
+                .map(|offset| index + offset + 1)
+                .expect("terminated Rust import");
+            let declaration = tokens[index..end].join("");
+            if declaration.contains("mech_syntax") || declaration.contains("mech_core") {
+                assert_allowed_mech_import(path, &declaration);
+            }
+        }
+        if *token == "extern" && tokens.get(index + 1) == Some(&"crate") {
+            assert!(
+                !matches!(tokens.get(index + 2), Some(&"mech_syntax" | &"mech_core")),
+                "extern crate aliases are outside canonical evidence"
+            );
+        }
+    }
+    for index in 0..tokens.len().saturating_sub(1) {
+        if tokens[index] != "mech_syntax" || tokens[index + 1] != "::" {
+            continue;
+        }
+        let mut parts = Vec::new();
+        let mut next = index + 2;
+        while next < tokens.len()
+            && tokens[next]
+                .bytes()
+                .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_')
+        {
+            parts.push(tokens[next]);
+            if tokens.get(next + 1) != Some(&"::") {
+                break;
+            }
+            next += 2;
+        }
+        let (module, item) = match parts.as_slice() {
+            ["document"] | ["document", "parser"] | ["document", "parser", "canonical"] => continue,
+            ["document", "parser", "canonical", item, ..] => ("document::parser::canonical", *item),
+            ["document", "parser", item, ..] => ("document::parser", *item),
+            ["document", item, ..] => ("document", *item),
+            _ => panic!(
+                "{} uses a noncanonical qualified syntax path: {}",
+                path.display(),
+                parts.join("::")
+            ),
+        };
+        // Imports and qualified references share exactly one item allowlist.
+        assert_allowed_mech_import(path, &format!("usemech_syntax::{module}::{{{item}}};"));
+    }
+}
 
+fn assert_canonical_only(path: &Path, evidence: &str) {
+    assert_allowed_qualified_syntax_paths(path, evidence);
+    let uncommented = strip_rust_comments(evidence);
+    let evidence = uncommented.as_str();
     let compact = evidence
         .chars()
         .filter(|character| !character.is_whitespace())
@@ -1238,27 +1443,7 @@ fn assert_canonical_only(path: &Path, evidence: &str) {
         .replace("r#", "");
     let normalized = compact.replace(['{', '}'], "");
     for forbidden in [
-        concat!("mech_syntax::", "parser"),
-        concat!("mech_syntax::", "parse"),
-        concat!("usemech_syntax", "as"),
-        concat!("mech_syntax::", "{"),
-        concat!("mech_syntax::", "*"),
-        concat!("externcratemech_", "syntax"),
-        concat!("mech_syntax::document::", "lower"),
-        concat!("mech_syntax::document::", "parse_document"),
-        concat!("mech_syntax::document::", "parse_syntax"),
-        concat!("mech_syntax::document::", "parse_fragment"),
-        concat!("mech_syntax::document::", "DocumentSession"),
-        concat!("mech_syntax::document::", "incremental"),
-        concat!("mech_syntax::document::parser::", "parse_document"),
-        concat!("mech_syntax::document::parser::", "parse_syntax"),
-        concat!("mech_syntax::document::parser::", "parse_fragment"),
-        concat!(
-            "mech_syntax::document::parser::fragment::",
-            "parse_fragment"
-        ),
         concat!("::", "lower"),
-        concat!("document::", "lower::", "legacy"),
         concat!("usemech_", "core"),
         concat!("externcratemech_", "core"),
         concat!("mech_core::", "Program"),
@@ -1361,7 +1546,12 @@ fn assert_allowed_mech_import(path: &Path, declaration: &str) {
         .strip_prefix("usemech_syntax::document::parser::{")
         .and_then(|items| items.strip_suffix("};"))
     {
-        let allowed = ["canonical_rule_id", "canonical_rule_name", "rules"];
+        let allowed = [
+            "canonical_rule_id",
+            "canonical_rule_name",
+            "rules",
+            "MIN_PREFIX_PRESERVING_EVENTS",
+        ];
         items
             .split(',')
             .filter(|item| !item.is_empty())
@@ -1376,6 +1566,7 @@ fn assert_allowed_mech_import(path: &Path, declaration: &str) {
             "DiagnosticPhase",
             "FixApplicability",
             "FoundSyntax",
+            "NormalizedDiagnostic",
             "NormalizedDiagnosticFix",
             "NormalizedDiagnosticLabel",
             "Severity",
@@ -1527,6 +1718,28 @@ fn canonical_authority_gate_rejects_glob_and_alias_routes() {
         concat!(
             "mech_syntax::document/* path gap */::r#incremental::reparse::",
             "reparse(snapshot, edits, config, ids);"
+        ),
+        concat!(
+            "fn bypass() { use mech_syntax as syntax; ",
+            "syntax::expression(input); }"
+        ),
+        concat!(
+            "fn bypass() { use {::mech_syntax as syntax}; ",
+            "syntax::expression(input); }"
+        ),
+        concat!("let quote = '\"'; mech_syntax::", "expression(input);"),
+        concat!("let slash = '/'; mech_syntax::", "expression(input);"),
+        concat!("mech_syntax::expressions::", "expression(input);"),
+        concat!("mech_syntax::", "expression(input);"),
+        concat!("mech_syntax::", "ParseString::new(&graphemes);"),
+        concat!("mech_syntax::structures::", "matrix(input);"),
+        concat!(
+            "return mech_syntax /* gap */ :: expressions :: ",
+            "expression(input);"
+        ),
+        concat!(
+            "mech_syntax::document::parser::mech::",
+            "parse_expression(context);"
         ),
         "pub use mech_syntax::document::*; lower_legacy_grammar();",
         "pub(crate) use mech_syntax::document::*; lower_legacy_grammar();",
