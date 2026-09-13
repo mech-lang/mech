@@ -67,10 +67,24 @@ impl LineIndex {
             .take_while(|start| start.0 < scan_start.0)
             .collect::<alloc::vec::Vec<_>>();
         starts.push(scan_start);
+        // scan_line_starts requests monotonically increasing offsets. Retain a
+        // piece cursor so rebuilding an edited, highly fragmented source does
+        // not restart a linear piece search for every byte.
+        let mut piece_index = 0;
+        let mut piece_start = 0_u32;
         scan_line_starts(
             scan_start,
             new_scan_end,
-            |offset| byte_from_pieces(new_pieces, offset),
+            |offset| loop {
+                let piece = new_pieces.get(piece_index)?;
+                let piece_end = piece_start.saturating_add(piece.len().0);
+                if offset.0 < piece_end {
+                    let local = piece.range_in_chunk.start.0 + offset.0 - piece_start;
+                    break piece.chunk.as_bytes().get(local as usize).copied();
+                }
+                piece_start = piece_end;
+                piece_index += 1;
+            },
             &mut starts,
         );
 
@@ -178,30 +192,20 @@ fn map_old_offset(offset: TextSize, edits: &[TextEdit]) -> TextSize {
         if offset.0 < edit.delete.start.0 {
             break;
         }
-        if offset.0 <= edit.delete.end.0 {
+        if offset.0 < edit.delete.end.0 {
             let mapped = i64::from(edit.delete.start.0)
                 + delta
                 + i64::try_from(edit.insert.len()).unwrap_or(i64::MAX);
             return TextSize(mapped.clamp(0, i64::from(u32::MAX)) as u32);
         }
+        // A boundary at the end of a replacement also precedes any adjacent
+        // insertion at that same old offset. Accumulate all such edits before
+        // projecting it so the rescanned window covers their complete text.
         delta +=
             i64::try_from(edit.insert.len()).unwrap_or(i64::MAX) - i64::from(edit.delete.len().0);
     }
     let mapped = i64::from(offset.0) + delta;
     TextSize(mapped.clamp(0, i64::from(u32::MAX)) as u32)
-}
-
-fn byte_from_pieces(pieces: &[Piece], offset: TextSize) -> Option<u8> {
-    let mut absolute = 0_u32;
-    for piece in pieces {
-        let len = piece.len().0;
-        if offset.0 < absolute.saturating_add(len) {
-            let local = piece.range_in_chunk.start.0 + (offset.0 - absolute);
-            return piece.chunk.as_bytes().get(local as usize).copied();
-        }
-        absolute = absolute.saturating_add(len);
-    }
-    None
 }
 
 fn scan_line_starts(

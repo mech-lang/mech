@@ -170,7 +170,12 @@ impl CodeBlockSyntax {
             .syntax()
             .tokens()
             .into_iter()
-            .find(|token| token.kind() == SyntaxKind::Newline)?
+            .find(|token| {
+                matches!(
+                    token.kind(),
+                    SyntaxKind::Newline | SyntaxKind::CarriageReturn
+                )
+            })?
             .range()
             .start;
         Some(TextRange::new(start, end))

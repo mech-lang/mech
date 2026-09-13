@@ -1091,7 +1091,7 @@ jobs:
           --test document_streaming_complexity --test document_streaming_storage
           --test document_streaming_lifecycle --test document_streaming_equivalence
           --test document_streaming_boundaries --test document_streaming_recovery
-          --test document_streaming_resources
+          --test document_streaming_resources --test document_streaming_publication
 
       - name: Verify canonical document execution and rendered outputs
         run: >-
