@@ -53,6 +53,10 @@ producer; their semantic hashes changed because the complete artifact bytecode i
 part of each witness fingerprint. The source programs, dispositions, required
 outcomes, and non-graph artifact sections are unchanged. Revision 5 remains rejected
 without a compatibility reader, including for externally supplied FSM artifacts.
+The committed 20-fixture bytecode-v1 corpus was also regenerated and checked across
+five fresh producer processes. Seventeen compiler-produced, graph-bearing fixtures
+changed at identical byte lengths; the three constructed scalar, matrix, and
+composite fixtures remain unchanged.
 
 ## Complete syntax evidence
 

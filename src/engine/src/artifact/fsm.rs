@@ -49,57 +49,60 @@ pub(super) const MAX_FSM_VALUE_DEPTH: usize = 32;
 pub(super) const MAX_FSM_STAGES: usize = 4_096;
 
 // Mirrors the canonical syntax identifier's alphabetic, numeric, symbol, and
-// forbidden-emoji scalar classes without depending on the source parser.
-fn is_forbidden_identifier_emoji(character: char) -> bool {
+// forbidden-emoji grapheme classes without depending on the source parser.
+fn is_forbidden_identifier_emoji(grapheme: &str) -> bool {
     matches!(
-        character,
-        '\u{00a0}'
-            | '\u{2009}'
-            | '\u{27e8}'
-            | '\u{27e9}'
-            | '\u{2e22}'
-            | '\u{2e25}'
-            | '╭'
-            | '╮'
-            | '╰'
-            | '╯'
-            | '┏'
-            | '┓'
-            | '┗'
-            | '┌'
-            | '┐'
-            | '└'
-            | '┼'
-            | '─'
-            | '├'
-            | '┤'
-            | '┬'
-            | '┴'
-            | '│'
-            | '┃'
+        grapheme,
+        "\u{00a0}"
+            | "\u{2009}"
+            | "\u{27e8}"
+            | "\u{27e9}"
+            | "\u{2e22}"
+            | "\u{2e25}"
+            | "╭"
+            | "╮"
+            | "╰"
+            | "╯"
+            | "┏"
+            | "┓"
+            | "┗"
+            | "┌"
+            | "┐"
+            | "└"
+            | "┼"
+            | "─"
+            | "├"
+            | "┤"
+            | "┬"
+            | "┴"
+            | "│"
+            | "┃"
     )
 }
 
-fn is_identifier_emoji(character: char) -> bool {
-    !character.is_alphanumeric()
-        && !character.is_ascii()
-        && !is_forbidden_identifier_emoji(character)
+fn is_identifier_emoji(grapheme: &str) -> bool {
+    let Some(first) = grapheme.chars().next() else {
+        return false;
+    };
+    !first.is_alphanumeric() && !first.is_ascii() && !is_forbidden_identifier_emoji(grapheme)
 }
 
 fn is_canonical_identifier(name: &str) -> bool {
-    let mut characters = name.chars();
-    let Some(first) = characters.next() else {
+    let mut graphemes = grapheme::Graphemes::from_usvs(name)
+        .iter()
+        .map(|grapheme| grapheme.as_str());
+    let Some(first) = graphemes.next() else {
         return false;
     };
-    if !first.is_alphabetic() && !is_identifier_emoji(first) {
+    if !first.chars().next().is_some_and(char::is_alphabetic) && !is_identifier_emoji(first) {
         return false;
     }
-    characters.all(|character| {
-        character.is_alphanumeric()
-            || is_identifier_emoji(character)
+    graphemes.all(|grapheme| {
+        grapheme.chars().next().is_some_and(char::is_alphanumeric)
+            || is_identifier_emoji(grapheme)
             || matches!(
-                character,
-                '&' | '$' | '%' | '/' | '#' | '\\' | '~' | '+' | '-' | '*' | '^'
+                grapheme,
+                "&" | "$" | "%" | "/" | "#" | "\\" | "~" | "+" | "-" | "*" | "^"
             )
     })
 }

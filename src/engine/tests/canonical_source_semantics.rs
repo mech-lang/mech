@@ -261,6 +261,39 @@ fn fsm_pipe_owns_typed_arguments_stages_and_artifact_roundtrip() {
 
     let sections = mech_engine::encode_program_artifact_sections(&artifact).unwrap();
     let graph = String::from_utf8(sections.nodes.clone()).unwrap();
+    // Canonical identifier classes are defined over extended grapheme clusters.
+    // U+0600 joins the following '=' into one emoji grapheme whose first scalar
+    // admits it in machine, named-argument, and structured-value roles.
+    let clustered_identifier = "\u{0600}=";
+    let clustered_source = format!(
+        "#{clustered_identifier}({clustered_identifier}: 1) -> :{clustered_identifier}(:x)"
+    );
+    CanonicalSourceFrontend
+        .compile_expression(&expression(&clustered_source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    for (original, replacement) in [
+        (
+            "\"machine\":\"machine\"",
+            format!("\"machine\":\"{clustered_identifier}\""),
+        ),
+        (
+            "\"arguments\":[[\"left\",0]",
+            format!("\"arguments\":[[\"{clustered_identifier}\",0]"),
+        ),
+        (
+            "\"name\":\"some\"",
+            format!("\"name\":\"{clustered_identifier}\""),
+        ),
+    ] {
+        let mutated = graph.replacen(original, &replacement, 1);
+        assert_ne!(mutated, graph, "missing FSM wire fixture {original}");
+        let mut valid = sections.clone();
+        valid.nodes = mutated.into_bytes();
+        mech_engine::decode_program_artifact_sections(&valid)
+            .unwrap_or_else(|error| panic!("canonical FSM identifier {replacement}: {error:?}"));
+    }
     let mut revision_five = sections.clone();
     revision_five.nodes = graph
         .replacen("\"revision\":6", "\"revision\":5", 1)
