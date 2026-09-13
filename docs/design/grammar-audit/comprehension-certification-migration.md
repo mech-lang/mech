@@ -29,6 +29,18 @@ nested comprehensions, and FSM lowering remain unfinished. The FSM witness retai
 executable outcome; the completion gate continues to fail until that implementation
 exists.
 
+## Nested-match graph revision
+
+Graph payload revision 5 gives each match-local operation a typed body, permitting
+recursive match declarations without an ordinary-call contract on control nodes.
+The 50 existing artifact-ready semantic witnesses were captured with both
+producers and compared section by section. For every witness, the graph revision
+changed from 4 to 5 and every other section payload remained byte-identical. Only
+those 50 semantic hashes changed; sources, dispositions and required outcomes did
+not. Positive compound-match, nested-match and exact table-join behavior remains
+in the completion suite. FSM remains a required executable witness and continues
+to fail until its typed implementation exists.
+
 ## Complete syntax evidence
 
 Clean-tree fingerprints use canonical-clean-tree-v2: an explicit traversal
