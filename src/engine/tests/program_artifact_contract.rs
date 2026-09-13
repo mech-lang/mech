@@ -3114,3 +3114,26 @@ fn bytecode_v1_round_trips_every_c2_snapshot_family() {
         );
     }
 }
+
+#[test]
+fn committed_source_bytecode_fixtures_pass_current_artifact_validation() {
+    let directory = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../tests/architecture/bytecode-v1");
+    let manifest: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(directory.join("manifest.json")).unwrap()).unwrap();
+    let mut checked = 0;
+    for fixture in manifest["fixtures"].as_array().unwrap() {
+        if fixture["origin"] != "source-compiler" {
+            continue;
+        }
+        let file = fixture["file"].as_str().unwrap();
+        let bytes = std::fs::read(directory.join(file)).unwrap();
+        decode_program_artifact_bytecode_v1(&bytes)
+            .unwrap_or_else(|error| panic!("committed source fixture {file}: {error:?}"));
+        checked += 1;
+    }
+    assert!(
+        checked > 0,
+        "the manifest must contain source artifact fixtures"
+    );
+}
