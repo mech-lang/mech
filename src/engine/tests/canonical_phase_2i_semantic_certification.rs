@@ -7,8 +7,8 @@ use std::path::PathBuf;
 use mech_engine::{
     CanonicalSourceFrontend, CanonicalSourceProgram, CardinalitySpec, DimensionExpr, FloatWidth,
     IntegerWidth, PHASE_2I_SEMANTIC_RULES, Phase2iSemanticDisposition, ProgramArtifact, SchemaBody,
-    SourceNodeOutput, SourceSemanticAnchor, SourceSemanticComprehensionQualifierRole, SourceValue,
-    canonical_application_requirement_bytes, encode_program_artifact_bytecode_v1,
+    SourceNodeOutput, SourceSemanticAnchor, SourceValue, canonical_application_requirement_bytes,
+    encode_program_artifact_bytecode_v1,
 };
 use mech_syntax::document::parser::canonical::parse_canonical_phase_2i_rule_for_test;
 use mech_syntax::document::parser::rules;
@@ -194,7 +194,7 @@ fn hash_slot_shapes(
 fn semantic_snapshot_hash(compiled: &CanonicalSourceProgram, artifact: &ProgramArtifact) -> u64 {
     let mut hash = StableHash::new();
     let program = compiled.program();
-    hash.field("canonical-source-program-v1");
+    hash.field("canonical-source-program-v2");
     hash.usize(program.requirements.len());
     for (_, requirement) in program.requirements.iter() {
         hash.bytes(
@@ -233,6 +233,11 @@ fn semantic_snapshot_hash(compiled: &CanonicalSourceProgram, artifact: &ProgramA
                 }
                 hash.field(&operation.operation_name);
                 hash_optional_u32(&mut hash, requirement.map(|id| id.get()));
+            }
+            mech_engine::SourceNodeBody::Comprehension(_) => {
+                // Ordered qualifiers, patterns, and yields are owned by the
+                // typed artifact bytecode included below.
+                hash.field("Comprehension");
             }
             mech_engine::SourceNodeBody::Match(_) => {
                 // The complete typed control body is sealed by the artifact
@@ -329,19 +334,6 @@ fn semantic_snapshot_hash(compiled: &CanonicalSourceProgram, artifact: &ProgramA
             hash.field(binding);
         }
         hash_anchor(&mut hash, pattern.anchor);
-    }
-    hash.usize(source_map.comprehension_qualifiers.len());
-    for qualifier in &source_map.comprehension_qualifiers {
-        hash.u32(qualifier.node);
-        hash.u32(qualifier.input_ordinal);
-        match qualifier.role {
-            SourceSemanticComprehensionQualifierRole::Generator { pattern } => {
-                hash.field("generator");
-                hash.u32(pattern);
-            }
-            SourceSemanticComprehensionQualifierRole::Definition => hash.field("definition"),
-            SourceSemanticComprehensionQualifierRole::Filter => hash.field("filter"),
-        }
     }
     hash.usize(source_map.outputs.len());
     for anchor in &source_map.outputs {
@@ -676,14 +668,10 @@ fn every_semantic_rule_meets_its_required_witness_outcome() {
         }
     }
     assert!(
-        unfinished_witnesses.is_empty(),
-        "semantic completion requires artifact-ready witnesses; unfinished lowering cannot be certified:\n{}",
+        unfinished_witnesses.is_empty() && stale_hashes.is_empty(),
+        "semantic completion requires artifact-ready witnesses and current fingerprints; unfinished lowering cannot be certified:\n{}\nsemantic snapshot hashes changed:\n{}",
         unfinished_witnesses.join("\n"),
-    );
-    assert!(
-        stale_hashes.is_empty(),
-        "semantic snapshot hashes changed:\n{}",
-        stale_hashes.join("\n")
+        stale_hashes.join("\n"),
     );
 }
 
