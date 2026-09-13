@@ -325,13 +325,6 @@ fn semantic_snapshot_hash(compiled: &CanonicalSourceProgram, artifact: &ProgramA
         }
         hash_anchor(&mut hash, pattern.anchor);
     }
-    hash.usize(source_map.match_arms.len());
-    for arm in &source_map.match_arms {
-        hash.u32(arm.node);
-        hash.u32(arm.pattern);
-        hash_optional_u32(&mut hash, arm.guard_input);
-        hash.u32(arm.result_input);
-    }
     hash.usize(source_map.comprehension_qualifiers.len());
     for qualifier in &source_map.comprehension_qualifiers {
         hash.u32(qualifier.node);
