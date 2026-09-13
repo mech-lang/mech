@@ -1069,6 +1069,11 @@ jobs:
           python3 scripts/generate-canonical-dependencies.py --check
           python3 scripts/generate-canonical-scc-report.py --check
 
+      # The consumer census resolves all features with locked, offline metadata.
+      # Building mech-syntax alone does not populate every workspace dependency.
+      - name: Fetch locked workspace dependencies for offline consumer census
+        run: cargo fetch --locked
+
       - name: Run syntax grammar suites
         run: |
           cargo test -p mech-syntax --tests --no-default-features --features full
