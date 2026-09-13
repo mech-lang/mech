@@ -157,7 +157,8 @@ impl Comparison<'_> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::node_bodies_semantically_equal;
+    use mech_engine::{ExecutableNodeBody, ProgramArtifact};
     use mech_syntax::document::{
         AstNode, DocumentId, ExpressionSyntax, ParseConfig, Revision, SyntaxNode, TextSnapshot,
     };

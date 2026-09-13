@@ -23,10 +23,6 @@ struct Witness {
     operation: String,
     overload: Option<u32>,
     source: String,
-    // TableJoin templates currently advertise bytecode/direct support only.
-    // This is an explicit semantic-template policy, never inferred from a
-    // missing binder (which would turn a regression into a passing skip).
-    resident: bool,
     artifact_only_syntax: bool,
 }
 
@@ -346,7 +342,6 @@ fn representative_witnesses(
             operation: operation.into(),
             overload: Some(overload.id),
             source,
-            resident: true,
             artifact_only_syntax: false,
         }));
     }
@@ -406,7 +401,7 @@ fn generate(catalog: &FunctionCatalog) -> (Vec<Witness>, Json) {
                 TableJoinMode::LeftAnti => "▷",
             };
             witnesses.push(Witness {
-                operation: name.into(), overload: None, resident: false, artifact_only_syntax: false,
+                operation: name.into(), overload: None, artifact_only_syntax: false,
                 source: format!("left := |id<f64> x<f64>| 1 10 | 2 20 |\nright := |id<f64> y<f64>| 2 30 | 3 40 |\nleft {operator} right"),
             });
             covered.insert(name.to_owned());
@@ -480,7 +475,6 @@ fn generate(catalog: &FunctionCatalog) -> (Vec<Witness>, Json) {
         witnesses.push(Witness {
             operation: "access/column".into(),
             overload: None,
-            resident: true,
             artifact_only_syntax: true,
             source: format!(
                 "data := |value<{}>| {} | {} |\ndata.value",
@@ -697,7 +691,7 @@ fn generated_source_catalog_closes_over_bytecode_and_resident_binders() -> MResu
             &ActivationFacts::default(),
             ResidentActivationOptions::default(),
         );
-        let resident = if witness.resident {
+        let resident = {
             let preflight = preflight.unwrap_or_else(|error| {
                 panic!(
                     "{} lost resident closure: {error:?}\n{}",
@@ -738,29 +732,6 @@ fn generated_source_catalog_closes_over_bytecode_and_resident_binders() -> MResu
                     )
                 });
             json!({"outcome": "activated", "node_count": canonical.nodes().len()})
-        } else {
-            let error = preflight.expect_err("table join target policy changed: qualify its resident implementation and update this template policy");
-            assert_eq!(error.target, ExecutionTarget::ResidentCpu);
-            let node = error
-                .node
-                .expect("unsupported join must identify the rejected node");
-            let operation = error
-                .operation
-                .expect("unsupported join must retain semantic identity");
-            assert_eq!(
-                &operation,
-                canonical.nodes()[node.get() as usize]
-                    .as_operation()
-                    .unwrap()
-                    .operation
-            );
-            assert_eq!(operation.canonical_name(), witness.operation);
-            assert!(
-                error.reason.contains("MissingResidentFactory"),
-                "unexpected target rejection: {}",
-                error.reason
-            );
-            json!({"outcome": "unsupported", "node": node.get(), "operation": operation.canonical_name(), "reason": error.reason})
         };
         results.push(json!({"operation": witness.operation, "overload": witness.overload, "source": witness.source, "runtime_calls": runtime_rows, "runtime_validation": runtime_validation, "resident": resident}));
     }
