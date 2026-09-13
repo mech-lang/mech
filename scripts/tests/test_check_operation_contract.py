@@ -112,11 +112,11 @@ pub struct DeclaredOperationContract { storage: StorageStrategy }
             failures = CHECKER.validate_semantic_guards(source)
             self.assertTrue(any("shape-contract reference" in failure for failure in failures))
 
-    def test_executable_operation_without_contract_is_rejected(self) -> None:
-        for name, field_type in (("OperationNodeBody", "OperationContractId"), ("ControlOperation", "C")):
+    def test_executable_call_or_control_body_owner_is_required(self) -> None:
+        for name, field in (("OperationNodeBody", "contract: OperationContractId"), ("ControlOperation", "body: ControlOperationBody")):
             model = f"pub struct {name} {{ pub operation: OperationReference }}"
             failures = CHECKER.validate_artifact_fields(
-                model, {name: f"contract: {field_type}"}
+                model, {name: field}
             )
             self.assertTrue(any(name in failure for failure in failures))
 
@@ -124,7 +124,8 @@ pub struct DeclaredOperationContract { storage: StorageStrategy }
         model = """
 pub struct NodeDeclaration { pub body: ExecutableNodeBody }
 pub enum ExecutableNodeBody { Operation(OperationNodeBody), Match(super::MatchDeclaration) }
-pub struct ControlOperation<C = OperationContractId> { pub contract: C }
+pub struct ControlOperation<C = OperationContractId> { pub body: ControlOperationBody<C> }
+pub enum ControlOperationBody<C = OperationContractId> { Operation { operation: OperationReference, contract: C }, Match(MatchDeclaration<C>) }
 """
         self.assertEqual(CHECKER.validate_executable_contract_ownership(model), [])
         for broken in (
@@ -132,6 +133,9 @@ pub struct ControlOperation<C = OperationContractId> { pub contract: C }
             model.replace("Match(super::MatchDeclaration)", "Match(String)"),
             model.replace("pub body: ExecutableNodeBody", "pub contract: OperationContractId"),
             model.replace("C = OperationContractId", "C = RuntimeFunctionId"),
+            model.replace("contract: C", "contract: RuntimeFunctionId"),
+            model.replace("Match(MatchDeclaration<C>)", "Match(String)"),
+            model.replace("pub body: ControlOperationBody<C>", "pub body: ControlOperationBody<C>, pub contract: C"),
         ):
             self.assertTrue(CHECKER.validate_executable_contract_ownership(broken))
 

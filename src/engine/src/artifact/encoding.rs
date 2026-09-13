@@ -86,8 +86,20 @@ impl CanonicalArtifactWriter {
         self.u64(block.operations.len() as u64);
         for operation in &block.operations {
             self.u32(operation.node);
-            self.operation(&operation.operation);
-            self.u32(operation.contract.get());
+            match &operation.body {
+                super::ControlOperationBody::Operation {
+                    operation,
+                    contract,
+                } => {
+                    self.u8(0);
+                    self.operation(operation);
+                    self.u32(contract.get());
+                }
+                super::ControlOperationBody::Match(control) => {
+                    self.u8(1);
+                    self.match_declaration(control);
+                }
+            }
             self.u32(operation.schema.get());
             self.u64(operation.inputs.len() as u64);
             for input in &operation.inputs {
@@ -95,6 +107,34 @@ impl CanonicalArtifactWriter {
             }
         }
         self.control_value(block.yield_value);
+    }
+
+    fn match_declaration(&mut self, control: &super::MatchDeclaration) {
+        self.u16(control.scrutinee);
+        self.u64(control.captures.len() as u64);
+        for capture in &control.captures {
+            self.u16(capture.input);
+            self.u32(capture.schema.get());
+        }
+        self.u64(control.arms.len() as u64);
+        for arm in &control.arms {
+            match arm.pattern {
+                super::MatchPattern::Literal(constant) => {
+                    self.u8(0);
+                    self.u32(constant.get());
+                }
+                super::MatchPattern::Wildcard => self.u8(1),
+                super::MatchPattern::Bind => self.u8(2),
+            };
+            match &arm.guard {
+                None => self.u8(0),
+                Some(guard) => {
+                    self.u8(1);
+                    self.control_block(guard);
+                }
+            }
+            self.control_block(&arm.body);
+        }
     }
 
     fn comprehension_value(&mut self, value: super::ComprehensionValue) {
@@ -320,31 +360,7 @@ pub(super) fn program_revision(
             }
             super::ExecutableNodeBody::Match(control) => {
                 writer.u8(1);
-                writer.u16(control.scrutinee);
-                writer.u64(control.captures.len() as u64);
-                for capture in &control.captures {
-                    writer.u16(capture.input);
-                    writer.u32(capture.schema.get());
-                }
-                writer.u64(control.arms.len() as u64);
-                for arm in &control.arms {
-                    match arm.pattern {
-                        super::MatchPattern::Literal(constant) => {
-                            writer.u8(0);
-                            writer.u32(constant.get());
-                        }
-                        super::MatchPattern::Wildcard => writer.u8(1),
-                        super::MatchPattern::Bind => writer.u8(2),
-                    };
-                    match &arm.guard {
-                        None => writer.u8(0),
-                        Some(guard) => {
-                            writer.u8(1);
-                            writer.control_block(guard);
-                        }
-                    }
-                    writer.control_block(&arm.body);
-                }
+                writer.match_declaration(control);
             }
         }
         writer.u32(node.input_bindings.start);

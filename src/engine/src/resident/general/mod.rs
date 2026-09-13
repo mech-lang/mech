@@ -142,7 +142,7 @@ pub struct ResidentEffectIntent {
 
 #[derive(Clone, Debug)]
 pub struct ActivatedControlBlock {
-    pub kernels: Range<u32>,
+    pub steps: std::sync::Arc<[ActivatedNodeIndex]>,
     pub yield_value: ResidentReadLocation,
 }
 
@@ -1874,52 +1874,93 @@ fn resident_concrete_execution_cases(
         let crate::ExecutableNodeBody::Match(control) = &node.body else {
             continue;
         };
-        let sources = node_inputs(artifact, node.node)?;
-        for block in control
-            .arms
-            .iter()
-            .flat_map(|arm| arm.guard.iter().chain(core::iter::once(&arm.body)))
-        {
-            for operation in &block.operations {
-                let Some(mech_core::ResolvedOperationContract::Declared(contract)) =
-                    artifact.contracts().get(operation.contract)
-                else {
-                    return Err(ResidentActivationError::LegacyOpaque { node: node.node });
-                };
-                let mut selectors = Vec::with_capacity(operation.inputs.len());
-                for value in &operation.inputs {
-                    let source = match *value {
-                        crate::ControlValue::Constant(id) => Some(ArtifactSource::Constant(id)),
-                        crate::ControlValue::Parameter { ordinal, .. } => {
-                            let input = match block.parameters[ordinal as usize].source {
-                                crate::ControlParameterSource::Scrutinee => control.scrutinee,
-                                crate::ControlParameterSource::Capture(index) => {
-                                    control.captures[index as usize].input
-                                }
-                            };
-                            Some(sources[input as usize])
-                        }
-                        crate::ControlValue::Local { .. } => None,
+        let sources = node_inputs(artifact, node.node)?
+            .into_iter()
+            .map(Some)
+            .collect::<Vec<_>>();
+        append_match_execution_cases(
+            artifact,
+            node.node,
+            control,
+            &sources,
+            static_selectors,
+            &mut cases,
+        )?;
+    }
+    Ok(cases.into_boxed_slice())
+}
+
+fn append_match_execution_cases(
+    artifact: &ProgramArtifact,
+    owner: NodeId,
+    control: &crate::MatchDeclaration,
+    sources: &[Option<ArtifactSource>],
+    static_selectors: &mut ArtifactStaticSelectorResolver,
+    cases: &mut Vec<ConcreteExecutionCase>,
+) -> Result<(), ResidentActivationError> {
+    for block in control
+        .arms
+        .iter()
+        .flat_map(|arm| arm.guard.iter().chain(core::iter::once(&arm.body)))
+    {
+        for operation in &block.operations {
+            let inputs = operation
+                .inputs
+                .iter()
+                .map(|value| match *value {
+                    crate::ControlValue::Constant(id) => Some(ArtifactSource::Constant(id)),
+                    crate::ControlValue::Parameter { ordinal, .. } => {
+                        let input = match block.parameters[ordinal as usize].source {
+                            crate::ControlParameterSource::Scrutinee => control.scrutinee,
+                            crate::ControlParameterSource::Capture(index) => {
+                                control.captures[index as usize].input
+                            }
+                        };
+                        sources[input as usize]
+                    }
+                    crate::ControlValue::Local { .. } => None,
+                })
+                .collect::<Vec<_>>();
+            match &operation.body {
+                crate::ControlOperationBody::Match(nested) => append_match_execution_cases(
+                    artifact,
+                    owner,
+                    nested,
+                    &inputs,
+                    static_selectors,
+                    cases,
+                )?,
+                crate::ControlOperationBody::Operation {
+                    operation: reference,
+                    contract,
+                } => {
+                    let Some(mech_core::ResolvedOperationContract::Declared(contract)) =
+                        artifact.contracts().get(*contract)
+                    else {
+                        return Err(ResidentActivationError::LegacyOpaque { node: owner });
                     };
-                    selectors.push(
-                        source
-                            .map(|source| static_selectors.resolve(artifact, source))
-                            .transpose()?
-                            .flatten(),
-                    );
+                    let selectors = inputs
+                        .into_iter()
+                        .map(|source| {
+                            source
+                                .map(|source| static_selectors.resolve(artifact, source))
+                                .transpose()
+                                .map(Option::flatten)
+                        })
+                        .collect::<Result<Box<[_]>, _>>()?;
+                    cases.push(ConcreteExecutionCase {
+                        node: owner,
+                        operation: reference.clone(),
+                        input_schemas: contract.inputs.iter().map(|port| port.schema).collect(),
+                        input_resolved_selectors: selectors,
+                        output_schema: operation.schema,
+                        targets: ExecutionTargetSet::RESIDENT_CPU,
+                    });
                 }
-                cases.push(ConcreteExecutionCase {
-                    node: node.node,
-                    operation: operation.operation.clone(),
-                    input_schemas: contract.inputs.iter().map(|port| port.schema).collect(),
-                    input_resolved_selectors: selectors.into_boxed_slice(),
-                    output_schema: operation.schema,
-                    targets: ExecutionTargetSet::RESIDENT_CPU,
-                });
             }
         }
     }
-    Ok(cases.into_boxed_slice())
+    Ok(())
 }
 
 /// Activates an external resident instance structurally. Safe engine consumers
@@ -3325,9 +3366,8 @@ fn build_layout(
     for node in artifact.nodes() {
         let local_definitions = match &node.body {
             crate::ExecutableNodeBody::Match(control) => control
-                .arms
-                .iter()
-                .flat_map(|arm| arm.guard.iter().chain(core::iter::once(&arm.body)))
+                .blocks()
+                .into_iter()
                 .flat_map(|block| {
                     block
                         .operations
@@ -3941,51 +3981,13 @@ fn build_plan(
             };
             let input_sources = node_inputs(artifact, node.node)?;
             let output_slot = node_output_slot(artifact, node.node)?;
-            let output = &layout.slots[output_slot.get() as usize];
-            // Only literal patterns perform a scalar comparison. Captures,
-            // bindings and results use their ordinary validated value layouts.
-            if control
-                .arms
-                .iter()
-                .any(|arm| matches!(arm.pattern, crate::MatchPattern::Literal(_)))
-            {
-                let source = input_sources[control.scrutinee as usize];
-                let port = source_port_layout(artifact, &layout, source, static_selectors)?;
-                if !matches!(
-                    port.kind,
-                    ResidentValueKind::Bool | ResidentValueKind::Index | ResidentValueKind::F64
-                ) || port.shape.len() != Some(1)
-                {
-                    return Err(ResidentActivationError::UnsupportedControlLayout {
-                        node: node.node,
-                    });
-                }
-            }
-            steps.push(ActivatedTurnStep::Match(ActivatedMatchNode {
-                artifact_node: node.node,
-                scrutinee: resolve_read(&layout, input_sources[control.scrutinee as usize])?,
-                write: ResidentWriteLocation {
-                    slot: output_slot,
-                    storage: output.storage,
-                    region: output.region,
-                },
-                arms: Box::new([]),
-                locals: control
-                    .arms
-                    .iter()
-                    .flat_map(|arm| arm.guard.iter().chain(core::iter::once(&arm.body)))
-                    .flat_map(|block| {
-                        block
-                            .operations
-                            .iter()
-                            .map(move |operation| (block.id.0, operation.node))
-                    })
-                    .map(|(block, local)| {
-                        let (slot, _) = layout.control_locals[&(node.node, block, local)];
-                        layout.slots[slot.get() as usize].region
-                    })
-                    .collect(),
-            }));
+            steps.push(ActivatedTurnStep::Match(prepare_match_node(
+                node.node,
+                control,
+                &input_sources,
+                output_slot,
+                &layout,
+            )?));
             continue;
         };
         let class = classes[node.node.get() as usize];
@@ -4167,35 +4169,17 @@ fn build_plan(
             continue;
         };
         let input_sources = node_inputs(artifact, node.node)?;
-        let mut arms = Vec::new();
-        for arm in &control.arms {
-            let mut bind = |block: &crate::ControlBlock| {
-                bind_control_block(
-                    artifact,
-                    catalog,
-                    node.node,
-                    control,
-                    block,
-                    &input_sources,
-                    &layout,
-                    &mut steps,
-                    &mut reads,
-                    &mut control_calls,
-                )
-            };
-            let guard = arm.guard.as_ref().map(&mut bind).transpose()?;
-            let body = bind(&arm.body)?;
-            arms.push(ActivatedMatchArm {
-                literal: match arm.pattern {
-                    crate::MatchPattern::Literal(constant) => {
-                        Some(layout.constant_regions[constant.get() as usize])
-                    }
-                    crate::MatchPattern::Wildcard | crate::MatchPattern::Bind => None,
-                },
-                guard,
-                body,
-            });
-        }
+        let arms = bind_match_arms(
+            artifact,
+            catalog,
+            node.node,
+            control,
+            &input_sources,
+            &layout,
+            &mut steps,
+            &mut reads,
+            &mut control_calls,
+        )?;
         let ActivatedTurnStep::Match(matched) = &mut steps[artifact_to_activated
             [node.node.get() as usize]
             .unwrap()
@@ -4203,7 +4187,7 @@ fn build_plan(
         else {
             unreachable!()
         };
-        matched.arms = arms.into_boxed_slice();
+        matched.arms = arms;
     }
     let mut pending = activation_steps
         .into_iter()
@@ -5890,6 +5874,94 @@ mod shape_fact_tests {
     }
 }
 
+fn prepare_match_node(
+    owner: NodeId,
+    control: &crate::MatchDeclaration,
+    inputs: &[ArtifactSource],
+    output_slot: CellSlotId,
+    layout: &LayoutBuild,
+) -> Result<ActivatedMatchNode, ResidentActivationError> {
+    let scrutinee = resolve_read(layout, inputs[control.scrutinee as usize])?;
+    if control
+        .arms
+        .iter()
+        .any(|arm| matches!(arm.pattern, crate::MatchPattern::Literal(_)))
+    {
+        let region = scrutinee.region();
+        if !matches!(
+            region.kind,
+            ResidentValueKind::Bool | ResidentValueKind::Index | ResidentValueKind::F64
+        ) || region.len != 1
+        {
+            return Err(ResidentActivationError::UnsupportedControlLayout { node: owner });
+        }
+    }
+    let output = &layout.slots[output_slot.get() as usize];
+    Ok(ActivatedMatchNode {
+        artifact_node: owner,
+        scrutinee,
+        write: ResidentWriteLocation {
+            slot: output_slot,
+            storage: output.storage,
+            region: output.region,
+        },
+        arms: Box::new([]),
+        locals: control
+            .blocks()
+            .into_iter()
+            .flat_map(|block| {
+                block
+                    .operations
+                    .iter()
+                    .map(move |operation| (block.id.0, operation.node))
+            })
+            .map(|(block, local)| {
+                layout.slots[layout.control_locals[&(owner, block, local)].0.get() as usize].region
+            })
+            .collect(),
+    })
+}
+
+fn bind_match_arms(
+    artifact: &ProgramArtifact,
+    catalog: &FunctionCatalog,
+    owner: NodeId,
+    control: &crate::MatchDeclaration,
+    captures: &[ArtifactSource],
+    layout: &LayoutBuild,
+    steps: &mut Vec<ActivatedTurnStep>,
+    reads: &mut Vec<ResidentReadLocation>,
+    calls: &mut Vec<(
+        NodeId,
+        crate::memory_planner::CallSiteMemoryTemplate,
+        mech_core::CallMemoryPlan,
+    )>,
+) -> Result<Box<[ActivatedMatchArm]>, ResidentActivationError> {
+    control
+        .arms
+        .iter()
+        .map(|arm| {
+            let mut bind = |block: &crate::ControlBlock| {
+                bind_control_block(
+                    artifact, catalog, owner, control, block, captures, layout, steps, reads, calls,
+                )
+            };
+            let guard = arm.guard.as_ref().map(&mut bind).transpose()?;
+            let body = bind(&arm.body)?;
+            Ok(ActivatedMatchArm {
+                literal: match arm.pattern {
+                    crate::MatchPattern::Literal(id) => {
+                        Some(layout.constant_regions[id.get() as usize])
+                    }
+                    crate::MatchPattern::Wildcard | crate::MatchPattern::Bind => None,
+                },
+                guard,
+                body,
+            })
+        })
+        .collect()
+}
+
 fn bind_control_block(
     artifact: &ProgramArtifact,
     catalog: &FunctionCatalog,
@@ -5940,8 +6012,7 @@ fn bind_control_block(
             }
         }
     };
-    let start =
-        u32::try_from(steps.len()).map_err(|_| ResidentActivationError::RegionSizeOverflow)?;
+    let mut direct_steps = Vec::new();
     for operation in &block.operations {
         let (output_slot, physical_node) =
             layout.control_locals[&(owner, block.id.0, operation.node)];
@@ -5952,6 +6023,28 @@ fn bind_control_block(
             .copied()
             .map(source)
             .collect::<Vec<_>>();
+        let index =
+            u32::try_from(steps.len()).map_err(|_| ResidentActivationError::RegionSizeOverflow)?;
+        direct_steps.push(ActivatedNodeIndex(index));
+        let crate::ControlOperationBody::Operation {
+            operation: reference,
+            contract: contract_id,
+        } = &operation.body
+        else {
+            let crate::ControlOperationBody::Match(nested) = &operation.body else {
+                unreachable!()
+            };
+            let prepared = prepare_match_node(owner, nested, &inputs, output_slot, layout)?;
+            steps.push(ActivatedTurnStep::Match(prepared));
+            let arms = bind_match_arms(
+                artifact, catalog, owner, nested, &inputs, layout, steps, reads, calls,
+            )?;
+            let ActivatedTurnStep::Match(prepared) = &mut steps[index as usize] else {
+                unreachable!()
+            };
+            prepared.arms = arms;
+            continue;
+        };
         let input_layouts = inputs
             .iter()
             .copied()
@@ -5961,8 +6054,8 @@ fn bind_control_block(
             artifact,
             catalog,
             owner,
-            &operation.operation,
-            operation.contract,
+            reference,
+            *contract_id,
             &input_layouts,
             slot_port_layout(output),
         )?;
@@ -5980,7 +6073,7 @@ fn bind_control_block(
             reads.push(resolve_read(layout, input)?);
         }
         let mech_core::ResolvedOperationContract::Declared(contract) =
-            artifact.contracts().get(operation.contract).unwrap()
+            artifact.contracts().get(*contract_id).unwrap()
         else {
             unreachable!()
         };
@@ -6008,7 +6101,7 @@ fn bind_control_block(
     }
     let yielded = source(block.yield_value);
     Ok(ActivatedControlBlock {
-        kernels: start..steps.len() as u32,
+        steps: direct_steps.into(),
         yield_value: resolve_read(layout, yielded)?,
     })
 }

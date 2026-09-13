@@ -190,11 +190,15 @@ enum WireNodeBody {
         steps: Box<[WireComprehensionStep]>,
         yield_value: WireComprehensionValue,
     },
-    Match {
-        scrutinee: u16,
-        captures: Box<[(u16, u32)]>,
-        arms: Box<[WireMatchArm]>,
-    },
+    Match(WireMatchDeclaration),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct WireMatchDeclaration {
+    scrutinee: u16,
+    captures: Box<[(u16, u32)]>,
+    arms: Box<[WireMatchArm]>,
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
@@ -239,6 +243,7 @@ enum WireComprehensionStep {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 struct WireMatchArm {
     pattern: WirePattern,
     guard: Option<WireControlBlock>,
@@ -253,6 +258,7 @@ enum WirePattern {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 struct WireControlBlock {
     id: u32,
     parameters: Box<[(Option<u16>, u32)]>,
@@ -261,15 +267,23 @@ struct WireControlBlock {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 struct WireControlOperation {
     node: u32,
-    operation: u32,
-    contract: u32,
+    body: WireControlOperationBody,
     inputs: Box<[WireControlValue]>,
     schema: u32,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+enum WireControlOperationBody {
+    Operation { operation: u32, contract: u32 },
+    Match(WireMatchDeclaration),
+}
+
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 enum WireControlValue {
     Constant(u32),
     Parameter { block: u32, ordinal: u16 },
@@ -440,7 +454,7 @@ pub fn encode_program_artifact_sections(
         slots: encode(&slots)?,
         producers: encode(&producers)?,
         nodes: encode(&WireGraph {
-            revision: 4,
+            revision: 5,
             requirements: artifact
                 .requirements()
                 .iter()
@@ -611,7 +625,7 @@ fn decode_program_artifact_sections_owned(
     }
     preflight_control_graph(&sections.nodes, &limits)?;
     let graph: WireGraph = serde_json::from_slice(&sections.nodes)?;
-    if graph.revision != 4 {
+    if graph.revision != 5 {
         return Err(ArtifactBytecodeError::InvalidWireTag {
             section: "graph revision",
             tag: graph.revision.min(255) as u8,
@@ -1568,8 +1582,18 @@ fn wire_control_block(
             .iter()
             .map(|operation| WireControlOperation {
                 node: operation.node,
-                operation: operations[&operation.operation],
-                contract: operation.contract.get(),
+                body: match &operation.body {
+                    super::ControlOperationBody::Operation {
+                        operation,
+                        contract,
+                    } => WireControlOperationBody::Operation {
+                        operation: operations[operation],
+                        contract: contract.get(),
+                    },
+                    super::ControlOperationBody::Match(control) => {
+                        WireControlOperationBody::Match(wire_match(control, operations))
+                    }
+                },
                 schema: operation.schema.get(),
                 inputs: operation
                     .inputs
@@ -1703,32 +1727,39 @@ fn wire_node_body(
                 .collect(),
             yield_value: wire_comprehension_value(control.yield_value),
         },
-        super::ExecutableNodeBody::Match(control) => WireNodeBody::Match {
-            scrutinee: control.scrutinee,
-            captures: control
-                .captures
-                .iter()
-                .map(|capture| (capture.input, capture.schema.get()))
-                .collect(),
-            arms: control
-                .arms
-                .iter()
-                .map(|arm| WireMatchArm {
-                    pattern: match arm.pattern {
-                        super::MatchPattern::Literal(constant) => {
-                            WirePattern::Literal(constant.get())
-                        }
-                        super::MatchPattern::Wildcard => WirePattern::Wildcard,
-                        super::MatchPattern::Bind => WirePattern::Bind,
-                    },
-                    guard: arm
-                        .guard
-                        .as_ref()
-                        .map(|block| wire_control_block(block, operations)),
-                    body: wire_control_block(&arm.body, operations),
-                })
-                .collect(),
-        },
+        super::ExecutableNodeBody::Match(control) => {
+            WireNodeBody::Match(wire_match(control, operations))
+        }
+    }
+}
+
+fn wire_match(
+    control: &super::MatchDeclaration,
+    operations: &BTreeMap<OperationReference, u32>,
+) -> WireMatchDeclaration {
+    WireMatchDeclaration {
+        scrutinee: control.scrutinee,
+        captures: control
+            .captures
+            .iter()
+            .map(|capture| (capture.input, capture.schema.get()))
+            .collect(),
+        arms: control
+            .arms
+            .iter()
+            .map(|arm| WireMatchArm {
+                pattern: match arm.pattern {
+                    super::MatchPattern::Literal(constant) => WirePattern::Literal(constant.get()),
+                    super::MatchPattern::Wildcard => WirePattern::Wildcard,
+                    super::MatchPattern::Bind => WirePattern::Bind,
+                },
+                guard: arm
+                    .guard
+                    .as_ref()
+                    .map(|block| wire_control_block(block, operations)),
+                body: wire_control_block(&arm.body, operations),
+            })
+            .collect(),
     }
 }
 
@@ -1755,8 +1786,18 @@ fn control_block_from_wire(
             .map(|node| {
                 Ok(super::ControlOperation {
                     node: node.node,
-                    operation: operation(node.operation)?,
-                    contract: OperationContractId::new(node.contract),
+                    body: match node.body {
+                        WireControlOperationBody::Operation {
+                            operation: reference,
+                            contract,
+                        } => super::ControlOperationBody::Operation {
+                            operation: operation(reference)?,
+                            contract: OperationContractId::new(contract),
+                        },
+                        WireControlOperationBody::Match(control) => {
+                            super::ControlOperationBody::Match(match_from_wire(control, operation)?)
+                        }
+                    },
                     schema: SchemaId::new(node.schema),
                     inputs: node
                         .inputs
@@ -1833,39 +1874,49 @@ fn node_body_from_wire(
                 .collect::<Result<Box<[_]>, ArtifactBytecodeError>>()?,
             yield_value: comprehension_value_from_wire(yield_value),
         }),
-        WireNodeBody::Match {
-            scrutinee,
-            captures,
-            arms,
-        } => super::ExecutableNodeBody::Match(super::MatchDeclaration {
-            scrutinee,
-            captures: captures
-                .into_iter()
-                .map(|(input, schema)| super::ControlCapture {
-                    input,
-                    schema: SchemaId::new(schema),
+        WireNodeBody::Match(control) => {
+            super::ExecutableNodeBody::Match(match_from_wire(control, operation)?)
+        }
+    })
+}
+
+fn match_from_wire(
+    control: WireMatchDeclaration,
+    operation: &impl Fn(u32) -> Result<OperationReference, ArtifactBytecodeError>,
+) -> Result<super::MatchDeclaration, ArtifactBytecodeError> {
+    let WireMatchDeclaration {
+        scrutinee,
+        captures,
+        arms,
+    } = control;
+    Ok(super::MatchDeclaration {
+        scrutinee,
+        captures: captures
+            .into_iter()
+            .map(|(input, schema)| super::ControlCapture {
+                input,
+                schema: SchemaId::new(schema),
+            })
+            .collect(),
+        arms: arms
+            .into_iter()
+            .map(|arm| {
+                Ok(super::ControlMatchArm {
+                    pattern: match arm.pattern {
+                        WirePattern::Literal(constant) => {
+                            super::MatchPattern::Literal(ConstantId::new(constant))
+                        }
+                        WirePattern::Wildcard => super::MatchPattern::Wildcard,
+                        WirePattern::Bind => super::MatchPattern::Bind,
+                    },
+                    guard: arm
+                        .guard
+                        .map(|block| control_block_from_wire(block, operation))
+                        .transpose()?,
+                    body: control_block_from_wire(arm.body, operation)?,
                 })
-                .collect(),
-            arms: arms
-                .into_iter()
-                .map(|arm| {
-                    Ok(super::ControlMatchArm {
-                        pattern: match arm.pattern {
-                            WirePattern::Literal(constant) => {
-                                super::MatchPattern::Literal(ConstantId::new(constant))
-                            }
-                            WirePattern::Wildcard => super::MatchPattern::Wildcard,
-                            WirePattern::Bind => super::MatchPattern::Bind,
-                        },
-                        guard: arm
-                            .guard
-                            .map(|block| control_block_from_wire(block, operation))
-                            .transpose()?,
-                        body: control_block_from_wire(arm.body, operation)?,
-                    })
-                })
-                .collect::<Result<Box<[_]>, ArtifactBytecodeError>>()?,
-        }),
+            })
+            .collect::<Result<Box<[_]>, ArtifactBytecodeError>>()?,
     })
 }
 
@@ -1877,14 +1928,18 @@ fn node_operation_references(body: &super::ExecutableNodeBody) -> Vec<OperationR
             .map(|op| op.operation.clone())
             .collect(),
         super::ExecutableNodeBody::Match(control) => control
-            .arms
-            .iter()
-            .flat_map(|arm| arm.guard.iter().chain(core::iter::once(&arm.body)))
+            .blocks()
+            .into_iter()
             .flat_map(|block| {
                 block
                     .operations
                     .iter()
-                    .map(|operation| operation.operation.clone())
+                    .filter_map(|operation| match &operation.body {
+                        super::ControlOperationBody::Operation { operation, .. } => {
+                            Some(operation.clone())
+                        }
+                        super::ControlOperationBody::Match(_) => None,
+                    })
             })
             .collect(),
     }
@@ -1900,12 +1955,25 @@ fn wire_operation_ids(body: &WireNodeBody) -> Vec<u32> {
                 _ => None,
             })
             .collect(),
-        WireNodeBody::Match { arms, .. } => arms
-            .iter()
-            .flat_map(|arm| arm.guard.iter().chain(core::iter::once(&arm.body)))
-            .flat_map(|block| block.operations.iter().map(|operation| operation.operation))
-            .collect(),
+        WireNodeBody::Match(control) => wire_match_operation_ids(control),
     }
+}
+
+fn wire_match_operation_ids(control: &WireMatchDeclaration) -> Vec<u32> {
+    control
+        .arms
+        .iter()
+        .flat_map(|arm| arm.guard.iter().chain(core::iter::once(&arm.body)))
+        .flat_map(|block| {
+            block
+                .operations
+                .iter()
+                .flat_map(|operation| match &operation.body {
+                    WireControlOperationBody::Operation { operation, .. } => vec![*operation],
+                    WireControlOperationBody::Match(nested) => wire_match_operation_ids(nested),
+                })
+        })
+        .collect()
 }
 
 /// First pass visits tokens without constructing graph arrays. The typed decode
@@ -1941,6 +2009,7 @@ fn preflight_control_graph(
         limits: &'a ArtifactDecodeLimits,
         field: Field,
         depth: u8,
+        control_depth: usize,
     }
     impl Scan<'_> {
         fn charge<E: serde::de::Error>(&mut self) -> Result<(), E> {
@@ -1977,7 +2046,7 @@ fn preflight_control_graph(
         ) -> Result<(), D::Error> {
             // A pattern layer can add an enum object and an array. Keep the
             // complete declared pattern depth below serde_json's own bound.
-            if self.depth > 96 {
+            if self.depth > 96 || self.control_depth > super::MAX_CONTROL_DEPTH {
                 return Err(D::Error::custom("control graph nesting limit"));
             }
             if matches!(self.field, Field::SingleOperand) {
@@ -2023,6 +2092,7 @@ fn preflight_control_graph(
                         Field::Other
                     },
                     depth: self.depth + 1,
+                    control_depth: self.control_depth,
                 })?
                 .is_some()
             {
@@ -2041,6 +2111,7 @@ fn preflight_control_graph(
                         limits: self.limits,
                         field: Field::Blocks,
                         depth: self.depth,
+                        control_depth: self.control_depth,
                     }
                     .charge::<A::Error>()?;
                 }
@@ -2062,6 +2133,7 @@ fn preflight_control_graph(
                     limits: self.limits,
                     field,
                     depth: self.depth + 1,
+                    control_depth: self.control_depth + usize::from(key == "Match"),
                 })?;
             }
             Ok(())
@@ -2081,6 +2153,7 @@ fn preflight_control_graph(
         limits,
         field: Field::Other,
         depth: 0,
+        control_depth: 0,
     }
     .deserialize(&mut decoder)?;
     decoder.end()?;

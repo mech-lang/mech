@@ -21,25 +21,7 @@ pub(super) fn node_bodies_semantically_equal(
                         .and_then(|id| target.requirements().get(id))
         }
         (ExecutableNodeBody::Match(left), ExecutableNodeBody::Match(right)) => {
-            left.scrutinee == right.scrutinee
-                && left.captures.len() == right.captures.len()
-                && left
-                    .captures
-                    .iter()
-                    .zip(&right.captures)
-                    .all(|(left, right)| {
-                        left.input == right.input && comparison.schema(left.schema, right.schema)
-                    })
-                && left.arms.len() == right.arms.len()
-                && left.arms.iter().zip(&right.arms).all(|(left, right)| {
-                    comparison.pattern(left.pattern, right.pattern)
-                        && match (&left.guard, &right.guard) {
-                            (Some(left), Some(right)) => comparison.block(left, right),
-                            (None, None) => true,
-                            _ => false,
-                        }
-                        && comparison.block(&left.body, &right.body)
-                })
+            comparison.match_declaration(left, right)
         }
         (ExecutableNodeBody::Comprehension(left), ExecutableNodeBody::Comprehension(right)) => {
             left.kind == right.kind
@@ -237,6 +219,56 @@ impl Comparison<'_> {
         }
     }
 
+    fn match_declaration(
+        &self,
+        left: &mech_engine::MatchDeclaration,
+        right: &mech_engine::MatchDeclaration,
+    ) -> bool {
+        left.scrutinee == right.scrutinee
+            && left.captures.len() == right.captures.len()
+            && left
+                .captures
+                .iter()
+                .zip(&right.captures)
+                .all(|(left, right)| {
+                    left.input == right.input && self.schema(left.schema, right.schema)
+                })
+            && left.arms.len() == right.arms.len()
+            && left.arms.iter().zip(&right.arms).all(|(left, right)| {
+                self.pattern(left.pattern, right.pattern)
+                    && match (&left.guard, &right.guard) {
+                        (Some(left), Some(right)) => self.block(left, right),
+                        (None, None) => true,
+                        _ => false,
+                    }
+                    && self.block(&left.body, &right.body)
+            })
+    }
+
+    fn local_body(
+        &self,
+        left: &mech_engine::ControlOperationBody,
+        right: &mech_engine::ControlOperationBody,
+    ) -> bool {
+        use mech_engine::ControlOperationBody;
+        match (left, right) {
+            (
+                ControlOperationBody::Operation {
+                    operation: left,
+                    contract: left_contract,
+                },
+                ControlOperationBody::Operation {
+                    operation: right,
+                    contract: right_contract,
+                },
+            ) => left == right && self.contract(*left_contract, *right_contract),
+            (ControlOperationBody::Match(left), ControlOperationBody::Match(right)) => {
+                self.match_declaration(left, right)
+            }
+            _ => false,
+        }
+    }
+
     fn block(&self, left: &ControlBlock, right: &ControlBlock) -> bool {
         left.id == right.id
             && left.parameters.len() == right.parameters.len()
@@ -254,9 +286,8 @@ impl Comparison<'_> {
                 .zip(&right.operations)
                 .all(|(left, right)| {
                     left.node == right.node
-                        && left.operation == right.operation
+                        && self.local_body(&left.body, &right.body)
                         && self.schema(left.schema, right.schema)
-                        && self.contract(left.contract, right.contract)
                         && left.inputs.len() == right.inputs.len()
                         && left
                             .inputs
@@ -330,6 +361,36 @@ mod tests {
             &changed,
             control(&changed)
         ));
+    }
+
+    #[test]
+    fn nested_control_reuse_resolves_inner_tables_and_detects_inner_changes() {
+        let source = "signal<f64> ? | item => (item ? | 0 => item + 1 | * => item + 2)";
+        let original = compile(source);
+        let mut moved = false;
+        for extra in 3..12 {
+            let shifted = compile(&format!("({extra}u8, ({source}))"));
+            moved |= control(&original) != control(&shifted);
+            assert!(node_bodies_semantically_equal(
+                &original,
+                control(&original),
+                &shifted,
+                control(&shifted)
+            ));
+        }
+        assert!(moved);
+        for changed in [
+            source.replace("| 0", "| 1"),
+            source.replace("item + 2", "item * 2"),
+        ] {
+            let changed = compile(&changed);
+            assert!(!node_bodies_semantically_equal(
+                &original,
+                control(&original),
+                &changed,
+                control(&changed)
+            ));
+        }
     }
 
     #[test]

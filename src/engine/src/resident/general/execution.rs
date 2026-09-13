@@ -1527,13 +1527,8 @@ impl ReactiveInstance {
             let guard = arm.guard.clone();
             let body = arm.body.clone();
             if let Some(guard) = guard {
-                for kernel in guard.kernels {
-                    self.execute_kernel(
-                        ActivatedNodeIndex(kernel),
-                        before_epoch,
-                        working_epoch,
-                        probe,
-                    )?;
+                for step in guard.steps.iter().copied() {
+                    self.execute_step(step, before_epoch, working_epoch, probe)?;
                 }
                 match self.read_location(guard.yield_value, working_epoch) {
                     Some(ResidentValueRef::Bool([1])) => {}
@@ -1541,15 +1536,10 @@ impl ReactiveInstance {
                     _ => return Err(fail()),
                 }
             }
-            for kernel in body.kernels {
+            for step in body.steps.iter().copied() {
                 // Branch switches always initialize their selected locals; no
                 // sibling output participates in scheduling or initialization.
-                self.execute_kernel(
-                    ActivatedNodeIndex(kernel),
-                    before_epoch,
-                    working_epoch,
-                    probe,
-                )?;
+                self.execute_step(step, before_epoch, working_epoch, probe)?;
             }
             let unchanged = match body.yield_value {
                 ResidentReadLocation::Constant(region) => regions_equal(
@@ -2944,6 +2934,14 @@ mod tests {
 
     #[cfg(feature = "source")]
     fn source_instance(source: &str) -> ReactiveInstance {
+        source_instance_with_budget(source, None)
+    }
+
+    #[cfg(feature = "source")]
+    fn source_instance_with_budget(
+        source: &str,
+        budget: Option<mech_core::ManagedMemoryBudget>,
+    ) -> ReactiveInstance {
         use mech_syntax::document::parser::{
             canonical::parse_canonical_phase_2i_rule_for_test, rules,
         };
@@ -2967,11 +2965,15 @@ mod tests {
             .unwrap();
         let mut catalog = mech_core::FunctionCatalogBuilder::new();
         crate::install_intrinsic_resident(&mut catalog).unwrap();
-        crate::resident::activate(
+        crate::resident::activate_with_options(
             mech_core::ReactiveInstanceId::new(822, 1),
             &artifact,
             &catalog.build().unwrap(),
             &crate::resident::ActivationFacts::default(),
+            crate::resident::ResidentActivationOptions {
+                memory_budget: budget,
+                ..Default::default()
+            },
         )
         .unwrap()
     }
@@ -3003,85 +3005,93 @@ mod tests {
     #[cfg(feature = "source")]
     #[test]
     fn match_payload_locals_are_released_after_commit_failure_and_abort() {
-        let mut instance = source_instance(
+        for source in [
             "(values<[f64]:1,2>, flag<bool> ? | true => ((signal<f64>, true), 1) | false => ((signal, false), values[index<f64>]))",
-        );
-        let slots = instance
-            .plan
-            .inputs
-            .iter()
-            .map(|input| input.slot)
-            .collect::<Vec<_>>();
-        let inputs = |flag, index| {
-            [
-                CapturedSignalInput {
-                    slot: slots[0],
-                    value: ResidentValueRef::F64(&[1.0, 2.0]),
-                },
-                CapturedSignalInput {
-                    slot: slots[1],
-                    value: ResidentValueRef::Bool(flag),
-                },
-                CapturedSignalInput {
-                    slot: slots[2],
-                    value: ResidentValueRef::F64(&[7.0]),
-                },
-                CapturedSignalInput {
-                    slot: slots[3],
-                    value: ResidentValueRef::F64(index),
-                },
-            ]
-        };
-        let released = |instance: &ReactiveInstance| {
-            let mut payloads = 0;
-            for step in &instance.plan.steps {
-                let ActivatedTurnStep::Match(control) = step else {
-                    continue;
+            "(values<[f64]:1,2>, flag<bool> ? | true => (signal<f64> ? | * => ((signal, true), 1)) | false => (signal ? | * => ((signal, false), values[index<f64>])))",
+        ] {
+            for managed in [false, true] {
+                let mut instance = source_instance_with_budget(
+                    source,
+                    managed.then(|| mech_core::ManagedMemoryBudget::new(1024 * 1024)),
+                );
+                let slots = instance
+                    .plan
+                    .inputs
+                    .iter()
+                    .map(|input| input.slot)
+                    .collect::<Vec<_>>();
+                let inputs = |flag, index| {
+                    [
+                        CapturedSignalInput {
+                            slot: slots[0],
+                            value: ResidentValueRef::F64(&[1.0, 2.0]),
+                        },
+                        CapturedSignalInput {
+                            slot: slots[1],
+                            value: ResidentValueRef::Bool(flag),
+                        },
+                        CapturedSignalInput {
+                            slot: slots[2],
+                            value: ResidentValueRef::F64(&[7.0]),
+                        },
+                        CapturedSignalInput {
+                            slot: slots[3],
+                            value: ResidentValueRef::F64(index),
+                        },
+                    ]
                 };
-                for region in &control.locals {
-                    if let ResidentValueRef::Snapshot(values) =
-                        instance.workspace.scratch.read(*region)
-                    {
-                        payloads += 1;
-                        assert!(
-                            values.iter().all(Option::is_none),
-                            "match local retained a payload"
-                        );
+                let released = |instance: &ReactiveInstance| {
+                    let mut payloads = 0;
+                    for step in &instance.plan.steps {
+                        let ActivatedTurnStep::Match(control) = step else {
+                            continue;
+                        };
+                        for region in &control.locals {
+                            if let ResidentValueRef::Snapshot(values) =
+                                instance.workspace.scratch.read(*region)
+                            {
+                                payloads += 1;
+                                assert!(
+                                    values.iter().all(Option::is_none),
+                                    "match local retained a payload"
+                                );
+                            }
+                        }
                     }
-                }
+                    assert!(
+                        payloads >= 4,
+                        "both arms must construct managed local payloads"
+                    );
+                };
+                instance.turn(&inputs(&[1], &[3.0])).unwrap();
+                released(&instance);
+                let epoch = instance.published_epoch();
+                let output = instance
+                    .copied_output(0)
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap();
+                assert!(instance.turn(&inputs(&[0], &[3.0])).is_err());
+                released(&instance);
+                assert_eq!(instance.published_epoch(), epoch);
+                instance
+                    .prepare_turn(&inputs(&[0], &[2.0]))
+                    .unwrap()
+                    .abort();
+                released(&instance);
+                assert_eq!(instance.published_epoch(), epoch);
+                assert_eq!(
+                    instance
+                        .copied_output(0)
+                        .unwrap()
+                        .canonical_data_draft()
+                        .unwrap(),
+                    output
+                );
+                instance.turn(&inputs(&[0], &[2.0])).unwrap();
+                released(&instance);
             }
-            assert!(
-                payloads >= 4,
-                "both arms must construct managed local payloads"
-            );
-        };
-        instance.turn(&inputs(&[1], &[3.0])).unwrap();
-        released(&instance);
-        let epoch = instance.published_epoch();
-        let output = instance
-            .copied_output(0)
-            .unwrap()
-            .canonical_data_draft()
-            .unwrap();
-        assert!(instance.turn(&inputs(&[0], &[3.0])).is_err());
-        released(&instance);
-        assert_eq!(instance.published_epoch(), epoch);
-        instance
-            .prepare_turn(&inputs(&[0], &[2.0]))
-            .unwrap()
-            .abort();
-        released(&instance);
-        assert_eq!(instance.published_epoch(), epoch);
-        assert_eq!(
-            instance
-                .copied_output(0)
-                .unwrap()
-                .canonical_data_draft()
-                .unwrap(),
-            output
-        );
-        instance.turn(&inputs(&[0], &[2.0])).unwrap();
-        released(&instance);
+        }
     }
 
     #[cfg(feature = "source")]
@@ -3101,66 +3111,71 @@ mod tests {
             output[0] = inputs.f64(0).unwrap()[0] + 1.0;
             Ok(true)
         }
-        let mut instance =
-            source_instance("flag<bool> ? | true => math/neg(signal<f64>) + 1 | false => signal");
-        let slots = instance
-            .plan
-            .inputs
-            .iter()
-            .map(|input| input.slot)
-            .collect::<Vec<_>>();
-        let inputs = |flag| {
-            [
-                CapturedSignalInput {
-                    slot: slots[0],
-                    value: ResidentValueRef::Bool(flag),
-                },
-                CapturedSignalInput {
-                    slot: slots[1],
-                    value: ResidentValueRef::F64(&[7.0]),
-                },
-            ]
-        };
-        let install = |instance: &mut ReactiveInstance, work| {
-            let mut calls = 0;
-            for step in &mut instance.plan.steps {
-                if let ActivatedTurnStep::Kernel(kernel) = step {
-                    kernel.kernel = mech_core::BoundResidentKernel::new(metered, Box::new([work]));
-                    calls += 1;
+        for source in [
+            "flag<bool> ? | true => math/neg(signal<f64>) + 1 | false => signal",
+            "flag<bool> ? | true => (signal<f64> ? | item => math/neg(item)) + 1 | false => signal",
+        ] {
+            let mut instance = source_instance(source);
+            let slots = instance
+                .plan
+                .inputs
+                .iter()
+                .map(|input| input.slot)
+                .collect::<Vec<_>>();
+            let inputs = |flag| {
+                [
+                    CapturedSignalInput {
+                        slot: slots[0],
+                        value: ResidentValueRef::Bool(flag),
+                    },
+                    CapturedSignalInput {
+                        slot: slots[1],
+                        value: ResidentValueRef::F64(&[7.0]),
+                    },
+                ]
+            };
+            let install = |instance: &mut ReactiveInstance, work| {
+                let mut calls = 0;
+                for step in &mut instance.plan.steps {
+                    if let ActivatedTurnStep::Kernel(kernel) = step {
+                        kernel.kernel =
+                            mech_core::BoundResidentKernel::new(metered, Box::new([work]));
+                        calls += 1;
+                    }
                 }
-            }
-            assert_eq!(calls, 2);
-        };
-        install(&mut instance, mech_core::RESIDENT_MAX_COMPUTE_WORK / 2 + 1);
-        instance.turn(&inputs(&[0])).unwrap();
-        let epoch = instance.published_epoch();
-        assert!(matches!(
-            instance.turn(&inputs(&[1])),
-            Err(ResidentExecutionError::Kernel {
-                error: ResidentKernelError::InvalidShape,
-                ..
-            })
-        ));
-        assert_eq!(instance.published_epoch(), epoch);
-        assert_eq!(
-            instance
-                .copied_output(0)
-                .unwrap()
-                .canonical_data_draft()
-                .unwrap(),
-            mech_core::ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(7.0))
-        );
-        install(&mut instance, mech_core::RESIDENT_MAX_COMPUTE_WORK / 2);
-        for _ in 0..2 {
-            instance.turn(&inputs(&[1])).unwrap();
+                assert_eq!(calls, 2);
+            };
+            install(&mut instance, mech_core::RESIDENT_MAX_COMPUTE_WORK / 2 + 1);
+            instance.turn(&inputs(&[0])).unwrap();
+            let epoch = instance.published_epoch();
+            assert!(matches!(
+                instance.turn(&inputs(&[1])),
+                Err(ResidentExecutionError::Kernel {
+                    error: ResidentKernelError::InvalidShape,
+                    ..
+                })
+            ));
+            assert_eq!(instance.published_epoch(), epoch);
             assert_eq!(
                 instance
                     .copied_output(0)
                     .unwrap()
                     .canonical_data_draft()
                     .unwrap(),
-                mech_core::ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(9.0))
+                mech_core::ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(7.0))
             );
+            install(&mut instance, mech_core::RESIDENT_MAX_COMPUTE_WORK / 2);
+            for _ in 0..2 {
+                instance.turn(&inputs(&[1])).unwrap();
+                assert_eq!(
+                    instance
+                        .copied_output(0)
+                        .unwrap()
+                        .canonical_data_draft()
+                        .unwrap(),
+                    mech_core::ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(9.0))
+                );
+            }
         }
     }
 

@@ -4,7 +4,7 @@ use mech_core::{ConstantId, OperationContractId, SchemaId};
 
 use super::OperationReference;
 
-/// Dense identity within one match declaration. Blocks cannot reference blocks.
+/// Dense preorder identity within one root control declaration.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct ControlBlockId(pub u32);
 
@@ -46,10 +46,18 @@ pub enum ControlValue {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ControlOperation<C = OperationContractId> {
     pub node: u32,
-    pub operation: OperationReference,
-    pub contract: C,
+    pub body: ControlOperationBody<C>,
     pub inputs: Box<[ControlValue]>,
     pub schema: SchemaId,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum ControlOperationBody<C = OperationContractId> {
+    Operation {
+        operation: OperationReference,
+        contract: C,
+    },
+    Match(MatchDeclaration<C>),
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -81,6 +89,17 @@ pub(super) fn validate_match(
     declaration: &MatchDeclaration,
     inputs: &[SchemaId],
     output: SchemaId,
+) -> Result<(), super::ArtifactBuildError> {
+    validate_match_inner(draft, node, declaration, inputs, output, &mut 0)
+}
+
+fn validate_match_inner(
+    draft: &super::ProgramArtifactDraft,
+    node: mech_core::NodeId,
+    declaration: &MatchDeclaration,
+    inputs: &[SchemaId],
+    output: SchemaId,
+    next_block: &mut u32,
 ) -> Result<(), super::ArtifactBuildError> {
     use mech_core::{
         AccessMode, AliasPolicy, DeliveryMode, ExternalInteraction, OutputConstruction,
@@ -143,7 +162,6 @@ pub(super) fn validate_match(
             "every enclosing input must have an explicit control role",
         ));
     }
-    let mut next_block = 0u32;
     let mut coverage = [false; 2];
     for arm in &declaration.arms {
         if let MatchPattern::Literal(constant) = arm.pattern {
@@ -161,10 +179,10 @@ pub(super) fn validate_match(
             .map(|block| (block, true))
             .chain(core::iter::once((&arm.body, false)))
         {
-            if block.id.0 != next_block {
+            if block.id.0 != *next_block {
                 return Err(invalid("noncanonical block identity"));
             }
-            next_block = next_block
+            *next_block = next_block
                 .checked_add(1)
                 .ok_or_else(|| invalid("block count overflow"))?;
             for parameter in &block.parameters {
@@ -219,12 +237,35 @@ pub(super) fn validate_match(
                         "invalid local identity or non-closed operation result",
                     ));
                 }
-                super::validation::validate_operation(&operation.operation)?;
+                let ControlOperationBody::Operation {
+                    operation: reference,
+                    contract: contract_id,
+                } = &operation.body
+                else {
+                    let ControlOperationBody::Match(nested) = &operation.body else {
+                        unreachable!()
+                    };
+                    let inputs = operation
+                        .inputs
+                        .iter()
+                        .map(|value| value_schema(*value, index))
+                        .collect::<Result<Vec<_>, _>>()?;
+                    validate_match_inner(
+                        draft,
+                        node,
+                        nested,
+                        &inputs,
+                        operation.schema,
+                        next_block,
+                    )?;
+                    continue;
+                };
+                super::validation::validate_operation(reference)?;
                 let Some(ResolvedOperationContract::Declared(contract)) =
-                    draft.contracts.get(operation.contract)
+                    draft.contracts.get(*contract_id)
                 else {
                     return Err(super::ArtifactBuildError::UnknownOperationContract {
-                        contract: operation.contract,
+                        contract: *contract_id,
                     });
                 };
                 if contract.interaction != ExternalInteraction::Pure
@@ -290,6 +331,8 @@ pub const MAX_CONTROL_ARMS: usize = 4_096;
 pub const MAX_CONTROL_BLOCKS: usize = 8_192;
 pub const MAX_CONTROL_OPERATIONS: usize = 65_536;
 pub const MAX_CONTROL_OPERANDS: usize = 262_144;
+/// Keeps validation, encoding and execution recursion within a bounded stack.
+pub const MAX_CONTROL_DEPTH: usize = 8;
 
 pub(super) fn validate_control_counts(
     draft: &super::ProgramArtifactDraft,
@@ -333,18 +376,27 @@ pub(super) fn validate_control_counts(
         let super::ExecutableNodeBody::Match(control) = &node.body else {
             continue;
         };
-        add(0, control.arms.len())?;
-        add(3, control.captures.len())?;
-        for block in control
-            .arms
-            .iter()
-            .flat_map(|arm| arm.guard.iter().chain(core::iter::once(&arm.body)))
-        {
-            add(1, 1)?;
-            add(2, block.operations.len())?;
-            add(3, block.parameters.len())?;
-            for operation in &block.operations {
-                add(3, operation.inputs.len())?;
+        let mut pending = vec![(control, 1)];
+        while let Some((control, depth)) = pending.pop() {
+            if depth > MAX_CONTROL_DEPTH {
+                return Err(invalid());
+            }
+            add(0, control.arms.len())?;
+            add(3, control.captures.len())?;
+            for block in control
+                .arms
+                .iter()
+                .flat_map(|arm| arm.guard.iter().chain(core::iter::once(&arm.body)))
+            {
+                add(1, 1)?;
+                add(2, block.operations.len())?;
+                add(3, block.parameters.len())?;
+                for operation in &block.operations {
+                    add(3, operation.inputs.len())?;
+                    if let ControlOperationBody::Match(nested) = &operation.body {
+                        pending.push((nested, depth + 1));
+                    }
+                }
             }
         }
     }
@@ -352,9 +404,64 @@ pub(super) fn validate_control_counts(
 }
 
 impl<C> MatchDeclaration<C> {
+    pub(super) fn validate_depth(
+        &self,
+        node: mech_core::NodeId,
+    ) -> Result<(), super::ArtifactBuildError> {
+        let mut pending = vec![(self, 1)];
+        while let Some((control, depth)) = pending.pop() {
+            if depth > MAX_CONTROL_DEPTH {
+                return Err(super::ArtifactBuildError::InvalidControl {
+                    node,
+                    reason: "control graph nesting limit",
+                });
+            }
+            for block in control
+                .arms
+                .iter()
+                .flat_map(|arm| arm.guard.iter().chain(core::iter::once(&arm.body)))
+            {
+                for operation in &block.operations {
+                    if let ControlOperationBody::Match(nested) = &operation.body {
+                        pending.push((nested, depth + 1));
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// All lexical blocks in canonical preorder, including nested declarations.
+    pub(crate) fn blocks(&self) -> Vec<&ControlBlock<C>> {
+        fn append<'a, C>(control: &'a MatchDeclaration<C>, output: &mut Vec<&'a ControlBlock<C>>) {
+            for block in control
+                .arms
+                .iter()
+                .flat_map(|arm| arm.guard.iter().chain(core::iter::once(&arm.body)))
+            {
+                output.push(block);
+                for operation in &block.operations {
+                    if let ControlOperationBody::Match(nested) = &operation.body {
+                        append(nested, output);
+                    }
+                }
+            }
+        }
+        let mut blocks = Vec::new();
+        append(self, &mut blocks);
+        blocks
+    }
+
     pub(super) fn map_contracts<D, E>(
         &self,
-        mut map: impl FnMut(&ControlBlock<C>, &ControlOperation<C>) -> Result<D, E>,
+        mut map: impl FnMut(&ControlBlock<C>, &ControlOperation<C>, &C) -> Result<D, E>,
+    ) -> Result<MatchDeclaration<D>, E> {
+        self.map_contracts_inner(&mut map)
+    }
+
+    fn map_contracts_inner<D, E>(
+        &self,
+        map: &mut dyn FnMut(&ControlBlock<C>, &ControlOperation<C>, &C) -> Result<D, E>,
     ) -> Result<MatchDeclaration<D>, E> {
         let mut block = |block: &ControlBlock<C>| -> Result<ControlBlock<D>, E> {
             Ok(ControlBlock {
@@ -367,10 +474,20 @@ impl<C> MatchDeclaration<C> {
                     .map(|operation| {
                         Ok(ControlOperation {
                             node: operation.node,
-                            operation: operation.operation.clone(),
+                            body: match &operation.body {
+                                ControlOperationBody::Operation {
+                                    operation: reference,
+                                    contract,
+                                } => ControlOperationBody::Operation {
+                                    operation: reference.clone(),
+                                    contract: map(block, operation, contract)?,
+                                },
+                                ControlOperationBody::Match(nested) => {
+                                    ControlOperationBody::Match(nested.map_contracts_inner(map)?)
+                                }
+                            },
                             inputs: operation.inputs.clone(),
                             schema: operation.schema,
-                            contract: map(block, operation)?,
                         })
                     })
                     .collect::<Result<Box<[_]>, E>>()?,

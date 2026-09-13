@@ -1593,7 +1593,7 @@
           "reserved": 0
         }
       ],
-      "sha256": "5e6b720236ec3c32fc76f23f6e8910bec5b23059b343e2bb99bc595d3a69f6a0",
+      "sha256": "e6c9a32267f2dffd6a61f1d3dad40dcfbc545f8875e8cf38f18f6333c7ee1643",
       "source": "42.0",
       "source_file": "literal-f64.mec"
     },
@@ -1812,7 +1812,7 @@
           "reserved": 0
         }
       ],
-      "sha256": "3e41cee3e225d38a61c08fae9aeda62c3bd83a94e8a314efaf556c0cd5bf2e92",
+      "sha256": "a64aaab0fb3a3ccefb2ab974ed742293e56b9f7765ec762cea157ab824cf8d84",
       "source": "1.0 + 2.0",
       "source_file": "scalar-add.mec"
     },
@@ -2076,7 +2076,7 @@
           "reserved": 0
         }
       ],
-      "sha256": "44cba17252c0f75d229fdfc82cda57187bf573e6e1cf8b8d0005797fdf3a63c4",
+      "sha256": "ad84086609d82f95ae3a0c68659e485bd7276a2d4456d07fbe42928a328945d4",
       "source": "[1.0 2.0; 3.0 4.0] + [5.0 6.0; 7.0 8.0]",
       "source_file": "fixed-matrix-add-f64.mec"
     },
@@ -2367,7 +2367,7 @@
           "reserved": 0
         }
       ],
-      "sha256": "f918c8529f3725206e102555466d576f494d529b74d5d2238292fad625538c1d",
+      "sha256": "5931cbf64fc1cbe366c1f8b1eb48ca13de373be4ddbc9dd566687b1033ae5d63",
       "source": "[1.0 2.0 3.0 4.0 5.0; 6.0 7.0 8.0 9.0 10.0; 11.0 12.0 13.0 14.0 15.0; 16.0 17.0 18.0 19.0 20.0; 21.0 22.0 23.0 24.0 25.0] + [25.0 24.0 23.0 22.0 21.0; 20.0 19.0 18.0 17.0 16.0; 15.0 14.0 13.0 12.0 11.0; 10.0 9.0 8.0 7.0 6.0; 5.0 4.0 3.0 2.0 1.0]",
       "source_file": "dynamic-matrix-add-f64.mec"
     },
@@ -2607,7 +2607,7 @@
           "reserved": 0
         }
       ],
-      "sha256": "465651e8271b8b4978580c0c530bdbc214ddcc49ac2f61a95c1fa1bed46a4783",
+      "sha256": "20c81b64a46d67154a212e8051b7a93ffb14aeab7f0ae2b0c5833eab4ec07049",
       "source": "[1.0 2.0 3.0 4.0 5.0]",
       "source_file": "variadic-horzcat-f64.mec"
     },
@@ -2820,7 +2820,7 @@
           "reserved": 0
         }
       ],
-      "sha256": "9ec1741385ec93f080f8c483dacb87cc8acb7af0a4b23af20d8d296eeec72b4b",
+      "sha256": "2ac3f9584d2016deec3676069f7bf3b7b510a5fb806525d8bc3392f90a8fad92",
       "source": "\"bytecode-v1\"",
       "source_file": "string.mec"
     },
@@ -3054,7 +3054,7 @@
           "reserved": 0
         }
       ],
-      "sha256": "e7ce7a437bf81806234e070607673a2fb4446c935ef1d447c1afa48697d8c475",
+      "sha256": "249361a9bb96fde7d2cedbbda9195addb1332958e862d554f5330bce22f48295",
       "source": "[9.0]",
       "source_file": "unary.mec"
     },
@@ -3291,7 +3291,7 @@
           "reserved": 0
         }
       ],
-      "sha256": "dc0af9b719622724f5f131033672d326dc2ad6aad9c7d1b4e6811f170e2773f9",
+      "sha256": "c0fe85afed9356cb69333c7f6cd0912c965310f87b21460b0655e6d466741c02",
       "source": "1.0..1.0..=4.0",
       "source_file": "ternary.mec"
     },
@@ -3587,7 +3587,7 @@
           "reserved": 0
         }
       ],
-      "sha256": "6e961ede34bb8f9fb4bd1972b55d2e0ec8043ba7b5642bdc0c2d7632e6ceb38e",
+      "sha256": "af04321c1c1684d4ca3ea5f2b05983a5384c7c7a5dad58862a1238ebad5c0458",
       "source": "a := [1.0 2.0 3.0 4.0 5.0]; b := [6.0 7.0 8.0 9.0 10.0]; c := [11.0 12.0 13.0 14.0 15.0]; d := [16.0 17.0 18.0 19.0 20.0]; [a; b; c; d]",
       "source_file": "quaternary.mec"
     },
@@ -3806,7 +3806,7 @@
           "reserved": 0
         }
       ],
-      "sha256": "5cc29e1e097008361c767f1a45d497877fab7af387d742b85150aa2287beb678",
+      "sha256": "927f7f21abd55180c8413625eb264b367d8a571b6a44d46aa50c630fc81a67ab",
       "source": "+> math\nmath/sin(0.0)",
       "source_file": "named-module-operation.mec"
     },
@@ -4037,7 +4037,7 @@
           "reserved": 0
         }
       ],
-      "sha256": "5b447181341e7f414f2c97fd55f631cb2f807df264ad9288d7d26e6fd168b13c",
+      "sha256": "ec492c0d5ce522872f1db27a2220ff4d448ab39a739165b000484faf86cb4d83",
       "source": "+> @out := cli/stdout\n\n@out/line <- \"phase1-hosted-ok\"\n\n\"done\"",
       "source_file": "cli-stdout.mec"
     },
@@ -4268,7 +4268,7 @@
           "reserved": 0
         }
       ],
-      "sha256": "df8c0a2b5c369487a1cee92123d7605179c2e64cce0d0333ac0f07b3e653748e",
+      "sha256": "ff31929fb841ac4ac30628e9b2cb94adde5fba43c01402f3385f6447b74524cb",
       "source": "@out := console://console/output{:write(line)}\n@out/line <- \"bytecode-v1-console\"\n\"console-done\"",
       "source_file": "console.mec"
     },
@@ -4505,7 +4505,7 @@
           "reserved": 0
         }
       ],
-      "sha256": "15bf49b6eff184c7d164fe98f5177957adb64e36dc8a76fc89d6cb6456e032b3",
+      "sha256": "cab9b20cfbf0fb7831c7383e89538fd986f2a6f80a47c738cc35d9b9e123ed4a",
       "source": "@clock := time://clock/clock{:read(second)}\nsecond := @clock/second\n\"time-done\"",
       "source_file": "time.mec"
     },
@@ -4742,7 +4742,7 @@
           "reserved": 0
         }
       ],
-      "sha256": "a3a60f67c3d4482e25bfb6c6271414729fec865d303c7209b4da41fa991a7339",
+      "sha256": "0f11c277c19104efe56738e5e9e91aabda8ede6bb9fda31519c4e4c113f320cb",
       "source": "@timer := timer://timer/tick{:read(tick)}\ntick := @timer/tick\n\"timer-done\"",
       "source_file": "timer.mec"
     },
@@ -5017,7 +5017,7 @@
           "reserved": 0
         }
       ],
-      "sha256": "f1cd9d1e9678f5b300a0526a6b1e8fb6102f6a24a05be9f3fbc9a96aa7fda171",
+      "sha256": "1d1106577bc222ddfacbab2082296b592880463fb190c5c3d63b4a1fd1bafe31",
       "source": "@frame := scene://scene/frame{:write(replace)}\nframe := {width: 640.0, height: 480.0, background: \"black\"}\n@frame/replace <- frame\n\"scene-done\"",
       "source_file": "scene.mec"
     },
@@ -5254,7 +5254,7 @@
           "reserved": 0
         }
       ],
-      "sha256": "8933382e06c229663116e17108097d145e3e09e5a21dbe05767dedf850330fea",
+      "sha256": "61e6262a5d95e31d102d73e8ef1b76b111cd62ba271ae12dc12e3f95c9fc3344",
       "source": "@arm := robot://arm/commands{:move(move)}\n@arm/move <- true\n\"robot-done\"",
       "source_file": "robot-arm.mec"
     },
@@ -5571,7 +5571,7 @@
           "reserved": 0
         }
       ],
-      "sha256": "32ed27f0c87ee072390a1875fa8fa6835e9be200e241e786011c79c9bbe52ca6",
+      "sha256": "bd800c7468c42f4f3c28eb13cf7f972c6bd7d5f7aee1205b14fd5824c4652f6c",
       "source": "+> @clock := test-live/clock\n\n+> @out := test-live/output\n\nvalue := @clock/value\ndoubled := value + value\n\npayload := (value, doubled)\nframe := {rotation: value}\n@out/tuple <- payload\n@out/frame <- frame\n\npayload",
       "source_file": "synthetic-live-read.mec"
     }

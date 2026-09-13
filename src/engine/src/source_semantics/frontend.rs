@@ -443,11 +443,7 @@ impl SourceSchemas {
                 }
             }
             if let PendingNodeBody::Match(control) = &node.body {
-                for block in control
-                    .arms
-                    .iter()
-                    .flat_map(|arm| arm.guard.iter().chain(core::iter::once(&arm.body)))
-                {
+                for block in control.blocks() {
                     for (_, schema) in &block.parameters {
                         insert(schema)?;
                     }
@@ -1410,6 +1406,28 @@ struct PendingMatch {
     arms: Vec<PendingMatchArm>,
 }
 
+impl PendingMatch {
+    fn blocks(&self) -> Vec<&PendingControlBlock> {
+        fn append<'a>(control: &'a PendingMatch, output: &mut Vec<&'a PendingControlBlock>) {
+            for block in control
+                .arms
+                .iter()
+                .flat_map(|arm| arm.guard.iter().chain(core::iter::once(&arm.body)))
+            {
+                output.push(block);
+                for operation in &block.operations {
+                    if let PendingControlOperationBody::Match(nested) = &operation.body {
+                        append(nested, output);
+                    }
+                }
+            }
+        }
+        let mut output = Vec::new();
+        append(self, &mut output);
+        output
+    }
+}
+
 struct PendingMatchArm {
     pattern: crate::MatchPattern<usize>,
     guard: Option<PendingControlBlock>,
@@ -1424,10 +1442,17 @@ enum PendingControlValue {
 }
 
 struct PendingControlOperation {
-    operation: OperationReference,
-    contract: OperationContractDeclaration,
+    body: PendingControlOperationBody,
     inputs: Vec<PendingControlValue>,
     schema: SchemaDraft,
+}
+
+enum PendingControlOperationBody {
+    Operation {
+        operation: OperationReference,
+        contract: OperationContractDeclaration,
+    },
+    Match(PendingMatch),
 }
 
 struct PendingControlBlock {
@@ -1494,6 +1519,7 @@ impl NamedKindPathResolver for BuiltinKindPaths {
 
 struct SemanticBuilder {
     control_depth: usize,
+    next_control_block: u32,
     anchor: SourceSemanticAnchor,
     constants: Vec<PendingConstant>,
     inputs: Vec<PendingInput>,
@@ -1511,6 +1537,7 @@ impl SemanticBuilder {
     fn new(anchor: SourceSemanticAnchor) -> Self {
         Self {
             control_depth: 0,
+            next_control_block: 0,
             anchor,
             constants: Vec::new(),
             inputs: Vec::new(),
@@ -1772,10 +1799,10 @@ impl SemanticBuilder {
         let mut value = self
             .expression_body_with_expected(&body, if arms.is_empty() { expected } else { None })?;
         if !arms.is_empty() {
-            if self.control_depth != 0 {
+            if self.control_depth >= crate::MAX_CONTROL_DEPTH {
                 return Err(SourceSemanticError {
-                    code: "source-semantics/unsupported-nested-control",
-                    message: "nested executable control is not yet lowered".to_owned(),
+                    code: "source-semantics/control-depth-limit",
+                    message: "executable control exceeds the nesting limit".to_owned(),
                     anchor: SourceSemanticAnchor::for_node(expression.syntax()),
                 });
             }
@@ -6329,7 +6356,9 @@ impl SemanticBuilder {
         let mut lowered = Vec::new();
         let mut coverage = [false; 2];
         let mut result_schema = None;
-        let mut next_block = 0u32;
+        if self.control_depth == 0 {
+            self.next_control_block = 0;
+        }
         for arm in arms {
             let pattern = self.required(arm.pattern(), arm.syntax(), "match pattern")?;
             let value = self.required(pattern.value(), pattern.syntax(), "pattern value")?;
@@ -6417,15 +6446,8 @@ impl SemanticBuilder {
             }
             let lowered_arm = (|| {
                 let guard = if let Some(guard) = arm.guard() {
-                    let (block, schema) = self.control_block(
-                        &guard,
-                        pattern,
-                        scrutinee,
-                        &mut inputs,
-                        &mut captures,
-                        next_block,
-                    )?;
-                    next_block += 1;
+                    let (block, schema) =
+                        self.control_block(&guard, pattern, scrutinee, &mut inputs, &mut captures)?;
                     if schema.body != SchemaBody::Bool {
                         return Err(SourceSemanticError {
                             code: "source-semantics/non-boolean-operator-kind",
@@ -6438,15 +6460,8 @@ impl SemanticBuilder {
                     None
                 };
                 let result = self.required(arm.value(), arm.syntax(), "match result")?;
-                let (body, schema) = self.control_block(
-                    &result,
-                    pattern,
-                    scrutinee,
-                    &mut inputs,
-                    &mut captures,
-                    next_block,
-                )?;
-                next_block += 1;
+                let (body, schema) =
+                    self.control_block(&result, pattern, scrutinee, &mut inputs, &mut captures)?;
                 if result_schema
                     .as_ref()
                     .is_some_and(|expected| expected != &schema)
@@ -6515,7 +6530,6 @@ impl SemanticBuilder {
         scrutinee: PendingValue,
         inputs: &mut Vec<PendingValue>,
         captures: &mut Vec<(u16, SchemaDraft)>,
-        id: u32,
     ) -> Result<(PendingControlBlock, SchemaDraft), SourceSemanticError> {
         let unsupported = || SourceSemanticError {
             code: "source-semantics/unsupported-match-block",
@@ -6523,6 +6537,11 @@ impl SemanticBuilder {
                 .to_owned(),
             anchor: SourceSemanticAnchor::for_node(expression.syntax()),
         };
+        let id = self.next_control_block;
+        self.next_control_block = id
+            .checked_add(1)
+            .filter(|id| *id as usize <= crate::MAX_CONTROL_BLOCKS)
+            .ok_or_else(unsupported)?;
         let start = self.nodes.len();
         self.control_depth += 1;
         let result = self
@@ -6596,22 +6615,24 @@ impl SemanticBuilder {
             };
         let mut operations = Vec::new();
         for node in nodes {
-            let PendingNodeBody::Operation {
-                operation,
-                contract: Some(contract),
-            } = node.body
-            else {
-                return Err(unsupported());
-            };
-            if node.state.is_some()
-                || contract.interaction != mech_core::ExternalInteraction::Pure
-                || !closed_value(&node.schema)
-            {
+            if node.state.is_some() || !closed_value(&node.schema) {
                 return Err(unsupported());
             }
+            let body = match node.body {
+                PendingNodeBody::Operation {
+                    operation,
+                    contract: Some(contract),
+                } if contract.interaction == mech_core::ExternalInteraction::Pure => {
+                    PendingControlOperationBody::Operation {
+                        operation,
+                        contract,
+                    }
+                }
+                PendingNodeBody::Match(control) => PendingControlOperationBody::Match(control),
+                _ => return Err(unsupported()),
+            };
             operations.push(PendingControlOperation {
-                operation,
-                contract,
+                body,
                 inputs: node
                     .inputs
                     .into_iter()
@@ -6677,8 +6698,20 @@ fn resolve_pending_match(
                 .enumerate()
                 .map(|(index, operation)| crate::ControlOperation {
                     node: index as u32,
-                    operation: operation.operation.clone(),
-                    contract: operation.contract.clone(),
+                    body: match &operation.body {
+                        PendingControlOperationBody::Operation {
+                            operation,
+                            contract,
+                        } => crate::ControlOperationBody::Operation {
+                            operation: operation.clone(),
+                            contract: contract.clone(),
+                        },
+                        PendingControlOperationBody::Match(nested) => {
+                            crate::ControlOperationBody::Match(resolve_pending_match(
+                                nested, schemas, constants,
+                            ))
+                        }
+                    },
                     inputs: operation.inputs.iter().copied().map(value).collect(),
                     schema: schema(&operation.schema),
                 })

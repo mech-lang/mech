@@ -155,6 +155,15 @@ def validate_executable_contract_ownership(model: str) -> list[str]:
     control = named_block(model, "struct", "ControlOperation") or ""
     if re.search(r"\bControlOperation\s*<\s*C\s*=\s*OperationContractId\s*>", control) is None:
         errors.append("ControlOperation must default to artifact OperationContractId ownership")
+    control_body = named_block(model, "enum", "ControlOperationBody") or ""
+    if re.search(r"\bbody\s*:\s*ControlOperationBody\s*<\s*C\s*>", control) is None:
+        errors.append("ControlOperation must own its typed executable body")
+    if re.search(r"\bcontract\s*:", control):
+        errors.append("ControlOperation must not duplicate its executable body's contract")
+    if re.search(r"\bOperation\s*\{[^}]*\bcontract\s*:\s*C\b", control_body) is None:
+        errors.append("ordinary control calls must retain their artifact contract")
+    if re.search(r"\bMatch\s*\(\s*MatchDeclaration\s*<\s*C\s*>\s*\)", control_body) is None:
+        errors.append("nested control must own a typed match declaration")
     return errors
 
 
