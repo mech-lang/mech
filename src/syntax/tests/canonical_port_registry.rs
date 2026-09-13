@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use mech_syntax::document::parser::{
     CANONICAL_PORT_COUNT, CANONICAL_PORTS, CANONICAL_RULE_COUNT, CANONICAL_RULES, NodePolicy,
@@ -26,6 +26,17 @@ fn repository_root() -> PathBuf {
 
 fn fields(line: &str) -> Vec<&str> {
     line.split('\t').collect()
+}
+
+fn collect_rust_sources(path: &Path, sources: &mut Vec<PathBuf>) {
+    for entry in fs::read_dir(path).expect("read production source directory") {
+        let path = entry.expect("read production source entry").path();
+        if path.is_dir() {
+            collect_rust_sources(&path, sources);
+        } else if path.extension().is_some_and(|extension| extension == "rs") {
+            sources.push(path);
+        }
+    }
 }
 
 fn family_name(family: RuleFamily) -> &'static str {
@@ -129,6 +140,35 @@ fn checked_in_port_registry_exactly_matches_ports_tsv() {
     assert_eq!(CANONICAL_RULE_COUNT, EXPECTED_RULES);
     assert_eq!(canonical.len(), EXPECTED_RULES);
     assert_eq!(names, canonical, "unknown or missing canonical port names");
+}
+
+#[test]
+fn canonical_port_registry_is_audit_metadata_not_runtime_dispatch() {
+    let source_root = repository_root().join("src/syntax/src");
+    let mut sources = Vec::new();
+    collect_rust_sources(&source_root, &mut sources);
+    let references = sources
+        .into_iter()
+        .filter(|path| {
+            fs::read_to_string(path)
+                .expect("read production Rust source")
+                .contains("CANONICAL_PORTS")
+        })
+        .map(|path| {
+            path.strip_prefix(&source_root)
+                .expect("source beneath syntax root")
+                .to_string_lossy()
+                .replace('\\', "/")
+        })
+        .collect::<BTreeSet<_>>();
+    assert_eq!(
+        references,
+        BTreeSet::from([
+            "document/parser/canonical_ports.rs".to_owned(),
+            "document/parser/rule.rs".to_owned(),
+        ]),
+        "the candidate port registry must remain metadata-only until activation qualification"
+    );
 }
 
 #[test]

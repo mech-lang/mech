@@ -5,12 +5,17 @@ use crate::document::{RuleId, SyntaxKind};
 
 use super::canonical_rules::rules;
 
+/// Rule-level syntax evidence; this metadata does not select a parser root.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum SyntaxPortStatus {
     Unported,
     Certified,
 }
 
+/// Rule-level source-semantic disposition evidence.
+///
+/// `Certified` is not the milestone-level `behavior-demonstrated` gate
+/// recorded by `phase-2i-semantic-completion.tsv`.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum SemanticPortStatus {
     Pending,
@@ -59,6 +64,7 @@ pub enum PortPhase {
     Phase2I,
 }
 
+/// Generated audit metadata; parser and runtime dispatch do not read it.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct RulePort {
     pub name: &'static str,

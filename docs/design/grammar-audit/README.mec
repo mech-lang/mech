@@ -24,11 +24,13 @@ Borrowed tuple, array, and tagged-pattern projection executes with primitive
 bindings, and matches support compound results and nested bodies and guards.
 Composite comprehension bindings/yields, computed pattern blocks, composition
 with nested comprehensions, the FSM resident continuation owner, and other S4
-limits remain unfinished. S6 registry activation is implemented here;
-qualification remains gated on S4 completion.
+limits remain unfinished. The exact S6 registry candidate is staged here;
+activation and qualification remain gated on S4 completion.
 `docs/design/syntax-v0.4-continuation-plan.mec` replaces the old combined Phase
-2I-D/2I-E delivery assumption with independently gated milestones. S6 implements
-atomic registry activation on this branch, pending S4 qualification. S7
+2I-D/2I-E delivery assumption with independently gated milestones. This
+unmerged S6 branch materializes the atomic candidate transition for review; the
+registry is audit metadata and does not activate parser or runtime dispatch.
+S7
 completes the canonical Document root; S8 performs the production cutover and
 removes the Nom implementation and its lowerers.
 

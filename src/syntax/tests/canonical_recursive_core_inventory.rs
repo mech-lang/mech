@@ -558,7 +558,7 @@ fn reviewed_count_anchors_and_families_are_frozen() {
 }
 
 #[test]
-fn recursive_core_has_exact_parser_and_typed_view_modules_and_is_activated() {
+fn recursive_core_has_exact_parser_typed_views_and_candidate_registry() {
     let root = repository_root();
     let parser_directory = root.join("src/syntax/src/document/parser/canonical/recursive_core");
     assert!(parser_directory.is_dir());
