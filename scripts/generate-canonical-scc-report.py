@@ -28,7 +28,7 @@ PORTS = (
 
 SCC_OUTPUT = (
     REPOSITORY_ROOT
-    / "docs/design/grammar-audit/unported-sccs.tsv"
+    / "docs/design/grammar-audit/inactive-sccs.tsv"
 )
 
 PHASE_OUTPUT = (
@@ -65,7 +65,8 @@ PORT_COLUMNS = [
     "grammar-name",
     "family",
     "syntax-status",
-    "lowering-status",
+    "semantic-status",
+    "activation-status",
     "node-policy",
     "phase",
     "notes",
@@ -82,8 +83,8 @@ SCC_COLUMNS = [
     "component-size",
     "recursive",
     "members",
-    "outgoing-unported-components",
-    "outgoing-ported-rules",
+    "outgoing-inactive-components",
+    "outgoing-active-rules",
 ]
 
 PHASE_COLUMNS = [
@@ -94,10 +95,12 @@ PHASE_COLUMNS = [
     "recursive-component",
     "same-component-children",
     "closure-children",
-    "ported-external-children",
+    "active-external-children",
 ]
 
-IMPLEMENTED_STATUSES = {"syntax-ported", "parity-verified"}
+CERTIFIED_STATUSES = {"certified"}
+SEMANTIC_STATUSES = {"pending", "syntax-only", "certified"}
+ACTIVATION_STATUSES = {"inactive", "candidate", "active"}
 ANCHOR_RULES = {
     "expression",
     "formula",
@@ -131,11 +134,11 @@ class Analysis:
     components: tuple[tuple[str, ...], ...]
     component_ids: dict[tuple[str, ...], str]
     component_by_rule: dict[str, tuple[str, ...]]
-    unported_components: tuple[tuple[str, ...], ...]
+    inactive_components: tuple[tuple[str, ...], ...]
     recursive: dict[tuple[str, ...], bool]
     closure_components: frozenset[tuple[str, ...]]
     closure_rules: frozenset[str]
-    ported_external_rules: frozenset[str]
+    active_external_rules: frozenset[str]
 
 
 def read_tsv(path: Path, expected_columns: list[str]) -> list[dict[str, str]]:
@@ -223,16 +226,31 @@ def load_inputs() -> tuple[
                 raise SystemExit(
                     f"{name}: unported rule has node policy {row['node-policy']}"
                 )
-            if row["lowering-status"] != "pending":
+            if row["semantic-status"] != "pending":
                 raise SystemExit(
-                    f"{name}: unported rule has lowering status "
-                    f"{row['lowering-status']}"
+                    f"{name}: unported rule has semantic status "
+                    f"{row['semantic-status']}"
                 )
-        elif status in IMPLEMENTED_STATUSES:
+        elif status in CERTIFIED_STATUSES:
             if not row["phase"]:
-                raise SystemExit(f"{name}: syntax-implemented rule has no phase")
+                raise SystemExit(f"{name}: certified rule has no phase")
+            if row["semantic-status"] == "pending":
+                raise SystemExit(f"{name}: certified rule has pending semantics")
         else:
             raise SystemExit(f"{name}: unknown syntax status {status}")
+        if row["semantic-status"] not in SEMANTIC_STATUSES:
+            raise SystemExit(
+                f"{name}: unknown semantic status {row['semantic-status']}"
+            )
+        activation = row["activation-status"]
+        if activation not in ACTIVATION_STATUSES:
+            raise SystemExit(f"{name}: unknown activation status {activation}")
+        if status == "unported" and activation != "inactive":
+            raise SystemExit(f"{name}: unported rule is not inactive")
+        if status == "certified" and activation == "inactive":
+            raise SystemExit(f"{name}: certified rule is inactive")
+        if activation == "candidate" and row["phase"] != "2I":
+            raise SystemExit(f"{name}: only Phase 2I may be an activation candidate")
 
     dependency_rows = read_tsv(DEPENDENCIES, DEPENDENCY_COLUMNS)
     if len(dependency_rows) != EXPECTED_RULES:
@@ -360,75 +378,61 @@ def analyze() -> Analysis:
         for component in components
     }
 
-    unported_components: list[tuple[str, ...]] = []
+    inactive_components: list[tuple[str, ...]] = []
     for component in components:
-        unported = tuple(
+        inactive = tuple(
             member
             for member in component
-            if ports[member]["syntax-status"] == "unported"
+            if ports[member]["activation-status"] != "active"
         )
-        implemented = tuple(
+        active = tuple(
             member
             for member in component
-            if ports[member]["syntax-status"] in IMPLEMENTED_STATUSES
+            if ports[member]["activation-status"] == "active"
         )
-        if unported and implemented:
+        if inactive and active:
             raise SystemExit(
-                "mixed port-status SCC:\n"
+                "mixed activation-status SCC:\n"
                 f"  members: {', '.join(component)}\n"
-                f"  unported: {', '.join(unported)}\n"
-                f"  syntax-implemented: {', '.join(implemented)}"
+                f"  inactive: {', '.join(inactive)}\n"
+                f"  active: {', '.join(active)}"
             )
-        if unported:
-            unported_components.append(component)
-
-    root_component = component_by_rule.get(PHASE_ROOT)
-    if root_component is None:
-        raise SystemExit(f"Phase 2I root is not canonical: {PHASE_ROOT}")
-    if ports[PHASE_ROOT]["syntax-status"] != "unported":
-        raise SystemExit(f"Phase 2I root is already syntax-implemented: {PHASE_ROOT}")
-
-    closure_components: set[tuple[str, ...]] = set()
-    pending = [root_component]
-    while pending:
-        component = pending.pop()
-        if component in closure_components:
-            continue
-        if any(
-            ports[member]["syntax-status"] != "unported"
-            for member in component
-        ):
-            continue
-        closure_components.add(component)
-        targets = {
-            component_by_rule[child]
-            for member in component
-            for child in graph[member]
-            if component_by_rule[child] != component
-        }
-        for target in sorted(targets, key=lambda item: component_ids[item], reverse=True):
-            if ports[target[0]]["syntax-status"] == "unported":
-                pending.append(target)
+        if inactive:
+            inactive_components.append(component)
 
     closure_rules = frozenset(
-        member
-        for component in closure_components
-        for member in component
+        name for name, row in ports.items() if row["phase"] == "2I"
     )
     if PHASE_ROOT not in closure_rules:
-        raise SystemExit(f"Phase 2I closure does not contain {PHASE_ROOT}")
+        raise SystemExit(f"Phase 2I certification does not contain {PHASE_ROOT}")
+    closure_components = {
+        component_by_rule[name] for name in closure_rules
+    }
+    component_members = frozenset(
+        member for component in closure_components for member in component
+    )
+    if component_members != closure_rules:
+        raise SystemExit("Phase 2I certification splits a canonical SCC")
     for name in sorted(closure_rules):
         row = ports[name]
-        if row["syntax-status"] != "unported":
-            raise SystemExit(f"{name}: Phase 2I member is already syntax-implemented")
-        if row["phase"]:
-            raise SystemExit(f"{name}: Phase 2I member already has phase {row['phase']}")
+        if row["syntax-status"] != "certified":
+            raise SystemExit(f"{name}: Phase 2I member is not certified")
+        if row["semantic-status"] != "certified":
+            raise SystemExit(f"{name}: Phase 2I semantics are not certified")
+        if row["activation-status"] not in {"candidate", "active"}:
+            raise SystemExit(f"{name}: invalid Phase 2I activation status")
         forbidden = row["family"]
         if forbidden in FORBIDDEN_FAMILIES:
             raise SystemExit(
                 f"{name}: forbidden Phase 2I family {forbidden}; "
                 "inspect canonical grammar metadata"
             )
+
+    phase_activation = {
+        ports[name]["activation-status"] for name in closure_rules
+    }
+    if len(phase_activation) != 1:
+        raise SystemExit("Phase 2I activation must change atomically")
 
     missing_anchors = sorted(ANCHOR_RULES - closure_rules)
     if missing_anchors:
@@ -441,19 +445,19 @@ def analyze() -> Analysis:
             "Phase 2I closure is missing anchor rules:\n" + "\n".join(details)
         )
 
-    ported_external_rules: set[str] = set()
+    active_external_rules: set[str] = set()
     for name in sorted(closure_rules):
         for child in graph[name]:
             if child in closure_rules:
                 continue
             status = ports[child]["syntax-status"]
-            if status == "unported":
+            if ports[child]["activation-status"] != "active":
                 raise SystemExit(
-                    f"{name}: unported child outside Phase 2I closure: {child}"
+                    f"{name}: inactive child outside Phase 2I closure: {child}"
                 )
-            if status not in IMPLEMENTED_STATUSES:
+            if status not in CERTIFIED_STATUSES:
                 raise SystemExit(f"{name}: invalid external child status for {child}")
-            ported_external_rules.add(child)
+            active_external_rules.add(child)
 
     return Analysis(
         productions=productions,
@@ -462,11 +466,11 @@ def analyze() -> Analysis:
         components=components,
         component_ids=component_ids,
         component_by_rule=component_by_rule,
-        unported_components=tuple(unported_components),
+        inactive_components=tuple(inactive_components),
         recursive=recursive,
         closure_components=frozenset(closure_components),
         closure_rules=closure_rules,
-        ported_external_rules=frozenset(ported_external_rules),
+        active_external_rules=frozenset(active_external_rules),
     )
 
 
@@ -488,18 +492,18 @@ def render_tsv(columns: list[str], rows: list[list[str]]) -> str:
 
 def render_scc_report(analysis: Analysis) -> str:
     rows: list[list[str]] = []
-    for component in analysis.unported_components:
+    for component in analysis.inactive_components:
         outgoing_components: set[str] = set()
-        outgoing_ported_rules: set[str] = set()
+        outgoing_active_rules: set[str] = set()
         for member in component:
             for child in analysis.graph[member]:
                 target = analysis.component_by_rule[child]
                 if target == component:
                     continue
-                if analysis.ports[child]["syntax-status"] == "unported":
+                if analysis.ports[child]["activation-status"] != "active":
                     outgoing_components.add(analysis.component_ids[target])
                 else:
-                    outgoing_ported_rules.add(child)
+                    outgoing_active_rules.add(child)
         rows.append(
             [
                 analysis.component_ids[component],
@@ -507,7 +511,7 @@ def render_scc_report(analysis: Analysis) -> str:
                 str(analysis.recursive[component]).lower(),
                 joined(component),
                 joined(outgoing_components),
-                joined(outgoing_ported_rules),
+                joined(outgoing_active_rules),
             ]
         )
     return render_tsv(SCC_COLUMNS, rows)
@@ -519,18 +523,18 @@ def render_phase_report(analysis: Analysis) -> str:
         component = analysis.component_by_rule[name]
         same_component: set[str] = set()
         closure_children: set[str] = set()
-        ported_external: set[str] = set()
+        active_external: set[str] = set()
         for child in analysis.graph[name]:
             target = analysis.component_by_rule[child]
             if target == component:
                 same_component.add(child)
             elif child in analysis.closure_rules:
                 closure_children.add(child)
-            elif analysis.ports[child]["syntax-status"] in IMPLEMENTED_STATUSES:
-                ported_external.add(child)
+            elif analysis.ports[child]["activation-status"] == "active":
+                active_external.add(child)
             else:
                 raise SystemExit(
-                    f"{name}: unported child outside Phase 2I closure: {child}"
+                    f"{name}: inactive child outside Phase 2I closure: {child}"
                 )
         rows.append(
             [
@@ -541,7 +545,7 @@ def render_phase_report(analysis: Analysis) -> str:
                 str(analysis.recursive[component]).lower(),
                 joined(same_component),
                 joined(closure_children),
-                joined(ported_external),
+                joined(active_external),
             ]
         )
     return render_tsv(PHASE_COLUMNS, rows)
@@ -553,22 +557,22 @@ def summary(analysis: Analysis) -> str:
         for row in analysis.ports.values()
         if row["syntax-status"] == "unported"
     )
-    recursive_unported = sum(
+    recursive_inactive = sum(
         analysis.recursive[component]
-        for component in analysis.unported_components
+        for component in analysis.inactive_components
     )
     return "\n".join(
         [
             f"canonical rules: {len(analysis.productions)}",
             f"unported rules: {unported_rules}",
-            f"unported SCCs: {len(analysis.unported_components)}",
-            f"recursive unported SCCs: {recursive_unported}",
+            f"inactive SCCs: {len(analysis.inactive_components)}",
+            f"recursive inactive SCCs: {recursive_inactive}",
             f"Phase 2I root: {PHASE_ROOT}",
             f"Phase 2I SCCs: {len(analysis.closure_components)}",
             f"Phase 2I rules: {len(analysis.closure_rules)}",
-            "ported external dependencies: "
-            f"{len(analysis.ported_external_rules)}",
-            "unported outgoing dependencies: 0",
+            "active external dependencies: "
+            f"{len(analysis.active_external_rules)}",
+            "inactive outgoing dependencies: 0",
         ]
     )
 

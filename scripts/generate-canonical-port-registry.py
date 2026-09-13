@@ -20,20 +20,25 @@ EXPECTED_COLUMNS = [
     "grammar-name",
     "family",
     "syntax-status",
-    "lowering-status",
+    "semantic-status",
+    "activation-status",
     "node-policy",
     "phase",
     "notes",
 ]
 SYNTAX_STATUSES = {
     "unported": "Unported",
-    "syntax-ported": "SyntaxPorted",
-    "parity-verified": "ParityVerified",
+    "certified": "Certified",
 }
-LOWERING_STATUSES = {
-    "not-applicable": "NotApplicable",
+SEMANTIC_STATUSES = {
     "pending": "Pending",
-    "parity-verified": "ParityVerified",
+    "syntax-only": "SyntaxOnly",
+    "certified": "Certified",
+}
+ACTIVATION_STATUSES = {
+    "inactive": "Inactive",
+    "candidate": "Candidate",
+    "active": "Active",
 }
 FAMILIES = {
     "activation": "Activation",
@@ -62,6 +67,7 @@ PHASES = {
     "2F": "Some(PortPhase::Phase2F)",
     "2G": "Some(PortPhase::Phase2G)",
     "2H": "Some(PortPhase::Phase2H)",
+    "2I": "Some(PortPhase::Phase2I)",
 }
 
 
@@ -125,11 +131,28 @@ def port_rows() -> list[dict[str, str]]:
             raise SystemExit(
                 f"{name}: unknown syntax status {row['syntax-status']}"
             )
-        if row["lowering-status"] not in LOWERING_STATUSES:
+        if row["semantic-status"] not in SEMANTIC_STATUSES:
             raise SystemExit(
-                f"{name}: unknown lowering status "
-                f"{row['lowering-status']}"
+                f"{name}: unknown semantic status "
+                f"{row['semantic-status']}"
             )
+        if row["activation-status"] not in ACTIVATION_STATUSES:
+            raise SystemExit(
+                f"{name}: unknown activation status "
+                f"{row['activation-status']}"
+            )
+        if (
+            row["syntax-status"] == "unported"
+            and row["activation-status"] != "inactive"
+        ):
+            raise SystemExit(f"{name}: unported rule is not inactive")
+        if (
+            row["syntax-status"] == "certified"
+            and row["activation-status"] == "inactive"
+        ):
+            raise SystemExit(f"{name}: certified rule is inactive")
+        if row["activation-status"] == "candidate" and row["phase"] != "2I":
+            raise SystemExit(f"{name}: only Phase 2I may be an activation candidate")
         node_policy(row["node-policy"])
         if row["phase"] not in PHASES:
             raise SystemExit(f"{name}: unknown phase {row['phase']}")
@@ -146,18 +169,30 @@ def render() -> str:
         "",
         "use super::canonical_rules::rules;",
         "",
+        "/// Rule-level syntax evidence; this metadata does not select a parser root.",
         "#[derive(Clone, Copy, Debug, Eq, PartialEq)]",
         "pub enum SyntaxPortStatus {",
         "  Unported,",
-        "  SyntaxPorted,",
-        "  ParityVerified,",
+        "  Certified,",
         "}",
         "",
+        "/// Rule-level source-semantic disposition evidence.",
+        "///",
+        "/// `Certified` is not the milestone-level `behavior-demonstrated` gate",
+        "/// recorded by `phase-2i-semantic-completion.tsv`.",
         "#[derive(Clone, Copy, Debug, Eq, PartialEq)]",
-        "pub enum LoweringPortStatus {",
-        "  NotApplicable,",
+        "pub enum SemanticPortStatus {",
         "  Pending,",
-        "  ParityVerified,",
+        "  SyntaxOnly,",
+        "  Certified,",
+        "}",
+        "",
+        "/// Milestone-level registry activation state.",
+        "#[derive(Clone, Copy, Debug, Eq, PartialEq)]",
+        "pub enum RegistryActivationStatus {",
+        "  Inactive,",
+        "  Candidate,",
+        "  Active,",
         "}",
         "",
         "#[derive(Clone, Copy, Debug, Eq, PartialEq)]",
@@ -187,15 +222,18 @@ def render() -> str:
             "  Phase2F,",
             "  Phase2G,",
             "  Phase2H,",
+            "  Phase2I,",
             "}",
             "",
+            "/// Generated audit metadata; parser and runtime dispatch do not read it.",
             "#[derive(Clone, Copy, Debug, Eq, PartialEq)]",
             "pub struct RulePort {",
             "  pub name: &'static str,",
             "  pub rule: RuleId,",
             "  pub family: RuleFamily,",
             "  pub syntax: SyntaxPortStatus,",
-            "  pub lowering: LoweringPortStatus,",
+            "  pub semantic: SemanticPortStatus,",
+            "  pub activation: RegistryActivationStatus,",
             "  pub node_policy: NodePolicy,",
             "  pub phase: Option<PortPhase>,",
             "  pub notes: &'static str,",
@@ -215,8 +253,10 @@ def render() -> str:
                 f"    family: RuleFamily::{FAMILIES[row['family']]},",
                 "    syntax: SyntaxPortStatus::"
                 f"{SYNTAX_STATUSES[row['syntax-status']]},",
-                "    lowering: LoweringPortStatus::"
-                f"{LOWERING_STATUSES[row['lowering-status']]},",
+                "    semantic: SemanticPortStatus::"
+                f"{SEMANTIC_STATUSES[row['semantic-status']]},",
+                "    activation: RegistryActivationStatus::"
+                f"{ACTIVATION_STATUSES[row['activation-status']]},",
                 f"    node_policy: {node_policy(row['node-policy'])},",
                 f"    phase: {PHASES[row['phase']]},",
                 f'    notes: "{rust_string(row["notes"])}",',
