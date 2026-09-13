@@ -1766,7 +1766,7 @@ impl<'a> BatchCompiler<'a> {
                 self.reject(
                     Some(node.node),
                     None,
-                    "Boolean control requires resident execution".to_owned(),
+                    "Typed match control requires resident execution".to_owned(),
                 );
                 continue;
             };

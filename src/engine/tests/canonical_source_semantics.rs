@@ -362,11 +362,10 @@ fn calls_ranges_subscripts_and_patterns_keep_their_canonical_roles() {
     let typed_pattern = CanonicalSourceFrontend
         .compile_expression(&expression("value<bool> ? | y<bool> => !y | * => false"))
         .unwrap();
-    let mech_engine::SourceNodeBody::BooleanMatch(control) = &typed_pattern.program().nodes[0].body
-    else {
+    let mech_engine::SourceNodeBody::Match(control) = &typed_pattern.program().nodes[0].body else {
         panic!("typed match");
     };
-    assert_eq!(control.arms[0].pattern, mech_engine::BooleanPattern::Bind);
+    assert_eq!(control.arms[0].pattern, mech_engine::MatchPattern::Bind);
     let parameter = &control.arms[0].body.parameters[0];
     assert_eq!(
         parameter.source,
@@ -952,7 +951,7 @@ fn reviewed_source_kind_edges_match_operation_and_literal_contracts() {
         .compile_expression(&expression("x<bool> ? | threshold + 1 => 2 | * => 3"))
         .err()
         .expect("expected rejection");
-    assert_eq!(error.code, "source-semantics/unsupported-boolean-match");
+    assert_eq!(error.code, "source-semantics/unsupported-match");
 
     for (source, code) in [
         ("1 && 2", "source-semantics/non-boolean-operator-kind"),
@@ -1786,8 +1785,7 @@ fn typed_match_blocks_and_fsm_diagnostics_preserve_owned_roles() {
     let matched = CanonicalSourceFrontend
         .compile_expression(&expression("x<bool> ? | *, true => 1 | * => 2"))
         .unwrap();
-    let mech_engine::SourceNodeBody::BooleanMatch(control) = &matched.program().nodes[0].body
-    else {
+    let mech_engine::SourceNodeBody::Match(control) = &matched.program().nodes[0].body else {
         panic!("typed match body");
     };
     assert_eq!(control.arms.len(), 2);

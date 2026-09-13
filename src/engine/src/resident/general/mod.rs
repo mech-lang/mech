@@ -146,7 +146,7 @@ pub struct ActivatedControlBlock {
 
 #[derive(Clone, Debug)]
 pub struct ActivatedMatchArm {
-    pub pattern: crate::BooleanPattern,
+    pub literal: Option<ResidentRegion>,
     pub guard: Option<ActivatedControlBlock>,
     pub body: ActivatedControlBlock,
 }
@@ -161,7 +161,7 @@ pub struct ActivatedMatchNode {
 
 #[derive(Clone, Debug)]
 pub enum ActivatedTurnStep {
-    BooleanMatch(ActivatedMatchNode),
+    Match(ActivatedMatchNode),
     Kernel(ActivatedKernelNode),
     External(ActivatedExternalNode),
 }
@@ -170,7 +170,7 @@ impl ActivatedTurnStep {
     pub const fn artifact_node(&self) -> NodeId {
         match self {
             Self::Kernel(node) => node.artifact_node,
-            Self::BooleanMatch(node) => node.artifact_node,
+            Self::Match(node) => node.artifact_node,
             Self::External(node) => node.artifact_node,
         }
     }
@@ -1792,7 +1792,7 @@ fn resident_concrete_execution_cases(
         })
         .collect::<Result<Vec<_>, _>>()?;
     for node in artifact.nodes() {
-        let crate::ExecutableNodeBody::BooleanMatch(control) = &node.body else {
+        let crate::ExecutableNodeBody::Match(control) = &node.body else {
             continue;
         };
         let sources = node_inputs(artifact, node.node)?;
@@ -3244,7 +3244,7 @@ fn build_layout(
     let mut control_locals = BTreeMap::new();
     let mut next_local = 0u32;
     for node in artifact.nodes() {
-        let crate::ExecutableNodeBody::BooleanMatch(control) = &node.body else {
+        let crate::ExecutableNodeBody::Match(control) = &node.body else {
             continue;
         };
         let mut ordinal = 0usize;
@@ -3829,7 +3829,7 @@ fn build_plan(
     let mut effect_ordinal = 0_u32;
     for node in artifact.nodes() {
         let Some(node) = node.as_operation() else {
-            let crate::ExecutableNodeBody::BooleanMatch(control) = &node.body else {
+            let crate::ExecutableNodeBody::Match(control) = &node.body else {
                 unreachable!()
             };
             let input_sources = node_inputs(artifact, node.node)?;
@@ -3851,7 +3851,7 @@ fn build_plan(
                     });
                 }
             }
-            steps.push(ActivatedTurnStep::BooleanMatch(ActivatedMatchNode {
+            steps.push(ActivatedTurnStep::Match(ActivatedMatchNode {
                 artifact_node: node.node,
                 scrutinee: resolve_read(&layout, input_sources[control.scrutinee as usize])?,
                 write: ResidentWriteLocation {
@@ -4006,7 +4006,7 @@ fn build_plan(
     }
     let mut control_calls = Vec::new();
     for node in artifact.nodes() {
-        let crate::ExecutableNodeBody::BooleanMatch(control) = &node.body else {
+        let crate::ExecutableNodeBody::Match(control) = &node.body else {
             continue;
         };
         let input_sources = node_inputs(artifact, node.node)?;
@@ -4029,12 +4029,17 @@ fn build_plan(
             let guard = arm.guard.as_ref().map(&mut bind).transpose()?;
             let body = bind(&arm.body)?;
             arms.push(ActivatedMatchArm {
-                pattern: arm.pattern,
+                literal: match arm.pattern {
+                    crate::MatchPattern::Literal(constant) => {
+                        Some(layout.constant_regions[constant.get() as usize])
+                    }
+                    crate::MatchPattern::Wildcard | crate::MatchPattern::Bind => None,
+                },
                 guard,
                 body,
             });
         }
-        let ActivatedTurnStep::BooleanMatch(matched) = &mut steps[artifact_to_activated
+        let ActivatedTurnStep::Match(matched) = &mut steps[artifact_to_activated
             [node.node.get() as usize]
             .unwrap()
             .get() as usize]
@@ -4184,7 +4189,7 @@ fn build_plan(
                 .iter()
                 .map(|step| match step {
                     ActivatedTurnStep::Kernel(node) => node.clone(),
-                    ActivatedTurnStep::External(_) | ActivatedTurnStep::BooleanMatch(_) => {
+                    ActivatedTurnStep::External(_) | ActivatedTurnStep::Match(_) => {
                         unreachable!("pure resident plan contains a non-kernel step")
                     }
                 })
@@ -5719,7 +5724,7 @@ fn bind_control_block(
     artifact: &ProgramArtifact,
     catalog: &FunctionCatalog,
     owner: NodeId,
-    control: &crate::BooleanMatchDeclaration,
+    control: &crate::MatchDeclaration,
     block: &crate::ControlBlock,
     captures: &[ArtifactSource],
     layout: &LayoutBuild,

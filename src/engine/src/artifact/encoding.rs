@@ -220,7 +220,7 @@ pub(super) fn program_revision(
                     }
                 }
             }
-            super::ExecutableNodeBody::BooleanMatch(control) => {
+            super::ExecutableNodeBody::Match(control) => {
                 writer.u8(1);
                 writer.u16(control.scrutinee);
                 writer.u64(control.captures.len() as u64);
@@ -230,12 +230,14 @@ pub(super) fn program_revision(
                 }
                 writer.u64(control.arms.len() as u64);
                 for arm in &control.arms {
-                    writer.u8(match arm.pattern {
-                        super::BooleanPattern::Literal(false) => 0,
-                        super::BooleanPattern::Literal(true) => 1,
-                        super::BooleanPattern::Wildcard => 2,
-                        super::BooleanPattern::Bind => 3,
-                    });
+                    match arm.pattern {
+                        super::MatchPattern::Literal(constant) => {
+                            writer.u8(0);
+                            writer.u32(constant.get());
+                        }
+                        super::MatchPattern::Wildcard => writer.u8(1),
+                        super::MatchPattern::Bind => writer.u8(2),
+                    };
                     match &arm.guard {
                         None => writer.u8(0),
                         Some(guard) => {

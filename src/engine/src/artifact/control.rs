@@ -9,8 +9,8 @@ use super::OperationReference;
 pub struct ControlBlockId(pub u32);
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum BooleanPattern {
-    Literal(bool),
+pub enum MatchPattern<C = ConstantId> {
+    Literal(C),
     Wildcard,
     /// Makes the scrutinee available to explicitly declared block parameters.
     Bind,
@@ -61,24 +61,24 @@ pub struct ControlBlock<C = OperationContractId> {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct BooleanMatchArm<C = OperationContractId> {
-    pub pattern: BooleanPattern,
+pub struct ControlMatchArm<C = OperationContractId> {
+    pub pattern: MatchPattern,
     pub guard: Option<ControlBlock<C>>,
     pub body: ControlBlock<C>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct BooleanMatchDeclaration<C = OperationContractId> {
+pub struct MatchDeclaration<C = OperationContractId> {
     /// Ordinal in the enclosing node's input bindings; evaluated once.
     pub scrutinee: u16,
     pub captures: Box<[ControlCapture]>,
-    pub arms: Box<[BooleanMatchArm<C>]>,
+    pub arms: Box<[ControlMatchArm<C>]>,
 }
 
 pub(super) fn validate_match(
     draft: &super::ProgramArtifactDraft,
     node: mech_core::NodeId,
-    declaration: &BooleanMatchDeclaration,
+    declaration: &MatchDeclaration,
     inputs: &[SchemaId],
     output: SchemaId,
 ) -> Result<(), super::ArtifactBuildError> {
@@ -102,10 +102,8 @@ pub(super) fn validate_match(
     let scrutinee = *inputs
         .get(declaration.scrutinee as usize)
         .ok_or_else(|| invalid("unknown scrutinee input"))?;
-    if !boolean(scrutinee) || !scalar(output) {
-        return Err(invalid(
-            "Boolean match requires Boolean scrutinee and exact scalar result",
-        ));
+    if !scalar(scrutinee) || !scalar(output) {
+        return Err(invalid("match requires exact scalar scrutinee and result"));
     }
     let mut used_inputs = std::collections::BTreeSet::from([declaration.scrutinee]);
     let mut captured_inputs = std::collections::BTreeSet::new();
@@ -126,6 +124,15 @@ pub(super) fn validate_match(
     let mut next_block = 0u32;
     let mut coverage = [false; 2];
     for arm in &declaration.arms {
+        if let MatchPattern::Literal(constant) = arm.pattern {
+            let value = draft
+                .constants
+                .get(constant)
+                .ok_or_else(|| invalid("unknown literal pattern constant"))?;
+            if value.schema() != scrutinee {
+                return Err(invalid("literal pattern schema differs from scrutinee"));
+            }
+        }
         for (block, is_guard) in arm
             .guard
             .iter()
@@ -140,7 +147,7 @@ pub(super) fn validate_match(
                 .ok_or_else(|| invalid("block count overflow"))?;
             for parameter in &block.parameters {
                 let expected = match parameter.source {
-                    ControlParameterSource::Scrutinee if arm.pattern == BooleanPattern::Bind => {
+                    ControlParameterSource::Scrutinee if arm.pattern == MatchPattern::Bind => {
                         scrutinee
                     }
                     ControlParameterSource::Scrutinee => {
@@ -234,13 +241,19 @@ pub(super) fn validate_match(
         }
         if arm.guard.is_none() {
             match arm.pattern {
-                BooleanPattern::Literal(value) => coverage[value as usize] = true,
-                BooleanPattern::Wildcard | BooleanPattern::Bind => coverage = [true; 2],
+                MatchPattern::Literal(constant) => {
+                    if let mech_core::ValueData::Bool(value) =
+                        draft.constants.get(constant).unwrap().data()
+                    {
+                        coverage[*value as usize] = true;
+                    }
+                }
+                MatchPattern::Wildcard | MatchPattern::Bind => coverage = [true; 2],
             }
         }
     }
     if coverage != [true; 2] {
-        return Err(invalid("non-exhaustive Boolean match"));
+        return Err(invalid("non-exhaustive match"));
     }
     Ok(())
 }
@@ -256,7 +269,7 @@ pub(super) fn validate_control_counts(
 ) -> Result<(), super::ArtifactBuildError> {
     let mut counts = [0usize; 4];
     for node in &draft.nodes {
-        let super::ExecutableNodeBody::BooleanMatch(control) = &node.body else {
+        let super::ExecutableNodeBody::Match(control) = &node.body else {
             continue;
         };
         let invalid = || super::ArtifactBuildError::InvalidControl {
@@ -295,11 +308,11 @@ pub(super) fn validate_control_counts(
     Ok(())
 }
 
-impl<C> BooleanMatchDeclaration<C> {
+impl<C> MatchDeclaration<C> {
     pub(super) fn map_contracts<D, E>(
         &self,
         mut map: impl FnMut(&ControlBlock<C>, &ControlOperation<C>) -> Result<D, E>,
-    ) -> Result<BooleanMatchDeclaration<D>, E> {
+    ) -> Result<MatchDeclaration<D>, E> {
         let mut block = |block: &ControlBlock<C>| -> Result<ControlBlock<D>, E> {
             Ok(ControlBlock {
                 id: block.id,
@@ -320,14 +333,14 @@ impl<C> BooleanMatchDeclaration<C> {
                     .collect::<Result<Box<[_]>, E>>()?,
             })
         };
-        Ok(BooleanMatchDeclaration {
+        Ok(MatchDeclaration {
             scrutinee: self.scrutinee,
             captures: self.captures.clone(),
             arms: self
                 .arms
                 .iter()
                 .map(|arm| {
-                    Ok(BooleanMatchArm {
+                    Ok(ControlMatchArm {
                         pattern: arm.pattern,
                         guard: arm.guard.as_ref().map(&mut block).transpose()?,
                         body: block(&arm.body)?,

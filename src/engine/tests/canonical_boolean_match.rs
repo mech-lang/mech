@@ -30,7 +30,9 @@ fn compile(source: &str) -> CanonicalSourceProgram {
 }
 
 fn fixture() -> ProgramArtifactDraft {
-    let base = compile("(flag<bool>, -11,22)").compile_artifact().unwrap();
+    let base = compile("(flag<bool>, -11,22,true,false)")
+        .compile_artifact()
+        .unwrap();
     let boolean = base.inputs()[0].schema;
     let scalar = (0..base.schemas().len())
         .map(|id| mech_core::SchemaId::new(id as u32))
@@ -46,6 +48,12 @@ fn fixture() -> ProgramArtifactDraft {
         .filter(|id| base.constants().get(*id).unwrap().schema() == scalar)
         .collect::<Vec<_>>();
     assert_eq!(constants.len(), 2);
+    let literal = |flag| {
+        (0..base.constants().len()).map(|id| ConstantId::new(id as u32))
+        .find(|id| matches!(base.constants().get(*id).unwrap().data(), mech_core::ValueData::Bool(value) if *value == flag)).unwrap()
+    };
+    let true_ = literal(true);
+    let false_ = literal(false);
     let block = |id, constant| ControlBlock {
         id: ControlBlockId(id),
         parameters: Box::new([]),
@@ -96,17 +104,17 @@ fn fixture() -> ProgramArtifactDraft {
         .into_boxed_slice(),
         nodes: vec![NodeDeclaration {
             node: NodeId(0),
-            body: ExecutableNodeBody::BooleanMatch(BooleanMatchDeclaration {
+            body: ExecutableNodeBody::Match(MatchDeclaration {
                 scrutinee: 0,
                 captures: Box::new([]),
                 arms: vec![
-                    BooleanMatchArm {
-                        pattern: BooleanPattern::Literal(true),
+                    ControlMatchArm {
+                        pattern: MatchPattern::Literal(true_),
                         guard: None,
                         body: block(0, constants[0]),
                     },
-                    BooleanMatchArm {
-                        pattern: BooleanPattern::Literal(false),
+                    ControlMatchArm {
+                        pattern: MatchPattern::Literal(false_),
                         guard: None,
                         body: block(1, constants[1]),
                     },
@@ -145,8 +153,8 @@ fn fixture() -> ProgramArtifactDraft {
     }
 }
 
-fn control(draft: &mut ProgramArtifactDraft) -> &mut BooleanMatchDeclaration {
-    let ExecutableNodeBody::BooleanMatch(control) = &mut draft.nodes[0].body else {
+fn control(draft: &mut ProgramArtifactDraft) -> &mut MatchDeclaration {
+    let ExecutableNodeBody::Match(control) = &mut draft.nodes[0].body else {
         panic!()
     };
     control
@@ -165,15 +173,16 @@ fn typed_match_roundtrip_and_revision_own_all_branch_semantics() {
         let matched = control(&mut changed);
         match change {
             0 => {
-                matched.arms[0].pattern = BooleanPattern::Literal(false);
-                matched.arms[1].pattern = BooleanPattern::Literal(true);
+                let first = matched.arms[0].pattern;
+                matched.arms[0].pattern = matched.arms[1].pattern;
+                matched.arms[1].pattern = first;
             }
             1 => {
                 let value = matched.arms[0].body.yield_value;
                 matched.arms[0].body.yield_value = matched.arms[1].body.yield_value;
                 matched.arms[1].body.yield_value = value;
             }
-            _ => matched.arms[1].pattern = BooleanPattern::Wildcard,
+            _ => matched.arms[1].pattern = MatchPattern::Wildcard,
         }
         assert_ne!(artifact.revision(), changed.finalize().unwrap().revision());
     }
@@ -181,11 +190,14 @@ fn typed_match_roundtrip_and_revision_own_all_branch_semantics() {
 
 #[test]
 fn typed_match_rejects_invalid_scope_coverage_schema_and_writer() {
-    for mutation in 0..8 {
+    for mutation in 0..10 {
         let mut draft = fixture();
         let boolean = draft.inputs[0].schema;
         match mutation {
-            0 => control(&mut draft).arms[1].pattern = BooleanPattern::Literal(true),
+            0 => {
+                let first = control(&mut draft).arms[0].pattern;
+                control(&mut draft).arms[1].pattern = first;
+            }
             1 => control(&mut draft).arms[0].body.id = ControlBlockId(9),
             2 => {
                 control(&mut draft).arms[0].body.yield_value = ControlValue::Local {
@@ -202,6 +214,17 @@ fn typed_match_rejects_invalid_scope_coverage_schema_and_writer() {
             4 => control(&mut draft).scrutinee = 9,
             5 => draft.slots[1].schema = boolean,
             6 => draft.slots[1].role = SlotRole::State,
+            8 => {
+                control(&mut draft).arms[0].pattern =
+                    MatchPattern::Literal(ConstantId::new(u32::MAX))
+            }
+            9 => {
+                let value = control(&mut draft).arms[0].body.yield_value;
+                let ControlValue::Constant(constant) = value else {
+                    panic!()
+                };
+                control(&mut draft).arms[0].pattern = MatchPattern::Literal(constant);
+            }
             _ => {
                 let guard = control(&mut draft).arms[0].body.clone();
                 control(&mut draft).arms[0].guard = Some(guard);
@@ -253,7 +276,7 @@ fn typed_match_codec_admits_exact_bounds_and_rejects_unknown_tags() {
         let text = if key == "revision" {
             text.replace("\"revision\":3", "\"revision\":9")
         } else {
-            text.replace("\"pattern\":1", "\"pattern\":9")
+            text.replace("\"Literal\":", "\"Unknown\":")
         };
         sections.nodes = text.into_bytes();
         assert!(
@@ -336,7 +359,7 @@ fn resident_typed_match_switches_true_false_true_without_eager_blocks() {
     .unwrap();
     assert!(!instance.plan.has_only_kernel_steps());
     let matched = match &artifact.nodes()[0].body {
-        ExecutableNodeBody::BooleanMatch(matched) => matched,
+        ExecutableNodeBody::Match(matched) => matched,
         _ => panic!(),
     };
     let expected = matched
@@ -387,7 +410,7 @@ fn canonical_match_blocks_roundtrip_and_execute_captures_binding_and_guards() {
         );
         assert!(matches!(
             compiled.program().nodes[0].body,
-            SourceNodeBody::BooleanMatch(_)
+            SourceNodeBody::Match(_)
         ));
         let artifact = compiled.compile_artifact().unwrap();
         let decoded = decode_program_artifact_bytecode_v1(
@@ -554,7 +577,7 @@ mod lazy_execution {
                 .steps
                 .iter()
                 .find_map(|step| match step {
-                    ActivatedTurnStep::BooleanMatch(matched) => {
+                    ActivatedTurnStep::Match(matched) => {
                         Some(matched.arms[0].body.kernels.start as usize)
                     }
                     _ => None,
@@ -693,7 +716,7 @@ fn source_only_match_has_typed_capture_and_binding_authority() {
         let compiled = compile(source);
         assert_eq!(compiled.program().nodes.len(), 1);
         assert_eq!(compiled.contracts(), &[None]);
-        let SourceNodeBody::BooleanMatch(control) = &compiled.program().nodes[0].body else {
+        let SourceNodeBody::Match(control) = &compiled.program().nodes[0].body else {
             panic!()
         };
         assert!(!control.arms.is_empty());
@@ -1006,7 +1029,7 @@ fn match_integrity_failure_preserves_state_and_published_epoch() {
 
 #[test]
 fn unfinished_control_forms_are_explicit_source_errors() {
-    for source in ["x<u8> ? | y => y | * => 0u8", "x<*> ? | y => y | * => 0"] {
+    for source in ["x<*> ? | y => y | * => 0"] {
         let parsed = parse_canonical_phase_2i_rule_for_test(
             TextSnapshot::new(DocumentId(822), Revision(1), source).unwrap(),
             rules::EXPRESSION,
@@ -1019,7 +1042,7 @@ fn unfinished_control_forms_are_explicit_source_errors() {
             .compile_expression(&find(parsed.syntax()).unwrap())
             .err()
             .expect("expected rejection");
-        assert_eq!(error.code, "source-semantics/unsupported-boolean-match");
+        assert_eq!(error.code, "source-semantics/unsupported-match");
     }
 }
 
@@ -1072,5 +1095,60 @@ fn long_blocks_keep_local_slots_outside_the_artifact_schedule() {
             panic!("scalar result");
         };
         assert_eq!(*actual, if flag == 1 { 85.0 } else { 0.0 });
+    }
+}
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn numeric_match_roundtrips_and_uses_literal_binding_guard_and_wildcard_on_each_turn() {
+    use mech_core::{FunctionCatalogBuilder, ReactiveInstanceId, ResidentValueRef, ValueData};
+    use mech_engine::resident::{ActivationFacts, CapturedSignalInput, activate};
+    let compiled = compile("signal<f64> ? | 0 => 10 | item, item > 0 => item + 1 | * => -1");
+    let artifact = compiled.compile_artifact().unwrap();
+    let artifact = decode_program_artifact_bytecode_v1(
+        &encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+    )
+    .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(822, 44),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    for (input, expected) in [
+        (0.0, 10.0),
+        (3.0, 4.0),
+        (-2.0, -1.0),
+        (-0.0, 10.0),
+        (8.0, 9.0),
+    ] {
+        instance
+            .turn(&[CapturedSignalInput {
+                slot: instance.plan.inputs[0].slot,
+                value: ResidentValueRef::F64(&[input]),
+            }])
+            .unwrap();
+        let value = instance.copied_output(0).unwrap();
+        let ValueData::F64(actual) = value.data() else {
+            panic!("{value:?}")
+        };
+        assert_eq!(actual.to_f64(), expected, "input {input}");
+    }
+}
+
+#[test]
+fn exact_scalar_pattern_schemas_are_artifact_semantics() {
+    for source in [
+        "x<u8> ? | 1u8 => 2u8 | y => y",
+        "x<ix> ? | 1<ix> => 2<ix> | y => y",
+    ] {
+        let artifact = compile(source).compile_artifact().unwrap();
+        let bytes = encode_program_artifact_bytecode_v1(&artifact).unwrap();
+        let decoded = decode_program_artifact_bytecode_v1(&bytes).unwrap();
+        assert_eq!(artifact.revision(), decoded.revision());
     }
 }

@@ -35,7 +35,7 @@ fn compute_targets_report_typed_control_without_dropping_or_flattening_arms() {
         let control: NodeId = artifact
             .nodes()
             .iter()
-            .find(|node| matches!(node.body, ExecutableNodeBody::BooleanMatch(_)))
+            .find(|node| matches!(node.body, ExecutableNodeBody::Match(_)))
             .unwrap()
             .node;
         let placement = ComputeLowerer.plan(&artifact);
@@ -58,7 +58,7 @@ fn compute_targets_report_typed_control_without_dropping_or_flattening_arms() {
                     .iter()
                     .any(|diagnostic| diagnostic.node == Some(control)
                         && diagnostic.code == GpuDiagnosticCode::OperationUnsupported
-                        && diagnostic.detail.contains("Boolean control")),
+                        && diagnostic.detail.contains("Typed match control")),
                 "{error}"
             );
         }

@@ -1,15 +1,16 @@
-# Canonical Boolean control in S4
+# Canonical scalar control in S4
 
-A Boolean match owns ordered arms and their optional guards. Its scrutinee is
-read once. Only a matching arm's guard executes; only the first matching arm
+A scalar match owns ordered arms and their optional guards. Its scrutinee is
+evaluated once. Only a matching arm's guard executes; only the first matching arm
 whose guard succeeds executes its body. Wildcard and lexical bind patterns are
-exhaustive without a guard. Source lowering requires exhaustive Boolean
-coverage and one exact scalar result schema.
+exhaustive without a guard. Source lowering requires an unguarded wildcard/binding or coverage of both Boolean
+literals, and one exact scalar result schema. Literal patterns reference constants
+with the scrutinee schema; bindings expose that same schema to guards and bodies.
 
 The engine artifact owns control blocks, captures, scoped parameters, local
 ordinary operations and yields. Source text and diagnostic strings are not
 execution operands. The artifact uses one tagged node body for ordinary
-operations or Boolean matches. The bytecode-v1 graph payload uses revision 3;
+operations or scalar matches. The bytecode-v1 graph payload uses revision 3;
 all durable fixtures are regenerated with that producer.
 
 Resident activation currently admits Bool, Index and F64 control values. Each
@@ -30,7 +31,7 @@ Runtime reuse compares control structure and resolves schema, contract and
 constant identities in each artifact's own tables. Equal numeric table IDs
 are not evidence that independently compiled blocks mean the same thing.
 
-This is a bounded executable-control increment, not S4 completion. Non-Boolean
+This is a bounded executable-control increment, not S4 completion. Composite
 patterns, nested executable control, composite match results, executable
 comprehensions and FSM lowering still require their owning S4 implementation.
 Their placeholder graphs or structured unsupported diagnostics do not count
