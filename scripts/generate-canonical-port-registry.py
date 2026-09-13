@@ -21,6 +21,7 @@ EXPECTED_COLUMNS = [
     "family",
     "syntax-status",
     "semantic-status",
+    "activation-status",
     "node-policy",
     "phase",
     "notes",
@@ -33,6 +34,11 @@ SEMANTIC_STATUSES = {
     "pending": "Pending",
     "syntax-only": "SyntaxOnly",
     "certified": "Certified",
+}
+ACTIVATION_STATUSES = {
+    "inactive": "Inactive",
+    "candidate": "Candidate",
+    "active": "Active",
 }
 FAMILIES = {
     "activation": "Activation",
@@ -130,6 +136,23 @@ def port_rows() -> list[dict[str, str]]:
                 f"{name}: unknown semantic status "
                 f"{row['semantic-status']}"
             )
+        if row["activation-status"] not in ACTIVATION_STATUSES:
+            raise SystemExit(
+                f"{name}: unknown activation status "
+                f"{row['activation-status']}"
+            )
+        if (
+            row["syntax-status"] == "unported"
+            and row["activation-status"] != "inactive"
+        ):
+            raise SystemExit(f"{name}: unported rule is not inactive")
+        if (
+            row["syntax-status"] == "certified"
+            and row["activation-status"] == "inactive"
+        ):
+            raise SystemExit(f"{name}: certified rule is inactive")
+        if row["activation-status"] == "candidate" and row["phase"] != "2I":
+            raise SystemExit(f"{name}: only Phase 2I may be an activation candidate")
         node_policy(row["node-policy"])
         if row["phase"] not in PHASES:
             raise SystemExit(f"{name}: unknown phase {row['phase']}")
@@ -162,6 +185,14 @@ def render() -> str:
         "  Pending,",
         "  SyntaxOnly,",
         "  Certified,",
+        "}",
+        "",
+        "/// Milestone-level registry activation state.",
+        "#[derive(Clone, Copy, Debug, Eq, PartialEq)]",
+        "pub enum RegistryActivationStatus {",
+        "  Inactive,",
+        "  Candidate,",
+        "  Active,",
         "}",
         "",
         "#[derive(Clone, Copy, Debug, Eq, PartialEq)]",
@@ -202,6 +233,7 @@ def render() -> str:
             "  pub family: RuleFamily,",
             "  pub syntax: SyntaxPortStatus,",
             "  pub semantic: SemanticPortStatus,",
+            "  pub activation: RegistryActivationStatus,",
             "  pub node_policy: NodePolicy,",
             "  pub phase: Option<PortPhase>,",
             "  pub notes: &'static str,",
@@ -223,6 +255,8 @@ def render() -> str:
                 f"{SYNTAX_STATUSES[row['syntax-status']]},",
                 "    semantic: SemanticPortStatus::"
                 f"{SEMANTIC_STATUSES[row['semantic-status']]},",
+                "    activation: RegistryActivationStatus::"
+                f"{ACTIVATION_STATUSES[row['activation-status']]},",
                 f"    node_policy: {node_policy(row['node-policy'])},",
                 f"    phase: {PHASES[row['phase']]},",
                 f'    notes: "{rust_string(row["notes"])}",',

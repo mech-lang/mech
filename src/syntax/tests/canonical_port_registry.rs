@@ -4,7 +4,8 @@ use std::path::{Path, PathBuf};
 
 use mech_syntax::document::parser::{
     CANONICAL_PORT_COUNT, CANONICAL_PORTS, CANONICAL_RULE_COUNT, CANONICAL_RULES, NodePolicy,
-    PortPhase, RuleFamily, SemanticPortStatus, SyntaxPortStatus, canonical_rule_id,
+    PortPhase, RegistryActivationStatus, RuleFamily, SemanticPortStatus, SyntaxPortStatus,
+    canonical_rule_id,
 };
 
 const EXPECTED_RULES: usize = 539;
@@ -19,6 +20,9 @@ const EXPECTED_PHASE_2H: usize = 10;
 const EXPECTED_PHASE_2I: usize = 80;
 const EXPECTED_CERTIFIED: usize = 408;
 const EXPECTED_UNPORTED: usize = 131;
+const EXPECTED_ACTIVE: usize = 328;
+const EXPECTED_CANDIDATE: usize = 80;
+const EXPECTED_INACTIVE: usize = 131;
 
 fn repository_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -74,6 +78,14 @@ fn semantic_name(status: SemanticPortStatus) -> &'static str {
     }
 }
 
+fn activation_name(status: RegistryActivationStatus) -> &'static str {
+    match status {
+        RegistryActivationStatus::Inactive => "inactive",
+        RegistryActivationStatus::Candidate => "candidate",
+        RegistryActivationStatus::Active => "active",
+    }
+}
+
 fn policy_name(policy: NodePolicy) -> String {
     match policy {
         NodePolicy::Undecided => "undecided".to_owned(),
@@ -108,7 +120,7 @@ fn checked_in_port_registry_exactly_matches_ports_tsv() {
         lines.next(),
         Some(
             "grammar-name\tfamily\tsyntax-status\tsemantic-status\t\
-       node-policy\tphase\tnotes"
+       activation-status\tnode-policy\tphase\tnotes"
         )
     );
     let rows = lines.map(fields).collect::<Vec<_>>();
@@ -119,7 +131,7 @@ fn checked_in_port_registry_exactly_matches_ports_tsv() {
     let mut previous = "";
     let mut names = BTreeSet::new();
     for (index, (row, generated)) in rows.iter().zip(CANONICAL_PORTS).enumerate() {
-        assert_eq!(row.len(), 7, "invalid ports.tsv row {}", index + 2);
+        assert_eq!(row.len(), 8, "invalid ports.tsv row {}", index + 2);
         assert!(row[0] > previous, "ports.tsv is not strictly ordered");
         previous = row[0];
         assert!(names.insert(row[0]), "duplicate port entry {}", row[0]);
@@ -128,9 +140,10 @@ fn checked_in_port_registry_exactly_matches_ports_tsv() {
         assert_eq!(family_name(generated.family), row[1]);
         assert_eq!(syntax_name(generated.syntax), row[2]);
         assert_eq!(semantic_name(generated.semantic), row[3]);
-        assert_eq!(policy_name(generated.node_policy), row[4]);
-        assert_eq!(phase_name(generated.phase), row[5]);
-        assert_eq!(generated.notes, row[6]);
+        assert_eq!(activation_name(generated.activation), row[4]);
+        assert_eq!(policy_name(generated.node_policy), row[5]);
+        assert_eq!(phase_name(generated.phase), row[6]);
+        assert_eq!(generated.notes, row[7]);
     }
 
     let canonical = CANONICAL_RULES
@@ -140,6 +153,77 @@ fn checked_in_port_registry_exactly_matches_ports_tsv() {
     assert_eq!(CANONICAL_RULE_COUNT, EXPECTED_RULES);
     assert_eq!(canonical.len(), EXPECTED_RULES);
     assert_eq!(names, canonical, "unknown or missing canonical port names");
+    assert_eq!(
+        CANONICAL_PORTS
+            .iter()
+            .filter(|port| port.activation == RegistryActivationStatus::Active)
+            .count(),
+        EXPECTED_ACTIVE
+    );
+    assert_eq!(
+        CANONICAL_PORTS
+            .iter()
+            .filter(|port| port.activation == RegistryActivationStatus::Candidate)
+            .count(),
+        EXPECTED_CANDIDATE
+    );
+    assert_eq!(
+        CANONICAL_PORTS
+            .iter()
+            .filter(|port| port.activation == RegistryActivationStatus::Inactive)
+            .count(),
+        EXPECTED_INACTIVE
+    );
+}
+
+#[test]
+fn phase_2i_activation_is_directly_gated_by_semantic_completion() {
+    let completion = fs::read_to_string(
+        repository_root().join("docs/design/grammar-audit/phase-2i-semantic-completion.tsv"),
+    )
+    .expect("read phase-2i-semantic-completion.tsv");
+    let mut lines = completion.lines();
+    assert_eq!(
+        lines.next(),
+        Some("capability\tgrammar-name\tresult\ttarget\towner\trequired-for-s6\tevidence")
+    );
+    let required = lines
+        .map(fields)
+        .filter(|row| {
+            assert_eq!(row.len(), 7, "invalid semantic-completion row");
+            row[5] == "true"
+        })
+        .collect::<Vec<_>>();
+    assert!(
+        !required.is_empty(),
+        "S6 must have required completion rows"
+    );
+    let completion_ready = required.iter().all(|row| row[2] == "behavior-demonstrated");
+    let phase_2i = CANONICAL_PORTS
+        .iter()
+        .filter(|port| port.phase == Some(PortPhase::Phase2I))
+        .collect::<Vec<_>>();
+    assert_eq!(phase_2i.len(), EXPECTED_PHASE_2I);
+    if completion_ready {
+        assert!(
+            phase_2i
+                .iter()
+                .all(|port| port.activation == RegistryActivationStatus::Active)
+        );
+    } else {
+        assert!(
+            phase_2i
+                .iter()
+                .all(|port| port.activation == RegistryActivationStatus::Candidate)
+        );
+    }
+    assert!(
+        phase_2i
+            .iter()
+            .all(|port| port.activation != RegistryActivationStatus::Active)
+            || completion_ready,
+        "Phase 2I cannot activate before every S6-required capability demonstrates behavior"
+    );
 }
 
 #[test]

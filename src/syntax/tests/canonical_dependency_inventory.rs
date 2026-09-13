@@ -107,13 +107,13 @@ fn port_names() -> BTreeSet<String> {
         lines.next(),
         Some(
             "grammar-name\tfamily\tsyntax-status\tsemantic-status\t\
-             node-policy\tphase\tnotes"
+             activation-status\tnode-policy\tphase\tnotes"
         )
     );
     let names = lines
         .map(fields)
         .map(|row| {
-            assert_eq!(row.len(), 7);
+            assert_eq!(row.len(), 8);
             row[0].to_owned()
         })
         .collect::<BTreeSet<_>>();

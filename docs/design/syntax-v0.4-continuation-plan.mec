@@ -304,7 +304,9 @@ materialize the exact candidate transition for review, but those rows remain
 inactive in the accepted milestone state until every S6-required completion row
 is `behavior-demonstrated` and S4 is complete. The generated `certified`
 semantic status records a rule-level source-semantic disposition; it is not the
-milestone-level behavior-demonstration gate.
+milestone-level behavior-demonstration gate. The separate generated
+`activation-status` is `candidate` for all 80 rows, and a direct registry test
+requires it to remain so while any required completion row is unfinished.
 
 S6. Atomic Phase 2I activation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -313,11 +315,12 @@ Update `ports.tsv` for all 80 rules in one change and regenerate the canonical
 port registry. Each member becomes Phase 2I with certified syntax, typed views,
 recovery, and source-semantic disposition.
 
-The candidate registry exposes `semantic-status` and the single `certified`
-syntax state for implemented rules. Existing closed phases are classified from
-their canonical evidence, and the candidate assigns Phase 2I as one complete
-component. This generated audit metadata does not itself activate a parser root
-or runtime path.
+The candidate registry exposes `semantic-status`, `activation-status`, and the
+single `certified` syntax state for implemented rules. Existing closed phases
+are classified from their canonical evidence, and the candidate assigns Phase
+2I as one complete component. This generated audit metadata does not itself
+activate a parser root or runtime path. The registry-to-completion assertion
+permits `active` only when every S6-required row is `behavior-demonstrated`.
 
 Expected inventory after activation:
 

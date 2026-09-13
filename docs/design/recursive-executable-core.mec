@@ -43,8 +43,10 @@ canonical recursive closure.
 `docs/design/grammar-audit/ports.tsv` defines rule-level canonical syntax and
 source-semantic disposition evidence. It is audit metadata, not parser or
 runtime dispatch, and its `certified` semantic status is distinct from the
-milestone-level behavior-demonstration gate. The recursive-core component is
-the exact Phase 2I candidate set:
+milestone-level behavior-demonstration gate. Its separate `activation-status`
+keeps all 80 Phase 2I rows at `candidate` until the completion record reports
+every required behavior as demonstrated. The recursive-core component is the
+exact Phase 2I candidate set:
 it starts at `expression`, follows the generated canonical dependencies, and
 contains one complete strongly connected component.
 
@@ -91,7 +93,8 @@ passes resource-limit tests
 S6 of `docs/design/syntax-v0.4-continuation-plan.mec` stages the complete
 reviewed closure atomically. No partial candidate registry state exists. The
 transition remains inactive until the separate S4 behavior-completion gate and
-S6 integration qualification pass.
+S6 integration qualification pass. A direct registry-to-completion test rejects
+an `active` Phase 2I row while any required behavior remains incomplete.
 
 4. Module design
 -------------------------------------------------------------------------------

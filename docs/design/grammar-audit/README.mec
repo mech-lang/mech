@@ -63,7 +63,10 @@ distinguishes artifact readiness, behavior demonstrated on a named target,
 intentional target unavailability, and unfinished implementation. In particular,
 the accepted FSM artifact witness cannot satisfy the resident-runtime row or open
 S6. Every S6-required row must record `behavior-demonstrated`, and S4 must be
-complete, before activation.
+complete, before activation. `ports.tsv` records this separately from rule-level
+syntax and semantic disposition evidence: all 80 Phase 2I rows are
+`activation-status: candidate`. A direct registry-to-completion test rejects
+`active` while any required completion row remains unfinished.
 
 Recovery certificates use `canonical-recovery-v3`: explicit canonical syntax
 names, flags, ranges and token text, plus normalized diagnostic fields with
