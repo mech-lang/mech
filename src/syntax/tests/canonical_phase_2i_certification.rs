@@ -158,7 +158,6 @@ fn find_typed<N: AstNode>(node: &SyntaxNode) -> Option<N> {
 
 fn hash_node<N: AstNode>(hash: &mut StableHash, role: &str, value: Option<N>) {
     hash.field(role);
-    hash.field(std::any::type_name::<N>());
     match value {
         Some(value) => {
             hash.field(&value.syntax().text().expect("typed accessor source text"));
@@ -1337,7 +1336,26 @@ fn typed_access_evidence_ignores_snapshot_identity_but_retains_accessor_text() {
         )
         .unwrap()
     };
+    // Distinct Rust wrapper types expose the same canonical accessor result.
+    #[derive(Clone)]
+    struct Accessor<const LOCATION: usize>(SyntaxNode);
+    impl<const LOCATION: usize> AstNode for Accessor<LOCATION> {
+        fn can_cast(_: mech_syntax::document::SyntaxKind) -> bool {
+            true
+        }
+        fn cast(syntax: SyntaxNode) -> Option<Self> {
+            Some(Self(syntax))
+        }
+        fn syntax(&self) -> &SyntaxNode {
+            &self.0
+        }
+    }
     let first = parse("alpha", 1, 1);
+    let mut original = StableHash::new();
+    let mut relocated = StableHash::new();
+    hash_node(&mut original, "value", Some(Accessor::<1>(first.syntax())));
+    hash_node(&mut relocated, "value", Some(Accessor::<2>(first.syntax())));
+    assert_eq!(original.0, relocated.0);
     let same = parse("alpha", 99, 500);
     let changed = parse("omega", 1, 1);
     assert_eq!(
