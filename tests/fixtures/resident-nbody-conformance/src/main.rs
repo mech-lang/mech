@@ -4,12 +4,13 @@ use mech_core::{
     BoundResidentKernel, ChangeDetectionPolicy, ConstantStoreBuilder, DeclaredOperationContract,
     DeliveryMode, DimensionExpr, DimensionLifetime, DimensionParameterDeclaration,
     DimensionParameterId, DimensionParameterOrigin, ExecutionResourceRequest, ExternalInteraction,
-    FloatWidth, InputId, LayoutGeneration, NodeId, ObservationContract, ObservationReplayPolicy,
-    OperationContractTableBuilder, OutputConstruction, OutputId, PlanGeneration, RegionPolicy,
-    ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelError, ResidentKernelInputs,
-    ResidentValueKind, ResidentValueMut, ResolvedInputPort, ResolvedOperationContract,
-    ResolvedOutputPort, ResourceDelivery, ResourceIntent, SchemaBody, SchemaDraft,
-    SchemaTableBuilder, ShapeRule, ValueData, ValueDataDraft, ValueDraft,
+    FloatWidth, InputId, LayoutGeneration, NodeId,
+    ObservationContract, ObservationReplayPolicy, OperationContractTableBuilder,
+    OutputConstruction, OutputId, PlanGeneration, RegionPolicy, ResidentKernelBindError,
+    ResidentKernelBindRequest, ResidentKernelError, ResidentKernelInputs, ResidentValueKind,
+    ResidentValueMut, ResolvedInputPort, ResolvedOperationContract, ResolvedOutputPort, SchemaBody,
+    ResourceDelivery, ResourceIntent, SchemaDraft, SchemaTableBuilder, ShapeRule, ValueData,
+    ValueDataDraft, ValueDraft,
 };
 use mech_engine::__resident::{
     ActivatedKernelNode, ActivatedTurnStep, ActivationFacts, ResidentActivationError,
@@ -299,7 +300,8 @@ fn main() {
     }
     let steady_state_allocations = ALLOCATIONS.load(Ordering::SeqCst);
     assert_eq!(
-        steady_state_allocations, 0,
+        steady_state_allocations,
+        0,
         "steady-state resident n-body turns allocate nothing"
     );
     println!(
@@ -521,7 +523,9 @@ fn assert_reordered_artifact_execution(
     );
 }
 
-fn assert_explicit_state_migration(catalog: &std::sync::Arc<mech_core::FunctionCatalog>) {
+fn assert_explicit_state_migration(
+    catalog: &std::sync::Arc<mech_core::FunctionCatalog>,
+) {
     const BASE: &str = "~a := [1.0, 2.0; 1.5, 2.5]\n~b := [3.0, 4.0; 3.5, 4.5]\na += [1.0, 1.0; 1.0, 1.0]\nb += [1.0, 1.0; 1.0, 1.0]\nout := a\n";
     const SWAPPED: &str = "~b := [3.0, 4.0; 3.5, 4.5]\n~a := [1.0, 2.0; 1.5, 2.5]\na += [1.0, 1.0; 1.0, 1.0]\nb += [1.0, 1.0; 1.0, 1.0]\nout := a\n";
     const INSERTED: &str = "~c := [5.0, 6.0; 5.5, 6.5]\n~a := [1.0, 2.0; 1.5, 2.5]\n~b := [3.0, 4.0; 3.5, 4.5]\nc += [1.0, 1.0; 1.0, 1.0]\na += [1.0, 1.0; 1.0, 1.0]\nb += [1.0, 1.0; 1.0, 1.0]\nout := a\n";
@@ -651,8 +655,11 @@ fn assert_explicit_state_migration(catalog: &std::sync::Arc<mech_core::FunctionC
 fn wrong_rmw_base_artifact(artifact: &ProgramArtifact) -> ProgramArtifact {
     assert_eq!(artifact.nodes().len(), 1);
     let node = &artifact.nodes()[0];
-    let ResolvedOperationContract::Declared(mut contract) =
-        artifact.contracts().get(node.contract).unwrap().clone()
+    let ResolvedOperationContract::Declared(mut contract) = artifact
+        .contracts()
+        .get(node.contract)
+        .unwrap()
+        .clone()
     else {
         unreachable!()
     };
@@ -672,7 +679,9 @@ fn wrong_rmw_base_artifact(artifact: &ProgramArtifact) -> ProgramArtifact {
     bindings.swap(0, 1);
     for (ordinal, binding) in bindings[..2].iter_mut().enumerate() {
         let BindingDeclaration::Input {
-            id, port_ordinal, ..
+            id,
+            port_ordinal,
+            ..
         } = binding
         else {
             unreachable!()
@@ -697,13 +706,15 @@ fn wrong_rmw_base_artifact(artifact: &ProgramArtifact) -> ProgramArtifact {
         bindings: bindings.into_boxed_slice(),
         outputs: artifact.outputs().to_vec().into_boxed_slice(),
         constraints: artifact.constraints().to_vec().into_boxed_slice(),
-        compute_regions: artifact.compute_regions().to_vec().into_boxed_slice(),
+    compute_regions: artifact.compute_regions().to_vec().into_boxed_slice(),
     }
     .finalize()
     .expect("alternate RMW base remains structurally valid")
 }
 
-fn assert_activation_fact_reconfiguration(catalog: &std::sync::Arc<mech_core::FunctionCatalog>) {
+fn assert_activation_fact_reconfiguration(
+    catalog: &std::sync::Arc<mech_core::FunctionCatalog>,
+) {
     use mech_core::snapshot::{F64Bits, SnapshotValidationContext};
     use mech_core::{CellSlotId, ConstantId};
 
@@ -871,7 +882,7 @@ fn assert_activation_fact_reconfiguration(catalog: &std::sync::Arc<mech_core::Fu
         }]
         .into_boxed_slice(),
         constraints: Box::new([]),
-        compute_regions: Box::new([]),
+    compute_regions: Box::new([]),
     }
     .finalize()
     .expect("build activation-dimension resident artifact");
@@ -908,7 +919,10 @@ fn assert_activation_fact_reconfiguration(catalog: &std::sync::Arc<mech_core::Fu
         )
         .expect("same artifact with different activation facts rebuilds its layout");
     assert_eq!(instance.plan.plan_generation, PlanGeneration::new(1));
-    assert_eq!(instance.plan.layout_generation, LayoutGeneration::new(1));
+    assert_eq!(
+        instance.plan.layout_generation,
+        LayoutGeneration::new(1)
+    );
     assert_eq!(instance.plan.inputs[0].region.shape.rows, 5);
 
     let mut invalid = ActivationFacts::default();
@@ -1005,7 +1019,10 @@ fn assert_activation_fact_reconfiguration(catalog: &std::sync::Arc<mech_core::Fu
     let mut wrong_change = assign_contract.clone();
     wrong_change.outputs[0].change_detection = ChangeDetectionPolicy::AlwaysChanged;
     assert_bind_rejected(
-        &replace_single_contract(&artifact, ResolvedOperationContract::Declared(wrong_change)),
+        &replace_single_contract(
+            &artifact,
+            ResolvedOperationContract::Declared(wrong_change),
+        ),
         catalog,
         &facts(2),
         ResidentKernelBindError::UnsupportedContract,
@@ -1036,7 +1053,8 @@ fn assert_activation_fact_reconfiguration(catalog: &std::sync::Arc<mech_core::Fu
         .expect("canonical core/assign supports the declared Bool schema");
     }
     let observation_bytes = encode_program_artifact_bytecode_v1(&observation_state).unwrap();
-    let observation_decoded = decode_program_artifact_bytecode_v1(&observation_bytes).unwrap();
+    let observation_decoded =
+        decode_program_artifact_bytecode_v1(&observation_bytes).unwrap();
     assert!(matches!(
         activate(
             mech_core::ReactiveInstanceId::new(99, 0),
@@ -1064,7 +1082,7 @@ fn assert_activation_fact_reconfiguration(catalog: &std::sync::Arc<mech_core::Fu
         bindings: zero_input.bindings().to_vec().into_boxed_slice(),
         outputs: zero_input.outputs().to_vec().into_boxed_slice(),
         constraints: Box::new([]),
-        compute_regions: Box::new([]),
+    compute_regions: Box::new([]),
     }
     .finalize()
     .unwrap();
@@ -1102,9 +1120,7 @@ fn assert_activation_fact_reconfiguration(catalog: &std::sync::Arc<mech_core::Fu
         )
         .expect("zero-input state transition activates as a turn root");
         assert_eq!(instance.plan.topology.turn_root_nodes.len(), 1);
-        instance
-            .turn(&[])
-            .expect("zero-input state transition runs");
+        instance.turn(&[]).expect("zero-input state transition runs");
         assert_eq!(
             resident_f64_slot(&instance, candidate.outputs()[0].source),
             vec![9.0; 4]
@@ -1160,7 +1176,7 @@ fn replace_single_contract(
         bindings: artifact.bindings().to_vec().into_boxed_slice(),
         outputs: artifact.outputs().to_vec().into_boxed_slice(),
         constraints: artifact.constraints().to_vec().into_boxed_slice(),
-        compute_regions: artifact.compute_regions().to_vec().into_boxed_slice(),
+    compute_regions: artifact.compute_regions().to_vec().into_boxed_slice(),
     }
     .finalize()
     .expect("replacement contract remains a structurally valid artifact")
@@ -1320,7 +1336,7 @@ fn wrong_dimension_artifact(
         }]
         .into_boxed_slice(),
         constraints: Box::new([]),
-        compute_regions: Box::new([]),
+    compute_regions: Box::new([]),
     }
     .finalize()
     .expect("mismatched activation shapes remain structurally valid")
@@ -1422,7 +1438,7 @@ fn canonical_bool_assign_artifact(
         }]
         .into_boxed_slice(),
         constraints: Box::new([]),
-        compute_regions: Box::new([]),
+    compute_regions: Box::new([]),
     }
     .finalize()
     .expect("wrong-kind operation artifact remains structurally valid")
@@ -1488,7 +1504,7 @@ fn zero_input_state_artifact(artifact: &ProgramArtifact) -> ProgramArtifact {
         .into_boxed_slice(),
         outputs: vec![output].into_boxed_slice(),
         constraints: artifact.constraints().to_vec().into_boxed_slice(),
-        compute_regions: artifact.compute_regions().to_vec().into_boxed_slice(),
+    compute_regions: artifact.compute_regions().to_vec().into_boxed_slice(),
     }
     .finalize()
     .expect("zero-input state artifact is structurally valid")
@@ -1579,10 +1595,7 @@ fn assert_production_dirty_propagation(template: &ProgramArtifact) {
             .unwrap_or_else(|error| panic!("{route} dirty fixture activation failed: {error:?}"));
             let first = instance.turn(&[]).expect("first dirty fixture turn");
             let second = instance.turn(&[]).expect("second dirty fixture turn");
-            assert_eq!(
-                first.dirty_nodes, 2,
-                "{route} first turn initializes the chain"
-            );
+            assert_eq!(first.dirty_nodes, 2, "{route} first turn initializes the chain");
             assert_eq!(
                 second.dirty_nodes, expected_second,
                 "{route} second turn follows the declared change policy"
@@ -1693,7 +1706,7 @@ fn dirty_propagation_artifact(
         .into_boxed_slice(),
         outputs: vec![output].into_boxed_slice(),
         constraints: Box::new([]),
-        compute_regions: Box::new([]),
+    compute_regions: Box::new([]),
     }
     .finalize()
     .expect("dirty-propagation artifact is structurally valid")
@@ -1793,9 +1806,7 @@ fn state_slot_with_initial(artifact: &ProgramArtifact, first: f64) -> mech_core:
         .slots()
         .iter()
         .find_map(|slot| {
-            let mech_engine::InitializerReference::Constant(constant) = slot.initializer? else {
-                return None;
-            };
+            let mech_engine::InitializerReference::Constant(constant) = slot.initializer? else { return None; };
             let value = artifact.constants().get(constant)?;
             let ValueData::Matrix(matrix) = value.data() else {
                 return None;
@@ -2011,7 +2022,7 @@ fn reorder_artifact(artifact: &ProgramArtifact, order: &[usize]) -> ProgramArtif
         bindings: bindings.into_boxed_slice(),
         outputs: artifact.outputs().to_vec().into_boxed_slice(),
         constraints: artifact.constraints().to_vec().into_boxed_slice(),
-        compute_regions: artifact.compute_regions().to_vec().into_boxed_slice(),
+    compute_regions: artifact.compute_regions().to_vec().into_boxed_slice(),
     }
     .finalize()
     .expect("physically reordered acyclic artifact remains valid")
