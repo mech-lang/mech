@@ -364,10 +364,14 @@ fn fsm_pipe_owns_typed_arguments_stages_and_artifact_roundtrip() {
 
 #[test]
 fn maximum_depth_structured_fsm_values_roundtrip() {
-    let mut value = ":x".to_owned();
-    for _ in 0..31 {
-        value = format!(":some({value})");
-    }
+    let nested_value = |wrappers| {
+        let mut value = ":x".to_owned();
+        for _ in 0..wrappers {
+            value = format!(":some({value})");
+        }
+        value
+    };
+    let value = nested_value(31);
     let compiled = CanonicalSourceFrontend
         .compile_expression(&expression(&format!("#machine -> {value}")))
         .unwrap();
@@ -376,6 +380,22 @@ fn maximum_depth_structured_fsm_values_roundtrip() {
     mech_engine::decode_program_artifact_sections(&sections).unwrap();
     let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
     mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
+
+    let beyond_limit = nested_value(32);
+    let compiled = CanonicalSourceFrontend
+        .compile_expression(&expression(&format!("#machine -> {beyond_limit}")))
+        .unwrap();
+    let result = compiled.compile_artifact();
+    assert!(
+        matches!(
+            result,
+            Err(mech_engine::ArtifactBuildError::InvalidControl {
+                reason: "FSM value admission limit",
+                ..
+            })
+        ),
+        "{result:?}"
+    );
 }
 
 #[test]

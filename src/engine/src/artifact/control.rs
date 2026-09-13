@@ -377,10 +377,13 @@ pub(super) fn validate_control_counts(
             add(2, control.stages.len())?;
             add(3, control.arguments.len())?;
             for stage in &control.stages {
-                add(
-                    3,
-                    super::fsm::value_count(&stage.value).ok_or_else(invalid)?,
+                let count = super::fsm::value_count(&stage.value).ok_or(
+                    super::ArtifactBuildError::InvalidControl {
+                        node: node.node,
+                        reason: "FSM value admission limit",
+                    },
                 )?;
+                add(3, count)?;
             }
             continue;
         }

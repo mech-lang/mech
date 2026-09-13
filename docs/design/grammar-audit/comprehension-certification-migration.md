@@ -69,3 +69,23 @@ rejected, and recovery sources, recovery fingerprints, semantic fingerprints,
 and required outcomes are unchanged. Regressions reject duplicate, missing, and
 unknown certification rules and detect flag-only tree changes even when the
 parser's structural hash is unchanged.
+
+## Recovery evidence wording migration
+
+Recovery fingerprints use `canonical-recovery-v3`. Diagnostic messages, label
+messages, and fix titles are presentation wording and are excluded. Canonical
+diagnostic code, phase, severity, rule, context, ranges, expected/found syntax,
+related diagnostic indices, recovery actions, tags, label ranges, fix
+applicability, edit ranges, and replacement text remain evidence. Wording
+invariance and structural-sensitivity regressions enforce that boundary. Only the
+80 recovery-hash cells change in this migration.
+
+## Artifact and execution completion boundary
+
+`phase-2i-semantic-completion.tsv` records artifact readiness separately from
+behavior demonstrated on a named target, intentional target unavailability, and
+unfinished implementation. The typed FSM artifact is accepted S5 evidence, while
+the resident FSM continuation target is intentionally unavailable and remains an
+S4 obligation required for S6. The gate is false until every required row records
+`behavior-demonstrated`. FSM remains an executable, fail-closed construct; it is
+neither structural syntax nor an expected user error.

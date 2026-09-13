@@ -1,0 +1,7 @@
+capability	grammar-name	result	target	owner	required-for-s6	evidence
+implemented-recursive-behavior	recursive-core	behavior-demonstrated	resident-artifact	S5	true	src/engine/tests/canonical_source_completion.rs
+fsm-artifact	fsm-pipe	artifact-ready	program-artifact-v1	S5	false	src/engine/tests/canonical_phase_2i_semantic_certification.rs::every_semantic_rule_meets_its_required_witness_outcome
+fsm-runtime	fsm-pipe	intentionally-unavailable	resident-artifact	S4	true	src/engine/tests/canonical_source_semantics.rs::typed_fsm_fails_closed_until_the_resident_continuation_owner_lands
+comprehension-composite-bindings-yields	matrix-comprehension|set-comprehension	unfinished-implementation	resident-artifact	S4	true	docs/design/grammar-audit/comprehension-certification-migration.md
+computed-pattern-blocks	pattern	unfinished-implementation	resident-artifact	S4	true	docs/design/grammar-audit/comprehension-certification-migration.md
+nested-comprehension-composition	matrix-comprehension|set-comprehension	unfinished-implementation	resident-artifact	S4	true	docs/design/grammar-audit/comprehension-certification-migration.md
