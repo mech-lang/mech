@@ -771,3 +771,43 @@ fn complex_decoder_preserves_decimal_exponent_signs_and_based_component_separato
         );
     }
 }
+
+#[test]
+fn maintained_underscore_set_relation_infers_both_operand_positions() {
+    // The maintained semantic identity contains an underscore; that spelling
+    // is not a canonical source identifier. Exercise the declared-call boundary
+    // directly without extending the frozen grammar or adding a source alias.
+    for reversed in [false, true] {
+        let signal: ExpressionSyntax = parse("signal", rules::EXPRESSION);
+        let peer: ExpressionSyntax = parse("{1}", rules::EXPRESSION);
+        let mut builder = SemanticBuilder::new(SourceSemanticAnchor::for_node(signal.syntax()));
+        let signal_value = builder.expression(&signal).unwrap().0;
+        let peer_value = builder.expression(&peer).unwrap().0;
+        let inputs = if reversed {
+            vec![peer_value, signal_value]
+        } else {
+            vec![signal_value, peer_value]
+        };
+        let (inputs, schema) = builder
+            .resolve_maintained_call("set/not_equals", inputs, signal.syntax())
+            .unwrap()
+            .unwrap();
+        let value = builder.emit_with_schema_draft(
+            "set/not_equals",
+            inputs,
+            schema,
+            signal.syntax(),
+            "call",
+            None,
+        );
+        builder.publish("result", None, value, signal.syntax());
+        let compiled = builder.finish().unwrap();
+        let artifact = compiled.compile_artifact().unwrap();
+        let bytes = crate::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+        let decoded = crate::decode_program_artifact_bytecode_v1(&bytes).unwrap();
+        assert_eq!(artifact.revision(), decoded.revision());
+        assert!(
+            matches!(artifact.schemas().get(artifact.inputs()[0].schema).unwrap().body(), SchemaBody::Set { element, .. } if element.as_ref() == &SchemaBody::FloatingPoint(FloatWidth::W64))
+        );
+    }
+}

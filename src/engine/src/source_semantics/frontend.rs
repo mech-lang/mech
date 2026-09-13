@@ -2338,35 +2338,36 @@ impl SemanticBuilder {
         // Both operator and call syntax enter this inference boundary. These
         // peer operations infer an undeclared input from the other operand;
         // the maintained schemes still validate exact kinds and conversions.
-        let peer_inputs = matches!(
-            name,
-            "math/add"
-                | "math/sub"
-                | "math/mul"
-                | "math/div"
-                | "math/mod"
-                | "math/pow"
-                | "string/concat"
-                | "compare/neq"
-                | "compare/eq"
-                | "compare/sneq"
-                | "compare/seq"
-                | "compare/gt"
-                | "compare/lt"
-                | "compare/gte"
-                | "compare/lte"
-                | "logic/or"
-                | "logic/and"
-                | "logic/xor"
-                | "set/union"
-                | "set/intersection"
-                | "set/difference"
-                | "set/subset"
-                | "set/superset"
-                | "set/proper_subset"
-                | "set/proper-superset"
-                | "set/symmetric-difference"
-        );
+        let peer_inputs = mech_core::maintained_math_operation(name)
+            .is_some_and(|operation| operation.input_count() == 2)
+            || matches!(
+                name,
+                "string/concat"
+                    | "compare/neq"
+                    | "compare/eq"
+                    | "compare/sneq"
+                    | "compare/seq"
+                    | "compare/gt"
+                    | "compare/lt"
+                    | "compare/gte"
+                    | "compare/lte"
+                    | "compare/min"
+                    | "compare/max"
+                    | "logic/or"
+                    | "logic/and"
+                    | "logic/xor"
+                    | "set/union"
+                    | "set/intersection"
+                    | "set/difference"
+                    | "set/subset"
+                    | "set/superset"
+                    | "set/proper_subset"
+                    | "set/proper-superset"
+                    | "set/symmetric-difference"
+                    | "set/equals"
+                    | "set/not_equals"
+                    | "set/disjoint"
+            );
         if peer_inputs && inputs.len() == 2 {
             match (
                 self.is_genuinely_dynamic(inputs[0])?,

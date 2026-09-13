@@ -155,6 +155,27 @@ pub fn maintained_operation_contract(
             ChangeDetectionPolicy::ExactScalar,
         )),
         "set/insert" | "set/remove" if input_count == 2 => Some(full(ShapeRule::Declared)),
+        "stats/sum/column" | "stats/sum/row" if input_count == 1 => Some(full(ShapeRule::Declared)),
+        "combinatorics/n-choose-k" if input_count == 2 => Some(declaration(
+            fixed(),
+            if matrix_output {
+                OutputConstruction::Build {
+                    postcondition: ShapeContractReference {
+                        module_path: vec!["combinatorics".to_string()].into_boxed_slice(),
+                        contract_name: "n-choose-k-matrix-output".to_string(),
+                    },
+                }
+            } else {
+                OutputConstruction::FullWrite {
+                    shape: ShapeRule::Declared,
+                }
+            },
+            if matrix_output {
+                ChangeDetectionPolicy::KernelReported
+            } else {
+                ChangeDetectionPolicy::ExactScalar
+            },
+        )),
         "logic/not" if input_count == 1 => {
             Some(elementwise_operation_contract(1, change_detection))
         }

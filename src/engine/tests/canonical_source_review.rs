@@ -2121,3 +2121,239 @@ fn review_maintained_calls_infer_peers_after_argument_binding_and_execute() {
         );
     }
 }
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn review_all_set_relations_infer_either_peer_and_execute() {
+    use mech_core::snapshot::{F64Bits, SnapshotValidationContext};
+    use mech_core::{
+        FunctionCatalogBuilder, ReactiveInstanceId, ResidentValueRef, ValueData, ValueDataDraft,
+        ValueDraft,
+    };
+    use mech_engine::resident::{ActivationFacts, CapturedSignalInput, activate};
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    for (name, equal_result) in [("equals", true), ("disjoint", false)] {
+        for arguments in ["signal, {1}", "{1}, signal"] {
+            let source = format!("set/{name}({arguments})");
+            let compiled = compile(&source);
+            let artifact = compiled.compile_artifact().unwrap();
+            let artifact = mech_engine::decode_program_artifact_bytecode_v1(
+                &mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+            )
+            .unwrap();
+            let schema = artifact.inputs()[0].schema;
+            assert!(
+                matches!(artifact.schemas().get(schema).unwrap().body(), SchemaBody::Set { element, .. } if element.as_ref() == &SchemaBody::FloatingPoint(FloatWidth::W64))
+            );
+            let mut instance = activate(
+                ReactiveInstanceId::new(822, 67),
+                &artifact,
+                &catalog,
+                &ActivationFacts::default(),
+            )
+            .unwrap();
+            for (number, expected) in [
+                (1.0, equal_result),
+                (2.0, !equal_result),
+                (1.0, equal_result),
+            ] {
+                let input = ValueDraft {
+                    schema,
+                    shape_values: Box::new([]),
+                    data: ValueDataDraft::Set(
+                        vec![ValueDataDraft::F64(F64Bits::from_f64(number))].into_boxed_slice(),
+                    ),
+                }
+                .finalize(&SnapshotValidationContext::new(artifact.schemas()))
+                .unwrap();
+                instance
+                    .turn(&[CapturedSignalInput {
+                        slot: instance.plan.inputs[0].slot,
+                        value: ResidentValueRef::Snapshot(&[Some(input)]),
+                    }])
+                    .unwrap();
+                assert!(
+                    matches!(instance.copied_output(0).unwrap().data(), ValueData::Bool(actual) if *actual == expected),
+                    "{source}, {number}"
+                );
+            }
+        }
+        for (arguments, code) in [
+            (
+                "signal<*>, {1}",
+                "source-semantics/unsupported-dynamic-conversion",
+            ),
+            ("signal, other", "source-semantics/unresolved-call-kind"),
+        ] {
+            let source = format!("set/{name}({arguments})");
+            assert_eq!(
+                CanonicalSourceFrontend
+                    .compile_expression(&expression(&source))
+                    .err()
+                    .unwrap()
+                    .code,
+                code,
+                "{source}"
+            );
+        }
+    }
+}
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn review_stats_and_combinatorics_contracts_roundtrip_and_execute() {
+    use mech_core::snapshot::F64Bits;
+    use mech_core::{
+        FunctionCatalogBuilder, ReactiveInstanceId, ResidentValueRef, ValueDataDraft as Data,
+    };
+    use mech_engine::resident::{ActivationFacts, CapturedSignalInput, activate};
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let f = |number| Data::F64(F64Bits::from_f64(number));
+    // Rectangular input makes the two reduction axes observably different.
+    for (source, inputs, expected) in [
+        (
+            "stats/sum/column(signal<[f64]:2,3>)",
+            vec![
+                vec![1.0, 4.0, 2.0, 5.0, 3.0, 6.0],
+                vec![2.0, 8.0, 4.0, 10.0, 6.0, 12.0],
+            ],
+            vec![
+                Data::Matrix(vec![f(6.0), f(15.0)].into_boxed_slice()),
+                Data::Matrix(vec![f(12.0), f(30.0)].into_boxed_slice()),
+            ],
+        ),
+        (
+            "stats/sum/row(signal<[f64]:2,3>)",
+            vec![
+                vec![1.0, 4.0, 2.0, 5.0, 3.0, 6.0],
+                vec![2.0, 8.0, 4.0, 10.0, 6.0, 12.0],
+            ],
+            vec![
+                Data::Matrix(vec![f(5.0), f(7.0), f(9.0)].into_boxed_slice()),
+                Data::Matrix(vec![f(10.0), f(14.0), f(18.0)].into_boxed_slice()),
+            ],
+        ),
+        (
+            "combinatorics/n-choose-k(signal<f64>,2)",
+            vec![vec![4.0], vec![5.0]],
+            vec![f(6.0), f(10.0)],
+        ),
+        (
+            "combinatorics/n-choose-k([1 2 3],2)",
+            vec![vec![], vec![]],
+            vec![
+                Data::Matrix(
+                    vec![f(1.0), f(1.0), f(2.0), f(2.0), f(3.0), f(3.0)].into_boxed_slice()
+                );
+                2
+            ],
+        ),
+    ] {
+        let artifact = compile(source).compile_artifact().unwrap();
+        let artifact = mech_engine::decode_program_artifact_bytecode_v1(
+            &mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+        )
+        .unwrap();
+        let mut instance = activate(
+            ReactiveInstanceId::new(822, 68),
+            &artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap_or_else(|error| panic!("{source}: {error:?}"));
+        for (input, expected) in inputs.iter().zip(expected) {
+            let captured = instance
+                .plan
+                .inputs
+                .iter()
+                .map(|port| CapturedSignalInput {
+                    slot: port.slot,
+                    value: ResidentValueRef::F64(input),
+                })
+                .collect::<Vec<_>>();
+            instance
+                .turn(&captured)
+                .unwrap_or_else(|error| panic!("{source}: {error:?}"));
+            assert_eq!(
+                instance
+                    .copied_output(0)
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                expected,
+                "{source}"
+            );
+        }
+    }
+    for (name, arity) in [
+        ("stats/sum/column", 1),
+        ("stats/sum/row", 1),
+        ("combinatorics/n-choose-k", 2),
+    ] {
+        for matrix in [false, true] {
+            assert!(mech_core::maintained_operation_contract(name, arity - 1, matrix).is_none());
+            assert!(mech_core::maintained_operation_contract(name, arity + 1, matrix).is_none());
+        }
+    }
+}
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn review_numeric_peer_inference_uses_the_maintained_math_family() {
+    use mech_core::{FunctionCatalogBuilder, ReactiveInstanceId, ResidentValueRef, ValueData};
+    use mech_engine::resident::{ActivationFacts, CapturedSignalInput, activate};
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    for (source, expected) in [
+        ("math/copysign(signal, -1)", [-3.0, -0.5]),
+        ("math/fdim(signal, 1)", [2.0, 0.0]),
+    ] {
+        let artifact = compile(source).compile_artifact().unwrap();
+        let artifact = mech_engine::decode_program_artifact_bytecode_v1(
+            &mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+        )
+        .unwrap();
+        let mut instance = activate(
+            ReactiveInstanceId::new(822, 69),
+            &artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        for (input, expected) in [3.0, 0.5].into_iter().zip(expected) {
+            instance
+                .turn(&[CapturedSignalInput {
+                    slot: instance.plan.inputs[0].slot,
+                    value: ResidentValueRef::F64(&[input]),
+                }])
+                .unwrap();
+            assert!(
+                matches!(instance.copied_output(0).unwrap().data(), ValueData::F64(actual) if actual.to_f64() == expected),
+                "{source}: {input}"
+            );
+        }
+    }
+}
+
+#[test]
+fn review_ordered_extrema_infer_their_peer_at_the_artifact_boundary() {
+    for source in ["compare/min(signal, 1)", "compare/max(1, signal)"] {
+        let artifact = compile(source).compile_artifact().unwrap();
+        let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+        let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
+        assert_eq!(artifact.revision(), decoded.revision());
+        assert_eq!(
+            artifact
+                .schemas()
+                .get(artifact.inputs()[0].schema)
+                .unwrap()
+                .body(),
+            &SchemaBody::FloatingPoint(FloatWidth::W64)
+        );
+    }
+}
