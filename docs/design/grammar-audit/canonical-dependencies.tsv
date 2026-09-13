@@ -318,7 +318,7 @@ mika-eye-left	none	mika-expression-inner
 mika-eye-right	none	mika-expression-inner
 mika-nose	none	micro-mika|mika-expression-inner
 mika-section	mika-section-close|mika-section-open|section	mika
-mika-section-close	none	code-terminal|forbidden-emoji|mika-section|not-mech-code|paragraph|paragraph-text
+mika-section-close	none	code-terminal|forbidden-emoji|mika-section|not-mech-code|paragraph|paragraph-text|section
 mika-section-open	none	forbidden-emoji|mika-section|paragraph-text
 mini-mika	left-parenthesis|mika-arm-left|mika-arm-right|mika-expression-inner|right-parenthesis	mika
 module-export-sigil	none	export-declaration
@@ -428,7 +428,7 @@ right-parenthesis	none	argument-list|context-capability-declaration|enum-variant
 row-separator	box-drawing-char|space-tab|space-tab0|table-end	fancy-table
 save-rpl	none	parse-repl-command
 scientific-literal	dash|float-literal|integer-literal|plus	real-number|untyped-real-number
-section	blank-line|mech-code|mika|section-element|ul-subtitle	body|mika-section
+section	blank-line|mech-code|mika|mika-section-close|section-element|ul-subtitle	body|mika-section
 section-element	abstract-el|citation|code-block|equation|error-block|figures|float|footnote|idea-block|img|info-block|mechdown-list|mechdown-table|paragraph|prompt|question-block|quote-block|subtitle|success-block|thematic-break|warning-block	float|prompt|section
 section-reference	alphanumeric|period|section-sigil	paragraph-element
 section-sigil	none	paragraph-text|section-reference

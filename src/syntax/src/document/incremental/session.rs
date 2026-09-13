@@ -1,4 +1,4 @@
-use crate::document::parser::{ParseConfig, parse_document_with_ids};
+use crate::document::parser::{ParseConfig, parse_canonical_document_with_ids};
 use crate::document::{
     DocumentId, IdGenerator, Revision, SourceError, SyntaxSnapshot, TextEdit, TextRange, TextSize,
     TextSnapshot,
@@ -22,7 +22,7 @@ impl DocumentSession {
         let source = TextSnapshot::new(document, Revision(0), source)
             .expect("session source must fit the document text range");
         let mut ids = IdGenerator::new();
-        let current = parse_document_with_ids(source, config, &mut ids);
+        let current = parse_canonical_document_with_ids(source, config, &mut ids);
         Self {
             current,
             ids,

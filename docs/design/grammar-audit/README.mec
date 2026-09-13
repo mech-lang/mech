@@ -12,16 +12,24 @@ crate at that baseline. It documents existing behavior, not a parser redesign.
 R1–R6 Integration Rebase
 -------------------------------------------------------------------------------
 
-The syntax stack is rebased through S6 onto
-`integration/v0.4` at `535e4b245` (R1–R6 plus the combined integration fixes).
-Local recursive-core recovery, typed views, engine-owned source semantics, and
-canonical certification and atomic Phase 2I registry activation are complete.
+The earlier rebase onto `integration/v0.4` at `535e4b245` is historical.
+The 2026-09-12 qualification baseline uses integration commit `1ee1a6a94`.
+Local recovery, typed views, source semantics, certification, registry activation,
+and the S7 document-root implementation are under correction and qualification.
 `docs/design/syntax-v0.4-continuation-plan.mec` replaces the old combined Phase
 2I-D/2I-E delivery assumption with independently gated milestones: canonical
 document-root completion, followed by the atomic product cutover that removes
-the Nom implementation and its lowerers. S6 activates the certified 80-rule
-recursive registry atomically. Canonical document-root completion remains the
-S7 milestone; product cutover and removal are reserved for S8.
+the Nom implementation and its lowerers. S6 activates the 80-rule recursive registry atomically. The S7 canonical
+document closure adds 112 grammar rows. These are inventory counts; S4/S5/S7
+semantic and consumer completion remains open. Seventeen runtime-owned interactive-command rows and two rules
+outside Document reachability remain unported. Product cutover and removal
+remain reserved for S8.
+
+`s7-document-certification.tsv` records a specification-derived clean source,
+typed node policy, semantic status, and stable specification location for every
+document rule. `s7-dispositions.tsv` accounts for all 131 rows that entered S7:
+110 document dependencies, two maintained roots, 17 historical commands, and
+two rules outside the canonical Document closure.
 
 The 539 canonical rule IDs and Phase 0 inventory remain stable. Their live
 implementation audit records the intervening integration changes explicitly:
@@ -32,7 +40,8 @@ and removal of `table_bottom`. REPL commands now belong to
 syntax, not pending work for the lossless document parser. Runtime command
 registry and request tests enforce the current command contract.
 
-`phase-2i-certification.tsv` records the S5 acceptance obligations. Every Phase 2I
+`phase-2i-certification.tsv` records the S5 acceptance obligations. Its expectations
+must be reviewed and rerun after the corrections in the continuation-plan ledger. Every Phase 2I
 row has specification-linked accepted and recovery inputs, a direct rejection
 case formed by placing a forbidden closing delimiter before that rule's accepted
 form, frozen lossless-tree and rule-specific typed-accessor snapshots, stable
@@ -44,6 +53,8 @@ program, schemas, constants, contracts, source map and shape hints are checked.
 Unfinished source or artifact lowering fails acceptance explicitly; an error
 fingerprint cannot satisfy it. Behavioral tests require execution and values
 independently of fingerprints. S4 and S5 semantic completion remains open.
+Generated S7 examples prove minimal recognition and cast consistency. Actual
+consumer roles, recovery, and semantics require independent canonical evidence.
 
 Canonical source-import parity now includes extensionless paths, percent
 characters, and whitespace around context capability groups. Canonical escape

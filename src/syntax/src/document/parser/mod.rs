@@ -189,6 +189,23 @@ impl<'a> Parser<'a> {
         &self.cursor
     }
 
+    /// Parse an embedded body in the same source and event stream. The body
+    /// shares every resource budget with its enclosing document. Exhaustion
+    /// still finalizes the enclosing parse range, including the owned closer.
+    pub(crate) fn with_cursor_end<T>(
+        &mut self,
+        end: TextSize,
+        parse: impl FnOnce(&mut Self) -> T,
+    ) -> T {
+        let mut outer = self.cursor.clone();
+        let range = TextRange::new(self.offset(), end);
+        self.cursor = Cursor::for_range_with_context(self.source, range, end);
+        let result = parse(self);
+        outer.rewind(self.cursor.checkpoint());
+        self.cursor = outer;
+        result
+    }
+
     pub(crate) fn config(&self) -> ParseConfig {
         self.config
     }
@@ -763,6 +780,9 @@ pub fn parse_syntax(
         (ParserImplementation::Canonical, ParseRoot::Grammar) => {
             Ok(parse_canonical_grammar_with_ids(source, config, &mut ids))
         }
+        (ParserImplementation::Canonical, ParseRoot::Document) => {
+            Ok(parse_canonical_document_with_ids(source, config, &mut ids))
+        }
         _ => Err(ParseRequestError::Unsupported {
             implementation,
             root,
@@ -790,6 +810,16 @@ pub fn parse_canonical_grammar(source: TextSnapshot, config: ParseConfig) -> Syn
     .expect("canonical grammar parsing is a supported configuration")
 }
 
+pub fn parse_canonical_document(source: TextSnapshot, config: ParseConfig) -> SyntaxSnapshot {
+    parse_syntax(
+        source,
+        ParseRoot::Document,
+        ParserImplementation::Canonical,
+        config,
+    )
+    .expect("canonical document parsing is a supported configuration")
+}
+
 pub(crate) fn parse_document_with_ids(
     source: TextSnapshot,
     config: ParseConfig,
@@ -811,6 +841,18 @@ fn parse_canonical_grammar_with_ids(
     canonical::roots::parse_grammar_root(&mut parser);
     let output = parser.finish();
     finish_snapshot(source, output, ids, SyntaxKind::GrammarDocument)
+}
+
+pub(crate) fn parse_canonical_document_with_ids(
+    source: TextSnapshot,
+    config: ParseConfig,
+    ids: &mut IdGenerator,
+) -> SyntaxSnapshot {
+    let mut parser = Parser::new(&source, LexicalMode::CanonicalSourceFragment, config, ids);
+    parser.set_resource_rule(rules::PARSE);
+    canonical::document::parse_document_root(&mut parser);
+    let output = parser.finish();
+    finish_snapshot(source, output, ids, SyntaxKind::Document)
 }
 
 fn canonical_fragment_rule(kind: SyntaxKind) -> Option<RuleId> {

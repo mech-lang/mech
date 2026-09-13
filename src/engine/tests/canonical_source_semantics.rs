@@ -14,8 +14,8 @@ use mech_engine::{
 use mech_syntax::document::parser::canonical::parse_canonical_phase_2i_rule_for_test;
 use mech_syntax::document::parser::rules;
 use mech_syntax::document::{
-    AstNode, DocumentId, ExpressionSyntax, ParseConfig, Revision, SyntaxKind, SyntaxNode, TextSize,
-    TextSnapshot, VariableDefineSyntax,
+    AstNode, DocumentId, DocumentSyntax, ExpressionSyntax, ParseConfig, Revision, SyntaxKind,
+    SyntaxNode, TextSize, TextSnapshot, VariableDefineSyntax, parse_canonical_document,
 };
 
 fn repository_root() -> PathBuf {
@@ -66,6 +66,161 @@ fn find(node: SyntaxNode, kind: SyntaxKind) -> Option<SyntaxNode> {
         return Some(node);
     }
     node.children().find_map(|child| find(child, kind))
+}
+
+fn document(source: &str) -> DocumentSyntax {
+    let snapshot = parse_canonical_document(
+        TextSnapshot::new(DocumentId(0x541), Revision(5), source).unwrap(),
+        ParseConfig::default(),
+    );
+    DocumentSyntax::cast(snapshot.syntax()).expect("canonical Document")
+}
+
+#[test]
+fn typed_document_compiles_definition_and_expression_units_in_source_order() {
+    let document = document("answer := 40 + 2\nanswer\n");
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document)
+        .expect("clean canonical document semantics");
+    assert_eq!(compiled.program().outputs.len(), 1);
+    assert_eq!(compiled.program().nodes.len(), 1);
+    assert_eq!(compiled.source_map().nodes[0].operation, "math/add");
+    assert_eq!(
+        compiled.source_map().outputs[0].document,
+        document.syntax().source().document()
+    );
+    compiled
+        .compile_artifact()
+        .expect("canonical document produces an artifact");
+}
+
+#[test]
+fn typed_document_rejects_recovered_source_before_semantics() {
+    let document = document("answer :=\n");
+    let error = match CanonicalSourceFrontend.compile_document(&document) {
+        Ok(_) => panic!("recovered document must not enter source semantics"),
+        Err(error) => error,
+    };
+    assert_eq!(error.code, "source-semantics/recovered-syntax");
+}
+
+#[test]
+fn typed_document_rejects_an_assignment_without_a_mutable_definition() {
+    let document = document("answer += 1\n");
+    let error = match CanonicalSourceFrontend.compile_document(&document) {
+        Ok(_) => panic!("assignment without a mutable target must not be skipped"),
+        Err(error) => error,
+    };
+    assert_eq!(error.code, "source-semantics/unknown-assignment-target");
+    assert!(error.message.contains("answer"));
+}
+
+#[test]
+fn ordering_document_state_writers_preserves_semantic_node_references() {
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document(
+            "~answer := 0\nanswer += 1\nmatched := answer ? | *, true => 1 | * => 2\n",
+        ))
+        .unwrap();
+    let writer = compiled.program().states[0].producer_node as usize;
+    assert_eq!(writer, compiled.program().nodes.len() - 1);
+    assert_eq!(
+        compiled.program().nodes[writer].outputs.as_ref(),
+        &[SourceNodeOutput::State(0)]
+    );
+    assert_eq!(compiled.source_map().match_arms.len(), 2);
+    for arm in &compiled.source_map().match_arms {
+        let node = &compiled.program().nodes[arm.node as usize];
+        assert_eq!(node.operation.canonical_name(), "source/match");
+        assert!(arm.result_input < node.inputs.len() as u32);
+        assert!(arm.pattern < compiled.source_map().patterns.len() as u32);
+        assert_eq!(compiled.source_map().nodes[arm.node as usize].role, "match");
+    }
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document(
+            "~answer := 0\nanswer += 1\n[y | x <- xs, y := x, y > 0]\n",
+        ))
+        .unwrap();
+    assert_eq!(compiled.source_map().comprehension_qualifiers.len(), 3);
+    for qualifier in &compiled.source_map().comprehension_qualifiers {
+        let node = &compiled.program().nodes[qualifier.node as usize];
+        assert_eq!(node.operation.canonical_name(), "matrix/comprehension");
+        assert!(qualifier.input_ordinal < node.inputs.len() as u32);
+        assert_eq!(
+            compiled.source_map().nodes[qualifier.node as usize].role,
+            "comprehension"
+        );
+    }
+}
+
+#[test]
+fn typed_document_executes_only_eval_inline_mech_code() {
+    let display_only = CanonicalSourceFrontend
+        .compile_document(&document("Displayed {{x<u8> := 1}}.\n\ny := x\n"))
+        .expect("display-only inline Mech must be ignored by execution");
+    assert_eq!(display_only.program().inputs.len(), 1);
+    assert_eq!(display_only.program().inputs[0].name, "x");
+    assert_eq!(
+        display_only.program().outputs[0].source,
+        SourceValue::Input(0)
+    );
+    assert!(matches!(
+        display_only
+            .schemas()
+            .get(display_only.program().inputs[0].schema)
+            .unwrap()
+            .body(),
+        SchemaBody::Dynamic
+    ));
+
+    let evaluated = CanonicalSourceFrontend
+        .compile_document(&document("Evaluated {1 + 2}.\n"))
+        .expect("eval inline Mech must enter document execution");
+    assert_eq!(evaluated.source_map().nodes.len(), 1);
+    assert_eq!(evaluated.source_map().nodes[0].operation, "math/add");
+}
+
+#[test]
+fn typed_document_excludes_mika_child_source_from_outer_execution() {
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document("~∘~⸢x := 1\n⸥\nx\n"))
+        .expect("the enclosing document must compile independently of Mika contents");
+    assert_eq!(compiled.program().inputs.len(), 1);
+    assert_eq!(compiled.program().inputs[0].name, "x");
+    assert_eq!(compiled.program().outputs[0].source, SourceValue::Input(0));
+}
+
+#[test]
+fn canonical_document_fixture_corpus_has_an_explicit_engine_disposition() {
+    let cases = [
+        ("compiler.mec", Ok(())),
+        ("config.mec", Ok(())),
+        ("document.mec", Ok(())),
+        ("empty.mec", Err("source-semantics/empty-document")),
+        ("executable.mec", Ok(())),
+        ("interactive.mec", Ok(())),
+        ("malformed.mec", Err("source-semantics/recovered-syntax")),
+        (
+            "resolver-index.mec",
+            Err("source-semantics/unsupported-document-unit"),
+        ),
+        ("wasm-document.mec", Ok(())),
+    ];
+    for (name, expected) in cases {
+        let source = fs::read_to_string(
+            repository_root()
+                .join("tests/fixtures/syntax-source-boundary")
+                .join(name),
+        )
+        .unwrap();
+        let result = CanonicalSourceFrontend.compile_document(&document(&source));
+        match (result, expected) {
+            (Ok(_), Ok(())) => {}
+            (Err(actual), Err(expected)) => assert_eq!(actual.code, expected, "{name}"),
+            (Ok(_), Err(expected)) => panic!("{name} unexpectedly compiled; wanted {expected}"),
+            (Err(actual), Ok(())) => panic!("{name} unexpectedly failed: {actual:?}"),
+        }
+    }
 }
 
 #[test]

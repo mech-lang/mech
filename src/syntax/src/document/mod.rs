@@ -1,9 +1,6 @@
 #![forbid(unsafe_code)]
 
-//! Experimental, lossless document syntax infrastructure.
-//!
-//! Production parsing still uses the legacy Nom parser and existing `Program`
-//! AST. Nothing in this module is called by the public legacy `parse` path.
+//! Lossless canonical document syntax infrastructure.
 
 extern crate alloc;
 
@@ -12,6 +9,7 @@ pub mod ast;
 pub mod builder;
 pub mod diagnostic;
 pub mod edit;
+pub mod fence;
 pub mod flags;
 pub mod green;
 pub mod ids;
@@ -33,6 +31,7 @@ pub use ast::*;
 pub use builder::*;
 pub use diagnostic::*;
 pub use edit::*;
+pub use fence::*;
 pub use flags::*;
 pub use green::*;
 pub use ids::*;
@@ -42,8 +41,8 @@ pub use line_index::*;
 pub use lower::*;
 pub use parser::{
     FenceDelimiter, FragmentKind, FragmentSnapshot, ParseConfig, ParseContext, ParseLimits,
-    ParseMode, ParseRequestError, ParseRoot, ParserImplementation, parse_canonical_grammar,
-    parse_document, parse_fragment, parse_syntax,
+    ParseMode, ParseRequestError, ParseRoot, ParserImplementation, parse_canonical_document,
+    parse_canonical_grammar, parse_document, parse_fragment, parse_syntax,
 };
 pub use pointer::*;
 pub use red::*;

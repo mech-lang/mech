@@ -2,6 +2,8 @@ pub(crate) mod base;
 pub(crate) mod combinator;
 pub(crate) mod control_operators;
 pub(crate) mod declarations;
+pub(crate) mod document;
+pub(crate) mod document_grammar;
 pub(crate) mod found;
 pub(crate) mod grammar;
 pub(crate) mod imports;
@@ -30,10 +32,11 @@ pub use terminal_spec::{
     FIXED_TERMINAL_COUNT, FIXED_TERMINALS, FixedTerminalSpec, TerminalSpacing, fixed_terminal_spec,
 };
 pub use test_support::{
-    CanonicalRuleOutcome, CanonicalSourceRuleSnapshot, parse_canonical_phase_2c_rule_for_test,
-    parse_canonical_phase_2d_rule_for_test, parse_canonical_phase_2e_rule_for_test,
-    parse_canonical_phase_2f_rule_for_test, parse_canonical_phase_2g_rule_for_test,
-    parse_canonical_phase_2h_rule_for_test, parse_canonical_phase_2i_rule_for_test,
+    CanonicalRuleOutcome, CanonicalSourceRuleSnapshot, parse_canonical_document_rule_for_test,
+    parse_canonical_phase_2c_rule_for_test, parse_canonical_phase_2d_rule_for_test,
+    parse_canonical_phase_2e_rule_for_test, parse_canonical_phase_2f_rule_for_test,
+    parse_canonical_phase_2g_rule_for_test, parse_canonical_phase_2h_rule_for_test,
+    parse_canonical_phase_2i_rule_for_test,
 };
 
 #[cfg(test)]

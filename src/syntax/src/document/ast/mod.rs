@@ -1,6 +1,7 @@
 pub mod control_operators;
 pub mod declarations;
 pub mod document;
+pub mod document_core;
 pub mod grammar;
 pub mod imports;
 pub mod kinds;
@@ -21,6 +22,7 @@ pub use crate::document::red::{
 };
 pub use control_operators::*;
 pub use declarations::*;
+pub use document_core::*;
 pub use grammar::*;
 pub use imports::*;
 pub use kinds::*;

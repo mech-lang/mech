@@ -1,5 +1,8 @@
 use std::collections::{BTreeMap, BTreeSet};
 
+#[path = "document_lowering.rs"]
+mod document_lowering;
+
 use mech_core::snapshot::{
     Complex32Bits, Complex64Bits, F32Bits, F64Bits, OptionDraft, ReifiedKind, ReifiedTypeDraft,
     SnapshotValidationContext,
@@ -95,6 +98,22 @@ pub struct CanonicalSourceProgram {
     contracts: Box<[Option<OperationContractDeclaration>]>,
     source_map: SourceSemanticMap,
     state_initializers: Box<[SourceStateInitializer]>,
+    document_outputs: Box<[SourceDocumentOutput]>,
+}
+
+/// A typed route from document presentation to an existing artifact output.
+/// Source anchors are held once in `SourceSemanticMap::outputs[output]`.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct SourceDocumentOutput {
+    pub output: u32,
+    pub kind: SourceDocumentOutputKind,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SourceDocumentOutputKind {
+    Program,
+    Inline,
+    Fence,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -135,6 +154,10 @@ impl CanonicalSourceProgram {
             .inputs
             .get(ordinal)
             .map(|input| crate::encode_source_input_name(&input.name))
+    }
+
+    pub const fn document_outputs(&self) -> &[SourceDocumentOutput] {
+        &self.document_outputs
     }
 
     pub fn compile_artifact(&self) -> Result<ProgramArtifact, ArtifactBuildError> {
@@ -221,63 +244,14 @@ impl CanonicalSourceFrontend {
         builder.finish()
     }
 
-    /// Compile every outermost canonical definition or expression in physical
-    /// document order. S7 completes the canonical document parser; keeping the
-    /// typed document entry point here fixes the engine boundary now.
+    /// Compile root program statements in source order and bind document
+    /// presentation expressions to that program's completed root scope.
     pub fn compile_document(
         &self,
         document: &DocumentSyntax,
     ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
         reject_recovered_syntax(document)?;
-        let anchor = SourceSemanticAnchor::for_node(document.syntax());
-        let mut units = Vec::new();
-        collect_document_units(document.syntax(), &mut units);
-        let mut builder = SemanticBuilder::new(anchor);
-        let mut declared_bindings = BTreeSet::new();
-        for unit in &units {
-            builder.declare_unit_input_annotations(unit, &mut declared_bindings)?;
-        }
-        let mut last = None;
-        for unit in units {
-            match unit.kind() {
-                SyntaxKind::VariableDefine => {
-                    let definition = VariableDefineSyntax::cast(unit)
-                        .expect("kind-checked variable definition cast");
-                    last = Some(builder.definition(&definition)?);
-                }
-                SyntaxKind::Expression => {
-                    let expression =
-                        ExpressionSyntax::cast(unit).expect("kind-checked expression cast");
-                    last = Some(builder.expression(&expression)?);
-                }
-                _ => unreachable!("document unit collector is closed"),
-            }
-        }
-        let Some((value, syntax)) = last else {
-            return Err(SourceSemanticError {
-                code: "source-semantics/empty-document",
-                message: "canonical document contains no executable source unit".to_owned(),
-                anchor,
-            });
-        };
-        builder.publish("result", None, value, &syntax);
-        builder.finish()
-    }
-}
-
-fn collect_document_units(node: &SyntaxNode, output: &mut Vec<SyntaxNode>) {
-    match node.kind() {
-        SyntaxKind::VariableDefine | SyntaxKind::Expression => output.push(node.clone()),
-        SyntaxKind::Document
-        | SyntaxKind::Body
-        | SyntaxKind::Section
-        | SyntaxKind::SectionElement
-        | SyntaxKind::MechItem => {
-            for child in node.children() {
-                collect_document_units(&child, output);
-            }
-        }
-        _ => {}
+        document_lowering::compile_document(document)
     }
 }
 
@@ -1352,6 +1326,12 @@ fn unresolved_empty(anchor: SourceSemanticAnchor) -> SourceSemanticError {
     }
 }
 
+#[derive(Clone, Copy)]
+enum PendingBinding {
+    Value(PendingValue),
+    MutableState(u32),
+}
+
 struct PendingConstant {
     schema: SchemaDraft,
     data: ValueDataDraft,
@@ -1474,7 +1454,7 @@ struct SemanticBuilder {
     nodes: Vec<PendingNode>,
     states: Vec<PendingState>,
     outputs: Vec<PendingOutput>,
-    bindings: BTreeMap<String, PendingValue>,
+    bindings: BTreeMap<String, PendingBinding>,
     patterns: Vec<SourceSemanticPattern>,
     comprehension_qualifiers: Vec<SourceSemanticComprehensionQualifier>,
 }
@@ -1617,7 +1597,9 @@ impl SemanticBuilder {
                 let stem = self.required(variable.stem(), variable.syntax(), "a variable stem")?;
                 bindings.insert(node_text(stem.syntax())?);
             }
-            SyntaxKind::Expression => self.declare_input_annotations(unit, bindings)?,
+            SyntaxKind::Expression | SyntaxKind::OpAssign | SyntaxKind::VariableAssign => {
+                self.declare_input_annotations(unit, bindings)?;
+            }
             _ => unreachable!("document unit collector is closed"),
         }
         Ok(())
@@ -2556,6 +2538,7 @@ impl SemanticBuilder {
             .map(|annotation| annotation_schema_draft(&annotation))
             .transpose()?;
         if let Some(value) = self.bindings.get(&name).copied() {
+            let value = self.read_document_binding(value, variable.syntax())?;
             return annotation.map_or(Ok(value), |expected| {
                 self.conform_schema_draft(
                     value,
@@ -2693,7 +2676,15 @@ impl SemanticBuilder {
         } else {
             value
         };
-        self.bindings.insert(name, bound);
+        let binding = if definition.mutability_marker().is_some() {
+            let PendingValue::State(state) = bound else {
+                unreachable!("mutable definitions allocate a state slot")
+            };
+            PendingBinding::MutableState(state)
+        } else {
+            PendingBinding::Value(bound)
+        };
+        self.bindings.insert(name, binding);
         Ok((bound, definition.syntax().clone()))
     }
 
@@ -4364,7 +4355,8 @@ impl SemanticBuilder {
                 };
                 self.nodes[index as usize].inferable_projection = true;
             }
-            self.bindings.insert(binding.name.clone(), projection);
+            self.bindings
+                .insert(binding.name.clone(), PendingBinding::Value(projection));
         }
         Ok(())
     }
@@ -4440,8 +4432,8 @@ impl SemanticBuilder {
 
     fn input_for_node(&mut self, node: &SyntaxNode) -> Result<PendingValue, SourceSemanticError> {
         let name = node_text(node)?;
-        if let Some(value) = self.bindings.get(&name) {
-            return Ok(*value);
+        if let Some(value) = self.bindings.get(&name).copied() {
+            return self.read_document_binding(value, node);
         }
         if let Some(index) = self.input_by_name.get(&name) {
             return Ok(PendingValue::Input(*index));
@@ -4868,7 +4860,10 @@ impl SemanticBuilder {
                     .flat_map(|node| node.inputs.iter().copied()),
             )
             .chain(self.states.iter().map(|state| state.initializer))
-            .chain(self.bindings.values().copied())
+            .chain(self.bindings.values().map(|binding| match *binding {
+                PendingBinding::Value(value) => value,
+                PendingBinding::MutableState(state) => PendingValue::State(state),
+            }))
         {
             value.resolved()?;
         }
@@ -5066,6 +5061,7 @@ impl SemanticBuilder {
             contracts: contracts.into_boxed_slice(),
             source_map,
             state_initializers,
+            document_outputs: Box::new([]),
         })
     }
 }

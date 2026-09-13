@@ -1,14 +1,14 @@
 grammar-name	family	syntax-status	semantic-status	node-policy	phase	notes
 absolute-source-import-specifier	statements	certified	certified	node:AbsoluteSourceImportSpecifier	2F	Phase 2F closed source, export, and context declaration layer
-abstract-el	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+abstract-el	mechdown	certified	syntax-only	node:AbstractEl	S7	S7 canonical document closure generated from the specification.
 abstract-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-activation-arm	activation	unported	pending	undecided		Deferred beyond Phase 2A.
-activation-scope	activation	unported	pending	undecided		Deferred beyond Phase 2A.
+activation-arm	activation	certified	syntax-only	node:ActivationArm	S7	S7 canonical document closure generated from the specification.
+activation-scope	activation	certified	syntax-only	node:ActivationScope	S7	S7 canonical document closure generated from the specification.
 add	expressions	certified	certified	node:AddOperation	2D	Phase 2D closed expression-operator layer
 add-assign-operator	statements	certified	certified	node:AddAssignOperation	2G	Phase 2G closed executable primitive layer
 add-sub-operator	expressions	certified	certified	node:AddSubOperator	2D	Phase 2D closed expression-operator layer
 aliased-item-import	imports	certified	certified	node:AliasedItemImport	2E	Phase 2E corrected module-import closure (IMPORT-001)
-alignment-separator	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+alignment-separator	mechdown	certified	syntax-only	node:AlignmentSeparator	S7	S7 canonical document closure generated from the specification.
 alpha	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 alpha-token	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 alphanumeric	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
@@ -29,7 +29,7 @@ bare-source-import-specifier	statements	certified	certified	node:BareSourceImpor
 binary-literal	literals	certified	certified	node:BinaryLiteral	2C	Phase 2C closed literal, path, and primitive kind island
 binding	structures	certified	certified	node:RecordBinding	2I	Phase 2I canonical recursive core; semantic disposition: structural.
 blank-line	mechdown	certified	syntax-only	node:BlankLine	2B	Phase 2B closed Mechdown grammar island
-body	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+body	mechdown	certified	syntax-only	node:Body	S7	S7 canonical document closure generated from the specification.
 boolean	literals	certified	syntax-only	token	2C	Phase 2C closed literal, path, and primitive kind island
 box-bl	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 box-bl-bold	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
@@ -61,17 +61,17 @@ caret	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 carriage-return	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 carriage-return-new-line	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 cd-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
-center-alignment	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-check-list	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-check-list-item	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+center-alignment	mechdown	certified	syntax-only	node:CenterAlignment	S7	S7 canonical document closure generated from the specification.
+check-list	mechdown	certified	syntax-only	node:CheckList	S7	S7 canonical document closure generated from the specification.
+check-list-item	mechdown	certified	syntax-only	node:CheckListItem	S7	S7 canonical document closure generated from the specification.
 check-mark	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-checked-item	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-citation	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+checked-item	mechdown	certified	syntax-only	node:CheckedItem	S7	S7 canonical document closure generated from the specification.
+citation	mechdown	certified	syntax-only	node:Citation	S7	S7 canonical document closure generated from the specification.
 clc-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
 clear-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
-code-block	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+code-block	mechdown	certified	syntax-only	node:CodeBlock	S7	S7 canonical document closure generated from the specification.
 code-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
-code-terminal	parser	unported	pending	undecided		Deferred beyond Phase 2A.
+code-terminal	parser	certified	syntax-only	node:CodeTerminal	S7	S7 canonical document closure generated from the specification.
 codeblock-sigil	mechdown	certified	syntax-only	transparent	2B	Phase 2B closed Mechdown grammar island
 colon	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 comma	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
@@ -91,7 +91,7 @@ context-capability-path-token	statements	certified	syntax-only	token	2F	Phase 2F
 context-capability-scope	statements	certified	certified	node:ContextCapabilityScope	2F	Phase 2F closed source, export, and context declaration layer
 context-declaration	statements	certified	certified	node:ContextDeclaration	2F	Phase 2F closed source, export, and context declaration layer
 context-import-alias-segment	imports	certified	certified	node:ContextImportAliasSegment	2E	Phase 2E corrected module-import closure (IMPORT-001)
-context-send	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+context-send	statements	certified	syntax-only	node:ContextSend	S7	S7 canonical document closure generated from the specification.
 cross	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 cross-product	expressions	certified	certified	node:CrossProductOperation	2D	Phase 2D closed expression-operator layer
 dash	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
@@ -111,28 +111,28 @@ dot-subscript-int	expressions	certified	certified	node:DotSubscriptInt	2G	Phase 
 element-of	expressions	certified	certified	node:ElementOfOperation	2D	Phase 2D closed expression-operator layer
 emoji	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 emoji-grapheme	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-emphasis	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+emphasis	mechdown	certified	syntax-only	node:Emphasis	S7	S7 canonical document closure generated from the specification.
 emphasis-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 empty	literals	certified	certified	node:EmptyLiteral	2C	Phase 2C closed literal, path, and primitive kind island
 empty-map	structures	certified	certified	node:EmptyMap	2H	Phase 2H closed structure shell
-empty-paragraph	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+empty-paragraph	mechdown	certified	syntax-only	node:EmptyParagraph	S7	S7 canonical document closure generated from the specification.
 empty-set	structures	certified	certified	node:EmptySet	2H	Phase 2H closed structure shell
 english-false-literal	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 english-true-literal	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-enum-define	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+enum-define	statements	certified	syntax-only	node:EnumDefine	S7	S7 canonical document closure generated from the specification.
 enum-separator	base	certified	syntax-only	transparent	2A	Phase 2A canonical base closure
-enum-variant	statements	unported	pending	undecided		Deferred beyond Phase 2A.
-enum-variant-inline-kind	statements	unported	pending	undecided		Deferred beyond Phase 2A.
-enum-variant-kind	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+enum-variant	statements	certified	syntax-only	node:EnumVariant	S7	S7 canonical document closure generated from the specification.
+enum-variant-inline-kind	statements	certified	syntax-only	node:EnumVariantInlineKind	S7	S7 canonical document closure generated from the specification.
+enum-variant-kind	statements	certified	syntax-only	node:EnumVariantKind	S7	S7 canonical document closure generated from the specification.
 equal	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 equal-to	expressions	certified	certified	node:EqualToOperation	2D	Phase 2D closed expression-operator layer
 equation	mechdown	certified	certified	node:Equation	2B	Phase 2B closed Mechdown grammar island
 equation-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 error-alt-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-error-block	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+error-block	mechdown	certified	syntax-only	node:ErrorBlock	S7	S7 canonical document closure generated from the specification.
 error-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 escaped-char	base	certified	certified	node:EscapedCharacter	2A	Phase 2A canonical base closure
-eval-inline-mech-code	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+eval-inline-mech-code	mechdown	certified	syntax-only	node:EvalInlineMechCode	S7	S7 canonical document closure generated from the specification.
 exclamation	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 exp-assign-operator	statements	certified	certified	node:ExpAssignOperation	2G	Phase 2G closed executable primitive layer
 export-declaration	statements	certified	certified	node:ExportDeclaration	2F	Phase 2F closed source, export, and context declaration layer
@@ -142,51 +142,51 @@ false-literal	literals	certified	syntax-only	token	2C	Phase 2C closed literal, p
 fancy-table	structures	certified	certified	node:FancyTable	2I	Phase 2I canonical recursive core; semantic disposition: executable.
 fancy-table-header	structures	certified	certified	node:FancyTableHeader	2I	Phase 2I canonical recursive core; semantic disposition: structural.
 field	structures	certified	certified	node:TableField	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
-figure-item	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-figures	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-figures-row	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-float	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+figure-item	mechdown	certified	syntax-only	node:FigureItem	S7	S7 canonical document closure generated from the specification.
+figures	mechdown	certified	syntax-only	node:Figures	S7	S7 canonical document closure generated from the specification.
+figures-row	mechdown	certified	syntax-only	node:FiguresRow	S7	S7 canonical document closure generated from the specification.
+float	mechdown	certified	syntax-only	node:Float	S7	S7 canonical document closure generated from the specification.
 float-decimal-start	literals	certified	certified	node:FloatDecimalStart	2C	Phase 2C closed literal, path, and primitive kind island
 float-full	literals	certified	certified	node:FloatFull	2C	Phase 2C closed literal, path, and primitive kind island
 float-left	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 float-literal	literals	certified	certified	node:FloatLiteral	2C	Phase 2C closed literal, path, and primitive kind island
 float-right	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-float-sigil	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-footnote	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+float-sigil	mechdown	certified	syntax-only	node:FloatSigil	S7	S7 canonical document closure generated from the specification.
+footnote	mechdown	certified	syntax-only	node:Footnote	S7	S7 canonical document closure generated from the specification.
 footnote-prefix	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 footnote-reference	mechdown	certified	certified	node:FootnoteReference	2B	Phase 2B closed Mechdown grammar island
 forbidden-emoji	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 formula	expressions	certified	certified	transparent	2I	Phase 2I canonical recursive core; semantic disposition: executable.
 formula-subscript	expressions	certified	certified	node:FormulaSubscript	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-fsm	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
+fsm	state_machines	certified	syntax-only	node:Fsm	S7	S7 canonical document closure generated from the specification.
 fsm-args	state_machines	certified	certified	node:FsmArguments	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-fsm-arm	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
+fsm-arm	state_machines	certified	syntax-only	node:FsmArm	S7	S7 canonical document closure generated from the specification.
 fsm-async-transition	state_machines	certified	certified	node:FsmAsyncTransition	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-fsm-block-transition	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
-fsm-comment-arm	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
-fsm-declare	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
-fsm-guard	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
-fsm-guard-arm	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
-fsm-implementation	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
+fsm-block-transition	state_machines	certified	syntax-only	node:FsmBlockTransition	S7	S7 canonical document closure generated from the specification.
+fsm-comment-arm	state_machines	certified	syntax-only	node:FsmCommentArm	S7	S7 canonical document closure generated from the specification.
+fsm-declare	state_machines	certified	syntax-only	node:FsmDeclare	S7	S7 canonical document closure generated from the specification.
+fsm-guard	state_machines	certified	syntax-only	node:FsmGuard	S7	S7 canonical document closure generated from the specification.
+fsm-guard-arm	state_machines	certified	syntax-only	node:FsmGuardArm	S7	S7 canonical document closure generated from the specification.
+fsm-implementation	state_machines	certified	syntax-only	node:FsmImplementation	S7	S7 canonical document closure generated from the specification.
 fsm-instance	state_machines	certified	certified	node:FsmInstance	2I	Phase 2I canonical recursive core; semantic disposition: structural.
 fsm-output	state_machines	certified	certified	node:FsmOutput	2I	Phase 2I canonical recursive core; semantic disposition: structural.
 fsm-pipe	state_machines	certified	certified	node:FsmPipe	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-fsm-specification	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
-fsm-state-definition	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
-fsm-state-definition-variables	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
+fsm-specification	state_machines	certified	syntax-only	node:FsmSpecification	S7	S7 canonical document closure generated from the specification.
+fsm-state-definition	state_machines	certified	syntax-only	node:FsmStateDefinition	S7	S7 canonical document closure generated from the specification.
+fsm-state-definition-variables	state_machines	certified	syntax-only	node:FsmStateDefinitionVariables	S7	S7 canonical document closure generated from the specification.
 fsm-state-transition	state_machines	certified	certified	node:FsmStateTransition	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-fsm-statement-transition	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
-fsm-transition	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
+fsm-statement-transition	state_machines	certified	syntax-only	node:FsmStatementTransition	S7	S7 canonical document closure generated from the specification.
+fsm-transition	state_machines	certified	syntax-only	node:FsmTransition	S7	S7 canonical document closure generated from the specification.
 fsm-value	state_machines	certified	certified	node:FsmValue	2I	Phase 2I canonical recursive core; semantic disposition: structural.
 full-join	expressions	certified	certified	node:FullJoinOperation	2D	Phase 2D closed expression-operator layer
-function-arg	functions	unported	pending	undecided		Deferred beyond Phase 2A.
+function-arg	functions	certified	syntax-only	node:FunctionArg	S7	S7 canonical document closure generated from the specification.
 function-call	functions	certified	certified	node:FunctionCall	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-function-define	functions	unported	pending	undecided		Deferred beyond Phase 2A.
-function-define-match-arms	functions	unported	pending	undecided		Deferred beyond Phase 2A.
-function-define-statements	functions	unported	pending	undecided		Deferred beyond Phase 2A.
-function-match-arm	functions	unported	pending	undecided		Deferred beyond Phase 2A.
-function-out-arg	functions	unported	pending	undecided		Deferred beyond Phase 2A.
-function-out-args	functions	unported	pending	undecided		Deferred beyond Phase 2A.
+function-define	functions	certified	syntax-only	node:FunctionDefine	S7	S7 canonical document closure generated from the specification.
+function-define-match-arms	functions	certified	syntax-only	node:FunctionDefineMatchArms	S7	S7 canonical document closure generated from the specification.
+function-define-statements	functions	certified	syntax-only	node:FunctionDefineStatements	S7	S7 canonical document closure generated from the specification.
+function-match-arm	functions	certified	syntax-only	node:FunctionMatchArm	S7	S7 canonical document closure generated from the specification.
+function-out-arg	functions	certified	syntax-only	node:FunctionOutArg	S7	S7 canonical document closure generated from the specification.
+function-out-args	functions	certified	syntax-only	node:FunctionOutArgs	S7	S7 canonical document closure generated from the specification.
 gen-operator	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 generator	expressions	certified	certified	node:Generator	2I	Phase 2I canonical recursive core; semantic disposition: structural.
 generator-arrow	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
@@ -218,17 +218,17 @@ hashtag	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 header-field	structures	certified	certified	node:HeaderField	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
 help-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
 hexadecimal-literal	literals	certified	certified	node:HexadecimalLiteral	2C	Phase 2C closed literal, path, and primitive kind island
-highlight	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+highlight	mechdown	certified	syntax-only	node:Highlight	S7	S7 canonical document closure generated from the specification.
 highlight-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 http-prefix	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-hyperlink	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-idea-block	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+hyperlink	mechdown	certified	syntax-only	node:Hyperlink	S7	S7 canonical document closure generated from the specification.
+idea-block	mechdown	certified	syntax-only	node:IdeaBlock	S7	S7 canonical document closure generated from the specification.
 idea-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 identifier	base	certified	certified	node:Identifier	2A	Phase 2A canonical base closure
 identifier-path-segment	base	certified	certified	node:IdentifierPathSegment	2A	Phase 2A canonical base closure
 identifier-path-segment-emoji	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 identifier-symbol	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-img	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+img	mechdown	certified	syntax-only	node:Img	S7	S7 canonical document closure generated from the specification.
 img-prefix	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 import-alias-operator	imports	certified	syntax-only	transparent	2E	Phase 2E corrected module-import closure (IMPORT-001)
 import-declaration	statements	certified	certified	node:ImportDeclaration	2F	Phase 2F closed source, export, and context declaration layer
@@ -236,24 +236,24 @@ import-group-item	imports	certified	certified	node:ImportGroupItem	2E	Phase 2E c
 import-group-items	imports	certified	certified	node:ImportGroupItems	2E	Phase 2E corrected module-import closure (IMPORT-001)
 import-group-separator	imports	certified	syntax-only	transparent	2E	Phase 2E corrected module-import closure (IMPORT-001)
 import-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure; renamed by IMPORT-001
-info-block	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+info-block	mechdown	certified	syntax-only	node:InfoBlock	S7	S7 canonical document closure generated from the specification.
 info-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 inline-code	mechdown	certified	certified	node:InlineCode	2B	Phase 2B closed Mechdown grammar island
 inline-equation	mechdown	certified	certified	node:InlineEquation	2B	Phase 2B closed Mechdown grammar island
-inline-mech-code	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-inline-paragraph	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+inline-mech-code	mechdown	certified	syntax-only	node:InlineMechCode	S7	S7 canonical document closure generated from the specification.
+inline-paragraph	mechdown	certified	syntax-only	node:InlineParagraph	S7	S7 canonical document closure generated from the specification.
 inline-table	structures	certified	certified	node:InlineTable	2I	Phase 2I canonical recursive core; semantic disposition: executable.
 inline-table-header	structures	certified	certified	node:InlineTableHeader	2I	Phase 2I canonical recursive core; semantic disposition: structural.
 inline-table-row	structures	certified	certified	node:InlineTableRow	2I	Phase 2I canonical recursive core; semantic disposition: structural.
 integer-literal	literals	certified	certified	node:IntegerLiteral	2C	Phase 2C closed literal, path, and primitive kind island
 intersection	expressions	certified	certified	node:IntersectionOperation	2D	Phase 2D closed expression-operator layer
-invariant-define	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+invariant-define	statements	certified	syntax-only	node:InvariantDefine	S7	S7 canonical document closure generated from the specification.
 join	expressions	certified	certified	node:JoinOperation	2D	Phase 2D closed expression-operator layer
 kind	literals	certified	certified	node:Kind	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
 kind-annotation	literals	certified	certified	node:KindAnnotation	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
 kind-any	literals	certified	certified	node:KindAny	2C	Phase 2C closed literal, path, and primitive kind island
 kind-atom	literals	certified	certified	node:KindAtom	2C	Phase 2C closed literal, path, and primitive kind island
-kind-define	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+kind-define	statements	certified	syntax-only	node:KindDefine	S7	S7 canonical document closure generated from the specification.
 kind-empty	literals	certified	certified	node:KindEmpty	2C	Phase 2C closed literal, path, and primitive kind island
 kind-kind	literals	certified	certified	node:KindKind	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
 kind-map	literals	certified	certified	node:KindMap	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
@@ -271,7 +271,7 @@ l4	expressions	certified	certified	node:MultiplicativeExpression	2I	Phase 2I can
 l5	expressions	certified	certified	node:PowerExpression	2I	Phase 2I canonical recursive core; semantic disposition: executable.
 l6	expressions	certified	certified	node:TableExpression	2I	Phase 2I canonical recursive core; semantic disposition: executable.
 l7	expressions	certified	certified	node:SetExpression	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-left-alignment	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+left-alignment	mechdown	certified	syntax-only	node:LeftAlignment	S7	S7 canonical document closure generated from the specification.
 left-angle	literals	certified	syntax-only	token	2A	Phase 2A explicit dependency closure
 left-angle1	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 left-angle2	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
@@ -291,7 +291,7 @@ ls-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
 map	structures	certified	certified	node:Map	2I	Phase 2I canonical recursive core; semantic disposition: executable.
 mapping	structures	certified	certified	node:MapEntry	2I	Phase 2I canonical recursive core; semantic disposition: structural.
 match-arm	expressions	certified	certified	node:MatchArm	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-match-expression	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+match-expression	expressions	unported	pending	undecided		Outside canonical Document reachability; not activated.
 matrix	structures	certified	certified	node:Matrix	2I	Phase 2I canonical recursive core; semantic disposition: executable.
 matrix-column	structures	certified	certified	node:MatrixColumn	2I	Phase 2I canonical recursive core; semantic disposition: structural.
 matrix-comprehension	expressions	certified	certified	node:MatrixComprehension	2I	Phase 2I canonical recursive core; semantic disposition: executable.
@@ -301,26 +301,26 @@ matrix-operator	expressions	certified	certified	node:MatrixOperator	2D	Phase 2D 
 matrix-row	structures	certified	certified	node:MatrixRow	2I	Phase 2I canonical recursive core; semantic disposition: structural.
 matrix-solve	expressions	certified	certified	node:MatrixSolveOperation	2D	Phase 2D closed expression-operator layer
 matrix-start	structures	certified	syntax-only	token	2H	Phase 2H closed structure shell
-mech-code	parser	unported	pending	undecided		Deferred beyond Phase 2A.
-mech-code-alt	parser	unported	pending	undecided		Deferred beyond Phase 2A.
-mechdown-list	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-mechdown-table	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-mechdown-table-header	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-mechdown-table-no-header	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-mechdown-table-row	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-mechdown-table-with-header	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-micro-mika	mika	unported	pending	undecided		Deferred beyond Phase 2A.
-mika	mika	unported	pending	undecided		Deferred beyond Phase 2A.
-mika-arm-left	mika	unported	pending	undecided		Deferred beyond Phase 2A.
-mika-arm-right	mika	unported	pending	undecided		Deferred beyond Phase 2A.
-mika-expression-inner	mika	unported	pending	undecided		Deferred beyond Phase 2A.
-mika-eye-left	mika	unported	pending	undecided		Deferred beyond Phase 2A.
-mika-eye-right	mika	unported	pending	undecided		Deferred beyond Phase 2A.
-mika-nose	mika	unported	pending	undecided		Deferred beyond Phase 2A.
-mika-section	mika	unported	pending	undecided		Deferred beyond Phase 2A.
+mech-code	parser	certified	syntax-only	node:MechCode	S7	S7 canonical document closure generated from the specification.
+mech-code-alt	parser	certified	syntax-only	node:MechCodeAlt	S7	S7 canonical document closure generated from the specification.
+mechdown-list	mechdown	certified	syntax-only	node:MechdownList	S7	S7 canonical document closure generated from the specification.
+mechdown-table	mechdown	certified	syntax-only	node:MechdownTable	S7	S7 canonical document closure generated from the specification.
+mechdown-table-header	mechdown	certified	syntax-only	node:MechdownTableHeader	S7	S7 canonical document closure generated from the specification.
+mechdown-table-no-header	mechdown	certified	syntax-only	node:MechdownTableNoHeader	S7	S7 canonical document closure generated from the specification.
+mechdown-table-row	mechdown	certified	syntax-only	node:MechdownTableRow	S7	S7 canonical document closure generated from the specification.
+mechdown-table-with-header	mechdown	certified	syntax-only	node:MechdownTableWithHeader	S7	S7 canonical document closure generated from the specification.
+micro-mika	mika	certified	syntax-only	node:MicroMika	S7	S7 canonical document closure generated from the specification.
+mika	mika	certified	syntax-only	node:Mika	S7	S7 canonical document closure generated from the specification.
+mika-arm-left	mika	certified	syntax-only	node:MikaArmLeft	S7	S7 canonical document closure generated from the specification.
+mika-arm-right	mika	certified	syntax-only	node:MikaArmRight	S7	S7 canonical document closure generated from the specification.
+mika-expression-inner	mika	certified	syntax-only	node:MikaExpressionInner	S7	S7 canonical document closure generated from the specification.
+mika-eye-left	mika	certified	syntax-only	node:MikaEyeLeft	S7	S7 canonical document closure generated from the specification.
+mika-eye-right	mika	certified	syntax-only	node:MikaEyeRight	S7	S7 canonical document closure generated from the specification.
+mika-nose	mika	certified	syntax-only	node:MikaNose	S7	S7 canonical document closure generated from the specification.
+mika-section	mika	certified	syntax-only	node:MikaSection	S7	S7 canonical document closure generated from the specification.
 mika-section-close	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 mika-section-open	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-mini-mika	mika	unported	pending	undecided		Deferred beyond Phase 2A.
+mini-mika	mika	certified	syntax-only	node:MiniMika	S7	S7 canonical document closure generated from the specification.
 module-export-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 module-import	imports	certified	certified	node:ModuleImport	2E	Phase 2E corrected module-import closure (IMPORT-001)
 module-import-alias	imports	certified	certified	node:ModuleImportAlias	2E	Phase 2E corrected module-import closure (IMPORT-001)
@@ -345,33 +345,33 @@ negate-factor	expressions	certified	certified	node:NegateFactor	2I	Phase 2I cano
 new-line	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 new-line-char	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 newline-indent	base	certified	syntax-only	transparent	2A	Phase 2A canonical base closure
-no-alignment	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+no-alignment	mechdown	certified	syntax-only	node:NoAlignment	S7	S7 canonical document closure generated from the specification.
 not	expressions	certified	certified	node:NotOperation	2D	Phase 2D closed expression-operator layer
 not-element-of	expressions	certified	certified	node:NotElementOfOperation	2D	Phase 2D closed expression-operator layer
 not-equal	expressions	certified	certified	node:NotEqualOperation	2D	Phase 2D closed expression-operator layer
 not-factor	expressions	certified	certified	node:NotFactor	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-not-mech-code	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+not-mech-code	mechdown	certified	syntax-only	node:NotMechCode	S7	S7 canonical document closure generated from the specification.
 number	literals	certified	certified	node:Number	2C	Phase 2C canonical syntax and semantic certification; scientific-exponent selection follows the specification.
 octal-literal	literals	certified	certified	node:OctalLiteral	2C	Phase 2C closed literal, path, and primitive kind island
-op-assign	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+op-assign	statements	certified	syntax-only	node:OpAssign	S7	S7 canonical document closure generated from the specification.
 op-assign-operator	statements	certified	certified	node:OpAssignOperator	2G	Phase 2G closed executable primitive layer
-option-map	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-option-mapping	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-option-value	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+option-map	mechdown	certified	syntax-only	node:OptionMap	S7	S7 canonical document closure generated from the specification.
+option-mapping	mechdown	certified	syntax-only	node:OptionMapping	S7	S7 canonical document closure generated from the specification.
+option-value	mechdown	certified	syntax-only	node:OptionValue	S7	S7 canonical document closure generated from the specification.
 or	expressions	certified	certified	node:OrOperation	2D	Phase 2D closed expression-operator layer
-ordered-list	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-ordered-list-item	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+ordered-list	mechdown	certified	syntax-only	node:OrderedList	S7	S7 canonical document closure generated from the specification.
+ordered-list-item	mechdown	certified	syntax-only	node:OrderedListItem	S7	S7 canonical document closure generated from the specification.
 output-operator	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 output-operator-a	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 output-operator-u	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-paragraph	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-paragraph-element	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-paragraph-newline	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+paragraph	mechdown	certified	syntax-only	node:Paragraph	S7	S7 canonical document closure generated from the specification.
+paragraph-element	mechdown	certified	syntax-only	node:ParagraphElement	S7	S7 canonical document closure generated from the specification.
+paragraph-newline	mechdown	certified	syntax-only	node:ParagraphNewline	S7	S7 canonical document closure generated from the specification.
 paragraph-text	mechdown	certified	certified	node:ParagraphText	2B	Phase 2B closed Mechdown grammar island
 parenthetical-term	expressions	certified	certified	node:ParentheticalExpression	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-parse	parser	unported	pending	undecided		Deferred beyond Phase 2A.
+parse	parser	certified	certified	root:Document	S7	S7 canonical document closure generated from the specification.
 parse-grammar	parser	certified	certified	root:GrammarDocument	2A	Phase 2A explicit dependency closure
-parse-mech	parser	unported	pending	undecided		Deferred beyond Phase 2A.
+parse-mech	parser	certified	syntax-only	transparent	S7	S7 canonical document closure generated from the specification.
 parse-repl-command	repl	unported	pending	undecided		Deferred beyond Phase 2A.
 pattern	patterns	certified	certified	node:Pattern	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
 pattern-array	patterns	certified	certified	node:ArrayPattern	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
@@ -388,18 +388,18 @@ power	expressions	certified	certified	node:PowerOperation	2D	Phase 2D closed exp
 power-operator	expressions	certified	certified	node:PowerOperator	2D	Phase 2D closed expression-operator layer
 prefixed-context-path	expressions	certified	certified	node:PrefixedContextPath	2C	Phase 2C closed literal, path, and primitive kind island
 profile-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
-program	parser	unported	pending	undecided		Deferred beyond Phase 2A.
-prompt	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+program	parser	certified	syntax-only	transparent	S7	S7 canonical document closure generated from the specification.
+prompt	mechdown	certified	syntax-only	node:Prompt	S7	S7 canonical document closure generated from the specification.
 prompt-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 proper-subset	expressions	certified	certified	node:ProperSubsetOperation	2D	Phase 2D closed expression-operator layer
 proper-superset	expressions	certified	certified	node:ProperSupersetOperation	2D	Phase 2D closed expression-operator layer
 punctuation	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 question	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-question-block	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+question-block	mechdown	certified	syntax-only	node:QuestionBlock	S7	S7 canonical document closure generated from the specification.
 question-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 quit-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
 quote	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-quote-block	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+quote-block	mechdown	certified	syntax-only	node:QuoteBlock	S7	S7 canonical document closure generated from the specification.
 quote-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 range-exclusive	expressions	certified	certified	node:RangeExclusiveOperation	2D	Phase 2D closed expression-operator layer
 range-expression	expressions	certified	certified	node:RangeExpression	2I	Phase 2I canonical recursive core; semantic disposition: executable.
@@ -417,7 +417,7 @@ reference	mechdown	certified	certified	node:Reference	2B	Phase 2B closed Mechdow
 regular-table	structures	certified	certified	node:RegularTable	2I	Phase 2I canonical recursive core; semantic disposition: executable.
 relative-source-import-specifier	statements	certified	certified	node:RelativeSourceImportSpecifier	2F	Phase 2F closed source, export, and context declaration layer
 repl-identifier	repl	unported	pending	undecided		Deferred beyond Phase 2A.
-right-alignment	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+right-alignment	mechdown	certified	syntax-only	node:RightAlignment	S7	S7 canonical document closure generated from the specification.
 right-angle	literals	certified	syntax-only	token	2A	Phase 2A explicit dependency closure
 right-angle1	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 right-angle2	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
@@ -428,8 +428,8 @@ right-parenthesis	base	certified	syntax-only	token	2A	Phase 2A canonical base cl
 row-separator	structures	certified	certified	node:TableRowSeparator	2H	Phase 2H closed structure shell
 save-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
 scientific-literal	literals	certified	certified	node:ScientificLiteral	2C	Phase 2C syntax port; typed scientific exponents preserve their suffix and lower deterministically while the retired parser exponent branch crashes.
-section	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-section-element	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+section	mechdown	certified	syntax-only	node:Section	S7	S7 canonical document closure generated from the specification.
+section-element	mechdown	certified	syntax-only	node:SectionElement	S7	S7 canonical document closure generated from the specification.
 section-reference	mechdown	certified	certified	node:SectionReference	2B	Phase 2B closed Mechdown grammar island
 section-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 select-all	expressions	certified	certified	node:SelectAllSubscript	2G	Phase 2G closed executable primitive layer
@@ -440,7 +440,7 @@ set-comprehension	expressions	certified	certified	node:SetComprehension	2I	Phase
 set-operator	expressions	certified	certified	node:SetOperator	2D	Phase 2D closed expression-operator layer
 slash	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 slice	expressions	certified	certified	node:Slice	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-slice-ref	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+slice-ref	expressions	certified	syntax-only	node:SliceRef	S7	S7 canonical document closure generated from the specification.
 source-import-specifier	statements	certified	certified	node:SourceImportSpecifier	2F	Phase 2F closed source, export, and context declaration layer
 source-import-tail	statements	certified	certified	node:SourceImportTail	2F	Phase 2F closed source, export, and context declaration layer
 source-import-uri-scheme	statements	certified	certified	node:SourceImportUriScheme	2F	Phase 2F closed source, export, and context declaration layer
@@ -456,24 +456,24 @@ spaced-subtract	expressions	certified	certified	node:SpacedSubtractOperation	2D	
 spread-operator	patterns	certified	syntax-only	transparent	2G	Phase 2G closed executable primitive layer
 spread-operator-a	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 spread-operator-u	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-statement	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+statement	statements	certified	syntax-only	node:Statement	S7	S7 canonical document closure generated from the specification.
 statement-separator	expressions	certified	syntax-only	transparent	2G	Phase 2G closed executable primitive layer
 step-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
 strict-equal	expressions	certified	certified	node:StrictEqualOperation	2D	Phase 2D closed expression-operator layer
 strict-not-equal	expressions	certified	certified	node:StrictNotEqualOperation	2D	Phase 2D closed expression-operator layer
 strike-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-strikethrough	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+strikethrough	mechdown	certified	syntax-only	node:Strikethrough	S7	S7 canonical document closure generated from the specification.
 string	literals	certified	certified	node:StringLiteral	2C	Phase 2C closed literal, path, and primitive kind island
-strong	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+strong	mechdown	certified	syntax-only	node:Strong	S7	S7 canonical document closure generated from the specification.
 strong-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 structure	structures	certified	certified	node:Structure	2I	Phase 2I canonical recursive core; semantic disposition: executable.
 sub-assign-operator	statements	certified	certified	node:SubAssignOperation	2G	Phase 2G closed executable primitive layer
-sublist	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+sublist	mechdown	certified	syntax-only	node:Sublist	S7	S7 canonical document closure generated from the specification.
 subscript	expressions	certified	certified	node:SubscriptList	2I	Phase 2I canonical recursive core; semantic disposition: structural.
 subset	expressions	certified	certified	node:SubsetOperation	2D	Phase 2D closed expression-operator layer
-subtitle	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+subtitle	mechdown	certified	syntax-only	node:Subtitle	S7	S7 canonical document closure generated from the specification.
 subtract	expressions	certified	certified	node:SubtractOperation	2D	Phase 2D closed expression-operator layer
-success-block	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+success-block	mechdown	certified	syntax-only	node:SuccessBlock	S7	S7 canonical document closure generated from the specification.
 success-check-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 success-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 superset	expressions	certified	certified	node:SupersetOperation	2D	Phase 2D closed expression-operator layer
@@ -484,7 +484,7 @@ symmetric-difference	expressions	certified	certified	node:SymmetricDifferenceOpe
 synth-operator	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 tab	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 table	structures	certified	certified	node:Table	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-table-column	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+table-column	structures	unported	pending	undecided		Outside canonical Document reachability; not activated.
 table-end	structures	certified	syntax-only	token	2H	Phase 2H closed structure shell
 table-header	structures	certified	certified	node:TableHeader	2I	Phase 2I canonical recursive core; semantic disposition: structural.
 table-horz	structures	certified	syntax-only	token	2H	Phase 2H closed structure shell
@@ -500,35 +500,35 @@ thematic-break	mechdown	certified	certified	node:ThematicBreak	2B	Phase 2B close
 thin-space	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 tilde	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 tilde-codeblock-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-title	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-title-front-matter	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+title	mechdown	certified	syntax-only	node:Title	S7	S7 canonical document closure generated from the specification.
+title-front-matter	mechdown	certified	syntax-only	node:TitleFrontMatter	S7	S7 canonical document closure generated from the specification.
 transition-operator	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 transition-operator-a	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 transition-operator-u	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 transpose	expressions	certified	syntax-only	transparent	2D	Phase 2D closed expression-operator layer
 true-literal	literals	certified	syntax-only	token	2C	Phase 2C closed literal, path, and primitive kind island
 tuple	structures	certified	certified	node:Tuple	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-tuple-destructure	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+tuple-destructure	statements	certified	syntax-only	node:TupleDestructure	S7	S7 canonical document closure generated from the specification.
 tuple-struct	structures	certified	certified	node:TupleStruct	2I	Phase 2I canonical recursive core; semantic disposition: executable.
 typed-integer	literals	certified	certified	node:TypedInteger	2C	Phase 2C closed literal, path, and primitive kind island
-ul-subtitle	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-unchecked-item	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-underline	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+ul-subtitle	mechdown	certified	syntax-only	node:UlSubtitle	S7	S7 canonical document closure generated from the specification.
+unchecked-item	mechdown	certified	syntax-only	node:UncheckedItem	S7	S7 canonical document closure generated from the specification.
+underline	mechdown	certified	syntax-only	node:Underline	S7	S7 canonical document closure generated from the specification.
 underline-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 underscore	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 underscore-digit	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 union-op	expressions	certified	certified	node:UnionOperation	2D	Phase 2D closed expression-operator layer
-unordered-list	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-unordered-list-item	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+unordered-list	mechdown	certified	syntax-only	node:UnorderedList	S7	S7 canonical document closure generated from the specification.
+unordered-list-item	mechdown	certified	syntax-only	node:UnorderedListItem	S7	S7 canonical document closure generated from the specification.
 untyped-integer	literals	certified	certified	node:UntypedInteger	2C	Phase 2C closed literal, path, and primitive kind island
 untyped-real-number	literals	certified	certified	node:UntypedRealNumber	2C	Phase 2C canonical syntax and semantic certification; scientific-exponent selection follows the specification.
 uri-scheme-part	statements	certified	syntax-only	token	2F	Phase 2F closed source, export, and context declaration layer
 uri-source-import-specifier	statements	certified	certified	node:UriSourceImportSpecifier	2F	Phase 2F closed source, export, and context declaration layer
 utf8-string	literals	certified	certified	node:Utf8String	2C	Phase 2C closed literal, path, and primitive kind island
 var	expressions	certified	certified	node:Variable	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-variable-assign	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+variable-assign	statements	certified	syntax-only	node:VariableAssign	S7	S7 canonical document closure generated from the specification.
 variable-define	statements	certified	certified	node:VariableDefine	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-warning-block	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+warning-block	mechdown	certified	syntax-only	node:WarningBlock	S7	S7 canonical document closure generated from the specification.
 warning-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 whitespace	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
 whitespace0	base	certified	syntax-only	transparent	2A	Phase 2A canonical base closure
