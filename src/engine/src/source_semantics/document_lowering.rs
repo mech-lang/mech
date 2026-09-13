@@ -207,6 +207,9 @@ fn collect_document_units(
             | SyntaxKind::Fsm
             | SyntaxKind::FsmDeclare
             | SyntaxKind::FsmImplementation
+            // An expression owns a pipe's semantics. A bare pipe in a document
+            // must not be traversed as unrelated child expressions.
+            | SyntaxKind::FsmPipe
             | SyntaxKind::FsmSpecification
             | SyntaxKind::FunctionDefine
             | SyntaxKind::InvariantDefine

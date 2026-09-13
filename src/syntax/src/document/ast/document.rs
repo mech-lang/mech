@@ -21,6 +21,59 @@ impl DocumentSyntax {
         self.syntax().children().find_map(BodySyntax::cast)
     }
 
+    /// Whether this clean document contains executable source syntax.
+    ///
+    /// This is a source-classification query, not target-capability validation.
+    /// It excludes comments, displayed inline code, Mika-local source, and
+    /// disabled/inert fences. Evaluated inline expressions and named Mech
+    /// scopes count as source. Consumers still perform semantic validation.
+    pub fn contains_executable_source(&self) -> bool {
+        use crate::document::{CodeFenceScope, NodeFlags};
+        if self.syntax().flags().intersects(
+            NodeFlags::ERROR
+                | NodeFlags::MISSING
+                | NodeFlags::CONTAINS_ERROR
+                | NodeFlags::CONTAINS_MISSING,
+        ) {
+            return false;
+        }
+        let mut pending = alloc::vec![self.syntax().clone()];
+        while let Some(node) = pending.pop() {
+            if matches!(
+                node.kind(),
+                SyntaxKind::InlineMechCode | SyntaxKind::MikaSection
+            ) {
+                continue;
+            }
+            if let Some(fence) = CodeBlockSyntax::cast(node.clone()) {
+                if matches!(
+                    fence.info().map(|info| info.scope),
+                    Some(CodeFenceScope::Root | CodeFenceScope::Named(_))
+                ) && let Some(body) = fence.mech_code()
+                {
+                    pending.push(body.syntax().clone());
+                }
+                continue;
+            }
+            if EvalInlineMechCodeSyntax::cast(node.clone()).is_some() {
+                return true;
+            }
+            if let Some(code) = MechCodeSyntax::cast(node.clone()) {
+                if code
+                    .items()
+                    .iter()
+                    .filter_map(MechCodeAltSyntax::value)
+                    .any(|item| !matches!(item.kind(), SyntaxKind::Comment))
+                {
+                    return true;
+                }
+                continue;
+            }
+            pending.extend(node.children());
+        }
+        false
+    }
+
     pub fn sections(&self) -> Vec<SectionSyntax> {
         let mut sections = Vec::new();
         collect_sections(self.syntax(), &mut sections);

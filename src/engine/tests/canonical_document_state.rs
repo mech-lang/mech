@@ -127,6 +127,14 @@ fn indexed_document_updates_use_canonical_assignment_and_preserve_state_order() 
             [23.0, 23.0],
         ),
         (
+            "~numbers := [1, 2; 3, 4]\nnumbers[:,:] = [5, 6; 7, 8]\nnumbers[2,2]\n",
+            [8.0, 8.0],
+        ),
+        (
+            "~numbers := [1, 2; 3, 4]\nnumbers[:,:] = 9\nnumbers[1,1] + numbers[2,2]\n",
+            [18.0, 18.0],
+        ),
+        (
             "~numbers := [1, 2; 3, 4]\nnumbers[:] = [5, 6; 7, 8]\nnumbers[2,2]\n",
             [8.0, 8.0],
         ),

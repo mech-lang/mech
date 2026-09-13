@@ -54,10 +54,12 @@ impl SourceIndex {
     /// Invalid syntax or unsupported scope configuration fails before publication.
     pub fn from_document(document: &DocumentSyntax) -> Result<Self> {
         let root = document.syntax();
-        if root
-            .flags()
-            .intersects(NodeFlags::ERROR | NodeFlags::CONTAINS_ERROR)
-        {
+        if root.flags().intersects(
+            NodeFlags::ERROR
+                | NodeFlags::MISSING
+                | NodeFlags::CONTAINS_ERROR
+                | NodeFlags::CONTAINS_MISSING,
+        ) {
             return Err(error(
                 root,
                 "cannot index a document containing syntax errors",

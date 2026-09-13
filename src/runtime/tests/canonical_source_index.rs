@@ -201,3 +201,19 @@ fn recovered_documents_do_not_publish_partial_resolver_indexes() {
         "cannot index a document containing syntax errors"
     );
 }
+
+#[test]
+fn a_missing_initializer_cannot_publish_an_index_of_earlier_imports() {
+    let parsed = parse_canonical_document(
+        TextSnapshot::new(DocumentId(0x57a), Revision(5), "+> math\nanswer :=\n").unwrap(),
+        ParseConfig::default(),
+    );
+    assert!(!parsed.diagnostics.is_empty());
+    let document = DocumentSyntax::cast(parsed.syntax()).unwrap();
+    let error = SourceIndex::from_document(&document).unwrap_err();
+    assert_eq!(error.revision, Revision(5));
+    assert_eq!(
+        error.message,
+        "cannot index a document containing syntax errors"
+    );
+}

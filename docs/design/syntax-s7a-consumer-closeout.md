@@ -9,7 +9,7 @@ replacement and removal step; unfinished consumer behavior below belongs to S7A.
 | --- | --- | --- |
 | Document execution | Root and named-fence scope execution, repeated named-fence bindings, retained mutable state, whole and indexed assignment, compound assignment, nested record/tuple/matrix updates, serial statement versions, candidate discard and failed-turn rollback. Bytecode round-trip and resident execution are exercised by `canonical_document_state`. | Declaration and Mika/configured-scope execution still need their canonical owners and implemented handoffs; the document collector's explicit unsupported-unit errors are not completion. |
 | Indexing and resolution | `SourceIndex::from_document` projects imports, aliases/groups, exports, context capabilities and addressed references into the existing resolver facts. Root and repeated named fences retain their scopes. Tests exercise dependency resolution, conflict validation, nested reads and reindexing edited snapshots. | Mika-local scopes and configured fence options need their document owner. The index returns an anchored error for these instead of publishing incomplete facts. Resolver facts alone do not implement declaration execution. |
-| Rendering and classification | Typed fence classification distinguishes root, named, hidden, disabled and inert fences. `canonical_document_outputs` checks actual inline/fence result bindings and formatted values. | Complete formatter/HTML consumer behavior and child-scope presentation still require qualification. Excluding display-only code from execution is not a complete rendering implementation. |
+| Rendering and classification | Typed fence classification distinguishes root, named, hidden, disabled and inert fences. `DocumentSyntax::contains_executable_source` classifies canonical source while excluding display-only code, comments and recovered documents. `canonical_document_outputs` checks actual inline/fence result bindings and formatted values. | Complete formatter/HTML consumer behavior and child-scope presentation still require qualification. Excluding display-only code from execution is not a complete rendering implementation. |
 | Editing | Canonical document sessions and edit-versus-fresh-parse tests preserve source, diagnostics, structural equivalence and unaffected identity. Indexing tests consume edited snapshots with updated scopes and positions. | Keep these regressions in the final-head qualification. S7B's resumable streaming optimization is a separate paused stage. |
 
 The current registry retains the S6 activation interlock: 80 Phase 2I candidates
@@ -34,3 +34,17 @@ passing result.
 The canonical indexing increment adds eight behavioral regressions to Full CI,
 alongside the indexed document-state target. Full qualification must use the
 final pushed SHA, including subsequent review corrections.
+
+The independent review of `1bb693dcf` is retained as a closeout checklist. Its
+two assignment defects were corrected in `36400610d` and their PR threads were
+replied to and resolved. The whole-value regressions cover both `[:]` and
+`[:,:]`, matrix replacement and scalar broadcast; ordinary flattened select-all
+reads remain covered by `canonical_source_review`. The broader declaration,
+scope and complete document-rendering findings remain open. Where an S4 semantic
+owner is unfinished, S7A must retain that dependency rather than duplicate it.
+
+Subsequent consumer qualification also rejected missing-only recovered syntax
+before indexing or source classification, and preserved the document collector's
+rejection of a bare FSM pipe outside its expression owner. The full R6 static
+checker mutation suite passed all 136 tests; its new shared-planner bypass test
+passed separately.
