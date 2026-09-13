@@ -87,6 +87,26 @@ impl TextSnapshot {
         &self.line_index
     }
 
+    /// Project a retained byte boundary to one-based row and extended-grapheme
+    /// column coordinates used by source consumers. Interior grapheme offsets
+    /// have no such coordinate and return `None`.
+    pub fn source_location(&self, offset: TextSize) -> Option<mech_core::SourceLocation> {
+        if offset > self.byte_len() || !self.is_char_boundary(offset) {
+            return None;
+        }
+        let line = self.line_index().line_of(offset);
+        let start = self.line_index().line_start(line)?;
+        let mut cursor = super::parser::Cursor::for_range(self, TextRange::new(start, offset));
+        let mut col = 1_usize;
+        while cursor.bump_grapheme().is_some() {
+            col = col.checked_add(1)?;
+        }
+        (cursor.offset() == offset).then_some(mech_core::SourceLocation {
+            row: line.checked_add(1)?,
+            col,
+        })
+    }
+
     pub fn piece_count(&self) -> usize {
         self.pieces.len()
     }

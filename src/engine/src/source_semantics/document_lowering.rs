@@ -2,8 +2,8 @@
 //! slots as expression compilation. Each mutable binding retains one writer.
 
 use mech_syntax::document::{
-    CanonicalOpAssign, CodeBlockSyntax, CodeFenceScope, EvalInlineMechCodeSyntax, OpAssignSyntax,
-    SliceRefSyntax, VariableAssignSyntax,
+    CanonicalOpAssign, CodeBlockSyntax, CodeFencePresentation, CodeFenceScope,
+    EvalInlineMechCodeSyntax, OpAssignSyntax, SliceRefSyntax, VariableAssignSyntax,
 };
 
 use super::*;
@@ -13,7 +13,7 @@ mod document_assignment;
 
 enum DocumentUnit {
     Statement(SyntaxNode),
-    Fence(CodeBlockSyntax, Vec<DocumentUnit>),
+    Fence(CodeBlockSyntax, CodeFencePresentation, Vec<DocumentUnit>),
 }
 
 pub(super) fn compile_document(
@@ -46,13 +46,7 @@ pub(super) fn compile_named_document_scope(
             {
                 continue;
             }
-            if let Some(options) = fence.options() {
-                return Err(SourceSemanticError {
-                    code: "source-semantics/unsupported-fence-options",
-                    message: "configured fence options need a typed document consumer".to_owned(),
-                    anchor: SourceSemanticAnchor::for_node(options.syntax()),
-                });
-            }
+            let presentation = fence_presentation(&fence)?;
             let body = fence.mech_code().ok_or_else(|| {
                 internal(
                     SourceSemanticAnchor::for_node(fence.syntax()),
@@ -61,7 +55,7 @@ pub(super) fn compile_named_document_scope(
             })?;
             let mut body_units = Vec::new();
             collect_document_units(body.syntax(), &mut body_units, &mut inline)?;
-            units.push(DocumentUnit::Fence(fence, body_units));
+            units.push(DocumentUnit::Fence(fence, presentation, body_units));
             continue;
         }
         let children: Vec<_> = node.children().collect();
@@ -151,31 +145,10 @@ fn collect_document_units(
         let Some(info) = fence.info() else {
             return Ok(());
         };
-        if let CodeFenceScope::UnsupportedInfo(info) = &info.scope {
-            return Err(SourceSemanticError {
-                code: "source-semantics/unsupported-fence-info",
-                message: format!(
-                    "Mech fence information {info:?} does not select a documented execution scope"
-                ),
-                anchor: SourceSemanticAnchor {
-                    document: fence.syntax().source().document(),
-                    revision: fence.syntax().source().revision(),
-                    range: fence
-                        .info_range()
-                        .expect("classified fence has an information range"),
-                },
-            });
-        }
         if !matches!(info.scope, CodeFenceScope::Root) {
             return Ok(());
         }
-        if let Some(options) = fence.options() {
-            return Err(SourceSemanticError {
-                code: "source-semantics/unsupported-fence-options",
-                message: "configured fence options need a typed document consumer".to_owned(),
-                anchor: SourceSemanticAnchor::for_node(options.syntax()),
-            });
-        }
+        let presentation = fence_presentation(&fence)?;
         let Some(body) = fence.mech_code() else {
             return Err(internal(
                 SourceSemanticAnchor::for_node(fence.syntax()),
@@ -184,7 +157,7 @@ fn collect_document_units(
         };
         let mut units = Vec::new();
         collect_document_units(body.syntax(), &mut units, inline)?;
-        output.push(DocumentUnit::Fence(fence, units));
+        output.push(DocumentUnit::Fence(fence, presentation, units));
         return Ok(());
     }
     if matches!(
@@ -243,7 +216,7 @@ fn declare_document_inputs(
             DocumentUnit::Statement(unit) => {
                 builder.declare_unit_input_annotations(unit, bindings)?
             }
-            DocumentUnit::Fence(_, units) => declare_document_inputs(builder, units, bindings)?,
+            DocumentUnit::Fence(_, _, units) => declare_document_inputs(builder, units, bindings)?,
         }
     }
     Ok(())
@@ -273,16 +246,18 @@ fn compile_document_units(
                 result.0.resolved()?;
                 last = Some(result);
             }
-            DocumentUnit::Fence(fence, units) => {
+            DocumentUnit::Fence(fence, fence_presentation, units) => {
                 if let Some((value, syntax)) = compile_document_units(builder, units, presentation)?
                 {
                     let value =
                         builder.read_document_binding(PendingBinding::Value(value), &syntax)?;
-                    presentation.push((
-                        SourceDocumentOutputKind::Fence,
-                        value,
-                        fence.syntax().clone(),
-                    ));
+                    if fence_presentation.show_output {
+                        presentation.push((
+                            SourceDocumentOutputKind::Fence,
+                            value,
+                            fence.syntax().clone(),
+                        ));
+                    }
                     last = Some((value, syntax));
                 }
             }
@@ -473,4 +448,14 @@ impl SemanticBuilder {
             }),
         }
     }
+}
+
+fn fence_presentation(
+    fence: &CodeBlockSyntax,
+) -> Result<CodeFencePresentation, SourceSemanticError> {
+    fence.presentation().ok_or_else(|| SourceSemanticError {
+        code: "source-semantics/invalid-fence-options",
+        message: "fence presentation settings require complete typed option values".to_owned(),
+        anchor: SourceSemanticAnchor::for_node(fence.syntax()),
+    })
 }

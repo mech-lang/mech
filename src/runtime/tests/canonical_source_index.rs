@@ -116,13 +116,17 @@ fn contexts_preserve_capability_roles_and_use_existing_conflict_validation() {
 }
 
 #[test]
-fn index_rejects_unowned_configuration_without_returning_partial_facts() {
-    let tree = document("+> math\n\n```mech nonsense\nx := 1\n```\n");
-    let error = SourceIndex::from_document(&tree).unwrap_err();
-    assert_eq!(error.document, DocumentId(0x57a));
-    assert_eq!(error.revision, Revision(3));
-    assert_eq!(error.message, "unsupported fence information");
-    assert!(error.range.start.0 > 0);
+fn colonless_and_repeated_prefix_fences_share_the_named_scope() {
+    let index = index(
+        "```mechworker\n+> math\n```\n\n```mech:worker\n<+ x\n```\n\n```mechmechmec🤖worker\nx := @env/HOME\n```\n",
+    );
+    assert_eq!(index.interpreter_scopes().len(), 1);
+    let scope = SourceScope::Interpreter(index.interpreter_scopes()[0].clone());
+    assert_eq!(index.interpreter_scopes()[0].namespace_str, "worker");
+    assert_eq!(index.imports_for_scope(&scope).len(), 1);
+    assert_eq!(index.exports_for_scope(&scope).len(), 1);
+    assert_eq!(index.address_references_for_scope(&scope).len(), 1);
+    assert!(index.program_imports().is_empty());
 }
 
 #[test]
@@ -216,4 +220,63 @@ fn a_missing_initializer_cannot_publish_an_index_of_earlier_imports() {
         error.message,
         "cannot index a document containing syntax errors"
     );
+}
+
+#[test]
+fn presentation_options_do_not_change_resolver_scope_or_dependencies() {
+    let index = index(
+        "```mech:worker{output: false, color: red}\n+> @env := cli/env\nx := @env/HOME\n```\n",
+    );
+    let scope = SourceScope::Interpreter(index.interpreter_scopes()[0].clone());
+    assert_eq!(
+        index.imports_for_scope(&scope)[0].alias,
+        Some(SourceImportAlias::Context("env".into()))
+    );
+    assert_eq!(index.address_references_for_scope(&scope)[0].target, "env");
+    assert!(index.program_imports().is_empty());
+}
+
+#[test]
+fn source_import_occurrences_cover_only_the_retained_specifier() {
+    for specifier in [
+        "math",
+        "./lib.mec",
+        "/lib.mec",
+        "https://example.com/lib.mec",
+    ] {
+        let index = index(&format!("  +> {specifier}\n"));
+        assert_eq!(index.imports.len(), 1);
+        let range = index.imports[0].occurrence.range.as_ref().unwrap();
+        assert_eq!((range.start.row, range.start.col), (1, 6), "{specifier}");
+        assert_eq!(
+            (range.end.row, range.end.col),
+            (1, 6 + specifier.len()),
+            "{specifier}"
+        );
+    }
+}
+
+#[test]
+fn resolver_locations_count_graphemes_across_source_pieces() {
+    for (prefix, column) in [("e\u{301}", 12), ("👩‍💻", 12)] {
+        let source = format!("x := \"{prefix}\" + @env/HOME\r\n");
+        let contiguous = TextSnapshot::new(DocumentId(1), Revision(1), source.clone()).unwrap();
+        let mut pieces = TextSnapshot::new(DocumentId(1), Revision(1), "").unwrap();
+        for ch in source.chars() {
+            pieces = pieces.append(ch.to_string()).unwrap();
+        }
+        for snapshot in [contiguous, pieces] {
+            let parsed = parse_canonical_document(snapshot, ParseConfig::default());
+            assert!(parsed.diagnostics.is_empty(), "{:?}", parsed.diagnostics);
+            let index = SourceIndex::from_document(&DocumentSyntax::cast(parsed.syntax()).unwrap())
+                .unwrap();
+            let range = index.address_references[0]
+                .occurrence
+                .range
+                .as_ref()
+                .unwrap();
+            assert_eq!((range.start.row, range.start.col), (1, column));
+            assert_eq!((range.end.row, range.end.col), (1, column + 9));
+        }
+    }
 }

@@ -621,3 +621,49 @@ fn derived_snapshot_updates_release_budgeted_prior_outputs_on_abort_and_drop() {
     drop(instance);
     assert_eq!(budget.used_bytes(), 0);
 }
+
+#[test]
+fn configured_fences_execute_updates_when_their_result_is_hidden() {
+    for suffix in ["", ":worker"] {
+        let source = format!(
+            "```mech{suffix}{{output: false, color: red}}\n~counter := 0\ncounter += 1\ncounter\n```\n"
+        );
+        let document = document(&source);
+        let compiled = if suffix.is_empty() {
+            CanonicalSourceFrontend.compile_document(&document)
+        } else {
+            CanonicalSourceFrontend.compile_named_document_scope(&document, "worker")
+        }
+        .unwrap();
+        assert_eq!(
+            compiled.document_outputs().len(),
+            1,
+            "only the program result is published"
+        );
+        compiled_turns(
+            compiled,
+            &source,
+            &[1.0, 2.0],
+            mech_engine::SourceDocumentOutputKind::Program,
+        );
+    }
+}
+
+#[test]
+fn colonless_named_fences_execute_and_share_state_with_colon_spelling() {
+    for info in ["mechworker", "mecworker", "🤖worker", "mechmechmec🤖worker"] {
+        let source = format!(
+            "~counter := 100\ncounter\n\n```{info}\n~counter := 0\ncounter += 1\ncounter\n```\n\n```mech:worker\ncounter += 2\ncounter\n```\n"
+        );
+        turns(&source, &[100.0, 100.0]);
+        let program = CanonicalSourceFrontend
+            .compile_named_document_scope(&document(&source), "worker")
+            .unwrap();
+        compiled_turns(
+            program,
+            &source,
+            &[3.0, 6.0],
+            mech_engine::SourceDocumentOutputKind::Program,
+        );
+    }
+}

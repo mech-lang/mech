@@ -82,9 +82,6 @@ impl SourceIndex {
                 let info = required(fence.info(), &node)?;
                 let scope = match info.scope {
                     CodeFenceScope::Inert | CodeFenceScope::Disabled => continue,
-                    CodeFenceScope::UnsupportedInfo(_) => {
-                        return Err(error(&node, "unsupported fence information"));
-                    }
                     CodeFenceScope::Root => SourceScope::Program,
                     CodeFenceScope::Named(name) => {
                         let interpreter = SourceInterpreterId {
@@ -99,12 +96,7 @@ impl SourceIndex {
                         scope
                     }
                 };
-                if let Some(options) = fence.options() {
-                    return Err(error(
-                        options.syntax(),
-                        "fence options require their document owner",
-                    ));
-                }
+                required(fence.presentation(), &node)?;
                 if let Some(code) = fence.mech_code() {
                     pending.push((code.syntax().clone(), scope));
                 }
@@ -113,12 +105,18 @@ impl SourceIndex {
             if let Some(import) = ImportDeclarationSyntax::cast(node.clone()) {
                 let specifier = required(import.specifier(), &node)?;
                 let declaration = classify_import_specifier(text(specifier.syntax())?);
-                index.canonical_import(&node, scope, declaration)?;
+                index.canonical_import(specifier.syntax(), scope, declaration)?;
                 continue;
             }
             if let Some(import) = ModuleImportSyntax::cast(node.clone()) {
+                let occurrence = module_import_range(&import)?;
                 for declaration in module_imports(&import)? {
-                    index.canonical_import(&node, scope.clone(), declaration)?;
+                    index.push_import(
+                        scope.clone(),
+                        index.declarations.len(),
+                        Some(occurrence.clone()),
+                        declaration,
+                    );
                 }
                 continue;
             }
@@ -206,6 +204,43 @@ impl SourceIndex {
     }
 }
 
+fn module_import_range(import: &ModuleImportSyntax) -> Result<SourceRange> {
+    let owner = import.syntax();
+    let mut roles = Vec::new();
+    match required(import.body(), owner)? {
+        CanonicalModuleImportBodySyntax::Module(body) => {
+            roles.push(required(body.module(), owner)?.syntax().clone());
+        }
+        CanonicalModuleImportBodySyntax::AliasedItem(body) => {
+            roles.push(required(body.module(), owner)?.syntax().clone());
+            roles.push(required(body.item(), owner)?.syntax().clone());
+            let alias = required(body.alias(), owner)?;
+            if let Some(context) = alias.context() {
+                roles.push(required(context.name(), owner)?.syntax().clone());
+            } else {
+                let value = required(alias.value(), owner)?;
+                roles.push(required(value.path(), owner)?.syntax().clone());
+            }
+        }
+        CanonicalModuleImportBodySyntax::Suffix(body) => {
+            roles.push(required(body.module(), owner)?.syntax().clone());
+            if let Some(group) = body.group() {
+                for item in group.items() {
+                    roles.push(required(item.path(), owner)?.syntax().clone());
+                }
+            } else if let Some(item) = body.item() {
+                roles.push(item.syntax().clone());
+            }
+        }
+    }
+    let start = roles.iter().min_by_key(|node| node.range().start).unwrap();
+    let end = roles.iter().max_by_key(|node| node.range().end).unwrap();
+    Ok(SourceRange {
+        start: range(start)?.start,
+        end: range(end)?.end,
+    })
+}
+
 fn module_imports(import: &ModuleImportSyntax) -> Result<Vec<SourceImportDeclaration>> {
     let node = import.syntax();
     Ok(match required(import.body(), node)? {
@@ -247,20 +282,13 @@ fn module_imports(import: &ModuleImportSyntax) -> Result<Vec<SourceImportDeclara
     })
 }
 
-// SourceIndex's public resolver coordinates are one-based Unicode scalar columns.
-// Canonical byte ranges remain on errors; this conversion never reparses syntax.
+// Resolver coordinates use one-based extended grapheme columns. Retained byte
+// ranges stay canonical; the snapshot owns this consumer-coordinate projection.
 fn range(node: &SyntaxNode) -> Result<SourceRange> {
-    let source = node.source();
-    let location = |offset| -> Result<mech_core::SourceLocation> {
-        let line = source.line_index().line_of(offset);
-        let start = source.line_index().line_start(line).unwrap();
-        let prefix = source
-            .text(TextRange::new(start, offset))
-            .map_err(|_| error(node, "canonical source position is unavailable"))?;
-        Ok(mech_core::SourceLocation {
-            row: line + 1,
-            col: prefix.chars().count() + 1,
-        })
+    let location = |offset| {
+        node.source()
+            .source_location(offset)
+            .ok_or_else(|| error(node, "canonical source position is unavailable"))
     };
     Ok(SourceRange {
         start: location(node.range().start)?,

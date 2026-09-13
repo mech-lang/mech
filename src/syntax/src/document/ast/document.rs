@@ -161,6 +161,34 @@ impl CodeBlockSyntax {
         Some(CodeFenceInfo::from_info_string(info))
     }
 
+    pub fn presentation(&self) -> Option<crate::document::CodeFencePresentation> {
+        use crate::document::NodeFlags;
+        if self.syntax().flags().intersects(
+            NodeFlags::ERROR
+                | NodeFlags::MISSING
+                | NodeFlags::CONTAINS_ERROR
+                | NodeFlags::CONTAINS_MISSING,
+        ) {
+            return None;
+        }
+        let mut presentation = crate::document::CodeFencePresentation::default();
+        if let Some(options) = self.options() {
+            for mapping in options.mappings() {
+                let key = mapping.key()?.syntax().text().ok()?;
+                let value = mapping.value()?.decoded_text()?;
+                if key == "output" {
+                    presentation.show_output = !matches!(
+                        value.trim().to_ascii_lowercase().as_str(),
+                        "false" | "no" | "off" | "0"
+                    );
+                } else {
+                    presentation.styles.push((key, value));
+                }
+            }
+        }
+        Some(presentation)
+    }
+
     pub fn options(&self) -> Option<OptionMapSyntax> {
         self.syntax().children().find_map(OptionMapSyntax::cast)
     }
@@ -247,5 +275,43 @@ fn collect_sections(node: &SyntaxNode, output: &mut Vec<SectionSyntax>) {
         } else if child.kind() == SyntaxKind::Body {
             collect_sections(&child, output);
         }
+    }
+}
+
+impl OptionMapSyntax {
+    pub fn mappings(&self) -> Vec<crate::document::OptionMappingSyntax> {
+        self.syntax()
+            .children()
+            .filter_map(crate::document::OptionMappingSyntax::cast)
+            .collect()
+    }
+}
+
+impl crate::document::OptionMappingSyntax {
+    pub fn key(&self) -> Option<IdentifierSyntax> {
+        self.syntax().children().find_map(IdentifierSyntax::cast)
+    }
+    pub fn value(&self) -> Option<crate::document::OptionValueSyntax> {
+        self.syntax()
+            .children()
+            .find_map(crate::document::OptionValueSyntax::cast)
+    }
+}
+
+impl crate::document::OptionValueSyntax {
+    pub fn decoded_text(&self) -> Option<alloc::string::String> {
+        if let Some(string) = self
+            .syntax()
+            .children()
+            .find_map(crate::document::StringLiteralSyntax::cast)
+        {
+            return string.decoded_text();
+        }
+        self.syntax()
+            .children()
+            .find_map(IdentifierSyntax::cast)?
+            .syntax()
+            .text()
+            .ok()
     }
 }

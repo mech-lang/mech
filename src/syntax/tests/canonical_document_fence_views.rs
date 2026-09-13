@@ -246,3 +246,77 @@ fn piece_backed_crlf_fence_bodies_keep_physical_unicode_ranges() {
         );
     }
 }
+
+#[test]
+fn fence_presentation_uses_typed_options_and_shared_string_decoding() {
+    for value in ["false", "no", "off", "\"0\"", "\"OFF\""] {
+        let text = format!(
+            "```mech:worker{{output: {value}, color: red, border: \"1px solid red\"}}\nx := 1\n```\n"
+        );
+        let parsed = parse_canonical_document(source(&text), ParseConfig::default());
+        assert!(
+            parsed.diagnostics.is_empty(),
+            "{text}: {:?}",
+            parsed.diagnostics
+        );
+        let fence = find::<CodeBlockSyntax>(parsed.syntax()).unwrap();
+        let presentation = fence.presentation().unwrap();
+        assert!(!presentation.show_output);
+        assert_eq!(
+            presentation.styles,
+            vec![
+                ("color".into(), "red".into()),
+                ("border".into(), "1px solid red".into())
+            ]
+        );
+        assert_eq!(
+            fence.info().unwrap().scope,
+            CodeFenceScope::Named("worker".into())
+        );
+    }
+    let text = "```mech{output: true, label: \"a\\n\\u{1f4a1}\"}\nx := 1\n```\n";
+    let parsed = parse_canonical_document(source(text), ParseConfig::default());
+    assert!(parsed.diagnostics.is_empty(), "{:?}", parsed.diagnostics);
+    let presentation = find::<CodeBlockSyntax>(parsed.syntax())
+        .unwrap()
+        .presentation()
+        .unwrap();
+    assert!(presentation.show_output);
+    assert_eq!(presentation.styles, vec![("label".into(), "a\n💡".into())]);
+}
+
+#[test]
+fn fence_information_normalizes_optional_colon_and_repeated_prefixes() {
+    use mech_syntax::document::CodeFenceInfo;
+    for prefix in ["mech", "mec", "🤖", "mechmechmecmec🤖🤖"] {
+        for separator in ["", ":"] {
+            for (name, scope, hidden) in [
+                ("", CodeFenceScope::Root, false),
+                ("hidden", CodeFenceScope::Root, true),
+                ("disabled", CodeFenceScope::Disabled, false),
+                ("worker", CodeFenceScope::Named("worker".into()), false),
+            ] {
+                let info = format!("{prefix}{separator}{name}");
+                assert_eq!(
+                    CodeFenceInfo::from_info_string(&info),
+                    CodeFenceInfo {
+                        scope: scope.clone(),
+                        hidden
+                    }
+                );
+                let parsed = parse_canonical_document(
+                    source(&format!("```{info}\nx := 1\n```\n")),
+                    ParseConfig::default(),
+                );
+                assert!(
+                    parsed.diagnostics.is_empty(),
+                    "{info}: {:?}",
+                    parsed.diagnostics
+                );
+                let fence = find::<CodeBlockSyntax>(parsed.syntax()).unwrap();
+                assert_eq!(fence.info().unwrap().scope, scope);
+                assert_eq!(fence.mech_code().unwrap().items().len(), 1);
+            }
+        }
+    }
+}

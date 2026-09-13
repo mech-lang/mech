@@ -2977,8 +2977,7 @@ impl SemanticBuilder {
         let value = self.required(literal.value(), literal.syntax(), "a literal value")?;
         match value {
             LiteralValueSyntax::String(value) => {
-                let source = node_text(value.syntax())?;
-                let decoded = decode_string(&source).ok_or_else(|| SourceSemanticError {
+                let decoded = value.decoded_text().ok_or_else(|| SourceSemanticError {
                     code: "source-semantics/invalid-string-literal",
                     message: "canonical string could not be decoded".to_owned(),
                     anchor: SourceSemanticAnchor::for_node(value.syntax()),
@@ -6307,48 +6306,6 @@ fn wrap_optional_number(
             }),
         )
     })
-}
-
-fn decode_string(source: &str) -> Option<String> {
-    if source.starts_with("\"\"\"") && source.ends_with("\"\"\"") && source.len() >= 6 {
-        return Some(source[3..source.len() - 3].to_owned());
-    }
-    let body = source.strip_prefix('"')?.strip_suffix('"')?;
-    let mut output = String::with_capacity(body.len());
-    let mut chars = body.chars().peekable();
-    while let Some(character) = chars.next() {
-        if character != '\\' {
-            output.push(character);
-            continue;
-        }
-        let escaped = chars.next()?;
-        output.push(match escaped {
-            '0' => '\0',
-            'n' => '\n',
-            'r' => '\r',
-            't' => '\t',
-            '\\' => '\\',
-            '"' => '"',
-            'u' if chars.peek() == Some(&'{') => {
-                chars.next();
-                let mut digits = String::new();
-                loop {
-                    let next = chars.next()?;
-                    if next == '}' {
-                        break;
-                    }
-                    if !next.is_ascii_hexdigit() || digits.len() == 6 {
-                        return None;
-                    }
-                    digits.push(next);
-                }
-                let scalar = u32::from_str_radix(&digits, 16).ok()?;
-                char::from_u32(scalar)?
-            }
-            other => other,
-        });
-    }
-    Some(output)
 }
 
 fn node_text(node: &SyntaxNode) -> Result<String, SourceSemanticError> {
