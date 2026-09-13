@@ -1901,3 +1901,34 @@ fn review_annotated_empty_map_roundtrips_and_executes() {
         "{:}"
     );
 }
+
+#[test]
+fn review_empty_maps_enforce_the_same_keyability_as_populated_maps() {
+    for (kind, populated) in [("c32", "{1<c32>: true}"), ("c64", "{1+2i: true}")] {
+        let source = format!("x<{{{kind}:bool}}> := {{:}}");
+        let error = CanonicalSourceFrontend
+            .compile_definition(&definition(&source))
+            .err()
+            .expect("complex map key must be rejected before emission");
+        let populated_error = CanonicalSourceFrontend
+            .compile_expression(&expression(populated))
+            .err()
+            .expect("populated map uses the same keyability boundary");
+        assert_eq!(error.code, "source-semantics/non-keyable-map-key-kind");
+        assert_eq!(populated_error.code, error.code);
+        assert_eq!(error.anchor.document, DocumentId(0x544));
+        assert_eq!(error.anchor.revision, Revision(1));
+        assert_eq!(
+            &source[error.anchor.range.start.0 as usize..error.anchor.range.end.0 as usize],
+            "{:}"
+        );
+    }
+    for kind in ["u8", "bool", "string"] {
+        let source = format!("x<{{{kind}:c64}}> := {{:}}");
+        CanonicalSourceFrontend
+            .compile_definition(&definition(&source))
+            .unwrap()
+            .compile_artifact()
+            .unwrap();
+    }
+}

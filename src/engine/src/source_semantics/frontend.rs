@@ -773,6 +773,27 @@ impl<'schema> ExpectedSchema<'schema> {
     }
 }
 
+fn require_keyable_map_key(
+    body: &SchemaBody,
+    parameters: &[DimensionParameterDeclaration],
+    syntax: &SyntaxNode,
+) -> Result<(), SourceSemanticError> {
+    let resolved = ResolvedType::from_schema_body(body, parameters).map_err(|error| {
+        internal(
+            SourceSemanticAnchor::for_node(syntax),
+            format!("invalid map key schema: {error}"),
+        )
+    })?;
+    if !resolved.satisfies(BuiltinKindPredicate::Keyable) {
+        return Err(SourceSemanticError {
+            code: "source-semantics/non-keyable-map-key-kind",
+            message: "map literal keys require a keyable kind".to_owned(),
+            anchor: SourceSemanticAnchor::for_node(syntax),
+        });
+    }
+    Ok(())
+}
+
 fn schema_component(schema: &SchemaDraft, body: &SchemaBody) -> SchemaDraft {
     SchemaDraft {
         body: body.clone(),
@@ -3076,6 +3097,7 @@ impl SemanticBuilder {
                         anchor: SourceSemanticAnchor::for_node(value.syntax()),
                     });
                 };
+                require_keyable_map_key(key, dimension_parameters, value.syntax())?;
                 Ok(self.emit_with_schema_draft(
                     "core/composite-pack",
                     Vec::new(),
@@ -3648,21 +3670,11 @@ impl SemanticBuilder {
                 });
             }
         }
-        let resolved_key =
-            ResolvedType::from_schema_body(&key_schema.body, &key_schema.dimension_parameters)
-                .map_err(|error| {
-                    internal(
-                        SourceSemanticAnchor::for_node(map.syntax()),
-                        format!("invalid map key schema: {error}"),
-                    )
-                })?;
-        if !resolved_key.satisfies(BuiltinKindPredicate::Keyable) {
-            return Err(SourceSemanticError {
-                code: "source-semantics/non-keyable-map-key-kind",
-                message: "map literal keys require a keyable kind".to_owned(),
-                anchor: SourceSemanticAnchor::for_node(map.syntax()),
-            });
-        }
+        require_keyable_map_key(
+            &key_schema.body,
+            &key_schema.dimension_parameters,
+            map.syntax(),
+        )?;
         let mut parameters = Vec::new();
         let key = embed_schema_draft(
             &key_schema,
