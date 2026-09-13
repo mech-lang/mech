@@ -1835,3 +1835,69 @@ fn review_live_optional_matrix_blocks_preserve_rectangular_order() {
         );
     }
 }
+
+#[test]
+fn review_scalar_booleans_are_not_logical_masks() {
+    for source in [
+        "(a<[f64]:1,2>, a[true])",
+        "(a<[f64]:1,1>, a[false])",
+        "(a<string>, a[true])",
+        "(a<[f64]:1,2>, a[true,:])",
+    ] {
+        let error = CanonicalSourceFrontend
+            .compile_expression(&expression(source))
+            .err()
+            .expect(source);
+        assert_eq!(
+            error.code, "source-semantics/incompatible-selection-kind",
+            "{source}: {error}"
+        );
+        assert_eq!(error.anchor.document, DocumentId(0x544));
+        assert_eq!(error.anchor.revision, Revision(1));
+    }
+    compile("(a<{bool:f64}>, a[true])")
+        .compile_artifact()
+        .unwrap();
+    compile("(a<[f64]:1,2>, a[[true false]])")
+        .compile_artifact()
+        .unwrap();
+}
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn review_annotated_empty_map_roundtrips_and_executes() {
+    use mech_core::{FunctionCatalogBuilder, ReactiveInstanceId, ValueData};
+    use mech_engine::resident::{ActivationFacts, activate};
+    let source = "x<{u8:bool}> := {:}";
+    let compiled = CanonicalSourceFrontend
+        .compile_definition(&definition(source))
+        .unwrap();
+    let artifact = compiled.compile_artifact().unwrap();
+    let artifact = mech_engine::decode_program_artifact_bytecode_v1(
+        &mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+    )
+    .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(822, 61),
+        &artifact,
+        &catalog.build().unwrap(),
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    for _ in 0..2 {
+        instance.turn(&[]).unwrap();
+        let output = instance.copied_output(0).unwrap();
+        assert!(matches!(output.data(), ValueData::Map(map) if map.entries().is_empty()));
+    }
+    let error = CanonicalSourceFrontend
+        .compile_expression(&expression("(1, {:})"))
+        .err()
+        .unwrap();
+    assert_eq!(error.code, "source-semantics/unresolved-map-entry-kind");
+    assert_eq!(
+        &"(1, {:})"[error.anchor.range.start.0 as usize..error.anchor.range.end.0 as usize],
+        "{:}"
+    );
+}

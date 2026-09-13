@@ -658,3 +658,95 @@ fn select_all_derives_its_shape_from_a_symbolic_selected_source() {
         }
     }
 }
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn review_swizzles_use_field_ids_and_preserve_heterogeneous_order() {
+    use crate::resident::{ActivationFacts, activate};
+    use mech_core::{FunctionCatalogBuilder, ReactiveInstanceId, ValueData};
+    let mut catalog = FunctionCatalogBuilder::new();
+    crate::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    for (source, expected) in [
+        (
+            "a := {first: 7u8, second: true}",
+            ValueDataDraft::Tuple(
+                vec![
+                    ValueDataDraft::Bool(true),
+                    ValueDataDraft::U8(7),
+                    ValueDataDraft::Bool(true),
+                ]
+                .into_boxed_slice(),
+            ),
+        ),
+        (
+            "a := (|first<u8> second<bool>|7u8 true|8u8 false|)",
+            ValueDataDraft::Tuple(
+                vec![
+                    ValueDataDraft::Matrix(
+                        vec![ValueDataDraft::Bool(true), ValueDataDraft::Bool(false)]
+                            .into_boxed_slice(),
+                    ),
+                    ValueDataDraft::Matrix(
+                        vec![ValueDataDraft::U8(7), ValueDataDraft::U8(8)].into_boxed_slice(),
+                    ),
+                    ValueDataDraft::Matrix(
+                        vec![ValueDataDraft::Bool(true), ValueDataDraft::Bool(false)]
+                            .into_boxed_slice(),
+                    ),
+                ]
+                .into_boxed_slice(),
+            ),
+        ),
+    ] {
+        let compiled = selected(source, "a.second,first,second");
+        let selectors = compiled
+            .program
+            .nodes
+            .iter()
+            .filter(|node| {
+                node.operation()
+                    .is_some_and(|operation| operation.canonical_name() == "access/column")
+            })
+            .map(|node| {
+                let SourceValue::Constant(id) = node.inputs[1] else {
+                    panic!("immutable field selector")
+                };
+                let ValueData::Id(id) = compiled.constants.get(id).unwrap().data() else {
+                    panic!("canonical field ID")
+                };
+                *id
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(
+            selectors,
+            vec![
+                mech_core::hash_str("second"),
+                mech_core::hash_str("first"),
+                mech_core::hash_str("second")
+            ]
+        );
+        let artifact = compiled.compile_artifact().unwrap();
+        let artifact = crate::decode_program_artifact_bytecode_v1(
+            &crate::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+        )
+        .unwrap();
+        let mut instance = activate(
+            ReactiveInstanceId::new(822, 62),
+            &artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        instance.turn(&[]).unwrap();
+        assert_eq!(
+            instance
+                .copied_output(0)
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            expected,
+            "{source}"
+        );
+    }
+}

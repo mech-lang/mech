@@ -22,7 +22,12 @@ fn compile(source: &str) -> CanonicalSourceProgram {
         ParseConfig::default(),
     )
     .unwrap();
-    assert!(parsed.is_strictly_clean(), "{source}");
+    assert!(
+        parsed.is_strictly_clean(),
+        "{source}: {:?}; consumed {:?}",
+        parsed.diagnostics,
+        parsed.consumed
+    );
     assert_eq!(parsed.consumed.end.0 as usize, source.len());
     CanonicalSourceFrontend
         .compile_expression(&find(parsed.syntax()).unwrap())
@@ -1103,7 +1108,9 @@ fn long_blocks_keep_local_slots_outside_the_artifact_schedule() {
 fn numeric_match_roundtrips_and_uses_literal_binding_guard_and_wildcard_on_each_turn() {
     use mech_core::{FunctionCatalogBuilder, ReactiveInstanceId, ResidentValueRef, ValueData};
     use mech_engine::resident::{ActivationFacts, CapturedSignalInput, activate};
-    let compiled = compile("signal<f64> ? | 0 => 10 | item, item > 0 => item + 1 | * => -1");
+    let compiled = compile(
+        "signal<f64> ? | -1 => 20 | -(3) => 22 | -1.0e3 => 30 | -128<f64> => 40 | 0 => 10 | item, item > 0 => item + 1 | * => -1",
+    );
     let artifact = compiled.compile_artifact().unwrap();
     let artifact = decode_program_artifact_bytecode_v1(
         &encode_program_artifact_bytecode_v1(&artifact).unwrap(),
@@ -1122,7 +1129,12 @@ fn numeric_match_roundtrips_and_uses_literal_binding_guard_and_wildcard_on_each_
     for (input, expected) in [
         (0.0, 10.0),
         (3.0, 4.0),
+        (-4.0, -1.0),
         (-2.0, -1.0),
+        (-3.0, 22.0),
+        (-1.0, 20.0),
+        (-1000.0, 30.0),
+        (-128.0, 40.0),
         (-0.0, 10.0),
         (8.0, 9.0),
     ] {
@@ -1145,6 +1157,7 @@ fn exact_scalar_pattern_schemas_are_artifact_semantics() {
     for source in [
         "x<u8> ? | 1u8 => 2u8 | y => y",
         "x<ix> ? | 1<ix> => 2<ix> | y => y",
+        "x<i8> ? | -128<i8> => 0<i8> | y => y",
     ] {
         let artifact = compile(source).compile_artifact().unwrap();
         let bytes = encode_program_artifact_bytecode_v1(&artifact).unwrap();

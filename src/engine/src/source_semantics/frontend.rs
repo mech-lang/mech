@@ -2844,48 +2844,7 @@ impl SemanticBuilder {
             }
             LiteralValueSyntax::Number(value) => {
                 let source = canonical_number_source(&value)?;
-                let dynamic_option = annotation == Some(BuiltinSchema::OptionDynamic);
-                let selected_suffix = selected_integer_suffix(&value)?;
-                if selected_suffix.is_some()
-                    && annotation.is_some_and(|schema| schema != BuiltinSchema::Dynamic)
-                {
-                    let (schema, data) =
-                        decode_number(&source, None, selected_suffix).ok_or_else(|| {
-                            SourceSemanticError {
-                                code: "source-semantics/invalid-number-literal",
-                                message: format!(
-                                    "canonical number {source:?} could not be represented"
-                                ),
-                                anchor: SourceSemanticAnchor::for_node(value.syntax()),
-                            }
-                        })?;
-                    if dynamic_option {
-                        return Ok(self.constant_dynamic_option(builtin_schema_draft(schema), data));
-                    }
-                    let literal = self.constant(schema, data);
-                    return self.conform_value(
-                        literal,
-                        annotation.expect("checked numeric annotation"),
-                        value.syntax(),
-                        "source-semantics/incompatible-literal-kind",
-                        "numeric literal does not satisfy its outer kind annotation",
-                    );
-                }
-                let (schema, data) = decode_number(
-                    &source,
-                    if dynamic_option { None } else { annotation },
-                    selected_suffix,
-                )
-                .ok_or_else(|| SourceSemanticError {
-                    code: "source-semantics/invalid-number-literal",
-                    message: format!("canonical number {source:?} could not be represented"),
-                    anchor: SourceSemanticAnchor::for_node(value.syntax()),
-                })?;
-                Ok(if dynamic_option {
-                    self.constant_dynamic_option(builtin_schema_draft(schema), data)
-                } else {
-                    self.constant(schema, data)
-                })
+                self.number_literal(&value, annotation, source)
             }
             LiteralValueSyntax::Empty(_) => {
                 unreachable!("source empty handled before literal typing")
@@ -2895,6 +2854,96 @@ impl SemanticBuilder {
             }
             LiteralValueSyntax::KindAnnotation(value) => self.kind_value(&value, annotation),
         }
+    }
+
+    fn number_literal(
+        &mut self,
+        value: &mech_syntax::document::NumberSyntax,
+        annotation: Option<BuiltinSchema>,
+        source: String,
+    ) -> Result<PendingValue, SourceSemanticError> {
+        let dynamic_option = annotation == Some(BuiltinSchema::OptionDynamic);
+        let selected_suffix = selected_integer_suffix(&value)?;
+        if selected_suffix.is_some()
+            && annotation.is_some_and(|schema| schema != BuiltinSchema::Dynamic)
+        {
+            let (schema, data) =
+                decode_number(&source, None, selected_suffix).ok_or_else(|| {
+                    SourceSemanticError {
+                        code: "source-semantics/invalid-number-literal",
+                        message: format!("canonical number {source:?} could not be represented"),
+                        anchor: SourceSemanticAnchor::for_node(value.syntax()),
+                    }
+                })?;
+            if dynamic_option {
+                return Ok(self.constant_dynamic_option(builtin_schema_draft(schema), data));
+            }
+            let literal = self.constant(schema, data);
+            return self.conform_value(
+                literal,
+                annotation.expect("checked numeric annotation"),
+                value.syntax(),
+                "source-semantics/incompatible-literal-kind",
+                "numeric literal does not satisfy its outer kind annotation",
+            );
+        }
+        let (schema, data) = decode_number(
+            &source,
+            if dynamic_option { None } else { annotation },
+            selected_suffix,
+        )
+        .ok_or_else(|| SourceSemanticError {
+            code: "source-semantics/invalid-number-literal",
+            message: format!("canonical number {source:?} could not be represented"),
+            anchor: SourceSemanticAnchor::for_node(value.syntax()),
+        })?;
+        Ok(if dynamic_option {
+            self.constant_dynamic_option(builtin_schema_draft(schema), data)
+        } else {
+            self.constant(schema, data)
+        })
+    }
+
+    fn signed_pattern_literal(
+        &mut self,
+        expression: &ExpressionSyntax,
+    ) -> Result<Option<PendingValue>, SourceSemanticError> {
+        fn find<N: AstNode>(node: &SyntaxNode, range: TextRange) -> Option<N> {
+            if node.range() == range {
+                if let Some(value) = N::cast(node.clone()) {
+                    return Some(value);
+                }
+                if let Some(group) =
+                    mech_syntax::document::ParentheticalExpressionSyntax::cast(node.clone())
+                {
+                    let expression = group.expression()?;
+                    return find(expression.syntax(), expression.syntax().range());
+                }
+            }
+            node.children().find_map(|child| find(&child, range))
+        }
+        let Some(negate) = find::<mech_syntax::document::NegateFactorSyntax>(
+            expression.syntax(),
+            expression.syntax().range(),
+        ) else {
+            return Ok(None);
+        };
+        let Some(operand) = negate.operand() else {
+            return Ok(None);
+        };
+        let Some(literal) = find::<LiteralSyntax>(operand.syntax(), operand.syntax().range())
+        else {
+            return Ok(None);
+        };
+        let Some(LiteralValueSyntax::Number(number)) = literal.value() else {
+            return Ok(None);
+        };
+        let annotation = literal
+            .annotation()
+            .map(|annotation| annotation_schema(&annotation))
+            .transpose()?;
+        let source = format!("-{}", canonical_number_source(&number)?);
+        self.number_literal(&number, annotation, source).map(Some)
     }
 
     fn literal_constant(
@@ -3009,11 +3058,40 @@ impl SemanticBuilder {
             StructureValueSyntax::Set(value) => self.set(&value, expected),
             StructureValueSyntax::Tuple(value) => self.tuple(&value, expected),
             StructureValueSyntax::TupleStruct(value) => self.tuple_struct(&value, expected),
-            StructureValueSyntax::EmptyMap(value) => Err(SourceSemanticError {
-                code: "source-semantics/unresolved-map-entry-kind",
-                message: "empty map literals require explicit key and value kinds".to_owned(),
-                anchor: SourceSemanticAnchor::for_node(value.syntax()),
-            }),
+            StructureValueSyntax::EmptyMap(value) => {
+                let Some(SchemaDraft {
+                    dimension_parameters,
+                    body:
+                        SchemaBody::Map {
+                            key,
+                            value: element,
+                            ..
+                        },
+                }) = expected
+                else {
+                    return Err(SourceSemanticError {
+                        code: "source-semantics/unresolved-map-entry-kind",
+                        message: "empty map literals require explicit key and value kinds"
+                            .to_owned(),
+                        anchor: SourceSemanticAnchor::for_node(value.syntax()),
+                    });
+                };
+                Ok(self.emit_with_schema_draft(
+                    "core/composite-pack",
+                    Vec::new(),
+                    SchemaDraft {
+                        dimension_parameters: dimension_parameters.clone(),
+                        body: SchemaBody::Map {
+                            key: key.clone(),
+                            value: element.clone(),
+                            cardinality: CardinalitySpec::Exact(DimensionExpr::Constant(0)),
+                        },
+                    },
+                    value.syntax(),
+                    "map",
+                    None,
+                ))
+            }
             StructureValueSyntax::EmptySet(value) => Err(SourceSemanticError {
                 code: "source-semantics/unresolved-set-element-kind",
                 message: "empty set literals require an explicit element kind".to_owned(),
@@ -3910,60 +3988,7 @@ impl SemanticBuilder {
                 let field =
                     self.required(value.identifier(), value.syntax(), "a selected field")?;
                 let name = node_text(field.syntax())?;
-                let mut schema = self.schema_draft_of(source)?;
-                let body = match &schema.body {
-                    SchemaBody::Record(fields) => fields
-                        .iter()
-                        .find(|field| field.name == name)
-                        .map(|field| field.schema.clone()),
-                    SchemaBody::Table { columns, rows } => {
-                        let element = columns
-                            .iter()
-                            .find(|column| column.name == name)
-                            .map(|column| column.schema.clone());
-                        let rows = match rows {
-                            CardinalitySpec::Exact(rows) => rows.clone(),
-                            CardinalitySpec::Dynamic { upper_bound } => {
-                                let id = DimensionParameterId::new(
-                                    schema.dimension_parameters.len() as u32,
-                                );
-                                let mut parameters = schema.dimension_parameters.into_vec();
-                                parameters.push(DimensionParameterDeclaration {
-                                    id,
-                                    origin: DimensionParameterOrigin::Inferred,
-                                    lifetime: DimensionLifetime::Turn,
-                                    lower_bound: DimensionExpr::Constant(0),
-                                    upper_bound: upper_bound.clone(),
-                                });
-                                schema.dimension_parameters = parameters.into_boxed_slice();
-                                DimensionExpr::Parameter(id)
-                            }
-                        };
-                        element.map(|element| SchemaBody::Matrix {
-                            element: Box::new(element),
-                            dimensions: vec![rows, DimensionExpr::Constant(1)].into_boxed_slice(),
-                        })
-                    }
-                    SchemaBody::Dynamic => Some(SchemaBody::Dynamic),
-                    _ => None,
-                }
-                .ok_or_else(|| SourceSemanticError {
-                    code: "source-semantics/unknown-selected-field",
-                    message: format!("source has no field {name}"),
-                    anchor: SourceSemanticAnchor::for_node(item.syntax()),
-                })?;
-                let selector = self.constant_exact(
-                    SchemaBody::Id,
-                    ValueDataDraft::Id(mech_core::hash_str(&name)),
-                );
-                return Ok(self.emit_with_schema_draft(
-                    "access/column",
-                    vec![source, selector],
-                    SchemaDraft { body, ..schema },
-                    item.syntax(),
-                    "slice",
-                    None,
-                ));
+                return self.select_field(source, &name, item.syntax());
             }
             SubscriptItemSyntax::DotInteger(value) => {
                 let integer =
@@ -3977,21 +4002,31 @@ impl SemanticBuilder {
                 return self.select_values(source, vec![Some(selector)], item.syntax());
             }
             SubscriptItemSyntax::Swizzle(value) => {
-                let inputs = value
+                let names = value
                     .identifiers()
                     .map(|name| node_text(name.syntax()))
-                    .collect::<Result<Vec<_>, _>>()?
-                    .into_iter()
-                    .map(|name| self.constant(BuiltinSchema::String, ValueDataDraft::String(name)))
-                    .collect::<Vec<_>>();
-                let mut all = vec![source];
-                all.extend(inputs);
-                return Ok(self.emit(
-                    "access/swizzle",
-                    all,
-                    BuiltinSchema::Dynamic,
+                    .collect::<Result<Vec<_>, _>>()?;
+                let mut inputs = Vec::new();
+                let mut parameters = Vec::new();
+                let mut fields = Vec::new();
+                for name in names {
+                    let selected = self.select_field(source, &name, item.syntax())?;
+                    fields.push(embed_schema_draft(
+                        &self.schema_draft_of(selected)?,
+                        &mut parameters,
+                        SourceSemanticAnchor::for_node(item.syntax()),
+                    )?);
+                    inputs.push(selected);
+                }
+                return Ok(self.emit_with_schema_draft(
+                    "core/composite-pack",
+                    inputs,
+                    SchemaDraft {
+                        dimension_parameters: parameters.into_boxed_slice(),
+                        body: SchemaBody::Tuple(fields.into_boxed_slice()),
+                    },
                     item.syntax(),
-                    "slice",
+                    "swizzle",
                     None,
                 ));
             }
@@ -4004,6 +4039,67 @@ impl SemanticBuilder {
             })
             .collect::<Result<Vec<_>, _>>()?;
         self.select_values(source, selectors, item.syntax())
+    }
+
+    fn select_field(
+        &mut self,
+        source: PendingValue,
+        name: &str,
+        syntax: &SyntaxNode,
+    ) -> Result<PendingValue, SourceSemanticError> {
+        let mut schema = self.schema_draft_of(source)?;
+        let body = match &schema.body {
+            SchemaBody::Record(fields) => fields
+                .iter()
+                .find(|field| field.name == name)
+                .map(|field| field.schema.clone()),
+            SchemaBody::Table { columns, rows } => {
+                let element = columns
+                    .iter()
+                    .find(|column| column.name == name)
+                    .map(|column| column.schema.clone());
+                let rows = match rows {
+                    CardinalitySpec::Exact(rows) => rows.clone(),
+                    CardinalitySpec::Dynamic { upper_bound } => {
+                        let id =
+                            DimensionParameterId::new(schema.dimension_parameters.len() as u32);
+                        let mut parameters = schema.dimension_parameters.into_vec();
+                        parameters.push(DimensionParameterDeclaration {
+                            id,
+                            origin: DimensionParameterOrigin::Inferred,
+                            lifetime: DimensionLifetime::Turn,
+                            lower_bound: DimensionExpr::Constant(0),
+                            upper_bound: upper_bound.clone(),
+                        });
+                        schema.dimension_parameters = parameters.into_boxed_slice();
+                        DimensionExpr::Parameter(id)
+                    }
+                };
+                element.map(|element| SchemaBody::Matrix {
+                    element: Box::new(element),
+                    dimensions: vec![rows, DimensionExpr::Constant(1)].into_boxed_slice(),
+                })
+            }
+            SchemaBody::Dynamic => Some(SchemaBody::Dynamic),
+            _ => None,
+        }
+        .ok_or_else(|| SourceSemanticError {
+            code: "source-semantics/unknown-selected-field",
+            message: format!("source has no field {name}"),
+            anchor: SourceSemanticAnchor::for_node(syntax),
+        })?;
+        let selector = self.constant_exact(
+            SchemaBody::Id,
+            ValueDataDraft::Id(mech_core::hash_str(&name)),
+        );
+        Ok(self.emit_with_schema_draft(
+            "access/column",
+            vec![source, selector],
+            SchemaDraft { body, ..schema },
+            syntax,
+            "slice",
+            None,
+        ))
     }
 
     fn select_values(
@@ -4048,7 +4144,6 @@ impl SemanticBuilder {
                     )?;
                     let positional = |schema: &SchemaBody| {
                         mech_core::is_positional_selector_schema(schema)
-                            || matches!(schema, SchemaBody::Bool)
                             || matches!(schema, SchemaBody::Matrix { element, .. }
                                 if mech_core::is_positional_selector_schema(element)
                                     || element.as_ref() == &SchemaBody::Bool)
@@ -4072,8 +4167,7 @@ impl SemanticBuilder {
                     }
                     let map_key = matches!(&body, SchemaBody::Map { .. });
                     let logical = !map_key
-                        && (matches!(&selector, SchemaBody::Bool)
-                            || matches!(&selector, SchemaBody::Matrix { element, .. } if element.as_ref() == &SchemaBody::Bool));
+                        && matches!(&selector, SchemaBody::Matrix { element, .. } if element.as_ref() == &SchemaBody::Bool);
                     let (count, is_scalar) = match selector {
                         _ if map_key => (DimensionExpr::Constant(1), true),
                         SchemaBody::Matrix { dimensions, .. } => {
@@ -6384,7 +6478,10 @@ impl SemanticBuilder {
                         crate::MatchPattern::Bind
                     } else {
                         let start = self.nodes.len();
-                        let literal = self.expression(&expression)?.0;
+                        let literal = match self.signed_pattern_literal(&expression)? {
+                            Some(literal) => literal,
+                            None => self.expression(&expression)?.0,
+                        };
                         let PendingValue::Constant(index) = literal else {
                             return Err(error(
                                 "only scalar literal, wildcard and bind patterns are lowered",

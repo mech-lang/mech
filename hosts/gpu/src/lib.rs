@@ -998,7 +998,11 @@ impl<'a> Compiler<'a> {
                 "integrity constraints require transactional validation and are not admitted",
             );
         }
+        let required_slots = self.required_slots();
         for slot in self.artifact.slots() {
+            if slot.role != SlotRole::State && !required_slots.contains(&slot.slot) {
+                continue;
+            }
             if slot.role == SlotRole::Output {
                 continue;
             }
@@ -1041,7 +1045,7 @@ impl<'a> Compiler<'a> {
         }
     }
 
-    fn lower_inputs(&mut self) {
+    fn required_slots(&self) -> BTreeSet<CellSlotId> {
         let turn_nodes = turn_required_nodes(self.artifact);
         let mut required_slots = BTreeSet::new();
         for node in self
@@ -1050,6 +1054,13 @@ impl<'a> Compiler<'a> {
             .iter()
             .filter(|node| turn_nodes.contains(&node.node))
         {
+            for binding in node.output_bindings.clone() {
+                if let Some(BindingDeclaration::Output { target, .. }) =
+                    self.artifact.bindings().get(binding as usize)
+                {
+                    required_slots.insert(*target);
+                }
+            }
             for binding in node.input_bindings.clone() {
                 if let Some(BindingDeclaration::Input {
                     source: ArtifactSource::Slot(slot),
@@ -1066,6 +1077,11 @@ impl<'a> Compiler<'a> {
                 ArtifactSource::Slot(slot) => Some(slot),
             }
         }));
+        required_slots
+    }
+
+    fn lower_inputs(&mut self) {
+        let required_slots = self.required_slots();
         for input in self.artifact.inputs() {
             if !required_slots.contains(&input.slot) {
                 continue;
@@ -1102,6 +1118,9 @@ impl<'a> Compiler<'a> {
     fn lower_nodes(&mut self) {
         let turn_nodes = turn_required_nodes(self.artifact);
         for node in self.artifact.nodes() {
+            if !turn_nodes.contains(&node.node) {
+                continue;
+            }
             let Some(node) = node.as_operation() else {
                 self.reject(
                     GpuDiagnosticCode::OperationUnsupported,
@@ -1111,9 +1130,6 @@ impl<'a> Compiler<'a> {
                 );
                 continue;
             };
-            if !turn_nodes.contains(&node.node) {
-                continue;
-            }
             let operation_name = display_operation(&node.operation);
             if node.operation.module_path.as_ref() == ["core"]
                 && node.operation.operation_name == "composite-pack"
