@@ -686,3 +686,60 @@ fn every_semantic_rule_meets_its_required_witness_outcome() {
         stale_hashes.join("\n")
     );
 }
+
+#[test]
+fn contextual_empty_structure_errors_keep_their_exact_syntax_anchors() {
+    let audit = repository_root().join("docs/design/grammar-audit");
+    let matrix = fs::read_to_string(audit.join("phase-2i-certification.tsv")).unwrap();
+    let structure = matrix
+        .lines()
+        .find(|line| line.starts_with("structure\t"))
+        .unwrap();
+    let linked_cases = structure
+        .split('\t')
+        .nth(12)
+        .unwrap()
+        .split(',')
+        .collect::<Vec<_>>();
+    let errors = fs::read_to_string(audit.join("phase-2i-semantic-errors.tsv")).unwrap();
+    let mut lines = errors.lines();
+    assert_eq!(
+        lines.next(),
+        Some("case-id\tgrammar-name\tsyntax-kind\tsource-json\terror-code")
+    );
+    let mut witnessed = Vec::new();
+    for line in lines {
+        let fields = line.split('\t').collect::<Vec<_>>();
+        assert_eq!(fields.len(), 5);
+        assert!(
+            linked_cases.contains(&fields[0]),
+            "unlinked conformance case {}",
+            fields[0]
+        );
+        assert_eq!(fields[1], "structure");
+        let kind = match fields[2] {
+            "EmptySet" => SyntaxKind::EmptySet,
+            "EmptyMap" => SyntaxKind::EmptyMap,
+            other => panic!("unexpected empty-structure owner {other}"),
+        };
+        let source: String = serde_json::from_str(fields[3]).unwrap();
+        let syntax = expression(&source);
+        let owner =
+            find(syntax.syntax().clone(), kind).expect("context contains the required empty form");
+        assert!(
+            owner.range().start.0 > 0,
+            "witness must test an inner source range"
+        );
+        let error = CanonicalSourceFrontend
+            .compile_expression(&syntax)
+            .err()
+            .expect("untyped empty structure requires a source error");
+        assert_eq!(error.code, fields[4], "{}", fields[0]);
+        assert_eq!(error.anchor.document, DocumentId(0x549));
+        assert_eq!(error.anchor.revision, Revision(7));
+        assert_eq!(error.anchor.range, owner.range(), "{}", fields[0]);
+        witnessed.push(fields[0]);
+    }
+    witnessed.sort_unstable();
+    assert_eq!(witnessed, ["STRUCT-EMPTY-MAP", "STRUCT-EMPTY-SET"]);
+}

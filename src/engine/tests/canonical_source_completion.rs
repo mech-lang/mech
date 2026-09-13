@@ -8,7 +8,8 @@ use mech_core::{
 };
 use mech_engine::__resident::{ActivationFacts, CapturedSignalInput, activate};
 use mech_engine::{CanonicalSourceFrontend, CanonicalSourceProgram};
-use mech_syntax::document::parser::{canonical::parse_canonical_phase_2i_rule_for_test, rules};
+use mech_syntax::document::parser::canonical::parse_canonical_phase_2i_rule_for_test;
+use mech_syntax::document::parser::rules;
 use mech_syntax::document::{
     AstNode, DocumentId, ParseConfig, Revision, SyntaxNode, TextSnapshot, VariableDefineSyntax,
 };

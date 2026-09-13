@@ -156,12 +156,12 @@ fn find_typed<N: AstNode>(node: &SyntaxNode) -> Option<N> {
     N::cast(node.clone()).or_else(|| node.children().find_map(|child| find_typed(&child)))
 }
 
-fn hash_node<N: AstNode + std::fmt::Debug>(hash: &mut StableHash, role: &str, value: Option<N>) {
+fn hash_node<N: AstNode>(hash: &mut StableHash, role: &str, value: Option<N>) {
     hash.field(role);
     hash.field(std::any::type_name::<N>());
     match value {
         Some(value) => {
-            hash.field(&format!("typed:{value:?}"));
+            hash.field(&value.syntax().text().expect("typed accessor source text"));
             hash.field(&format!(
                 "some:{:?}:{}:{}:{}",
                 value.syntax().kind(),
@@ -174,7 +174,7 @@ fn hash_node<N: AstNode + std::fmt::Debug>(hash: &mut StableHash, role: &str, va
     }
 }
 
-fn hash_nodes<N: AstNode + std::fmt::Debug>(hash: &mut StableHash, role: &str, values: Vec<N>) {
+fn hash_nodes<N: AstNode>(hash: &mut StableHash, role: &str, values: Vec<N>) {
     hash.field(role);
     hash.field(&values.len().to_string());
     for (index, value) in values.into_iter().enumerate() {
@@ -945,6 +945,7 @@ fn certification_evidence_uses_only_canonical_authorities() {
         "src/syntax/tests/canonical_phase_2i_resource_limits.rs",
         "src/syntax/tests/canonical_phase_2i_certification.rs",
         "src/engine/tests/canonical_phase_2i_semantic_certification.rs",
+        "src/engine/tests/canonical_source_completion.rs",
     ] {
         let path = repository_root().join(relative);
         let evidence = fs::read_to_string(&path).unwrap_or_else(|error| {
@@ -1094,6 +1095,9 @@ fn assert_canonical_only(path: &Path, evidence: &str) {
         concat!("externcratemech_", "core"),
         concat!("mech_core::", "Program"),
     ] {
+        if behavioral_evidence(path) && forbidden == concat!("usemech_", "core") {
+            continue; // The import parser above checks this file's exact runtime-type allowance.
+        }
         assert!(
             !compact.contains(forbidden) && !normalized.contains(forbidden),
             "{} imports forbidden certification authority {forbidden}",
@@ -1101,6 +1105,10 @@ fn assert_canonical_only(path: &Path, evidence: &str) {
         );
     }
     assert!(!compact.contains(concat!("lower/", "legacy")));
+}
+
+fn behavioral_evidence(path: &Path) -> bool {
+    path.ends_with("src/engine/tests/canonical_source_completion.rs")
 }
 
 fn assert_allowed_mech_import(path: &Path, declaration: &str) {
@@ -1113,6 +1121,46 @@ fn assert_allowed_mech_import(path: &Path, declaration: &str) {
         .strip_prefix("use::")
         .map(|path| format!("use{path}"))
         .unwrap_or(declaration);
+    if behavioral_evidence(path) && declaration.contains("mech_core") {
+        let allowed = if let Some(items) = declaration
+            .strip_prefix(concat!("usemech_", "core::{"))
+            .and_then(|items| items.strip_suffix("};"))
+        {
+            items
+                .split(',')
+                .filter(|item| !item.is_empty())
+                .all(|item| {
+                    matches!(
+                        item,
+                        "FunctionCatalogBuilder"
+                            | "ReactiveInstanceId"
+                            | "ResidentValueRef"
+                            | "ValueDataDraftasData"
+                    )
+                })
+        } else if let Some(items) = declaration
+            .strip_prefix(concat!("usemech_", "core::snapshot::{"))
+            .and_then(|items| items.strip_suffix("};"))
+        {
+            items
+                .split(',')
+                .filter(|item| !item.is_empty())
+                .all(|item| {
+                    matches!(
+                        item,
+                        "MapEntryDraft" | "NamedValueDraft" | "TableColumnDraft"
+                    )
+                })
+        } else {
+            false
+        };
+        assert!(
+            allowed,
+            "{} imports outside the behavioral runtime-type allowance: {declaration}",
+            path.display()
+        );
+        return;
+    }
     assert!(
         !declaration.contains("mech_core"),
         "{} imports forbidden certification authority mech_core",
@@ -1277,4 +1325,52 @@ fn canonical_authority_gate_rejects_glob_and_alias_routes() {
         Path::new("fixture.rs"),
         "use ::mech_syntax::document::{AstNode};",
     );
+}
+
+#[test]
+fn typed_access_evidence_ignores_snapshot_identity_but_retains_accessor_text() {
+    let parse = |text, document, revision| {
+        parse_canonical_phase_2i_rule_for_test(
+            TextSnapshot::new(DocumentId(document), Revision(revision), text).unwrap(),
+            canonical_rule_id("var").unwrap(),
+            ParseConfig::default(),
+        )
+        .unwrap()
+    };
+    let first = parse("alpha", 1, 1);
+    let same = parse("alpha", 99, 500);
+    let changed = parse("omega", 1, 1);
+    assert_eq!(
+        typed_access_hash("var", &first.syntax()),
+        typed_access_hash("var", &same.syntax())
+    );
+    assert_ne!(
+        typed_access_hash("var", &first.syntax()),
+        typed_access_hash("var", &changed.syntax())
+    );
+}
+
+#[test]
+fn behavioral_authority_allowance_excludes_parser_routes_and_unrelated_core_types() {
+    let path = Path::new("src/engine/tests/canonical_source_completion.rs");
+    assert_canonical_only(
+        path,
+        concat!(
+            "use mech_",
+            "core::{FunctionCatalogBuilder, ReactiveInstanceId, ResidentValueRef, ValueDataDraft as Data};"
+        ),
+    );
+    for evidence in [
+        "use mech_syntax::document::*;",
+        concat!("use mech_syntax::document::", "lower::*;"),
+        concat!("use mech_", "core::{Program};"),
+        concat!("use mech_", "core::*;"),
+        concat!("use mech_", "core::{FunctionCatalogBuilder, Program};"),
+        concat!("use mech_", "core::snapshot::{Value};"),
+    ] {
+        assert!(
+            std::panic::catch_unwind(|| assert_canonical_only(path, evidence)).is_err(),
+            "{evidence}"
+        );
+    }
 }
