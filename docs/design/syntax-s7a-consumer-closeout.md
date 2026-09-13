@@ -1,0 +1,36 @@
+# S7A consumer closeout
+
+S7A is still open. Passing syntax certification and resolving review comments do
+not establish that every inventoried consumer can perform its job. S7B streaming
+is paused until this boundary is complete. S8 remains the production call-site
+replacement and removal step; unfinished consumer behavior below belongs to S7A.
+
+| Consumer | Demonstrated canonical behavior | Remaining completion work |
+| --- | --- | --- |
+| Document execution | Root definitions, retained mutable state, whole and indexed assignment, compound assignment, nested record/tuple/matrix updates, serial statement versions, candidate discard and failed-turn rollback. Bytecode round-trip and resident execution are exercised by `canonical_document_state`. | Declaration and scope execution still need their canonical owners and implemented handoffs; the document collector's explicit unsupported-unit errors are not completion. |
+| Indexing and resolution | `SourceIndex::from_document` projects imports, aliases/groups, exports, context capabilities and addressed references into the existing resolver facts. Root and repeated named fences retain their scopes. Tests exercise dependency resolution, conflict validation, nested reads and reindexing edited snapshots. | Mika-local scopes and configured fence options need their document owner. The index returns an anchored error for these instead of publishing incomplete facts. Resolver facts alone do not implement declaration execution. |
+| Rendering and classification | Typed fence classification distinguishes root, named, hidden, disabled and inert fences. `canonical_document_outputs` checks actual inline/fence result bindings and formatted values. | Complete formatter/HTML consumer behavior and child-scope presentation still require qualification. Excluding display-only code from execution is not a complete rendering implementation. |
+| Editing | Canonical document sessions and edit-versus-fresh-parse tests preserve source, diagnostics, structural equivalence and unaffected identity. Indexing tests consume edited snapshots with updated scopes and positions. | Keep these regressions in the final-head qualification. S7B's resumable streaming optimization is a separate paused stage. |
+
+The current registry retains the S6 activation interlock: 80 Phase 2I candidates
+remain candidates while their semantic completion gate is open. S7A must not
+silently convert that prerequisite into a completed activation claim.
+
+## Qualification checkpoints
+
+The restack onto S6 `725ee191f` retained the activation-status column and fixed
+S7A's certification readers. The full syntax pass produced 792 passing tests and
+two metadata/certification failures; the corrected affected targets then passed
+all 14 tests. These are separate observations, not a claim that the original run
+was green.
+
+The indexed-assignment checkpoint `e0ee7c9ca` passed 11 document-state tests,
+26 canonical source semantics tests, 183 resident unit tests, 33 artifact-contract
+tests, and 22 workflow-contract tests locally. Operation contracts, R5 memory
+planning, R6 memory runtime, bytecode fixtures and formatting checks passed.
+Remote CI and review completion are tracked on PR 825; a running job is not a
+passing result.
+
+The canonical indexing increment adds eight behavioral regressions to Full CI,
+alongside the indexed document-state target. Full qualification must use the
+final pushed SHA, including subsequent review corrections.

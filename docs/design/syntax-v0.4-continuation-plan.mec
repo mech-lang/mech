@@ -537,6 +537,12 @@ slot-shape hints. S6 requires completed full integration CI; the final accumulat
 S7 candidate also requires completed full integration coverage. Pending, skipped,
 old-head and zero-test runs are not passing qualification evidence.
 
+Current S7A consumer completion is tracked in
+`docs/design/syntax-s7a-consumer-closeout.md`. The execution-boundary list below
+records the earlier review baseline; whole, compound, and indexed assignments
+have since received canonical execution and rollback regressions. The remaining
+declaration and scope obligations stay in S7A.
+
 Execution boundary under review:
 
 - Outer canonical definitions and expressions are collected in source order.

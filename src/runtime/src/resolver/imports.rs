@@ -101,7 +101,7 @@ fn module_import_item_path(item: &mech_core::ModuleImportPath) -> String {
     item.to_string()
 }
 
-fn classified_module_import(
+pub(super) fn classified_module_import(
     module: &str,
     item: Option<&str>,
     alias: Option<SourceImportAlias>,
