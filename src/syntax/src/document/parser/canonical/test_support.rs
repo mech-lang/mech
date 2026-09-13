@@ -180,9 +180,18 @@ pub(crate) fn parse_source_rule_prefix(
         .expect("canonical source-rule events must form one root");
 
     let mut diagnostics = DiagnosticStore::new(source.revision());
-    for mut pending in output.diagnostics {
+    for mut pending in output.diagnostics.iter().cloned() {
         if let Some(event) = pending.event
-            && let Some(node) = sink_result.event_nodes.get(&event)
+            && let Some(node) = output
+                .events
+                .get(event)
+                .and_then(|event| match event {
+                    crate::document::parser::event::Event::Start { identity, .. } => {
+                        identity.as_ref()
+                    }
+                    _ => None,
+                })
+                .or_else(|| sink_result.event_nodes.get(&event))
         {
             pending.diagnostic.primary = DiagnosticAnchor::Element {
                 element: crate::document::SyntaxElementId::Node(*node),

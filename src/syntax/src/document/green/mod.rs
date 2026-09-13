@@ -6,8 +6,10 @@ use super::flags::{NodeFlags, TokenFlags};
 use super::ids::{NodeId, TokenId};
 use super::source::TextSnapshot;
 use super::syntax_kind::SyntaxKind;
+mod children;
+pub use children::GreenChildren;
 
-const FNV_OFFSET: u64 = 0xcbf2_9ce4_8422_2325;
+pub(crate) const FNV_OFFSET: u64 = 0xcbf2_9ce4_8422_2325;
 const FNV_PRIME: u64 = 0x0000_0100_0000_01b3;
 
 #[derive(Clone, Debug)]
@@ -15,7 +17,7 @@ pub struct GreenNode {
     pub id: NodeId,
     pub kind: SyntaxKind,
     pub text_len: TextSize,
-    pub children: Arc<[GreenElement]>,
+    pub children: GreenChildren,
     pub flags: NodeFlags,
     pub structural_hash: u64,
 }
@@ -66,23 +68,19 @@ pub fn text_hash(text: &str) -> u64 {
     hash
 }
 
-pub(crate) fn hash_node(kind: SyntaxKind, children: &[GreenElement]) -> u64 {
-    let mut hash = hash_u64(FNV_OFFSET, kind as u64);
-    for child in children {
-        hash = hash_u64(hash, child.kind() as u64);
-        hash = hash_u64(hash, u64::from(child.text_len().0));
-        hash = hash_u64(
-            hash,
-            match child {
-                GreenElement::Node(node) => node.structural_hash,
-                GreenElement::Token(token) => token.text_hash,
-            },
-        );
-    }
-    hash
+pub(crate) fn child_hash_append(hash: u64, child: &GreenElement) -> u64 {
+    let hash = hash_u64(hash, child.kind() as u64);
+    let hash = hash_u64(hash, u64::from(child.text_len().0));
+    hash_u64(
+        hash,
+        match child {
+            GreenElement::Node(node) => node.structural_hash,
+            GreenElement::Token(token) => token.text_hash,
+        },
+    )
 }
 
-fn hash_u64(mut hash: u64, value: u64) -> u64 {
+pub(crate) fn hash_u64(mut hash: u64, value: u64) -> u64 {
     for byte in value.to_le_bytes() {
         hash ^= u64::from(byte);
         hash = hash.wrapping_mul(FNV_PRIME);
@@ -287,10 +285,4 @@ pub(crate) fn propagated_flags(
         }
     }
     flags
-}
-
-pub(crate) fn child_text_len(children: &[GreenElement]) -> TextSize {
-    children
-        .iter()
-        .fold(TextSize::ZERO, |total, child| total + child.text_len())
 }

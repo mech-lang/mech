@@ -4,9 +4,7 @@ use core::fmt;
 
 use super::edit::TextSize;
 use super::flags::{NodeFlags, TokenFlags};
-use super::green::{
-    GreenElement, GreenNode, GreenToken, child_text_len, hash_node, propagated_flags, text_hash,
-};
+use super::green::{GreenChildren, GreenElement, GreenNode, GreenToken, text_hash};
 use super::ids::IdGenerator;
 use super::syntax_kind::SyntaxKind;
 
@@ -34,7 +32,7 @@ impl fmt::Display for BuildError {
 struct Frame {
     kind: SyntaxKind,
     flags: NodeFlags,
-    children: Vec<GreenElement>,
+    children: GreenChildren,
 }
 
 pub struct GreenBuilder<'a> {
@@ -60,7 +58,7 @@ impl<'a> GreenBuilder<'a> {
         self.frames.push(Frame {
             kind,
             flags,
-            children: Vec::new(),
+            children: GreenChildren::for_kind(kind),
         });
     }
 
@@ -109,17 +107,17 @@ impl<'a> GreenBuilder<'a> {
 
     pub fn finish_node(&mut self) -> Result<Arc<GreenNode>, BuildError> {
         let frame = self.frames.pop().ok_or(BuildError::NoOpenNode)?;
-        let flags = propagated_flags(frame.kind, frame.flags, &frame.children);
+        let flags = frame.children.flags(frame.kind, frame.flags);
         let node = Arc::new(GreenNode {
             id: self.ids.node(),
             kind: frame.kind,
-            text_len: child_text_len(&frame.children),
-            structural_hash: hash_node(frame.kind, &frame.children),
-            children: frame.children.into(),
+            text_len: frame.children.text_len(),
+            structural_hash: frame.children.hash(frame.kind),
+            children: frame.children,
             flags,
         });
         if let Some(parent) = self.frames.last_mut() {
-            parent.children.push(GreenElement::Node(node.clone()));
+            parent.children.append(GreenElement::Node(node.clone()));
         } else {
             self.roots.push(node.clone());
         }
@@ -138,7 +136,7 @@ impl<'a> GreenBuilder<'a> {
 
     fn push_element(&mut self, element: GreenElement) -> Result<(), BuildError> {
         let frame = self.frames.last_mut().ok_or(BuildError::NoOpenNode)?;
-        frame.children.push(element);
+        frame.children.append(element);
         Ok(())
     }
 }

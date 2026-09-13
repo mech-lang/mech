@@ -148,7 +148,11 @@ fn run_with_config<T: TestContinuation>(
     let mut output = parser.finish();
     // Revision numbers count append operations; physical diagnostic content
     // and speculative identities must otherwise remain exactly identical.
-    for pending in &mut output.diagnostics {
+    for index in 0..output.diagnostics.len() {
+        let pending = output
+            .diagnostics
+            .get_mut(index)
+            .expect("pending diagnostic");
         let diagnostic = &mut pending.diagnostic;
         if let DiagnosticAnchor::Absolute { revision, .. } = &mut diagnostic.primary {
             *revision = Revision(0);

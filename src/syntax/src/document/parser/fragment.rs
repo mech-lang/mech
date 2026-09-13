@@ -164,9 +164,16 @@ pub fn parse_fragment(
 
     let nodes = NodeIndex::build_at(&sink_result.root, range.start);
     let mut diagnostics = DiagnosticStore::new(source.revision());
-    for mut pending in output.diagnostics {
+    for mut pending in output.diagnostics.iter().cloned() {
         if let Some(event) = pending.event
-            && let Some(node) = sink_result.event_nodes.get(&event)
+            && let Some(node) = output
+                .events
+                .get(event)
+                .and_then(|event| match event {
+                    super::Event::Start { identity, .. } => identity.as_ref(),
+                    _ => None,
+                })
+                .or_else(|| sink_result.event_nodes.get(&event))
         {
             pending.diagnostic.primary = DiagnosticAnchor::Element {
                 element: crate::document::SyntaxElementId::Node(*node),
@@ -312,7 +319,7 @@ fn fallback_fragment(
             id: ids.node(),
             kind,
             text_len: TextSize::ZERO,
-            children: Arc::from([]),
+            children: Default::default(),
             flags: NodeFlags::ERROR,
             structural_hash: 0,
         })
