@@ -187,6 +187,152 @@ fn structures_calls_comprehensions_and_fsm_enter_one_source_graph() {
 }
 
 #[test]
+fn fsm_pipe_owns_typed_arguments_stages_and_artifact_roundtrip() {
+    let compiled = CanonicalSourceFrontend
+        .compile_expression(&expression(
+            "#machine(left: 1, 2) ~> (:next, [:head, :tail], :some(:payload), `some(:x, :y)) -> :ready => :value",
+        ))
+        .unwrap();
+    assert_eq!(compiled.program().nodes.len(), 1);
+    let mech_engine::SourceNodeBody::Fsm(fsm) = &compiled.program().nodes[0].body else {
+        panic!("FSM source must retain a typed control body")
+    };
+    assert_eq!(fsm.machine, "machine");
+    assert_eq!(fsm.arguments.len(), 2);
+    assert_eq!(fsm.arguments[0].name.as_deref(), Some("left"));
+    assert_eq!(fsm.arguments[0].input, 0);
+    assert_eq!(fsm.arguments[1].name, None);
+    assert_eq!(fsm.arguments[1].input, 1);
+    assert_eq!(
+        fsm.stages
+            .iter()
+            .map(|stage| stage.kind)
+            .collect::<Vec<_>>(),
+        [
+            mech_engine::FsmStageKind::Async,
+            mech_engine::FsmStageKind::State,
+            mech_engine::FsmStageKind::Output,
+        ]
+    );
+    assert_eq!(
+        fsm.stages[0].value,
+        mech_engine::FsmValue::Tuple(
+            vec![
+                mech_engine::FsmValue::Input(2),
+                mech_engine::FsmValue::Array(
+                    vec![
+                        mech_engine::FsmValue::Input(3),
+                        mech_engine::FsmValue::Input(4),
+                    ]
+                    .into_boxed_slice(),
+                ),
+                mech_engine::FsmValue::AtomStruct {
+                    name: "some".to_owned(),
+                    items: vec![mech_engine::FsmValue::Input(5)].into_boxed_slice(),
+                },
+                mech_engine::FsmValue::TupleStruct {
+                    name: "some".to_owned(),
+                    items: vec![
+                        mech_engine::FsmValue::Input(6),
+                        mech_engine::FsmValue::Input(7),
+                    ]
+                    .into_boxed_slice(),
+                },
+            ]
+            .into_boxed_slice(),
+        )
+    );
+    assert_eq!(fsm.stages[1].value, mech_engine::FsmValue::Input(8));
+    assert_eq!(fsm.stages[2].value, mech_engine::FsmValue::Input(9));
+    assert_eq!(compiled.program().nodes[0].inputs.len(), 10);
+    assert_eq!(compiled.contracts(), &[None]);
+
+    let artifact = compiled.compile_artifact().unwrap();
+    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
+    assert_eq!(
+        mech_engine::encode_program_artifact_bytecode_v1(&decoded).unwrap(),
+        bytes
+    );
+    assert!(matches!(
+        &decoded.nodes()[0].body,
+        mech_engine::ExecutableNodeBody::Fsm(decoded) if decoded == fsm
+    ));
+
+    let sections = mech_engine::encode_program_artifact_sections(&artifact).unwrap();
+    let graph = String::from_utf8(sections.nodes.clone()).unwrap();
+    let mut revision_five = sections.clone();
+    revision_five.nodes = graph
+        .replacen("\"revision\":6", "\"revision\":5", 1)
+        .into_bytes();
+    assert!(mech_engine::decode_program_artifact_sections(&revision_five).is_err());
+    for (original, replacement) in [
+        ("\"machine\":\"machine\"", "\"machine\":\" \""),
+        (
+            "\"arguments\":[[\"left\",0]",
+            "\"arguments\":[[\"bad\\u0000name\",0]",
+        ),
+        ("\"name\":\"some\"", "\"name\":\"bad\\u0000name\""),
+    ] {
+        let mutated = graph.replacen(original, replacement, 1);
+        assert_ne!(mutated, graph, "missing FSM wire fixture {original}");
+        let mut invalid = sections.clone();
+        invalid.nodes = mutated.into_bytes();
+        assert!(
+            mech_engine::decode_program_artifact_sections(&invalid).is_err(),
+            "noncanonical FSM identifier {replacement}"
+        );
+    }
+}
+
+#[test]
+fn fsm_values_predeclare_late_input_annotations() {
+    let compiled = CanonicalSourceFrontend
+        .compile_expression(&expression("#machine -> x -> x<u8>"))
+        .unwrap();
+    assert_eq!(compiled.program().inputs.len(), 1);
+    assert!(matches!(
+        compiled
+            .schemas()
+            .get(compiled.program().inputs[0].schema)
+            .unwrap()
+            .body(),
+        SchemaBody::UnsignedInteger(IntegerWidth::W8)
+    ));
+    assert_eq!(
+        compiled.program().nodes[0].inputs.as_ref(),
+        &[SourceValue::Input(0), SourceValue::Input(0)]
+    );
+    compiled
+        .compile_artifact()
+        .expect("FSM value annotations must be occurrence-order independent");
+}
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn typed_fsm_fails_closed_until_the_resident_continuation_owner_lands() {
+    use mech_core::{FunctionCatalogBuilder, ReactiveInstanceId};
+    use mech_engine::__resident::{ActivationFacts, ResidentActivationError, activate};
+
+    let compiled = CanonicalSourceFrontend
+        .compile_expression(&expression("#machine -> :ready"))
+        .unwrap();
+    let artifact = compiled.compile_artifact().unwrap();
+    let catalog = FunctionCatalogBuilder::new().build().unwrap();
+
+    assert!(matches!(
+        activate(
+            ReactiveInstanceId::new(0x540, 0),
+            &artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        ),
+        Err(ResidentActivationError::UnsupportedControlLayout { node })
+            if node == mech_core::NodeId(0)
+    ));
+}
+
+#[test]
 fn recovered_trees_never_construct_partial_semantics() {
     let error = CanonicalSourceFrontend
         .compile_expression(&recovered_expression("1 +"))

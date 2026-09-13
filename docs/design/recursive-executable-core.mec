@@ -1,7 +1,7 @@
 Recursive Executable-Core Contract
 ===============================================================================
 
-Status: S2 recovery and S3 typed views complete; S4 semantics and S5 certification open; registry inactive.
+Status: S2 recovery, S3 typed views, and S5 certification complete; S4 semantics open; registry inactive.
 
 Current canonical progress remains 328 / 539. The component implements clean,
 lossless recognition and local malformed-input recovery for all 80 rules but
@@ -277,17 +277,16 @@ compatibility lowering and cross-parser parity with canonical typed syntax,
 engine-owned source semantics, and specification-derived certification.
 
 Clean recognition, local lossless recovery, and typed views cover all 80
-mutually recursive productions against the frozen schema. S4 engine-owned
-source semantics and S5 canonical certification remain partially implemented:
-comprehension and pattern witnesses now produce validated artifacts, and the
-source-completion behavior suite passes. FSM lowering still blocks artifact
-certification. Resident comprehensions now borrow tuple, array, and tagged-pattern
-components for primitive bindings, including repeated-binding checks. Composite
-comprehension bindings/yields, computed pattern blocks, and composition with nested
-comprehensions remain unfinished. Compound match results and nested match bodies
-and guards execute through typed control and ordinary construction providers.
-S6 activation prerequisites are not yet satisfied; the 80-rule
-registry remains inactive on S5 until those gates are complete.
+mutually recursive productions against the frozen schema. S5 canonical
+certification is complete: comprehension, pattern, and typed FSM witnesses
+produce validated revision-five artifacts, and all thirteen source-completion
+behavior tests pass. Resident comprehensions borrow tuple, array, and tagged-pattern
+components for primitive bindings, including repeated-binding checks. Compound
+match results and nested match bodies and guards execute through typed control and
+ordinary construction providers. S4 still owns composite comprehension bindings
+and yields, computed pattern blocks, composition with nested comprehensions, and
+the FSM resident continuation owner. S6 activation prerequisites are therefore not
+yet satisfied; the 80-rule registry remains inactive on S5.
 
 Shared parenthesis, bracket, brace, colon, identifier, and kind prefixes are
 handled without exponential reparsing. Expression-level set and matrix

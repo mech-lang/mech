@@ -244,6 +244,7 @@ pub enum ExecutableNodeBody {
     Operation(OperationNodeBody),
     Match(super::MatchDeclaration),
     Comprehension(super::ComprehensionDeclaration),
+    Fsm(super::FsmDeclaration),
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -287,7 +288,9 @@ impl NodeDeclaration {
                 contract: operation.contract,
                 requirement: operation.requirement,
             }),
-            ExecutableNodeBody::Match(_) | ExecutableNodeBody::Comprehension(_) => None,
+            ExecutableNodeBody::Match(_)
+            | ExecutableNodeBody::Comprehension(_)
+            | ExecutableNodeBody::Fsm(_) => None,
         }
     }
 }
@@ -638,6 +641,23 @@ impl ProgramArtifactDraft {
                 node_handles.push(None);
                 continue;
             }
+            if let super::SourceNodeBody::Fsm(control) = &graph.nodes[node.node.get() as usize].body
+            {
+                if declaration.is_some() {
+                    return Err(ArtifactBuildError::InvalidControl {
+                        node: node.node,
+                        reason: "FSM control has no ordinary root contract",
+                    });
+                }
+                if !matches!(&node.body, ExecutableNodeBody::Fsm(actual) if actual == control) {
+                    return Err(ArtifactBuildError::InvalidControl {
+                        node: node.node,
+                        reason: "compiler FSM body mismatch",
+                    });
+                }
+                node_handles.push(None);
+                continue;
+            }
             let declaration =
                 declaration.ok_or_else(|| ArtifactBuildError::MissingOperationContract {
                     node: node.node,
@@ -721,6 +741,7 @@ impl ProgramArtifactDraft {
                             Ok::<_, ArtifactBuildError>(build.resolve(operation.contract)?)
                         })?;
                 }
+                (ExecutableNodeBody::Fsm(_), None) => {}
                 _ => {
                     return Err(ArtifactBuildError::InvalidControl {
                         node: node.node,

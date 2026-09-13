@@ -131,6 +131,7 @@ impl CanonicalSourceProgram {
                 crate::SourceNodeBody::Match(_) | crate::SourceNodeBody::Comprehension(_) => {
                     Ok(None)
                 }
+                crate::SourceNodeBody::Fsm(_) => Ok(None),
             })
             .collect::<Result<Vec<_>, _>>()?;
         let mut artifact_program = self.program.clone();
@@ -1398,6 +1399,7 @@ enum PendingNodeBody {
     },
     Match(PendingMatch),
     Comprehension(PendingComprehension),
+    Fsm(crate::FsmDeclaration),
     CollectionBinding,
 }
 
@@ -1481,10 +1483,6 @@ struct PendingOutput {
     interactive_symbol: Option<String>,
     source: PendingValue,
     anchor: SourceSemanticAnchor,
-}
-
-struct RecordedPattern {
-    dependencies: Vec<PendingValue>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -1614,6 +1612,10 @@ impl SemanticBuilder {
                 }
             }
             return Ok(());
+        }
+        if node.kind() == SyntaxKind::FsmPipe {
+            let pipe = FsmPipeSyntax::cast(node.clone()).expect("kind-checked FSM pipe cast");
+            return self.declare_fsm_input_annotations(&pipe, bindings);
         }
         if node.kind() == SyntaxKind::SetComprehension {
             let value = SetComprehensionSyntax::cast(node.clone())
@@ -1762,6 +1764,80 @@ impl SemanticBuilder {
             PatternValueSyntax::TupleStruct(tuple) => {
                 for pattern in tuple.items() {
                     self.declare_pattern_input_annotations(&pattern, bindings)?;
+                }
+            }
+            PatternValueSyntax::Wildcard(_) => {}
+        }
+        Ok(())
+    }
+
+    fn declare_fsm_input_annotations(
+        &mut self,
+        pipe: &FsmPipeSyntax,
+        bindings: &BTreeSet<String>,
+    ) -> Result<(), SourceSemanticError> {
+        let instance = self.required(pipe.instance(), pipe.syntax(), "an FSM instance")?;
+        if let Some(argument_list) = instance.arguments() {
+            for argument in argument_list.arguments() {
+                let value = match argument {
+                    AnyCallArgumentSyntax::Positional(argument) => {
+                        self.required(argument.value(), argument.syntax(), "an FSM argument value")?
+                    }
+                    AnyCallArgumentSyntax::Bound(argument) => {
+                        self.required(argument.value(), argument.syntax(), "an FSM argument value")?
+                    }
+                };
+                self.declare_input_annotations(value.syntax(), bindings)?;
+            }
+        }
+        for stage in pipe.stages() {
+            let value = match stage {
+                FsmStageSyntax::State(value) => {
+                    self.required(value.value(), value.syntax(), "an FSM transition value")?
+                }
+                FsmStageSyntax::Async(value) => {
+                    self.required(value.value(), value.syntax(), "an FSM transition value")?
+                }
+                FsmStageSyntax::Output(value) => {
+                    self.required(value.value(), value.syntax(), "an FSM output value")?
+                }
+            };
+            let pattern = self.required(value.pattern(), value.syntax(), "an FSM value pattern")?;
+            self.declare_fsm_value_input_annotations(&pattern, bindings)?;
+        }
+        Ok(())
+    }
+
+    fn declare_fsm_value_input_annotations(
+        &mut self,
+        pattern: &PatternSyntax,
+        bindings: &BTreeSet<String>,
+    ) -> Result<(), SourceSemanticError> {
+        let value = self.required(pattern.value(), pattern.syntax(), "an FSM value")?;
+        match value {
+            PatternValueSyntax::Expression(expression) => {
+                self.declare_input_annotations(expression.syntax(), bindings)?;
+            }
+            PatternValueSyntax::Array(array) => {
+                for element in array.elements() {
+                    let pattern =
+                        self.required(element.pattern(), element.syntax(), "an FSM array value")?;
+                    self.declare_fsm_value_input_annotations(&pattern, bindings)?;
+                }
+            }
+            PatternValueSyntax::Tuple(tuple) => {
+                for pattern in tuple.items() {
+                    self.declare_fsm_value_input_annotations(&pattern, bindings)?;
+                }
+            }
+            PatternValueSyntax::AtomStruct(tuple) => {
+                for pattern in tuple.items() {
+                    self.declare_fsm_value_input_annotations(&pattern, bindings)?;
+                }
+            }
+            PatternValueSyntax::TupleStruct(tuple) => {
+                for pattern in tuple.items() {
+                    self.declare_fsm_value_input_annotations(&pattern, bindings)?;
                 }
             }
             PatternValueSyntax::Wildcard(_) => {}
@@ -4426,134 +4502,191 @@ impl SemanticBuilder {
         )
     }
 
-    fn record_pattern(
-        &mut self,
-        pattern: &PatternSyntax,
-    ) -> Result<RecordedPattern, SourceSemanticError> {
-        self.required(pattern.value(), pattern.syntax(), "a pattern body")?;
-        let mut bindings = Vec::new();
-        collect_pattern_bindings(pattern, &mut bindings)?;
-        let mut seen = BTreeSet::new();
-        bindings.retain(|binding| seen.insert(binding.name.clone()));
-        let dependencies = self.compile_pattern_dependencies(pattern)?;
-        self.patterns.push(SourceSemanticPattern {
-            source: node_text(pattern.syntax())?,
-            bindings: bindings
-                .iter()
-                .map(|binding| binding.name.clone())
-                .collect::<Vec<_>>()
-                .into_boxed_slice(),
-            anchor: SourceSemanticAnchor::for_node(pattern.syntax()),
-        });
-        Ok(RecordedPattern { dependencies })
-    }
-
-    fn compile_pattern_dependencies(
-        &mut self,
-        pattern: &PatternSyntax,
-    ) -> Result<Vec<PendingValue>, SourceSemanticError> {
-        let value = self.required(pattern.value(), pattern.syntax(), "a pattern body")?;
-        let mut dependencies = Vec::new();
-        match value {
-            PatternValueSyntax::Expression(expression) => {
-                if standalone_pattern_variable(&expression).is_none() {
-                    dependencies.push(self.expression(&expression)?.0);
-                }
-            }
-            PatternValueSyntax::Array(array) => {
-                for element in array.elements() {
-                    if let Some(pattern) = element.pattern() {
-                        dependencies.extend(self.compile_pattern_dependencies(&pattern)?);
-                    }
-                }
-            }
-            PatternValueSyntax::Tuple(tuple) => {
-                for pattern in tuple.items() {
-                    dependencies.extend(self.compile_pattern_dependencies(&pattern)?);
-                }
-            }
-            PatternValueSyntax::AtomStruct(tuple) => {
-                for pattern in tuple.items() {
-                    dependencies.extend(self.compile_pattern_dependencies(&pattern)?);
-                }
-            }
-            PatternValueSyntax::TupleStruct(tuple) => {
-                for pattern in tuple.items() {
-                    dependencies.extend(self.compile_pattern_dependencies(&pattern)?);
-                }
-            }
-            PatternValueSyntax::Wildcard(_) => {}
-        }
-        Ok(dependencies)
-    }
-
     fn fsm_pipe(&mut self, pipe: &FsmPipeSyntax) -> Result<PendingValue, SourceSemanticError> {
         let instance = self.required(pipe.instance(), pipe.syntax(), "an FSM instance")?;
         let name = self.required(instance.name(), instance.syntax(), "an FSM name")?;
         let mut inputs = Vec::new();
-        let mut argument_names = Vec::new();
-        if let Some(arguments) = instance.arguments() {
-            for argument in arguments.arguments() {
-                let value = match argument {
-                    AnyCallArgumentSyntax::Positional(argument) => {
-                        argument_names.push(String::new());
-                        self.required(argument.value(), argument.syntax(), "an FSM argument value")?
-                    }
+        let mut arguments = Vec::new();
+        if let Some(argument_list) = instance.arguments() {
+            for argument in argument_list.arguments() {
+                let argument_anchor = SourceSemanticAnchor::for_node(argument.syntax());
+                let (name, value) = match argument {
+                    AnyCallArgumentSyntax::Positional(argument) => (
+                        None,
+                        self.required(
+                            argument.value(),
+                            argument.syntax(),
+                            "an FSM argument value",
+                        )?,
+                    ),
                     AnyCallArgumentSyntax::Bound(argument) => {
                         let name = self.required(
                             argument.name(),
                             argument.syntax(),
                             "an FSM argument name",
                         )?;
-                        argument_names.push(node_text(name.syntax())?);
-                        self.required(argument.value(), argument.syntax(), "an FSM argument value")?
+                        (
+                            Some(node_text(name.syntax())?),
+                            self.required(
+                                argument.value(),
+                                argument.syntax(),
+                                "an FSM argument value",
+                            )?,
+                        )
                     }
                 };
+                let input = u16::try_from(inputs.len()).map_err(|_| SourceSemanticError {
+                    code: "source-semantics/fsm-input-count-exhausted",
+                    message: "FSM inputs exceed artifact identity space".to_owned(),
+                    anchor: argument_anchor,
+                })?;
                 inputs.push(self.expression(&value)?.0);
+                arguments.push(crate::FsmArgument { name, input });
             }
         }
+        let mut stages = Vec::new();
         for stage in pipe.stages() {
-            let (value, role, syntax) = match stage {
+            let (value, kind) = match stage {
                 FsmStageSyntax::State(value) => (
                     self.required(value.value(), value.syntax(), "an FSM transition value")?,
-                    "state",
-                    value.syntax().clone(),
+                    crate::FsmStageKind::State,
                 ),
                 FsmStageSyntax::Async(value) => (
                     self.required(value.value(), value.syntax(), "an FSM transition value")?,
-                    "async",
-                    value.syntax().clone(),
+                    crate::FsmStageKind::Async,
                 ),
                 FsmStageSyntax::Output(value) => (
                     self.required(value.value(), value.syntax(), "an FSM output value")?,
-                    "output",
-                    value.syntax().clone(),
+                    crate::FsmStageKind::Output,
                 ),
             };
             let pattern = self.required(value.pattern(), value.syntax(), "an FSM value pattern")?;
-            let pattern = self.record_pattern(&pattern)?;
-            inputs.extend(pattern.dependencies);
-            inputs.push(self.emit(
-                "source/fsm-stage",
-                Vec::new(),
-                BuiltinSchema::Dynamic,
-                &syntax,
-                "fsm-stage",
-                Some(role.to_owned()),
-            ));
+            self.record_fsm_pattern(&pattern)?;
+            let value = self.fsm_value(&pattern, &mut inputs)?;
+            stages.push(crate::FsmStage { kind, value });
         }
-        Ok(self.emit(
-            "source/fsm",
+        let machine = node_text(name.syntax())?;
+        let detail = format!(
+            "{}({})",
+            machine,
+            arguments
+                .iter()
+                .map(|argument| argument.name.as_deref().unwrap_or_default())
+                .collect::<Vec<_>>()
+                .join(",")
+        );
+        let index = self.nodes.len() as u32;
+        self.nodes.push(PendingNode {
+            body: PendingNodeBody::Fsm(crate::FsmDeclaration {
+                machine: machine.clone(),
+                arguments: arguments.into_boxed_slice(),
+                stages: stages.into_boxed_slice(),
+            }),
+            inferable_projection: false,
             inputs,
-            BuiltinSchema::Dynamic,
-            pipe.syntax(),
-            "fsm",
-            Some(format!(
-                "{}({})",
-                node_text(name.syntax())?,
-                argument_names.join(",")
-            )),
-        ))
+            schema: builtin_schema_draft(BuiltinSchema::Dynamic),
+            state: None,
+            semantic: SourceSemanticNode {
+                operation: "source/fsm".to_owned(),
+                role: "fsm",
+                detail: Some(detail),
+                anchor: SourceSemanticAnchor::for_node(pipe.syntax()),
+            },
+        });
+        Ok(PendingValue::Node(index))
+    }
+
+    fn record_fsm_pattern(&mut self, pattern: &PatternSyntax) -> Result<(), SourceSemanticError> {
+        let mut bindings = Vec::new();
+        collect_pattern_bindings(pattern, &mut bindings)?;
+        let mut seen = BTreeSet::new();
+        bindings.retain(|binding| seen.insert(binding.name.clone()));
+        self.patterns.push(SourceSemanticPattern {
+            source: node_text(pattern.syntax())?,
+            bindings: bindings
+                .into_iter()
+                .map(|binding| binding.name)
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+            anchor: SourceSemanticAnchor::for_node(pattern.syntax()),
+        });
+        Ok(())
+    }
+
+    fn fsm_value(
+        &mut self,
+        pattern: &PatternSyntax,
+        inputs: &mut Vec<PendingValue>,
+    ) -> Result<crate::FsmValue, SourceSemanticError> {
+        let value = self.required(pattern.value(), pattern.syntax(), "an FSM value")?;
+        let leaf = |value: PendingValue,
+                    inputs: &mut Vec<PendingValue>|
+         -> Result<crate::FsmValue, SourceSemanticError> {
+            let input = u16::try_from(inputs.len()).map_err(|_| SourceSemanticError {
+                code: "source-semantics/fsm-input-count-exhausted",
+                message: "FSM inputs exceed artifact identity space".to_owned(),
+                anchor: SourceSemanticAnchor::for_node(pattern.syntax()),
+            })?;
+            inputs.push(value);
+            Ok(crate::FsmValue::Input(input))
+        };
+        Ok(match value {
+            PatternValueSyntax::Expression(expression) => {
+                let value = self.expression(&expression)?.0;
+                leaf(value, inputs)?
+            }
+            PatternValueSyntax::Tuple(tuple) => crate::FsmValue::Tuple(
+                tuple
+                    .items()
+                    .iter()
+                    .map(|item| self.fsm_value(item, inputs))
+                    .collect::<Result<Vec<_>, _>>()?
+                    .into_boxed_slice(),
+            ),
+            PatternValueSyntax::Array(array) => crate::FsmValue::Array(
+                array
+                    .elements()
+                    .iter()
+                    .map(|item| {
+                        let pattern =
+                            self.required(item.pattern(), item.syntax(), "an FSM array value")?;
+                        self.fsm_value(&pattern, inputs)
+                    })
+                    .collect::<Result<Vec<_>, _>>()?
+                    .into_boxed_slice(),
+            ),
+            PatternValueSyntax::AtomStruct(value) => crate::FsmValue::AtomStruct {
+                name: node_text(
+                    self.required(value.name(), value.syntax(), "an FSM atom-structure name")?
+                        .syntax(),
+                )?,
+                items: value
+                    .items()
+                    .iter()
+                    .map(|item| self.fsm_value(item, inputs))
+                    .collect::<Result<Vec<_>, _>>()?
+                    .into_boxed_slice(),
+            },
+            PatternValueSyntax::TupleStruct(value) => crate::FsmValue::TupleStruct {
+                name: node_text(
+                    self.required(value.name(), value.syntax(), "an FSM tuple-structure name")?
+                        .syntax(),
+                )?,
+                items: value
+                    .items()
+                    .iter()
+                    .map(|item| self.fsm_value(item, inputs))
+                    .collect::<Result<Vec<_>, _>>()?
+                    .into_boxed_slice(),
+            },
+            PatternValueSyntax::Wildcard(value) => {
+                return Err(SourceSemanticError {
+                    code: "source-semantics/invalid-fsm-value",
+                    message: "wildcards cannot construct FSM values".to_owned(),
+                    anchor: SourceSemanticAnchor::for_node(value.syntax()),
+                });
+            }
+        })
     }
 
     fn input_for_node(&mut self, node: &SyntaxNode) -> Result<PendingValue, SourceSemanticError> {
@@ -5086,6 +5219,10 @@ impl SemanticBuilder {
                             &schemas.table,
                             &constant_ids,
                         ))
+                    }
+                    PendingNodeBody::Fsm(control) => {
+                        contracts.push(None);
+                        crate::SourceNodeBody::Fsm(control.clone())
                     }
                     PendingNodeBody::CollectionBinding => {
                         unreachable!("lexical bindings cannot escape collection lowering")

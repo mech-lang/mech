@@ -231,6 +231,45 @@ impl CanonicalArtifactWriter {
         self.comprehension_value(control.yield_value);
     }
 
+    fn fsm_value(&mut self, value: &super::FsmValue) {
+        match value {
+            super::FsmValue::Input(input) => {
+                self.u8(0);
+                self.u16(*input);
+            }
+            super::FsmValue::Tuple(items) => {
+                self.u8(1);
+                self.u64(items.len() as u64);
+                for item in items {
+                    self.fsm_value(item);
+                }
+            }
+            super::FsmValue::Array(items) => {
+                self.u8(2);
+                self.u64(items.len() as u64);
+                for item in items {
+                    self.fsm_value(item);
+                }
+            }
+            super::FsmValue::AtomStruct { name, items } => {
+                self.u8(3);
+                self.string(name);
+                self.u64(items.len() as u64);
+                for item in items {
+                    self.fsm_value(item);
+                }
+            }
+            super::FsmValue::TupleStruct { name, items } => {
+                self.u8(4);
+                self.string(name);
+                self.u64(items.len() as u64);
+                for item in items {
+                    self.fsm_value(item);
+                }
+            }
+        }
+    }
+
     fn source(&mut self, source: ArtifactSource) {
         match source {
             ArtifactSource::Constant(constant) => {
@@ -361,6 +400,30 @@ pub(super) fn program_revision(
             super::ExecutableNodeBody::Match(control) => {
                 writer.u8(1);
                 writer.match_declaration(control);
+            }
+            super::ExecutableNodeBody::Fsm(control) => {
+                writer.u8(3);
+                writer.string(&control.machine);
+                writer.u64(control.arguments.len() as u64);
+                for argument in &control.arguments {
+                    match &argument.name {
+                        None => writer.u8(0),
+                        Some(name) => {
+                            writer.u8(1);
+                            writer.string(name);
+                        }
+                    }
+                    writer.u16(argument.input);
+                }
+                writer.u64(control.stages.len() as u64);
+                for stage in &control.stages {
+                    writer.u8(match stage.kind {
+                        super::FsmStageKind::State => 0,
+                        super::FsmStageKind::Async => 1,
+                        super::FsmStageKind::Output => 2,
+                    });
+                    writer.fsm_value(&stage.value);
+                }
             }
         }
         writer.u32(node.input_bindings.start);

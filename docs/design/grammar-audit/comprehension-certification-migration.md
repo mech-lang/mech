@@ -25,9 +25,12 @@ bindings, generator/filter/join behavior, normalization, work admission, and fai
 publication recovery have execution regressions. Compound match results and nested
 match bodies/guards now use the same ordinary construction and memory providers.
 Comprehension composite bindings/yields, computed pattern blocks, composition with
-nested comprehensions, and FSM lowering remain unfinished. The FSM witness retains its required
-executable outcome; the completion gate continues to fail until that implementation
-exists.
+nested comprehensions, and the FSM resident continuation owner remain unfinished.
+FSM pipes now retain machine identity, named and positional argument bindings,
+ordered stage kinds, and recursively typed stage values in the artifact itself.
+Source-map strings are not an FSM execution input. The `~>` commit, resume,
+capture, cancellation, and fairness contract is recorded in
+`docs/design/specification.mec`.
 
 ## Nested-match graph revision
 
@@ -38,8 +41,18 @@ producers and compared section by section. For every witness, the graph revision
 changed from 4 to 5 and every other section payload remained byte-identical. Only
 those 50 semantic hashes changed; sources, dispositions and required outcomes did
 not. Positive compound-match, nested-match and exact table-join behavior remains
-in the completion suite. FSM remains a required executable witness and continues
-to fail until its typed implementation exists.
+in the completion suite. The required FSM executable witness now reaches a
+typed revision-six artifact rather than an ordinary source operation. Revision 6
+adds the FSM body variant; revision 5 remains the closed nested-match graph grammar.
+
+## FSM graph revision
+
+Graph payload revision 6 closes the representation introduced by typed FSM bodies.
+The 51 artifact-bearing semantic witnesses were regenerated with the revision-six
+producer; their semantic hashes changed because the complete artifact bytecode is
+part of each witness fingerprint. The source programs, dispositions, required
+outcomes, and non-graph artifact sections are unchanged. Revision 5 remains rejected
+without a compatibility reader, including for externally supplied FSM artifacts.
 
 ## Complete syntax evidence
 

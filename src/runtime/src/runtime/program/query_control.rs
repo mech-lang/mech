@@ -65,6 +65,7 @@ pub(super) fn node_bodies_semantically_equal(
                     }
                 })
         }
+        (ExecutableNodeBody::Fsm(left), ExecutableNodeBody::Fsm(right)) => left == right,
         _ => false,
     }
 }

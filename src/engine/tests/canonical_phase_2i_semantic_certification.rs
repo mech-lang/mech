@@ -244,6 +244,11 @@ fn semantic_snapshot_hash(compiled: &CanonicalSourceProgram, artifact: &ProgramA
                 // bytecode below, including captures, guards, operations and yields.
                 hash.field("Match");
             }
+            mech_engine::SourceNodeBody::Fsm(_) => {
+                // Machine identity, named arguments, stage kinds, and complete
+                // typed values are sealed by artifact bytecode below.
+                hash.field("Fsm");
+            }
         }
         hash.usize(node.inputs.len());
         for input in &node.inputs {

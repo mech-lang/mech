@@ -14,12 +14,16 @@ R1–R6 Integration Rebase
 
 The syntax stack is rebased through S5 onto
 `integration/v0.4` at `535e4b245` (R1–R6 plus the combined integration fixes).
-S0-S3 recovery and typed-view gates are complete. S4 source semantics and S5
-certification remain open. Comprehension and pattern witnesses now reach validated
-artifacts, and all source-completion behavior tests pass. FSM lowering still
-blocks artifact-ready acceptance. Borrowed tuple, array, and tagged-pattern
-projection now executes with primitive bindings; composite bindings/yields,
-computed pattern blocks, nested control, and other S4 limits remain unfinished. S6 activation depends on both gates.
+S0-S3 recovery and typed-view gates and S5 certification are complete. S4
+source semantics remains open. Comprehension, pattern, and FSM witnesses now
+reach validated artifacts, and all thirteen source-completion behavior tests pass.
+FSM artifacts own machine identity, argument roles, ordered stage kinds, and
+typed stage values; they do not reconstruct behavior from source-map strings.
+Borrowed tuple, array, and tagged-pattern projection executes with primitive
+bindings, and matches support compound results and nested bodies and guards.
+Composite comprehension bindings/yields, computed pattern blocks, composition
+with nested comprehensions, the FSM resident continuation owner, and other S4
+limits remain unfinished. S6 activation remains gated on S4 completion.
 `docs/design/syntax-v0.4-continuation-plan.mec` replaces the old combined Phase
 2I-D/2I-E delivery assumption with independently gated milestones and an atomic
 document-root/product cutover that removes the Nom path and compatibility
@@ -47,7 +51,8 @@ witnesses with exact syntax-owner ranges for the STRUCT-EMPTY conformance cases.
 program, schemas, constants, contracts, source map and shape hints are checked.
 Unfinished source or artifact lowering fails acceptance explicitly; an error
 fingerprint cannot satisfy it. Behavioral tests require execution and values
-independently of fingerprints. S4 and S5 semantic completion remains open.
+independently of fingerprints. The S5 matrix and semantic gate pass; the
+separately documented S4 runtime limits remain activation blockers.
 
 Recovery certificates use `canonical-recovery-v2`: explicit canonical syntax
 names, flags, ranges and token text, plus normalized diagnostic fields with
