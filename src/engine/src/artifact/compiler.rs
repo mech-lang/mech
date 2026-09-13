@@ -86,6 +86,7 @@ pub enum SourceNodeBody {
         requirement: Option<ApplicationRequirementId>,
     },
     Match(super::MatchDeclaration<OperationContractDeclaration>),
+    Comprehension(super::ComprehensionDeclaration<OperationContractDeclaration>),
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -99,7 +100,7 @@ impl SourceNode {
     pub fn operation(&self) -> Option<&OperationReference> {
         match &self.body {
             SourceNodeBody::Operation { operation, .. } => Some(operation),
-            SourceNodeBody::Match(_) => None,
+            SourceNodeBody::Match(_) | SourceNodeBody::Comprehension(_) => None,
         }
     }
 }
@@ -460,6 +461,11 @@ fn compile_source_program_with_metadata(
                     contract: OperationContractId::new(0),
                     requirement: *requirement,
                 }),
+                SourceNodeBody::Comprehension(control) => {
+                    crate::ExecutableNodeBody::Comprehension(control.map_contracts(|_| {
+                        Ok::<_, ArtifactBuildError>(OperationContractId::new(0))
+                    })?)
+                }
                 SourceNodeBody::Match(control) => {
                     crate::ExecutableNodeBody::Match(control.map_contracts(|_, _| {
                         Ok::<_, ArtifactBuildError>(OperationContractId::new(0))

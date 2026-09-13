@@ -7,8 +7,8 @@ use mech_core::{
     ChangeDetectionPolicy, IntegerWidth, OutputConstruction, SchemaBody, ShapeRule, ValueData,
 };
 use mech_engine::{
-    CanonicalSourceFrontend, PHASE_2I_SEMANTIC_RULES, Phase2iSemanticDisposition,
-    SourceSemanticComprehensionQualifierRole, SourceValue, phase_2i_semantic_disposition,
+    CanonicalSourceFrontend, PHASE_2I_SEMANTIC_RULES, Phase2iSemanticDisposition, SourceValue,
+    phase_2i_semantic_disposition,
 };
 use mech_syntax::document::parser::canonical::parse_canonical_phase_2i_rule_for_test;
 use mech_syntax::document::parser::rules;
@@ -291,73 +291,88 @@ fn calls_ranges_subscripts_and_patterns_keep_their_canonical_roles() {
             .collect::<Vec<_>>(),
         vec!["xs"]
     );
-    assert_eq!(comprehension.source_map().patterns.len(), 1);
-    assert_eq!(
-        comprehension.source_map().patterns[0].bindings.as_ref(),
-        &["x"]
-    );
-    assert!(comprehension.program().nodes.iter().all(|node| {
-        !node
-            .operation()
-            .expect("ordinary operation fixture")
-            .canonical_name()
-            .starts_with("source/pattern")
-    }));
-    assert_eq!(comprehension.source_map().comprehension_qualifiers.len(), 1);
+    let mech_engine::SourceNodeBody::Comprehension(control) =
+        &comprehension.program().nodes[0].body
+    else {
+        panic!("typed collection control")
+    };
     assert!(matches!(
-        comprehension.source_map().comprehension_qualifiers[0].role,
-        SourceSemanticComprehensionQualifierRole::Generator { pattern: 0 }
+        control.steps.as_ref(),
+        [mech_engine::ComprehensionStep::Generator {
+            source: mech_engine::ComprehensionValue::Input(0),
+            pattern: mech_engine::CollectionPattern::Bind { local: 0, .. },
+        }]
     ));
+    assert_eq!(
+        control.yield_value,
+        mech_engine::ComprehensionValue::Local(0)
+    );
+    comprehension.compile_artifact().unwrap();
 
     let qualified = CanonicalSourceFrontend
         .compile_expression(&expression("[y | x <- xs, y := x, y > 0]"))
         .unwrap();
-    assert_eq!(qualified.source_map().comprehension_qualifiers.len(), 3);
+    let mech_engine::SourceNodeBody::Comprehension(control) = &qualified.program().nodes[0].body
+    else {
+        panic!("typed qualifiers")
+    };
     assert!(matches!(
-        qualified.source_map().comprehension_qualifiers[0].role,
-        SourceSemanticComprehensionQualifierRole::Generator { pattern: 0 }
+        control.steps.first(),
+        Some(mech_engine::ComprehensionStep::Generator { .. })
+    ));
+    assert!(matches!(
+        control.steps.last(),
+        Some(mech_engine::ComprehensionStep::Filter(_))
     ));
     assert_eq!(
-        qualified.source_map().comprehension_qualifiers[1].role,
-        SourceSemanticComprehensionQualifierRole::Definition
+        control.yield_value,
+        mech_engine::ComprehensionValue::Local(0),
+        "immutable alias preserves the generator binding"
     );
-    assert_eq!(
-        qualified.source_map().comprehension_qualifiers[2].role,
-        SourceSemanticComprehensionQualifierRole::Filter
-    );
-    assert_eq!(
-        qualified
-            .source_map()
-            .comprehension_qualifiers
-            .iter()
-            .map(|qualifier| qualifier.input_ordinal)
-            .collect::<Vec<_>>(),
-        vec![0, 1, 2]
-    );
+    assert!(control.steps.iter().any(|step| matches!(step, mech_engine::ComprehensionStep::Operation(operation) if operation.operation.canonical_name() == "compare/gt")));
+    qualified.compile_artifact().unwrap();
 
     let destructured = CanonicalSourceFrontend
         .compile_expression(&expression("[a + b | (a<u8>, b<u8>) <- xs]"))
         .unwrap();
-    let bindings = destructured
-        .source_map()
-        .nodes
+    let mech_engine::SourceNodeBody::Comprehension(control) = &destructured.program().nodes[0].body
+    else {
+        panic!("typed projections")
+    };
+    let mech_engine::ComprehensionStep::Generator {
+        pattern: mech_engine::CollectionPattern::Tuple(fields),
+        ..
+    } = &control.steps[0]
+    else {
+        panic!("tuple projection")
+    };
+    assert!(matches!(
+        fields.as_ref(),
+        [
+            mech_engine::CollectionPattern::Bind { local: 0, .. },
+            mech_engine::CollectionPattern::Bind { local: 1, .. }
+        ]
+    ));
+    let add = control
+        .steps
         .iter()
-        .filter(|node| node.operation == "source/bind")
-        .collect::<Vec<_>>();
-    assert_eq!(bindings.len(), 2);
-    assert_ne!(bindings[0].detail, bindings[1].detail);
-    let add = destructured
-        .program()
-        .nodes
-        .iter()
-        .find(|node| {
-            node.operation()
-                .expect("ordinary operation fixture")
-                .canonical_name()
-                == "math/add"
+        .find_map(|step| match step {
+            mech_engine::ComprehensionStep::Operation(operation)
+                if operation.operation.canonical_name() == "math/add" =>
+            {
+                Some(operation)
+            }
+            _ => None,
         })
         .unwrap();
-    assert_ne!(add.inputs[0], add.inputs[1]);
+    assert_eq!(
+        add.inputs.as_ref(),
+        &[
+            mech_engine::ComprehensionValue::Local(0),
+            mech_engine::ComprehensionValue::Local(1)
+        ]
+    );
+    destructured.compile_artifact().unwrap();
 
     let typed_pattern = CanonicalSourceFrontend
         .compile_expression(&expression("value<bool> ? | y<bool> => !y | * => false"))
@@ -1731,11 +1746,15 @@ fn compound_and_maintained_operations_retain_exact_source_schemas() {
         let compiled = CanonicalSourceFrontend
             .compile_expression(&expression(source))
             .unwrap();
-        let contract = compiled.contracts().last().unwrap().as_ref().unwrap();
+        assert!(
+            compiled.contracts().last().unwrap().is_none(),
+            "typed collection roots do not fabricate ordinary call contracts"
+        );
         assert!(matches!(
-            contract.outputs[0].construction,
-            OutputConstruction::Build { .. }
+            compiled.program().nodes.last().unwrap().body,
+            mech_engine::SourceNodeBody::Comprehension(_)
         ));
+        compiled.compile_artifact().unwrap();
         let output = compiled
             .schemas()
             .get(compiled.program().outputs[0].schema)

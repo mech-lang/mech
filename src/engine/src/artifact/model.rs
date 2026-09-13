@@ -243,6 +243,7 @@ impl BindingDeclaration {
 pub enum ExecutableNodeBody {
     Operation(OperationNodeBody),
     Match(super::MatchDeclaration),
+    Comprehension(super::ComprehensionDeclaration),
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -286,7 +287,7 @@ impl NodeDeclaration {
                 contract: operation.contract,
                 requirement: operation.requirement,
             }),
-            ExecutableNodeBody::Match(_) => None,
+            ExecutableNodeBody::Match(_) | ExecutableNodeBody::Comprehension(_) => None,
         }
     }
 }
@@ -517,6 +518,7 @@ impl ProgramArtifactDraft {
         let mut builder = OperationContractTableBuilder::new();
         let mut node_handles = Vec::with_capacity(self.nodes.len());
         let mut control_handles = BTreeMap::new();
+        let mut comprehension_handles = BTreeMap::new();
         for (node, declaration) in self.nodes.iter().zip(declarations) {
             if let super::SourceNodeBody::Match(control) =
                 &graph.nodes[node.node.get() as usize].body
@@ -567,6 +569,72 @@ impl ProgramArtifactDraft {
                     )?)?)
                 })?;
                 control_handles.insert(node.node, handles);
+                node_handles.push(None);
+                continue;
+            }
+            if let super::SourceNodeBody::Comprehension(control) =
+                &graph.nodes[node.node.get() as usize].body
+            {
+                let invalid = |reason| ArtifactBuildError::InvalidControl {
+                    node: node.node,
+                    reason,
+                };
+                if declaration.is_some() {
+                    return Err(invalid("control has no ordinary root contract"));
+                }
+                let inputs = binding_range(&self, &node.input_bindings, node.node)?
+                    .iter()
+                    .map(|binding| match binding {
+                        BindingDeclaration::Input { source, .. } => source_schema(&self, *source),
+                        _ => Err(invalid("invalid collection input binding")),
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                let mut locals = Vec::new();
+                let mut handles = Vec::new();
+                for step in &control.steps {
+                    match step {
+                        super::ComprehensionStep::Generator { pattern, .. } => {
+                            super::comprehension::pattern_counts(pattern)
+                                .ok_or_else(|| invalid("collection pattern admission limit"))?;
+                            super::comprehension::pattern_locals(pattern, &mut locals)
+                                .ok_or_else(|| invalid("invalid collection local identity"))?;
+                        }
+                        super::ComprehensionStep::Operation(operation) => {
+                            if operation.local as usize != locals.len() {
+                                return Err(invalid("invalid collection local identity"));
+                            }
+                            let schemas = operation
+                                .inputs
+                                .iter()
+                                .map(|value| {
+                                    super::comprehension::value_schema(
+                                        *value,
+                                        &self.constants,
+                                        &inputs,
+                                        &locals,
+                                    )
+                                    .ok_or_else(|| invalid("invalid collection operand"))
+                                })
+                                .collect::<Result<Vec<_>, _>>()?;
+                            handles.push(builder.insert(resolve_declared_contract(
+                                &operation.contract,
+                                schemas,
+                                vec![operation.schema],
+                            )?)?);
+                            locals.push(operation.schema);
+                        }
+                        super::ComprehensionStep::Filter(_) => {}
+                    }
+                }
+                let mut handles = handles.into_iter();
+                comprehension_handles.insert(
+                    node.node,
+                    control.map_contracts(|_| {
+                        Ok::<_, ArtifactBuildError>(
+                            handles.next().expect("collection contract count"),
+                        )
+                    })?,
+                );
                 node_handles.push(None);
                 continue;
             }
@@ -642,6 +710,14 @@ impl ProgramArtifactDraft {
                         .remove(&node.node)
                         .expect("compiler control handles")
                         .map_contracts(|_, operation| {
+                            Ok::<_, ArtifactBuildError>(build.resolve(operation.contract)?)
+                        })?;
+                }
+                (ExecutableNodeBody::Comprehension(control), None) => {
+                    *control = comprehension_handles
+                        .remove(&node.node)
+                        .expect("compiler collection handles")
+                        .map_contracts(|operation| {
                             Ok::<_, ArtifactBuildError>(build.resolve(operation.contract)?)
                         })?;
                 }

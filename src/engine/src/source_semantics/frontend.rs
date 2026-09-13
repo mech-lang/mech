@@ -1,3 +1,7 @@
+#[path = "comprehension.rs"]
+mod comprehension;
+use comprehension::{PendingComprehension, resolve_comprehension};
+
 use std::collections::{BTreeMap, BTreeSet};
 
 use mech_core::snapshot::{
@@ -64,26 +68,11 @@ pub struct SourceSemanticPattern {
     pub anchor: SourceSemanticAnchor,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum SourceSemanticComprehensionQualifierRole {
-    Generator { pattern: u32 },
-    Definition,
-    Filter,
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct SourceSemanticComprehensionQualifier {
-    pub node: u32,
-    pub input_ordinal: u32,
-    pub role: SourceSemanticComprehensionQualifierRole,
-}
-
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct SourceSemanticMap {
     pub inputs: Box<[SourceSemanticAnchor]>,
     pub nodes: Box<[SourceSemanticNode]>,
     pub patterns: Box<[SourceSemanticPattern]>,
-    pub comprehension_qualifiers: Box<[SourceSemanticComprehensionQualifier]>,
     pub outputs: Box<[SourceSemanticAnchor]>,
 }
 
@@ -139,7 +128,9 @@ impl CanonicalSourceProgram {
                         node: NodeId(index as u32),
                         operation: operation.clone(),
                     }),
-                crate::SourceNodeBody::Match(_) => Ok(None),
+                crate::SourceNodeBody::Match(_) | crate::SourceNodeBody::Comprehension(_) => {
+                    Ok(None)
+                }
             })
             .collect::<Result<Vec<_>, _>>()?;
         let mut artifact_program = self.program.clone();
@@ -274,14 +265,6 @@ fn collect_pattern_bindings(
     pattern: &PatternSyntax,
     output: &mut Vec<PatternBinding>,
 ) -> Result<(), SourceSemanticError> {
-    collect_projected_pattern_bindings(pattern, &mut Vec::new(), output)
-}
-
-fn collect_projected_pattern_bindings(
-    pattern: &PatternSyntax,
-    path: &mut Vec<usize>,
-    output: &mut Vec<PatternBinding>,
-) -> Result<(), SourceSemanticError> {
     let value = pattern
         .value()
         .ok_or_else(|| missing_kind_child(pattern.syntax(), "pattern body"))?;
@@ -296,7 +279,6 @@ fn collect_projected_pattern_bindings(
                         .annotation()
                         .map(|annotation| annotation_schema_draft(&annotation))
                         .transpose()?,
-                    path: path.clone(),
                 });
             }
             Vec::new()
@@ -311,12 +293,8 @@ fn collect_projected_pattern_bindings(
         PatternValueSyntax::TupleStruct(tuple) => tuple.items().into_iter().map(Some).collect(),
         PatternValueSyntax::Wildcard(_) => Vec::new(),
     };
-    for (index, child) in children.into_iter().enumerate() {
-        if let Some(child) = child {
-            path.push(index);
-            collect_projected_pattern_bindings(&child, path, output)?;
-            path.pop();
-        }
+    for child in children.into_iter().flatten() {
+        collect_pattern_bindings(&child, output)?;
     }
     Ok(())
 }
@@ -443,6 +421,27 @@ impl SourceSchemas {
             .map(|value| insert(&value.schema))
             .collect::<Result<Vec<_>, _>>()?;
         for node in nodes {
+            if let PendingNodeBody::Comprehension(control) = &node.body {
+                let mut failure = None;
+                for step in &control.steps {
+                    match step {
+                        crate::ComprehensionStep::Generator { pattern, .. } => {
+                            pattern.bindings(&mut |_, schema| {
+                                if let Err(error) = insert(schema) {
+                                    failure = Some(error);
+                                }
+                            })
+                        }
+                        crate::ComprehensionStep::Operation(operation) => {
+                            insert(&operation.schema)?;
+                        }
+                        crate::ComprehensionStep::Filter(_) => {}
+                    }
+                }
+                if let Some(error) = failure {
+                    return Err(error);
+                }
+            }
             if let PendingNodeBody::Match(control) = &node.body {
                 for block in control
                     .arms
@@ -1402,6 +1401,8 @@ enum PendingNodeBody {
         contract: Option<OperationContractDeclaration>,
     },
     Match(PendingMatch),
+    Comprehension(PendingComprehension),
+    CollectionBinding,
 }
 
 struct PendingMatch {
@@ -1458,17 +1459,13 @@ struct PendingOutput {
 }
 
 struct RecordedPattern {
-    index: u32,
-    bindings: Vec<PatternBinding>,
     dependencies: Vec<PendingValue>,
-    syntax: SyntaxNode,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct PatternBinding {
     name: String,
     schema: Option<SchemaDraft>,
-    path: Vec<usize>,
 }
 
 struct BuiltinKindPaths(BTreeMap<KindId, CanonicalNominalPath>);
@@ -1508,7 +1505,6 @@ struct SemanticBuilder {
     bindings: BTreeMap<String, PendingValue>,
     scope_definitions: BTreeSet<String>,
     patterns: Vec<SourceSemanticPattern>,
-    comprehension_qualifiers: Vec<SourceSemanticComprehensionQualifier>,
 }
 
 impl SemanticBuilder {
@@ -1526,7 +1522,6 @@ impl SemanticBuilder {
             bindings: BTreeMap::new(),
             scope_definitions: BTreeSet::new(),
             patterns: Vec::new(),
-            comprehension_qualifiers: Vec::new(),
         }
     }
 
@@ -4404,125 +4399,6 @@ impl SemanticBuilder {
         )
     }
 
-    fn comprehension(
-        &mut self,
-        syntax: &SyntaxNode,
-        result: Option<ExpressionSyntax>,
-        qualifiers: Vec<mech_syntax::document::ComprehensionQualifierSyntax>,
-        operation: &'static str,
-    ) -> Result<PendingValue, SourceSemanticError> {
-        let saved = self.bindings.clone();
-        let saved_definitions = core::mem::take(&mut self.scope_definitions);
-        let compiled = (|| {
-            let mut inputs = Vec::new();
-            let mut qualifier_layouts = Vec::new();
-            for qualifier in qualifiers {
-                let qualifier = self.required(
-                    qualifier.value(),
-                    qualifier.syntax(),
-                    "a comprehension qualifier",
-                )?;
-                match qualifier {
-                    ComprehensionQualifierValueSyntax::Generator(generator) => {
-                        let pattern = self.required(
-                            generator.pattern(),
-                            generator.syntax(),
-                            "a generator pattern",
-                        )?;
-                        let source = self.required(
-                            generator.source(),
-                            generator.syntax(),
-                            "a generator source",
-                        )?;
-                        let source = self.expression(&source)?.0;
-                        let pattern = self.record_pattern(&pattern)?;
-                        let item_schema = match self.schema_draft_of(source)? {
-                            SchemaDraft {
-                                dimension_parameters,
-                                body:
-                                    SchemaBody::Set { element, .. } | SchemaBody::Matrix { element, .. },
-                            } => Some(SchemaDraft {
-                                dimension_parameters,
-                                body: *element,
-                            }),
-                            _ => None,
-                        };
-                        self.bind_pattern(&pattern, source, item_schema.as_ref())?;
-                        qualifier_layouts.push((
-                            inputs.len() as u32,
-                            SourceSemanticComprehensionQualifierRole::Generator {
-                                pattern: pattern.index,
-                            },
-                        ));
-                        inputs.push(source);
-                        inputs.extend(pattern.dependencies.iter().copied());
-                    }
-                    ComprehensionQualifierValueSyntax::Definition(definition) => {
-                        qualifier_layouts.push((
-                            inputs.len() as u32,
-                            SourceSemanticComprehensionQualifierRole::Definition,
-                        ));
-                        inputs.push(self.definition(&definition)?.0);
-                    }
-                    ComprehensionQualifierValueSyntax::Filter(filter) => {
-                        qualifier_layouts.push((
-                            inputs.len() as u32,
-                            SourceSemanticComprehensionQualifierRole::Filter,
-                        ));
-                        let filter_value = self.expression(&filter)?.0;
-                        inputs.push(self.require_boolean_operand(filter_value, filter.syntax())?);
-                    }
-                }
-            }
-            let result = self.required(result, syntax, "a comprehension result")?;
-            let result = self.expression(&result)?.0;
-            let value = if self.is_genuinely_dynamic(result)? {
-                inputs.push(result);
-                self.emit(
-                    operation,
-                    inputs,
-                    BuiltinSchema::Dynamic,
-                    syntax,
-                    "comprehension",
-                    None,
-                )
-            } else {
-                let Some((resolved_inputs, schema)) =
-                    self.resolve_maintained_call(operation, vec![result], syntax)?
-                else {
-                    return Err(internal(
-                        SourceSemanticAnchor::for_node(syntax),
-                        format!("{operation} has no maintained type declaration"),
-                    ));
-                };
-                inputs.push(resolved_inputs[0]);
-                self.emit_with_schema_draft(
-                    operation,
-                    inputs,
-                    schema,
-                    syntax,
-                    "comprehension",
-                    None,
-                )
-            };
-            let PendingValue::Node(node) = value else {
-                unreachable!("emit always returns a node")
-            };
-            self.comprehension_qualifiers
-                .extend(qualifier_layouts.into_iter().map(|(input_ordinal, role)| {
-                    SourceSemanticComprehensionQualifier {
-                        node,
-                        input_ordinal,
-                        role,
-                    }
-                }));
-            Ok(value)
-        })();
-        self.bindings = saved;
-        self.scope_definitions = saved_definitions;
-        compiled
-    }
-
     fn record_pattern(
         &mut self,
         pattern: &PatternSyntax,
@@ -4533,7 +4409,6 @@ impl SemanticBuilder {
         let mut seen = BTreeSet::new();
         bindings.retain(|binding| seen.insert(binding.name.clone()));
         let dependencies = self.compile_pattern_dependencies(pattern)?;
-        let index = self.patterns.len() as u32;
         self.patterns.push(SourceSemanticPattern {
             source: node_text(pattern.syntax())?,
             bindings: bindings
@@ -4543,12 +4418,7 @@ impl SemanticBuilder {
                 .into_boxed_slice(),
             anchor: SourceSemanticAnchor::for_node(pattern.syntax()),
         });
-        Ok(RecordedPattern {
-            index,
-            bindings,
-            dependencies,
-            syntax: pattern.syntax().clone(),
-        })
+        Ok(RecordedPattern { dependencies })
     }
 
     fn compile_pattern_dependencies(
@@ -4588,79 +4458,6 @@ impl SemanticBuilder {
             PatternValueSyntax::Wildcard(_) => {}
         }
         Ok(dependencies)
-    }
-
-    fn bind_pattern(
-        &mut self,
-        pattern: &RecordedPattern,
-        source: PendingValue,
-        element_schema: Option<&SchemaDraft>,
-    ) -> Result<(), SourceSemanticError> {
-        let source_schema = match element_schema {
-            Some(schema) => schema.clone(),
-            None => self.schema_draft_of(source)?,
-        };
-        let unresolved_source = match source {
-            PendingValue::Input(index) => !self
-                .input_declarations
-                .contains_key(&self.inputs[index as usize].name),
-            PendingValue::Node(index) => self.nodes[index as usize].inferable_projection,
-            _ => false,
-        };
-        for (binding_index, binding) in pattern.bindings.iter().enumerate() {
-            let mut inferred = source_schema.clone();
-            for index in &binding.path {
-                inferred.body = match &inferred.body {
-                    SchemaBody::Tuple(items) => items.get(*index).cloned(),
-                    SchemaBody::Matrix { element, .. } => Some(*element.clone()),
-                    SchemaBody::Dynamic => Some(SchemaBody::Dynamic),
-                    _ => None,
-                }
-                .ok_or_else(|| SourceSemanticError {
-                    code: "source-semantics/incompatible-pattern-shape",
-                    message: format!(
-                        "pattern projection {:?} does not exist in its source",
-                        binding.path
-                    ),
-                    anchor: SourceSemanticAnchor::for_node(&pattern.syntax),
-                })?;
-            }
-            if let Some(expected) = &binding.schema {
-                if is_dynamic_schema_draft(&inferred) {
-                    inferred = expected.clone();
-                } else if inferred != *expected && !is_dynamic_schema_draft(expected) {
-                    return Err(SourceSemanticError {
-                        code: "source-semantics/incompatible-local-kind",
-                        message: "pattern projection does not satisfy its kind annotation"
-                            .to_owned(),
-                        anchor: SourceSemanticAnchor::for_node(&pattern.syntax),
-                    });
-                }
-            }
-            let detail = Some(format!(
-                "pattern={};binding={binding_index};name={};path={:?}",
-                pattern.index, binding.name, binding.path
-            ));
-            let projection = self.emit_with_schema_draft(
-                "source/bind",
-                vec![source],
-                inferred,
-                &pattern.syntax,
-                "pattern-binding",
-                detail,
-            );
-            if unresolved_source
-                && binding.schema.is_none()
-                && self.is_genuinely_dynamic(projection)?
-            {
-                let PendingValue::Node(index) = projection else {
-                    unreachable!("emitted projection")
-                };
-                self.nodes[index as usize].inferable_projection = true;
-            }
-            self.bindings.insert(binding.name.clone(), projection);
-        }
-        Ok(())
     }
 
     fn fsm_pipe(&mut self, pipe: &FsmPipeSyntax) -> Result<PendingValue, SourceSemanticError> {
@@ -5255,6 +5052,17 @@ impl SemanticBuilder {
                             requirement: None,
                         }
                     }
+                    PendingNodeBody::Comprehension(control) => {
+                        contracts.push(None);
+                        crate::SourceNodeBody::Comprehension(resolve_comprehension(
+                            control,
+                            &schemas.table,
+                            &constant_ids,
+                        ))
+                    }
+                    PendingNodeBody::CollectionBinding => {
+                        unreachable!("lexical bindings cannot escape collection lowering")
+                    }
                     PendingNodeBody::Match(control) => {
                         contracts.push(None);
                         crate::SourceNodeBody::Match(resolve_pending_match(
@@ -5314,7 +5122,6 @@ impl SemanticBuilder {
                 .collect::<Vec<_>>()
                 .into_boxed_slice(),
             patterns: self.patterns.into_boxed_slice(),
-            comprehension_qualifiers: self.comprehension_qualifiers.into_boxed_slice(),
             outputs: self
                 .outputs
                 .into_iter()

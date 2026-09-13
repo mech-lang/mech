@@ -408,7 +408,7 @@ only then allocate and decode typed values.
 | Artifact inputs | `{input,name,slot,schema}` |
 | Artifact slots | `{slot,schema,role,initializer}`; role 1 input, 2 state, 3 derived, 4 output; initializer is null, `{Constant:id}`, or `{Slot:id}` |
 | Artifact producers | `{"Input":input}` or `{"NodeOutput":{"node":n,"output_ordinal":p}}` |
-| Artifact nodes | `{revision:3,requirements:[...],nodes:[...]}`; each node is `{node,body,input_start,input_end,output_start,output_end}` |
+| Artifact nodes | `{revision:4,requirements:[...],nodes:[...]}`; each node is `{node,body,input_start,input_end,output_start,output_end}` |
 | Artifact bindings | tagged `Input`/`Output` records containing ID, node, port, and source/target |
 | Artifact outputs | `{output,name,source,schema}` |
 | Artifact integrity constraints | `{constraint,operation,contract,inputs}` |
@@ -424,11 +424,11 @@ zero-based `contract`. The engine reconstructs
 bijections, recomputes `ProgramRevision`, and exposes only the finalized
 read-only artifact.
 
-### Typed graph bodies (graph revision 3)
+### Typed graph bodies (graph revision 4)
 
 An ordinary body is `{"Operation":{"operation":id,"contract":id,"requirement":id_or_null}}`.
 A control body is `{"Match":{"scrutinee":input_ordinal,"captures":[[input_ordinal,schema_id]],"arms":[...]}}`.
-The decoder requires revision 3 and typed bodies; earlier graph representations
+The decoder requires revision 4 and typed bodies; earlier graph representations
 must be regenerated with the current producer. The outer bytecode container
 remains version 1. There is one graph representation and no compatibility reader.
 
@@ -449,6 +449,25 @@ and undeclared captures. Decoder admission counts nested control arrays before
 allocating them: defaults allow 4,096 arms, 8,192 blocks, 65,536 local operations,
 and 262,144 operands across the artifact. Existing section and aggregate byte
 limits also apply. Every control field participates in the artifact revision.
+
+A collection body is `{"Comprehension":{"kind":0_or_1,"steps":[...],"yield_value":value}}`.
+Kind 0 constructs a row matrix; kind 1 constructs a canonical set. Values are
+`Constant(id)`, `Input(ordinal)`, or `Local(id)`. Steps are tagged `Generator`
+(`source`, `pattern`), `Operation` (`local`, `operation`, `contract`, `inputs`,
+`schema`), or `Filter(value)`. Generators enumerate their current collection
+for each preceding lexical binding; a failed pattern or false filter skips that
+binding. Immutable definitions resolve to lexical values. The final yield runs
+once per surviving binding. Repeated pattern names become equality against
+previously defined locals, including across generators.
+
+Collection patterns are `Wildcard`, `Bind {local,schema}`, `Equal(value)`,
+`Tuple([...])`, or `Array {prefix,rest,suffix}`. An absent rest requires exact
+length; a wildcard rest ignores the middle elements. Local IDs are dense and
+single-writer across all steps. Finalization checks dominance, collection
+sources, pattern projection schemas, Boolean filters, pure ordinary operation
+contracts and the declared yield element. Pattern depth is bounded at 32 and generator nesting at 64; step and operand populations share the artifact-wide
+control limits above. All of these fields participate in artifact identity.
+Source maps contain diagnostics only and are not serialized as execution data.
 
 ### Operation-contract binary encoding
 

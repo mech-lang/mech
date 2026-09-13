@@ -1,4 +1,7 @@
-//! Allocation-free candidate execution for the schema-driven resident plan.
+//! Candidate execution for the schema-driven resident plan.
+
+#[path = "comprehension_execution.rs"]
+mod comprehension_execution;
 
 use core::ops::Range;
 use core::sync::atomic::Ordering;
@@ -322,14 +325,9 @@ impl ReactiveInstance {
             // The kernel still admits its concrete work and scratch demand.
             return super::super::budget::with_resident_turn_plan(cached, || execute(self));
         }
-        let node = if let Some(nodes) = &self.plan.pure_kernel_steps {
-            &nodes[index]
-        } else {
-            let ActivatedTurnStep::Kernel(node) = &self.plan.steps[index] else {
-                unreachable!("external steps are staged by the dispatcher")
-            };
-            node
-        };
+        let node = self.plan.steps[index]
+            .memory_site()
+            .expect("executable memory call");
         let artifact_node = node.artifact_node;
         let fail = || ResidentExecutionError::Kernel {
             node: artifact_node,
@@ -795,7 +793,9 @@ impl ReactiveInstance {
             .enumerate()
             .filter_map(|(index, step)| match step {
                 ActivatedTurnStep::Kernel(node) => Some((index, node)),
-                ActivatedTurnStep::External(_) | ActivatedTurnStep::Match(_) => None,
+                ActivatedTurnStep::External(_)
+                | ActivatedTurnStep::Match(_)
+                | ActivatedTurnStep::Comprehension(_) => None,
             })
             .filter(|(_, node)| {
                 node.write.storage == ResidentStorageClass::State
@@ -851,6 +851,7 @@ impl ReactiveInstance {
                 ),
                 ActivatedTurnStep::External(node) => (None, Some(node.captured_payload)),
                 ActivatedTurnStep::Match(node) => (Some(node.write.region), None),
+                ActivatedTurnStep::Comprehension(node) => (Some(node.write.region), None),
             };
             if let Some(region) = scratch {
                 self.workspace.scratch.discard_payload_write(region);
@@ -1443,6 +1444,12 @@ impl ReactiveInstance {
         working_epoch: InstanceEpoch,
         probe: &mut ResidentStructuralProbe,
     ) -> Result<bool, ResidentExecutionError> {
+        if matches!(
+            self.plan.steps[node_index.get() as usize],
+            ActivatedTurnStep::Comprehension(_)
+        ) {
+            return self.execute_comprehension(node_index, before_epoch, working_epoch, probe);
+        }
         if matches!(
             self.plan.steps[node_index.get() as usize],
             ActivatedTurnStep::Match(_)

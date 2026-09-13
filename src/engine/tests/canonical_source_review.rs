@@ -134,26 +134,36 @@ fn bindings_inherit_actual_structural_projections_and_keep_local_scope() {
         "{x | (*, (x, *)) <- {(true, (1u8, false))}}",
     ] {
         let compiled = compile(source);
-        let bindings = compiled
+        fn binding(pattern: &mech_engine::CollectionPattern) -> Option<mech_core::SchemaId> {
+            match pattern {
+                mech_engine::CollectionPattern::Bind { schema, .. } => Some(*schema),
+                mech_engine::CollectionPattern::Tuple(fields) => fields.iter().find_map(binding),
+                _ => None,
+            }
+        }
+        let control = compiled
             .program()
             .nodes
             .iter()
-            .filter(|node| {
-                node.operation()
-                    .expect("ordinary operation fixture")
-                    .canonical_name()
-                    == "source/bind"
+            .find_map(|node| match &node.body {
+                mech_engine::SourceNodeBody::Comprehension(control) => Some(control),
+                _ => None,
             })
-            .collect::<Vec<_>>();
-        assert_eq!(bindings.len(), 1, "{source}");
-        let SourceNodeOutput::Derived { schema } = bindings[0].outputs[0] else {
-            panic!()
-        };
+            .unwrap();
+        let schema = control
+            .steps
+            .iter()
+            .find_map(|step| match step {
+                mech_engine::ComprehensionStep::Generator { pattern, .. } => binding(pattern),
+                _ => None,
+            })
+            .unwrap();
         assert_eq!(
             compiled.schemas().get(schema).unwrap().body(),
             &SchemaBody::UnsignedInteger(IntegerWidth::W8),
             "{source}"
         );
+        compiled.compile_artifact().unwrap();
         assert!(
             compiled.program().inputs.iter().all(
                 |input| input.name != "y" && (input.name != "x" || source.starts_with("x<u8>"))
@@ -175,56 +185,79 @@ fn bindings_inherit_actual_structural_projections_and_keep_local_scope() {
             .collect::<Vec<_>>(),
         vec!["xs"]
     );
-    let binding = inferred
-        .program()
-        .nodes
-        .iter()
-        .find(|node| {
-            node.operation()
-                .expect("ordinary operation fixture")
-                .canonical_name()
-                == "source/bind"
-        })
-        .unwrap();
-    let SourceNodeOutput::Derived { schema } = binding.outputs[0] else {
-        panic!()
+    let mech_engine::SourceNodeBody::Comprehension(control) = &inferred.program().nodes[0].body
+    else {
+        panic!("typed collection")
+    };
+    let mech_engine::ComprehensionStep::Generator {
+        pattern: mech_engine::CollectionPattern::Bind { schema, .. },
+        ..
+    } = &control.steps[0]
+    else {
+        panic!("typed binding")
     };
     assert_eq!(
-        inferred.schemas().get(schema).unwrap().body(),
+        inferred.schemas().get(*schema).unwrap().body(),
         &SchemaBody::FloatingPoint(FloatWidth::W64)
     );
-    assert!(
-        inferred.compile_artifact().is_err(),
-        "the unresolved generator remains an explicit intermediate source/bind boundary"
-    );
+    inferred.compile_artifact().unwrap();
     let compiled = compile("{x + y | (x, y) <- {(1u8, 2u8)}}");
-    let add = compiled
+    let control = compiled
         .program()
         .nodes
         .iter()
-        .find(|node| {
-            node.operation()
-                .expect("ordinary operation fixture")
-                .canonical_name()
-                == "math/add"
+        .find_map(|node| match &node.body {
+            mech_engine::SourceNodeBody::Comprehension(control) => Some(control),
+            _ => None,
         })
         .unwrap();
-    assert_ne!(add.inputs[0], add.inputs[1]);
-    assert!(compiled.program().inputs.is_empty());
-    let details = compiled
-        .source_map()
-        .nodes
+    let add = control
+        .steps
         .iter()
-        .filter(|node| node.operation == "source/bind")
-        .map(|node| node.detail.as_deref().unwrap())
-        .collect::<Vec<_>>();
+        .find_map(|step| match step {
+            mech_engine::ComprehensionStep::Operation(operation)
+                if operation.operation.canonical_name() == "math/add" =>
+            {
+                Some(operation)
+            }
+            _ => None,
+        })
+        .unwrap();
+    let fields = control
+        .steps
+        .iter()
+        .find_map(|step| match step {
+            mech_engine::ComprehensionStep::Generator {
+                pattern: mech_engine::CollectionPattern::Tuple(fields),
+                ..
+            } => Some(fields),
+            _ => None,
+        })
+        .unwrap();
+    let [
+        mech_engine::CollectionPattern::Bind { local: left, .. },
+        mech_engine::CollectionPattern::Bind { local: right, .. },
+    ] = fields.as_ref()
+    else {
+        panic!("distinct tuple fields")
+    };
+    assert_ne!(left, right);
     assert_eq!(
-        details,
-        [
-            "pattern=0;binding=0;name=x;path=[0]",
-            "pattern=0;binding=1;name=y;path=[1]"
+        add.inputs.as_ref(),
+        &[
+            mech_engine::ComprehensionValue::Local(*left),
+            mech_engine::ComprehensionValue::Local(*right)
         ]
     );
+    assert!(compiled.program().inputs.is_empty());
+    assert!(
+        compiled
+            .source_map()
+            .nodes
+            .iter()
+            .all(|node| node.operation != "source/bind")
+    );
+    compiled.compile_artifact().unwrap();
 }
 
 #[test]

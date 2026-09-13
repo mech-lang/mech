@@ -9335,6 +9335,16 @@ fn sum_columns(
     if input.len() != rows * columns || output.len() != rows {
         return Err(ResidentKernelError::InvalidShape);
     }
+    super::budget::PreparedKernel::new(
+        (),
+        super::budget::resident_cost! {
+            compute_work: input.len(),
+            comparison_work: output.len(),
+            output_elements: output.len(),
+            output_bytes: output.len().checked_mul(core::mem::size_of::<f64>()).ok_or(ResidentKernelError::InvalidShape)?,
+            ..super::budget::KernelCostEstimate::default()
+        },
+    ).admit()?.into_plan();
     Ok(replace_f64(output, |row| {
         (0..columns).map(|column| input[row + column * rows]).sum()
     }))
@@ -9355,6 +9365,16 @@ fn sum_rows(
     if input.len() != rows * columns || output.len() != columns {
         return Err(ResidentKernelError::InvalidShape);
     }
+    super::budget::PreparedKernel::new(
+        (),
+        super::budget::resident_cost! {
+            compute_work: input.len(),
+            comparison_work: output.len(),
+            output_elements: output.len(),
+            output_bytes: output.len().checked_mul(core::mem::size_of::<f64>()).ok_or(ResidentKernelError::InvalidShape)?,
+            ..super::budget::KernelCostEstimate::default()
+        },
+    ).admit()?.into_plan();
     Ok(replace_f64(output, |column| {
         (0..rows).map(|row| input[row + column * rows]).sum()
     }))

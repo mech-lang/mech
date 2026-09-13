@@ -275,9 +275,6 @@ pub(super) fn validate_control_counts(
 ) -> Result<(), super::ArtifactBuildError> {
     let mut counts = [0usize; 4];
     for node in &draft.nodes {
-        let super::ExecutableNodeBody::Match(control) = &node.body else {
-            continue;
-        };
         let invalid = || super::ArtifactBuildError::InvalidControl {
             node: node.node,
             reason: "control graph admission limit",
@@ -295,6 +292,25 @@ pub(super) fn validate_control_counts(
                 return Err(invalid());
             }
             Ok(())
+        };
+        if let super::ExecutableNodeBody::Comprehension(control) = &node.body {
+            add(2, control.steps.len())?;
+            for step in &control.steps {
+                match step {
+                    super::ComprehensionStep::Generator { pattern, .. } => add(
+                        3,
+                        super::comprehension::pattern_counts(pattern).ok_or_else(invalid)?,
+                    )?,
+                    super::ComprehensionStep::Operation(operation) => {
+                        add(3, operation.inputs.len())?
+                    }
+                    super::ComprehensionStep::Filter(_) => add(3, 1)?,
+                }
+            }
+            continue;
+        }
+        let super::ExecutableNodeBody::Match(control) = &node.body else {
+            continue;
         };
         add(0, control.arms.len())?;
         add(3, control.captures.len())?;
