@@ -122,16 +122,34 @@ fn expected_error_families_also_have_positive_call_and_literal_execution() {
 
 #[test]
 fn table_join_has_real_resident_output_after_artifact_roundtrip() {
-    let expected = Data::Table(
-        vec![TableColumnDraft {
-            name: "a".to_owned(),
-            values: vec![Data::U8(1)].into_boxed_slice(),
-        }]
-        .into_boxed_slice(),
-    );
+    let expected = |right| {
+        Data::Table(
+            vec![
+                TableColumnDraft {
+                    name: "a".to_owned(),
+                    values: vec![Data::U8(1)].into_boxed_slice(),
+                },
+                TableColumnDraft {
+                    name: "left".to_owned(),
+                    values: vec![Data::U8(7)].into_boxed_slice(),
+                },
+                TableColumnDraft {
+                    name: "right".to_owned(),
+                    values: vec![f(right)].into_boxed_slice(),
+                },
+            ]
+            .into_boxed_slice(),
+        )
+    };
+    // Both operands have unmatched rows and distinct payload columns. The
+    // right payload changes after activation, so neither passthrough, a cross
+    // product, nor a cached result can satisfy both expected turns.
     execute(
-        "x := (|a<u8>|1u8|) ⋈ (|a<u8>|1u8|)",
-        [(Vec::new(), expected.clone()), (Vec::new(), expected)],
+        "x := (|a<u8> left<u8>|1u8 7u8|2u8 8u8|) ⋈ (|a<u8> right<f64>|1u8 signal<f64>|3u8 90|)",
+        [
+            (vec![ResidentValueRef::F64(&[3.0])], expected(3.0)),
+            (vec![ResidentValueRef::F64(&[9.0])], expected(9.0)),
+        ],
     );
 }
 

@@ -1088,6 +1088,10 @@ fn assert_canonical_only(path: &Path, evidence: &str) {
         concat!("mech_syntax::", "*"),
         concat!("externcratemech_", "syntax"),
         concat!("mech_syntax::document::", "lower"),
+        concat!("mech_syntax::document::", "parse_document"),
+        concat!("mech_syntax::document::", "parse_syntax"),
+        concat!("mech_syntax::document::parser::", "parse_document"),
+        concat!("mech_syntax::document::parser::", "parse_syntax"),
         concat!("::", "lower"),
         concat!("document::", "lower::", "legacy"),
         concat!("usemech_", "core"),
@@ -1310,6 +1314,19 @@ fn canonical_authority_gate_rejects_glob_and_alias_routes() {
         concat!("mech_syntax/* detached path comment */::", "parse(\"1\");"),
         concat!("mech_syntax// detached path comment\n::", "parse(\"1\");"),
         concat!("mech_syntax::r#", "parse(\"1\");"),
+        concat!("mech_syntax::document::", "parse_document(source, config);"),
+        concat!(
+            "::mech_syntax::document::",
+            "parse_syntax(source, root, config);"
+        ),
+        concat!(
+            "mech_syntax::document::parser::",
+            "parse_document(source, config);"
+        ),
+        concat!(
+            "mech_syntax::document/* path gap */::parser::r#",
+            "parse_syntax(source, root, config);"
+        ),
         "pub use mech_syntax::document::*; lower_legacy_grammar();",
         "pub(crate) use mech_syntax::document::*; lower_legacy_grammar();",
     ] {
