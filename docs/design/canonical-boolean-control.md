@@ -16,8 +16,9 @@ Resident activation currently admits Bool, Index and F64 control values. Each
 local operation binds through the existing ordinary provider and call-memory
 contract. Its physical call and scratch identities are separate from the
 outer artifact schedule. Capability witnesses include local operations, while
-failures report the enclosing source owner. Every local is fully written when
-its block executes, including after branch switches.
+failures report the enclosing source owner. Each local's turn plan uses that
+local's physical call identity. Every local is fully written when its block
+executes, including after branch switches.
 
 Match results use owned derived slots. State changes proceed through the
 existing assignment and candidate-publication machinery. Kernel failures,

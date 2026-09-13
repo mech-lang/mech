@@ -416,11 +416,12 @@ impl ReactiveInstance {
                 self.read_location(location, working_epoch).ok_or_else(fail)
             })
             .collect::<Result<Vec<_>, _>>()?;
-        let facts = super::live::facts(call, artifact_node, &inputs, current, &self.plan.schemas)
-            .map_err(|_| fail())?;
+        let facts =
+            super::live::facts(call, node.memory_node, &inputs, current, &self.plan.schemas)
+                .map_err(|_| fail())?;
         let turn_plan = crate::memory_planner::plan_current_resident_turn(
             &self.plan.memory_plan,
-            artifact_node,
+            node.memory_node,
             &facts,
         )
         .map_err(|_| ResidentExecutionError::Kernel {
@@ -2860,6 +2861,59 @@ mod tests {
     use super::*;
     use crate::resident::general::{ResidentArenaSizes, StateVersion};
     use mech_core::ResidentShape;
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn control_locals_retain_distinct_certified_turn_call_plans() {
+        use mech_syntax::document::parser::{
+            canonical::parse_canonical_phase_2i_rule_for_test, rules,
+        };
+        use mech_syntax::document::{
+            AstNode, DocumentId, ExpressionSyntax, ParseConfig, Revision, SyntaxNode, TextSnapshot,
+        };
+        fn expression(node: SyntaxNode) -> Option<ExpressionSyntax> {
+            ExpressionSyntax::cast(node.clone()).or_else(|| node.children().find_map(expression))
+        }
+        let source = "flag<bool> ? | true => signal<f64> + 1 | false => signal<f64> * 2";
+        let parsed = parse_canonical_phase_2i_rule_for_test(
+            TextSnapshot::new(DocumentId(822), Revision(1), source).unwrap(),
+            rules::EXPRESSION,
+            ParseConfig::default(),
+        )
+        .unwrap();
+        assert!(parsed.is_strictly_clean());
+        let artifact = crate::CanonicalSourceFrontend
+            .compile_expression(&expression(parsed.syntax()).unwrap())
+            .unwrap()
+            .compile_artifact()
+            .unwrap();
+        let mut catalog = mech_core::FunctionCatalogBuilder::new();
+        crate::install_intrinsic_resident(&mut catalog).unwrap();
+        let instance = crate::resident::activate(
+            mech_core::ReactiveInstanceId::new(822, 1),
+            &artifact,
+            &catalog.build().unwrap(),
+            &crate::resident::ActivationFacts::default(),
+        )
+        .unwrap();
+        let mut locals = 0;
+        for (index, step) in instance.plan.steps.iter().enumerate() {
+            let ActivatedTurnStep::Kernel(kernel) = step else {
+                continue;
+            };
+            locals += 1;
+            assert_ne!(kernel.memory_node, kernel.artifact_node);
+            let turn = instance.workspace.fixed_turn_plans[index].as_ref().unwrap();
+            assert_eq!(turn.node, kernel.memory_node);
+            let call = turn
+                .call
+                .as_ref()
+                .expect("a local operation cannot use an empty enclosing-node plan");
+            assert_eq!(call.inputs.len(), 2);
+            assert_eq!(call.outputs.len(), 1);
+        }
+        assert_eq!(locals, 2);
+    }
 
     fn state_arena() -> StateArena {
         let sizes = ResidentArenaSizes {

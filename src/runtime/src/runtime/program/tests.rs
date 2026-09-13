@@ -4163,10 +4163,14 @@ fn advance_product_nbody(runtime: &mut crate::MechRuntime) {
         ))
         .unwrap();
     let outcome = runtime.drain_resident_host_inputs(64).unwrap();
-    assert!(matches!(
+    assert!(
+        matches!(
+            outcome.turn,
+            Some(crate::ResidentExternalTurnOutcome::Accepted { .. })
+        ),
+        "n-body turn was not accepted: {:?}",
         outcome.turn,
-        Some(crate::ResidentExternalTurnOutcome::Accepted { .. })
-    ));
+    );
 }
 
 #[derive(Clone, Debug)]

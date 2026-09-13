@@ -44,6 +44,60 @@ fn admit_payload_plan(plan: &TurnMemoryPlan) -> Result<(), ResidentKernelError> 
     })
 }
 
+/// Reuse the old output witness measured at this call's execution boundary.
+/// The turn plan is scoped to the kernel invocation; no snapshot or permit is
+/// cached across turns, and candidate admission still charges coexistence.
+pub(crate) fn published_canonical_footprint(
+    meter: &mut ResidentBudgetMeter,
+    current: &Value,
+    schemas: &SchemaTable,
+) -> Result<ValueFootprint, ResidentKernelError> {
+    let witnessed = with_active_turn_plan(|active| {
+        active.as_ref().map(|plan| {
+            let output = plan
+                .call
+                .as_ref()
+                .and_then(|call| call.outputs.first())
+                .ok_or(ResidentKernelError::InvalidOutput)?;
+            let schema = schemas
+                .get(current.schema())
+                .ok_or(ResidentKernelError::InvalidOutput)?;
+            if schema != output.descriptor.schema()
+                || !mech_core::shape_change_allowed(
+                    schema,
+                    output.descriptor.shape(),
+                    current.shape(),
+                )
+            {
+                return Err(ResidentKernelError::InvalidOutput);
+            }
+            let footprint = plan
+                .facts
+                .published_footprints
+                .get(&(plan.node, 0))
+                .ok_or(ResidentKernelError::InvalidOutput)?;
+            Ok(ValueFootprint {
+                encoded_bytes: footprint.encoded_bytes,
+                retained_bytes: footprint.payload_bytes,
+                node_count: footprint.retained_nodes,
+            })
+        })
+    });
+    if let Some(witnessed) = witnessed {
+        let footprint = witnessed?;
+        meter.charge_retained_nodes(footprint.node_count)?;
+        meter.charge_compute_work(1)?;
+        return Ok(footprint);
+    }
+    #[cfg(test)]
+    {
+        // Direct kernel unit tests have no executor boundary or scoped plan.
+        return measure_canonical_value_footprint(meter, current, schemas);
+    }
+    #[cfg(not(test))]
+    Err(ResidentKernelError::InvalidInput)
+}
+
 fn with_active_turn_plan<T>(use_plan: impl FnOnce(&mut Option<Arc<TurnMemoryPlan>>) -> T) -> T {
     ACTIVE_TURN_PLAN.with(|plans| {
         let mut plans = plans
