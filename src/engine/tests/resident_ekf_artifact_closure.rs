@@ -168,13 +168,14 @@ fn declaration_markers_stay_in_bytecode_but_not_the_artifact() -> MResult<()> {
         .filter(|entry| entry.name.starts_with("VariableDefine"))
         .count();
     assert!(declaration_instructions >= 1);
-    assert!(
-        compilation
-            .source_artifact
-            .nodes()
-            .iter()
-            .all(|node| { !node.operation.operation_name.starts_with("VariableDefine") })
-    );
+    assert!(compilation.source_artifact.nodes().iter().all(|node| {
+        !node
+            .as_operation()
+            .unwrap()
+            .operation
+            .operation_name
+            .starts_with("VariableDefine")
+    }));
     Ok(())
 }
 
@@ -184,8 +185,10 @@ fn both_state_updates_are_complete_declared_writes() -> MResult<()> {
     let compilation = compile_frozen_ekf_source(SOURCE, &mut services)?;
     for update in &compilation.source_closure.state_updates {
         let node = &compilation.source_artifact.nodes()[update.node.get() as usize];
-        let Some(ResolvedOperationContract::Declared(contract)) =
-            compilation.source_artifact.contracts().get(node.contract)
+        let Some(ResolvedOperationContract::Declared(contract)) = compilation
+            .source_artifact
+            .contracts()
+            .get(node.as_operation().unwrap().contract)
         else {
             panic!("state update must use a declared contract");
         };

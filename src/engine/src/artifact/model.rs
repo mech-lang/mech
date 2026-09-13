@@ -55,7 +55,7 @@ impl OperationReference {
             "scalar" if self.module_is(&["access"]) && selector_count == 1 => {
                 Some(ResolvedSelectionMode::LinearScalar)
             }
-            "range" if self.module_is(&["access"]) && selector_count == 1 => {
+            "range" if self.module_is(&["access"]) && selector_count <= 1 => {
                 Some(ResolvedSelectionMode::LinearGather)
             }
             "scalar" | "range" if self.module_is(&["access"]) && selector_count == 2 => {
@@ -124,9 +124,15 @@ mod operation_mode_tests {
             scalar.resolved_selection_mode(1),
             Some(ResolvedSelectionMode::LinearScalar)
         );
+        for selectors in [0, 1] {
+            assert_eq!(
+                operation(&["access"], "range").resolved_selection_mode(selectors),
+                Some(ResolvedSelectionMode::LinearGather)
+            );
+        }
         assert_eq!(
-            operation(&["access"], "range").resolved_selection_mode(1),
-            Some(ResolvedSelectionMode::LinearGather)
+            operation(&["access"], "range").resolved_selection_mode(3),
+            None
         );
         assert_eq!(
             scalar.resolved_selection_mode(2),
@@ -228,14 +234,58 @@ impl BindingDeclaration {
     }
 }
 
+/// An executable node has exactly one semantic owner. Control nodes do not
+/// claim an ordinary operation contract.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct NodeDeclaration {
-    pub node: NodeId,
+pub enum ExecutableNodeBody {
+    Operation(OperationNodeBody),
+    BooleanMatch(super::BooleanMatchDeclaration),
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct OperationNodeBody {
     pub operation: OperationReference,
     pub contract: OperationContractId,
     pub requirement: Option<ApplicationRequirementId>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct NodeDeclaration {
+    pub node: NodeId,
+    pub body: ExecutableNodeBody,
     pub input_bindings: Range<u32>,
     pub output_bindings: Range<u32>,
+}
+
+/// Borrowed ordinary-operation view. Callers must explicitly handle control
+/// nodes before accessing an operation identity or contract.
+#[derive(Clone, Copy, Debug)]
+pub struct OperationNodeView<'a> {
+    declaration: &'a NodeDeclaration,
+    pub operation: &'a OperationReference,
+    pub contract: OperationContractId,
+    pub requirement: Option<ApplicationRequirementId>,
+}
+
+impl core::ops::Deref for OperationNodeView<'_> {
+    type Target = NodeDeclaration;
+    fn deref(&self) -> &Self::Target {
+        self.declaration
+    }
+}
+
+impl NodeDeclaration {
+    pub fn as_operation(&self) -> Option<OperationNodeView<'_>> {
+        match &self.body {
+            ExecutableNodeBody::Operation(operation) => Some(OperationNodeView {
+                declaration: self,
+                operation: &operation.operation,
+                contract: operation.contract,
+                requirement: operation.requirement,
+            }),
+            ExecutableNodeBody::BooleanMatch(_) => None,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -451,7 +501,8 @@ impl ProgramArtifactDraft {
 impl ProgramArtifactDraft {
     pub(super) fn attach_contracts(
         mut self,
-        declarations: &[&OperationContractDeclaration],
+        declarations: &[Option<&OperationContractDeclaration>],
+        graph: &super::SourceProgram,
     ) -> Result<Self, ArtifactBuildError> {
         if declarations.len() != self.nodes.len() {
             return Err(ArtifactBuildError::CompiledMetadataLengthMismatch {
@@ -462,7 +513,69 @@ impl ProgramArtifactDraft {
         }
         let mut builder = OperationContractTableBuilder::new();
         let mut node_handles = Vec::with_capacity(self.nodes.len());
+        let mut control_handles = BTreeMap::new();
         for (node, declaration) in self.nodes.iter().zip(declarations) {
+            if let super::SourceNodeBody::BooleanMatch(control) =
+                &graph.nodes[node.node.get() as usize].body
+            {
+                if declaration.is_some() {
+                    return Err(ArtifactBuildError::InvalidControl {
+                        node: node.node,
+                        reason: "control has no ordinary root contract",
+                    });
+                }
+                let handles = control.map_contracts(|block, operation| {
+                    let inputs = operation
+                        .inputs
+                        .iter()
+                        .map(|value| {
+                            match *value {
+                                super::ControlValue::Constant(id) => {
+                                    self.constants.get(id).map(|value| value.schema())
+                                }
+                                super::ControlValue::Parameter {
+                                    block: owner,
+                                    ordinal,
+                                } if owner == block.id => block
+                                    .parameters
+                                    .get(ordinal as usize)
+                                    .map(|parameter| parameter.schema),
+                                super::ControlValue::Local {
+                                    block: owner,
+                                    node: local,
+                                } if owner == block.id && local < operation.node => block
+                                    .operations
+                                    .get(local as usize)
+                                    .map(|operation| operation.schema),
+                                _ => None,
+                            }
+                            .ok_or(
+                                ArtifactBuildError::InvalidControl {
+                                    node: node.node,
+                                    reason: "invalid compiler block reference",
+                                },
+                            )
+                        })
+                        .collect::<Result<Vec<_>, _>>()?;
+                    Ok::<_, ArtifactBuildError>(builder.insert(resolve_declared_contract(
+                        &operation.contract,
+                        inputs,
+                        vec![operation.schema],
+                    )?)?)
+                })?;
+                control_handles.insert(node.node, handles);
+                node_handles.push(None);
+                continue;
+            }
+            let declaration =
+                declaration.ok_or_else(|| ArtifactBuildError::MissingOperationContract {
+                    node: node.node,
+                    operation: node
+                        .as_operation()
+                        .expect("compiler operation body")
+                        .operation
+                        .clone(),
+                })?;
             let inputs = binding_range(&self, &node.input_bindings, node.node)?
                 .iter()
                 .map(|binding| match binding {
@@ -486,43 +599,11 @@ impl ProgramArtifactDraft {
                     }
                 })
                 .collect::<Result<Vec<_>, _>>()?;
-            validate_declaration(declaration)?;
-            let policies = declaration.inputs.resolve(inputs.len())?;
-            if declaration.outputs.len() != outputs.len() {
-                return Err(OperationContractError::PortCountMismatch {
-                    direction: PortDirection::Output,
-                    expected: declaration.outputs.len() as u64,
-                    actual: outputs.len() as u64,
-                }
-                .into());
-            }
-            let contract = ResolvedOperationContract::Declared(DeclaredOperationContract {
-                inputs: inputs
-                    .into_iter()
-                    .zip(policies)
-                    .map(|(schema, policy)| ResolvedInputPort {
-                        schema,
-                        access: policy.access,
-                        delivery: policy.delivery,
-                    })
-                    .collect::<Vec<_>>()
-                    .into_boxed_slice(),
-                outputs: outputs
-                    .into_iter()
-                    .zip(declaration.outputs.iter())
-                    .map(|(schema, policy)| ResolvedOutputPort {
-                        schema,
-                        access: policy.access,
-                        delivery: policy.delivery,
-                        construction: policy.construction.clone(),
-                        alias: policy.alias,
-                        change_detection: policy.change_detection,
-                    })
-                    .collect::<Vec<_>>()
-                    .into_boxed_slice(),
-                interaction: declaration.interaction.clone(),
-            });
-            node_handles.push(builder.insert(contract)?);
+            node_handles.push(Some(builder.insert(resolve_declared_contract(
+                declaration,
+                inputs,
+                outputs,
+            )?)?));
         }
 
         let mut constraint_handles = Vec::with_capacity(self.constraints.len());
@@ -549,7 +630,25 @@ impl ProgramArtifactDraft {
 
         let build = builder.finish()?;
         for (node, handle) in self.nodes.iter_mut().zip(node_handles) {
-            node.contract = build.resolve(handle)?;
+            match (&mut node.body, handle) {
+                (ExecutableNodeBody::Operation(operation), Some(handle)) => {
+                    operation.contract = build.resolve(handle)?
+                }
+                (ExecutableNodeBody::BooleanMatch(control), None) => {
+                    *control = control_handles
+                        .remove(&node.node)
+                        .expect("compiler control handles")
+                        .map_contracts(|_, operation| {
+                            Ok::<_, ArtifactBuildError>(build.resolve(operation.contract)?)
+                        })?;
+                }
+                _ => {
+                    return Err(ArtifactBuildError::InvalidControl {
+                        node: node.node,
+                        reason: "compiler node body mismatch",
+                    });
+                }
+            }
         }
         for (constraint, handle) in self.constraints.iter_mut().zip(constraint_handles) {
             constraint.contract = build.resolve(handle)?;
@@ -557,6 +656,50 @@ impl ProgramArtifactDraft {
         self.contracts = build.table;
         Ok(self)
     }
+}
+
+fn resolve_declared_contract(
+    declaration: &OperationContractDeclaration,
+    inputs: Vec<SchemaId>,
+    outputs: Vec<SchemaId>,
+) -> Result<ResolvedOperationContract, ArtifactBuildError> {
+    validate_declaration(declaration)?;
+    let policies = declaration.inputs.resolve(inputs.len())?;
+    if declaration.outputs.len() != outputs.len() {
+        return Err(OperationContractError::PortCountMismatch {
+            direction: PortDirection::Output,
+            expected: declaration.outputs.len() as u64,
+            actual: outputs.len() as u64,
+        }
+        .into());
+    }
+    let contract = ResolvedOperationContract::Declared(DeclaredOperationContract {
+        inputs: inputs
+            .into_iter()
+            .zip(policies)
+            .map(|(schema, policy)| ResolvedInputPort {
+                schema,
+                access: policy.access,
+                delivery: policy.delivery,
+            })
+            .collect::<Vec<_>>()
+            .into_boxed_slice(),
+        outputs: outputs
+            .into_iter()
+            .zip(declaration.outputs.iter())
+            .map(|(schema, policy)| ResolvedOutputPort {
+                schema,
+                access: policy.access,
+                delivery: policy.delivery,
+                construction: policy.construction.clone(),
+                alias: policy.alias,
+                change_detection: policy.change_detection,
+            })
+            .collect::<Vec<_>>()
+            .into_boxed_slice(),
+        interaction: declaration.interaction.clone(),
+    });
+    Ok(contract)
 }
 
 fn binding_range<'a>(
@@ -591,6 +734,10 @@ fn source_schema(
 
 #[derive(Debug)]
 pub enum ArtifactBuildError {
+    InvalidControl {
+        node: NodeId,
+        reason: &'static str,
+    },
     CompiledMetadataLengthMismatch {
         table: &'static str,
         expected: usize,

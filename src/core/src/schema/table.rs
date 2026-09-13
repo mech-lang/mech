@@ -465,6 +465,14 @@ impl SchemaTable {
     }
 }
 
+impl SchemaBody {
+    /// Heap layout bound reused by canonical body closure. Closing dimensions
+    /// only replaces expressions with constants, so it cannot exceed a clone.
+    pub(crate) fn clone_allocation_bound_bytes(&self) -> Option<u64> {
+        body_clone_heap_bytes(self)
+    }
+}
+
 fn clone_slice_bytes<T>(len: usize) -> Option<u64> {
     u64::try_from(len)
         .ok()?

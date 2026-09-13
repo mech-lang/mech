@@ -370,6 +370,7 @@ struct ResolvedAccessGeometry {
 
 #[derive(Clone, Debug)]
 struct SnapshotAccessPlan {
+    matrix_constructor: Option<Arc<mech_core::snapshot::MatrixSnapshotConstructor>>,
     selectors: Box<[SnapshotAccessSelectorLayout]>,
     matrix_mode: Option<ResolvedSelectionMode>,
     source_dimensions: Option<(usize, usize)>,
@@ -511,6 +512,12 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     )?;
     register_no_additional_scratch(builder, &["access"], "index", bind_scalar_index)?;
     register_canonical_finalize(builder, &["access"], "range", bind_semantic_range_access)?;
+    register_canonical_finalize(
+        builder,
+        &["access"],
+        "rectangle",
+        bind_semantic_range_access,
+    )?;
     register_canonical_finalize(builder, &["matrix"], "horzcat", bind_horizontal)?;
     register_canonical_finalize(builder, &["matrix"], "vertcat", bind_vertical)?;
     register_canonical_finalize(
@@ -520,6 +527,7 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         bind_matrix_comprehension,
     )?;
     register_no_additional_scratch(builder, &["matrix"], "multiply", bind_matmul)?;
+    register_no_additional_scratch(builder, &["matrix"], "matmul", bind_matmul)?;
     register_no_additional_scratch(builder, &["matrix"], "dot", bind_matrix_dot)?;
     register_with_memory_class(
         builder,
@@ -4223,27 +4231,48 @@ pub(super) fn checked_combination_count(n: usize, k: usize) -> Option<usize> {
     usize::try_from(result).ok()
 }
 
-fn bind_gather_1d(
+fn validate_dense_gather(
     request: &ResidentKernelBindRequest<'_>,
-) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    mode: ResolvedSelectionMode,
+) -> Result<(), ResidentKernelBindError> {
+    let count = if mode == ResolvedSelectionMode::Rectangle {
+        3
+    } else {
+        2
+    };
     validate_full_write(
         request,
-        2,
+        count,
         ShapeRule::Declared,
         ChangeDetectionPolicy::KernelReported,
     )?;
-    let [source, selector] = request.inputs else {
-        return Err(ResidentKernelBindError::UnsupportedLayout);
-    };
-    let selected = declared_selector_cardinality(request, selector)?;
-    let expected_output = resident_shape_from_dimensions(selected, 1)?;
+    let source = &request.inputs[0];
     if source.kind != ResidentValueKind::F64
-        || !numeric_positional_selector_layout(request, selector)
         || request.output.kind != ResidentValueKind::F64
-        || request.output.shape != expected_output
+        || request.inputs[1..]
+            .iter()
+            .any(|selector| !positional_selector_layout(request, selector))
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
+    validate_snapshot_access_geometry(
+        request,
+        Some((source.shape.rows as usize, source.shape.columns as usize)),
+        Some((
+            request.output.shape.rows as usize,
+            request.output.shape.columns as usize,
+        )),
+        Some(mode),
+        &request.inputs[1..],
+        None,
+    )?;
+    Ok(())
+}
+
+fn bind_gather_1d(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_dense_gather(request, ResolvedSelectionMode::LinearGather)?;
     bound(gather_1d, Vec::<u64>::new().into_boxed_slice())
 }
 
@@ -4336,12 +4365,109 @@ fn bind_scalar_access_2d(
     )
 }
 
+fn bind_all_elements_range(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_full_write(
+        request,
+        1,
+        ShapeRule::Declared,
+        ChangeDetectionPolicy::KernelReported,
+    )?;
+    let [source] = request.inputs else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    let source_schema = request
+        .schemas
+        .get(source.schema_id)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let output_schema = request
+        .schemas
+        .get(request.output.schema_id)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let (
+        SchemaBody::Matrix {
+            element: source_element,
+            ..
+        },
+        SchemaBody::Matrix {
+            element: output_element,
+            ..
+        },
+    ) = (
+        source_schema
+            .closed_body(&source.shape_instance)
+            .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?,
+        output_schema
+            .closed_body(&request.output.shape_instance)
+            .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?,
+    )
+    else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    let (rows, columns) = declared_matrix_dimensions(request, source)?;
+    let count = rows
+        .checked_mul(columns)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    if source_element != output_element
+        || declared_matrix_dimensions(request, &request.output)? != (count, 1)
+        || source.kind != request.output.kind
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    if source.kind != ResidentValueKind::Snapshot {
+        // The dense resident lane is already column-major: copying it into one
+        // column implements the canonical linear gather without index storage.
+        if source.shape != resident_shape_from_dimensions(rows, columns)?
+            || request.output.shape != resident_shape_from_dimensions(count, 1)?
+        {
+            return Err(ResidentKernelBindError::UnsupportedLayout);
+        }
+        return bound(hold_state, Vec::<u64>::new().into_boxed_slice());
+    }
+    if source.shape != ResidentShape::SCALAR || request.output.shape != ResidentShape::SCALAR {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    let constructor = mech_core::snapshot::MatrixSnapshotConstructor::bind(
+        request.output.schema_id,
+        request.output.shape_instance.clone(),
+        (source.schema_id, source.shape_instance.clone()),
+        Arc::new(request.schemas.clone()),
+    )
+    .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
+    let plan = SnapshotAccessPlan {
+        matrix_constructor: Some(Arc::new(constructor)),
+        selectors: Box::new([]),
+        matrix_mode: Some(ResolvedSelectionMode::LinearGather),
+        source_dimensions: Some((rows, columns)),
+        output_dimensions: Some((count, 1)),
+        output_geometry: ResolvedAccessGeometry {
+            logical_output_rows: count,
+            logical_output_columns: 1,
+        },
+        aggregate_ordinal: None,
+        output_schema: request.output.schema_id,
+    };
+    Ok(
+        bound(snapshot_access, Vec::<u64>::new().into_boxed_slice())?
+            .with_retained_state(Arc::new(plan))
+            .with_snapshot_output(ResidentSnapshotOutput {
+                schema: request.output.schema_id,
+                schema_key: request.output.schema_key,
+                shape: request.output.shape_instance.clone(),
+                exact_cardinality: None,
+                maximum_cardinality: None,
+            })
+            .with_snapshot_schemas(request.schemas.clone()),
+    )
+}
+
 fn bind_semantic_range_access(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_gather_1d(request)
-        .or_else(|_| bind_all_rows_columns(request))
-        .or_else(|_| bind_rows_all_columns(request))
+    bind_all_elements_range(request)
+        .or_else(|_| bind_gather_1d(request))
+        .or_else(|_| bind_gather_rectangle(request))
         .or_else(|_| super::text::bind_string_gather(request))
         .or_else(|_| {
             let mode = if request.inputs.len() == 3 {
@@ -4351,6 +4477,56 @@ fn bind_semantic_range_access(
             };
             bind_snapshot_access_mode(request, Some(mode))
         })
+}
+
+fn bind_gather_rectangle(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_dense_gather(request, ResolvedSelectionMode::Rectangle)?;
+    let source = &request.inputs[0];
+    bound(
+        gather_rectangle,
+        vec![
+            u64::from(source.shape.rows),
+            u64::from(source.shape.columns),
+            u64::from(request.output.shape.rows),
+            u64::from(request.output.shape.columns),
+        ]
+        .into_boxed_slice(),
+    )
+}
+
+fn gather_rectangle(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let source = f64_input(inputs, 0)?;
+    let rows =
+        usize::try_from(kernel.parameters()[0]).map_err(|_| ResidentKernelError::InvalidShape)?;
+    let columns =
+        usize::try_from(kernel.parameters()[1]).map_err(|_| ResidentKernelError::InvalidShape)?;
+    let selected_rows = ValidatedPositions::new(input(inputs, 1)?, rows)?;
+    let selected_columns = ValidatedPositions::new(input(inputs, 2)?, columns)?;
+    let output = f64_output(output)?;
+    if rows.checked_mul(columns) != Some(source.len())
+        || selected_rows.len().checked_mul(selected_columns.len()) != Some(output.len())
+        || selected_rows.len() as u64 != kernel.parameters()[2]
+        || selected_columns.len() as u64 != kernel.parameters()[3]
+    {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let mut changed = false;
+    selected_columns.try_for_each(|out_column, column| {
+        selected_rows.try_for_each(|out_row, row| {
+            let next = source[column * rows + row];
+            let target = &mut output[out_column * selected_rows.len() + out_row];
+            changed |= target.to_bits() != next.to_bits();
+            *target = next;
+            Ok::<(), ResidentKernelError>(())
+        })
+    })?;
+    Ok(changed)
 }
 
 fn bind_semantic_rows_access(
@@ -4594,6 +4770,7 @@ fn bind_snapshot_access_mode(
         .collect::<Vec<_>>()
         .into_boxed_slice();
     let plan = SnapshotAccessPlan {
+        matrix_constructor: None,
         selectors,
         matrix_mode,
         source_dimensions,
@@ -4961,18 +5138,16 @@ fn bind_matrix_solve(
 fn bind_all_rows_columns(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    validate_selection_contract(request)?;
-    let [source, _] = request.inputs else {
-        return Err(ResidentKernelBindError::UnsupportedLayout);
-    };
-    let selected = declared_selector_cardinality(request, &request.inputs[1])?;
-    let expected = resident_shape_from_dimensions(source.shape.rows as usize, selected)?;
-    if request.output.shape != expected {
-        return Err(ResidentKernelBindError::UnsupportedLayout);
-    }
+    validate_dense_gather(request, ResolvedSelectionMode::Columns)?;
+    let source = &request.inputs[0];
     bound(
         all_rows_columns,
-        vec![source.shape.rows as u64, source.shape.columns as u64].into_boxed_slice(),
+        vec![
+            source.shape.rows as u64,
+            source.shape.columns as u64,
+            request.output.shape.columns as u64,
+        ]
+        .into_boxed_slice(),
     )
 }
 
@@ -4980,6 +5155,7 @@ fn bind_all_rows_column(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     if request.inputs.get(1).is_none()
+        || !numeric_positional_selector_layout(request, &request.inputs[1])
         || declared_selector_cardinality(request, &request.inputs[1])? != 1
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
@@ -4990,6 +5166,7 @@ fn bind_all_rows_column(
             vec![
                 request.inputs[0].shape.rows as u64,
                 request.inputs[0].shape.columns as u64,
+                1,
             ]
             .into_boxed_slice(),
         )
@@ -5018,18 +5195,16 @@ fn bind_row_all_columns(
 fn bind_rows_all_columns(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    validate_selection_contract(request)?;
-    let [source, _] = request.inputs else {
-        return Err(ResidentKernelBindError::UnsupportedLayout);
-    };
-    let selected = declared_selector_cardinality(request, &request.inputs[1])?;
-    let expected = resident_shape_from_dimensions(selected, source.shape.columns as usize)?;
-    if request.output.shape != expected {
-        return Err(ResidentKernelBindError::UnsupportedLayout);
-    }
+    validate_dense_gather(request, ResolvedSelectionMode::Rows)?;
+    let source = &request.inputs[0];
     bound(
         rows_all_columns,
-        vec![source.shape.rows as u64, source.shape.columns as u64].into_boxed_slice(),
+        vec![
+            source.shape.rows as u64,
+            source.shape.columns as u64,
+            request.output.shape.rows as u64,
+        ]
+        .into_boxed_slice(),
     )
 }
 
@@ -10558,12 +10733,12 @@ fn gather_1d(
     }
     let source_values = f64_input(inputs, 0)?;
     let output = f64_output(output)?;
-    let indices = ValidatedIndices::new(input(inputs, 1)?, source_values.len())?;
+    let indices = ValidatedPositions::new(input(inputs, 1)?, source_values.len())?;
     if output.len() != indices.len() {
         return Err(ResidentKernelError::InvalidShape);
     }
     let mut changed = false;
-    indices.try_for_each_position(|ordinal, index| {
+    indices.try_for_each(|ordinal, index| {
         let target = &mut output[ordinal];
         let next = source_values[index];
         changed |= target.to_bits() != next.to_bits();
@@ -11297,7 +11472,7 @@ fn checked_footprint_add(
     Ok(())
 }
 
-fn selected_sequence_footprint(
+pub(crate) fn selected_sequence_footprint(
     total: &mut ValueFootprint,
     meter: &mut super::budget::ResidentBudgetMeter,
     schema: &SchemaBody,
@@ -11470,6 +11645,30 @@ fn snapshot_access_output_cost(
                 count > super::budget::MAX_RESIDENT_OUTPUT_ELEMENTS
             }) {
                 return Err(ResidentKernelError::InvalidShape);
+            }
+            if plan.matrix_constructor.is_some() {
+                if expected_count != source_len {
+                    return Err(ResidentKernelError::InvalidShape);
+                }
+                // Reordering copies canonical cells without normalizing nested
+                // payloads. Their data footprint, including the matrix root,
+                // is unchanged; token construction still visits the full data.
+                let footprint = super::budget::measure_canonical_data_footprint(
+                    meter,
+                    source_schema,
+                    source.data(),
+                )?;
+                let finalization_work = footprint
+                    .encoded_bytes
+                    .checked_add(footprint.node_count)
+                    .ok_or(ResidentKernelError::InvalidShape)?;
+                return Ok(SnapshotAccessOutputCost {
+                    footprint,
+                    count: source_len,
+                    index_elements: 0,
+                    selected_ordinal: None,
+                    finalization_work,
+                });
             }
             let mut footprint = ValueFootprint::zero();
             let mut finalization_work = 0_u64;
@@ -12094,6 +12293,34 @@ fn snapshot_access(
     )?
     .admit()?
     .into_plan();
+    if let Some(constructor) = &plan.matrix_constructor {
+        let (rows, columns) = plan
+            .source_dimensions
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        let positions = (0..output_cost.count).map(|linear| {
+            let row = linear % rows;
+            let column = linear / rows;
+            row * columns + column
+        });
+        let next = constructor
+            .construct(source, positions)
+            .map_err(|_| ResidentKernelError::InvalidOutput)?;
+        let ResidentValueMut::Snapshot([target]) = output else {
+            return Err(ResidentKernelError::InvalidOutput);
+        };
+        let changed = target
+            .as_ref()
+            .map(|previous| {
+                previous
+                    .language_eq(schemas, &next, schemas)
+                    .map(|same| !same)
+            })
+            .transpose()
+            .map_err(|_| ResidentKernelError::InvalidOutput)?
+            .unwrap_or(true);
+        *target = Some(next);
+        return Ok(changed);
+    }
     let selectors = plan
         .selectors
         .iter()
@@ -13506,16 +13733,17 @@ fn all_rows_columns(
     let output = f64_output(output)?;
     let rows = kernel.parameters()[0] as usize;
     let source_columns = kernel.parameters()[1] as usize;
-    let selected_columns = ValidatedIndices::new(input(inputs, 1)?, source_columns)?;
-    if output.len()
-        != rows
-            .checked_mul(selected_columns.len())
-            .ok_or(ResidentKernelError::InvalidShape)?
+    let selected_columns = ValidatedPositions::new(input(inputs, 1)?, source_columns)?;
+    if selected_columns.len() as u64 != kernel.parameters()[2]
+        || output.len()
+            != rows
+                .checked_mul(selected_columns.len())
+                .ok_or(ResidentKernelError::InvalidShape)?
     {
         return Err(ResidentKernelError::InvalidShape);
     }
     let mut changed = false;
-    selected_columns.try_for_each_position(|ordinal, column| {
+    selected_columns.try_for_each(|ordinal, column| {
         let source = &source[column * rows..(column + 1) * rows];
         let target = &mut output[ordinal * rows..(ordinal + 1) * rows];
         changed |= target
@@ -13567,19 +13795,20 @@ fn rows_all_columns(
     let output = f64_output(output)?;
     let rows = kernel.parameters()[0] as usize;
     let columns = kernel.parameters()[1] as usize;
-    let selected_rows = ValidatedIndices::new(input(inputs, 1)?, rows)?;
-    if output.len()
-        != selected_rows
-            .len()
-            .checked_mul(columns)
-            .ok_or(ResidentKernelError::InvalidShape)?
+    let selected_rows = ValidatedPositions::new(input(inputs, 1)?, rows)?;
+    if selected_rows.len() as u64 != kernel.parameters()[2]
+        || output.len()
+            != selected_rows
+                .len()
+                .checked_mul(columns)
+                .ok_or(ResidentKernelError::InvalidShape)?
     {
         return Err(ResidentKernelError::InvalidShape);
     }
     let mut changed = false;
     let mut target_index = 0;
     for column in 0..columns {
-        selected_rows.try_for_each_position(|_, row| {
+        selected_rows.try_for_each(|_, row| {
             let next = source[row + column * rows];
             changed |= output[target_index].to_bits() != next.to_bits();
             output[target_index] = next;
@@ -13886,6 +14115,235 @@ mod tests {
             .into_boxed_slice(),
             interaction: ExternalInteraction::Pure,
         })
+    }
+
+    #[test]
+    fn all_elements_range_requires_exact_declared_geometry_and_element_schema() {
+        let f64_body = SchemaBody::FloatingPoint(mech_core::FloatWidth::W64);
+        let u8_body = SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W8);
+        let matrix = |element: SchemaBody, rows, columns| SchemaBody::Matrix {
+            element: Box::new(element),
+            dimensions: vec![
+                mech_core::DimensionExpr::Constant(rows),
+                mech_core::DimensionExpr::Constant(columns),
+            ]
+            .into_boxed_slice(),
+        };
+        let (schemas, ids) = test_schema_table([
+            matrix(f64_body.clone(), 2, 3),
+            matrix(f64_body.clone(), 6, 1),
+            matrix(f64_body.clone(), 1, 6),
+            matrix(f64_body.clone(), 5, 1),
+            matrix(u8_body.clone(), 2, 3),
+            matrix(u8_body.clone(), 6, 1),
+            matrix(u8_body, 1, 6),
+            f64_body,
+        ]);
+        let layout = |index, kind, rows, columns| {
+            test_layout(&schemas, ids[index], kind, ResidentShape { rows, columns })
+        };
+        let source = layout(0, ResidentValueKind::F64, 2, 3);
+        let output = layout(1, ResidentValueKind::F64, 6, 1);
+        let check = |inputs: &[mech_core::ResidentPortLayout],
+                     output: mech_core::ResidentPortLayout,
+                     shape| {
+            let contract = test_contract(
+                &inputs
+                    .iter()
+                    .map(|input| input.schema_id)
+                    .collect::<Vec<_>>(),
+                output.schema_id,
+                OutputConstruction::FullWrite { shape },
+                AccessMode::Write,
+                AliasPolicy::NoAlias,
+                ChangeDetectionPolicy::KernelReported,
+            );
+            bind_all_elements_range(&ResidentKernelBindRequest {
+                contract: &contract,
+                schemas: &schemas,
+                inputs,
+                output,
+            })
+            .is_ok()
+        };
+        assert!(check(
+            &[source.clone()],
+            output.clone(),
+            ShapeRule::Declared
+        ));
+        let snapshot_source = layout(4, ResidentValueKind::Snapshot, 1, 1);
+        let snapshot_output = layout(5, ResidentValueKind::Snapshot, 1, 1);
+        assert!(check(
+            &[snapshot_source.clone()],
+            snapshot_output.clone(),
+            ShapeRule::Declared
+        ));
+        for (case, inputs, output, shape) in [
+            (
+                "non-column output",
+                vec![source.clone()],
+                layout(2, ResidentValueKind::F64, 1, 6),
+                ShapeRule::Declared,
+            ),
+            (
+                "wrong count",
+                vec![source.clone()],
+                layout(3, ResidentValueKind::F64, 5, 1),
+                ShapeRule::Declared,
+            ),
+            (
+                "wrong element",
+                vec![source.clone()],
+                layout(5, ResidentValueKind::F64, 6, 1),
+                ShapeRule::Declared,
+            ),
+            (
+                "wrong physical source geometry",
+                vec![layout(0, ResidentValueKind::F64, 3, 2)],
+                output.clone(),
+                ShapeRule::Declared,
+            ),
+            (
+                "wrong physical output geometry",
+                vec![source.clone()],
+                layout(1, ResidentValueKind::F64, 1, 6),
+                ShapeRule::Declared,
+            ),
+            (
+                "snapshot non-column output",
+                vec![snapshot_source.clone()],
+                layout(6, ResidentValueKind::Snapshot, 1, 1),
+                ShapeRule::Declared,
+            ),
+            (
+                "snapshot carrier is scalar",
+                vec![layout(4, ResidentValueKind::Snapshot, 2, 3)],
+                snapshot_output.clone(),
+                ShapeRule::Declared,
+            ),
+            (
+                "scalar source",
+                vec![layout(7, ResidentValueKind::F64, 1, 1)],
+                output.clone(),
+                ShapeRule::Declared,
+            ),
+            (
+                "wrong shape contract",
+                vec![source.clone()],
+                output.clone(),
+                ShapeRule::SameAsInput { input: 0 },
+            ),
+            (
+                "missing source",
+                vec![],
+                output.clone(),
+                ShapeRule::Declared,
+            ),
+            (
+                "unexpected selector",
+                vec![source.clone(), source],
+                output,
+                ShapeRule::Declared,
+            ),
+        ] {
+            assert!(!check(&inputs, output, shape), "{case}");
+        }
+    }
+
+    #[test]
+    fn all_elements_range_closes_nested_elements_in_each_schema_environment() {
+        use mech_core::{
+            DimensionExpr, DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+            DimensionParameterOrigin, SchemaDraft,
+        };
+        let nested = |rows| SchemaBody::Matrix {
+            element: Box::new(SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W8)),
+            dimensions: vec![rows, DimensionExpr::Constant(1)].into_boxed_slice(),
+        };
+        let mut builder = mech_core::SchemaTableBuilder::new();
+        let mut handles = Vec::new();
+        for (rows, columns, parameterized) in [(2, 3, true), (6, 1, true), (6, 1, false)] {
+            let parameters = if parameterized {
+                vec![DimensionParameterDeclaration {
+                    id: DimensionParameterId::new(0),
+                    origin: DimensionParameterOrigin::Inferred,
+                    lifetime: DimensionLifetime::Turn,
+                    lower_bound: DimensionExpr::Constant(0),
+                    upper_bound: None,
+                }]
+                .into_boxed_slice()
+            } else {
+                Box::new([])
+            };
+            handles.push(
+                builder
+                    .insert(
+                        SchemaDraft {
+                            dimension_parameters: parameters,
+                            body: SchemaBody::Matrix {
+                                element: Box::new(nested(if parameterized {
+                                    DimensionExpr::Parameter(DimensionParameterId::new(0))
+                                } else {
+                                    DimensionExpr::Constant(2)
+                                })),
+                                dimensions: vec![
+                                    DimensionExpr::Constant(rows),
+                                    DimensionExpr::Constant(columns),
+                                ]
+                                .into_boxed_slice(),
+                            },
+                        }
+                        .finalize()
+                        .unwrap(),
+                    )
+                    .unwrap(),
+            );
+        }
+        let built = builder.finish().unwrap();
+        let ids = handles
+            .into_iter()
+            .map(|handle| built.resolve(handle).unwrap())
+            .collect::<Vec<_>>();
+        let (schemas, _) = built.into_parts();
+        let layout = |index: usize, values: Box<[u64]>| mech_core::ResidentPortLayout {
+            schema_id: ids[index],
+            schema_key: schemas.entry(ids[index]).unwrap().key(),
+            kind: ResidentValueKind::Snapshot,
+            shape: ResidentShape::SCALAR,
+            shape_instance: schemas
+                .get(ids[index])
+                .unwrap()
+                .instantiate_shape(values)
+                .unwrap(),
+            resolved_selector: None,
+        };
+        let input = layout(0, vec![2].into_boxed_slice());
+        for (output, compatible) in [
+            (layout(1, vec![2].into_boxed_slice()), true),
+            (layout(1, vec![3].into_boxed_slice()), false),
+            (layout(2, Box::new([])), true),
+        ] {
+            let contract = test_contract(
+                &[input.schema_id],
+                output.schema_id,
+                OutputConstruction::FullWrite {
+                    shape: ShapeRule::Declared,
+                },
+                AccessMode::Write,
+                AliasPolicy::NoAlias,
+                ChangeDetectionPolicy::KernelReported,
+            );
+            assert_eq!(
+                bind_all_elements_range(&ResidentKernelBindRequest {
+                    contract: &contract,
+                    schemas: &schemas,
+                    inputs: &[input.clone()],
+                    output
+                })
+                .is_ok(),
+                compatible
+            );
+        }
     }
 
     #[test]
@@ -14458,7 +14916,7 @@ mod tests {
 
     #[test]
     fn late_out_of_range_row_selector_rejects_before_output_mutation() {
-        let kernel = BoundResidentKernel::new(rows_all_columns, Box::new([2, 2]));
+        let kernel = BoundResidentKernel::new(rows_all_columns, Box::new([2, 2, 2]));
         let source = [10.0, 20.0, 30.0, 40.0];
         let indices = [1_u64, 3];
         let inputs = [

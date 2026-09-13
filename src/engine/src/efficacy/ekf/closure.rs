@@ -95,6 +95,9 @@ pub struct FrozenEkfArtifactClosure {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum FrozenEkfArtifactClosureError {
+    UnsupportedControl {
+        node: NodeId,
+    },
     UnexpectedExecutableNode {
         node: NodeId,
         operation: crate::OperationReference,
@@ -158,9 +161,12 @@ impl FrozenEkfArtifactClosure {
         let mut output_by_operation = std::collections::BTreeMap::new();
 
         for node in artifact.nodes() {
+            let node = node
+                .as_operation()
+                .ok_or(FrozenEkfArtifactClosureError::UnsupportedControl { node: node.node })?;
             let declared = declared_contract(artifact, node.node, node.contract)?;
-            let inputs = node_inputs(artifact, node)?;
-            let outputs = node_outputs(artifact, node)?;
+            let inputs = node_inputs(artifact, &node)?;
+            let outputs = node_outputs(artifact, &node)?;
             if node.operation.module_path.as_ref() == ["resource", "read"]
                 && node.operation.operation_name == "read"
             {
@@ -319,7 +325,7 @@ fn declared_contract<'a>(
 
 fn node_inputs(
     artifact: &ProgramArtifact,
-    node: &crate::NodeDeclaration,
+    node: &crate::OperationNodeView<'_>,
 ) -> Result<Box<[ArtifactSource]>, FrozenEkfArtifactClosureError> {
     artifact
         .bindings()
@@ -342,7 +348,7 @@ fn node_inputs(
 
 fn node_outputs(
     artifact: &ProgramArtifact,
-    node: &crate::NodeDeclaration,
+    node: &crate::OperationNodeView<'_>,
 ) -> Result<Box<[CellSlotId]>, FrozenEkfArtifactClosureError> {
     artifact
         .bindings()
@@ -477,7 +483,10 @@ fn validate_frozen_operation(
             FrozenEkfOperation::Kernel(_) => {
                 FrozenEkfArtifactClosureError::UnsupportedNodeContract {
                     node,
-                    contract: artifact.nodes()[node.get() as usize].contract,
+                    contract: artifact.nodes()[node.get() as usize]
+                        .as_operation()
+                        .ok_or(FrozenEkfArtifactClosureError::UnsupportedControl { node })?
+                        .contract,
                 }
             }
             FrozenEkfOperation::Predicate(_) => {
@@ -493,7 +502,10 @@ fn validate_frozen_operation(
             FrozenEkfOperation::Kernel(_) => {
                 FrozenEkfArtifactClosureError::UnsupportedNodeContract {
                     node,
-                    contract: artifact.nodes()[node.get() as usize].contract,
+                    contract: artifact.nodes()[node.get() as usize]
+                        .as_operation()
+                        .ok_or(FrozenEkfArtifactClosureError::UnsupportedControl { node })?
+                        .contract,
                 }
             }
             FrozenEkfOperation::Predicate(_) => {

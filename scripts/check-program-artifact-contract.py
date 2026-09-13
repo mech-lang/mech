@@ -80,10 +80,15 @@ def validate_model(source: str, manifest: dict[str, object]) -> list[str]:
     if "Deserialize" in derive:
         failures.append("ProgramArtifact must not derive unchecked Deserialize")
     node = struct_body(source, "NodeDeclaration") or ""
-    if "requirements" in durable_fields and "requirement: Option<ApplicationRequirementId>" not in node:
+    operation = struct_body(source, "OperationNodeBody") or ""
+    if "requirements" in durable_fields and not (
+        "body: ExecutableNodeBody" in node
+        and "Operation(OperationNodeBody)" in source
+        and "requirement: Option<ApplicationRequirementId>" in operation
+    ):
         failures.append("resident external artifact requirement table lacks per-node requirement identity")
     for token in manifest["forbidden_artifact_tokens"]:
-        if token in node:
+        if token in node or token in operation:
             failures.append(f"NodeDeclaration contains forbidden runtime token {token}")
     return failures
 

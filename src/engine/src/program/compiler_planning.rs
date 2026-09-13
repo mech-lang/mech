@@ -1110,7 +1110,7 @@ mod tests {
             assert!(!artifact_a.schemas().is_empty());
             executable_node_count += artifact_a.nodes().len();
             assert!(artifact_a.nodes().iter().all(|node| matches!(
-                artifact_a.contracts().get(node.contract),
+                artifact_a.contracts().get(node.as_operation().unwrap().contract),
                 Some(mech_core::ResolvedOperationContract::Declared(_))
             )));
         }
@@ -1153,8 +1153,8 @@ mod tests {
                 .nodes()
                 .iter()
                 .find(|node| {
-                    node.operation.module_path.as_ref() == ["core"]
-                        && node.operation.operation_name == "composite-pack"
+                    node.as_operation().unwrap().operation.module_path.as_ref() == ["core"]
+                        && node.as_operation().unwrap().operation.operation_name == "composite-pack"
                 })
                 .expect("source tuple must retain a reactive composite-pack node");
             assert!(composite.input_bindings.len() >= 2);

@@ -287,11 +287,13 @@ impl ReactiveInstance {
                 continue;
             };
             let artifact_node = node.artifact_node;
-            let call = self.plan.memory_plan.call_for_node(artifact_node).ok_or(
-                ResidentActivationError::InvalidDependency {
+            let call = self
+                .plan
+                .memory_plan
+                .call_for_node(node.memory_node)
+                .ok_or(ResidentActivationError::InvalidDependency {
                     node: artifact_node,
-                },
-            )?;
+                })?;
             if super::live::has_invariant_memory_facts(call) {
                 self.with_kernel_turn_plan(
                     ActivatedNodeIndex(index as u32),
@@ -348,7 +350,7 @@ impl ReactiveInstance {
         let call = self
             .plan
             .memory_plan
-            .call_for_node(artifact_node)
+            .call_for_node(node.memory_node)
             .ok_or_else(fail)?;
         let base = match node.construction {
             OutputConstruction::ReadModifyWrite { base_input, .. } => Some(base_input as usize),
@@ -414,11 +416,12 @@ impl ReactiveInstance {
                 self.read_location(location, working_epoch).ok_or_else(fail)
             })
             .collect::<Result<Vec<_>, _>>()?;
-        let facts = super::live::facts(call, artifact_node, &inputs, current, &self.plan.schemas)
-            .map_err(|_| fail())?;
+        let facts =
+            super::live::facts(call, node.memory_node, &inputs, current, &self.plan.schemas)
+                .map_err(|_| fail())?;
         let turn_plan = crate::memory_planner::plan_current_resident_turn(
             &self.plan.memory_plan,
-            artifact_node,
+            node.memory_node,
             &facts,
         )
         .map_err(|_| ResidentExecutionError::Kernel {
@@ -743,6 +746,9 @@ impl ReactiveInstance {
         if self.plan.has_external_steps() {
             return Err(ResidentExecutionError::ExternalSummaryRequired);
         }
+        if !self.plan.has_only_kernel_steps() {
+            return self.prepare_turn(inputs)?.publish().map(|_| ());
+        }
         if self.candidate_active {
             return Err(ResidentExecutionError::ActiveCandidate);
         }
@@ -789,7 +795,7 @@ impl ReactiveInstance {
             .enumerate()
             .filter_map(|(index, step)| match step {
                 ActivatedTurnStep::Kernel(node) => Some((index, node)),
-                ActivatedTurnStep::External(_) => None,
+                ActivatedTurnStep::External(_) | ActivatedTurnStep::BooleanMatch(_) => None,
             })
             .filter(|(_, node)| {
                 node.write.storage == ResidentStorageClass::State
@@ -833,7 +839,7 @@ impl ReactiveInstance {
         // their epoch/execution evidence so a failed turn cannot consume the
         // next turn's exact candidate headroom.
         self.state.abort_payloads(working_epoch);
-        for index in 0..self.plan.steps.len() {
+        for index in 0..self.plan.topology.linear_node_order.len() {
             if !bit_is_set(&self.workspace.executed_bits, index) {
                 continue;
             }
@@ -844,6 +850,7 @@ impl ReactiveInstance {
                     None,
                 ),
                 ActivatedTurnStep::External(node) => (None, Some(node.captured_payload)),
+                ActivatedTurnStep::BooleanMatch(node) => (Some(node.write.region), None),
             };
             if let Some(region) = scratch {
                 self.workspace.scratch.discard_payload_write(region);
@@ -1074,7 +1081,7 @@ impl ReactiveInstance {
         working_epoch: InstanceEpoch,
         probe: &mut ResidentStructuralProbe,
     ) -> Result<(), ResidentExecutionError> {
-        if !self.plan.has_external_steps() {
+        if self.plan.has_only_kernel_steps() {
             return self.execute_pure_candidate(before_epoch, working_epoch, probe);
         }
         if self.plan.topology.word_len() == 1 {
@@ -1438,12 +1445,94 @@ impl ReactiveInstance {
     ) -> Result<bool, ResidentExecutionError> {
         if matches!(
             self.plan.steps[node_index.get() as usize],
+            ActivatedTurnStep::BooleanMatch(_)
+        ) {
+            return self.execute_boolean_match(node_index, before_epoch, working_epoch, probe);
+        }
+        if matches!(
+            self.plan.steps[node_index.get() as usize],
             ActivatedTurnStep::External(_)
         ) {
             self.stage_external(node_index, working_epoch)?;
             return Ok(false);
         }
         self.execute_kernel(node_index, before_epoch, working_epoch, probe)
+    }
+
+    fn execute_boolean_match(
+        &mut self,
+        node_index: ActivatedNodeIndex,
+        before_epoch: InstanceEpoch,
+        working_epoch: InstanceEpoch,
+        probe: &mut ResidentStructuralProbe,
+    ) -> Result<bool, ResidentExecutionError> {
+        let index = node_index.get() as usize;
+        let ActivatedTurnStep::BooleanMatch(matched) = &self.plan.steps[index] else {
+            unreachable!()
+        };
+        let node = matched.artifact_node;
+        let write = matched.write;
+        let arm_count = matched.arms.len();
+        let fail = || ResidentExecutionError::Kernel {
+            node,
+            error: ResidentKernelError::InvalidInput,
+        };
+        let scrutinee = match self.read_location(matched.scrutinee, working_epoch) {
+            Some(ResidentValueRef::Bool([0])) => false,
+            Some(ResidentValueRef::Bool([1])) => true,
+            _ => return Err(fail()),
+        };
+        for arm_index in 0..arm_count {
+            let ActivatedTurnStep::BooleanMatch(matched) = &self.plan.steps[index] else {
+                unreachable!()
+            };
+            let arm = &matched.arms[arm_index];
+            if matches!(arm.pattern, crate::BooleanPattern::Literal(value) if value != scrutinee) {
+                continue;
+            }
+            let guard = arm.guard.clone();
+            let body = arm.body.clone();
+            if let Some(guard) = guard {
+                for kernel in guard.kernels {
+                    self.execute_kernel(
+                        ActivatedNodeIndex(kernel),
+                        before_epoch,
+                        working_epoch,
+                        probe,
+                    )?;
+                }
+                match self.read_location(guard.yield_value, working_epoch) {
+                    Some(ResidentValueRef::Bool([1])) => {}
+                    Some(ResidentValueRef::Bool([0])) => continue,
+                    _ => return Err(fail()),
+                }
+            }
+            for kernel in body.kernels {
+                // Branch switches always initialize their selected locals; no
+                // sibling output participates in scheduling or initialization.
+                self.execute_kernel(
+                    ActivatedNodeIndex(kernel),
+                    before_epoch,
+                    working_epoch,
+                    probe,
+                )?;
+            }
+            let before = scalar_token(self.workspace.scratch.read(write.region));
+            let value = self
+                .read_location(body.yield_value, working_epoch)
+                .and_then(scalar_token)
+                .ok_or_else(fail)?;
+            match self.workspace.scratch.write(write.region) {
+                ResidentValueMut::Bool([output]) => *output = u8::from(value != 0),
+                ResidentValueMut::Index([output]) => *output = value,
+                ResidentValueMut::F64([output]) => *output = f64::from_bits(value),
+                _ => return Err(fail()),
+            }
+            let initialized = bit_is_set(&self.workspace.initialized_output_bits, index);
+            set_bit(&mut self.workspace.initialized_output_bits, index);
+            return Ok(!initialized || before != Some(value));
+        }
+        Err(fail())
     }
 
     fn stage_external(
@@ -2772,6 +2861,59 @@ mod tests {
     use super::*;
     use crate::resident::general::{ResidentArenaSizes, StateVersion};
     use mech_core::ResidentShape;
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn control_locals_retain_distinct_certified_turn_call_plans() {
+        use mech_syntax::document::parser::{
+            canonical::parse_canonical_phase_2i_rule_for_test, rules,
+        };
+        use mech_syntax::document::{
+            AstNode, DocumentId, ExpressionSyntax, ParseConfig, Revision, SyntaxNode, TextSnapshot,
+        };
+        fn expression(node: SyntaxNode) -> Option<ExpressionSyntax> {
+            ExpressionSyntax::cast(node.clone()).or_else(|| node.children().find_map(expression))
+        }
+        let source = "flag<bool> ? | true => signal<f64> + 1 | false => signal<f64> * 2";
+        let parsed = parse_canonical_phase_2i_rule_for_test(
+            TextSnapshot::new(DocumentId(822), Revision(1), source).unwrap(),
+            rules::EXPRESSION,
+            ParseConfig::default(),
+        )
+        .unwrap();
+        assert!(parsed.is_strictly_clean());
+        let artifact = crate::CanonicalSourceFrontend
+            .compile_expression(&expression(parsed.syntax()).unwrap())
+            .unwrap()
+            .compile_artifact()
+            .unwrap();
+        let mut catalog = mech_core::FunctionCatalogBuilder::new();
+        crate::install_intrinsic_resident(&mut catalog).unwrap();
+        let instance = crate::resident::activate(
+            mech_core::ReactiveInstanceId::new(822, 1),
+            &artifact,
+            &catalog.build().unwrap(),
+            &crate::resident::ActivationFacts::default(),
+        )
+        .unwrap();
+        let mut locals = 0;
+        for (index, step) in instance.plan.steps.iter().enumerate() {
+            let ActivatedTurnStep::Kernel(kernel) = step else {
+                continue;
+            };
+            locals += 1;
+            assert_ne!(kernel.memory_node, kernel.artifact_node);
+            let turn = instance.workspace.fixed_turn_plans[index].as_ref().unwrap();
+            assert_eq!(turn.node, kernel.memory_node);
+            let call = turn
+                .call
+                .as_ref()
+                .expect("a local operation cannot use an empty enclosing-node plan");
+            assert_eq!(call.inputs.len(), 2);
+            assert_eq!(call.outputs.len(), 1);
+        }
+        assert_eq!(locals, 2);
+    }
 
     fn state_arena() -> StateArena {
         let sizes = ResidentArenaSizes {

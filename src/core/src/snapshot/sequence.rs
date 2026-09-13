@@ -89,6 +89,33 @@ impl SequenceView<'_> {
         self.len() == 0
     }
 
+    /// Copies one certified canonical element, retaining nested snapshot owners.
+    pub(super) fn value_at(self, index: usize) -> Option<ValueData> {
+        match self {
+            Self::U8(values) => values.get(index).cloned().map(ValueData::U8),
+            Self::U16(values) => values.get(index).cloned().map(ValueData::U16),
+            Self::U32(values) => values.get(index).cloned().map(ValueData::U32),
+            Self::U64(values) => values.get(index).cloned().map(ValueData::U64),
+            Self::U128(values) => values.get(index).cloned().map(ValueData::U128),
+            Self::I8(values) => values.get(index).cloned().map(ValueData::I8),
+            Self::I16(values) => values.get(index).cloned().map(ValueData::I16),
+            Self::I32(values) => values.get(index).cloned().map(ValueData::I32),
+            Self::I64(values) => values.get(index).cloned().map(ValueData::I64),
+            Self::I128(values) => values.get(index).cloned().map(ValueData::I128),
+            Self::F32(values) => values.get(index).cloned().map(ValueData::F32),
+            Self::F64(values) => values.get(index).cloned().map(ValueData::F64),
+            Self::Complex32(values) => values.get(index).cloned().map(ValueData::Complex32),
+            Self::Complex64(values) => values.get(index).cloned().map(ValueData::Complex64),
+            Self::Rational64(values) => values.get(index).cloned().map(ValueData::Rational64),
+            Self::Bool(values) => values.get(index).cloned().map(ValueData::Bool),
+            Self::String(values) => values.get(index).cloned().map(ValueData::String),
+            Self::Id(values) => values.get(index).cloned().map(ValueData::Id),
+            Self::Index(values) => values.get(index).cloned().map(ValueData::Index),
+            Self::Unit(count) => ((index as u64) < count).then_some(ValueData::Atom),
+            Self::Values(values) => values.get(index).cloned(),
+        }
+    }
+
     /// Materializes canonical sequence elements without changing their
     /// schema-directed representation.
     pub fn to_values(self) -> Vec<ValueData> {
@@ -271,89 +298,6 @@ impl SequenceStorage {
             Self::Unit(count) => SequenceView::Unit(*count),
             Self::Values(values) => SequenceView::Values(values),
         }
-    }
-
-    pub(super) fn len(&self) -> Option<usize> {
-        Some(match self {
-            Self::U8(values) => values.len(),
-            Self::U16(values) => values.len(),
-            Self::U32(values) => values.len(),
-            Self::U64(values) => values.len(),
-            Self::U128(values) => values.len(),
-            Self::I8(values) => values.len(),
-            Self::I16(values) => values.len(),
-            Self::I32(values) => values.len(),
-            Self::I64(values) => values.len(),
-            Self::I128(values) => values.len(),
-            Self::F32(values) => values.len(),
-            Self::F64(values) => values.len(),
-            Self::Complex32(values) => values.len(),
-            Self::Complex64(values) => values.len(),
-            Self::Rational64(values) => values.len(),
-            Self::Bool(values) => values.len(),
-            Self::String(values) => values.len(),
-            Self::Id(values) => values.len(),
-            Self::Index(values) => values.len(),
-            Self::Unit(count) => usize::try_from(*count).ok()?,
-            Self::Values(values) => values.len(),
-        })
-    }
-
-    pub(super) fn rebuild_with_values(&self, values: Vec<ValueData>) -> Option<Self> {
-        macro_rules! pack {
-            ($variant:ident, $target:ident) => {{
-                let values = values
-                    .into_iter()
-                    .map(|value| match value {
-                        ValueData::$variant(value) => Some(value),
-                        _ => None,
-                    })
-                    .collect::<Option<Vec<_>>>()?;
-                Self::$target(values.into_boxed_slice())
-            }};
-        }
-
-        Some(match self {
-            Self::U8(_) => pack!(U8, U8),
-            Self::U16(_) => pack!(U16, U16),
-            Self::U32(_) => pack!(U32, U32),
-            Self::U64(_) => pack!(U64, U64),
-            Self::U128(_) => pack!(U128, U128),
-            Self::I8(_) => pack!(I8, I8),
-            Self::I16(_) => pack!(I16, I16),
-            Self::I32(_) => pack!(I32, I32),
-            Self::I64(_) => pack!(I64, I64),
-            Self::I128(_) => pack!(I128, I128),
-            Self::F32(_) => pack!(F32, F32),
-            Self::F64(_) => pack!(F64, F64),
-            Self::Complex32(_) => pack!(Complex32, Complex32),
-            Self::Complex64(_) => pack!(Complex64, Complex64),
-            Self::Rational64(_) => pack!(Rational64, Rational64),
-            Self::Bool(_) => pack!(Bool, Bool),
-            Self::String(_) => pack!(String, String),
-            Self::Id(_) => pack!(Id, Id),
-            Self::Index(_) => pack!(Index, Index),
-            Self::Unit(_) => {
-                if values.iter().any(|value| !matches!(value, ValueData::Atom)) {
-                    return None;
-                }
-                Self::Unit(u64::try_from(values.len()).ok()?)
-            }
-            Self::Values(expected) => {
-                if expected.len() != values.len()
-                    || expected.iter().zip(values.iter()).any(|(expected, value)| {
-                        expected.kind() != value.kind()
-                            && !matches!(
-                                (expected, value),
-                                (ValueData::Dynamic(_), ValueData::Dynamic(_))
-                            )
-                    })
-                {
-                    return None;
-                }
-                Self::Values(values.into_boxed_slice())
-            }
-        })
     }
 
     pub(super) fn to_values(&self) -> Vec<ValueData> {

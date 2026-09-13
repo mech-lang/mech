@@ -131,32 +131,7 @@ static PURE_COMPARE_MATRIX_CONTRACT: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| pure_compare_contract(ChangeDetectionPolicy::KernelReported));
 
 fn pure_compare_contract(change_detection: ChangeDetectionPolicy) -> OperationContractDeclaration {
-    OperationContractDeclaration {
-        inputs: InputPortLayout::Fixed(
-            vec![
-                InputPortPolicy {
-                    access: AccessMode::Read,
-                    delivery: DeliveryMode::Signal,
-                },
-                InputPortPolicy {
-                    access: AccessMode::Read,
-                    delivery: DeliveryMode::Signal,
-                },
-            ]
-            .into_boxed_slice(),
-        ),
-        outputs: vec![OutputPortPolicy {
-            access: AccessMode::Write,
-            delivery: DeliveryMode::Signal,
-            construction: OutputConstruction::FullWrite {
-                shape: ShapeRule::Declared,
-            },
-            alias: AliasPolicy::NoAlias,
-            change_detection,
-        }]
-        .into_boxed_slice(),
-        interaction: ExternalInteraction::Pure,
-    }
+    mech_core::elementwise_operation_contract(2, change_detection)
 }
 
 fn compare_full_write_contract(

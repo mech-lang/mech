@@ -63,7 +63,7 @@ ARTIFACT_COMPLETENESS_PROOFS = (
         "src/engine/src/program/compiler_planning.rs",
         (
             "ordinary_mech_sources_emit_equivalent_program_artifacts_in_bytecode_v1",
-            "artifact_a.contracts().get(node.contract)",
+            "artifact_a.contracts().get(node.as_operation().unwrap().contract)",
         ),
     ),
     (

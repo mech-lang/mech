@@ -333,18 +333,40 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         "kind",
         ImplementationMemoryClass::CanonicalFinalize,
         bind_kind_conversion,
+    )?;
+    builder.insert_resident_factory(
+        ["option"],
+        "some",
+        ImplementationMemoryClass::CanonicalFinalize,
+        bind_present_option,
     )
 }
 
 #[derive(Debug)]
 struct ResidentConversionPlan {
     source: SchemaBody,
+    source_layout: mech_core::ResidentShape,
     target: SchemaBody,
     conversion: mech_core::ConversionPlan,
+    wrap_present: bool,
+    dynamic_payload: Option<(mech_core::SchemaId, Box<[u64]>)>,
 }
 
 fn bind_kind_conversion(
     request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_conversion(request, false)
+}
+
+fn bind_present_option(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_conversion(request, true)
+}
+
+fn bind_conversion(
+    request: &ResidentKernelBindRequest<'_>,
+    wrap_present: bool,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     let ResolvedOperationContract::Declared(contract) = request.contract else {
         return Err(ResidentKernelBindError::UnsupportedContract);
@@ -367,7 +389,11 @@ fn bind_kind_conversion(
         || output_contract.delivery != DeliveryMode::Signal
         || output_contract.construction
             != (OutputConstruction::FullWrite {
-                shape: ShapeRule::SameAsInput { input: 0 },
+                shape: if wrap_present {
+                    ShapeRule::Declared
+                } else {
+                    ShapeRule::SameAsInput { input: 0 }
+                },
             })
         || output_contract.alias != AliasPolicy::NoAlias
         || output_contract.change_detection != ChangeDetectionPolicy::KernelReported
@@ -389,14 +415,37 @@ fn bind_kind_conversion(
     }
     let source = ResolvedType::from_schema(source_schema, &input.shape_instance)
         .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
-    let target = ResolvedType::from_schema(target_schema, &request.output.shape_instance)
+    let mut target = ResolvedType::from_schema(target_schema, &request.output.shape_instance)
         .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
-    let conversion = plan_explicit_cast(&source, &target)
+    if wrap_present {
+        let mech_core::KindExpr::Option(payload) = target.kind() else {
+            return Err(ResidentKernelBindError::UnsupportedLayout);
+        };
+        target = ResolvedType::new(
+            *payload.clone(),
+            target.dimension_parameters().to_vec().into_boxed_slice(),
+        )
+        .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
+    }
+    // Constructing a Dynamic option boxes the original typed snapshot. It does
+    // not cast to or from Dynamic, which is outside Type System v1 conversions.
+    let dynamic_payload = (wrap_present && matches!(target_schema.body(), SchemaBody::Option(payload) if payload.as_ref() == &SchemaBody::Dynamic)
+        && source_schema.body() != &SchemaBody::Dynamic)
+        .then(|| (input.schema_id, input.shape_instance.parameter_values().to_vec().into_boxed_slice()));
+    let conversion_target = if dynamic_payload.is_some() {
+        &source
+    } else {
+        &target
+    };
+    let conversion = plan_explicit_cast(&source, conversion_target)
         .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
     let plan = ResidentConversionPlan {
         source: source_schema.body().clone(),
+        source_layout: input.shape,
         target: target_schema.body().clone(),
         conversion,
+        wrap_present,
+        dynamic_payload,
     };
     Ok(
         BoundResidentKernel::new(execute_kind_conversion, Box::new([]))
@@ -475,6 +524,95 @@ fn converted_elements(
     }
 }
 
+fn preflight_present_option(
+    kernel: &BoundResidentKernel,
+    input: ResidentValueRef<'_>,
+    output: &ResidentValueMut<'_>,
+) -> Result<(), ResidentKernelError> {
+    use super::budget::{
+        KernelCostEstimate, PreparedKernel, ResidentBudgetMeter, checked_cost_product,
+        checked_cost_sum, checked_u64,
+    };
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let mut meter = ResidentBudgetMeter::default();
+    let planned = kernel.retained_state::<ResidentConversionPlan>();
+    let expected = planned
+        .map_or(Some(1), |plan| plan.source_layout.len())
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    if input.len() != expected {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let length = checked_u64(input.len())?;
+    let (bytes, nodes, work) = match input {
+        ResidentValueRef::Snapshot([Some(value)]) => {
+            let cost = super::budget::charge_canonical_value_footprint(&mut meter, value, schemas)?;
+            (
+                cost.retained_bytes,
+                cost.node_count,
+                cost.encoded_bytes.max(cost.node_count),
+            )
+        }
+        ResidentValueRef::F64(_) | ResidentValueRef::Index(_) => {
+            (checked_cost_product(&[8, length])?, length, length)
+        }
+        ResidentValueRef::Bool(values) if values.iter().all(|value| *value <= 1) => {
+            (length, length, length)
+        }
+        ResidentValueRef::String(values) => {
+            let payload = values.iter().try_fold(0_u64, |total, value| {
+                checked_cost_sum(&[total, checked_u64(value.len())?])
+            })?;
+            (
+                checked_cost_sum(&[
+                    payload,
+                    checked_cost_product(&[length, checked_u64(core::mem::size_of::<String>())?])?,
+                ])?,
+                length,
+                payload,
+            )
+        }
+        _ => return Err(ResidentKernelError::InvalidInput),
+    };
+    let matrix_drafts =
+        if planned.is_some_and(|plan| matches!(plan.source, SchemaBody::Matrix { .. })) {
+            checked_cost_product(&[
+                checked_u64(logical_input_len(input)?)?,
+                checked_u64(core::mem::size_of::<ValueDataDraft>())?,
+            ])?
+        } else {
+            0
+        };
+    if let ResidentValueMut::Snapshot([Some(previous)]) = output {
+        super::budget::charge_canonical_value_footprint(&mut meter, previous, schemas)?;
+    }
+    let shape_bytes = kernel
+        .retained_state::<ResidentConversionPlan>()
+        .and_then(|plan| plan.dynamic_payload.as_ref())
+        .map_or(Ok(0), |(_, shape)| {
+            checked_cost_product(&[checked_u64(shape.len())?, 8])
+        })?;
+    let output_bytes = checked_cost_sum(&[
+        bytes,
+        shape_bytes,
+        matrix_drafts,
+        checked_u64(core::mem::size_of::<ValueDataDraft>())?,
+        checked_u64(core::mem::size_of::<ValueDraft>())?,
+        checked_u64(core::mem::size_of::<mech_core::Value>())?,
+    ])?;
+    let measured = meter.estimate();
+    PreparedKernel::new((), super::budget::resident_cost! {
+        comparison_work: checked_cost_sum(&[measured.comparison_work(), work, 4])?,
+        compute_work: checked_cost_sum(&[measured.compute_work(), work, 4])?,
+        output_elements: 1, output_bytes,
+        temporary_bytes: checked_cost_product(&[output_bytes, 3])?, cloned_bytes: checked_cost_product(&[bytes, 2])?,
+        retained_nodes: checked_cost_sum(&[measured.retained_nodes(), checked_cost_product(&[nodes, 2])?, 8])?,
+        ..KernelCostEstimate::default()
+    }).admit()?.into_plan();
+    Ok(())
+}
+
 fn execute_kind_conversion(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -490,9 +628,62 @@ fn execute_kind_conversion(
         .retained_state::<ResidentConversionPlan>()
         .ok_or(ResidentKernelError::InvalidInput)?;
     preflight_string_conversion(kernel, input, &output, &plan.target)?;
-    let source = resident_input_draft(input, &plan.source)?;
+    if plan.wrap_present {
+        preflight_present_option(kernel, input, &output)?;
+    }
+    let source = if plan.wrap_present
+        && matches!(plan.source, SchemaBody::Matrix { .. })
+        && !matches!(input, ResidentValueRef::Snapshot(_))
+    {
+        // Reuse the composite boundary's column-major resident to canonical
+        // row-major conversion before embedding the immutable typed payload.
+        let matrix = match input {
+            ResidentValueRef::F64(values) => {
+                super::composite::canonical_matrix_elements(values, plan.source_layout, |value| {
+                    Some(ValueDataDraft::F64(F64Bits::from_f64(*value)))
+                })
+            }
+            ResidentValueRef::Index(values) => {
+                super::composite::canonical_matrix_elements(values, plan.source_layout, |value| {
+                    Some(ValueDataDraft::Index(*value))
+                })
+            }
+            ResidentValueRef::Bool(values) => {
+                super::composite::canonical_matrix_elements(values, plan.source_layout, |value| {
+                    (*value <= 1).then_some(ValueDataDraft::Bool(*value != 0))
+                })
+            }
+            ResidentValueRef::String(values) => {
+                super::composite::canonical_matrix_elements(values, plan.source_layout, |value| {
+                    Some(ValueDataDraft::String(value.clone()))
+                })
+            }
+            ResidentValueRef::Snapshot(_) => unreachable!("snapshot handled below"),
+        }
+        .ok_or(ResidentKernelError::InvalidInput)?;
+        ValueDataDraft::Matrix(matrix)
+    } else {
+        resident_input_draft(input, &plan.source)?
+    };
     let converted = execute_conversion_draft(source, &plan.conversion.step)
         .map_err(|_| ResidentKernelError::Arithmetic)?;
+    let converted = if let Some((schema, shape_values)) = &plan.dynamic_payload {
+        ValueDataDraft::Dynamic(Some(Box::new(ValueDraft {
+            schema: *schema,
+            shape_values: shape_values.clone(),
+            data: converted,
+        })))
+    } else {
+        converted
+    };
+    let converted = if plan.wrap_present {
+        ValueDataDraft::Option(mech_core::snapshot::OptionDraft {
+            present: true,
+            value: Some(Box::new(converted)),
+        })
+    } else {
+        converted
+    };
     match output {
         ResidentValueMut::Bool(target) => {
             let next = converted_elements(converted, &plan.target)?
@@ -594,6 +785,59 @@ fn publish_slice<T: PartialEq>(
 mod tests {
     use super::*;
     use mech_core::{DimensionExpr, IntegerWidth, SchemaDraft, SchemaTableBuilder};
+
+    #[test]
+    fn present_option_preflights_payload_budget_before_publishing() {
+        let mut builder = SchemaTableBuilder::new();
+        let pending = builder
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: SchemaBody::Option(Box::new(SchemaBody::String)),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let schema = build.resolve(pending).unwrap();
+        let (schemas, _) = build.into_parts();
+        let previous = ValueDraft {
+            schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Option(mech_core::snapshot::OptionDraft {
+                present: false,
+                value: None,
+            }),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        let mut output = [Some(previous)];
+        let kernel = BoundResidentKernel::new(execute_kind_conversion, Box::new([]))
+            .with_snapshot_schemas(schemas);
+        let oversized = ["x".repeat(super::super::budget::MAX_RESIDENT_OUTPUT_BYTES as usize)];
+        assert_eq!(
+            preflight_present_option(
+                &kernel,
+                ResidentValueRef::String(&oversized),
+                &ResidentValueMut::Snapshot(&mut output)
+            ),
+            Err(ResidentKernelError::InvalidShape)
+        );
+        assert!(matches!(
+            output[0].as_ref().unwrap().data(),
+            mech_core::ValueData::Option(None)
+        ));
+        let valid = ["small".to_owned()];
+        assert_eq!(
+            preflight_present_option(
+                &kernel,
+                ResidentValueRef::String(&valid),
+                &ResidentValueMut::Snapshot(&mut output)
+            ),
+            Ok(())
+        );
+    }
 
     #[test]
     fn snapshot_matrix_string_conversion_plans_logical_elements_before_drafting() {

@@ -1,3 +1,9 @@
+#[cfg(feature = "resident-routing-source")]
+#[path = "query_control.rs"]
+mod control_comparison;
+#[cfg(feature = "resident-routing-source")]
+use control_comparison::node_bodies_semantically_equal;
+
 use crate::RuntimeValueSnapshot;
 use crate::runtime::{MechRuntime, RuntimeInvalidOperationError};
 use mech_core::{MResult, MechError, OutputId};
@@ -747,12 +753,12 @@ fn artifact_sources_semantically_equal(
                             return false;
                         };
                         if source_ordinal != target_ordinal
-                            || source_node.operation != target_node.operation
-                            || source_node.requirement.and_then(|requirement| {
-                                source_artifact.requirements().get(requirement)
-                            }) != target_node.requirement.and_then(|requirement| {
-                                target_artifact.requirements().get(requirement)
-                            })
+                            || !node_bodies_semantically_equal(
+                                source_artifact,
+                                &source_node.body,
+                                target_artifact,
+                                &target_node.body,
+                            )
                         {
                             cache.insert(root, false);
                             return false;

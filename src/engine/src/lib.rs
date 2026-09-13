@@ -110,6 +110,8 @@ pub mod __resident {
         activate_external, activate_with_options,
     };
 }
+#[cfg(feature = "source")]
+pub mod source_semantics;
 #[cfg(all(feature = "semantic-compiler", feature = "state_machines"))]
 pub mod state_machines;
 #[cfg(feature = "semantic-compiler")]
@@ -179,6 +181,8 @@ pub use crate::mechdown::*;
 #[cfg(feature = "semantic-compiler")]
 pub use crate::patterns::*;
 pub use crate::program::*;
+#[cfg(feature = "source")]
+pub use crate::source_semantics::*;
 #[cfg(all(feature = "semantic-compiler", feature = "state_machines"))]
 pub use crate::state_machines::*;
 #[cfg(feature = "semantic-compiler")]

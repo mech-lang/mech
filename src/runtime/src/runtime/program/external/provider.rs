@@ -270,8 +270,9 @@ fn compare_contract(
         .nodes()
         .get(node.get() as usize)
         .ok_or_else(|| contract_mismatch(node, "artifact node is missing"))?;
-    let Some(ResolvedOperationContract::Declared(artifact_contract)) =
-        artifact.contracts().get(declaration.contract)
+    let Some(ResolvedOperationContract::Declared(artifact_contract)) = declaration
+        .as_operation()
+        .and_then(|operation| artifact.contracts().get(operation.contract))
     else {
         return Err(contract_mismatch(node, "artifact contract is not declared"));
     };

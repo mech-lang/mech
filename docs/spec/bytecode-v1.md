@@ -392,8 +392,9 @@ adapter and not a second bytecode version. Constructed runtime-only programs
 may leave all eleven sections absent. Source compiler output includes all eleven;
 partial presence is invalid.
 
-Sections 8 through 17 are compact UTF-8 JSON arrays with no insignificant
-whitespace; section 18 is the canonical binary contract table described
+Sections 8 through 17 use compact UTF-8 JSON with no insignificant
+whitespace. The artifact-nodes section is a graph object; the other sections
+are arrays. Section 18 is the canonical binary contract table described
 below. The JSON arrays use the field order below, decimal JSON integers, JSON
 strings, `null` for an absent optional value, and Serde's externally tagged
 form for sum types. Decoders first enforce the raw section and aggregate byte
@@ -407,7 +408,7 @@ only then allocate and decode typed values.
 | Artifact inputs | `{input,name,slot,schema}` |
 | Artifact slots | `{slot,schema,role,initializer}`; role 1 input, 2 state, 3 derived |
 | Artifact producers | `{"Input":input}` or `{"NodeOutput":{"node":n,"output_ordinal":p}}` |
-| Artifact nodes | `{node,operation,contract,requirement,input_start,input_end,output_start,output_end}`; `requirement` is a dense application-requirement ID or `null` |
+| Artifact nodes | `{revision:2,requirements:[...],nodes:[...]}`; each node is `{node,body,input_start,input_end,output_start,output_end}` |
 | Artifact bindings | tagged `Input`/`Output` records containing ID, node, port, and source/target |
 | Artifact outputs | `{output,name,source,schema}` |
 | Artifact integrity constraints | `{constraint,operation,contract,inputs}` |
@@ -422,6 +423,32 @@ zero-based `contract`. The engine reconstructs
 `ProgramArtifactDraft`, validates all references and producer/binding
 bijections, recomputes `ProgramRevision`, and exposes only the finalized
 read-only artifact.
+
+### Typed graph bodies (graph revision 2)
+
+An ordinary body is `{"Operation":{"operation":id,"contract":id,"requirement":id_or_null}}`.
+A control body is `{"BooleanMatch":{"scrutinee":input_ordinal,"captures":[[input_ordinal,schema_id]],"arms":[...]}}`.
+The decoder requires revision 2 and typed bodies; earlier graph representations
+must be regenerated with the current producer. The outer bytecode container
+remains version 1. There is one graph representation and no compatibility reader.
+
+An arm has `pattern`, `guard`, and `body`. Pattern tags are 0 for false, 1 for
+true, 2 for wildcard, and 3 for bind. A guard is a block or null. A block has
+`id`, `parameters`, `operations`, and `yield_value`. Parameters are
+`[capture_ordinal_or_null,schema_id]`; null denotes the bound scrutinee.
+Each local operation has `node`, `operation`, `contract`, `inputs`, and `schema`.
+Values are externally tagged `Constant(id)`, `Parameter {block,ordinal}`, or
+`Local {block,node}`. Block and local IDs are dense within their owning scope.
+Global schema, constant, operation, and contract IDs refer to the enclosing
+artifact tables.
+
+Finalization checks scope and dominance, exact scalar schemas, pure ordinary
+operation contracts, Boolean guard yields, identical arm result schemas, and
+unguarded coverage of both Boolean values. It rejects cross-block references
+and undeclared captures. Decoder admission counts nested control arrays before
+allocating them: defaults allow 4,096 arms, 8,192 blocks, 65,536 local operations,
+and 262,144 operands across the artifact. Existing section and aggregate byte
+limits also apply. Every control field participates in the artifact revision.
 
 ### Operation-contract binary encoding
 

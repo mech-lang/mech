@@ -13,6 +13,7 @@ use super::{
 };
 
 pub(super) fn validate(draft: &ProgramArtifactDraft) -> Result<(), ArtifactBuildError> {
+    super::control::validate_control_counts(draft)?;
     validate_dense_identities(draft)?;
     validate_contract_table(draft)?;
     validate_interfaces(draft)?;
@@ -40,7 +41,7 @@ fn canonical_name(value: &str) -> bool {
         && !value.contains(['\0', '/', '\\'])
 }
 
-fn validate_operation(operation: &OperationReference) -> Result<(), ArtifactBuildError> {
+pub(super) fn validate_operation(operation: &OperationReference) -> Result<(), ArtifactBuildError> {
     if operation.module_path.is_empty()
         || !canonical_name(&operation.operation_name)
         || operation
@@ -390,7 +391,6 @@ fn validate_nodes_and_bindings(draft: &ProgramArtifactDraft) -> Result<(), Artif
     let mut bound_producers = BTreeSet::new();
     let mut state_writers = BTreeMap::<CellSlotId, Vec<(NodeId, u16)>>::new();
     for node in &draft.nodes {
-        validate_operation(&node.operation)?;
         let inputs = checked_range(&node.input_bindings, draft.bindings.len(), node.node)?;
         let outputs = checked_range(&node.output_bindings, draft.bindings.len(), node.node)?;
         if inputs.start != cursor || inputs.end != outputs.start {
@@ -398,26 +398,70 @@ fn validate_nodes_and_bindings(draft: &ProgramArtifactDraft) -> Result<(), Artif
         }
         cursor = outputs.end;
 
-        let contract = require_contract(draft, node.contract)?;
-        validate_node_requirement(draft, node, contract)?;
-        validate_signal_bindings(contract)?;
-        let (expected_inputs, expected_outputs) = contract_port_counts(contract);
-        if inputs.len() != expected_inputs {
-            return Err(OperationContractError::PortCountMismatch {
-                direction: PortDirection::Input,
-                expected: expected_inputs as u64,
-                actual: inputs.len() as u64,
+        let (input_schemas, output_schemas, operation_contract) = match &node.body {
+            super::ExecutableNodeBody::Operation(operation) => {
+                validate_operation(&operation.operation)?;
+                let contract = require_contract(draft, operation.contract)?;
+                validate_node_requirement(draft, node.node, operation, contract)?;
+                validate_signal_bindings(contract)?;
+                let (expected_inputs, expected_outputs) = contract_port_counts(contract);
+                for (direction, expected, actual) in [
+                    (PortDirection::Input, expected_inputs, inputs.len()),
+                    (PortDirection::Output, expected_outputs, outputs.len()),
+                ] {
+                    if expected != actual {
+                        return Err(OperationContractError::PortCountMismatch {
+                            direction,
+                            expected: expected as u64,
+                            actual: actual as u64,
+                        }
+                        .into());
+                    }
+                }
+                (
+                    (0..expected_inputs)
+                        .map(|ordinal| contract_input_schema(contract, ordinal).unwrap())
+                        .collect::<Vec<_>>(),
+                    (0..expected_outputs)
+                        .map(|ordinal| contract_output_schema(contract, ordinal).unwrap())
+                        .collect::<Vec<_>>(),
+                    Some(operation.contract),
+                )
             }
-            .into());
-        }
-        if outputs.len() != expected_outputs {
-            return Err(OperationContractError::PortCountMismatch {
-                direction: PortDirection::Output,
-                expected: expected_outputs as u64,
-                actual: outputs.len() as u64,
+            super::ExecutableNodeBody::BooleanMatch(control) => {
+                let input_schemas = draft.bindings[inputs.clone()]
+                    .iter()
+                    .map(|binding| match binding {
+                        BindingDeclaration::Input { source, .. } => source_schema(draft, *source),
+                        _ => Err(ArtifactBuildError::BindingDirectionMismatch {
+                            binding: binding.id(),
+                        }),
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                let [BindingDeclaration::Output { target, .. }] = &draft.bindings[outputs.clone()]
+                else {
+                    return Err(ArtifactBuildError::InvalidControl {
+                        node: node.node,
+                        reason: "match requires exactly one output",
+                    });
+                };
+                let output = require_slot(draft, *target)?;
+                if output.role != SlotRole::Derived {
+                    return Err(ArtifactBuildError::InvalidControl {
+                        node: node.node,
+                        reason: "match output must be an owned derived slot",
+                    });
+                }
+                super::control::validate_match(
+                    draft,
+                    node.node,
+                    control,
+                    &input_schemas,
+                    output.schema,
+                )?;
+                (input_schemas, vec![output.schema], None)
             }
-            .into());
-        }
+        };
 
         for (ordinal, binding) in draft.bindings[inputs.clone()].iter().enumerate() {
             validate_binding_identity(binding, node.node, ordinal)?;
@@ -427,12 +471,11 @@ fn validate_nodes_and_bindings(draft: &ProgramArtifactDraft) -> Result<(), Artif
                 });
             };
             validate_source(draft, *source)?;
-            let expected = contract_input_schema(contract, ordinal)
-                .expect("contract input count was validated");
+            let expected = input_schemas[ordinal];
             let actual = source_schema(draft, *source)?;
             if actual != expected {
                 return Err(ArtifactBuildError::ContractInputSchemaMismatch {
-                    contract: node.contract,
+                    contract: operation_contract.expect("control schema was validated"),
                     port: ordinal as u16,
                     expected,
                     actual,
@@ -447,11 +490,10 @@ fn validate_nodes_and_bindings(draft: &ProgramArtifactDraft) -> Result<(), Artif
                 });
             };
             let slot = require_slot(draft, *target)?;
-            let expected = contract_output_schema(contract, ordinal)
-                .expect("contract output count was validated");
+            let expected = output_schemas[ordinal];
             if slot.schema != expected {
                 return Err(ArtifactBuildError::ContractOutputSchemaMismatch {
-                    contract: node.contract,
+                    contract: operation_contract.expect("control schema was validated"),
                     port: ordinal as u16,
                     expected,
                     actual: slot.schema,
@@ -507,7 +549,8 @@ fn validate_nodes_and_bindings(draft: &ProgramArtifactDraft) -> Result<(), Artif
 
 fn validate_node_requirement(
     draft: &ProgramArtifactDraft,
-    node: &super::NodeDeclaration,
+    node_id: NodeId,
+    node: &super::OperationNodeBody,
     contract: &ResolvedOperationContract,
 ) -> Result<(), ArtifactBuildError> {
     let requirement = match node.requirement {
@@ -526,7 +569,7 @@ fn validate_node_requirement(
     match (&contract.interaction, requirement) {
         (ExternalInteraction::Pure, None) => Ok(()),
         (ExternalInteraction::Pure, Some(_)) => {
-            Err(ArtifactBuildError::UnexpectedApplicationRequirement { node: node.node })
+            Err(ArtifactBuildError::UnexpectedApplicationRequirement { node: node_id })
         }
         (ExternalInteraction::Observation(_), Some(ApplicationRequirement::Resource(request)))
             if request.intent == ResourceIntent::Read
@@ -558,8 +601,8 @@ fn validate_node_requirement(
             | ExternalInteraction::Effect(_)
             | ExternalInteraction::TransactionalExternal(_),
             None,
-        ) => Err(ArtifactBuildError::MissingApplicationRequirement { node: node.node }),
-        _ => Err(ArtifactBuildError::ApplicationRequirementInteractionMismatch { node: node.node }),
+        ) => Err(ArtifactBuildError::MissingApplicationRequirement { node: node_id }),
+        _ => Err(ArtifactBuildError::ApplicationRequirementInteractionMismatch { node: node_id }),
     }
 }
 
@@ -591,7 +634,14 @@ fn validate_state_writer_chain(
     let mut form = None;
     for &(node_id, output_ordinal) in writers {
         let node = require_node(draft, node_id)?;
-        let ResolvedOperationContract::Declared(contract) = require_contract(draft, node.contract)?
+        let super::ExecutableNodeBody::Operation(operation) = &node.body else {
+            return Err(ArtifactBuildError::InvalidStateWriterChain {
+                slot: slot_id,
+                reason: "control blocks cannot write state",
+            });
+        };
+        let ResolvedOperationContract::Declared(contract) =
+            require_contract(draft, operation.contract)?
         else {
             return Err(ArtifactBuildError::InvalidStateWriterChain {
                 slot: slot_id,

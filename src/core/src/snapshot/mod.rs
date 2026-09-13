@@ -1,3 +1,4 @@
+mod composite_cost;
 mod constants;
 mod data;
 mod draft;
@@ -8,6 +9,7 @@ mod sequence;
 pub(crate) mod validation;
 mod views;
 
+pub use self::composite_cost::CompositeBindingCost;
 pub use self::constants::{
     ConstantEntry, ConstantHandle, ConstantStore, ConstantStoreBuild, ConstantStoreBuilder,
 };
@@ -37,9 +39,16 @@ pub use self::relations::{
 };
 pub use self::sequence::SequenceView;
 pub use self::validation::{
-    SnapshotCanonicalizationBudget, SnapshotValidationContext, Value, build_f64_set_snapshot,
+    CompositeSnapshotConstructor, MatrixSnapshotConstructor, SnapshotCanonicalizationBudget,
+    SnapshotValidationContext, TableSnapshotBuilder, Value, build_f64_set_snapshot,
     build_f64_set_snapshot_after_remove, canonical_snapshot_data_draft, f64_set_snapshot_contains,
-    rebuild_composite_snapshot, rebuild_f64_set_snapshot, wrap_resident_dynamic_data,
+    rebuild_f64_set_snapshot, wrap_resident_dynamic_data,
 };
 pub use self::views::{EnumView, MapView, MatrixView, RecordView, SetView, TableView, TupleView};
 pub use crate::{ConstantId, KeyHash, ValueHash};
+
+#[cfg(test)]
+mod composite_constructor_tests;
+
+#[cfg(test)]
+mod matrix_constructor_tests;

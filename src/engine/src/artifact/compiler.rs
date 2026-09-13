@@ -25,11 +25,10 @@ use crate::{
 };
 #[cfg(feature = "semantic-compiler")]
 use mech_core::{
-    AccessMode, AliasPolicy, ApplicationRequirement, BoundCallOrigin, BytecodeInstruction,
-    ChangeDetectionPolicy, ConstantHandle, ConstantStoreBuilder, DeliveryMode, ExecutionTarget,
-    ExternalInteraction, FunctionCatalog, InputPortLayout, InputPortPolicy, OperationContractError,
-    OutputConstruction, OutputPortPolicy, Register, RuntimeType, SchemaBody, SchemaDraft,
-    SchemaHandle, SchemaTableBuilder, ShapeInstance, ShapeRule, Value,
+    ApplicationRequirement, BoundCallOrigin, BytecodeInstruction, ConstantHandle,
+    ConstantStoreBuilder, ExecutionTarget, FunctionCatalog, InputPortLayout,
+    OperationContractError, OutputConstruction, Register, RuntimeType, SchemaBody, SchemaDraft,
+    SchemaHandle, SchemaTableBuilder, ShapeInstance, Value,
 };
 
 #[cfg(feature = "semantic-compiler")]
@@ -80,60 +79,40 @@ pub enum SourceNodeOutput {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+pub enum SourceNodeBody {
+    Operation {
+        operation: OperationReference,
+        requirement: Option<ApplicationRequirementId>,
+    },
+    BooleanMatch(super::BooleanMatchDeclaration<OperationContractDeclaration>),
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SourceNode {
-    pub operation: OperationReference,
-    pub requirement: Option<ApplicationRequirementId>,
+    pub body: SourceNodeBody,
     pub inputs: Box<[SourceValue]>,
     pub outputs: Box<[SourceNodeOutput]>,
 }
 
-#[cfg(feature = "semantic-compiler")]
-static COMPILER_STATE_HOLD_CONTRACT: LazyLock<OperationContractDeclaration> =
-    LazyLock::new(|| OperationContractDeclaration {
-        inputs: InputPortLayout::Fixed(
-            vec![InputPortPolicy {
-                access: AccessMode::Read,
-                delivery: DeliveryMode::Signal,
-            }]
-            .into_boxed_slice(),
-        ),
-        outputs: vec![OutputPortPolicy {
-            access: AccessMode::Write,
-            delivery: DeliveryMode::Signal,
-            construction: OutputConstruction::FullWrite {
-                shape: ShapeRule::SameAsInput { input: 0 },
-            },
-            alias: AliasPolicy::NoAlias,
-            change_detection: ChangeDetectionPolicy::KernelReported,
-        }]
-        .into_boxed_slice(),
-        interaction: ExternalInteraction::Pure,
-    });
+impl SourceNode {
+    pub fn operation(&self) -> Option<&OperationReference> {
+        match &self.body {
+            SourceNodeBody::Operation { operation, .. } => Some(operation),
+            SourceNodeBody::BooleanMatch(_) => None,
+        }
+    }
+}
 
 #[cfg(feature = "semantic-compiler")]
-fn matrix_literal_contract(element_count: usize) -> OperationContractDeclaration {
-    OperationContractDeclaration {
-        inputs: InputPortLayout::Fixed(
-            (0..element_count)
-                .map(|_| InputPortPolicy {
-                    access: AccessMode::Read,
-                    delivery: DeliveryMode::Signal,
-                })
-                .collect::<Vec<_>>()
-                .into_boxed_slice(),
-        ),
-        outputs: vec![OutputPortPolicy {
-            access: AccessMode::Write,
-            delivery: DeliveryMode::Signal,
-            construction: OutputConstruction::FullWrite {
-                shape: ShapeRule::Declared,
-            },
-            alias: AliasPolicy::NoAlias,
-            change_detection: ChangeDetectionPolicy::AlwaysChanged,
-        }]
-        .into_boxed_slice(),
-        interaction: ExternalInteraction::Pure,
-    }
+static COMPILER_STATE_HOLD_CONTRACT: LazyLock<OperationContractDeclaration> = LazyLock::new(|| {
+    mech_core::maintained_operation_contract("core/assign", 1, false)
+        .expect("state hold uses the canonical assignment contract")
+});
+
+#[cfg(feature = "semantic-compiler")]
+pub(crate) fn matrix_literal_contract(element_count: usize) -> OperationContractDeclaration {
+    mech_core::maintained_operation_contract("matrix/literal", element_count, true)
+        .expect("matrix literal contract is maintained")
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -261,13 +240,27 @@ pub fn compile_source_program_with_contracts(
     context: &mut ArtifactBuildContext<'_>,
     node_contracts: &[&OperationContractDeclaration],
 ) -> Result<ProgramArtifact, ArtifactBuildError> {
+    compile_source_program_with_metadata(
+        graph,
+        context,
+        &node_contracts.iter().copied().map(Some).collect::<Vec<_>>(),
+        &[],
+    )
+}
+
+/// Lower typed source control while preserving ordinary operation declarations.
+pub fn compile_source_program_with_control_contracts(
+    graph: &SourceProgram,
+    context: &mut ArtifactBuildContext<'_>,
+    node_contracts: &[Option<&OperationContractDeclaration>],
+) -> Result<ProgramArtifact, ArtifactBuildError> {
     compile_source_program_with_metadata(graph, context, node_contracts, &[])
 }
 
 fn compile_source_program_with_metadata(
     graph: &SourceProgram,
     context: &mut ArtifactBuildContext<'_>,
-    node_contracts: &[&OperationContractDeclaration],
+    node_contracts: &[Option<&OperationContractDeclaration>],
     node_matrix_literals: &[Option<SourceMatrixLiteral>],
 ) -> Result<ProgramArtifact, ArtifactBuildError> {
     if !node_matrix_literals.is_empty() && node_matrix_literals.len() != graph.nodes.len() {
@@ -445,9 +438,21 @@ fn compile_source_program_with_metadata(
         let output_end = checked_u32(bindings.len(), "BindingId")?;
         nodes.push(NodeDeclaration {
             node,
-            operation: declaration.operation.clone(),
-            contract: OperationContractId::new(0),
-            requirement: declaration.requirement,
+            body: match &declaration.body {
+                SourceNodeBody::Operation {
+                    operation,
+                    requirement,
+                } => crate::ExecutableNodeBody::Operation(crate::OperationNodeBody {
+                    operation: operation.clone(),
+                    contract: OperationContractId::new(0),
+                    requirement: *requirement,
+                }),
+                SourceNodeBody::BooleanMatch(control) => {
+                    crate::ExecutableNodeBody::BooleanMatch(control.map_contracts(|_, _| {
+                        Ok::<_, ArtifactBuildError>(OperationContractId::new(0))
+                    })?)
+                }
+            },
             input_bindings: input_start..input_end,
             output_bindings: output_start..output_end,
         });
@@ -551,7 +556,7 @@ fn compile_source_program_with_metadata(
         constraints: constraints.into_boxed_slice(),
         compute_regions: Box::new([]),
     };
-    draft.attach_contracts(node_contracts)?.finalize()
+    draft.attach_contracts(node_contracts, graph)?.finalize()
 }
 
 #[cfg(feature = "semantic-compiler")]
@@ -699,11 +704,28 @@ pub const INTERACTIVE_SYMBOL_OUTPUT_PREFIX: &str = "mech-repl-symbol-";
 /// makes the mapping injective and keeps query identity independent from the
 /// artifact interface grammar.
 pub fn encode_interactive_symbol_output_name(name: &str) -> String {
+    encode_interface_symbol(INTERACTIVE_SYMBOL_OUTPUT_PREFIX, name)
+}
+
+/// Namespace for externally supplied canonical source inputs. This transports
+/// source identity only; it does not resolve context capabilities or paths.
+pub const SOURCE_INPUT_PREFIX: &str = "mech-source-input-";
+
+/// Encode every source input name injectively, preserving arbitrary UTF-8.
+pub fn encode_source_input_name(name: &str) -> String {
+    encode_interface_symbol(SOURCE_INPUT_PREFIX, name)
+}
+
+/// Recover the source name carried by a canonical artifact input interface.
+pub fn decode_source_input_name(name: &str) -> Option<String> {
+    decode_interface_symbol(SOURCE_INPUT_PREFIX, name)
+}
+
+fn encode_interface_symbol(prefix: &str, name: &str) -> String {
     const HEX: &[u8; 16] = b"0123456789abcdef";
 
-    let mut encoded =
-        String::with_capacity(INTERACTIVE_SYMBOL_OUTPUT_PREFIX.len() + name.len() * 2);
-    encoded.push_str(INTERACTIVE_SYMBOL_OUTPUT_PREFIX);
+    let mut encoded = String::with_capacity(prefix.len() + name.len() * 2);
+    encoded.push_str(prefix);
     for byte in name.bytes() {
         encoded.push(HEX[(byte >> 4) as usize] as char);
         encoded.push(HEX[(byte & 0x0f) as usize] as char);
@@ -713,7 +735,11 @@ pub fn encode_interactive_symbol_output_name(name: &str) -> String {
 
 /// Decode an interactive artifact output name back to its lexical query name.
 pub fn decode_interactive_symbol_output_name(name: &str) -> Option<String> {
-    let encoded = name.strip_prefix(INTERACTIVE_SYMBOL_OUTPUT_PREFIX)?;
+    decode_interface_symbol(INTERACTIVE_SYMBOL_OUTPUT_PREFIX, name)
+}
+
+fn decode_interface_symbol(prefix: &str, name: &str) -> Option<String> {
+    let encoded = name.strip_prefix(prefix)?;
     if encoded.len() % 2 != 0 {
         return None;
     }
@@ -1639,11 +1665,13 @@ fn compile_executable_program_artifact_from_semantics(
         let node = checked_u32(nodes.len(), "NodeId")?;
         states[state as usize].producer_node = node;
         nodes.push(SourceNode {
-            operation: OperationReference {
-                module_path: vec!["core".to_owned()].into_boxed_slice(),
-                operation_name: "assign".to_owned(),
+            body: crate::SourceNodeBody::Operation {
+                operation: OperationReference {
+                    module_path: vec!["core".to_owned()].into_boxed_slice(),
+                    operation_name: "assign".to_owned(),
+                },
+                requirement: None,
             },
-            requirement: None,
             inputs: vec![SourceValue::State(state)].into_boxed_slice(),
             outputs: vec![SourceNodeOutput::State(state)].into_boxed_slice(),
         });
@@ -1755,11 +1783,13 @@ fn compile_executable_program_artifact_from_semantics(
                 });
             }
             nodes.push(SourceNode {
-                operation: OperationReference {
-                    module_path: vec!["matrix".to_owned()].into_boxed_slice(),
-                    operation_name: "literal".to_owned(),
+                body: crate::SourceNodeBody::Operation {
+                    operation: OperationReference {
+                        module_path: vec!["matrix".to_owned()].into_boxed_slice(),
+                        operation_name: "literal".to_owned(),
+                    },
+                    requirement: None,
                 },
-                requirement: None,
                 inputs: inputs.into_boxed_slice(),
                 outputs: match state_index {
                     Some(state) => vec![SourceNodeOutput::State(state)],
@@ -2021,7 +2051,7 @@ fn compile_executable_program_artifact_from_semantics(
                 // catalog-installed runtime functions also carry authoritative
                 // semantic metadata. Preserve that declaration when the
                 // specialized function uses the trait's default `None`.
-                let mut semantic_inputs = semantic_input_registers(&semantics, declaration)?
+                let semantic_inputs = semantic_input_registers(&semantics, declaration)?
                     .iter()
                     .map(|input| {
                         if *input == dst && state_index.is_some() {
@@ -2037,19 +2067,6 @@ fn compile_executable_program_artifact_from_semantics(
                         }
                     })
                     .collect::<Result<Vec<_>, ArtifactBuildError>>()?;
-                if let Some(template) = semantics.template_constant {
-                    let schema = schema.ok_or(ArtifactBuildError::MissingRegisterKind {
-                        instruction: instruction_id,
-                        register: dst,
-                    })?;
-                    let constant = constants.get(&(template, schema)).copied().ok_or(
-                        ArtifactBuildError::SourceGraphReferenceOutOfRange {
-                            reference: "composite template constant",
-                            index: template,
-                        },
-                    )?;
-                    semantic_inputs.insert(0, SourceValue::Constant(constant));
-                }
                 let semantic_inputs = semantic_inputs.into_boxed_slice();
                 if declaration.is_some() {
                     if let Some(source_node) = compiled.instruction_source_nodes[instruction_index]
@@ -2066,8 +2083,10 @@ fn compile_executable_program_artifact_from_semantics(
                 let exposes_output =
                     declaration.is_none_or(|declaration| !declaration.outputs.is_empty());
                 nodes.push(SourceNode {
-                    operation: semantics.operation,
-                    requirement: semantics.requirement,
+                    body: crate::SourceNodeBody::Operation {
+                        operation: semantics.operation,
+                        requirement: semantics.requirement,
+                    },
                     inputs: semantic_inputs,
                     outputs: match (exposes_output, state_index, schema) {
                         (false, _, _) => Vec::new(),
@@ -2258,14 +2277,21 @@ fn compile_executable_program_artifact_from_semantics(
                 .as_ref()
                 .ok_or(ArtifactBuildError::MissingOperationContract {
                     node: NodeId::new(node as u32),
-                    operation: source.nodes[node].operation.clone(),
+                    operation: source.nodes[node]
+                        .operation()
+                        .expect("compiled instruction is an ordinary operation")
+                        .clone(),
                 })
         })
         .collect::<Result<Vec<_>, _>>()?;
     let artifact = compile_source_program_with_metadata(
         &source,
         &mut ArtifactBuildContext::new(&schemas, &constant_store),
-        &node_contract_refs,
+        &node_contract_refs
+            .iter()
+            .copied()
+            .map(Some)
+            .collect::<Vec<_>>(),
         &node_matrix_literals,
     )?;
     let shape_hints = compiled_slot_shape_hints(compiled, &registers, &artifact)?;
@@ -2937,7 +2963,6 @@ fn instruction_role_name(role: CompiledInstructionRole) -> &'static str {
 struct CompiledInstructionSemantics {
     destination: u32,
     inputs: Vec<u32>,
-    template_constant: Option<u32>,
     operation: OperationReference,
     requirement: Option<ApplicationRequirementId>,
 }
@@ -3108,14 +3133,10 @@ fn instruction_semantics(
         BytecodeInstruction::ConstLoad { .. } | BytecodeInstruction::Return { .. } => {
             return Ok(None);
         }
-        BytecodeInstruction::CompositePack {
-            dst,
-            template,
-            children,
-        } => CompiledInstructionSemantics {
+        BytecodeInstruction::CompositePack { dst, children, .. } => CompiledInstructionSemantics {
             destination: *dst,
             inputs: children.clone(),
-            template_constant: Some(*template),
+
             operation: OperationReference {
                 module_path: vec!["core".to_owned()].into_boxed_slice(),
                 operation_name: "composite-pack".to_owned(),
@@ -3125,14 +3146,14 @@ fn instruction_semantics(
         BytecodeInstruction::RuntimeNullary { function, dst } => CompiledInstructionSemantics {
             destination: *dst,
             inputs: Vec::new(),
-            template_constant: None,
+
             operation: runtime(*function)?,
             requirement: None,
         },
         BytecodeInstruction::RuntimeUnary { function, dst, src } => CompiledInstructionSemantics {
             destination: *dst,
             inputs: vec![*src],
-            template_constant: None,
+
             operation: runtime(*function)?,
             requirement: None,
         },
@@ -3144,7 +3165,7 @@ fn instruction_semantics(
         } => CompiledInstructionSemantics {
             destination: *dst,
             inputs: vec![*lhs, *rhs],
-            template_constant: None,
+
             operation: runtime(*function)?,
             requirement: None,
         },
@@ -3157,7 +3178,7 @@ fn instruction_semantics(
         } => CompiledInstructionSemantics {
             destination: *dst,
             inputs: vec![*a, *b, *c],
-            template_constant: None,
+
             operation: runtime(*function)?,
             requirement: None,
         },
@@ -3171,7 +3192,7 @@ fn instruction_semantics(
         } => CompiledInstructionSemantics {
             destination: *dst,
             inputs: vec![*a, *b, *c, *d],
-            template_constant: None,
+
             operation: runtime(*function)?,
             requirement: None,
         },
@@ -3182,7 +3203,7 @@ fn instruction_semantics(
         } => CompiledInstructionSemantics {
             destination: *dst,
             inputs: arguments.clone(),
-            template_constant: None,
+
             operation: runtime(*function)?,
             requirement: None,
         },
@@ -3205,7 +3226,7 @@ fn instruction_semantics(
             CompiledInstructionSemantics {
                 destination: *dst,
                 inputs: arguments.clone(),
-                template_constant: None,
+
                 operation: operation_reference_from_name("host", &request.name)?,
                 requirement: Some(ApplicationRequirementId::new(*requirement)),
             }
@@ -3213,7 +3234,7 @@ fn instruction_semantics(
         BytecodeInstruction::ResourceRead { requirement, dst } => CompiledInstructionSemantics {
             destination: *dst,
             inputs: Vec::new(),
-            template_constant: None,
+
             operation: resource_operation_reference(*requirement, requirements, "read")?,
             requirement: Some(ApplicationRequirementId::new(*requirement)),
         },
@@ -3224,7 +3245,7 @@ fn instruction_semantics(
         } => CompiledInstructionSemantics {
             destination: *dst,
             inputs: vec![*src],
-            template_constant: None,
+
             operation: resource_operation_reference(*requirement, requirements, "write")?,
             requirement: Some(ApplicationRequirementId::new(*requirement)),
         },
@@ -3235,7 +3256,7 @@ fn instruction_semantics(
         } => CompiledInstructionSemantics {
             destination: *dst,
             inputs: vec![*src],
-            template_constant: None,
+
             operation: resource_operation_reference(*requirement, requirements, "send")?,
             requirement: Some(ApplicationRequirementId::new(*requirement)),
         },
@@ -3299,22 +3320,9 @@ fn resolve_source(
     })
 }
 
-fn published_output_initializer(graph: &SourceProgram, source: SourceValue) -> Option<ConstantId> {
+fn published_output_initializer(_graph: &SourceProgram, source: SourceValue) -> Option<ConstantId> {
     match source {
         SourceValue::Constant(constant) => Some(constant),
-        SourceValue::NodeOutput {
-            node,
-            output_ordinal: 0,
-        } => {
-            let node = graph.nodes.get(node as usize)?;
-            (node.operation.module_path.as_ref() == ["core"]
-                && node.operation.operation_name == "composite-pack")
-                .then(|| match node.inputs.first() {
-                    Some(SourceValue::Constant(template)) => Some(*template),
-                    _ => None,
-                })
-                .flatten()
-        }
         SourceValue::Input(_) | SourceValue::State(_) | SourceValue::NodeOutput { .. } => None,
     }
 }
@@ -3365,15 +3373,17 @@ mod tests {
     }
 
     #[test]
-    fn published_reactive_composite_retains_its_canonical_template_initializer() {
+    fn published_composite_children_are_not_mistaken_for_output_initializers() {
         let template = ConstantId::new(3);
         let graph = SourceProgram {
             nodes: vec![SourceNode {
-                operation: OperationReference {
-                    module_path: vec!["core".to_owned()].into_boxed_slice(),
-                    operation_name: "composite-pack".to_owned(),
+                body: crate::SourceNodeBody::Operation {
+                    operation: OperationReference {
+                        module_path: vec!["core".to_owned()].into_boxed_slice(),
+                        operation_name: "composite-pack".to_owned(),
+                    },
+                    requirement: None,
                 },
-                requirement: None,
                 inputs: vec![SourceValue::Constant(template), SourceValue::Input(0)]
                     .into_boxed_slice(),
                 outputs: vec![SourceNodeOutput::Derived {
@@ -3393,7 +3403,7 @@ mod tests {
                     output_ordinal: 0,
                 },
             ),
-            Some(template),
+            None,
         );
         assert_eq!(
             published_output_initializer(

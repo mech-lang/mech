@@ -5,40 +5,16 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::sync::LazyLock;
 
 use crate::{
-    AccessMode, AliasPolicy, ApplicationRequirement, BytecodeCompilerContext, BytecodeInstruction,
-    BytecodeProgram, BytecodeRegisterIdentity, BytecodeValidationError, ChangeDetectionPolicy,
-    CompiledMatrixLiteral, ComputePlacement, DeliveryMode, EncodedConstant, ExternalInteraction,
-    InputPortLayout, InputPortPolicy, MResult, MechError, OperationContractDeclaration,
-    OutputConstruction, OutputPortPolicy, ParsedProgram, Register, ShapeRule, ValueCell,
-    compare_application_requirements, hash_str, write_bytecode,
+    ApplicationRequirement, BytecodeCompilerContext, BytecodeInstruction, BytecodeProgram,
+    BytecodeRegisterIdentity, BytecodeValidationError, CompiledMatrixLiteral, ComputePlacement,
+    EncodedConstant, MResult, MechError, OperationContractDeclaration, ParsedProgram, Register,
+    ValueCell, compare_application_requirements, hash_str, write_bytecode,
 };
 
-static PURE_COMPOSITE_PACK_CONTRACT: LazyLock<OperationContractDeclaration> =
-    LazyLock::new(|| OperationContractDeclaration {
-        inputs: InputPortLayout::Variadic {
-            prefix: vec![InputPortPolicy {
-                access: AccessMode::Read,
-                delivery: DeliveryMode::Signal,
-            }]
-            .into_boxed_slice(),
-            repeated: InputPortPolicy {
-                access: AccessMode::Read,
-                delivery: DeliveryMode::Signal,
-            },
-            min_repetitions: 0,
-        },
-        outputs: vec![OutputPortPolicy {
-            access: AccessMode::Write,
-            delivery: DeliveryMode::Signal,
-            construction: OutputConstruction::FullWrite {
-                shape: ShapeRule::Declared,
-            },
-            alias: AliasPolicy::NoAlias,
-            change_detection: ChangeDetectionPolicy::AlwaysChanged,
-        }]
-        .into_boxed_slice(),
-        interaction: ExternalInteraction::Pure,
-    });
+static PURE_COMPOSITE_PACK_CONTRACT: LazyLock<OperationContractDeclaration> = LazyLock::new(|| {
+    crate::maintained_operation_contract("core/composite-pack", 0, false)
+        .expect("canonical composite declaration is maintained")
+});
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum CompiledNodeKind {
