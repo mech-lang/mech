@@ -1538,20 +1538,66 @@ impl ReactiveInstance {
                     probe,
                 )?;
             }
-            let before = scalar_token(self.workspace.scratch.read(write.region));
-            let value = self
-                .read_location(body.yield_value, working_epoch)
-                .and_then(scalar_token)
-                .ok_or_else(fail)?;
-            match self.workspace.scratch.write(write.region) {
-                ResidentValueMut::Bool([output]) => *output = u8::from(value != 0),
-                ResidentValueMut::Index([output]) => *output = value,
-                ResidentValueMut::F64([output]) => *output = f64::from_bits(value),
-                _ => return Err(fail()),
-            }
+            let unchanged = match body.yield_value {
+                ResidentReadLocation::Constant(region) => regions_equal(
+                    &self.workspace.scratch,
+                    write.region,
+                    &self.activation,
+                    region,
+                ),
+                ResidentReadLocation::Input(region) => regions_equal(
+                    &self.workspace.scratch,
+                    write.region,
+                    &self.workspace.input,
+                    region,
+                ),
+                ResidentReadLocation::State { slot, region } => {
+                    let buffer = self.state.select_buffer(slot, working_epoch);
+                    regions_equal(
+                        &self.workspace.scratch,
+                        write.region,
+                        &self.state.buffers[buffer],
+                        region,
+                    )
+                }
+                ResidentReadLocation::Scratch(region) => regions_equal(
+                    &self.workspace.scratch,
+                    write.region,
+                    &self.workspace.scratch,
+                    region,
+                ),
+            };
+            // Publish the selected value through the same managed copy path used
+            // for ordinary resident state. Composite construction remains in its
+            // existing bound kernel; no sibling branch is evaluated here.
+            let copied = match body.yield_value {
+                ResidentReadLocation::Constant(region) => {
+                    self.workspace
+                        .scratch
+                        .copy_region_from(write.region, &self.activation, region)
+                }
+                ResidentReadLocation::Input(region) => self.workspace.scratch.copy_region_from(
+                    write.region,
+                    &self.workspace.input,
+                    region,
+                ),
+                ResidentReadLocation::State { slot, region } => {
+                    let buffer = self.state.select_buffer(slot, working_epoch);
+                    self.workspace.scratch.copy_region_from(
+                        write.region,
+                        &self.state.buffers[buffer],
+                        region,
+                    )
+                }
+                ResidentReadLocation::Scratch(region) => self
+                    .workspace
+                    .scratch
+                    .copy_region_within(write.region, region),
+            };
+            copied.map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
             let initialized = bit_is_set(&self.workspace.initialized_output_bits, index);
             set_bit(&mut self.workspace.initialized_output_bits, index);
-            return Ok(!initialized || before != Some(value));
+            return Ok(!initialized || !unchanged);
         }
         Err(fail())
     }

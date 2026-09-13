@@ -6389,7 +6389,7 @@ impl SemanticBuilder {
                     ));
                 }
             };
-            if pattern != crate::MatchPattern::Wildcard
+            if matches!(pattern, crate::MatchPattern::Literal(_))
                 && !scrutinee_schema
                     .clone()
                     .finalize()
@@ -6397,6 +6397,17 @@ impl SemanticBuilder {
             {
                 return Err(error(
                     "non-wildcard patterns require a concrete scalar scrutinee",
+                    syntax,
+                ));
+            }
+            if pattern == crate::MatchPattern::Bind
+                && !scrutinee_schema
+                    .clone()
+                    .finalize()
+                    .is_ok_and(|schema| crate::is_control_value_schema(&schema))
+            {
+                return Err(error(
+                    "match bindings require a closed value schema",
                     syntax,
                 ));
             }
@@ -6508,7 +6519,7 @@ impl SemanticBuilder {
     ) -> Result<(PendingControlBlock, SchemaDraft), SourceSemanticError> {
         let unsupported = || SourceSemanticError {
             code: "source-semantics/unsupported-match-block",
-            message: "match blocks require pure maintained operations and fixed scalar values"
+            message: "match blocks require pure maintained operations and closed value schemas"
                 .to_owned(),
             anchor: SourceSemanticAnchor::for_node(expression.syntax()),
         };
@@ -6520,13 +6531,13 @@ impl SemanticBuilder {
         self.control_depth -= 1;
         let nodes = self.nodes.split_off(start);
         let (value, schema) = result?;
-        let scalar = |schema: &SchemaDraft| {
+        let closed_value = |schema: &SchemaDraft| {
             schema
                 .clone()
                 .finalize()
-                .is_ok_and(|schema| crate::is_control_scalar_schema(&schema))
+                .is_ok_and(|schema| crate::is_control_value_schema(&schema))
         };
-        if !scalar(&schema) {
+        if !closed_value(&schema) {
             return Err(unsupported());
         }
         let mut parameters = Vec::<(crate::ControlParameterSource, SchemaDraft)>::new();
@@ -6547,7 +6558,7 @@ impl SemanticBuilder {
                             return Ok(PendingControlValue::Parameter(index as u16));
                         }
                         let schema = self.schema_draft_of(value)?;
-                        if !scalar(&schema) {
+                        if !closed_value(&schema) {
                             return Err(unsupported());
                         }
                         let source = if pattern == crate::MatchPattern::Bind && value == scrutinee {
@@ -6594,7 +6605,7 @@ impl SemanticBuilder {
             };
             if node.state.is_some()
                 || contract.interaction != mech_core::ExternalInteraction::Pure
-                || !scalar(&node.schema)
+                || !closed_value(&node.schema)
             {
                 return Err(unsupported());
             }

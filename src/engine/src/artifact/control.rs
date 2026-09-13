@@ -42,7 +42,7 @@ pub enum ControlValue {
     Local { block: ControlBlockId, node: u32 },
 }
 
-/// Each local has one writer and one exactly typed scalar result.
+/// Each local has one writer and one exactly typed owned result.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ControlOperation<C = OperationContractId> {
     pub node: u32,
@@ -93,6 +93,12 @@ pub(super) fn validate_match(
             .get(schema)
             .is_some_and(is_control_scalar_schema)
     };
+    let closed_value = |schema| {
+        draft
+            .schemas
+            .get(schema)
+            .is_some_and(is_control_value_schema)
+    };
     let boolean = |schema| {
         draft
             .schemas
@@ -102,20 +108,30 @@ pub(super) fn validate_match(
     let scrutinee = *inputs
         .get(declaration.scrutinee as usize)
         .ok_or_else(|| invalid("unknown scrutinee input"))?;
-    if !scalar(output)
+    if !closed_value(output)
         || (!scalar(scrutinee)
             && declaration
                 .arms
                 .iter()
-                .any(|arm| arm.pattern != MatchPattern::Wildcard))
+                .any(|arm| matches!(arm.pattern, MatchPattern::Literal(_))))
     {
-        return Err(invalid("match requires exact scalar scrutinee and result"));
+        return Err(invalid(
+            "match requires a closed result and scalar literal-pattern scrutinee",
+        ));
+    }
+    if !closed_value(scrutinee)
+        && declaration
+            .arms
+            .iter()
+            .any(|arm| arm.pattern == MatchPattern::Bind)
+    {
+        return Err(invalid("match bindings require a closed value schema"));
     }
     let mut used_inputs = std::collections::BTreeSet::from([declaration.scrutinee]);
     let mut captured_inputs = std::collections::BTreeSet::new();
     for capture in &declaration.captures {
         if inputs.get(capture.input as usize) != Some(&capture.schema)
-            || !scalar(capture.schema)
+            || !closed_value(capture.schema)
             || !captured_inputs.insert(capture.input)
         {
             return Err(invalid("invalid or duplicate capture"));
@@ -198,9 +214,9 @@ pub(super) fn validate_match(
                 }
             };
             for (index, operation) in block.operations.iter().enumerate() {
-                if operation.node as usize != index || !scalar(operation.schema) {
+                if operation.node as usize != index || !closed_value(operation.schema) {
                     return Err(invalid(
-                        "invalid local identity or non-scalar operation result",
+                        "invalid local identity or non-closed operation result",
                     ));
                 }
                 super::validation::validate_operation(&operation.operation)?;
@@ -223,7 +239,7 @@ pub(super) fn validate_match(
                     if port.access != AccessMode::Read
                         || port.delivery != DeliveryMode::Signal
                         || value_schema(*input, index)? != port.schema
-                        || !scalar(port.schema)
+                        || !closed_value(port.schema)
                     {
                         return Err(invalid("block operation input contract mismatch"));
                     }
@@ -233,7 +249,12 @@ pub(super) fn validate_match(
                     || port.access != AccessMode::Write
                     || port.delivery != DeliveryMode::Signal
                     || port.alias != AliasPolicy::NoAlias
-                    || !matches!(port.construction, OutputConstruction::FullWrite { .. })
+                    || !matches!(
+                        port.construction,
+                        OutputConstruction::FullWrite { .. }
+                            | OutputConstruction::Build { .. }
+                            | OutputConstruction::Replace { .. }
+                    )
                 {
                     return Err(invalid(
                         "block operation must fully write its exact owned result",
@@ -386,4 +407,11 @@ pub(crate) fn is_control_scalar_schema(schema: &mech_core::Schema) -> bool {
                 | SchemaBody::Complex(_)
                 | SchemaBody::Rational64
         )
+}
+
+/// Control values share ordinary schema and construction authorities.
+/// Per-turn variable shapes need explicit control shape bindings before admission.
+pub(crate) fn is_control_value_schema(schema: &mech_core::Schema) -> bool {
+    schema.dimension_parameters().is_empty()
+        && !matches!(schema.body(), mech_core::SchemaBody::Dynamic)
 }

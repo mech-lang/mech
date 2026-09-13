@@ -761,7 +761,7 @@ fn captured_source_identity_and_guard_changes_change_revision() {
 #[cfg(feature = "resident-artifact")]
 #[test]
 fn portable_scalar_match_target_capability_is_separate_from_artifact_validity() {
-    let compiled = compile("flag<bool> ? | true => 1u8 | false => 2u8");
+    let compiled = compile("flag<u8> ? | 1u8 => 1u8 | * => 2u8");
     let artifact = compiled.compile_artifact().unwrap();
     let artifact = decode_program_artifact_bytecode_v1(
         &encode_program_artifact_bytecode_v1(&artifact).unwrap(),
@@ -1149,6 +1149,253 @@ fn numeric_match_roundtrips_and_uses_literal_binding_guard_and_wildcard_on_each_
             panic!("{value:?}")
         };
         assert_eq!(actual.to_f64(), expected, "input {input}");
+    }
+}
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn compound_match_results_reuse_managed_construction_across_branch_switches() {
+    use mech_core::{FunctionCatalogBuilder, ReactiveInstanceId, ResidentValueRef, ValueDataDraft};
+    use mech_engine::resident::{ActivationFacts, CapturedSignalInput, activate};
+    let f = |value| ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(value));
+    for (source, live) in [
+        ("signal<f64> ? | 0 => (1, true) | * => (2, false)", false),
+        (
+            "signal<f64> ? | 0 => (signal + 1, true) | * => (signal + 2, false)",
+            true,
+        ),
+    ] {
+        let artifact = compile(source).compile_artifact().unwrap();
+        let artifact = decode_program_artifact_bytecode_v1(
+            &encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+        )
+        .unwrap();
+        let mut catalog = FunctionCatalogBuilder::new();
+        install_intrinsic_resident(&mut catalog).unwrap();
+        let catalog = catalog.build().unwrap();
+        let mut instance = activate(
+            ReactiveInstanceId::new(822, 80),
+            &artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        for input in [0.0, 4.0, 0.0] {
+            instance
+                .turn(&[CapturedSignalInput {
+                    slot: instance.plan.inputs[0].slot,
+                    value: ResidentValueRef::F64(&[input]),
+                }])
+                .unwrap();
+            let selected = input == 0.0;
+            let number = if selected { 1.0 } else { 2.0 } + if live { input } else { 0.0 };
+            assert_eq!(
+                instance
+                    .copied_output(0)
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                ValueDataDraft::Tuple(
+                    vec![f(number), ValueDataDraft::Bool(selected)].into_boxed_slice()
+                ),
+                "{source}: {input}",
+            );
+        }
+    }
+}
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn compound_match_keeps_failing_siblings_lazy_and_publication_atomic() {
+    use mech_core::{FunctionCatalogBuilder, ReactiveInstanceId, ResidentValueRef, ValueDataDraft};
+    use mech_engine::resident::{ActivationFacts, CapturedSignalInput, activate};
+    let artifact =
+        compile("(values<[f64]:1,2>, flag<bool> ? | true => (1, true) | false => (values[index<f64>], false))")
+            .compile_artifact()
+            .unwrap();
+    let artifact = decode_program_artifact_bytecode_v1(
+        &encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+    )
+    .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    install_intrinsic_resident(&mut catalog).unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(822, 81),
+        &artifact,
+        &catalog.build().unwrap(),
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    let values = instance.plan.inputs[0].slot;
+    let flag = instance.plan.inputs[1].slot;
+    let index = instance.plan.inputs[2].slot;
+    let inputs = |flag_value, index_value| {
+        [
+            CapturedSignalInput {
+                slot: values,
+                value: ResidentValueRef::F64(&[1.0, 2.0]),
+            },
+            CapturedSignalInput {
+                slot: flag,
+                value: ResidentValueRef::Bool(flag_value),
+            },
+            CapturedSignalInput {
+                slot: index,
+                value: ResidentValueRef::F64(index_value),
+            },
+        ]
+    };
+    let expected = |value, flag| {
+        let f = |value| ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(value));
+        ValueDataDraft::Tuple(
+            vec![
+                ValueDataDraft::Matrix(vec![f(1.0), f(2.0)].into_boxed_slice()),
+                ValueDataDraft::Tuple(
+                    vec![f(value), ValueDataDraft::Bool(flag)].into_boxed_slice(),
+                ),
+            ]
+            .into_boxed_slice(),
+        )
+    };
+    // An out-of-bounds access in the unselected branch must not execute.
+    instance.turn(&inputs(&[1], &[3.0])).unwrap();
+    assert_eq!(
+        instance
+            .copied_output(0)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap(),
+        expected(1.0, true)
+    );
+    instance.turn(&inputs(&[0], &[1.0])).unwrap();
+    let epoch = instance.published_epoch();
+    assert_eq!(
+        instance
+            .copied_output(0)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap(),
+        expected(1.0, false)
+    );
+    assert!(instance.turn(&inputs(&[0], &[3.0])).is_err());
+    assert_eq!(instance.published_epoch(), epoch);
+    assert_eq!(
+        instance
+            .copied_output(0)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap(),
+        expected(1.0, false)
+    );
+    instance
+        .prepare_turn(&inputs(&[1], &[3.0]))
+        .unwrap()
+        .abort();
+    assert_eq!(instance.published_epoch(), epoch);
+    assert_eq!(
+        instance
+            .copied_output(0)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap(),
+        expected(1.0, false)
+    );
+    instance.turn(&inputs(&[0], &[2.0])).unwrap();
+    assert_eq!(
+        instance
+            .copied_output(0)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap(),
+        expected(2.0, false)
+    );
+}
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn closed_match_values_use_existing_matrix_record_string_and_snapshot_layouts() {
+    use mech_core::snapshot::NamedValueDraft;
+    use mech_core::{
+        FunctionCatalogBuilder, ReactiveInstanceId, ResidentValueRef, ValueDataDraft as Data,
+    };
+    use mech_engine::resident::{ActivationFacts, CapturedSignalInput, activate};
+    let f = |value| Data::F64(mech_core::snapshot::F64Bits::from_f64(value));
+    let record = |value, selected| {
+        Data::Record(
+            vec![
+                NamedValueDraft {
+                    name: "a".to_owned(),
+                    value: f(value),
+                },
+                NamedValueDraft {
+                    name: "b".to_owned(),
+                    value: Data::Bool(selected),
+                },
+            ]
+            .into_boxed_slice(),
+        )
+    };
+    let cases = [
+        (
+            "signal<f64> ? | 0 => [1 2] | * => [3 4]",
+            Data::Matrix(vec![f(1.0), f(2.0)].into_boxed_slice()),
+            Data::Matrix(vec![f(3.0), f(4.0)].into_boxed_slice()),
+        ),
+        (
+            "signal<f64> ? | 0 => {a: 1, b: true} | * => {a: signal, b: false}",
+            record(1.0, true),
+            record(4.0, false),
+        ),
+        (
+            "signal<f64> ? | 0 => 1u8 | * => 2u8",
+            Data::U8(1),
+            Data::U8(2),
+        ),
+        (
+            "(signal<f64>, true) ? | item => item",
+            Data::Tuple(vec![f(0.0), Data::Bool(true)].into_boxed_slice()),
+            Data::Tuple(vec![f(4.0), Data::Bool(true)].into_boxed_slice()),
+        ),
+        (
+            "signal<f64> ? | 0 => \"first\" | * => \"second\"",
+            Data::String("first".to_owned()),
+            Data::String("second".to_owned()),
+        ),
+    ];
+    for (source, first, second) in cases {
+        let artifact = compile(source)
+            .compile_artifact()
+            .unwrap_or_else(|error| panic!("{source}: {error:?}"));
+        let artifact = decode_program_artifact_bytecode_v1(
+            &encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+        )
+        .unwrap();
+        let mut catalog = FunctionCatalogBuilder::new();
+        install_intrinsic_resident(&mut catalog).unwrap();
+        let mut instance = activate(
+            ReactiveInstanceId::new(822, 82),
+            &artifact,
+            &catalog.build().unwrap(),
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        for (input, expected) in [(0.0, &first), (4.0, &second), (0.0, &first)] {
+            instance
+                .turn(&[CapturedSignalInput {
+                    slot: instance.plan.inputs[0].slot,
+                    value: ResidentValueRef::F64(&[input]),
+                }])
+                .unwrap();
+            assert_eq!(
+                &instance
+                    .copied_output(0)
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                expected,
+                "{source}"
+            );
+        }
     }
 }
 

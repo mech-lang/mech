@@ -3325,18 +3325,18 @@ fn build_layout(
                     block
                         .operations
                         .iter()
-                        .map(move |operation| (block.id.0, operation.node, operation.schema, true))
+                        .map(move |operation| (block.id.0, operation.node, operation.schema))
                 })
                 .collect::<Vec<_>>(),
             crate::ExecutableNodeBody::Comprehension(control) => comprehension::locals(control)
                 .into_iter()
                 .enumerate()
-                .map(|(local, schema)| (0, local as u32, schema, false))
+                .map(|(local, schema)| (0, local as u32, schema))
                 .collect(),
             _ => continue,
         };
         let mut ordinal = 0usize;
-        for (block, local, schema_id, scalar_only) in local_definitions {
+        for (block, local, schema_id) in local_definitions {
             let slot = CellSlotId(
                 u32::try_from(slot_layouts.len())
                     .map_err(|_| ResidentActivationError::RegionSizeOverflow)?,
@@ -3358,14 +3358,6 @@ fn build_layout(
                     node: node.node,
                 })?;
             let (kind, resident_shape) = schema_layout(artifact, schema_id, &shape, true, None)?;
-            if scalar_only
-                && (!matches!(
-                    kind,
-                    ResidentValueKind::Bool | ResidentValueKind::Index | ResidentValueKind::F64
-                ) || resident_shape.len() != Some(1))
-            {
-                return Err(ResidentActivationError::UnsupportedControlLayout { node: node.node });
-            }
             let len = resident_shape
                 .len()
                 .ok_or(ResidentActivationError::RegionSizeOverflow)?;
@@ -3943,21 +3935,14 @@ fn build_plan(
             let input_sources = node_inputs(artifact, node.node)?;
             let output_slot = node_output_slot(artifact, node.node)?;
             let output = &layout.slots[output_slot.get() as usize];
-            let wildcard_only = control
+            // Only literal patterns perform a scalar comparison. Captures,
+            // bindings and results use their ordinary validated value layouts.
+            if control
                 .arms
                 .iter()
-                .all(|arm| arm.pattern == crate::MatchPattern::Wildcard);
-            for (ordinal, source) in input_sources
-                .iter()
-                .copied()
-                .chain(core::iter::once(ArtifactSource::Slot(output_slot)))
-                .enumerate()
+                .any(|arm| matches!(arm.pattern, crate::MatchPattern::Literal(_)))
             {
-                // Wildcards impose no value test and bind no scrutinee parameter.
-                // The input retains its own exact layout and capture validation.
-                if wildcard_only && ordinal == control.scrutinee as usize {
-                    continue;
-                }
+                let source = input_sources[control.scrutinee as usize];
                 let port = source_port_layout(artifact, &layout, source, static_selectors)?;
                 if !matches!(
                     port.kind,
@@ -5950,14 +5935,6 @@ fn bind_control_block(
             .copied()
             .map(port)
             .collect::<Result<Vec<_>, _>>()?;
-        if input_layouts.iter().any(|input| {
-            !matches!(
-                input.kind,
-                ResidentValueKind::Bool | ResidentValueKind::Index | ResidentValueKind::F64
-            ) || input.shape.len() != Some(1)
-        }) {
-            return Err(ResidentActivationError::UnsupportedControlLayout { node: owner });
-        }
         let (kernel, memory_plan) = bind_resident_operation(
             artifact,
             catalog,
@@ -6008,14 +5985,6 @@ fn bind_control_block(
         }));
     }
     let yielded = source(block.yield_value);
-    let yielded_port = port(yielded)?;
-    if !matches!(
-        yielded_port.kind,
-        ResidentValueKind::Bool | ResidentValueKind::Index | ResidentValueKind::F64
-    ) || yielded_port.shape.len() != Some(1)
-    {
-        return Err(ResidentActivationError::UnsupportedControlLayout { node: owner });
-    }
     Ok(ActivatedControlBlock {
         kernels: start..steps.len() as u32,
         yield_value: resolve_read(layout, yielded)?,
