@@ -55,6 +55,8 @@ fn is_forbidden_identifier_emoji(character: char) -> bool {
         character,
         '\u{00a0}'
             | '\u{2009}'
+            | '\u{27e8}'
+            | '\u{27e9}'
             | '\u{2e22}'
             | '\u{2e25}'
             | '╭'

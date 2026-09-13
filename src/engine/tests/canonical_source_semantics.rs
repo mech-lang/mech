@@ -266,6 +266,33 @@ fn fsm_pipe_owns_typed_arguments_stages_and_artifact_roundtrip() {
         .replacen("\"revision\":6", "\"revision\":5", 1)
         .into_bytes();
     assert!(mech_engine::decode_program_artifact_sections(&revision_five).is_err());
+    // Artifact admission must enforce both canonical angle terminals in all
+    // three identifier roles, including a forbidden scalar after a valid prefix.
+    for glyph in ['⟨', '⟩'] {
+        for name in [
+            format!("{glyph}bad"),
+            format!("bad{glyph}"),
+            format!("b{glyph}ad"),
+        ] {
+            for (original, replacement) in [
+                ("\"machine\":\"machine\"", format!("\"machine\":\"{name}\"")),
+                (
+                    "\"arguments\":[[\"left\",0]",
+                    format!("\"arguments\":[[\"{name}\",0]"),
+                ),
+                ("\"name\":\"some\"", format!("\"name\":\"{name}\"")),
+            ] {
+                let mutated = graph.replacen(original, &replacement, 1);
+                assert_ne!(mutated, graph, "missing FSM wire fixture {original}");
+                let mut invalid = sections.clone();
+                invalid.nodes = mutated.into_bytes();
+                assert!(
+                    mech_engine::decode_program_artifact_sections(&invalid).is_err(),
+                    "forbidden canonical angle in FSM identifier: {replacement}"
+                );
+            }
+        }
+    }
     for (original, replacement) in [
         ("\"machine\":\"machine\"", "\"machine\":\" \""),
         (
