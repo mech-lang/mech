@@ -6,6 +6,7 @@ whose guard succeeds executes its body. Wildcard and lexical bind patterns are
 exhaustive without a guard. Source lowering requires an unguarded wildcard/binding or coverage of both Boolean
 literals, and one exact scalar result schema. Literal patterns reference constants
 with the scrutinee schema; bindings expose that same schema to guards and bodies.
+Wildcard-only matches impose no scalar type on an unused scrutinee.
 
 The engine artifact owns control blocks, captures, scoped parameters, local
 ordinary operations and yields. Source text and diagnostic strings are not

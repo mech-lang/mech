@@ -3835,11 +3835,21 @@ fn build_plan(
             let input_sources = node_inputs(artifact, node.node)?;
             let output_slot = node_output_slot(artifact, node.node)?;
             let output = &layout.slots[output_slot.get() as usize];
-            for source in input_sources
+            let wildcard_only = control
+                .arms
+                .iter()
+                .all(|arm| arm.pattern == crate::MatchPattern::Wildcard);
+            for (ordinal, source) in input_sources
                 .iter()
                 .copied()
                 .chain(core::iter::once(ArtifactSource::Slot(output_slot)))
+                .enumerate()
             {
+                // Wildcards impose no value test and bind no scrutinee parameter.
+                // The input retains its own exact layout and capture validation.
+                if wildcard_only && ordinal == control.scrutinee as usize {
+                    continue;
+                }
                 let port = source_port_layout(artifact, &layout, source, static_selectors)?;
                 if !matches!(
                     port.kind,

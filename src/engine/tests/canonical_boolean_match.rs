@@ -1152,3 +1152,39 @@ fn exact_scalar_pattern_schemas_are_artifact_semantics() {
         assert_eq!(artifact.revision(), decoded.revision());
     }
 }
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn wildcard_matches_do_not_impose_a_scalar_type_on_unused_scrutinees() {
+    use mech_core::{FunctionCatalogBuilder, ReactiveInstanceId, ResidentValueRef, ValueData};
+    use mech_engine::resident::{ActivationFacts, CapturedSignalInput, activate};
+    compile("x ? | *, true => 1 | * => 2")
+        .compile_artifact()
+        .unwrap();
+    let artifact = compile("signal<[f64]:1,2> ? | *, true => 1 | * => 2")
+        .compile_artifact()
+        .unwrap();
+    let artifact = decode_program_artifact_bytecode_v1(
+        &encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+    )
+    .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(822, 45),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    instance
+        .turn(&[CapturedSignalInput {
+            slot: instance.plan.inputs[0].slot,
+            value: ResidentValueRef::F64(&[8.0, 9.0]),
+        }])
+        .unwrap();
+    assert!(
+        matches!(instance.copied_output(0).unwrap().data(), ValueData::F64(value) if value.to_f64() == 1.0)
+    );
+}

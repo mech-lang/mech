@@ -102,7 +102,13 @@ pub(super) fn validate_match(
     let scrutinee = *inputs
         .get(declaration.scrutinee as usize)
         .ok_or_else(|| invalid("unknown scrutinee input"))?;
-    if !scalar(scrutinee) || !scalar(output) {
+    if !scalar(output)
+        || (!scalar(scrutinee)
+            && declaration
+                .arms
+                .iter()
+                .any(|arm| arm.pattern != MatchPattern::Wildcard))
+    {
         return Err(invalid("match requires exact scalar scrutinee and result"));
     }
     let mut used_inputs = std::collections::BTreeSet::from([declaration.scrutinee]);

@@ -6258,13 +6258,6 @@ impl SemanticBuilder {
             anchor: SourceSemanticAnchor::for_node(syntax),
         };
         let scrutinee_schema = self.schema_draft_of(scrutinee)?;
-        if !scrutinee_schema
-            .clone()
-            .finalize()
-            .is_ok_and(|schema| crate::is_control_scalar_schema(&schema))
-        {
-            return Err(error("match requires a concrete scalar scrutinee", syntax));
-        }
         let mut inputs = vec![scrutinee];
         let mut captures = Vec::new();
         let mut lowered = Vec::new();
@@ -6330,6 +6323,17 @@ impl SemanticBuilder {
                     ));
                 }
             };
+            if pattern != crate::MatchPattern::Wildcard
+                && !scrutinee_schema
+                    .clone()
+                    .finalize()
+                    .is_ok_and(|schema| crate::is_control_scalar_schema(&schema))
+            {
+                return Err(error(
+                    "non-wildcard patterns require a concrete scalar scrutinee",
+                    syntax,
+                ));
+            }
             let saved = self.bindings.clone();
             if let Some(name) = binding {
                 self.bindings.insert(name, scrutinee);
