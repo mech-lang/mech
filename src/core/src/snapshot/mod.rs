@@ -41,8 +41,9 @@ pub use self::sequence::SequenceView;
 pub use self::validation::{
     CompositeSnapshotConstructor, MatrixSnapshotConstructor, SnapshotCanonicalizationBudget,
     SnapshotValidationContext, TableSnapshotBuilder, Value, build_f64_set_snapshot,
-    build_f64_set_snapshot_after_remove, canonical_snapshot_data_draft, f64_set_snapshot_contains,
-    rebuild_f64_set_snapshot, wrap_resident_dynamic_data,
+    build_f64_set_snapshot_after_remove, canonical_snapshot_data_draft,
+    canonical_snapshot_data_draft_in, f64_set_snapshot_contains, rebuild_f64_set_snapshot,
+    wrap_resident_dynamic_data,
 };
 pub use self::views::{EnumView, MapView, MatrixView, RecordView, SetView, TableView, TupleView};
 pub use crate::{ConstantId, KeyHash, ValueHash};

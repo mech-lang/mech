@@ -1611,6 +1611,16 @@ pub fn canonical_snapshot_data_draft(
     canonical_data_to_draft(schema, data, &SnapshotPath::root())
 }
 
+/// Projects validated snapshot data into a destination schema arena. Dynamic
+/// children are resolved by schema key, never by their arena-local ordinals.
+pub fn canonical_snapshot_data_draft_in(
+    schema: &SchemaBody,
+    data: &ValueData,
+    schemas: &SchemaTable,
+) -> Result<ValueDataDraft, SnapshotValueError> {
+    canonical_data_to_rebound_draft(schema, data, &SnapshotPath::root(), schemas)
+}
+
 fn canonical_data_to_rebound_draft(
     schema: &SchemaBody,
     data: &ValueData,
@@ -1650,7 +1660,18 @@ fn canonical_data_to_draft_with_target(
                     Ok(Box::new(ValueDraft {
                         schema: value.schema(),
                         shape_values: value.shape().parameter_values().to_vec().into_boxed_slice(),
-                        data: value.canonical_data_draft()?,
+                        data: canonical_data_to_draft_with_target(
+                            value
+                                .validate_against(value.schemas.as_deref().ok_or(
+                                    SnapshotValueError::UnknownSnapshotSchema {
+                                        schema: value.schema(),
+                                    },
+                                )?)?
+                                .body(),
+                            value.data(),
+                            path,
+                            target_schemas,
+                        )?,
                     }))
                 })
                 .transpose()?;

@@ -18,7 +18,6 @@ use serde::{
     de::{DeserializeOwned, DeserializeSeed, Error as _, IgnoredAny, SeqAccess, Visitor},
 };
 
-use super::snapshot::data_draft;
 use super::{
     ApplicationRequirementTable, ArtifactBuildError, ArtifactSource, BindingDeclaration,
     ComputeRegionDeclaration, InitializerReference, InputDeclaration,
@@ -1225,7 +1224,7 @@ fn finalize_constants(
 }
 
 fn value_draft(
-    constant: ConstantId,
+    _constant: ConstantId,
     value: &Value,
     schemas: &SchemaTable,
 ) -> Result<ValueDraft, ArtifactBytecodeError> {
@@ -1239,9 +1238,11 @@ fn value_draft(
     Ok(ValueDraft {
         schema: value.schema(),
         shape_values: value.shape().parameter_values().to_vec().into_boxed_slice(),
-        data: data_draft(value.data(), schema.body()).ok_or(ArtifactBytecodeError::Artifact(
-            ArtifactBuildError::UnknownConstant { constant },
-        ))?,
+        data: mech_core::snapshot::canonical_snapshot_data_draft_in(
+            schema.body(),
+            value.data(),
+            schemas,
+        )?,
     })
 }
 
@@ -1284,6 +1285,113 @@ mod tests {
                 SnapshotValueError::CanonicalizationWorkLimitExceededV1 { limit: found }
             ) if found == limit
         ));
+    }
+
+    #[test]
+    fn dynamic_constant_projection_rebinds_foreign_nominal_schema_ids() {
+        use mech_core::snapshot::CompositeSnapshotConstructor;
+        use std::sync::Arc;
+        let atom = |name: &str| {
+            SchemaBody::Atom(mech_core::NominalKey::from_path(
+                mech_core::NominalKind::Atom,
+                &mech_core::CanonicalNominalPath::new(vec![name.to_owned()]).unwrap(),
+            ))
+        };
+        let tuple = SchemaBody::Tuple(vec![SchemaBody::Dynamic].into_boxed_slice());
+        let arena = |bodies: Vec<SchemaBody>| {
+            let mut builder = SchemaTableBuilder::new();
+            for body in bodies {
+                builder
+                    .insert(
+                        SchemaDraft {
+                            body,
+                            dimension_parameters: Box::new([]),
+                        }
+                        .finalize()
+                        .unwrap(),
+                    )
+                    .unwrap();
+            }
+            Arc::new(builder.finish().unwrap().into_parts().0)
+        };
+        let target = arena(vec![
+            atom("ready"),
+            atom("other"),
+            atom("third"),
+            tuple.clone(),
+        ]);
+        let outer = |child: Value, schemas: &Arc<SchemaTable>| {
+            let child_id = schemas.find_by_key(child.schema_key()).unwrap();
+            let tuple_schema = SchemaDraft {
+                body: tuple.clone(),
+                dimension_parameters: Box::new([]),
+            }
+            .finalize()
+            .unwrap();
+            let id = schemas.find_by_key(tuple_schema.key()).unwrap();
+            CompositeSnapshotConstructor::bind(
+                id,
+                schemas
+                    .get(id)
+                    .unwrap()
+                    .instantiate_shape(Box::new([]))
+                    .unwrap(),
+                &[(child_id, child.shape().clone())],
+                Arc::clone(schemas),
+            )
+            .unwrap()
+            .construct(vec![child].into_boxed_slice(), None)
+            .unwrap()
+        };
+        let mut shifted = 0;
+        for name in ["ready", "other", "third"] {
+            let (foreign, id) = schema_table(atom(name));
+            let child = draft(id, ValueDataDraft::Atom)
+                .finalize(&SnapshotValidationContext::new(&foreign))
+                .unwrap();
+            if target.find_by_key(child.schema_key()).unwrap() != child.schema() {
+                shifted += 1;
+            }
+            let foreign = arena(vec![atom(name), tuple.clone()]);
+            let foreign_id = foreign.find_by_key(child.schema_key()).unwrap();
+            let nested_child = child.rebind(foreign_id, child.shape(), &foreign).unwrap();
+            for original in [
+                outer(child, &target),
+                outer(outer(nested_child, &foreign), &target),
+            ] {
+                let expected = original.canonical_snapshot_bytes(&target).unwrap();
+                let missing = arena(vec![tuple.clone()]);
+                assert!(
+                    mech_core::snapshot::canonical_snapshot_data_draft_in(
+                        &tuple,
+                        original.data(),
+                        &missing,
+                    )
+                    .is_err(),
+                    "missing dynamic schema keys must fail closed"
+                );
+                let mut builder = ConstantStoreBuilder::new(&target);
+                builder.insert(original).unwrap();
+                let constants = builder.finish().unwrap().into_parts().0;
+                let bytes = encode(&constant_drafts(&constants, &target).unwrap()).unwrap();
+                let drafts = decode_vec("constants", &bytes, 1).unwrap();
+                let decoded =
+                    finalize_constants(drafts, &target, DEFAULT_MAX_CONSTANT_CANONICALIZATION_WORK)
+                        .unwrap();
+                assert_eq!(
+                    decoded
+                        .get(ConstantId::new(0))
+                        .unwrap()
+                        .canonical_snapshot_bytes(&target)
+                        .unwrap(),
+                    expected
+                );
+            }
+        }
+        assert!(
+            shifted >= 2,
+            "exercise compatible nominal ordinals from different arenas"
+        );
     }
 
     #[test]
