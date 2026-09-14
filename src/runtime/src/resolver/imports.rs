@@ -5,6 +5,13 @@ use super::{
     SourceRequest,
 };
 
+fn is_source_specifier(specifier: &str) -> bool {
+    specifier.contains("://")
+        || specifier.starts_with("./")
+        || specifier.starts_with("../")
+        || specifier.ends_with(".mec")
+}
+
 pub fn classify_import_specifier(specifier: impl Into<String>) -> SourceImportDeclaration {
     let specifier = specifier.into();
     if let Some(prefix) = specifier.strip_suffix("/*") {
@@ -15,11 +22,7 @@ pub fn classify_import_specifier(specifier: impl Into<String>) -> SourceImportDe
             item: None,
             kind: SourceImportKind::Wildcard,
         }
-    } else if specifier.contains("://")
-        || specifier.starts_with("./")
-        || specifier.starts_with("../")
-        || specifier.ends_with(".mec")
-    {
+    } else if is_source_specifier(&specifier) {
         SourceImportDeclaration {
             specifier,
             alias: None,
@@ -101,7 +104,7 @@ fn module_import_item_path(item: &mech_core::ModuleImportPath) -> String {
     item.to_string()
 }
 
-fn classified_module_import(
+pub(super) fn classified_module_import(
     module: &str,
     item: Option<&str>,
     alias: Option<SourceImportAlias>,
@@ -175,6 +178,8 @@ pub fn import_requires_source_dependency(import: &SourceImportDeclaration) -> bo
     }
 
     matches!(import.kind, SourceImportKind::DependencyOnly)
+        || matches!(import.kind, SourceImportKind::Wildcard)
+            && is_source_specifier(&import.specifier)
 }
 
 pub fn import_may_resolve_source_dependency(import: &SourceImportDeclaration) -> bool {
@@ -264,10 +269,19 @@ mod tests {
     }
 
     #[test]
-    fn wildcard_import_does_not_require_source_dependency() {
+    fn compiler_module_wildcard_does_not_require_source_dependency() {
         let import = classify_import_specifier("math/*");
         assert_eq!(import.kind, SourceImportKind::Wildcard);
         assert!(!import_requires_source_dependency(&import));
+    }
+
+    #[test]
+    fn source_wildcard_requires_source_dependency() {
+        for specifier in ["./dep.mec/*", "../lib/dep.mec/*", "file:///tmp/dep.mec/*"] {
+            let import = classify_import_specifier(specifier);
+            assert_eq!(import.kind, SourceImportKind::Wildcard);
+            assert!(import_requires_source_dependency(&import));
+        }
     }
 
     #[test]

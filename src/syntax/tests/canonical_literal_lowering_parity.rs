@@ -101,6 +101,22 @@ fn primitive_literal_values_match_legacy_exactly() {
 }
 
 #[test]
+fn typed_string_decoding_follows_retained_escape_structure() {
+    for (input, expected) in [
+        (r#""\u{0000041}""#, "A"),
+        (r#""\u{1f600}""#, "😀"),
+        (r#""\u{110000}""#, "u{110000}"),
+        (r#""\u{D800}""#, "u{D800}"),
+        (r#""\u{}""#, "u{}"),
+        (r#""line\nnext""#, "line\nnext"),
+    ] {
+        let node = canonical_node(input, rules::STRING, SyntaxKind::StringLiteral);
+        let string = StringLiteralSyntax::cast(node).unwrap();
+        assert_eq!(string.decoded_text().as_deref(), Some(expected), "{input}");
+    }
+}
+
+#[test]
 fn ordinary_number_values_match_legacy_exactly() {
     for input in [
         "1", "1u8", "1.0", ".5", "1/2", "0d12", "0xG_", "0o9", "0b9", "-1",

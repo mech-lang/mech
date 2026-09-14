@@ -35,6 +35,9 @@ pub(crate) fn skip_error(
     code: &str,
     message: &str,
 ) -> Option<CompletedMarker> {
+    if !parser.consuming_recovery_allowed() {
+        return None;
+    }
     let start = parser.offset();
     let marker = parser.start();
     while !parser.is_eof() && remaining_recovery_bytes(parser) > 0 {
@@ -133,6 +136,9 @@ pub(crate) fn abandon_until(
     message: &str,
     mut should_stop: impl FnMut(&mut Parser<'_>, char) -> bool,
 ) -> Option<CompletedMarker> {
+    if !parser.consuming_recovery_allowed() {
+        return None;
+    }
     let start = parser.offset();
     let marker = parser.start();
     let mut delimiters = Vec::new();
@@ -399,6 +405,9 @@ fn should_stop(
 }
 
 pub(crate) fn nesting_limit(parser: &mut Parser<'_>) {
+    if !parser.consuming_recovery_allowed() {
+        return;
+    }
     let start = parser.offset();
     let marker = parser.start();
     let mut nested = 0_u32;

@@ -1,5 +1,6 @@
 //! Typed syntax views for the closed Phase 2C literal and number productions.
 
+use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 
 use crate::document::red::IdentifierSyntax;
@@ -101,6 +102,24 @@ impl AtomLiteralSyntax {
 }
 
 impl StringLiteralSyntax {
+    /// Decode the retained canonical string spelling without reparsing it.
+    pub fn decoded_text(&self) -> Option<String> {
+        use crate::document::NodeFlags;
+        if self.syntax().flags().intersects(
+            NodeFlags::ERROR
+                | NodeFlags::MISSING
+                | NodeFlags::CONTAINS_ERROR
+                | NodeFlags::CONTAINS_MISSING,
+        ) {
+            return None;
+        }
+        if let Some(string) = self.utf8() {
+            decode_utf8_string(&string)
+        } else {
+            decode_raw_string(&self.raw()?)
+        }
+    }
+
     pub fn utf8(&self) -> Option<Utf8StringSyntax> {
         child(&self.0)
     }
@@ -304,4 +323,55 @@ impl DigitSequenceSyntax {
     pub fn tokens(&self) -> Vec<SyntaxToken> {
         self.0.tokens()
     }
+}
+
+fn decode_utf8_string(string: &Utf8StringSyntax) -> Option<String> {
+    let elements = string.syntax().children_with_tokens();
+    let content = elements.get(1..elements.len().checked_sub(1)?)?;
+    let mut output = String::new();
+    for element in content {
+        match element {
+            SyntaxElement::Token(token) => output.push_str(&token.text().ok()?),
+            SyntaxElement::Node(node) if node.kind() == SyntaxKind::EscapedCharacter => {
+                output.push_str(&decode_escaped_character(node)?);
+            }
+            SyntaxElement::Node(_) => return None,
+        }
+    }
+    Some(output)
+}
+
+fn decode_escaped_character(node: &SyntaxNode) -> Option<String> {
+    let escaped = node
+        .tokens()
+        .into_iter()
+        .find(|token| token.kind() == SyntaxKind::EscapedChar)?
+        .text()
+        .ok()?;
+    Some(match escaped.as_str() {
+        "0" => "\0".to_string(),
+        "n" => "\n".to_string(),
+        "r" => "\r".to_string(),
+        "t" => "\t".to_string(),
+        _ => {
+            if let Some(digits) = escaped
+                .strip_prefix("u{")
+                .and_then(|value| value.strip_suffix('}'))
+            {
+                char::from_u32(u32::from_str_radix(digits, 16).ok()?)?.to_string()
+            } else {
+                escaped
+            }
+        }
+    })
+}
+
+fn decode_raw_string(string: &RawStringSyntax) -> Option<String> {
+    let source = string.syntax().text().ok()?;
+    Some(
+        source
+            .strip_prefix("\"\"\"")?
+            .strip_suffix("\"\"\"")?
+            .to_string(),
+    )
 }

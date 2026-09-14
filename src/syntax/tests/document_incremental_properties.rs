@@ -1,7 +1,7 @@
 use mech_syntax::document::{
     DocumentId, DocumentSession, ParseConfig, SyntaxKind, TextEdit, TextRange, TextSize,
-    TextSnapshot, compact_debug_tree, normalize_diagnostics, parse_document, reconstruct_source,
-    validate_lossless,
+    TextSnapshot, compact_debug_tree, normalize_diagnostics, parse_canonical_document,
+    reconstruct_source, validate_lossless,
 };
 use proptest::prelude::*;
 
@@ -12,7 +12,7 @@ fn unicode_string(max_chars: usize) -> impl Strategy<Value = String> {
 
 fn assert_equivalent(session: &DocumentSession) {
     let incremental = session.snapshot();
-    let full = parse_document(
+    let full = parse_canonical_document(
         TextSnapshot::new(
             DocumentId(1),
             incremental.revision,
@@ -141,11 +141,14 @@ fn deleted_subtree_identity_is_removed() {
 
 #[test]
 fn removing_paragraph_newline_reparses_the_containing_section() {
-    let mut session = DocumentSession::new("first\nsecond\n", ParseConfig::default());
-    session.apply_edits(&[TextEdit::delete(TextRange::new(TextSize(5), TextSize(6)))]);
+    let mut session = DocumentSession::new(
+        "first paragraph\nsecond paragraph\n",
+        ParseConfig::default(),
+    );
+    session.apply_edits(&[TextEdit::delete(TextRange::new(TextSize(15), TextSize(16)))]);
     assert_eq!(
         session.snapshot().source.to_contiguous_string(),
-        "firstsecond\n"
+        "first paragraphsecond paragraph\n"
     );
     assert_equivalent(&session);
     let paragraphs = session
@@ -158,7 +161,7 @@ fn removing_paragraph_newline_reparses_the_containing_section() {
 }
 
 #[test]
-fn deleting_a_line_prefix_can_reclassify_an_underlined_subtitle() {
+fn historical_line_prefix_edit_matches_canonical_classification() {
     let regression = include_str!(
         "fixtures/document/promoted-regressions/underlined-subtitle-reclassification.mec"
     );
@@ -172,8 +175,10 @@ fn deleting_a_line_prefix_can_reclassify_an_underlined_subtitle() {
     ))]);
     assert_eq!(session.snapshot().source.to_contiguous_string(), regression);
     assert_equivalent(&session);
+    // This historical input was classified differently by the prototype.
+    // Only the canonical whole-document classification owns the edited tree.
     assert!(
-        session
+        !session
             .snapshot()
             .nodes
             .nodes()
@@ -182,7 +187,7 @@ fn deleting_a_line_prefix_can_reclassify_an_underlined_subtitle() {
 }
 
 #[test]
-fn editing_a_comment_line_can_reclassify_an_underlined_subtitle() {
+fn historical_comment_edit_matches_canonical_classification() {
     let regression = include_str!(
         "fixtures/document/promoted-regressions/comment-to-subtitle-reclassification.mec"
     );
@@ -195,8 +200,10 @@ fn editing_a_comment_line_can_reclassify_an_underlined_subtitle() {
     session.apply_edits(&[TextEdit::delete(TextRange::new(TextSize(11), TextSize(12)))]);
     assert_eq!(session.snapshot().source.to_contiguous_string(), regression);
     assert_equivalent(&session);
+    // This historical input was classified differently by the prototype.
+    // Only the canonical whole-document classification owns the edited tree.
     assert!(
-        session
+        !session
             .snapshot()
             .nodes
             .nodes()

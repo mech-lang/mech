@@ -115,3 +115,34 @@ fn deterministic_random_edit_sequences_match_string_model() {
         }
     }
 }
+
+#[test]
+fn source_locations_require_complete_grapheme_boundaries() {
+    let source = snapshot("e\u{301}👩‍💻\r\nx");
+    for offset in [1, 2, 7, 10] {
+        assert!(
+            source.source_location(TextSize(offset)).is_none(),
+            "{offset}"
+        );
+    }
+    for (offset, row, col) in [(0, 1, 1), (3, 1, 2), (14, 1, 3), (16, 2, 1), (17, 2, 2)] {
+        let location = source.source_location(TextSize(offset)).unwrap();
+        assert_eq!((location.row, location.col), (row, col));
+    }
+    assert!(source.source_location(TextSize(18)).is_none());
+}
+
+#[test]
+fn source_locations_batch_preserves_order_duplicates_and_graphemes() {
+    let source = snapshot("e\u{301}👩‍💻\r\nx");
+    let offsets = [TextSize(17), TextSize(3), TextSize(0), TextSize(3)];
+    let locations = source.source_locations(&offsets).unwrap();
+    assert_eq!(
+        locations
+            .iter()
+            .map(|location| (location.row, location.col))
+            .collect::<Vec<_>>(),
+        vec![(2, 2), (1, 2), (1, 1), (1, 2)]
+    );
+    assert!(source.source_locations(&[TextSize(7)]).is_none());
+}

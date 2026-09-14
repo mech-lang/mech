@@ -4,6 +4,9 @@ use comprehension::{PendingComprehension, resolve_comprehension};
 
 use std::collections::{BTreeMap, BTreeSet};
 
+#[path = "document_lowering.rs"]
+mod document_lowering;
+
 use mech_core::snapshot::{
     Complex32Bits, Complex64Bits, F32Bits, F64Bits, OptionDraft, ReifiedKind, ReifiedTypeDraft,
     SnapshotValidationContext,
@@ -83,6 +86,35 @@ pub struct CanonicalSourceProgram {
     constants: ConstantStore,
     contracts: Box<[Option<OperationContractDeclaration>]>,
     source_map: SourceSemanticMap,
+    document_outputs: Box<[SourceDocumentOutput]>,
+    document_exports: Box<[SourceDocumentExport]>,
+}
+
+/// A typed route from document presentation to an existing artifact output.
+/// Source anchors are held once in `SourceSemanticMap::outputs[output]`.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct SourceDocumentOutput {
+    pub output: u32,
+    pub kind: SourceDocumentOutputKind,
+    /// Whether this output owns a visible document presentation slot.
+    /// The aggregate program result remains available to execution consumers
+    /// even when its producing inline/fence already owns presentation or is
+    /// explicitly hidden.
+    pub visible: bool,
+}
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum SourceDocumentOutputKind {
+    Program,
+    Inline,
+    Fence,
+}
+
+/// A document export connected to the artifact output that carries its value.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SourceDocumentExport {
+    pub output: u32,
+    pub name: String,
 }
 
 impl CanonicalSourceProgram {
@@ -113,6 +145,14 @@ impl CanonicalSourceProgram {
             .inputs
             .get(ordinal)
             .map(|input| crate::encode_source_input_name(&input.name))
+    }
+
+    pub const fn document_outputs(&self) -> &[SourceDocumentOutput] {
+        &self.document_outputs
+    }
+
+    pub const fn document_exports(&self) -> &[SourceDocumentExport] {
+        &self.document_exports
     }
 
     pub fn compile_artifact(&self) -> Result<ProgramArtifact, ArtifactBuildError> {
@@ -192,74 +232,46 @@ impl CanonicalSourceFrontend {
         builder.finish()
     }
 
-    /// Compile every outermost canonical definition or expression in physical
-    /// document order. This S4 subset rejects all other document units with
-    /// their source anchor; S7 owns the complete document language.
+    /// Compile root program statements in source order and bind document
+    /// presentation expressions to that program's completed root scope.
     pub fn compile_document(
         &self,
         document: &DocumentSyntax,
     ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
         reject_recovered_syntax(document)?;
-        let anchor = SourceSemanticAnchor::for_node(document.syntax());
-        let mut units = Vec::new();
-        collect_document_units(document.syntax(), &mut units)?;
-        let mut builder = SemanticBuilder::new(anchor);
-        let mut declared_bindings = BTreeSet::new();
-        for unit in &units {
-            builder.declare_unit_input_annotations(unit, &mut declared_bindings)?;
-        }
-        let mut last = None;
-        for unit in units {
-            match unit.kind() {
-                SyntaxKind::VariableDefine => {
-                    let definition = VariableDefineSyntax::cast(unit)
-                        .expect("kind-checked variable definition cast");
-                    last = Some(builder.definition(&definition)?);
-                }
-                SyntaxKind::Expression => {
-                    let expression =
-                        ExpressionSyntax::cast(unit).expect("kind-checked expression cast");
-                    last = Some(builder.expression(&expression)?);
-                }
-                _ => unreachable!("document unit collector is closed"),
-            }
-        }
-        let Some((value, syntax)) = last else {
-            return Err(SourceSemanticError {
-                code: "source-semantics/empty-document",
-                message: "canonical document contains no executable source unit".to_owned(),
-                anchor,
-            });
-        };
-        builder.publish("result", None, value, &syntax);
-        builder.finish()
+        document_lowering::compile_document(document)
     }
-}
 
-fn collect_document_units(
-    node: &SyntaxNode,
-    output: &mut Vec<SyntaxNode>,
-) -> Result<(), SourceSemanticError> {
-    match node.kind() {
-        SyntaxKind::VariableDefine | SyntaxKind::Expression => output.push(node.clone()),
-        SyntaxKind::Document
-        | SyntaxKind::Body
-        | SyntaxKind::Section
-        | SyntaxKind::SectionElement
-        | SyntaxKind::MechItem => {
-            for child in node.children() {
-                collect_document_units(&child, output)?;
-            }
-        }
-        _ => {
-            return Err(SourceSemanticError {
-                code: "source-semantics/unsupported-document-unit",
-                message: format!("the S4 document subset does not support {:?}", node.kind()),
-                anchor: SourceSemanticAnchor::for_node(node),
-            });
-        }
+    /// Compile the ordered fences belonging to one named interpreter scope.
+    /// Root statements and other named scopes do not enter its binding environment.
+    /// The resulting artifact owns its own state and fence output bindings.
+    pub fn compile_named_document_scope(
+        &self,
+        document: &DocumentSyntax,
+        name: &str,
+    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+        reject_recovered_syntax(document)?;
+        document_lowering::compile_named_document_scope(document, name)
     }
-    Ok(())
+    /// Compile one retained Mika-local body without importing its parent's or
+    /// nested Mika children's bindings. The artifact owns this section's state.
+    pub fn compile_mika_section(
+        &self,
+        section: &mech_syntax::document::MikaSectionSyntax,
+    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+        reject_recovered_syntax(section)?;
+        document_lowering::compile_mika_section(section, None)
+    }
+
+    /// Compile repeated named fences within one Mika-local owner.
+    pub fn compile_named_mika_scope(
+        &self,
+        section: &mech_syntax::document::MikaSectionSyntax,
+        name: &str,
+    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+        reject_recovered_syntax(section)?;
+        document_lowering::compile_mika_section(section, Some(name))
+    }
 }
 
 fn collect_pattern_bindings(
@@ -1379,6 +1391,12 @@ fn unresolved_empty(anchor: SourceSemanticAnchor) -> SourceSemanticError {
     }
 }
 
+#[derive(Clone, Copy)]
+enum PendingBinding {
+    Value(PendingValue),
+    MutableState(u32),
+}
+
 struct PendingConstant {
     schema: SchemaDraft,
     data: ValueDataDraft,
@@ -1526,7 +1544,7 @@ struct SemanticBuilder {
     nodes: Vec<PendingNode>,
     states: Vec<PendingState>,
     outputs: Vec<PendingOutput>,
-    bindings: BTreeMap<String, PendingValue>,
+    bindings: BTreeMap<String, PendingBinding>,
     scope_definitions: BTreeSet<String>,
     patterns: Vec<SourceSemanticPattern>,
 }
@@ -1674,7 +1692,9 @@ impl SemanticBuilder {
                 let stem = self.required(variable.stem(), variable.syntax(), "a variable stem")?;
                 bindings.insert(node_text(stem.syntax())?);
             }
-            SyntaxKind::Expression => self.declare_input_annotations(unit, bindings)?,
+            SyntaxKind::Expression | SyntaxKind::OpAssign | SyntaxKind::VariableAssign => {
+                self.declare_input_annotations(unit, bindings)?;
+            }
             _ => unreachable!("document unit collector is closed"),
         }
         Ok(())
@@ -2755,6 +2775,7 @@ impl SemanticBuilder {
             .map(|annotation| annotation_schema_draft(&annotation))
             .transpose()?;
         if let Some(value) = self.bindings.get(&name).copied() {
+            let value = self.read_document_binding(value, variable.syntax())?;
             return annotation.map_or(Ok(value), |expected| {
                 self.conform_schema_draft(
                     value,
@@ -2900,7 +2921,15 @@ impl SemanticBuilder {
             value
         };
         self.scope_definitions.insert(name.clone());
-        self.bindings.insert(name, bound);
+        let binding = if definition.mutability_marker().is_some() {
+            let PendingValue::State(state) = bound else {
+                unreachable!("mutable definitions allocate a state slot")
+            };
+            PendingBinding::MutableState(state)
+        } else {
+            PendingBinding::Value(bound)
+        };
+        self.bindings.insert(name, binding);
         Ok((bound, definition.syntax().clone()))
     }
 
@@ -2984,8 +3013,7 @@ impl SemanticBuilder {
         let value = self.required(literal.value(), literal.syntax(), "a literal value")?;
         match value {
             LiteralValueSyntax::String(value) => {
-                let source = node_text(value.syntax())?;
-                let decoded = decode_string(&source).ok_or_else(|| SourceSemanticError {
+                let decoded = value.decoded_text().ok_or_else(|| SourceSemanticError {
                     code: "source-semantics/invalid-string-literal",
                     message: "canonical string could not be decoded".to_owned(),
                     anchor: SourceSemanticAnchor::for_node(value.syntax()),
@@ -4195,14 +4223,21 @@ impl SemanticBuilder {
                 ));
             }
         };
-        let selectors = selectors
+        let selectors = self.subscript_values(&selectors)?;
+        self.select_values(source, selectors, item.syntax())
+    }
+
+    fn subscript_values(
+        &mut self,
+        selectors: &[SubscriptValueSyntax],
+    ) -> Result<Vec<Option<PendingValue>>, SourceSemanticError> {
+        selectors
             .iter()
             .map(|selector| match selector {
                 SubscriptValueSyntax::SelectAll(_) => Ok(None),
                 _ => self.subscript_value(selector).map(Some),
             })
-            .collect::<Result<Vec<_>, _>>()?;
-        self.select_values(source, selectors, item.syntax())
+            .collect()
     }
 
     fn select_field(
@@ -4685,8 +4720,8 @@ impl SemanticBuilder {
 
     fn input_for_node(&mut self, node: &SyntaxNode) -> Result<PendingValue, SourceSemanticError> {
         let name = node_text(node)?;
-        if let Some(value) = self.bindings.get(&name) {
-            return Ok(*value);
+        if let Some(value) = self.bindings.get(&name).copied() {
+            return self.read_document_binding(value, node);
         }
         if let Some(index) = self.input_by_name.get(&name) {
             return Ok(PendingValue::Input(*index));
@@ -5113,7 +5148,10 @@ impl SemanticBuilder {
                     .flat_map(|node| node.inputs.iter().copied()),
             )
             .chain(self.states.iter().map(|state| state.initializer))
-            .chain(self.bindings.values().copied())
+            .chain(self.bindings.values().map(|binding| match *binding {
+                PendingBinding::Value(value) => value,
+                PendingBinding::MutableState(state) => PendingValue::State(state),
+            }))
         {
             value.resolved()?;
         }
@@ -5310,6 +5348,8 @@ impl SemanticBuilder {
             constants: constant_build.store,
             contracts: contracts.into_boxed_slice(),
             source_map,
+            document_outputs: Box::new([]),
+            document_exports: Box::new([]),
         })
     }
 }
@@ -6305,48 +6345,6 @@ fn wrap_optional_number(
     })
 }
 
-fn decode_string(source: &str) -> Option<String> {
-    if source.starts_with("\"\"\"") && source.ends_with("\"\"\"") && source.len() >= 6 {
-        return Some(source[3..source.len() - 3].to_owned());
-    }
-    let body = source.strip_prefix('"')?.strip_suffix('"')?;
-    let mut output = String::with_capacity(body.len());
-    let mut chars = body.chars().peekable();
-    while let Some(character) = chars.next() {
-        if character != '\\' {
-            output.push(character);
-            continue;
-        }
-        let escaped = chars.next()?;
-        output.push(match escaped {
-            '0' => '\0',
-            'n' => '\n',
-            'r' => '\r',
-            't' => '\t',
-            '\\' => '\\',
-            '"' => '"',
-            'u' if chars.peek() == Some(&'{') => {
-                chars.next();
-                let mut digits = String::new();
-                loop {
-                    let next = chars.next()?;
-                    if next == '}' {
-                        break;
-                    }
-                    if !next.is_ascii_hexdigit() || digits.len() == 6 {
-                        return None;
-                    }
-                    digits.push(next);
-                }
-                let scalar = u32::from_str_radix(&digits, 16).ok()?;
-                char::from_u32(scalar)?
-            }
-            other => other,
-        });
-    }
-    Some(output)
-}
-
 fn node_text(node: &SyntaxNode) -> Result<String, SourceSemanticError> {
     node.text().map_err(|error| SourceSemanticError {
         code: "source-semantics/source-range",
@@ -6573,7 +6571,7 @@ impl SemanticBuilder {
             }
             let saved = self.bindings.clone();
             if let Some(name) = binding {
-                self.bindings.insert(name, scrutinee);
+                self.bindings.insert(name, PendingBinding::Value(scrutinee));
             }
             let lowered_arm = (|| {
                 let guard = if let Some(guard) = arm.guard() {

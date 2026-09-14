@@ -1613,7 +1613,9 @@ fn review_simple_string_escapes_preserve_canonical_values() {
     for (source, expected) in [
         (r#""\a\!\u""#, "a!u"),
         (r#""\n\t\r\0\\\"""#, "\n\t\r\0\\\""),
-        (r#""\é\👩🏽‍💻""#, "é👩🏽‍💻"),
+        // Emoji are ordinary UTF-8 string content, not members of the
+        // alpha/symbol/punctuation `escaped-char` production.
+        (r#""\é👩🏽‍💻""#, "é👩🏽‍💻"),
     ] {
         let artifact = compile(source).compile_artifact().unwrap();
         let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();

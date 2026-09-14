@@ -38,6 +38,8 @@ use crate::capability::CapabilityRequest;
 // -----------------------------------------------------------------------------
 
 pub mod ast;
+#[cfg(feature = "source")]
+mod canonical_handoff;
 pub mod file;
 pub mod imports;
 pub mod index;
@@ -45,6 +47,8 @@ pub mod memory;
 pub mod source;
 
 pub use ast::*;
+#[cfg(feature = "source")]
+pub use canonical_handoff::*;
 pub use file::*;
 pub use imports::*;
 pub use index::*;

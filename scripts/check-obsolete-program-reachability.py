@@ -44,11 +44,43 @@ def is_allowed_compatibility_data(relative: Path, line: str) -> bool:
     return relative == ALLOWED_DOMAIN_OWNER and line.strip() == ALLOWED_DOMAIN_LITERAL
 
 
-def is_css_class_literal(line: str) -> bool:
-    """Keep HTML/CSS class contracts distinct from obsolete crate reachability."""
-    return (
-        OBSOLETE_PACKAGE in line
-        and (f".{OBSOLETE_PACKAGE}" in line or 'class=\\"' in line)
+def is_css_class_occurrence(line: str, start: int) -> bool:
+    """Return whether one package spelling is CSS selector/class data."""
+    in_string = False
+    for index, character in enumerate(line[:start]):
+        if character != '"':
+            continue
+        backslashes = 0
+        cursor = index
+        while cursor > 0 and line[cursor - 1] == "\\":
+            backslashes += 1
+            cursor -= 1
+        if backslashes % 2 == 0:
+            in_string = not in_string
+
+    if start > 0 and line[start - 1] == "." and in_string:
+        return True
+
+    prefix = line[:start]
+    class_attribute = r"class\s*=\s*(?P<escape>\\?)(?P<quote>[\"'])"
+    for opening in reversed(list(re.finditer(class_attribute, prefix))):
+        if opening.start() > 0:
+            previous = line[opening.start() - 1]
+            in_tag = prefix.rfind("<") > prefix.rfind(">")
+            if not in_string or not (previous == '"' or previous.isspace() and in_tag):
+                continue
+        delimiter = opening.group("escape") + opening.group("quote")
+        closing = line.find(delimiter, opening.end())
+        if closing >= start + len(OBSOLETE_PACKAGE):
+            return True
+    return False
+
+
+def has_obsolete_package_reference(line: str) -> bool:
+    """Reject any package spelling not proven to be CSS class data."""
+    return any(
+        not is_css_class_occurrence(line, match.start())
+        for match in re.finditer(re.escape(OBSOLETE_PACKAGE), line)
     )
 
 
@@ -60,7 +92,7 @@ def findings(root: Path) -> list[Finding]:
         ):
             if is_allowed_compatibility_data(relative, line):
                 continue
-            if OBSOLETE_PACKAGE in line and not is_css_class_literal(line):
+            if has_obsolete_package_reference(line):
                 result.append(Finding(relative, line_number, line))
                 continue
             if CRATE_REACHABILITY.search(line):
