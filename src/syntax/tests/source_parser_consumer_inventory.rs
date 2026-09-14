@@ -3625,3 +3625,85 @@ fn final_review_shared_file_unions_physical_calls_across_package_namespaces() {
     );
     assert!(aliases.is_empty());
 }
+
+#[test]
+fn cutover_readiness_and_removal_routes_extend_the_frozen_census() {
+    let root = repository_root();
+    let census = consumers();
+    let source =
+        fs::read_to_string(root.join("docs/design/grammar-audit/s8-consumer-readiness.tsv"))
+            .unwrap();
+    let mut lines = source.lines();
+    assert_eq!(
+        lines.next().unwrap(),
+        "consumer-id\tintegration-owner\tfinal-entry-point\towning-data-type\tinput-finality-policy\tdiagnostic-policy\tfeature-distribution-profiles\tpositive-witness\tnegative-witness\tfinal-c-change\tremoval-dependencies\tblocker-owner\tstatus\tevidence-sha\tevidence-result"
+    );
+    let mut owners = BTreeMap::new();
+    let mut counts = BTreeMap::<String, (usize, usize)>::new();
+    for line in lines {
+        let row = fields(line);
+        assert_eq!(row.len(), 15);
+        assert!(row.iter().all(|value| !value.is_empty()));
+        let consumer = census
+            .get(row[0])
+            .expect("readiness row absent from frozen census");
+        assert!(matches!(row[1], "A" | "B"));
+        assert!(
+            owners
+                .insert(row[0].to_owned(), row[1].to_owned())
+                .is_none()
+        );
+        let count = counts.entry(row[1].to_owned()).or_default();
+        count.0 += 1;
+        count.1 += consumer.calls;
+        assert!(matches!(row[12], "planned" | "prepared" | "demonstrated"));
+        if row[12] != "planned" {
+            assert_eq!(row[13].len(), 40, "evidence must identify a full commit");
+            assert!(row[13].bytes().all(|byte| byte.is_ascii_hexdigit()));
+            assert_ne!(row[14], "pending");
+        }
+    }
+    assert_eq!(
+        owners.keys().collect::<Vec<_>>(),
+        census.keys().collect::<Vec<_>>()
+    );
+    assert_eq!(
+        counts,
+        BTreeMap::from([("A".into(), (10, 11)), ("B".into(), (17, 18))])
+    );
+    let source =
+        fs::read_to_string(root.join("docs/design/grammar-audit/s8-removal-manifest.tsv")).unwrap();
+    let mut lines = source.lines();
+    assert_eq!(
+        lines.next().unwrap(),
+        "removal-id\tkind\tsource-path\tsurface\tpreparation-owner\tc-action\ttest-disposition\treplacement-contract\tblocker\tstatus\tevidence-sha\tevidence-result"
+    );
+    let mut ids = BTreeSet::new();
+    let mut routes = BTreeMap::new();
+    for line in lines {
+        let row = fields(line);
+        assert_eq!(row.len(), 12);
+        assert!(row.iter().all(|value| !value.is_empty()));
+        assert!(ids.insert(row[0].to_owned()), "duplicate removal entry");
+        assert!(
+            root.join(row[2]).exists(),
+            "inventoried source is absent: {}",
+            row[2]
+        );
+        assert!(matches!(row[4], "A" | "B"));
+        assert!(matches!(
+            row[6],
+            "retain-unchanged" | "retarget" | "remove-retired-detail"
+        ));
+        if let Some(id) = row[0].strip_prefix("route:") {
+            assert_eq!(row[1], "route");
+            assert_eq!(row[2], census[id].source_path);
+            assert_eq!(row[3], census[id].caller);
+            routes.insert(id.to_owned(), row[4].to_owned());
+        }
+    }
+    assert_eq!(
+        routes, owners,
+        "every final route must retain its preparation owner"
+    );
+}

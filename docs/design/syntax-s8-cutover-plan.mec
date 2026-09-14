@@ -1,0 +1,188 @@
+S8 — Canonical product cutover and physical removal
+===============================================================================
+
+Status: preparation started; no consumer is accepted and no stage is sealed.
+Planning baseline: S7B 723aa500c2022d40a2ac3f0f6d35f0fb39772509 on S7A
+b237d74a316a88fbf6ce48b6e417592479e4dc3e. Both are still qualifying.
+
+1. Acceptance and ownership
+-------------------------------------------------------------------------------
+
+Keep three draft PRs: codex/syntax-s8a-consumers -> S7B;
+codex/syntax-s8b-execution -> S8A; codex/syntax-s8c-cutover -> S8B.
+Develop the actual C branch while A/B remain open. Approve C last.
+A and B cannot be sealed until the planned C candidate has demonstrated the full
+product matrix with retiring parser/lowering code physically removed. A's local
+consumer-readiness gate is provisional while explicitly B-owned blockers remain.
+B cannot seal with a failing or incomplete deleted-code C rehearsal.
+
+Only C changes shipping source routing. A/B prepare canonical product interfaces
+and executable witnesses. No production parser selector, fallback, shadow run,
+or canonical-to-old-AST adapter is allowed. Preparation must not cache two trees
+as competing source authorities. Keep the existing S1 census frozen at 27
+contracts / 29 calls until the coordinated C change.
+
+The readiness inventory extends source-parser-consumers.tsv by consumer-id; it
+does not replace that authoritative caller census. There are exactly 10 A-owned
+contracts / 11 calls and 17 B-owned contracts / 18 calls. Every contract has one
+integration owner. The removal inventory links route:<consumer-id> to the same
+owner and also tracks transitive interfaces, caches, serialization, features,
+build products and test dispositions. Planned entry-point names are proposals,
+not claims that a product witness already exists.
+
+S8A owns CLI formatting/classification, retained source/cache/index interfaces,
+file/memory resolution, and browser capture/source/presentation preparation.
+S8B owns compilation/configuration, interactive execution and combined native,
+server/bundle/browser products. Shared files do not change contract ownership.
+C owns the reviewed routing, export/dependency removal and permanent enforcement.
+An implementation gap discovered on C returns to A, B or its upstream owner.
+
+2. Prerequisites remain with their owners
+-------------------------------------------------------------------------------
+
+The baseline continuation/closeout records still have open S4 semantic execution,
+S6 activation, S7A declaration bindings and complete rendering, and S7B final
+qualification gates. A clean code review is not their product acceptance.
+S7A's local rendering work is not included in this baseline. Rebase qualified
+upstream changes before the final rehearsal; do not copy an unfinished renderer
+or declaration implementation into S8 to bypass those gates.
+
+Wrong recognition/recovery/typed structure -> its canonical syntax owner.
+Missing language execution, type/shape/control semantics -> S4 semantic owner.
+Missing document declaration/scope/render/capture behavior -> S7A.
+Streaming finality/continuations/deltas/performance -> S7B.
+Old-tree storage, public consumer interfaces and canonical-result handling -> A/B.
+Mechanical adoption and the approved deletion -> C.
+
+3. First implementation increments
+-------------------------------------------------------------------------------
+
+A1: freeze linked ownership, removal/test inventory, API decisions and acceptance
+matrix. Add retained SourceDocument ownership with exact source coordinates and
+strict indexing admission; no production route switch. Prove that malformed
+source remains reportable and cannot publish partial resolver facts.
+
+A2: prepare file/memory/module/compiler cache integration using one canonical
+snapshot. Fallible insertion must be atomic on error. Infallible builders retain
+malformed source plus diagnostics. Usable resolved bindings require the S7A
+handoff; index-only tests do not finish a resolver row.
+
+A3: integrate qualified rendering/classification/capture at product-facing
+interfaces. Exercise actual CLI and browser entry points on C, including errors,
+Unicode, CRLF, hidden/disabled/named/Mika outputs and source replacements.
+
+B1: start with compiler tree-accepting APIs, mixed compute and bundle/browser
+loader boundaries. Preserve host capabilities, initializers, observable symbols,
+module resolution, compute partitioning, memory planning and artifact ownership.
+A CanonicalSourceFrontend unit test alone does not prove ProgramCompiler ready.
+
+B2: integrate configuration and interactive lifecycle. Consume every StreamUpdate
+before advance or deliberately coalesce with the original baseline. Only actual
+submission finality authorizes one execution. Test replacement/reset/clear,
+failed submission, cancellation/discard and editing/stream transitions.
+
+B3: complete the actual deleted-code C candidate and execute every product route
+and distribution gate. Fix discovered behavior in its named owner and restack C.
+
+C: draft deletion/routing early. An incomplete first draft records exact compiler
+and consumer blockers; it is not a successful rehearsal. Final C adds no new
+semantics, renderer, parser recovery, runtime owner or artifact format. Freeze
+named routing/API/removal changes before B acceptance, not a line-count budget.
+
+4. Public API and packaging decisions
+-------------------------------------------------------------------------------
+
+Retained source: SourceDocument owns a canonical SyntaxSnapshot and its exact
+source revision. Derived typed indexes are projections, not a second tree. Do
+not persist process-local node IDs as durable cache identities. Replacing source
+invalidates indexes and presentation/compilation projections for the prior
+revision. No format-old-tree/reparse path survives.
+
+Normalization: retain raw source in canonical storage. Frozen trimmed interfaces
+must be reviewed individually; changing to raw is a proposed API change until
+that row's positive/negative coordinate tests pass. Empty reset is intentional;
+transport exhaustion is not final EOF. There is no universal trim operation.
+
+Remove tree-accepting compiler methods only with canonical source/scope methods
+that preserve each method's responsibility (inputs, initialization, static
+symbols, interactive observability and mixed compute). Do not silently drop
+methods by replacing all of them with a scalar compile wrapper.
+
+ResolvedSource.syntax_tree and with_syntax_tree/replace_syntax_tree are planned
+breaking removals. C replaces them with canonical source ownership. A/B do not
+add another tree field to the shipping record. SourceIndex DTOs remain usable;
+old-node traversal disappears. CanonicalDocumentIndex retains local Mika owners.
+
+nodes::Program is the retiring AST. MechSourceCode::Program(Vec<MechSourceCode>)
+is a source-asset grouping type, not that AST. Its public migration is an explicit
+B decision after transitive inspection; a matching name is not deletion evidence.
+Similarly preserve shared source-coordinate/runtime types if still required.
+
+Bundle payloads must use retained source and the accepted ProgramArtifact/
+bytecode representation. B must prove producer -> actual loader -> execution.
+Retired serialized Program payloads and stale caches require regeneration or
+explicit rejection; no decoder/parser fallback. Keep current artifact ABI/version.
+The exact envelope and cache discriminator are B-owned decisions still open;
+C may not design them. Apply release/API notes with C. Rollback is a qualified
+pre-cutover revision, never a runtime parser-selection flag.
+
+5. Product and distribution acceptance matrix
+-------------------------------------------------------------------------------
+
+Reuse .github/workflows/ci-full.yml and existing distribution/browser machinery.
+A/B run pre-cutover checks; C runs the real switched product. Add missing named
+product witnesses to those jobs. No parallel CI system or special executable.
+
+- Syntax: isolated full/base --tests, grammar conformance, reduced features,
+  no_std native/WASM, all streaming/publication/resource/growth tests.
+- CLI: standard and full distributions; format source/HTML, executable
+  classification, run source and inline native mixed compute, positive results
+  and positioned invalid-source diagnostics through actual commands.
+- Runtime: isolated full_source/resident-routing-source; retained resolver
+  bindings, program artifact/inputs/initializers, config, observable REPL and
+  canonical document output/state. Repeat failed/discarded candidate behavior.
+- Native: existing generated end-to-end and hosted CLI tests, accepted artifact
+  admission and execution, frozen EKF and mixed-compute target canaries.
+- Server/bundle: actual bundle generation, serve/load, source retention, output
+  placeholders, accepted artifact execution; stale AST payload/cache rejection.
+- Browser: existing formatted/served document browser smoke and standard/compute
+  bootstraps; REPL source/highlighting/capture and interactive lifecycle through
+  actual exported APIs; WASM bytecode admission and execution.
+- Distribution: check-static-distribution-profiles.sh isolated source/runtime/
+  compiler profiles, maintained reduced/no-source dependencies, packaging and
+  generated products; static distribution and warning/architecture contracts.
+
+Cargo workspace feature unification cannot stand in for an isolated profile.
+A required test target with zero executed tests is incomplete evidence. Record
+intentional feature exclusions separately and run their positive counterpart.
+
+6. Evidence and removal closure
+-------------------------------------------------------------------------------
+
+Every readiness row requires named positive/negative product witnesses, C route,
+removed dependencies, feature profiles and exact evidence SHA/result. Initial
+status is planned, never accepted from a function's existence. Preparation tests
+are identified separately from real routed C product evidence.
+
+Every affected test is retained unchanged, retargeted to canonical APIs, or
+removed only for an exclusively retired implementation detail. The initial
+manifest conservatively marks scanned affected files for retargeting. Mixed
+behavior/parity files must split maintained assertions before removal. The
+textual seed scan is not a complete Rust dependency graph; C builds and the
+existing semantic alias/cfg census expose its remaining closure.
+
+For every C rehearsal record: B parent SHA, C commit and tree IDs, routing and
+removal manifest identities, commands/profile/toolchain, CI run/head or test-merge
+identity, executed test counts/results, and named A/B/upstream blockers. Do not
+infer execution from a green badge. Publish candidate evidence on the PR to avoid
+self-referential commit hashes. Keep old results labeled historical after a
+representation/semantic change. Final C needs full agreed qualification.
+
+Replace the frozen caller assertion with zero-retiring-call enforcement only in
+C. Preserve adversarial alias/cfg scanner tests. Verify retired files and exports
+are absent, not feature-disabled. Historical inventory cannot exempt live code.
+Final review must find no unresolved ownership or public API decisions.
+
+Progress is reported as consumer witnesses, closed removal dependencies, routed
+products and exact qualification results. Starting counts: 0/27 consumers
+accepted; 0/29 shipping routes changed; deletion closure unproven.
