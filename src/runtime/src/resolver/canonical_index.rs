@@ -139,6 +139,26 @@ impl SourceIndex {
                 pending.push((expression.syntax().clone(), scope, publish_declarations));
                 continue;
             }
+            // FSM formal inputs are declarations, not reads. Specifications
+            // have no executable read roles at all; implementations begin
+            // indexing at their start value and arms, so omit only the direct
+            // Variable children that occupy the formal input list.
+            if node.kind() == SyntaxKind::FsmSpecification {
+                continue;
+            }
+            if node.kind() == SyntaxKind::FsmImplementation {
+                let children = node
+                    .children()
+                    .filter(|child| child.kind() != SyntaxKind::Variable)
+                    .collect::<Vec<_>>();
+                pending.extend(
+                    children
+                        .into_iter()
+                        .rev()
+                        .map(|child| (child, scope.clone(), false)),
+                );
+                continue;
+            }
             if let Some(import) = ImportDeclarationSyntax::cast(node.clone()) {
                 if publish_declarations {
                     let specifier = required(import.specifier(), &node)?;

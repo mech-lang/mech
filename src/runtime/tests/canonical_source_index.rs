@@ -392,6 +392,23 @@ fn context_send_destinations_are_not_indexed_as_addressed_reads() {
 }
 
 #[test]
+fn fsm_formal_inputs_and_specifications_are_not_resolver_reads() {
+    let source = "#Counter(@formal/input) -> :Count(@start/value)\n:Count(n)\n| @guard/enabled -> :Done(@body/value).\n\n#Shape(@spec/input) => <u64> :=\n| :Done(n).\n";
+    let index = index(source);
+    assert_eq!(
+        index
+            .address_references
+            .iter()
+            .map(|reference| (
+                reference.reference.target.as_str(),
+                reference.reference.name.as_str()
+            ))
+            .collect::<Vec<_>>(),
+        vec![("start", "value"), ("guard", "enabled"), ("body", "value"),]
+    );
+}
+
+#[test]
 fn many_same_line_occurrences_share_the_batched_location_projection() {
     let reads = std::iter::repeat_n("@env/VALUE", 1_024)
         .collect::<Vec<_>>()

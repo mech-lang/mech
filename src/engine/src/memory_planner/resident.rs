@@ -4,7 +4,7 @@ use mech_core::{
     AllocationPlan, AllocationRole, ArenaBackingKind, ArenaPlacement, ArenaPlan, AxisCapacityPlan,
     CapacityAuthority, CapacityRequirement, GrowthPolicy, MemoryArenaId, MemoryLifetime,
     MemoryObjectId, MemoryObjectOwner, MemoryPlanError, MemorySpace, PayloadCapacityPlan,
-    PhysicalStorageDescriptor, PlannedSlotKind, ResidentValueKind, ResourceDemand,
+    PhysicalStorageDescriptor, PlannedSlotKind, ResidentValueKind, ResourceDemand, ReuseGroupId,
     ScalarMemoryKind, SlotLayout, StorageAccessCapabilities, StorageAccountingCapability,
     StorageAddressingCapabilities, StorageCanonicalizationCapabilities,
     StorageCapabilityDescriptor, StorageElementKind, StorageExtentCapability, StorageLayoutClass,
@@ -644,6 +644,7 @@ pub fn plan_resident_effect_payload(
         elements,
         1,
         MemoryObjectOwner::NodeInput { node, port: 0 },
+        false,
     )
 }
 
@@ -662,6 +663,7 @@ pub fn plan_resident_rmw_previous(
         elements,
         2,
         MemoryObjectOwner::TransactionStage { node, output: 0 },
+        true,
     )
 }
 
@@ -672,6 +674,7 @@ fn plan_resident_saved_value(
     elements: u64,
     buffer: u8,
     owner: MemoryObjectOwner,
+    reuse_turn_local: bool,
 ) -> Result<usize, MemoryPlanError> {
     let target = TargetMemoryProfile::current_resident_cpu()?;
     let slot = resident_slot_layout(&target, kind);
@@ -697,18 +700,53 @@ fn plan_resident_saved_value(
             arenas.len() - 1
         }
     };
-    let offset_bytes = arenas[arena_index].capacity_bytes;
-    let end = offset_bytes
-        .checked_add(bytes)
-        .ok_or(MemoryPlanError::ArithmeticOverflow {
-            field: "resident saved-value arena capacity",
-        })?;
+    let offset_bytes = if reuse_turn_local {
+        0
+    } else {
+        arenas[arena_index].capacity_bytes
+    };
+    let end = if reuse_turn_local {
+        arenas[arena_index].capacity_bytes.max(bytes)
+    } else {
+        offset_bytes
+            .checked_add(bytes)
+            .ok_or(MemoryPlanError::ArithmeticOverflow {
+                field: "resident saved-value arena capacity",
+            })?
+    };
     let id = MemoryObjectId::new(u32::try_from(plan.allocations.len()).map_err(|_| {
         MemoryPlanError::ArithmeticOverflow {
             field: "resident saved-value memory-object id",
         }
     })?);
     let (first, last) = super::schedule_points(position)?;
+    let reuse_group = if reuse_turn_local {
+        if let Some(group) = plan
+            .allocations
+            .iter()
+            .find(|allocation| allocation.placement.arena == arena_id)
+            .and_then(|allocation| allocation.reuse_group)
+        {
+            Some(group)
+        } else {
+            let raw = plan
+                .allocations
+                .iter()
+                .filter_map(|allocation| allocation.reuse_group)
+                .map(ReuseGroupId::get)
+                .max()
+                .map_or(Ok(0), |value| {
+                    value
+                        .checked_add(1)
+                        .ok_or(MemoryPlanError::ArithmeticOverflow {
+                            field: "resident saved-value reuse group",
+                        })
+                })?;
+            Some(ReuseGroupId::new(raw))
+        }
+    } else {
+        None
+    };
     let allocation = AllocationPlan {
         id,
         owner: owner.clone(),
@@ -724,7 +762,7 @@ fn plan_resident_saved_value(
             arena: arena_id,
             offset: offset_bytes,
         },
-        reuse_group: None,
+        reuse_group,
     };
     let mut allocations = plan.allocations.to_vec();
     allocations.push(allocation);
@@ -735,11 +773,15 @@ fn plan_resident_saved_value(
     arenas.sort_by_key(|arena| arena.id);
     plan.allocations = allocations.into_boxed_slice();
     plan.arenas = arenas.into_boxed_slice();
-    plan.peak.turn_peak_bytes = plan.peak.turn_peak_bytes.checked_add(bytes).ok_or(
-        MemoryPlanError::ArithmeticOverflow {
-            field: "resident saved-value turn peak",
-        },
-    )?;
+    if reuse_turn_local {
+        plan.peak.turn_peak_bytes = recompute_program_peak(plan)?.turn_peak_bytes;
+    } else {
+        plan.peak.turn_peak_bytes = plan.peak.turn_peak_bytes.checked_add(bytes).ok_or(
+            MemoryPlanError::ArithmeticOverflow {
+                field: "resident saved-value turn peak",
+            },
+        )?;
+    }
     let mut violations = plan.budget_violations.to_vec();
     violations.extend(mech_core::evaluate_aggregate_memory_budget(
         owner,
@@ -748,6 +790,16 @@ fn plan_resident_saved_value(
                 .last()
                 .ok_or(MemoryPlanError::DescriptorMismatch)?,
         ),
+        0,
+        target.limits,
+    ));
+    violations.extend(mech_core::evaluate_aggregate_memory_budget(
+        plan.allocations
+            .last()
+            .ok_or(MemoryPlanError::DescriptorMismatch)?
+            .owner
+            .clone(),
+        plan.peak,
         0,
         target.limits,
     ));
@@ -943,6 +995,46 @@ mod tests {
             effect.slot,
             Some(PlannedSlotKind::FixedScalar(ScalarMemoryKind::Bool))
         );
+    }
+
+    #[test]
+    fn resident_rmw_backups_reuse_one_non_overlapping_region_per_kind() {
+        let mut projection = plan_resident_arenas(&[]).unwrap();
+        let first = plan_resident_rmw_previous(
+            &mut projection.plan,
+            mech_core::NodeId::new(7),
+            1,
+            ResidentValueKind::F64,
+            3,
+        )
+        .unwrap();
+        let second = plan_resident_rmw_previous(
+            &mut projection.plan,
+            mech_core::NodeId::new(8),
+            4,
+            ResidentValueKind::F64,
+            5,
+        )
+        .unwrap();
+        assert_eq!((first, second), (0, 0));
+        assert_eq!(projection.plan.allocations.len(), 2);
+        let group = projection.plan.allocations[0].reuse_group.unwrap();
+        assert!(
+            projection
+                .plan
+                .allocations
+                .iter()
+                .all(|allocation| allocation.reuse_group == Some(group))
+        );
+        let arena = projection
+            .plan
+            .arenas
+            .iter()
+            .find(|arena| arena.id == projection.plan.allocations[0].placement.arena)
+            .unwrap();
+        assert_eq!(arena.capacity_bytes, 5 * 8);
+        assert_eq!(projection.plan.peak.turn_peak_bytes, 5 * 8);
+        crate::memory_runtime::ManagedProgramMemory::realize(&projection.plan).unwrap();
     }
 
     #[test]
