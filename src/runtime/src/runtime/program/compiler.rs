@@ -7,7 +7,7 @@
 //! escape this module.
 
 use std::{
-    collections::{BTreeMap, BTreeSet, HashMap, HashSet},
+    collections::{BTreeMap, BTreeSet, HashMap},
     sync::Arc,
 };
 
@@ -79,7 +79,7 @@ fn canonical_compilation_error(reason: impl Into<String>) -> MechError {
     .with_compiler_loc()
 }
 
-fn retained_compiler_document(source: &str) -> MResult<SourceDocument> {
+pub(super) fn retained_compiler_document(source: &str) -> MResult<SourceDocument> {
     SourceDocument::parse_resolved(
         "runtime:program-compiler",
         mech_syntax::document::Revision(0),
@@ -218,8 +218,8 @@ impl ProgramCompiler {
         &mut self,
         source: &str,
     ) -> MResult<ProgramArtifactCompilationProduct> {
-        let tree = mech_syntax::parser::parse(source.trim())?;
-        self.compile_tree_artifact(&tree)
+        let document = retained_compiler_document(source)?;
+        self.compile_document_artifact(&document)
     }
 
     pub fn compile_document_artifact(
@@ -459,16 +459,8 @@ impl<'a> ProgramCompilerView<'a> {
     }
 
     pub(crate) fn compile_source(&self, source: &str) -> MResult<ProgramCompilationProduct> {
-        let tree = mech_syntax::parser::parse(source.trim())?;
-        self.compile_tree(&tree)
-    }
-
-    pub(crate) fn compile_interactive_source(
-        &self,
-        source: &str,
-    ) -> MResult<ProgramCompilationProduct> {
-        let tree = mech_syntax::parser::parse(source.trim())?;
-        self.compile_tree_with_projection(&tree, RootOutputProjection::ObservableResultsAndSymbols)
+        let document = retained_compiler_document(source)?;
+        self.compile_document(&document)
     }
 
     pub(crate) fn compile_document(
@@ -1106,49 +1098,32 @@ impl<'a> ProgramCompilerView<'a> {
 
     fn compile_resolved_root_with_projection(
         &self,
-        resolved: ResolvedSource,
+        mut resolved: ResolvedSource,
         options: ModuleBuildOptions<'_>,
         output_projection: RootOutputProjection,
     ) -> MResult<ProgramCompilationProduct> {
-        let mut modules = HashMap::new();
-        let mut stack = Vec::new();
-        let root = self.resolve_resolved_module(resolved, options, &mut modules, &mut stack)?;
-        let mut instances = HashMap::new();
-        let mut active = Vec::new();
-        let mut root_program = Some(self.new_program());
-        #[cfg(feature = "compute")]
-        let mut compute_activation_inputs = BTreeMap::new();
-        self.execute_module(
-            &root,
-            &modules,
-            &mut instances,
-            &mut active,
-            Some(&mut root_program),
-            None,
-            #[cfg(feature = "compute")]
-            &mut compute_activation_inputs,
-        )?;
-        let program = root_program
-            .as_mut()
-            .expect("root compiler program is retained until finalization");
-        let instance = instances
-            .get(&root)
-            .expect("the requested root was executed");
-        publish_module_outputs(program, instance)?;
-        if matches!(
-            output_projection,
-            RootOutputProjection::ObservableResultsAndSymbols
-        ) {
-            program.publish_compiler_root_symbols();
+        index_source(&mut resolved)?;
+        resolved.capability_requirements.extend(
+            options
+                .capability_requirements
+                .iter()
+                .map(|resource| CapabilityRequest::from_keys("compiler", "use", *resource)),
+        );
+        if !resolved.imports.is_empty() {
+            return Err(route_failure(
+                ResidentRouteFailureClass::SemanticUnsupported,
+                "canonical rooted compilation has unresolved source imports",
+            ));
         }
-        let operations = modules
-            .values()
-            .flat_map(|module| compiled_resource_send_operations(&module.source.contexts))
-            .collect::<Vec<_>>();
-        self.finalize(
-            root_program.expect("root compiler program is retained until finalization"),
-            &operations,
-        )
+        let document = resolved
+            .source_document()
+            .ok_or_else(|| unsupported_route("root source has no retained canonical document"))?;
+        match output_projection {
+            RootOutputProjection::ObservableResults => self.compile_document(document),
+            RootOutputProjection::ObservableResultsAndSymbols => {
+                self.compile_interactive_document(document)
+            }
+        }
     }
 
     pub(crate) fn compile_roots(
@@ -1162,50 +1137,13 @@ impl<'a> ProgramCompilerView<'a> {
                 "resident source compilation requires at least one root",
             ));
         }
-        let mut modules = HashMap::new();
-        let mut stack = Vec::new();
-        let mut roots = Vec::with_capacity(requests.len());
-        for request in requests {
-            request.validate()?;
-            roots.push(self.resolve_module(request.clone(), options, &mut modules, &mut stack)?);
+        if requests.len() != 1 {
+            return Err(route_failure(
+                ResidentRouteFailureClass::SemanticUnsupported,
+                "canonical multi-root linking is not available",
+            ));
         }
-        let plan_order = explicit_root_plan_order(&roots, &modules);
-        let mut instances = HashMap::new();
-        let mut active = Vec::new();
-        let mut root_program = Some(self.new_program());
-        #[cfg(feature = "compute")]
-        let mut compute_activation_inputs = BTreeMap::new();
-        for root in plan_order {
-            self.execute_module(
-                &root,
-                &modules,
-                &mut instances,
-                &mut active,
-                Some(&mut root_program),
-                None,
-                #[cfg(feature = "compute")]
-                &mut compute_activation_inputs,
-            )?;
-        }
-        let program = root_program
-            .as_mut()
-            .expect("root compiler program is retained until finalization");
-        for root in &roots {
-            publish_module_outputs(
-                program,
-                instances
-                    .get(root)
-                    .expect("every requested root was executed"),
-            )?;
-        }
-        let operations = modules
-            .values()
-            .flat_map(|module| compiled_resource_send_operations(&module.source.contexts))
-            .collect::<Vec<_>>();
-        self.finalize(
-            root_program.expect("root compiler program is retained until finalization"),
-            &operations,
-        )
+        self.compile_root(requests[0].clone(), options)
     }
 
     fn new_program(&self) -> CompilerPlanningProgram {
@@ -1872,43 +1810,6 @@ fn narrow_compute_input_f64(port: &str, value: f64) -> MResult<f32> {
     })
 }
 
-/// Preserve caller order for independent roots while promoting any requested
-/// dependency ahead of its consumer. That lets an explicit dependency execute
-/// exactly once in the shared program. Caller-visible outputs are published
-/// separately after planning so this topological order cannot reorder them.
-fn explicit_root_plan_order(
-    roots: &[String],
-    modules: &HashMap<String, CompilerModule>,
-) -> Vec<String> {
-    fn visit(
-        root: &str,
-        requested: &HashSet<&str>,
-        modules: &HashMap<String, CompilerModule>,
-        visited: &mut HashSet<String>,
-        ordered: &mut Vec<String>,
-    ) {
-        if !visited.insert(root.to_owned()) {
-            return;
-        }
-        if let Some(module) = modules.get(root) {
-            for (_, dependency) in &module.import_edges {
-                if requested.contains(dependency.as_str()) {
-                    visit(dependency, requested, modules, visited, ordered);
-                }
-            }
-        }
-        ordered.push(root.to_owned());
-    }
-
-    let requested = roots.iter().map(String::as_str).collect::<HashSet<_>>();
-    let mut visited = HashSet::new();
-    let mut ordered = Vec::with_capacity(requested.len());
-    for root in roots {
-        visit(root, &requested, modules, &mut visited, &mut ordered);
-    }
-    ordered
-}
-
 fn publish_document_and_root_outputs(
     program: &mut CompilerPlanningProgram,
     document_output_ids: &[u64],
@@ -2124,18 +2025,27 @@ fn index_source(resolved: &mut ResolvedSource) -> MResult<()> {
     if !resolved.scopes.is_empty() {
         return Ok(());
     }
-    let parsed;
-    let tree = match resolved.syntax_tree.as_deref() {
-        Some(tree) => tree,
-        None => {
-            parsed = source_tree(&resolved.source)?;
-            let Some(tree) = parsed.as_ref() else {
-                return Ok(());
-            };
-            tree
-        }
-    };
-    let index = SourceIndex::from_program(tree);
+    if resolved.source_document.is_none() {
+        let MechSourceCode::String(source) = &resolved.source else {
+            return Ok(());
+        };
+        let document = SourceDocument::parse_resolved(
+            &resolved.canonical_uri,
+            mech_syntax::document::Revision(0),
+            source.as_str(),
+            mech_syntax::document::ParseConfig::default(),
+        )
+        .map_err(|error| {
+            canonical_compilation_error(format!("invalid retained source: {error:?}"))
+        })?;
+        resolved.source_document = Some(document);
+    }
+    let index = resolved
+        .source_document()
+        .expect("text source retains a canonical document")
+        .index()
+        .map_err(|error| MechError::new(error, None))?
+        .root;
     index.validate_address_targets()?;
     resolved.imports = index.all_imports();
     resolved.exports = index.all_exports();
@@ -2152,21 +2062,12 @@ fn executable_resolved_tree(source: &ResolvedSource) -> MResult<mech_core::Progr
     }
 }
 
-fn source_tree(source: &MechSourceCode) -> MResult<Option<mech_core::Program>> {
-    match source {
-        MechSourceCode::String(source) => Ok(Some(mech_syntax::parser::parse(source.trim())?)),
-        MechSourceCode::Program(_) => Ok(None),
-        MechSourceCode::ByteCode(_) | MechSourceCode::Html(_) => Ok(None),
-        MechSourceCode::Image(_, _) => Err(unsupported_route(
-            "image source cannot be compiled as a resident program",
-        )),
-    }
-}
-
 #[cfg(feature = "compute")]
 fn declaration_tree(source: &MechSourceCode) -> MResult<Program> {
     match source {
-        MechSourceCode::String(source) => mech_syntax::parser::parse(source.trim()),
+        MechSourceCode::String(_) => Err(unsupported_route(
+            "text source cannot enter the retired mixed Program tree route",
+        )),
         MechSourceCode::Program(sources) => {
             let mut sections = Vec::new();
             for source in sources {
@@ -2188,7 +2089,9 @@ fn declaration_tree(source: &MechSourceCode) -> MResult<Program> {
 
 fn executable_tree(source: &MechSourceCode) -> MResult<mech_core::Program> {
     match source {
-        MechSourceCode::String(source) => sanitize_tree(mech_syntax::parser::parse(source.trim())?),
+        MechSourceCode::String(_) => Err(unsupported_route(
+            "text source cannot enter the retired Program tree route",
+        )),
         MechSourceCode::Program(sources) => {
             let mut sections = Vec::new();
             for source in sources {

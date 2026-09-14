@@ -75,10 +75,26 @@ impl MechRuntime {
         source: &str,
         durability: crate::ResidentDurabilityPolicy,
     ) -> MResult<RuntimeProgramLoadOutcome> {
-        self.enforce_source_byte_limit(u64::try_from(source.len()).unwrap_or(u64::MAX))?;
+        let document = super::compiler::retained_compiler_document(source)?;
+        self.load_document_program(&document, durability)
+    }
+
+    #[cfg(feature = "resident-routing-source")]
+    pub fn load_document_program(
+        &mut self,
+        document: &crate::SourceDocument,
+        durability: crate::ResidentDurabilityPolicy,
+    ) -> MResult<RuntimeProgramLoadOutcome> {
+        self.enforce_source_byte_limit(
+            u64::try_from(document.source().byte_len().to_usize()).unwrap_or(u64::MAX),
+        )?;
         self.load_production_with(durability, |runtime| {
             Ok(Arc::new(
-                runtime.plan_source_product(source)?.into_parts().0,
+                runtime
+                    .compiler_view()?
+                    .compile_document(document)?
+                    .into_parts()
+                    .0,
             ))
         })
     }
@@ -93,14 +109,27 @@ impl MechRuntime {
         source: &str,
         durability: crate::ResidentDurabilityPolicy,
     ) -> MResult<RuntimeProgramLoadOutcome> {
-        self.enforce_source_byte_limit(u64::try_from(source.len()).unwrap_or(u64::MAX))?;
+        let document = super::compiler::retained_compiler_document(source)?;
+        self.load_interactive_document_program(&document, durability)
+    }
+
+    #[cfg(feature = "resident-routing-source")]
+    pub fn load_interactive_document_program(
+        &mut self,
+        document: &crate::SourceDocument,
+        durability: crate::ResidentDurabilityPolicy,
+    ) -> MResult<RuntimeProgramLoadOutcome> {
+        self.enforce_source_byte_limit(
+            u64::try_from(document.source().byte_len().to_usize()).unwrap_or(u64::MAX),
+        )?;
         self.load_production_with_projection(
             durability,
             InitialValueProjection::InteractiveRootResult,
             |runtime| {
                 Ok(Arc::new(
                     runtime
-                        .plan_interactive_source_product(source)?
+                        .compiler_view()?
+                        .compile_interactive_document(document)?
                         .into_parts()
                         .0,
                 ))
@@ -308,19 +337,6 @@ impl MechRuntime {
     ) -> MResult<ProgramCompilationProduct> {
         self.compiler_view()?
             .compile_interactive_resolved_root(resolved, module_options)
-    }
-
-    #[cfg(feature = "resident-routing-source")]
-    fn plan_source_product(&mut self, source: &str) -> MResult<ProgramCompilationProduct> {
-        self.compiler_view()?.compile_source(source)
-    }
-
-    #[cfg(feature = "resident-routing-source")]
-    fn plan_interactive_source_product(
-        &mut self,
-        source: &str,
-    ) -> MResult<ProgramCompilationProduct> {
-        self.compiler_view()?.compile_interactive_source(source)
     }
 
     #[cfg(feature = "resident-routing-source")]

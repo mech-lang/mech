@@ -51,8 +51,25 @@ fn source_index_for_module_record_source(
     match source {
         #[cfg(feature = "source")]
         mech_core::MechSourceCode::String(source) => {
-            let tree = mech_syntax::parser::parse(source.trim())?;
-            Ok(Some(SourceIndex::from_program(&tree)))
+            let document = crate::SourceDocument::parse_resolved(
+                "runtime:module-record",
+                mech_syntax::document::Revision(0),
+                source.as_str(),
+                mech_syntax::document::ParseConfig::default(),
+            )
+            .map_err(|error| {
+                MechError::new(
+                    RuntimeInvalidOperationError {
+                        operation: "index_module_source",
+                        reason: format!("invalid retained source: {error:?}"),
+                    },
+                    None,
+                )
+            })?;
+            document
+                .index()
+                .map(|index| Some(index.root))
+                .map_err(|error| MechError::new(error, None))
         }
         _ => Ok(None),
     }

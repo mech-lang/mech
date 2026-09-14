@@ -245,10 +245,7 @@ impl InMemorySourceResolver {
                     None,
                 )
             })?;
-            let syntax_tree = mech_syntax::parser::parse(source.trim())?;
-            resolved
-                .with_source_document(document)?
-                .with_syntax_tree(syntax_tree)
+            resolved.with_indexed_source_document(document)?
         };
 
         self.insert_source(specifier, resolved)
@@ -329,16 +326,14 @@ impl InMemorySourceResolver {
         .with_kind(SourceKind::Mech);
 
         // The builder cannot return a parse error without breaking its fluent
-        // API. Preserve malformed source in its canonical diagnostic owner; a
-        // legacy tree remains only a temporary projection when that parser also
-        // accepts the source.
+        // API. Preserve malformed source in its canonical diagnostic owner.
         #[cfg(feature = "source")]
         let resolved = {
             let revision = match self.next_document_revision(&specifier) {
                 Ok(revision) => revision,
                 Err(_) => return self,
             };
-            let resolved = match SourceDocument::parse_resolved(
+            match SourceDocument::parse_resolved(
                 &resolved.canonical_uri,
                 revision,
                 source.as_str(),
@@ -348,11 +343,6 @@ impl InMemorySourceResolver {
                     .with_source_document(document)
                     .expect("resolver-created document retains the same source bytes"),
                 Err(_) => resolved,
-            };
-            if let Ok(syntax_tree) = mech_syntax::parser::parse(source.trim()) {
-                resolved.with_syntax_tree(syntax_tree)
-            } else {
-                resolved
             }
         };
 

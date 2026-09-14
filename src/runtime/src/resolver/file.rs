@@ -12,9 +12,7 @@ use std::sync::{Arc, Mutex};
 use mech_core::{MResult, MechError, MechErrorKind, MechSourceCode};
 
 #[cfg(feature = "source")]
-use crate::resolver::{
-    InvalidResolvedSourceError, SourceDocument, SourceIndex, source_request_for_import,
-};
+use crate::resolver::{InvalidResolvedSourceError, SourceDocument};
 use crate::resolver::{ResolvedSource, SourceRequest, SourceResolver};
 use crate::{FS_IMPORT, FS_READ, FS_RESOLVE, SharedCapabilityKernel, check_fs_capability};
 
@@ -363,35 +361,13 @@ impl SourceResolver for FileSourceResolver {
                             None,
                         )
                     })?;
-                    let tree = mech_syntax::parser::parse(source_text.trim())?;
-                    let referrer = canonical_uri.clone();
-                    let index = SourceIndex::from_program(&tree);
-                    index.validate_address_targets()?;
-                    let imports = index.all_imports();
-                    let exports = index.all_exports();
-                    let contexts = index.all_contexts();
-                    let address_references = index.all_address_references();
-                    let scopes = index.module_scopes();
-                    let dependencies = imports
-                        .iter()
-                        .map(|import| source_request_for_import(import, Some(&referrer)))
-                        .collect::<Vec<_>>();
-
+                    let accepted_revision = document.source().revision();
+                    resolved = resolved.with_indexed_source_document(document)?;
                     self.accept_source_revision(
                         &canonical_uri,
                         source_text,
-                        document.source().revision(),
+                        accepted_revision,
                     )?;
-
-                    resolved = resolved
-                        .with_source_document(document)?
-                        .with_syntax_tree(tree)
-                        .with_imports(imports)
-                        .with_exports(exports)
-                        .with_contexts(contexts)
-                        .with_address_references(address_references)
-                        .with_dependencies(dependencies)
-                        .with_scopes(scopes);
                 }
             }
             resolved
