@@ -53,6 +53,17 @@ class ObsoleteProgramReachabilityTests(unittest.TestCase):
         )
         self.assertEqual(findings, [])
 
+    def test_single_quoted_mech_program_html_class_is_allowed(self):
+        findings = self.scan(
+            {
+                "src/render.rs":
+                    'output.push_str("<output class=\'mech-program-output\'>");\n',
+                "tests/render.rs":
+                    'assert!(html.contains("class=\'mech-program-output\'"));\n',
+            }
+        )
+        self.assertEqual(findings, [])
+
     def test_obsolete_feature_or_package_path_is_rejected(self):
         for content in (
             '[features]\nmech-program = []\n',

@@ -48,7 +48,11 @@ def is_css_class_literal(line: str) -> bool:
     """Keep HTML/CSS class contracts distinct from obsolete crate reachability."""
     return (
         OBSOLETE_PACKAGE in line
-        and (f".{OBSOLETE_PACKAGE}" in line or 'class=\\"' in line)
+        and (
+            f".{OBSOLETE_PACKAGE}" in line
+            or 'class=\\"' in line
+            or "class='" in line
+        )
     )
 
 
