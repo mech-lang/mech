@@ -3,8 +3,8 @@
 use std::sync::Arc;
 
 use mech_syntax::document::{
-    AstNode, DocumentScopeId, DocumentSyntax, ParseConfig, SyntaxSnapshot, TextSnapshot,
-    parser::parse_canonical_document,
+    AstNode, DocumentScopeId, DocumentSession, DocumentStream, DocumentSyntax, ParseConfig,
+    StreamError, StreamState, SyntaxSnapshot, TextSnapshot, parser::parse_canonical_document,
 };
 
 use super::{CanonicalDocumentIndex, CanonicalSourceIndexError};
@@ -50,6 +50,31 @@ impl SourceDocument {
     pub fn parse(source: TextSnapshot, config: ParseConfig) -> Self {
         Self {
             snapshot: Arc::new(parse_canonical_document(source, config)),
+        }
+    }
+
+    /// Adopt the stream's finalized canonical result without parsing again.
+    ///
+    /// Submission and scheduling remain the caller's responsibility. This method
+    /// neither finishes an open stream nor admits its finite preview. Limited and
+    /// cancelled streams stay with their diagnostic owner. A finished malformed
+    /// document can be retained, but still fails strict index/execution admission.
+    pub fn from_finished_stream(stream: &mut DocumentStream) -> Result<Self, StreamError> {
+        match stream.state() {
+            StreamState::Finished => Ok(Self {
+                snapshot: stream.materialize()?,
+            }),
+            StreamState::Open | StreamState::Finishing => Err(StreamError::NotFinal),
+            state => Err(StreamError::Closed(state)),
+        }
+    }
+
+    /// Retain an explicitly finite editor revision, sharing its canonical tree
+    /// and preserving node identities. Later session edits cannot mutate it.
+    /// This does not accept a streaming preview or an arbitrary SyntaxSnapshot.
+    pub fn from_session(session: &DocumentSession) -> Self {
+        Self {
+            snapshot: Arc::new(session.snapshot().clone()),
         }
     }
 

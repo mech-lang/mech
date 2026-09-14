@@ -3,7 +3,7 @@ use super::{consumers, repository_root};
 use std::{collections::BTreeMap, fs};
 
 const READINESS_HEADER: &str = "consumer-id\tintegration-owner\tfinal-entry-point\towning-data-type\tinput-finality-policy\tdiagnostic-policy\tfeature-distribution-profiles\tpositive-witness\tnegative-witness\tfinal-c-change\tremoval-dependencies\tblocker-owner\tstatus\tevidence-sha\tevidence-result";
-const REMOVAL_HEADER: &str = "removal-id\tkind\tsource-path\tsurface\tpreparation-owner\tc-action\ttest-disposition\treplacement-contract\tblocker\tstatus\tevidence-sha\tevidence-result";
+const REMOVAL_HEADER: &str = "removal-id\tkind\tsource-path\tsurface\tpreparation-owner\tc-action\ttest-disposition\treplacement-contract\tblocker\tstatus\tevidence-sha\tevidence-result\tcompletion-action";
 
 fn evidence(sha: &str, result: &str) -> Result<(), String> {
     if sha.len() != 40
@@ -16,21 +16,29 @@ fn evidence(sha: &str, result: &str) -> Result<(), String> {
     Ok(())
 }
 
-fn removal_state(exists: bool, status: &str, sha: &str, result: &str) -> Result<bool, String> {
-    match status {
-        "inventoried" if exists => Ok(false),
-        "removed" if !exists => {
+fn removal_state(
+    action: &str,
+    exists: bool,
+    status: &str,
+    sha: &str,
+    result: &str,
+) -> Result<bool, String> {
+    match (action, status) {
+        ("delete-path" | "replace-surface" | "retain-verified", "inventoried") if exists => {
+            Ok(false)
+        }
+        ("delete-path", "removed") if !exists => {
             evidence(sha, result)?;
             Ok(true)
         }
         // An API/route replacement retains its containing file; product and
         // zero-route checks prove the removed surface on the cited candidate.
-        "replaced" if exists => {
+        ("replace-surface", "replaced") | ("retain-verified", "retained") if exists => {
             evidence(sha, result)?;
             Ok(true)
         }
         _ => Err(format!(
-            "invalid removal status/path state: {status}, exists={exists}"
+            "invalid removal action/status/path state: {action}/{status}, exists={exists}"
         )),
     }
 }
@@ -91,8 +99,14 @@ fn cutover_readiness_and_removal_routes_extend_the_frozen_census() {
             row[6].as_str(),
             "retain-unchanged" | "retarget" | "remove-retired-detail"
         ));
-        let closed = removal_state(root.join(&row[2]).exists(), &row[9], &row[10], &row[11])
-            .unwrap_or_else(|error| panic!("{}: {error}", row[0]));
+        let closed = removal_state(
+            &row[12],
+            root.join(&row[2]).exists(),
+            &row[9],
+            &row[10],
+            &row[11],
+        )
+        .unwrap_or_else(|error| panic!("{}: {error}", row[0]));
         assert!(manifest.insert(row[0].clone(), closed).is_none());
         if let Some(id) = row[0].strip_prefix("route:") {
             assert_eq!(row[1], "route");
@@ -158,20 +172,26 @@ fn cutover_readiness_and_removal_routes_extend_the_frozen_census() {
 #[test]
 fn historical_deletions_require_absence_and_pass_evidence() {
     let sha = "1234567890abcdef1234567890abcdef12345678";
-    assert_eq!(removal_state(false, "removed", sha, "pass"), Ok(true));
-    assert!(removal_state(true, "removed", sha, "pass").is_err());
-    assert!(removal_state(false, "inventoried", "pending", "pending").is_err());
-    assert!(removal_state(false, "removed", "pending", "pass").is_err());
-    assert!(removal_state(false, "removed", sha, "failed").is_err());
-    assert!(removal_state(true, "unknown", sha, "pass").is_err());
+    assert_eq!(
+        removal_state("delete-path", false, "removed", sha, "pass"),
+        Ok(true)
+    );
+    assert!(removal_state("delete-path", true, "removed", sha, "pass").is_err());
+    assert!(removal_state("delete-path", false, "inventoried", "pending", "pending").is_err());
+    assert!(removal_state("delete-path", false, "removed", "pending", "pass").is_err());
+    assert!(removal_state("delete-path", false, "removed", sha, "failed").is_err());
+    assert!(removal_state("delete-path", true, "unknown", sha, "pass").is_err());
 }
 
 #[test]
 fn replacement_evidence_keeps_the_container_but_does_not_allow_pending_results() {
     let sha = "1234567890abcdef1234567890abcdef12345678";
-    assert_eq!(removal_state(true, "replaced", sha, "pass"), Ok(true));
-    assert!(removal_state(false, "replaced", sha, "pass").is_err());
-    assert!(removal_state(true, "replaced", sha, "pending").is_err());
+    assert_eq!(
+        removal_state("replace-surface", true, "replaced", sha, "pass"),
+        Ok(true)
+    );
+    assert!(removal_state("replace-surface", false, "replaced", sha, "pass").is_err());
+    assert!(removal_state("replace-surface", true, "replaced", sha, "pending").is_err());
 }
 
 #[test]
@@ -184,4 +204,134 @@ fn demonstrated_consumers_cannot_hide_missing_or_open_removal_dependencies() {
     assert!(dependencies("demonstrated", "route:sample; cache", &manifest).is_ok());
     assert!(dependencies("demonstrated", "route:sample; cache; cache", &manifest).is_err());
     assert!(dependencies("demonstrated", "", &manifest).is_err());
+}
+
+// This audits test/example/helper files too; the frozen production census
+// deliberately excludes cfg(test), examples and their direct parser helpers.
+fn has_retiring_reference(source: &str) -> bool {
+    let tokens = super::rust_tokens(source);
+    tokens.iter().any(|token| token.text == "syntax_tree")
+        || tokens.windows(4).any(|path| {
+            path[0].text == "mech_syntax"
+                && path[1].text == ":"
+                && path[2].text == ":"
+                && matches!(path[3].text, "parse" | "parser" | "formatter")
+        })
+}
+
+#[test]
+fn direct_retiring_references_in_all_package_targets_have_removal_owners() {
+    let root = repository_root();
+    let removals = rows(
+        &fs::read_to_string(root.join("docs/design/grammar-audit/s8-removal-manifest.tsv"))
+            .unwrap(),
+        REMOVAL_HEADER,
+    );
+    let paths = removals
+        .iter()
+        .map(|row| row[2].as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    let mut files = std::collections::BTreeSet::new();
+    for package in super::local_packages(&root, super::workspace_metadata(&root)) {
+        let directory = std::path::Path::new(package["manifest_path"].as_str().unwrap())
+            .parent()
+            .unwrap();
+        for name in ["src", "tests", "examples", "benches"] {
+            let path = directory.join(name);
+            if path.is_dir() {
+                super::visit_rust_files(&path, &mut files);
+            }
+        }
+        // Also cover explicit targets outside the conventional directories.
+        for target in package["targets"].as_array().unwrap() {
+            files.insert(std::path::PathBuf::from(
+                target["src_path"].as_str().unwrap(),
+            ));
+        }
+    }
+    let missing = files
+        .into_iter()
+        .filter_map(|path| {
+            let source = fs::read_to_string(&path).unwrap();
+            let relative = path.strip_prefix(&root).unwrap().to_str().unwrap();
+            (has_retiring_reference(&source) && !paths.contains(relative))
+                .then(|| relative.to_owned())
+        })
+        .collect::<Vec<_>>();
+    assert!(
+        missing.is_empty(),
+        "retiring references lack removal owners: {missing:#?}"
+    );
+}
+
+#[test]
+fn supplemental_scan_includes_test_helpers_but_ignores_fixture_text() {
+    assert!(has_retiring_reference(
+        "#[cfg(test)] fn helper() { mech_syntax::parse(s); }"
+    ));
+    assert!(has_retiring_reference(
+        "fn benchmark() { mech_syntax :: r#parser :: parse(s); }"
+    ));
+    assert!(has_retiring_reference("record.syntax_tree.clone()"));
+    assert!(!has_retiring_reference(
+        "// mech_syntax::parse(s)\nlet fixture = r#\"syntax_tree\"#;"
+    ));
+    assert!(!has_retiring_reference(
+        "mech_syntax::document::parse_canonical_document(s)"
+    ));
+}
+
+#[test]
+fn readiness_includes_cross_boundary_payload_and_cache_handoffs() {
+    let root = repository_root();
+    let readiness = rows(
+        &fs::read_to_string(root.join("docs/design/grammar-audit/s8-consumer-readiness.tsv"))
+            .unwrap(),
+        READINESS_HEADER,
+    );
+    for row in readiness {
+        let id = row[0].as_str();
+        let dependencies = row[10]
+            .split(';')
+            .map(str::trim)
+            .collect::<std::collections::BTreeSet<_>>();
+        let mut required = Vec::new();
+        if id == "bundle-web.project" || id.starts_with("wasm.") {
+            required.extend(["bundle-payload", "browser-loader", "browser-features"]);
+        }
+        if id.starts_with("runtime.interactive-") || id.starts_with("wasm.") {
+            required.push("interactive-cache");
+        }
+        if id.starts_with("runtime.program-") || id.starts_with("runtime.interactive-") {
+            required.push("compiler-tree-apis");
+        }
+        if id.starts_with("runtime.") || id == "serve.workspace-render" || id.starts_with("wasm.") {
+            required.extend([
+                "module-cache",
+                "module-store-cache",
+                "module-store-transfer",
+                "module-builder-transfer",
+                "workspace-cache",
+                "workspace-load-transfer",
+            ]);
+        }
+        for dependency in required {
+            assert!(
+                dependencies.contains(dependency),
+                "{id} omits transitive dependency {dependency}"
+            );
+        }
+    }
+}
+
+#[test]
+fn completion_action_cannot_disguise_a_required_physical_deletion() {
+    let sha = "1234567890abcdef1234567890abcdef12345678";
+    // parser-nom must remain open while its implementation path exists.
+    assert!(removal_state("delete-path", true, "replaced", sha, "pass").is_err());
+    assert!(removal_state("delete-path", true, "retained", sha, "pass").is_err());
+    assert!(removal_state("replace-surface", true, "replaced", sha, "pass").is_ok());
+    assert!(removal_state("retain-verified", true, "retained", sha, "pass").is_ok());
+    assert!(removal_state("retain-verified", false, "removed", sha, "pass").is_err());
+    assert!(removal_state("unknown", true, "inventoried", "pending", "pending").is_err());
 }

@@ -203,3 +203,22 @@ Final review must find no unresolved ownership or public API decisions.
 Progress is reported as consumer witnesses, closed removal dependencies, routed
 products and exact qualification results. Starting counts: 0/27 consumers
 accepted; 0/29 shipping routes changed; deletion closure unproven.
+
+Retained-source adoption and completion evidence
+-------------------------------------------------------------------------------
+
+SourceDocument::from_finished_stream borrows the actual DocumentStream, checks
+its private lifecycle through state(), and shares its finalized materialization.
+It never finishes input, accepts a caller finality flag, or reparses the source.
+Open, Finishing, Cancelled and Limited states reject. Final malformed input can
+be retained for diagnostics but cannot publish a strict index or execute.
+SourceDocument::from_session retains an explicitly finite editor revision with
+its existing node identities; subsequent edits leave the historical record intact.
+Neither API accepts arbitrary SyntaxSnapshot or ProvisionalSnapshot values.
+
+Every removal row declares completion-action. delete-path can close only as
+removed with the path absent; replace-surface closes as replaced in a retained
+container; retain-verified closes as retained with passing evidence. Action/state
+compatibility does not replace permanent zero-route/symbol checks or product
+witnesses. Readiness requires the listed transitive dependencies closed, including
+bundle producer/loader payloads and every source-cache transfer boundary.

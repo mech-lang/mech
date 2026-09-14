@@ -47,6 +47,7 @@ fn malformed_records_remain_lossless_without_publishing_partial_facts() {
     }
 }
 
+#[cfg(feature = "mika")]
 #[test]
 fn local_owners_and_named_scopes_stay_attached_to_the_retained_document() {
     let record =
@@ -105,11 +106,14 @@ fn replacing_a_revision_does_not_mutate_historical_source_or_indexes() {
 fn conflicts_in_any_local_owner_reject_the_entire_index() {
     use mech_runtime::resolver::SourceDocumentIndexError;
     let conflict = "@users := @main{:read(*)}\n\n```mech:users\nx := 1\n```\n";
-    for text in [
-        conflict.to_owned(),
-        format!("╭◉╮⸢{conflict}⸥\n"),
-        format!("╭◉╮⸢~∘~⸢{conflict}⸥\n⸥\n"),
-    ] {
+    let mut sources = vec![conflict.to_owned()];
+    if cfg!(feature = "mika") {
+        sources.extend([
+            format!("╭◉╮⸢{conflict}⸥\n"),
+            format!("╭◉╮⸢~∘~⸢{conflict}⸥\n⸥\n"),
+        ]);
+    }
+    for text in sources {
         let record = record(&text);
         assert!(record.is_strictly_clean(), "{text:?}");
         let SourceDocumentIndexError::AddressTargets { owner, error } = record.index().unwrap_err()
@@ -129,10 +133,128 @@ fn conflicts_in_any_local_owner_reject_the_entire_index() {
     }
 }
 
+#[cfg(feature = "mika")]
 #[test]
 fn separate_mika_namespaces_can_reuse_address_target_names() {
     let text = "@users := @main{:read(*)}\n\n╭◉╮⸢```mech:users\nx := 1\n```\n⸥\n\n~∘~⸢```mech:users\nx := 2\n```\n⸥\n";
     let index = record(text).index().unwrap();
     assert_eq!(index.root.contexts.len(), 1);
     assert_eq!(index.mika.len(), 2);
+}
+
+#[test]
+fn finalized_stream_adoption_preserves_snapshot_identity_and_parser_work() {
+    use mech_syntax::document::{DocumentStream, StreamProgress};
+    for text in ["  <+ e\u{301}\r\n", "  <+ e\u{301}\r\nx := [1,,2]\r\n"] {
+        let mut stream = DocumentStream::new(DocumentId(830), ParseConfig::default());
+        stream.append(text, u64::MAX).unwrap();
+        assert_eq!(stream.finish(u64::MAX).progress, StreamProgress::Finished);
+        let snapshot = stream.materialize().unwrap();
+        let work = stream.work();
+        let adopted = SourceDocument::from_finished_stream(&mut stream).unwrap();
+        assert!(std::ptr::eq(adopted.snapshot(), snapshot.as_ref()));
+        assert_eq!(
+            stream.work(),
+            work,
+            "adoption must not parse or export again"
+        );
+        assert_eq!(adopted.source().to_contiguous_string(), text);
+        assert_eq!(adopted.source().document(), snapshot.document);
+        assert_eq!(adopted.source().revision(), snapshot.revision);
+        assert_eq!(adopted.document().scope_id().node, snapshot.syntax().id());
+        if text.contains("[1,,2]") {
+            assert!(!adopted.snapshot().diagnostics.is_empty());
+            assert!(adopted.index().is_err());
+        } else {
+            let index = adopted.index().unwrap();
+            let range = index.root.exports[0].occurrence.range.as_ref().unwrap();
+            assert_eq!((range.start.row, range.start.col), (1, 6));
+        }
+    }
+}
+
+#[test]
+fn open_preview_finishing_cancelled_and_limited_streams_cannot_be_adopted() {
+    use mech_syntax::document::{DocumentStream, StreamError, StreamLimits, StreamState};
+    let mut stream = DocumentStream::new(DocumentId(831), ParseConfig::default());
+    stream.append("x := 1\n", 0).unwrap();
+    assert_eq!(
+        SourceDocument::from_finished_stream(&mut stream).unwrap_err(),
+        StreamError::NotFinal
+    );
+    assert!(stream.preview().snapshot.is_strictly_clean());
+    assert_eq!(
+        SourceDocument::from_finished_stream(&mut stream).unwrap_err(),
+        StreamError::NotFinal
+    );
+    stream.finish(0);
+    assert_eq!(stream.state(), StreamState::Finishing);
+    assert_eq!(
+        SourceDocument::from_finished_stream(&mut stream).unwrap_err(),
+        StreamError::NotFinal
+    );
+    stream.cancel();
+    assert_eq!(
+        SourceDocument::from_finished_stream(&mut stream).unwrap_err(),
+        StreamError::Closed(StreamState::Cancelled)
+    );
+
+    let mut limited = DocumentStream::with_limits(
+        DocumentId(832),
+        ParseConfig::default(),
+        StreamLimits {
+            max_parser_work: 1,
+            ..StreamLimits::default()
+        },
+    );
+    limited.append("x := 1\n", u64::MAX).unwrap();
+    limited.finish(u64::MAX);
+    assert_eq!(limited.state(), StreamState::Limited);
+    // Even materializing its diagnostic envelope cannot grant finality.
+    limited.materialize().unwrap();
+    assert_eq!(
+        SourceDocument::from_finished_stream(&mut limited).unwrap_err(),
+        StreamError::Closed(StreamState::Limited)
+    );
+}
+
+#[test]
+fn finite_session_adoption_preserves_revision_identity_across_later_edits() {
+    use mech_syntax::document::DocumentSession;
+    let mut session =
+        DocumentSession::new_with_document(DocumentId(833), "<+ old\n", ParseConfig::default());
+    let before = SourceDocument::from_session(&session);
+    assert_eq!(
+        before.snapshot().syntax().id(),
+        session.snapshot().syntax().id()
+    );
+    session.apply_edits(&[TextEdit::replace(
+        TextRange::new(TextSize(3), TextSize(6)),
+        "new",
+    )]);
+    let after = SourceDocument::from_session(&session);
+    assert_eq!(
+        after.snapshot().syntax().id(),
+        session.snapshot().syntax().id()
+    );
+    assert_eq!(after.source().revision(), session.snapshot().revision);
+    assert_ne!(before.source().revision(), after.source().revision());
+    assert_eq!(
+        before.index().unwrap().root.exports[0].declaration.name,
+        "old"
+    );
+    assert_eq!(
+        after.index().unwrap().root.exports[0].declaration.name,
+        "new"
+    );
+}
+
+#[cfg(not(feature = "mika"))]
+#[test]
+fn disabled_mika_source_is_retained_but_cannot_publish_an_index() {
+    let text = "╭◉╮⸢<+ name\n⸥\n";
+    let document = record(text);
+    assert_eq!(document.source().to_contiguous_string(), text);
+    assert!(!document.is_strictly_clean());
+    assert!(document.index().is_err());
 }

@@ -598,7 +598,8 @@ jobs:
             test "$LINUX_RESULT" = skipped
             test "$OWNER_RESULT" = skipped
             test "$WINDOWS_RESULT" = skipped
-            test "$BROWSER_RESULT" = skipped
+            # The always-running aggregate verifies that browser suites skipped.
+            test "$BROWSER_RESULT" = success
           else
             test "$STATIC_RESULT" = success
             test "$LINUX_RESULT" = success
