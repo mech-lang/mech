@@ -24,14 +24,16 @@ use mech_engine::{
     insert_root_document_program_output_capture, root_document_inline_eval_count,
     root_document_output_ids, root_document_program_output_id,
 };
+#[cfg(feature = "served_project_authority")]
+use mech_runtime::CanonicalProgramBundle;
 #[cfg(feature = "browser_host_scene")]
 use mech_runtime::MechEvent;
 use mech_runtime::{
-    CanonicalProgramBundle, ConfigProfileOptions, ConfigValue, HostInstanceConfig,
-    InMemorySourceResolver, MechConfigDocument, MechEventBuffer, MechEventBus, MechRuntime,
-    ModuleBuildOptions, ResidentRouteFailure, ResidentRouteFailureClass, ResolvedSource,
-    RunResourceGrantConfig, RuntimeBuilder, RuntimeProgramExecutionInfo, RuntimeProgramLoadOutcome,
-    RuntimeProgramRoute, SourceKind, SourceRequest, SourceResolutionEntry, parse_config_document,
+    ConfigProfileOptions, ConfigValue, HostInstanceConfig, InMemorySourceResolver,
+    MechConfigDocument, MechEventBuffer, MechEventBus, MechRuntime, ModuleBuildOptions,
+    ResidentRouteFailure, ResidentRouteFailureClass, ResolvedSource, RunResourceGrantConfig,
+    RuntimeBuilder, RuntimeProgramExecutionInfo, RuntimeProgramLoadOutcome, RuntimeProgramRoute,
+    SourceKind, SourceRequest, SourceResolutionEntry, parse_config_document,
     validate_source_resolution_entries,
 };
 #[cfg(feature = "served_project_authority")]
@@ -927,6 +929,7 @@ fn js_value_to_mech_error(error: JsValue) -> MechError {
     )
 }
 
+#[cfg(any(feature = "served_project_authority", test))]
 fn internal_repl_console_instance(hosts: &[HostInstanceConfig]) -> String {
     for candidate in std::iter::once("repl".to_string()).chain(
         std::iter::once("repl-console".to_string())
