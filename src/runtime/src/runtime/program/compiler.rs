@@ -6,8 +6,10 @@
 //! compilation products and detached typed initialization values
 //! escape this module.
 
+#[cfg(feature = "compute")]
+use std::collections::HashMap;
 use std::{
-    collections::{BTreeMap, BTreeSet, HashMap},
+    collections::{BTreeMap, BTreeSet},
     sync::Arc,
 };
 
@@ -36,16 +38,19 @@ use mech_engine::{
 };
 
 #[cfg(feature = "compute")]
-use crate::SourceContextCapabilityScope;
 use crate::{
-    CapabilityRequest, HostInterfaceCatalog, ModuleBuildOptions, ModuleBuilder, ModuleVersionId,
+    CapabilityRequest, HostInterfaceCatalog, ModuleBuildOptions, ModuleBuilder,
     ResidentExternalContractResolver, ResolvedSource, RuntimeCapabilityOperation,
-    RuntimeHostInputValue, RuntimeInvalidOperationError, RuntimeModuleDependencyCycleError,
-    RuntimeModuleDependencyMissingError, RuntimeModuleExportNotFound, RuntimeModuleImportConflict,
-    RuntimeResourceKey, RuntimeResourceProviderNotFound, RuntimeResourceReadRequest,
-    RuntimeResourceRegistry, RuntimeResourceWriteCommand, RuntimeResourceWriteIntent,
-    SourceContextBase, SourceDocument, SourceExportDeclaration, SourceImportAlias,
-    SourceImportDeclaration, SourceImportKind, SourceIndex, SourceRequest, SourceResolver,
+    RuntimeHostInputValue, RuntimeInvalidOperationError, RuntimeResourceKey,
+    RuntimeResourceProviderNotFound, RuntimeResourceReadRequest, RuntimeResourceRegistry,
+    RuntimeResourceWriteCommand, RuntimeResourceWriteIntent, SourceContextBase,
+    SourceContextCapabilityScope, SourceDocument, SourceImportAlias, SourceImportDeclaration,
+    SourceImportKind, SourceIndex, SourceRequest, SourceResolver,
+};
+#[cfg(feature = "compute")]
+use crate::{
+    ModuleVersionId, RuntimeModuleDependencyCycleError, RuntimeModuleDependencyMissingError,
+    RuntimeModuleExportNotFound, RuntimeModuleImportConflict, SourceExportDeclaration,
     import_may_resolve_source_dependency, import_requires_source_dependency,
     module_namespace_for_import, source_request_for_import,
 };
@@ -557,12 +562,14 @@ pub(crate) struct ProgramCompilerView<'a> {
     function_catalog: Arc<mech_core::FunctionCatalog>,
     source_resolver: &'a dyn SourceResolver,
     resources: &'a RuntimeResourceRegistry,
+    #[cfg(feature = "compute")]
     module_builder: &'a ModuleBuilder,
     host_interfaces: &'a HostInterfaceCatalog,
     module_manifests: &'a ModuleManifestCatalog,
     program_config: CompilerPlanningConfig,
 }
 
+#[cfg(feature = "compute")]
 #[derive(Clone)]
 struct CompilerModule {
     source: ResolvedSource,
@@ -570,6 +577,7 @@ struct CompilerModule {
     module_version: ModuleVersionId,
 }
 
+#[cfg(feature = "compute")]
 #[derive(Clone)]
 struct CompilerModuleInstance {
     exports: HashMap<String, CompilerExportValue>,
@@ -578,6 +586,7 @@ struct CompilerModuleInstance {
     result_name: Option<String>,
 }
 
+#[cfg(feature = "compute")]
 #[derive(Clone)]
 struct CompilerExportValue {
     module: String,
@@ -585,6 +594,7 @@ struct CompilerExportValue {
     value: Value,
 }
 
+#[cfg(feature = "compute")]
 impl CompilerExportValue {
     fn fresh_cell(&self) -> MResult<ValueCell> {
         ValueCell::from_snapshot(self.value.clone()).map_err(|_| unsupported_compiler_import(self))
@@ -611,6 +621,7 @@ impl MechErrorKind for CompilerImportValueUnsupported {
     }
 }
 
+#[cfg(feature = "compute")]
 fn unsupported_compiler_import(value: &CompilerExportValue) -> MechError {
     MechError::new(
         CompilerImportValueUnsupported {
@@ -661,10 +672,13 @@ impl<'a> ProgramCompilerView<'a> {
         module_manifests: &'a ModuleManifestCatalog,
         program_config: CompilerPlanningConfig,
     ) -> Self {
+        #[cfg(not(feature = "compute"))]
+        let _ = module_builder;
         Self {
             function_catalog,
             source_resolver,
             resources,
+            #[cfg(feature = "compute")]
             module_builder,
             host_interfaces,
             module_manifests,
@@ -2379,6 +2393,7 @@ impl<'a> ProgramCompilerView<'a> {
         })
     }
 
+    #[cfg(feature = "compute")]
     fn resolve_module(
         &self,
         request: SourceRequest,
@@ -2398,6 +2413,7 @@ impl<'a> ProgramCompilerView<'a> {
         self.resolve_resolved_module(resolved, options, modules, stack)
     }
 
+    #[cfg(feature = "compute")]
     fn resolve_resolved_module(
         &self,
         mut resolved: ResolvedSource,
@@ -2498,6 +2514,7 @@ impl<'a> ProgramCompilerView<'a> {
         Ok(canonical_uri)
     }
 
+    #[cfg(feature = "compute")]
     fn materialize_manifest_context_imports(
         &self,
         record: &mut crate::RuntimeModuleRecord,
@@ -2558,6 +2575,7 @@ impl<'a> ProgramCompilerView<'a> {
         Ok(())
     }
 
+    #[cfg(feature = "compute")]
     fn execute_module(
         &self,
         canonical_uri: &str,
@@ -3207,6 +3225,7 @@ fn publish_document_and_root_outputs(
     Ok(())
 }
 
+#[cfg(feature = "compute")]
 fn publish_module_outputs(
     program: &mut CompilerPlanningProgram,
     instance: &CompilerModuleInstance,
@@ -3438,6 +3457,7 @@ fn index_source(resolved: &mut ResolvedSource) -> MResult<()> {
     Ok(())
 }
 
+#[cfg(feature = "compute")]
 fn executable_resolved_tree(source: &ResolvedSource) -> MResult<mech_core::Program> {
     match source.syntax_tree.as_deref() {
         Some(tree) => sanitize_tree(tree.clone()),
@@ -3470,6 +3490,7 @@ fn declaration_tree(source: &MechSourceCode) -> MResult<Program> {
     }
 }
 
+#[cfg(feature = "compute")]
 fn executable_tree(source: &MechSourceCode) -> MResult<mech_core::Program> {
     match source {
         MechSourceCode::String(_) => Err(unsupported_route(
@@ -3518,6 +3539,7 @@ fn sanitize_tree(mut tree: mech_core::Program) -> MResult<mech_core::Program> {
     Ok(tree)
 }
 
+#[cfg(feature = "compute")]
 fn source_exports(source: &ResolvedSource) -> Vec<SourceExportDeclaration> {
     source
         .scopes
@@ -3566,6 +3588,7 @@ fn install_function_imports(
     Ok(())
 }
 
+#[cfg(feature = "compute")]
 fn build_import_environment(
     module: &CompilerModule,
     instances: &HashMap<String, CompilerModuleInstance>,
@@ -3633,6 +3656,7 @@ fn build_import_environment(
     Ok(environment)
 }
 
+#[cfg(feature = "compute")]
 fn insert_import(
     environment: &mut HashMap<String, CompilerExportValue>,
     ownership: &mut HashMap<String, String>,
@@ -3654,6 +3678,7 @@ fn insert_import(
     Ok(())
 }
 
+#[cfg(feature = "compute")]
 fn install_environment(
     program: &mut CompilerPlanningProgram,
     environment: &HashMap<String, CompilerExportValue>,
