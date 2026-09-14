@@ -37,22 +37,21 @@ use mech_engine::{
     ProgramArtifactCompilationProduct, ProgramCompilationProduct, root_document_output_ids,
 };
 
-#[cfg(feature = "compute")]
 use crate::{
     CapabilityRequest, HostInterfaceCatalog, ModuleBuildOptions, ModuleBuilder,
     ResidentExternalContractResolver, ResolvedSource, RuntimeCapabilityOperation,
     RuntimeHostInputValue, RuntimeInvalidOperationError, RuntimeResourceKey,
     RuntimeResourceProviderNotFound, RuntimeResourceReadRequest, RuntimeResourceRegistry,
-    RuntimeResourceWriteCommand, RuntimeResourceWriteIntent, SourceContextBase,
-    SourceContextCapabilityScope, SourceDocument, SourceImportAlias, SourceImportDeclaration,
-    SourceImportKind, SourceIndex, SourceRequest, SourceResolver,
+    RuntimeResourceWriteCommand, RuntimeResourceWriteIntent, SourceContextBase, SourceDocument,
+    SourceImportAlias, SourceImportDeclaration, SourceImportKind, SourceIndex, SourceRequest,
+    SourceResolver,
 };
 #[cfg(feature = "compute")]
 use crate::{
     ModuleVersionId, RuntimeModuleDependencyCycleError, RuntimeModuleDependencyMissingError,
-    RuntimeModuleExportNotFound, RuntimeModuleImportConflict, SourceExportDeclaration,
-    import_may_resolve_source_dependency, import_requires_source_dependency,
-    module_namespace_for_import, source_request_for_import,
+    RuntimeModuleExportNotFound, RuntimeModuleImportConflict, SourceContextCapabilityScope,
+    SourceExportDeclaration, import_may_resolve_source_dependency,
+    import_requires_source_dependency, module_namespace_for_import, source_request_for_import,
 };
 
 use super::{ResidentRouteFailure, ResidentRouteFailureClass, route_failure, unsupported_route};
