@@ -138,3 +138,33 @@ fn numeric_separators_preserve_configuration_values() {
         );
     }
 }
+
+#[test]
+fn scientific_components_preserve_value_and_retained_spelling() {
+    for (literal, expected) in [
+        ("1.0e+-3", "0.001"),
+        ("1.0e3u8", "1000"),
+        ("1.0e+3u8", "1000"),
+        ("-1.0e+-3u8", "-0.001"),
+        ("1_2.5E+0_3u16", "12500"),
+    ] {
+        let text = format!("config := {{runtime: {{name: string({literal})}}}}\n");
+        let source = mech_runtime::resolver::SourceDocument::parse(
+            TextSnapshot::new(DocumentId(837), Revision(4), text.as_str()).unwrap(),
+            ParseConfig::default(),
+        );
+        assert!(
+            source.is_strictly_clean(),
+            "{literal}: {:?}",
+            source.snapshot().diagnostics
+        );
+        let result = mech_runtime::compile_config_document(
+            "scientific.mcfg",
+            &source,
+            ConfigProfileOptions::default(),
+        )
+        .unwrap();
+        assert_eq!(result.runtime.name.as_deref(), Some(expected), "{literal}");
+        assert_eq!(source.source().to_contiguous_string(), text);
+    }
+}

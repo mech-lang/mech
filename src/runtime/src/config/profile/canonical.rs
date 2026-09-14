@@ -289,15 +289,7 @@ fn number(value: &NumberSyntax) -> MResult<ConfigExpr> {
     }
     let real = missing(value.real())?;
     let value = missing(real.value())?;
-    let mut raw = if let Some(integer) = IntegerLiteralSyntax::cast(value.clone()) {
-        let digits = integer
-            .typed()
-            .and_then(|n| n.digits())
-            .or_else(|| integer.untyped().and_then(|n| n.digits()));
-        text(missing(digits)?.syntax())?
-    } else {
-        text(&value)?
-    };
+    let mut raw = numeric_spelling(&value)?;
     // The canonical tree retains numeric separator spelling. The restricted
     // value parser consumes its numeric value, independently of that spelling.
     raw.retain(|character| character != '_');
@@ -318,6 +310,31 @@ fn number(value: &NumberSyntax) -> MResult<ConfigExpr> {
             .map_err(|_| ConfigProfileViolation::error(format!("invalid config integer `{raw}`")))
     }
 }
+// Read numeric payloads through their typed boundaries: a scientific exponent
+// can have a type suffix, and its grammar admits both '+' and '-' before it.
+// Those are syntax components, not part of Rust's decimal conversion spelling.
+fn numeric_spelling(node: &SyntaxNode) -> MResult<String> {
+    if let Some(integer) = IntegerLiteralSyntax::cast(node.clone()) {
+        let digits = integer
+            .typed()
+            .and_then(|value| value.digits())
+            .or_else(|| integer.untyped().and_then(|value| value.digits()));
+        return text(missing(digits)?.syntax());
+    }
+    if let Some(scientific) = ScientificLiteralSyntax::cast(node.clone()) {
+        let base = numeric_spelling(&missing(scientific.base())?)?;
+        let exponent = numeric_spelling(&missing(scientific.exponent())?)?;
+        let negative = node.children_with_tokens().iter().any(|element| {
+            matches!(element, SyntaxElement::Token(token) if token.kind() == SyntaxKind::Dash)
+        });
+        return Ok(format!(
+            "{base}e{}{exponent}",
+            if negative { "-" } else { "" }
+        ));
+    }
+    text(node)
+}
+
 fn structure(value: &StructureSyntax) -> MResult<ConfigExpr> {
     match missing(value.value())? {
         StructureValueSyntax::EmptyMap(_) => Ok(ConfigExpr::Map(Vec::new())),
