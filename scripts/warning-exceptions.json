@@ -208,18 +208,6 @@
     {
       "directive": "allow",
       "expires_release": "0.5.0",
-      "expiry_condition": "Remove when statement variants can no longer be unified independently across runtime dependencies.",
-      "introduced_release": "0.4.0",
-      "lint": "unreachable_patterns",
-      "occurrences": 1,
-      "owner": "Runtime config profile",
-      "path": "src/runtime/src/config/profile/compile.rs",
-      "production_or_test": "production",
-      "reason": "dependency feature unification can expose statement variants disabled in this runtime profile"
-    },
-    {
-      "directive": "allow",
-      "expires_release": "0.5.0",
       "expiry_condition": "Remove when matrix storage features can no longer be unified independently across runtime dependencies.",
       "introduced_release": "0.4.0",
       "lint": "unreachable_patterns",

@@ -2,20 +2,14 @@
 mod analyze;
 #[cfg(feature = "source")]
 mod canonical;
-#[cfg(feature = "source")]
-mod compile;
 mod error;
 mod eval;
-#[cfg(feature = "source")]
-mod extract;
 #[cfg(feature = "source")]
 mod ir;
 mod lower;
 
 #[cfg(feature = "source")]
 use self::analyze::ConfigAnalyzer;
-#[cfg(feature = "source")]
-use self::compile::ConfigCompiler;
 pub use self::error::InvalidConfigField;
 #[cfg(feature = "source")]
 pub use self::error::InvalidConfigSyntax;
@@ -24,8 +18,6 @@ use self::error::*;
 #[cfg(feature = "source")]
 use self::eval::ConfigEvaluator;
 pub use self::eval::ConfigValue;
-#[cfg(feature = "source")]
-use self::extract::{ConfigExtractor, ExtractedConfigProgram};
 #[cfg(feature = "source")]
 use self::ir::{ConfigExpr, ConfigFunction, ConfigItem, ConfigLet, ConfigProgram};
 #[cfg(feature = "source")]
@@ -68,17 +60,21 @@ pub fn parse_config_document(
     source: &str,
     options: ConfigProfileOptions,
 ) -> MResult<MechConfigDocument> {
-    let program = mech_syntax::parser::parse(source)?;
-    let extracted = ConfigExtractor::new(options.clone()).extract(&program)?;
-    let ir = ConfigCompiler::new().compile(&extracted)?;
-    ConfigAnalyzer::new().analyze(&ir)?;
-    let value = ConfigEvaluator::new(options).evaluate(&ir)?;
-    ConfigLowerer::new().lower(source_name.into(), value)
+    use mech_syntax::document::{DocumentId, ParseConfig, Revision, TextSnapshot};
+
+    // This one-shot configuration has no cache identity. Callers retaining an
+    // editor or stream revision use compile_config_document directly.
+    let text = TextSnapshot::new(DocumentId(0), Revision(0), source).map_err(|error| {
+        ConfigProfileViolation::error(format!("invalid configuration source: {error:?}"))
+    })?;
+    let document = crate::resolver::SourceDocument::parse(text, ParseConfig::default());
+    compile_config_document(source_name, &document, options)
 }
 
 /// Compile retained canonical configuration through the existing restricted IR,
 /// analyzer, evaluator and field lowering. No source parse or general evaluator
-/// is introduced at this boundary. The shipping text route switches in S8C.
+/// is introduced at this boundary. Text configuration and retained revisions
+/// share this compiler.
 #[cfg(feature = "source")]
 pub fn compile_config_document(
     source_name: impl Into<String>,
