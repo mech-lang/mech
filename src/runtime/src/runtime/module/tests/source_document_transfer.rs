@@ -377,3 +377,74 @@ fn invalid_canonical_authority_never_falls_back_to_an_available_legacy_tree() {
     assert!(record.syntax_tree.is_some());
     assert!(record.canonical_document_index().is_err());
 }
+
+#[test]
+fn injected_store_history_controls_revisions_even_when_latest_is_inactive() {
+    use crate::{InMemoryStore, MechStore, ModuleRecord, module_id};
+    let uri = "memory:reopened.mec";
+    let options = ModuleBuildOptions::new("test", "v0.4", "native", &[], &[]);
+    for canonical in [false, true] {
+        let mut store = InMemoryStore::new();
+        store
+            .put_module(ModuleRecord::new(module_id(uri), uri))
+            .unwrap();
+        for revision in [0, 7] {
+            let resolved = ResolvedSource::new(
+                "reopened.mec",
+                uri,
+                MechSourceCode::String(format!("value := {revision}\n")),
+            )
+            .with_kind(SourceKind::Mech)
+            .retain_source_document(Revision(revision), ParseConfig::default())
+            .unwrap()
+            .admit_canonical_document()
+            .unwrap();
+            let record = ModuleBuilder::new()
+                .build_resolved_source(resolved, "test", "v0.4", "native", &[], &[], &[])
+                .unwrap();
+            let version =
+                crate::ModuleVersionRecord::new(record.module_version, record.module_id, 1)
+                    .with_source(record.source)
+                    .with_source_document(record.source_document);
+            let id = store.put_module_version(version).unwrap();
+            if revision == 0 {
+                store.set_active_module_version(module_id(uri), id).unwrap();
+            }
+        }
+        let mut runtime = MechRuntime::builder().store(store).build().unwrap();
+        let conflicting = ResolvedSource::new(
+            "reopened.mec",
+            uri,
+            MechSourceCode::String("value := 99\n".into()),
+        )
+        .with_kind(SourceKind::Mech)
+        .retain_source_document(Revision(7), ParseConfig::default())
+        .unwrap()
+        .admit_canonical_document()
+        .unwrap();
+        assert!(
+            runtime
+                .build_module_from_resolved_source_with_context(
+                    &mut runtime.runtime_context().unwrap(),
+                    conflicting,
+                    options
+                )
+                .is_err()
+        );
+        let version = if canonical {
+            runtime.put_canonical_source_module("reopened.mec", uri, "value := 8\n", options)
+        } else {
+            runtime.put_source_module("reopened.mec", uri, "value := 8\n", options)
+        }
+        .unwrap();
+        let record = runtime
+            .workspace_module_records(version)
+            .unwrap()
+            .unwrap()
+            .1;
+        assert_eq!(
+            record.source_document.unwrap().source().revision(),
+            Revision(8)
+        );
+    }
+}

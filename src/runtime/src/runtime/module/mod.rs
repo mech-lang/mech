@@ -834,10 +834,10 @@ impl MechRuntime {
         document: &crate::SourceDocument,
     ) -> MResult<()> {
         let revision = document.source().revision();
-        let committed = self
-            .source_revisions
-            .get(&module)
-            .and_then(|history| history.get(&revision));
+        let documents = self.store.module_source_documents(module)?;
+        let committed = documents
+            .iter()
+            .filter(|known| known.source().revision() == revision);
         let pending = self.active_transactions.values().flat_map(|transaction| {
             transaction.modules.version_puts().filter_map(|version| {
                 if version.module != module {
@@ -849,11 +849,7 @@ impl MechRuntime {
                     .filter(|known| known.source().revision() == revision)
             })
         });
-        if committed
-            .into_iter()
-            .chain(pending)
-            .any(|known| known != document)
-        {
+        if committed.chain(pending).any(|known| known != document) {
             return Err(MechError::new(
                 RuntimeInvalidOperationError {
                     operation: "store_resolved_module_source",
@@ -874,14 +870,13 @@ impl MechRuntime {
         canonical_uri: &str,
     ) -> MResult<mech_syntax::document::Revision> {
         let module = module_id(canonical_uri);
-        // Committed sources from every admission path share this high-water mark.
-        // Also account for provisional versions so two active transactions cannot
-        // issue the same revision for different candidates. Aborts discard them.
+        // The durable store is the committed authority, including after reopening
+        // a populated store. Pending journals reserve revisions until commit/abort.
         let previous = self
-            .source_revisions
-            .get(&module)
-            .and_then(|history| history.last_key_value().map(|(revision, _)| *revision))
-            .into_iter()
+            .store
+            .module_source_documents(module)?
+            .iter()
+            .map(|document| document.source().revision())
             .chain(self.active_transactions.values().flat_map(|transaction| {
                 transaction.modules.version_puts().filter_map(|version| {
                     (version.module == module)

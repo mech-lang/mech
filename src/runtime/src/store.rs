@@ -68,6 +68,11 @@ pub trait MechStore: std::fmt::Debug + Send {
 
     fn get_module_version(&self, id: ModuleVersionId) -> MResult<Option<ModuleVersionRecord>>;
 
+    /// All retained source revisions for this module, including inactive versions.
+    /// Implementations must return the durable history, not only the active source.
+    #[cfg(feature = "source")]
+    fn module_source_documents(&self, module: ModuleId) -> MResult<Vec<SourceDocument>>;
+
     fn set_active_module_version(
         &mut self,
         module: ModuleId,
@@ -1196,6 +1201,16 @@ impl MechStore for InMemoryStore {
 
     fn get_module_version(&self, id: ModuleVersionId) -> MResult<Option<ModuleVersionRecord>> {
         Ok(self.module_versions.get(&id).cloned())
+    }
+
+    #[cfg(feature = "source")]
+    fn module_source_documents(&self, module: ModuleId) -> MResult<Vec<SourceDocument>> {
+        Ok(self
+            .module_versions
+            .values()
+            .filter(|version| version.module == module)
+            .filter_map(|version| version.source_document.clone())
+            .collect())
     }
 
     fn set_active_module_version(
