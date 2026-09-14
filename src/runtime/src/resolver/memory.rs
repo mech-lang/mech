@@ -609,7 +609,6 @@ mod tests {
     use super::*;
 
     #[cfg(feature = "source")]
-    #[cfg(feature = "source")]
     #[test]
     fn cloned_resolvers_allocate_concurrent_revisions_atomically() {
         let resolver =
@@ -682,6 +681,7 @@ mod tests {
         }
     }
 
+    #[cfg(feature = "source")]
     #[test]
     fn revision_history_survives_deletion_and_diverging_clones() {
         for canonical in [false, true] {

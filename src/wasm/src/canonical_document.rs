@@ -155,7 +155,7 @@ mod tests {
     }
 
     #[test]
-    fn canonical_browser_repl_formatting_has_no_legacy_fallback() {
+    fn canonical_browser_repl_renderer_obeys_admission_contract() {
         let formatted =
             CanonicalWasmDocument::repl_format_source("answer := 1 + 1; -- suppress this value")
                 .expect("complete canonical source should highlight");
