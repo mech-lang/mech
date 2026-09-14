@@ -246,6 +246,7 @@ impl SemanticBuilder {
                 PendingNodeBody::Operation {
                     operation,
                     contract: Some(contract),
+                    requirement: None,
                 } if node.state.is_none()
                     && contract.interaction == mech_core::ExternalInteraction::Pure =>
                 {
@@ -280,6 +281,7 @@ impl SemanticBuilder {
             inferable_projection: false,
             inputs,
             schema: output,
+            exposes_output: true,
             state: None,
             semantic: SourceSemanticNode {
                 operation: operation.to_owned(),
@@ -351,6 +353,7 @@ impl SemanticBuilder {
                                 inferable_projection: variable.annotation().is_none(),
                                 inputs: Vec::new(),
                                 schema,
+                                exposes_output: true,
                                 state: None,
                                 semantic: SourceSemanticNode {
                                     operation: String::new(),

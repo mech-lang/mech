@@ -685,6 +685,29 @@ impl CanonicalSourceFrontend {
         )
     }
 
+    /// Compile a retained document after the product boundary has resolved
+    /// external input schemas and context-addressed write destinations.
+    pub fn compile_document_with_catalog_and_resources(
+        &self,
+        document: &DocumentSyntax,
+        catalog: Arc<mech_core::FunctionCatalog>,
+        input_schemas: BTreeMap<String, SchemaBody>,
+        resource_reads: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+        resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+        reject_recovered_syntax(document)?;
+        let mut program = document_lowering::compile_document_with_catalog_and_resources(
+            document,
+            catalog,
+            input_schemas,
+            resource_writes,
+        )?;
+        for (name, request) in resource_reads {
+            program = program.bind_resource_input(&name, request)?;
+        }
+        Ok(program)
+    }
+
     /// Compile the ordered fences belonging to one named interpreter scope.
     /// Root statements and other named scopes do not enter its binding environment.
     /// The resulting artifact owns its own state and fence output bindings.
@@ -1857,6 +1880,7 @@ enum PendingNodeBody {
     Operation {
         operation: OperationReference,
         contract: Option<OperationContractDeclaration>,
+        requirement: Option<mech_core::ApplicationRequirement>,
     },
     Match(PendingMatch),
     Comprehension(PendingComprehension),
@@ -1930,6 +1954,7 @@ struct PendingNode {
     inferable_projection: bool,
     inputs: Vec<PendingValue>,
     schema: SchemaDraft,
+    exposes_output: bool,
     state: Option<u32>,
     semantic: SourceSemanticNode,
 }
@@ -1998,6 +2023,7 @@ struct SemanticBuilder {
     bindings: BTreeMap<String, PendingBinding>,
     scope_definitions: BTreeSet<String>,
     patterns: Vec<SourceSemanticPattern>,
+    resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
 }
 
 impl SemanticBuilder {
@@ -2019,6 +2045,7 @@ impl SemanticBuilder {
             bindings: BTreeMap::new(),
             scope_definitions: BTreeSet::new(),
             patterns: Vec::new(),
+            resource_writes: BTreeMap::new(),
         }
     }
 
@@ -3429,10 +3456,12 @@ impl SemanticBuilder {
                 body: PendingNodeBody::Operation {
                     contract: mech_core::maintained_operation_contract("core/assign", 1, false),
                     operation: operation_reference("core/assign"),
+                    requirement: None,
                 },
                 inferable_projection: false,
                 inputs: vec![PendingValue::State(state)],
                 schema: schema_draft,
+                exposes_output: true,
                 state: Some(state),
                 semantic: SourceSemanticNode {
                     operation: "core/assign".to_owned(),
@@ -5202,6 +5231,7 @@ impl SemanticBuilder {
             inferable_projection: false,
             inputs,
             schema: builtin_schema_draft(BuiltinSchema::Dynamic),
+            exposes_output: true,
             state: None,
             semantic: SourceSemanticNode {
                 operation: "source/fsm".to_owned(),
@@ -5684,10 +5714,12 @@ impl SemanticBuilder {
             body: PendingNodeBody::Operation {
                 contract,
                 operation: operation_reference(operation),
+                requirement: None,
             },
             inferable_projection: false,
             inputs,
             schema,
+            exposes_output: true,
             state: None,
             semantic: SourceSemanticNode {
                 operation: operation.to_owned(),
@@ -5697,6 +5729,70 @@ impl SemanticBuilder {
             },
         });
         PendingValue::Node(index)
+    }
+
+    fn emit_resource_send(
+        &mut self,
+        send: &mech_syntax::document::ContextSendSyntax,
+    ) -> Result<PendingValue, SourceSemanticError> {
+        let target = self.required(send.target(), send.syntax(), "a resource-send target")?;
+        let path = match target.stem() {
+            Some(VariableStemSyntax::Context(path)) => path,
+            _ => {
+                return Err(SourceSemanticError {
+                    code: "source-semantics/invalid-resource-send-target",
+                    message: "a resource send target must be context-addressed".to_owned(),
+                    anchor: SourceSemanticAnchor::for_node(target.syntax()),
+                });
+            }
+        };
+        let context = self.required(path.context(), path.syntax(), "a resource context")?;
+        let address = self.required(path.address(), path.syntax(), "a resource path")?;
+        let target_name = format!(
+            "@{}/{}",
+            node_text(context.syntax())?,
+            node_text(address.syntax())?
+        );
+        let request = self
+            .resource_writes
+            .get(&target_name)
+            .cloned()
+            .ok_or_else(|| SourceSemanticError {
+                code: "source-semantics/unbound-resource-send",
+                message: format!(
+                    "canonical resource send {target_name} has no resolved context binding"
+                ),
+                anchor: SourceSemanticAnchor::for_node(target.syntax()),
+            })?;
+        let expression =
+            self.required(send.expression(), send.syntax(), "a resource-send value")?;
+        let (value, _) = self.expression(&expression)?;
+        value.resolved()?;
+        self.nodes.push(PendingNode {
+            body: PendingNodeBody::Operation {
+                operation: operation_reference("resource/send"),
+                contract: Some(crate::function::external::RESOURCE_EFFECT_CONTRACT.clone()),
+                requirement: Some(mech_core::ApplicationRequirement::Resource(request)),
+            },
+            inferable_projection: false,
+            inputs: vec![value],
+            schema: SchemaDraft {
+                body: SchemaBody::Tuple(Box::new([])),
+                dimension_parameters: Box::new([]),
+            },
+            exposes_output: false,
+            state: None,
+            semantic: SourceSemanticNode {
+                operation: "resource/send".to_owned(),
+                role: "resource",
+                detail: Some(target_name),
+                anchor: SourceSemanticAnchor::for_node(send.syntax()),
+            },
+        });
+        Ok(self.constant_exact(
+            SchemaBody::Tuple(Box::new([])),
+            ValueDataDraft::Tuple(Box::new([])),
+        ))
     }
 
     fn publish(
@@ -5806,6 +5902,24 @@ impl SemanticBuilder {
             })
             .collect::<Vec<_>>()
             .into_boxed_slice();
+        let mut requirement_entries = self
+            .nodes
+            .iter()
+            .filter_map(|node| match &node.body {
+                PendingNodeBody::Operation { requirement, .. } => requirement.clone(),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        requirement_entries.sort_by(mech_core::compare_application_requirements);
+        requirement_entries.dedup();
+        let requirements =
+            crate::ApplicationRequirementTable::from_canonical_entries(requirement_entries)
+                .map_err(|error| {
+                    internal(
+                        self.anchor,
+                        format!("invalid source requirement: {error:?}"),
+                    )
+                })?;
         let mut contracts = Vec::with_capacity(self.nodes.len());
         let nodes = self
             .nodes
@@ -5816,11 +5930,16 @@ impl SemanticBuilder {
                     PendingNodeBody::Operation {
                         operation,
                         contract,
+                        requirement,
                     } => {
                         contracts.push(contract.clone());
                         crate::SourceNodeBody::Operation {
                             operation: operation.clone(),
-                            requirement: None,
+                            requirement: requirement.as_ref().and_then(|requirement| {
+                                requirements.iter().find_map(|(id, candidate)| {
+                                    (candidate == requirement).then_some(id)
+                                })
+                            }),
                         }
                     }
                     PendingNodeBody::Comprehension(control) => {
@@ -5855,13 +5974,17 @@ impl SemanticBuilder {
                         .map(|value| resolve_value(*value, &constant_ids))
                         .collect::<Vec<_>>()
                         .into_boxed_slice(),
-                    outputs: vec![match node.state {
-                        Some(state) => SourceNodeOutput::State(state),
-                        None => SourceNodeOutput::Derived {
-                            schema: schemas.node_id(index),
-                        },
-                    }]
-                    .into_boxed_slice(),
+                    outputs: if node.exposes_output {
+                        vec![match node.state {
+                            Some(state) => SourceNodeOutput::State(state),
+                            None => SourceNodeOutput::Derived {
+                                schema: schemas.node_id(index),
+                            },
+                        }]
+                        .into_boxed_slice()
+                    } else {
+                        Box::new([])
+                    },
                 }
             })
             .collect::<Vec<_>>()
@@ -5916,7 +6039,7 @@ impl SemanticBuilder {
         };
         Ok(CanonicalSourceProgram {
             program: SourceProgram {
-                requirements: Default::default(),
+                requirements,
                 inputs,
                 states: self
                     .states
@@ -7230,6 +7353,7 @@ impl SemanticBuilder {
             inferable_projection: false,
             inputs,
             schema: result_schema.expect("exhaustive match has arms"),
+            exposes_output: true,
             state: None,
             semantic: SourceSemanticNode {
                 operation: "match".to_owned(),
@@ -7340,6 +7464,7 @@ impl SemanticBuilder {
                 PendingNodeBody::Operation {
                     operation,
                     contract: Some(contract),
+                    requirement: None,
                 } if contract.interaction == mech_core::ExternalInteraction::Pure => {
                     PendingControlOperationBody::Operation {
                         operation,
