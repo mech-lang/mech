@@ -1111,6 +1111,7 @@ jobs:
         run: >-
           cargo +nightly-2026-03-03 test --locked -p mech-runtime
           --no-default-features --features source --test source_document
+          --test canonical_config_profile
 
       - name: Check reduced core feature boundaries
         run: |

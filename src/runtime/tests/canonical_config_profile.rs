@@ -113,3 +113,28 @@ fn finalized_stream_compiles_configuration_without_reparsing_or_replacing_its_re
     assert_eq!(source.source().revision(), snapshot.revision);
     assert_eq!(stream.work(), work);
 }
+
+#[test]
+fn numeric_separators_preserve_configuration_values() {
+    for literal in ["8_081", "0d8_081", "8_081u16"] {
+        let source = format!("config := {{serve: {{port: {literal}}}}}\n");
+        assert_eq!(
+            parse(&source).unwrap().serve.unwrap().port,
+            Some(8081),
+            "{literal}"
+        );
+    }
+    for (literal, expected) in [
+        ("1_234.5_0", "1234.5"),
+        ("1_2.5e+0_1", "125"),
+        ("-1_234", "-1234"),
+        ("-1_234.5_0", "-1234.5"),
+    ] {
+        let source = format!("config := {{runtime: {{name: string({literal})}}}}\n");
+        assert_eq!(
+            parse(&source).unwrap().runtime.name.as_deref(),
+            Some(expected),
+            "{literal}"
+        );
+    }
+}
