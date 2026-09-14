@@ -154,17 +154,19 @@ fn comment_wins_at_mech_item_boundary(parser: &mut Parser<'_>) -> bool {
         parser.rewind(checkpoint);
         return true;
     }
-    let expression = parse_any_rule(parser, rules::EXPRESSION);
-    // Recovery can consume comment text before reaching a real terminal. Only
-    // zero-width repairs may keep a committed expression ahead of the comment.
-    let recovered_source = expression == Attempt::Committed
-        && parser.events[checkpoint.events..].iter().any(|event| {
-            matches!(event, Event::Token { range, flags, .. }
-                if !range.is_empty() && flags.contains(TokenFlags::ERROR))
-        });
-    let complete_expression = expression.accepted()
-        && !recovered_source
-        && parse_any_rule(parser, rules::CODE_TERMINAL) == Attempt::Matched;
+    let complete_expression = parser.without_consuming_recovery(|parser| {
+        let expression = parse_any_rule(parser, rules::EXPRESSION);
+        // Only zero-width repairs may keep a committed expression ahead of the
+        // comment. Retained error text from any candidate still disqualifies it.
+        let recovered_source = expression == Attempt::Committed
+            && parser.events[checkpoint.events..].iter().any(|event| {
+                matches!(event, Event::Token { range, flags, .. }
+                    if !range.is_empty() && flags.contains(TokenFlags::ERROR))
+            });
+        expression.accepted()
+            && !recovered_source
+            && parse_any_rule(parser, rules::CODE_TERMINAL) == Attempt::Matched
+    });
     parser.rewind(checkpoint);
     !complete_expression
 }

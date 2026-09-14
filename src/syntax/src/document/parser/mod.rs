@@ -96,6 +96,7 @@ pub(crate) struct Parser<'a> {
     halted: bool,
     resource_diagnostic_emitted: bool,
     resource_finalizing: bool,
+    allow_consuming_recovery: bool,
     resource_rule: Option<RuleId>,
     ids: &'a mut IdGenerator,
     stats: ParseStats,
@@ -130,6 +131,7 @@ impl<'a> Parser<'a> {
             halted: false,
             resource_diagnostic_emitted: false,
             resource_finalizing: false,
+            allow_consuming_recovery: true,
             resource_rule: None,
             ids,
             stats: ParseStats {
@@ -164,6 +166,7 @@ impl<'a> Parser<'a> {
             halted: false,
             resource_diagnostic_emitted: false,
             resource_finalizing: false,
+            allow_consuming_recovery: true,
             resource_rule,
             ids,
             stats: ParseStats {
@@ -175,6 +178,23 @@ impl<'a> Parser<'a> {
             parser.halted = true;
         }
         parser
+    }
+
+    /// Arbitrate grammar alternatives without skipping source during recovery.
+    /// Zero-width repairs and all actual parsing/fuel costs remain unchanged.
+    /// The caller still owns the normal checkpoint rollback of syntax/diagnostics.
+    pub(crate) fn without_consuming_recovery<T>(
+        &mut self,
+        parse: impl FnOnce(&mut Self) -> T,
+    ) -> T {
+        let previous = core::mem::replace(&mut self.allow_consuming_recovery, false);
+        let result = parse(self);
+        self.allow_consuming_recovery = previous;
+        result
+    }
+
+    pub(crate) fn consuming_recovery_allowed(&self) -> bool {
+        self.allow_consuming_recovery
     }
 
     pub(crate) fn source(&self) -> &TextSnapshot {
