@@ -177,6 +177,38 @@ fn indexed_document_updates_use_canonical_assignment_and_preserve_state_order() 
 }
 
 #[test]
+fn whole_value_document_assignment_does_not_emit_a_discarded_selection() {
+    for selection in [":", ":,:"] {
+        let source =
+            format!("~matrix := [1, 2; 3, 4]\nmatrix[{selection}] = [5, 6; 7, 8]\nmatrix\n");
+        let compiled = compiled(&source);
+        let operations = compiled
+            .program()
+            .nodes
+            .iter()
+            .map(|node| {
+                node.operation()
+                    .expect("ordinary source operation")
+                    .canonical_name()
+            })
+            .collect::<Vec<_>>();
+        assert!(
+            operations
+                .iter()
+                .any(|operation| operation == "core/assign/whole-value"),
+            "{source}"
+        );
+        assert!(
+            !operations
+                .iter()
+                .any(|operation| operation == "access/range"),
+            "{source}: {operations:?}"
+        );
+        compiled.compile_artifact().unwrap();
+    }
+}
+
+#[test]
 fn document_bindings_preserve_empty_errors_and_contextual_optional_state() {
     for source in [
         "x := _\nx\n",
