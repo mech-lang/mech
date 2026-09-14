@@ -518,7 +518,7 @@ impl<'a> ProgramCompilerView<'a> {
             .map_err(|error| MechError::new(error, None))?;
         let (input_schemas, resource_reads, resource_writes) =
             self.canonical_document_resources(&index.root, &document.document())?;
-        CanonicalSourceFrontend
+        let program = CanonicalSourceFrontend
             .compile_document_with_catalog_and_resources(
                 &document.document(),
                 Arc::clone(&self.function_catalog),
@@ -526,8 +526,11 @@ impl<'a> ProgramCompilerView<'a> {
                 resource_reads,
                 resource_writes,
             )
-            .map_err(|error| canonical_compilation_error(error.to_string()))?
-            .compile_artifact()
+            .map_err(|error| canonical_compilation_error(error.to_string()))?;
+        program
+            .compile_artifact_with_external_contracts(&ResidentExternalContractResolver::new(
+                self.resources,
+            ))
             .map_err(|error| {
                 canonical_compilation_error(format!(
                     "unable to compile canonical ProgramArtifact: {error:?}"
