@@ -229,9 +229,10 @@ impl InMemorySourceResolver {
 
         #[cfg(feature = "source")]
         let resolved = {
+            let revision = self.next_document_revision(&specifier)?;
             let document = SourceDocument::parse_resolved(
                 &resolved.canonical_uri,
-                Revision(0),
+                revision,
                 source.as_str(),
                 ParseConfig::default(),
             )
@@ -253,6 +254,70 @@ impl InMemorySourceResolver {
         self.insert_source(specifier, resolved)
     }
 
+    /// Insert one strictly admitted canonical revision without constructing a
+    /// competing legacy Program tree. Candidate validation completes before
+    /// the previous accepted source can be replaced.
+    #[cfg(feature = "source")]
+    pub fn insert_canonical_string(
+        &mut self,
+        specifier: impl Into<String>,
+        source: impl Into<String>,
+    ) -> MResult<()> {
+        let specifier = specifier.into();
+        let source = source.into();
+        let resolved = ResolvedSource::new(
+            specifier.clone(),
+            Self::default_canonical_uri(&specifier),
+            MechSourceCode::String(source.clone()),
+        )
+        .with_kind(SourceKind::Mech);
+        let document = SourceDocument::parse_resolved(
+            &resolved.canonical_uri,
+            self.next_document_revision(&specifier)?,
+            source,
+            ParseConfig::default(),
+        )
+        .map_err(|_| {
+            MechError::new(
+                super::InvalidResolvedSourceError {
+                    field: "source",
+                    reason: "exceeds the canonical retained-source range",
+                },
+                None,
+            )
+        })?;
+        let resolved = resolved
+            .with_source_document(document)?
+            .admit_canonical_document()?;
+        self.insert_source(specifier, resolved)
+    }
+
+    #[cfg(feature = "source")]
+    fn next_document_revision(&self, specifier: &str) -> MResult<Revision> {
+        let Some(previous) = self
+            .sources
+            .get(specifier)
+            .and_then(ResolvedSource::source_document)
+        else {
+            return Ok(Revision(0));
+        };
+        previous
+            .source()
+            .revision()
+            .0
+            .checked_add(1)
+            .map(Revision)
+            .ok_or_else(|| {
+                MechError::new(
+                    super::InvalidResolvedSourceError {
+                        field: "source_document.revision",
+                        reason: "revision identity is exhausted",
+                    },
+                    None,
+                )
+            })
+    }
+
     pub fn with_string(mut self, specifier: impl Into<String>, source: impl Into<String>) -> Self {
         let specifier = specifier.into();
         let source = source.into();
@@ -269,9 +334,13 @@ impl InMemorySourceResolver {
         // accepts the source.
         #[cfg(feature = "source")]
         let resolved = {
+            let revision = match self.next_document_revision(&specifier) {
+                Ok(revision) => revision,
+                Err(_) => return self,
+            };
             let resolved = match SourceDocument::parse_resolved(
                 &resolved.canonical_uri,
-                Revision(0),
+                revision,
                 source.as_str(),
                 ParseConfig::default(),
             ) {
@@ -290,6 +359,45 @@ impl InMemorySourceResolver {
         if self.insert_source(specifier, resolved).is_err() {
             // Preserve the established infallible-builder contract: invalid
             // entries are left absent and can be reported by later resolution.
+            return self;
+        }
+        self
+    }
+
+    /// Retain one canonical revision for later diagnostics without claiming
+    /// that it has passed strict admission. This preserves the infallible
+    /// builder shape while keeping every legacy projection absent.
+    #[cfg(feature = "source")]
+    pub fn with_canonical_string(
+        mut self,
+        specifier: impl Into<String>,
+        source: impl Into<String>,
+    ) -> Self {
+        let specifier = specifier.into();
+        let source = source.into();
+        let resolved = ResolvedSource::new(
+            specifier.clone(),
+            Self::default_canonical_uri(&specifier),
+            MechSourceCode::String(source.clone()),
+        )
+        .with_kind(SourceKind::Mech);
+        let revision = match self.next_document_revision(&specifier) {
+            Ok(revision) => revision,
+            Err(_) => return self,
+        };
+        let document = match SourceDocument::parse_resolved(
+            &resolved.canonical_uri,
+            revision,
+            source,
+            ParseConfig::default(),
+        ) {
+            Ok(document) => document,
+            Err(_) => return self,
+        };
+        let resolved = resolved
+            .with_source_document(document)
+            .expect("resolver-created document retains the same source bytes");
+        if self.insert_source(specifier, resolved).is_err() {
             return self;
         }
         self
@@ -628,10 +736,122 @@ rows := |id<string> x<f64>|
             .unwrap()
             .unwrap();
         assert_eq!(after.source, before.source);
+        assert_eq!(
+            after.source_document().unwrap().source().revision(),
+            before.source_document().unwrap().source().revision(),
+        );
         assert!(std::ptr::eq(
             after.source_document().unwrap().snapshot(),
             before.source_document().unwrap().snapshot(),
         ));
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn successful_replacement_advances_the_retained_revision() {
+        let mut resolver = InMemorySourceResolver::new();
+        resolver.insert_string("main.mec", "value := 1\n").unwrap();
+        let before = resolver
+            .resolve(&SourceRequest::new("main.mec"))
+            .unwrap()
+            .unwrap();
+        resolver.insert_string("main.mec", "value := 2\n").unwrap();
+        let after = resolver
+            .resolve(&SourceRequest::new("main.mec"))
+            .unwrap()
+            .unwrap();
+
+        let before = before.source_document().unwrap();
+        let after = after.source_document().unwrap();
+        assert_eq!(before.source().document(), after.source().document());
+        assert_eq!(before.source().revision(), Revision(0));
+        assert_eq!(after.source().revision(), Revision(1));
+        assert_eq!(before.source().to_contiguous_string(), "value := 1\n");
+        assert_eq!(after.source().to_contiguous_string(), "value := 2\n");
+        assert!(before.index().is_ok());
+        assert!(after.index().is_ok());
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn canonical_insertion_fails_closed_before_replacing_the_accepted_revision() {
+        let mut resolver = InMemorySourceResolver::new();
+        resolver
+            .insert_canonical_string("main.mec", "value := 1\n")
+            .unwrap();
+        let before = resolver
+            .resolve(&SourceRequest::new("main.mec"))
+            .unwrap()
+            .unwrap();
+        assert!(before.syntax_tree.is_none());
+
+        assert!(
+            resolver
+                .insert_canonical_string("main.mec", "value := [\n")
+                .is_err()
+        );
+        let after = resolver
+            .resolve(&SourceRequest::new("main.mec"))
+            .unwrap()
+            .unwrap();
+        assert_eq!(after.source, before.source);
+        assert_eq!(
+            after.source_document().unwrap().source().revision(),
+            Revision(0),
+        );
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn canonical_builder_retains_malformed_source_without_publishing_facts() {
+        let resolver = InMemorySourceResolver::new()
+            .with_canonical_string("broken.mec", "use ./ready.mec\nx := [\n");
+        let resolved = resolver
+            .resolve(&SourceRequest::new("broken.mec"))
+            .unwrap()
+            .expect("malformed canonical source remains available to diagnostics");
+
+        assert!(resolved.source_document().is_some());
+        assert!(!resolved.source_document().unwrap().is_strictly_clean());
+        assert!(resolved.canonical_document_index().is_err());
+        assert!(resolved.syntax_tree.is_none());
+        assert!(resolved.imports.is_empty());
+        assert!(resolved.exports.is_empty());
+        assert!(resolved.contexts.is_empty());
+        assert!(resolved.address_references.is_empty());
+        assert!(resolved.scopes.is_empty());
+        assert!(resolved.dependencies.is_empty());
+    }
+
+    #[cfg(all(feature = "source", feature = "mika"))]
+    #[test]
+    fn canonical_insertion_hands_off_root_dependencies_and_preserves_local_owners() {
+        let source = "+> ./root.mec\n\n~∘~⸢+> ./child.mec\nx := @env/HOME\n⸥\n";
+        let mut resolver = InMemorySourceResolver::new();
+        resolver
+            .insert_canonical_string("main.mec", source)
+            .unwrap();
+        let resolved = resolver
+            .resolve(&SourceRequest::new("main.mec"))
+            .unwrap()
+            .unwrap();
+
+        assert!(resolved.syntax_tree.is_none());
+        assert_eq!(resolved.imports.len(), 1);
+        assert_eq!(resolved.dependencies.len(), 1);
+        assert_eq!(resolved.dependencies[0].specifier, "./root.mec");
+        assert_eq!(
+            resolved.dependencies[0].referrer.as_deref(),
+            Some("memory:main.mec")
+        );
+        let index = resolved.canonical_document_index().unwrap();
+        assert_eq!(index.root.imports.len(), 1);
+        assert_eq!(index.mika.len(), 1);
+        assert_eq!(index.mika[0].index.imports.len(), 1);
+        assert_eq!(
+            index.mika[0].index.program_address_references()[0].target,
+            "env"
+        );
     }
 
     #[test]

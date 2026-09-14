@@ -80,4 +80,23 @@ impl RuntimeModuleRecord {
             capability_requirement_keys,
         }
     }
+
+    /// Read the retained canonical resolver authority without falling back to
+    /// the temporary Program cache carried for the pre-cutover shipping path.
+    #[cfg(feature = "source")]
+    pub fn canonical_document_index(&self) -> mech_core::MResult<crate::CanonicalDocumentIndex> {
+        self.source_document
+            .as_ref()
+            .ok_or_else(|| {
+                mech_core::MechError::new(
+                    crate::InvalidResolvedSourceError {
+                        field: "source_document",
+                        reason: "is required for canonical admission",
+                    },
+                    None,
+                )
+            })?
+            .index()
+            .map_err(|error| mech_core::MechError::new(error, None))
+    }
 }

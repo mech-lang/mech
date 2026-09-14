@@ -317,6 +317,47 @@ impl ResolvedSource {
         self.source_document.as_ref()
     }
 
+    /// Admit the retained canonical authority without consulting a cached or
+    /// reparsed legacy tree. Invalid documents remain retained for diagnostics
+    /// but cannot publish resolver facts through this boundary.
+    #[cfg(feature = "source")]
+    pub fn canonical_document_index(&self) -> MResult<crate::CanonicalDocumentIndex> {
+        self.source_document
+            .as_ref()
+            .ok_or_else(|| {
+                MechError::new(
+                    InvalidResolvedSourceError {
+                        field: "source_document",
+                        reason: "is required for canonical admission",
+                    },
+                    None,
+                )
+            })?
+            .index()
+            .map_err(|error| MechError::new(error, None))
+    }
+
+    /// Populate the resolver handoff solely from the retained canonical
+    /// document. The legacy Program cache is neither read nor manufactured.
+    #[cfg(feature = "source")]
+    pub fn admit_canonical_document(mut self) -> MResult<Self> {
+        let index = self.canonical_document_index()?;
+        let root = index.root;
+        let imports = root.all_imports();
+        let referrer = self.canonical_uri.clone();
+        self.dependencies = imports
+            .iter()
+            .map(|import| source_request_for_import(import, Some(&referrer)))
+            .collect();
+        self.exports = root.all_exports();
+        self.contexts = root.all_contexts();
+        self.address_references = root.all_address_references();
+        self.scopes = root.module_scopes();
+        self.imports = imports;
+        self.syntax_tree = None;
+        Ok(self)
+    }
+
     /// Parse and retain this record's exact textual source under its canonical
     /// URI. This is the normal adoption point for product paths that construct
     /// `ResolvedSource` directly rather than through a resolver.
