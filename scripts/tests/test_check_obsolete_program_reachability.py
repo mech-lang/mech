@@ -82,6 +82,12 @@ class ObsoleteProgramReachabilityTests(unittest.TestCase):
         )
         self.assertEqual(len(findings), 1)
 
+    def test_similarly_named_attribute_is_not_a_class_exception(self):
+        findings = self.scan(
+            {"src/lib.rs": 'render("data-class=\'mech-program-output\'");\n'}
+        )
+        self.assertEqual(len(findings), 1)
+
     def test_obsolete_feature_or_package_path_is_rejected(self):
         for content in (
             '[features]\nmech-program = []\n',

@@ -50,7 +50,8 @@ def is_css_class_occurrence(line: str, start: int) -> bool:
         return True
 
     prefix = line[:start]
-    for opening in reversed(list(re.finditer(r"class=(?P<escape>\\?)(?P<quote>[\"'])", prefix))):
+    class_attribute = r"(?<![\w:-])class\s*=\s*(?P<escape>\\?)(?P<quote>[\"'])"
+    for opening in reversed(list(re.finditer(class_attribute, prefix))):
         delimiter = opening.group("escape") + opening.group("quote")
         closing = line.find(delimiter, opening.end())
         if closing >= start + len(OBSOLETE_PACKAGE):
