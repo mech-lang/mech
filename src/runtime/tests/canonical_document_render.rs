@@ -220,8 +220,11 @@ fn renderer_preserves_title_subtitle_and_plain_document_structure() {
     let html = CanonicalDocumentRenderer
         .render_html(&document, &[])
         .unwrap();
-    assert!(html.contains("<header class='mech-document-title'><pre>"));
+    assert!(html.contains(
+        "<header class='mech-document-header'><h1 class='mech-document-title'>Grammar Conformance</h1>"
+    ));
     assert!(html.contains("Grammar Conformance"));
+    assert!(!html.contains("==================="), "{html}");
     assert!(
         html.contains("<h2 class='mech-subtitle' id='section-1'>Overview</h2>"),
         "{html}"
@@ -364,6 +367,62 @@ fn image_url_extraction_starts_after_parentheses_in_the_caption() {
 }
 
 #[test]
+fn image_options_are_safely_whitelisted_into_presentation_attributes() {
+    let document = document(
+        "![small](image.png){width: \"200px\", height: \"50%\", alignment: center}\n![unsafe](other.png){width: \"1px; color: red\", onclick: alert}\n",
+    );
+    let html = CanonicalDocumentRenderer
+        .render_html(&document, &[])
+        .unwrap();
+    assert!(
+        html.contains(
+            "class='mech-image mech-image-align-center' src='image.png' alt='small' style='width: 200px; height: 50%'"
+        ),
+        "{html}"
+    );
+    assert!(!html.contains("color: red"), "{html}");
+    assert!(!html.contains("onclick"), "{html}");
+}
+
+#[test]
+fn inert_fences_preserve_their_language_for_highlighting() {
+    let document = document("```rust\nfn main() {}\n```\n");
+    let html = CanonicalDocumentRenderer
+        .render_html(&document, &[])
+        .unwrap();
+    assert!(html.contains("<pre><code data-language='rust'>"), "{html}");
+}
+
+#[test]
+fn title_front_matter_is_semantic_and_uses_completed_inline_results() {
+    let document = document(
+        "Result Report\n===================\nauthor: Ada\nvalue: {answer}\n===================\nanswer := 42\n",
+    );
+    let program = CanonicalSourceFrontend.compile_document(&document).unwrap();
+    let results = [execute(
+        document.scope_id(),
+        CanonicalRenderScope::Root,
+        &program,
+        18,
+    )];
+    let html = CanonicalDocumentRenderer
+        .render_html(&document, &results)
+        .unwrap();
+    assert!(
+        html.contains("<h1 class='mech-document-title'>Result Report</h1>"),
+        "{html}"
+    );
+    assert!(
+        html.contains("<div class='mech-title-field'><dt>author</dt><dd>Ada</dd></div>"),
+        "{html}"
+    );
+    assert!(html.contains("<dt>value</dt><dd><span"), "{html}");
+    assert!(html.contains(">42</span>"), "{html}");
+    assert!(!html.contains("{answer}"), "{html}");
+    assert!(!html.contains("==================="), "{html}");
+}
+
+#[test]
 fn raw_hyperlinks_and_inline_code_use_semantic_html() {
     let document = document("Visit http://example.com/path or `x < y & z`.\n");
     let html = CanonicalDocumentRenderer
@@ -395,7 +454,7 @@ fn retained_inline_markup_uses_semantic_elements_without_delimiters() {
         "<u class='mech-underline'>underline</u>",
         "<del class='mech-strikethrough'>strike</del>",
         "<span class='mech-inline-equation'>x+1</span>",
-        "<a class='mech-reference' href='#reference-ref'>[ref]</a>",
+        "<span class='mech-reference'>[<a class='mech-reference-link' href='#reference-ref'>ref</a>]</span>",
         "<a class='mech-footnote-reference' href='#footnote-note'>[^note]</a>",
         "<a class='mech-section-reference-link' href='#section-1.2'>§1.2</a>",
         "<h3 class='mech-subtitle' id='section-1.2'>Details</h3>",
@@ -448,7 +507,7 @@ fn retained_rich_document_nodes_use_semantic_html_containers() {
         ),
         (
             include_str!("../../syntax/tests/fixtures/grammar/accepted/mechdown-table.mec"),
-            "<table class='mech-table'><thead><tr><th>Name ",
+            "<table class='mech-table'><thead><tr><th class='mech-table-cell mech-align-left'>Name ",
         ),
         (
             include_str!("../../syntax/tests/fixtures/grammar/accepted/mechdown-thematic.mec"),
@@ -460,21 +519,101 @@ fn retained_rich_document_nodes_use_semantic_html_containers() {
         ),
         (
             include_str!("../../syntax/tests/fixtures/grammar/accepted/citation.mec"),
-            "<aside class='mech-reference' id='reference-ref1'><p>A source description</p></aside>",
+            "<section class='mech-works-cited'><h3 class='mech-backmatter-heading'>Works Cited</h3><div class='mech-citation' id='reference-ref1'><span class='mech-citation-id'>[1]:</span>",
         ),
         (
             include_str!("../../syntax/tests/fixtures/grammar/accepted/figures.mec"),
-            "<div class='mech-figures'>",
+            "<figure class='mech-figure-table'><div class='mech-figure-grid'>",
         ),
         (
             include_str!("../../syntax/tests/fixtures/grammar/accepted/float.mec"),
-            "<div class='mech-float'>",
+            "<div class='mech-float mech-float-left'>",
         ),
     ] {
         let document = document(source);
         let html = CanonicalDocumentRenderer
             .render_html(&document, &[])
             .unwrap();
+        assert!(html.contains(expected), "missing {expected:?}: {html}");
+    }
+}
+
+#[test]
+fn citations_are_numbered_and_deferred_to_link_safe_backmatter() {
+    let document = document(
+        "See [ref] before the definition.\n[ref]: Source [site](https://example.com)\nText after the definition.\n",
+    );
+    let html = CanonicalDocumentRenderer
+        .render_html(&document, &[])
+        .unwrap();
+    assert!(
+        html.contains(
+            "<span class='mech-reference'>[<a class='mech-reference-link' href='#reference-ref'>1</a>]</span>"
+        ),
+        "{html}"
+    );
+    assert!(
+        html.contains(
+            "class='mech-hyperlink mech-citation-external-link' href='https://example.com' target='_blank' rel='noopener noreferrer'"
+        ),
+        "{html}"
+    );
+    let after = html.find("Text after the definition.").unwrap();
+    let works_cited = html.find("class='mech-works-cited'").unwrap();
+    assert!(works_cited > after, "{html}");
+}
+
+#[test]
+fn floats_preserve_left_and_right_direction() {
+    let document = document("<<: ![left](left.png)\n:>> ![right](right.png)\n");
+    let html = CanonicalDocumentRenderer
+        .render_html(&document, &[])
+        .unwrap();
+    assert!(
+        html.contains("<div class='mech-float mech-float-left'>"),
+        "{html}"
+    );
+    assert!(
+        html.contains("<div class='mech-float mech-float-right'>"),
+        "{html}"
+    );
+}
+
+#[test]
+fn table_alignment_is_projected_to_header_and_body_cells() {
+    let document = document(include_str!(
+        "../../syntax/tests/fixtures/grammar/accepted/mechdown-table.mec"
+    ));
+    let html = CanonicalDocumentRenderer
+        .render_html(&document, &[])
+        .unwrap();
+    for expected in [
+        "<th class='mech-table-cell mech-align-left'>Name ",
+        "<th class='mech-table-cell mech-align-right'>Value ",
+        "<td class='mech-table-cell mech-align-left'>one  ",
+        "<td class='mech-table-cell mech-align-right'>1     ",
+    ] {
+        assert!(html.contains(expected), "missing {expected:?}: {html}");
+    }
+}
+
+#[test]
+fn figure_grids_preserve_panel_labels_and_combined_caption() {
+    let document = document(include_str!(
+        "../../syntax/tests/fixtures/grammar/accepted/figures.mec"
+    ));
+    let html = CanonicalDocumentRenderer
+        .render_html(&document, &[])
+        .unwrap();
+    for expected in [
+        "<figure class='mech-figure-table'>",
+        "<figure class='mech-subfigure' data-panel='a'>",
+        "<figure class='mech-subfigure' data-panel='b'>",
+        "<figure class='mech-subfigure' data-panel='c'>",
+        "<figcaption class='mech-figure-table-caption'>",
+        "<span class='mech-subfigure-label'>(a)</span> one",
+        "<span class='mech-subfigure-label'>(c)</span> wide",
+    ] {
         assert!(html.contains(expected), "missing {expected:?}: {html}");
     }
 }
@@ -487,7 +626,7 @@ fn retained_footnotes_preserve_every_paragraph() {
         .unwrap();
     assert!(
         html.contains(
-            "<aside class='mech-footnote' id='footnote-note'><p>First paragraph.</p><p>Second paragraph.</p></aside>"
+            "<aside class='mech-footnote' id='footnote-note'><span class='mech-footnote-id'>1:</span><p>First paragraph.</p><p>Second paragraph.</p></aside>"
         ),
         "{html}"
     );
@@ -508,12 +647,12 @@ fn retained_lists_use_semantic_html_without_source_markers() {
         ),
         (
             "-[x]done\ncontinued\n",
-            "<ul class='mech-check-list'><li><input class='mech-check-item' type='checkbox' disabled checked />done",
+            "<ul class='mech-check-list'><li><input class='mech-check-item' type='checkbox' disabled checked /><span class='mech-list-item-label'>done</span><p class='mech-list-item-continuation'>continued</p>",
             "-[x]done",
         ),
         (
             "-[]todo\n",
-            "<ul class='mech-check-list'><li><input class='mech-check-item' type='checkbox' disabled />todo",
+            "<ul class='mech-check-list'><li><input class='mech-check-item' type='checkbox' disabled /><span class='mech-list-item-label'>todo</span>",
             "-[]todo",
         ),
     ] {
