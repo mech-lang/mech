@@ -1634,12 +1634,28 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
     DocumentRule {
         rule: rules::UL_SUBTITLE,
         expression: GrammarExpression::Sequence(&[
-            GrammarExpression::OneOrMore(&GrammarExpression::Choice(&[
-                GrammarExpression::Rule(rules::DIGIT_TOKEN),
-                GrammarExpression::Rule(rules::ALPHA_TOKEN),
-            ])),
-            GrammarExpression::Rule(rules::PERIOD),
-            GrammarExpression::Rule(rules::SPACE_TAB0),
+            GrammarExpression::Choice(&[
+                GrammarExpression::Sequence(&[
+                    GrammarExpression::OneOrMore(&GrammarExpression::Choice(&[
+                        GrammarExpression::Rule(rules::DIGIT_TOKEN),
+                        GrammarExpression::Rule(rules::ALPHA_TOKEN),
+                    ])),
+                    GrammarExpression::Rule(rules::PERIOD),
+                    GrammarExpression::Rule(rules::SPACE_TAB0),
+                ]),
+                GrammarExpression::Peek(&GrammarExpression::Sequence(&[
+                    GrammarExpression::ZeroOrMore(&GrammarExpression::Sequence(&[
+                        GrammarExpression::Not(&GrammarExpression::Sequence(&[
+                            GrammarExpression::Rule(rules::SPACE_TAB1),
+                            GrammarExpression::Literal("@"),
+                        ])),
+                        GrammarExpression::Rule(rules::TEXT),
+                    ])),
+                    GrammarExpression::Rule(rules::SPACE_TAB1),
+                    GrammarExpression::Literal("@"),
+                    GrammarExpression::Rule(rules::IDENTIFIER),
+                ])),
+            ]),
             GrammarExpression::Rule(rules::PARAGRAPH_NEWLINE),
             GrammarExpression::OneOrMore(&GrammarExpression::Rule(rules::DASH)),
             GrammarExpression::Rule(rules::SPACE_TAB0),

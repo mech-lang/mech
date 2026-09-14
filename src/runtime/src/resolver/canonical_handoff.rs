@@ -221,96 +221,29 @@ impl CanonicalDocumentCompilation {
         &self,
         resolved: &[CanonicalResolvedImport],
     ) -> Result<Vec<CanonicalDocumentInputBinding>, CanonicalDocumentHandoffError> {
-        let declared = self.declared_imports();
-        for declaration in declared
-            .iter()
-            .filter(|declaration| import_requires_source_dependency(declaration))
-        {
-            if !resolved
-                .iter()
-                .any(|dependency| &dependency.declaration == declaration)
-            {
-                return Err(CanonicalDocumentHandoffError::UnresolvedImport {
-                    specifier: declaration.specifier.clone(),
-                    occurrence: self.import_occurrence(declaration),
-                });
-            }
-        }
-        let mut environment = BTreeMap::<String, RuntimeValueSnapshot>::new();
-        let mut ownership = HashMap::<String, String>::new();
+        let environment = canonical_import_values(&self.index, &self.scope, resolved)?;
+        // Diagnose a requested namespace member even if another export exists.
         for dependency in resolved {
-            if !declared.contains(&dependency.declaration)
-                || !import_may_resolve_source_dependency(&dependency.declaration)
+            if matches!(
+                dependency.declaration.kind,
+                SourceImportKind::DependencyOnly | SourceImportKind::Namespace
+            ) && let Some(namespace) = module_namespace_for_import(&dependency.declaration)
             {
-                return Err(CanonicalDocumentHandoffError::UnknownResolvedImport {
-                    specifier: dependency.declaration.specifier.clone(),
-                });
-            }
-            let occurrence = self.import_occurrence(&dependency.declaration);
-            let mut insert = |binding: String,
-                              value: RuntimeValueSnapshot|
-             -> Result<(), CanonicalDocumentHandoffError> {
-                if let Some(first) =
-                    ownership.insert(binding.clone(), dependency.canonical_uri.clone())
+                let namespace_prefix = format!("{namespace}/");
+                let occurrence = self.import_occurrence(&dependency.declaration);
+                for export in self
+                    .program
+                    .program()
+                    .inputs
+                    .iter()
+                    .filter_map(|input| input.name.strip_prefix(&namespace_prefix))
                 {
-                    return Err(CanonicalDocumentHandoffError::ImportConflict {
-                        binding,
-                        first,
-                        second: dependency.canonical_uri.clone(),
-                        occurrence: occurrence.clone(),
-                    });
-                }
-                environment.insert(binding, value);
-                Ok(())
-            };
-            match &dependency.declaration.kind {
-                SourceImportKind::DependencyOnly | SourceImportKind::Namespace => {
-                    if let Some(namespace) = module_namespace_for_import(&dependency.declaration) {
-                        let namespace_prefix = format!("{namespace}/");
-                        for export in self
-                            .program
-                            .program()
-                            .inputs
-                            .iter()
-                            .filter_map(|input| input.name.strip_prefix(&namespace_prefix))
-                        {
-                            if !dependency.exports.contains_key(export) {
-                                return Err(CanonicalDocumentHandoffError::MissingExport {
-                                    dependency: dependency.canonical_uri.clone(),
-                                    export: export.to_owned(),
-                                    occurrence: occurrence.clone(),
-                                });
-                            }
-                        }
-                        for (name, value) in &dependency.exports {
-                            insert(format!("{namespace}/{name}"), value.clone())?;
-                        }
-                    }
-                }
-                SourceImportKind::Single { name } => {
-                    if matches!(
-                        dependency.declaration.alias,
-                        Some(SourceImportAlias::Context(_))
-                    ) {
-                        continue;
-                    }
-                    let value = dependency.exports.get(name).cloned().ok_or_else(|| {
-                        CanonicalDocumentHandoffError::MissingExport {
+                    if !dependency.exports.contains_key(export) {
+                        return Err(CanonicalDocumentHandoffError::MissingExport {
                             dependency: dependency.canonical_uri.clone(),
-                            export: name.clone(),
+                            export: export.to_owned(),
                             occurrence: occurrence.clone(),
-                        }
-                    })?;
-                    let binding = match &dependency.declaration.alias {
-                        Some(SourceImportAlias::Value(alias)) => alias.clone(),
-                        Some(SourceImportAlias::Context(_)) => unreachable!(),
-                        None => name.clone(),
-                    };
-                    insert(binding, value)?;
-                }
-                SourceImportKind::Wildcard => {
-                    for (name, value) in &dependency.exports {
-                        insert(name.clone(), value.clone())?;
+                        });
                     }
                 }
             }
@@ -354,4 +287,99 @@ fn named_scope(name: &str) -> SourceScope {
         namespace: mech_core::hash_str(name),
         namespace_str: name.to_owned(),
     })
+}
+
+pub(crate) fn canonical_import_values(
+    index: &SourceIndex,
+    scope: &SourceScope,
+    resolved: &[CanonicalResolvedImport],
+) -> Result<BTreeMap<String, RuntimeValueSnapshot>, CanonicalDocumentHandoffError> {
+    let occurrence = |declaration: &SourceImportDeclaration| {
+        index
+            .imports
+            .iter()
+            .find(|candidate| {
+                &candidate.occurrence.scope == scope && &candidate.declaration == declaration
+            })
+            .and_then(|candidate| candidate.occurrence.range.clone())
+    };
+    let declared = index.imports_for_scope(scope);
+    for declaration in declared
+        .iter()
+        .filter(|declaration| import_requires_source_dependency(declaration))
+    {
+        if !resolved
+            .iter()
+            .any(|dependency| &dependency.declaration == declaration)
+        {
+            return Err(CanonicalDocumentHandoffError::UnresolvedImport {
+                specifier: declaration.specifier.clone(),
+                occurrence: occurrence(declaration),
+            });
+        }
+    }
+    let mut environment = BTreeMap::<String, RuntimeValueSnapshot>::new();
+    let mut ownership = HashMap::<String, String>::new();
+    for dependency in resolved {
+        if !declared.contains(&dependency.declaration)
+            || !import_may_resolve_source_dependency(&dependency.declaration)
+        {
+            return Err(CanonicalDocumentHandoffError::UnknownResolvedImport {
+                specifier: dependency.declaration.specifier.clone(),
+            });
+        }
+        let occurrence = occurrence(&dependency.declaration);
+        let mut insert = |binding: String,
+                          value: RuntimeValueSnapshot|
+         -> Result<(), CanonicalDocumentHandoffError> {
+            if let Some(first) = ownership.insert(binding.clone(), dependency.canonical_uri.clone())
+            {
+                return Err(CanonicalDocumentHandoffError::ImportConflict {
+                    binding,
+                    first,
+                    second: dependency.canonical_uri.clone(),
+                    occurrence: occurrence.clone(),
+                });
+            }
+            environment.insert(binding, value);
+            Ok(())
+        };
+        match &dependency.declaration.kind {
+            SourceImportKind::DependencyOnly | SourceImportKind::Namespace => {
+                if let Some(namespace) = module_namespace_for_import(&dependency.declaration) {
+                    for (name, value) in &dependency.exports {
+                        insert(format!("{namespace}/{name}"), value.clone())?;
+                    }
+                }
+            }
+            SourceImportKind::Single { name } => {
+                if matches!(
+                    dependency.declaration.alias,
+                    Some(SourceImportAlias::Context(_))
+                ) {
+                    continue;
+                }
+                let value = dependency.exports.get(name).cloned().ok_or_else(|| {
+                    CanonicalDocumentHandoffError::MissingExport {
+                        dependency: dependency.canonical_uri.clone(),
+                        export: name.clone(),
+                        occurrence: occurrence.clone(),
+                    }
+                })?;
+                let binding = match &dependency.declaration.alias {
+                    Some(SourceImportAlias::Value(alias)) => alias.clone(),
+                    Some(SourceImportAlias::Context(_)) => unreachable!(),
+                    None => name.clone(),
+                };
+                insert(binding, value)?;
+            }
+            SourceImportKind::Wildcard => {
+                for (name, value) in &dependency.exports {
+                    insert(name.clone(), value.clone())?;
+                }
+            }
+        }
+    }
+
+    Ok(environment)
 }

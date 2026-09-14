@@ -1,10 +1,13 @@
 S8B — Execution interfaces and the deleted-code rehearsal
 ===============================================================================
 
-Status: B1 dependency preparation; no execution consumer is accepted.
-Parent: S8A 8a650af6a6f80268b75216092aed45500c0babed.
+Status: execution preparation and review correction; product qualification remains open.
+Parent: S8A 5e2d43ce5be254fbdf99d094c0115054effd0422.
 The linked s8-consumer-readiness.tsv remains the consumer tracker; this record
-fixes B's initial public-interface decisions.
+records B's public-interface decisions. Canonical configuration, document and
+interactive compilation, mixed compute partitioning, retained import binding,
+and bundle provider planning now have implementation witnesses. The remaining
+method migrations and the deleted-code product matrix below still gate acceptance.
 
 1. Compiler migration contract
 -------------------------------------------------------------------------------

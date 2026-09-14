@@ -1,11 +1,12 @@
+#[path = "bundle_planning.rs"]
+mod planning;
+
 use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
 
 use mech_core::*;
-use mech_runtime::{CanonicalProgramBundle, RuntimeBuilder, SourceDocument};
-use mech_syntax::document::{ParseConfig, Revision};
+use mech_runtime::CanonicalProgramBundle;
 use mech_syntax::formatter::{Formatter, HtmlShimExtraSlots};
 use mech_syntax::parser;
 
@@ -119,17 +120,20 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
     fs::write(&index_html, &root_shim_with_config)?;
 
     let mut bundled_sources = Vec::with_capacity(options.source_paths.len());
-    let mut compiler = RuntimeBuilder::new()
-        .function_catalog(mech_stdlib::source_catalog())
+    let (resolver, documents) =
+        planning::retained_sources(&options.source_paths, &base_dir, &project_dir)?;
+    let mut compiler = planning::compiler_builder(&options.loaded_config.document, runtime_config)?
+        .source_resolver(resolver)
         .build_compiler()?;
     for source_path in &options.source_paths {
         let logical_source_path = source_path;
         let read_source_path = source_path.canonicalize()?;
         let relative = relative_source_path(logical_source_path, &base_dir, &project_dir)?;
-        let source_text = fs::read_to_string(&read_source_path)?;
-        let tree = parser::parse(&source_text)?;
-
         let specifier = bundle_source_specifier(&relative)?;
+        let canonical_uri = format!("bundle:///{specifier}");
+        let document = &documents[&canonical_uri];
+        let source_text = document.source().to_contiguous_string();
+        let tree = parser::parse(&source_text)?;
         let url = format!("source/{}", percent_encode_url_path(&specifier));
         bundled_sources.push(BundledSource {
             canonical_path: read_source_path.clone(),
@@ -139,17 +143,10 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
 
         write_bundle_file(&output_dir, "source", &relative, source_text.as_bytes())?;
 
-        let canonical_uri = format!("bundle:///{specifier}");
-        let document = SourceDocument::parse_resolved(
-            &canonical_uri,
-            Revision(0),
-            Arc::<str>::from(source_text.as_str()),
-            ParseConfig::default(),
-        )
-        .map_err(|error| validation_error(format!("invalid canonical bundle source: {error:?}")))?;
-        let product = compiler.compile_document(&document)?;
+        let product =
+            compiler.compile_canonical_root(mech_runtime::SourceRequest::new(&canonical_uri))?;
         let encoded =
-            CanonicalProgramBundle::from_product(canonical_uri, &document, &product)?.encode()?;
+            CanonicalProgramBundle::from_product(canonical_uri, document, &product)?.encode()?;
         write_bundle_file(&output_dir, "code", &relative, encoded.as_bytes())?;
 
         let html_relative = relative.with_extension("html");
@@ -813,6 +810,99 @@ export default async function init() {}
             loaded_config: loaded,
             host_config_injection: None,
         }
+    }
+
+    #[test]
+    fn canonical_bundle_root_executes_with_transitive_source_exports() {
+        let root = temp_root("canonical-imports");
+        let loaded = write_demo_project(&root);
+        fs::write(
+            root.join("demo.mec"),
+            "+> ./dep.mec\nanswer := dep/value + 2\n",
+        )
+        .unwrap();
+        fs::write(
+            root.join("dep.mec"),
+            "+> ./leaf.mec\nvalue := leaf/value + 1\n<+ value\n",
+        )
+        .unwrap();
+        fs::write(root.join("leaf.mec"), "value := 39\n<+ value\n").unwrap();
+        let out = root.join("out");
+        let mut options = options(&root, &out, loaded);
+        options
+            .source_paths
+            .extend([root.join("dep.mec"), root.join("leaf.mec")]);
+        bundle_web_project(options).unwrap();
+        let bundle = CanonicalProgramBundle::decode(
+            &fs::read_to_string(out.join("code/demo.mec")).unwrap(),
+            None,
+        )
+        .unwrap();
+        let mut runtime = mech_runtime::RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_catalog())
+            .build()
+            .unwrap();
+        let durability = runtime.config().resident_durability;
+        let result = runtime
+            .load_bytecode_program(&bundle.bytecode, durability)
+            .unwrap();
+        assert_eq!(result.initial_value.format_canonical_inline(), "42");
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn canonical_bundle_rejects_missing_and_cyclic_dependencies() {
+        for cyclic in [false, true] {
+            let root = temp_root("canonical-invalid-imports");
+            let loaded = write_demo_project(&root);
+            fs::write(root.join("demo.mec"), "+> ./dep.mec\nanswer := 42\n").unwrap();
+            let out = root.join("out");
+            let mut options = options(&root, &out, loaded);
+            if cyclic {
+                fs::write(
+                    root.join("dep.mec"),
+                    "+> ./demo.mec\nvalue := 1\n<+ value\n",
+                )
+                .unwrap();
+                options.source_paths.push(root.join("dep.mec"));
+            }
+            let error = bundle_web_project(options).unwrap_err().display_message();
+            assert!(
+                error.contains(if cyclic { "cycle" } else { "absent" }),
+                "{error}"
+            );
+            fs::remove_dir_all(root).unwrap();
+        }
+    }
+
+    #[test]
+    fn canonical_bundle_compiler_installs_configured_timer_contracts() {
+        let root = temp_root("canonical-provider");
+        let mut loaded = write_demo_project(&root);
+        loaded
+            .document
+            .hosts
+            .push(mech_runtime::HostInstanceConfig {
+                name: "clock".to_owned(),
+                provider: "timer".to_owned(),
+                settings: mech_runtime::ConfigValue::Map(std::collections::BTreeMap::new()),
+            });
+        fs::write(
+            root.join("demo.mec"),
+            "@clock := timer://clock/tick{:read(tick)}\nvalue := @clock/tick\n",
+        )
+        .unwrap();
+        let out = root.join("out");
+        bundle_web_project(options(&root, &out, loaded)).unwrap();
+        let bundle = CanonicalProgramBundle::decode(
+            &fs::read_to_string(out.join("code/demo.mec")).unwrap(),
+            None,
+        )
+        .unwrap();
+        let artifact = mech_engine::decode_program_artifact_bytecode_v1(&bundle.bytecode).unwrap();
+        assert!(artifact.inputs().is_empty());
+        assert!(artifact.requirements().iter().any(|(_, requirement)| matches!(requirement, mech_core::ApplicationRequirement::Resource(request) if request.base_uri == "timer://clock/tick")));
+        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]

@@ -95,8 +95,8 @@ pub struct CompiledResourceSendOperation {
 impl ProgramCompilationProduct {
     /// Build the durable product directly from a canonical ProgramArtifact.
     /// Canonical artifacts already carry their operation contracts, schemas,
-    /// memory declarations, inputs, outputs, and requirements; legacy planner
-    /// side tables are therefore intentionally empty.
+    /// memory declarations, inputs, outputs, and requirements in artifact sections.
+    /// The decoded instruction stream is empty, as are its native binding sidecars.
     pub fn from_canonical_artifact(artifact: ProgramArtifact) -> MResult<Self> {
         let bytecode = encode_program_artifact_bytecode_v1(&artifact).map_err(|error| {
             MechError::new(

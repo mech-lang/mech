@@ -164,7 +164,13 @@ impl CanonicalSourceProgram {
         }
         self.compute_region = Some((name, placement));
         Ok(self)
+    }
 
+    /// Choose the public identity of the implicit result when adapting a frozen program contract.
+    #[cfg(feature = "resident-artifact")]
+    pub(crate) fn with_primary_output_name(mut self, name: &str) -> Self {
+        self.program.outputs[0].name = name.to_owned();
+        self
     }
 
     pub const fn program(&self) -> &SourceProgram {

@@ -176,12 +176,19 @@ impl SubtitleProbe {
                     previous_was_horizontal,
                 } => {
                     if let Some(character) = character.filter(|ch| !matches!(ch, '\r' | '\n')) {
+                        let next = view
+                            .at_relative(self.relative + character.len_utf8() as u32)
+                            .and_then(|next| next.peek_char());
+                        if character == '@'
+                            && previous_was_horizontal
+                            && next.is_none()
+                            && !final_input
+                        {
+                            return Progress::NeedInput;
+                        }
                         let annotation = character == '@'
                             && previous_was_horizontal
-                            && view
-                                .at_relative(self.relative + character.len_utf8() as u32)
-                                .and_then(|next| next.peek_char())
-                                .is_some_and(|next| next.is_alphabetic() || next == '_');
+                            && next.is_some_and(|next| next.is_alphabetic() || next == '_');
                         self.relative += character.len_utf8() as u32;
                         self.phase = SubtitlePhase::Title {
                             any: true,
@@ -311,6 +318,9 @@ mod tests {
             (" ``", false, None),
             (" ~~x", false, None),
             ("A. title\r\n---\t\n", true, None),
+            ("calculation @compute\n---\n", true, None),
+            ("calculation @_compute\r\n---\n", true, None),
+            ("calculation @\n---\n", false, None),
             ("é1.\u{2009}💡\n-", true, None),
             ("1. title\r---", true, None),
             ("1. title\n--- \u{a0}", true, None),

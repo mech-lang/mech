@@ -1253,7 +1253,7 @@ result
     assert_eq!(
         mixed.activation_inputs["x"],
         mech_compute::ComputeValue::TensorF32 {
-            dimensions: vec![1, 4].into_boxed_slice(),
+            dimensions: vec![4].into_boxed_slice(),
             layout: mech_compute::TensorLayout::RowMajor,
             values: Arc::from([0.001, 0.002, 0.003, 0.004]),
         }
@@ -5174,4 +5174,83 @@ fn product_nbody_source_and_bytecode_match_reference_for_4096_accepted_turns() {
         assert_eq!(trace.latest.len(), 20);
         assert_eq!(trace.max_retained_values, 20);
     }
+}
+
+#[test]
+fn canonical_resource_planning_excludes_inactive_document_owners() {
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .build_compiler()
+        .unwrap();
+    for inactive in [
+        "```mech:worker\nvalue := @missing/input\n@missing/output <- value\n```\n",
+        "```mech:disabled\nvalue := @missing/input\n@missing/output <- value\n```\n",
+        "╭◉╮⸢value := @missing/input\n@missing/output <- value\n⸥\n",
+    ] {
+        let product = compiler
+            .compile_canonical_source(&format!("answer := 42\n{inactive}"))
+            .unwrap();
+        assert!(product.artifact().inputs().is_empty());
+    }
+    assert!(
+        compiler
+            .compile_canonical_source("answer := @missing/input\n")
+            .is_err()
+    );
+    assert!(
+        compiler
+            .compile_canonical_source("```mech\nanswer := @missing/input\n```\n")
+            .is_err()
+    );
+}
+
+#[test]
+fn canonical_native_sidecars_cover_every_encoded_instruction() {
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .build_compiler()
+        .unwrap();
+    let product = compiler
+        .compile_canonical_source("answer := 40 + 2\n")
+        .unwrap();
+    let (artifact, bytecode, bindings, requirements, memory) = product.into_native_parts();
+    let parsed = ParsedProgram::from_bytes(&bytecode).unwrap();
+    assert!(!artifact.nodes().is_empty());
+    assert!(parsed.instructions.is_empty());
+    assert_eq!(bindings.len(), parsed.instructions.len());
+    assert_eq!(requirements.len(), parsed.instructions.len());
+    assert_eq!(memory.len(), parsed.instructions.len());
+}
+
+#[test]
+fn canonical_trailing_resource_send_preserves_implicit_result() {
+    let catalog = mech_stdlib::source_catalog();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(Arc::clone(&catalog))
+        .resource_provider(Box::new(ProductSceneProvider {
+            trace: Arc::new(Mutex::new(ProductSceneTrace::default())),
+            contract: ProductSceneContract::AtMostOnce,
+            prepare_delay: Duration::ZERO,
+        }))
+        .build_compiler()
+        .unwrap();
+    let product = compiler
+        .compile_canonical_source(
+            "@scene := scene://orbit/frame{:write(points)}\nanswer := 42\n@scene/points <- [1 2]\n",
+        )
+        .unwrap();
+    let mut instance = mech_engine::__resident::activate_external(
+        mech_core::ReactiveInstanceId::new(801, 0),
+        product.artifact(),
+        &catalog,
+        &mech_engine::resident::ActivationFacts::default(),
+        mech_engine::resident::ResidentIntegrityMode::Checked,
+    )
+    .unwrap();
+    let prepared = instance.prepare_turn(&[]).unwrap();
+    assert_eq!(prepared.effect_intents().count(), 1);
+    let value =
+        crate::RuntimeValueSnapshot::from_value(prepared.copied_output(0).unwrap()).unwrap();
+    assert_eq!(value.format_canonical_inline(), "42");
+    prepared.abort();
 }

@@ -1194,6 +1194,20 @@ fn remove_canonical_definitions(
             }
             continue;
         }
+        let target = VariableAssignSyntax::cast(node.clone())
+            .and_then(|assignment| assignment.target())
+            .or_else(|| {
+                OpAssignSyntax::cast(node.clone()).and_then(|assignment| assignment.target())
+            });
+        if let Some(name) = target
+            .and_then(|target| target.stem())
+            .and_then(|stem| stem.syntax().text().ok())
+        {
+            if requested.contains(&name) {
+                ranges.push(node.range());
+            }
+            continue;
+        }
         pending.extend(node.children());
     }
     let mut source = document.source().to_contiguous_string();
@@ -1216,7 +1230,15 @@ fn remove_canonical_definitions(
         })
         .collect::<Vec<_>>();
     byte_ranges.sort_unstable();
-    for (start, end) in byte_ranges.into_iter().rev() {
+    let mut merged: Vec<(usize, usize)> = Vec::new();
+    for (start, end) in byte_ranges {
+        if let Some(previous) = merged.last_mut().filter(|previous| start <= previous.1) {
+            previous.1 = previous.1.max(end);
+        } else {
+            merged.push((start, end));
+        }
+    }
+    for (start, end) in merged.into_iter().rev() {
         source.replace_range(start..end, "");
     }
     Ok((source, removed))
@@ -1605,6 +1627,57 @@ mod tests {
         stream.append(source, u64::MAX).unwrap();
         assert_eq!(stream.finish(u64::MAX).progress, StreamProgress::Finished);
         stream
+    }
+
+    #[test]
+    fn canonical_clear_removes_definitions_assignments_and_op_assignments() {
+        let initial = crate::SourceDocument::parse_resolved(
+            "repl://clear",
+            Revision(0),
+            Arc::<str>::from("~x := 1\nx = 2\nx += 1\ny := 9\n"),
+            ParseConfig::default(),
+        )
+        .unwrap();
+        let mut session = ResidentReplSession::from_document(
+            CanonicalRuntimeFactory {
+                activations: std::rc::Rc::new(Cell::new(0)),
+            },
+            initial,
+        )
+        .unwrap();
+        assert_eq!(session.clear_variables(&["x".to_owned()]).unwrap(), ["x"]);
+        assert_eq!(session.source(), "y := 9\n");
+        assert!(session.clear_variables(&["x".to_owned()]).is_err());
+    }
+
+    #[test]
+    fn canonical_invariants_keep_queryable_sigil_names() {
+        let initial = crate::SourceDocument::parse_resolved(
+            "repl://invariants",
+            Revision(0),
+            Arc::<str>::from("x := 1\nsafe! := x <= 2\n"),
+            ParseConfig::default(),
+        )
+        .unwrap();
+        let session = ResidentReplSession::from_document(
+            CanonicalRuntimeFactory {
+                activations: std::rc::Rc::new(Cell::new(0)),
+            },
+            initial,
+        )
+        .unwrap();
+        for names in [vec![], vec!["safe!".to_owned()]] {
+            let constraints = session.integrity_constraints(&names).unwrap();
+            assert_eq!(constraints.len(), 1);
+            assert_eq!(constraints[0].0, "safe!");
+            assert_eq!(constraints[0].1.format_canonical_inline(), "true");
+        }
+        assert!(
+            session
+                .integrity_constraints(&["safe".to_owned()])
+                .unwrap()
+                .is_empty()
+        );
     }
 
     #[test]

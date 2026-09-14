@@ -639,7 +639,7 @@ fn validate_output(
         return Err(FrozenEkfArtifactClosureError::InvalidOutput);
     };
     let semantic_source = published_output_source(artifact, output.output, output.source)?;
-    if output.name != "result"
+    if output.name != "estimate"
         || !state_updates
             .iter()
             .any(|update| update.target == semantic_source || update.candidate == semantic_source)
@@ -650,7 +650,7 @@ fn validate_output(
     }
     Ok(FrozenEkfOutputClosure {
         output: output.output,
-        name: "result",
+        name: "estimate",
         source: output.source,
         schema: output.schema,
     })
@@ -1233,6 +1233,7 @@ fn compile_frozen_ekf_product(
         ));
     }
     let source_artifact = canonical_program
+        .with_primary_output_name("estimate")
         .bind_resource_input("@trace/sample", expected_request.clone())
         .map_err(|error| frozen_service_error(error.to_string()))?
         .compile_artifact()

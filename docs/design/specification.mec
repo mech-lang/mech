@@ -3436,7 +3436,9 @@ mechdown-table-row :=
     bar),
   whitespace0 ;
 
-ul-subtitle := +(digit-token | alpha-token), period, space-tab0,
+ul-subtitle := ((+(digit-token | alpha-token), period, space-tab0)
+               | >(*(¬(space-tab1, "@"), text),
+                     space-tab1, "@", identifier)),
                paragraph-newline, +dash, space-tab0, new-line,
                space-tab0, whitespace0 ;
 subtitle := ¬(error-sigil | info-sigil), space-tab0,

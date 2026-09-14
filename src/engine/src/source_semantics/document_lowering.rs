@@ -152,6 +152,7 @@ pub(super) fn compile_mixed_document_with_catalog_and_resources(
         }
     }
     let coordinator = compile_collected_document(
+        document.scope_id(),
         anchor,
         coordinator_units,
         coordinator_exports,
@@ -168,6 +169,7 @@ pub(super) fn compile_mixed_document_with_catalog_and_resources(
     let mut compute_exports = Vec::new();
     collect_document_units(region.syntax(), &mut compute_units, &mut compute_exports)?;
     let compute = compile_collected_document(
+        document.scope_id(),
         anchor,
         compute_units,
         compute_exports,
@@ -188,6 +190,7 @@ pub(super) fn compile_mixed_document_with_catalog_and_resources(
         &mut initializer_exports,
     )?;
     let compute_initializers = compile_collected_document(
+        document.scope_id(),
         anchor,
         initializer_units,
         initializer_exports,
@@ -353,7 +356,12 @@ fn compile_collected_document(
             anchor,
         });
     };
+    // Constraint query outputs are separate from the implicit document result.
+    let constraint_outputs = std::mem::take(&mut builder.outputs);
     builder.publish("result", None, last.value, &last.syntax);
+    if interactive {
+        builder.outputs.extend(constraint_outputs);
+    }
     let mut output_bindings = vec![SourceDocumentOutput {
         output: 0,
         kind: SourceDocumentOutputKind::Program,
@@ -716,14 +724,13 @@ fn compile_document_units_inner(
             }
             DocumentUnit::ResourceSend(send) => {
                 let value = builder.emit_resource_send(&send)?;
-                retain_later_document_value(
-                    &mut last,
-                    CompiledDocumentValue {
+                if last.is_none() {
+                    last = Some(CompiledDocumentValue {
                         value,
                         syntax: send.syntax().clone(),
-                        program_visible: true,
-                    },
-                );
+                        program_visible: false,
+                    });
+                }
                 refresh_deferred_inline(builder, deferred_inline, presentation, &mut last)?;
             }
             DocumentUnit::Invariant(invariant) => {
@@ -756,10 +763,9 @@ fn compile_document_units_inner(
                         anchor: SourceSemanticAnchor::for_node(expression.syntax()),
                     });
                 }
-                builder.constraints.push(PendingConstraint {
-                    name: node_text(&name)?,
-                    value,
-                });
+                let name = format!("{}!", node_text(&name)?);
+                builder.publish(&name, None, value, invariant.syntax());
+                builder.constraints.push(PendingConstraint { name, value });
                 refresh_deferred_inline(builder, deferred_inline, presentation, &mut last)?;
             }
             DocumentUnit::Inline(inline) => {

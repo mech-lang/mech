@@ -88,7 +88,7 @@ pub(crate) fn is_ul_subtitle(cursor: &Cursor<'_>) -> bool {
         if character == '@' && previous_was_horizontal {
             let mut annotation = lookahead.clone();
             let _ = annotation.bump_char();
-            has_annotation = annotation
+            has_annotation |= annotation
                 .peek_char()
                 .is_some_and(|next| next.is_alphabetic() || next == '_');
         }
