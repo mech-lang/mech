@@ -356,6 +356,26 @@ impl ModuleVersionRecord {
             return invalid_store_record("module_version.version", "must be greater than zero");
         }
 
+        #[cfg(feature = "source")]
+        if let Some(document) = &self.source_document {
+            match &self.source {
+                Some(MechSourceCode::String(source))
+                    if source.as_str() == document.source().to_contiguous_string() => {}
+                Some(MechSourceCode::String(_)) => {
+                    return invalid_store_record(
+                        "module_version.source_document",
+                        "must retain the exact source bytes",
+                    );
+                }
+                _ => {
+                    return invalid_store_record(
+                        "module_version.source_document",
+                        "requires textual source",
+                    );
+                }
+            }
+        }
+
         Ok(())
     }
 
@@ -1700,6 +1720,45 @@ impl MechErrorKind for StoreCapabilityNotRevocableError {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn stored_source_document_must_match_exact_textual_source() {
+        use mech_syntax::document::{ParseConfig, Revision};
+        let document = SourceDocument::parse_resolved(
+            "memory:main.mec",
+            Revision(0),
+            "value := 1\r\n",
+            ParseConfig::default(),
+        )
+        .unwrap();
+        for source in [
+            None,
+            Some(MechSourceCode::Html("value := 1\r\n".into())),
+            Some(MechSourceCode::String("value := 2\r\n".into())),
+            Some(MechSourceCode::String("value := 1\n".into())),
+        ] {
+            let mut version = ModuleVersionRecord::new(ModuleVersionId(2), ModuleId(1), 1)
+                .with_source_document(Some(document.clone()));
+            version.source = source;
+            assert!(version.validate().is_err());
+            let mut store = InMemoryStore::new();
+            store
+                .put_module(ModuleRecord::new(ModuleId(1), "memory:main.mec"))
+                .unwrap();
+            assert!(store.put_module_version(version).is_err());
+            assert!(
+                store
+                    .get_module_version(ModuleVersionId(2))
+                    .unwrap()
+                    .is_none()
+            );
+        }
+        let version = ModuleVersionRecord::new(ModuleVersionId(2), ModuleId(1), 1)
+            .with_source(MechSourceCode::String("value := 1\r\n".into()))
+            .with_source_document(Some(document));
+        assert!(version.validate().is_ok());
+    }
 
     use crate::capability::{BasicCapability, BasicOperation, BasicResource, BasicSubject};
 

@@ -43,6 +43,19 @@ fn module_journal_validation_error(
 
 impl MechRuntime {
     #[cfg(feature = "source")]
+    fn remember_committed_source_revisions(&mut self, envelope: &ActiveRuntimeTransaction) {
+        for version in envelope.modules.version_puts() {
+            if let Some(document) = &version.source_document {
+                let revision = document.source().revision();
+                self.source_revisions
+                    .entry(version.module)
+                    .and_modify(|previous| *previous = (*previous).max(revision))
+                    .or_insert(revision);
+            }
+        }
+    }
+
+    #[cfg(feature = "source")]
     fn validate_runtime_module_journal(&self, transaction_id: TransactionId) -> MResult<()> {
         let journal = &self.active_runtime_transaction(transaction_id)?.modules;
         if journal.is_empty() {
@@ -332,6 +345,8 @@ impl MechRuntime {
                     return Err(error);
                 }
             };
+            #[cfg(feature = "source")]
+            self.remember_committed_source_revisions(&envelope);
             context.transaction = None;
             self.push_persisted_event_to_context(context, commit_event)?;
             return Ok(RuntimeCommitResolution::Committed(RuntimeCommitOutcome {
@@ -517,6 +532,8 @@ impl MechRuntime {
             }
         };
 
+        #[cfg(feature = "source")]
+        self.remember_committed_source_revisions(&envelope);
         let phase_guard = ScopedRuntimeState::enter(
             &self.active_effect_phase,
             ActiveRuntimeEffectPhase::Committing,

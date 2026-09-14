@@ -11,11 +11,9 @@ use std::sync::{Arc, Mutex};
 
 use mech_core::{MResult, MechError, MechErrorKind, MechSourceCode};
 
-#[cfg(feature = "source")]
-use crate::resolver::{
-    InvalidResolvedSourceError, SourceDocument, SourceIndex, source_request_for_import,
-};
 use crate::resolver::{ResolvedSource, SourceRequest, SourceResolver};
+#[cfg(feature = "source")]
+use crate::resolver::{SourceIndex, source_request_for_import};
 use crate::{FS_IMPORT, FS_READ, FS_RESOLVE, SharedCapabilityKernel, check_fs_capability};
 
 use super::{
@@ -146,71 +144,52 @@ impl FileSourceResolver {
         let canonical_uri = path_to_file_uri(&path)?;
         let mut resolved = ResolvedSource::new(name, canonical_uri.clone(), source).with_kind(kind);
         if resolved.kind == SourceKind::Mech
-            && let MechSourceCode::String(source_text) = &resolved.source
+            && matches!(&resolved.source, MechSourceCode::String(_))
         {
-            let document = SourceDocument::parse_resolved(
-                &canonical_uri,
-                self.proposed_source_revision(&canonical_uri, source_text)?,
-                source_text.as_str(),
-                mech_syntax::document::ParseConfig::default(),
-            )
-            .map_err(|_| {
-                MechError::new(
-                    InvalidResolvedSourceError {
-                        field: "source",
-                        reason: "exceeds the canonical retained-source range",
-                    },
-                    None,
-                )
-            })?;
-            let accepted_revision = document.source().revision();
-            let accepted_source = source_text.clone();
-            resolved = resolved
-                .with_source_document(document)?
-                .admit_canonical_document()?;
-            self.accept_source_revision(&canonical_uri, &accepted_source, accepted_revision)?;
+            resolved =
+                self.with_source_revision(resolved, ResolvedSource::admit_canonical_document)?;
         }
         Ok(Some(resolved))
     }
 
+    /// Revision selection and successful admission form one transaction across
+    /// resolver clones. Rejected candidates leave the accepted history untouched.
     #[cfg(feature = "source")]
-    fn proposed_source_revision(
+    fn with_source_revision(
         &self,
-        canonical_uri: &str,
-        source: &str,
-    ) -> MResult<mech_syntax::document::Revision> {
-        let revisions = self.source_revisions.lock().map_err(|_| {
-            filesystem_specifier_error(canonical_uri, "source revision owner is poisoned")
-        })?;
-        let Some((previous_source, previous_revision)) = revisions.get(canonical_uri) else {
-            return Ok(mech_syntax::document::Revision(0));
+        resolved: ResolvedSource,
+        admit: impl FnOnce(ResolvedSource) -> MResult<ResolvedSource>,
+    ) -> MResult<ResolvedSource> {
+        let canonical_uri = resolved.canonical_uri.clone();
+        let MechSourceCode::String(source) = &resolved.source else {
+            return Err(filesystem_specifier_error(
+                &canonical_uri,
+                "requires textual source",
+            ));
         };
-        if previous_source == source {
-            return Ok(*previous_revision);
-        }
-        previous_revision
-            .0
-            .checked_add(1)
-            .map(mech_syntax::document::Revision)
-            .ok_or_else(|| {
-                filesystem_specifier_error(canonical_uri, "source revision identity is exhausted")
-            })
-    }
-
-    #[cfg(feature = "source")]
-    fn accept_source_revision(
-        &self,
-        canonical_uri: &str,
-        source: &str,
-        revision: mech_syntax::document::Revision,
-    ) -> MResult<()> {
-        self.source_revisions
-            .lock()
-            .map_err(|_| {
-                filesystem_specifier_error(canonical_uri, "source revision owner is poisoned")
-            })?
-            .insert(canonical_uri.to_owned(), (source.to_owned(), revision));
-        Ok(())
+        let source = source.clone();
+        let mut revisions = self.source_revisions.lock().map_err(|_| {
+            filesystem_specifier_error(&canonical_uri, "source revision owner is poisoned")
+        })?;
+        let revision = match revisions.get(&canonical_uri) {
+            None => mech_syntax::document::Revision(0),
+            Some((previous_source, revision)) if previous_source == &source => *revision,
+            Some((_, revision)) => revision
+                .0
+                .checked_add(1)
+                .map(mech_syntax::document::Revision)
+                .ok_or_else(|| {
+                    filesystem_specifier_error(
+                        &canonical_uri,
+                        "source revision identity is exhausted",
+                    )
+                })?,
+        };
+        let resolved = resolved
+            .retain_source_document(revision, mech_syntax::document::ParseConfig::default())?;
+        let resolved = admit(resolved)?;
+        revisions.insert(canonical_uri, (source, revision));
+        Ok(resolved)
     }
 
     fn resolve_path(&self, request: &SourceRequest) -> MResult<Option<PathBuf>> {
@@ -347,51 +326,34 @@ impl SourceResolver for FileSourceResolver {
         let resolved = {
             let mut resolved = resolved;
             if resolved.kind == SourceKind::Mech {
-                if let MechSourceCode::String(source_text) = &resolved.source {
-                    let document = SourceDocument::parse_resolved(
-                        &canonical_uri,
-                        self.proposed_source_revision(&canonical_uri, source_text)?,
-                        source_text.as_str(),
-                        mech_syntax::document::ParseConfig::default(),
-                    )
-                    .map_err(|_| {
-                        MechError::new(
-                            InvalidResolvedSourceError {
-                                field: "source",
-                                reason: "exceeds the canonical retained-source range",
-                            },
-                            None,
-                        )
+                if matches!(&resolved.source, MechSourceCode::String(_)) {
+                    resolved = self.with_source_revision(resolved, |resolved| {
+                        let MechSourceCode::String(source_text) = &resolved.source else {
+                            unreachable!("textual source checked before admission");
+                        };
+                        let tree = mech_syntax::parser::parse(source_text.trim())?;
+                        let referrer = canonical_uri.clone();
+                        let index = SourceIndex::from_program(&tree);
+                        index.validate_address_targets()?;
+                        let imports = index.all_imports();
+                        let exports = index.all_exports();
+                        let contexts = index.all_contexts();
+                        let address_references = index.all_address_references();
+                        let scopes = index.module_scopes();
+                        let dependencies = imports
+                            .iter()
+                            .map(|import| source_request_for_import(import, Some(&referrer)))
+                            .collect::<Vec<_>>();
+
+                        Ok(resolved
+                            .with_syntax_tree(tree)
+                            .with_imports(imports)
+                            .with_exports(exports)
+                            .with_contexts(contexts)
+                            .with_address_references(address_references)
+                            .with_dependencies(dependencies)
+                            .with_scopes(scopes))
                     })?;
-                    let tree = mech_syntax::parser::parse(source_text.trim())?;
-                    let referrer = canonical_uri.clone();
-                    let index = SourceIndex::from_program(&tree);
-                    index.validate_address_targets()?;
-                    let imports = index.all_imports();
-                    let exports = index.all_exports();
-                    let contexts = index.all_contexts();
-                    let address_references = index.all_address_references();
-                    let scopes = index.module_scopes();
-                    let dependencies = imports
-                        .iter()
-                        .map(|import| source_request_for_import(import, Some(&referrer)))
-                        .collect::<Vec<_>>();
-
-                    self.accept_source_revision(
-                        &canonical_uri,
-                        source_text,
-                        document.source().revision(),
-                    )?;
-
-                    resolved = resolved
-                        .with_source_document(document)?
-                        .with_syntax_tree(tree)
-                        .with_imports(imports)
-                        .with_exports(exports)
-                        .with_contexts(contexts)
-                        .with_address_references(address_references)
-                        .with_dependencies(dependencies)
-                        .with_scopes(scopes);
                 }
             }
             resolved
@@ -1203,6 +1165,51 @@ mod tests {
                 mech_core::hash_str(&resolved.canonical_uri)
             );
         }
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn cloned_file_resolvers_assign_distinct_revisions_to_concurrent_candidates() {
+        let resolver = FileSourceResolver::new(".");
+        let start = Arc::new(std::sync::Barrier::new(8));
+        let workers = (0..8)
+            .map(|value| {
+                let resolver = resolver.clone();
+                let start = start.clone();
+                std::thread::spawn(move || {
+                    let source = format!("value := {value}\n");
+                    let resolved = ResolvedSource::new(
+                        "index.mec",
+                        "file:///concurrent/index.mec",
+                        MechSourceCode::String(source.clone()),
+                    )
+                    .with_kind(SourceKind::Mech);
+                    start.wait();
+                    let resolved = resolver
+                        .with_source_revision(resolved, ResolvedSource::admit_canonical_document)
+                        .unwrap();
+                    let document = resolved.source_document().unwrap();
+                    (
+                        document.source().document(),
+                        document.source().revision(),
+                        source,
+                    )
+                })
+            })
+            .collect::<Vec<_>>();
+        let mut accepted = std::collections::BTreeMap::new();
+        for worker in workers {
+            let (document, revision, text) = worker.join().unwrap();
+            assert!(accepted.insert((document, revision), text).is_none());
+        }
+        assert_eq!(accepted.len(), 8);
+        assert_eq!(
+            accepted
+                .keys()
+                .map(|(_, revision)| revision.0)
+                .collect::<Vec<_>>(),
+            (0..8).collect::<Vec<_>>()
+        );
     }
 
     #[cfg(feature = "source")]

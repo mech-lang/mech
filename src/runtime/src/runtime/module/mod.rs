@@ -768,9 +768,6 @@ impl MechRuntime {
                 runtime.build_module_from_resolved_source_in_transaction(context, resolved, options)
             },
         )?;
-        #[cfg(feature = "source")]
-        self.source_revisions
-            .insert(canonical_uri.to_owned(), revision);
         Ok(version)
     }
 
@@ -822,8 +819,6 @@ impl MechRuntime {
                 runtime.build_module_from_resolved_source_in_transaction(context, resolved, options)
             },
         )?;
-        self.source_revisions
-            .insert(canonical_uri.to_owned(), revision);
         Ok(version)
     }
 
@@ -832,7 +827,25 @@ impl MechRuntime {
         &self,
         canonical_uri: &str,
     ) -> MResult<mech_syntax::document::Revision> {
-        let Some(previous) = self.source_revisions.get(canonical_uri) else {
+        let module = module_id(canonical_uri);
+        // Committed sources from every admission path share this high-water mark.
+        // Also account for provisional versions so two active transactions cannot
+        // issue the same revision for different candidates. Aborts discard them.
+        let previous = self
+            .source_revisions
+            .get(&module)
+            .copied()
+            .into_iter()
+            .chain(self.active_transactions.values().flat_map(|transaction| {
+                transaction.modules.version_puts().filter_map(|version| {
+                    (version.module == module)
+                        .then_some(version.source_document.as_ref())
+                        .flatten()
+                        .map(|document| document.source().revision())
+                })
+            }))
+            .max();
+        let Some(previous) = previous else {
             return Ok(mech_syntax::document::Revision(0));
         };
         previous
