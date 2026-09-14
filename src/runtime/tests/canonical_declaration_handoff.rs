@@ -234,6 +234,25 @@ fn every_declared_import_requires_a_positioned_resolution() {
 }
 
 #[test]
+fn source_wildcard_requires_a_positioned_resolution() {
+    let compilation = CanonicalDocumentCompilation::from_document(&document(
+        27,
+        "+> ./missing.mec/*\nanswer := 42\nanswer\n",
+    ))
+    .unwrap();
+    let error = compilation
+        .bind_resolved_imports(&[])
+        .err()
+        .expect("a source wildcard cannot omit its dependency");
+    let CanonicalDocumentHandoffError::UnresolvedImport { occurrence, .. } = error else {
+        panic!("expected an unresolved import error")
+    };
+    let occurrence = occurrence.expect("declaration retains its source position");
+    assert_eq!((occurrence.start.row, occurrence.start.col), (1, 4));
+    assert_eq!((occurrence.end.row, occurrence.end.col), (1, 19));
+}
+
+#[test]
 fn context_alias_imports_do_not_require_source_dependency_edges() {
     let compilation = CanonicalDocumentCompilation::from_document(&document(
         24,
@@ -287,6 +306,34 @@ fn missing_dependency_exports_report_the_import_occurrence() {
     let CanonicalDocumentHandoffError::MissingExport { occurrence, .. } = error else {
         panic!("expected a missing export error")
     };
+    let occurrence = occurrence.expect("declared imports have retained positions");
+    assert_eq!((occurrence.start.row, occurrence.start.col), (1, 4));
+    assert_eq!((occurrence.end.row, occurrence.end.col), (1, 13));
+}
+
+#[test]
+fn missing_namespace_exports_report_the_import_occurrence() {
+    let compilation = CanonicalDocumentCompilation::from_document(&document(
+        28,
+        "+> ./dep.mec\nanswer := dep/missing\nanswer\n",
+    ))
+    .unwrap();
+    let declaration = compilation.declared_imports()[0].clone();
+    let error = compilation
+        .bind_resolved_imports(&[CanonicalResolvedImport {
+            declaration,
+            canonical_uri: "memory:dep.mec".to_owned(),
+            exports: BTreeMap::new(),
+        }])
+        .err()
+        .expect("a namespace dependency cannot omit a referenced export");
+    let CanonicalDocumentHandoffError::MissingExport {
+        export, occurrence, ..
+    } = error
+    else {
+        panic!("expected a missing namespace export error")
+    };
+    assert_eq!(export, "missing");
     let occurrence = occurrence.expect("declared imports have retained positions");
     assert_eq!((occurrence.start.row, occurrence.start.col), (1, 4));
     assert_eq!((occurrence.end.row, occurrence.end.col), (1, 13));

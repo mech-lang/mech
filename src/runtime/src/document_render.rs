@@ -146,7 +146,8 @@ impl CanonicalDocumentRenderer {
             &CanonicalRenderScope::Root,
             &lookup,
             &mut output,
-        );
+            visible_root_program_range(document.syntax()),
+        )?;
         output.push_str("</article>");
         Ok(output)
     }
@@ -171,7 +172,8 @@ impl CanonicalDocumentRenderer {
             &CanonicalRenderScope::Root,
             &lookup,
             &mut output,
-        );
+            visible_root_program_range(document.syntax()),
+        )?;
         Ok(output)
     }
 }
@@ -339,8 +341,13 @@ fn render_document_node_html(
         if let Some(body) = mika.body() {
             render_section_html(&body, child, lookup, output)?;
         }
-        append_program_html(child, &CanonicalRenderScope::Root, lookup, output);
+        let required = mika
+            .body()
+            .and_then(|body| visible_root_program_range(body.syntax()));
+        append_program_html(child, &CanonicalRenderScope::Root, lookup, output, required)?;
         output.push_str("</section>");
+    } else if value.kind() == SyntaxKind::Img {
+        render_image_html(value, owner, lookup, output)?;
     } else if let Some(code) = MechCodeSyntax::cast(value.clone()) {
         output.push_str("<pre class='mech-code'><code>");
         output.push_str(&escape_html(&node_text(code.syntax())?));
@@ -382,7 +389,6 @@ fn render_document_node_text(
 ) -> Result<(), CanonicalDocumentRenderError> {
     if let Some(paragraph) = ParagraphSyntax::cast(value.clone()) {
         render_paragraph_text(&paragraph, owner, lookup, output)?;
-        output.push('\n');
     } else if let Some(fence) = CodeBlockSyntax::cast(value.clone()) {
         render_fence_text(&fence, owner, lookup, output)?;
     } else if let Some(mika) = find::<MikaSectionSyntax>(value) {
@@ -390,7 +396,10 @@ fn render_document_node_text(
         if let Some(body) = mika.body() {
             render_section_text(&body, child, lookup, output)?;
         }
-        append_program_text(child, &CanonicalRenderScope::Root, lookup, output);
+        let required = mika
+            .body()
+            .and_then(|body| visible_root_program_range(body.syntax()));
+        append_program_text(child, &CanonicalRenderScope::Root, lookup, output, required)?;
     } else if MechCodeSyntax::cast(value.clone()).is_some()
         || UlSubtitleSyntax::cast(value.clone()).is_some()
     {
@@ -558,6 +567,7 @@ fn render_inline_html(
             SyntaxKind::HighlightSigil,
         ),
         SyntaxKind::Hyperlink => render_hyperlink_html(node, owner, lookup, output),
+        SyntaxKind::Img => render_image_html(node, owner, lookup, output),
         _ => render_inline_children_html(node, owner, lookup, output, None),
     }
 }
@@ -635,6 +645,51 @@ fn render_hyperlink_html(
     Ok(())
 }
 
+fn render_image_html(
+    node: &SyntaxNode,
+    owner: DocumentScopeId,
+    lookup: &ResultLookup<'_>,
+    output: &mut String,
+) -> Result<(), CanonicalDocumentRenderError> {
+    let caption = node
+        .children()
+        .find(|child| child.kind() == SyntaxKind::InlineParagraph);
+    let tokens = node.tokens();
+    let start = tokens
+        .iter()
+        .find(|token| token.kind() == SyntaxKind::LeftParen)
+        .map(|token| token.range().end)
+        .ok_or_else(|| range_error(node.range()))?;
+    let end = tokens
+        .iter()
+        .find(|token| token.kind() == SyntaxKind::RightParen && token.range().start >= start)
+        .map(|token| token.range().start)
+        .ok_or_else(|| range_error(node.range()))?;
+    let source = node
+        .source()
+        .text(TextRange::new(start, end))
+        .map_err(|_| range_error(node.range()))?;
+    validate_image_source(&source, node.range())?;
+    let alt = caption
+        .as_ref()
+        .map(node_text)
+        .transpose()?
+        .unwrap_or_default();
+
+    output.push_str("<figure class='mech-figure'><img class='mech-image' src='");
+    output.push_str(&escape_attribute(&source));
+    output.push_str("' alt='");
+    output.push_str(&escape_attribute(&alt));
+    output.push_str("' />");
+    if let Some(caption) = caption {
+        output.push_str("<figcaption class='mech-figure-caption'>");
+        render_inline_html(&caption, owner, lookup, output)?;
+        output.push_str("</figcaption>");
+    }
+    output.push_str("</figure>");
+    Ok(())
+}
+
 fn validate_hyperlink(href: &str, range: TextRange) -> Result<(), CanonicalDocumentRenderError> {
     let trimmed = href.trim();
     let scheme_end = trimmed.find(':').filter(|colon| {
@@ -650,6 +705,31 @@ fn validate_hyperlink(href: &str, range: TextRange) -> Result<(), CanonicalDocum
         {
             return Err(CanonicalDocumentRenderError {
                 message: format!("unsafe hyperlink scheme {scheme:?}"),
+                range: Some(range),
+            });
+        }
+    }
+    Ok(())
+}
+
+fn validate_image_source(
+    source: &str,
+    range: TextRange,
+) -> Result<(), CanonicalDocumentRenderError> {
+    let trimmed = source.trim();
+    let scheme_end = trimmed.find(':').filter(|colon| {
+        !trimmed[..*colon]
+            .bytes()
+            .any(|byte| matches!(byte, b'/' | b'?' | b'#'))
+    });
+    if let Some(colon) = scheme_end {
+        let scheme = &trimmed[..colon];
+        if !["http", "https"]
+            .iter()
+            .any(|allowed| scheme.eq_ignore_ascii_case(allowed))
+        {
+            return Err(CanonicalDocumentRenderError {
+                message: format!("unsafe image source scheme {scheme:?}"),
                 range: Some(range),
             });
         }
@@ -775,17 +855,94 @@ fn render_scope(scope: &CodeFenceScope) -> Option<CanonicalRenderScope> {
     }
 }
 
+fn visible_root_program_range(root: &SyntaxNode) -> Option<TextRange> {
+    fn retain_latest(latest: &mut Option<(TextRange, bool)>, range: TextRange, visible: bool) {
+        if latest
+            .as_ref()
+            .is_none_or(|(current, _)| current.start < range.start)
+        {
+            *latest = Some((range, visible));
+        }
+    }
+
+    fn collect(node: &SyntaxNode, latest: &mut Option<(TextRange, bool)>) {
+        if matches!(
+            node.kind(),
+            SyntaxKind::InlineMechCode | SyntaxKind::MikaSection
+        ) {
+            return;
+        }
+        if EvalInlineMechCodeSyntax::cast(node.clone()).is_some() {
+            retain_latest(latest, node.range(), false);
+            return;
+        }
+        if let Some(fence) = CodeBlockSyntax::cast(node.clone()) {
+            if !matches!(
+                fence.info().map(|info| info.scope),
+                Some(CodeFenceScope::Root)
+            ) {
+                return;
+            }
+            let mut fence_latest = None;
+            if let Some(code) = fence.mech_code() {
+                collect(code.syntax(), &mut fence_latest);
+            }
+            if let Some((range, _)) = fence_latest {
+                retain_latest(latest, range, false);
+            }
+            return;
+        }
+        if matches!(
+            node.kind(),
+            SyntaxKind::VariableDefine
+                | SyntaxKind::Expression
+                | SyntaxKind::OpAssign
+                | SyntaxKind::VariableAssign
+        ) {
+            retain_latest(latest, node.range(), true);
+            return;
+        }
+        if matches!(
+            node.kind(),
+            SyntaxKind::ContextDeclaration
+                | SyntaxKind::ExportDeclaration
+                | SyntaxKind::ImportDeclaration
+                | SyntaxKind::ModuleImport
+        ) {
+            return;
+        }
+        for child in node.children() {
+            collect(&child, latest);
+        }
+    }
+
+    let mut latest = None;
+    collect(root, &mut latest);
+    latest.and_then(|(range, visible)| visible.then_some(range))
+}
+
 fn append_program_html(
     owner: DocumentScopeId,
     scope: &CanonicalRenderScope,
     lookup: &ResultLookup<'_>,
     output: &mut String,
-) {
-    if let Some(value) = lookup.get(owner, scope, SourceDocumentOutputKind::Program, None) {
+    required: Option<TextRange>,
+) -> Result<(), CanonicalDocumentRenderError> {
+    let value = lookup.get(owner, scope, SourceDocumentOutputKind::Program, None);
+    if let Some(range) = required
+        && value.is_none()
+    {
+        return Err(CanonicalDocumentRenderError {
+            message: "visible root program has no completed scope result".to_owned(),
+            range: Some(range),
+        });
+    }
+    if let Some(value) = value {
         output.push_str("<output class='mech-program-output'>");
         output.push_str(&value.format_html());
         output.push_str("</output>");
     }
+    Ok(())
 }
 
 fn append_program_text(
@@ -793,12 +950,23 @@ fn append_program_text(
     scope: &CanonicalRenderScope,
     lookup: &ResultLookup<'_>,
     output: &mut String,
-) {
-    if let Some(value) = lookup.get(owner, scope, SourceDocumentOutputKind::Program, None) {
+    required: Option<TextRange>,
+) -> Result<(), CanonicalDocumentRenderError> {
+    let value = lookup.get(owner, scope, SourceDocumentOutputKind::Program, None);
+    if let Some(range) = required
+        && value.is_none()
+    {
+        return Err(CanonicalDocumentRenderError {
+            message: "visible root program has no completed scope result".to_owned(),
+            range: Some(range),
+        });
+    }
+    if let Some(value) = value {
         output.push_str("\n=> ");
         output.push_str(&value.format_canonical_inline());
         output.push('\n');
     }
+    Ok(())
 }
 
 fn fence_body(fence: &CodeBlockSyntax) -> Result<String, CanonicalDocumentRenderError> {

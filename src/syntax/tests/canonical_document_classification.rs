@@ -17,7 +17,6 @@ fn classify(source: &str) -> bool {
 fn canonical_classification_distinguishes_run_source_from_presentation() {
     for source in [
         "answer := 42\n",
-        "+> @env := cli/env\n",
         "@ui/message <- \"hello\"\n",
         "```mech\nx := 1\n```\n",
         "```mech:worker\nx := 1\n```\n",
@@ -34,6 +33,10 @@ fn canonical_classification_distinguishes_run_source_from_presentation() {
         "Just prose.\n",
         "// comment\n",
         "-- comment\n",
+        "+> ./dep.mec\n",
+        "+> @env := cli/env\n",
+        "<+ value\n",
+        "@ui := fs://workspace\n",
         "Displayed {{x := 1}}.\n",
         "Code `x := 1`.\n",
         "```mech:disabled\nx := 1\n```\n",

@@ -232,12 +232,12 @@ fn renderer_preserves_title_subtitle_and_plain_document_structure() {
 
 #[test]
 fn text_renderer_preserves_retained_blank_lines() {
-    let document = document("first\n\nsecond\n");
+    let document = document("first line.\n\nsecond line.\n");
     assert_eq!(
         CanonicalDocumentRenderer
             .render_text(&document, &[])
             .unwrap(),
-        "first\n\nsecond\n"
+        "first line.\n\nsecond line.\n"
     );
 }
 
@@ -252,6 +252,51 @@ fn visible_executable_fences_require_their_owner_result() {
         "visible executable fence has no completed scope result"
     );
     assert!(error.range.is_some());
+}
+
+#[test]
+fn visible_root_programs_require_their_owner_result() {
+    let document = document("answer := 42\nanswer\n");
+    for error in [
+        CanonicalDocumentRenderer
+            .render_html(&document, &[])
+            .unwrap_err(),
+        CanonicalDocumentRenderer
+            .render_text(&document, &[])
+            .unwrap_err(),
+    ] {
+        assert_eq!(
+            error.message,
+            "visible root program has no completed scope result"
+        );
+        assert!(error.range.is_some());
+    }
+}
+
+#[test]
+fn visible_mika_root_programs_require_their_owner_result() {
+    let document = document("~∘~⸢answer := 42\nanswer\n⸥\n");
+    let error = CanonicalDocumentRenderer
+        .render_html(&document, &[])
+        .unwrap_err();
+    assert_eq!(
+        error.message,
+        "visible root program has no completed scope result"
+    );
+    assert!(error.range.is_some());
+}
+
+#[test]
+fn metadata_only_documents_do_not_require_program_results() {
+    for source in ["+> ./dep.mec\n", "@ui := fs://workspace\n"] {
+        let document = document(source);
+        CanonicalDocumentRenderer
+            .render_html(&document, &[])
+            .unwrap();
+        CanonicalDocumentRenderer
+            .render_text(&document, &[])
+            .unwrap();
+    }
 }
 
 #[test]
@@ -287,6 +332,34 @@ fn renderer_rejects_active_script_hyperlinks() {
         .render_html(&document, &[])
         .unwrap_err();
     assert!(error.message.contains("unsafe hyperlink scheme"));
+    assert!(error.range.is_some());
+}
+
+#[test]
+fn retained_images_render_with_safe_escaped_attributes_and_captions() {
+    let document = document("![A ' & B](image'file.png?x=1&y=2)\n");
+    let html = CanonicalDocumentRenderer
+        .render_html(&document, &[])
+        .unwrap();
+    assert!(
+        html.contains(
+            "<img class='mech-image' src='image&#39;file.png?x=1&amp;y=2' alt='A &#39; &amp; B' />"
+        ),
+        "{html}"
+    );
+    assert!(
+        html.contains("<figcaption class='mech-figure-caption'>A ' &amp; B</figcaption>"),
+        "{html}"
+    );
+}
+
+#[test]
+fn renderer_rejects_active_script_image_sources() {
+    let document = document("![unsafe](javascript:payload)\n");
+    let error = CanonicalDocumentRenderer
+        .render_html(&document, &[])
+        .unwrap_err();
+    assert!(error.message.contains("unsafe image source scheme"));
     assert!(error.range.is_some());
 }
 
