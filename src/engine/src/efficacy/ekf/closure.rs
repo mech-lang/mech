@@ -1,5 +1,7 @@
 //! Semantic admission and normalization for the frozen EKF artifact.
 
+use std::sync::Arc;
+
 use mech_core::snapshot::{F64Bits, SequenceView};
 use mech_core::{
     AccessMode, AliasPolicy, CellSlotId, ChangeDetectionPolicy, ConstantId, DeliveryMode,
@@ -9,10 +11,11 @@ use mech_core::{
     ResolvedOperationContract, ResolvedValueDescriptor, ResourceDelivery, ResourceIntent,
     SchemaBody, SchemaDraft, SchemaId, ShapeRule, ValueCell, ValueData, ValueDataDraft,
 };
+use mech_syntax::document::AstNode;
 
 use crate::{
-    ArtifactSource, CompilerPlanningConfig, CompilerPlanningProgram, ProgramArtifact,
-    decode_program_artifact_bytecode_v1,
+    ArtifactSource, CanonicalSourceFrontend, ProgramArtifact, decode_program_artifact_bytecode_v1,
+    encode_program_artifact_bytecode_v1,
 };
 
 use super::catalog::frozen_ekf_compiler_catalog;
@@ -158,6 +161,8 @@ impl FrozenEkfArtifactClosure {
         let mut kernels = Vec::with_capacity(15);
         let mut predicates = Vec::with_capacity(3);
         let mut state_updates = Vec::with_capacity(2);
+        let mut structural_alias_nodes = Vec::new();
+        let mut structural_aliases = std::collections::BTreeMap::new();
         let mut output_by_operation = std::collections::BTreeMap::new();
 
         for node in artifact.nodes() {
@@ -231,15 +236,35 @@ impl FrozenEkfArtifactClosure {
                 if inputs.len() != 1 || outputs.len() != 1 || !is_state_update_contract(declared) {
                     return Err(FrozenEkfArtifactClosureError::InvalidStateUpdate);
                 }
-                let ArtifactSource::Slot(candidate) = inputs[0] else {
-                    return Err(FrozenEkfArtifactClosureError::InvalidStateUpdate);
-                };
                 let target = outputs[0];
                 let target_declaration = artifact
                     .slots()
                     .get(target.get() as usize)
-                    .filter(|slot| slot.slot == target && slot.role == crate::SlotRole::State)
+                    .filter(|slot| slot.slot == target)
                     .ok_or(FrozenEkfArtifactClosureError::InvalidStateUpdate)?;
+                if target_declaration.role == crate::SlotRole::Derived {
+                    let ArtifactSource::Slot(source) = inputs[0] else {
+                        return Err(FrozenEkfArtifactClosureError::InvalidStateUpdate);
+                    };
+                    let source_declaration = artifact
+                        .slots()
+                        .get(source.get() as usize)
+                        .filter(|slot| slot.slot == source && slot.role == crate::SlotRole::State)
+                        .ok_or(FrozenEkfArtifactClosureError::InvalidStateUpdate)?;
+                    if source_declaration.schema != target_declaration.schema
+                        || structural_aliases.insert(target, inputs[0]).is_some()
+                    {
+                        return Err(FrozenEkfArtifactClosureError::InvalidStateUpdate);
+                    }
+                    structural_alias_nodes.push(node.node);
+                    continue;
+                }
+                if target_declaration.role != crate::SlotRole::State {
+                    return Err(FrozenEkfArtifactClosureError::InvalidStateUpdate);
+                }
+                let ArtifactSource::Slot(candidate) = inputs[0] else {
+                    return Err(FrozenEkfArtifactClosureError::InvalidStateUpdate);
+                };
                 let crate::InitializerReference::Constant(initializer) = target_declaration
                     .initializer
                     .ok_or(FrozenEkfArtifactClosureError::InvalidInitializer)?
@@ -291,12 +316,14 @@ impl FrozenEkfArtifactClosure {
         validate_initializers(artifact, &state_updates, &output)?;
         let constants = validate_constants(artifact, &kernels)?;
         validate_operation_wiring(
+            artifact,
             &kernels,
             &predicates,
             &state_updates,
             &output,
             &constants,
             observation_slot,
+            &structural_aliases,
         )?;
         let constraints = validate_constraints(artifact, &predicates)?;
 
@@ -309,7 +336,7 @@ impl FrozenEkfArtifactClosure {
             constraints,
             constants,
             observation_adapter_nodes: Box::new([]),
-            structural_alias_nodes: Box::new([]),
+            structural_alias_nodes: structural_alias_nodes.into_boxed_slice(),
             output,
         })
     }
@@ -611,10 +638,11 @@ fn validate_output(
     let [output] = artifact.outputs() else {
         return Err(FrozenEkfArtifactClosureError::InvalidOutput);
     };
-    if output.name != "estimate"
+    let semantic_source = published_output_source(artifact, output.output, output.source)?;
+    if output.name != "result"
         || !state_updates
             .iter()
-            .any(|update| update.target == output.source)
+            .any(|update| update.target == semantic_source || update.candidate == semantic_source)
         || !schema_matches(artifact, output.schema, FrozenEkfValueShape::Vector(3))
         || slot_schema(artifact, output.source)? != output.schema
     {
@@ -622,10 +650,32 @@ fn validate_output(
     }
     Ok(FrozenEkfOutputClosure {
         output: output.output,
-        name: "estimate",
+        name: "result",
         source: output.source,
         schema: output.schema,
     })
+}
+
+fn published_output_source(
+    artifact: &ProgramArtifact,
+    output: OutputId,
+    source: CellSlotId,
+) -> Result<CellSlotId, FrozenEkfArtifactClosureError> {
+    let declaration = artifact
+        .slots()
+        .get(source.get() as usize)
+        .filter(|slot| slot.slot == source)
+        .ok_or(FrozenEkfArtifactClosureError::InvalidOutput)?;
+    match declaration.producer {
+        crate::ProducerReference::Output {
+            output: producer,
+            source: ArtifactSource::Slot(source),
+        } if producer == output => Ok(source),
+        crate::ProducerReference::Output { .. } => {
+            Err(FrozenEkfArtifactClosureError::InvalidOutput)
+        }
+        _ => Ok(source),
+    }
 }
 
 fn validate_initializers(
@@ -633,13 +683,14 @@ fn validate_initializers(
     state_updates: &[FrozenEkfStateUpdate],
     output: &FrozenEkfOutputClosure,
 ) -> Result<(), FrozenEkfArtifactClosureError> {
+    let semantic_source = published_output_source(artifact, output.output, output.source)?;
     let state = state_updates
         .iter()
-        .find(|update| update.target == output.source)
+        .find(|update| update.target == semantic_source || update.candidate == semantic_source)
         .ok_or(FrozenEkfArtifactClosureError::InvalidInitializer)?;
     let covariance = state_updates
         .iter()
-        .find(|update| update.target != output.source)
+        .find(|update| update.target != state.target)
         .ok_or(FrozenEkfArtifactClosureError::InvalidInitializer)?;
     if value_f64s(artifact, state.initializer).as_deref() != Some(&[2.0, 1.0, 0.15])
         || value_f64s(artifact, covariance.initializer).as_deref()
@@ -702,12 +753,14 @@ fn validate_constants(
 }
 
 fn validate_operation_wiring(
+    artifact: &ProgramArtifact,
     kernels: &[FrozenEkfKernelNode],
     predicates: &[FrozenEkfPredicateNode],
     state_updates: &[FrozenEkfStateUpdate],
     output: &FrozenEkfOutputClosure,
     constants: &FrozenEkfConstantClosure,
     observation: CellSlotId,
+    structural_aliases: &std::collections::BTreeMap<CellSlotId, ArtifactSource>,
 ) -> Result<(), FrozenEkfArtifactClosureError> {
     let kernel_output = |operation| {
         let spec = super::operation::operation_spec(FrozenEkfOperation::Kernel(operation));
@@ -719,13 +772,14 @@ fn validate_operation_wiring(
                 operation: spec.canonical_name,
             })
     };
+    let semantic_source = published_output_source(artifact, output.output, output.source)?;
     let state = state_updates
         .iter()
-        .find(|update| update.target == output.source)
+        .find(|update| update.target == semantic_source || update.candidate == semantic_source)
         .ok_or(FrozenEkfArtifactClosureError::InvalidStateUpdate)?;
     let covariance = state_updates
         .iter()
-        .find(|update| update.target != output.source)
+        .find(|update| update.target != state.target)
         .ok_or(FrozenEkfArtifactClosureError::InvalidStateUpdate)?;
     let state_source = ArtifactSource::Slot(state.target);
     let covariance_source = ArtifactSource::Slot(covariance.target);
@@ -798,7 +852,17 @@ fn validate_operation_wiring(
                 vec![kernel_output(EkfKernel::JosephCovarianceUpdate)?]
             }
         };
-        if node.inputs.as_ref() != expected.as_slice() {
+        let actual = node
+            .inputs
+            .iter()
+            .map(|input| match input {
+                ArtifactSource::Slot(slot) => {
+                    structural_aliases.get(slot).copied().unwrap_or(*input)
+                }
+                ArtifactSource::Constant(_) => *input,
+            })
+            .collect::<Vec<_>>();
+        if actual.as_slice() != expected.as_slice() {
             return Err(FrozenEkfArtifactClosureError::InvalidOperationWiring {
                 node: node.node,
                 operation: super::operation::operation_spec(FrozenEkfOperation::Kernel(
@@ -1120,19 +1184,68 @@ fn compile_frozen_ekf_product(
     services: &mut dyn MechExecutionServices,
 ) -> MResult<FrozenEkfCompiledProduct> {
     let catalog = frozen_ekf_compiler_catalog()?;
-    let mut program = CompilerPlanningProgram::with_function_catalog(
-        CompilerPlanningConfig::default(),
-        catalog.clone(),
+    let expected_request = ExecutionResourceRequest {
+        base_uri: "test-resource://ekf/frame".to_owned(),
+        path: "sample".to_owned(),
+        context_name: "frame".to_owned(),
+        operation: "read".to_owned(),
+        intent: ResourceIntent::Read,
+        delivery: ResourceDelivery::Live,
+    };
+    FrozenEkfCompilationServices::validate_request(&expected_request)?;
+    let planning_value = services.plan_resource_read_output(&expected_request)?;
+    let planning_schema = ValueCell::from_snapshot(planning_value)?.closed_schema_body()?;
+    let source = mech_syntax::document::TextSnapshot::new(
+        mech_syntax::document::DocumentId(mech_core::hash_str("engine:frozen-ekf")),
+        mech_syntax::document::Revision(0),
+        Arc::<str>::from(source),
+    )
+    .map_err(|error| frozen_service_error(format!("invalid retained EKF source: {error:?}")))?;
+    let snapshot = mech_syntax::document::parse_canonical_document(
+        source,
+        mech_syntax::document::ParseConfig::default(),
     );
-    for spec in FROZEN_EKF_OPERATIONS {
-        let export = catalog
-            .module_export("ekf", spec.module_item)
-            .expect("the frozen catalog installs every EKF module export");
-        program.bind_compiler_catalog_export(export, spec.canonical_name)?;
+    if !snapshot.is_strictly_clean() {
+        return Err(frozen_service_error(format!(
+            "canonical EKF source contains diagnostics: {:?}",
+            snapshot.diagnostics
+        )));
     }
-    let tree = mech_syntax::parser::parse(source.trim())?;
-    program.plan_tree_with_services(&tree, services)?;
-    let (source_artifact, bytecode) = program.compile_program_product()?.into_parts();
+    let document =
+        mech_syntax::document::DocumentSyntax::cast(snapshot.syntax()).ok_or_else(|| {
+            frozen_service_error("canonical EKF source did not produce a document root")
+        })?;
+    let canonical_program = CanonicalSourceFrontend
+        .compile_document_with_catalog_and_input_schemas(
+            &document,
+            catalog,
+            std::collections::BTreeMap::from([("@trace/sample".to_owned(), planning_schema)]),
+        )
+        .map_err(|error| frozen_service_error(error.to_string()))?;
+    let [observation_input] = canonical_program.program().inputs.as_ref() else {
+        return Err(frozen_service_error(
+            "frozen EKF must contain exactly one observation input @trace/sample",
+        ));
+    };
+    if observation_input.name != "@trace/sample" {
+        return Err(frozen_service_error(
+            "frozen EKF must contain exactly one observation input @trace/sample",
+        ));
+    }
+    let source_artifact = canonical_program
+        .bind_resource_input("@trace/sample", expected_request.clone())
+        .map_err(|error| frozen_service_error(error.to_string()))?
+        .compile_artifact()
+        .map_err(|error| {
+            frozen_service_error(format!(
+                "unable to compile canonical EKF artifact: {error:?}"
+            ))
+        })?;
+    let bytecode = encode_program_artifact_bytecode_v1(&source_artifact).map_err(|error| {
+        frozen_service_error(format!(
+            "unable to encode canonical EKF artifact: {error:?}"
+        ))
+    })?;
     let parsed = mech_core::ParsedProgram::from_bytes(&bytecode)?;
     let resource_request = parsed
         .requirements
@@ -1153,6 +1266,22 @@ fn compile_frozen_ekf_product(
         )));
     };
     FrozenEkfCompilationServices::validate_request(resource_request)?;
+    if resource_request != &expected_request {
+        return Err(frozen_service_error(
+            "canonical EKF artifact changed its resource request",
+        ));
+    }
+    let resource_value = services.read_resource(resource_request)?;
+    if resource_request.delivery == ResourceDelivery::Live {
+        let resource_value = ValueCell::from_snapshot(resource_value)?;
+        services
+            .prepare_live_resource_binding(
+                mech_core::hash_str("program/program"),
+                resource_request,
+                resource_value,
+            )?
+            .commit();
+    }
     let decoded_artifact = decode_program_artifact_bytecode_v1(&bytecode).map_err(|error| {
         frozen_service_error(format!(
             "unable to decode frozen EKF ProgramArtifact: {error:?}"

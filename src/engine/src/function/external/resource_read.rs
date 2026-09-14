@@ -25,6 +25,10 @@ pub(crate) static RESOURCE_OBSERVATION_CONTRACT: LazyLock<OperationContractDecla
         }),
     });
 
+pub(crate) fn resource_observation_contract() -> OperationContractDeclaration {
+    RESOURCE_OBSERVATION_CONTRACT.clone()
+}
+
 #[cfg(feature = "semantic-compiler")]
 use mech_core::{ApplicationRequirement, BytecodeCompilerContext, MechFunctionCompiler, Register};
 

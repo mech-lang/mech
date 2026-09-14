@@ -1,8 +1,11 @@
 use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use mech_core::*;
+use mech_runtime::{CanonicalProgramBundle, RuntimeBuilder, SourceDocument};
+use mech_syntax::document::{ParseConfig, Revision};
 use mech_syntax::formatter::{Formatter, HtmlShimExtraSlots};
 use mech_syntax::parser;
 
@@ -116,6 +119,9 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
     fs::write(&index_html, &root_shim_with_config)?;
 
     let mut bundled_sources = Vec::with_capacity(options.source_paths.len());
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .build_compiler()?;
     for source_path in &options.source_paths {
         let logical_source_path = source_path;
         let read_source_path = source_path.canonicalize()?;
@@ -127,14 +133,23 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
         let url = format!("source/{}", percent_encode_url_path(&specifier));
         bundled_sources.push(BundledSource {
             canonical_path: read_source_path.clone(),
-            specifier,
+            specifier: specifier.clone(),
             url,
         });
 
         write_bundle_file(&output_dir, "source", &relative, source_text.as_bytes())?;
 
+        let canonical_uri = format!("bundle:///{specifier}");
+        let document = SourceDocument::parse_resolved(
+            &canonical_uri,
+            Revision(0),
+            Arc::<str>::from(source_text.as_str()),
+            ParseConfig::default(),
+        )
+        .map_err(|error| validation_error(format!("invalid canonical bundle source: {error:?}")))?;
+        let product = compiler.compile_document(&document)?;
         let encoded =
-            compress_and_encode(&tree).map_err(|error| std::io::Error::other(error.to_string()))?;
+            CanonicalProgramBundle::from_product(canonical_uri, &document, &product)?.encode()?;
         write_bundle_file(&output_dir, "code", &relative, encoded.as_bytes())?;
 
         let html_relative = relative.with_extension("html");
@@ -181,11 +196,12 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
             serde_json::json!({
               "specifier": source.specifier,
               "url": source.url,
+              "artifactUrl": format!("code/{}", percent_encode_url_path(&source.specifier)),
             })
         })
         .collect::<Vec<_>>();
     let manifest = serde_json::to_vec(&serde_json::json!({
-      "version": 2,
+      "version": 3,
       "roots": roots,
       "sources": source_entries,
     }))
@@ -680,7 +696,6 @@ fn write_bundle_file(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mech_core::nodes::Program;
     use std::time::{SystemTime, UNIX_EPOCH};
 
     const STATIC_WASM_WRAPPER: &str = r#"export class WasmProject {
@@ -969,10 +984,11 @@ export default async function init() {}
         assert!(index.contains("window.__MECH_HOST_CONFIG"));
         assert!(bootstrap.contains("WasmProject.fromServedBundle"));
         assert!(bootstrap.contains("../pkg/mech_wasm.js"));
-        assert_eq!(manifest["version"], 2);
+        assert_eq!(manifest["version"], 3);
         assert_eq!(manifest["roots"], serde_json::json!(["demo.mec"]));
         assert_eq!(manifest["sources"][0]["specifier"], "demo.mec");
         assert_eq!(manifest["sources"][0]["url"], "source/demo.mec");
+        assert_eq!(manifest["sources"][0]["artifactUrl"], "code/demo.mec");
         fs::remove_dir_all(root).unwrap();
     }
 
@@ -1025,7 +1041,7 @@ export default async function init() {}
         let manifest: serde_json::Value =
             serde_json::from_slice(&fs::read(root.join("out/_mech/project-sources.json")).unwrap())
                 .unwrap();
-        assert_eq!(manifest["version"], 2);
+        assert_eq!(manifest["version"], 3);
         assert_eq!(manifest["roots"], serde_json::json!(["src/main.mec"]));
         assert!(
             manifest["sources"]
@@ -1055,8 +1071,10 @@ export default async function init() {}
 
         let source = fs::read_to_string(root.join("demo.mec")).unwrap();
         let encoded = fs::read_to_string(out.join("code/demo.mec")).unwrap();
-        let decoded: Program = decode_and_decompress(&encoded).unwrap();
-        assert_eq!(decoded, parser::parse(&source).unwrap());
+        let decoded = CanonicalProgramBundle::decode(&encoded, Some(&source)).unwrap();
+        assert_eq!(decoded.source, source);
+        assert_eq!(decoded.canonical_uri, "bundle:///demo.mec");
+        assert!(!decoded.bytecode.is_empty());
         fs::remove_dir_all(root).unwrap();
     }
 

@@ -25,8 +25,9 @@ use mech_core::{
 use mech_core::{Body, MechCode, Program, Section, SectionElement};
 use mech_engine::expressions::ReactiveComprehensionStructureUnsupported;
 use mech_engine::{
-    CompiledResourceSendOperation, CompilerPlanningConfig, CompilerPlanningProgram,
-    ProgramArtifactCompilationProduct, ProgramCompilationProduct, root_document_output_ids,
+    CanonicalSourceFrontend, CompiledResourceSendOperation, CompilerPlanningConfig,
+    CompilerPlanningProgram, ProgramArtifactCompilationProduct, ProgramCompilationProduct,
+    root_document_output_ids,
 };
 #[cfg(feature = "compute")]
 use mech_engine::{ComputeRegionDeclaration, ProgramArtifact};
@@ -38,9 +39,10 @@ use crate::{
     RuntimeModuleDependencyMissingError, RuntimeModuleExportNotFound, RuntimeModuleImportConflict,
     RuntimeResourceKey, RuntimeResourceProviderNotFound, RuntimeResourceReadRequest,
     RuntimeResourceRegistry, RuntimeResourceWriteCommand, RuntimeResourceWriteIntent,
-    SourceExportDeclaration, SourceImportAlias, SourceImportDeclaration, SourceImportKind,
-    SourceIndex, SourceRequest, SourceResolver, import_may_resolve_source_dependency,
-    import_requires_source_dependency, module_namespace_for_import, source_request_for_import,
+    SourceDocument, SourceExportDeclaration, SourceImportAlias, SourceImportDeclaration,
+    SourceImportKind, SourceIndex, SourceRequest, SourceResolver,
+    import_may_resolve_source_dependency, import_requires_source_dependency,
+    module_namespace_for_import, source_request_for_import,
 };
 #[cfg(feature = "compute")]
 use crate::{SourceContextBase, SourceContextCapabilityScope};
@@ -51,6 +53,41 @@ use super::{ResidentRouteFailure, ResidentRouteFailureClass, route_failure, unsu
 type ComputeRegionInterface = ();
 #[cfg(not(feature = "compute"))]
 type ComputeValue = ();
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CanonicalProgramCompilationError {
+    pub reason: String,
+}
+
+impl MechErrorKind for CanonicalProgramCompilationError {
+    fn name(&self) -> &str {
+        "CanonicalProgramCompilationError"
+    }
+
+    fn message(&self) -> String {
+        self.reason.clone()
+    }
+}
+
+fn canonical_compilation_error(reason: impl Into<String>) -> MechError {
+    MechError::new(
+        CanonicalProgramCompilationError {
+            reason: reason.into(),
+        },
+        None,
+    )
+    .with_compiler_loc()
+}
+
+fn retained_compiler_document(source: &str) -> MResult<SourceDocument> {
+    SourceDocument::parse_resolved(
+        "runtime:program-compiler",
+        mech_syntax::document::Revision(0),
+        Arc::<str>::from(source),
+        mech_syntax::document::ParseConfig::default(),
+    )
+    .map_err(|error| canonical_compilation_error(format!("invalid retained source: {error:?}")))
+}
 
 #[derive(Clone, Copy)]
 enum RootOutputProjection {
@@ -137,6 +174,28 @@ impl ProgramCompiler {
         self.view().compile_source(source)
     }
 
+    pub fn compile_document(
+        &mut self,
+        document: &SourceDocument,
+    ) -> MResult<ProgramCompilationProduct> {
+        self.view().compile_document(document)
+    }
+
+    pub fn compile_interactive_document(
+        &mut self,
+        document: &SourceDocument,
+    ) -> MResult<ProgramCompilationProduct> {
+        self.view().compile_interactive_document(document)
+    }
+
+    /// Prepared canonical source entry point for the coordinated C cutover.
+    /// B keeps the shipping source route unchanged while proving this product
+    /// boundary against retained documents and real activation.
+    pub fn compile_canonical_source(&mut self, source: &str) -> MResult<ProgramCompilationProduct> {
+        let document = retained_compiler_document(source)?;
+        self.compile_document(&document)
+    }
+
     pub fn compile_tree(
         &mut self,
         tree: &mech_core::Program,
@@ -161,6 +220,21 @@ impl ProgramCompiler {
     ) -> MResult<ProgramArtifactCompilationProduct> {
         let tree = mech_syntax::parser::parse(source.trim())?;
         self.compile_tree_artifact(&tree)
+    }
+
+    pub fn compile_document_artifact(
+        &mut self,
+        document: &SourceDocument,
+    ) -> MResult<ProgramArtifactCompilationProduct> {
+        self.view().compile_document_artifact(document)
+    }
+
+    pub fn compile_canonical_source_artifact(
+        &mut self,
+        source: &str,
+    ) -> MResult<ProgramArtifactCompilationProduct> {
+        let document = retained_compiler_document(source)?;
+        self.compile_document_artifact(&document)
     }
 
     pub fn compile_tree_artifact(
@@ -395,6 +469,62 @@ impl<'a> ProgramCompilerView<'a> {
     ) -> MResult<ProgramCompilationProduct> {
         let tree = mech_syntax::parser::parse(source.trim())?;
         self.compile_tree_with_projection(&tree, RootOutputProjection::ObservableResultsAndSymbols)
+    }
+
+    pub(crate) fn compile_document(
+        &self,
+        document: &SourceDocument,
+    ) -> MResult<ProgramCompilationProduct> {
+        let artifact = self.canonical_document_artifact(document)?;
+        ProgramCompilationProduct::from_canonical_artifact(artifact)
+    }
+
+    pub(crate) fn compile_interactive_document(
+        &self,
+        document: &SourceDocument,
+    ) -> MResult<ProgramCompilationProduct> {
+        document
+            .index()
+            .map_err(|error| MechError::new(error, None))?;
+        let artifact = CanonicalSourceFrontend
+            .compile_interactive_document_with_catalog(
+                &document.document(),
+                Arc::clone(&self.function_catalog),
+            )
+            .map_err(|error| canonical_compilation_error(error.to_string()))?
+            .compile_artifact()
+            .map_err(|error| {
+                canonical_compilation_error(format!(
+                    "unable to compile canonical interactive ProgramArtifact: {error:?}"
+                ))
+            })?;
+        ProgramCompilationProduct::from_canonical_artifact(artifact)
+    }
+
+    pub(crate) fn compile_document_artifact(
+        &self,
+        document: &SourceDocument,
+    ) -> MResult<ProgramArtifactCompilationProduct> {
+        self.canonical_document_artifact(document)
+            .map(ProgramArtifactCompilationProduct::from_artifact)
+    }
+
+    fn canonical_document_artifact(
+        &self,
+        document: &SourceDocument,
+    ) -> MResult<mech_engine::ProgramArtifact> {
+        document
+            .index()
+            .map_err(|error| MechError::new(error, None))?;
+        CanonicalSourceFrontend
+            .compile_document_with_catalog(&document.document(), Arc::clone(&self.function_catalog))
+            .map_err(|error| canonical_compilation_error(error.to_string()))?
+            .compile_artifact()
+            .map_err(|error| {
+                canonical_compilation_error(format!(
+                    "unable to compile canonical ProgramArtifact: {error:?}"
+                ))
+            })
     }
 
     pub(crate) fn compile_tree(

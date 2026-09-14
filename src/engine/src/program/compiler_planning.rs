@@ -65,6 +65,12 @@ pub struct ProgramArtifactCompilationProduct {
 
 #[cfg(feature = "semantic-compiler")]
 impl ProgramArtifactCompilationProduct {
+    /// Wrap an already compiled canonical artifact for immediate activation.
+    /// No planner cells or duplicate durable bytecode are retained.
+    pub fn from_artifact(artifact: ProgramArtifact) -> Self {
+        Self { artifact }
+    }
+
     pub const fn artifact(&self) -> &ProgramArtifact {
         &self.artifact
     }
@@ -87,6 +93,29 @@ pub struct CompiledResourceSendOperation {
 
 #[cfg(feature = "semantic-compiler")]
 impl ProgramCompilationProduct {
+    /// Build the durable product directly from a canonical ProgramArtifact.
+    /// Canonical artifacts already carry their operation contracts, schemas,
+    /// memory declarations, inputs, outputs, and requirements; legacy planner
+    /// side tables are therefore intentionally empty.
+    pub fn from_canonical_artifact(artifact: ProgramArtifact) -> MResult<Self> {
+        let bytecode = encode_program_artifact_bytecode_v1(&artifact).map_err(|error| {
+            MechError::new(
+                ProgramArtifactCompilationError {
+                    reason: format!("unable to encode canonical ProgramArtifact: {error:?}"),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+        Ok(Self {
+            artifact,
+            bytecode,
+            instruction_type_bindings: Vec::new(),
+            instruction_type_binding_requirements: Vec::new(),
+            instruction_memory_plans: Vec::new(),
+        })
+    }
+
     pub const fn artifact(&self) -> &ProgramArtifact {
         &self.artifact
     }
