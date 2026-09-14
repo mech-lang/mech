@@ -2,8 +2,9 @@ S8B — Execution interfaces and the deleted-code rehearsal
 ===============================================================================
 
 Status: B1 dependency preparation; no execution consumer is accepted.
-Parent: S8A 812fc1036. The linked s8-consumer-readiness.tsv remains the
-consumer tracker; this record fixes B's initial public-interface decisions.
+Parent: S8A b9c184c8b66ca391fa9364e8f5411b632bbab134.
+The linked s8-consumer-readiness.tsv remains the consumer tracker; this record
+fixes B's initial public-interface decisions.
 
 1. Compiler migration contract
 -------------------------------------------------------------------------------
@@ -59,10 +60,14 @@ the Nom recognizer/direct-rule modules and document/lower/legacy, and draft CLI
 classification's canonical route. Keep all maintained tests until their reviewed
 disposition is implemented; unretargeted tests are blockers, not passes/skips.
 
-A owns residual parser/formatter exports, consumer routing and source-cache APIs.
-B owns unresolved compiler/config/interactive/bundle/browser dependencies.
+A owns preparation of source-cache, resolver, presentation and retained-source
+interfaces for its ten contracts. B owns compiler/config/interactive/bundle/browser
+interface preparation for its seventeen execution contracts.
 S7A owns missing renderer/declaration behavior; S4 owns semantic implementation.
-C owns mechanical module/export edits. No new semantic layer belongs on C.
+Only C changes shipping routes, module/export wiring and dependency removal after
+the owning A/B interface is prepared. A route failure caused by an interface gap
+returns to that interface owner; the final route change stays with C. No new
+semantic layer belongs on C.
 
 The first draft is deliberately incomplete and cannot satisfy deletion closure:
 remaining product routes and AST owners must still be migrated. Record its exact
