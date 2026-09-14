@@ -25,6 +25,7 @@ pub(crate) static RESOURCE_OBSERVATION_CONTRACT: LazyLock<OperationContractDecla
         }),
     });
 
+#[cfg(feature = "source")]
 pub(crate) fn resource_observation_contract() -> OperationContractDeclaration {
     RESOURCE_OBSERVATION_CONTRACT.clone()
 }
