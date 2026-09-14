@@ -118,6 +118,13 @@ is a source-asset grouping type, not that AST. Its public migration is an explic
 B decision after transitive inspection; a matching name is not deletion evidence.
 Similarly preserve shared source-coordinate/runtime types if still required.
 
+The retained syntax namespace also exposes an older Prototype document route
+and a ParserImplementation selector outside the S1 Nom caller census. A owns
+its removal/test inventory; C removes those public routes and prototype owners.
+DocumentSession and DocumentStream already use canonical owners. The final
+absence gate must cover prototype APIs as well as Nom and lower/legacy. Shared
+scanner/recovery utilities stay with the canonical owner; do not delete by name.
+
 Bundle payloads must use retained source and the accepted ProgramArtifact/
 bytecode representation. B must prove producer -> actual loader -> execution.
 Retired serialized Program payloads and stale caches require regeneration or
