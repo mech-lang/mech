@@ -60,7 +60,10 @@ fn source_index_for_module_record_source(
 
 fn source_index_for_resolved_source(resolved: &ResolvedSource) -> MResult<Option<SourceIndex>> {
     #[cfg(feature = "source")]
-    if let Some(document) = resolved.source_document() {
+    if let Some(document) = resolved
+        .source_document()
+        .filter(|document| document.is_strictly_clean())
+    {
         return document
             .index()
             .map(|index| Some(index.root))
@@ -73,7 +76,11 @@ fn source_index_for_runtime_record(
     record: &crate::RuntimeModuleRecord,
 ) -> MResult<Option<SourceIndex>> {
     #[cfg(feature = "source")]
-    if let Some(document) = record.source_document.as_ref() {
+    if let Some(document) = record
+        .source_document
+        .as_ref()
+        .filter(|document| document.is_strictly_clean())
+    {
         return document
             .index()
             .map(|index| Some(index.root))
