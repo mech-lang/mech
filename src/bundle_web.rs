@@ -1,7 +1,5 @@
 #[path = "bundle_planning.rs"]
 mod planning;
-#[path = "bundle_presentation.rs"]
-mod presentation;
 
 use std::collections::BTreeSet;
 use std::fs;
@@ -10,6 +8,7 @@ use std::path::{Path, PathBuf};
 use mech_core::*;
 use mech_runtime::CanonicalProgramBundle;
 
+use crate::canonical_presentation::{HtmlShimExtraSlots, HtmlStyleSheets, render_canonical_html};
 use crate::fs_paths::validate_safe_relative_path;
 use crate::{HostAuthorityInjection, LoadedMechConfig, resolve_config_path};
 
@@ -185,11 +184,13 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
         let depth = html_relative.components().count();
         let rebased_shim = rebase_bundle_shim_for_depth(&shim_string, depth);
         let source_shim = crate::inject_host_authority_injection_script(&rebased_shim, &injection)?;
-        let html = presentation::render_canonical_html(
+        let html = render_canonical_html(
             &document.document(),
-            &stylesheet_string,
-            &source_shim,
-        )?;
+            HtmlStyleSheets::legacy(stylesheet_string.clone()),
+            source_shim,
+            &HtmlShimExtraSlots::default(),
+        )?
+        .html;
         write_bundle_file(&output_dir, "html", &html_relative, html.as_bytes())?;
     }
     let mut roots = Vec::with_capacity(
