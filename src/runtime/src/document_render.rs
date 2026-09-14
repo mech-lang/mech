@@ -1994,7 +1994,7 @@ fn render_fence_html(
         message: "code fence is missing canonical info".to_owned(),
         range: Some(fence.syntax().range()),
     })?;
-    if info.hidden {
+    if info.hidden && lookup.mode == RenderMode::Completed {
         return Ok(());
     }
     let presentation = fence
@@ -2003,7 +2003,11 @@ fn render_fence_html(
             message: "code fence has no valid presentation options".to_owned(),
             range: Some(fence.syntax().range()),
         })?;
-    output.push_str("<figure class='mech-code-block'");
+    output.push_str("<figure class='mech-code-block");
+    if info.hidden {
+        output.push_str(" hidden");
+    }
+    output.push('\'');
     if !presentation.styles.is_empty() {
         let styles = presentation
             .styles
