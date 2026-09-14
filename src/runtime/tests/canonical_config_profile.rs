@@ -68,6 +68,22 @@ fn retained_config_rejects_malformed_and_resource_limited_documents() {
         )
         .unwrap_err();
         assert!(error.kind_message().contains("complete canonical source"));
+        let syntax = error
+            .kind_as::<mech_runtime::InvalidConfigSyntax>()
+            .unwrap();
+        assert_eq!(syntax.source_name, "limited.mcfg");
+        assert!(std::ptr::eq(syntax.source.snapshot(), source.snapshot()));
+        assert_eq!(syntax.source.source().document(), DocumentId(835));
+        assert_eq!(syntax.source.source().revision(), Revision(3));
+        for diagnostic in source.snapshot().diagnostics.iter() {
+            assert!(error.kind_message().contains(&diagnostic.message));
+            assert!(
+                diagnostic
+                    .primary
+                    .resolve(Revision(3), &syntax.source.snapshot().nodes)
+                    .is_some()
+            );
+        }
     }
 }
 

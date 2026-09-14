@@ -18,6 +18,8 @@ use self::analyze::ConfigAnalyzer;
 use self::compile::ConfigCompiler;
 pub use self::error::InvalidConfigField;
 #[cfg(feature = "source")]
+pub use self::error::InvalidConfigSyntax;
+#[cfg(feature = "source")]
 use self::error::*;
 #[cfg(feature = "source")]
 use self::eval::ConfigEvaluator;
@@ -83,13 +85,18 @@ pub fn compile_config_document(
     source: &crate::resolver::SourceDocument,
     options: ConfigProfileOptions,
 ) -> MResult<MechConfigDocument> {
+    let source_name = source_name.into();
     if !source.is_strictly_clean() {
-        return Err(ConfigProfileViolation::error(
-            "configuration requires a complete canonical source document",
+        return Err(mech_core::MechError::new(
+            InvalidConfigSyntax {
+                source_name,
+                source: source.clone(),
+            },
+            None,
         ));
     }
     let ir = canonical::compile(&source.document(), &options)?;
     ConfigAnalyzer::new().analyze(&ir)?;
     let value = ConfigEvaluator::new(options).evaluate(&ir)?;
-    ConfigLowerer::new().lower(source_name.into(), value)
+    ConfigLowerer::new().lower(source_name, value)
 }
