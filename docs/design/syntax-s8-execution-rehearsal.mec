@@ -8,6 +8,9 @@ records B's public-interface decisions. Canonical configuration, document and
 interactive compilation, mixed compute partitioning, retained import binding,
 and bundle provider planning now have implementation witnesses. The remaining
 method migrations and the deleted-code product matrix below still gate acceptance.
+A removal row marked routed has switched its caller to canonical input and must
+have zero old parser calls. It remains open for deletion qualification and cannot
+satisfy a demonstrated consumer's dependency gate.
 
 1. Compiler migration contract
 -------------------------------------------------------------------------------
