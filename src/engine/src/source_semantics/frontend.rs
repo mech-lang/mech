@@ -435,6 +435,75 @@ impl CanonicalSourceProgram {
         )
     }
 
+    /// Compile an artifact after resolving every external node against the
+    /// exact provider contract selected by the product boundary.
+    #[cfg(feature = "semantic-compiler")]
+    pub fn compile_artifact_with_external_contracts(
+        &self,
+        resolver: &dyn crate::ExternalRequirementContractResolver,
+    ) -> mech_core::MResult<ProgramArtifact> {
+        let contracts = self
+            .contracts
+            .iter()
+            .enumerate()
+            .map(|(index, contract)| match &self.program.nodes[index].body {
+                crate::SourceNodeBody::Operation {
+                    operation,
+                    requirement,
+                } => {
+                    let resolved = requirement
+                        .map(|requirement| {
+                            self.program.requirements.get(requirement).ok_or_else(|| {
+                                mech_core::MechError::new(
+                                    mech_core::GenericError {
+                                        msg: format!(
+                                            "canonical external node {index} references an unknown requirement"
+                                        ),
+                                    },
+                                    None,
+                                )
+                            })
+                        })
+                        .transpose()?
+                        .map(|requirement| resolver.resolve_external_contract(requirement))
+                        .transpose()?
+                        .flatten();
+                    resolved.or(contract.as_ref()).map(Some).ok_or_else(|| {
+                        mech_core::MechError::new(
+                            mech_core::GenericError {
+                                msg: format!(
+                                    "canonical node {index} has no operation contract for {operation:?}"
+                                ),
+                            },
+                            None,
+                        )
+                    })
+                }
+                crate::SourceNodeBody::Match(_)
+                | crate::SourceNodeBody::Comprehension(_)
+                | crate::SourceNodeBody::Fsm(_) => Ok(None),
+            })
+            .collect::<mech_core::MResult<Vec<_>>>()?;
+        let mut artifact_program = self.program.clone();
+        for input in &mut artifact_program.inputs {
+            input.name = crate::encode_source_input_name(&input.name);
+        }
+        crate::compile_source_program_with_control_contracts(
+            &artifact_program,
+            &mut ArtifactBuildContext::new(&self.schemas, &self.constants),
+            &contracts,
+        )
+        .map_err(|error| {
+            mech_core::MechError::new(
+                mech_core::GenericError {
+                    msg: format!("unable to compile canonical source artifact: {error:?}"),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })
+    }
+
     /// Replace one detached planning input with an explicit resource-read
     /// requirement. The returned semantic program has no competing input for
     /// that name; every reference is rewired to the observation node.
