@@ -236,6 +236,25 @@ impl CanonicalSourceFrontend {
         reject_recovered_syntax(document)?;
         document_lowering::compile_named_document_scope(document, name)
     }
+    /// Compile one retained Mika-local body without importing its parent's or
+    /// nested Mika children's bindings. The artifact owns this section's state.
+    pub fn compile_mika_section(
+        &self,
+        section: &mech_syntax::document::MikaSectionSyntax,
+    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+        reject_recovered_syntax(section)?;
+        document_lowering::compile_mika_section(section, None)
+    }
+
+    /// Compile repeated named fences within one Mika-local owner.
+    pub fn compile_named_mika_scope(
+        &self,
+        section: &mech_syntax::document::MikaSectionSyntax,
+        name: &str,
+    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+        reject_recovered_syntax(section)?;
+        document_lowering::compile_mika_section(section, Some(name))
+    }
 }
 
 fn collect_pattern_bindings(

@@ -280,3 +280,56 @@ fn resolver_locations_count_graphemes_across_source_pieces() {
         }
     }
 }
+
+#[test]
+fn mika_indexes_share_retained_owners_and_keep_local_resolution_separate() {
+    use mech_runtime::resolver::CanonicalDocumentIndex;
+    let source = "+> ./root.mec\n\n~∘~⸢+> ./child.mec\nx := @env/HOME\n\n╭◉╮⸢+> ./nested.mec\ny := @nested/VALUE\n⸥\n\n```mechworker{output: false}\n+> ./worker.mec\nz := @worker/VALUE\n```\n⸥\n";
+    let document = document(source);
+    let index = CanonicalDocumentIndex::from_document(&document).unwrap();
+    let owners = document.mika_scopes();
+    assert_eq!(index.owner, document.scope_id());
+    assert_eq!(index.mika.len(), 2);
+    assert_eq!(index.root.imports.len(), 1);
+    assert!(index.root.address_references.is_empty());
+    for (child, owner) in index.mika.iter().zip(&owners) {
+        assert_eq!(child.owner.section.scope_id(), owner.section.scope_id());
+        assert_eq!(child.owner.parent, owner.parent);
+    }
+    assert_eq!(index.mika[0].index.imports.len(), 2);
+    assert_eq!(index.mika[1].index.imports.len(), 1);
+    assert_eq!(
+        index.mika[0].index.program_address_references()[0].target,
+        "env"
+    );
+    assert_eq!(
+        index.mika[1].index.program_address_references()[0].target,
+        "nested"
+    );
+    let scope = SourceScope::Interpreter(index.mika[0].index.interpreter_scopes()[0].clone());
+    assert_eq!(
+        index.mika[0].index.address_references_for_scope(&scope)[0].target,
+        "worker"
+    );
+    let resolver = InMemorySourceResolver::new().with_string("app/child.mec", "value := 42\n");
+    let import = &index.mika[0].index.program_imports()[0];
+    let resolved = resolver
+        .resolve(&source_request_for_import(
+            import,
+            Some("memory:app/main.mec"),
+        ))
+        .unwrap()
+        .unwrap();
+    assert_eq!(resolved.canonical_uri, "memory:app/child.mec");
+}
+
+#[test]
+fn a_missing_mika_closer_cannot_publish_its_clean_body_index() {
+    let parsed = parse_canonical_document(
+        TextSnapshot::new(DocumentId(1), Revision(1), "~∘~⸢+> ./child.mec\n").unwrap(),
+        ParseConfig::default(),
+    );
+    assert!(!parsed.diagnostics.is_empty());
+    let document = DocumentSyntax::cast(parsed.syntax()).unwrap();
+    assert!(SourceIndex::from_mika_section(&document.mika_scopes()[0].section).is_err());
+}
