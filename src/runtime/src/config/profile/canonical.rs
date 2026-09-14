@@ -298,6 +298,9 @@ fn number(value: &NumberSyntax) -> MResult<ConfigExpr> {
     } else {
         text(&value)?
     };
+    // The canonical tree retains numeric separator spelling. The restricted
+    // value parser consumes its numeric value, independently of that spelling.
+    raw.retain(|character| character != '_');
     if real.is_negated() {
         raw.insert(0, '-');
     }
