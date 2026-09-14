@@ -304,13 +304,7 @@ impl InMemorySourceResolver {
         let source = source.into();
         #[cfg(feature = "source")]
         {
-            self.insert_prepared_string(specifier, source, |resolved| {
-                let MechSourceCode::String(source) = &resolved.source else {
-                    unreachable!()
-                };
-                let tree = mech_syntax::parser::parse(source.trim())?;
-                Ok(resolved.with_syntax_tree(tree))
-            })
+            self.insert_prepared_string(specifier, source, ResolvedSource::admit_canonical_document)
         }
         #[cfg(not(feature = "source"))]
         self.insert_source(
@@ -344,18 +338,7 @@ impl InMemorySourceResolver {
         let specifier = specifier.into();
         let source = source.into();
         #[cfg(feature = "source")]
-        let result = self.insert_prepared_string(specifier, source, |resolved| {
-            // This infallible builder retains malformed source for diagnostics.
-            // The shipping parser projection remains frozen until cutover.
-            let MechSourceCode::String(source) = &resolved.source else {
-                unreachable!()
-            };
-            if let Ok(tree) = mech_syntax::parser::parse(source.trim()) {
-                Ok(resolved.with_syntax_tree(tree))
-            } else {
-                Ok(resolved)
-            }
-        });
+        let result = self.insert_prepared_string(specifier, source, Ok);
         #[cfg(not(feature = "source"))]
         let result = self.insert_string(specifier, source);
         if result.is_err() {
