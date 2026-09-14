@@ -244,9 +244,6 @@ impl InMemorySourceResolver {
                     None,
                 )
             })?;
-            document
-                .index()
-                .map_err(|error| MechError::new(error, None))?;
             let syntax_tree = mech_syntax::parser::parse(source.trim())?;
             resolved
                 .with_source_document(document)?
@@ -566,6 +563,32 @@ mod tests {
         let resolved = resolver.resolve(&request).unwrap().unwrap();
 
         assert_eq!(resolved.name, "main.mec");
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn insert_string_retains_a_document_without_requiring_canonical_indexing() {
+        let source = r#"delta := 0.25
+rows := |id<string> x<f64>|
+  | "row-a" 1 + delta |
+  | "row-b" 2 + delta |"#;
+        let mut resolver = InMemorySourceResolver::new();
+
+        resolver.insert_string("table.mec", source).unwrap();
+
+        let resolved = resolver
+            .resolve(&SourceRequest::new("table.mec"))
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            resolved
+                .source_document()
+                .unwrap()
+                .source()
+                .to_contiguous_string(),
+            source
+        );
+        assert!(resolved.syntax_tree.is_some());
     }
 
     #[cfg(feature = "source")]

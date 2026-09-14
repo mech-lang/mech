@@ -262,9 +262,6 @@ impl SourceResolver for FileSourceResolver {
                             None,
                         )
                     })?;
-                    document
-                        .index()
-                        .map_err(|error| MechError::new(error, None))?;
                     let tree = mech_syntax::parser::parse(source_text.trim())?;
                     let referrer = canonical_uri.clone();
                     let index = SourceIndex::from_program(&tree);
