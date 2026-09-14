@@ -373,3 +373,20 @@ fn context_occurrences_span_name_through_last_semantic_role() {
         );
     }
 }
+
+#[test]
+fn context_send_destinations_are_not_indexed_as_addressed_reads() {
+    for (source, end_column) in [
+        ("@sink/value <- @env/HOME<u8>\n", 29),
+        ("@sink/value <- @env/HOME[1]\n", 28),
+    ] {
+        let index = index(source);
+        assert_eq!(index.address_references.len(), 1, "{source}");
+        let reference = &index.address_references[0];
+        assert_eq!(reference.reference.target, "env");
+        assert_eq!(reference.reference.name, "HOME");
+        let range = reference.occurrence.range.as_ref().unwrap();
+        assert_eq!((range.start.row, range.start.col), (1, 16), "{source}");
+        assert_eq!((range.end.row, range.end.col), (1, end_column), "{source}");
+    }
+}

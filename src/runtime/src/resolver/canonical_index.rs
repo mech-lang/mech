@@ -5,9 +5,10 @@ use crate::resolver::{SourceImportAlias, imports::classified_module_import};
 use mech_syntax::document::{
     AstNode, CanonicalContextBaseSyntax, CanonicalContextCapabilityScopeSyntax,
     CanonicalModuleImportBodySyntax, CodeBlockSyntax, CodeFenceScope, ContextDeclarationSyntax,
-    DocumentId, DocumentSyntax, ExportDeclarationSyntax, ImportDeclarationSyntax,
-    ModuleImportSyntax, NodeFlags, PrefixedContextPathSyntax, Revision, SyntaxKind, SyntaxNode,
-    TextRange,
+    ContextSendSyntax, DocumentId, DocumentSyntax, ExportDeclarationSyntax,
+    ImportDeclarationSyntax, ModuleImportSyntax, NodeFlags, OpAssignSyntax,
+    PrefixedContextPathSyntax, Revision, SliceStemSyntax, SliceSyntax, SyntaxKind, SyntaxNode,
+    TextRange, VariableAssignSyntax, VariableStemSyntax, VariableSyntax,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -119,6 +120,23 @@ impl SourceIndex {
                 }
                 continue;
             }
+            // Assignment and send destinations are writes, not addressed reads.
+            // Match the established Program index by traversing only their values.
+            if let Some(send) = ContextSendSyntax::cast(node.clone()) {
+                let expression = required(send.expression(), &node)?;
+                pending.push((expression.syntax().clone(), scope));
+                continue;
+            }
+            if let Some(assign) = VariableAssignSyntax::cast(node.clone()) {
+                let expression = required(assign.value(), &node)?;
+                pending.push((expression.syntax().clone(), scope));
+                continue;
+            }
+            if let Some(assign) = OpAssignSyntax::cast(node.clone()) {
+                let expression = required(assign.value(), &node)?;
+                pending.push((expression.syntax().clone(), scope));
+                continue;
+            }
             if let Some(import) = ImportDeclarationSyntax::cast(node.clone()) {
                 let specifier = required(import.specifier(), &node)?;
                 let declaration = classify_import_specifier(text(specifier.syntax())?);
@@ -194,15 +212,23 @@ impl SourceIndex {
                 );
                 continue;
             }
+            if let Some(variable) = VariableSyntax::cast(node.clone())
+                && let Some(VariableStemSyntax::Context(path)) = variable.stem()
+            {
+                index.canonical_address_reference(&path, variable.syntax(), scope)?;
+                continue;
+            }
+            if let Some(slice) = SliceSyntax::cast(node.clone())
+                && let Some(SliceStemSyntax::Context(path)) = slice.stem()
+            {
+                index.canonical_address_reference(&path, slice.syntax(), scope.clone())?;
+                if let Some(subscripts) = slice.subscripts() {
+                    pending.push((subscripts.syntax().clone(), scope));
+                }
+                continue;
+            }
             if let Some(path) = PrefixedContextPathSyntax::cast(node.clone()) {
-                let target = text(required(path.context(), &node)?.syntax())?;
-                let name = text(required(path.address(), &node)?.syntax())?;
-                index.push_address_reference(
-                    scope,
-                    index.declarations.len(),
-                    Some(range(&node)?),
-                    SourceAddressReference { name, target },
-                );
+                index.canonical_address_reference(&path, &node, scope)?;
                 continue;
             }
             let children: Vec<_> = node.children().collect();
@@ -227,6 +253,23 @@ impl SourceIndex {
             self.declarations.len(),
             Some(range(node)?),
             declaration,
+        );
+        Ok(())
+    }
+
+    fn canonical_address_reference(
+        &mut self,
+        path: &PrefixedContextPathSyntax,
+        occurrence: &SyntaxNode,
+        scope: SourceScope,
+    ) -> Result<()> {
+        let target = text(required(path.context(), path.syntax())?.syntax())?;
+        let name = text(required(path.address(), path.syntax())?.syntax())?;
+        self.push_address_reference(
+            scope,
+            self.declarations.len(),
+            Some(range(occurrence)?),
+            SourceAddressReference { name, target },
         );
         Ok(())
     }

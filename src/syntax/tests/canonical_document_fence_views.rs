@@ -283,6 +283,16 @@ fn fence_presentation_uses_typed_options_and_shared_string_decoding() {
         .unwrap();
     assert!(presentation.show_output);
     assert_eq!(presentation.styles, vec![("label".into(), "a\n💡".into())]);
+
+    let text = "```mech:hidden{output: true, color: red}\nx := 1\n```\n";
+    let parsed = parse_canonical_document(source(text), ParseConfig::default());
+    assert!(parsed.diagnostics.is_empty(), "{:?}", parsed.diagnostics);
+    let presentation = find::<CodeBlockSyntax>(parsed.syntax())
+        .unwrap()
+        .presentation()
+        .unwrap();
+    assert!(!presentation.show_output);
+    assert_eq!(presentation.styles, vec![("color".into(), "red".into())]);
 }
 
 #[test]

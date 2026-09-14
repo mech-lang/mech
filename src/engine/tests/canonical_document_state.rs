@@ -679,6 +679,19 @@ fn configured_fences_execute_updates_when_their_result_is_hidden() {
             mech_engine::SourceDocumentOutputKind::Program,
         );
     }
+    let source = "```mech:hidden{output: true}\n~counter := 0\ncounter += 1\ncounter\n```\n";
+    let compiled = compiled(source);
+    assert_eq!(
+        compiled.document_outputs().len(),
+        1,
+        "a hidden fence executes without a presentation output"
+    );
+    compiled_turns(
+        compiled,
+        source,
+        &[1.0, 2.0],
+        mech_engine::SourceDocumentOutputKind::Program,
+    );
 }
 
 #[test]
