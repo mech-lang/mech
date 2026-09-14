@@ -390,3 +390,15 @@ fn context_send_destinations_are_not_indexed_as_addressed_reads() {
         assert_eq!((range.end.row, range.end.col), (1, end_column), "{source}");
     }
 }
+
+#[test]
+fn many_same_line_occurrences_share_the_batched_location_projection() {
+    let reads = std::iter::repeat_n("@env/VALUE", 1_024)
+        .collect::<Vec<_>>()
+        .join(" + ");
+    let index = index(&format!("value := {reads}\n"));
+    assert_eq!(index.address_references.len(), 1_024);
+    assert!(index.address_references.iter().all(|reference| {
+        reference.reference.target == "env" && reference.reference.name == "VALUE"
+    }));
+}

@@ -1,5 +1,6 @@
 use alloc::string::String;
 use alloc::sync::Arc;
+use alloc::vec;
 use alloc::vec::Vec;
 
 use super::edit::{SourceError, TextEdit, TextRange, TextSize};
@@ -91,20 +92,53 @@ impl TextSnapshot {
     /// column coordinates used by source consumers. Interior grapheme offsets
     /// have no such coordinate and return `None`.
     pub fn source_location(&self, offset: TextSize) -> Option<mech_core::SourceLocation> {
-        if offset > self.byte_len() || !self.is_char_boundary(offset) {
-            return None;
+        self.source_locations(&[offset])?.pop()
+    }
+
+    /// Project several retained byte boundaries in one ordered pass per line.
+    ///
+    /// The returned locations preserve the input order. Repeated boundaries
+    /// are allowed; an invalid UTF-8 or interior grapheme boundary rejects the
+    /// complete projection.
+    pub fn source_locations(&self, offsets: &[TextSize]) -> Option<Vec<mech_core::SourceLocation>> {
+        let mut ordered = offsets.iter().copied().enumerate().collect::<Vec<_>>();
+        for (_, offset) in &ordered {
+            if *offset > self.byte_len() || !self.is_char_boundary(*offset) {
+                return None;
+            }
         }
-        let line = self.line_index().line_of(offset);
-        let start = self.line_index().line_start(line)?;
-        let mut cursor = super::parser::Cursor::for_range(self, TextRange::new(start, offset));
-        let mut col = 1_usize;
-        while cursor.bump_grapheme().is_some() {
-            col = col.checked_add(1)?;
+        ordered.sort_unstable_by_key(|(_, offset)| *offset);
+
+        let mut projected = vec![None; offsets.len()];
+        let mut first = 0;
+        while first < ordered.len() {
+            let line = self.line_index().line_of(ordered[first].1);
+            let mut last = first + 1;
+            while last < ordered.len() && self.line_index().line_of(ordered[last].1) == line {
+                last += 1;
+            }
+
+            let line_start = self.line_index().line_start(line)?;
+            let line_end = ordered[last - 1].1;
+            let mut cursor =
+                super::parser::Cursor::for_range(self, TextRange::new(line_start, line_end));
+            let mut col = 1_usize;
+            for (output, offset) in &ordered[first..last] {
+                while cursor.offset() < *offset {
+                    cursor.bump_grapheme()?;
+                    col = col.checked_add(1)?;
+                }
+                if cursor.offset() != *offset {
+                    return None;
+                }
+                projected[*output] = Some(mech_core::SourceLocation {
+                    row: line.checked_add(1)?,
+                    col,
+                });
+            }
+            first = last;
         }
-        (cursor.offset() == offset).then_some(mech_core::SourceLocation {
-            row: line.checked_add(1)?,
-            col,
-        })
+        projected.into_iter().collect()
     }
 
     pub fn piece_count(&self) -> usize {

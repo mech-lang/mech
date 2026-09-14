@@ -131,3 +131,18 @@ fn source_locations_require_complete_grapheme_boundaries() {
     }
     assert!(source.source_location(TextSize(18)).is_none());
 }
+
+#[test]
+fn source_locations_batch_preserves_order_duplicates_and_graphemes() {
+    let source = snapshot("e\u{301}👩‍💻\r\nx");
+    let offsets = [TextSize(17), TextSize(3), TextSize(0), TextSize(3)];
+    let locations = source.source_locations(&offsets).unwrap();
+    assert_eq!(
+        locations
+            .iter()
+            .map(|location| (location.row, location.col))
+            .collect::<Vec<_>>(),
+        vec![(2, 2), (1, 2), (1, 1), (1, 2)]
+    );
+    assert!(source.source_locations(&[TextSize(7)]).is_none());
+}
