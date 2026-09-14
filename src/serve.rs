@@ -13,22 +13,21 @@ use std::time::{Duration, Instant};
 use colored::{ColoredString, Colorize};
 use ignore::WalkBuilder;
 use mech_browser::BrowserRuntimeInjectionConfig;
-use mech_core::{
-    GenericError, MResult, MechError, MechErrorKind, MechSourceCode, compress_and_encode,
-};
+use mech_core::{GenericError, MResult, MechError, MechErrorKind, MechSourceCode};
 use mech_runtime::{
-    DefaultIdGenerator, EventId, EventSink, FS_IMPORT, FS_LIST, FS_READ, FS_RESOLVE, FS_SERVE,
-    FS_WATCH, HostFilesystemAuthority, ModuleBuildOptions, RuntimeConfig, RuntimeEvent,
-    RuntimeWorkspaceFolder, RuntimeWorkspaceSnapshot, RuntimeWorkspaceTarget,
-    RuntimeWorkspaceWatchEvent, SERVE_HOST_SUBJECT, ServerWorkspaceSession, SourceKind,
-    SourceResolutionEntry, check_fs_capability, validate_source_resolution_entries,
+    CanonicalProgramBundle, DefaultIdGenerator, EventId, EventSink, FS_IMPORT, FS_LIST, FS_READ,
+    FS_RESOLVE, FS_SERVE, FS_WATCH, HostFilesystemAuthority, ModuleBuildOptions, RuntimeBuilder,
+    RuntimeConfig, RuntimeEvent, RuntimeWorkspaceFolder, RuntimeWorkspaceSnapshot,
+    RuntimeWorkspaceTarget, RuntimeWorkspaceWatchEvent, SERVE_HOST_SUBJECT, ServerWorkspaceSession,
+    SourceDocument, SourceKind, SourceResolutionEntry, check_fs_capability,
+    validate_source_resolution_entries,
 };
-use mech_syntax::{
-    formatter::{Formatter, HtmlShimExtraSlots, HtmlStyleSheets, validate_shipped_shim_render},
-    parser,
-};
+use mech_syntax::document::{ParseConfig, Revision};
 use warp::Filter;
 
+use crate::canonical_presentation::{
+    HtmlShimExtraSlots, HtmlStyleSheets, render_canonical_html, validate_shipped_shim_render,
+};
 use crate::{
     HostAuthorityInjection, inject_browser_host_config_script,
     inject_host_authority_injection_script,
@@ -391,6 +390,9 @@ impl ServerSourceRegistry {
         self.source_roots.clear();
         self.source_resolutions.clear();
         let mut module_specifiers = BTreeMap::new();
+        let mut compiler = RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_catalog())
+            .build_compiler()?;
 
         for source in snapshot.sources.values() {
             let Some(path) = source.path.as_ref() else {
@@ -447,17 +449,28 @@ impl ServerSourceRegistry {
                     backing_paths: vec![path.clone()],
                 },
             );
-            let fallback_tree = source
-                .syntax_tree
-                .is_none()
-                .then(|| parser::parse(&source_text));
-            let tree = match (source.syntax_tree.as_deref(), fallback_tree.as_ref()) {
-                (Some(tree), _) => Ok(tree),
-                (None, Some(tree)) => tree.as_ref(),
-                (None, None) => unreachable!("missing parsed-tree fallback"),
-            };
-            match tree {
-                Ok(tree) => {
+            let document = source.source_document.clone().map(Ok).unwrap_or_else(|| {
+                SourceDocument::parse_resolved(
+                    &source.canonical_uri,
+                    Revision(0),
+                    Arc::<str>::from(source_text.as_str()),
+                    ParseConfig::default(),
+                )
+                .map_err(|error| {
+                    MechError::new(
+                        GenericError {
+                            msg: format!("invalid retained source: {error:?}"),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                })
+            });
+            match document {
+                Ok(document) => {
+                    document
+                        .index()
+                        .map_err(|error| MechError::new(error, None))?;
                     let mut extra_slots = HtmlShimExtraSlots::default();
                     extra_slots.insert("SOURCE_URL_KEY", escape_html(&key));
                     extra_slots.insert(
@@ -481,13 +494,12 @@ impl ServerSourceRegistry {
                         // with an embedded source bundle instead.
                         extra_slots.insert("DOCUMENT_SOURCES", "");
                     }
-                    let mut formatter = Formatter::new();
-                    let render = formatter.format_html_with_style_sheets_and_slots(
-                        &tree,
+                    let render = render_canonical_html(
+                        &document.document(),
                         stylesheets.clone(),
                         shim.to_string(),
                         &extra_slots,
-                    );
+                    )?;
                     if let Some(shim_name) = self.shipped_document_shim.as_deref() {
                         validate_shipped_shim_render(shim_name, &render)?;
                     }
@@ -503,13 +515,17 @@ impl ServerSourceRegistry {
                             backing_paths: dedupe_paths(backing_paths),
                         },
                     );
-                    #[cfg(feature = "serde")]
+                    let product = compiler.compile_document(&document)?;
+                    let code = CanonicalProgramBundle::from_product(
+                        source.canonical_uri.clone(),
+                        &document,
+                        &product,
+                    )?
+                    .encode()?;
                     self.code_sources.insert(
                         key.clone(),
                         ServerAsset {
-                            bytes: compress_and_encode(&tree)
-                                .map_err(|error| Error::new(ErrorKind::Other, error.to_string()))?
-                                .into_bytes(),
+                            bytes: code.into_bytes(),
                             content_type: "text/plain",
                             content_encoding: None,
                             backing_paths: vec![path.clone()],
@@ -803,7 +819,7 @@ impl MechServer {
         )
     }
 
-    pub fn new_with_runtime_config_and_host_config(
+    pub(crate) fn new_with_runtime_config_and_host_config(
         name: String,
         full_address: String,
         stylesheets: impl Into<HtmlStyleSheets>,

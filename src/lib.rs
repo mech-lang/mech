@@ -18,13 +18,7 @@ pub extern crate mech_stdlib as stdlib;
 pub extern crate mech_syntax as syntax;
 
 pub use mech_engine::*;
-#[cfg(not(feature = "no_std"))]
-pub use mech_syntax::print_err_report;
-pub use mech_syntax::{
-    ParseError, ParseErrorDetail, ParseResult, ParseString, ParserErrorContext, ParserErrorReport,
-    SubmissionTerminal, TextFormatter, alt_best, graphemes, parse, parse_grammar, parse_mech,
-    parser, submission_terminal,
-};
+pub use mech_syntax::document::{SubmissionTerminal, submission_terminal};
 
 extern crate colored;
 use colored::*;
@@ -40,6 +34,8 @@ use rand::Rng;
 
 #[cfg(feature = "bundle_web_core")]
 mod bundle_web;
+#[cfg(feature = "formatter_core")]
+mod canonical_presentation;
 #[cfg(feature = "cli_core")]
 pub mod cli;
 #[cfg(any(

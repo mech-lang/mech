@@ -6,9 +6,8 @@ use std::sync::Arc;
 use mech_core::*;
 use mech_runtime::{CanonicalProgramBundle, RuntimeBuilder, SourceDocument};
 use mech_syntax::document::{ParseConfig, Revision};
-use mech_syntax::formatter::{Formatter, HtmlShimExtraSlots};
-use mech_syntax::parser;
 
+use crate::canonical_presentation::{HtmlShimExtraSlots, HtmlStyleSheets, render_canonical_html};
 use crate::fs_paths::validate_safe_relative_path;
 use crate::{HostAuthorityInjection, LoadedMechConfig, resolve_config_path};
 
@@ -127,8 +126,6 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
         let read_source_path = source_path.canonicalize()?;
         let relative = relative_source_path(logical_source_path, &base_dir, &project_dir)?;
         let source_text = fs::read_to_string(&read_source_path)?;
-        let tree = parser::parse(&source_text)?;
-
         let specifier = bundle_source_specifier(&relative)?;
         let url = format!("source/{}", percent_encode_url_path(&specifier));
         bundled_sources.push(BundledSource {
@@ -156,15 +153,13 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
         let depth = html_relative.components().count();
         let rebased_shim = rebase_bundle_shim_for_depth(&shim_string, depth);
         let source_shim = crate::inject_host_authority_injection_script(&rebased_shim, &injection)?;
-        let mut formatter = Formatter::new();
-        let html = formatter
-            .format_html_with_slots(
-                &tree,
-                stylesheet_string.clone(),
-                source_shim,
-                &HtmlShimExtraSlots::default(),
-            )
-            .html;
+        let html = render_canonical_html(
+            &document.document(),
+            HtmlStyleSheets::legacy(stylesheet_string.clone()),
+            source_shim,
+            &HtmlShimExtraSlots::default(),
+        )?
+        .html;
         write_bundle_file(&output_dir, "html", &html_relative, html.as_bytes())?;
     }
     let mut roots = Vec::with_capacity(
