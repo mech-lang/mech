@@ -2,14 +2,14 @@
 
 S7A is still open. Passing syntax certification and resolving review comments do
 not establish that every inventoried consumer can perform its job. S7B streaming
-is paused until this boundary is complete. S8 remains the production call-site
+remains a separate foundation stage. S8 remains the production call-site
 replacement and removal step; unfinished consumer behavior below belongs to S7A.
 
 | Consumer | Demonstrated canonical behavior | Remaining completion work |
 | --- | --- | --- |
-| Document execution | Root, Mika-local and named-fence scope execution, repeated named-fence bindings within each local owner, typed fence presentation options (output suppression preserves execution), retained mutable state, whole and indexed assignment, compound assignment, nested record/tuple/matrix updates, serial statement versions, candidate discard and failed-turn rollback. Bytecode round-trip and resident execution are exercised by `canonical_document_state`. | Declaration execution still needs its implemented handoffs; the document collector's explicit unsupported-unit errors are not completion. |
-| Indexing and resolution | `SourceIndex::from_document` projects imports, aliases/groups, exports, context capabilities and addressed references into the existing resolver facts. Root and repeated named fences retain their scopes. Tests exercise dependency resolution, conflict validation, nested reads and reindexing edited snapshots. | CanonicalDocumentIndex projects separate root/named indexes for each retained Mika owner and preserves lexical parent identities. Configured fence options use the same typed presentation owner as execution. Resolved bindings still require the declaration compiler handoff. Resolver facts alone do not implement declaration execution. |
-| Rendering and classification | Typed fence classification distinguishes root, named, hidden, disabled and inert fences. `DocumentSyntax::contains_executable_source` classifies canonical source while excluding display-only code, comments and recovered documents. `canonical_document_outputs` checks actual inline/fence result bindings and formatted values. | Complete formatter/HTML consumer behavior and child-scope presentation still require qualification. Excluding display-only code from execution is not a complete rendering implementation. |
+| Document execution | Root, Mika-local and named-fence scope execution, repeated named-fence bindings within each local owner, typed fence presentation options (output suppression preserves execution), retained mutable state, whole and indexed assignment, compound assignment, nested record/tuple/matrix updates, serial statement versions, candidate discard and failed-turn rollback. Canonical imports now bind resolved dependency exports to artifact inputs in root, named-root, Mika-root and named-Mika owners; exports publish named artifact outputs. | Keep the new declaration handoff, positioned failure and bytecode/resident execution regressions in final-head qualification. Language forms whose semantic implementation remains S4-owned continue to fail with explicit capability errors. |
+| Indexing and resolution | `SourceIndex::from_document` projects imports, aliases/groups, exports, context capabilities and addressed references into the existing resolver facts. Root and repeated named fences retain their scopes. FSM formal declarations are excluded while start/guard/body reads remain. `CanonicalDocumentIndex` projects every retained Mika owner with one shared coordinate projection and preserves lexical parent identities. | Keep the document-level FSM, nested-owner, Unicode/CRLF, large-line and complete nested-document work checks in final-head qualification. |
+| Rendering and classification | Typed fence classification distinguishes root, named, hidden, disabled and inert fences. `CanonicalDocumentRenderer` consumes retained syntax plus owner-associated completed results directly and produces complete text/HTML documents. Tests cover title/section/prose structure, the shared mixed-document fixture, displayed and evaluated inline code, root/named/Mika result placement, hidden execution, disabled/inert display, options, escaping and foreign/missing result rejection. | S8 still owns switching shipping formatter/server/bundle/browser callers to this qualified canonical consumer. Keep direct rendering integration tests in final-head qualification. |
 | Editing | Canonical document sessions and edit-versus-fresh-parse tests preserve source, diagnostics, structural equivalence and unaffected identity. Indexing tests consume edited snapshots with updated scopes and positions. | Keep these regressions in the final-head qualification. S7B's resumable streaming optimization is a separate paused stage. |
 
 The current registry retains the S6 activation interlock: 80 Phase 2I candidates
@@ -68,4 +68,35 @@ This adds no grammar rule or activation: 539 total rows and the 80 Phase 2I
 candidates remain unchanged. Focused validation passed 19 document-state,
 46 source-review, 26 source-semantics, 14 resolver-index, 6 document-output,
 and 15 document-root/scope tests. Full document rendering and usable declaration
-bindings remain separate completion gates.
+bindings were the next completion gates.
+
+The subsequent consumer-completion candidate implements those gates without a
+legacy `Program` translation. Resolver-owned imports and contexts are metadata
+at engine lowering; resolved value exports bind through the existing runtime
+resolver namespace rules, and document exports become named artifact outputs.
+The same handoff is exercised for root, named-root, Mika-root and named-Mika
+owners, including positioned unresolved/missing-export failures. The canonical
+renderer walks retained document structure and accepts completed results keyed
+by retained owner, scope, output kind and source range. It rejects foreign,
+duplicate and missing visible result slots. Sequential derived RMW comparison
+backups now use disjoint-lifetime reuse groups, with the backup arena sized to
+the largest simultaneous member rather than their sum; external-effect capture
+keeps its separate allocation policy. These are candidate results until the
+final pushed SHA completes required CI and independent review.
+
+## Independent seal audit
+
+The candidate diff was traced from retained syntax through each affected owner,
+not inferred from green smoke tests. The bounded S7A gate has this disposition:
+
+| Seal gate | Direct implementation evidence | Qualification witness | Candidate disposition |
+| --- | --- | --- | --- |
+| FSM resolver roles | Canonical traversal omits specifications and implementation formals while retaining start, guard and body reads. | `canonical_source_index::fsm_formal_inputs_and_specifications_are_not_resolver_reads` starts from a parsed document and asserts both excluded and retained targets. | Complete in candidate. |
+| RMW backup ownership | Derived comparison backups alone share a per-kind, disjoint-lifetime region; effect payloads retain cumulative storage. Peak and budget evaluation use the plan's effective limits. | The resident unit test proves unequal-size maximum-only arena/peak and budget admission. Document-state tests prove multiple actual updates, final-value change detection, candidate discard, failed-turn rollback and budget release. | Complete in candidate. |
+| Whole-document indexing work | `CanonicalDocumentIndex` constructs one immutable coordinate projection and reuses it for root and every nested Mika owner. Standalone owner APIs remain self-contained. | The complete-document unit test parses nested Mika owners, checks each local result and asserts exactly one projection; Unicode/CRLF and 1,024-reference integration checks remain separate. | Complete in candidate. |
+| Declaration handoff | The runtime handoff keeps the canonical index and compiled program together, binds resolved dependency exports using established namespace/alias rules, excludes context aliases from source edges, and publishes canonical exports as artifact outputs. Construction and binding are result-valued, so an error cannot publish a partially accepted program or environment. | Root, named-root, Mika-root and named-Mika execution use imported values and publish exports. Unresolved dependencies, missing dependency exports, incomplete completed exports and unknown exported bindings retain source positions. | Complete for implemented declaration owners; S4-owned unsupported forms remain explicit capability errors. |
+| Complete rendering | The renderer walks retained canonical nodes directly, associates results by document owner, local scope, output kind and source range, and does no evaluation or legacy lowering. | Complete text/HTML tests cover the shared mixed fixture, semantic inline markup, evaluated/displayed inline code, prose/title/subtitle, root/named/Mika results, hidden execution, disabled/inert source, options, escaping, and foreign/duplicate/missing result rejection. | Complete in candidate; production caller replacement remains S8. |
+| Exact-head authority | Full CI now invokes the handoff and renderer integrations plus the canonical-index library units that the earlier integration-only command omitted. | The final pushed SHA still requires completed required checks and a fresh clean Codex review. | Pending final-head evidence. |
+
+No audit item changes the S6 activation prerequisite or claims implementation of
+the eleven S4-owned document-unit forms that still fail closed.

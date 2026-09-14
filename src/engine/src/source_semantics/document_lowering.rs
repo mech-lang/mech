@@ -3,7 +3,8 @@
 
 use mech_syntax::document::{
     CanonicalOpAssign, CodeBlockSyntax, CodeFencePresentation, CodeFenceScope,
-    EvalInlineMechCodeSyntax, OpAssignSyntax, SliceRefSyntax, VariableAssignSyntax,
+    EvalInlineMechCodeSyntax, ExportDeclarationSyntax, OpAssignSyntax, SliceRefSyntax,
+    VariableAssignSyntax,
 };
 
 use super::*;
@@ -22,8 +23,9 @@ pub(super) fn compile_document(
     let anchor = SourceSemanticAnchor::for_node(document.syntax());
     let mut units = Vec::new();
     let mut inline = Vec::new();
-    collect_document_units(document.syntax(), &mut units, &mut inline)?;
-    compile_collected_document(anchor, units, inline)
+    let mut exports = Vec::new();
+    collect_document_units(document.syntax(), &mut units, &mut inline, &mut exports)?;
+    compile_collected_document(anchor, units, inline, exports)
 }
 
 pub(super) fn compile_named_document_scope(
@@ -40,6 +42,7 @@ fn compile_named_scope(
     let anchor = SourceSemanticAnchor::for_node(root);
     let mut units = Vec::new();
     let mut inline = Vec::new();
+    let mut exports = Vec::new();
     let mut pending = vec![root.clone()];
     while let Some(node) = pending.pop() {
         if matches!(
@@ -61,14 +64,14 @@ fn compile_named_scope(
                 )
             })?;
             let mut body_units = Vec::new();
-            collect_document_units(body.syntax(), &mut body_units, &mut inline)?;
+            collect_document_units(body.syntax(), &mut body_units, &mut inline, &mut exports)?;
             units.push(DocumentUnit::Fence(fence, presentation, body_units));
             continue;
         }
         let children: Vec<_> = node.children().collect();
         pending.extend(children.into_iter().rev());
     }
-    compile_collected_document(anchor, units, inline)
+    compile_collected_document(anchor, units, inline, exports)
 }
 
 pub(super) fn compile_mika_section(
@@ -84,14 +87,16 @@ pub(super) fn compile_mika_section(
     }
     let mut units = Vec::new();
     let mut inline = Vec::new();
-    collect_document_units(body.syntax(), &mut units, &mut inline)?;
-    compile_collected_document(anchor, units, inline)
+    let mut exports = Vec::new();
+    collect_document_units(body.syntax(), &mut units, &mut inline, &mut exports)?;
+    compile_collected_document(anchor, units, inline, exports)
 }
 
 fn compile_collected_document(
     anchor: SourceSemanticAnchor,
     units: Vec<DocumentUnit>,
     inline: Vec<EvalInlineMechCodeSyntax>,
+    exports: Vec<ExportDeclarationSyntax>,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
     let mut builder = SemanticBuilder::new(anchor);
     let mut bindings = BTreeSet::new();
@@ -128,6 +133,36 @@ fn compile_collected_document(
         output: 0,
         kind: SourceDocumentOutputKind::Program,
     }];
+    let mut document_exports = Vec::new();
+    let mut exported_names = BTreeSet::new();
+    for export in exports {
+        let name_node = builder.required(export.name(), export.syntax(), "an exported name")?;
+        let name = node_text(name_node.syntax())?;
+        if !exported_names.insert(name.clone()) {
+            return Err(SourceSemanticError {
+                code: "source-semantics/duplicate-export",
+                message: format!("document exports {name} more than once"),
+                anchor: SourceSemanticAnchor::for_node(export.syntax()),
+            });
+        }
+        let binding = builder
+            .bindings
+            .get(&name)
+            .copied()
+            .ok_or_else(|| SourceSemanticError {
+                code: "source-semantics/unknown-export",
+                message: format!("document exports undefined binding {name}"),
+                anchor: SourceSemanticAnchor::for_node(export.syntax()),
+            })?;
+        let value = builder.read_document_binding(binding, export.syntax())?;
+        let output = u32::try_from(builder.outputs.len()).map_err(|_| SourceSemanticError {
+            code: "source-semantics/output-identity-exhausted",
+            message: "canonical output count exceeds SourceProgram identity space".to_owned(),
+            anchor: SourceSemanticAnchor::for_node(export.syntax()),
+        })?;
+        builder.publish(&name, None, value, name_node.syntax());
+        document_exports.push(SourceDocumentExport { output, name });
+    }
     presentation.sort_by_key(|(_, _, owner)| owner.range().start);
     for (kind, value, owner) in presentation {
         let role = match kind {
@@ -147,6 +182,7 @@ fn compile_collected_document(
     builder.order_document_state_writers();
     let mut program = builder.finish()?;
     program.document_outputs = output_bindings.into_boxed_slice();
+    program.document_exports = document_exports.into_boxed_slice();
     Ok(program)
 }
 
@@ -154,6 +190,7 @@ fn collect_document_units(
     node: &SyntaxNode,
     output: &mut Vec<DocumentUnit>,
     inline: &mut Vec<EvalInlineMechCodeSyntax>,
+    exports: &mut Vec<ExportDeclarationSyntax>,
 ) -> Result<(), SourceSemanticError> {
     if matches!(
         node.kind(),
@@ -180,7 +217,7 @@ fn collect_document_units(
             ));
         };
         let mut units = Vec::new();
-        collect_document_units(body.syntax(), &mut units, inline)?;
+        collect_document_units(body.syntax(), &mut units, inline, exports)?;
         output.push(DocumentUnit::Fence(fence, presentation, units));
         return Ok(());
     }
@@ -194,13 +231,23 @@ fn collect_document_units(
         output.push(DocumentUnit::Statement(node.clone()));
         return Ok(());
     }
+    if let Some(export) = ExportDeclarationSyntax::cast(node.clone()) {
+        exports.push(export);
+        return Ok(());
+    }
+    // Resolver-owned declarations participate through the canonical source
+    // index and runtime handoff; they do not emit engine operations themselves.
+    if matches!(
+        node.kind(),
+        SyntaxKind::ContextDeclaration | SyntaxKind::ImportDeclaration | SyntaxKind::ModuleImport
+    ) {
+        return Ok(());
+    }
     if matches!(
         node.kind(),
         SyntaxKind::ActivationScope
-            | SyntaxKind::ContextDeclaration
             | SyntaxKind::ContextSend
             | SyntaxKind::EnumDefine
-            | SyntaxKind::ExportDeclaration
             | SyntaxKind::Fsm
             | SyntaxKind::FsmDeclare
             | SyntaxKind::FsmImplementation
@@ -210,9 +257,7 @@ fn collect_document_units(
             | SyntaxKind::FsmSpecification
             | SyntaxKind::FunctionDefine
             | SyntaxKind::InvariantDefine
-            | SyntaxKind::ImportDeclaration
             | SyntaxKind::KindDefine
-            | SyntaxKind::ModuleImport
             | SyntaxKind::TupleDestructure
     ) {
         return Err(SourceSemanticError {
@@ -225,7 +270,7 @@ fn collect_document_units(
         });
     }
     for child in node.children() {
-        collect_document_units(&child, output, inline)?;
+        collect_document_units(&child, output, inline, exports)?;
     }
     Ok(())
 }

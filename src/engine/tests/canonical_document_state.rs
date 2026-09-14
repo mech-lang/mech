@@ -616,6 +616,66 @@ fn derived_updates_compare_final_output_to_the_value_before_seeding() {
 }
 
 #[test]
+fn sequential_derived_updates_share_only_the_largest_rmw_backup_region() {
+    use mech_core::{AllocationRole, MemoryLifetime, MemoryObjectOwner};
+
+    let source = "~tick := 0\ntick += 1\n~small := [0, 0]\nsmall[1] = tick\nsmall[1] = 0\n~large := [0, 0, 0, 0]\nlarge[1] = tick\nlarge[1] = 0\nsmall[1] + large[1]\n";
+    let artifact = compiled(source).compile_artifact().unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x582, 0),
+        &artifact,
+        &catalog.build().unwrap(),
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    let backups = instance
+        .plan
+        .memory_plan
+        .allocations
+        .iter()
+        .filter(|allocation| {
+            allocation.role == AllocationRole::Scratch
+                && matches!(allocation.owner, MemoryObjectOwner::TransactionStage { .. })
+                && matches!(allocation.lifetime, MemoryLifetime::Turn { .. })
+        })
+        .collect::<Vec<_>>();
+    assert!(backups.len() >= 4, "{:#?}", instance.plan.memory_plan);
+    let group = backups[0].reuse_group.unwrap();
+    let arena_id = backups[0].placement.arena;
+    assert!(backups.iter().all(|backup| {
+        backup.reuse_group == Some(group)
+            && backup.placement.arena == arena_id
+            && backup.placement.offset == 0
+    }));
+    let maximum = backups
+        .iter()
+        .map(|backup| backup.capacity_bytes)
+        .max()
+        .unwrap();
+    let sum = backups
+        .iter()
+        .map(|backup| backup.capacity_bytes)
+        .sum::<u64>();
+    assert!(sum > maximum);
+    let arena = instance
+        .plan
+        .memory_plan
+        .arenas
+        .iter()
+        .find(|arena| arena.id == arena_id)
+        .unwrap();
+    assert_eq!(arena.capacity_bytes, maximum);
+    instance.turn(&[]).unwrap();
+    let output = instance.copied_output(0).unwrap();
+    let ValueData::F64(value) = output.data() else {
+        panic!("scalar result")
+    };
+    assert_eq!(value.to_f64(), 0.0);
+}
+
+#[test]
 fn derived_snapshot_updates_release_budgeted_prior_outputs_on_abort_and_drop() {
     use mech_engine::resident::{ResidentActivationOptions, activate_with_options};
     let artifact =

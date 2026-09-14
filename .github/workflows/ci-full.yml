@@ -1093,7 +1093,14 @@ jobs:
         run: >-
           cargo +nightly-2026-03-03 test --locked -p mech-runtime
           --no-default-features --features full_source,resident-routing-source
-          --test canonical_document_outputs --test canonical_source_index
+          --test canonical_declaration_handoff --test canonical_document_outputs
+          --test canonical_document_render --test canonical_source_index
+
+      - name: Verify canonical complete-document indexing work
+        run: >-
+          cargo +nightly-2026-03-03 test --locked -p mech-runtime
+          --no-default-features --features full_source,resident-routing-source
+          --lib resolver::index::canonical::tests
 
       - name: Check reduced core feature boundaries
         run: |

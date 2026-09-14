@@ -60,34 +60,22 @@ impl SourceIndex {
 
     /// Index only this Mika's lexical body. Nested Mika owners have separate indexes.
     pub fn from_mika_section(section: &mech_syntax::document::MikaSectionSyntax) -> Result<Self> {
-        if section.syntax().flags().intersects(
-            NodeFlags::ERROR
-                | NodeFlags::MISSING
-                | NodeFlags::CONTAINS_ERROR
-                | NodeFlags::CONTAINS_MISSING,
-        ) {
-            return Err(error(
-                section.syntax(),
-                "cannot index a Mika section containing syntax errors",
-            ));
-        }
+        validate_mika_section(section)?;
         let body = required(section.body(), section.syntax())?;
         Self::from_local_owner(body.syntax())
     }
 
     fn from_local_owner(root: &SyntaxNode) -> Result<Self> {
-        if root.flags().intersects(
-            NodeFlags::ERROR
-                | NodeFlags::MISSING
-                | NodeFlags::CONTAINS_ERROR
-                | NodeFlags::CONTAINS_MISSING,
-        ) {
-            return Err(error(
-                root,
-                "cannot index a document containing syntax errors",
-            ));
-        }
+        validate_local_owner(root)?;
         let locations = SourceLocationProjector::new(root)?;
+        Self::from_local_owner_with_locations(root, &locations)
+    }
+
+    fn from_local_owner_with_locations(
+        root: &SyntaxNode,
+        locations: &SourceLocationProjector,
+    ) -> Result<Self> {
+        validate_local_owner(root)?;
         let mut index = Self::default();
         index.push_scope(SourceScope::Program);
         let mut pending = vec![(root.clone(), SourceScope::Program, true)];
@@ -314,6 +302,36 @@ impl SourceIndex {
     }
 }
 
+fn validate_local_owner(root: &SyntaxNode) -> Result<()> {
+    if root.flags().intersects(
+        NodeFlags::ERROR
+            | NodeFlags::MISSING
+            | NodeFlags::CONTAINS_ERROR
+            | NodeFlags::CONTAINS_MISSING,
+    ) {
+        return Err(error(
+            root,
+            "cannot index a document containing syntax errors",
+        ));
+    }
+    Ok(())
+}
+
+fn validate_mika_section(section: &mech_syntax::document::MikaSectionSyntax) -> Result<()> {
+    if section.syntax().flags().intersects(
+        NodeFlags::ERROR
+            | NodeFlags::MISSING
+            | NodeFlags::CONTAINS_ERROR
+            | NodeFlags::CONTAINS_MISSING,
+    ) {
+        return Err(error(
+            section.syntax(),
+            "cannot index a Mika section containing syntax errors",
+        ));
+    }
+    Ok(())
+}
+
 fn module_import_range(
     locations: &SourceLocationProjector,
     import: &ModuleImportSyntax,
@@ -422,6 +440,8 @@ struct SourceLocationProjector {
 
 impl SourceLocationProjector {
     fn new(root: &SyntaxNode) -> Result<Self> {
+        #[cfg(test)]
+        SOURCE_LOCATION_PROJECTIONS.with(|count| count.set(count.get() + 1));
         let mut offsets = Vec::new();
         let mut pending = vec![root.clone()];
         while let Some(node) = pending.pop() {
@@ -465,12 +485,16 @@ pub struct CanonicalMikaIndex {
 
 impl CanonicalDocumentIndex {
     pub fn from_document(document: &DocumentSyntax) -> Result<Self> {
-        let root = SourceIndex::from_document(document)?;
+        let locations = SourceLocationProjector::new(document.syntax())?;
+        let root = SourceIndex::from_local_owner_with_locations(document.syntax(), &locations)?;
         let mika = document
             .mika_scopes()
             .into_iter()
             .map(|owner| {
-                let index = SourceIndex::from_mika_section(&owner.section)?;
+                validate_mika_section(&owner.section)?;
+                let body = required(owner.section.body(), owner.section.syntax())?;
+                let index =
+                    SourceIndex::from_local_owner_with_locations(body.syntax(), &locations)?;
                 Ok(CanonicalMikaIndex { owner, index })
             })
             .collect::<Result<_>>()?;
@@ -483,13 +507,21 @@ impl CanonicalDocumentIndex {
 }
 
 #[cfg(test)]
+std::thread_local! {
+    static SOURCE_LOCATION_PROJECTIONS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
     use mech_syntax::document::parser::canonical::{
         parse_canonical_document_rule_for_test, parse_canonical_phase_2f_rule_for_test,
     };
     use mech_syntax::document::parser::canonical_rule_id;
-    use mech_syntax::document::{DocumentId, GreenBuilder, IdGenerator, ParseConfig, TextSnapshot};
+    use mech_syntax::document::{
+        DocumentId, DocumentSyntax, GreenBuilder, IdGenerator, ParseConfig, TextSnapshot,
+        parse_canonical_document,
+    };
 
     fn direct_fragment(
         rule: &str,
@@ -561,5 +593,23 @@ mod tests {
         assert_eq!(function.address_references[0].reference.target, "live");
         assert_eq!(transition.address_references.len(), 1);
         assert_eq!(transition.address_references[0].reference.target, "live");
+    }
+
+    #[test]
+    fn complete_document_indexes_all_mika_owners_with_one_coordinate_projection() {
+        let source = "x := @root/VALUE\n\n~∘~⸢y := @child/VALUE\n\n╭◉╮⸢z := @nested/VALUE\n⸥\n⸥\n";
+        let parsed = parse_canonical_document(
+            TextSnapshot::new(DocumentId(79), Revision(1), source).unwrap(),
+            ParseConfig::default(),
+        );
+        assert!(parsed.diagnostics.is_empty(), "{:#?}", parsed.diagnostics);
+        let document = DocumentSyntax::cast(parsed.syntax()).unwrap();
+        SOURCE_LOCATION_PROJECTIONS.with(|count| count.set(0));
+        let index = CanonicalDocumentIndex::from_document(&document).unwrap();
+        assert_eq!(index.root.address_references.len(), 1);
+        assert_eq!(index.mika.len(), 2);
+        assert_eq!(index.mika[0].index.address_references.len(), 1);
+        assert_eq!(index.mika[1].index.address_references.len(), 1);
+        SOURCE_LOCATION_PROJECTIONS.with(|count| assert_eq!(count.get(), 1));
     }
 }

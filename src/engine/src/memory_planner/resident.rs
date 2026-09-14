@@ -791,7 +791,7 @@ fn plan_resident_saved_value(
                 .ok_or(MemoryPlanError::DescriptorMismatch)?,
         ),
         0,
-        target.limits,
+        plan.budget_limits,
     ));
     violations.extend(mech_core::evaluate_aggregate_memory_budget(
         plan.allocations
@@ -801,7 +801,7 @@ fn plan_resident_saved_value(
             .clone(),
         plan.peak,
         0,
-        target.limits,
+        plan.budget_limits,
     ));
     violations.sort();
     violations.dedup();
@@ -1000,6 +1000,7 @@ mod tests {
     #[test]
     fn resident_rmw_backups_reuse_one_non_overlapping_region_per_kind() {
         let mut projection = plan_resident_arenas(&[]).unwrap();
+        projection.plan.budget_limits.max_temporary_bytes = Some(48);
         let first = plan_resident_rmw_previous(
             &mut projection.plan,
             mech_core::NodeId::new(7),
@@ -1034,6 +1035,10 @@ mod tests {
             .unwrap();
         assert_eq!(arena.capacity_bytes, 5 * 8);
         assert_eq!(projection.plan.peak.turn_peak_bytes, 5 * 8);
+        assert!(
+            projection.plan.budget_violations.is_empty(),
+            "the 48-byte budget admits the 40-byte simultaneous peak, not the 64-byte sum"
+        );
         crate::memory_runtime::ManagedProgramMemory::realize(&projection.plan).unwrap();
     }
 
