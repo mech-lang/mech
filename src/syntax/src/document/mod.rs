@@ -21,6 +21,7 @@ pub mod pointer;
 pub mod red;
 mod retained_sequence;
 pub mod source;
+mod submission;
 pub mod syntax_kind;
 
 use alloc::sync::Arc;
@@ -47,6 +48,7 @@ pub use parser::{
 pub use pointer::*;
 pub use red::*;
 pub use source::*;
+pub use submission::*;
 pub use syntax_kind::*;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
