@@ -3,8 +3,8 @@
 
 use mech_syntax::document::{
     CanonicalOpAssign, CodeBlockSyntax, CodeFencePresentation, CodeFenceScope,
-    EvalInlineMechCodeSyntax, ExportDeclarationSyntax, OpAssignSyntax, SliceRefSyntax,
-    VariableAssignSyntax,
+    EvalInlineMechCodeSyntax, ExportDeclarationSyntax, InvariantDefineSyntax, OpAssignSyntax,
+    SliceRefSyntax, VariableAssignSyntax,
 };
 
 use super::*;
@@ -14,6 +14,7 @@ mod document_assignment;
 
 enum DocumentUnit {
     Statement(SyntaxNode),
+    Invariant(InvariantDefineSyntax),
     Inline(EvalInlineMechCodeSyntax),
     Fence(CodeBlockSyntax, CodeFencePresentation, Vec<DocumentUnit>),
 }
@@ -33,11 +34,42 @@ struct DeferredInline {
 pub(super) fn compile_document(
     document: &DocumentSyntax,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+    compile_document_with_options(document, None, BTreeMap::new(), false)
+}
+
+pub(super) fn compile_document_with_catalog(
+    document: &DocumentSyntax,
+    catalog: Arc<mech_core::FunctionCatalog>,
+) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+    compile_document_with_options(document, Some(catalog), BTreeMap::new(), false)
+}
+
+pub(super) fn compile_interactive_document_with_catalog(
+    document: &DocumentSyntax,
+    catalog: Arc<mech_core::FunctionCatalog>,
+) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+    compile_document_with_options(document, Some(catalog), BTreeMap::new(), true)
+}
+
+pub(super) fn compile_document_with_catalog_and_input_schemas(
+    document: &DocumentSyntax,
+    catalog: Arc<mech_core::FunctionCatalog>,
+    input_schemas: BTreeMap<String, SchemaBody>,
+) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+    compile_document_with_options(document, Some(catalog), input_schemas, false)
+}
+
+fn compile_document_with_options(
+    document: &DocumentSyntax,
+    catalog: Option<Arc<mech_core::FunctionCatalog>>,
+    input_schemas: BTreeMap<String, SchemaBody>,
+    interactive: bool,
+) -> Result<CanonicalSourceProgram, SourceSemanticError> {
     let anchor = SourceSemanticAnchor::for_node(document.syntax());
     let mut units = Vec::new();
     let mut exports = Vec::new();
     collect_document_units(document.syntax(), &mut units, &mut exports)?;
-    compile_collected_document(anchor, units, exports)
+    compile_collected_document(anchor, units, exports, catalog, input_schemas, interactive)
 }
 
 pub(super) fn compile_named_document_scope(
@@ -82,7 +114,7 @@ fn compile_named_scope(
         let children: Vec<_> = node.children().collect();
         pending.extend(children.into_iter().rev());
     }
-    compile_collected_document(anchor, units, exports)
+    compile_collected_document(anchor, units, exports, None, BTreeMap::new(), false)
 }
 
 pub(super) fn compile_mika_section(
@@ -99,15 +131,24 @@ pub(super) fn compile_mika_section(
     let mut units = Vec::new();
     let mut exports = Vec::new();
     collect_document_units(body.syntax(), &mut units, &mut exports)?;
-    compile_collected_document(anchor, units, exports)
+    compile_collected_document(anchor, units, exports, None, BTreeMap::new(), false)
 }
 
 fn compile_collected_document(
     anchor: SourceSemanticAnchor,
     units: Vec<DocumentUnit>,
     exports: Vec<ExportDeclarationSyntax>,
+    catalog: Option<Arc<mech_core::FunctionCatalog>>,
+    input_schemas: BTreeMap<String, SchemaBody>,
+    interactive: bool,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
-    let mut builder = SemanticBuilder::new(anchor);
+    let mut builder = match catalog {
+        Some(catalog) if !input_schemas.is_empty() => {
+            SemanticBuilder::with_function_catalog_and_input_schemas(anchor, catalog, input_schemas)
+        }
+        Some(catalog) => SemanticBuilder::with_function_catalog(anchor, catalog),
+        None => SemanticBuilder::new(anchor),
+    };
     let mut bindings = BTreeSet::new();
     declare_document_inputs(&mut builder, &units, &mut bindings)?;
     declare_document_inline_inputs(&mut builder, &units, &bindings)?;
@@ -173,6 +214,22 @@ fn compile_collected_document(
         });
         builder.publish(&name, None, value, &owner);
     }
+    if interactive {
+        let bindings = builder
+            .bindings
+            .iter()
+            .map(|(name, binding)| (name.clone(), *binding))
+            .collect::<Vec<_>>();
+        for (name, binding) in bindings {
+            let value = builder.read_document_binding(binding, &last.syntax)?;
+            builder.publish(
+                &crate::encode_interactive_symbol_output_name(&name),
+                Some(name),
+                value,
+                &last.syntax,
+            );
+        }
+    }
     builder.order_document_state_writers();
     let mut program = builder.finish()?;
     program.document_outputs = output_bindings.into_boxed_slice();
@@ -189,6 +246,10 @@ fn collect_document_units(
         node.kind(),
         SyntaxKind::InlineMechCode | SyntaxKind::MikaSection
     ) {
+        return Ok(());
+    }
+    if let Some(invariant) = InvariantDefineSyntax::cast(node.clone()) {
+        output.push(DocumentUnit::Invariant(invariant));
         return Ok(());
     }
     if let Some(expression) = EvalInlineMechCodeSyntax::cast(node.clone()) {
@@ -249,7 +310,6 @@ fn collect_document_units(
             | SyntaxKind::FsmPipe
             | SyntaxKind::FsmSpecification
             | SyntaxKind::FunctionDefine
-            | SyntaxKind::InvariantDefine
             | SyntaxKind::KindDefine
             | SyntaxKind::TupleDestructure
     ) {
@@ -278,6 +338,9 @@ fn declare_document_inputs(
             DocumentUnit::Statement(unit) => {
                 builder.declare_unit_input_annotations(unit, bindings)?
             }
+            DocumentUnit::Invariant(invariant) => {
+                builder.declare_input_annotations(invariant.syntax(), bindings)?
+            }
             DocumentUnit::Inline(_) => {}
             DocumentUnit::Fence(_, _, units) => declare_document_inputs(builder, units, bindings)?,
         }
@@ -293,6 +356,7 @@ fn declare_document_inline_inputs(
     for unit in units {
         match unit {
             DocumentUnit::Statement(_) => {}
+            DocumentUnit::Invariant(_) => {}
             DocumentUnit::Inline(inline) => {
                 builder.declare_input_annotations(inline.syntax(), bindings)?
             }
@@ -360,6 +424,42 @@ fn compile_document_units_inner(
                         program_visible: true,
                     },
                 );
+                refresh_deferred_inline(builder, deferred_inline, presentation, &mut last)?;
+            }
+            DocumentUnit::Invariant(invariant) => {
+                let name = invariant
+                    .syntax()
+                    .children()
+                    .find(|child| child.kind() == SyntaxKind::Identifier)
+                    .ok_or_else(|| {
+                        internal(
+                            SourceSemanticAnchor::for_node(invariant.syntax()),
+                            "invariant definition has no name".to_owned(),
+                        )
+                    })?;
+                let expression = invariant
+                    .syntax()
+                    .children()
+                    .find_map(ExpressionSyntax::cast)
+                    .ok_or_else(|| {
+                        internal(
+                            SourceSemanticAnchor::for_node(invariant.syntax()),
+                            "invariant definition has no expression".to_owned(),
+                        )
+                    })?;
+                let (value, _) = builder.expression(&expression)?;
+                value.resolved()?;
+                if builder.schema_of(value)? != Some(BuiltinSchema::Bool) {
+                    return Err(SourceSemanticError {
+                        code: "source-semantics/non-boolean-invariant",
+                        message: "an invariant expression must resolve to bool".to_owned(),
+                        anchor: SourceSemanticAnchor::for_node(expression.syntax()),
+                    });
+                }
+                builder.constraints.push(PendingConstraint {
+                    name: node_text(&name)?,
+                    value,
+                });
                 refresh_deferred_inline(builder, deferred_inline, presentation, &mut last)?;
             }
             DocumentUnit::Inline(inline) => {
@@ -637,6 +737,9 @@ impl SemanticBuilder {
         }
         for output in &mut self.outputs {
             remap(&mut output.source);
+        }
+        for constraint in &mut self.constraints {
+            remap(&mut constraint.value);
         }
         for binding in self.bindings.values_mut() {
             if let PendingBinding::Value(value) = binding {

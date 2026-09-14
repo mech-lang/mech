@@ -3,6 +3,7 @@ mod comprehension;
 use comprehension::{PendingComprehension, resolve_comprehension};
 
 use std::collections::{BTreeMap, BTreeSet};
+use std::sync::Arc;
 
 #[path = "document_lowering.rs"]
 mod document_lowering;
@@ -184,6 +185,161 @@ impl CanonicalSourceProgram {
             &contracts,
         )
     }
+
+    /// Replace one detached planning input with an explicit resource-read
+    /// requirement. The returned semantic program has no competing input for
+    /// that name; every reference is rewired to the observation node.
+    pub fn bind_resource_input(
+        mut self,
+        input_name: &str,
+        request: mech_core::ExecutionResourceRequest,
+    ) -> Result<Self, SourceSemanticError> {
+        let input_index =
+            self.program
+                .inputs
+                .iter()
+                .position(|input| input.name == input_name)
+                .ok_or_else(|| SourceSemanticError {
+                    code: "source-semantics/unknown-resource-input",
+                    message: format!("canonical program has no input named {input_name}"),
+                    anchor: self.source_map.inputs.first().copied().unwrap_or(
+                        SourceSemanticAnchor {
+                            document: DocumentId(0),
+                            revision: Revision(0),
+                            range: TextRange::empty(mech_syntax::document::TextSize::ZERO),
+                        },
+                    ),
+                })?;
+        let input_index = u32::try_from(input_index).map_err(|_| SourceSemanticError {
+            code: "source-semantics/input-identity-exhausted",
+            message: "canonical resource input exceeds u32 identity space".to_owned(),
+            anchor: self.source_map.inputs[0],
+        })?;
+        let input_anchor = self.source_map.inputs[input_index as usize];
+        let mut inputs = self.program.inputs.into_vec();
+        let input = inputs.remove(input_index as usize);
+        self.program.inputs = inputs.into_boxed_slice();
+        let mut input_anchors = self.source_map.inputs.into_vec();
+        input_anchors.remove(input_index as usize);
+        self.source_map.inputs = input_anchors.into_boxed_slice();
+
+        let remap = |value: &mut SourceValue| match value {
+            SourceValue::Input(index) if *index == input_index => {
+                *value = SourceValue::NodeOutput {
+                    node: 0,
+                    output_ordinal: 0,
+                };
+            }
+            SourceValue::Input(index) if *index > input_index => *index -= 1,
+            SourceValue::NodeOutput { node, .. } => *node += 1,
+            SourceValue::Constant(_) | SourceValue::Input(_) | SourceValue::State(_) => {}
+        };
+        for state in &mut self.program.states {
+            state.producer_node += 1;
+            if let Some(initializer) = &mut state.initializer {
+                remap(initializer);
+            }
+        }
+        for node in &mut self.program.nodes {
+            for value in &mut node.inputs {
+                remap(value);
+            }
+        }
+        for output in &mut self.program.outputs {
+            remap(&mut output.source);
+        }
+        for constraint in &mut self.program.constraints {
+            for value in &mut constraint.inputs {
+                remap(value);
+            }
+        }
+
+        let requirement = mech_core::ApplicationRequirement::Resource(request);
+        let old_requirements = self
+            .program
+            .requirements
+            .iter()
+            .map(|(_, requirement)| requirement.clone())
+            .collect::<Vec<_>>();
+        let mut requirements = old_requirements.clone();
+        requirements.push(requirement.clone());
+        requirements.sort_by(mech_core::compare_application_requirements);
+        requirements.dedup();
+        let requirement_id = requirements
+            .binary_search_by(|candidate| {
+                mech_core::compare_application_requirements(candidate, &requirement)
+            })
+            .expect("inserted canonical requirement");
+        for node in &mut self.program.nodes {
+            let crate::SourceNodeBody::Operation {
+                requirement: Some(id),
+                ..
+            } = &mut node.body
+            else {
+                continue;
+            };
+            let old = old_requirements
+                .get(id.get() as usize)
+                .expect("canonical requirement identity");
+            *id = mech_core::ApplicationRequirementId::new(
+                requirements
+                    .binary_search_by(|candidate| {
+                        mech_core::compare_application_requirements(candidate, old)
+                    })
+                    .expect("retained canonical requirement") as u32,
+            );
+        }
+        self.program.requirements = crate::ApplicationRequirementTable::from_canonical_entries(
+            requirements,
+        )
+        .map_err(|error| {
+            internal(
+                input_anchor,
+                format!("invalid resource requirement: {error:?}"),
+            )
+        })?;
+
+        let mut nodes = self.program.nodes.into_vec();
+        nodes.insert(
+            0,
+            SourceNode {
+                body: crate::SourceNodeBody::Operation {
+                    operation: OperationReference {
+                        module_path: vec!["resource".to_owned(), "read".to_owned()]
+                            .into_boxed_slice(),
+                        operation_name: "read".to_owned(),
+                    },
+                    requirement: Some(mech_core::ApplicationRequirementId::new(
+                        requirement_id as u32,
+                    )),
+                },
+                inputs: Box::new([]),
+                outputs: vec![SourceNodeOutput::Derived {
+                    schema: input.schema,
+                }]
+                .into_boxed_slice(),
+            },
+        );
+        self.program.nodes = nodes.into_boxed_slice();
+        let mut contracts = self.contracts.into_vec();
+        contracts.insert(
+            0,
+            Some(crate::function::external::resource_observation_contract()),
+        );
+        self.contracts = contracts.into_boxed_slice();
+        let mut semantic_nodes = self.source_map.nodes.into_vec();
+        semantic_nodes.insert(
+            0,
+            SourceSemanticNode {
+                operation: "resource/read".to_owned(),
+                role: "resource",
+                detail: Some(input_name.to_owned()),
+                anchor: input_anchor,
+            },
+        );
+        self.source_map.nodes = semantic_nodes.into_boxed_slice();
+        Ok(self)
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -240,6 +396,44 @@ impl CanonicalSourceFrontend {
     ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
         reject_recovered_syntax(document)?;
         document_lowering::compile_document(document)
+    }
+
+    /// Compile through the exact function catalog that will activate the
+    /// resulting artifact. This preserves module-only source declarations and
+    /// their semantic contracts without building or interpreting a legacy AST.
+    pub fn compile_document_with_catalog(
+        &self,
+        document: &DocumentSyntax,
+        catalog: Arc<mech_core::FunctionCatalog>,
+    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+        reject_recovered_syntax(document)?;
+        document_lowering::compile_document_with_catalog(document, catalog)
+    }
+
+    pub fn compile_interactive_document_with_catalog(
+        &self,
+        document: &DocumentSyntax,
+        catalog: Arc<mech_core::FunctionCatalog>,
+    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+        reject_recovered_syntax(document)?;
+        document_lowering::compile_interactive_document_with_catalog(document, catalog)
+    }
+
+    /// Compile with detached planning-value schemas supplied by the product
+    /// boundary. These schemas specialize source inputs but do not make them
+    /// live ports; callers must explicitly retain or bind each input afterward.
+    pub fn compile_document_with_catalog_and_input_schemas(
+        &self,
+        document: &DocumentSyntax,
+        catalog: Arc<mech_core::FunctionCatalog>,
+        input_schemas: BTreeMap<String, SchemaBody>,
+    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+        reject_recovered_syntax(document)?;
+        document_lowering::compile_document_with_catalog_and_input_schemas(
+            document,
+            catalog,
+            input_schemas,
+        )
     }
 
     /// Compile the ordered fences belonging to one named interpreter scope.
@@ -1503,6 +1697,11 @@ struct PendingOutput {
     anchor: SourceSemanticAnchor,
 }
 
+struct PendingConstraint {
+    name: String,
+    value: PendingValue,
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct PatternBinding {
     name: String,
@@ -1534,6 +1733,8 @@ impl NamedKindPathResolver for BuiltinKindPaths {
 }
 
 struct SemanticBuilder {
+    function_catalog: Option<Arc<mech_core::FunctionCatalog>>,
+    input_schema_overrides: BTreeMap<String, SchemaDraft>,
     control_depth: usize,
     next_control_block: u32,
     anchor: SourceSemanticAnchor,
@@ -1544,6 +1745,7 @@ struct SemanticBuilder {
     nodes: Vec<PendingNode>,
     states: Vec<PendingState>,
     outputs: Vec<PendingOutput>,
+    constraints: Vec<PendingConstraint>,
     bindings: BTreeMap<String, PendingBinding>,
     scope_definitions: BTreeSet<String>,
     patterns: Vec<SourceSemanticPattern>,
@@ -1552,6 +1754,8 @@ struct SemanticBuilder {
 impl SemanticBuilder {
     fn new(anchor: SourceSemanticAnchor) -> Self {
         Self {
+            function_catalog: None,
+            input_schema_overrides: BTreeMap::new(),
             control_depth: 0,
             next_control_block: 0,
             anchor,
@@ -1562,10 +1766,80 @@ impl SemanticBuilder {
             nodes: Vec::new(),
             states: Vec::new(),
             outputs: Vec::new(),
+            constraints: Vec::new(),
             bindings: BTreeMap::new(),
             scope_definitions: BTreeSet::new(),
             patterns: Vec::new(),
         }
+    }
+
+    fn with_function_catalog(
+        anchor: SourceSemanticAnchor,
+        function_catalog: Arc<mech_core::FunctionCatalog>,
+    ) -> Self {
+        let mut builder = Self::new(anchor);
+        builder.function_catalog = Some(function_catalog);
+        builder
+    }
+
+    fn with_function_catalog_and_input_schemas(
+        anchor: SourceSemanticAnchor,
+        function_catalog: Arc<mech_core::FunctionCatalog>,
+        input_schemas: BTreeMap<String, SchemaBody>,
+    ) -> Self {
+        let mut builder = Self::with_function_catalog(anchor, function_catalog);
+        builder.input_schema_overrides = input_schemas
+            .into_iter()
+            .map(|(name, body)| {
+                (
+                    name,
+                    SchemaDraft {
+                        body,
+                        dimension_parameters: Box::new([]),
+                    },
+                )
+            })
+            .collect();
+        builder
+    }
+
+    fn source_type_declaration(
+        &self,
+        name: &str,
+    ) -> Result<mech_core::FunctionTypeDeclaration, mech_core::MechError> {
+        if let Some(declaration) = self
+            .function_catalog
+            .as_ref()
+            .and_then(|catalog| catalog.source_type_declaration(name))
+        {
+            return Ok(declaration.clone());
+        }
+        mech_core::maintained_source_type_declaration(name)
+    }
+
+    fn source_operation_contract(
+        &self,
+        name: &str,
+        input_count: usize,
+        output: &SchemaDraft,
+    ) -> Option<OperationContractDeclaration> {
+        self.function_catalog
+            .as_ref()
+            .and_then(|catalog| {
+                catalog.source_operation_contract(
+                    name,
+                    input_count,
+                    matches!(output.body, SchemaBody::Matrix { .. }),
+                )
+            })
+            .cloned()
+            .or_else(|| {
+                mech_core::maintained_operation_contract(
+                    name,
+                    input_count,
+                    matches!(output.body, SchemaBody::Matrix { .. }),
+                )
+            })
     }
 
     fn declare_input_annotations(
@@ -2282,14 +2556,15 @@ impl SemanticBuilder {
                 let function =
                     self.required(value.function(), value.syntax(), "a function name")?;
                 let function_name = node_text(function.syntax())?;
-                let declaration = mech_core::maintained_source_type_declaration(&function_name)
-                    .map_err(|_| SourceSemanticError {
+                let declaration = self.source_type_declaration(&function_name).map_err(|_| {
+                    SourceSemanticError {
                         code: "source-semantics/unknown-function",
                         message: format!(
                             "function {function_name} has no declared source semantics"
                         ),
                         anchor: SourceSemanticAnchor::for_node(function.syntax()),
-                    })?;
+                    }
+                })?;
                 let arguments = self.required(
                     value.arguments(),
                     value.syntax(),
@@ -2439,7 +2714,7 @@ impl SemanticBuilder {
         inputs: Vec<PendingValue>,
         syntax: &SyntaxNode,
     ) -> Result<Option<(Vec<PendingValue>, SchemaDraft)>, SourceSemanticError> {
-        let Ok(declaration) = mech_core::maintained_source_type_declaration(name) else {
+        let Ok(declaration) = self.source_type_declaration(name) else {
             return Ok(None);
         };
         self.resolve_declared_call(name, inputs, syntax, declaration)
@@ -2788,8 +3063,9 @@ impl SemanticBuilder {
         }
         let schema = annotation.unwrap_or_else(dynamic_schema_draft);
         let declared = self
-            .input_declarations
+            .input_schema_overrides
             .get(&name)
+            .or_else(|| self.input_declarations.get(&name))
             .cloned()
             .unwrap_or_else(|| schema.clone());
         if !is_dynamic_schema_draft(&schema)
@@ -3398,6 +3674,63 @@ impl SemanticBuilder {
                 && !has_matrix_blocks)
         {
             return self.optional_matrix(values, matrix.syntax(), element);
+        }
+
+        // A rectangular matrix made entirely from already typed scalar
+        // constants is itself one canonical constant. Folding it here avoids
+        // manufacturing runtime concatenation nodes and preserves the same
+        // initializer ownership used by state and native artifact consumers.
+        if self.function_catalog.is_some()
+            && !has_matrix_blocks
+            && values.iter().all(|row| row.len() == first.len())
+            && values
+                .iter()
+                .flatten()
+                .all(|value| matches!(value, Some(PendingValue::Constant(_))))
+        {
+            let first_value = values[0][0].expect("constant matrix entry");
+            let PendingValue::Constant(first_constant) = first_value else {
+                unreachable!("constant matrix checked above")
+            };
+            let element_schema = self.constants[first_constant].schema.clone();
+            if element_schema.dimension_parameters.is_empty()
+                && !matches!(element_schema.body, SchemaBody::Matrix { .. })
+                && values.iter().flatten().all(|value| {
+                    let PendingValue::Constant(index) = value.expect("constant matrix entry")
+                    else {
+                        return false;
+                    };
+                    self.constants[index].schema == element_schema
+                })
+            {
+                let row_count = values.len() as u64;
+                let column_count = first.len() as u64;
+                let mut data = Vec::with_capacity(values.len() * first.len());
+                for column in 0..first.len() {
+                    for row in &values {
+                        let PendingValue::Constant(index) =
+                            row[column].expect("constant matrix entry")
+                        else {
+                            unreachable!("constant matrix checked above")
+                        };
+                        data.push(self.constants[index].data.clone());
+                    }
+                }
+                return Ok(self.constant_draft(
+                    SchemaDraft {
+                        body: SchemaBody::Matrix {
+                            element: Box::new(element_schema.body),
+                            dimensions: vec![
+                                DimensionExpr::Constant(row_count),
+                                DimensionExpr::Constant(column_count),
+                            ]
+                            .into_boxed_slice(),
+                        },
+                        dimension_parameters: Box::new([]),
+                    },
+                    ValueDataDraft::Matrix(data.into_boxed_slice()),
+                ));
+            }
         }
 
         let mut rows = Vec::with_capacity(values.len());
@@ -4732,8 +5065,9 @@ impl SemanticBuilder {
             anchor: SourceSemanticAnchor::for_node(node),
         })?;
         let schema = self
-            .input_declarations
+            .input_schema_overrides
             .get(&name)
+            .or_else(|| self.input_declarations.get(&name))
             .cloned()
             .unwrap_or_else(dynamic_schema_draft);
         self.input_by_name.insert(name.clone(), index);
@@ -5096,11 +5430,7 @@ impl SemanticBuilder {
         // Keep the operation contract with the selected identity, converted
         // arguments and exact output schema. Artifact handoff only transports
         // this binding; it never reselects semantics from a name or feature set.
-        let contract = mech_core::maintained_operation_contract(
-            operation,
-            inputs.len(),
-            matches!(schema.body, SchemaBody::Matrix { .. }),
-        );
+        let contract = self.source_operation_contract(operation, inputs.len(), &schema);
         self.nodes.push(PendingNode {
             body: PendingNodeBody::Operation {
                 contract,
@@ -5304,6 +5634,16 @@ impl SemanticBuilder {
             })
             .collect::<Vec<_>>()
             .into_boxed_slice();
+        let constraints = self
+            .constraints
+            .iter()
+            .map(|constraint| crate::SourceIntegrityConstraint {
+                name: constraint.name.clone(),
+                operation: operation_reference("integrity/assert"),
+                inputs: vec![resolve_value(constraint.value, &constant_ids)].into_boxed_slice(),
+            })
+            .collect::<Vec<_>>()
+            .into_boxed_slice();
         let source_map = SourceSemanticMap {
             inputs: self
                 .inputs
@@ -5342,7 +5682,7 @@ impl SemanticBuilder {
                     .into_boxed_slice(),
                 nodes,
                 outputs,
-                constraints: Box::new([]),
+                constraints,
             },
             schemas: schemas.table,
             constants: constant_build.store,
