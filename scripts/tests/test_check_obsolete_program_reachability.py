@@ -64,6 +64,24 @@ class ObsoleteProgramReachabilityTests(unittest.TestCase):
         )
         self.assertEqual(findings, [])
 
+    def test_unrelated_single_quoted_class_does_not_hide_package_reference(self):
+        findings = self.scan(
+            {
+                "src/lib.rs":
+                    'run_package("mech-program", "<div class=\'error\'>");\n'
+            }
+        )
+        self.assertEqual(len(findings), 1)
+
+    def test_css_class_does_not_hide_another_package_reference(self):
+        findings = self.scan(
+            {
+                "src/lib.rs":
+                    'run_package("mech-program", "<div class=\'mech-program-output\'>");\n'
+            }
+        )
+        self.assertEqual(len(findings), 1)
+
     def test_obsolete_feature_or_package_path_is_rejected(self):
         for content in (
             '[features]\nmech-program = []\n',
