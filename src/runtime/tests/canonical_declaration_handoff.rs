@@ -245,6 +245,19 @@ fn context_alias_imports_do_not_require_source_dependency_edges() {
 }
 
 #[test]
+fn compiler_module_imports_remain_optional_source_dependencies() {
+    for import in ["math", "math/sin", "math/*"] {
+        let compilation = CanonicalDocumentCompilation::from_document(&document(
+            26,
+            &format!("+> {import}\nanswer := 42\nanswer\n"),
+        ))
+        .unwrap();
+        assert_eq!(compilation.declared_imports().len(), 1);
+        assert!(compilation.bind_resolved_imports(&[]).unwrap().is_empty());
+    }
+}
+
+#[test]
 fn incomplete_export_results_fail_at_the_retained_export_anchor() {
     let compilation =
         CanonicalDocumentCompilation::from_document(&document(25, "value := 42\n<+ value\n"))

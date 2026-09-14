@@ -143,6 +143,48 @@ fn renderer_rejects_results_from_another_document_owner() {
 }
 
 #[test]
+fn renderer_rejects_results_from_an_older_document_revision() {
+    let parsed = |revision, source| {
+        let parsed = parse_canonical_document(
+            TextSnapshot::new(DocumentId(0x580), Revision(revision), source).unwrap(),
+            ParseConfig::default(),
+        );
+        assert!(parsed.diagnostics.is_empty(), "{:#?}", parsed.diagnostics);
+        DocumentSyntax::cast(parsed.syntax()).unwrap()
+    };
+    let old = parsed(1, "answer := 1\nanswer\n");
+    let current = parsed(2, "answer := 2\nanswer\n");
+    let program = CanonicalSourceFrontend.compile_document(&old).unwrap();
+    let stale = execute(old.scope_id(), CanonicalRenderScope::Root, &program, 8);
+    let error = CanonicalDocumentRenderer
+        .render_html(&current, &[stale])
+        .unwrap_err();
+    assert!(
+        error
+            .message
+            .contains("different canonical document revision")
+    );
+}
+
+#[test]
+fn renderer_rejects_same_document_results_relabelled_to_another_owner() {
+    let document = document("root := 1\nroot\n\n~∘~⸢child := 2\nchild\n⸥\n");
+    let child = &document.mika_scopes()[0].section;
+    let program = CanonicalSourceFrontend.compile_mika_section(child).unwrap();
+    let relabelled = execute(
+        document.scope_id(),
+        CanonicalRenderScope::Root,
+        &program,
+        10,
+    );
+    let error = CanonicalDocumentRenderer
+        .render_html(&document, &[relabelled])
+        .unwrap_err();
+    assert!(error.message.contains("retained presentation owner"));
+    assert!(error.range.is_some());
+}
+
+#[test]
 fn renderer_rejects_duplicate_results_for_one_presentation_slot() {
     let document = document("answer := 42\nanswer\n");
     let program = CanonicalSourceFrontend.compile_document(&document).unwrap();
@@ -172,6 +214,17 @@ fn renderer_preserves_title_subtitle_and_plain_document_structure() {
 }
 
 #[test]
+fn text_renderer_preserves_retained_blank_lines() {
+    let document = document("first\n\nsecond\n");
+    assert_eq!(
+        CanonicalDocumentRenderer
+            .render_text(&document, &[])
+            .unwrap(),
+        "first\n\nsecond\n"
+    );
+}
+
+#[test]
 fn visible_executable_fences_require_their_owner_result() {
     let document = document("```mech\nanswer := 42\nanswer\n```\n");
     let error = CanonicalDocumentRenderer
@@ -181,6 +234,42 @@ fn visible_executable_fences_require_their_owner_result() {
         error.message,
         "visible executable fence has no completed scope result"
     );
+    assert!(error.range.is_some());
+}
+
+#[test]
+fn hidden_and_output_suppressed_fences_do_not_leak_the_program_result() {
+    for (source, source_is_visible) in [
+        ("```mech:hidden\n42\n```\n", false),
+        ("```mech{output: false}\n42\n```\n", true),
+    ] {
+        let document = document(source);
+        let program = CanonicalSourceFrontend.compile_document(&document).unwrap();
+        let results = [execute(
+            document.scope_id(),
+            CanonicalRenderScope::Root,
+            &program,
+            9,
+        )];
+        let html = CanonicalDocumentRenderer
+            .render_html(&document, &results)
+            .unwrap();
+        assert_eq!(
+            html.contains("<figure class='mech-code-block'"),
+            source_is_visible
+        );
+        assert!(!html.contains("class='mech-value'"), "{html}");
+        assert!(!html.contains("class='mech-program-output'"), "{html}");
+    }
+}
+
+#[test]
+fn renderer_rejects_active_script_hyperlinks() {
+    let document = document("[open](javascript:alert)\n");
+    let error = CanonicalDocumentRenderer
+        .render_html(&document, &[])
+        .unwrap_err();
+    assert!(error.message.contains("unsafe hyperlink scheme"));
     assert!(error.range.is_some());
 }
 

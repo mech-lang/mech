@@ -96,6 +96,11 @@ pub struct CanonicalSourceProgram {
 pub struct SourceDocumentOutput {
     pub output: u32,
     pub kind: SourceDocumentOutputKind,
+    /// Whether this output owns a visible document presentation slot.
+    /// The aggregate program result remains available to execution consumers
+    /// even when its producing inline/fence already owns presentation or is
+    /// explicitly hidden.
+    pub visible: bool,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

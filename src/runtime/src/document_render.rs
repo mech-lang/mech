@@ -1,6 +1,6 @@
 //! Canonical document rendering from retained syntax and completed scope results.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use mech_engine::{CanonicalSourceProgram, SourceDocumentOutputKind};
 use mech_syntax::document::{
@@ -23,12 +23,14 @@ struct CanonicalRenderedOutput {
     kind: SourceDocumentOutputKind,
     range: TextRange,
     value: RuntimeValueSnapshot,
+    visible: bool,
 }
 
 #[derive(Clone)]
 pub struct CanonicalScopeResults {
     pub owner: DocumentScopeId,
     pub scope: CanonicalRenderScope,
+    revision: mech_syntax::document::Revision,
     outputs: Vec<CanonicalRenderedOutput>,
 }
 
@@ -54,6 +56,22 @@ impl CanonicalScopeResults {
         program: &CanonicalSourceProgram,
         values: &[RuntimeValueSnapshot],
     ) -> Result<Self, CanonicalDocumentRenderError> {
+        let identity =
+            program
+                .source_map()
+                .outputs
+                .first()
+                .ok_or_else(|| CanonicalDocumentRenderError {
+                    message: "canonical scope program has no retained source identity".to_owned(),
+                    range: None,
+                })?;
+        if identity.document != owner.document {
+            return Err(CanonicalDocumentRenderError {
+                message: "scope program and presentation owner belong to different documents"
+                    .to_owned(),
+                range: Some(identity.range),
+            });
+        }
         let mut outputs = Vec::new();
         for binding in program.document_outputs() {
             let output = binding.output as usize;
@@ -78,15 +96,25 @@ impl CanonicalScopeResults {
                     range: None,
                 })?
                 .range;
+            let anchor = program.source_map().outputs[output];
+            if anchor.document != identity.document || anchor.revision != identity.revision {
+                return Err(CanonicalDocumentRenderError {
+                    message: "canonical scope outputs span more than one source revision"
+                        .to_owned(),
+                    range: Some(anchor.range),
+                });
+            }
             outputs.push(CanonicalRenderedOutput {
                 kind: binding.kind,
                 range,
                 value,
+                visible: binding.visible,
             });
         }
         Ok(Self {
             owner,
             scope,
+            revision: identity.revision,
             outputs,
         })
     }
@@ -169,17 +197,31 @@ impl<'a> ResultLookup<'a> {
             .mika_scopes()
             .into_iter()
             .map(|scope| scope.section.scope_id())
-            .collect::<Vec<_>>();
-        owners.push(document.scope_id());
+            .collect::<HashSet<_>>();
+        owners.insert(document.scope_id());
+        let range_owners = retained_range_owners(document);
         let mut values = HashMap::new();
         for result in results {
-            if !owners.contains(&result.owner) {
+            if !owners.contains(&result.owner)
+                || result.revision != document.syntax().source().revision()
+            {
                 return Err(CanonicalDocumentRenderError {
-                    message: "scope results belong to a different canonical document".to_owned(),
+                    message: "scope results belong to a different canonical document revision"
+                        .to_owned(),
                     range: None,
                 });
             }
             for output in &result.outputs {
+                if range_owners.get(&output.range) != Some(&result.owner) {
+                    return Err(CanonicalDocumentRenderError {
+                        message: "scope results do not match their retained presentation owner"
+                            .to_owned(),
+                        range: Some(output.range),
+                    });
+                }
+                if !output.visible {
+                    continue;
+                }
                 let key = ResultKey {
                     owner: result.owner,
                     scope: result.scope.clone(),
@@ -215,6 +257,21 @@ impl<'a> ResultLookup<'a> {
             })
             .copied()
     }
+}
+
+fn retained_range_owners(document: &DocumentSyntax) -> HashMap<TextRange, DocumentScopeId> {
+    let mut owners = HashMap::new();
+    let mut pending = vec![(document.syntax().clone(), document.scope_id())];
+    while let Some((node, inherited_owner)) = pending.pop() {
+        let owner = MikaSectionSyntax::cast(node.clone())
+            .map(|section| section.scope_id())
+            .unwrap_or(inherited_owner);
+        owners.insert(node.range(), owner);
+        for child in node.children() {
+            pending.push((child, owner));
+        }
+    }
+    owners
 }
 
 fn render_section_html(
@@ -308,7 +365,9 @@ fn render_document_node_text(
         || UlSubtitleSyntax::cast(value.clone()).is_some()
     {
         output.push_str(&node_text(value)?);
-    } else if value.kind() != mech_syntax::document::SyntaxKind::BlankLine {
+    } else if value.kind() == mech_syntax::document::SyntaxKind::BlankLine {
+        output.push_str(&node_text(value)?);
+    } else {
         render_inline(value, owner, lookup, output, false)?;
     }
     Ok(())
@@ -537,11 +596,34 @@ fn render_hyperlink_html(
         .source()
         .text(TextRange::new(start, end))
         .map_err(|_| range_error(node.range()))?;
+    validate_hyperlink(&href, node.range())?;
     output.push_str("<a class='mech-hyperlink' href='");
     output.push_str(&escape_attribute(&href));
     output.push_str("'>");
     render_inline_html(&label, owner, lookup, output)?;
     output.push_str("</a>");
+    Ok(())
+}
+
+fn validate_hyperlink(href: &str, range: TextRange) -> Result<(), CanonicalDocumentRenderError> {
+    let trimmed = href.trim();
+    let scheme_end = trimmed.find(':').filter(|colon| {
+        !trimmed[..*colon]
+            .bytes()
+            .any(|byte| matches!(byte, b'/' | b'?' | b'#'))
+    });
+    if let Some(colon) = scheme_end {
+        let scheme = &trimmed[..colon];
+        if !["http", "https", "mailto", "tel"]
+            .iter()
+            .any(|allowed| scheme.eq_ignore_ascii_case(allowed))
+        {
+            return Err(CanonicalDocumentRenderError {
+                message: format!("unsafe hyperlink scheme {scheme:?}"),
+                range: Some(range),
+            });
+        }
+    }
     Ok(())
 }
 

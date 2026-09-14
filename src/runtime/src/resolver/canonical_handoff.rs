@@ -8,7 +8,7 @@ use mech_syntax::document::DocumentSyntax;
 use super::{
     CanonicalSourceIndexError, SourceImportAlias, SourceImportDeclaration, SourceImportKind,
     SourceIndex, SourceInterpreterId, SourceScope, import_may_resolve_source_dependency,
-    module_namespace_for_import,
+    import_requires_source_dependency, module_namespace_for_import,
 };
 use crate::RuntimeValueSnapshot;
 
@@ -224,7 +224,7 @@ impl CanonicalDocumentCompilation {
         let declared = self.declared_imports();
         for declaration in declared
             .iter()
-            .filter(|declaration| import_may_resolve_source_dependency(declaration))
+            .filter(|declaration| import_requires_source_dependency(declaration))
         {
             if !resolved
                 .iter()
