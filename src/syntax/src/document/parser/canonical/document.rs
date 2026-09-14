@@ -1,10 +1,10 @@
 //! Canonical document grammar interpreter.
 
-use crate::document::{ExpectedSyntax, NodeFlags, RuleId, SyntaxKind};
+use crate::document::{ExpectedSyntax, NodeFlags, RuleId, SyntaxKind, TokenFlags};
 
-use super::super::Parser;
 use super::super::recovery;
 use super::super::rule::rules;
+use super::super::{Event, Parser};
 use super::combinator::Attempt;
 use super::document_grammar::{
     DOCUMENT_RULE_COUNT, DOCUMENT_RULES, DocumentRule, GrammarExpression,
@@ -155,10 +155,16 @@ fn comment_wins_at_mech_item_boundary(parser: &mut Parser<'_>) -> bool {
         return true;
     }
     let expression = parse_any_rule(parser, rules::EXPRESSION);
-    // A recovered terminal must not turn the remainder of a valid comment
-    // into malformed code. Committed expressions still need a real terminal.
-    let complete_expression =
-        expression.accepted() && parse_any_rule(parser, rules::CODE_TERMINAL) == Attempt::Matched;
+    // Recovery can consume comment text before reaching a real terminal. Only
+    // zero-width repairs may keep a committed expression ahead of the comment.
+    let recovered_source = expression == Attempt::Committed
+        && parser.events[checkpoint.events..].iter().any(|event| {
+            matches!(event, Event::Token { range, flags, .. }
+                if !range.is_empty() && flags.contains(TokenFlags::ERROR))
+        });
+    let complete_expression = expression.accepted()
+        && !recovered_source
+        && parse_any_rule(parser, rules::CODE_TERMINAL) == Attempt::Matched;
     parser.rewind(checkpoint);
     !complete_expression
 }
