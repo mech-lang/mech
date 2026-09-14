@@ -134,8 +134,11 @@ mod tests {
         );
         assert!(CanonicalProgramBundle::decode(&encoded, Some("answer := 0\n")).is_err());
 
-        let legacy = mech_syntax::parser::parse(source.trim())?;
-        let legacy = mech_core::nodes::compress_and_encode(&legacy).unwrap();
+        // A retired tree envelope is intentionally represented as an opaque
+        // serialized payload here. The cutover test must not recreate the
+        // parser dependency merely to prove that the canonical decoder rejects
+        // a noncanonical shape.
+        let legacy = mech_core::nodes::compress_and_encode(&("Program", source)).unwrap();
         let error = CanonicalProgramBundle::decode(&legacy, Some(source)).unwrap_err();
         assert!(error.display_message().contains("retired AST"));
         Ok(())

@@ -362,10 +362,11 @@ impl SourceResolver for FileSourceResolver {
                         )
                     })?;
                     let accepted_revision = document.source().revision();
+                    let accepted_source = source_text.clone();
                     resolved = resolved.with_indexed_source_document(document)?;
                     self.accept_source_revision(
                         &canonical_uri,
-                        source_text,
+                        &accepted_source,
                         accepted_revision,
                     )?;
                 }
