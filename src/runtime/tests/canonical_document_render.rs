@@ -420,6 +420,11 @@ fn title_front_matter_is_semantic_and_uses_completed_inline_results() {
     assert!(html.contains(">42</span>"), "{html}");
     assert!(!html.contains("{answer}"), "{html}");
     assert!(!html.contains("==================="), "{html}");
+    let text = CanonicalDocumentRenderer
+        .render_text(&document, &results)
+        .unwrap();
+    assert!(text.contains("value: 42"), "{text}");
+    assert!(!text.contains("{answer}"), "{text}");
 }
 
 #[test]

@@ -159,7 +159,7 @@ impl CanonicalDocumentRenderer {
         let lookup = ResultLookup::new(document, results)?;
         let mut output = String::new();
         if let Some(title) = document.title() {
-            output.push_str(&node_text(title.syntax())?);
+            render_inline_text(title.syntax(), document.scope_id(), &lookup, &mut output)?;
         }
         if let Some(body) = document.body() {
             for section in body.sections() {
