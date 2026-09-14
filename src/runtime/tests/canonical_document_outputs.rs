@@ -181,6 +181,41 @@ fn deferred_inline_does_not_become_the_aggregate_result_when_a_later_definition_
 }
 
 #[test]
+fn deferred_inline_preserves_already_bound_state_at_its_source_position() {
+    use SourceDocumentOutputKind::{Inline, Program};
+    let source = "~y := 0\nValue {x + y}.\ny += 1\nx := 1\nx\n";
+    rendered_turns(
+        source,
+        &[
+            &[(Program, "1"), (Inline, "1")],
+            &[(Program, "1"), (Inline, "2")],
+        ],
+    );
+}
+
+#[test]
+fn deferred_inline_snapshots_each_forward_local_when_it_becomes_available() {
+    use SourceDocumentOutputKind::{Inline, Program};
+    let source = "Value {x + z}.\n~x := 1\nx += 10\nz := 2\nz\n";
+    rendered_turns(
+        source,
+        &[
+            &[(Program, "2"), (Inline, "3")],
+            &[(Program, "2"), (Inline, "13")],
+        ],
+    );
+}
+
+#[test]
+fn forward_local_slice_stems_defer_without_manufacturing_external_inputs() {
+    use SourceDocumentOutputKind::{Inline, Program};
+    rendered_turns(
+        "Value {answer[1]}.\nanswer := [41]\n",
+        &[&[(Program, "[41]"), (Inline, "41")]],
+    );
+}
+
+#[test]
 fn deferred_presentation_does_not_change_executable_statement_visibility() {
     let compiled = compile("before := answer\n~answer := 41\nbefore\n");
     assert_eq!(compiled.program().inputs.len(), 1);

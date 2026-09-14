@@ -8,7 +8,8 @@ use mech_syntax::document::{
     ContextSendSyntax, DocumentId, DocumentSyntax, ExportDeclarationSyntax,
     ImportDeclarationSyntax, ModuleImportSyntax, NodeFlags, OpAssignSyntax,
     PrefixedContextPathSyntax, Revision, SliceStemSyntax, SliceSyntax, SyntaxKind, SyntaxNode,
-    TextRange, TextSize, VariableAssignSyntax, VariableStemSyntax, VariableSyntax,
+    TextRange, TextSize, VariableAssignSyntax, VariableDefineSyntax, VariableStemSyntax,
+    VariableSyntax,
 };
 use std::collections::HashMap;
 
@@ -114,6 +115,11 @@ impl SourceIndex {
             // Match the established Program index by traversing only their values.
             if let Some(send) = ContextSendSyntax::cast(node.clone()) {
                 let expression = required(send.expression(), &node)?;
+                pending.push((expression.syntax().clone(), scope, publish_declarations));
+                continue;
+            }
+            if let Some(definition) = VariableDefineSyntax::cast(node.clone()) {
+                let expression = required(definition.value(), &node)?;
                 pending.push((expression.syntax().clone(), scope, publish_declarations));
                 continue;
             }
@@ -516,6 +522,7 @@ mod tests {
     use super::*;
     use mech_syntax::document::parser::canonical::{
         parse_canonical_document_rule_for_test, parse_canonical_phase_2f_rule_for_test,
+        parse_canonical_phase_2i_rule_for_test,
     };
     use mech_syntax::document::parser::canonical_rule_id;
     use mech_syntax::document::{
@@ -529,7 +536,9 @@ mod tests {
     ) -> std::sync::Arc<mech_syntax::document::GreenNode> {
         let source = TextSnapshot::new(DocumentId(77), Revision(1), source).unwrap();
         let rule_id = canonical_rule_id(rule).unwrap();
-        let snapshot = if matches!(
+        let snapshot = if rule == "variable-define" {
+            parse_canonical_phase_2i_rule_for_test(source, rule_id, ParseConfig::default())
+        } else if matches!(
             rule,
             "import-declaration" | "export-declaration" | "context-declaration"
         ) {
@@ -593,6 +602,19 @@ mod tests {
         assert_eq!(function.address_references[0].reference.target, "live");
         assert_eq!(transition.address_references.len(), 1);
         assert_eq!(transition.address_references[0].reference.target, "live");
+    }
+
+    #[test]
+    fn variable_definitions_traverse_only_their_values() {
+        let source = "answer := @env/HOME";
+        let root = SyntaxNode::new_root(
+            direct_fragment("variable-define", source),
+            TextSnapshot::new(DocumentId(80), Revision(1), source).unwrap(),
+        );
+        let index = SourceIndex::from_local_owner(&root).unwrap();
+        assert_eq!(index.address_references.len(), 1);
+        assert_eq!(index.address_references[0].reference.target, "env");
+        assert_eq!(index.address_references[0].reference.name, "HOME");
     }
 
     #[test]

@@ -185,6 +185,23 @@ fn renderer_rejects_same_document_results_relabelled_to_another_owner() {
 }
 
 #[test]
+fn renderer_rejects_results_relabelled_to_another_execution_scope() {
+    let document = document("answer := 42\nanswer\n");
+    let program = CanonicalSourceFrontend.compile_document(&document).unwrap();
+    let relabelled = execute(
+        document.scope_id(),
+        CanonicalRenderScope::Named("ghost".to_owned()),
+        &program,
+        11,
+    );
+    let error = CanonicalDocumentRenderer
+        .render_html(&document, &[relabelled])
+        .unwrap_err();
+    assert!(error.message.contains("retained document execution scope"));
+    assert!(error.range.is_some());
+}
+
+#[test]
 fn renderer_rejects_duplicate_results_for_one_presentation_slot() {
     let document = document("answer := 42\nanswer\n");
     let program = CanonicalSourceFrontend.compile_document(&document).unwrap();

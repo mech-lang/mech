@@ -199,7 +199,7 @@ impl<'a> ResultLookup<'a> {
             .map(|scope| scope.section.scope_id())
             .collect::<HashSet<_>>();
         owners.insert(document.scope_id());
-        let range_owners = retained_range_owners(document);
+        let retained_coordinates = retained_coordinates(document);
         let mut values = HashMap::new();
         for result in results {
             if !owners.contains(&result.owner)
@@ -212,10 +212,21 @@ impl<'a> ResultLookup<'a> {
                 });
             }
             for output in &result.outputs {
-                if range_owners.get(&output.range) != Some(&result.owner) {
+                let coordinates = retained_coordinates.get(&output.range);
+                if coordinates.map(|coordinates| coordinates.owner) != Some(result.owner) {
                     return Err(CanonicalDocumentRenderError {
                         message: "scope results do not match their retained presentation owner"
                             .to_owned(),
+                        range: Some(output.range),
+                    });
+                }
+                if coordinates.and_then(|coordinates| coordinates.scope.as_ref())
+                    != Some(&result.scope)
+                {
+                    return Err(CanonicalDocumentRenderError {
+                        message:
+                            "scope results do not match their retained document execution scope"
+                                .to_owned(),
                         range: Some(output.range),
                     });
                 }
@@ -259,19 +270,38 @@ impl<'a> ResultLookup<'a> {
     }
 }
 
-fn retained_range_owners(document: &DocumentSyntax) -> HashMap<TextRange, DocumentScopeId> {
-    let mut owners = HashMap::new();
-    let mut pending = vec![(document.syntax().clone(), document.scope_id())];
-    while let Some((node, inherited_owner)) = pending.pop() {
-        let owner = MikaSectionSyntax::cast(node.clone())
-            .map(|section| section.scope_id())
-            .unwrap_or(inherited_owner);
-        owners.insert(node.range(), owner);
+#[derive(Clone)]
+struct RetainedCoordinates {
+    owner: DocumentScopeId,
+    scope: Option<CanonicalRenderScope>,
+}
+
+fn retained_coordinates(document: &DocumentSyntax) -> HashMap<TextRange, RetainedCoordinates> {
+    let mut coordinates = HashMap::new();
+    let mut pending = vec![(
+        document.syntax().clone(),
+        RetainedCoordinates {
+            owner: document.scope_id(),
+            scope: Some(CanonicalRenderScope::Root),
+        },
+    )];
+    while let Some((node, inherited)) = pending.pop() {
+        let mut retained = inherited;
+        if let Some(section) = MikaSectionSyntax::cast(node.clone()) {
+            retained = RetainedCoordinates {
+                owner: section.scope_id(),
+                scope: Some(CanonicalRenderScope::Root),
+            };
+        }
+        if let Some(fence) = CodeBlockSyntax::cast(node.clone()) {
+            retained.scope = fence.info().and_then(|info| render_scope(&info.scope));
+        }
+        coordinates.insert(node.range(), retained.clone());
         for child in node.children() {
-            pending.push((child, owner));
+            pending.push((child, retained.clone()));
         }
     }
-    owners
+    coordinates
 }
 
 fn render_section_html(

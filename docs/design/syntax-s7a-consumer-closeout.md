@@ -84,6 +84,20 @@ the largest simultaneous member rather than their sum; external-effect capture
 keeps its separate allocation policy. These are candidate results until the
 final pushed SHA completes required CI and independent review.
 
+The exact-head review of `1d2136550` found four additional presentation-boundary
+cases. Deferred inline expressions now snapshot every already-bound local at the
+inline's physical source position and snapshot each forward local as soon as its
+definition becomes available; a later update can no longer leak backward into
+the inline result. Direct slice stems participate in the same forward-local
+discovery. Canonical indexing traverses only the value of a variable definition,
+matching assignment/send write-role handling, while context declarations remain
+declarations rather than addressed reads. Finally, renderer result admission now
+validates the retained execution scope as well as document revision and Mika/root
+owner, including outputs suppressed from presentation. Focused qualification
+passes the mixed-state forward-inline, forward-slice, destination-write and
+scope-relabel regressions together with all document output, renderer, index,
+document-state and source-semantics integrations.
+
 ## Independent seal audit
 
 The candidate diff was traced from retained syntax through each affected owner,
@@ -91,11 +105,11 @@ not inferred from green smoke tests. The bounded S7A gate has this disposition:
 
 | Seal gate | Direct implementation evidence | Qualification witness | Candidate disposition |
 | --- | --- | --- | --- |
-| FSM resolver roles | Canonical traversal omits specifications and implementation formals while retaining start, guard and body reads. | `canonical_source_index::fsm_formal_inputs_and_specifications_are_not_resolver_reads` starts from a parsed document and asserts both excluded and retained targets. | Complete in candidate. |
+| FSM resolver roles | Canonical traversal omits specifications and implementation formals while retaining start, guard and body reads. Assignment, send and definition destinations are write roles; only their executable values are traversed. | `canonical_source_index::fsm_formal_inputs_and_specifications_are_not_resolver_reads` starts from a parsed document and asserts both excluded and retained targets. Destination regressions prove addressed RHS reads remain indexed without publishing their targets. | Complete in candidate. |
 | RMW backup ownership | Derived comparison backups alone share a per-kind, disjoint-lifetime region; effect payloads retain cumulative storage. Peak and budget evaluation use the plan's effective limits. | The resident unit test proves unequal-size maximum-only arena/peak and budget admission. Document-state tests prove multiple actual updates, final-value change detection, candidate discard, failed-turn rollback and budget release. | Complete in candidate. |
 | Whole-document indexing work | `CanonicalDocumentIndex` constructs one immutable coordinate projection and reuses it for root and every nested Mika owner. Standalone owner APIs remain self-contained. | The complete-document unit test parses nested Mika owners, checks each local result and asserts exactly one projection; Unicode/CRLF and 1,024-reference integration checks remain separate. | Complete in candidate. |
 | Declaration handoff | The runtime handoff keeps the canonical index and compiled program together, binds resolved dependency exports using established namespace/alias rules, leaves compiler-module imports as optional source edges, excludes context aliases from source edges, and publishes canonical exports as artifact outputs. Construction and binding are result-valued, so an error cannot publish a partially accepted program or environment. | Root, named-root, Mika-root and named-Mika execution use imported values and publish exports. Unresolved required dependencies, missing dependency exports, incomplete completed exports and unknown exported bindings retain source positions. | Complete for implemented declaration owners; S4-owned unsupported forms remain explicit capability errors. |
-| Complete rendering | The renderer walks retained canonical nodes directly, associates results by document revision, retained owner ancestry, local scope, output kind and source range, and does no evaluation or legacy lowering. Inline results retain source-order state versions; aggregate outputs without visible presentation ownership are not rendered. | Complete text/HTML tests cover the shared mixed fixture, semantic inline markup, evaluated/displayed inline code, retained blank lines, prose/title/subtitle, root/named/Mika results, hidden execution, disabled/inert source, options, escaping, safe hyperlink schemes, and stale/foreign/same-document-misowned/duplicate/missing result rejection. | Complete in candidate; production caller replacement remains S8. |
+| Complete rendering | The renderer walks retained canonical nodes directly, associates results by document revision, retained owner ancestry, retained root/named execution scope, output kind and source range, and does no evaluation or legacy lowering. Inline results retain source-order state versions, including mixed forward/current locals; aggregate outputs without visible presentation ownership are not rendered. | Complete text/HTML tests cover the shared mixed fixture, semantic inline markup, evaluated/displayed inline code, retained blank lines, prose/title/subtitle, root/named/Mika results, hidden execution, disabled/inert source, options, escaping, safe hyperlink schemes, and stale/foreign/same-document-misowned/scope-relabelled/duplicate/missing result rejection. | Complete in candidate; production caller replacement remains S8. |
 | Exact-head authority | Full CI now invokes the handoff and renderer integrations plus the canonical-index library units that the earlier integration-only command omitted. | The final pushed SHA still requires completed required checks and a fresh clean Codex review. | Pending final-head evidence. |
 
 No audit item changes the S6 activation prerequisite or claims implementation of

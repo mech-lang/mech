@@ -392,6 +392,18 @@ fn context_send_destinations_are_not_indexed_as_addressed_reads() {
 }
 
 #[test]
+fn context_definition_destinations_are_not_indexed_as_addressed_reads() {
+    let context_index = index("@local/value := 1\n42\n");
+    assert!(context_index.address_references.is_empty());
+
+    let index = index("answer := @env/HOME\n42\n");
+    assert_eq!(index.address_references.len(), 1);
+    let reference = &index.address_references[0];
+    assert_eq!(reference.reference.target, "env");
+    assert_eq!(reference.reference.name, "HOME");
+}
+
+#[test]
 fn fsm_formal_inputs_and_specifications_are_not_resolver_reads() {
     let source = "#Counter(@formal/input) -> :Count(@start/value)\n:Count(n)\n| @guard/enabled -> :Done(@body/value).\n\n#Shape(@spec/input) => <u64> :=\n| :Done(n).\n";
     let index = index(source);
