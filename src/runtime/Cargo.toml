@@ -239,7 +239,7 @@ required-features = ["runtime_default"]
 [[test]]
 name = "config_profile"
 path = "tests/config_profile.rs"
-required-features = ["source_default"]
+required-features = ["source"]
 
 [[test]]
 name = "generic_host_kernel"
