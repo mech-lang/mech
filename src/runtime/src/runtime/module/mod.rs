@@ -58,14 +58,36 @@ fn source_index_for_module_record_source(
     }
 }
 
+fn source_index_for_resolved_source(resolved: &ResolvedSource) -> MResult<Option<SourceIndex>> {
+    #[cfg(feature = "source")]
+    if let Some(document) = resolved.source_document() {
+        return document
+            .index()
+            .map(|index| Some(index.root))
+            .map_err(|error| MechError::new(error, None));
+    }
+    source_index_for_module_record_source(&resolved.source, resolved.syntax_tree.as_deref())
+}
+
+fn source_index_for_runtime_record(
+    record: &crate::RuntimeModuleRecord,
+) -> MResult<Option<SourceIndex>> {
+    #[cfg(feature = "source")]
+    if let Some(document) = record.source_document.as_ref() {
+        return document
+            .index()
+            .map(|index| Some(index.root))
+            .map_err(|error| MechError::new(error, None));
+    }
+    source_index_for_module_record_source(&record.source, record.syntax_tree.as_deref())
+}
+
 fn index_unindexed_module_source(resolved: &mut ResolvedSource) -> MResult<()> {
     if !resolved.scopes.is_empty() {
         return Ok(());
     }
 
-    let Some(index) =
-        source_index_for_module_record_source(&resolved.source, resolved.syntax_tree.as_deref())?
-    else {
+    let Some(index) = source_index_for_resolved_source(resolved)? else {
         return Ok(());
     };
 
@@ -205,9 +227,7 @@ impl MechRuntime {
         &mut self,
         record: &mut crate::RuntimeModuleRecord,
     ) -> MResult<()> {
-        let Some(index) =
-            source_index_for_module_record_source(&record.source, record.syntax_tree.as_deref())?
-        else {
+        let Some(index) = source_index_for_runtime_record(record)? else {
             return self.materialize_manifest_context_imports_from_scopes(record);
         };
 
@@ -602,8 +622,11 @@ impl MechRuntime {
             );
 
             let module_version = record.module_version;
-            let version = ModuleVersionRecord::new(module_version, module, 1)
-                .with_source(record.source)
+            let version =
+                ModuleVersionRecord::new(module_version, module, 1).with_source(record.source);
+            #[cfg(feature = "source")]
+            let version = version.with_source_document(record.source_document);
+            let version = version
                 .with_syntax_tree(record.syntax_tree)
                 .with_exports(record.exports)
                 .with_imports(record.imports)
@@ -746,6 +769,11 @@ impl MechRuntime {
             MechSourceCode::String(source.to_string()),
         )
         .with_kind(crate::SourceKind::Mech);
+        #[cfg(feature = "source")]
+        let resolved = resolved.retain_source_document(
+            mech_syntax::document::Revision(0),
+            mech_syntax::document::ParseConfig::default(),
+        )?;
 
         self.with_atomic_module_operation(
             context,
@@ -793,7 +821,7 @@ impl MechRuntime {
         self.store.get_active_module_version(module)
     }
 
-    #[cfg(all(feature = "watcher", feature = "source"))]
+    #[cfg(all(feature = "source", any(feature = "watcher", test)))]
     pub(crate) fn workspace_module_records(
         &self,
         version: ModuleVersionId,

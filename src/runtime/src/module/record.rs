@@ -1,6 +1,8 @@
 use mech_core::{MechSourceCode, Program};
 use std::sync::Arc;
 
+#[cfg(feature = "source")]
+use crate::SourceDocument;
 use crate::{
     CapabilityRequest, ModuleId, ModuleScopeMetadata, ModuleVersionId, SourceAddressReference,
     SourceContextDeclaration, SourceExportDeclaration, SourceImportDeclaration, SourceKind,
@@ -14,6 +16,8 @@ pub struct RuntimeModuleRecord {
     pub canonical_uri: String,
     pub kind: SourceKind,
     pub source: MechSourceCode,
+    #[cfg(feature = "source")]
+    pub source_document: Option<SourceDocument>,
     pub syntax_tree: Option<Arc<Program>>,
     pub compiler_version: String,
     pub language_edition: String,
@@ -37,6 +41,7 @@ impl RuntimeModuleRecord {
         canonical_uri: impl Into<String>,
         kind: SourceKind,
         source: MechSourceCode,
+        #[cfg(feature = "source")] source_document: Option<SourceDocument>,
         syntax_tree: Option<Arc<Program>>,
         compiler_version: impl Into<String>,
         language_edition: impl Into<String>,
@@ -58,6 +63,8 @@ impl RuntimeModuleRecord {
             canonical_uri: canonical_uri.into(),
             kind,
             source,
+            #[cfg(feature = "source")]
+            source_document,
             syntax_tree,
             compiler_version: compiler_version.into(),
             language_edition: language_edition.into(),

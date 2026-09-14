@@ -7,9 +7,11 @@ use std::path::{Component, Path, PathBuf};
 
 use mech_core::{MResult, MechError, MechErrorKind, MechSourceCode};
 
-use crate::resolver::{ResolvedSource, SourceRequest, SourceResolver};
 #[cfg(feature = "source")]
-use crate::resolver::{SourceIndex, source_request_for_import};
+use crate::resolver::{
+    InvalidResolvedSourceError, SourceDocument, SourceIndex, source_request_for_import,
+};
+use crate::resolver::{ResolvedSource, SourceRequest, SourceResolver};
 use crate::{FS_IMPORT, FS_READ, FS_RESOLVE, SharedCapabilityKernel, check_fs_capability};
 
 use super::{
@@ -245,6 +247,24 @@ impl SourceResolver for FileSourceResolver {
             let mut resolved = resolved;
             if resolved.kind == SourceKind::Mech {
                 if let MechSourceCode::String(source_text) = &resolved.source {
+                    let document = SourceDocument::parse_resolved(
+                        &canonical_uri,
+                        mech_syntax::document::Revision(0),
+                        source_text.as_str(),
+                        mech_syntax::document::ParseConfig::default(),
+                    )
+                    .map_err(|_| {
+                        MechError::new(
+                            InvalidResolvedSourceError {
+                                field: "source",
+                                reason: "exceeds the canonical retained-source range",
+                            },
+                            None,
+                        )
+                    })?;
+                    document
+                        .index()
+                        .map_err(|error| MechError::new(error, None))?;
                     let tree = mech_syntax::parser::parse(source_text.trim())?;
                     let referrer = canonical_uri.clone();
                     let index = SourceIndex::from_program(&tree);
@@ -260,6 +280,7 @@ impl SourceResolver for FileSourceResolver {
                         .collect::<Vec<_>>();
 
                     resolved = resolved
+                        .with_source_document(document)?
                         .with_syntax_tree(tree)
                         .with_imports(imports)
                         .with_exports(exports)
@@ -1067,6 +1088,17 @@ mod tests {
         assert_eq!(resolved.kind, SourceKind::Mech);
         assert!(resolved.canonical_uri.starts_with("file://"));
         assert!(resolved.is_executable_mech_source());
+        #[cfg(feature = "source")]
+        {
+            let document = resolved
+                .source_document()
+                .expect("file resolver retains the canonical source revision");
+            assert_eq!(document.source().to_contiguous_string(), "x := 1");
+            assert_eq!(
+                document.source().document().0,
+                mech_core::hash_str(&resolved.canonical_uri)
+            );
+        }
     }
 
     #[test]

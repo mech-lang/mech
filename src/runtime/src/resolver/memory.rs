@@ -16,7 +16,11 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 use mech_core::{MResult, MechError, MechErrorKind, MechSourceCode};
 
+#[cfg(feature = "source")]
+use super::SourceDocument;
 use super::{MutableSourceResolver, ResolvedSource, SourceKind, SourceRequest, SourceResolver};
+#[cfg(feature = "source")]
+use mech_syntax::document::{ParseConfig, Revision};
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 struct InMemoryResolutionKey {
@@ -216,18 +220,38 @@ impl InMemorySourceResolver {
         let specifier = specifier.into();
         let source = source.into();
 
-        #[cfg(feature = "source")]
-        let syntax_tree = mech_syntax::parser::parse(source.trim())?;
-
         let resolved = ResolvedSource::new(
             specifier.clone(),
             Self::default_canonical_uri(&specifier),
-            MechSourceCode::String(source),
+            MechSourceCode::String(source.clone()),
         )
         .with_kind(SourceKind::Mech);
 
         #[cfg(feature = "source")]
-        let resolved = resolved.with_syntax_tree(syntax_tree);
+        let resolved = {
+            let document = SourceDocument::parse_resolved(
+                &resolved.canonical_uri,
+                Revision(0),
+                source.as_str(),
+                ParseConfig::default(),
+            )
+            .map_err(|_| {
+                MechError::new(
+                    super::InvalidResolvedSourceError {
+                        field: "source",
+                        reason: "exceeds the canonical retained-source range",
+                    },
+                    None,
+                )
+            })?;
+            document
+                .index()
+                .map_err(|error| MechError::new(error, None))?;
+            let syntax_tree = mech_syntax::parser::parse(source.trim())?;
+            resolved
+                .with_source_document(document)?
+                .with_syntax_tree(syntax_tree)
+        };
 
         self.insert_source(specifier, resolved)
     }
@@ -243,14 +267,27 @@ impl InMemorySourceResolver {
         .with_kind(SourceKind::Mech);
 
         // The builder cannot return a parse error without breaking its fluent
-        // API. Preserve malformed source without a cache so the compiler's
-        // canonical fallback parse reports the real syntax diagnostic instead
-        // of turning it into a misleading missing-source error.
+        // API. Preserve malformed source in its canonical diagnostic owner; a
+        // legacy tree remains only a temporary projection when that parser also
+        // accepts the source.
         #[cfg(feature = "source")]
-        let resolved = if let Ok(syntax_tree) = mech_syntax::parser::parse(source.trim()) {
-            resolved.with_syntax_tree(syntax_tree)
-        } else {
-            resolved
+        let resolved = {
+            let resolved = match SourceDocument::parse_resolved(
+                &resolved.canonical_uri,
+                Revision(0),
+                source.as_str(),
+                ParseConfig::default(),
+            ) {
+                Ok(document) => resolved
+                    .with_source_document(document)
+                    .expect("resolver-created document retains the same source bytes"),
+                Err(_) => resolved,
+            };
+            if let Ok(syntax_tree) = mech_syntax::parser::parse(source.trim()) {
+                resolved.with_syntax_tree(syntax_tree)
+            } else {
+                resolved
+            }
         };
 
         if self.insert_source(specifier, resolved).is_err() {
@@ -492,7 +529,7 @@ mod tests {
     fn resolves_inserted_string() {
         let mut resolver = InMemorySourceResolver::new();
 
-        resolver.insert_string("main.mec", "x := 1").unwrap();
+        resolver.insert_string("main.mec", "  x := 1\r\n").unwrap();
 
         let request = SourceRequest::new("main.mec");
         let resolved = resolver.resolve(&request).unwrap().unwrap();
@@ -500,6 +537,15 @@ mod tests {
         assert_eq!(resolved.name, "main.mec");
         assert_eq!(resolved.canonical_uri, "memory:main.mec");
         assert!(resolved.is_executable_mech_source());
+        #[cfg(feature = "source")]
+        assert_eq!(
+            resolved
+                .source_document()
+                .unwrap()
+                .source()
+                .to_contiguous_string(),
+            "  x := 1\r\n"
+        );
     }
 
     #[test]
@@ -533,9 +579,35 @@ mod tests {
             .expect("malformed source must remain resolvable");
 
         assert!(resolved.syntax_tree.is_none());
+        let document = resolved
+            .source_document()
+            .expect("malformed source keeps its canonical diagnostic owner");
+        assert!(!document.is_strictly_clean());
+        assert!(!document.snapshot().diagnostics.is_empty());
         assert!(matches!(
             resolved.source,
             MechSourceCode::String(ref source) if source == "x := ["
+        ));
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn malformed_replacement_is_transactional_and_preserves_the_prior_revision() {
+        let mut resolver = InMemorySourceResolver::new();
+        resolver.insert_string("main.mec", "value := 1\n").unwrap();
+        let before = resolver
+            .resolve(&SourceRequest::new("main.mec"))
+            .unwrap()
+            .unwrap();
+        assert!(resolver.insert_string("main.mec", "value := [\n").is_err());
+        let after = resolver
+            .resolve(&SourceRequest::new("main.mec"))
+            .unwrap()
+            .unwrap();
+        assert_eq!(after.source, before.source);
+        assert!(std::ptr::eq(
+            after.source_document().unwrap().snapshot(),
+            before.source_document().unwrap().snapshot(),
         ));
     }
 
