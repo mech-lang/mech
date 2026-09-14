@@ -379,6 +379,42 @@ impl ModuleVersionRecord {
         Ok(())
     }
 
+    #[cfg(feature = "source")]
+    pub(crate) fn validate_source_owner(&self, canonical_uri: &str) -> MResult<()> {
+        if let Some(document) = &self.source_document {
+            if document.source().document().0 != mech_core::hash_str(canonical_uri) {
+                return invalid_store_record(
+                    "module_version.source_document",
+                    "document owner does not match the module URI",
+                );
+            }
+        }
+        Ok(())
+    }
+
+    #[cfg(feature = "source")]
+    fn validate_source_revisions<'a>(
+        &self,
+        known_versions: impl Iterator<Item = &'a ModuleVersionRecord>,
+    ) -> MResult<()> {
+        let Some(document) = &self.source_document else {
+            return Ok(());
+        };
+        for known in known_versions.filter(|known| known.module == self.module) {
+            if let Some(previous) = &known.source_document {
+                if previous.source().revision() == document.source().revision()
+                    && previous != document
+                {
+                    return invalid_store_record(
+                        "module_version.source_document",
+                        "revision already identifies another document",
+                    );
+                }
+            }
+        }
+        Ok(())
+    }
+
     pub fn validate_import_edges(&self) -> MResult<()> {
         let mut matched_edges = vec![false; self.import_edges.len()];
         for import in self
@@ -1137,6 +1173,11 @@ impl MechStore for InMemoryStore {
     fn put_module_version(&mut self, version: ModuleVersionRecord) -> MResult<ModuleVersionId> {
         version.validate()?;
         self.ensure_module_exists(version.module)?;
+        #[cfg(feature = "source")]
+        {
+            version.validate_source_owner(&self.modules[&version.module].name)?;
+            version.validate_source_revisions(self.module_versions.values())?;
+        }
 
         if self.module_versions.contains_key(&version.id) {
             return Err(MechError::new(
@@ -1720,6 +1761,68 @@ impl MechErrorKind for StoreCapabilityNotRevocableError {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn stored_document_owner_and_revision_cannot_be_aliased() {
+        use mech_syntax::document::{ParseConfig, Revision};
+        let uri = "memory:main.mec";
+        let module = module_id(uri);
+        let mut store = InMemoryStore::new();
+        store.put_module(ModuleRecord::new(module, uri)).unwrap();
+        let record = |id, owner, source: &str| {
+            ModuleVersionRecord::new(ModuleVersionId(id), module, 1)
+                .with_source(MechSourceCode::String(source.into()))
+                .with_source_document(Some(
+                    SourceDocument::parse_resolved(
+                        owner,
+                        Revision(0),
+                        source,
+                        ParseConfig::default(),
+                    )
+                    .unwrap(),
+                ))
+        };
+        let wrong_owner = record(2, "memory:other.mec", "value := 1\n");
+        assert!(store.put_module_version(wrong_owner.clone()).is_err());
+        assert!(
+            store
+                .commit_runtime(runtime_commit(70, vec![], vec![wrong_owner]))
+                .is_err()
+        );
+        let first = record(2, uri, "value := 1\n");
+        let conflicting = record(3, uri, "value := 2\n");
+        assert!(
+            store
+                .commit_runtime(runtime_commit(
+                    71,
+                    vec![],
+                    vec![first.clone(), conflicting.clone()]
+                ))
+                .is_err()
+        );
+        assert!(
+            store
+                .get_module_version(ModuleVersionId(2))
+                .unwrap()
+                .is_none()
+        );
+        store.put_module_version(first.clone()).unwrap();
+        assert!(store.put_module_version(conflicting.clone()).is_err());
+        assert!(
+            store
+                .commit_runtime(runtime_commit(72, vec![], vec![conflicting]))
+                .is_err()
+        );
+        assert_eq!(
+            store.get_module_version(ModuleVersionId(2)).unwrap(),
+            Some(first)
+        );
+        // Rebuilding an existing revision with different compilation inputs is valid.
+        store
+            .put_module_version(record(4, uri, "value := 1\n"))
+            .unwrap();
+    }
 
     #[cfg(feature = "source")]
     #[test]

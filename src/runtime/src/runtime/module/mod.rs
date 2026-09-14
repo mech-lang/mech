@@ -472,6 +472,11 @@ impl MechRuntime {
         }
 
         self.enforce_source_limits(context, &resolved.source)?;
+        resolved.validate()?;
+        #[cfg(feature = "source")]
+        if let Some(document) = resolved.source_document() {
+            self.validate_source_revision(module_id(&resolved.canonical_uri), document)?;
+        }
 
         let canonical_uri = resolved.canonical_uri.clone();
 
@@ -823,6 +828,47 @@ impl MechRuntime {
     }
 
     #[cfg(feature = "source")]
+    pub(in crate::runtime) fn validate_source_revision(
+        &self,
+        module: ModuleId,
+        document: &crate::SourceDocument,
+    ) -> MResult<()> {
+        let revision = document.source().revision();
+        let committed = self
+            .source_revisions
+            .get(&module)
+            .and_then(|history| history.get(&revision));
+        let pending = self.active_transactions.values().flat_map(|transaction| {
+            transaction.modules.version_puts().filter_map(|version| {
+                if version.module != module {
+                    return None;
+                }
+                version
+                    .source_document
+                    .as_ref()
+                    .filter(|known| known.source().revision() == revision)
+            })
+        });
+        if committed
+            .into_iter()
+            .chain(pending)
+            .any(|known| known != document)
+        {
+            return Err(MechError::new(
+                RuntimeInvalidOperationError {
+                    operation: "store_resolved_module_source",
+                    reason: format!(
+                        "source revision {} for module {module} already identifies another document",
+                        revision.0
+                    ),
+                },
+                None,
+            ));
+        }
+        Ok(())
+    }
+
+    #[cfg(feature = "source")]
     fn next_source_revision(
         &self,
         canonical_uri: &str,
@@ -834,7 +880,7 @@ impl MechRuntime {
         let previous = self
             .source_revisions
             .get(&module)
-            .copied()
+            .and_then(|history| history.last_key_value().map(|(revision, _)| *revision))
             .into_iter()
             .chain(self.active_transactions.values().flat_map(|transaction| {
                 transaction.modules.version_puts().filter_map(|version| {

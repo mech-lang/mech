@@ -249,6 +249,106 @@ fn transaction_revisions_commit_together_and_abort_without_consuming_history() {
 }
 
 #[test]
+fn duplicate_incoming_source_revision_is_rejected_before_admission() {
+    #[derive(Debug)]
+    struct Resolver(ResolvedSource);
+    impl crate::SourceResolver for Resolver {
+        fn resolve(&self, _: &crate::SourceRequest) -> mech_core::MResult<Option<ResolvedSource>> {
+            Ok(Some(self.0.clone()))
+        }
+    }
+    for provisional in [false, true] {
+        let candidate = ResolvedSource::new(
+            "main.mec",
+            "memory:main.mec",
+            MechSourceCode::String("value := 2\n".into()),
+        )
+        .with_kind(SourceKind::Mech)
+        .retain_source_document(Revision(0), ParseConfig::default())
+        .unwrap()
+        .admit_canonical_document()
+        .unwrap();
+        let mut runtime = MechRuntime::builder()
+            .source_resolver(Resolver(candidate))
+            .build()
+            .unwrap();
+        let options = ModuleBuildOptions::new("test", "v0.4", "native", &[], &[]);
+        let mut context = runtime.runtime_context().unwrap();
+        if provisional {
+            runtime.begin_transaction(&mut context).unwrap();
+        }
+        let first = runtime
+            .put_canonical_source_module_with_context(
+                &mut context,
+                "main.mec",
+                "memory:main.mec",
+                "value := 1\n",
+                options,
+            )
+            .unwrap();
+        assert!(
+            runtime
+                .build_module_from_request_with_context(&mut context, "memory:main.mec", options)
+                .is_err()
+        );
+        let document = runtime
+            .get_module_version_visible(&context, first)
+            .unwrap()
+            .unwrap()
+            .source_document
+            .unwrap();
+        assert_eq!(document.source().revision(), Revision(0));
+        assert_eq!(document.source().to_contiguous_string(), "value := 1\n");
+        let second = runtime
+            .put_canonical_source_module_with_context(
+                &mut context,
+                "main.mec",
+                "memory:main.mec",
+                "value := 3\n",
+                options,
+            )
+            .unwrap();
+        let document = runtime
+            .get_module_version_visible(&context, second)
+            .unwrap()
+            .unwrap()
+            .source_document
+            .unwrap();
+        assert_eq!(document.source().revision(), Revision(1));
+    }
+}
+
+#[test]
+fn resolved_document_owner_must_match_the_canonical_uri() {
+    let wrong = SourceDocument::parse_resolved(
+        "memory:other.mec",
+        Revision(0),
+        "value := 1\n",
+        ParseConfig::default(),
+    )
+    .unwrap();
+    let resolved = ResolvedSource::new(
+        "main.mec",
+        "memory:main.mec",
+        MechSourceCode::String("value := 1\n".into()),
+    )
+    .with_kind(SourceKind::Mech);
+    assert!(
+        resolved
+            .clone()
+            .with_source_document(wrong.clone())
+            .is_err()
+    );
+    let mut bypass = resolved;
+    bypass.source_document = Some(wrong);
+    assert!(
+        ModuleBuilder::new()
+            .build_resolved_source(bypass, "test", "v0.4", "native", &[], &[], &[],)
+            .is_err()
+    );
+}
+
+#[test]
 fn invalid_canonical_authority_never_falls_back_to_an_available_legacy_tree() {
     let source = include_str!("../../../../../../examples/gpu-particles/particles.mec");
     let document = SourceDocument::parse_resolved(
