@@ -56,6 +56,7 @@ impl Row {
 pub(super) enum Phase {
     Enter(RuleId),
     Finish(Marker, Row),
+    Leading(Row),
     Open(Row),
     EmptyProbe(Row, ParserCheckpoint),
     First(Row, Option<ParserCheckpoint>),
@@ -63,6 +64,8 @@ pub(super) enum Phase {
     EmptyRecovered(Row),
     Loop(Row, bool),
     Pair(Row, bool, ParserCheckpoint, usize),
+    Space(Row, bool, ParserCheckpoint),
+    SpaceItem(Row, bool, ParserCheckpoint),
     Item(Row, bool, ParserCheckpoint),
     Trailing(Row, bool),
     Close(Row, bool),
@@ -107,8 +110,8 @@ impl Continuation {
                     self.row(Phase::First(spec, None));
                     self.push(Frame::Call(spec.child()));
                 } else {
-                    self.row(Phase::Open(spec));
-                    self.table_separator();
+                    self.row(Phase::Leading(spec));
+                    self.base(rules::SPACE_TAB0);
                 }
             }
             Phase::Finish(node, spec) => {
@@ -119,6 +122,10 @@ impl Continuation {
                 } else {
                     node.complete(parser, spec.kind);
                 }
+            }
+            Phase::Leading(spec) => {
+                self.row(Phase::Open(spec));
+                self.table_separator();
             }
             Phase::Open(spec) => {
                 if self.result != Attempt::Matched {
@@ -203,7 +210,24 @@ impl Continuation {
                 if self.result != Attempt::Matched {
                     if spec.fancy && !spec.header {
                         parser.rewind(checkpoint);
+                        if index > 0 {
+                            self.row(Phase::Space(spec, committed, checkpoint));
+                            self.base(rules::SPACE_TAB1);
+                            return;
+                        }
                     }
+                    self.row_trailing(spec, committed);
+                } else if spec.fancy
+                    && !spec.header
+                    && index == 2
+                    && (parser.is_eof()
+                        || parser.cursor().starts_with("\n")
+                        || parser.cursor().starts_with("\r"))
+                {
+                    parser.rewind(checkpoint);
+                    self.row_trailing(spec, committed);
+                } else if !spec.fancy && !spec.header && parser.cursor().starts_with("|") {
+                    parser.rewind(checkpoint);
                     self.row_trailing(spec, committed);
                 } else if spec.fancy && !spec.header && index < 2 {
                     self.row(Phase::Pair(spec, committed, checkpoint, index + 1));
@@ -215,6 +239,26 @@ impl Continuation {
                 } else {
                     self.row(Phase::Item(spec, committed, checkpoint));
                     self.push(Frame::Call(spec.child()));
+                }
+            }
+            Phase::Space(spec, committed, checkpoint) => {
+                if self.result == Attempt::Matched {
+                    self.row(Phase::SpaceItem(spec, committed, checkpoint));
+                    self.push(Frame::Call(spec.child()));
+                } else {
+                    parser.rewind(checkpoint);
+                    self.row_trailing(spec, committed);
+                }
+            }
+            Phase::SpaceItem(spec, committed, checkpoint) => {
+                if self.result == Attempt::NoMatch {
+                    parser.rewind(checkpoint);
+                    self.row_trailing(spec, committed);
+                } else {
+                    self.row(Phase::Loop(
+                        spec,
+                        committed || self.result == Attempt::Committed,
+                    ));
                 }
             }
             Phase::Item(spec, committed, checkpoint) => {
