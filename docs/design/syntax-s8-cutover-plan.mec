@@ -178,6 +178,16 @@ behavior/parity files must split maintained assertions before removal. The
 textual seed scan is not a complete Rust dependency graph; C builds and the
 existing semantic alias/cfg census expose its remaining closure.
 
+Manifest lifecycle: inventoried entries require their path to exist. Physically
+removed entries require absence; replaced API/route entries retain their file.
+Both completed states require a full commit SHA and a pass result. Every
+readiness dependency must resolve to a manifest ID, including planned rows.
+Prepared witnesses may have open dependencies; demonstrated consumers require
+all referenced removals/replacements complete. These structural evidence checks
+do not replace the actual C product matrix or its permanent zero-route scan.
+The fragment API (including non-grammar prototype dispatch and public exports)
+and ModuleVersionRecord store cache/transfer are explicit transitive owners.
+
 For every C rehearsal record: B parent SHA, C commit and tree IDs, routing and
 removal manifest identities, commands/profile/toolchain, CI run/head or test-merge
 identity, executed test counts/results, and named A/B/upstream blockers. Do not

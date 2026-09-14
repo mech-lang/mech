@@ -3,7 +3,7 @@
 use std::sync::Arc;
 
 use mech_syntax::document::{
-    AstNode, DocumentSyntax, ParseConfig, SyntaxSnapshot, TextSnapshot,
+    AstNode, DocumentScopeId, DocumentSyntax, ParseConfig, SyntaxSnapshot, TextSnapshot,
     parser::parse_canonical_document,
 };
 
@@ -21,6 +21,28 @@ use super::{CanonicalDocumentIndex, CanonicalSourceIndexError};
 pub struct SourceDocument {
     snapshot: Arc<SyntaxSnapshot>,
 }
+
+/// Admission distinguishes invalid syntax from conflicts in a local resolver owner.
+#[derive(Clone, Debug)]
+pub enum SourceDocumentIndexError {
+    Syntax(CanonicalSourceIndexError),
+    AddressTargets {
+        owner: DocumentScopeId,
+        error: Box<mech_core::MechError>,
+    },
+}
+
+impl std::fmt::Display for SourceDocumentIndexError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Syntax(error) => error.fmt(f),
+            Self::AddressTargets { owner, error } => {
+                write!(f, "{} in {owner:?}", error.kind_message())
+            }
+        }
+    }
+}
+impl std::error::Error for SourceDocumentIndexError {}
 
 impl SourceDocument {
     /// Retain exactly the supplied text and revision, without trimming. Malformed
@@ -51,15 +73,33 @@ impl SourceDocument {
     /// Project all local owners only after strict admission. A failed document
     /// cannot publish an index of the clean declarations preceding its error.
     /// Actual resolved binding compilation remains the semantic owner's job.
-    pub fn index(&self) -> Result<CanonicalDocumentIndex, CanonicalSourceIndexError> {
+    pub fn index(&self) -> Result<CanonicalDocumentIndex, SourceDocumentIndexError> {
         if !self.is_strictly_clean() {
-            return Err(CanonicalSourceIndexError {
-                document: self.snapshot.document,
-                revision: self.snapshot.revision,
-                range: self.source().full_range(),
-                message: "cannot index an invalid retained source document",
-            });
+            return Err(SourceDocumentIndexError::Syntax(
+                CanonicalSourceIndexError {
+                    document: self.snapshot.document,
+                    revision: self.snapshot.revision,
+                    range: self.source().full_range(),
+                    message: "cannot index an invalid retained source document",
+                },
+            ));
         }
-        CanonicalDocumentIndex::from_document(&self.document())
+        let index = CanonicalDocumentIndex::from_document(&self.document())
+            .map_err(SourceDocumentIndexError::Syntax)?;
+        index.root.validate_address_targets().map_err(|error| {
+            SourceDocumentIndexError::AddressTargets {
+                owner: index.owner,
+                error: Box::new(error),
+            }
+        })?;
+        for local in &index.mika {
+            local.index.validate_address_targets().map_err(|error| {
+                SourceDocumentIndexError::AddressTargets {
+                    owner: local.owner.section.scope_id(),
+                    error: Box::new(error),
+                }
+            })?;
+        }
+        Ok(index)
     }
 }

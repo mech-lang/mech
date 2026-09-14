@@ -100,3 +100,39 @@ fn replacing_a_revision_does_not_mutate_historical_source_or_indexes() {
         "new"
     );
 }
+
+#[test]
+fn conflicts_in_any_local_owner_reject_the_entire_index() {
+    use mech_runtime::resolver::SourceDocumentIndexError;
+    let conflict = "@users := @main{:read(*)}\n\n```mech:users\nx := 1\n```\n";
+    for text in [
+        conflict.to_owned(),
+        format!("╭◉╮⸢{conflict}⸥\n"),
+        format!("╭◉╮⸢~∘~⸢{conflict}⸥\n⸥\n"),
+    ] {
+        let record = record(&text);
+        assert!(record.is_strictly_clean(), "{text:?}");
+        let SourceDocumentIndexError::AddressTargets { owner, error } = record.index().unwrap_err()
+        else {
+            panic!("expected retained address-target conflict");
+        };
+        assert_eq!(error.kind_name(), "AddressTargetNameConflict");
+        assert!(error.kind_message().contains("users"));
+        let document = record.document();
+        let owners = document.mika_scopes();
+        assert_eq!(
+            owner,
+            owners
+                .last()
+                .map_or(document.scope_id(), |local| local.section.scope_id())
+        );
+    }
+}
+
+#[test]
+fn separate_mika_namespaces_can_reuse_address_target_names() {
+    let text = "@users := @main{:read(*)}\n\n╭◉╮⸢```mech:users\nx := 1\n```\n⸥\n\n~∘~⸢```mech:users\nx := 2\n```\n⸥\n";
+    let index = record(text).index().unwrap();
+    assert_eq!(index.root.contexts.len(), 1);
+    assert_eq!(index.mika.len(), 2);
+}

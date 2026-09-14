@@ -42,7 +42,7 @@ pub mod ast;
 mod canonical_handoff;
 mod document;
 #[cfg(feature = "source")]
-pub use document::SourceDocument;
+pub use document::{SourceDocument, SourceDocumentIndexError};
 pub mod file;
 pub mod imports;
 pub mod index;
