@@ -35,9 +35,12 @@ The walkthrough prints and checks:
 5. seven successful turns against the literal oracle
    `5, 13, 29, 61, 125, 253, 509`;
 6. identical values and receipts from the source artifact and decoded bytecode;
-7. rejection of the next candidate, `1021`, with epoch, hash, state, and output
+7. a source-perturbation control: changing only the visible recurrence to
+   `x * 3 + 4` changes the artifact revision and outputs to `7, 25, 79` while
+   retaining the same four primitive operations;
+8. rejection of the next candidate, `1021`, with epoch, hash, state, and output
    all unchanged;
-8. syntax, type, missing-operation, truncated-bytecode, tampered-artifact, and
+9. syntax, type, missing-operation, truncated-bytecode, tampered-artifact, and
    one-byte-budget rejection paths.
 
 Each protection is checked in-process. A false claim makes the demo exit with a

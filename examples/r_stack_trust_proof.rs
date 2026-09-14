@@ -13,10 +13,12 @@ use mech_engine::program::{CompilerPlanningConfig, CompilerPlanningProgram};
 use mech_engine::{ProgramArtifact, ProgramArtifactDraft, decode_program_artifact_bytecode_v1};
 
 const SOURCE: &str = include_str!("r-stack-proof/trust-program.mec");
+const PERTURBED_SOURCE: &str = include_str!("r-stack-proof/perturbed-program.mec");
 
 // This is deliberately literal test data, not a second implementation of the
 // recurrence. Every value can be checked by hand from the five-line Mech source.
 const EXPECTED_COMMITTED_OUTPUTS: [f64; 7] = [5.0, 13.0, 29.0, 61.0, 125.0, 253.0, 509.0];
+const EXPECTED_PERTURBED_OUTPUTS: [f64; 3] = [7.0, 25.0, 79.0];
 const EXPECTED_REJECTED_CANDIDATE: f64 = 1021.0;
 const APPROVED_OPERATIONS: [&str; 4] = ["math/mul", "math/add", "compare/lt", "core/assign"];
 
@@ -376,7 +378,45 @@ fn run() -> Result<(), String> {
     );
     println!("publication ops : {}", probe.publication_store_count);
 
-    heading("7 / PROTECTIONS — REJECTION MUST LEAVE NO SCAR");
+    heading("7 / SOURCE PERTURBATION CONTROL");
+    println!("Changed Mech line: next := x * 3.0 + 4.0");
+    println!("Literal oracle  : {EXPECTED_PERTURBED_OUTPUTS:?}");
+    let perturbed_artifact = compile_visible_source(PERTURBED_SOURCE, &catalog)?;
+    require(
+        perturbed_artifact.revision() != source_artifact.revision(),
+        "changing the Mech constants did not change the artifact revision",
+    )?;
+    let perturbed_operations = perturbed_artifact
+        .nodes()
+        .iter()
+        .map(|node| node.operation.canonical_name())
+        .collect::<Vec<_>>();
+    require(
+        perturbed_operations == APPROVED_OPERATIONS,
+        "perturbed artifact changed the four-operation shape",
+    )?;
+    let mut perturbed_instance = activate(
+        ReactiveInstanceId::new(3, 0),
+        &perturbed_artifact,
+        catalog.as_ref(),
+        &ActivationFacts::default(),
+    )
+    .map_err(debug_error)?;
+    for expected in EXPECTED_PERTURBED_OUTPUTS {
+        perturbed_instance.turn(&[]).map_err(debug_error)?;
+        require(
+            output_f64(&perturbed_instance)? == expected,
+            &format!("perturbed source did not produce literal oracle value {expected}"),
+        )?;
+    }
+    println!("artifact revision: PASS — changed from the original");
+    println!("operation shape : PASS — still exactly {APPROVED_OPERATIONS:?}");
+    println!("resident outputs: PASS — 7, 25, 79");
+    println!(
+        "control meaning : changing only visible Mech constants changed the compiled artifact and behavior"
+    );
+
+    heading("8 / PROTECTIONS — REJECTION MUST LEAVE NO SCAR");
 
     let syntax_error = mech_syntax::parser::parse("~x := [1.0; 2.0").unwrap_err();
     println!(
@@ -476,6 +516,9 @@ fn run() -> Result<(), String> {
     println!("PROVED  the algorithm is a visible Mech graph, not an ekf/* Rust operation");
     println!("PROVED  seven literal expected values match both artifact routes exactly");
     println!(
+        "PROVED  a source-only constant change changes artifact identity and resident outputs"
+    );
+    println!(
         "PROVED  malformed/type-invalid/tampered/truncated/under-budget/unsafe cases are contained"
     );
     println!(
@@ -486,6 +529,27 @@ fn run() -> Result<(), String> {
     heading("VERDICT");
     println!("ALL CLAIMED CHECKS PASSED");
     Ok(())
+}
+
+fn compile_visible_source(
+    source: &str,
+    catalog: &std::sync::Arc<FunctionCatalog>,
+) -> Result<ProgramArtifact, String> {
+    let tree = mech_syntax::parser::parse(source).map_err(debug_error)?;
+    let mut compiler = CompilerPlanningProgram::with_function_catalog(
+        CompilerPlanningConfig::default(),
+        catalog.clone(),
+    );
+    let output = compiler
+        .plan_tree_with_services(&tree, &mut NoMechExecutionServices)
+        .map_err(debug_error)?
+        .ok_or("perturbed source produced no output")?;
+    compiler.publish_compiler_root_output(output);
+    Ok(compiler
+        .compile_program_product()
+        .map_err(debug_error)?
+        .into_parts()
+        .0)
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
