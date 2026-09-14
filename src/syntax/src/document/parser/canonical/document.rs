@@ -155,9 +155,10 @@ fn comment_wins_at_mech_item_boundary(parser: &mut Parser<'_>) -> bool {
         return true;
     }
     let expression = parse_any_rule(parser, rules::EXPRESSION);
-    let complete_expression = expression == Attempt::Committed
-        || expression == Attempt::Matched
-            && parse_any_rule(parser, rules::CODE_TERMINAL).accepted();
+    // A recovered terminal must not turn the remainder of a valid comment
+    // into malformed code. Committed expressions still need a real terminal.
+    let complete_expression =
+        expression.accepted() && parse_any_rule(parser, rules::CODE_TERMINAL) == Attempt::Matched;
     parser.rewind(checkpoint);
     !complete_expression
 }

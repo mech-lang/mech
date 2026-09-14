@@ -333,3 +333,43 @@ fn a_missing_mika_closer_cannot_publish_its_clean_body_index() {
     let document = DocumentSyntax::cast(parsed.syntax()).unwrap();
     assert!(SourceIndex::from_mika_section(&document.mika_scopes()[0].section).is_err());
 }
+
+#[test]
+fn export_occurrences_cover_the_name_without_indent_or_sigil() {
+    for (name, columns) in [("value", 5), ("e\u{301}", 1)] {
+        let index = index(&format!("  <+ {name}\r\n"));
+        assert_eq!(index.exports.len(), 1);
+        assert_eq!(index.exports[0].declaration.name, name);
+        let range = index.exports[0].occurrence.range.as_ref().unwrap();
+        assert_eq!((range.start.row, range.start.col), (1, 6));
+        assert_eq!((range.end.row, range.end.col), (1, 6 + columns));
+    }
+}
+
+#[test]
+fn context_occurrences_span_name_through_last_semantic_role() {
+    for (declaration, semantic) in [
+        ("@users := @main", "users := @main"),
+        ("@users := @main   ", "users := @main"),
+        ("@users := file://data/users", "users := file://data/users"),
+        ("@users := @main{:read(*)}", "users := @main{:read(*"),
+        (
+            "@users := @main{:read(users/*), :write(*)}",
+            "users := @main{:read(users/*), :write(*",
+        ),
+        (
+            "@users := @main{:read(*), :write(users/*), }",
+            "users := @main{:read(*), :write(users/*",
+        ),
+    ] {
+        let index = index(&format!("  {declaration}\r\n"));
+        assert_eq!(index.contexts.len(), 1, "{declaration}");
+        let range = index.contexts[0].occurrence.range.as_ref().unwrap();
+        assert_eq!((range.start.row, range.start.col), (1, 4), "{declaration}");
+        assert_eq!(
+            (range.end.row, range.end.col),
+            (1, 4 + semantic.len()),
+            "{declaration}"
+        );
+    }
+}

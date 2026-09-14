@@ -406,3 +406,28 @@ fn repeated_document_units_remain_measured_linear() {
         );
     }
 }
+
+#[test]
+fn committed_negation_must_reach_a_terminal_before_displacing_a_comment() {
+    for text in ["--- heading\n", "---- heading\n", "  --- heading\r\n"] {
+        let parsed = parse_canonical_document(source(text), ParseConfig::default());
+        assert!(
+            parsed.is_strictly_clean(),
+            "{text:?}: {:?}",
+            parsed.diagnostics
+        );
+        assert_eq!(count(&parsed.syntax(), SyntaxKind::Comment), 1);
+        assert_eq!(count(&parsed.syntax(), SyntaxKind::Expression), 0);
+        validate_lossless(&parsed.root, &parsed.source).unwrap();
+        assert_eq!(
+            reconstruct_source(&parsed.root, &parsed.source).unwrap(),
+            text
+        );
+    }
+    for (text, clean) in [("---x\n", true), ("--x +\n", false)] {
+        let parsed = parse_canonical_document(source(text), ParseConfig::default());
+        assert_eq!(parsed.is_strictly_clean(), clean);
+        assert_eq!(count(&parsed.syntax(), SyntaxKind::Comment), 0);
+        assert!(count(&parsed.syntax(), SyntaxKind::NegateFactor) >= 2);
+    }
+}

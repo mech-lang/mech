@@ -138,18 +138,28 @@ impl SourceIndex {
                 continue;
             }
             if let Some(export) = ExportDeclarationSyntax::cast(node.clone()) {
-                let name = text(required(export.name(), &node)?.syntax())?;
+                let name = required(export.name(), &node)?;
+                let occurrence = range(name.syntax())?;
+                let name = text(name.syntax())?;
                 index.push_export(
                     scope,
                     index.declarations.len(),
-                    Some(range(&node)?),
+                    Some(occurrence),
                     SourceExportDeclaration { name },
                 );
                 continue;
             }
             if let Some(context) = ContextDeclarationSyntax::cast(node.clone()) {
-                let name = text(required(context.name(), &node)?.syntax())?;
-                let base = match required(context.base(), &node)? {
+                let name = required(context.name(), &node)?;
+                let base = required(context.base(), &node)?;
+                // Resolver occurrences span semantic roles, excluding the leading
+                // @/whitespace and trailing capability delimiters or trivia.
+                let mut occurrence = SourceRange {
+                    start: range(name.syntax())?.start,
+                    end: range(base.syntax())?.end,
+                };
+                let name = text(name.syntax())?;
+                let base = match base {
                     CanonicalContextBaseSyntax::Context(base) => SourceContextBase::Context(text(
                         required(base.name(), base.syntax())?.syntax(),
                     )?),
@@ -161,6 +171,7 @@ impl SourceIndex {
                 for cap in context.capabilities() {
                     let operation = text(required(cap.operation(), cap.syntax())?.syntax())?;
                     let cap_scope = required(cap.scope(), cap.syntax())?;
+                    occurrence.end = range(cap_scope.syntax())?.end;
                     let scope = match required(cap_scope.selected(), cap_scope.syntax())? {
                         CanonicalContextCapabilityScopeSyntax::Wildcard(_) => {
                             SourceContextCapabilityScope::Wildcard
@@ -174,7 +185,7 @@ impl SourceIndex {
                 index.push_context(
                     scope,
                     index.declarations.len(),
-                    Some(range(&node)?),
+                    Some(occurrence),
                     SourceContextDeclaration {
                         name,
                         base,
