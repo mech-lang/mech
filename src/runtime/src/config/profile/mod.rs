@@ -1,6 +1,8 @@
 #[cfg(feature = "source")]
 mod analyze;
 #[cfg(feature = "source")]
+mod canonical;
+#[cfg(feature = "source")]
 mod compile;
 mod error;
 mod eval;
@@ -67,6 +69,26 @@ pub fn parse_config_document(
     let program = mech_syntax::parser::parse(source)?;
     let extracted = ConfigExtractor::new(options.clone()).extract(&program)?;
     let ir = ConfigCompiler::new().compile(&extracted)?;
+    ConfigAnalyzer::new().analyze(&ir)?;
+    let value = ConfigEvaluator::new(options).evaluate(&ir)?;
+    ConfigLowerer::new().lower(source_name.into(), value)
+}
+
+/// Compile retained canonical configuration through the existing restricted IR,
+/// analyzer, evaluator and field lowering. No source parse or general evaluator
+/// is introduced at this boundary. The shipping text route switches in S8C.
+#[cfg(feature = "source")]
+pub fn compile_config_document(
+    source_name: impl Into<String>,
+    source: &crate::resolver::SourceDocument,
+    options: ConfigProfileOptions,
+) -> MResult<MechConfigDocument> {
+    if !source.is_strictly_clean() {
+        return Err(ConfigProfileViolation::error(
+            "configuration requires a complete canonical source document",
+        ));
+    }
+    let ir = canonical::compile(&source.document(), &options)?;
     ConfigAnalyzer::new().analyze(&ir)?;
     let value = ConfigEvaluator::new(options).evaluate(&ir)?;
     ConfigLowerer::new().lower(source_name.into(), value)
