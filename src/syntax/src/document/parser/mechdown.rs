@@ -64,6 +64,7 @@ pub(crate) fn is_ul_subtitle(cursor: &Cursor<'_>) -> bool {
     if !lookahead.is_line_start() {
         return false;
     }
+    let heading_start = lookahead.clone();
     let mut count = 0;
     while lookahead
         .peek_char()
@@ -72,16 +73,32 @@ pub(crate) fn is_ul_subtitle(cursor: &Cursor<'_>) -> bool {
         count += 1;
         let _ = lookahead.bump_char();
     }
-    if count == 0 || !lookahead.starts_with(".") {
-        return false;
+    let numbered = count != 0 && lookahead.starts_with(".");
+    if numbered {
+        let _ = lookahead.bump_bytes(1);
+        consume_horizontal_lookahead(&mut lookahead);
+    } else {
+        lookahead = heading_start;
     }
-    let _ = lookahead.bump_bytes(1);
-    consume_horizontal_lookahead(&mut lookahead);
     let title_start = lookahead.offset();
+    let mut previous_was_horizontal = false;
+    let mut has_annotation = false;
     while !lookahead.is_eof() && !is_newline_start(&lookahead) {
+        let character = lookahead.peek_char().expect("non-EOF heading character");
+        if character == '@' && previous_was_horizontal {
+            let mut annotation = lookahead.clone();
+            let _ = annotation.bump_char();
+            has_annotation = annotation
+                .peek_char()
+                .is_some_and(|next| next.is_alphabetic() || next == '_');
+        }
+        previous_was_horizontal = is_horizontal_space(character);
         let _ = lookahead.bump_char();
     }
-    if lookahead.offset() == title_start || consume_newline_lookahead(&mut lookahead).is_none() {
+    if lookahead.offset() == title_start
+        || (!numbered && !has_annotation)
+        || consume_newline_lookahead(&mut lookahead).is_none()
+    {
         return false;
     }
     let mut dashes = 0;
@@ -261,6 +278,23 @@ pub(crate) fn parse_paragraph(parser: &mut Parser<'_>) {
         let _ = parser.consume_newline();
         paragraph.complete_with_flags(parser, SyntaxKind::Paragraph, NodeFlags::REPARSE_ROOT);
     });
+}
+
+#[cfg(test)]
+mod subtitle_tests {
+    use super::*;
+    use crate::document::{DocumentId, Revision, TextSnapshot};
+
+    #[test]
+    fn recognizes_annotated_unnumbered_heading() {
+        let source = TextSnapshot::new(
+            DocumentId(1),
+            Revision(0),
+            "calculation @compute\n-----------\n",
+        )
+        .unwrap();
+        assert!(is_ul_subtitle(&Cursor::new(&source)));
+    }
 }
 
 fn matching_fence(cursor: &Cursor<'_>, delimiter: FenceDelimiter) -> bool {

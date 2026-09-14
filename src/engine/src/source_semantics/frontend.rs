@@ -13,9 +13,9 @@ use mech_core::snapshot::{
     SnapshotValidationContext,
 };
 use mech_core::{
-    BuiltinKindPredicate, BuiltinScalarKind, CanonicalNominalPath, CardinalitySpec, ConstantId,
-    ConstantStore, ConstantStoreBuilder, DimensionEnvironmentBuilder, DimensionExpr,
-    DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+    BuiltinKindPredicate, BuiltinScalarKind, CanonicalNominalPath, CardinalitySpec,
+    ComputePlacement, ConstantId, ConstantStore, ConstantStoreBuilder, DimensionEnvironmentBuilder,
+    DimensionExpr, DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
     DimensionParameterOrigin, FloatWidth, InputKindScheme, IntegerWidth, KindExpr, KindField,
     KindId, NamedKindPathResolver, NodeId, NominalKey, NominalKind, OperationContractDeclaration,
     ResolvedOutputSchemaRule, ResolvedType, SchemaBody, SchemaDraft, SchemaField, SchemaId,
@@ -37,8 +37,9 @@ use mech_syntax::document::{
 };
 
 use crate::{
-    ArtifactBuildContext, ArtifactBuildError, OperationReference, ProgramArtifact, SourceInput,
-    SourceNode, SourceNodeOutput, SourceOutput, SourceProgram, SourceState, SourceValue,
+    ArtifactBuildContext, ArtifactBuildError, ComputeRegionDeclaration, OperationReference,
+    ProgramArtifact, SourceInput, SourceNode, SourceNodeOutput, SourceOutput, SourceProgram,
+    SourceState, SourceValue,
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -82,6 +83,7 @@ pub struct SourceSemanticMap {
 }
 
 /// The complete engine-owned input to canonical artifact construction.
+#[derive(Clone)]
 pub struct CanonicalSourceProgram {
     document_owner: Option<DocumentScopeId>,
     program: SourceProgram,
@@ -91,6 +93,18 @@ pub struct CanonicalSourceProgram {
     source_map: SourceSemanticMap,
     document_outputs: Box<[SourceDocumentOutput]>,
     document_exports: Box<[SourceDocumentExport]>,
+    compute_region: Option<(String, ComputePlacement)>,
+}
+
+/// Canonical semantic partitions for one mixed coordinator/compute document.
+/// Every partition is derived from the same retained syntax snapshot; no text
+/// projection or second parser owns either executable graph.
+pub struct CanonicalMixedSourcePrograms {
+    pub region_name: String,
+    pub placement: ComputePlacement,
+    pub coordinator: CanonicalSourceProgram,
+    pub compute: CanonicalSourceProgram,
+    pub compute_initializers: CanonicalSourceProgram,
 }
 
 /// A typed route from document presentation to an existing artifact output.
@@ -125,6 +139,32 @@ impl CanonicalSourceProgram {
     /// Expression-only programs do not claim a document presentation owner.
     pub const fn document_owner(&self) -> Option<DocumentScopeId> {
         self.document_owner
+    }
+
+    pub(crate) fn with_compute_region(
+        mut self,
+        name: String,
+        placement: ComputePlacement,
+    ) -> Result<Self, SourceSemanticError> {
+        if name.trim().is_empty() {
+            return Err(SourceSemanticError {
+                code: "source-semantics/empty-compute-region-name",
+                message: "canonical compute region name must not be empty".to_owned(),
+                anchor: self
+                    .source_map
+                    .outputs
+                    .first()
+                    .copied()
+                    .unwrap_or(SourceSemanticAnchor {
+                        document: DocumentId(0),
+                        revision: Revision(0),
+                        range: TextRange::empty(mech_syntax::document::TextSize::ZERO),
+                    }),
+            });
+        }
+        self.compute_region = Some((name, placement));
+        Ok(self)
+
     }
 
     pub const fn program(&self) -> &SourceProgram {
@@ -435,11 +475,12 @@ impl CanonicalSourceProgram {
         for input in &mut artifact_program.inputs {
             input.name = crate::encode_source_input_name(&input.name);
         }
-        crate::compile_source_program_with_control_contracts(
+        let artifact = crate::compile_source_program_with_control_contracts(
             &artifact_program,
             &mut ArtifactBuildContext::new(&self.schemas, &self.constants),
             &contracts,
-        )
+        )?;
+        self.attach_compute_region(artifact)
     }
 
     /// Compile an artifact after resolving every external node against the
@@ -495,7 +536,7 @@ impl CanonicalSourceProgram {
         for input in &mut artifact_program.inputs {
             input.name = crate::encode_source_input_name(&input.name);
         }
-        crate::compile_source_program_with_control_contracts(
+        let artifact = crate::compile_source_program_with_control_contracts(
             &artifact_program,
             &mut ArtifactBuildContext::new(&self.schemas, &self.constants),
             &contracts,
@@ -508,7 +549,40 @@ impl CanonicalSourceProgram {
                 None,
             )
             .with_compiler_loc()
+        })?;
+        self.attach_compute_region(artifact).map_err(|error| {
+            mech_core::MechError::new(
+                mech_core::GenericError {
+                    msg: format!("unable to attach canonical compute region: {error:?}"),
+                },
+                None,
+            )
+            .with_compiler_loc()
         })
+    }
+
+    fn attach_compute_region(
+        &self,
+        artifact: ProgramArtifact,
+    ) -> Result<ProgramArtifact, ArtifactBuildError> {
+        let Some((name, placement)) = &self.compute_region else {
+            return Ok(artifact);
+        };
+        let nodes = artifact
+            .nodes()
+            .iter()
+            .map(|node| node.node)
+            .collect::<Vec<_>>()
+            .into_boxed_slice();
+        artifact.with_compute_regions(
+            vec![ComputeRegionDeclaration {
+                id: mech_core::ComputeRegionId::new(0),
+                name: name.clone().into_boxed_str(),
+                placement: *placement,
+                nodes,
+            }]
+            .into_boxed_slice(),
+        )
     }
 
     /// Replace one detached planning input with an explicit resource-read
@@ -782,6 +856,29 @@ impl CanonicalSourceFrontend {
             program = program.bind_resource_input(&name, request)?;
         }
         Ok(program)
+    }
+
+    /// Partition one retained mixed document into coordinator, compute, and
+    /// initializer semantic programs. All three projections share the same
+    /// canonical source owner and source coordinates.
+    pub fn compile_mixed_document_with_catalog_and_resources(
+        &self,
+        document: &DocumentSyntax,
+        catalog: Arc<mech_core::FunctionCatalog>,
+        input_schemas: BTreeMap<String, SchemaBody>,
+        resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+        external_inputs: &BTreeSet<String>,
+        retained_outputs: &BTreeSet<String>,
+    ) -> Result<CanonicalMixedSourcePrograms, SourceSemanticError> {
+        reject_recovered_syntax(document)?;
+        document_lowering::compile_mixed_document_with_catalog_and_resources(
+            document,
+            catalog,
+            input_schemas,
+            resource_writes,
+            external_inputs,
+            retained_outputs,
+        )
     }
 
     /// Compile the ordered fences belonging to one named interpreter scope.
@@ -2098,6 +2195,7 @@ struct SemanticBuilder {
     constraints: Vec<PendingConstraint>,
     bindings: BTreeMap<String, PendingBinding>,
     scope_definitions: BTreeSet<String>,
+    external_definitions: BTreeSet<String>,
     patterns: Vec<SourceSemanticPattern>,
     resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
 }
@@ -2120,6 +2218,7 @@ impl SemanticBuilder {
             constraints: Vec::new(),
             bindings: BTreeMap::new(),
             scope_definitions: BTreeSet::new(),
+            external_definitions: BTreeSet::new(),
             patterns: Vec::new(),
             resource_writes: BTreeMap::new(),
         }
@@ -3517,6 +3616,13 @@ impl SemanticBuilder {
         }
         value.resolved()?;
         let bound = if definition.mutability_marker().is_some() {
+            if self.external_definitions.contains(&name) {
+                return Err(SourceSemanticError {
+                    code: "source-semantics/mutable-compute-input",
+                    message: format!("compute input {name} must be an immutable definition"),
+                    anchor: SourceSemanticAnchor::for_node(definition.syntax()),
+                });
+            }
             let schema_draft = self.schema_draft_of(value)?;
             let state = u32::try_from(self.states.len()).map_err(|_| SourceSemanticError {
                 code: "source-semantics/state-identity-exhausted",
@@ -3547,6 +3653,20 @@ impl SemanticBuilder {
                 },
             });
             PendingValue::State(state)
+        } else if self.external_definitions.contains(&name) {
+            let schema = self.schema_draft_of(value)?;
+            let index = u32::try_from(self.inputs.len()).map_err(|_| SourceSemanticError {
+                code: "source-semantics/input-identity-exhausted",
+                message: "canonical input count exceeds SourceProgram identity space".to_owned(),
+                anchor: SourceSemanticAnchor::for_node(definition.syntax()),
+            })?;
+            self.input_by_name.insert(name.clone(), index);
+            self.inputs.push(PendingInput {
+                name: name.clone(),
+                schema,
+                anchor: SourceSemanticAnchor::for_node(variable.syntax()),
+            });
+            PendingValue::Input(index)
         } else {
             value
         };
@@ -6139,6 +6259,7 @@ impl SemanticBuilder {
             source_map,
             document_outputs: Box::new([]),
             document_exports: Box::new([]),
+            compute_region: None,
         })
     }
 }

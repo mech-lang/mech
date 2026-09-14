@@ -1206,6 +1206,62 @@ fn mixed_tree_compilation_owns_partitioning_and_typed_initializers() {
 
 #[cfg(feature = "compute")]
 #[test]
+fn canonical_mixed_document_owns_partitioning_and_typed_initializers() {
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .unwrap();
+
+    let mixed = compiler.compile_mixed_source(MIXED_COMPUTE_SOURCE).unwrap();
+
+    assert!(mixed.coordinator.artifact().compute_regions().is_empty());
+    assert_eq!(mixed.compute.declaration.name.as_ref(), "calculation");
+    assert_eq!(mixed.compute.interface.inputs.len(), 1);
+    assert_eq!(mixed.compute.interface.outputs.len(), 1);
+    assert_eq!(mixed.compute.interface.outputs[0].name.as_ref(), "result");
+    let input = &mixed.compute.interface.inputs[0];
+    assert_eq!(input.name.as_ref(), "x");
+    assert!(input.dimensions.is_empty());
+    assert_eq!(
+        mixed.compute.initializers.get(input.id),
+        Some(&mech_compute::ComputeValue::ScalarF32(1.0))
+    );
+}
+
+#[cfg(feature = "compute")]
+#[test]
+fn canonical_mixed_document_retains_batched_activation_values() {
+    let source = r#"
+@compute := compute://worker/kernel{:write(input/x), :write(turn)}
+lanes := [1f32 2f32 3f32 4f32]
+@compute/input/x <- lanes * 0.001<f32>
+@compute/turn <- 1
+
+calculation @compute
+-------------------------------------------------------------------------------
+x := 0f32
+result := x + 1f32
+result
+"#;
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .unwrap();
+
+    let mixed = compiler.compile_mixed_source(source).unwrap();
+
+    assert_eq!(
+        mixed.activation_inputs["x"],
+        mech_compute::ComputeValue::TensorF32 {
+            dimensions: vec![1, 4].into_boxed_slice(),
+            layout: mech_compute::TensorLayout::RowMajor,
+            values: Arc::from([0.001, 0.002, 0.003, 0.004]),
+        }
+    );
+}
+
+#[cfg(feature = "compute")]
+#[test]
 fn mixed_tree_retains_only_explicit_sample_read_capabilities() {
     let tree = mech_syntax::parse(
         r#"

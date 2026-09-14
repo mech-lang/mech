@@ -338,6 +338,23 @@ fn consecutive_underlined_subtitles_start_distinct_sections() {
 }
 
 #[test]
+fn annotated_underlined_subtitles_do_not_require_source_ordinals() {
+    let snapshot = parse_canonical_document(
+        source("calculation @compute\n-----------\nresult := 1\n"),
+        ParseConfig::default(),
+    );
+    assert!(
+        snapshot.is_strictly_clean(),
+        "{:#?}\n{}",
+        snapshot.diagnostics,
+        compact_debug_tree(&snapshot.syntax())
+    );
+    let document = DocumentSyntax::cast(snapshot.syntax()).unwrap();
+    assert_eq!(document.sections().len(), 1);
+    assert_eq!(count(document.syntax(), SyntaxKind::UlSubtitle), 1);
+}
+
+#[test]
 fn document_resource_limits_remain_hard_and_lossless() {
     let text = "x := [1, 2, 3]\n".repeat(64);
     let limits = ParseLimits {

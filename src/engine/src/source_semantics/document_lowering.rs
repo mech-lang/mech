@@ -35,7 +35,15 @@ struct DeferredInline {
 pub(super) fn compile_document(
     document: &DocumentSyntax,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
-    compile_document_with_options(document, None, BTreeMap::new(), false, BTreeMap::new())
+    compile_document_with_options(
+        document,
+        None,
+        BTreeMap::new(),
+        false,
+        BTreeMap::new(),
+        &BTreeSet::new(),
+        &BTreeSet::new(),
+    )
 }
 
 pub(super) fn compile_document_with_catalog(
@@ -48,6 +56,8 @@ pub(super) fn compile_document_with_catalog(
         BTreeMap::new(),
         false,
         BTreeMap::new(),
+        &BTreeSet::new(),
+        &BTreeSet::new(),
     )
 }
 
@@ -61,6 +71,8 @@ pub(super) fn compile_interactive_document_with_catalog(
         BTreeMap::new(),
         true,
         BTreeMap::new(),
+        &BTreeSet::new(),
+        &BTreeSet::new(),
     )
 }
 
@@ -75,6 +87,8 @@ pub(super) fn compile_document_with_catalog_and_input_schemas(
         input_schemas,
         false,
         BTreeMap::new(),
+        &BTreeSet::new(),
+        &BTreeSet::new(),
     )
 }
 
@@ -90,7 +104,108 @@ pub(super) fn compile_document_with_catalog_and_resources(
         input_schemas,
         false,
         resource_writes,
+        &BTreeSet::new(),
+        &BTreeSet::new(),
     )
+}
+
+pub(super) fn compile_mixed_document_with_catalog_and_resources(
+    document: &DocumentSyntax,
+    catalog: Arc<mech_core::FunctionCatalog>,
+    input_schemas: BTreeMap<String, SchemaBody>,
+    resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+    external_inputs: &BTreeSet<String>,
+    retained_outputs: &BTreeSet<String>,
+) -> Result<CanonicalMixedSourcePrograms, SourceSemanticError> {
+    let anchor = SourceSemanticAnchor::for_node(document.syntax());
+    let sections = document
+        .body()
+        .map(|body| body.sections())
+        .unwrap_or_default();
+    let mut regions = Vec::new();
+    for (index, section) in sections.iter().enumerate() {
+        if let Some((name, placement)) = mixed_section_identity(section)? {
+            regions.push((index, name, placement));
+        }
+    }
+    if regions.len() != 1 {
+        return Err(SourceSemanticError {
+            code: "source-semantics/mixed-region-count",
+            message: format!(
+                "v0.4 mixed programs require exactly one executable compute region, found {}",
+                regions.len(),
+            ),
+            anchor,
+        });
+    }
+    let (region_index, region_name, placement) = regions.pop().expect("one region checked");
+
+    let mut coordinator_units = Vec::new();
+    let mut coordinator_exports = Vec::new();
+    for (index, section) in sections.iter().enumerate() {
+        if index != region_index {
+            collect_document_units(
+                section.syntax(),
+                &mut coordinator_units,
+                &mut coordinator_exports,
+            )?;
+        }
+    }
+    let coordinator = compile_collected_document(
+        anchor,
+        coordinator_units,
+        coordinator_exports,
+        Some(Arc::clone(&catalog)),
+        input_schemas.clone(),
+        true,
+        resource_writes.clone(),
+        &BTreeSet::new(),
+        &BTreeSet::new(),
+    )?;
+
+    let region = &sections[region_index];
+    let mut compute_units = Vec::new();
+    let mut compute_exports = Vec::new();
+    collect_document_units(region.syntax(), &mut compute_units, &mut compute_exports)?;
+    let compute = compile_collected_document(
+        anchor,
+        compute_units,
+        compute_exports,
+        Some(Arc::clone(&catalog)),
+        input_schemas.clone(),
+        false,
+        BTreeMap::new(),
+        external_inputs,
+        retained_outputs,
+    )?
+    .with_compute_region(region_name.clone(), placement)?;
+
+    let mut initializer_units = Vec::new();
+    let mut initializer_exports = Vec::new();
+    collect_document_units(
+        region.syntax(),
+        &mut initializer_units,
+        &mut initializer_exports,
+    )?;
+    let compute_initializers = compile_collected_document(
+        anchor,
+        initializer_units,
+        initializer_exports,
+        Some(catalog),
+        input_schemas,
+        false,
+        BTreeMap::new(),
+        &BTreeSet::new(),
+        external_inputs,
+    )?;
+
+    Ok(CanonicalMixedSourcePrograms {
+        region_name,
+        placement,
+        coordinator,
+        compute,
+        compute_initializers,
+    })
 }
 
 fn compile_document_with_options(
@@ -99,6 +214,8 @@ fn compile_document_with_options(
     input_schemas: BTreeMap<String, SchemaBody>,
     interactive: bool,
     resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+    external_definitions: &BTreeSet<String>,
+    published_bindings: &BTreeSet<String>,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
     let anchor = SourceSemanticAnchor::for_node(document.syntax());
     let mut units = Vec::new();
@@ -113,6 +230,8 @@ fn compile_document_with_options(
         input_schemas,
         interactive,
         resource_writes,
+        external_definitions,
+        published_bindings,
     )
 }
 
@@ -168,6 +287,8 @@ fn compile_named_scope(
         BTreeMap::new(),
         false,
         BTreeMap::new(),
+        &BTreeSet::new(),
+        &BTreeSet::new(),
     )
 }
 
@@ -194,6 +315,8 @@ pub(super) fn compile_mika_section(
         BTreeMap::new(),
         false,
         BTreeMap::new(),
+        &BTreeSet::new(),
+        &BTreeSet::new(),
     )
 }
 
@@ -206,6 +329,8 @@ fn compile_collected_document(
     input_schemas: BTreeMap<String, SchemaBody>,
     interactive: bool,
     resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+    external_definitions: &BTreeSet<String>,
+    published_bindings: &BTreeSet<String>,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
     let mut builder = match catalog {
         Some(catalog) if !input_schemas.is_empty() => {
@@ -215,6 +340,7 @@ fn compile_collected_document(
         None => SemanticBuilder::new(anchor),
     };
     builder.resource_writes = resource_writes;
+    builder.external_definitions = external_definitions.clone();
     let mut bindings = BTreeSet::new();
     declare_document_inputs(&mut builder, &units, &mut bindings)?;
     declare_document_inline_inputs(&mut builder, &units, &bindings)?;
@@ -263,6 +389,22 @@ fn compile_collected_document(
         builder.publish(&name, None, value, name_node.syntax());
         document_exports.push(SourceDocumentExport { output, name });
     }
+    for name in published_bindings {
+        if builder.outputs.iter().any(|output| output.name == *name) {
+            continue;
+        }
+        let binding = builder
+            .bindings
+            .get(name)
+            .copied()
+            .ok_or_else(|| SourceSemanticError {
+                code: "source-semantics/unknown-published-binding",
+                message: format!("document does not define requested output {name}"),
+                anchor,
+            })?;
+        let value = builder.read_document_binding(binding, &last.syntax)?;
+        builder.publish(name, None, value, &last.syntax);
+    }
     presentation.sort_by_key(|(_, _, owner)| owner.range().start);
     for (kind, value, owner) in presentation {
         let role = match kind {
@@ -302,6 +444,76 @@ fn compile_collected_document(
     program.document_outputs = output_bindings.into_boxed_slice();
     program.document_exports = document_exports.into_boxed_slice();
     Ok(program)
+}
+
+fn mixed_section_identity(
+    section: &mech_syntax::document::SectionSyntax,
+) -> Result<Option<(String, mech_core::ComputePlacement)>, SourceSemanticError> {
+    let Some(subtitle) = section.subtitle() else {
+        return Ok(None);
+    };
+    let text = subtitle.syntax().text().map_err(|_| {
+        internal(
+            SourceSemanticAnchor::for_node(subtitle.syntax()),
+            "compute section subtitle is outside retained source".to_owned(),
+        )
+    })?;
+    let heading = text.lines().next().unwrap_or_default().trim();
+    let mut name_parts = Vec::new();
+    let mut selected = None;
+    for part in heading.split_whitespace() {
+        let Some(annotation) = part.strip_prefix('@') else {
+            if selected.is_none() {
+                name_parts.push(part);
+                continue;
+            }
+            return Err(SourceSemanticError {
+                code: "source-semantics/section-annotation-order",
+                message: "section text cannot follow a placement annotation".to_owned(),
+                anchor: SourceSemanticAnchor::for_node(subtitle.syntax()),
+            });
+        };
+        if annotation.contains(['(', ')', ',']) {
+            return Err(SourceSemanticError {
+                code: "source-semantics/section-placement-arguments",
+                message: format!(
+                    "section placement annotation @{annotation} does not accept arguments"
+                ),
+                anchor: SourceSemanticAnchor::for_node(subtitle.syntax()),
+            });
+        }
+        let placement = match annotation {
+            "compute" => mech_core::ComputePlacement::Compute,
+            "cpu" => mech_core::ComputePlacement::Cpu,
+            "gpu" => mech_core::ComputePlacement::Gpu,
+            other => {
+                return Err(SourceSemanticError {
+                    code: "source-semantics/unsupported-section-annotation",
+                    message: format!("section annotation @{other} is not supported"),
+                    anchor: SourceSemanticAnchor::for_node(subtitle.syntax()),
+                });
+            }
+        };
+        if selected.replace(placement).is_some() {
+            return Err(SourceSemanticError {
+                code: "source-semantics/duplicate-section-placement",
+                message: "section has more than one placement annotation".to_owned(),
+                anchor: SourceSemanticAnchor::for_node(subtitle.syntax()),
+            });
+        }
+    }
+    let Some(placement) = selected else {
+        return Ok(None);
+    };
+    let name = name_parts.join(" ");
+    if name.is_empty() {
+        return Err(SourceSemanticError {
+            code: "source-semantics/empty-compute-region-name",
+            message: "the executable compute region must have a nonempty section name".to_owned(),
+            anchor: SourceSemanticAnchor::for_node(subtitle.syntax()),
+        });
+    }
+    Ok(Some((name, placement)))
 }
 
 fn collect_document_units(
