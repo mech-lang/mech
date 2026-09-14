@@ -14,6 +14,7 @@ mod document_assignment;
 
 enum DocumentUnit {
     Statement(SyntaxNode),
+    ResourceSend(mech_syntax::document::ContextSendSyntax),
     Invariant(InvariantDefineSyntax),
     Inline(EvalInlineMechCodeSyntax),
     Fence(CodeBlockSyntax, CodeFencePresentation, Vec<DocumentUnit>),
@@ -34,21 +35,33 @@ struct DeferredInline {
 pub(super) fn compile_document(
     document: &DocumentSyntax,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
-    compile_document_with_options(document, None, BTreeMap::new(), false)
+    compile_document_with_options(document, None, BTreeMap::new(), false, BTreeMap::new())
 }
 
 pub(super) fn compile_document_with_catalog(
     document: &DocumentSyntax,
     catalog: Arc<mech_core::FunctionCatalog>,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
-    compile_document_with_options(document, Some(catalog), BTreeMap::new(), false)
+    compile_document_with_options(
+        document,
+        Some(catalog),
+        BTreeMap::new(),
+        false,
+        BTreeMap::new(),
+    )
 }
 
 pub(super) fn compile_interactive_document_with_catalog(
     document: &DocumentSyntax,
     catalog: Arc<mech_core::FunctionCatalog>,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
-    compile_document_with_options(document, Some(catalog), BTreeMap::new(), true)
+    compile_document_with_options(
+        document,
+        Some(catalog),
+        BTreeMap::new(),
+        true,
+        BTreeMap::new(),
+    )
 }
 
 pub(super) fn compile_document_with_catalog_and_input_schemas(
@@ -56,7 +69,28 @@ pub(super) fn compile_document_with_catalog_and_input_schemas(
     catalog: Arc<mech_core::FunctionCatalog>,
     input_schemas: BTreeMap<String, SchemaBody>,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
-    compile_document_with_options(document, Some(catalog), input_schemas, false)
+    compile_document_with_options(
+        document,
+        Some(catalog),
+        input_schemas,
+        false,
+        BTreeMap::new(),
+    )
+}
+
+pub(super) fn compile_document_with_catalog_and_resources(
+    document: &DocumentSyntax,
+    catalog: Arc<mech_core::FunctionCatalog>,
+    input_schemas: BTreeMap<String, SchemaBody>,
+    resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+    compile_document_with_options(
+        document,
+        Some(catalog),
+        input_schemas,
+        false,
+        resource_writes,
+    )
 }
 
 fn compile_document_with_options(
@@ -64,12 +98,22 @@ fn compile_document_with_options(
     catalog: Option<Arc<mech_core::FunctionCatalog>>,
     input_schemas: BTreeMap<String, SchemaBody>,
     interactive: bool,
+    resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
     let anchor = SourceSemanticAnchor::for_node(document.syntax());
     let mut units = Vec::new();
     let mut exports = Vec::new();
     collect_document_units(document.syntax(), &mut units, &mut exports)?;
-    compile_collected_document(document.scope_id(), anchor, units, exports, catalog, input_schemas, interactive)
+    compile_collected_document(
+        document.scope_id(),
+        anchor,
+        units,
+        exports,
+        catalog,
+        input_schemas,
+        interactive,
+        resource_writes,
+    )
 }
 
 pub(super) fn compile_named_document_scope(
@@ -115,7 +159,16 @@ fn compile_named_scope(
         let children: Vec<_> = node.children().collect();
         pending.extend(children.into_iter().rev());
     }
-    compile_collected_document(owner, anchor, units, exports, None, BTreeMap::new(), false)
+    compile_collected_document(
+        owner,
+        anchor,
+        units,
+        exports,
+        None,
+        BTreeMap::new(),
+        false,
+        BTreeMap::new(),
+    )
 }
 
 pub(super) fn compile_mika_section(
@@ -132,7 +185,16 @@ pub(super) fn compile_mika_section(
     let mut units = Vec::new();
     let mut exports = Vec::new();
     collect_document_units(body.syntax(), &mut units, &mut exports)?;
-    compile_collected_document(section.scope_id(), anchor, units, exports, None, BTreeMap::new(), false)
+    compile_collected_document(
+        section.scope_id(),
+        anchor,
+        units,
+        exports,
+        None,
+        BTreeMap::new(),
+        false,
+        BTreeMap::new(),
+    )
 }
 
 fn compile_collected_document(
@@ -143,6 +205,7 @@ fn compile_collected_document(
     catalog: Option<Arc<mech_core::FunctionCatalog>>,
     input_schemas: BTreeMap<String, SchemaBody>,
     interactive: bool,
+    resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
     let mut builder = match catalog {
         Some(catalog) if !input_schemas.is_empty() => {
@@ -151,6 +214,7 @@ fn compile_collected_document(
         Some(catalog) => SemanticBuilder::with_function_catalog(anchor, catalog),
         None => SemanticBuilder::new(anchor),
     };
+    builder.resource_writes = resource_writes;
     let mut bindings = BTreeSet::new();
     declare_document_inputs(&mut builder, &units, &mut bindings)?;
     declare_document_inline_inputs(&mut builder, &units, &bindings)?;
@@ -251,6 +315,10 @@ fn collect_document_units(
     ) {
         return Ok(());
     }
+    if let Some(send) = mech_syntax::document::ContextSendSyntax::cast(node.clone()) {
+        output.push(DocumentUnit::ResourceSend(send));
+        return Ok(());
+    }
     if let Some(invariant) = InvariantDefineSyntax::cast(node.clone()) {
         output.push(DocumentUnit::Invariant(invariant));
         return Ok(());
@@ -303,7 +371,6 @@ fn collect_document_units(
     if matches!(
         node.kind(),
         SyntaxKind::ActivationScope
-            | SyntaxKind::ContextSend
             | SyntaxKind::EnumDefine
             | SyntaxKind::Fsm
             | SyntaxKind::FsmDeclare
@@ -341,6 +408,11 @@ fn declare_document_inputs(
             DocumentUnit::Statement(unit) => {
                 builder.declare_unit_input_annotations(unit, bindings)?
             }
+            DocumentUnit::ResourceSend(send) => {
+                let expression =
+                    builder.required(send.expression(), send.syntax(), "a resource-send value")?;
+                builder.declare_input_annotations(expression.syntax(), bindings)?;
+            }
             DocumentUnit::Invariant(invariant) => {
                 builder.declare_input_annotations(invariant.syntax(), bindings)?
             }
@@ -359,6 +431,7 @@ fn declare_document_inline_inputs(
     for unit in units {
         match unit {
             DocumentUnit::Statement(_) => {}
+            DocumentUnit::ResourceSend(_) => {}
             DocumentUnit::Invariant(_) => {}
             DocumentUnit::Inline(inline) => {
                 builder.declare_input_annotations(inline.syntax(), bindings)?
@@ -424,6 +497,18 @@ fn compile_document_units_inner(
                     CompiledDocumentValue {
                         value: result.0,
                         syntax: result.1,
+                        program_visible: true,
+                    },
+                );
+                refresh_deferred_inline(builder, deferred_inline, presentation, &mut last)?;
+            }
+            DocumentUnit::ResourceSend(send) => {
+                let value = builder.emit_resource_send(&send)?;
+                retain_later_document_value(
+                    &mut last,
+                    CompiledDocumentValue {
+                        value,
+                        syntax: send.syntax().clone(),
                         program_visible: true,
                     },
                 );

@@ -32,6 +32,8 @@ use mech_engine::{
 #[cfg(feature = "compute")]
 use mech_engine::{ComputeRegionDeclaration, ProgramArtifact};
 
+#[cfg(feature = "compute")]
+use crate::SourceContextCapabilityScope;
 use crate::{
     CapabilityRequest, HostInterfaceCatalog, ModuleBuildOptions, ModuleBuilder, ModuleVersionId,
     ResidentExternalContractResolver, ResolvedSource, RuntimeCapabilityOperation,
@@ -39,13 +41,11 @@ use crate::{
     RuntimeModuleDependencyMissingError, RuntimeModuleExportNotFound, RuntimeModuleImportConflict,
     RuntimeResourceKey, RuntimeResourceProviderNotFound, RuntimeResourceReadRequest,
     RuntimeResourceRegistry, RuntimeResourceWriteCommand, RuntimeResourceWriteIntent,
-    SourceDocument, SourceExportDeclaration, SourceImportAlias, SourceImportDeclaration,
-    SourceImportKind, SourceIndex, SourceRequest, SourceResolver,
+    SourceContextBase, SourceDocument, SourceExportDeclaration, SourceImportAlias,
+    SourceImportDeclaration, SourceImportKind, SourceIndex, SourceRequest, SourceResolver,
     import_may_resolve_source_dependency, import_requires_source_dependency,
     module_namespace_for_import, source_request_for_import,
 };
-#[cfg(feature = "compute")]
-use crate::{SourceContextBase, SourceContextCapabilityScope};
 
 use super::{ResidentRouteFailure, ResidentRouteFailureClass, route_failure, unsupported_route};
 
@@ -513,11 +513,19 @@ impl<'a> ProgramCompilerView<'a> {
         &self,
         document: &SourceDocument,
     ) -> MResult<mech_engine::ProgramArtifact> {
-        document
+        let index = document
             .index()
             .map_err(|error| MechError::new(error, None))?;
+        let (input_schemas, resource_reads, resource_writes) =
+            self.canonical_document_resources(&index.root, &document.document())?;
         CanonicalSourceFrontend
-            .compile_document_with_catalog(&document.document(), Arc::clone(&self.function_catalog))
+            .compile_document_with_catalog_and_resources(
+                &document.document(),
+                Arc::clone(&self.function_catalog),
+                input_schemas,
+                resource_reads,
+                resource_writes,
+            )
             .map_err(|error| canonical_compilation_error(error.to_string()))?
             .compile_artifact()
             .map_err(|error| {
@@ -525,6 +533,102 @@ impl<'a> ProgramCompilerView<'a> {
                     "unable to compile canonical ProgramArtifact: {error:?}"
                 ))
             })
+    }
+
+    fn canonical_document_resources(
+        &self,
+        index: &SourceIndex,
+        document: &mech_syntax::document::DocumentSyntax,
+    ) -> MResult<(
+        BTreeMap<String, mech_core::SchemaBody>,
+        BTreeMap<String, ExecutionResourceRequest>,
+        BTreeMap<String, ExecutionResourceRequest>,
+    )> {
+        use mech_syntax::document::{AstNode, ContextSendSyntax, VariableStemSyntax};
+
+        let imports = index.all_imports();
+        let mut contexts = index.all_contexts();
+        self.materialize_inline_context_imports(&imports, &mut contexts)?;
+        let bindings = resolve_canonical_context_bindings(&contexts)?;
+        let operations = canonical_resource_send_operations(&contexts, &bindings);
+
+        let mut input_schemas = BTreeMap::new();
+        let mut reads = BTreeMap::new();
+        for reference in index.all_address_references() {
+            let (context_name, base_uri) = bindings.get(&reference.target).ok_or_else(|| {
+                canonical_compilation_error(format!(
+                    "canonical resource read references unknown context @{}",
+                    reference.target,
+                ))
+            })?;
+            let key = RuntimeResourceKey::new(base_uri, &reference.name)?;
+            let request = ExecutionResourceRequest {
+                base_uri: key.base_uri.clone(),
+                path: key.path.clone(),
+                context_name: context_name.clone(),
+                operation: "read".to_owned(),
+                intent: ResourceIntent::Read,
+                delivery: mech_core::ResourceDelivery::Live,
+            };
+            let value = self.resources.plan_read(RuntimeResourceReadRequest {
+                base_uri: key.base_uri,
+                path: key.path,
+                context_name: context_name.clone(),
+            })?;
+            let schemas = value.schemas().ok_or_else(|| {
+                canonical_compilation_error("planned resource read has no schema owner")
+            })?;
+            let schema = schemas.get(value.schema()).ok_or_else(|| {
+                canonical_compilation_error("planned resource read schema is unavailable")
+            })?;
+            let name = format!("@{}/{}", reference.target, reference.name);
+            input_schemas.insert(name.clone(), schema.body().clone());
+            reads.insert(name, request);
+        }
+
+        let mut writes = BTreeMap::new();
+        let mut pending = vec![document.syntax().clone()];
+        while let Some(node) = pending.pop() {
+            if let Some(send) = ContextSendSyntax::cast(node.clone()) {
+                let target = send.target().ok_or_else(|| {
+                    canonical_compilation_error("canonical resource send is missing its target")
+                })?;
+                let Some(VariableStemSyntax::Context(path)) = target.stem() else {
+                    return Err(canonical_compilation_error(
+                        "canonical resource send target is not context-addressed",
+                    ));
+                };
+                let context = path
+                    .context()
+                    .and_then(|value| value.syntax().text().ok())
+                    .ok_or_else(|| canonical_compilation_error("resource send has no context"))?;
+                let address = path
+                    .address()
+                    .and_then(|value| value.syntax().text().ok())
+                    .ok_or_else(|| canonical_compilation_error("resource send has no path"))?;
+                let (context_name, base_uri) = bindings.get(&context).ok_or_else(|| {
+                    canonical_compilation_error(format!(
+                        "canonical resource send references unknown context @{context}",
+                    ))
+                })?;
+                let key = RuntimeResourceKey::new(base_uri, &address)?;
+                let mut request = ExecutionResourceRequest {
+                    base_uri: key.base_uri,
+                    path: key.path,
+                    context_name: context_name.clone(),
+                    operation: "write".to_owned(),
+                    intent: ResourceIntent::Send,
+                    delivery: mech_core::ResourceDelivery::Snapshot,
+                };
+                if let Some(operation) = declared_resource_send_operation(&request, &operations)? {
+                    request.operation = operation.to_owned();
+                }
+                writes.insert(format!("@{context}/{address}"), request);
+                continue;
+            }
+            pending.extend(node.children());
+        }
+        Ok((input_schemas, reads, writes))
     }
 
     pub(crate) fn compile_tree(
@@ -1851,6 +1955,94 @@ fn compiled_resource_send_operations(
                     operation: capability.operation.clone(),
                 })
             }))
+        })
+        .flatten()
+        .collect()
+}
+
+fn resolve_canonical_context_bindings(
+    contexts: &[crate::SourceContextDeclaration],
+) -> MResult<BTreeMap<String, (String, String)>> {
+    let mut declarations = BTreeMap::new();
+    for context in contexts {
+        if declarations
+            .insert(context.name.clone(), &context.base)
+            .is_some()
+        {
+            return Err(canonical_compilation_error(format!(
+                "canonical context `@{}` is declared more than once",
+                context.name,
+            )));
+        }
+    }
+
+    fn resolve(
+        name: &str,
+        declarations: &BTreeMap<String, &SourceContextBase>,
+        resolved: &mut BTreeMap<String, (String, String)>,
+        active: &mut BTreeSet<String>,
+    ) -> MResult<(String, String)> {
+        if let Some(binding) = resolved.get(name) {
+            return Ok(binding.clone());
+        }
+        if !active.insert(name.to_owned()) {
+            return Err(canonical_compilation_error(format!(
+                "canonical context inheritance contains a cycle at `@{name}`",
+            )));
+        }
+        let base = declarations.get(name).ok_or_else(|| {
+            canonical_compilation_error(format!(
+                "canonical context `@{name}` references an unknown base context",
+            ))
+        })?;
+        let binding = match base {
+            SourceContextBase::ResourceUri(base_uri) => {
+                if base_uri.is_empty() {
+                    return Err(canonical_compilation_error(format!(
+                        "canonical context `@{name}` has an empty resource URI",
+                    )));
+                }
+                let context_name = base_uri
+                    .trim_end_matches('/')
+                    .rsplit('/')
+                    .next()
+                    .unwrap_or(base_uri)
+                    .to_owned();
+                (context_name, (*base_uri).clone())
+            }
+            SourceContextBase::Context(base) => resolve(base, declarations, resolved, active)?,
+        };
+        active.remove(name);
+        resolved.insert(name.to_owned(), binding.clone());
+        Ok(binding)
+    }
+
+    let mut resolved = BTreeMap::new();
+    for name in declarations.keys() {
+        resolve(name, &declarations, &mut resolved, &mut BTreeSet::new())?;
+    }
+    Ok(resolved)
+}
+
+fn canonical_resource_send_operations(
+    contexts: &[crate::SourceContextDeclaration],
+    bindings: &BTreeMap<String, (String, String)>,
+) -> Vec<CompiledResourceSendOperation> {
+    contexts
+        .iter()
+        .filter_map(|context| {
+            bindings.get(&context.name).map(|(_, base_uri)| {
+                context.capabilities.iter().filter_map(move |capability| {
+                    (capability.operation != "read").then(|| CompiledResourceSendOperation {
+                        base_uri: base_uri.clone(),
+                        path: match &capability.scope {
+                            crate::SourceContextCapabilityScope::Path(path) => Some(path.clone()),
+                            crate::SourceContextCapabilityScope::Wildcard => None,
+                        },
+                        operation: capability.operation.clone(),
+                    })
+                })
+            })
         })
         .flatten()
         .collect()
