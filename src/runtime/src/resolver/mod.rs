@@ -375,7 +375,8 @@ impl ResolvedSource {
     /// owned by the retained document and never leak into module resolution.
     #[cfg(feature = "source")]
     pub fn with_indexed_source_document(self, document: SourceDocument) -> MResult<Self> {
-        self.with_source_document(document)?.admit_canonical_document()
+        self.with_source_document(document)?
+            .admit_canonical_document()
     }
 
     /// Parse and retain this record's exact textual source under its canonical
