@@ -215,15 +215,14 @@ fn renderer_rejects_same_document_results_relabelled_to_another_owner() {
     let document = document("root := 1\nroot\n\n~∘~⸢child := 2\nchild\n⸥\n");
     let child = &document.mika_scopes()[0].section;
     let program = CanonicalSourceFrontend.compile_mika_section(child).unwrap();
-    let relabelled = execute(
+    let error = CanonicalScopeResults::from_values(
         document.scope_id(),
         CanonicalRenderScope::Root,
         &program,
-        10,
-    );
-    let error = CanonicalDocumentRenderer
-        .render_html(&document, &[relabelled])
-        .unwrap_err();
+        &[],
+    )
+    .err()
+    .expect("owner mismatch must be rejected before accepting values");
     assert!(error.message.contains("retained presentation owner"));
     assert!(error.range.is_some());
 }

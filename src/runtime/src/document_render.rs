@@ -28,8 +28,8 @@ struct CanonicalRenderedOutput {
 
 #[derive(Clone)]
 pub struct CanonicalScopeResults {
-    pub owner: DocumentScopeId,
-    pub scope: CanonicalRenderScope,
+    owner: DocumentScopeId,
+    scope: CanonicalRenderScope,
     revision: mech_syntax::document::Revision,
     outputs: Vec<CanonicalRenderedOutput>,
 }
@@ -49,6 +49,14 @@ impl core::fmt::Display for CanonicalDocumentRenderError {
 impl std::error::Error for CanonicalDocumentRenderError {}
 
 impl CanonicalScopeResults {
+    pub fn owner(&self) -> DocumentScopeId {
+        self.owner
+    }
+
+    pub fn scope(&self) -> &CanonicalRenderScope {
+        &self.scope
+    }
+
     /// Associate completed artifact outputs with their retained presentation owners.
     pub fn from_values(
         owner: DocumentScopeId,
@@ -65,10 +73,9 @@ impl CanonicalScopeResults {
                     message: "canonical scope program has no retained source identity".to_owned(),
                     range: None,
                 })?;
-        if identity.document != owner.document {
+        if program.document_owner() != Some(owner) || identity.document != owner.document {
             return Err(CanonicalDocumentRenderError {
-                message: "scope program and presentation owner belong to different documents"
-                    .to_owned(),
+                message: "scope program does not match its retained presentation owner".to_owned(),
                 range: Some(identity.range),
             });
         }
@@ -209,12 +216,29 @@ impl CanonicalDocumentRenderer {
         Ok(Some(output))
     }
 
+    /// Format canonical syntax without execution or completed output values.
+    pub fn format_html(
+        &self,
+        document: &DocumentSyntax,
+    ) -> Result<String, CanonicalDocumentRenderError> {
+        self.render_html_mode(document, &[], RenderMode::Source)
+    }
+
     pub fn render_html(
         &self,
         document: &DocumentSyntax,
         results: &[CanonicalScopeResults],
     ) -> Result<String, CanonicalDocumentRenderError> {
-        let lookup = ResultLookup::new(document, results)?;
+        self.render_html_mode(document, results, RenderMode::Completed)
+    }
+
+    fn render_html_mode(
+        &self,
+        document: &DocumentSyntax,
+        results: &[CanonicalScopeResults],
+        mode: RenderMode,
+    ) -> Result<String, CanonicalDocumentRenderError> {
+        let lookup = ResultLookup::new(document, results, mode)?;
         let mut output = String::from("<article class='mech-document'>");
         if let Some(title) = document.title() {
             render_title_html(&title, document.scope_id(), &lookup, &mut output)?;
@@ -236,12 +260,29 @@ impl CanonicalDocumentRenderer {
         Ok(output)
     }
 
+    /// Preserve executable source and its syntax boundaries without evaluating it.
+    pub fn format_text(
+        &self,
+        document: &DocumentSyntax,
+    ) -> Result<String, CanonicalDocumentRenderError> {
+        self.render_text_mode(document, &[], RenderMode::Source)
+    }
+
     pub fn render_text(
         &self,
         document: &DocumentSyntax,
         results: &[CanonicalScopeResults],
     ) -> Result<String, CanonicalDocumentRenderError> {
-        let lookup = ResultLookup::new(document, results)?;
+        self.render_text_mode(document, results, RenderMode::Completed)
+    }
+
+    fn render_text_mode(
+        &self,
+        document: &DocumentSyntax,
+        results: &[CanonicalScopeResults],
+        mode: RenderMode,
+    ) -> Result<String, CanonicalDocumentRenderError> {
+        let lookup = ResultLookup::new(document, results, mode)?;
         let mut output = String::new();
         if let Some(title) = document.title() {
             render_inline_text(title.syntax(), document.scope_id(), &lookup, &mut output)?;
@@ -338,7 +379,14 @@ struct ResultKey {
     range: Option<TextRange>,
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum RenderMode {
+    Source,
+    Completed,
+}
+
 struct ResultLookup<'a> {
+    mode: RenderMode,
     values: HashMap<ResultKey, &'a RuntimeValueSnapshot>,
     citation_numbers: HashMap<String, usize>,
     citations: Vec<(DocumentScopeId, SyntaxNode)>,
@@ -349,6 +397,7 @@ impl<'a> ResultLookup<'a> {
     fn new(
         document: &DocumentSyntax,
         results: &'a [CanonicalScopeResults],
+        mode: RenderMode,
     ) -> Result<Self, CanonicalDocumentRenderError> {
         let mut owners = document
             .mika_scopes()
@@ -488,6 +537,7 @@ impl<'a> ResultLookup<'a> {
             }
         }
         Ok(Self {
+            mode,
             values,
             citation_numbers,
             citations,
@@ -770,6 +820,10 @@ fn render_document_node_text(
     } else if let Some(fence) = CodeBlockSyntax::cast(value.clone()) {
         render_fence_text(&fence, owner, lookup, output)?;
     } else if let Some(mika) = find::<MikaSectionSyntax>(value) {
+        if lookup.mode == RenderMode::Source {
+            output.push_str(&node_text(value)?);
+            return Ok(());
+        }
         let child = mika.scope_id();
         if let Some(body) = mika.body() {
             render_section_text(&body, child, lookup, output)?;
@@ -1291,6 +1345,9 @@ fn render_inline_text(
     lookup: &ResultLookup<'_>,
     output: &mut String,
 ) -> Result<(), CanonicalDocumentRenderError> {
+    if lookup.mode == RenderMode::Source {
+        return push_source(node, node.range(), output, false);
+    }
     let mut replacements = Vec::new();
     collect_inline_replacements(node, &mut replacements);
     replacements.sort_by_key(|node| node.range().start);
@@ -1337,6 +1394,12 @@ fn render_inline_html(
 ) -> Result<(), CanonicalDocumentRenderError> {
     match node.kind() {
         SyntaxKind::EvalInlineMechCode => {
+            if lookup.mode == RenderMode::Source {
+                output.push_str("<code class='mech-inline'>");
+                output.push_str(&escape_html(&node_text(node)?));
+                output.push_str("</code>");
+                return Ok(());
+            }
             let range = node.range();
             let value = lookup
                 .get(
@@ -1964,7 +2027,8 @@ fn render_fence_html(
     output.push_str(&escape_html(&fence_body(fence)?));
     output.push_str("</code></pre>");
     let scope = render_scope(&info.scope);
-    if presentation.show_output
+    if lookup.mode == RenderMode::Completed
+        && presentation.show_output
         && let Some(scope) = scope
     {
         let value = lookup
@@ -2002,6 +2066,10 @@ fn render_fence_text(
     lookup: &ResultLookup<'_>,
     output: &mut String,
 ) -> Result<(), CanonicalDocumentRenderError> {
+    if lookup.mode == RenderMode::Source {
+        output.push_str(&node_text(fence.syntax())?);
+        return Ok(());
+    }
     let info = fence.info().ok_or_else(|| CanonicalDocumentRenderError {
         message: "code fence is missing canonical info".to_owned(),
         range: Some(fence.syntax().range()),
@@ -2016,7 +2084,8 @@ fn render_fence_text(
             message: "code fence has no valid presentation options".to_owned(),
             range: Some(fence.syntax().range()),
         })?;
-    if presentation.show_output
+    if lookup.mode == RenderMode::Completed
+        && presentation.show_output
         && let Some(scope) = render_scope(&info.scope)
     {
         let value = lookup
@@ -2118,6 +2187,9 @@ fn append_program_html(
     output: &mut String,
     required: Option<TextRange>,
 ) -> Result<(), CanonicalDocumentRenderError> {
+    if lookup.mode == RenderMode::Source {
+        return Ok(());
+    }
     let value = lookup.get(owner, scope, SourceDocumentOutputKind::Program, None);
     if let Some(range) = required
         && value.is_none()
@@ -2142,6 +2214,9 @@ fn append_program_text(
     output: &mut String,
     required: Option<TextRange>,
 ) -> Result<(), CanonicalDocumentRenderError> {
+    if lookup.mode == RenderMode::Source {
+        return Ok(());
+    }
     let value = lookup.get(owner, scope, SourceDocumentOutputKind::Program, None);
     if let Some(range) = required
         && value.is_none()

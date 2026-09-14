@@ -351,3 +351,43 @@ fn repl_renderer_rejects_all_heading_owners_alongside_executable_code() {
             .is_some()
     );
 }
+
+#[cfg(feature = "pretty_print")]
+#[test]
+fn completed_results_cannot_be_relabelled_after_session_to_stream_transition() {
+    use mech_engine::CanonicalSourceFrontend;
+    use mech_runtime::{CanonicalRenderScope, CanonicalScopeResults};
+    use mech_syntax::document::{DocumentSession, StreamProgress};
+    let session = DocumentSession::new_with_document(
+        DocumentId(835),
+        "answer := 1\nanswer\n",
+        ParseConfig::default(),
+    );
+    let finite = SourceDocument::from_session(&session);
+    let program = CanonicalSourceFrontend
+        .compile_document(&finite.document())
+        .unwrap();
+    let mut stream = session.into_stream();
+    assert_eq!(stream.finish(u64::MAX).progress, StreamProgress::Finished);
+    let streamed = SourceDocument::from_finished_stream(&mut stream).unwrap();
+    assert_ne!(finite.document().scope_id(), streamed.document().scope_id());
+    let values = vec![mech_runtime::RuntimeValueSnapshot::empty()];
+    assert!(
+        CanonicalScopeResults::from_values(
+            finite.document().scope_id(),
+            CanonicalRenderScope::Root,
+            &program,
+            &values
+        )
+        .is_ok()
+    );
+    assert!(
+        CanonicalScopeResults::from_values(
+            streamed.document().scope_id(),
+            CanonicalRenderScope::Root,
+            &program,
+            &values
+        )
+        .is_err()
+    );
+}
