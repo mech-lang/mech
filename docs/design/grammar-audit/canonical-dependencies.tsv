@@ -303,7 +303,7 @@ matrix-solve	backslash|ws0e	matrix-operator
 matrix-start	box-tl|box-tl-bold|box-tl-round|left-bracket	matrix
 mech-code	code-terminal|mech-code-alt|not-mech-code	activation-arm|activation-scope|section
 mech-code-alt	activation-scope|comment|expression|fsm-implementation|fsm-specification|function-define|module-import|statement|whitespace0	fsm-block-transition|inline-mech-code|mech-code
-mechdown-list	check-list|ordered-list|unordered-list	section-element
+mechdown-list	check-list|ordered-list|unordered-list	not-mech-code|section-element
 mechdown-table	mechdown-table-no-header|mechdown-table-with-header|whitespace0	section-element
 mechdown-table-header	alignment-separator|bar|inline-paragraph|space-tab0|whitespace0	mechdown-table-with-header
 mechdown-table-no-header	mechdown-table-row	mechdown-table
@@ -350,7 +350,7 @@ not	exclamation|negate	not-factor
 not-element-of	ws0e	set-operator
 not-equal	ws0e	comparison-operator
 not-factor	factor|not	factor
-not-mech-code	error-block|float|idea-block|img|info-block|micro-mika|mika-section-close|mini-mika|question-block|success-block|warning-block	mech-code
+not-mech-code	error-block|float|idea-block|img|info-block|mechdown-list|micro-mika|mika-section-close|mini-mika|question-block|success-block|warning-block	mech-code
 number	complex-number|real-number	literal|ordered-list-item
 octal-literal	digit-sequence	real-number|untyped-real-number
 op-assign	define-operator|expression|op-assign-operator|slice-ref	statement

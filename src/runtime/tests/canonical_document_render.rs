@@ -223,7 +223,7 @@ fn renderer_preserves_title_subtitle_and_plain_document_structure() {
     assert!(html.contains("<header class='mech-document-title'><pre>"));
     assert!(html.contains("Grammar Conformance"));
     assert!(
-        html.contains("<h2 class='mech-subtitle'>1. Overview\n--------</h2>"),
+        html.contains("<h2 class='mech-subtitle' id='section-1'>Overview</h2>"),
         "{html}"
     );
     assert!(html.contains("<p>Body A &amp; B.</p>"));
@@ -351,6 +351,165 @@ fn retained_images_render_with_safe_escaped_attributes_and_captions() {
         html.contains("<figcaption class='mech-figure-caption'>A ' &amp; B</figcaption>"),
         "{html}"
     );
+}
+
+#[test]
+fn image_url_extraction_starts_after_parentheses_in_the_caption() {
+    let document = document("![Results (draft)](plot.png)\n");
+    let html = CanonicalDocumentRenderer
+        .render_html(&document, &[])
+        .unwrap();
+    assert!(html.contains("src='plot.png'"), "{html}");
+    assert!(html.contains("alt='Results (draft)'"), "{html}");
+}
+
+#[test]
+fn raw_hyperlinks_and_inline_code_use_semantic_html() {
+    let document = document("Visit http://example.com/path or `x < y & z`.\n");
+    let html = CanonicalDocumentRenderer
+        .render_html(&document, &[])
+        .unwrap();
+    assert!(
+        html.contains(
+            "<a class='mech-hyperlink' href='http://example.com/path'>http://example.com/path</a>"
+        ),
+        "{html}"
+    );
+    assert!(
+        html.contains("<code class='mech-inline-code'>x &lt; y &amp; z</code>"),
+        "{html}"
+    );
+    assert!(!html.contains("`x"), "{html}");
+}
+
+#[test]
+fn retained_inline_markup_uses_semantic_elements_without_delimiters() {
+    let document = document(
+        "1. Overview\n--------\n(1.2) Details\n*emphasis* _underline_ ~strike~ $$x+1$$ [ref] [^note] §1.2\n",
+    );
+    let html = CanonicalDocumentRenderer
+        .render_html(&document, &[])
+        .unwrap();
+    for expected in [
+        "<em class='mech-emphasis'>emphasis</em>",
+        "<u class='mech-underline'>underline</u>",
+        "<del class='mech-strikethrough'>strike</del>",
+        "<span class='mech-inline-equation'>x+1</span>",
+        "<a class='mech-reference' href='#reference-ref'>[ref]</a>",
+        "<a class='mech-footnote-reference' href='#footnote-note'>[^note]</a>",
+        "<a class='mech-section-reference-link' href='#section-1.2'>§1.2</a>",
+        "<h3 class='mech-subtitle' id='section-1.2'>Details</h3>",
+    ] {
+        assert!(html.contains(expected), "missing {expected:?}: {html}");
+    }
+    for leaked in ["*emphasis*", "_underline_", "~strike~", "$$x+1$$"] {
+        assert!(!html.contains(leaked), "leaked {leaked:?}: {html}");
+    }
+}
+
+#[test]
+fn retained_rich_document_nodes_use_semantic_html_containers() {
+    for (source, expected) in [
+        (
+            include_str!("../../syntax/tests/fixtures/grammar/accepted/mechdown-abstract.mec"),
+            "<aside class='mech-abstract'>",
+        ),
+        (
+            include_str!("../../syntax/tests/fixtures/grammar/accepted/mechdown-quote.mec"),
+            "<blockquote class='mech-quote-block'>",
+        ),
+        (
+            include_str!("../../syntax/tests/fixtures/grammar/accepted/mechdown-info.mec"),
+            "<aside class='mech-info-block'>",
+        ),
+        (
+            include_str!("../../syntax/tests/fixtures/grammar/accepted/mechdown-success.mec"),
+            "<aside class='mech-success-block'>",
+        ),
+        (
+            include_str!("../../syntax/tests/fixtures/grammar/accepted/mechdown-idea.mec"),
+            "<aside class='mech-idea-block'>",
+        ),
+        (
+            include_str!("../../syntax/tests/fixtures/grammar/accepted/mechdown-warning.mec"),
+            "<aside class='mech-warning-block'>",
+        ),
+        (
+            include_str!("../../syntax/tests/fixtures/grammar/accepted/mechdown-error.mec"),
+            "<aside class='mech-error-block'>",
+        ),
+        (
+            include_str!("../../syntax/tests/fixtures/grammar/accepted/mechdown-question.mec"),
+            "<aside class='mech-question-block'>",
+        ),
+        (
+            include_str!("../../syntax/tests/fixtures/grammar/accepted/mechdown-prompt.mec"),
+            "<div class='mech-prompt'>",
+        ),
+        (
+            include_str!("../../syntax/tests/fixtures/grammar/accepted/mechdown-table.mec"),
+            "<table class='mech-table'><thead><tr><th>Name ",
+        ),
+        (
+            include_str!("../../syntax/tests/fixtures/grammar/accepted/mechdown-thematic.mec"),
+            "<hr class='mech-thematic-break' />",
+        ),
+        (
+            include_str!("../../syntax/tests/fixtures/grammar/accepted/mechdown-equation.mec"),
+            "<div class='mech-equation'>x + 1</div>",
+        ),
+        (
+            include_str!("../../syntax/tests/fixtures/grammar/accepted/citation.mec"),
+            "<aside class='mech-reference' id='reference-ref1'>",
+        ),
+        (
+            include_str!("../../syntax/tests/fixtures/grammar/accepted/figures.mec"),
+            "<div class='mech-figures'>",
+        ),
+        (
+            include_str!("../../syntax/tests/fixtures/grammar/accepted/float.mec"),
+            "<div class='mech-float'>",
+        ),
+    ] {
+        let document = document(source);
+        let html = CanonicalDocumentRenderer
+            .render_html(&document, &[])
+            .unwrap();
+        assert!(html.contains(expected), "missing {expected:?}: {html}");
+    }
+}
+
+#[test]
+fn retained_lists_use_semantic_html_without_source_markers() {
+    for (source, expected, marker) in [
+        (
+            include_str!("../../syntax/tests/fixtures/grammar/accepted/mechdown-ordered.mec"),
+            "<ol class='mech-ordered-list'><li>first",
+            "1.first",
+        ),
+        (
+            include_str!("../../syntax/tests/fixtures/grammar/accepted/mechdown-unordered.mec"),
+            "<ul class='mech-unordered-list'><li>first",
+            "- first",
+        ),
+        (
+            "-[x]done\ncontinued\n",
+            "<ul class='mech-check-list'><li><input class='mech-check-item' type='checkbox' disabled checked />done",
+            "-[x]done",
+        ),
+        (
+            "-[]todo\n",
+            "<ul class='mech-check-list'><li><input class='mech-check-item' type='checkbox' disabled />todo",
+            "-[]todo",
+        ),
+    ] {
+        let document = document(source);
+        let html = CanonicalDocumentRenderer
+            .render_html(&document, &[])
+            .unwrap();
+        assert!(html.contains(expected), "missing {expected:?}: {html}");
+        assert!(!html.contains(marker), "leaked {marker:?}: {html}");
+    }
 }
 
 #[test]

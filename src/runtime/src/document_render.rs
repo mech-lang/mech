@@ -348,14 +348,42 @@ fn render_document_node_html(
         output.push_str("</section>");
     } else if value.kind() == SyntaxKind::Img {
         render_image_html(value, owner, lookup, output)?;
+    } else if matches!(
+        value.kind(),
+        SyntaxKind::AbstractEl
+            | SyntaxKind::QuoteBlock
+            | SyntaxKind::InfoBlock
+            | SyntaxKind::SuccessBlock
+            | SyntaxKind::IdeaBlock
+            | SyntaxKind::WarningBlock
+            | SyntaxKind::ErrorBlock
+            | SyntaxKind::QuestionBlock
+            | SyntaxKind::Prompt
+    ) {
+        render_callout_html(value, owner, lookup, output)?;
+    } else if value.kind() == SyntaxKind::ThematicBreak {
+        output.push_str("<hr class='mech-thematic-break' />");
+    } else if value.kind() == SyntaxKind::Equation {
+        render_equation_html(value, output)?;
+    } else if value.kind() == SyntaxKind::MechdownList {
+        render_list_html(value, owner, lookup, output)?;
+    } else if value.kind() == SyntaxKind::MechdownTable {
+        render_table_html(value, owner, lookup, output)?;
+    } else if matches!(value.kind(), SyntaxKind::Citation | SyntaxKind::Footnote) {
+        render_note_definition_html(value, owner, lookup, output)?;
+    } else if matches!(
+        value.kind(),
+        SyntaxKind::Figures | SyntaxKind::FiguresRow | SyntaxKind::FigureItem | SyntaxKind::Float
+    ) {
+        render_figure_container_html(value, owner, lookup, output)?;
     } else if let Some(code) = MechCodeSyntax::cast(value.clone()) {
         output.push_str("<pre class='mech-code'><code>");
         output.push_str(&escape_html(&node_text(code.syntax())?));
         output.push_str("</code></pre>");
-    } else if let Some(subtitle) = UlSubtitleSyntax::cast(value.clone()) {
-        output.push_str("<h2 class='mech-subtitle'>");
-        output.push_str(&escape_html(node_text(subtitle.syntax())?.trim_end()));
-        output.push_str("</h2>");
+    } else if UlSubtitleSyntax::cast(value.clone()).is_some()
+        || value.kind() == SyntaxKind::Subtitle
+    {
+        render_subtitle_html(value, owner, lookup, output)?;
     } else if value.kind() != mech_syntax::document::SyntaxKind::BlankLine {
         output.push_str("<div class='mech-document-node' data-mech-kind='");
         output.push_str(&format!("{:?}", value.kind()));
@@ -364,6 +392,59 @@ fn render_document_node_html(
         output.push_str("</div>");
     }
     Ok(())
+}
+
+fn render_subtitle_html(
+    node: &SyntaxNode,
+    owner: DocumentScopeId,
+    lookup: &ResultLookup<'_>,
+    output: &mut String,
+) -> Result<(), CanonicalDocumentRenderError> {
+    let source = node_text(node)?;
+    let first_line = source
+        .lines()
+        .next()
+        .ok_or_else(|| range_error(node.range()))?
+        .trim();
+    let (section, level) = if node.kind() == SyntaxKind::UlSubtitle {
+        let section = first_line
+            .split_once('.')
+            .map(|(section, _)| section)
+            .filter(|section| valid_section_number(section))
+            .ok_or_else(|| range_error(node.range()))?;
+        (section, 2usize)
+    } else {
+        let (section, _) = first_line
+            .strip_prefix('(')
+            .and_then(|line| line.split_once(')'))
+            .filter(|(section, _)| valid_section_number(section))
+            .ok_or_else(|| range_error(node.range()))?;
+        let depth = section.split('.').count();
+        (section, if depth < 3 { 3 } else { depth + 1 }.min(6))
+    };
+    let paragraph = node
+        .children()
+        .find(|child| child.kind() == SyntaxKind::ParagraphNewline)
+        .ok_or_else(|| range_error(node.range()))?;
+    output.push_str(&format!("<h{level} class='mech-subtitle' id='section-"));
+    output.push_str(&escape_attribute(section));
+    output.push_str("'>");
+    render_inline_children_html(
+        &paragraph,
+        owner,
+        lookup,
+        output,
+        &[SyntaxKind::Newline, SyntaxKind::CarriageReturn],
+    )?;
+    output.push_str(&format!("</h{level}>"));
+    Ok(())
+}
+
+fn valid_section_number(value: &str) -> bool {
+    !value.is_empty()
+        && value.split('.').all(|part| {
+            !part.is_empty() && part.chars().all(|character| character.is_alphanumeric())
+        })
 }
 
 fn render_section_text(
@@ -409,6 +490,243 @@ fn render_document_node_text(
     } else {
         render_inline(value, owner, lookup, output, false)?;
     }
+    Ok(())
+}
+
+fn render_callout_html(
+    node: &SyntaxNode,
+    owner: DocumentScopeId,
+    lookup: &ResultLookup<'_>,
+    output: &mut String,
+) -> Result<(), CanonicalDocumentRenderError> {
+    let (tag, class, sigil) = match node.kind() {
+        SyntaxKind::AbstractEl => ("aside", "mech-abstract", SyntaxKind::AbstractSigil),
+        SyntaxKind::QuoteBlock => ("blockquote", "mech-quote-block", SyntaxKind::QuoteSigil),
+        SyntaxKind::InfoBlock => ("aside", "mech-info-block", SyntaxKind::InfoSigil),
+        SyntaxKind::SuccessBlock => ("aside", "mech-success-block", SyntaxKind::SuccessSigil),
+        SyntaxKind::IdeaBlock => ("aside", "mech-idea-block", SyntaxKind::IdeaSigil),
+        SyntaxKind::WarningBlock => ("aside", "mech-warning-block", SyntaxKind::WarningSigil),
+        SyntaxKind::ErrorBlock => ("aside", "mech-error-block", SyntaxKind::ErrorSigil),
+        SyntaxKind::QuestionBlock => ("aside", "mech-question-block", SyntaxKind::QuestionSigil),
+        SyntaxKind::Prompt => ("div", "mech-prompt", SyntaxKind::PromptSigil),
+        _ => return Err(range_error(node.range())),
+    };
+    output.push_str(&format!("<{tag} class='{class}'>"));
+    render_inline_children_html(node, owner, lookup, output, &[sigil])?;
+    output.push_str(&format!("</{tag}>"));
+    Ok(())
+}
+
+fn render_equation_html(
+    node: &SyntaxNode,
+    output: &mut String,
+) -> Result<(), CanonicalDocumentRenderError> {
+    output.push_str("<div class='mech-equation'>");
+    for element in node.children_with_tokens() {
+        if let SyntaxElement::Token(token) = element
+            && token.kind() != SyntaxKind::EquationSigil
+        {
+            output.push_str(&escape_html(
+                &token.text().map_err(|_| range_error(token.range()))?,
+            ));
+        }
+    }
+    output.push_str("</div>");
+    Ok(())
+}
+
+fn render_list_html(
+    node: &SyntaxNode,
+    owner: DocumentScopeId,
+    lookup: &ResultLookup<'_>,
+    output: &mut String,
+) -> Result<(), CanonicalDocumentRenderError> {
+    match node.kind() {
+        SyntaxKind::MechdownList | SyntaxKind::Sublist => {
+            for child in node.children() {
+                render_list_html(&child, owner, lookup, output)?;
+            }
+        }
+        SyntaxKind::OrderedList | SyntaxKind::UnorderedList | SyntaxKind::CheckList => {
+            let (tag, class) = if node.kind() == SyntaxKind::OrderedList {
+                ("ol", "mech-ordered-list")
+            } else if node.kind() == SyntaxKind::CheckList {
+                ("ul", "mech-check-list")
+            } else {
+                ("ul", "mech-unordered-list")
+            };
+            output.push_str(&format!("<{tag} class='{class}'>"));
+            for child in node.children() {
+                render_list_html(&child, owner, lookup, output)?;
+            }
+            output.push_str(&format!("</{tag}>"));
+        }
+        SyntaxKind::OrderedListItem | SyntaxKind::UnorderedListItem | SyntaxKind::CheckListItem => {
+            output.push_str("<li>");
+            for child in node.children() {
+                render_list_html(&child, owner, lookup, output)?;
+            }
+            output.push_str("</li>");
+        }
+        SyntaxKind::CheckedItem | SyntaxKind::UncheckedItem => {
+            output.push_str("<input class='mech-check-item' type='checkbox' disabled");
+            if node.kind() == SyntaxKind::CheckedItem {
+                output.push_str(" checked");
+            }
+            output.push_str(" />");
+            for child in node.children() {
+                render_list_html(&child, owner, lookup, output)?;
+            }
+        }
+        SyntaxKind::ParagraphNewline | SyntaxKind::Paragraph | SyntaxKind::InlineParagraph => {
+            render_inline_html(node, owner, lookup, output)?;
+        }
+        _ => {
+            for child in node.children() {
+                render_list_html(&child, owner, lookup, output)?;
+            }
+        }
+    }
+    Ok(())
+}
+
+fn render_table_html(
+    node: &SyntaxNode,
+    owner: DocumentScopeId,
+    lookup: &ResultLookup<'_>,
+    output: &mut String,
+) -> Result<(), CanonicalDocumentRenderError> {
+    match node.kind() {
+        SyntaxKind::MechdownTable => {
+            for child in node.children() {
+                render_table_html(&child, owner, lookup, output)?;
+            }
+        }
+        SyntaxKind::MechdownTableWithHeader | SyntaxKind::MechdownTableNoHeader => {
+            output.push_str("<table class='mech-table'>");
+            let header = node
+                .children()
+                .find(|child| child.kind() == SyntaxKind::MechdownTableHeader);
+            if let Some(header) = header {
+                output.push_str("<thead><tr>");
+                render_table_cells(&header, "th", owner, lookup, output)?;
+                output.push_str("</tr></thead>");
+            }
+            output.push_str("<tbody>");
+            for row in node
+                .children()
+                .filter(|child| child.kind() == SyntaxKind::MechdownTableRow)
+            {
+                output.push_str("<tr>");
+                render_table_cells(&row, "td", owner, lookup, output)?;
+                output.push_str("</tr>");
+            }
+            output.push_str("</tbody></table>");
+        }
+        _ => return Err(range_error(node.range())),
+    }
+    Ok(())
+}
+
+fn render_table_cells(
+    row: &SyntaxNode,
+    tag: &str,
+    owner: DocumentScopeId,
+    lookup: &ResultLookup<'_>,
+    output: &mut String,
+) -> Result<(), CanonicalDocumentRenderError> {
+    for cell in row.children().filter(|child| {
+        matches!(
+            child.kind(),
+            SyntaxKind::InlineParagraph | SyntaxKind::EmptyParagraph
+        )
+    }) {
+        output.push_str(&format!("<{tag}>"));
+        render_inline_html(&cell, owner, lookup, output)?;
+        output.push_str(&format!("</{tag}>"));
+    }
+    Ok(())
+}
+
+fn render_figure_container_html(
+    node: &SyntaxNode,
+    owner: DocumentScopeId,
+    lookup: &ResultLookup<'_>,
+    output: &mut String,
+) -> Result<(), CanonicalDocumentRenderError> {
+    let class = match node.kind() {
+        SyntaxKind::Figures => "mech-figures",
+        SyntaxKind::FiguresRow => "mech-figures-row",
+        SyntaxKind::FigureItem => "mech-figure-item",
+        SyntaxKind::Float => "mech-float",
+        _ => return Err(range_error(node.range())),
+    };
+    output.push_str(&format!("<div class='{class}'>"));
+    for child in node.children() {
+        if child.kind() == SyntaxKind::FloatSigil {
+            continue;
+        }
+        match child.kind() {
+            SyntaxKind::Figures
+            | SyntaxKind::FiguresRow
+            | SyntaxKind::FigureItem
+            | SyntaxKind::Float => {
+                render_figure_container_html(&child, owner, lookup, output)?;
+            }
+            SyntaxKind::SectionElement => {
+                if let Some(value) =
+                    SectionElementSyntax::cast(child.clone()).and_then(|element| element.value())
+                {
+                    render_document_node_html(&value, owner, lookup, output)?;
+                }
+            }
+            _ => render_inline_html(&child, owner, lookup, output)?,
+        }
+    }
+    output.push_str("</div>");
+    Ok(())
+}
+
+fn render_note_definition_html(
+    node: &SyntaxNode,
+    owner: DocumentScopeId,
+    lookup: &ResultLookup<'_>,
+    output: &mut String,
+) -> Result<(), CanonicalDocumentRenderError> {
+    let prefix = if node.kind() == SyntaxKind::Footnote {
+        "footnote"
+    } else {
+        "reference"
+    };
+    let tokens = node.tokens();
+    let start = tokens
+        .iter()
+        .find(|token| {
+            matches!(
+                token.kind(),
+                SyntaxKind::LeftBracket | SyntaxKind::FootnotePrefix
+            )
+        })
+        .map(|token| token.range().end)
+        .ok_or_else(|| range_error(node.range()))?;
+    let end = tokens
+        .iter()
+        .find(|token| token.kind() == SyntaxKind::RightBracket && token.range().start >= start)
+        .map(|token| token.range().start)
+        .ok_or_else(|| range_error(node.range()))?;
+    let label = node
+        .source()
+        .text(TextRange::new(start, end))
+        .map_err(|_| range_error(node.range()))?;
+    output.push_str("<aside class='mech-");
+    output.push_str(prefix);
+    output.push_str("' id='");
+    output.push_str(&escape_attribute(&format!("{prefix}-{label}")));
+    output.push_str("'>");
+    if let Some(paragraph) = find::<ParagraphSyntax>(node) {
+        render_paragraph_html(&paragraph, owner, lookup, output)?;
+    }
+    output.push_str("</aside>");
     Ok(())
 }
 
@@ -528,7 +846,7 @@ fn render_inline_html(
             output,
             "strong",
             "mech-strong",
-            SyntaxKind::StrongSigil,
+            &[SyntaxKind::StrongSigil],
         ),
         SyntaxKind::Emphasis => render_inline_wrapper(
             node,
@@ -537,7 +855,7 @@ fn render_inline_html(
             output,
             "em",
             "mech-emphasis",
-            SyntaxKind::EmphasisSigil,
+            &[SyntaxKind::EmphasisSigil],
         ),
         SyntaxKind::Underline => render_inline_wrapper(
             node,
@@ -546,7 +864,7 @@ fn render_inline_html(
             output,
             "u",
             "mech-underline",
-            SyntaxKind::UnderlineSigil,
+            &[SyntaxKind::UnderlineSigil, SyntaxKind::Underscore],
         ),
         SyntaxKind::Strikethrough => render_inline_wrapper(
             node,
@@ -555,7 +873,7 @@ fn render_inline_html(
             output,
             "del",
             "mech-strikethrough",
-            SyntaxKind::StrikeSigil,
+            &[SyntaxKind::StrikeSigil, SyntaxKind::Tilde],
         ),
         SyntaxKind::Highlight => render_inline_wrapper(
             node,
@@ -564,11 +882,41 @@ fn render_inline_html(
             output,
             "mark",
             "mech-highlight",
-            SyntaxKind::HighlightSigil,
+            &[SyntaxKind::HighlightSigil],
         ),
         SyntaxKind::Hyperlink => render_hyperlink_html(node, owner, lookup, output),
+        SyntaxKind::RawHyperlink => render_raw_hyperlink_html(node, output),
+        SyntaxKind::InlineCode => render_inline_code_html(node, output),
+        SyntaxKind::InlineEquation => render_delimited_inline_html(
+            node,
+            owner,
+            lookup,
+            output,
+            "span",
+            "mech-inline-equation",
+            &[SyntaxKind::EquationSigil],
+        ),
+        SyntaxKind::Reference => {
+            render_reference_html(node, "mech-reference", "reference", "[", "]", output)
+        }
+        SyntaxKind::FootnoteReference => render_reference_html(
+            node,
+            "mech-footnote-reference",
+            "footnote",
+            "[^",
+            "]",
+            output,
+        ),
+        SyntaxKind::SectionReference => render_reference_html(
+            node,
+            "mech-section-reference-link",
+            "section",
+            "§",
+            "",
+            output,
+        ),
         SyntaxKind::Img => render_image_html(node, owner, lookup, output),
-        _ => render_inline_children_html(node, owner, lookup, output, None),
+        _ => render_inline_children_html(node, owner, lookup, output, &[]),
     }
 }
 
@@ -579,10 +927,10 @@ fn render_inline_wrapper(
     output: &mut String,
     tag: &str,
     class: &str,
-    delimiter: SyntaxKind,
+    delimiters: &[SyntaxKind],
 ) -> Result<(), CanonicalDocumentRenderError> {
     output.push_str(&format!("<{tag} class='{class}'>"));
-    render_inline_children_html(node, owner, lookup, output, Some(delimiter))?;
+    render_inline_children_html(node, owner, lookup, output, delimiters)?;
     output.push_str(&format!("</{tag}>"));
     Ok(())
 }
@@ -592,12 +940,12 @@ fn render_inline_children_html(
     owner: DocumentScopeId,
     lookup: &ResultLookup<'_>,
     output: &mut String,
-    skipped_token: Option<SyntaxKind>,
+    skipped_tokens: &[SyntaxKind],
 ) -> Result<(), CanonicalDocumentRenderError> {
     for element in node.children_with_tokens() {
         match element {
             SyntaxElement::Node(child) => render_inline_html(&child, owner, lookup, output)?,
-            SyntaxElement::Token(token) if Some(token.kind()) == skipped_token => {}
+            SyntaxElement::Token(token) if skipped_tokens.contains(&token.kind()) => {}
             SyntaxElement::Token(token) => {
                 output.push_str(&escape_html(
                     &token.text().map_err(|_| range_error(token.range()))?,
@@ -645,6 +993,75 @@ fn render_hyperlink_html(
     Ok(())
 }
 
+fn render_delimited_inline_html(
+    node: &SyntaxNode,
+    owner: DocumentScopeId,
+    lookup: &ResultLookup<'_>,
+    output: &mut String,
+    tag: &str,
+    class: &str,
+    delimiters: &[SyntaxKind],
+) -> Result<(), CanonicalDocumentRenderError> {
+    output.push_str(&format!("<{tag} class='{class}'>"));
+    render_inline_children_html(node, owner, lookup, output, delimiters)?;
+    output.push_str(&format!("</{tag}>"));
+    Ok(())
+}
+
+fn render_reference_html(
+    node: &SyntaxNode,
+    class: &str,
+    target_prefix: &str,
+    source_prefix: &str,
+    source_suffix: &str,
+    output: &mut String,
+) -> Result<(), CanonicalDocumentRenderError> {
+    let source = node_text(node)?;
+    let label = source
+        .strip_prefix(source_prefix)
+        .and_then(|source| source.strip_suffix(source_suffix))
+        .unwrap_or(&source);
+    let target = format!("{target_prefix}-{label}");
+    output.push_str("<a class='");
+    output.push_str(class);
+    output.push_str("' href='#");
+    output.push_str(&escape_attribute(&target));
+    output.push_str("'>");
+    output.push_str(&escape_html(&source));
+    output.push_str("</a>");
+    Ok(())
+}
+
+fn render_raw_hyperlink_html(
+    node: &SyntaxNode,
+    output: &mut String,
+) -> Result<(), CanonicalDocumentRenderError> {
+    let href = node_text(node)?;
+    validate_hyperlink(&href, node.range())?;
+    output.push_str("<a class='mech-hyperlink' href='");
+    output.push_str(&escape_attribute(&href));
+    output.push_str("'>");
+    output.push_str(&escape_html(&href));
+    output.push_str("</a>");
+    Ok(())
+}
+
+fn render_inline_code_html(
+    node: &SyntaxNode,
+    output: &mut String,
+) -> Result<(), CanonicalDocumentRenderError> {
+    let source = node_text(node)?;
+    let content = source
+        .strip_prefix('`')
+        .and_then(|source| source.strip_suffix('`'))
+        .unwrap_or(&source)
+        .trim();
+    output.push_str("<code class='mech-inline-code'>");
+    output.push_str(&escape_html(content));
+    output.push_str("</code>");
+    Ok(())
+}
+
 fn render_image_html(
     node: &SyntaxNode,
     owner: DocumentScopeId,
@@ -654,10 +1071,14 @@ fn render_image_html(
     let caption = node
         .children()
         .find(|child| child.kind() == SyntaxKind::InlineParagraph);
+    let caption_end = caption
+        .as_ref()
+        .map(|caption| caption.range().end)
+        .unwrap_or(node.range().start);
     let tokens = node.tokens();
     let start = tokens
         .iter()
-        .find(|token| token.kind() == SyntaxKind::LeftParen)
+        .find(|token| token.kind() == SyntaxKind::LeftParen && token.range().start >= caption_end)
         .map(|token| token.range().end)
         .ok_or_else(|| range_error(node.range()))?;
     let end = tokens
