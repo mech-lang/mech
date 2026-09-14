@@ -499,21 +499,47 @@ fn render_callout_html(
     lookup: &ResultLookup<'_>,
     output: &mut String,
 ) -> Result<(), CanonicalDocumentRenderError> {
-    let (tag, class, sigil) = match node.kind() {
-        SyntaxKind::AbstractEl => ("aside", "mech-abstract", SyntaxKind::AbstractSigil),
-        SyntaxKind::QuoteBlock => ("blockquote", "mech-quote-block", SyntaxKind::QuoteSigil),
-        SyntaxKind::InfoBlock => ("aside", "mech-info-block", SyntaxKind::InfoSigil),
-        SyntaxKind::SuccessBlock => ("aside", "mech-success-block", SyntaxKind::SuccessSigil),
-        SyntaxKind::IdeaBlock => ("aside", "mech-idea-block", SyntaxKind::IdeaSigil),
-        SyntaxKind::WarningBlock => ("aside", "mech-warning-block", SyntaxKind::WarningSigil),
-        SyntaxKind::ErrorBlock => ("aside", "mech-error-block", SyntaxKind::ErrorSigil),
-        SyntaxKind::QuestionBlock => ("aside", "mech-question-block", SyntaxKind::QuestionSigil),
-        SyntaxKind::Prompt => ("div", "mech-prompt", SyntaxKind::PromptSigil),
+    let (tag, class) = match node.kind() {
+        SyntaxKind::AbstractEl => ("aside", "mech-abstract"),
+        SyntaxKind::QuoteBlock => ("blockquote", "mech-quote-block"),
+        SyntaxKind::InfoBlock => ("aside", "mech-info-block"),
+        SyntaxKind::SuccessBlock => ("aside", "mech-success-block"),
+        SyntaxKind::IdeaBlock => ("aside", "mech-idea-block"),
+        SyntaxKind::WarningBlock => ("aside", "mech-warning-block"),
+        SyntaxKind::ErrorBlock => ("aside", "mech-error-block"),
+        SyntaxKind::QuestionBlock => ("aside", "mech-question-block"),
+        SyntaxKind::Prompt => ("div", "mech-prompt"),
         _ => return Err(range_error(node.range())),
     };
     output.push_str(&format!("<{tag} class='{class}'>"));
-    render_inline_children_html(node, owner, lookup, output, &[sigil])?;
+    for child in node.children() {
+        if child.kind() == SyntaxKind::ParagraphNewline {
+            render_retained_paragraph_html(&child, owner, lookup, output)?;
+        } else if child.kind() == SyntaxKind::SectionElement {
+            let value = SectionElementSyntax::cast(child.clone())
+                .and_then(|element| element.value())
+                .ok_or_else(|| range_error(child.range()))?;
+            render_document_node_html(&value, owner, lookup, output)?;
+        } else {
+            render_inline_html(&child, owner, lookup, output)?;
+        }
+    }
     output.push_str(&format!("</{tag}>"));
+    Ok(())
+}
+
+fn render_retained_paragraph_html(
+    node: &SyntaxNode,
+    owner: DocumentScopeId,
+    lookup: &ResultLookup<'_>,
+    output: &mut String,
+) -> Result<(), CanonicalDocumentRenderError> {
+    let paragraph = ParagraphSyntax::cast(node.clone())
+        .or_else(|| find::<ParagraphSyntax>(node))
+        .ok_or_else(|| range_error(node.range()))?;
+    output.push_str("<p>");
+    render_paragraph_html(&paragraph, owner, lookup, output)?;
+    output.push_str("</p>");
     Ok(())
 }
 
@@ -723,8 +749,12 @@ fn render_note_definition_html(
     output.push_str("' id='");
     output.push_str(&escape_attribute(&format!("{prefix}-{label}")));
     output.push_str("'>");
-    if let Some(paragraph) = find::<ParagraphSyntax>(node) {
-        render_paragraph_html(&paragraph, owner, lookup, output)?;
+    for child in node.children() {
+        if ParagraphSyntax::cast(child.clone()).is_some()
+            || child.kind() == SyntaxKind::ParagraphNewline
+        {
+            render_retained_paragraph_html(&child, owner, lookup, output)?;
+        }
     }
     output.push_str("</aside>");
     Ok(())

@@ -152,7 +152,7 @@ float-left	none	float-sigil
 float-literal	float-decimal-start|float-full	real-number|scientific-literal|untyped-real-number
 float-right	none	float-sigil
 float-sigil	float-left|float-right	error-block|float|quote-block|success-block|warning-block
-footnote	colon|footnote-prefix|paragraph-newline|right-bracket|text|whitespace0	section-element
+footnote	colon|footnote-prefix|paragraph-newline|right-bracket|text|whitespace0	not-mech-code|section-element
 footnote-prefix	none	footnote|footnote-reference|paragraph-text
 footnote-reference	footnote-prefix|right-bracket|text	paragraph-element
 forbidden-emoji	box-drawing-emoji|left-angle2|mika-section-close|mika-section-open|nbsp|right-angle2|thin-space	emoji|raw-text|text
@@ -350,7 +350,7 @@ not	exclamation|negate	not-factor
 not-element-of	ws0e	set-operator
 not-equal	ws0e	comparison-operator
 not-factor	factor|not	factor
-not-mech-code	error-block|float|idea-block|img|info-block|mechdown-list|micro-mika|mika-section-close|mini-mika|question-block|success-block|warning-block	mech-code
+not-mech-code	error-block|float|footnote|idea-block|img|info-block|mechdown-list|micro-mika|mika-section-close|mini-mika|question-block|success-block|warning-block	mech-code
 number	complex-number|real-number	literal|ordered-list-item
 octal-literal	digit-sequence	real-number|untyped-real-number
 op-assign	define-operator|expression|op-assign-operator|slice-ref	statement

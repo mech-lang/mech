@@ -1204,6 +1204,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
             GrammarExpression::Rule(rules::MICRO_MIKA),
             GrammarExpression::Rule(rules::MINI_MIKA),
             GrammarExpression::Rule(rules::MECHDOWN_LIST),
+            GrammarExpression::Rule(rules::FOOTNOTE),
             GrammarExpression::Rule(rules::QUESTION_BLOCK),
             GrammarExpression::Rule(rules::INFO_BLOCK),
             GrammarExpression::Rule(rules::SUCCESS_BLOCK),

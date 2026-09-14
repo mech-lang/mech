@@ -420,7 +420,7 @@ fn retained_rich_document_nodes_use_semantic_html_containers() {
         ),
         (
             include_str!("../../syntax/tests/fixtures/grammar/accepted/mechdown-info.mec"),
-            "<aside class='mech-info-block'>",
+            "<aside class='mech-info-block'><p>Isolated info</p></aside>",
         ),
         (
             include_str!("../../syntax/tests/fixtures/grammar/accepted/mechdown-success.mec"),
@@ -460,7 +460,7 @@ fn retained_rich_document_nodes_use_semantic_html_containers() {
         ),
         (
             include_str!("../../syntax/tests/fixtures/grammar/accepted/citation.mec"),
-            "<aside class='mech-reference' id='reference-ref1'>",
+            "<aside class='mech-reference' id='reference-ref1'><p>A source description</p></aside>",
         ),
         (
             include_str!("../../syntax/tests/fixtures/grammar/accepted/figures.mec"),
@@ -477,6 +477,20 @@ fn retained_rich_document_nodes_use_semantic_html_containers() {
             .unwrap();
         assert!(html.contains(expected), "missing {expected:?}: {html}");
     }
+}
+
+#[test]
+fn retained_footnotes_preserve_every_paragraph() {
+    let document = document("[^note]: First paragraph.\nSecond paragraph.\n");
+    let html = CanonicalDocumentRenderer
+        .render_html(&document, &[])
+        .unwrap();
+    assert!(
+        html.contains(
+            "<aside class='mech-footnote' id='footnote-note'><p>First paragraph.</p><p>Second paragraph.</p></aside>"
+        ),
+        "{html}"
+    );
 }
 
 #[test]

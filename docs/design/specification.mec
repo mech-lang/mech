@@ -3497,6 +3497,7 @@ float := float-sigil, space-tab0, section-element ;
 not-mech-code := micro-mika
                | mini-mika
                | mechdown-list
+               | footnote
                | question-block
                | info-block
                | success-block
