@@ -18,6 +18,11 @@ name = "mech"
 path = "src/bin/mech.rs"
 required-features = ["cli_core"]
 
+[[example]]
+name = "r-stack-trust-proof"
+path = "examples/r_stack_trust_proof.rs"
+required-features = ["r_stack_trust_proof"]
+
 [profile.release]
 debug = false
 
@@ -29,6 +34,12 @@ strip = "symbols"
 
 [features]
 no_std = ["mech-core/no_std", "mech-engine/no_std", "mech-stdlib/no_std", "mech-syntax/no_std"]
+
+# Explicit demo-only profile: ordinary standard compilation plus resident
+# artifact activation and the state assignment used by the proof program.
+r_stack_trust_proof = [
+      "standard_compiler", "variable_assign", "mech-engine/resident-artifact",
+      ]
 
 standard_runtime = [
       "mech-engine/runtime",
