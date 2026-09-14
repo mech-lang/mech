@@ -44,7 +44,7 @@ impl CanonicalCliSource {
     /// Classify only a strictly admitted canonical document.
     #[cfg(feature = "run")]
     pub fn contains_executable_source(&self) -> bool {
-        self.document.is_strictly_clean() && self.document.document().contains_executable_source()
+        self.document.index().is_ok() && self.document.document().contains_executable_source()
     }
 
     /// Render through the qualified canonical document renderer. Invalid
@@ -117,6 +117,28 @@ mod tests {
         assert!(!invalid.document().snapshot().diagnostics.is_empty());
         assert!(invalid.render_text(&[]).is_err());
         assert!(invalid.render_html(&[]).is_err());
+    }
+
+    #[cfg(feature = "run")]
+    #[test]
+    fn canonical_cli_classifier_rejects_address_conflicts_in_every_owner() {
+        let conflict = "@users := @main{:read(*)}\n\n```mech:users\nx := 1\n```\n";
+        let mut sources = vec![format!("answer := 1\n{conflict}")];
+        if cfg!(feature = "mika") {
+            sources.extend([
+                format!("answer := 1\n╭◉╮⸢{conflict}⸥\n"),
+                format!("answer := 1\n╭◉╮⸢~∘~⸢{conflict}⸥\n⸥\n"),
+            ]);
+        }
+        for source in sources {
+            let retained =
+                CanonicalCliSource::retain("cli:run:conflict", Revision(0), source.as_str())
+                    .unwrap();
+            assert!(retained.document().is_strictly_clean(), "{source:?}");
+            assert!(retained.document().document().contains_executable_source());
+            assert!(retained.document().index().is_err());
+            assert!(!retained.contains_executable_source(), "{source:?}");
+        }
     }
 
     #[cfg(feature = "run")]
