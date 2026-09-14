@@ -824,3 +824,120 @@ fn mika_named_fences_share_only_their_local_owner_and_keep_output_options() {
         mech_engine::SourceDocumentOutputKind::Program,
     );
 }
+
+#[test]
+fn finalized_streams_execute_configured_root_and_normalized_named_scopes() {
+    use mech_syntax::document::{DocumentStream, StreamProgress};
+    for scope in ["", "worker"] {
+        let source = format!(
+            "```mech{scope}{{output: false, color: red}}\n~counter := 0\ncounter += 1\ncounter\n```\n"
+        );
+        let mut stream = DocumentStream::new(DocumentId(826), ParseConfig::default());
+        for ch in source.chars() {
+            let mut progress = stream.append(&ch.to_string(), 17).unwrap().progress;
+            for _ in 0..100_000 {
+                if progress != StreamProgress::NeedsProcessing {
+                    break;
+                }
+                progress = stream.advance(17).progress;
+            }
+            assert_eq!(progress, StreamProgress::NeedInput);
+        }
+        let mut progress = stream.finish(17).progress;
+        for _ in 0..100_000 {
+            if progress != StreamProgress::NeedsProcessing {
+                break;
+            }
+            progress = stream.advance(17).progress;
+        }
+        assert_eq!(progress, StreamProgress::Finished);
+        let snapshot = stream.materialize().unwrap();
+        assert!(snapshot.is_strictly_clean());
+        let document = DocumentSyntax::cast(snapshot.syntax()).unwrap();
+        let program = if scope.is_empty() {
+            CanonicalSourceFrontend.compile_document(&document)
+        } else {
+            CanonicalSourceFrontend.compile_named_document_scope(&document, scope)
+        }
+        .unwrap();
+        assert_eq!(program.document_outputs().len(), 1);
+        compiled_turns(
+            program,
+            &source,
+            &[1.0, 2.0],
+            mech_engine::SourceDocumentOutputKind::Program,
+        );
+    }
+}
+
+fn streamed_document(source: &str) -> DocumentSyntax {
+    use mech_syntax::document::{DocumentStream, StreamProgress};
+    let mut stream = DocumentStream::new(DocumentId(826), ParseConfig::default());
+    for ch in source.chars() {
+        let mut progress = stream.append(&ch.to_string(), 19).unwrap().progress;
+        while progress == StreamProgress::NeedsProcessing {
+            progress = stream.advance(19).progress;
+        }
+        assert_eq!(progress, StreamProgress::NeedInput);
+    }
+    let mut progress = stream.finish(19).progress;
+    while progress == StreamProgress::NeedsProcessing {
+        progress = stream.advance(19).progress;
+    }
+    assert_eq!(progress, StreamProgress::Finished);
+    let snapshot = stream.materialize().unwrap();
+    assert!(snapshot.is_strictly_clean());
+    DocumentSyntax::cast(snapshot.syntax()).unwrap()
+}
+
+#[test]
+fn finalized_streams_mika_bodies_execute_independently_of_parent_sibling_and_nested_state() {
+    let source = "~counter := 100\ncounter += 10\ncounter\n\n~∘~⸢~counter := 0\ncounter += 1\ncounter\n\n╭◉╮⸢~counter := 20\ncounter += 2\ncounter\n⸥\n⸥\n\n~∘~⸢~counter := 40\ncounter += 4\ncounter\n⸥\n";
+    let document = streamed_document(source);
+    compiled_turns(
+        CanonicalSourceFrontend.compile_document(&document).unwrap(),
+        source,
+        &[110.0, 120.0],
+        mech_engine::SourceDocumentOutputKind::Program,
+    );
+    let scopes = document.mika_scopes();
+    assert_eq!(scopes.len(), 3);
+    for (scope, expected) in scopes.iter().zip([[1.0, 2.0], [22.0, 24.0], [44.0, 48.0]]) {
+        let program = CanonicalSourceFrontend
+            .compile_mika_section(&scope.section)
+            .unwrap();
+        compiled_turns(
+            program,
+            source,
+            &expected,
+            mech_engine::SourceDocumentOutputKind::Program,
+        );
+    }
+}
+
+#[test]
+fn finalized_streams_mika_named_fences_share_only_their_local_owner_and_keep_output_options() {
+    let source = "```mech:worker\n~counter := 100\ncounter += 10\ncounter\n```\n\n~∘~⸢```mechworker{output: false}\n~counter := 0\ncounter += 1\ncounter\n```\n\n```mech:worker\ncounter += 2\ncounter\n```\n⸥\n";
+    let document = streamed_document(source);
+    let root = CanonicalSourceFrontend
+        .compile_named_document_scope(&document, "worker")
+        .unwrap();
+    compiled_turns(
+        root,
+        source,
+        &[110.0, 120.0],
+        mech_engine::SourceDocumentOutputKind::Program,
+    );
+    let scopes = document.mika_scopes();
+    assert_eq!(scopes.len(), 1);
+    let local = CanonicalSourceFrontend
+        .compile_named_mika_scope(&scopes[0].section, "worker")
+        .unwrap();
+    assert_eq!(local.document_outputs().len(), 2);
+    compiled_turns(
+        local,
+        source,
+        &[3.0, 6.0],
+        mech_engine::SourceDocumentOutputKind::Program,
+    );
+}

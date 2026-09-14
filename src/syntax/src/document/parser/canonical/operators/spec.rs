@@ -1,0 +1,370 @@
+//! Canonical operator selections, spacing, guards, and syntax-node ownership.
+use super::*;
+#[derive(Clone, Copy)]
+pub(super) enum Spec {
+    Aggregate {
+        kind: SyntaxKind,
+        alternatives: &'static [RuleId],
+    },
+    Leaf {
+        kind: SyntaxKind,
+        alternatives: &'static [OperatorAtom],
+        guard: OperatorGuard,
+        spacing: Option<RuleId>,
+    },
+    SpacedSubtract,
+    Transpose,
+}
+pub(super) fn specification(rule: RuleId) -> Spec {
+    match rule {
+        rules::ADD_SUB_OPERATOR => Spec::Aggregate {
+            kind: SyntaxKind::AddSubOperator,
+            alternatives: &[rules::ADD, rules::SUBTRACT],
+        },
+        rules::MUL_DIV_OPERATOR => Spec::Aggregate {
+            kind: SyntaxKind::MulDivOperator,
+            alternatives: &[rules::MULTIPLY, rules::DIVIDE, rules::MODULUS],
+        },
+        rules::POWER_OPERATOR => Spec::Aggregate {
+            kind: SyntaxKind::PowerOperator,
+            alternatives: &[rules::POWER],
+        },
+        rules::MATRIX_OPERATOR => Spec::Aggregate {
+            kind: SyntaxKind::MatrixOperator,
+            alternatives: &[
+                rules::MATRIX_MULTIPLY,
+                rules::MATRIX_SOLVE,
+                rules::DOT_PRODUCT,
+                rules::CROSS_PRODUCT,
+            ],
+        },
+        rules::RANGE_OPERATOR => Spec::Aggregate {
+            kind: SyntaxKind::RangeOperator,
+            alternatives: &[rules::RANGE_INCLUSIVE, rules::RANGE_EXCLUSIVE],
+        },
+        rules::COMPARISON_OPERATOR => Spec::Aggregate {
+            kind: SyntaxKind::ComparisonOperator,
+            alternatives: &[
+                rules::STRICT_EQUAL,
+                rules::STRICT_NOT_EQUAL,
+                rules::NOT_EQUAL,
+                rules::EQUAL_TO,
+                rules::GREATER_THAN_EQUAL,
+                rules::GREATER_THAN,
+                rules::LESS_THAN_EQUAL,
+                rules::LESS_THAN,
+            ],
+        },
+        rules::LOGIC_OPERATOR => Spec::Aggregate {
+            kind: SyntaxKind::LogicOperator,
+            alternatives: &[rules::AND, rules::OR, rules::XOR],
+        },
+        rules::TABLE_OPERATOR => Spec::Aggregate {
+            kind: SyntaxKind::TableOperator,
+            alternatives: &[
+                rules::JOIN,
+                rules::LEFT_JOIN,
+                rules::RIGHT_JOIN,
+                rules::FULL_JOIN,
+                rules::LEFT_SEMI_JOIN,
+                rules::LEFT_ANTI_JOIN,
+            ],
+        },
+        rules::SET_OPERATOR => Spec::Aggregate {
+            kind: SyntaxKind::SetOperator,
+            alternatives: &[
+                rules::UNION_OP,
+                rules::INTERSECTION,
+                rules::DIFFERENCE,
+                rules::COMPLEMENT,
+                rules::SUBSET,
+                rules::SUPERSET,
+                rules::PROPER_SUBSET,
+                rules::PROPER_SUPERSET,
+                rules::ELEMENT_OF,
+                rules::NOT_ELEMENT_OF,
+                rules::SYMMETRIC_DIFFERENCE,
+            ],
+        },
+        rules::ADD => Spec::Leaf {
+            kind: SyntaxKind::AddOperation,
+            alternatives: &[OperatorAtom::CanonicalRule(rules::PLUS)],
+            guard: OperatorGuard::None,
+            spacing: Some(rules::WS0E),
+        },
+        rules::SUBTRACT => Spec::Aggregate {
+            kind: SyntaxKind::SubtractOperation,
+            alternatives: &[rules::SPACED_SUBTRACT, rules::RAW_SUBTRACT],
+        },
+        rules::RAW_SUBTRACT => Spec::Leaf {
+            kind: SyntaxKind::RawSubtractOperation,
+            alternatives: &[OperatorAtom::CanonicalRule(rules::DASH)],
+            guard: OperatorGuard::NotCommentSigil,
+            spacing: None,
+        },
+        rules::SPACED_SUBTRACT => Spec::SpacedSubtract,
+        rules::MULTIPLY => Spec::Leaf {
+            kind: SyntaxKind::MultiplyOperation,
+            alternatives: &[OperatorAtom::Text("*"), OperatorAtom::Text("×")],
+            guard: OperatorGuard::NotMatrixMultiply,
+            spacing: Some(rules::WS0E),
+        },
+        rules::DIVIDE => Spec::Leaf {
+            kind: SyntaxKind::DivideOperation,
+            alternatives: &[
+                OperatorAtom::CanonicalRule(rules::SLASH),
+                OperatorAtom::Text("÷"),
+            ],
+            guard: OperatorGuard::NotCommentSigil,
+            spacing: Some(rules::WS0E),
+        },
+        rules::MODULUS => Spec::Leaf {
+            kind: SyntaxKind::ModulusOperation,
+            alternatives: &[OperatorAtom::CanonicalRule(rules::PERCENT)],
+            guard: OperatorGuard::None,
+            spacing: Some(rules::WS0E),
+        },
+        rules::POWER => Spec::Leaf {
+            kind: SyntaxKind::PowerOperation,
+            alternatives: &[OperatorAtom::CanonicalRule(rules::CARET)],
+            guard: OperatorGuard::None,
+            spacing: Some(rules::WS0E),
+        },
+        rules::MATRIX_MULTIPLY => Spec::Leaf {
+            kind: SyntaxKind::MatrixMultiplyOperation,
+            alternatives: &[OperatorAtom::Text("**")],
+            guard: OperatorGuard::None,
+            spacing: Some(rules::WS0E),
+        },
+        rules::MATRIX_SOLVE => Spec::Leaf {
+            kind: SyntaxKind::MatrixSolveOperation,
+            alternatives: &[OperatorAtom::CanonicalRule(rules::BACKSLASH)],
+            guard: OperatorGuard::None,
+            spacing: Some(rules::WS0E),
+        },
+        rules::DOT_PRODUCT => Spec::Leaf {
+            kind: SyntaxKind::DotProductOperation,
+            alternatives: &[OperatorAtom::Text("·"), OperatorAtom::Text("•")],
+            guard: OperatorGuard::None,
+            spacing: Some(rules::WS0E),
+        },
+        rules::CROSS_PRODUCT => Spec::Leaf {
+            kind: SyntaxKind::CrossProductOperation,
+            alternatives: &[OperatorAtom::Text("⨯")],
+            guard: OperatorGuard::None,
+            spacing: Some(rules::WS0E),
+        },
+        rules::TRANSPOSE => Spec::Transpose,
+        rules::RANGE_INCLUSIVE => Spec::Leaf {
+            kind: SyntaxKind::RangeInclusiveOperation,
+            alternatives: &[OperatorAtom::Text("..=")],
+            guard: OperatorGuard::None,
+            spacing: None,
+        },
+        rules::RANGE_EXCLUSIVE => Spec::Leaf {
+            kind: SyntaxKind::RangeExclusiveOperation,
+            alternatives: &[OperatorAtom::Text("..")],
+            guard: OperatorGuard::None,
+            spacing: None,
+        },
+        rules::NOT_EQUAL => Spec::Leaf {
+            kind: SyntaxKind::NotEqualOperation,
+            alternatives: &[
+                OperatorAtom::Text("!="),
+                OperatorAtom::Text("¬="),
+                OperatorAtom::Text("≠"),
+            ],
+            guard: OperatorGuard::None,
+            spacing: Some(rules::WS0E),
+        },
+        rules::EQUAL_TO => Spec::Leaf {
+            kind: SyntaxKind::EqualToOperation,
+            alternatives: &[OperatorAtom::Text("=="), OperatorAtom::Text("⩵")],
+            guard: OperatorGuard::None,
+            spacing: Some(rules::WS0E),
+        },
+        rules::STRICT_NOT_EQUAL => Spec::Leaf {
+            kind: SyntaxKind::StrictNotEqualOperation,
+            alternatives: &[
+                OperatorAtom::Text("!=="),
+                OperatorAtom::Text("!≡"),
+                OperatorAtom::Text("¬≡"),
+                OperatorAtom::Text("¬=="),
+            ],
+            guard: OperatorGuard::None,
+            spacing: Some(rules::WS0E),
+        },
+        rules::STRICT_EQUAL => Spec::Leaf {
+            kind: SyntaxKind::StrictEqualOperation,
+            alternatives: &[OperatorAtom::Text("==="), OperatorAtom::Text("≡")],
+            guard: OperatorGuard::None,
+            spacing: Some(rules::WS0E),
+        },
+        rules::GREATER_THAN => Spec::Leaf {
+            kind: SyntaxKind::GreaterThanOperation,
+            alternatives: &[OperatorAtom::CanonicalRule(rules::RIGHT_ANGLE1)],
+            guard: OperatorGuard::None,
+            spacing: Some(rules::WS0E),
+        },
+        rules::LESS_THAN => Spec::Leaf {
+            kind: SyntaxKind::LessThanOperation,
+            alternatives: &[OperatorAtom::CanonicalRule(rules::LEFT_ANGLE1)],
+            guard: OperatorGuard::NotGeneratorArrow,
+            spacing: Some(rules::WS0E),
+        },
+        rules::GREATER_THAN_EQUAL => Spec::Leaf {
+            kind: SyntaxKind::GreaterThanEqualOperation,
+            alternatives: &[OperatorAtom::Text(">="), OperatorAtom::Text("≥")],
+            guard: OperatorGuard::None,
+            spacing: Some(rules::WS0E),
+        },
+        rules::LESS_THAN_EQUAL => Spec::Leaf {
+            kind: SyntaxKind::LessThanEqualOperation,
+            alternatives: &[OperatorAtom::Text("<="), OperatorAtom::Text("≤")],
+            guard: OperatorGuard::None,
+            spacing: Some(rules::WS0E),
+        },
+        rules::OR => Spec::Leaf {
+            kind: SyntaxKind::OrOperation,
+            alternatives: &[
+                OperatorAtom::Text("||"),
+                OperatorAtom::Text("∨"),
+                OperatorAtom::Text("⋁"),
+            ],
+            guard: OperatorGuard::None,
+            spacing: Some(rules::WS0E),
+        },
+        rules::AND => Spec::Leaf {
+            kind: SyntaxKind::AndOperation,
+            alternatives: &[
+                OperatorAtom::Text("&&"),
+                OperatorAtom::Text("∧"),
+                OperatorAtom::Text("⋀"),
+            ],
+            guard: OperatorGuard::None,
+            spacing: Some(rules::WS0E),
+        },
+        rules::NOT => Spec::Leaf {
+            kind: SyntaxKind::NotOperation,
+            alternatives: &[
+                OperatorAtom::CanonicalRule(rules::EXCLAMATION),
+                OperatorAtom::CanonicalRule(rules::NEGATE),
+            ],
+            guard: OperatorGuard::None,
+            spacing: None,
+        },
+        rules::XOR => Spec::Leaf {
+            kind: SyntaxKind::XorOperation,
+            alternatives: &[
+                OperatorAtom::Text("^^"),
+                OperatorAtom::Text("⊕"),
+                OperatorAtom::Text("⊻"),
+            ],
+            guard: OperatorGuard::None,
+            spacing: Some(rules::WS0E),
+        },
+        rules::JOIN => Spec::Leaf {
+            kind: SyntaxKind::JoinOperation,
+            alternatives: &[OperatorAtom::Text("⋈")],
+            guard: OperatorGuard::None,
+            spacing: Some(rules::WS0E),
+        },
+        rules::LEFT_JOIN => Spec::Leaf {
+            kind: SyntaxKind::LeftJoinOperation,
+            alternatives: &[OperatorAtom::Text("⟕")],
+            guard: OperatorGuard::None,
+            spacing: Some(rules::WS0E),
+        },
+        rules::RIGHT_JOIN => Spec::Leaf {
+            kind: SyntaxKind::RightJoinOperation,
+            alternatives: &[OperatorAtom::Text("⟖")],
+            guard: OperatorGuard::None,
+            spacing: Some(rules::WS0E),
+        },
+        rules::FULL_JOIN => Spec::Leaf {
+            kind: SyntaxKind::FullJoinOperation,
+            alternatives: &[OperatorAtom::Text("⟗")],
+            guard: OperatorGuard::None,
+            spacing: Some(rules::WS0E),
+        },
+        rules::LEFT_SEMI_JOIN => Spec::Leaf {
+            kind: SyntaxKind::LeftSemiJoinOperation,
+            alternatives: &[OperatorAtom::Text("⋉")],
+            guard: OperatorGuard::None,
+            spacing: Some(rules::WS0E),
+        },
+        rules::LEFT_ANTI_JOIN => Spec::Leaf {
+            kind: SyntaxKind::LeftAntiJoinOperation,
+            alternatives: &[OperatorAtom::Text("▷")],
+            guard: OperatorGuard::None,
+            spacing: Some(rules::WS0E),
+        },
+        rules::UNION_OP => Spec::Leaf {
+            kind: SyntaxKind::UnionOperation,
+            alternatives: &[OperatorAtom::Text("∪")],
+            guard: OperatorGuard::None,
+            spacing: Some(rules::WS0E),
+        },
+        rules::INTERSECTION => Spec::Leaf {
+            kind: SyntaxKind::IntersectionOperation,
+            alternatives: &[OperatorAtom::Text("∩")],
+            guard: OperatorGuard::None,
+            spacing: Some(rules::WS0E),
+        },
+        rules::DIFFERENCE => Spec::Leaf {
+            kind: SyntaxKind::DifferenceOperation,
+            alternatives: &[OperatorAtom::Text("∖")],
+            guard: OperatorGuard::None,
+            spacing: Some(rules::WS0E),
+        },
+        rules::COMPLEMENT => Spec::Leaf {
+            kind: SyntaxKind::ComplementOperation,
+            alternatives: &[OperatorAtom::Text("∁")],
+            guard: OperatorGuard::None,
+            spacing: Some(rules::WS0E),
+        },
+        rules::SUBSET => Spec::Leaf {
+            kind: SyntaxKind::SubsetOperation,
+            alternatives: &[OperatorAtom::Text("⊆")],
+            guard: OperatorGuard::None,
+            spacing: Some(rules::WS0E),
+        },
+        rules::SUPERSET => Spec::Leaf {
+            kind: SyntaxKind::SupersetOperation,
+            alternatives: &[OperatorAtom::Text("⊇")],
+            guard: OperatorGuard::None,
+            spacing: Some(rules::WS0E),
+        },
+        rules::PROPER_SUBSET => Spec::Leaf {
+            kind: SyntaxKind::ProperSubsetOperation,
+            alternatives: &[OperatorAtom::Text("⊊"), OperatorAtom::Text("⊂")],
+            guard: OperatorGuard::None,
+            spacing: Some(rules::WS0E),
+        },
+        rules::PROPER_SUPERSET => Spec::Leaf {
+            kind: SyntaxKind::ProperSupersetOperation,
+            alternatives: &[OperatorAtom::Text("⊋"), OperatorAtom::Text("⊃")],
+            guard: OperatorGuard::None,
+            spacing: Some(rules::WS0E),
+        },
+        rules::ELEMENT_OF => Spec::Leaf {
+            kind: SyntaxKind::ElementOfOperation,
+            alternatives: &[OperatorAtom::Text("∈")],
+            guard: OperatorGuard::None,
+            spacing: Some(rules::WS0E),
+        },
+        rules::NOT_ELEMENT_OF => Spec::Leaf {
+            kind: SyntaxKind::NotElementOfOperation,
+            alternatives: &[OperatorAtom::Text("∉")],
+            guard: OperatorGuard::None,
+            spacing: Some(rules::WS0E),
+        },
+        rules::SYMMETRIC_DIFFERENCE => Spec::Leaf {
+            kind: SyntaxKind::SymmetricDifferenceOperation,
+            alternatives: &[OperatorAtom::Text("Δ")],
+            guard: OperatorGuard::None,
+            spacing: Some(rules::WS1E),
+        },
+        _ => unreachable!("supported canonical operator"),
+    }
+}

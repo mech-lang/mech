@@ -1,5 +1,6 @@
 path	outcome	entry-path	reason
 docs/design/ROADMAP.mec	accept	mech_syntax::parser::parse	Raw source accepted unchanged; no preprocessing or exclusion.
+docs/design/canonical-document-streaming.mec	excluded	canonical-specification	S7B planning artifact governed by the canonical specification, like the continuation plan; not a raw-parser acceptance fixture.
 docs/design/canonical-source-boundary.mec	excluded	canonical-specification	Planning artifact governed by the canonical specification; the retiring raw parser is not an acceptance authority.
 docs/design/grammar-audit/README.mec	accept	mech_syntax::parser::parse	Raw source accepted unchanged; no preprocessing or exclusion.
 docs/design/grammar-audit/discrepancies.mec	reject	mech_syntax::parser::parse	Raw source is rejected unchanged by the current parser; no preprocessing or exclusion.

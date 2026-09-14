@@ -14,16 +14,25 @@ pub mod canonical;
 mod canonical_ports;
 mod canonical_rules;
 pub mod checkpoint;
+mod context_probe;
 pub mod cursor;
+mod delimiter_scan;
 pub mod document;
 pub mod event;
 pub mod fragment;
+mod grapheme_scan;
+mod journal;
 pub mod limits;
+mod literal_scan;
+mod tree_cache;
+use journal::Journal;
 pub mod marker;
 pub mod mech;
 pub mod mechdown;
 pub mod recovery;
+mod resource_found;
 pub mod rule;
+pub mod stream;
 pub mod terminal;
 
 pub use checkpoint::*;
@@ -35,6 +44,7 @@ pub use marker::*;
 pub use recovery::*;
 pub use rule::*;
 
+#[derive(Clone, Debug)]
 struct PendingDiagnostic {
     diagnostic: Diagnostic,
     event: Option<usize>,
@@ -42,8 +52,8 @@ struct PendingDiagnostic {
 }
 
 struct ParserOutput {
-    events: Vec<Event>,
-    diagnostics: Vec<PendingDiagnostic>,
+    events: Journal<Event>,
+    diagnostics: Journal<PendingDiagnostic>,
     stats: ParseStats,
 }
 
@@ -82,30 +92,107 @@ pub(crate) enum LexicalMode {
 
 pub(crate) struct Parser<'a> {
     source: &'a TextSnapshot,
+    cursor: Cursor<'a>,
+    ids: &'a mut IdGenerator,
+    state: ParserState,
+}
+
+/// Borrow-free cursor scope retained by an embedded grammar continuation.
+#[derive(Clone, Copy)]
+pub(crate) struct CursorScope {
+    consume_end: TextSize,
+    context_end: TextSize,
+    cursor_frontier: bool,
+    context_frontier: bool,
+}
+
+/// Input-independent ownership of a live parse. Moving this state never
+/// finalizes events, loses rule/marker context, or replenishes resource fuel.
+pub(crate) struct ParserState {
     lexical_mode: LexicalMode,
     parse_range: TextRange,
-    cursor: Cursor<'a>,
-    events: Vec<Event>,
+    events: Journal<Event>,
+    tree_cache: tree_cache::TreeCache,
+    grapheme_tail: Option<grapheme_scan::GraphemeScan>,
     open_markers: Vec<usize>,
+    peak_open_markers: usize,
+    peak_events: usize,
+    rewinds: u64,
+    rewound_bytes: u64,
+    cached_replay_bytes: u64,
     covered_end: TextSize,
-    diagnostics: Vec<PendingDiagnostic>,
+    diagnostics: Journal<PendingDiagnostic>,
     rules: RuleStack,
     config: ParseConfig,
     fuel: u64,
     nesting: u32,
     halted: bool,
     resource_diagnostic_emitted: bool,
+    resource_found: Option<resource_found::Continuation>,
     resource_finalizing: bool,
     allow_consuming_recovery: bool,
     resource_rule: Option<RuleId>,
-    ids: &'a mut IdGenerator,
     stats: ParseStats,
+    cursor: cursor::CursorCheckpoint,
+    cursor_end: TextSize,
+    context_end: TextSize,
+    input_frontier: bool,
+    cursor_frontier: bool,
+    context_frontier: bool,
 }
 
 pub(crate) struct CleanSubtree {
     start: TextSize,
     end: TextSize,
     node: Arc<GreenNode>,
+}
+
+impl ParserState {
+    fn new(
+        range: TextRange,
+        context_end: TextSize,
+        lexical_mode: LexicalMode,
+        config: ParseConfig,
+        input_frontier: bool,
+    ) -> Self {
+        Self {
+            lexical_mode,
+            parse_range: range,
+            events: Journal::default(),
+            tree_cache: tree_cache::TreeCache::default(),
+            grapheme_tail: None,
+            open_markers: Vec::new(),
+            peak_open_markers: 0,
+            peak_events: 0,
+            rewinds: 0,
+            rewound_bytes: 0,
+            cached_replay_bytes: 0,
+            covered_end: range.start,
+            diagnostics: Journal::default(),
+            rules: RuleStack::default(),
+            config,
+            fuel: config.limits.fuel,
+            nesting: 0,
+            halted: false,
+            resource_diagnostic_emitted: false,
+            resource_found: None,
+            resource_finalizing: false,
+            allow_consuming_recovery: true,
+            resource_rule: None,
+            stats: ParseStats {
+                source_bytes: u64::from(range.len().0),
+                ..ParseStats::default()
+            },
+            cursor: cursor::CursorCheckpoint {
+                offset: range.start,
+            },
+            cursor_end: range.end,
+            context_end,
+            input_frontier,
+            cursor_frontier: input_frontier,
+            context_frontier: true,
+        }
+    }
 }
 
 impl<'a> Parser<'a> {
@@ -115,30 +202,14 @@ impl<'a> Parser<'a> {
         config: ParseConfig,
         ids: &'a mut IdGenerator,
     ) -> Self {
-        Self {
-            source,
+        let state = ParserState::new(
+            source.full_range(),
+            source.byte_len(),
             lexical_mode,
-            parse_range: source.full_range(),
-            cursor: Cursor::new(source),
-            events: Vec::new(),
-            open_markers: Vec::new(),
-            covered_end: TextSize::ZERO,
-            diagnostics: Vec::new(),
-            rules: RuleStack::default(),
             config,
-            fuel: config.limits.fuel,
-            nesting: 0,
-            halted: false,
-            resource_diagnostic_emitted: false,
-            resource_finalizing: false,
-            allow_consuming_recovery: true,
-            resource_rule: None,
-            ids,
-            stats: ParseStats {
-                source_bytes: u64::from(source.byte_len().0),
-                ..ParseStats::default()
-            },
-        }
+            true,
+        );
+        Self::resume(source, state, ids)
     }
 
     fn for_range(
@@ -150,51 +221,55 @@ impl<'a> Parser<'a> {
         config: ParseConfig,
         ids: &'a mut IdGenerator,
     ) -> Self {
-        let mut parser = Self {
-            source,
-            lexical_mode,
-            parse_range: range,
-            cursor: Cursor::for_range(source, range),
-            events: Vec::new(),
-            open_markers: Vec::new(),
-            covered_end: range.start,
-            diagnostics: Vec::new(),
-            rules: RuleStack::default(),
-            config,
-            fuel: config.limits.fuel,
-            nesting: initial_nesting,
-            halted: false,
-            resource_diagnostic_emitted: false,
-            resource_finalizing: false,
-            allow_consuming_recovery: true,
-            resource_rule,
-            ids,
-            stats: ParseStats {
-                source_bytes: u64::from(range.len().0),
-                ..ParseStats::default()
-            },
-        };
-        if source.validate_range(range).is_err() {
-            parser.halted = true;
-        }
-        parser
+        let mut state = ParserState::new(range, source.byte_len(), lexical_mode, config, false);
+        state.nesting = initial_nesting;
+        state.resource_rule = resource_rule;
+        state.halted = source.validate_range(range).is_err();
+        Self::resume(source, state, ids)
     }
 
-    /// Arbitrate grammar alternatives without skipping source during recovery.
-    /// Zero-width repairs and all actual parsing/fuel costs remain unchanged.
-    /// The caller still owns the normal checkpoint rollback of syntax/diagnostics.
-    pub(crate) fn without_consuming_recovery<T>(
-        &mut self,
-        parse: impl FnOnce(&mut Self) -> T,
-    ) -> T {
-        let previous = core::mem::replace(&mut self.allow_consuming_recovery, false);
-        let result = parse(self);
-        self.allow_consuming_recovery = previous;
-        result
+    /// The continuation owner accepts append-only input; an edit must discard
+    /// this state. Fixed embedded-body bounds never expand with the frontier.
+    fn resume(source: &'a TextSnapshot, mut state: ParserState, ids: &'a mut IdGenerator) -> Self {
+        if state.input_frontier {
+            state.parse_range.end = source.byte_len();
+        }
+        if state.cursor_frontier {
+            state.cursor_end = source.byte_len();
+        }
+        if state.context_frontier {
+            state.context_end = source.byte_len();
+        }
+        state.stats.source_bytes = u64::from(state.parse_range.len().0);
+        let cursor = Cursor::for_range_with_context(
+            source,
+            TextRange::new(state.cursor.offset, state.cursor_end),
+            state.context_end,
+        );
+        Self {
+            source,
+            cursor,
+            ids,
+            state,
+        }
+    }
+
+    fn suspend(mut self) -> ParserState {
+        self.state.cursor = self.cursor.checkpoint();
+        self.state.cursor_end = self.cursor.end();
+        self.state.context_end = self.cursor.context_end();
+        self.state
+    }
+
+    /// The continuation owns this policy until its speculative child completes,
+    /// including across input and processing yields. Restore the returned policy
+    /// before parsing the selected alternative.
+    pub(crate) fn replace_consuming_recovery(&mut self, allowed: bool) -> bool {
+        core::mem::replace(&mut self.state.allow_consuming_recovery, allowed)
     }
 
     pub(crate) fn consuming_recovery_allowed(&self) -> bool {
-        self.allow_consuming_recovery
+        self.state.allow_consuming_recovery
     }
 
     pub(crate) fn source(&self) -> &TextSnapshot {
@@ -202,7 +277,7 @@ impl<'a> Parser<'a> {
     }
 
     pub(crate) fn set_resource_rule(&mut self, rule: RuleId) {
-        self.resource_rule = Some(rule);
+        self.state.resource_rule = Some(rule);
     }
 
     pub(crate) fn cursor(&self) -> &Cursor<'a> {
@@ -212,22 +287,46 @@ impl<'a> Parser<'a> {
     /// Parse an embedded body in the same source and event stream. The body
     /// shares every resource budget with its enclosing document. Exhaustion
     /// still finalizes the enclosing parse range, including the owned closer.
-    pub(crate) fn with_cursor_end<T>(
-        &mut self,
-        end: TextSize,
-        parse: impl FnOnce(&mut Self) -> T,
-    ) -> T {
-        let mut outer = self.cursor.clone();
-        let range = TextRange::new(self.offset(), end);
-        self.cursor = Cursor::for_range_with_context(self.source, range, end);
-        let result = parse(self);
-        outer.rewind(self.cursor.checkpoint());
-        self.cursor = outer;
-        result
+    pub(crate) fn enter_cursor_scope(&mut self, end: TextSize) -> CursorScope {
+        let outer = CursorScope {
+            consume_end: self.cursor.end(),
+            context_end: self.cursor.context_end(),
+            cursor_frontier: self.state.cursor_frontier,
+            context_frontier: self.state.context_frontier,
+        };
+        self.state.cursor_frontier = false;
+        self.state.context_frontier = false;
+        self.cursor =
+            Cursor::for_range_with_context(self.source, TextRange::new(self.offset(), end), end);
+        outer
+    }
+
+    pub(crate) fn leave_cursor_scope(&mut self, outer: CursorScope) {
+        let checkpoint = self.cursor.checkpoint();
+        let end = if outer.cursor_frontier {
+            self.source.byte_len()
+        } else {
+            outer.consume_end
+        };
+        let context = if outer.context_frontier {
+            self.source.byte_len()
+        } else {
+            outer.context_end
+        };
+        // Resource finalization may own a document remainder beyond an embedded
+        // consume bound; restoration preserves that cursor exactly.
+        self.cursor = Cursor::for_range_with_context(
+            self.source,
+            TextRange::new(TextSize::ZERO, end),
+            context,
+        );
+        self.cursor.rewind(checkpoint);
+        self.state.cursor_frontier = outer.cursor_frontier;
+        self.state.context_frontier = outer.context_frontier;
     }
 
     pub(crate) fn config(&self) -> ParseConfig {
-        self.config
+        self.state.config
     }
 
     pub(crate) fn offset(&self) -> TextSize {
@@ -239,35 +338,43 @@ impl<'a> Parser<'a> {
     }
 
     pub(crate) fn is_halted(&self) -> bool {
-        self.halted
+        self.state.halted
     }
 
     pub(crate) fn halt(&mut self) {
-        self.halted = true;
+        self.state.halted = true;
     }
 
     pub(crate) fn stats(&self) -> ParseStats {
-        self.stats
+        self.state.stats
     }
 
     pub(crate) fn stats_mut(&mut self) -> &mut ParseStats {
-        &mut self.stats
+        &mut self.state.stats
     }
 
     pub(crate) fn start(&mut self) -> Marker {
-        if self.halted || self.resource_finalizing {
+        if self.state.halted || self.state.resource_finalizing {
             return Marker {
                 position: usize::MAX,
+                offset: self.offset(),
             };
         }
-        let open_after = self.open_markers.len().saturating_add(1);
+        let open_after = self.state.open_markers.len().saturating_add(1);
         let position = self
             .emit(Event::Tombstone, open_after)
             .unwrap_or(usize::MAX);
         if position != usize::MAX {
-            self.open_markers.push(position);
+            self.state.open_markers.push(position);
+            self.state.peak_open_markers = self
+                .state
+                .peak_open_markers
+                .max(self.state.open_markers.len());
         }
-        Marker { position }
+        Marker {
+            position,
+            offset: self.offset(),
+        }
     }
 
     pub(crate) fn complete_marker(
@@ -282,25 +389,31 @@ impl<'a> Parser<'a> {
                 kind,
             };
         }
-        if self.halted && !self.resource_finalizing {
+        if self.state.halted && !self.state.resource_finalizing {
             self.consume_resource_remainder();
         }
-        if self.open_markers.is_empty() {
+        if self.state.open_markers.is_empty() {
             return CompletedMarker {
                 position: usize::MAX,
                 kind,
             };
         }
         assert_eq!(
-            self.open_markers.last().copied(),
+            self.state.open_markers.last().copied(),
             Some(marker.position),
             "parser markers must complete in strict LIFO order"
         );
-        if let Some(event) = self.events.get_mut(marker.position) {
-            *event = Event::Start { kind, flags };
+        let identity = self.ids.node();
+        if let Some(event) = self.state.events.get_mut(marker.position) {
+            *event = Event::Start {
+                kind,
+                flags,
+                identity: Some(identity),
+                cached: None,
+            };
         }
-        let open_after = self.open_markers.len().saturating_sub(1);
-        let finish = if self.resource_finalizing {
+        let open_after = self.state.open_markers.len().saturating_sub(1);
+        let finish = if self.state.resource_finalizing {
             self.emit_emergency(Event::Finish)
         } else {
             self.emit(Event::Finish, open_after)
@@ -309,7 +422,10 @@ impl<'a> Parser<'a> {
             finish.is_some(),
             "accepted marker start must reserve capacity for its finish"
         );
-        self.open_markers.pop();
+        self.state.open_markers.pop();
+        self.state
+            .tree_cache
+            .enqueue(&self.state.events, marker.position, marker.offset, identity);
         CompletedMarker {
             position: marker.position,
             kind,
@@ -321,18 +437,18 @@ impl<'a> Parser<'a> {
             return;
         }
         assert!(
-            !self.resource_finalizing,
+            !self.state.resource_finalizing,
             "resource finalization cannot abandon an enclosing parser marker"
         );
         assert_eq!(
-            self.open_markers.last().copied(),
+            self.state.open_markers.last().copied(),
             Some(marker.position),
             "parser markers must abandon in strict LIFO order"
         );
-        self.open_markers.pop();
-        if marker.position + 1 == self.events.len() {
-            self.events.pop();
-        } else if let Some(event) = self.events.get_mut(marker.position) {
+        self.state.open_markers.pop();
+        if marker.position + 1 == self.state.events.len() {
+            self.state.events.pop();
+        } else if let Some(event) = self.state.events.get_mut(marker.position) {
             *event = Event::Tombstone;
         }
     }
@@ -340,35 +456,42 @@ impl<'a> Parser<'a> {
     pub(crate) fn checkpoint(&self) -> ParserCheckpoint {
         ParserCheckpoint {
             cursor: self.cursor.checkpoint(),
-            events: self.events.len(),
-            diagnostics: self.diagnostics.len(),
-            open_markers: self.open_markers.len(),
-            covered_end: self.covered_end,
-            rule_depth: self.rules.len(),
-            nesting: self.nesting,
+            events: self.state.events.len(),
+            diagnostics: self.state.diagnostics.len(),
+            open_markers: self.state.open_markers.len(),
+            covered_end: self.state.covered_end,
+            rule_depth: self.state.rules.len(),
+            nesting: self.state.nesting,
         }
     }
 
     pub(crate) fn rewind(&mut self, checkpoint: ParserCheckpoint) {
         // Resource finalization has assigned the remaining source to an ERROR
         // envelope. Rejected lookahead cannot discard it or refund parser work.
-        if self.resource_finalizing {
+        if self.state.resource_finalizing {
             // The rejected candidate may have left provisional markers for its
             // transaction to discard. Keep finalized children and source, but
             // remove those unselected wrappers before its enclosing owner ends.
-            while self.open_markers.len() > checkpoint.open_markers {
-                let position = self.open_markers.pop().expect("marker above checkpoint");
-                self.events[position] = Event::Tombstone;
+            while self.state.open_markers.len() > checkpoint.open_markers {
+                let position = self
+                    .state
+                    .open_markers
+                    .pop()
+                    .expect("marker above checkpoint");
+                self.state.events[position] = Event::Tombstone;
             }
             return;
         }
+        self.state.rewinds += 1;
+        self.state.rewound_bytes +=
+            u64::from(self.offset().0.saturating_sub(checkpoint.cursor.offset.0));
         self.cursor.rewind(checkpoint.cursor);
-        self.events.truncate(checkpoint.events);
-        self.diagnostics.truncate(checkpoint.diagnostics);
-        self.open_markers.truncate(checkpoint.open_markers);
-        self.covered_end = checkpoint.covered_end;
-        self.rules.truncate(checkpoint.rule_depth);
-        self.nesting = checkpoint.nesting;
+        self.state.events.truncate(checkpoint.events);
+        self.state.diagnostics.truncate(checkpoint.diagnostics);
+        self.state.open_markers.truncate(checkpoint.open_markers);
+        self.state.covered_end = checkpoint.covered_end;
+        self.state.rules.truncate(checkpoint.rule_depth);
+        self.state.nesting = checkpoint.nesting;
     }
 
     pub(crate) fn cache_clean_subtree(
@@ -385,13 +508,21 @@ impl<'a> Parser<'a> {
         {
             return None;
         }
-        let node = sink(
-            self.events.get(start.events..end.events)?,
-            self.source,
-            self.ids,
-        )
-        .ok()?
-        .root;
+        let mut at = start.events;
+        while matches!(self.state.events.get(at), Some(Event::Tombstone)) {
+            at += 1;
+        }
+        let Event::Start {
+            cached: Some(cached),
+            ..
+        } = self.state.events.get(at)?
+        else {
+            return None;
+        };
+        if cached.end_event != end.events {
+            return None;
+        }
+        let node = cached.node.clone();
         (node.text_len == end.cursor.offset - start.cursor.offset).then_some(CleanSubtree {
             start: start.cursor.offset,
             end: end.cursor.offset,
@@ -400,10 +531,10 @@ impl<'a> Parser<'a> {
     }
 
     pub(crate) fn reuse_clean_subtree(&mut self, subtree: &CleanSubtree) -> bool {
-        if self.offset() != subtree.start || self.halted || self.resource_finalizing {
+        if self.offset() != subtree.start || self.state.halted || self.state.resource_finalizing {
             return false;
         }
-        let open_after = self.open_markers.len();
+        let open_after = self.state.open_markers.len();
         if self
             .emit(
                 Event::Reuse {
@@ -418,8 +549,9 @@ impl<'a> Parser<'a> {
         self.cursor.rewind(CursorCheckpoint {
             offset: subtree.end,
         });
-        self.covered_end = self.covered_end.max(subtree.end);
-        self.stats.reused_node_count = self.stats.reused_node_count.saturating_add(1);
+        self.state.covered_end = self.state.covered_end.max(subtree.end);
+        self.state.stats.reused_node_count = self.state.stats.reused_node_count.saturating_add(1);
+        self.state.cached_replay_bytes += u64::from((subtree.end - subtree.start).0);
         true
     }
 
@@ -429,10 +561,10 @@ impl<'a> Parser<'a> {
         canonical: Option<RuleId>,
         parse: impl FnOnce(&mut Self) -> T,
     ) -> T {
-        let depth = self.rules.len();
-        self.rules.push(context, canonical);
+        let depth = self.state.rules.len();
+        self.state.rules.push(context, canonical);
         let result = parse(self);
-        self.rules.truncate(depth);
+        self.state.rules.truncate(depth);
         result
     }
 
@@ -441,24 +573,24 @@ impl<'a> Parser<'a> {
         rule: RuleId,
         parse: impl FnOnce(&mut Self) -> T,
     ) -> T {
-        let depth = self.rules.len();
-        self.rules.push_canonical(rule);
+        let depth = self.state.rules.len();
+        self.state.rules.push_canonical(rule);
         let result = parse(self);
-        self.rules.truncate(depth);
+        self.state.rules.truncate(depth);
         result
     }
 
     pub(crate) fn current_rule(&self) -> Option<RuleId> {
-        self.rules.current_rule()
+        self.state.rules.current_rule()
     }
 
     pub(crate) fn current_context(&self) -> Option<ParserContextId> {
-        self.rules.current_context()
+        self.state.rules.current_context()
     }
 
     #[cfg(test)]
     pub(crate) fn rule_depth(&self) -> usize {
-        self.rules.len()
+        self.state.rules.len()
     }
 
     pub(crate) fn bump_char_raw(&mut self) -> Option<(char, TextRange)> {
@@ -501,7 +633,10 @@ impl<'a> Parser<'a> {
         range: TextRange,
         flags: TokenFlags,
     ) {
-        let _ = self.emit(Event::Token { kind, range, flags }, self.open_markers.len());
+        let _ = self.emit(
+            Event::Token { kind, range, flags },
+            self.state.open_markers.len(),
+        );
     }
 
     pub(crate) fn missing_token(&mut self, kind: SyntaxKind) {
@@ -511,7 +646,7 @@ impl<'a> Parser<'a> {
                 range: TextRange::empty(self.offset()),
                 flags: TokenFlags::SYNTHETIC | TokenFlags::MISSING,
             },
-            self.open_markers.len(),
+            self.state.open_markers.len(),
         );
     }
 
@@ -525,11 +660,11 @@ impl<'a> Parser<'a> {
         event: Option<usize>,
         relative: TextRange,
     ) {
-        if self.diagnostics.len() >= self.config.limits.max_diagnostics as usize {
-            self.stats.diagnostics_truncated = true;
+        if self.state.diagnostics.len() >= self.state.config.limits.max_diagnostics as usize {
+            self.state.stats.diagnostics_truncated = true;
             return;
         }
-        self.diagnostics.push(PendingDiagnostic {
+        self.state.diagnostics.push(PendingDiagnostic {
             diagnostic,
             event,
             relative,
@@ -537,7 +672,8 @@ impl<'a> Parser<'a> {
     }
 
     pub(crate) fn last_diagnostic_mut(&mut self) -> Option<&mut Diagnostic> {
-        self.diagnostics
+        self.state
+            .diagnostics
             .last_mut()
             .map(|pending| &mut pending.diagnostic)
     }
@@ -581,7 +717,7 @@ impl<'a> Parser<'a> {
     }
 
     pub(crate) fn found_syntax(&self) -> FoundSyntax {
-        match self.lexical_mode {
+        match self.state.lexical_mode {
             LexicalMode::PrototypeDocument => {
                 let character = self.cursor.context_peek_char();
                 if character.is_none() {
@@ -604,29 +740,19 @@ impl<'a> Parser<'a> {
 
     #[cfg(test)]
     pub(crate) fn nesting(&self) -> u32 {
-        self.nesting
+        self.state.nesting
     }
 
     pub(crate) fn push_nesting(&mut self) -> bool {
-        if self.nesting >= self.config.limits.max_nesting {
+        if self.state.nesting >= self.state.config.limits.max_nesting {
             return false;
         }
-        self.nesting += 1;
+        self.state.nesting += 1;
         true
     }
 
     pub(crate) fn pop_nesting(&mut self) {
-        self.nesting = self.nesting.saturating_sub(1);
-    }
-
-    pub(crate) fn with_nesting<T>(&mut self, parse: impl FnOnce(&mut Self) -> T) -> Option<T> {
-        if !self.push_nesting() {
-            return None;
-        }
-
-        let result = parse(self);
-        self.pop_nesting();
-        Some(result)
+        self.state.nesting = self.state.nesting.saturating_sub(1);
     }
 
     pub(crate) fn is_fence_start(&self) -> bool {
@@ -644,26 +770,28 @@ impl<'a> Parser<'a> {
     }
 
     pub(crate) fn consume_resource_remainder(&mut self) {
-        if self.resource_finalizing {
+        if self.state.resource_finalizing {
             return;
         }
-        self.resource_finalizing = true;
-        let mut range = TextRange::new(self.covered_end, self.parse_range.end);
+        self.state.resource_finalizing = true;
+        let mut range = TextRange::new(self.state.covered_end, self.state.parse_range.end);
         self.cursor.rewind(CursorCheckpoint { offset: range.end });
 
-        if self.config.limits.max_events < MIN_PREFIX_PRESERVING_EVENTS {
-            self.events.clear();
-            self.open_markers.clear();
-            self.covered_end = self.parse_range.start;
-            range = self.parse_range;
+        if self.state.config.limits.max_events < MIN_PREFIX_PRESERVING_EVENTS {
+            self.state.events.clear();
+            self.state.open_markers.clear();
+            self.state.covered_end = self.state.parse_range.start;
+            range = self.state.parse_range;
         } else if !range.is_empty() {
-            let required = self.open_markers.len().saturating_add(3);
+            let required = self.state.open_markers.len().saturating_add(3);
             assert!(
-                self.events.len().saturating_add(required)
-                    <= self.config.limits.max_events as usize,
+                self.state.events.len().saturating_add(required)
+                    <= self.state.config.limits.max_events as usize,
                 "ordinary events must reserve the resource envelope and open-marker finishes"
             );
             let _ = self.emit_emergency(Event::Start {
+                identity: None,
+                cached: None,
                 kind: SyntaxKind::Error,
                 flags: NodeFlags::ERROR,
             });
@@ -673,22 +801,22 @@ impl<'a> Parser<'a> {
                 flags: TokenFlags::ERROR,
             });
             let _ = self.emit_emergency(Event::Finish);
-            self.covered_end = range.end;
+            self.state.covered_end = range.end;
         }
-        if !self.resource_diagnostic_emitted {
-            self.resource_diagnostic_emitted = true;
-            let rule = self.current_rule().or(self.resource_rule);
+        if !self.state.resource_diagnostic_emitted {
+            self.state.resource_diagnostic_emitted = true;
+            let rule = self.current_rule().or(self.state.resource_rule);
             let context = rule.is_none().then(|| self.current_context()).flatten();
-            let found = match self.lexical_mode {
-                LexicalMode::PrototypeDocument => FoundSyntax {
+            let found = if self.state.lexical_mode == LexicalMode::PrototypeDocument {
+                Some(FoundSyntax {
                     kind: Some(SyntaxKind::Unknown),
                     text: None,
-                },
-                LexicalMode::CanonicalGrammar => canonical::found::found_syntax(self, range.start),
-                LexicalMode::CanonicalSourceFragment => {
-                    canonical::found::source_found_syntax(self, range.start)
-                }
+                })
+            } else {
+                None
             };
+            let diagnostic_index = self.state.diagnostics.len();
+            let deferred = found.is_none();
             let diagnostic = Diagnostic {
                 id: self.next_diagnostic_id(),
                 code: DiagnosticCode::syntax("recovery-limit"),
@@ -702,7 +830,7 @@ impl<'a> Parser<'a> {
                 },
                 labels: Vec::new(),
                 expected: Vec::new(),
-                found: Some(found),
+                found,
                 fixes: Vec::new(),
                 related: Vec::new(),
                 recovery: Some(RecoveryAction::ResourceLimit { range }),
@@ -710,78 +838,102 @@ impl<'a> Parser<'a> {
                 message: String::from("parser resource limit reached"),
             };
             self.push_diagnostic(diagnostic, None, range);
+            if deferred && self.state.diagnostics.len() > diagnostic_index {
+                self.state.resource_found = Some(resource_found::Continuation::new(
+                    self.state.lexical_mode,
+                    diagnostic_index,
+                    range.start,
+                    self.cursor.context_end(),
+                ));
+            }
         }
-        self.halted = true;
+        self.state.halted = true;
     }
 
     fn emit(&mut self, event: Event, open_after: usize) -> Option<usize> {
-        if self.halted || self.resource_finalizing {
-            self.halted = true;
+        if self.state.halted || self.state.resource_finalizing {
+            self.state.halted = true;
             return None;
         }
         let emergency = open_after.saturating_add(3);
         if self
+            .state
             .events
             .len()
             .saturating_add(1)
             .saturating_add(emergency)
-            > self.config.limits.max_events as usize
+            > self.state.config.limits.max_events as usize
         {
-            self.halted = true;
+            self.state.halted = true;
             return None;
         }
-        let position = self.events.len();
+        let position = self.state.events.len();
         if let Event::Token { range, flags, .. } = &event
             && !flags.contains(TokenFlags::SYNTHETIC)
         {
-            self.covered_end = self.covered_end.max(range.end);
+            self.state.covered_end = self.state.covered_end.max(range.end);
         }
-        self.events.push(event);
+        self.state.events.push(event);
+        self.state.peak_events = self.state.peak_events.max(self.state.events.len());
         Some(position)
     }
 
     fn emit_emergency(&mut self, event: Event) -> Option<usize> {
-        if self.events.len() >= self.config.limits.max_events as usize {
+        if self.state.events.len() >= self.state.config.limits.max_events as usize {
             return None;
         }
-        let position = self.events.len();
-        self.events.push(event);
+        let position = self.state.events.len();
+        self.state.events.push(event);
+        self.state.peak_events = self.state.peak_events.max(self.state.events.len());
         Some(position)
     }
 
     fn charge(&mut self) -> bool {
-        if self.halted || self.fuel == 0 {
-            self.halted = true;
+        if self.state.halted || self.state.fuel == 0 {
+            self.state.halted = true;
             return false;
         }
-        self.fuel -= 1;
-        self.stats.parser_steps = self.stats.parser_steps.saturating_add(1);
+        self.state.fuel -= 1;
+        self.state.stats.parser_steps = self.state.stats.parser_steps.saturating_add(1);
         true
     }
 
     fn finish(mut self) -> ParserOutput {
-        if self.halted && !self.resource_finalizing {
+        if self.state.halted && !self.state.resource_finalizing {
             self.consume_resource_remainder();
         }
+        loop {
+            let mut allowance = u64::MAX;
+            if self.advance_resource_found(&mut allowance) {
+                break;
+            }
+        }
+        loop {
+            let mut allowance = u64::MAX;
+            if self.advance_tree_cache(&mut allowance) {
+                break;
+            }
+        }
         assert_eq!(
-            self.rules.len(),
+            self.state.rules.len(),
             0,
             "parser rule stack must be empty after every parse"
         );
         assert!(
-            self.open_markers.is_empty(),
+            self.state.open_markers.is_empty(),
             "parser marker stack must be empty after every parse"
         );
         assert!(
-            self.events.len() <= self.config.limits.max_events as usize,
+            self.state.events.len() <= self.state.config.limits.max_events as usize,
             "parser event budget must be a hard limit"
         );
-        self.stats.events_emitted = self.events.len() as u64;
-        self.stats.diagnostics_emitted = self.diagnostics.len() as u64;
+        self.state.stats.events_emitted = self.state.events.len() as u64;
+        self.state.stats.diagnostics_emitted = self.state.diagnostics.len() as u64;
+        let state = self.suspend();
         ParserOutput {
-            events: self.events,
-            diagnostics: self.diagnostics,
-            stats: self.stats,
+            events: state.events,
+            diagnostics: state.diagnostics,
+            stats: state.stats,
         }
     }
 }
@@ -897,9 +1049,30 @@ fn finish_snapshot(
         .unwrap_or_else(|_| fallback_tree(&source, ids, fallback_kind));
 
     let mut diagnostics = DiagnosticStore::new(source.revision());
-    for mut pending in output.diagnostics {
+    for mut pending in output.diagnostics.iter().cloned() {
+        // Accepted append-only prefixes keep their byte ranges. Bind absolute
+        // anchors to the exported revision here, not by revisiting every old
+        // diagnostic each time input arrives. Edits invalidate live parse state.
+        for anchor in core::iter::once(&mut pending.diagnostic.primary).chain(
+            pending
+                .diagnostic
+                .labels
+                .iter_mut()
+                .map(|label| &mut label.anchor),
+        ) {
+            if let DiagnosticAnchor::Absolute { revision, .. } = anchor {
+                *revision = source.revision();
+            }
+        }
         if let Some(event) = pending.event
-            && let Some(node) = sink_result.event_nodes.get(&event)
+            && let Some(node) = output
+                .events
+                .get(event)
+                .and_then(|event| match event {
+                    Event::Start { identity, .. } => identity.as_ref(),
+                    _ => None,
+                })
+                .or_else(|| sink_result.event_nodes.get(&event))
         {
             pending.diagnostic.primary = DiagnosticAnchor::Element {
                 element: crate::document::SyntaxElementId::Node(*node),
@@ -936,7 +1109,7 @@ fn fallback_tree(
             id: ids.node(),
             kind: root_kind,
             text_len: TextSize::ZERO,
-            children: Arc::from([]),
+            children: Default::default(),
             flags: NodeFlags::ERROR,
             structural_hash: 0,
         })
@@ -1018,6 +1191,192 @@ mod tests {
     use super::*;
     use crate::document::{DocumentId, ExpectedSyntax, Revision};
 
+    #[test]
+    fn embedded_cursor_scopes_survive_append_and_restore_each_owning_frontier() {
+        let source = TextSnapshot::new(DocumentId(826), Revision(0), "abcd").unwrap();
+        let mut ids = IdGenerator::new();
+        let mut parser = Parser::new(
+            &source,
+            LexicalMode::CanonicalSourceFragment,
+            ParseConfig::default(),
+            &mut ids,
+        );
+        let outer = parser.enter_cursor_scope(TextSize(3));
+        let inner = parser.enter_cursor_scope(TextSize(2));
+        parser.bump_bytes_token(1, SyntaxKind::Text).unwrap();
+        let fuel = parser.state.fuel;
+        let state = parser.suspend();
+        let extended = source.append("ef").unwrap();
+        let mut parser = Parser::resume(&extended, state, &mut ids);
+        assert_eq!(parser.offset(), TextSize(1));
+        assert_eq!(parser.cursor().end(), TextSize(2));
+        parser.leave_cursor_scope(inner);
+        assert_eq!(parser.cursor().end(), TextSize(3));
+        assert_eq!(parser.cursor().context_end(), TextSize(3));
+        assert!(!parser.state.cursor_frontier);
+        parser.leave_cursor_scope(outer);
+        assert_eq!(parser.cursor().end(), extended.byte_len());
+        assert_eq!(parser.cursor().context_end(), extended.byte_len());
+        assert_eq!(parser.offset(), TextSize(1));
+        assert_eq!(parser.state.fuel, fuel);
+        assert!(parser.state.cursor_frontier);
+        assert!(parser.state.context_frontier);
+    }
+
+    #[test]
+    fn cursor_scope_restore_keeps_document_resource_remainders_past_local_bounds() {
+        let source = TextSnapshot::new(DocumentId(826), Revision(0), "abcdef").unwrap();
+        let mut ids = IdGenerator::new();
+        let mut parser = Parser::new(
+            &source,
+            LexicalMode::CanonicalSourceFragment,
+            ParseConfig::default(),
+            &mut ids,
+        );
+        let wrapper = parser.start();
+        let outer = parser.enter_cursor_scope(TextSize(4));
+        let inner = parser.enter_cursor_scope(TextSize(2));
+        parser.halt();
+        parser.consume_resource_remainder();
+        assert_eq!(parser.offset(), source.byte_len());
+        parser.leave_cursor_scope(inner);
+        assert_eq!(parser.cursor().end(), TextSize(4));
+        assert_eq!(parser.offset(), source.byte_len());
+        parser.leave_cursor_scope(outer);
+        assert_eq!(parser.cursor().end(), source.byte_len());
+        assert_eq!(parser.offset(), source.byte_len());
+        wrapper.complete(&mut parser, SyntaxKind::Document);
+        let output = parser.finish();
+        assert_eq!(output.diagnostics.len(), 1);
+        assert_eq!(output.stats.source_bytes, 6);
+    }
+
+    #[test]
+    fn suspended_parser_retains_live_markers_context_and_nonrefundable_work() {
+        let source = TextSnapshot::new(DocumentId(826), Revision(0), "a").unwrap();
+        let mut ids = IdGenerator::new();
+        let mut parser = Parser::new(
+            &source,
+            LexicalMode::CanonicalSourceFragment,
+            ParseConfig::default(),
+            &mut ids,
+        );
+        let root = parser.start();
+        parser.state.rules.push_canonical(rules::PARSE);
+        let checkpoint = parser.checkpoint();
+        parser.bump_bytes_token(1, SyntaxKind::Text).unwrap();
+        let fuel = parser.state.fuel;
+        let events = parser.state.events.get(0).map(core::ptr::from_ref);
+        let steps = parser.stats().parser_steps;
+        let state = parser.suspend();
+        let source = source.append("b").unwrap();
+        let mut parser = Parser::resume(&source, state, &mut ids);
+        assert_eq!(parser.state.events.get(0).map(core::ptr::from_ref), events);
+        assert_eq!(parser.current_rule(), Some(rules::PARSE));
+        assert_eq!(parser.state.open_markers.len(), 1);
+        assert_eq!(parser.offset(), TextSize(1));
+        assert_eq!(parser.cursor.end(), TextSize(2));
+        assert_eq!(parser.state.fuel, fuel);
+        assert_eq!(parser.stats().parser_steps, steps);
+        parser.rewind(checkpoint);
+        assert_eq!(parser.offset(), TextSize::ZERO);
+        assert_eq!(
+            parser.state.fuel, fuel,
+            "rewind cannot refund work across a resume"
+        );
+        parser.bump_bytes_token(2, SyntaxKind::Text).unwrap();
+        parser.state.rules.truncate(0);
+        root.complete(&mut parser, SyntaxKind::Document);
+        let output = parser.finish();
+        let tree = event::sink(&output.events, &source, &mut ids).unwrap();
+        assert_eq!(
+            crate::document::reconstruct_source(&tree.root, &source).unwrap(),
+            "ab"
+        );
+        assert_eq!(output.stats.source_bytes, 2);
+        assert!(output.stats.parser_steps > steps);
+    }
+
+    #[test]
+    fn resumed_diagnostics_keep_identity_and_bind_labels_to_the_export_revision() {
+        let source = TextSnapshot::new(DocumentId(826), Revision(0), "a").unwrap();
+        let mut ids = IdGenerator::new();
+        let mut parser = Parser::new(
+            &source,
+            LexicalMode::CanonicalSourceFragment,
+            ParseConfig::default(),
+            &mut ids,
+        );
+        let root = parser.start();
+        recovery::insert_missing(
+            &mut parser,
+            "syntax/test-missing",
+            "expected closer",
+            ExpectedSyntax::Token(SyntaxKind::RightParen),
+            Some(SyntaxKind::RightParen),
+        );
+        let diagnostic = parser.last_diagnostic_mut().unwrap();
+        let id = diagnostic.id;
+        diagnostic.labels.push(crate::document::DiagnosticLabel {
+            anchor: DiagnosticAnchor::Absolute {
+                revision: source.revision(),
+                range: source.full_range(),
+            },
+            message: String::from("retained prefix"),
+        });
+        parser.bump_bytes_token(1, SyntaxKind::Text).unwrap();
+        let diagnostics = parser.state.diagnostics.get(0).map(core::ptr::from_ref);
+        let state = parser.suspend();
+        let source = source.append("b").unwrap();
+        let mut parser = Parser::resume(&source, state, &mut ids);
+        assert_eq!(
+            parser.state.diagnostics.get(0).map(core::ptr::from_ref),
+            diagnostics
+        );
+        assert_eq!(parser.state.diagnostics[0].diagnostic.id, id);
+        parser.bump_bytes_token(1, SyntaxKind::Text).unwrap();
+        root.complete(&mut parser, SyntaxKind::Document);
+        let snapshot = finish_snapshot(
+            source.clone(),
+            parser.finish(),
+            &mut ids,
+            SyntaxKind::Document,
+        );
+        let diagnostic = snapshot.diagnostics.iter().next().unwrap();
+        assert_eq!(diagnostic.id, id);
+        assert_eq!(
+            diagnostic.labels[0]
+                .anchor
+                .resolve(snapshot.revision, &snapshot.nodes),
+            Some(TextRange::new(TextSize::ZERO, TextSize(1)))
+        );
+        assert_eq!(
+            crate::document::reconstruct_source(&snapshot.root, &snapshot.source).unwrap(),
+            "ab"
+        );
+    }
+
+    #[test]
+    fn resuming_an_embedded_range_does_not_expand_a_fixed_eof_bound() {
+        let source = TextSnapshot::new(DocumentId(826), Revision(0), "a").unwrap();
+        let mut ids = IdGenerator::new();
+        let parser = Parser::for_range(
+            &source,
+            source.full_range(),
+            LexicalMode::CanonicalSourceFragment,
+            None,
+            0,
+            ParseConfig::default(),
+            &mut ids,
+        );
+        let state = parser.suspend();
+        let source = source.append("b").unwrap();
+        let parser = Parser::resume(&source, state, &mut ids);
+        assert_eq!(parser.cursor.end(), TextSize(1));
+        assert_eq!(parser.cursor.context_end(), TextSize(2));
+        assert_eq!(parser.state.parse_range.end, TextSize(1));
+    }
+
     fn classify(text: &str, mode: LexicalMode, resource_rule: Option<RuleId>) -> FoundSyntax {
         let source = TextSnapshot::new(DocumentId(1), Revision(0), text).unwrap();
         let mut ids = IdGenerator::new();
@@ -1076,7 +1435,7 @@ mod tests {
     }
 
     #[test]
-    fn scoped_nesting_returns_result_and_restores_depth() {
+    fn retained_nesting_enters_and_restores_depth() {
         let source = TextSnapshot::new(DocumentId(1), Revision(0), "").unwrap();
         let mut ids = IdGenerator::new();
         let mut parser = Parser::new(
@@ -1087,17 +1446,14 @@ mod tests {
         );
         let initial = parser.nesting();
 
-        let result = parser.with_nesting(|parser| {
-            assert_eq!(parser.nesting(), initial + 1);
-            42_u32
-        });
-
-        assert_eq!(result, Some(42));
+        assert!(parser.push_nesting());
+        assert_eq!(parser.nesting(), initial + 1);
+        parser.pop_nesting();
         assert_eq!(parser.nesting(), initial);
     }
 
     #[test]
-    fn scoped_nesting_does_not_call_closure_at_limit() {
+    fn retained_nesting_rejects_entry_at_limit() {
         let source = TextSnapshot::new(DocumentId(1), Revision(0), "").unwrap();
         let mut ids = IdGenerator::new();
         let config = ParseConfig {
@@ -1113,19 +1469,12 @@ mod tests {
             &mut ids,
         );
         let initial = parser.nesting();
-        let mut called = false;
-
-        let result = parser.with_nesting(|_| {
-            called = true;
-        });
-
-        assert_eq!(result, None);
-        assert!(!called);
+        assert!(!parser.push_nesting());
         assert_eq!(parser.nesting(), initial);
     }
 
     #[test]
-    fn scoped_nesting_restores_depth_when_closure_halts_parser() {
+    fn retained_nesting_restores_depth_after_halt() {
         let source = TextSnapshot::new(DocumentId(1), Revision(0), "").unwrap();
         let mut ids = IdGenerator::new();
         let mut parser = Parser::new(
@@ -1136,13 +1485,10 @@ mod tests {
         );
         let initial = parser.nesting();
 
-        let result = parser.with_nesting(|parser| {
-            parser.halt();
-            assert_eq!(parser.nesting(), initial + 1);
-            "halted"
-        });
-
-        assert_eq!(result, Some("halted"));
+        assert!(parser.push_nesting());
+        parser.halt();
+        assert_eq!(parser.nesting(), initial + 1);
+        parser.pop_nesting();
         assert!(parser.is_halted());
         assert_eq!(parser.nesting(), initial);
     }

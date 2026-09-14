@@ -276,6 +276,18 @@
       "path": "src/runtime/src/store.rs",
       "production_or_test": "test",
       "reason": "used by source-enabled transaction regression profiles"
+    },
+    {
+      "directive": "allow",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Remove when the publication and complexity integration targets no longer compile the shared mirror separately.",
+      "introduced_release": "0.4.0",
+      "lint": "dead_code",
+      "occurrences": 1,
+      "owner": "Canonical retained-document streaming qualification",
+      "path": "src/syntax/tests/support/stream_mirror.rs",
+      "production_or_test": "test",
+      "reason": "limited-export resynchronization is exercised by the publication integration target"
     }
   ],
   "policy_release": "0.4.0",

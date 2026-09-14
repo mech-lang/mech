@@ -259,3 +259,34 @@ fn shared_sigil_alone_never_commits_recovery() {
         assert!(parsed.diagnostics.is_empty(), "{input:?}");
     }
 }
+
+#[test]
+fn module_import_resource_exhaustion_keeps_nested_recovery_owners_lossless() {
+    use mech_syntax::document::parser::canonical::parse_canonical_phase_2e_rule_for_test;
+    use mech_syntax::document::{DocumentId, Revision, TextSnapshot, validate_lossless_range};
+    for input in [
+        "+> @ctx/path;next",
+        "+> @ctx/💡\u{301}\r\nnext",
+        "+> @ctx :",
+        "+> @",
+        "+> alias := math/",
+        "+> math/{sin,}",
+        "+> math/{_}",
+    ] {
+        for fuel in 0..=80 {
+            for max_events in [8, 16, 64, 1024] {
+                let mut config = ParseConfig::default();
+                config.limits.fuel = fuel;
+                config.limits.max_events = max_events;
+                let source = TextSnapshot::new(DocumentId(826), Revision(0), input).unwrap();
+                let parsed =
+                    parse_canonical_phase_2e_rule_for_test(source, rules::MODULE_IMPORT, config)
+                        .unwrap();
+                validate_lossless_range(&parsed.root, &parsed.source, parsed.consumed)
+                    .unwrap_or_else(|error| {
+                        panic!("{input:?}, fuel {fuel}, events {max_events}: {error:?}")
+                    });
+            }
+        }
+    }
+}

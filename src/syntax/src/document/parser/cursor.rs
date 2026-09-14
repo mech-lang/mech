@@ -3,7 +3,8 @@ use core::str;
 
 use unicode_segmentation::{GraphemeCursor, GraphemeIncomplete, UnicodeSegmentation};
 
-use crate::document::source::SourceChunk;
+use super::grapheme_scan::{GraphemeScan, ScanProgress};
+use super::literal_scan::{LiteralProgress, LiteralScan};
 use crate::document::{TextRange, TextSize, TextSnapshot};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -109,19 +110,18 @@ impl<'a> Cursor<'a> {
 
     /// Match a literal as a sequence of complete extended graphemes.
     pub(crate) fn grapheme_literal_end(&self, literal: &str) -> Option<TextSize> {
-        if literal.is_empty() {
-            return None;
+        let mut scan = LiteralScan::new(literal, self.offset, Some(self.context_end))?;
+        let mut allowance = u64::MAX;
+        match scan.advance(
+            self.source,
+            self.consume_end,
+            self.context_end,
+            true,
+            &mut allowance,
+        ) {
+            LiteralProgress::Complete(result) => result,
+            _ => None,
         }
-
-        let mut scan = self.clone();
-        for expected in UnicodeSegmentation::graphemes(literal, true) {
-            let range = scan.peek_grapheme_range()?;
-            if range.len().to_usize() != expected.len() || !scan.starts_with(expected) {
-                return None;
-            }
-            scan.bump_bytes(range.len().0)?;
-        }
-        (scan.offset > self.offset).then_some(scan.offset)
     }
 
     /// Match a literal against complete graphemes after omitting selected
@@ -389,41 +389,12 @@ fn next_grapheme_range(
         return None;
     }
 
-    let mut cursor = GraphemeCursor::new(offset.to_usize(), end.to_usize(), true);
-    let mut chunk = forward_chunk(source, offset, end)?;
-    loop {
-        match cursor.next_boundary(chunk.text, chunk.range.start.to_usize()) {
-            Ok(Some(boundary)) => {
-                let boundary = TextSize::checked_from_usize(boundary).ok()?;
-                return Some(TextRange::new(offset, boundary));
-            }
-            Ok(None) => return None,
-            Err(GraphemeIncomplete::NextChunk) => {
-                let at = TextSize::checked_from_usize(cursor.cur_cursor()).ok()?;
-                chunk = forward_chunk(source, at, end)?;
-            }
-            Err(GraphemeIncomplete::PreContext(before)) => {
-                let before = TextSize::checked_from_usize(before).ok()?;
-                let context = source.chunk_before(before)?;
-                cursor.provide_context(context.text, context.range.start.to_usize());
-            }
-            Err(GraphemeIncomplete::PrevChunk | GraphemeIncomplete::InvalidOffset) => return None,
-        }
+    let mut scan = GraphemeScan::new(offset, Some(end));
+    let mut allowance = u64::MAX;
+    match scan.advance(source, end, true, &mut allowance) {
+        ScanProgress::Grapheme(range) => Some(range),
+        _ => None,
     }
-}
-
-fn forward_chunk(
-    source: &TextSnapshot,
-    offset: TextSize,
-    end: TextSize,
-) -> Option<SourceChunk<'_>> {
-    let chunk = source.chunk_at(offset)?;
-    let chunk_end = TextSize(chunk.range.end.0.min(end.0));
-    let len = (chunk_end - chunk.range.start).to_usize();
-    Some(SourceChunk {
-        text: &chunk.text[..len],
-        range: TextRange::new(chunk.range.start, chunk_end),
-    })
 }
 
 const fn utf8_width(first: u8) -> usize {

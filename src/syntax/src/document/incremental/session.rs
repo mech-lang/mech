@@ -11,6 +11,8 @@ pub struct DocumentSession {
     current: SyntaxSnapshot,
     ids: IdGenerator,
     config: ParseConfig,
+    // Retained across ownership handoffs even when the source revision is unchanged.
+    interpretation: u64,
 }
 
 impl DocumentSession {
@@ -27,6 +29,7 @@ impl DocumentSession {
             current,
             ids,
             config,
+            interpretation: 0,
         }
     }
 
@@ -61,6 +64,29 @@ impl DocumentSession {
             diagnostics: result.diagnostics,
             stats: result.stats,
         })
+    }
+
+    /// Start a fresh retained interpretation without changing the source revision.
+    pub fn into_stream(self) -> crate::document::DocumentStream {
+        crate::document::DocumentStream::from_session(
+            self.current.source,
+            self.ids,
+            self.config,
+            self.interpretation,
+        )
+    }
+    pub(crate) fn from_stream_parts(
+        current: SyntaxSnapshot,
+        ids: IdGenerator,
+        config: ParseConfig,
+        interpretation: u64,
+    ) -> Self {
+        Self {
+            current,
+            ids,
+            config,
+            interpretation,
+        }
     }
 
     pub fn snapshot(&self) -> &SyntaxSnapshot {

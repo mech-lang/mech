@@ -1,15 +1,11 @@
-//! Canonical direct subscript primitives for the Phase 2G closed island.
-//!
-//! The complete `subscript` parent remains outside this phase. These direct
-//! productions only retain the exact prefix recognized by their legacy peers.
+//! Canonical subscript primitives entry points.
+//! Recognition runs through shared retained primitive phases.
 
-use crate::document::{RuleId, SyntaxKind};
+use crate::document::RuleId;
 
 use super::super::Parser;
 use super::super::rule::rules;
-use super::base;
-use super::combinator::{self, Attempt};
-use super::literals;
+use super::combinator::Attempt;
 
 /// The Phase 2G subscript primitives with no recursive parent dependency.
 pub(crate) const PHASE_2G_SUBSCRIPT_RULES: &[RuleId; 4] = &[
@@ -35,79 +31,15 @@ pub(crate) fn parse_rule(parser: &mut Parser<'_>, rule: RuleId) -> Option<Attemp
     })
 }
 
-/// Parse the direct `:` selector used by bracket and brace parents.
 pub(crate) fn parse_select_all(parser: &mut Parser<'_>) -> Attempt {
-    combinator::transactional(parser, rules::SELECT_ALL, |parser| {
-        let subscript = parser.start();
-        if !base::parse_rule(parser, rules::COLON) {
-            subscript.abandon(parser);
-            return Attempt::NoMatch;
-        }
-        subscript.complete(parser, SyntaxKind::SelectAllSubscript);
-        Attempt::Matched
-    })
+    super::primitives::parse_rule(parser, rules::SELECT_ALL)
 }
-
-/// Parse a dot followed by two or more comma-separated identifiers.
-///
-/// Each repeated `, identifier` pair is transactional. In particular, a
-/// trailing comma is retained for a future parent instead of being consumed by
-/// this direct leaf.
 pub(crate) fn parse_swizzle_subscript(parser: &mut Parser<'_>) -> Attempt {
-    combinator::transactional(parser, rules::SWIZZLE_SUBSCRIPT, |parser| {
-        let subscript = parser.start();
-        if !base::parse_rule(parser, rules::PERIOD)
-            || !base::parse_rule(parser, rules::IDENTIFIER)
-            || !base::parse_rule(parser, rules::COMMA)
-            || !base::parse_rule(parser, rules::IDENTIFIER)
-        {
-            subscript.abandon(parser);
-            return Attempt::NoMatch;
-        }
-
-        loop {
-            let checkpoint = parser.checkpoint();
-            if !base::parse_rule(parser, rules::COMMA)
-                || !base::parse_rule(parser, rules::IDENTIFIER)
-            {
-                parser.rewind(checkpoint);
-                break;
-            }
-            if parser.is_halted() {
-                break;
-            }
-        }
-
-        subscript.complete(parser, SyntaxKind::SwizzleSubscript);
-        Attempt::Matched
-    })
+    super::primitives::parse_rule(parser, rules::SWIZZLE_SUBSCRIPT)
 }
-
-/// Parse one identifier dot subscript.
 pub(crate) fn parse_dot_subscript(parser: &mut Parser<'_>) -> Attempt {
-    combinator::transactional(parser, rules::DOT_SUBSCRIPT, |parser| {
-        let subscript = parser.start();
-        if !base::parse_rule(parser, rules::PERIOD) || !base::parse_rule(parser, rules::IDENTIFIER)
-        {
-            subscript.abandon(parser);
-            return Attempt::NoMatch;
-        }
-        subscript.complete(parser, SyntaxKind::DotSubscript);
-        Attempt::Matched
-    })
+    super::primitives::parse_rule(parser, rules::DOT_SUBSCRIPT)
 }
-
-/// Parse one integer-literal dot subscript using the Phase 2C literal rule.
 pub(crate) fn parse_dot_subscript_int(parser: &mut Parser<'_>) -> Attempt {
-    combinator::transactional(parser, rules::DOT_SUBSCRIPT_INT, |parser| {
-        let subscript = parser.start();
-        if !base::parse_rule(parser, rules::PERIOD)
-            || !literals::parse_integer_literal(parser).accepted()
-        {
-            subscript.abandon(parser);
-            return Attempt::NoMatch;
-        }
-        subscript.complete(parser, SyntaxKind::DotSubscriptInt);
-        Attempt::Matched
-    })
+    super::primitives::parse_rule(parser, rules::DOT_SUBSCRIPT_INT)
 }

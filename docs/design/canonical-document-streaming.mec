@@ -1,0 +1,338 @@
+Canonical Retained-Document Streaming — S7B
+===============================================================================
+
+Implementation: B1-B6, rebased onto the S7A base recorded below.
+Historical growth measurements: f33df6d8fdebbe670f2f05067ceb54891f835b26.
+B6 closeout: API and handoff implemented; exact-head qualification lives on PR #826.
+A completed checkpoint document does not certify pending CI or review.
+PR: https://github.com/mech-lang/mech/pull/826 (draft).
+Base: S7A #825, f6fa1075d0ed75d15413d2f31813486c70206fa7.
+Branch: codex/syntax-s7b-streaming -> codex/syntax-s7-document-root.
+
+1. Scope and authority
+-------------------------------------------------------------------------------
+
+DocumentStream retains a canonical document while valid UTF-8 text arrives.
+The document grammar, recursive rule continuations, recognition, recovery, typed
+syntax, and semantic consumer boundary have one implementation. Final one-shot
+parsing drives those same owners with final input. Frozen grammar witnesses and
+structural hashes provide an independent reference beyond differential tests.
+
+The grammar inventory remains 520/539. This work adds no productions, alternate
+AST, compatibility parser, semantic capability, FSM scheduling, or production
+caller switch. S8 performs production integration and removal of retiring paths.
+S2/S3 remain frozen. Shared canonical execution changes belong in this S7B diff.
+
+Production parsing uses safe, deterministic core/alloc machinery. Transports,
+UTF-8 byte buffering, I/O, threads, clocks, and async scheduling remain external.
+Retained-document streaming keeps accepted source and syntax inspectable; its
+storage grows with the document. Callers control retention of historical views.
+
+2. Public lifecycle and scheduling
+-------------------------------------------------------------------------------
+
+DocumentStream::new(document, config) starts empty. with_limits additionally
+sets StreamLimits { max_source_bytes, max_parser_work }. ParseConfig retains the
+canonical fuel, event, diagnostic, recovery, and nesting limits.
+
+Open -> Finishing -> Finished
+Open/Finishing -> Limited
+Open/Finishing -> Cancelled
+
+append(text, allowance) accepts an entire valid UTF-8 string or returns an error.
+SourceLimit rejects oversized input before append allocation; accepted source,
+revision, interpretation, and work remain unchanged. Empty append is a no-op,
+even when accepted input still needs processing. Closed streams reject appends.
+
+advance(allowance) processes accepted input without declaring final EOF.
+StreamProgress::NeedInput means the retained owner needs additional source.
+NeedsProcessing means the owner can continue when given another allowance.
+Neither outcome means syntax failure. Limited reports hard resource exhaustion.
+
+finish(allowance) declares final EOF once and changes state to Finishing. Call
+advance while progress is NeedsProcessing; Finished identifies the final result.
+Repeated finish on Finished preserves identity and performs no repeated work.
+An established syntax error can recover before final EOF. An unfinished string,
+operator prefix, grapheme, alternative, or physical closer stays suspended until
+its decision is established or finish supplies final EOF.
+
+cancel stops live processing and retains every accepted byte. It does not supply
+final EOF or allow materialize. Cancellation is terminal for edits and appends.
+
+The allowance measures canonical continuation/scanner/materialization transitions,
+not CPU instructions or a wall-clock deadline. A Unicode transition supplies at
+most one forward and one preceding scalar to the pinned segmentation cursor;
+extra backward context has separately charged transitions. Allocation, retained
+source lookup, journal path copying, and discarded volume have additional work
+counters. append must also copy/index the incoming chunk before processing it.
+
+max_parser_work caps cumulative live plus preview continuation transitions.
+It does not cap StreamWork::total(), explicit export, or source insertion work.
+Neither appends, edits, speculative rewinds, nor invalidated previews replenish
+that session budget. Final limited-envelope cleanup is explicit export work;
+canonical fuel/event/recovery/diagnostic constraints still apply to its output.
+
+3. Publication, diagnostics, and identity
+-------------------------------------------------------------------------------
+
+Every StreamUpdate contains progress, accepted_bytes, syntax and diagnostic
+StreamChange suffix deltas, a shared StreamView, and cumulative StreamWork.
+For each delta, replace [from, old_len) with [from, new_len) from the new journal.
+The baseline is the immediately preceding returned update, including every
+NeedsProcessing result. Apply both deltas before calling advance again; use the
+same loop for append and finish. Dropping intermediate updates is not coalescing.
+A consumer that skips updates must explicitly resynchronize from the full view.
+The executable DocumentStream example shows the consume-before-advance loop.
+A speculative rewind can replace an earlier suffix. No update enumerates the
+unchanged prefix or builds the complete node/token/restart indexes.
+
+StreamView exposes source, parsed_through, pending_source, event_count/event,
+events/events_from, diagnostic_count/diagnostic, and completed_node(event_index).
+The root role is Document. Incomplete parents remain open on the canonical event
+tape; completed_node returns existing SyntaxNode values for materialized children.
+Bounded node lookup supports existing typed access without full-tree export.
+completed_node_with_work also returns actual journal lookup steps, allowing a
+caller to account for requested access without mutating live parser counters.
+A complete view traversal or node.text() is caller-requested work, proportional
+to the data requested, and is outside automatic ingestion accounting.
+
+Historical views preserve their source, journals, and completed node Arcs.
+Diagnostics bind absolute anchors to the view's revision when read. Diagnostic
+suffixes may change when alternatives resolve or final EOF establishes recovery.
+Completed children retained by the selected parse keep their node identities
+through subsequent appends and final materialization. Rewound candidates do not
+promise identity continuity. Node identity is scoped to its document session.
+
+StreamIdentity includes document, revision, interpretation generation, state,
+and StreamInterpretation (Live, FinitePreview, Finalized, Limited, Cancelled).
+Source revision alone is insufficient for caching syntax. Finalization and
+limited-envelope export can change interpretation without changing source bytes.
+Limited materialization publishes the finalized journal baseline under a new
+identity so subsequent edit deltas refer to that publication. materialize returns
+no delta: after Limited export, explicitly replace the consumer baseline from
+stream.view() before applying further updates. Unchanged ordinary view reads do
+not advance the baseline. Retain diagnostic anchors relative to the current view
+revision and bind them on read, rather than rewriting all settled diagnostics.
+
+4. Explicit previews, exports, and session transitions
+-------------------------------------------------------------------------------
+
+preview() performs explicit finite-prefix canonical parsing and returns a
+ProvisionalSnapshot. It shares the remaining session continuation budget, reports
+its separate preview_work and preview_parser_work, and caches unchanged requests.
+It never changes live alternatives, events, grammar fuel, or recovery decisions.
+Preview node issuance shares the document ID sequence, preventing preview/live
+ID aliasing. FinitePreview always remains provisional, even if strictly clean.
+Under exhausted limits it contains the canonical limited envelope; it does not
+promise the unlimited one-shot result. Repeated invalidated previews may require
+full prefix parsing and are excluded from ordinary-publication growth claims.
+
+materialize() is available only after Finished or Limited. It explicitly exports
+SyntaxSnapshot, including the complete root, diagnostics, node/token indexes,
+and restart metadata. Repeated calls share the cached Arc. Limited export keeps
+the accepted suffix lossless and charges cleanup separately. Exported source and
+public views do not carry the private parser lookup counter; external reads cannot
+mutate the live accounting. A limited or recovered snapshot is not execution-ready.
+
+apply_edits(edits, allowance) validates ordered, nonoverlapping UTF-8 ranges and
+checks resulting source capacity before constructing storage or indexing inserted
+text. It discards suspended owners/caches and restarts canonical parsing on the
+edited source. Historical views remain valid; old identities are not reconciled
+into this new interpretation. The returned deltas replace the old journals.
+full_document_restarts and edit_restart_work charge this transition. Arbitrary
+edits may rebuild source storage and line metadata; no sublinear edit claim applies.
+Adjacent edits at one old-source boundary contribute to the complete projected
+rescan window, including CR/LF text split across separate insertions. Rebuilding
+that window advances one retained piece cursor rather than restarting a piece
+search for each byte, and the conservative edit charge includes edit multiplicity.
+
+into_session() transfers a finalized or limited materialized snapshot, identity
+issuance, interpretation generation, and configuration to DocumentSession and
+returns accumulated work. The generation includes any limited-export invalidation.
+If a caller retains the materialized Arc, the required snapshot clone charges
+node/token indexes, restart and diagnostic records, nested vectors, and owned
+UTF-8 payload bytes. Otherwise ownership transfers without that clone.
+
+DocumentSession::into_stream() preserves source/configuration/ID issuance and
+establishes a new retained parse. It reports existing source storage immediately
+and one full_document_restart. It advances the retained interpretation generation
+before exposing the new stream, even if the session received no edits. Document
+and source revision remain unchanged; a new interpretation cannot reuse cached
+node associations from a previous stream. Call advance to process that accepted source, or
+append additional text. This explicit transition does not reconcile old session
+nodes into the new stream. Finite DocumentSession edit/reconciliation semantics
+remain available to consumers that continue to own a finite document.
+
+5. Retained storage and canonical owners
+-------------------------------------------------------------------------------
+
+TextSnapshot pieces and line starts use balanced persistent sequences. Append
+copies only the new text, scans its line endings, and path-copies storage nodes.
+CR/LF split repair replaces a shared line-start path without changing old views.
+Byte/chunk lookup visits a logarithmic path; sequential exports traverse retained
+storage in linear time. LineIndex::line_starts explicitly exports a Vec.
+
+ParserState owns journals, open markers, rules, cursor bounds, resources, and
+materialization state independently of input borrows. Resume extends only bounds
+marked as an input frontier; fixed embedded ranges remain fixed. Generated
+canonical document phases and all 80 recursive Phase 2I rule entries retain
+suspension, selected alternatives, delimiters, and rule-owned recovery.
+Executable fences feed the child owner only the safe prefix until their physical
+closer or final EOF seals it. No newline is treated as a universal commit point.
+
+Base and delimiter traversal retain Unicode cursor state between graphemes.
+Literal comparison rejects nonmatching non-ASCII prefixes without repeatedly
+walking regional-indicator context; ASCII probes preserve grapheme-frontier waits.
+The pinned Unicode implementation remains the segmentation authority.
+
+Persistent event/diagnostic journals share prefixes and count changed path copies.
+Completed-node materialization is scheduled under the same continuation allowance;
+token bytes are hashed incrementally. GreenChildren preserves the canonical logical
+child order and original structural hash formula while sharing growing children.
+There are no synthetic grouping nodes or replacement certification hashes.
+
+6. Work accounting and supported performance claims
+-------------------------------------------------------------------------------
+
+StreamWork reports source copying/indexing/storage allocations and actual parser
+source-tree lookup visits; continuation transitions/resumes; journal mutations,
+allocations and discards; materialized nodes, hashed token bytes, child storage and
+reuse; publications; preview/export work; and explicit edit restarts.
+Checkpoint rewinds, rewound bytes and cached replay bytes are reported separately.
+
+StreamWork::total() sums charged categories rather than summing every descriptive
+counter twice. preview_parser_work is already included in preview_work. Export
+accounting is a conservative record/payload-volume charge, not a cycle count.
+Allocator headers, caller-owned input creation and explicit public traversal are
+outside the owned-body byte fields. Peak source pieces/bytes, events, open markers,
+rule depth, document frames, and pending materialization describe components;
+they are not a measurement of all resident bytes or every recursive frame.
+
+The growth gate uses fixed small UTF-8 chunks at N=64,128,256,512, verifies complete
+source and canonical final tree/diagnostics, checks resource caps did not truncate
+the workload, and includes final grammar draining. It runs ingestion alone and
+with normal views, metered completed-node access, and retained historical views.
+Each doubling must stay <=3x charged work. Explicit materialize/export is measured
+separately. A six-byte append to increasingly large settled prefixes has its own
+<=3x bound across an eightfold prefix increase.
+
+Qualified families are strings, nested expressions, inert/executable fences,
+combining clusters, regional indicators, malformed string tails, and late brace
+selection. These measured families do not establish universal linear parsing for
+all grammar/input combinations. Arbitrary edits, repeated finite previews, full
+exports, and caller-requested full traversals have separate proportional costs.
+
+The frozen B1 S7A baseline remains in s7b-streaming-baseline.json. It measured
+partial parser/event/reconciliation accounting and four failing positive gates.
+Current complete counters are not directly comparable as instruction counts.
+Do not reinterpret historical B1 numbers as full end-to-end execution costs.
+
+7. Qualification record and canonical commits
+-------------------------------------------------------------------------------
+
+B1 — Contract and baseline: 73c681b09fa6e5a529dec2c858aea7d0e246325b.
+B2 — Append storage and scanners: fb9359034762cc82c37e7603b50b292535f4f5c0.
+B3 — Canonical continuations: 698e9cdb63b7404615cce9571373c5b0d8525722.
+B4 — Snapshots and sessions: 25dd2ffa103fa841f3b289201d985d8a7453448f.
+B5 — Complete qualification: 34d187f3b070dc727666bbfcdc3e87b914750f25.
+B6 — Closeout and S8 handoff: this consolidated API/performance/handoff record.
+All checkpoints remain commits in the single S7B draft PR.
+
+Targets cover lifecycle/identity, source allocation, all byte/scalar partitions,
+random longer partitions, malformed recovery/physical closers, explicit previews,
+hard resources and soft allowances, adversarial complexity, typed views, and
+existing semantic/artifact consumers. Full/base syntax --tests executes all new
+targets. Reduced syntax CI names them explicitly; full_source CI includes the
+canonical_document_streaming engine canary and the accumulated document-state
+canaries. Runtime qualification also checks finalized streamed execution through
+complete document rendering, plus resolver scopes, import spans, and grapheme
+coordinates against one-shot documents. Native/WASM and generator/architecture
+checks remain required. Pinned toolchain: nightly-2026-03-03, locked dependencies.
+
+The committed s7b-streaming-qualification.json records all 68 measured growth
+samples, the implementation commit, command, and focused pass counts. It
+explicitly separates that result from the complete final-head matrix. Final CI
+and review status must be confirmed on PR #826 before implementation closeout.
+A queued job, zero-test feature-gated target, historical pass, or targeted subset
+is not evidence that the complete matrix passed. Fix and respond to every relevant
+review note before requesting another review. CI/review links and exact final
+head results are published on that PR to avoid a self-referential commit hash.
+
+8. S8 production handoff
+-------------------------------------------------------------------------------
+
+1. Allocate one DocumentStream per retained document and select hard limits.
+   Buffer incomplete UTF-8 transport bytes outside the parser. Feed valid strings
+   to append with a bounded allowance. Apply each update before driving advance
+   again while NeedsProcessing.
+2. Publish the returned journal deltas and shared views. Use full StreamIdentity
+   as the cache key. Query completed_node for existing typed consumers. Offer
+   preview only as an explicit finite-prefix operation with a provisional label.
+3. Declare finish at the application's actual completion boundary. Drain work
+   until Finished or Limited, applying every intermediate update. Cancellation
+   and Limited do not authorize execution. Resynchronize after Limited export.
+4. On Finished, materialize once and validate the canonical snapshot is strictly
+   clean before passing its DocumentSyntax to the existing semantic frontend.
+   Preserve the frontend's capability/semantic validation and artifact boundary.
+   A clean finite preview is insufficient; require finalized lifecycle identity.
+5. Select apply_edits or ownership transfer deliberately for editing. Invalidate
+   caches using interpretation identity and deltas; do not reuse IDs from the old
+   interpretation after a restart. Keep only needed historical views.
+6. Migrate production input, rendering, and execution ownership in S8. Remove
+   retiring ingestion/AST paths in that same migration, retain one canonical
+   syntax authority, and run the accumulated native/WASM/consumer matrix.
+
+Production caller switches, transport policy, semantic expansion, and scheduler
+activation belong to S8 or their separately defined work. S7B hands off a retained
+canonical syntax lifecycle with explicit progress, finality, resources and costs.
+
+B6 accumulated-stack fixture qualification
+-------------------------------------------------------------------------------
+
+Full integration CI identified 17 source-compiled bytecode fixtures still carrying
+graph revision 5 while the canonical decoder requires revision 6. The maintained
+isolated producers regenerated the corpus. Section-by-section comparison proved
+that only the graph revision and checksum changed: source text, expected output,
+headers/section tables, all non-graph payloads, and all three constructed fixtures
+remain identical. The manual corpus seals now cover those generated revision-six
+artifacts. s7b-bytecode-corpus-migration.json records before/after hashes and the
+comparison scope. No earlier graph reader or compatibility path was introduced.
+
+B6 publication closeout qualification
+-------------------------------------------------------------------------------
+
+document_streaming_publication applies every event/diagnostic suffix to an
+application-owned mirror of shared journal ranges under allowance one, comparing the complete view after
+every update, including cached-node identity. It covers speculative rewinds,
+recovery, final EOF, edit restart, and explicit Limited export resynchronization.
+
+The normal-view complexity path uses the same mirror and verifies its complete
+final tape. The consumer preserves unaffected ranges from historical views,
+trims/removes overlapping range descriptors, and adopts the new suffix as one
+shared view/range. It charges descriptor visits, adopted/removed ranges, and update
+applications. Logical removed record counts are separately reported; adoption
+never enumerates those records. Full oracle scans are validation work, not normal
+update operations. Diagnostic anchors bind lazily to the current revision.
+
+A preliminary flat-vector consumer failed the 32-to-64 KiB generated-Mech gate:
+738,035 to 2,262,698 record operations (3.066x), while combined work stayed below
+3x. The qualified integration strategy therefore uses shared ranges, not repeated
+suffix cloning. A concrete reference consumer is in tests/support/stream_mirror.rs.
+This is existing StreamView sharing, with no acknowledgment or parser redesign.
+
+The additional 8,192/16,384/32,768/65,536 size ladder includes generated Mech,
+mixed Mechdown, unfinished strings/prose, executable fences, malformed tails,
+and late brace selection. It uses 64-byte chunks and allowance 65,536, and gates
+both combined work and consumer record work at at most 3x per doubling. Settled
+prefixes separately gate a six-byte append across the same ladder. Explicit
+limits: nesting 256, diagnostics 65,536, events 16,000,000, recovery bytes 8,000,000,
+canonical fuel 1,000,000,000, retained bytes 1,000,000, session work 2,000,000,000.
+Both one-shot and streaming outputs must remain uncapped and agree structurally,
+diagnostically, and losslessly. These gates supplement the original small ladder;
+they do not establish universal complexity or a measured speedup over S7A.
+
+Finalized character streams also run the S7A Mika local/nested/named execution and
+resolver owner checks. The CRLF fence-information accessor recognizes the
+canonical CarriageReturn token (which retains the whole CRLF grapheme), preserving
+configured scope/index behavior. Consumer paths reuse the same semantics.
+Execution results for this candidate are recorded on PR #826 after validation.

@@ -593,7 +593,32 @@ fn recursive_core_has_exact_parser_typed_views_and_candidate_registry() {
     .into_iter()
     .map(str::to_owned)
     .collect::<BTreeSet<_>>();
-    assert_eq!(actual_files, expected_files);
+    let mut expected_parser_files = expected_files.clone();
+    expected_parser_files.remove("precedence.rs");
+    expected_parser_files.remove("kinds.rs");
+    expected_parser_files.remove("structures.rs");
+    expected_parser_files.insert(String::from("structures"));
+    expected_parser_files.insert(String::from("kinds"));
+    expected_parser_files.insert(String::from("precedence"));
+    expected_parser_files.insert(String::from("required.rs"));
+    assert_eq!(actual_files, expected_parser_files);
+    let precedence_files = fs::read_dir(parser_directory.join("precedence"))
+        .expect("read retained precedence module")
+        .map(|entry| {
+            entry
+                .expect("precedence entry")
+                .file_name()
+                .to_string_lossy()
+                .into_owned()
+        })
+        .collect::<BTreeSet<_>>();
+    assert_eq!(
+        precedence_files,
+        ["mod.rs", "continuation"]
+            .into_iter()
+            .map(str::to_owned)
+            .collect()
+    );
 
     let ast_directory = root.join("src/syntax/src/document/ast/recursive_core");
     assert!(ast_directory.is_dir());
@@ -644,11 +669,23 @@ fn recursive_dispatcher_and_production_functions_are_exactly_the_frozen_eighty()
     assert_eq!(expected_functions.len(), EXPECTED_PHASE_2I_RULES);
 
     let mut actual_functions = BTreeSet::new();
-    for entry in fs::read_dir(&parser_directory).expect("read recursive parser directory") {
-        let path = entry.expect("read recursive parser entry").path();
-        if path.file_name().and_then(|name| name.to_str()) == Some("mod.rs") {
+    let mut pending = vec![parser_directory.clone()];
+    while let Some(path) = pending.pop() {
+        if path.is_dir() {
+            pending.extend(
+                fs::read_dir(&path)
+                    .expect("read recursive parser directory")
+                    .map(|entry| entry.expect("read recursive parser entry").path()),
+            );
             continue;
         }
+        if path == parser_directory.join("mod.rs") {
+            continue;
+        }
+        assert_eq!(
+            path.extension().and_then(|extension| extension.to_str()),
+            Some("rs")
+        );
         let source = fs::read_to_string(&path).expect("read recursive production module");
         for suffix in source.split("pub(super) fn ").skip(1) {
             let name = suffix.split('(').next().expect("function name").trim();

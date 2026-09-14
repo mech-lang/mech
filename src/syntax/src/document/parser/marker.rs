@@ -4,6 +4,7 @@ use super::Parser;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Marker {
+    pub(crate) offset: crate::document::TextSize,
     pub(crate) position: usize,
 }
 

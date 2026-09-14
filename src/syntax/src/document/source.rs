@@ -2,15 +2,23 @@ use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec;
 use alloc::vec::Vec;
+use core::sync::atomic::{AtomicU64, Ordering};
 
 use super::edit::{SourceError, TextEdit, TextRange, TextSize};
 use super::ids::{DocumentId, Revision};
 use super::line_index::LineIndex;
+use super::retained_sequence::{Measured, RetainedSequence};
 
 #[derive(Clone, Debug)]
 pub(crate) struct Piece {
     pub(crate) chunk: Arc<str>,
     pub(crate) range_in_chunk: TextRange,
+}
+
+impl Measured for Piece {
+    fn measure(&self) -> usize {
+        self.len().to_usize()
+    }
 }
 
 impl Piece {
@@ -29,13 +37,27 @@ pub(crate) struct SourceChunk<'a> {
     pub range: TextRange,
 }
 
+/// Work performed inside `append_with_work`, excluding caller-owned input
+/// construction and allocator headers. Node body bytes include new branch
+/// descriptors; source bytes are copied only into the new shared chunk.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct SourceAppendWork {
+    pub accepted_bytes: u64,
+    pub source_bytes_copied: u64,
+    pub index_bytes_scanned: u64,
+    pub piece_nodes_allocated: u64,
+    pub line_nodes_allocated: u64,
+    pub storage_node_body_bytes: u64,
+}
+
 #[derive(Clone, Debug)]
 pub struct TextSnapshot {
     document: DocumentId,
     revision: Revision,
-    pub(crate) pieces: Arc<[Piece]>,
+    pieces: RetainedSequence<Piece>,
     byte_len: TextSize,
     line_index: LineIndex,
+    lookup_work: Option<Arc<AtomicU64>>,
 }
 
 impl TextSnapshot {
@@ -47,13 +69,15 @@ impl TextSnapshot {
         let source = source.into();
         let byte_len = TextSize::checked_from_usize(source.len())?;
         let line_index = LineIndex::from_str(&source);
-        let pieces: Arc<[Piece]> = if source.is_empty() {
-            Arc::from([])
+        let pieces = if source.is_empty() {
+            RetainedSequence::default()
         } else {
-            Arc::from([Piece {
+            [Piece {
                 chunk: source,
                 range_in_chunk: TextRange::new(TextSize::ZERO, byte_len),
-            }])
+            }]
+            .into_iter()
+            .collect()
         };
         Ok(Self {
             document,
@@ -61,9 +85,32 @@ impl TextSnapshot {
             pieces,
             byte_len,
             line_index,
+            lookup_work: None,
         })
     }
 
+    pub(crate) fn with_lookup_work(&self, counter: Arc<AtomicU64>) -> Self {
+        Self {
+            lookup_work: Some(counter),
+            ..self.clone()
+        }
+    }
+    pub(crate) fn without_lookup_work(&self) -> Self {
+        Self {
+            lookup_work: None,
+            ..self.clone()
+        }
+    }
+    fn record_lookups(&self, steps: u64) {
+        if let Some(counter) = &self.lookup_work {
+            counter.fetch_add(steps, Ordering::Relaxed);
+        }
+    }
+    fn piece_at(&self, offset: usize) -> Option<(usize, &Piece)> {
+        let (piece, steps) = self.pieces.at_measure_with_work(offset);
+        self.record_lookups(steps);
+        piece
+    }
     pub fn document(&self) -> DocumentId {
         self.document
     }
@@ -146,7 +193,10 @@ impl TextSnapshot {
     }
 
     pub fn chunks(&self) -> impl Iterator<Item = &str> {
-        self.pieces.iter().map(Piece::text)
+        self.pieces.iter_with_work().map(|(piece, steps)| {
+            self.record_lookups(steps);
+            piece.text()
+        })
     }
 
     pub fn text(&self, range: TextRange) -> Result<String, SourceError> {
@@ -183,59 +233,31 @@ impl TextSnapshot {
     }
 
     pub fn byte_at(&self, offset: TextSize) -> Option<u8> {
-        if offset.0 >= self.byte_len.0 {
-            return None;
-        }
-        let mut absolute = 0_u32;
-        for piece in self.pieces.iter() {
-            let end = absolute + piece.len().0;
-            if offset.0 < end {
-                let local = piece.range_in_chunk.start.0 + (offset.0 - absolute);
-                return piece.chunk.as_bytes().get(local as usize).copied();
-            }
-            absolute = end;
-        }
-        None
+        let (base, piece) = self.piece_at(offset.to_usize())?;
+        piece
+            .text()
+            .as_bytes()
+            .get(offset.to_usize() - base)
+            .copied()
     }
 
     pub(crate) fn chunk_at(&self, offset: TextSize) -> Option<SourceChunk<'_>> {
-        if offset.0 >= self.byte_len.0 {
-            return None;
-        }
-        let mut absolute = TextSize::ZERO;
-        for piece in self.pieces.iter() {
-            let end = absolute + piece.len();
-            if offset.0 < end.0 {
-                return Some(SourceChunk {
-                    text: piece.text(),
-                    range: TextRange::new(absolute, end),
-                });
-            }
-            absolute = end;
-        }
-        None
+        let (base, piece) = self.piece_at(offset.to_usize())?;
+        Some(SourceChunk {
+            text: piece.text(),
+            range: TextRange::new(TextSize(base as u32), TextSize(base as u32) + piece.len()),
+        })
     }
 
     pub(crate) fn chunk_before(&self, offset: TextSize) -> Option<SourceChunk<'_>> {
         if offset.0 == 0 || offset.0 > self.byte_len.0 || !self.is_char_boundary(offset) {
             return None;
         }
-        let mut absolute = TextSize::ZERO;
-        for piece in self.pieces.iter() {
-            let end = absolute + piece.len();
-            if offset.0 <= end.0 {
-                let prefix_len = (offset - absolute).to_usize();
-                if prefix_len == 0 {
-                    return None;
-                }
-                return Some(SourceChunk {
-                    text: &piece.text()[..prefix_len],
-                    range: TextRange::new(absolute, offset),
-                });
-            }
-            absolute = end;
-        }
-        None
+        let (base, piece) = self.piece_at(offset.to_usize() - 1)?;
+        Some(SourceChunk {
+            text: &piece.text()[..offset.to_usize() - base],
+            range: TextRange::new(TextSize(base as u32), offset),
+        })
     }
 
     pub fn is_char_boundary(&self, offset: TextSize) -> bool {
@@ -261,11 +283,67 @@ impl TextSnapshot {
     }
 
     pub fn append(&self, text: impl Into<String>) -> Result<Self, SourceError> {
-        self.apply_edits(&[TextEdit::insert(self.byte_len, text)])
+        self.append_with_work(&text.into())
+            .map(|(snapshot, _)| snapshot)
+    }
+
+    /// Append without copying the historical piece list or rescanning old lines.
+    /// Empty input preserves revision and storage and performs no append work.
+    pub fn append_with_work(&self, text: &str) -> Result<(Self, SourceAppendWork), SourceError> {
+        if text.is_empty() {
+            return Ok((self.clone(), SourceAppendWork::default()));
+        }
+        let added = TextSize::checked_from_usize(text.len())?;
+        let byte_len = TextSize(
+            self.byte_len
+                .0
+                .checked_add(added.0)
+                .ok_or(SourceError::SourceTooLarge)?,
+        );
+        let (pieces, piece_nodes_allocated) = self.pieces.appended(Piece {
+            chunk: Arc::from(text),
+            range_in_chunk: TextRange::new(TextSize::ZERO, added),
+        });
+        let old_ends_cr = self
+            .byte_len
+            .0
+            .checked_sub(1)
+            .and_then(|offset| self.byte_at(TextSize(offset)))
+            == Some(b'\r');
+        let (line_index, line_nodes_allocated) =
+            self.line_index.appended(self.byte_len, old_ends_cr, text);
+        let work = SourceAppendWork {
+            accepted_bytes: text.len() as u64,
+            source_bytes_copied: text.len() as u64,
+            index_bytes_scanned: text.len() as u64,
+            piece_nodes_allocated,
+            line_nodes_allocated,
+            storage_node_body_bytes: piece_nodes_allocated
+                * RetainedSequence::<Piece>::node_bytes() as u64
+                + line_nodes_allocated * LineIndex::storage_node_bytes() as u64,
+        };
+        Ok((
+            Self {
+                document: self.document,
+                revision: Revision(self.revision.0.saturating_add(1)),
+                pieces,
+                byte_len,
+                line_index,
+                lookup_work: self.lookup_work.clone(),
+            },
+            work,
+        ))
     }
 
     pub fn apply_edits(&self, edits: &[TextEdit]) -> Result<Self, SourceError> {
         self.validate_edits(edits)?;
+        if let [edit] = edits {
+            if edit.delete.is_empty() && edit.delete.start == self.byte_len {
+                return self
+                    .append_with_work(&edit.insert)
+                    .map(|(snapshot, _)| snapshot);
+            }
+        }
         if edits.is_empty() {
             return Ok(self.clone());
         }
@@ -288,9 +366,10 @@ impl TextSnapshot {
         Ok(Self {
             document: self.document,
             revision: Revision(self.revision.0.saturating_add(1)),
-            pieces: pieces.into(),
+            pieces: pieces.into_iter().collect(),
             byte_len,
             line_index,
+            lookup_work: self.lookup_work.clone(),
         })
     }
 
@@ -298,23 +377,19 @@ impl TextSnapshot {
         if range.is_empty() {
             return;
         }
-        let mut absolute = 0_u32;
-        for piece in self.pieces.iter() {
-            let piece_start = absolute;
-            let piece_end = absolute + piece.len().0;
-            absolute = piece_end;
-            let start = range.start.0.max(piece_start);
-            let end = range.end.0.min(piece_end);
-            if start >= end {
-                continue;
-            }
-            let local_start = piece.range_in_chunk.start.0 + start - piece_start;
-            let local_end = piece.range_in_chunk.start.0 + end - piece_start;
-            f(&piece.chunk[local_start as usize..local_end as usize]);
-        }
+        let steps = self.pieces.visit_range_with_work(
+            range.start.to_usize(),
+            range.end.to_usize(),
+            |base, piece| {
+                let start = range.start.to_usize().saturating_sub(base);
+                let end = (range.end.to_usize() - base).min(piece.len().to_usize());
+                f(&piece.text()[start..end]);
+            },
+        );
+        self.record_lookups(steps);
     }
 
-    fn validate_edits(&self, edits: &[TextEdit]) -> Result<(), SourceError> {
+    pub(crate) fn validate_edits(&self, edits: &[TextEdit]) -> Result<(), SourceError> {
         let mut previous: Option<TextRange> = None;
         for edit in edits {
             self.validate_range(edit.delete)?;
@@ -380,6 +455,30 @@ mod tests {
     }
 
     #[test]
+    fn append_allocations_match_path_copy_accounting_with_a_large_retained_prefix() {
+        for size in [512, 4096, 16384] {
+            let mut source = TextSnapshot::new(DocumentId(826), Revision(0), "").unwrap();
+            for _ in 0..size {
+                source = source.append("a\n").unwrap();
+            }
+            let ((next, work), allocations, bytes) =
+                allocation_probe::measured_with_bytes(|| source.append_with_work("b\r\n").unwrap());
+            let nodes = work.piece_nodes_allocated + work.line_nodes_allocated;
+            assert_eq!(
+                allocations as u64,
+                nodes + 1,
+                "only tree nodes and the new chunk allocate"
+            );
+            // Arc control words/alignment are deliberately separate from node
+            // body accounting. This checks real allocations, not just counters.
+            assert!(bytes as u64 <= work.storage_node_body_bytes + nodes * 32 + 64);
+            assert!(bytes < 8192, "append copied the settled prefix: {bytes}");
+            assert_eq!(next.byte_len().0, source.byte_len().0 + 3);
+            assert_eq!(source.line_index().line_count(), size + 1);
+        }
+    }
+
+    #[test]
     fn exact_text_comparison_preserves_range_errors_without_allocating() {
         let text = "a╭💡e\u{301}┃z\r\n";
         for pieces in [false, true] {
@@ -418,17 +517,19 @@ mod tests {
                         id: NodeId(1),
                         kind: SyntaxKind::Expression,
                         text_len: range.len(),
-                        children: Arc::from([GreenElement::Token(GreenToken {
-                            id: TokenId(2),
-                            kind: SyntaxKind::BoxDrawing,
-                            text_len: range.len(),
-                            flags: if range.is_empty() {
-                                TokenFlags::MISSING
-                            } else {
-                                TokenFlags::NONE
+                        children: crate::document::GreenChildren::from([GreenElement::Token(
+                            GreenToken {
+                                id: TokenId(2),
+                                kind: SyntaxKind::BoxDrawing,
+                                text_len: range.len(),
+                                flags: if range.is_empty() {
+                                    TokenFlags::MISSING
+                                } else {
+                                    TokenFlags::NONE
+                                },
+                                text_hash: 0,
                             },
-                            text_hash: 0,
-                        })]),
+                        )]),
                         flags: NodeFlags::NONE,
                         structural_hash: 0,
                     }),
