@@ -256,7 +256,7 @@ impl<'a> ResultLookup<'a> {
         let mut citation_nodes = Vec::new();
         collect_nodes(document.syntax(), SyntaxKind::Citation, &mut citation_nodes);
         citation_nodes.sort_by_key(|citation| citation.range().start);
-        let citations = citation_nodes
+        let mut citations = citation_nodes
             .into_iter()
             .map(|citation| {
                 let owner = retained_coordinates
@@ -266,30 +266,73 @@ impl<'a> ResultLookup<'a> {
                 Ok((owner, citation))
             })
             .collect::<Result<Vec<_>, CanonicalDocumentRenderError>>()?;
-        let mut citation_numbers = HashMap::new();
+        let mut defined_citations = HashSet::new();
         for (_, citation) in &citations {
             let label = definition_label(citation)?;
-            if citation_numbers.contains_key(&label) {
+            if !defined_citations.insert(label.clone()) {
                 return Err(CanonicalDocumentRenderError {
                     message: format!("duplicate citation definition {label:?}"),
                     range: Some(citation.range()),
                 });
             }
-            citation_numbers.insert(label, citation_numbers.len() + 1);
         }
+        let mut citation_occurrences = citations
+            .iter()
+            .map(|(_, citation)| citation.clone())
+            .collect::<Vec<_>>();
+        collect_nodes(
+            document.syntax(),
+            SyntaxKind::Reference,
+            &mut citation_occurrences,
+        );
+        citation_occurrences.sort_by_key(|node| node.range().start);
+        let mut citation_numbers = HashMap::new();
+        for occurrence in citation_occurrences {
+            let label = if occurrence.kind() == SyntaxKind::Citation {
+                definition_label(&occurrence)?
+            } else {
+                reference_label(&occurrence, "[", "]")?
+            };
+            if !citation_numbers.contains_key(&label) {
+                citation_numbers.insert(label, citation_numbers.len() + 1);
+            }
+        }
+        citations.sort_by_key(|(_, citation)| {
+            definition_label(citation)
+                .ok()
+                .and_then(|label| citation_numbers.get(&label).copied())
+                .unwrap_or(usize::MAX)
+        });
         let mut footnotes = Vec::new();
         collect_nodes(document.syntax(), SyntaxKind::Footnote, &mut footnotes);
         footnotes.sort_by_key(|footnote| footnote.range().start);
-        let mut footnote_numbers = HashMap::new();
-        for footnote in footnotes {
+        let mut defined_footnotes = HashSet::new();
+        for footnote in &footnotes {
             let label = definition_label(&footnote)?;
-            if footnote_numbers.contains_key(&label) {
+            if !defined_footnotes.insert(label.clone()) {
                 return Err(CanonicalDocumentRenderError {
                     message: format!("duplicate footnote definition {label:?}"),
                     range: Some(footnote.range()),
                 });
             }
-            footnote_numbers.insert(label, footnote_numbers.len() + 1);
+        }
+        let mut footnote_occurrences = footnotes;
+        collect_nodes(
+            document.syntax(),
+            SyntaxKind::FootnoteReference,
+            &mut footnote_occurrences,
+        );
+        footnote_occurrences.sort_by_key(|node| node.range().start);
+        let mut footnote_numbers = HashMap::new();
+        for occurrence in footnote_occurrences {
+            let label = if occurrence.kind() == SyntaxKind::Footnote {
+                definition_label(&occurrence)?
+            } else {
+                reference_label(&occurrence, "[^", "]")?
+            };
+            if !footnote_numbers.contains_key(&label) {
+                footnote_numbers.insert(label, footnote_numbers.len() + 1);
+            }
         }
         Ok(Self {
             values,
@@ -682,13 +725,35 @@ fn render_list_html(
             } else {
                 ("ul", "mech-unordered-list")
             };
-            output.push_str(&format!("<{tag} class='{class}'>"));
+            output.push_str(&format!("<{tag} class='{class}'"));
+            if node.kind() == SyntaxKind::OrderedList
+                && let Some(start) = node.children().find_map(|child| {
+                    (child.kind() == SyntaxKind::OrderedListItem)
+                        .then(|| ordered_list_marker(&child))
+                        .flatten()
+                })
+                && start != 1
+            {
+                output.push_str(&format!(" start='{start}'"));
+            }
+            output.push('>');
             for child in node.children() {
                 render_list_html(&child, owner, lookup, output)?;
             }
             output.push_str(&format!("</{tag}>"));
         }
-        SyntaxKind::OrderedListItem | SyntaxKind::UnorderedListItem | SyntaxKind::CheckListItem => {
+        SyntaxKind::OrderedListItem => {
+            output.push_str("<li");
+            if let Some(value) = ordered_list_marker(node) {
+                output.push_str(&format!(" value='{value}'"));
+            }
+            output.push('>');
+            for child in node.children() {
+                render_list_html(&child, owner, lookup, output)?;
+            }
+            output.push_str("</li>");
+        }
+        SyntaxKind::UnorderedListItem | SyntaxKind::CheckListItem => {
             output.push_str("<li>");
             for child in node.children() {
                 render_list_html(&child, owner, lookup, output)?;
@@ -733,6 +798,18 @@ fn render_list_html(
         }
     }
     Ok(())
+}
+
+fn ordered_list_marker(node: &SyntaxNode) -> Option<u64> {
+    node_text(node)
+        .ok()?
+        .lines()
+        .next()?
+        .split_once('.')?
+        .0
+        .trim()
+        .parse()
+        .ok()
 }
 
 fn render_table_html(
@@ -1415,20 +1492,16 @@ fn render_citation_reference_html(
     lookup: &ResultLookup<'_>,
     output: &mut String,
 ) -> Result<(), CanonicalDocumentRenderError> {
-    let source = node_text(node)?;
-    let label = source
-        .strip_prefix('[')
-        .and_then(|source| source.strip_suffix(']'))
-        .unwrap_or(&source);
-    let number = lookup.citation_numbers.get(label);
+    let label = reference_label(node, "[", "]")?;
+    let number = lookup.citation_numbers.get(&label);
     output
         .push_str("<span class='mech-reference'>[<a class='mech-reference-link' href='#reference-");
-    output.push_str(&escape_attribute(label));
+    output.push_str(&escape_attribute(&label));
     output.push_str("'>");
     if let Some(number) = number {
         output.push_str(&number.to_string());
     } else {
-        output.push_str(&escape_html(label));
+        output.push_str(&escape_html(&label));
     }
     output.push_str("</a>]</span>");
     Ok(())
@@ -1440,20 +1513,30 @@ fn render_footnote_reference_html(
     output: &mut String,
 ) -> Result<(), CanonicalDocumentRenderError> {
     let source = node_text(node)?;
-    let label = source
-        .strip_prefix("[^")
-        .and_then(|source| source.strip_suffix(']'))
-        .unwrap_or(&source);
+    let label = reference_label(node, "[^", "]")?;
     output.push_str("<a class='mech-footnote-reference' href='#footnote-");
-    output.push_str(&escape_attribute(label));
+    output.push_str(&escape_attribute(&label));
     output.push_str("'>");
-    if let Some(number) = lookup.footnote_numbers.get(label) {
+    if let Some(number) = lookup.footnote_numbers.get(&label) {
         output.push_str(&number.to_string());
     } else {
         output.push_str(&escape_html(&source));
     }
     output.push_str("</a>");
     Ok(())
+}
+
+fn reference_label(
+    node: &SyntaxNode,
+    prefix: &str,
+    suffix: &str,
+) -> Result<String, CanonicalDocumentRenderError> {
+    let source = node_text(node)?;
+    Ok(source
+        .strip_prefix(prefix)
+        .and_then(|source| source.strip_suffix(suffix))
+        .unwrap_or(&source)
+        .to_owned())
 }
 
 fn render_raw_hyperlink_html(

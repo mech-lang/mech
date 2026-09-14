@@ -454,8 +454,8 @@ fn retained_inline_markup_uses_semantic_elements_without_delimiters() {
         "<u class='mech-underline'>underline</u>",
         "<del class='mech-strikethrough'>strike</del>",
         "<span class='mech-inline-equation'>x+1</span>",
-        "<span class='mech-reference'>[<a class='mech-reference-link' href='#reference-ref'>ref</a>]</span>",
-        "<a class='mech-footnote-reference' href='#footnote-note'>[^note]</a>",
+        "<span class='mech-reference'>[<a class='mech-reference-link' href='#reference-ref'>1</a>]</span>",
+        "<a class='mech-footnote-reference' href='#footnote-note'>1</a>",
         "<a class='mech-section-reference-link' href='#section-1.2'>§1.2</a>",
         "<h3 class='mech-subtitle' id='section-1.2'>Details</h3>",
     ] {
@@ -564,6 +564,21 @@ fn citations_are_numbered_and_deferred_to_link_safe_backmatter() {
 }
 
 #[test]
+fn citation_numbers_and_backmatter_follow_first_reference_order() {
+    let document = document("Read [alpha] then [beta].\n[beta]: B\n[alpha]: A\n");
+    let html = CanonicalDocumentRenderer
+        .render_html(&document, &[])
+        .unwrap();
+    assert!(html.contains("href='#reference-alpha'>1</a>"), "{html}");
+    assert!(html.contains("href='#reference-beta'>2</a>"), "{html}");
+    let works = html.split("class='mech-works-cited'").nth(1).unwrap();
+    assert!(
+        works.find("id='reference-alpha'").unwrap() < works.find("id='reference-beta'").unwrap(),
+        "{html}"
+    );
+}
+
+#[test]
 fn floats_preserve_left_and_right_direction() {
     let document = document("<<: ![left](left.png)\n:>> ![right](right.png)\n");
     let html = CanonicalDocumentRenderer
@@ -637,7 +652,7 @@ fn retained_lists_use_semantic_html_without_source_markers() {
     for (source, expected, marker) in [
         (
             include_str!("../../syntax/tests/fixtures/grammar/accepted/mechdown-ordered.mec"),
-            "<ol class='mech-ordered-list'><li>first",
+            "<ol class='mech-ordered-list'><li value='1'>first",
             "1.first",
         ),
         (
@@ -663,6 +678,20 @@ fn retained_lists_use_semantic_html_without_source_markers() {
         assert!(html.contains(expected), "missing {expected:?}: {html}");
         assert!(!html.contains(marker), "leaked {marker:?}: {html}");
     }
+}
+
+#[test]
+fn ordered_lists_preserve_their_authored_start_and_item_values() {
+    let document = document("3.third\n5.fifth\n");
+    let html = CanonicalDocumentRenderer
+        .render_html(&document, &[])
+        .unwrap();
+    assert!(
+        html.contains(
+            "<ol class='mech-ordered-list' start='3'><li value='3'>third\n</li><li value='5'>fifth"
+        ),
+        "{html}"
+    );
 }
 
 #[test]

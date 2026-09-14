@@ -120,7 +120,8 @@ title/front-matter rendering consumes completed inline results; citations are
 numbered and deferred to link-safe backmatter; image options, float direction,
 table alignment and inert-fence language survive as constrained presentation
 attributes; checked-list continuations and figure-grid panels retain their
-structural roles.
+structural roles. Ordered-list starts/items and citation/footnote numbering
+preserve authored order rather than being regenerated from definition order.
 
 ## Independent seal audit
 
