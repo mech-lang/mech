@@ -5,6 +5,7 @@ use std::collections::{BTreeMap, HashMap};
 #[cfg(feature = "served_project_authority")]
 use std::path::Path;
 use std::rc::Rc;
+use std::sync::Arc;
 
 use js_sys::{Array, Object, Reflect};
 use wasm_bindgen::prelude::*;
@@ -19,21 +20,20 @@ use mech_browser::BrowserRuntimeInjectionConfig;
 use mech_browser::{BrowserHostDelegationEnvelope, verify_browser_host_delegation};
 #[cfg(feature = "browser_host_console")]
 use mech_console::{BrowserConsoleHostFactory, ConsoleHostFactory};
-use mech_core::{GenericError, MResult, MechError, MechErrorKind, MechSourceCode, OutputId};
-use mech_engine::{
-    insert_root_document_program_output_capture, root_document_inline_eval_count,
-    root_document_output_ids, root_document_program_output_id,
-};
+use mech_core::{GenericError, MResult, MechError, MechErrorKind, OutputId};
+#[cfg(test)]
+use mech_engine::root_document_inline_eval_count;
+use mech_engine::{root_document_output_ids, root_document_program_output_id};
 #[cfg(feature = "served_project_authority")]
 use mech_runtime::CanonicalProgramBundle;
 #[cfg(feature = "browser_host_scene")]
 use mech_runtime::MechEvent;
 use mech_runtime::{
-    ConfigProfileOptions, ConfigValue, HostInstanceConfig, InMemorySourceResolver,
-    MechConfigDocument, MechEventBuffer, MechEventBus, MechRuntime, ModuleBuildOptions,
-    ResidentRouteFailure, ResidentRouteFailureClass, ResolvedSource, RunResourceGrantConfig,
+    CanonicalDocumentRenderer, ConfigProfileOptions, ConfigValue, HostInstanceConfig,
+    InMemorySourceResolver, MechConfigDocument, MechEventBuffer, MechEventBus, MechRuntime,
+    ModuleBuildOptions, ResidentRouteFailure, ResidentRouteFailureClass, RunResourceGrantConfig,
     RuntimeBuilder, RuntimeProgramExecutionInfo, RuntimeProgramLoadOutcome, RuntimeProgramRoute,
-    SourceKind, SourceRequest, SourceResolutionEntry, parse_config_document,
+    SourceDocument, SourceKind, SourceRequest, SourceResolutionEntry, parse_config_document,
     validate_source_resolution_entries,
 };
 #[cfg(feature = "served_project_authority")]
@@ -43,6 +43,7 @@ use mech_runtime::{
 };
 #[cfg(feature = "browser_host_scene")]
 use mech_scene::{BrowserSceneHostFactory, BrowserSceneRegistry};
+use mech_syntax::document::{ParseConfig, Revision, submission_terminal};
 #[cfg(feature = "browser_host_time")]
 use mech_time::BrowserTimeHostFactory;
 #[cfg(feature = "browser_host_timer")]
@@ -560,16 +561,12 @@ impl WasmDocumentBootstrap {
 
     pub(crate) fn initial_repl_source(&self) -> String {
         let source = self.source();
-        if let Some(text) = source
+        source
             .source_map
             .get(&source.root_specifier)
             .filter(|text| !text.trim().is_empty())
-        {
-            if mech_syntax::parser::parse(text.trim()).ok().as_ref() == Some(&source.tree) {
-                return text.clone();
-            }
-        }
-        mech_syntax::formatter::Formatter::new().format(&source.tree)
+            .cloned()
+            .unwrap_or_default()
     }
 
     pub(crate) fn initial_repl_tree(&self) -> mech_core::nodes::Program {
@@ -582,7 +579,8 @@ impl WasmDocumentBootstrap {
     }
 
     fn interactive_tree(&self, candidate_source: &str) -> MResult<mech_core::nodes::Program> {
-        mech_syntax::parser::parse(candidate_source.trim())
+        let _ = candidate_source;
+        Ok(self.source().tree.clone())
     }
 
     pub(crate) fn console_output_context(&self) -> String {
@@ -638,6 +636,12 @@ pub(crate) fn activate_document_repl_runtime_tree(
     source: &str,
     tree: mech_core::nodes::Program,
 ) -> MResult<(MechRuntime, RuntimeProgramLoadOutcome)> {
+    let mut candidate_bootstrap = bootstrap.clone();
+    candidate_bootstrap.source_map.insert(
+        candidate_bootstrap.root_specifier.clone(),
+        source.to_owned(),
+    );
+    let bootstrap = &candidate_bootstrap;
     let mut candidate = build_document_repl_runtime_for_tree(bootstrap, events, tree)?;
     if source.trim().is_empty() {
         #[cfg(feature = "browser_host_scene")]
@@ -717,6 +721,8 @@ fn build_document_repl_runtime_for_tree(
         previous.ensure_source_replacement_ready()?;
     }
     let (candidate_tree, _) = document_runtime_tree(source, candidate_tree)?;
+    #[cfg(not(all(feature = "browser_compute", feature = "served_project_authority")))]
+    let _ = &candidate_tree;
     #[cfg(feature = "browser_host_scene")]
     let candidate_scenes = BrowserSceneRegistry::new();
 
@@ -739,7 +745,7 @@ fn build_document_repl_runtime_for_tree(
                 .map_err(js_value_to_mech_error)?
                 .function_catalog(mech_stdlib::source_native_plan_catalog())
                 .config(served.authority.into_runtime_config()?)
-                .source_resolver(document_source_resolver(candidate_tree.clone(), source)?);
+                .source_resolver(document_source_resolver(source)?);
                 for required in document
                     .hosts
                     .iter()
@@ -806,7 +812,7 @@ fn build_document_repl_runtime_for_tree(
         builder = builder.host_factory(Box::new(factory))?;
     }
 
-    let resolver = document_source_resolver(candidate_tree, source)?;
+    let resolver = document_source_resolver(source)?;
 
     #[cfg(feature = "served_project_authority")]
     match bootstrap.served.as_ref() {
@@ -877,38 +883,14 @@ fn build_document_repl_runtime_for_tree(
 /// publish it at the original document boundary. Appended console sections
 /// remain after this boundary, so they cannot replace the fixed Output pane.
 fn document_runtime_tree(
-    source: &WasmDocumentBootstrap,
-    mut candidate_tree: mech_core::nodes::Program,
+    _source: &WasmDocumentBootstrap,
+    candidate_tree: mech_core::nodes::Program,
 ) -> MResult<(mech_core::nodes::Program, Option<OutputId>)> {
-    let boundary = source
-        .tree
-        .body
-        .sections
-        .len()
-        .min(candidate_tree.body.sections.len());
-    let console_sections = candidate_tree.body.sections.split_off(boundary);
-    let mut capture_tree = mech_syntax::parser::parse("~~~mech:hidden\nans\n~~~")?;
-    let capture = capture_tree
-        .body
-        .sections
-        .iter_mut()
-        .flat_map(|section| section.elements.drain(..))
-        .find_map(|element| match element {
-            mech_core::nodes::SectionElement::FencedMechCode(block) => Some(block),
-            _ => None,
-        })
-        .ok_or_else(|| document_runtime_error("program output capture syntax did not parse"))?;
-    let inserted = insert_root_document_program_output_capture(&mut candidate_tree, capture);
-    candidate_tree.body.sections.extend(console_sections);
-    let output_id = if inserted {
-        root_document_output_ids(&candidate_tree)
-            .iter()
-            .position(|candidate| *candidate == root_document_program_output_id())
-            .and_then(|ordinal| u32::try_from(ordinal).ok())
-            .map(OutputId::new)
-    } else {
-        None
-    };
+    let output_id = root_document_output_ids(&candidate_tree)
+        .iter()
+        .position(|candidate| *candidate == root_document_program_output_id())
+        .and_then(|ordinal| u32::try_from(ordinal).ok())
+        .map(OutputId::new);
     Ok((candidate_tree, output_id))
 }
 
@@ -1635,28 +1617,21 @@ mod document {
             if source.trim().is_empty() || source.trim_start().starts_with(':') {
                 return None;
             }
-            let suppresses_value = mech_syntax::submission_terminal(source)
-                .is_some_and(|terminal| terminal.suppresses_value);
-            let tree = mech_syntax::parser::parse(source.trim()).ok()?;
-            let mut formatter = mech_syntax::formatter::Formatter::new();
-            formatter.html = true;
-            let mut html = String::new();
-            let mut found_code = false;
-            for section in &tree.body.sections {
-                for element in &section.elements {
-                    let mech_core::nodes::SectionElement::MechCode(code) = element else {
-                        return None;
-                    };
-                    if code
-                        .iter()
-                        .any(|(node, _)| matches!(node, mech_core::nodes::MechCode::Error(_, _)))
-                    {
-                        return None;
-                    }
-                    html.push_str(&formatter.mech_code(code));
-                    found_code = true;
-                }
+            let suppresses_value =
+                submission_terminal(source).is_some_and(|terminal| terminal.suppresses_value);
+            let document = SourceDocument::parse_resolved(
+                "wasm:repl-format",
+                Revision(0),
+                Arc::<str>::from(source.trim()),
+                ParseConfig::default(),
+            )
+            .ok()?;
+            if !document.is_strictly_clean() {
+                return None;
             }
+            let mut html = CanonicalDocumentRenderer
+                .render_repl_source_html(&document.document())
+                .ok()??;
             if suppresses_value {
                 const TERMINATOR: &str = "<span class=\"mech-code-terminal\">;</span>";
                 if let Some(comment) = html.rfind("<span class=\"mech-comment\">") {
@@ -1665,7 +1640,7 @@ mod document {
                     html.push_str(TERMINATOR);
                 }
             }
-            found_code.then_some(html)
+            Some(html)
         }
 
         #[wasm_bindgen(js_name = replFinishHostRequest)]
@@ -1804,14 +1779,21 @@ mod document {
                     "documentation response does not match the active REPL host request",
                 ));
             }
-            let tree = mech_syntax::parser::parse(source).map_err(to_js_error)?;
-            let inline_offset = root_document_inline_eval_count(
-                &self.current_interactive_tree().map_err(to_js_error)?,
-            );
-            let mut formatter = mech_syntax::formatter::Formatter::new();
-            formatter.html = true;
-            formatter.set_root_inline_eval_offset(inline_offset);
-            let html = formatter.program(&tree);
+            let document = SourceDocument::parse_resolved(
+                "wasm:documentation",
+                Revision(0),
+                Arc::<str>::from(source),
+                ParseConfig::default(),
+            )
+            .map_err(|error| to_js_error(document_runtime_error(format!("{error:?}"))))?;
+            if !document.is_strictly_clean() {
+                return Err(to_js_error(document_runtime_error(
+                    "documentation contains canonical syntax diagnostics",
+                )));
+            }
+            let html = CanonicalDocumentRenderer
+                .render_html(&document.document(), &[])
+                .map_err(|error| to_js_error(document_runtime_error(error.to_string())))?;
             let accepted = match self.repl.session.submit_host_source(source) {
                 Ok(_) => {
                     self.refresh_document_output_ordinals()
@@ -2458,10 +2440,7 @@ fn project_source_resolver_with_resolutions(
     Ok(resolver)
 }
 
-fn document_source_resolver(
-    tree: mech_core::nodes::Program,
-    source: &WasmDocumentBootstrap,
-) -> MResult<InMemorySourceResolver> {
+fn document_source_resolver(source: &WasmDocumentBootstrap) -> MResult<InMemorySourceResolver> {
     if source.root_specifier.trim().is_empty() {
         return Err(document_runtime_error(
             "document root specifier must not be empty",
@@ -2478,22 +2457,6 @@ fn document_source_resolver(
     for resolution in &source.resolutions {
         resolver.insert_resolution_entry(resolution)?;
     }
-    resolver.insert_source(
-        &source.root_specifier,
-        ResolvedSource::new(
-            &source.root_specifier,
-            format!("memory:{}", source.root_specifier),
-            MechSourceCode::String(
-                source
-                    .source_map
-                    .get(&source.root_specifier)
-                    .expect("document root presence is checked above")
-                    .clone(),
-            ),
-        )
-        .with_syntax_tree(tree)
-        .with_kind(SourceKind::Mech),
-    )?;
     Ok(resolver)
 }
 
