@@ -1882,6 +1882,13 @@ impl<'a> ProgramCompilerView<'a> {
             .map_err(|error| MechError::new(error, None))?;
         let external_input_names = canonical_declared_compute_inputs(&index.root)?;
         let retained_outputs = canonical_declared_compute_outputs(&index.root)?;
+        // Retained host paths name flattened interface leaves (e.g. result.1.0).
+        // Source publication owns their lexical producers; the interface below
+        // remains the authority for validating exact leaf names.
+        let published_compute_bindings = retained_outputs
+            .iter()
+            .map(|name| name.split('.').next().unwrap_or(name).to_owned())
+            .collect();
         let (mut input_schemas, resource_reads, resource_writes, mut planned_reads) = self
             .canonical_document_resources_with_read_planner(
                 &index.root,
@@ -1923,7 +1930,7 @@ impl<'a> ProgramCompilerView<'a> {
                 input_schemas,
                 resource_writes,
                 &external_input_names,
-                &retained_outputs,
+                &published_compute_bindings,
                 &modules,
             )
             .map_err(|error| canonical_compilation_error(error.to_string()))?;
@@ -1969,6 +1976,19 @@ impl<'a> ProgramCompilerView<'a> {
             initial_inputs,
             &programs.region_name,
         )?;
+
+        for name in &retained_outputs {
+            if !compute
+                .interface
+                .outputs
+                .iter()
+                .any(|port| port.name.as_ref() == name)
+            {
+                return Err(compute_planning_error(format!(
+                    "unknown sampled compute output `{name}`"
+                )));
+            }
+        }
 
         let mut compute_read_schemas = BTreeMap::new();
         for (name, request) in &resource_reads {
