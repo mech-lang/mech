@@ -53,7 +53,14 @@ impl SemanticBuilder {
         }
         if items.len() > 1
             && arithmetic.is_some()
-            && matches!(&schema.body, SchemaBody::Matrix { .. })
+            && matches!(&schema.body, SchemaBody::Matrix { element, .. }
+                if !matches!(element.as_ref(), SchemaBody::Matrix { .. } | SchemaBody::Record(_) | SchemaBody::Table { .. } | SchemaBody::Tuple(_) | SchemaBody::Map { .. }))
+            && items.iter().all(|item| {
+                matches!(
+                    item,
+                    SubscriptItemSyntax::Bracket(_) | SubscriptItemSyntax::Brace(_)
+                )
+            })
         {
             return self.document_nested_matrix_update(
                 base,
@@ -64,22 +71,8 @@ impl SemanticBuilder {
                 value_syntax,
             );
         }
-        // Normalize mixed arithmetic with the maintained type scheme. The
-        // addressed kernel converts each result back to the destination kind
-        // before the next occurrence reads that destination again.
-        let same_element = if arithmetic.is_some()
-            && let SchemaBody::Matrix { element, .. } = &schema.body
-        {
-            let replacement_schema = self.schema_draft_of(replacement)?;
-            let replacement_element = match &replacement_schema.body {
-                SchemaBody::Matrix { element, .. } => element.as_ref(),
-                scalar => scalar,
-            };
-            element.as_ref() == replacement_element
-        } else {
-            false
-        };
-        let read_selection = !remaining.is_empty() || (arithmetic.is_some() && !same_element);
+        let read_selection = !remaining.is_empty()
+            || (arithmetic.is_some() && !matches!(schema.body, SchemaBody::Matrix { .. }));
         let (selected, selected_schema, selectors, operation) = match item {
             SubscriptItemSyntax::Bracket(bracket) => {
                 let selectors = self.subscript_values(&bracket.values())?;
@@ -167,36 +160,20 @@ impl SemanticBuilder {
             // A gather followed by arithmetic and replacement loses repeated
             // selector occurrences. Carry the update into the addressed RMW
             // owner so each occurrence reads the current candidate value.
-            let replacement = if same_element {
-                let replacement = self.document_assignment_broadcast(
-                    replacement,
-                    selected_schema.clone(),
-                    value_syntax,
-                )?;
-                self.conform_assignment_value(replacement, selected_schema.clone(), value_syntax)?
-            } else {
-                // Resolve promotion once, but perform the destination read and
-                // assignment conversion for every addressed occurrence.
-                let Some((inputs, _)) = self.resolve_maintained_call(
-                    arithmetic,
-                    vec![
-                        selected.expect("mixed arithmetic retains its selection"),
-                        replacement,
-                    ],
-                    statement,
-                )?
-                else {
-                    return Err(internal(
-                        SourceSemanticAnchor::for_node(statement),
-                        format!(
-                            "assignment operation {arithmetic} has no maintained type declaration"
-                        ),
-                    ));
-                };
-                inputs[1]
-            };
-            let replacement =
-                self.document_assignment_broadcast(replacement, selected_schema, value_syntax)?;
+            let declaration = self.source_type_declaration(arithmetic).map_err(|_| {
+                internal(
+                    SourceSemanticAnchor::for_node(statement),
+                    format!("assignment operation {arithmetic} has no maintained type declaration"),
+                )
+            })?;
+            let (inputs, _) = self.resolve_declared_call_with_destination(
+                arithmetic,
+                vec![base, replacement],
+                statement,
+                declaration,
+                Some(selected_schema),
+            )?;
+            let replacement = inputs[1];
             let operation = format!("{operation}/{}", arithmetic.strip_prefix("math/").unwrap());
             let mut inputs = vec![base, replacement];
             inputs.extend(selectors);
