@@ -5,7 +5,8 @@ use crate::RuntimeValueSnapshot;
 
 /// Identify the implicit result through its interactive alias while retaining
 /// the ordinary output's public identity. Document presentation and constraints
-/// may be published on either side of it.
+/// may be published on either side of it. When presentation repeats the
+/// result value, the first ordinary publication owns the public identity.
 pub(crate) fn program_result_output_index(
     artifact: &mech_engine::ProgramArtifact,
 ) -> Option<usize> {
@@ -18,7 +19,7 @@ pub(crate) fn program_result_output_index(
     artifact
         .outputs()
         .iter()
-        .rposition(|output| {
+        .position(|output| {
             output.interactive_binding.is_none()
                 && result.is_none_or(|index| output.source == artifact.outputs()[index].source)
                 && !artifact

@@ -6441,3 +6441,49 @@ fn canonical_ordered_roots_share_prior_definitions_and_reject_invalid_edges() {
         );
     }
 }
+
+#[test]
+fn canonical_fizzbuzz_preserves_constraints_and_presentation_through_bytecode() {
+    let source = include_str!("../../../../../examples/working/fizzbuzz.mec");
+    let document = canonical_planning_test_document(source);
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .build_compiler()
+        .unwrap();
+    for interactive in [false, true] {
+        let product = if interactive {
+            compiler.compile_interactive_document(&document)
+        } else {
+            compiler.compile_document(&document)
+        }
+        .unwrap();
+        assert_eq!(product.artifact().constraints().len(), 4);
+        let bytes = product.bytecode().to_vec();
+        let mut from_source = runtime();
+        let source_loaded = from_source
+            .load_compiled_program(
+                product.artifact().clone(),
+                crate::ResidentDurabilityPolicy::Volatile,
+            )
+            .unwrap();
+        let mut from_bytecode = runtime();
+        let bytecode_loaded = from_bytecode
+            .load_bytecode_program(&bytes, crate::ResidentDurabilityPolicy::Volatile)
+            .unwrap();
+        assert_eq!(source_loaded.route, RuntimeProgramRoute::ResidentPure);
+        assert_eq!(
+            source_loaded.info.program_revision,
+            bytecode_loaded.info.program_revision
+        );
+        for runtime in [&from_source, &from_bytecode] {
+            let output = runtime.program_output_id().unwrap();
+            assert_eq!(runtime.output_name(output).as_deref(), Some("result"));
+        }
+        let actual = source_loaded.initial_value.format_canonical_inline();
+        assert!(actual.contains("✨🐝"), "{actual}");
+        assert_eq!(
+            actual,
+            bytecode_loaded.initial_value.format_canonical_inline()
+        );
+    }
+}

@@ -215,3 +215,64 @@ two live state identities and checks a changed output dependency.
 `canonical_interactive_result_identity_is_independent_of_fence_publication`
 checks a final result different from the preceding formatted fence.
 The full B runtime library profile with compute executes 709 tests, all passing.
+
+
+5. Fixed closeout sequence and evidence rules (2026-09-15)
+-------------------------------------------------------------------------------
+
+This is the completion sequence for the existing review, not a new milestone or
+an expansion of the language. The consumer census remains the seventeen B rows
+in grammar-audit/s8-consumer-readiness.tsv. Required semantic behavior is bounded
+by the maintained source/type/operation contracts and checked-in applications.
+A passing retiring compiler, isolated parser rule, or extracted compute region
+cannot qualify a complete canonical product. Existing component evidence remains
+useful, but its narrower scope must be stated.
+
+Proceed in this order, repairing concrete failures in their shared owner:
+
+1. Audit types and operations before further architectural implementation. Use
+   BuiltinScalarKind::ALL (17 kinds) and SchemaBody as the census, and the existing
+   phase-2i-semantic-completion.tsv for explicit target capability dispositions.
+   Exercise retained complete documents, artifact encode/decode, live changes,
+   downstream propagation, and rejection/rollback where the contract applies.
+   Scalar coverage does not imply matrix, composite, or backend coverage.
+2. Close the known full runtime failures in the one deleted-parser C candidate:
+   terminal logical assignments; ordinary result identity when presentation repeats
+   it; comprehension-backed computed initialization; maintained pattern-function
+   execution. Preserve application values, constraints, recurrence and rollback.
+   Ordered roots and resource planning are implemented and have paired witnesses.
+3. Complete the actual canonical WasmDocument transport and configured served
+   activation. Qualify the full particle and EKF applications and stale dependency
+   rejection at the real browser loader. Kernel-only and envelope-helper results
+   do not satisfy this gate.
+4. Reconcile each of the original seventeen B consumer rows with its switched C
+   caller, positive/negative tests, feature profile, exact candidate and result.
+   Unretargeted tests, zero-test runs and required skipped adapters are blockers.
+5. Freeze the implementation, run the complete deleted-code product/distribution
+   matrix and affected CPU/SIMD/JIT/GPU/memory profiles, address every relevant
+   review note, then obtain a clean review and green exact-head CI. Re-run affected
+   checks after a correction; do not add optional cleanup or new language features.
+
+Type coverage audit
+-------------------------------------------------------------------------------
+
+These entries identify required coverage, not a claim that every entry has passed.
+Existing expression/definition witnesses must be paired with complete-document
+execution where state or product behavior is part of the contract.
+
+| Family | Required dimensions | Existing evidence and remaining check |
+| --- | --- | --- |
+| u8/u16/u32/u64/u128, i8/i16/i32/i64/i128 | Literal, arithmetic, state update, downstream change, overflow rollback; numeric matrices and selected writes | canonical_document_state repeated-selection tests currently cover i32/u32/f32; expand from the registry rather than assume widths share correctness. |
+| f32/f64, c32/c64, r64 | Exact kind, conversions, arithmetic where maintained, successive state updates; matrix operations where admitted | canonical_source_review and canonical_source_semantics include complex/rational witnesses; complete-document recurrence audit remains required. |
+| bool/string | Live replacement, propagation, matrix selection and publication | Full FizzBuzz and changing logical-mask assignments supplement the existing boolean/structure tests. |
+| Id/Index | Exact identity, one-based selectors, wide-value admission | canonical source Id and portable selector regressions; verify document transport and boundary rejection. |
+| Atom/Enum/ReifiedType | Nominal/type identity, supported construction/matching and explicit capability rejection | Audit existing semantic certification against the declared target disposition; do not treat syntax admission as execution support. |
+| Option/Dynamic | Present/absent, concrete payload identity, nested dimensions, changed payload | canonical_source_structures dynamic options, contextual empties and foreign dynamic payload tests. |
+| Tuple/Record | Heterogeneous construction, selection, nested mutation, alias ownership and rollback | canonical_source_structures/completion and canonical_document_state; audit complete-document plus bytecode coverage. |
+| Matrix | Scalar kinds, nonsquare/empty shapes, whole/indexed/nested writes, repeats, live masks and computed initialization | Changing-mask and repeated-selector tests; comprehension initialization and repeated mixed-kind/nested arithmetic remain open checks. |
+| Table/Set/Map | Canonical ordering, duplicate/key rules, changed inputs, joins, nested payloads and memory rejection | canonical_source_collections/structures provide paired execution witnesses; audit complete-document consumers. |
+
+Do not silently mark an uncovered row unsupported. An unsupported disposition
+must already belong to the maintained contract, or be an explicit scope decision.
+Any new failure found by this sweep is recorded under its existing gate; the seal
+requires zero unresolved required rows, not an arbitrary number of review rounds.

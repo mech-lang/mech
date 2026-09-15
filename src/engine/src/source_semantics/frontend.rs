@@ -116,6 +116,12 @@ pub enum CanonicalOrderedImport {
     RootExport { root: usize, name: String },
 }
 
+struct PendingSelection {
+    operation: Option<&'static str>,
+    inputs: Vec<PendingValue>,
+    schema: SchemaDraft,
+}
+
 impl CanonicalSourceFrontend {
     /// Lower retained roots into one graph in dependency order and publish
     /// their results in caller order. No root text is joined or reparsed.
@@ -5485,6 +5491,30 @@ impl SemanticBuilder {
         selectors: Vec<Option<PendingValue>>,
         syntax: &SyntaxNode,
     ) -> Result<PendingValue, SourceSemanticError> {
+        let selection = self.prepare_selection(source, selectors, syntax)?;
+        Ok(self.emit_selection(selection, syntax))
+    }
+
+    fn emit_selection(&mut self, selection: PendingSelection, syntax: &SyntaxNode) -> PendingValue {
+        match selection.operation {
+            Some(operation) => self.emit_with_schema_draft(
+                operation,
+                selection.inputs,
+                selection.schema,
+                syntax,
+                "slice",
+                None,
+            ),
+            None => selection.inputs[0],
+        }
+    }
+
+    fn prepare_selection(
+        &mut self,
+        source: PendingValue,
+        selectors: Vec<Option<PendingValue>>,
+        syntax: &SyntaxNode,
+    ) -> Result<PendingSelection, SourceSemanticError> {
         if selectors.is_empty() || selectors.len() > 2 {
             return Err(SourceSemanticError {
                 code: "source-semantics/invalid-selection-arity",
@@ -5493,7 +5523,11 @@ impl SemanticBuilder {
             });
         }
         if selectors.len() == 2 && selectors.iter().all(Option::is_none) {
-            return Ok(source);
+            return Ok(PendingSelection {
+                operation: None,
+                inputs: vec![source],
+                schema: self.schema_draft_of(source)?,
+            });
         }
         let mut parameters = Vec::new();
         let body = embed_schema_draft(
@@ -5502,7 +5536,11 @@ impl SemanticBuilder {
             SourceSemanticAnchor::for_node(syntax),
         )?;
         if matches!(body, SchemaBody::String) && matches!(selectors.as_slice(), [None]) {
-            return Ok(source);
+            return Ok(PendingSelection {
+                operation: None,
+                inputs: vec![source],
+                schema: self.schema_draft_of(source)?,
+            });
         }
         let mut inputs = vec![source];
         let mut counts = Vec::new();
@@ -5632,17 +5670,14 @@ impl SemanticBuilder {
                 });
             }
         };
-        Ok(self.emit_with_schema_draft(
-            name,
+        Ok(PendingSelection {
+            operation: Some(name),
             inputs,
-            SchemaDraft {
+            schema: SchemaDraft {
                 body: output,
                 dimension_parameters: parameters.into_boxed_slice(),
             },
-            syntax,
-            "slice",
-            None,
-        ))
+        })
     }
 
     fn constant_selection_ordinal(&self, value: PendingValue) -> Option<u64> {

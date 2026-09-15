@@ -1141,3 +1141,20 @@ fn ordered_retained_roots_link_live_exports_and_preserve_caller_output_order() {
         mech_engine::SourceDocumentOutputKind::Program,
     );
 }
+
+#[test]
+fn terminal_logical_updates_do_not_require_a_gather_population_at_activation() {
+    for target in ["a[mask,:]", "a[:,mask]", "a[mask,mask]", "a[mask]"] {
+        let mask = if target == "a[mask]" {
+            "[1 2; 3 4] <= n"
+        } else {
+            "[1; 2] <= n"
+        };
+        for (operator, expected) in [("=", [10.0, 10.0, 10.0]), ("+=", [11.0, 21.0, 31.0])] {
+            let source = format!(
+                "~a := [1 2; 3 4]\n~n := 0\nn += 1\nmask := {mask}\n{target} {operator} 10\na[1,1]\n"
+            );
+            turns(&source, &expected);
+        }
+    }
+}
