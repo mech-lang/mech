@@ -386,6 +386,7 @@ jobs:
           python3 scripts/build-wasm.py --profile browser-compute-canary
           grep -q '^export class WasmDocument' src/wasm/pkg/mech_wasm.js
           grep -q '^export class WasmMixedComputeProject' src/wasm/pkg/mech_wasm.js
+          python3 scripts/smoke-canonical-compute-browser.py --software-adapter
           cargo build --locked --bin mech --features compute_backends_native
       - name: Verify report-only particle WebGPU execution
         run: >-

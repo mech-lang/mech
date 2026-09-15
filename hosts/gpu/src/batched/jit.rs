@@ -299,7 +299,12 @@ impl NativeKernel {
                     )));
                 }
             }
-            for (index, state) in program.states.iter().enumerate() {
+            for (index, state) in program
+                .states
+                .iter()
+                .enumerate()
+                .filter(|(_, state)| state.recurrence)
+            {
                 let offset = program.register_offsets[&state.slot];
                 for component in 0..state.shape.elements() {
                     registers[offset + component] = Some(NativeRegister::F32(load_component(

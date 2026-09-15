@@ -6,9 +6,10 @@ use std::{
 
 use mech_compute::{
     ComparisonOperation, ComputeKernel, ComputeProgram, FixedShape, FixedShapeConstraint,
-    FixedShapeInputStorage, FixedShapeIr, FixedShapeStateStorage, FixedShapeStoragePlan,
-    LogicOperation, ScalarComputation, ScalarInstruction, ScalarOperand, ScalarPredicate,
-    build_compute_region_interface, plan_compute_artifact, resolve_compute_slot_dimensions,
+    FixedShapeInputStorage, FixedShapeIr, FixedShapePublicationStorage, FixedShapeStateStorage,
+    FixedShapeStoragePlan, LogicOperation, ScalarComputation, ScalarInstruction, ScalarOperand,
+    ScalarPredicate, build_compute_region_interface, plan_compute_artifact,
+    resolve_compute_slot_dimensions,
 };
 use mech_core::{
     CellSlotId, DimensionExpr, ExecutionTargetSet, FloatWidth, IntegrityConstraintId, NodeId,
@@ -441,6 +442,7 @@ fn prune_dead_instructions(
     instructions: Vec<ScalarInstruction>,
     states: &BTreeMap<CellSlotId, PendingState>,
     constraints: &[BatchedConstraint],
+    publications: &[FixedShapePublicationStorage],
 ) -> Vec<ScalarInstruction> {
     let mut live = BTreeSet::new();
     for state in states.values() {
@@ -452,6 +454,11 @@ fn prune_dead_instructions(
     }
     for constraint in constraints {
         constraint.predicate.collect_registers(&mut live);
+    }
+    for publication in publications {
+        for source in &publication.value {
+            collect_operand_register(*source, &mut live);
+        }
     }
 
     let mut retained = Vec::with_capacity(instructions.len());
@@ -475,6 +482,9 @@ struct BatchedInput {
 
 #[derive(Clone, Debug)]
 struct BatchedState {
+    /// Only recurrence state is loaded into the turn registers. Derived
+    /// publications share transactional double buffering, not recurrence reads.
+    recurrence: bool,
     slot: CellSlotId,
     shape: FixedShape,
     initializer: Vec<f32>,
@@ -682,21 +692,31 @@ impl FixedShapeKernel {
                 "resident fixed-shape storage requires a fixed-shape kernel",
             ));
         }
-        let state_slots = storage
+        let retained_slots = storage
             .states
             .iter()
             .map(|state| state.slot)
+            .chain(
+                storage
+                    .publications
+                    .iter()
+                    .map(|publication| publication.slot),
+            )
             .collect::<BTreeSet<_>>();
-        if let Some(output) = program
+        if program
             .interface()
             .outputs
             .iter()
-            .find(|output| !state_slots.contains(&output.slot))
+            .any(|output| !retained_slots.contains(&output.slot))
         {
-            return Err(fixed_shape_program_error(format!(
-                "fixed-shape output `{}` is derived storage; browser and native GPU backends require every published output to be resident state",
-                output.name,
-            )));
+            return Err(fixed_shape_program_error(
+                "fixed-shape output has no publication storage",
+            ));
+        }
+        if retained_slots.len() != storage.states.len() + storage.publications.len() {
+            return Err(fixed_shape_program_error(
+                "fixed-shape retained storage slots overlap",
+            ));
         }
 
         let mut binding = 0_u32;
@@ -714,11 +734,12 @@ impl FixedShapeKernel {
                 physical
             })
             .collect::<Vec<_>>();
-        let states = storage
+        let mut states = storage
             .states
             .iter()
             .map(|state| {
                 let physical = BatchedState {
+                    recurrence: true,
                     slot: state.slot,
                     shape: state.shape,
                     initializer: state.initializer.to_vec(),
@@ -730,6 +751,23 @@ impl FixedShapeKernel {
                 physical
             })
             .collect::<Vec<_>>();
+        for publication in &storage.publications {
+            if publication.value.len() != publication.shape.elements() {
+                return Err(fixed_shape_program_error(
+                    "publication extent differs from its value",
+                ));
+            }
+            states.push(BatchedState {
+                recurrence: false,
+                slot: publication.slot,
+                shape: publication.shape,
+                initializer: vec![0.0; publication.shape.elements()],
+                update: publication.value.to_vec(),
+                read_binding: binding,
+                write_binding: binding + 1,
+            });
+            binding += 2;
+        }
         let constraints = storage
             .constraints
             .iter()
@@ -1041,7 +1079,7 @@ impl BatchedCpuSession {
                     self.registers[offset..offset + elements]
                         .copy_from_slice(&values[instance * elements..(instance + 1) * elements]);
                 }
-                for state in &self.program.states {
+                for state in self.program.states.iter().filter(|state| state.recurrence) {
                     let offset = self.program.register_offsets[&state.slot];
                     let elements = state.shape.elements();
                     let values = &self.state[&state.slot];
@@ -1124,7 +1162,7 @@ impl BatchedSimdCpuSession {
                             gather_simd(values, first_instance, instances, elements, component);
                     }
                 }
-                for state in &self.program.states {
+                for state in self.program.states.iter().filter(|state| state.recurrence) {
                     let offset = self.program.register_offsets[&state.slot];
                     let elements = state.shape.elements();
                     let values = &self.state[&state.slot];
@@ -1562,10 +1600,33 @@ impl<'a> BatchCompiler<'a> {
                 diagnostics: self.diagnostics,
             });
         }
+        let interface =
+            build_compute_region_interface(self.artifact, self.artifact.compute_regions().first())?;
+        let mut published = BTreeSet::new();
+        let publications = interface
+            .outputs
+            .iter()
+            .filter(|output| {
+                !self.states.contains_key(&output.slot) && published.insert(output.slot)
+            })
+            .map(|output| {
+                let shape = self.shape(output.slot)?;
+                let value = (0..shape.elements())
+                    .map(|component| self.operand(ArtifactSource::Slot(output.slot), component))
+                    .collect::<Result<Box<[_]>, _>>()?;
+                Ok(FixedShapePublicationStorage {
+                    slot: output.slot,
+                    shape,
+                    value,
+                })
+            })
+            .collect::<Result<Box<[_]>, String>>()
+            .map_err(fixed_shape_program_error)?;
         self.instructions = prune_dead_instructions(
             std::mem::take(&mut self.instructions),
             &self.states,
             &constraints,
+            &publications,
         );
 
         let mut binding = 0_u32;
@@ -1591,6 +1652,7 @@ impl<'a> BatchCompiler<'a> {
                 let write_binding = binding + 1;
                 binding += 2;
                 BatchedState {
+                    recurrence: true,
                     slot: state.slot,
                     shape: state.shape,
                     initializer: state.initializer,
@@ -1600,8 +1662,6 @@ impl<'a> BatchCompiler<'a> {
                 }
             })
             .collect::<Vec<_>>();
-        let interface =
-            build_compute_region_interface(self.artifact, self.artifact.compute_regions().first())?;
         let plan = plan_compute_artifact(self.artifact, self.artifact.compute_regions());
         let kernel = ComputeKernel::FixedShape(FixedShapeIr {
             register_count: self.register_count,
@@ -1610,6 +1670,7 @@ impl<'a> BatchCompiler<'a> {
         let storage = FixedShapeStoragePlan {
             instances: self.instances,
             register_offsets: self.register_offsets,
+            publications,
             inputs: inputs
                 .iter()
                 .map(|input| FixedShapeInputStorage {
@@ -1958,18 +2019,39 @@ impl<'a> BatchCompiler<'a> {
             ));
         }
         let shape = self.shape(output)?;
+        let input_shapes = inputs
+            .iter()
+            .map(|source| {
+                let input = self.source_shape(*source)?;
+                if (input.rows != shape.rows && input.rows != 1)
+                    || (input.columns != shape.columns && input.columns != 1)
+                {
+                    return Err(format!(
+                        "input shape {input:?} cannot broadcast to {shape:?}"
+                    ));
+                }
+                Ok(input)
+            })
+            .collect::<Result<Vec<_>, String>>()?;
         self.reserve_scalar_instructions(shape.elements(), 1, 1)?;
         for component in 0..shape.elements() {
             let operands = inputs
                 .iter()
-                .map(|source| {
-                    let input_shape = self.source_shape(*source)?;
-                    let component = if input_shape.elements() == 1 {
+                .zip(&input_shapes)
+                .map(|(source, input)| {
+                    // Fixed-shape registers use column-major order. Project
+                    // each logical axis before converting back to an offset.
+                    let row = if input.rows == 1 {
                         0
                     } else {
-                        component
+                        component % shape.rows
                     };
-                    self.operand(*source, component)
+                    let column = if input.columns == 1 {
+                        0
+                    } else {
+                        component / shape.rows
+                    };
+                    self.operand(*source, input.index(row, column))
                 })
                 .collect::<Result<Vec<_>, String>>()?;
             self.emit(
@@ -3194,7 +3276,7 @@ fn generate_wgsl(
             ));
         }
     }
-    for state in states {
+    for state in states.iter().filter(|state| state.recurrence) {
         let offset = register_offsets[&state.slot];
         for component in 0..state.shape.elements() {
             shader.push_str(&format!(

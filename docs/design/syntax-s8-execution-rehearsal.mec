@@ -64,6 +64,21 @@ compute regions inherit root imports without sharing local variable bindings.
 Resolved host capabilities and module catalog ownership stay in the current
 ProgramCompiler boundary. Production witnesses must enter those methods.
 
+Fixed-shape compute retains derived output publications separately from recurrence
+state in its backend-neutral storage plan. Each derived slot has one publication
+buffer even when several output names alias it. Publications begin zeroed, commit
+with the accepted candidate, and preserve their prior contents after an integrity
+rejection. CPU scalar, SIMD, JIT, native GPU and browser GPU use the same physical
+double-buffer plan; only recurrence state is loaded into the next turn's registers.
+Publication-only computations remain live during instruction pruning. Fixed-shape
+elementwise broadcasting projects each matrix axis before indexing its physical
+column-major registers; both row and column inputs retain their logical order.
+The canonical compute browser canary checks this source-to-WASM interface against
+both CPU and real WebGPU after each WASM build, before the native server build.
+The browser creates an explicit pipeline layout from the physical plan so shader
+reflection cannot drop an unused publication read binding. Full application and
+deleted-code canaries remain required for acceptance.
+
 2. Bundle/browser decisions requiring implementation before C approval
 -------------------------------------------------------------------------------
 
