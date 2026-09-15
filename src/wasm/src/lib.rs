@@ -13,6 +13,9 @@ compile_error!(
 
 mod repl;
 
+#[cfg(feature = "browser_project_core")]
+mod canonical_document;
+
 #[cfg(feature = "browser_host_dom")]
 mod host;
 
@@ -25,6 +28,8 @@ mod gpu;
 #[cfg(feature = "browser_compute")]
 mod mixed_compute;
 
+#[cfg(feature = "browser_project_core")]
+pub use canonical_document::*;
 #[cfg(feature = "browser_project_core")]
 pub use project::*;
 

@@ -6,8 +6,8 @@ use mech_engine::{CanonicalSourceProgram, SourceDocumentOutputKind};
 use mech_syntax::document::{
     AstNode, CodeBlockSyntax, CodeFenceScope, DocumentScopeId, DocumentSyntax,
     EvalInlineMechCodeSyntax, IdentifierSyntax, InlineMechCodeSyntax, MechCodeSyntax,
-    MikaSectionSyntax, OptionMapSyntax, ParagraphSyntax, SectionElementSyntax, SectionSyntax,
-    SyntaxElement, SyntaxKind, SyntaxNode, TextRange, TitleSyntax, UlSubtitleSyntax,
+    MikaSectionSyntax, NodeFlags, OptionMapSyntax, ParagraphSyntax, SectionElementSyntax,
+    SectionSyntax, SyntaxElement, SyntaxKind, SyntaxNode, TextRange, TitleSyntax, UlSubtitleSyntax,
 };
 
 use crate::RuntimeValueSnapshot;
@@ -28,8 +28,8 @@ struct CanonicalRenderedOutput {
 
 #[derive(Clone)]
 pub struct CanonicalScopeResults {
-    pub owner: DocumentScopeId,
-    pub scope: CanonicalRenderScope,
+    owner: DocumentScopeId,
+    scope: CanonicalRenderScope,
     revision: mech_syntax::document::Revision,
     outputs: Vec<CanonicalRenderedOutput>,
 }
@@ -49,6 +49,14 @@ impl core::fmt::Display for CanonicalDocumentRenderError {
 impl std::error::Error for CanonicalDocumentRenderError {}
 
 impl CanonicalScopeResults {
+    pub fn owner(&self) -> DocumentScopeId {
+        self.owner
+    }
+
+    pub fn scope(&self) -> &CanonicalRenderScope {
+        &self.scope
+    }
+
     /// Associate completed artifact outputs with their retained presentation owners.
     pub fn from_values(
         owner: DocumentScopeId,
@@ -65,10 +73,9 @@ impl CanonicalScopeResults {
                     message: "canonical scope program has no retained source identity".to_owned(),
                     range: None,
                 })?;
-        if identity.document != owner.document {
+        if program.document_owner() != Some(owner) || identity.document != owner.document {
             return Err(CanonicalDocumentRenderError {
-                message: "scope program and presentation owner belong to different documents"
-                    .to_owned(),
+                message: "scope program does not match its retained presentation owner".to_owned(),
                 range: Some(identity.range),
             });
         }
@@ -124,12 +131,114 @@ impl CanonicalScopeResults {
 pub struct CanonicalDocumentRenderer;
 
 impl CanonicalDocumentRenderer {
+    /// Render one complete root-only REPL submission from canonical syntax.
+    /// Document prose, fences and Mika-local scopes are deliberately rejected:
+    /// the browser document renderer owns those presentation forms.
+    pub fn render_repl_source_html(
+        &self,
+        document: &DocumentSyntax,
+    ) -> Result<Option<String>, CanonicalDocumentRenderError> {
+        if document.syntax().flags().intersects(
+            NodeFlags::ERROR
+                | NodeFlags::MISSING
+                | NodeFlags::CONTAINS_ERROR
+                | NodeFlags::CONTAINS_MISSING,
+        ) {
+            return Err(CanonicalDocumentRenderError {
+                message: "cannot render an invalid canonical REPL source".to_owned(),
+                range: Some(document.syntax().range()),
+            });
+        }
+        if !document.contains_executable_source() {
+            return Ok(None);
+        }
+
+        let mut code = Vec::new();
+        let mut pending = vec![document.syntax().clone()];
+        while let Some(node) = pending.pop() {
+            if let Some(mech_code) = MechCodeSyntax::cast(node.clone()) {
+                code.extend(
+                    mech_code
+                        .items()
+                        .into_iter()
+                        .filter_map(|item| item.value()),
+                );
+                continue;
+            }
+            match node.kind() {
+                SyntaxKind::Document
+                | SyntaxKind::Body
+                | SyntaxKind::Section
+                | SyntaxKind::SectionElement => {
+                    pending.extend(node.children());
+                }
+                SyntaxKind::Comment | SyntaxKind::BlankLine => {}
+                // Only root code and trivia belong to a REPL submission. This
+                // excludes every heading and other document presentation owner.
+                _ => return Ok(None),
+            }
+        }
+        if code.is_empty() {
+            return Ok(None);
+        }
+        code.sort_by_key(|node| node.range().start);
+
+        let source = document.syntax().source();
+        let mut cursor = source.full_range().start;
+        let mut output = String::from("<div class='mech-code-block'><pre><code>");
+        for item in code {
+            let range = item.range();
+            let gap = source
+                .text(TextRange::new(cursor, range.start))
+                .map_err(|_| range_error(range))?;
+            render_repl_gap_html(&gap, &mut output);
+            output.push_str("<span class='");
+            output.push_str(repl_item_class(&item));
+            output.push_str("'>");
+            for token in item.tokens() {
+                let text = token.text().map_err(|_| range_error(token.range()))?;
+                if token.kind() == SyntaxKind::Semicolon {
+                    output.push_str("<span class='mech-code-terminal'>");
+                    output.push_str(&escape_html(&text));
+                    output.push_str("</span>");
+                } else {
+                    output.push_str(&escape_html(&text));
+                }
+            }
+            output.push_str("</span>");
+            cursor = range.end;
+        }
+        let tail = source
+            .text(TextRange::new(cursor, source.full_range().end))
+            .map_err(|_| range_error(source.full_range()))?;
+        render_repl_gap_html(&tail, &mut output);
+        output.push_str("</code></pre></div>");
+        Ok(Some(output))
+    }
+
+    /// Format canonical syntax without execution or completed output values.
+    pub fn format_html(
+        &self,
+        document: &DocumentSyntax,
+    ) -> Result<String, CanonicalDocumentRenderError> {
+        self.render_html_mode(document, &[], RenderMode::Source)
+    }
+
     pub fn render_html(
         &self,
         document: &DocumentSyntax,
         results: &[CanonicalScopeResults],
     ) -> Result<String, CanonicalDocumentRenderError> {
-        let lookup = ResultLookup::new(document, results)?;
+        self.render_html_mode(document, results, RenderMode::Completed)
+    }
+
+    fn render_html_mode(
+        &self,
+        document: &DocumentSyntax,
+        results: &[CanonicalScopeResults],
+        mode: RenderMode,
+    ) -> Result<String, CanonicalDocumentRenderError> {
+        let lookup = ResultLookup::new(document, results, mode)?;
         let mut output = String::from("<article class='mech-document'>");
         if let Some(title) = document.title() {
             render_title_html(&title, document.scope_id(), &lookup, &mut output)?;
@@ -151,12 +260,29 @@ impl CanonicalDocumentRenderer {
         Ok(output)
     }
 
+    /// Preserve executable source and its syntax boundaries without evaluating it.
+    pub fn format_text(
+        &self,
+        document: &DocumentSyntax,
+    ) -> Result<String, CanonicalDocumentRenderError> {
+        self.render_text_mode(document, &[], RenderMode::Source)
+    }
+
     pub fn render_text(
         &self,
         document: &DocumentSyntax,
         results: &[CanonicalScopeResults],
     ) -> Result<String, CanonicalDocumentRenderError> {
-        let lookup = ResultLookup::new(document, results)?;
+        self.render_text_mode(document, results, RenderMode::Completed)
+    }
+
+    fn render_text_mode(
+        &self,
+        document: &DocumentSyntax,
+        results: &[CanonicalScopeResults],
+        mode: RenderMode,
+    ) -> Result<String, CanonicalDocumentRenderError> {
+        let lookup = ResultLookup::new(document, results, mode)?;
         let mut output = String::new();
         if let Some(title) = document.title() {
             render_inline_text(title.syntax(), document.scope_id(), &lookup, &mut output)?;
@@ -177,6 +303,74 @@ impl CanonicalDocumentRenderer {
     }
 }
 
+fn repl_item_class(item: &SyntaxNode) -> &'static str {
+    let mut kinds = vec![item.kind()];
+    let mut pending = item.children().collect::<Vec<_>>();
+    while let Some(node) = pending.pop() {
+        kinds.push(node.kind());
+        pending.extend(node.children());
+    }
+    let contains = |kind| kinds.contains(&kind);
+    if contains(SyntaxKind::VariableDefine) {
+        return "mech-variable-define";
+    }
+    if contains(SyntaxKind::VariableAssign) {
+        return "mech-variable-assign";
+    }
+    if contains(SyntaxKind::OpAssign) {
+        return "mech-op-assign";
+    }
+    if contains(SyntaxKind::FunctionDefine) {
+        return "mech-function-define";
+    }
+    if kinds.iter().any(|kind| {
+        matches!(
+            kind,
+            SyntaxKind::FsmImplementation
+                | SyntaxKind::FsmSpecification
+                | SyntaxKind::FsmStatementTransition
+                | SyntaxKind::FsmBlockTransition
+        )
+    }) {
+        return "mech-fsm";
+    }
+    match item.kind() {
+        SyntaxKind::Comment => "mech-comment",
+        SyntaxKind::ImportDeclaration | SyntaxKind::ModuleImport => "mech-import",
+        SyntaxKind::ExportDeclaration => "mech-export",
+        SyntaxKind::ContextDeclaration | SyntaxKind::ContextSend => "mech-context",
+        SyntaxKind::Statement => "mech-statement",
+        _ => "mech-expression",
+    }
+}
+
+fn render_repl_gap_html(gap: &str, output: &mut String) {
+    let mut remaining = gap;
+    while !remaining.is_empty() {
+        if let Some(comment) = remaining.strip_prefix("--") {
+            let end = comment.find('\n').map_or(remaining.len(), |end| end + 2);
+            output.push_str("<span class='mech-comment'>");
+            output.push_str(&escape_html(&remaining[..end]));
+            output.push_str("</span>");
+            remaining = &remaining[end..];
+        } else if let Some(after) = remaining.strip_prefix(';') {
+            output.push_str("<span class='mech-code-terminal'>;</span>");
+            remaining = after;
+        } else {
+            let next = remaining
+                .char_indices()
+                .skip(1)
+                .find_map(|(index, _)| {
+                    (remaining[index..].starts_with("--") || remaining[index..].starts_with(';'))
+                        .then_some(index)
+                })
+                .unwrap_or(remaining.len());
+            output.push_str(&escape_html(&remaining[..next]));
+            remaining = &remaining[next..];
+        }
+    }
+}
+
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 struct ResultKey {
     owner: DocumentScopeId,
@@ -185,7 +379,14 @@ struct ResultKey {
     range: Option<TextRange>,
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum RenderMode {
+    Source,
+    Completed,
+}
+
 struct ResultLookup<'a> {
+    mode: RenderMode,
     values: HashMap<ResultKey, &'a RuntimeValueSnapshot>,
     citation_numbers: HashMap<String, usize>,
     citations: Vec<(DocumentScopeId, SyntaxNode)>,
@@ -196,6 +397,7 @@ impl<'a> ResultLookup<'a> {
     fn new(
         document: &DocumentSyntax,
         results: &'a [CanonicalScopeResults],
+        mode: RenderMode,
     ) -> Result<Self, CanonicalDocumentRenderError> {
         let mut owners = document
             .mika_scopes()
@@ -335,6 +537,7 @@ impl<'a> ResultLookup<'a> {
             }
         }
         Ok(Self {
+            mode,
             values,
             citation_numbers,
             citations,
@@ -617,6 +820,10 @@ fn render_document_node_text(
     } else if let Some(fence) = CodeBlockSyntax::cast(value.clone()) {
         render_fence_text(&fence, owner, lookup, output)?;
     } else if let Some(mika) = find::<MikaSectionSyntax>(value) {
+        if lookup.mode == RenderMode::Source {
+            output.push_str(&node_text(value)?);
+            return Ok(());
+        }
         let child = mika.scope_id();
         if let Some(body) = mika.body() {
             render_section_text(&body, child, lookup, output)?;
@@ -1138,6 +1345,9 @@ fn render_inline_text(
     lookup: &ResultLookup<'_>,
     output: &mut String,
 ) -> Result<(), CanonicalDocumentRenderError> {
+    if lookup.mode == RenderMode::Source {
+        return push_source(node, node.range(), output, false);
+    }
     let mut replacements = Vec::new();
     collect_inline_replacements(node, &mut replacements);
     replacements.sort_by_key(|node| node.range().start);
@@ -1184,6 +1394,12 @@ fn render_inline_html(
 ) -> Result<(), CanonicalDocumentRenderError> {
     match node.kind() {
         SyntaxKind::EvalInlineMechCode => {
+            if lookup.mode == RenderMode::Source {
+                output.push_str("<code class='mech-inline'>");
+                output.push_str(&escape_html(&node_text(node)?));
+                output.push_str("</code>");
+                return Ok(());
+            }
             let range = node.range();
             let value = lookup
                 .get(
@@ -1778,7 +1994,7 @@ fn render_fence_html(
         message: "code fence is missing canonical info".to_owned(),
         range: Some(fence.syntax().range()),
     })?;
-    if info.hidden {
+    if info.hidden && lookup.mode == RenderMode::Completed {
         return Ok(());
     }
     let presentation = fence
@@ -1787,7 +2003,11 @@ fn render_fence_html(
             message: "code fence has no valid presentation options".to_owned(),
             range: Some(fence.syntax().range()),
         })?;
-    output.push_str("<figure class='mech-code-block'");
+    output.push_str("<figure class='mech-code-block");
+    if info.hidden {
+        output.push_str(" hidden");
+    }
+    output.push('\'');
     if !presentation.styles.is_empty() {
         let styles = presentation
             .styles
@@ -1811,7 +2031,8 @@ fn render_fence_html(
     output.push_str(&escape_html(&fence_body(fence)?));
     output.push_str("</code></pre>");
     let scope = render_scope(&info.scope);
-    if presentation.show_output
+    if lookup.mode == RenderMode::Completed
+        && presentation.show_output
         && let Some(scope) = scope
     {
         let value = lookup
@@ -1849,6 +2070,10 @@ fn render_fence_text(
     lookup: &ResultLookup<'_>,
     output: &mut String,
 ) -> Result<(), CanonicalDocumentRenderError> {
+    if lookup.mode == RenderMode::Source {
+        output.push_str(&node_text(fence.syntax())?);
+        return Ok(());
+    }
     let info = fence.info().ok_or_else(|| CanonicalDocumentRenderError {
         message: "code fence is missing canonical info".to_owned(),
         range: Some(fence.syntax().range()),
@@ -1863,7 +2088,8 @@ fn render_fence_text(
             message: "code fence has no valid presentation options".to_owned(),
             range: Some(fence.syntax().range()),
         })?;
-    if presentation.show_output
+    if lookup.mode == RenderMode::Completed
+        && presentation.show_output
         && let Some(scope) = render_scope(&info.scope)
     {
         let value = lookup
@@ -1965,6 +2191,9 @@ fn append_program_html(
     output: &mut String,
     required: Option<TextRange>,
 ) -> Result<(), CanonicalDocumentRenderError> {
+    if lookup.mode == RenderMode::Source {
+        return Ok(());
+    }
     let value = lookup.get(owner, scope, SourceDocumentOutputKind::Program, None);
     if let Some(range) = required
         && value.is_none()
@@ -1989,6 +2218,9 @@ fn append_program_text(
     output: &mut String,
     required: Option<TextRange>,
 ) -> Result<(), CanonicalDocumentRenderError> {
+    if lookup.mode == RenderMode::Source {
+        return Ok(());
+    }
     let value = lookup.get(owner, scope, SourceDocumentOutputKind::Program, None);
     if let Some(range) = required
         && value.is_none()

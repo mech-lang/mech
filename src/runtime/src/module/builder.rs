@@ -105,6 +105,8 @@ impl ModuleBuilder {
             resolved.canonical_uri,
             resolved.kind,
             resolved.source,
+            #[cfg(feature = "source")]
+            resolved.source_document,
             resolved.syntax_tree,
             compiler_version,
             language_edition,
@@ -123,16 +125,25 @@ impl ModuleBuilder {
 }
 
 fn source_version_input(resolved: &ResolvedSource) -> String {
-    // For now this makes version identity depend on source content shape.
-    // Later this should probably become a ContentHash over normalized source bytes.
-    format!(
+    let input = format!(
         "{:?}\nimports={:?}\nexports={:?}\ncontexts={:?}\naddress_references={:?}",
         resolved.source,
         resolved.imports,
         resolved.exports,
         resolved.contexts,
         resolved.address_references,
-    )
+    );
+    // Retained revisions own distinct node/result associations even when source
+    // bytes repeat. A stored version must identify that revision as well as text.
+    #[cfg(feature = "source")]
+    if let Some(document) = resolved.source_document() {
+        return format!(
+            "{input}\nsource_document={:?}\nsource_revision={:?}",
+            document.source().document(),
+            document.source().revision(),
+        );
+    }
+    input
 }
 
 #[derive(Debug, Clone)]

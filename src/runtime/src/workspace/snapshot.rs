@@ -18,6 +18,8 @@ pub struct RuntimeWorkspaceSourceSnapshot {
     /// Filesystem-backed Mech text already contains recursively expanded
     /// Mechdown includes.
     pub source: Option<MechSourceCode>,
+    #[cfg(feature = "source")]
+    pub source_document: Option<crate::SourceDocument>,
     pub syntax_tree: Option<Arc<Program>>,
     pub module_version: Option<ModuleVersionId>,
     pub content_hash: u64,

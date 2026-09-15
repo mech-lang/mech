@@ -58,14 +58,22 @@ fn source_index_for_module_record_source(
     }
 }
 
+fn source_index_for_resolved_source(resolved: &ResolvedSource) -> MResult<Option<SourceIndex>> {
+    source_index_for_module_record_source(&resolved.source, resolved.syntax_tree.as_deref())
+}
+
+fn source_index_for_runtime_record(
+    record: &crate::RuntimeModuleRecord,
+) -> MResult<Option<SourceIndex>> {
+    source_index_for_module_record_source(&record.source, record.syntax_tree.as_deref())
+}
+
 fn index_unindexed_module_source(resolved: &mut ResolvedSource) -> MResult<()> {
     if !resolved.scopes.is_empty() {
         return Ok(());
     }
 
-    let Some(index) =
-        source_index_for_module_record_source(&resolved.source, resolved.syntax_tree.as_deref())?
-    else {
+    let Some(index) = source_index_for_resolved_source(resolved)? else {
         return Ok(());
     };
 
@@ -205,9 +213,7 @@ impl MechRuntime {
         &mut self,
         record: &mut crate::RuntimeModuleRecord,
     ) -> MResult<()> {
-        let Some(index) =
-            source_index_for_module_record_source(&record.source, record.syntax_tree.as_deref())?
-        else {
+        let Some(index) = source_index_for_runtime_record(record)? else {
             return self.materialize_manifest_context_imports_from_scopes(record);
         };
 
@@ -466,6 +472,11 @@ impl MechRuntime {
         }
 
         self.enforce_source_limits(context, &resolved.source)?;
+        resolved.validate()?;
+        #[cfg(feature = "source")]
+        if let Some(document) = resolved.source_document() {
+            self.validate_source_revision(module_id(&resolved.canonical_uri), document)?;
+        }
 
         let canonical_uri = resolved.canonical_uri.clone();
 
@@ -602,8 +613,11 @@ impl MechRuntime {
             );
 
             let module_version = record.module_version;
-            let version = ModuleVersionRecord::new(module_version, module, 1)
-                .with_source(record.source)
+            let version =
+                ModuleVersionRecord::new(module_version, module, 1).with_source(record.source);
+            #[cfg(feature = "source")]
+            let version = version.with_source_document(record.source_document);
+            let version = version
                 .with_syntax_tree(record.syntax_tree)
                 .with_exports(record.exports)
                 .with_imports(record.imports)
@@ -740,20 +754,156 @@ impl MechRuntime {
         options: ModuleBuildOptions<'_>,
     ) -> MResult<ModuleVersionId> {
         self.ensure_runtime_mutation_allowed("put_source_module_with_context")?;
+        #[cfg(feature = "source")]
+        let revision = self.next_source_revision(canonical_uri)?;
         let resolved = ResolvedSource::new(
             name,
             canonical_uri,
             MechSourceCode::String(source.to_string()),
         )
         .with_kind(crate::SourceKind::Mech);
+        #[cfg(feature = "source")]
+        let resolved = resolved
+            .retain_source_document(revision, mech_syntax::document::ParseConfig::default())?;
 
-        self.with_atomic_module_operation(
+        let version = self.with_atomic_module_operation(
             context,
             "put_source_module_with_context",
             |runtime, context| {
                 runtime.build_module_from_resolved_source_in_transaction(context, resolved, options)
             },
+        )?;
+        Ok(version)
+    }
+
+    /// Prepare and store one source revision through the canonical resolver
+    /// authority only. Strict admission and all local-owner validation finish
+    /// before the runtime transaction can replace any accepted state.
+    #[cfg(feature = "source")]
+    pub fn put_canonical_source_module(
+        &mut self,
+        name: &str,
+        canonical_uri: &str,
+        source: &str,
+        options: ModuleBuildOptions<'_>,
+    ) -> MResult<ModuleVersionId> {
+        self.ensure_runtime_mutation_allowed("put_canonical_source_module")?;
+        let mut context = self.runtime_context()?;
+        self.put_canonical_source_module_with_context(
+            &mut context,
+            name,
+            canonical_uri,
+            source,
+            options,
         )
+    }
+
+    #[cfg(feature = "source")]
+    pub fn put_canonical_source_module_with_context(
+        &mut self,
+        context: &mut RuntimeContext,
+        name: &str,
+        canonical_uri: &str,
+        source: &str,
+        options: ModuleBuildOptions<'_>,
+    ) -> MResult<ModuleVersionId> {
+        self.ensure_runtime_mutation_allowed("put_canonical_source_module_with_context")?;
+        let revision = self.next_source_revision(canonical_uri)?;
+        let resolved = ResolvedSource::new(
+            name,
+            canonical_uri,
+            MechSourceCode::String(source.to_owned()),
+        )
+        .with_kind(crate::SourceKind::Mech)
+        .retain_source_document(revision, mech_syntax::document::ParseConfig::default())?
+        .admit_canonical_document()?;
+        let version = self.with_atomic_module_operation(
+            context,
+            "put_canonical_source_module_with_context",
+            |runtime, context| {
+                runtime.build_module_from_resolved_source_in_transaction(context, resolved, options)
+            },
+        )?;
+        Ok(version)
+    }
+
+    #[cfg(feature = "source")]
+    pub(in crate::runtime) fn validate_source_revision(
+        &self,
+        module: ModuleId,
+        document: &crate::SourceDocument,
+    ) -> MResult<()> {
+        let revision = document.source().revision();
+        let documents = self.store.module_source_documents(module)?;
+        let committed = documents
+            .iter()
+            .filter(|known| known.source().revision() == revision);
+        let pending = self.active_transactions.values().flat_map(|transaction| {
+            transaction.modules.version_puts().filter_map(|version| {
+                if version.module != module {
+                    return None;
+                }
+                version
+                    .source_document
+                    .as_ref()
+                    .filter(|known| known.source().revision() == revision)
+            })
+        });
+        if committed.chain(pending).any(|known| known != document) {
+            return Err(MechError::new(
+                RuntimeInvalidOperationError {
+                    operation: "store_resolved_module_source",
+                    reason: format!(
+                        "source revision {} for module {module} already identifies another document",
+                        revision.0
+                    ),
+                },
+                None,
+            ));
+        }
+        Ok(())
+    }
+
+    #[cfg(feature = "source")]
+    fn next_source_revision(
+        &self,
+        canonical_uri: &str,
+    ) -> MResult<mech_syntax::document::Revision> {
+        let module = module_id(canonical_uri);
+        // The durable store is the committed authority, including after reopening
+        // a populated store. Pending journals reserve revisions until commit/abort.
+        let previous = self
+            .store
+            .module_source_documents(module)?
+            .iter()
+            .map(|document| document.source().revision())
+            .chain(self.active_transactions.values().flat_map(|transaction| {
+                transaction.modules.version_puts().filter_map(|version| {
+                    (version.module == module)
+                        .then_some(version.source_document.as_ref())
+                        .flatten()
+                        .map(|document| document.source().revision())
+                })
+            }))
+            .max();
+        let Some(previous) = previous else {
+            return Ok(mech_syntax::document::Revision(0));
+        };
+        previous
+            .0
+            .checked_add(1)
+            .map(mech_syntax::document::Revision)
+            .ok_or_else(|| {
+                MechError::new(
+                    RuntimeInvalidOperationError {
+                        operation: "put_source_module",
+                        reason: format!(
+                            "retained source revision is exhausted for `{canonical_uri}`"
+                        ),
+                    },
+                    None,
+                )
+            })
     }
 
     pub fn activate_module_version(
@@ -793,7 +943,7 @@ impl MechRuntime {
         self.store.get_active_module_version(module)
     }
 
-    #[cfg(all(feature = "watcher", feature = "source"))]
+    #[cfg(all(feature = "source", any(feature = "watcher", test)))]
     pub(crate) fn workspace_module_records(
         &self,
         version: ModuleVersionId,

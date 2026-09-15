@@ -1361,9 +1361,13 @@ def assert_toc_survives_console_pressure():
   const oldPaneWidth = pane.style.width;
   const initialTocRect = toc.getBoundingClientRect();
   const initialMainRect = main.getBoundingClientRect();
+  // The TOC is sticky: prior navigation can move the article above its pinned
+  // top. Side-by-side columns must overlap vertically, not share a top edge.
   const initialSideBySide = getComputedStyle(toc).display !== 'none' &&
+    initialTocRect.width > 0 && initialMainRect.width > 0 &&
     initialTocRect.right <= initialMainRect.left + 1 &&
-    Math.abs(initialTocRect.top - initialMainRect.top) < 80;
+    initialTocRect.bottom > initialMainRect.top &&
+    initialTocRect.top < initialMainRect.bottom;
   const pressuredSize = Math.max(
     370,
     Math.floor(root.getBoundingClientRect().width - 72 - 840),
@@ -1408,6 +1412,8 @@ def assert_toc_survives_console_pressure():
   };
   const result = {
     initialSideBySide,
+    initialToc: initialTocRect.toJSON(),
+    initialMain: initialMainRect.toJSON(),
     contentUsesCompactRange: contentRect.width > 680 && contentRect.width < 900,
     collapsed,
     open,

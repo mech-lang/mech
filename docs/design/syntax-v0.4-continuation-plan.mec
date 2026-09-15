@@ -1,7 +1,7 @@
 Syntax v0.4 Continuation Plan
 ===============================================================================
 
-Status: S0-S3 and S5 certification complete; S4 semantics and S7A consumer qualification remain open. S7B B1-B6 implemented; exact-head qualification/closeout is recorded on PR #826; S8 has not started. S6 activation remains gated on S4 completion.
+Status: S0-S3 and S5 certification complete; S4 semantics and S7A consumer qualification remain open. S7B B1-B6 implemented; exact-head qualification/closeout is recorded on PR #826; S8A preparation has started; the A/B/C gates and linked inventories are in syntax-s8-cutover-plan.mec. S6 activation remains gated on S4 completion.
 
 Current stack index (names and ordering, not completion):
 
@@ -431,6 +431,11 @@ Exit gate:
 
 S8. Atomic product cutover and removal
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Preparation is split into S8A consumer ownership and S8B execution integration;
+S8C alone applies the coordinated switch/deletion. A/B cannot seal until the
+actual deleted-code C candidate demonstrates the full product matrix. See
+syntax-s8-cutover-plan.mec and its linked readiness/removal inventories.
 
 Replace the complete S1 caller inventory by consumer class:
 

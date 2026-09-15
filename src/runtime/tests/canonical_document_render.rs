@@ -215,15 +215,14 @@ fn renderer_rejects_same_document_results_relabelled_to_another_owner() {
     let document = document("root := 1\nroot\n\n~∘~⸢child := 2\nchild\n⸥\n");
     let child = &document.mika_scopes()[0].section;
     let program = CanonicalSourceFrontend.compile_mika_section(child).unwrap();
-    let relabelled = execute(
+    let error = CanonicalScopeResults::from_values(
         document.scope_id(),
         CanonicalRenderScope::Root,
         &program,
-        10,
-    );
-    let error = CanonicalDocumentRenderer
-        .render_html(&document, &[relabelled])
-        .unwrap_err();
+        &[],
+    )
+    .err()
+    .expect("owner mismatch must be rejected before accepting values");
     assert!(error.message.contains("retained presentation owner"));
     assert!(error.range.is_some());
 }
@@ -353,6 +352,20 @@ fn hidden_and_output_suppressed_fences_do_not_leak_the_program_result() {
         ("```mech{output: false}\n42\n```\n", true),
     ] {
         let document = document(source);
+        let source_html = CanonicalDocumentRenderer.format_html(&document).unwrap();
+        assert!(source_html.contains("<code>42\n</code>"), "{source_html}");
+        assert_eq!(
+            source_html.contains("class='mech-code-block hidden'"),
+            !source_is_visible
+        );
+        assert!(
+            !source_html.contains("class='mech-output'"),
+            "{source_html}"
+        );
+        assert_eq!(
+            CanonicalDocumentRenderer.format_text(&document).unwrap(),
+            source
+        );
         let program = CanonicalSourceFrontend.compile_document(&document).unwrap();
         let results = [execute(
             document.scope_id(),
