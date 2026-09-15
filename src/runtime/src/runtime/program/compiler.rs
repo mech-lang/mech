@@ -2195,19 +2195,7 @@ impl<'a> ProgramCompilerView<'a> {
         requests: &[SourceRequest],
         options: ModuleBuildOptions<'_>,
     ) -> MResult<ProgramCompilationProduct> {
-        if requests.is_empty() {
-            return Err(route_failure(
-                ResidentRouteFailureClass::SemanticUnsupported,
-                "resident source compilation requires at least one root",
-            ));
-        }
-        if requests.len() != 1 {
-            return Err(route_failure(
-                ResidentRouteFailureClass::SemanticUnsupported,
-                "canonical multi-root linking is not available",
-            ));
-        }
-        self.compile_root(requests[0].clone(), options)
+        self.compile_canonical_roots(requests, options)
     }
 
     fn new_program(&self) -> CompilerPlanningProgram {
