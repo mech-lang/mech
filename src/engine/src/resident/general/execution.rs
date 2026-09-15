@@ -497,6 +497,7 @@ impl ReactiveInstance {
     /// every non-migrated projection describes the installed state epoch.
     pub fn refresh_output_projections(
         &mut self,
+        artifact: &crate::ProgramArtifact,
         targets: &std::collections::BTreeSet<CellSlotId>,
     ) -> Result<(), ResidentExecutionError> {
         if targets.is_empty() {
@@ -521,7 +522,70 @@ impl ReactiveInstance {
             }
         }
 
+        if artifact.revision() != self.plan.program_revision {
+            return Err(ResidentExecutionError::InvalidOutputMaterialization {
+                slot: *targets.first().expect("nonempty targets checked"),
+            });
+        }
         let epoch = self.published_epoch();
+        // A canonical state writer copies its final candidate into the retained
+        // cell. During projection refresh that candidate means the published
+        // state value: recomputing it would execute the transition a second time.
+        // Derive this relation from the accepted artifact's identity operation,
+        // not from source names or an independent evaluation graph.
+        let mut published_candidates = std::collections::BTreeMap::new();
+        for state in artifact
+            .slots()
+            .iter()
+            .filter(|slot| slot.role == SlotRole::State)
+        {
+            let crate::ProducerReference::NodeOutput { node, .. } = state.producer else {
+                continue;
+            };
+            let Some(writer) = artifact.nodes()[node.get() as usize].as_operation() else {
+                continue;
+            };
+            if writer.operation.module_path.as_ref() != ["core"]
+                || writer.operation.operation_name != "assign"
+            {
+                continue;
+            }
+            let [
+                crate::BindingDeclaration::Input {
+                    source: crate::ArtifactSource::Slot(source),
+                    ..
+                },
+            ] = &artifact.bindings()
+                [writer.input_bindings.start as usize..writer.input_bindings.end as usize]
+            else {
+                continue;
+            };
+            let source_slot = &artifact.slots()[source.get() as usize];
+            let crate::ProducerReference::NodeOutput { node: producer, .. } = source_slot.producer
+            else {
+                continue;
+            };
+            if source_slot.role != SlotRole::Derived
+                || self.plan.slots[source.get() as usize].storage != ResidentStorageClass::Scratch
+            {
+                continue;
+            }
+            if let Some(previous) = published_candidates.insert(producer, state.slot) {
+                let previous_region = self.plan.slots[previous.get() as usize].region;
+                let region = self.plan.slots[state.slot.get() as usize].region;
+                if !rmw_outputs_equal(
+                    &self.state.buffers[self.state.published_buffer(previous, epoch)],
+                    previous_region,
+                    &self.state.buffers[self.state.published_buffer(state.slot, epoch)],
+                    region,
+                    &self.plan.schemas,
+                ) {
+                    return Err(ResidentExecutionError::InvalidOutputMaterialization {
+                        slot: state.slot,
+                    });
+                }
+            }
+        }
         self.refresh_f64_state_arenas(epoch);
         let execution_order = self.plan.execution_node_order.to_vec();
         let mut probe = ResidentStructuralProbe::default();
@@ -532,7 +596,24 @@ impl ReactiveInstance {
                     if node.write.storage == ResidentStorageClass::Scratch
             );
             if execute {
-                self.execute_kernel(node_index, epoch, epoch, &mut probe)?;
+                let ActivatedTurnStep::Kernel(node) = &self.plan.steps[node_index.get() as usize]
+                else {
+                    unreachable!("projection refresh selects only kernels");
+                };
+                if let Some(source) = published_candidates.get(&node.artifact_node) {
+                    let source_region = self.plan.slots[source.get() as usize].region;
+                    let source_buffer = self.state.published_buffer(*source, epoch);
+                    self.workspace
+                        .scratch
+                        .copy_region_from(
+                            node.write.region,
+                            &self.state.buffers[source_buffer],
+                            source_region,
+                        )
+                        .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+                } else {
+                    self.execute_kernel(node_index, epoch, epoch, &mut probe)?;
+                }
             }
         }
 
@@ -1838,8 +1919,15 @@ impl ReactiveInstance {
                         }
                     }
                     ChangeDetectionPolicy::ExactScalar => {
-                        before_scalar
-                            != scalar_token(self.workspace.scratch.read(node.write.region))
+                        match (
+                            before_scalar,
+                            scalar_token(self.workspace.scratch.read(node.write.region)),
+                        ) {
+                            (Some(before), Some(after)) => before != after,
+                            // Non-scalar snapshots have no fixed scalar token;
+                            // their maintained kernel compares the typed value.
+                            _ => kernel_changed,
+                        }
                     }
                     ChangeDetectionPolicy::AlwaysChanged => true,
                     ChangeDetectionPolicy::SemanticHash => unreachable!(
@@ -2921,15 +3009,51 @@ fn rmw_outputs_equal(
     regions_equal(left, left_region, right, right_region)
 }
 
-fn scalar_token(value: ResidentValueRef<'_>) -> Option<u64> {
-    match value {
-        ResidentValueRef::Bool([value]) => Some(u64::from(*value)),
-        ResidentValueRef::Index([value]) => Some(*value),
-        ResidentValueRef::F64([value]) => Some(value.to_bits()),
-        ResidentValueRef::String([value]) => Some(hash_string(value)),
-        ResidentValueRef::Snapshot(_) => None,
-        _ => None,
-    }
+fn scalar_token(value: ResidentValueRef<'_>) -> Option<(u8, u128, u128)> {
+    use mech_core::ValueData;
+    let data = match value {
+        ResidentValueRef::Bool([value]) => return Some((0, u128::from(*value), 0)),
+        ResidentValueRef::Index([value]) => return Some((1, u128::from(*value), 0)),
+        ResidentValueRef::F64([value]) => return Some((2, u128::from(value.to_bits()), 0)),
+        ResidentValueRef::String([value]) => return Some((3, u128::from(hash_string(value)), 0)),
+        ResidentValueRef::Snapshot([Some(value)]) => value.data(),
+        _ => return None,
+    };
+    // Preserve all scalar bits: narrowing i128/u128 or hashing a snapshot
+    // would make distinct values indistinguishable to ExactScalar propagation.
+    Some(match data {
+        ValueData::U8(value) => (4, u128::from(*value), 0),
+        ValueData::U16(value) => (5, u128::from(*value), 0),
+        ValueData::U32(value) => (6, u128::from(*value), 0),
+        ValueData::U64(value) => (7, u128::from(*value), 0),
+        ValueData::U128(value) => (8, *value, 0),
+        ValueData::I8(value) => (9, *value as u128, 0),
+        ValueData::I16(value) => (10, *value as u128, 0),
+        ValueData::I32(value) => (11, *value as u128, 0),
+        ValueData::I64(value) => (12, *value as u128, 0),
+        ValueData::I128(value) => (13, *value as u128, 0),
+        ValueData::F32(value) => (14, u128::from(value.bits()), 0),
+        ValueData::F64(value) => (15, u128::from(value.bits()), 0),
+        ValueData::Complex32(value) => (
+            16,
+            u128::from(value.real().bits()),
+            u128::from(value.imaginary().bits()),
+        ),
+        ValueData::Complex64(value) => (
+            17,
+            u128::from(value.real().bits()),
+            u128::from(value.imaginary().bits()),
+        ),
+        ValueData::Rational64(value) => (
+            18,
+            value.numerator() as u128,
+            u128::from(value.denominator()),
+        ),
+        ValueData::Bool(value) => (19, u128::from(*value), 0),
+        ValueData::Id(value) => (20, u128::from(*value), 0),
+        ValueData::Index(value) => (21, u128::from(*value), 0),
+        _ => return None,
+    })
 }
 
 fn region_bytes(region: ResidentRegion) -> usize {

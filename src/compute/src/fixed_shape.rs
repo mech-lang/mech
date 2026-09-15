@@ -282,6 +282,7 @@ pub struct FixedShapeStoragePlan {
     pub register_offsets: BTreeMap<CellSlotId, usize>,
     pub inputs: Box<[FixedShapeInputStorage]>,
     pub states: Box<[FixedShapeStateStorage]>,
+    pub publications: Box<[FixedShapePublicationStorage]>,
     pub constraints: Box<[FixedShapeConstraint]>,
 }
 
@@ -298,6 +299,15 @@ pub struct FixedShapeStateStorage {
     pub shape: FixedShape,
     pub initializer: Arc<[f32]>,
     pub update: Box<[ScalarOperand]>,
+}
+
+/// A retained derived result, committed with state only after a successful turn.
+/// Publication buffers begin zeroed and never feed recurrence registers.
+#[derive(Clone, Debug)]
+pub struct FixedShapePublicationStorage {
+    pub slot: CellSlotId,
+    pub shape: FixedShape,
+    pub value: Box<[ScalarOperand]>,
 }
 
 #[derive(Clone, Debug)]

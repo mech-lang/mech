@@ -5,6 +5,8 @@
 //! resident session types below. The engine's resident executor remains a
 //! separate lower-level component.
 
+#[cfg(all(feature = "resident-routing-source", feature = "serde"))]
+mod bundle;
 #[cfg(feature = "resident-routing-source")]
 mod compiler;
 #[cfg(feature = "resident-routing")]
@@ -31,6 +33,8 @@ mod artifact_tests;
 #[cfg(test)]
 mod query_tests;
 
+#[cfg(all(feature = "resident-routing-source", feature = "serde"))]
+pub use bundle::{CANONICAL_PROGRAM_BUNDLE_VERSION, CanonicalProgramBundle};
 #[cfg(feature = "resident-routing-source")]
 pub(crate) use compiler::ProgramCompilerView;
 #[cfg(feature = "resident-routing-source")]

@@ -29,6 +29,7 @@ const PLANNING_WRITE_BASE_URI: &str = "counting://sink";
 #[derive(Debug, Default)]
 struct PlanningWriteCounters {
     send_preflights: AtomicUsize,
+    payload_plans: AtomicUsize,
     prepares: AtomicUsize,
     deliveries: AtomicUsize,
 }
@@ -58,6 +59,30 @@ impl RuntimeResourceProvider for PlanningWriteProvider {
         intent: RuntimeResourceWriteIntent,
     ) -> Option<&'static mech_core::OperationContractDeclaration> {
         (intent == RuntimeResourceWriteIntent::Send).then(crate::prepare_commit_compensate_contract)
+    }
+
+    fn plan_write(&self, request: crate::RuntimeResourceWriteCommand) -> mech_core::MResult<()> {
+        let mech_core::ValueData::F64(value) = request.value.data() else {
+            panic!("planning must preserve the concrete payload kind");
+        };
+        self.counters.payload_plans.fetch_add(1, Ordering::SeqCst);
+        if value.to_f64() < 0.0 {
+            return Err(mech_core::MechError::new(
+                crate::RuntimeInvalidOperationError {
+                    operation: "plan_write",
+                    reason: "fixture rejects negative payloads".to_owned(),
+                },
+                None,
+            ));
+        }
+        assert_eq!(value.to_f64(), 2.0);
+        self.preflight_write(RuntimeResourceWritePreflightRequest {
+            base_uri: request.base_uri,
+            path: request.path,
+            context_name: request.context_name,
+            operation: request.operation,
+            intent: request.intent,
+        })
     }
 
     fn preflight_write(
@@ -104,6 +129,7 @@ impl RuntimeResourceProvider for PlanningWriteProvider {
 fn compiler_with_write_counters() -> (ProgramCompiler, Arc<PlanningWriteCounters>) {
     let counters = Arc::new(PlanningWriteCounters::default());
     let runtime = test_runtime_builder()
+        .function_catalog(mech_stdlib::source_catalog())
         .resource_provider(Box::new(PlanningWriteProvider {
             counters: Arc::clone(&counters),
         }))
@@ -259,4 +285,60 @@ fn provider_transaction_contract_reaches_the_source_program_artifact() {
     assert_eq!(counters.send_preflights.load(Ordering::SeqCst), 1);
     assert_eq!(counters.prepares.load(Ordering::SeqCst), 0);
     assert_eq!(counters.deliveries.load(Ordering::SeqCst), 0);
+}
+
+#[cfg(feature = "semantic-compiler")]
+#[test]
+fn canonical_ordinary_and_interactive_compilation_preflight_payloads_without_live_effects() {
+    for route in 0..5 {
+        for (payload, accepted) in [("1 + 1", true), ("-1.0", false)] {
+            let counters = Arc::new(PlanningWriteCounters::default());
+            let source = format!(
+                "@out := counting://sink{{:write(sent)}}\nvalue := {payload}\n@out/sent <- value\n"
+            );
+            let mut resolver = crate::InMemorySourceResolver::new();
+            resolver.insert_string("main.mec", source.clone()).unwrap();
+            let mut compiler = test_runtime_builder()
+                .function_catalog(mech_stdlib::source_catalog())
+                .source_resolver(resolver)
+                .resource_provider(Box::new(PlanningWriteProvider {
+                    counters: Arc::clone(&counters),
+                }))
+                .build_compiler()
+                .unwrap();
+            let document = crate::SourceDocument::parse_resolved(
+                "test:canonical-write-planning",
+                mech_syntax::document::Revision(0),
+                Arc::<str>::from(source),
+                mech_syntax::document::ParseConfig::default(),
+            )
+            .unwrap();
+            let result = match route {
+                0 => compiler.compile_document(&document).map(|_| ()),
+                1 => compiler.compile_interactive_document(&document).map(|_| ()),
+                2 => compiler
+                    .compile_canonical_root(crate::SourceRequest::new("main.mec"))
+                    .map(|_| ()),
+                3 => compiler
+                    .compile_canonical_interactive_root(crate::SourceRequest::new("main.mec"))
+                    .map(|_| ()),
+                4 => compiler
+                    .compile_document_artifact_with_inputs(
+                        &document,
+                        &std::collections::BTreeMap::new(),
+                        &std::collections::BTreeSet::new(),
+                    )
+                    .map(|_| ()),
+                _ => unreachable!(),
+            };
+            assert_eq!(result.is_ok(), accepted, "route={route}: {result:?}");
+            assert_eq!(counters.payload_plans.load(Ordering::SeqCst), 1);
+            assert_eq!(
+                counters.send_preflights.load(Ordering::SeqCst),
+                usize::from(accepted)
+            );
+            assert_eq!(counters.prepares.load(Ordering::SeqCst), 0);
+            assert_eq!(counters.deliveries.load(Ordering::SeqCst), 0);
+        }
+    }
 }

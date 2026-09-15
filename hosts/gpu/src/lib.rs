@@ -564,49 +564,11 @@ impl ElementwiseKernel {
             unreachable!("elementwise GPU program contains a fixed-shape kernel")
         };
         for instruction in &ir.instructions {
-            let (output_slot, output) = match instruction {
-                ElementwiseInstruction::Apply {
-                    operation,
-                    inputs,
-                    output,
-                    elements,
-                } => {
-                    let mut values = Vec::with_capacity(*elements as usize);
-                    for index in 0..*elements as usize {
-                        let inputs = inputs
-                            .iter()
-                            .map(|source| {
-                                cpu_source_value(
-                                    *source,
-                                    index,
-                                    *elements as usize,
-                                    slots,
-                                    &self.constants,
-                                )
-                            })
-                            .collect::<Result<Vec<_>, _>>()?;
-                        values.push(operation.apply(&inputs));
-                    }
-                    (*output, values)
-                }
-                ElementwiseInstruction::Concatenate { output, .. } => {
-                    let mut values = Vec::with_capacity(instruction.elements() as usize);
-                    for index in 0..instruction.elements() {
-                        let (source, local_index, source_elements) = instruction
-                            .concat_source_at(index)
-                            .expect("validated concatenation covers every output element");
-                        values.push(cpu_source_value(
-                            source,
-                            local_index as usize,
-                            source_elements as usize,
-                            slots,
-                            &self.constants,
-                        )?);
-                    }
-                    (*output, values)
-                }
-            };
-            slots.insert(output_slot, output);
+            let mut values = Vec::with_capacity(instruction.elements() as usize);
+            instruction.evaluate_into(&mut values, |source, index, elements| {
+                cpu_source_value(source, index, elements, slots, &self.constants)
+            })?;
+            slots.insert(instruction.output(), values);
         }
         let next_states = self
             .states
@@ -879,6 +841,7 @@ impl ComputeLowerer {
 }
 
 struct Compiler<'a> {
+    activation: mech_compute::ComputeActivationValues<'a>,
     artifact: &'a ProgramArtifact,
     diagnostics: Vec<GpuDiagnostic>,
     resolved_dimensions: BTreeMap<CellSlotId, Box<[u64]>>,
@@ -905,6 +868,7 @@ impl<'a> Compiler<'a> {
     fn new(artifact: &'a ProgramArtifact) -> Self {
         Self {
             artifact,
+            activation: mech_compute::ComputeActivationValues::new(artifact),
             diagnostics: Vec::new(),
             resolved_dimensions: resolve_compute_slot_dimensions(artifact),
             slot_elements: BTreeMap::new(),
@@ -1089,16 +1053,18 @@ impl<'a> Compiler<'a> {
             let Some(elements) = self.slot_elements.get(&input.slot).copied() else {
                 continue;
             };
+            let name = mech_engine::decode_source_input_name(&input.name)
+                .unwrap_or_else(|| input.name.clone());
             let binding = self.bindings.len() as u32;
             self.bindings.push(GpuBinding {
                 binding,
-                name: input.name.clone(),
+                name: name.clone(),
                 access: GpuBindingAccess::Read,
                 elements,
                 kind: GpuBindingKind::Input(input.slot),
             });
             self.input_slots
-                .insert(input.slot, (input.name.clone(), elements, binding));
+                .insert(input.slot, (name, elements, binding));
         }
         let state_slots = self.state_slots.keys().copied().collect::<Vec<_>>();
         for slot in state_slots {
@@ -1200,9 +1166,16 @@ impl<'a> Compiler<'a> {
                 continue;
             };
             let host_proven_concatenation = matches!(lowering, ElementwiseLowering::Concatenate(_));
-            if !host_proven_concatenation
-                && !self.admit_contract(node.node, &operation_name, node.contract)
-            {
+            let admitted = if matches!(
+                lowering,
+                ElementwiseLowering::Apply(ElementwiseOperation::Identity)
+            ) {
+                self.admit_assignment_contract(node.node, &operation_name, node.contract)
+            } else {
+                host_proven_concatenation
+                    || self.admit_contract(node.node, &operation_name, node.contract)
+            };
+            if !admitted {
                 continue;
             }
             let inputs = node
@@ -1256,7 +1229,7 @@ impl<'a> Compiler<'a> {
             }
             let output_dimensions = self.slot_dimensions(outputs[0]);
             let shapes_compatible = match lowering {
-                ElementwiseLowering::Concatenate(axis) => concatenate_shapes(
+                ElementwiseLowering::Concatenate(axis) => mech_compute::concatenate_shapes(
                     axis,
                     &inputs
                         .iter()
@@ -1311,7 +1284,7 @@ impl<'a> Compiler<'a> {
             }
             let instruction = match lowering {
                 ElementwiseLowering::Concatenate(axis) => {
-                    let (rows, columns, input_shapes) = concatenate_shapes(
+                    let (rows, columns, input_shapes) = mech_compute::concatenate_shapes(
                         axis,
                         &inputs
                             .iter()
@@ -1366,7 +1339,7 @@ impl<'a> Compiler<'a> {
             );
             return;
         }
-        if !self.admit_state_contract(node.node, operation_name, node.contract) {
+        if !self.admit_assignment_contract(node.node, operation_name, node.contract) {
             return;
         }
         let inputs = node
@@ -1574,7 +1547,7 @@ impl<'a> Compiler<'a> {
         true
     }
 
-    fn admit_state_contract(
+    fn admit_assignment_contract(
         &mut self,
         node: NodeId,
         operation: &str,
@@ -1622,53 +1595,13 @@ impl<'a> Compiler<'a> {
     }
 
     fn state_initializer(
-        &self,
+        &mut self,
         slot: &mech_engine::SlotDeclaration,
     ) -> Result<Vec<f32>, (GpuDiagnosticCode, String)> {
-        let Some(mech_engine::InitializerReference::Constant(constant)) = slot.initializer else {
-            return Err((
-                GpuDiagnosticCode::StateUnsupported,
-                "state has no constant initializer".to_owned(),
-            ));
-        };
-        let value = self.artifact.constants().get(constant).ok_or_else(|| {
-            (
-                GpuDiagnosticCode::ArtifactMalformed,
-                format!("initializer constant {} does not exist", constant.get()),
-            )
-        })?;
-        let values = match value.data() {
-            ValueData::F32(value) => vec![value.to_f32()],
-            ValueData::Matrix(matrix) => match matrix.elements() {
-                SequenceView::F32(values) => {
-                    let values = values
-                        .iter()
-                        .map(|value| value.to_f32())
-                        .collect::<Vec<_>>();
-                    let dimensions = self.slot_dimensions(slot.slot);
-                    mech_compute::column_major_to_row_major(&dimensions, &values).map_err(
-                        |error| {
-                            (
-                                GpuDiagnosticCode::ShapeMismatch,
-                                format!("initializer matrix layout is invalid: {error}"),
-                            )
-                        },
-                    )?
-                }
-                _ => {
-                    return Err((
-                        GpuDiagnosticCode::ConstantUnsupported,
-                        "initializer is not an f32 matrix".to_owned(),
-                    ));
-                }
-            },
-            _ => {
-                return Err((
-                    GpuDiagnosticCode::ConstantUnsupported,
-                    "initializer is not scalar f32 or an f32 matrix".to_owned(),
-                ));
-            }
-        };
+        let values = self
+            .activation
+            .initializer(slot.initializer)
+            .map_err(|detail| (GpuDiagnosticCode::StateUnsupported, detail))?;
         if values.len() != self.slot_elements[&slot.slot] as usize {
             return Err((
                 GpuDiagnosticCode::ShapeMismatch,
@@ -1679,7 +1612,7 @@ impl<'a> Compiler<'a> {
                 ),
             ));
         }
-        Ok(values)
+        Ok(values.to_vec())
     }
 
     fn slot_schema_elements(
@@ -1811,51 +1744,47 @@ impl<'a> Compiler<'a> {
                         self.constants.insert(constant, vec![value.to_f32()]);
                         Some(1)
                     }
-                    ValueData::Matrix(matrix) => match matrix.elements() {
-                        SequenceView::F32(values) => {
-                            let values = values
-                                .iter()
-                                .map(|value| value.to_f32())
-                                .collect::<Vec<_>>();
-                            let Some(dimensions) =
-                                self.source_dimensions(ArtifactSource::Constant(constant))
-                            else {
+                    ValueData::Matrix(matrix) => {
+                        match matrix.elements() {
+                            SequenceView::F32(values) => {
+                                let values = values
+                                    .iter()
+                                    .map(|value| value.to_f32())
+                                    .collect::<Vec<_>>();
+                                let Some(dimensions) =
+                                    self.source_dimensions(ArtifactSource::Constant(constant))
+                                else {
+                                    self.reject(
+                                        GpuDiagnosticCode::DynamicShapeUnsupported,
+                                        Some(node),
+                                        Some(operation.to_owned()),
+                                        "constant matrix dimensions are not resolved",
+                                    );
+                                    return None;
+                                };
+                                if dimensions
+                                    .iter()
+                                    .try_fold(1_u64, |count, extent| count.checked_mul(*extent))
+                                    != Some(values.len() as u64)
+                                {
+                                    self.reject(GpuDiagnosticCode::ShapeMismatch, Some(node), Some(operation.to_owned()), "constant matrix extent does not match its canonical elements");
+                                    return None;
+                                }
+                                let elements = values.len() as u64;
+                                self.constants.insert(constant, values);
+                                Some(elements)
+                            }
+                            _ => {
                                 self.reject(
-                                    GpuDiagnosticCode::DynamicShapeUnsupported,
+                                    GpuDiagnosticCode::ConstantUnsupported,
                                     Some(node),
                                     Some(operation.to_owned()),
-                                    "constant matrix dimensions are not resolved",
+                                    "only scalar and matrix f32 constants can be embedded",
                                 );
-                                return None;
-                            };
-                            let values =
-                                match mech_compute::column_major_to_row_major(&dimensions, &values)
-                                {
-                                    Ok(values) => values,
-                                    Err(error) => {
-                                        self.reject(
-                                            GpuDiagnosticCode::ShapeMismatch,
-                                            Some(node),
-                                            Some(operation.to_owned()),
-                                            format!("constant matrix layout is invalid: {error}"),
-                                        );
-                                        return None;
-                                    }
-                                };
-                            let elements = values.len() as u64;
-                            self.constants.insert(constant, values);
-                            Some(elements)
+                                None
+                            }
                         }
-                        _ => {
-                            self.reject(
-                                GpuDiagnosticCode::ConstantUnsupported,
-                                Some(node),
-                                Some(operation.to_owned()),
-                                "only scalar and matrix f32 constants can be embedded",
-                            );
-                            None
-                        }
-                    },
+                    }
                     _ => {
                         self.reject(
                             GpuDiagnosticCode::ConstantUnsupported,
@@ -1924,12 +1853,16 @@ fn wgsl_broadcast_index(elements: u64, consumer_elements: u64, index: &str) -> S
 
 fn wgsl_elementwise_expression(operation: ElementwiseOperation, inputs: &[String]) -> String {
     match operation {
+        ElementwiseOperation::Binary(BinaryOperation::Remainder) => {
+            format!("({0} - trunc({0} / {1}) * {1})", inputs[0], inputs[1])
+        }
         ElementwiseOperation::Binary(operation) => {
             let operator = match operation {
                 BinaryOperation::Add => "+",
                 BinaryOperation::Subtract => "-",
                 BinaryOperation::Multiply => "*",
                 BinaryOperation::Divide => "/",
+                BinaryOperation::Remainder => unreachable!(),
             };
             format!("{} {operator} {}", inputs[0], inputs[1])
         }
@@ -2008,47 +1941,6 @@ fn wgsl_concatenate_instruction(
     }
     rendered.push_str("  }\n");
     rendered
-}
-
-fn concatenate_shapes(
-    axis: ConcatenationAxis,
-    input_dimensions: &[Vec<u64>],
-    output_dimensions: &[u64],
-) -> Option<(u64, u64, Vec<(u64, u64)>)> {
-    let (output_rows, output_columns) = two_dimensional_shape(output_dimensions)?;
-    let inputs = input_dimensions
-        .iter()
-        .map(|dimensions| two_dimensional_shape(dimensions))
-        .collect::<Option<Vec<_>>>()?;
-    if inputs.is_empty() {
-        return None;
-    }
-    let compatible = match axis {
-        ConcatenationAxis::Horizontal => {
-            inputs.iter().all(|(rows, _)| *rows == output_rows)
-                && inputs
-                    .iter()
-                    .try_fold(0_u64, |total, (_, columns)| total.checked_add(*columns))
-                    == Some(output_columns)
-        }
-        ConcatenationAxis::Vertical => {
-            inputs.iter().all(|(_, columns)| *columns == output_columns)
-                && inputs
-                    .iter()
-                    .try_fold(0_u64, |total, (rows, _)| total.checked_add(*rows))
-                    == Some(output_rows)
-        }
-    };
-    compatible.then_some((output_rows, output_columns, inputs))
-}
-
-fn two_dimensional_shape(dimensions: &[u64]) -> Option<(u64, u64)> {
-    match dimensions {
-        [] => Some((1, 1)),
-        [rows] => Some((*rows, 1)),
-        [rows, columns] => Some((*rows, *columns)),
-        _ => None,
-    }
 }
 
 fn block_broadcast_dimensions(input: &[u64], output: &[u64]) -> bool {

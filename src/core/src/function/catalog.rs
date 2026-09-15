@@ -514,6 +514,33 @@ pub struct FunctionSpecializerEntry {
 }
 
 impl FunctionSpecializerEntry {
+    fn operation_contract_for_output_shape(
+        &self,
+        input_count: usize,
+        output_is_matrix: bool,
+    ) -> Option<&OperationContractDeclaration> {
+        let mut candidates = self
+            .operation_contracts
+            .iter()
+            .filter(|contract| {
+                contract.inputs.resolve(input_count).is_ok() && contract.outputs.len() == 1
+            })
+            .collect::<Vec<_>>();
+        candidates.sort_by_key(|contract| {
+            let output = contract.outputs.first();
+            let matrix_specific = output_is_matrix
+                && output.is_some_and(|output| {
+                    output.change_detection != crate::ChangeDetectionPolicy::ExactScalar
+                });
+            let scalar_specific = !output_is_matrix
+                && output.is_some_and(|output| {
+                    output.change_detection == crate::ChangeDetectionPolicy::ExactScalar
+                });
+            (matrix_specific, scalar_specific)
+        });
+        candidates.last().copied()
+    }
+
     pub fn resolved_operation(
         &self,
         input_count: usize,
@@ -913,6 +940,42 @@ impl FunctionCatalog {
     pub fn module_export(&self, module: &str, item: &str) -> Option<&FunctionExport> {
         self.exports_by_module_item
             .get(&(String::from(module), String::from(item)))
+    }
+
+    /// Returns the source type declaration registered for one canonical
+    /// operation name. Product source frontends use this catalog authority so
+    /// module-only operations receive the same type selection as the runtime.
+    pub fn source_type_declaration(
+        &self,
+        canonical_name: &str,
+    ) -> Option<&FunctionTypeDeclaration> {
+        let export = self
+            .all_exports
+            .iter()
+            .find(|export| export.canonical_name == canonical_name)?;
+        let entry = self.specializer(export.operation)?;
+        match &entry.type_authority {
+            SourceTypeAuthority::Schemes(declaration) => Some(declaration),
+            SourceTypeAuthority::SyntaxDirectedIntrinsic => None,
+        }
+    }
+
+    /// Returns the semantic contract selected for a canonical source call.
+    /// Type inference has already established whether its output is scalar or
+    /// matrix-shaped; this completes catalog selection without planning an old
+    /// interpreter tree.
+    pub fn source_operation_contract(
+        &self,
+        canonical_name: &str,
+        input_count: usize,
+        output_is_matrix: bool,
+    ) -> Option<&OperationContractDeclaration> {
+        let export = self
+            .all_exports
+            .iter()
+            .find(|export| export.canonical_name == canonical_name)?;
+        self.specializer(export.operation)?
+            .operation_contract_for_output_shape(input_count, output_is_matrix)
     }
 
     /// Returns the exports for one exact module in ascending module/item order.
