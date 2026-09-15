@@ -114,7 +114,10 @@ fn canonical_mixed_unknown_compute_reads_reject_at_the_interface() {
         .build_compiler()
         .unwrap();
     for (path, message) in [
-        ("sample/missing", "source-semantics/unknown-published-binding: document does not define requested output missing"),
+        (
+            "sample/missing",
+            "source-semantics/unknown-published-binding: document does not define requested output missing",
+        ),
         ("unknown", "unknown compute telemetry path `unknown`"),
     ] {
         let error = compiler
