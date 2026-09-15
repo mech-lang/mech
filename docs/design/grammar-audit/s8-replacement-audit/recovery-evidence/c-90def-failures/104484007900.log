@@ -1,0 +1,442 @@
+﻿2026-09-15T17:20:43.5066647Z Current runner version: '2.337.0'
+2026-09-15T17:20:43.5094308Z ##[group]Runner Image Provisioner
+2026-09-15T17:20:43.5095251Z Hosted Compute Agent
+2026-09-15T17:20:43.5095967Z Version: 20260828.587
+2026-09-15T17:20:43.5096618Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-09-15T17:20:43.5097334Z Build Date: 2026-08-28T16:44:25Z
+2026-09-15T17:20:43.5098094Z Worker ID: {784c78ea-b75d-41cb-9881-34d4ed7b5afc}
+2026-09-15T17:20:43.5098808Z Azure Region: centralus
+2026-09-15T17:20:43.5099444Z ##[endgroup]
+2026-09-15T17:20:43.5101419Z ##[group]Operating System
+2026-09-15T17:20:43.5102077Z Ubuntu
+2026-09-15T17:20:43.5102699Z 24.04.5
+2026-09-15T17:20:43.5103250Z LTS
+2026-09-15T17:20:43.5103824Z ##[endgroup]
+2026-09-15T17:20:43.5104383Z ##[group]Runner Image
+2026-09-15T17:20:43.5104991Z Image: ubuntu-24.04
+2026-09-15T17:20:43.5105927Z Version: 20260907.300.1
+2026-09-15T17:20:43.5107284Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260907.300/images/ubuntu/Ubuntu2404-Readme.md
+2026-09-15T17:20:43.5108909Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260907.300
+2026-09-15T17:20:43.5110269Z ##[endgroup]
+2026-09-15T17:20:43.5113517Z ##[group]GITHUB_TOKEN Permissions
+2026-09-15T17:20:43.5115990Z Actions: write
+2026-09-15T17:20:43.5116727Z ArtifactMetadata: write
+2026-09-15T17:20:43.5117350Z Attestations: write
+2026-09-15T17:20:43.5118002Z Checks: write
+2026-09-15T17:20:43.5118587Z CodeQuality: write
+2026-09-15T17:20:43.5119193Z Contents: write
+2026-09-15T17:20:43.5120204Z CopilotRequests: write
+2026-09-15T17:20:43.5120833Z Deployments: write
+2026-09-15T17:20:43.5121385Z Discussions: write
+2026-09-15T17:20:43.5122013Z Drives: write
+2026-09-15T17:20:43.5122616Z Issues: write
+2026-09-15T17:20:43.5123186Z Metadata: read
+2026-09-15T17:20:43.5123844Z Models: read
+2026-09-15T17:20:43.5124365Z Packages: write
+2026-09-15T17:20:43.5124979Z Pages: write
+2026-09-15T17:20:43.5125561Z PullRequests: write
+2026-09-15T17:20:43.5126203Z RepositoryProjects: write
+2026-09-15T17:20:43.5126854Z SecurityEvents: write
+2026-09-15T17:20:43.5127436Z Statuses: write
+2026-09-15T17:20:43.5128079Z VulnerabilityAlerts: read
+2026-09-15T17:20:43.5128849Z ##[endgroup]
+2026-09-15T17:20:43.5131502Z Secret source: Actions
+2026-09-15T17:20:43.5132481Z Cache mode: write
+2026-09-15T17:20:43.5133234Z Prepare workflow directory
+2026-09-15T17:20:43.5565490Z Prepare all required actions
+2026-09-15T17:20:43.5618461Z Getting action download info
+2026-09-15T17:20:43.8352338Z Download action repository 'actions/checkout@v7.0.1' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+2026-09-15T17:20:44.0705476Z Complete job name: Static architecture contracts
+2026-09-15T17:20:44.1525213Z ##[group]Run actions/checkout@v7.0.1
+2026-09-15T17:20:44.1526133Z with:
+2026-09-15T17:20:44.1526635Z   ref: 90defdf9ed0599316d7fb0d8f19e0d2ac36b35f9
+2026-09-15T17:20:44.1527238Z   fetch-depth: 0
+2026-09-15T17:20:44.1527696Z   repository: mech-lang/mech
+2026-09-15T17:20:44.1532112Z   token: ***
+2026-09-15T17:20:44.1532742Z   ssh-strict: true
+2026-09-15T17:20:44.1533218Z   ssh-user: git
+2026-09-15T17:20:44.1533672Z   persist-credentials: true
+2026-09-15T17:20:44.1534160Z   clean: true
+2026-09-15T17:20:44.1534607Z   sparse-checkout-cone-mode: true
+2026-09-15T17:20:44.1535136Z   fetch-tags: false
+2026-09-15T17:20:44.1535584Z   show-progress: true
+2026-09-15T17:20:44.1536043Z   lfs: false
+2026-09-15T17:20:44.1536456Z   submodules: false
+2026-09-15T17:20:44.1536899Z   set-safe-directory: true
+2026-09-15T17:20:44.1537406Z   allow-unsafe-pr-checkout: false
+2026-09-15T17:20:44.1538252Z env:
+2026-09-15T17:20:44.1538675Z   CARGO_INCREMENTAL: 0
+2026-09-15T17:20:44.1539207Z   CARGO_PROFILE_TEST_DEBUG: 0
+2026-09-15T17:20:44.1540353Z ##[endgroup]
+2026-09-15T17:20:44.2642757Z Syncing repository: mech-lang/mech
+2026-09-15T17:20:44.2645365Z ##[group]Getting Git version info
+2026-09-15T17:20:44.2646401Z Working directory is '/home/runner/work/mech/mech'
+2026-09-15T17:20:44.2647934Z [command]/usr/bin/git version
+2026-09-15T17:20:44.2721517Z git version 2.55.0
+2026-09-15T17:20:44.2746507Z ##[endgroup]
+2026-09-15T17:20:44.2771392Z Temporarily overriding HOME='/home/runner/work/_temp/d1292437-e550-459c-b82c-03dae60e9b61' before making global git config changes
+2026-09-15T17:20:44.2773613Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-15T17:20:44.2775862Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/mech/mech
+2026-09-15T17:20:44.2833296Z Deleting the contents of '/home/runner/work/mech/mech'
+2026-09-15T17:20:44.2838176Z ##[group]Determining repository object format
+2026-09-15T17:20:44.2839663Z ##[endgroup]
+2026-09-15T17:20:44.2841289Z ##[group]Initializing the repository
+2026-09-15T17:20:44.2845646Z [command]/usr/bin/git init /home/runner/work/mech/mech
+2026-09-15T17:20:44.2951200Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-15T17:20:44.2953499Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-15T17:20:44.2955542Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-15T17:20:44.2956552Z hint: call:
+2026-09-15T17:20:44.2957078Z hint:
+2026-09-15T17:20:44.2957742Z hint: 	git config --global init.defaultBranch <name>
+2026-09-15T17:20:44.2958463Z hint:
+2026-09-15T17:20:44.2959156Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-15T17:20:44.2960964Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-15T17:20:44.2962265Z hint:
+2026-09-15T17:20:44.2962982Z hint: 	git branch -m <name>
+2026-09-15T17:20:44.2963766Z hint:
+2026-09-15T17:20:44.2964527Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-15T17:20:44.2965525Z Initialized empty Git repository in /home/runner/work/mech/mech/.git/
+2026-09-15T17:20:44.2967253Z [command]/usr/bin/git remote add origin https://github.com/mech-lang/mech
+2026-09-15T17:20:44.3014453Z ##[endgroup]
+2026-09-15T17:20:44.3015316Z ##[group]Disabling automatic garbage collection
+2026-09-15T17:20:44.3018914Z [command]/usr/bin/git config --local gc.auto 0
+2026-09-15T17:20:44.3054581Z ##[endgroup]
+2026-09-15T17:20:44.3055486Z ##[group]Setting up auth
+2026-09-15T17:20:44.3056430Z Removing SSH command configuration
+2026-09-15T17:20:44.3061888Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-15T17:20:44.3104662Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-15T17:20:44.3475607Z Removing HTTP extra header
+2026-09-15T17:20:44.3502387Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-15T17:20:44.3526223Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-15T17:20:44.3765399Z Removing includeIf entries pointing to credentials config files
+2026-09-15T17:20:44.3771419Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-15T17:20:44.3811582Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-15T17:20:44.4057765Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-7146d281-ce82-4aa7-a4a1-5f6bd23f9f5b.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-15T17:20:44.4101854Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/mech/mech/.git.path /home/runner/work/_temp/git-credentials-7146d281-ce82-4aa7-a4a1-5f6bd23f9f5b.config
+2026-09-15T17:20:44.4138704Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/mech/mech/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-7146d281-ce82-4aa7-a4a1-5f6bd23f9f5b.config
+2026-09-15T17:20:44.4177146Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-7146d281-ce82-4aa7-a4a1-5f6bd23f9f5b.config
+2026-09-15T17:20:44.4213987Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-7146d281-ce82-4aa7-a4a1-5f6bd23f9f5b.config
+2026-09-15T17:20:44.4247800Z ##[endgroup]
+2026-09-15T17:20:44.4248582Z ##[group]Fetching the repository
+2026-09-15T17:20:44.4255863Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules origin +refs/heads/*:refs/remotes/origin/* +refs/tags/*:refs/tags/*
+2026-09-15T17:20:48.9751331Z From https://github.com/mech-lang/mech
+2026-09-15T17:20:48.9755386Z  * [new branch]          codex/executable-mech-spec -> origin/codex/executable-mech-spec
+2026-09-15T17:20:48.9757233Z  * [new branch]          codex/mech-program-gpu  -> origin/codex/mech-program-gpu
+2026-09-15T17:20:48.9758923Z  * [new branch]          codex/n-body-orbit-viewer -> origin/codex/n-body-orbit-viewer
+2026-09-15T17:20:48.9761294Z  * [new branch]          codex/nbody-cross-language-benchmarks -> origin/codex/nbody-cross-language-benchmarks
+2026-09-15T17:20:48.9763770Z  * [new branch]          codex/nbody-julia-integration-benchmarks -> origin/codex/nbody-julia-integration-benchmarks
+2026-09-15T17:20:48.9765991Z  * [new branch]          codex/pypy-ekf-mega-chart -> origin/codex/pypy-ekf-mega-chart
+2026-09-15T17:20:48.9770389Z  * [new branch]          codex/r-stack-proof-demo -> origin/codex/r-stack-proof-demo
+2026-09-15T17:20:48.9772739Z  * [new branch]          codex/r5-ci-candidate-e1bdb6363188 -> origin/codex/r5-ci-candidate-e1bdb6363188
+2026-09-15T17:20:48.9774644Z  * [new branch]          codex/r5-ci-diagnostics -> origin/codex/r5-ci-diagnostics
+2026-09-15T17:20:48.9776584Z  * [new branch]          codex/r5-green-candidate-8d4d414b -> origin/codex/r5-green-candidate-8d4d414b
+2026-09-15T17:20:48.9778832Z  * [new branch]          codex/r5-review-correction-d96425614d69 -> origin/codex/r5-review-correction-d96425614d69
+2026-09-15T17:20:48.9781470Z  * [new branch]          codex/r5-review-fixes-validation -> origin/codex/r5-review-fixes-validation
+2026-09-15T17:20:48.9783456Z  * [new branch]          codex/r5-validation-251be13 -> origin/codex/r5-validation-251be13
+2026-09-15T17:20:48.9785620Z  * [new branch]          codex/syntax-s2-recursive-recovery -> origin/codex/syntax-s2-recursive-recovery
+2026-09-15T17:20:48.9788103Z  * [new branch]          codex/syntax-s3-typed-recursive -> origin/codex/syntax-s3-typed-recursive
+2026-09-15T17:20:48.9790893Z  * [new branch]          codex/syntax-s4-engine-source -> origin/codex/syntax-s4-engine-source
+2026-09-15T17:20:48.9792909Z  * [new branch]          codex/syntax-s5-certification -> origin/codex/syntax-s5-certification
+2026-09-15T17:20:48.9794747Z  * [new branch]          codex/syntax-s6-activation -> origin/codex/syntax-s6-activation
+2026-09-15T17:20:48.9796661Z  * [new branch]          codex/syntax-s7-document-root -> origin/codex/syntax-s7-document-root
+2026-09-15T17:20:48.9798565Z  * [new branch]          codex/syntax-s7b-streaming -> origin/codex/syntax-s7b-streaming
+2026-09-15T17:20:48.9800751Z  * [new branch]          codex/syntax-s8-replacement-audit -> origin/codex/syntax-s8-replacement-audit
+2026-09-15T17:20:48.9802728Z  * [new branch]          codex/syntax-s8a-consumers -> origin/codex/syntax-s8a-consumers
+2026-09-15T17:20:48.9804597Z  * [new branch]          codex/syntax-s8b-execution -> origin/codex/syntax-s8b-execution
+2026-09-15T17:20:48.9806354Z  * [new branch]          codex/syntax-s8c-cutover -> origin/codex/syntax-s8c-cutover
+2026-09-15T17:20:48.9808421Z  * [new branch]          codex/syntax-s8c-cutover-browser-wip -> origin/codex/syntax-s8c-cutover-browser-wip
+2026-09-15T17:20:48.9811296Z  * [new branch]          codex/syntax-s8c-qualification-20260915 -> origin/codex/syntax-s8c-qualification-20260915
+2026-09-15T17:20:48.9813669Z  * [new branch]          codex/syntax-s8e1-config-syntax -> origin/codex/syntax-s8e1-config-syntax
+2026-09-15T17:20:48.9816140Z  * [new branch]          codex/syntax-s8e10-web-handoff -> origin/codex/syntax-s8e10-web-handoff
+2026-09-15T17:20:48.9818608Z  * [new branch]          codex/syntax-s8e11-qualification -> origin/codex/syntax-s8e11-qualification
+2026-09-15T17:20:48.9821192Z  * [new branch]          codex/syntax-s8e2-syntax -> origin/codex/syntax-s8e2-syntax
+2026-09-15T17:20:48.9823103Z  * [new branch]          codex/syntax-s8e3-resident-values -> origin/codex/syntax-s8e3-resident-values
+2026-09-15T17:20:48.9825384Z  * [new branch]          codex/syntax-s8e4-semantic-frontend -> origin/codex/syntax-s8e4-semantic-frontend
+2026-09-15T17:20:48.9827722Z  * [new branch]          codex/syntax-s8e5-compiler-planning -> origin/codex/syntax-s8e5-compiler-planning
+2026-09-15T17:20:48.9830268Z  * [new branch]          codex/syntax-s8e6-graph-planning -> origin/codex/syntax-s8e6-graph-planning
+2026-09-15T17:20:48.9832315Z  * [new branch]          codex/syntax-s8e7-interactive -> origin/codex/syntax-s8e7-interactive
+2026-09-15T17:20:48.9834449Z  * [new branch]          codex/syntax-s8e8-mixed-planning -> origin/codex/syntax-s8e8-mixed-planning
+2026-09-15T17:20:48.9836692Z  * [new branch]          codex/syntax-s8e9-compute-execution -> origin/codex/syntax-s8e9-compute-execution
+2026-09-15T17:20:48.9839002Z  * [new branch]          codex/syntax-s8r01-call-visibility -> origin/codex/syntax-s8r01-call-visibility
+2026-09-15T17:20:48.9841477Z  * [new branch]          codex/syntax-s8r03-bound-schemas -> origin/codex/syntax-s8r03-bound-schemas
+2026-09-15T17:20:48.9843732Z  * [new branch]          codex/syntax-s8r04-dynamic-binding -> origin/codex/syntax-s8r04-dynamic-binding
+2026-09-15T17:20:48.9846016Z  * [new branch]          codex/syntax-s8r05-selected-updates -> origin/codex/syntax-s8r05-selected-updates
+2026-09-15T17:20:48.9848384Z  * [new branch]          codex/syntax-v0.4-continuation-plan -> origin/codex/syntax-v0.4-continuation-plan
+2026-09-15T17:20:48.9850719Z  * [new branch]          codex/taichi-ekf-pr11   -> origin/codex/taichi-ekf-pr11
+2026-09-15T17:20:48.9852770Z  * [new branch]          codex/v0.4-consolidation-head-hygiene -> origin/codex/v0.4-consolidation-head-hygiene
+2026-09-15T17:20:48.9855300Z  * [new branch]          codex/v0.4-consolidation-historical-gates -> origin/codex/v0.4-consolidation-historical-gates
+2026-09-15T17:20:48.9857451Z  * [new branch]          examples/tables-example -> origin/examples/tables-example
+2026-09-15T17:20:48.9859127Z  * [new branch]          feature/syntax          -> origin/feature/syntax
+2026-09-15T17:20:48.9860951Z  * [new branch]          integration/v0.4        -> origin/integration/v0.4
+2026-09-15T17:20:48.9862844Z  * [new branch]          legacy-root             -> origin/legacy-root
+2026-09-15T17:20:48.9863951Z  * [new branch]          main                    -> origin/main
+2026-09-15T17:20:48.9864799Z  * [new branch]          unified-history         -> origin/unified-history
+2026-09-15T17:20:48.9865651Z  * [new branch]          v0.1-beta               -> origin/v0.1-beta
+2026-09-15T17:20:48.9866479Z  * [new branch]          v0.2-beta               -> origin/v0.2-beta
+2026-09-15T17:20:48.9867259Z  * [new branch]          v0.3-beta               -> origin/v0.3-beta
+2026-09-15T17:20:48.9868025Z  * [new branch]          v0.4-beta               -> origin/v0.4-beta
+2026-09-15T17:20:48.9869336Z  * [new tag]             0.2.64-beta             -> 0.2.64-beta
+2026-09-15T17:20:48.9870523Z  * [new tag]             v0.0.1                  -> v0.0.1
+2026-09-15T17:20:48.9871241Z  * [new tag]             v0.0.2                  -> v0.0.2
+2026-09-15T17:20:48.9871958Z  * [new tag]             v0.0.3                  -> v0.0.3
+2026-09-15T17:20:48.9872594Z  * [new tag]             v0.0.4                  -> v0.0.4
+2026-09-15T17:20:48.9873225Z  * [new tag]             v0.0.5                  -> v0.0.5
+2026-09-15T17:20:48.9873859Z  * [new tag]             v0.1                    -> v0.1
+2026-09-15T17:20:48.9874515Z  * [new tag]             v0.1-alpha              -> v0.1-alpha
+2026-09-15T17:20:48.9875407Z  * [new tag]             v0.1.0-beta             -> v0.1.0-beta
+2026-09-15T17:20:48.9876132Z  * [new tag]             v0.2-beta               -> v0.2-beta
+2026-09-15T17:20:48.9876852Z  * [new tag]             v0.2.1-beta             -> v0.2.1-beta
+2026-09-15T17:20:48.9877700Z  * [new tag]             v0.2.10-beta            -> v0.2.10-beta
+2026-09-15T17:20:48.9878386Z  * [new tag]             v0.2.11-beta            -> v0.2.11-beta
+2026-09-15T17:20:48.9879055Z  * [new tag]             v0.2.12-beta            -> v0.2.12-beta
+2026-09-15T17:20:48.9879978Z  * [new tag]             v0.2.13-beta            -> v0.2.13-beta
+2026-09-15T17:20:48.9880743Z  * [new tag]             v0.2.14-beta            -> v0.2.14-beta
+2026-09-15T17:20:48.9881431Z  * [new tag]             v0.2.15-beta            -> v0.2.15-beta
+2026-09-15T17:20:48.9882102Z  * [new tag]             v0.2.16-beta            -> v0.2.16-beta
+2026-09-15T17:20:48.9882773Z  * [new tag]             v0.2.17-beta            -> v0.2.17-beta
+2026-09-15T17:20:48.9883449Z  * [new tag]             v0.2.18-beta            -> v0.2.18-beta
+2026-09-15T17:20:48.9884113Z  * [new tag]             v0.2.19-beta            -> v0.2.19-beta
+2026-09-15T17:20:48.9884788Z  * [new tag]             v0.2.2-beta             -> v0.2.2-beta
+2026-09-15T17:20:48.9885458Z  * [new tag]             v0.2.20-beta            -> v0.2.20-beta
+2026-09-15T17:20:48.9886127Z  * [new tag]             v0.2.21-beta            -> v0.2.21-beta
+2026-09-15T17:20:48.9886795Z  * [new tag]             v0.2.22-beta            -> v0.2.22-beta
+2026-09-15T17:20:48.9887472Z  * [new tag]             v0.2.24-beta            -> v0.2.24-beta
+2026-09-15T17:20:48.9888159Z  * [new tag]             v0.2.25-beta            -> v0.2.25-beta
+2026-09-15T17:20:48.9889174Z  * [new tag]             v0.2.26-beta            -> v0.2.26-beta
+2026-09-15T17:20:48.9890518Z  * [new tag]             v0.2.27-beta            -> v0.2.27-beta
+2026-09-15T17:20:48.9891662Z  * [new tag]             v0.2.29-beta            -> v0.2.29-beta
+2026-09-15T17:20:48.9892393Z  * [new tag]             v0.2.3-beta             -> v0.2.3-beta
+2026-09-15T17:20:48.9893075Z  * [new tag]             v0.2.30-beta            -> v0.2.30-beta
+2026-09-15T17:20:48.9893750Z  * [new tag]             v0.2.31-beta            -> v0.2.31-beta
+2026-09-15T17:20:48.9894417Z  * [new tag]             v0.2.33-beta            -> v0.2.33-beta
+2026-09-15T17:20:48.9895088Z  * [new tag]             v0.2.34-beta            -> v0.2.34-beta
+2026-09-15T17:20:48.9895765Z  * [new tag]             v0.2.35-beta            -> v0.2.35-beta
+2026-09-15T17:20:48.9896632Z  * [new tag]             v0.2.36-beta            -> v0.2.36-beta
+2026-09-15T17:20:48.9897331Z  * [new tag]             v0.2.37-beta            -> v0.2.37-beta
+2026-09-15T17:20:48.9898001Z  * [new tag]             v0.2.38-beta            -> v0.2.38-beta
+2026-09-15T17:20:48.9898677Z  * [new tag]             v0.2.39-beta            -> v0.2.39-beta
+2026-09-15T17:20:48.9899351Z  * [new tag]             v0.2.4-beta             -> v0.2.4-beta
+2026-09-15T17:20:48.9900390Z  * [new tag]             v0.2.40-beta            -> v0.2.40-beta
+2026-09-15T17:20:48.9901094Z  * [new tag]             v0.2.41-beta            -> v0.2.41-beta
+2026-09-15T17:20:48.9901802Z  * [new tag]             v0.2.42-beta            -> v0.2.42-beta
+2026-09-15T17:20:48.9902496Z  * [new tag]             v0.2.43-beta            -> v0.2.43-beta
+2026-09-15T17:20:48.9903237Z  * [new tag]             v0.2.44-beta            -> v0.2.44-beta
+2026-09-15T17:20:48.9904434Z  * [new tag]             v0.2.45-beta            -> v0.2.45-beta
+2026-09-15T17:20:48.9905260Z  * [new tag]             v0.2.46-beta            -> v0.2.46-beta
+2026-09-15T17:20:48.9906004Z  * [new tag]             v0.2.47-beta            -> v0.2.47-beta
+2026-09-15T17:20:48.9906707Z  * [new tag]             v0.2.48-beta            -> v0.2.48-beta
+2026-09-15T17:20:48.9907450Z  * [new tag]             v0.2.49-beta            -> v0.2.49-beta
+2026-09-15T17:20:48.9908147Z  * [new tag]             v0.2.5-beta             -> v0.2.5-beta
+2026-09-15T17:20:48.9909904Z  * [new tag]             v0.2.50-beta            -> v0.2.50-beta
+2026-09-15T17:20:48.9910803Z  * [new tag]             v0.2.51-beta            -> v0.2.51-beta
+2026-09-15T17:20:48.9911535Z  * [new tag]             v0.2.52-beta            -> v0.2.52-beta
+2026-09-15T17:20:48.9912217Z  * [new tag]             v0.2.56-beta            -> v0.2.56-beta
+2026-09-15T17:20:48.9912884Z  * [new tag]             v0.2.58-beta            -> v0.2.58-beta
+2026-09-15T17:20:48.9913549Z  * [new tag]             v0.2.6-beta             -> v0.2.6-beta
+2026-09-15T17:20:48.9914238Z  * [new tag]             v0.2.60-beta            -> v0.2.60-beta
+2026-09-15T17:20:48.9914908Z  * [new tag]             v0.2.64-beta            -> v0.2.64-beta
+2026-09-15T17:20:48.9915593Z  * [new tag]             v0.2.66-beta            -> v0.2.66-beta
+2026-09-15T17:20:48.9916280Z  * [new tag]             v0.2.7-beta             -> v0.2.7-beta
+2026-09-15T17:20:48.9917062Z  * [new tag]             v0.2.75-beta            -> v0.2.75-beta
+2026-09-15T17:20:48.9917843Z  * [new tag]             v0.2.8-beta             -> v0.2.8-beta
+2026-09-15T17:20:48.9918506Z  * [new tag]             v0.2.9-beta             -> v0.2.9-beta
+2026-09-15T17:20:48.9919174Z  * [new tag]             v0.3.1-beta             -> v0.3.1-beta
+2026-09-15T17:20:48.9919987Z  * [new tag]             v0.3.2-beta             -> v0.3.2-beta
+2026-09-15T17:20:48.9920673Z  * [new tag]             v0.3.4-beta             -> v0.3.4-beta
+2026-09-15T17:20:48.9921339Z  * [new tag]             v0.3.5-beta             -> v0.3.5-beta
+2026-09-15T17:20:48.9923147Z [command]/usr/bin/git rev-parse --verify --quiet 90defdf9ed0599316d7fb0d8f19e0d2ac36b35f9^{object}
+2026-09-15T17:20:48.9924043Z 90defdf9ed0599316d7fb0d8f19e0d2ac36b35f9
+2026-09-15T17:20:48.9925406Z ##[endgroup]
+2026-09-15T17:20:48.9926110Z ##[group]Determining the checkout info
+2026-09-15T17:20:48.9926903Z ##[endgroup]
+2026-09-15T17:20:48.9927466Z [command]/usr/bin/git sparse-checkout disable
+2026-09-15T17:20:48.9929907Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-09-15T17:20:48.9931574Z ##[group]Checking out the ref
+2026-09-15T17:20:48.9932373Z [command]/usr/bin/git checkout --progress --force 90defdf9ed0599316d7fb0d8f19e0d2ac36b35f9
+2026-09-15T17:20:49.2303245Z Note: switching to '90defdf9ed0599316d7fb0d8f19e0d2ac36b35f9'.
+2026-09-15T17:20:49.2311230Z 
+2026-09-15T17:20:49.2312356Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-09-15T17:20:49.2314056Z changes and commit them, and you can discard any commits you make in this
+2026-09-15T17:20:49.2315762Z state without impacting any branches by switching back to a branch.
+2026-09-15T17:20:49.2316597Z 
+2026-09-15T17:20:49.2317138Z If you want to create a new branch to retain commits you create, you may
+2026-09-15T17:20:49.2318429Z do so (now or later) by using -c with the switch command. Example:
+2026-09-15T17:20:49.2319269Z 
+2026-09-15T17:20:49.2319609Z   git switch -c <new-branch-name>
+2026-09-15T17:20:49.2320799Z 
+2026-09-15T17:20:49.2321229Z Or undo this operation with:
+2026-09-15T17:20:49.2321761Z 
+2026-09-15T17:20:49.2322055Z   git switch -
+2026-09-15T17:20:49.2322455Z 
+2026-09-15T17:20:49.2323151Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-09-15T17:20:49.2324195Z 
+2026-09-15T17:20:49.2325185Z HEAD is now at 90defdf9e test(cutover): account for removed parser dependencies in distribution graphs
+2026-09-15T17:20:49.2336016Z ##[endgroup]
+2026-09-15T17:20:49.2389267Z [command]/usr/bin/git log -1 --format=%H
+2026-09-15T17:20:49.2423858Z 90defdf9ed0599316d7fb0d8f19e0d2ac36b35f9
+2026-09-15T17:20:49.2774141Z ##[group]Run rustup toolchain install nightly-2026-03-03 --profile minimal --component rustfmt
+2026-09-15T17:20:49.2777151Z [36;1mrustup toolchain install nightly-2026-03-03 --profile minimal --component rustfmt[0m
+2026-09-15T17:20:49.2779227Z [36;1mif ! command -v rg >/dev/null 2>&1[0m
+2026-09-15T17:20:49.2780811Z [36;1mthen[0m
+2026-09-15T17:20:49.2782520Z [36;1m  # Only Ubuntu provides ripgrep. Do not let an unrelated preinstalled[0m
+2026-09-15T17:20:49.2784765Z [36;1m  # third-party repository make the architecture gate unavailable.[0m
+2026-09-15T17:20:49.2786500Z [36;1m  sudo apt-get update \[0m
+2026-09-15T17:20:49.2788055Z [36;1m    -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources \[0m
+2026-09-15T17:20:49.2790128Z [36;1m    -o Dir::Etc::sourceparts=-[0m
+2026-09-15T17:20:49.2791452Z [36;1m  sudo apt-get install --yes ripgrep[0m
+2026-09-15T17:20:49.2792705Z [36;1mfi[0m
+2026-09-15T17:20:49.2836158Z shell: /usr/bin/bash -e {0}
+2026-09-15T17:20:49.2837317Z env:
+2026-09-15T17:20:49.2838135Z   CARGO_INCREMENTAL: 0
+2026-09-15T17:20:49.2839146Z   CARGO_PROFILE_TEST_DEBUG: 0
+2026-09-15T17:20:49.2840462Z ##[endgroup]
+2026-09-15T17:20:49.3323472Z info: syncing channel updates for nightly-2026-03-03-x86_64-unknown-linux-gnu
+2026-09-15T17:20:49.5918324Z info: latest update on 2026-03-03 for version 1.96.0-nightly (ec818fda3 2026-03-02)
+2026-09-15T17:20:49.5922491Z info: downloading 4 components
+2026-09-15T17:20:57.5257537Z 
+2026-09-15T17:20:57.5333149Z   nightly-2026-03-03-x86_64-unknown-linux-gnu installed - rustc 1.96.0-nightly (ec818fda3 2026-03-02)
+2026-09-15T17:20:57.5333970Z 
+2026-09-15T17:20:57.5950281Z Get:1 file:/etc/apt/apt-mirrors.txt Mirrorlist [144 B]
+2026-09-15T17:20:57.6322592Z Hit:2 http://azure.archive.ubuntu.com/ubuntu noble InRelease
+2026-09-15T17:20:57.6331889Z Get:3 http://azure.archive.ubuntu.com/ubuntu noble-updates InRelease [126 kB]
+2026-09-15T17:20:57.6349401Z Get:4 http://azure.archive.ubuntu.com/ubuntu noble-backports InRelease [126 kB]
+2026-09-15T17:20:57.6371201Z Get:5 http://azure.archive.ubuntu.com/ubuntu noble-security InRelease [126 kB]
+2026-09-15T17:20:57.7754692Z Get:6 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 Packages [1263 kB]
+2026-09-15T17:20:57.7911662Z Get:7 http://azure.archive.ubuntu.com/ubuntu noble-updates/main Translation-en [292 kB]
+2026-09-15T17:20:57.7931523Z Get:8 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 Components [181 kB]
+2026-09-15T17:20:57.7935119Z Get:9 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe amd64 Packages [1686 kB]
+2026-09-15T17:20:57.8020631Z Get:10 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe Translation-en [337 kB]
+2026-09-15T17:20:57.8047510Z Get:11 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe amd64 Components [388 kB]
+2026-09-15T17:20:57.8114162Z Get:12 http://azure.archive.ubuntu.com/ubuntu noble-updates/restricted amd64 Packages [1550 kB]
+2026-09-15T17:20:57.8201455Z Get:13 http://azure.archive.ubuntu.com/ubuntu noble-updates/restricted Translation-en [355 kB]
+2026-09-15T17:20:57.8212004Z Get:14 http://azure.archive.ubuntu.com/ubuntu noble-updates/multiverse amd64 Packages [45.7 kB]
+2026-09-15T17:20:57.8331244Z Get:15 http://azure.archive.ubuntu.com/ubuntu noble-updates/multiverse Translation-en [12.8 kB]
+2026-09-15T17:20:57.8765000Z Get:16 http://azure.archive.ubuntu.com/ubuntu noble-updates/multiverse amd64 Components [940 B]
+2026-09-15T17:20:57.8774822Z Get:17 http://azure.archive.ubuntu.com/ubuntu noble-backports/main amd64 Components [5772 B]
+2026-09-15T17:20:57.8781896Z Get:18 http://azure.archive.ubuntu.com/ubuntu noble-backports/universe amd64 Components [12.6 kB]
+2026-09-15T17:20:57.9034344Z Get:19 http://azure.archive.ubuntu.com/ubuntu noble-security/main amd64 Packages [1007 kB]
+2026-09-15T17:20:57.9089305Z Get:20 http://azure.archive.ubuntu.com/ubuntu noble-security/main Translation-en [213 kB]
+2026-09-15T17:20:57.9106203Z Get:21 http://azure.archive.ubuntu.com/ubuntu noble-security/main amd64 Components [46.4 kB]
+2026-09-15T17:20:57.9114705Z Get:22 http://azure.archive.ubuntu.com/ubuntu noble-security/universe amd64 Packages [1207 kB]
+2026-09-15T17:20:57.9176526Z Get:23 http://azure.archive.ubuntu.com/ubuntu noble-security/universe Translation-en [242 kB]
+2026-09-15T17:20:57.9197189Z Get:24 http://azure.archive.ubuntu.com/ubuntu noble-security/universe amd64 Components [76.3 kB]
+2026-09-15T17:20:57.9208180Z Get:25 http://azure.archive.ubuntu.com/ubuntu noble-security/restricted amd64 Packages [1445 kB]
+2026-09-15T17:20:57.9280520Z Get:26 http://azure.archive.ubuntu.com/ubuntu noble-security/restricted Translation-en [336 kB]
+2026-09-15T17:21:02.4653082Z Fetched 11.1 MB in 1s (8580 kB/s)
+2026-09-15T17:21:03.2446095Z Reading package lists...
+2026-09-15T17:21:04.0771025Z Reading package lists...
+2026-09-15T17:21:04.2777777Z Building dependency tree...
+2026-09-15T17:21:04.2786237Z Reading state information...
+2026-09-15T17:21:04.4586141Z The following NEW packages will be installed:
+2026-09-15T17:21:04.4586872Z   ripgrep
+2026-09-15T17:21:04.4764772Z 0 upgraded, 1 newly installed, 0 to remove and 62 not upgraded.
+2026-09-15T17:21:04.4765472Z Need to get 1551 kB of archives.
+2026-09-15T17:21:04.4766030Z After this operation, 5335 kB of additional disk space will be used.
+2026-09-15T17:21:04.4766651Z Get:1 file:/etc/apt/apt-mirrors.txt Mirrorlist [144 B]
+2026-09-15T17:21:04.5219575Z Get:2 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 ripgrep amd64 14.1.0-1 [1551 kB]
+2026-09-15T17:21:04.7866484Z Fetched 1551 kB in 0s (23.6 MB/s)
+2026-09-15T17:21:04.8083912Z Selecting previously unselected package ripgrep.
+2026-09-15T17:21:04.8381023Z (Reading database ... 
+2026-09-15T17:21:04.8381729Z (Reading database ... 5%
+2026-09-15T17:21:04.8382506Z (Reading database ... 10%
+2026-09-15T17:21:04.8383013Z (Reading database ... 15%
+2026-09-15T17:21:04.8383450Z (Reading database ... 20%
+2026-09-15T17:21:04.8383869Z (Reading database ... 25%
+2026-09-15T17:21:04.8384273Z (Reading database ... 30%
+2026-09-15T17:21:04.8384730Z (Reading database ... 35%
+2026-09-15T17:21:04.8385136Z (Reading database ... 40%
+2026-09-15T17:21:04.8385564Z (Reading database ... 45%
+2026-09-15T17:21:04.8385991Z (Reading database ... 50%
+2026-09-15T17:21:04.8433957Z (Reading database ... 55%
+2026-09-15T17:21:04.9897820Z (Reading database ... 60%
+2026-09-15T17:21:05.1524826Z (Reading database ... 65%
+2026-09-15T17:21:05.3387811Z (Reading database ... 70%
+2026-09-15T17:21:05.4993178Z (Reading database ... 75%
+2026-09-15T17:21:05.6599251Z (Reading database ... 80%
+2026-09-15T17:21:05.8886886Z (Reading database ... 85%
+2026-09-15T17:21:06.0627722Z (Reading database ... 90%
+2026-09-15T17:21:06.2489969Z (Reading database ... 95%
+2026-09-15T17:21:06.2490490Z (Reading database ... 100%
+2026-09-15T17:21:06.2491078Z (Reading database ... 201818 files and directories currently installed.)
+2026-09-15T17:21:06.2534465Z Preparing to unpack .../ripgrep_14.1.0-1_amd64.deb ...
+2026-09-15T17:21:06.2563328Z Unpacking ripgrep (14.1.0-1) ...
+2026-09-15T17:21:06.3207912Z Setting up ripgrep (14.1.0-1) ...
+2026-09-15T17:21:06.3238229Z Processing triggers for man-db (2.12.0-4build2) ...
+2026-09-15T17:21:06.3260328Z Not building database; man-db/auto-update is not 'true'.
+2026-09-15T17:21:06.9523720Z 
+2026-09-15T17:21:06.9524573Z Running kernel seems to be up-to-date.
+2026-09-15T17:21:06.9525064Z 
+2026-09-15T17:21:06.9525277Z No services need to be restarted.
+2026-09-15T17:21:06.9525584Z 
+2026-09-15T17:21:06.9525721Z No containers need to be restarted.
+2026-09-15T17:21:06.9525959Z 
+2026-09-15T17:21:06.9526124Z No user sessions are running outdated binaries.
+2026-09-15T17:21:06.9526392Z 
+2026-09-15T17:21:06.9526658Z No VM guests are running outdated hypervisor (qemu) binaries on this host.
+2026-09-15T17:21:08.1745705Z ##[group]Run cargo +nightly-2026-03-03 fmt --all -- --check
+2026-09-15T17:21:08.1746200Z [36;1mcargo +nightly-2026-03-03 fmt --all -- --check[0m
+2026-09-15T17:21:08.1746548Z [36;1mpython3 -B -m unittest \[0m
+2026-09-15T17:21:08.1746825Z [36;1m  tests.ci.test_ci_impact \[0m
+2026-09-15T17:21:08.1747109Z [36;1m  tests.ci.test_ci_full_contract[0m
+2026-09-15T17:21:08.1747493Z [36;1mpython3 scripts/check-production-resident-routing.py[0m
+2026-09-15T17:21:08.1747901Z [36;1mpython3 scripts/check-warning-policy.py[0m
+2026-09-15T17:21:08.1748285Z [36;1mpython3 scripts/check-interactive-architecture.py[0m
+2026-09-15T17:21:08.1748894Z [36;1mpython3 scripts/check-compiler-planning-quarantine.py[0m
+2026-09-15T17:21:08.1749275Z [36;1mscripts/check-unsafe-boundaries.sh[0m
+2026-09-15T17:21:08.1749631Z [36;1mpython3 scripts/check-runtime-factory-safety.py[0m
+2026-09-15T17:21:08.1750362Z [36;1mpython3 scripts/check-value-execution-boundary.py[0m
+2026-09-15T17:21:08.1750794Z [36;1mpython3 scripts/check-value-system-contract.py[0m
+2026-09-15T17:21:08.1751181Z [36;1mpython3 scripts/check-no-retired-value-system.py[0m
+2026-09-15T17:21:08.1751576Z [36;1mpython3 scripts/check-r1-compatibility-closure.py[0m
+2026-09-15T17:21:08.1751962Z [36;1mpython3 scripts/check-r2-type-memory-boundary.py[0m
+2026-09-15T17:21:08.1752319Z [36;1mpython3 scripts/check-r3-type-system.py[0m
+2026-09-15T17:21:08.1752660Z [36;1mpython3 scripts/check-r4-type-cutover.py[0m
+2026-09-15T17:21:08.1753011Z [36;1mpython3 scripts/check-r5-memory-planner.py[0m
+2026-09-15T17:21:08.1753374Z [36;1mpython3 scripts/check-r6-memory-runtime.py[0m
+2026-09-15T17:21:08.1753726Z [36;1mpython3 scripts/check-bytecode-v1-format.py[0m
+2026-09-15T17:21:08.1792722Z shell: /usr/bin/bash -e {0}
+2026-09-15T17:21:08.1792998Z env:
+2026-09-15T17:21:08.1793210Z   CARGO_INCREMENTAL: 0
+2026-09-15T17:21:08.1793440Z   CARGO_PROFILE_TEST_DEBUG: 0
+2026-09-15T17:21:08.1793681Z ##[endgroup]
+2026-09-15T17:21:14.2577581Z ...............................................
+2026-09-15T17:21:14.2578205Z ----------------------------------------------------------------------
+2026-09-15T17:21:14.2578799Z Ran 47 tests in 0.083s
+2026-09-15T17:21:14.2579026Z 
+2026-09-15T17:21:14.2579142Z OK
+2026-09-15T17:21:14.4622337Z Production resident-routing contract passed
+2026-09-15T17:21:16.7601436Z warning policy failed: conditional allow in cfg_attr is not permitted in src/canonical_presentation.rs; use an unconditional audited exception
+2026-09-15T17:21:16.7677263Z ##[error]Process completed with exit code 1.
+2026-09-15T17:21:16.7819461Z Post job cleanup.
+2026-09-15T17:21:16.8694177Z [command]/usr/bin/git version
+2026-09-15T17:21:16.8737459Z git version 2.55.0
+2026-09-15T17:21:16.8777266Z Temporarily overriding HOME='/home/runner/work/_temp/21c441f9-0b8d-4b89-97af-fe2987f939fc' before making global git config changes
+2026-09-15T17:21:16.8778717Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-15T17:21:16.8782755Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/mech/mech
+2026-09-15T17:21:16.8819360Z Removing SSH command configuration
+2026-09-15T17:21:16.8827304Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-15T17:21:16.8863812Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-15T17:21:16.9118143Z Removing HTTP extra header
+2026-09-15T17:21:16.9125141Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-15T17:21:16.9170869Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-15T17:21:16.9435518Z Removing includeIf entries pointing to credentials config files
+2026-09-15T17:21:16.9441941Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-15T17:21:16.9477151Z includeif.gitdir:/home/runner/work/mech/mech/.git.path
+2026-09-15T17:21:16.9478079Z includeif.gitdir:/home/runner/work/mech/mech/.git/worktrees/*.path
+2026-09-15T17:21:16.9479122Z includeif.gitdir:/github/workspace/.git.path
+2026-09-15T17:21:16.9480343Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-09-15T17:21:16.9487795Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/mech/mech/.git.path
+2026-09-15T17:21:16.9521465Z /home/runner/work/_temp/git-credentials-7146d281-ce82-4aa7-a4a1-5f6bd23f9f5b.config
+2026-09-15T17:21:16.9533055Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/mech/mech/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-7146d281\-ce82\-4aa7\-a4a1\-5f6bd23f9f5b\.config
+2026-09-15T17:21:16.9583221Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/mech/mech/.git/worktrees/*.path
+2026-09-15T17:21:16.9620256Z /home/runner/work/_temp/git-credentials-7146d281-ce82-4aa7-a4a1-5f6bd23f9f5b.config
+2026-09-15T17:21:16.9630645Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/mech/mech/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-7146d281\-ce82\-4aa7\-a4a1\-5f6bd23f9f5b\.config
+2026-09-15T17:21:16.9672659Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-09-15T17:21:16.9704005Z /github/runner_temp/git-credentials-7146d281-ce82-4aa7-a4a1-5f6bd23f9f5b.config
+2026-09-15T17:21:16.9711844Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-7146d281\-ce82\-4aa7\-a4a1\-5f6bd23f9f5b\.config
+2026-09-15T17:21:16.9750776Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-09-15T17:21:16.9777786Z /github/runner_temp/git-credentials-7146d281-ce82-4aa7-a4a1-5f6bd23f9f5b.config
+2026-09-15T17:21:16.9787630Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-7146d281\-ce82\-4aa7\-a4a1\-5f6bd23f9f5b\.config
+2026-09-15T17:21:16.9826544Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-15T17:21:17.0055189Z Removing credentials config '/home/runner/work/_temp/git-credentials-7146d281-ce82-4aa7-a4a1-5f6bd23f9f5b.config'
+2026-09-15T17:21:17.0204662Z Cleaning up orphan processes

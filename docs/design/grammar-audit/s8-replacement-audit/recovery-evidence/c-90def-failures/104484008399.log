@@ -1,0 +1,760 @@
+﻿2026-09-15T17:11:41.1616300Z Current runner version: '2.337.0'
+2026-09-15T17:11:41.1641698Z ##[group]Runner Image Provisioner
+2026-09-15T17:11:41.1642745Z Hosted Compute Agent
+2026-09-15T17:11:41.1643400Z Version: 20260828.587
+2026-09-15T17:11:41.1644102Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-09-15T17:11:41.1644878Z Build Date: 2026-08-28T16:44:25Z
+2026-09-15T17:11:41.1645802Z Worker ID: {cc0c926d-bfba-47c8-914a-47e5cdff6fe1}
+2026-09-15T17:11:41.1646704Z Azure Region: northcentralus
+2026-09-15T17:11:41.1647372Z ##[endgroup]
+2026-09-15T17:11:41.1648956Z ##[group]Operating System
+2026-09-15T17:11:41.1649628Z Ubuntu
+2026-09-15T17:11:41.1650167Z 24.04.5
+2026-09-15T17:11:41.1650766Z LTS
+2026-09-15T17:11:41.1651285Z ##[endgroup]
+2026-09-15T17:11:41.1651824Z ##[group]Runner Image
+2026-09-15T17:11:41.1652492Z Image: ubuntu-24.04
+2026-09-15T17:11:41.1653113Z Version: 20260907.300.1
+2026-09-15T17:11:41.1654460Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260907.300/images/ubuntu/Ubuntu2404-Readme.md
+2026-09-15T17:11:41.1656607Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260907.300
+2026-09-15T17:11:41.1657728Z ##[endgroup]
+2026-09-15T17:11:41.1660915Z ##[group]GITHUB_TOKEN Permissions
+2026-09-15T17:11:41.1663142Z Actions: write
+2026-09-15T17:11:41.1663785Z ArtifactMetadata: write
+2026-09-15T17:11:41.1664496Z Attestations: write
+2026-09-15T17:11:41.1665071Z Checks: write
+2026-09-15T17:11:41.1665949Z CodeQuality: write
+2026-09-15T17:11:41.1666626Z Contents: write
+2026-09-15T17:11:41.1667239Z CopilotRequests: write
+2026-09-15T17:11:41.1667875Z Deployments: write
+2026-09-15T17:11:41.1668448Z Discussions: write
+2026-09-15T17:11:41.1669025Z Drives: write
+2026-09-15T17:11:41.1669626Z Issues: write
+2026-09-15T17:11:41.1670178Z Metadata: read
+2026-09-15T17:11:41.1670878Z Models: read
+2026-09-15T17:11:41.1671448Z Packages: write
+2026-09-15T17:11:41.1672217Z Pages: write
+2026-09-15T17:11:41.1673365Z PullRequests: write
+2026-09-15T17:11:41.1674496Z RepositoryProjects: write
+2026-09-15T17:11:41.1676321Z SecurityEvents: write
+2026-09-15T17:11:41.1677493Z Statuses: write
+2026-09-15T17:11:41.1678602Z VulnerabilityAlerts: read
+2026-09-15T17:11:41.1679803Z ##[endgroup]
+2026-09-15T17:11:41.1682842Z Secret source: Actions
+2026-09-15T17:11:41.1684721Z Cache mode: write
+2026-09-15T17:11:41.1686304Z Prepare workflow directory
+2026-09-15T17:11:41.2243096Z Prepare all required actions
+2026-09-15T17:11:41.2314297Z Getting action download info
+2026-09-15T17:11:41.5073794Z Download action repository 'actions/checkout@v7.0.1' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+2026-09-15T17:11:41.7121378Z Uses: mech-lang/mech/.github/workflows/ci-native-plan.yml@refs/pull/830/merge (ebfe4275c66361799387f9dd473e8a3cff955491)
+2026-09-15T17:11:41.7127079Z ##[group] Inputs
+2026-09-15T17:11:41.7128084Z   validation_ref: 90defdf9ed0599316d7fb0d8f19e0d2ac36b35f9
+2026-09-15T17:11:41.7128846Z ##[endgroup]
+2026-09-15T17:11:41.7129379Z Complete job name: Early native plan / Native plan
+2026-09-15T17:11:41.7918353Z ##[group]Run actions/checkout@v7.0.1
+2026-09-15T17:11:41.7919315Z with:
+2026-09-15T17:11:41.7919811Z   ref: 90defdf9ed0599316d7fb0d8f19e0d2ac36b35f9
+2026-09-15T17:11:41.7920438Z   repository: mech-lang/mech
+2026-09-15T17:11:41.7924394Z   token: ***
+2026-09-15T17:11:41.7924854Z   ssh-strict: true
+2026-09-15T17:11:41.7925305Z   ssh-user: git
+2026-09-15T17:11:41.7926066Z   persist-credentials: true
+2026-09-15T17:11:41.7926575Z   clean: true
+2026-09-15T17:11:41.7927041Z   sparse-checkout-cone-mode: true
+2026-09-15T17:11:41.7927595Z   fetch-depth: 1
+2026-09-15T17:11:41.7928035Z   fetch-tags: false
+2026-09-15T17:11:41.7928493Z   show-progress: true
+2026-09-15T17:11:41.7928960Z   lfs: false
+2026-09-15T17:11:41.7929381Z   submodules: false
+2026-09-15T17:11:41.7929838Z   set-safe-directory: true
+2026-09-15T17:11:41.7930371Z   allow-unsafe-pr-checkout: false
+2026-09-15T17:11:41.7931171Z env:
+2026-09-15T17:11:41.7931602Z   CARGO_INCREMENTAL: 0
+2026-09-15T17:11:41.7932084Z ##[endgroup]
+2026-09-15T17:11:41.8951651Z Syncing repository: mech-lang/mech
+2026-09-15T17:11:41.8953910Z ##[group]Getting Git version info
+2026-09-15T17:11:41.8954712Z Working directory is '/home/runner/work/mech/mech'
+2026-09-15T17:11:41.8956519Z [command]/usr/bin/git version
+2026-09-15T17:11:41.9095409Z git version 2.55.0
+2026-09-15T17:11:41.9120889Z ##[endgroup]
+2026-09-15T17:11:41.9132338Z Temporarily overriding HOME='/home/runner/work/_temp/b90d9793-575f-4694-9cb0-c45b3b46e95c' before making global git config changes
+2026-09-15T17:11:41.9139258Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-15T17:11:41.9140960Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/mech/mech
+2026-09-15T17:11:41.9190420Z Deleting the contents of '/home/runner/work/mech/mech'
+2026-09-15T17:11:41.9193579Z ##[group]Determining repository object format
+2026-09-15T17:11:41.9195450Z ##[endgroup]
+2026-09-15T17:11:41.9196881Z ##[group]Initializing the repository
+2026-09-15T17:11:41.9201462Z [command]/usr/bin/git init /home/runner/work/mech/mech
+2026-09-15T17:11:41.9310270Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-15T17:11:41.9312253Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-15T17:11:41.9314177Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-15T17:11:41.9315381Z hint: call:
+2026-09-15T17:11:41.9316386Z hint:
+2026-09-15T17:11:41.9317043Z hint: 	git config --global init.defaultBranch <name>
+2026-09-15T17:11:41.9318174Z hint:
+2026-09-15T17:11:41.9319251Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-15T17:11:41.9320354Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-15T17:11:41.9321211Z hint:
+2026-09-15T17:11:41.9321685Z hint: 	git branch -m <name>
+2026-09-15T17:11:41.9322228Z hint:
+2026-09-15T17:11:41.9322997Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-15T17:11:41.9324645Z Initialized empty Git repository in /home/runner/work/mech/mech/.git/
+2026-09-15T17:11:41.9327754Z [command]/usr/bin/git remote add origin https://github.com/mech-lang/mech
+2026-09-15T17:11:41.9401391Z ##[endgroup]
+2026-09-15T17:11:41.9402799Z ##[group]Disabling automatic garbage collection
+2026-09-15T17:11:41.9406128Z [command]/usr/bin/git config --local gc.auto 0
+2026-09-15T17:11:41.9444504Z ##[endgroup]
+2026-09-15T17:11:41.9446026Z ##[group]Setting up auth
+2026-09-15T17:11:41.9446914Z Removing SSH command configuration
+2026-09-15T17:11:41.9452538Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-15T17:11:41.9488978Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-15T17:11:41.9885796Z Removing HTTP extra header
+2026-09-15T17:11:41.9897814Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-15T17:11:41.9927342Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-15T17:11:42.0154644Z Removing includeIf entries pointing to credentials config files
+2026-09-15T17:11:42.0159747Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-15T17:11:42.0195528Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-15T17:11:42.0428301Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-a068da6f-d1f5-45cd-8e46-f75d0589bf56.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-15T17:11:42.0470763Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/mech/mech/.git.path /home/runner/work/_temp/git-credentials-a068da6f-d1f5-45cd-8e46-f75d0589bf56.config
+2026-09-15T17:11:42.0504723Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/mech/mech/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-a068da6f-d1f5-45cd-8e46-f75d0589bf56.config
+2026-09-15T17:11:42.0543279Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-a068da6f-d1f5-45cd-8e46-f75d0589bf56.config
+2026-09-15T17:11:42.0578452Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-a068da6f-d1f5-45cd-8e46-f75d0589bf56.config
+2026-09-15T17:11:42.0610462Z ##[endgroup]
+2026-09-15T17:11:42.0611242Z ##[group]Fetching the repository
+2026-09-15T17:11:42.0618156Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin 90defdf9ed0599316d7fb0d8f19e0d2ac36b35f9
+2026-09-15T17:11:43.4979293Z From https://github.com/mech-lang/mech
+2026-09-15T17:11:43.4981400Z  * branch            90defdf9ed0599316d7fb0d8f19e0d2ac36b35f9 -> FETCH_HEAD
+2026-09-15T17:11:43.4991501Z [command]/usr/bin/git rev-parse --verify --quiet 90defdf9ed0599316d7fb0d8f19e0d2ac36b35f9^{object}
+2026-09-15T17:11:43.5022600Z 90defdf9ed0599316d7fb0d8f19e0d2ac36b35f9
+2026-09-15T17:11:43.5033697Z ##[endgroup]
+2026-09-15T17:11:43.5034524Z ##[group]Determining the checkout info
+2026-09-15T17:11:43.5035385Z ##[endgroup]
+2026-09-15T17:11:43.5037650Z [command]/usr/bin/git sparse-checkout disable
+2026-09-15T17:11:43.5097223Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-09-15T17:11:43.5136743Z ##[group]Checking out the ref
+2026-09-15T17:11:43.5139426Z [command]/usr/bin/git checkout --progress --force 90defdf9ed0599316d7fb0d8f19e0d2ac36b35f9
+2026-09-15T17:11:43.7117830Z Note: switching to '90defdf9ed0599316d7fb0d8f19e0d2ac36b35f9'.
+2026-09-15T17:11:43.7118514Z 
+2026-09-15T17:11:43.7119046Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-09-15T17:11:43.7120035Z changes and commit them, and you can discard any commits you make in this
+2026-09-15T17:11:43.7120976Z state without impacting any branches by switching back to a branch.
+2026-09-15T17:11:43.7121521Z 
+2026-09-15T17:11:43.7121875Z If you want to create a new branch to retain commits you create, you may
+2026-09-15T17:11:43.7122868Z do so (now or later) by using -c with the switch command. Example:
+2026-09-15T17:11:43.7123512Z 
+2026-09-15T17:11:43.7123712Z   git switch -c <new-branch-name>
+2026-09-15T17:11:43.7124194Z 
+2026-09-15T17:11:43.7124444Z Or undo this operation with:
+2026-09-15T17:11:43.7124799Z 
+2026-09-15T17:11:43.7124973Z   git switch -
+2026-09-15T17:11:43.7125239Z 
+2026-09-15T17:11:43.7126382Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-09-15T17:11:43.7127784Z 
+2026-09-15T17:11:43.7129008Z HEAD is now at 90defdf test(cutover): account for removed parser dependencies in distribution graphs
+2026-09-15T17:11:43.7133197Z ##[endgroup]
+2026-09-15T17:11:43.7184605Z [command]/usr/bin/git log -1 --format=%H
+2026-09-15T17:11:43.7213756Z 90defdf9ed0599316d7fb0d8f19e0d2ac36b35f9
+2026-09-15T17:11:43.7444032Z ##[group]Run rustup toolchain install nightly-2026-03-03 --profile minimal
+2026-09-15T17:11:43.7446122Z [36;1mrustup toolchain install nightly-2026-03-03 --profile minimal[0m
+2026-09-15T17:11:43.7487855Z shell: /usr/bin/bash -e {0}
+2026-09-15T17:11:43.7488539Z env:
+2026-09-15T17:11:43.7489001Z   CARGO_INCREMENTAL: 0
+2026-09-15T17:11:43.7489599Z ##[endgroup]
+2026-09-15T17:11:43.8084647Z info: syncing channel updates for nightly-2026-03-03-x86_64-unknown-linux-gnu
+2026-09-15T17:11:44.0714132Z info: latest update on 2026-03-03 for version 1.96.0-nightly (ec818fda3 2026-03-02)
+2026-09-15T17:11:44.0715230Z info: downloading 3 components
+2026-09-15T17:11:51.5694759Z 
+2026-09-15T17:11:51.5767142Z   nightly-2026-03-03-x86_64-unknown-linux-gnu installed - rustc 1.96.0-nightly (ec818fda3 2026-03-02)
+2026-09-15T17:11:51.5767983Z 
+2026-09-15T17:11:51.5952370Z ##[group]Run cargo +nightly-2026-03-03 fetch --locked
+2026-09-15T17:11:51.5953048Z [36;1mcargo +nightly-2026-03-03 fetch --locked[0m
+2026-09-15T17:11:51.5953656Z [36;1mcargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/native-build-owner-runner/Cargo.toml[0m
+2026-09-15T17:11:51.5992217Z shell: /usr/bin/bash -e {0}
+2026-09-15T17:11:51.5992475Z env:
+2026-09-15T17:11:51.5992670Z   CARGO_INCREMENTAL: 0
+2026-09-15T17:11:51.5992889Z ##[endgroup]
+2026-09-15T17:11:51.6463180Z     Updating crates.io index
+2026-09-15T17:11:53.0810625Z  Downloading crates ...
+2026-09-15T17:11:53.1719792Z   Downloaded winres v0.1.12
+2026-09-15T17:11:53.1865302Z   Downloaded serde_derive v1.0.229
+2026-09-15T17:11:53.2051667Z   Downloaded windows-link v0.2.1
+2026-09-15T17:11:53.2100885Z   Downloaded zerofrom-derive v0.1.7
+2026-09-15T17:11:53.2179540Z   Downloaded httparse v1.10.1
+2026-09-15T17:11:53.2226057Z   Downloaded mime v0.3.17
+2026-09-15T17:11:53.2264482Z   Downloaded data-encoding v2.11.0
+2026-09-15T17:11:53.2314184Z   Downloaded generic-array v0.14.7
+2026-09-15T17:11:53.2349922Z   Downloaded crypto-common v0.1.7
+2026-09-15T17:11:53.2379323Z   Downloaded futures-task v0.3.33
+2026-09-15T17:11:53.2412781Z   Downloaded block-buffer v0.10.4
+2026-09-15T17:11:53.2442878Z   Downloaded futures-io v0.3.33
+2026-09-15T17:11:53.2472616Z   Downloaded wasm-bindgen-shared v0.2.126
+2026-09-15T17:11:53.2504517Z   Downloaded cfg-if v1.0.4
+2026-09-15T17:11:53.2541185Z   Downloaded fnv v1.0.7
+2026-09-15T17:11:53.2570824Z   Downloaded idna_adapter v1.2.2
+2026-09-15T17:11:53.2600121Z   Downloaded quote v1.0.47
+2026-09-15T17:11:53.2648791Z   Downloaded futures-core v0.3.33
+2026-09-15T17:11:53.2687096Z   Downloaded scoped-tls v1.0.1
+2026-09-15T17:11:53.2717524Z   Downloaded itoa v1.0.18
+2026-09-15T17:11:53.2752679Z   Downloaded try-lock v0.2.5
+2026-09-15T17:11:53.2780846Z   Downloaded rand_chacha v0.3.1
+2026-09-15T17:11:53.2812167Z   Downloaded httpdate v1.0.3
+2026-09-15T17:11:53.2845416Z   Downloaded unicase v2.9.0
+2026-09-15T17:11:53.2885137Z   Downloaded byteorder v1.5.0
+2026-09-15T17:11:53.2920793Z   Downloaded utf8_iter v1.0.4
+2026-09-15T17:11:53.2951958Z   Downloaded windows-implement v0.60.2
+2026-09-15T17:11:53.2982395Z   Downloaded alloc-stdlib v0.2.4
+2026-09-15T17:11:53.3014766Z   Downloaded windows-interface v0.59.3
+2026-09-15T17:11:53.3046449Z   Downloaded zerofrom v0.1.8
+2026-09-15T17:11:53.3072577Z   Downloaded tinystr v0.8.3
+2026-09-15T17:11:53.3113223Z   Downloaded utf-8 v0.7.6
+2026-09-15T17:11:53.3146139Z   Downloaded iana-time-zone-haiku v0.1.2
+2026-09-15T17:11:53.3181459Z   Downloaded untrusted v0.9.0
+2026-09-15T17:11:53.3219837Z   Downloaded num-conv v0.2.2
+2026-09-15T17:11:53.3246222Z   Downloaded windows-strings v0.5.1
+2026-09-15T17:11:53.3280175Z   Downloaded zerovec-derive v0.11.3
+2026-09-15T17:11:53.3318102Z   Downloaded headers-core v0.2.0
+2026-09-15T17:11:53.3345954Z   Downloaded crc v3.4.0
+2026-09-15T17:11:53.3384429Z   Downloaded filetime_creation v0.2.0
+2026-09-15T17:11:53.3410817Z   Downloaded equivalent v1.0.2
+2026-09-15T17:11:53.3443018Z   Downloaded dunce v1.0.5
+2026-09-15T17:11:53.3478209Z   Downloaded tower-layer v0.3.3
+2026-09-15T17:11:53.3507728Z   Downloaded rustls-platform-verifier-android v0.1.1
+2026-09-15T17:11:53.3538710Z   Downloaded same-file v1.0.6
+2026-09-15T17:11:53.3569258Z   Downloaded spin v0.9.9
+2026-09-15T17:11:53.3622453Z   Downloaded rustc-hash v2.1.3
+2026-09-15T17:11:53.3652912Z   Downloaded icu_properties v2.2.0
+2026-09-15T17:11:53.3697233Z   Downloaded thiserror-impl v2.0.19
+2026-09-15T17:11:53.3727348Z   Downloaded fastrand v2.5.0
+2026-09-15T17:11:53.3779694Z   Downloaded quinn-udp v0.5.15
+2026-09-15T17:11:53.3816752Z   Downloaded lru-slab v0.1.2
+2026-09-15T17:11:53.3845598Z   Downloaded bit-vec v0.7.0
+2026-09-15T17:11:53.3873634Z   Downloaded autocfg v1.5.1
+2026-09-15T17:11:53.3930815Z   Downloaded ipnet v2.12.0
+2026-09-15T17:11:53.3968554Z   Downloaded hyper-rustls v0.27.9
+2026-09-15T17:11:53.4003852Z   Downloaded windows-targets v0.53.5
+2026-09-15T17:11:53.4027573Z   Downloaded rand_chacha v0.9.0
+2026-09-15T17:11:53.4089727Z   Downloaded cfg_aliases v0.2.2
+2026-09-15T17:11:53.4122704Z   Downloaded approx v0.5.1
+2026-09-15T17:11:53.4159422Z   Downloaded rawpointer v0.2.1
+2026-09-15T17:11:53.4179904Z   Downloaded simdutf8 v0.1.5
+2026-09-15T17:11:53.4248058Z   Downloaded nalgebra-macros v0.3.0
+2026-09-15T17:11:53.4273040Z   Downloaded matrixmultiply v0.3.11
+2026-09-15T17:11:53.4324716Z   Downloaded toml v1.1.3+spec-1.1.0
+2026-09-15T17:11:53.4421083Z   Downloaded serde_spanned v1.1.1
+2026-09-15T17:11:53.4453347Z   Downloaded crossbeam-deque v0.8.7
+2026-09-15T17:11:53.4483306Z   Downloaded fxhash v0.2.1
+2026-09-15T17:11:53.4499756Z   Downloaded crossbeam-utils v0.8.22
+2026-09-15T17:11:53.4573506Z   Downloaded embedded-io v0.7.1
+2026-09-15T17:11:53.4597757Z   Downloaded foldhash v0.2.0
+2026-09-15T17:11:53.4630381Z   Downloaded anstyle-wincon v3.0.11
+2026-09-15T17:11:53.4654809Z   Downloaded once_cell_polyfill v1.70.2
+2026-09-15T17:11:53.4722226Z   Downloaded grapheme_macro v2.0.0
+2026-09-15T17:11:53.4746988Z   Downloaded crunchy v0.2.4
+2026-09-15T17:11:53.4784817Z   Downloaded signature v2.2.0
+2026-09-15T17:11:53.4855997Z   Downloaded ed25519 v2.2.3
+2026-09-15T17:11:53.4931206Z   Downloaded arrayref v0.3.9
+2026-09-15T17:11:53.5006768Z   Downloaded unicode-xid v0.2.6
+2026-09-15T17:11:53.5056195Z   Downloaded gpu-descriptor-types v0.2.0
+2026-09-15T17:11:53.5138328Z   Downloaded foldhash v0.1.5
+2026-09-15T17:11:53.5201035Z   Downloaded gl_generator v0.14.0
+2026-09-15T17:11:53.5254606Z   Downloaded unicode-segmentation v1.13.3
+2026-09-15T17:11:53.5333093Z   Downloaded heck v0.5.0
+2026-09-15T17:11:53.5395542Z   Downloaded anyhow v1.0.104
+2026-09-15T17:11:53.5507925Z   Downloaded cranelift-native v0.131.3
+2026-09-15T17:11:53.5549931Z   Downloaded cranelift-frontend v0.131.3
+2026-09-15T17:11:53.5585723Z   Downloaded cranelift-jit v0.131.3
+2026-09-15T17:11:53.5622333Z   Downloaded console v0.16.4
+2026-09-15T17:11:53.5660251Z   Downloaded vt100 v0.16.2
+2026-09-15T17:11:53.5699873Z   Downloaded csv-core v0.1.13
+2026-09-15T17:11:53.5727924Z   Downloaded block2 v0.6.2
+2026-09-15T17:11:53.5764995Z   Downloaded gloo-utils v0.2.0
+2026-09-15T17:11:53.5788197Z   Downloaded gloo-net v0.6.0
+2026-09-15T17:11:53.5818412Z   Downloaded wasm-bindgen-test v0.3.76
+2026-09-15T17:11:53.5864031Z   Downloaded crossterm_winapi v0.9.1
+2026-09-15T17:11:53.5901030Z   Downloaded signal-hook v0.3.18
+2026-09-15T17:11:53.5948129Z   Downloaded widestring v1.2.1
+2026-09-15T17:11:53.5992205Z   Downloaded windows-sys v0.61.2
+2026-09-15T17:11:53.6631471Z   Downloaded signal-hook-mio v0.2.5
+2026-09-15T17:11:53.6649968Z   Downloaded unicode-width v0.1.14
+2026-09-15T17:11:53.6708540Z   Downloaded encoding_rs v0.8.35
+2026-09-15T17:11:53.6911634Z   Downloaded hashbrown v0.15.5
+2026-09-15T17:11:53.6965400Z   Downloaded khronos_api v3.1.0
+2026-09-15T17:11:53.7151831Z   Downloaded winapi v0.3.9
+2026-09-15T17:11:53.7551114Z   Downloaded ndk-sys v0.5.0+25.2.9519653
+2026-09-15T17:11:53.7623314Z   Downloaded naga v0.20.0
+2026-09-15T17:11:53.7768566Z   Downloaded convert_case v0.10.0
+2026-09-15T17:11:53.7796073Z   Downloaded encode_unicode v1.0.0
+2026-09-15T17:11:53.7826580Z   Downloaded windows-sys v0.52.0
+2026-09-15T17:11:53.8479443Z   Downloaded wgpu-hal v0.21.1
+2026-09-15T17:11:53.8564457Z   Downloaded windows_i686_msvc v0.53.1
+2026-09-15T17:11:53.8690454Z   Downloaded glow v0.13.1
+2026-09-15T17:11:53.8736940Z   Downloaded wgpu-core v0.21.1
+2026-09-15T17:11:53.8807628Z   Downloaded windows-sys v0.60.2
+2026-09-15T17:11:53.9442067Z   Downloaded ash v0.37.3+1.3.251
+2026-09-15T17:11:53.9587943Z   Downloaded include_dir_macros v0.7.4
+2026-09-15T17:11:53.9599514Z   Downloaded cranelift-codegen-meta v0.131.3
+2026-09-15T17:11:53.9638688Z   Downloaded gimli v0.33.0
+2026-09-15T17:11:53.9716994Z   Downloaded linux-raw-sys v0.12.1
+2026-09-15T17:11:54.0338882Z   Downloaded syn v1.0.109
+2026-09-15T17:11:54.0435690Z   Downloaded fiat-crypto v0.2.9
+2026-09-15T17:11:54.0527161Z   Downloaded windows_i686_gnu v0.52.6
+2026-09-15T17:11:54.0716256Z   Downloaded winnow v0.7.15
+2026-09-15T17:11:54.0817003Z   Downloaded windows_i686_msvc v0.52.6
+2026-09-15T17:11:54.0941714Z   Downloaded cranelift-codegen v0.131.3
+2026-09-15T17:11:54.1199247Z   Downloaded toml_edit v0.23.10+spec-1.0.0
+2026-09-15T17:11:54.1241344Z   Downloaded cranelift-isle v0.131.3
+2026-09-15T17:11:54.1292669Z   Downloaded portable-atomic v1.14.0
+2026-09-15T17:11:54.1367225Z   Downloaded regalloc2 v0.15.2
+2026-09-15T17:11:54.1416061Z   Downloaded serde-wasm-bindgen v0.6.5
+2026-09-15T17:11:54.1435845Z   Downloaded async-trait v0.1.91
+2026-09-15T17:11:54.1476004Z   Downloaded minicov v0.3.8
+2026-09-15T17:11:54.1501378Z   Downloaded nu-ansi-term v0.50.3
+2026-09-15T17:11:54.1528862Z   Downloaded wasm-bindgen-test-macro v0.3.76
+2026-09-15T17:11:54.1540361Z   Downloaded ctrlc v3.5.2
+2026-09-15T17:11:54.1563563Z   Downloaded objc2 v0.6.4
+2026-09-15T17:11:54.1668698Z   Downloaded glam v0.30.10
+2026-09-15T17:11:54.1935896Z   Downloaded nix v0.31.3
+2026-09-15T17:11:54.2054526Z   Downloaded windows_aarch64_gnullvm v0.53.1
+2026-09-15T17:11:54.2168740Z   Downloaded windows_aarch64_msvc v0.52.6
+2026-09-15T17:11:54.2282745Z   Downloaded windows_x86_64_gnu v0.52.6
+2026-09-15T17:11:54.2461648Z   Downloaded windows_x86_64_msvc v0.52.6
+2026-09-15T17:11:54.2575274Z   Downloaded wasm-bindgen-test-shared v0.2.126
+2026-09-15T17:11:54.2585548Z   Downloaded dispatch2 v0.3.1
+2026-09-15T17:11:54.2613029Z   Downloaded indicatif v0.18.6
+2026-09-15T17:11:54.2651819Z   Downloaded include_dir v0.7.4
+2026-09-15T17:11:54.2664311Z   Downloaded objc2-encode v4.1.0
+2026-09-15T17:11:54.2681350Z   Downloaded brotli v8.0.4
+2026-09-15T17:11:54.2833673Z   Downloaded blake3 v1.8.5
+2026-09-15T17:11:54.2915187Z   Downloaded winapi-i686-pc-windows-gnu v0.4.0
+2026-09-15T17:11:54.4314620Z   Downloaded curve25519-dalek v4.1.3
+2026-09-15T17:11:54.4399578Z   Downloaded web-sys v0.3.103
+2026-09-15T17:11:54.5587492Z   Downloaded csv v1.4.0
+2026-09-15T17:11:54.5763236Z   Downloaded crossbeam-channel v0.5.16
+2026-09-15T17:11:54.5811542Z   Downloaded winapi-x86_64-pc-windows-gnu v0.4.0
+2026-09-15T17:11:54.7239154Z   Downloaded unit-prefix v0.5.2
+2026-09-15T17:11:54.7251778Z   Downloaded vte v0.15.0
+2026-09-15T17:11:54.7274153Z   Downloaded camino v1.2.5
+2026-09-15T17:11:54.7292006Z   Downloaded cargo-platform v0.3.3
+2026-09-15T17:11:54.7305503Z   Downloaded cargo_metadata v0.23.1
+2026-09-15T17:11:54.7325432Z   Downloaded toml_datetime v0.7.5+spec-1.1.0
+2026-09-15T17:11:54.7339193Z   Downloaded bstr v1.13.0
+2026-09-15T17:11:54.7418512Z   Downloaded regex-automata v0.4.16
+2026-09-15T17:11:54.7558379Z   Downloaded wasmtime-internal-core v44.0.3
+2026-09-15T17:11:54.7585843Z   Downloaded wgpu v0.20.1
+2026-09-15T17:11:54.7702357Z   Downloaded mach2 v0.4.3
+2026-09-15T17:11:54.7735724Z   Downloaded wasmtime-internal-jit-icache-coherence v44.0.3
+2026-09-15T17:11:54.7746012Z   Downloaded cranelift-entity v0.131.3
+2026-09-15T17:11:54.7762989Z   Downloaded arbitrary v1.4.2
+2026-09-15T17:11:54.7813194Z   Downloaded derive_more v2.1.1
+2026-09-15T17:11:54.7945175Z   Downloaded der v0.7.10
+2026-09-15T17:11:54.7999902Z   Downloaded proptest v1.11.0
+2026-09-15T17:11:54.8101468Z   Downloaded metal v0.28.0
+2026-09-15T17:11:54.8322594Z   Downloaded glam v0.31.1
+2026-09-15T17:11:54.8604547Z   Downloaded glam v0.32.1
+2026-09-15T17:11:54.8892817Z   Downloaded windows_i686_gnu v0.53.1
+2026-09-15T17:11:54.9087118Z   Downloaded sevenz-rust v0.6.1
+2026-09-15T17:11:54.9158379Z   Downloaded region v3.0.2
+2026-09-15T17:11:54.9182734Z   Downloaded target-lexicon v0.13.5
+2026-09-15T17:11:54.9199346Z   Downloaded cranelift-control v0.131.3
+2026-09-15T17:11:54.9209631Z   Downloaded slotmap v1.1.1
+2026-09-15T17:11:54.9231400Z   Downloaded ed25519-dalek v2.2.0
+2026-09-15T17:11:54.9263316Z   Downloaded regex-syntax v0.8.11
+2026-09-15T17:11:54.9330265Z   Downloaded glam v0.27.0
+2026-09-15T17:11:54.9511762Z   Downloaded glam v0.28.0
+2026-09-15T17:11:54.9707028Z   Downloaded windows_i686_gnullvm v0.52.6
+2026-09-15T17:11:54.9787646Z   Downloaded cranelift-assembler-x64 v0.131.3
+2026-09-15T17:11:54.9806969Z   Downloaded cranelift-bforest v0.131.3
+2026-09-15T17:11:54.9821978Z   Downloaded crossterm v0.29.0
+2026-09-15T17:11:54.9892462Z   Downloaded cranelift-assembler-x64-meta v0.131.3
+2026-09-15T17:11:54.9931430Z   Downloaded cranelift-srcgen v0.131.3
+2026-09-15T17:11:54.9939613Z   Downloaded cranelift-codegen-shared v0.131.3
+2026-09-15T17:11:54.9948825Z   Downloaded cranelift-bitset v0.131.3
+2026-09-15T17:11:54.9959506Z   Downloaded static_assertions v1.1.0
+2026-09-15T17:11:54.9974625Z   Downloaded document-features v0.2.12
+2026-09-15T17:11:54.9988083Z   Downloaded libloading v0.7.4
+2026-09-15T17:11:55.0011635Z   Downloaded cfg_aliases v0.1.1
+2026-09-15T17:11:55.0020841Z   Downloaded d3d12 v0.20.0
+2026-09-15T17:11:55.0037723Z   Downloaded xml-rs v0.8.29
+2026-09-15T17:11:55.0067577Z   Downloaded itertools v0.14.0
+2026-09-15T17:11:55.0138827Z   Downloaded unicode-normalization v0.1.25
+2026-09-15T17:11:55.0174086Z   Downloaded clap_builder v4.6.2
+2026-09-15T17:11:55.0237964Z   Downloaded windows_aarch64_msvc v0.53.1
+2026-09-15T17:11:55.0352480Z   Downloaded windows_i686_gnullvm v0.53.1
+2026-09-15T17:11:55.0471843Z   Downloaded ring v0.17.14
+2026-09-15T17:11:55.0892166Z   Downloaded rustix v1.1.4
+2026-09-15T17:11:55.1166338Z   Downloaded windows_aarch64_gnullvm v0.52.6
+2026-09-15T17:11:55.1243222Z   Downloaded windows_x86_64_gnullvm v0.52.6
+2026-09-15T17:11:55.1319026Z   Downloaded cranelift-module v0.131.3
+2026-09-15T17:11:55.1331794Z   Downloaded pollster v0.3.0
+2026-09-15T17:11:55.1345176Z   Downloaded litrs v1.0.0
+2026-09-15T17:11:55.1376172Z   Downloaded derive_more-impl v2.1.1
+2026-09-15T17:11:55.1429440Z   Downloaded ignore v0.4.31
+2026-09-15T17:11:55.1454857Z   Downloaded itertools v0.13.0
+2026-09-15T17:11:55.1529222Z   Downloaded unicode-width v0.2.2
+2026-09-15T17:11:55.1584628Z   Downloaded rustls v0.23.42
+2026-09-15T17:11:55.1703464Z   Downloaded aho-corasick v1.1.4
+2026-09-15T17:11:55.1755398Z   Downloaded rayon v1.12.0
+2026-09-15T17:11:55.1851847Z   Downloaded tabled v0.20.0
+2026-09-15T17:11:55.2052528Z   Downloaded glam v0.29.3
+2026-09-15T17:11:55.2272364Z   Downloaded windows_x86_64_gnu v0.53.1
+2026-09-15T17:11:55.2456223Z   Downloaded windows_x86_64_msvc v0.53.1
+2026-09-15T17:11:55.2571063Z   Downloaded glutin_wgl_sys v0.5.0
+2026-09-15T17:11:55.2579884Z   Downloaded gpu-alloc-types v0.3.1
+2026-09-15T17:11:55.2589938Z   Downloaded gpu-alloc v0.6.2
+2026-09-15T17:11:55.2604813Z   Downloaded presser v0.3.1
+2026-09-15T17:11:55.2623712Z   Downloaded windows-core v0.52.0
+2026-09-15T17:11:55.2657309Z   Downloaded gpu-allocator v0.25.0
+2026-09-15T17:11:55.2683852Z   Downloaded com v0.6.0
+2026-09-15T17:11:55.2715605Z   Downloaded hassle-rs v0.11.0
+2026-09-15T17:11:55.2733050Z   Downloaded bit-vec v0.6.3
+2026-09-15T17:11:55.2745980Z   Downloaded bincode v2.0.1
+2026-09-15T17:11:55.2799438Z   Downloaded hashbrown v0.16.1
+2026-09-15T17:11:55.2851039Z   Downloaded time v0.3.54
+2026-09-15T17:11:55.2998667Z   Downloaded gpu-descriptor v0.3.2
+2026-09-15T17:11:55.3007310Z   Downloaded com_macros v0.6.0
+2026-09-15T17:11:55.3013891Z   Downloaded khronos-egl v6.0.0
+2026-09-15T17:11:55.3033555Z   Downloaded block v0.1.6
+2026-09-15T17:11:55.3040562Z   Downloaded bitflags v1.3.2
+2026-09-15T17:11:55.3074404Z   Downloaded core-graphics-types v0.1.3
+2026-09-15T17:11:55.3083976Z   Downloaded foreign-types-macros v0.2.4
+2026-09-15T17:11:55.3093876Z   Downloaded foreign-types-shared v0.3.1
+2026-09-15T17:11:55.3101702Z   Downloaded foreign-types v0.5.0
+2026-09-15T17:11:55.3111708Z   Downloaded objc v0.2.7
+2026-09-15T17:11:55.3134516Z   Downloaded regex v1.13.1
+2026-09-15T17:11:55.3188227Z   Downloaded criterion v0.8.2
+2026-09-15T17:11:55.3263826Z   Downloaded rayon-core v1.13.0
+2026-09-15T17:11:55.3302035Z   Downloaded glam v0.25.0
+2026-09-15T17:11:55.3478223Z   Downloaded windows_x86_64_gnullvm v0.53.1
+2026-09-15T17:11:55.3589058Z   Downloaded chrono v0.4.45
+2026-09-15T17:11:55.3655665Z   Downloaded com_macros_support v0.6.0
+2026-09-15T17:11:55.3675184Z   Downloaded bit-set v0.5.3
+2026-09-15T17:11:55.3686519Z   Downloaded codespan-reporting v0.11.1
+2026-09-15T17:11:55.3760882Z   Downloaded hexf-parse v0.2.1
+2026-09-15T17:11:55.3768240Z   Downloaded spirv v0.3.0+sdk-1.3.268.0
+2026-09-15T17:11:55.3779237Z   Downloaded jni-sys v0.3.1
+2026-09-15T17:11:55.3790737Z   Downloaded malloc_buf v0.0.6
+2026-09-15T17:11:55.3796215Z   Downloaded profiling v1.0.18
+2026-09-15T17:11:55.3808970Z   Downloaded raw-window-handle v0.6.2
+2026-09-15T17:11:55.3827754Z   Downloaded wgpu-types v0.20.0
+2026-09-15T17:11:55.3843747Z   Downloaded winnow v1.0.4
+2026-09-15T17:11:55.3942457Z   Downloaded glam v0.15.2
+2026-09-15T17:11:55.4031010Z   Downloaded glam v0.16.0
+2026-09-15T17:11:55.4116951Z   Downloaded glam v0.17.3
+2026-09-15T17:11:55.4203941Z   Downloaded glam v0.21.3
+2026-09-15T17:11:55.4341881Z   Downloaded glam v0.22.0
+2026-09-15T17:11:55.4482657Z   Downloaded glam v0.23.0
+2026-09-15T17:11:55.4622643Z   Downloaded glam v0.24.2
+2026-09-15T17:11:55.4780925Z   Downloaded nalgebra v0.34.2
+2026-09-15T17:11:55.5030562Z   Downloaded h2 v0.4.15
+2026-09-15T17:11:55.5097416Z   Downloaded hyper v1.11.0
+2026-09-15T17:11:55.5167076Z   Downloaded jni v0.22.4
+2026-09-15T17:11:55.5239713Z   Downloaded tower-http v0.6.11
+2026-09-15T17:11:55.5335602Z   Downloaded brotli-decompressor v5.0.3
+2026-09-15T17:11:55.5393163Z   Downloaded hyper v0.14.32
+2026-09-15T17:11:55.5469603Z   Downloaded range-alloc v0.1.5
+2026-09-15T17:11:55.5480695Z   Downloaded renderdoc-sys v1.1.0
+2026-09-15T17:11:55.5490298Z   Downloaded rustc-hash v1.1.0
+2026-09-15T17:11:55.5501200Z   Downloaded arrayvec v0.7.8
+2026-09-15T17:11:55.5523637Z   Downloaded constant_time_eq v0.4.2
+2026-09-15T17:11:55.5544652Z   Downloaded const-oid v0.9.6
+2026-09-15T17:11:55.5564004Z   Downloaded glam v0.14.0
+2026-09-15T17:11:55.5641965Z   Downloaded glam v0.18.0
+2026-09-15T17:11:55.5737617Z   Downloaded glam v0.19.0
+2026-09-15T17:11:55.5834656Z   Downloaded glam v0.20.5
+2026-09-15T17:11:55.5932472Z   Downloaded num-bigint v0.4.8
+2026-09-15T17:11:55.5980367Z   Downloaded wide v0.7.33
+2026-09-15T17:11:55.6028826Z   Downloaded wasip2 v1.0.4+wasi-0.2.12
+2026-09-15T17:11:55.6068814Z   Downloaded combine v4.6.7
+2026-09-15T17:11:55.6122988Z   Downloaded libm v0.2.16
+2026-09-15T17:11:55.6235081Z   Downloaded hashbrown v0.17.1
+2026-09-15T17:11:55.6287980Z   Downloaded h2 v0.3.27
+2026-09-15T17:11:55.6351176Z   Downloaded curve25519-dalek-derive v0.1.1
+2026-09-15T17:11:55.6362344Z   Downloaded base64ct v1.8.3
+2026-09-15T17:11:55.6389309Z   Downloaded spki v0.7.3
+2026-09-15T17:11:55.6407620Z   Downloaded pkcs8 v0.10.2
+2026-09-15T17:11:55.6436726Z   Downloaded globset v0.4.19
+2026-09-15T17:11:55.6451658Z   Downloaded half v2.7.1
+2026-09-15T17:11:55.6479131Z   Downloaded rand v0.9.5
+2026-09-15T17:11:55.6517772Z   Downloaded webpki-root-certs v1.0.9
+2026-09-15T17:11:55.6551258Z   Downloaded reqwest v0.13.4
+2026-09-15T17:11:55.6610203Z   Downloaded serde_json v1.0.151
+2026-09-15T17:11:55.6685845Z   Downloaded grapheme v1.3.0
+2026-09-15T17:11:55.6700291Z   Downloaded libloading v0.8.9
+2026-09-15T17:11:55.6724615Z   Downloaded colored v3.1.1
+2026-09-15T17:11:55.6753236Z   Downloaded virtue v0.0.18
+2026-09-15T17:11:55.6779458Z   Downloaded anes v0.1.6
+2026-09-15T17:11:55.6808533Z   Downloaded ciborium v0.2.2
+2026-09-15T17:11:55.6833384Z   Downloaded clap v4.6.4
+2026-09-15T17:11:55.6932727Z   Downloaded rand_xorshift v0.4.0
+2026-09-15T17:11:55.6944179Z   Downloaded unarray v0.1.4
+2026-09-15T17:11:55.6957599Z   Downloaded bincode_derive v2.0.1
+2026-09-15T17:11:55.6968116Z   Downloaded anstyle-parse v1.0.0
+2026-09-15T17:11:55.6987067Z   Downloaded criterion-plot v0.8.2
+2026-09-15T17:11:55.7006241Z   Downloaded anstyle-query v1.1.5
+2026-09-15T17:11:55.7018502Z   Downloaded utf8parse v0.2.2
+2026-09-15T17:11:55.7028978Z   Downloaded anstyle v1.0.14
+2026-09-15T17:11:55.7044108Z   Downloaded cast v0.3.0
+2026-09-15T17:11:55.7056301Z   Downloaded papergrid v0.17.0
+2026-09-15T17:11:55.7113677Z   Downloaded safe_arch v0.7.4
+2026-09-15T17:11:55.7160021Z   Downloaded minimal-lexical v0.2.1
+2026-09-15T17:11:55.7206876Z   Downloaded nom v7.1.3
+2026-09-15T17:11:55.7258790Z   Downloaded wit-bindgen v0.57.1
+2026-09-15T17:11:55.7295446Z   Downloaded indexmap v2.14.0
+2026-09-15T17:11:55.7339841Z   Downloaded libc v0.2.189
+2026-09-15T17:11:55.7785530Z   Downloaded tokio v1.53.1
+2026-09-15T17:11:55.8247755Z   Downloaded unty v0.0.4
+2026-09-15T17:11:55.8258492Z   Downloaded alloca v0.4.0
+2026-09-15T17:11:55.8271282Z   Downloaded ciborium-io v0.2.2
+2026-09-15T17:11:55.8279808Z   Downloaded ciborium-ll v0.2.2
+2026-09-15T17:11:55.8291276Z   Downloaded anstream v1.0.0
+2026-09-15T17:11:55.8311838Z   Downloaded clap_lex v1.1.0
+2026-09-15T17:11:55.8323676Z   Downloaded strsim v0.11.1
+2026-09-15T17:11:55.8337415Z   Downloaded oorandom v11.1.5
+2026-09-15T17:11:55.8347834Z   Downloaded tinytemplate v1.2.1
+2026-09-15T17:11:55.8365342Z   Downloaded crossbeam-epoch v0.9.20
+2026-09-15T17:11:55.8391644Z   Downloaded toml_parser v1.1.2+spec-1.1.0
+2026-09-15T17:11:55.8415098Z   Downloaded getrandom v0.3.4
+2026-09-15T17:11:55.8450314Z   Downloaded colorchoice v1.0.5
+2026-09-15T17:11:55.8460614Z   Downloaded is_terminal_polyfill v1.70.2
+2026-09-15T17:11:55.8470801Z   Downloaded async-compression v0.4.42
+2026-09-15T17:11:55.8543682Z   Downloaded base64 v0.21.7
+2026-09-15T17:11:55.8583082Z   Downloaded page_size v0.6.0
+2026-09-15T17:11:55.8593660Z   Downloaded testing_table v0.3.0
+2026-09-15T17:11:55.8603003Z   Downloaded kqueue v1.2.0
+2026-09-15T17:11:55.8628393Z   Downloaded cc v1.3.0
+2026-09-15T17:11:55.8658417Z   Downloaded either v1.16.0
+2026-09-15T17:11:55.8673811Z   Downloaded digest v0.11.3
+2026-09-15T17:11:55.8698219Z   Downloaded sha2 v0.11.0
+2026-09-15T17:11:55.8737176Z   Downloaded http v0.2.12
+2026-09-15T17:11:55.8772620Z   Downloaded seahash v4.1.0
+2026-09-15T17:11:55.8822177Z   Downloaded notify-types v2.1.0
+2026-09-15T17:11:55.8869584Z   Downloaded jni-macros v0.22.4
+2026-09-15T17:11:55.8899195Z   Downloaded flate2 v1.1.9
+2026-09-15T17:11:55.8949726Z   Downloaded rlibc v1.0.0
+2026-09-15T17:11:55.8958358Z   Downloaded block-buffer v0.12.1
+2026-09-15T17:11:55.8971135Z   Downloaded hybrid-array v0.4.14
+2026-09-15T17:11:55.8994335Z   Downloaded crypto-common v0.2.2
+2026-09-15T17:11:55.9006067Z   Downloaded bytecount v0.6.9
+2026-09-15T17:11:55.9027725Z   Downloaded glob v0.3.4
+2026-09-15T17:11:55.9045890Z   Downloaded target-triple v1.0.1
+2026-09-15T17:11:55.9058145Z   Downloaded termcolor v1.4.1
+2026-09-15T17:11:55.9070799Z   Downloaded toml_datetime v1.1.1+spec-1.1.0
+2026-09-15T17:11:55.9083791Z   Downloaded rand_core v0.9.5
+2026-09-15T17:11:55.9097756Z   Downloaded base64 v0.22.1
+2026-09-15T17:11:55.9137038Z   Downloaded rand v0.10.2
+2026-09-15T17:11:55.9174943Z   Downloaded quinn-proto v0.11.16
+2026-09-15T17:11:55.9242514Z   Downloaded simd_cesu8 v1.2.0
+2026-09-15T17:11:55.9287226Z   Downloaded socket2 v0.5.10
+2026-09-15T17:11:55.9305693Z   Downloaded tracing v0.1.44
+2026-09-15T17:11:55.9461324Z   Downloaded toml_writer v1.1.2+spec-1.1.0
+2026-09-15T17:11:55.9476061Z   Downloaded uuid v1.24.0
+2026-09-15T17:11:55.9506212Z   Downloaded fsevent-sys v4.1.0
+2026-09-15T17:11:55.9515259Z   Downloaded hyper-util v0.1.20
+2026-09-15T17:11:55.9578608Z   Downloaded schannel v0.1.29
+2026-09-15T17:11:55.9597538Z   Downloaded rustls-platform-verifier v0.7.0
+2026-09-15T17:11:55.9637754Z   Downloaded r-efi v6.0.0
+2026-09-15T17:11:55.9688740Z   Downloaded miniz_oxide v0.8.9
+2026-09-15T17:11:55.9713978Z   Downloaded headers v0.3.9
+2026-09-15T17:11:55.9774891Z   Downloaded trybuild v1.0.118
+2026-09-15T17:11:55.9825169Z   Downloaded kqueue-sys v1.1.2
+2026-09-15T17:11:55.9840297Z   Downloaded system-configuration-sys v0.6.0
+2026-09-15T17:11:55.9852600Z   Downloaded aws-lc-sys v0.43.0
+2026-09-15T17:11:56.2413357Z   Downloaded system-configuration v0.7.0
+2026-09-15T17:11:56.2427006Z   Downloaded num-traits v0.2.19
+2026-09-15T17:11:56.2453851Z   Downloaded bytemuck v1.25.2
+2026-09-15T17:11:56.2486579Z   Downloaded aws-lc-rs v1.17.3
+2026-09-15T17:11:56.2596108Z   Downloaded zerocopy v0.8.55
+2026-09-15T17:11:56.2826038Z   Downloaded syn v2.0.119
+2026-09-15T17:11:56.2934545Z   Downloaded syn v3.0.3
+2026-09-15T17:11:56.3041339Z   Downloaded num-rational v0.4.2
+2026-09-15T17:11:56.3054220Z   Downloaded simba v0.9.1
+2026-09-15T17:11:56.3084251Z   Downloaded cmake v0.1.58
+2026-09-15T17:11:56.3098617Z   Downloaded getrandom v0.4.3
+2026-09-15T17:11:56.3137125Z   Downloaded num-integer v0.1.46
+2026-09-15T17:11:56.3153874Z   Downloaded num-complex v0.4.6
+2026-09-15T17:11:56.3168798Z   Downloaded paste v1.0.15
+2026-09-15T17:11:56.3201330Z   Downloaded atomic-waker v1.1.2
+2026-09-15T17:11:56.3213775Z   Downloaded tokio-rustls v0.26.4
+2026-09-15T17:11:56.3235362Z   Downloaded inotify-sys v0.1.8
+2026-09-15T17:11:56.3247782Z   Downloaded inotify v0.11.4
+2026-09-15T17:11:56.3267621Z   Downloaded notify v8.2.0
+2026-09-15T17:11:56.3284775Z   Downloaded r-efi v5.3.0
+2026-09-15T17:11:56.3336104Z   Downloaded quinn v0.11.11
+2026-09-15T17:11:56.3368996Z   Downloaded thiserror v2.0.19
+2026-09-15T17:11:56.3435276Z   Downloaded filetime v0.2.29
+2026-09-15T17:11:56.3452870Z   Downloaded windows-core v0.62.2
+2026-09-15T17:11:56.3483281Z   Downloaded icu_properties_data v2.2.0
+2026-09-15T17:11:56.3592719Z   Downloaded rustls-native-certs v0.8.4
+2026-09-15T17:11:56.3606233Z   Downloaded core-foundation-sys v0.8.7
+2026-09-15T17:11:56.3638134Z   Downloaded iana-time-zone v0.1.65
+2026-09-15T17:11:56.3667487Z   Downloaded nt-time v0.8.1
+2026-09-15T17:11:56.3695927Z   Downloaded tempfile v3.27.0
+2026-09-15T17:11:56.3722458Z   Downloaded futures-util v0.3.33
+2026-09-15T17:11:56.3858074Z   Downloaded crc32fast v1.5.0
+2026-09-15T17:11:56.3877714Z   Downloaded http-body-util v0.1.4
+2026-09-15T17:11:56.3898212Z   Downloaded rustc_version v0.4.1
+2026-09-15T17:11:56.3911998Z   Downloaded time-macros v0.2.32
+2026-09-15T17:11:56.3937247Z   Downloaded futures-channel v0.3.33
+2026-09-15T17:11:56.3956520Z   Downloaded core-foundation v0.9.4
+2026-09-15T17:11:56.3978773Z   Downloaded chacha20 v0.10.1
+2026-09-15T17:11:56.4002846Z   Downloaded tinyvec v1.12.0
+2026-09-15T17:11:56.4030788Z   Downloaded security-framework v3.7.0
+2026-09-15T17:11:56.4074108Z   Downloaded zeroize v1.9.0
+2026-09-15T17:11:56.4090224Z   Downloaded tower v0.5.3
+2026-09-15T17:11:56.4195331Z   Downloaded jobserver v0.1.35
+2026-09-15T17:11:56.4214921Z   Downloaded deranged v0.5.8
+2026-09-15T17:11:56.4229524Z   Downloaded pin-project v1.1.13
+2026-09-15T17:11:56.4368057Z   Downloaded http v1.4.2
+2026-09-15T17:11:56.4405278Z   Downloaded memchr v2.8.3
+2026-09-15T17:11:56.4462107Z   Downloaded bumpalo v3.20.3
+2026-09-15T17:11:56.4488715Z   Downloaded typenum v1.20.1
+2026-09-15T17:11:56.4523785Z   Downloaded zerovec v0.11.6
+2026-09-15T17:11:56.4584252Z   Downloaded idna v1.1.0
+2026-09-15T17:11:56.4619997Z   Downloaded mio v1.2.2
+2026-09-15T17:11:56.4682268Z   Downloaded tokio-util v0.7.19
+2026-09-15T17:11:56.4763084Z   Downloaded windows-registry v0.6.1
+2026-09-15T17:11:56.4778422Z   Downloaded lzma-rust v0.1.7
+2026-09-15T17:11:56.4800383Z   Downloaded find-msvc-tools v0.1.9
+2026-09-15T17:11:56.4817057Z   Downloaded sha2 v0.10.9
+2026-09-15T17:11:56.4843635Z   Downloaded zerocopy-derive v0.8.55
+2026-09-15T17:11:56.4940424Z   Downloaded js-sys v0.3.103
+2026-09-15T17:11:56.4970427Z   Downloaded wasm-bindgen-macro-support v0.2.126
+2026-09-15T17:11:56.4990927Z   Downloaded icu_collections v2.2.0
+2026-09-15T17:11:56.5054193Z   Downloaded zerotrie v0.2.4
+2026-09-15T17:11:56.5094262Z   Downloaded cpufeatures v0.3.0
+2026-09-15T17:11:56.5109545Z   Downloaded rand_pcg v0.10.2
+2026-09-15T17:11:56.5124751Z   Downloaded tinyvec_macros v0.1.1
+2026-09-15T17:11:56.5135969Z   Downloaded semver v1.0.28
+2026-09-15T17:11:56.5160687Z   Downloaded rustls-webpki v0.103.13
+2026-09-15T17:11:56.5191865Z   Downloaded compression-core v0.4.32
+2026-09-15T17:11:56.5203013Z   Downloaded rand v0.8.7
+2026-09-15T17:11:56.5236995Z   Downloaded icu_locale_core v2.2.0
+2026-09-15T17:11:56.5308353Z   Downloaded url v2.5.8
+2026-09-15T17:11:56.5334434Z   Downloaded bytes v1.12.1
+2026-09-15T17:11:56.5370395Z   Downloaded warp v0.3.7
+2026-09-15T17:11:56.5452077Z   Downloaded serde v1.0.229
+2026-09-15T17:11:56.5487238Z   Downloaded walkdir v2.5.0
+2026-09-15T17:11:56.5506399Z   Downloaded openssl-probe v0.2.1
+2026-09-15T17:11:56.5518850Z   Downloaded crc-catalog v2.5.0
+2026-09-15T17:11:56.5533668Z   Downloaded shlex v2.0.1
+2026-09-15T17:11:56.5547308Z   Downloaded rand_core v0.10.1
+2026-09-15T17:11:56.5564005Z   Downloaded icu_normalizer_data v2.2.0
+2026-09-15T17:11:56.5585083Z   Downloaded icu_normalizer v2.2.0
+2026-09-15T17:11:56.5622500Z   Downloaded log v0.4.33
+2026-09-15T17:11:56.5647886Z   Downloaded wasm-bindgen v0.2.126
+2026-09-15T17:11:56.5675129Z   Downloaded tungstenite v0.21.0
+2026-09-15T17:11:56.5708373Z   Downloaded bitflags v2.13.1
+2026-09-15T17:11:56.5754497Z   Downloaded socket2 v0.6.5
+2026-09-15T17:11:56.5772942Z   Downloaded jni-sys-macros v0.4.1
+2026-09-15T17:11:56.5780575Z   Downloaded jni-sys v0.4.1
+2026-09-15T17:11:56.5791281Z   Downloaded core-foundation v0.10.1
+2026-09-15T17:11:56.5813986Z   Downloaded security-framework-sys v2.17.0
+2026-09-15T17:11:56.5836933Z   Downloaded rustls-pki-types v1.15.1
+2026-09-15T17:11:56.5863176Z   Downloaded wasm-bindgen-futures v0.4.76
+2026-09-15T17:11:56.5873271Z   Downloaded adler2 v2.0.1
+2026-09-15T17:11:56.5886522Z   Downloaded simd-adler32 v0.3.10
+2026-09-15T17:11:56.5906695Z   Downloaded rustversion v1.0.23
+2026-09-15T17:11:56.5935972Z   Downloaded allocator-api2 v0.2.21
+2026-09-15T17:11:56.5961981Z   Downloaded ryu v1.0.23
+2026-09-15T17:11:56.5995419Z   Downloaded parking_lot v0.12.5
+2026-09-15T17:11:56.6020927Z   Downloaded winapi-util v0.1.11
+2026-09-15T17:11:56.6036022Z   Downloaded fs_extra v1.3.0
+2026-09-15T17:11:56.6052924Z   Downloaded pkg-config v0.3.33
+2026-09-15T17:11:56.6069421Z   Downloaded web-time v1.1.0
+2026-09-15T17:11:56.6097968Z   Downloaded compression-codecs v0.4.38
+2026-09-15T17:11:56.6139515Z   Downloaded bit-set v0.6.0
+2026-09-15T17:11:56.6152428Z   Downloaded getrandom v0.2.17
+2026-09-15T17:11:56.6182971Z   Downloaded yoke v0.8.3
+2026-09-15T17:11:56.6201289Z   Downloaded smallvec v1.15.2
+2026-09-15T17:11:56.6217034Z   Downloaded parking_lot_core v0.9.12
+2026-09-15T17:11:56.6239096Z   Downloaded serde_core v1.0.229
+2026-09-15T17:11:56.6267123Z   Downloaded android_system_properties v0.1.5
+2026-09-15T17:11:56.6277168Z   Downloaded icu_provider v2.2.0
+2026-09-15T17:11:56.6309579Z   Downloaded proc-macro2 v1.0.107
+2026-09-15T17:11:56.6335238Z   Downloaded unicode-ident v1.0.24
+2026-09-15T17:11:56.6363678Z   Downloaded toml v0.5.11
+2026-09-15T17:11:56.6387905Z   Downloaded powerfmt v0.2.0
+2026-09-15T17:11:56.6399386Z   Downloaded tokio-tungstenite v0.21.0
+2026-09-15T17:11:56.6419918Z   Downloaded http-body v0.4.6
+2026-09-15T17:11:56.6437602Z   Downloaded want v0.3.1
+2026-09-15T17:11:56.6446802Z   Downloaded thiserror v1.0.69
+2026-09-15T17:11:56.6504371Z   Downloaded litemap v0.8.2
+2026-09-15T17:11:56.6529776Z   Downloaded pin-project-lite v0.2.17
+2026-09-15T17:11:56.6606258Z   Downloaded thiserror-impl v1.0.69
+2026-09-15T17:11:56.6619850Z   Downloaded writeable v0.6.3
+2026-09-15T17:11:56.6639647Z   Downloaded percent-encoding v2.3.2
+2026-09-15T17:11:56.6648817Z   Downloaded wasi v0.11.1+wasi-snapshot-preview1
+2026-09-15T17:11:56.6665434Z   Downloaded signal-hook-registry v1.4.8
+2026-09-15T17:11:56.6677651Z   Downloaded tokio-macros v2.7.1
+2026-09-15T17:11:56.6688437Z   Downloaded tracing-attributes v0.1.31
+2026-09-15T17:11:56.6715427Z   Downloaded tracing-core v0.1.36
+2026-09-15T17:11:56.6742814Z   Downloaded mime_guess v2.0.5
+2026-09-15T17:11:56.6759657Z   Downloaded multer v2.1.0
+2026-09-15T17:11:56.6783834Z   Downloaded pin-project-internal v1.1.13
+2026-09-15T17:11:56.6799371Z   Downloaded zmij v1.0.23
+2026-09-15T17:11:56.6817663Z   Downloaded displaydoc v0.2.6
+2026-09-15T17:11:56.6839039Z   Downloaded redox_syscall v0.5.18
+2026-09-15T17:11:56.6864506Z   Downloaded time-core v0.1.9
+2026-09-15T17:11:56.6875313Z   Downloaded lock_api v0.4.14
+2026-09-15T17:11:56.6888360Z   Downloaded once_cell v1.21.4
+2026-09-15T17:11:56.6913694Z   Downloaded subtle v2.6.1
+2026-09-15T17:11:56.6925542Z   Downloaded http-body v1.1.0
+2026-09-15T17:11:56.6936755Z   Downloaded sync_wrapper v1.0.2
+2026-09-15T17:11:56.6946705Z   Downloaded windows-result v0.4.1
+2026-09-15T17:11:56.6959687Z   Downloaded windows-targets v0.52.6
+2026-09-15T17:11:56.6969453Z   Downloaded ppv-lite86 v0.2.21
+2026-09-15T17:11:56.6982464Z   Downloaded slab v0.4.12
+2026-09-15T17:11:56.6995551Z   Downloaded rand_core v0.6.4
+2026-09-15T17:11:56.7009289Z   Downloaded version_check v0.9.5
+2026-09-15T17:11:56.7021914Z   Downloaded digest v0.10.7
+2026-09-15T17:11:56.7040251Z   Downloaded synstructure v0.13.2
+2026-09-15T17:11:56.7050364Z   Downloaded alloc-no-stdlib v2.0.4
+2026-09-15T17:11:56.7067885Z   Downloaded wasm-bindgen-macro v0.2.126
+2026-09-15T17:11:56.7077199Z   Downloaded sha1 v0.10.7
+2026-09-15T17:11:56.7092719Z   Downloaded yoke-derive v0.8.2
+2026-09-15T17:11:56.7104310Z   Downloaded errno v0.3.14
+2026-09-15T17:11:56.7120421Z   Downloaded cpufeatures v0.2.17
+2026-09-15T17:11:56.7134346Z   Downloaded stable_deref_trait v1.2.1
+2026-09-15T17:11:56.7143078Z   Downloaded futures-sink v0.3.33
+2026-09-15T17:11:56.7151978Z   Downloaded serde_urlencoded v0.7.1
+2026-09-15T17:11:56.7169071Z   Downloaded potential_utf v0.1.5
+2026-09-15T17:11:56.7179808Z   Downloaded tower-service v0.3.3
+2026-09-15T17:11:56.7187874Z   Downloaded form_urlencoded v1.2.2
+2026-09-15T17:11:56.7195972Z   Downloaded scopeguard v1.2.0
+2026-09-15T17:11:56.7230530Z   Downloaded windows v0.52.0
+2026-09-15T17:11:57.4937158Z error: cannot update the lock file /home/runner/work/mech/mech/tests/fixtures/native-build-owner-runner/Cargo.lock because --locked was passed to prevent this
+2026-09-15T17:11:57.4938924Z help: to generate the lock file without accessing the network, remove the --locked flag and use --offline instead.
+2026-09-15T17:11:57.4973735Z ##[error]Process completed with exit code 101.
+2026-09-15T17:11:57.5141982Z Post job cleanup.
+2026-09-15T17:11:57.6013783Z [command]/usr/bin/git version
+2026-09-15T17:11:57.6094833Z git version 2.55.0
+2026-09-15T17:11:57.6144975Z Temporarily overriding HOME='/home/runner/work/_temp/c0d3b3e1-d983-4879-84ca-8f9db748e0a1' before making global git config changes
+2026-09-15T17:11:57.6146812Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-15T17:11:57.6150175Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/mech/mech
+2026-09-15T17:11:57.6194498Z Removing SSH command configuration
+2026-09-15T17:11:57.6202350Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-15T17:11:57.6245075Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-15T17:11:57.6631653Z Removing HTTP extra header
+2026-09-15T17:11:57.6638334Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-15T17:11:57.6654387Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-15T17:11:57.6976478Z Removing includeIf entries pointing to credentials config files
+2026-09-15T17:11:57.6977601Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-15T17:11:57.7019150Z includeif.gitdir:/home/runner/work/mech/mech/.git.path
+2026-09-15T17:11:57.7021668Z includeif.gitdir:/home/runner/work/mech/mech/.git/worktrees/*.path
+2026-09-15T17:11:57.7024211Z includeif.gitdir:/github/workspace/.git.path
+2026-09-15T17:11:57.7028655Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-09-15T17:11:57.7030354Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/mech/mech/.git.path
+2026-09-15T17:11:57.7058780Z /home/runner/work/_temp/git-credentials-a068da6f-d1f5-45cd-8e46-f75d0589bf56.config
+2026-09-15T17:11:57.7079197Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/mech/mech/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-a068da6f\-d1f5\-45cd\-8e46\-f75d0589bf56\.config
+2026-09-15T17:11:57.7133414Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/mech/mech/.git/worktrees/*.path
+2026-09-15T17:11:57.7182481Z /home/runner/work/_temp/git-credentials-a068da6f-d1f5-45cd-8e46-f75d0589bf56.config
+2026-09-15T17:11:57.7198773Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/mech/mech/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-a068da6f\-d1f5\-45cd\-8e46\-f75d0589bf56\.config
+2026-09-15T17:11:57.7243652Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-09-15T17:11:57.7272046Z /github/runner_temp/git-credentials-a068da6f-d1f5-45cd-8e46-f75d0589bf56.config
+2026-09-15T17:11:57.7280721Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-a068da6f\-d1f5\-45cd\-8e46\-f75d0589bf56\.config
+2026-09-15T17:11:57.7319197Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-09-15T17:11:57.7346859Z /github/runner_temp/git-credentials-a068da6f-d1f5-45cd-8e46-f75d0589bf56.config
+2026-09-15T17:11:57.7357062Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-a068da6f\-d1f5\-45cd\-8e46\-f75d0589bf56\.config
+2026-09-15T17:11:57.7401135Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-15T17:11:57.7647008Z Removing credentials config '/home/runner/work/_temp/git-credentials-a068da6f-d1f5-45cd-8e46-f75d0589bf56.config'
+2026-09-15T17:11:57.7797576Z Cleaning up orphan processes

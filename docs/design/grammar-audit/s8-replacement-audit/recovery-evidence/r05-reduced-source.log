@@ -1,0 +1,6 @@
+    Checking num-rational v0.4.2
+    Checking nalgebra v0.34.2
+    Checking mech-core v0.3.5 (/private/tmp/mech-syntax-s8r05-updates/src/core)
+    Checking mech-syntax v0.3.5 (/private/tmp/mech-syntax-s8r05-updates/src/syntax)
+    Checking mech-engine v0.3.5 (/private/tmp/mech-syntax-s8r05-updates/src/engine)
+    Finished `dev` profile [unoptimized] target(s) in 12.20s

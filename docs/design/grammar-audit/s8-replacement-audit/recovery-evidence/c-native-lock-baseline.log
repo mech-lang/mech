@@ -1,0 +1,2 @@
+error: cannot update the lock file /private/tmp/mech-syntax-s8c-qualification/tests/fixtures/native-build-owner-runner/Cargo.lock because --locked was passed to prevent this
+help: to generate the lock file without accessing the network, remove the --locked flag and use --offline instead.

@@ -171,37 +171,55 @@ reports 14 catalog cases plus rooted checks, and actual Chrome CPU/WebGPU
 publication passes two turns for both backends. Runtime executes 713 passing /
 2 failing tests with the same G19 and G05 failures. All 47 CI contract tests pass.
 These focused results are not final full qualification. The single current PR CI
-run is 34999106483; obsolete run 34997626903 is canceled. The latest-head standard/
-full distribution rerun remains in progress (the refreshed contracts passed
-before the CI-only restack).
+run is 34999106483; obsolete run 34997626903 is canceled. The exact-head standard/full distribution rerun also passed; its output is
+retained in recovery-evidence/c-policy-final-distributions.log.
 The obsolete 109c55242 CI and earlier slice runs were archived before the
 reviewed rollout and cancellation requests; canceled work remains unqualified.
 
-**Current action:** R05/G04 is isolated on `codex/syntax-s8r05-selected-updates`
-in `/private/tmp/mech-syntax-s8r05-updates` at published WIP commit 06eb812b3. It is not incorporated into C or open
-as an additional PR. The new binder requires the core lossless implicit promotion
-plan, then uses the core explicit assignment conversion for each occurrence.
-The full canonical_document_state run now has 32 passing / 1 failing test;
-the failing nested-selection witness remains strict and committed. Two original strict witnesses reproduce 12 instead of 14.
-The promoted occurrence implementation uses core semantic conversion plans for
-each current destination value; its focused tests pass for the valid mixed
-integer promotions, multiplication/division/subtraction and fractional casts.
-A fixture initially pairing wide integers with f64 was corrected to valid
-integer promotions because the unchanged Number contract rejects that lossy
-common type; no established positive witness was changed.
+**Current action:** R05/G04 is published in #847 at `92fc1acb1`, based on
+R04 and not yet incorporated into C. Both original wrong-result witnesses now
+produce 14. Its 36 state regressions and 20 memory-runtime tests pass, including
+nested/mixed occurrence order, per-occurrence canonical conversion, rational
+power and failed-turn rollback. The reduced source build, both distribution
+contracts, architecture checks, formatting and 47 CI contracts pass. Its exact
+PR identity registers focused state/memory CI. Implementation review is pending.
 
-**Next action:** Collect the current distribution rerun in
-`/private/tmp/mech-syntax-qualification/c-policy-final-distributions.log` and
-inspect the CI review result. Then finish R05's nested occurrence address
-composition, heterogeneous numeric schemes, malformed/overflow/budget rollback
-and focused qualification before requesting review or incorporating it into C.
-Run the existing canonical_document_state suite with
-`cargo +nightly-2026-03-03 test --locked --offline -p mech-engine --no-default-features --features full_compiler,full_source,resident-artifact --test canonical_document_state`.
-The runtime and R05 test runs have completed. Use one Cargo owner at a time
-for `/private/tmp/mech-syntax-s8-extraction-target`; the distribution script uses
-the C worktree's separate target. C integration review was requested only after
-confirming no unresolved C threads. R01/R03/R04 review responses for the first
-restack were clean; final exact-candidate required review remains outstanding.
+C 90defdf9e CI has four actual failed jobs, with logs preserved in
+recovery-evidence/c-90def-failures. Their owners and executable witnesses are:
+- C/G23 fixture retirement: `cargo metadata --locked --offline --manifest-path
+  tests/fixtures/native-build-owner-runner/Cargo.toml --format-version 1` fails
+  because its lock still includes the deleted parser dependencies. Regeneration
+  removes 36 lines only; no dependency upgrades or capability changes.
+- CI coordinator: the C-only standalone fixture runs offline without fetching
+  its separate lock graph; clean CI lacks aho-corasick 1.1.5. E1 now stages an
+  explicit locked fetch before builds, with an ordering regression.
+- C/G22 presentation: warning policy rejects conditional allow in
+  canonical_presentation.rs. The owning presentation correction removes that
+  suppression while preserving feature builds.
+- C/G22 served browser product: actual particle probe exits at server startup.
+  Root is reproducing it and inspecting server output; the failing smoke remains
+  required and has not been replaced by a passing isolated compute probe.
+
+Eight current C review notes are owned in G22/C, grouped by shared cause:
+canonical source rendering must publish browser output mounts and documented shim
+slots; raw formatting/docs must not demand completed results; CLI declaration-only
+context source must not be mistaken for a slash-containing path; REPL must retain
+one terminator; browser bootstrap must use the current canonical document for
+source replacement and decoded initialization. Existing/new strict witnesses are
+being corrected in their shared rendering and canonical session authorities.
+Two workers own presentation and WASM/session fixes; root owns CLI/CI/fixture fixes,
+integration and qualification. R05 is under review. No additional corrective PR
+has been opened for these already-owned C corrections.
+
+**Next action:** Finish the current CLI classification build, run the actual
+particle product server probe, finish the two C review-owner corrections, then
+run their focused product/regression tests. Address and resolve every C thread
+before requesting its next review. Collect R05's independent and PR reviews;
+fix demonstrated notes before accepting it into C. Propagate the tested shared
+CI dependency-fetch correction once through the stack, integrate accepted R05,
+and publish the next combined C SHA with actual product results. G05/R07 control
+initializers remains the next dependency-ready semantic obligation after this
+batch. Existing G19/G05 runtime failures remain positive and open.
 
 **External blocker:** None for current accepted work. GitHub native-stack
 re-linking was explicitly approved and completed. Outstanding capability/semantic
