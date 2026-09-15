@@ -442,6 +442,40 @@
         ]
       ],
       "base": "codex/syntax-s8r04-dynamic-binding"
+    },
+    "849": {
+      "branch": "codex/syntax-s8r25-compute-read-planning",
+      "base": "codex/syntax-s8r05-selected-updates",
+      "checks": [
+        [
+          "cargo",
+          "+nightly-2026-03-03",
+          "test",
+          "--locked",
+          "--offline",
+          "-p",
+          "mech-runtime",
+          "--no-default-features",
+          "--features",
+          "full_compiler,full_source,resident-routing-source,compute",
+          "--test",
+          "canonical_mixed_resource_planning"
+        ],
+        [
+          "cargo",
+          "+nightly-2026-03-03",
+          "test",
+          "--locked",
+          "--offline",
+          "-p",
+          "mech-runtime",
+          "--no-default-features",
+          "--features",
+          "full_compiler,full_source,resident-routing-source,compute",
+          "--lib",
+          "mixed"
+        ]
+      ]
     }
   }
 }
