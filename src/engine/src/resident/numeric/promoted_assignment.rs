@@ -284,11 +284,14 @@ fn execute(
             .map_err(|_| ResidentKernelError::Arithmetic)?;
     }
     let next = finalize_snapshot_data_with_work_budget(kernel, ValueDataDraft::Matrix(next), None)?;
-    let changed = !current
-        .language_eq(schemas, &next, schemas)
-        .map_err(|_| ResidentKernelError::InvalidOutput)?;
-    match output {
-        ResidentValueMut::Snapshot([target]) => *target = Some(next),
+    let changed = match output {
+        ResidentValueMut::Snapshot([target]) => {
+            let changed = !current
+                .language_eq(schemas, &next, schemas)
+                .map_err(|_| ResidentKernelError::InvalidOutput)?;
+            *target = Some(next);
+            changed
+        }
         ResidentValueMut::F64(target) => {
             let ValueData::Matrix(matrix) = next.data() else {
                 return Err(ResidentKernelError::InvalidOutput);
@@ -299,13 +302,18 @@ fn execute(
             if values.len() != target.len() {
                 return Err(ResidentKernelError::InvalidShape);
             }
+            let mut changed = false;
             for row in 0..plan.rows {
                 for column in 0..plan.columns {
-                    target[column * plan.rows + row] = values[row * plan.columns + column].to_f64();
+                    let destination = &mut target[column * plan.rows + row];
+                    let value = values[row * plan.columns + column].to_f64();
+                    changed |= destination.to_bits() != value.to_bits();
+                    *destination = value;
                 }
             }
+            changed
         }
         _ => return Err(ResidentKernelError::InvalidOutput),
-    }
+    };
     Ok(changed)
 }
