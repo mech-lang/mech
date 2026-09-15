@@ -1,5 +1,5 @@
 S8B — Execution interfaces and the deleted-code rehearsal
-===============================================================================
+========================================================================
 
 Status: execution preparation and review correction; product qualification remains open.
 Parent: S8A b573284cb4587d4fb0085cc69a80a036830f1b76.
@@ -276,3 +276,22 @@ Do not silently mark an uncovered row unsupported. An unsupported disposition
 must already belong to the maintained contract, or be an explicit scope decision.
 Any new failure found by this sweep is recorded under its existing gate; the seal
 requires zero unresolved required rows, not an arbitrary number of review rounds.
+
+Configured served source graphs
+-------------------------------
+
+The public C qualification candidate now uses `configured_browser_compiler_builder`
+for ordinary served roots, with the same host projection and runtime configuration
+that the server injects into the browser. Source and dependency edges come from
+one retained workspace snapshot. Browser transport documents have stable bundle
+URIs and retain the workspace revision; compilation never reconstructs an import
+graph from newer file contents. Configured run paths select executable roots
+independently of rendered dependencies and prose.
+
+`configured_served_root_uses_snapshot_dependencies_and_planning_hosts` covers a
+configured timer read, retained relative imports, dependency hashes, prose-only
+rendering, old-snapshot stability after a disk edit, and old-artifact rejection
+following dependency refresh. The full native server regression suite passes
+90 tests in the cutover candidate. This qualifies the ordinary server connection;
+full served mixed EKF/particles and the canonical browser document transport
+remain open acceptance work.

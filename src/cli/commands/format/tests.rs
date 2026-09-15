@@ -226,7 +226,9 @@ fn raw_format_preserves_include_directives_without_expanding() {
     let formatted = match source {
         MechSourceCode::String(text) => {
             let document = canonical_document(&text).unwrap();
-            CanonicalDocumentRenderer.format_text(&document.document()).unwrap()
+            CanonicalDocumentRenderer
+                .format_text(&document.document())
+                .unwrap()
         }
         other => panic!("expected string source, got {other:?}"),
     };
