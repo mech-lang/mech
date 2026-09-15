@@ -1230,6 +1230,116 @@ fn canonical_mixed_document_owns_partitioning_and_typed_initializers() {
 
 #[cfg(feature = "compute")]
 #[test]
+fn canonical_rooted_mixed_compilation_shares_transitive_imports_and_initializers() {
+    let root = r#"+> ./dep.mec
+@compute := compute://worker/kernel{:write(input/x), :write(turn)}
+@compute/input/x <- dep/value * 2f32
+@compute/turn <- 1
+
+calculation @compute
+-------------------
+x := dep/value
+result := x + dep/value
+result
+"#;
+    let dependency = "+> ./leaf.mec\nvalue := leaf/value + 1f32\n<+ value\n";
+    let leaf = "value := 2f32\n<+ value\n";
+    let mut resolver = InMemorySourceResolver::new();
+    resolver.insert_canonical_string("main.mec", root).unwrap();
+    resolver
+        .insert_canonical_string("dep.mec", dependency)
+        .unwrap();
+    resolver.insert_canonical_string("leaf.mec", leaf).unwrap();
+    resolver
+        .insert_canonical_string("broken.mec", "+> ./broken.mec\nvalue := 1f32\n<+ value\n")
+        .unwrap();
+    let resolved = crate::SourceResolver::resolve(&resolver, &SourceRequest::new("main.mec"))
+        .unwrap()
+        .unwrap();
+    let catalog = mech_stdlib::source_native_plan_catalog();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(catalog.clone())
+        .source_resolver(resolver)
+        .build_compiler()
+        .unwrap();
+    let options = ModuleBuildOptions::new("test", "v0.4", "native", &["compute"], &[]);
+    let products = [
+        compiler
+            .compile_canonical_mixed_root(SourceRequest::new("main.mec"), options)
+            .unwrap(),
+        compiler
+            .compile_canonical_mixed_resolved_root(resolved, options)
+            .unwrap(),
+    ];
+    assert_eq!(
+        products[0].coordinator.artifact().revision(),
+        products[1].coordinator.artifact().revision()
+    );
+    assert_eq!(
+        products[0].compute.artifact.revision(),
+        products[1].compute.artifact.revision()
+    );
+    for mixed in products {
+        assert_eq!(
+            mixed.source_dependencies,
+            BTreeMap::from([
+                ("memory:dep.mec".into(), mech_core::hash_str(dependency)),
+                ("memory:leaf.mec".into(), mech_core::hash_str(leaf)),
+            ])
+        );
+        assert_eq!(mixed.compute.interface.inputs.len(), 1);
+        let port = &mixed.compute.interface.inputs[0];
+        assert_eq!(port.name.as_ref(), "x");
+        assert_eq!(
+            mixed.compute.initializers.get(port.id),
+            Some(&mech_compute::ComputeValue::ScalarF32(3.0))
+        );
+        assert_eq!(
+            mixed.activation_inputs["x"],
+            mech_compute::ComputeValue::ScalarF32(6.0)
+        );
+        let mut live = mech_engine::resident::activate(
+            mech_core::ReactiveInstanceId::new(828, 0),
+            &mixed.compute.artifact,
+            &catalog,
+            &mech_engine::resident::ActivationFacts::default(),
+        )
+        .unwrap();
+        let input = live.plan.inputs[0].clone();
+        for (value, expected) in [(6.0, 9.0), (10.0, 13.0)] {
+            let value = RuntimeHostInputValue::F32(value)
+                .into_value()
+                .unwrap()
+                .rebind(input.schema, &input.shape, mixed.compute.artifact.schemas())
+                .unwrap();
+            let prepared = live
+                .prepare_turn_values(&[mech_engine::__resident::CapturedValueInput {
+                    slot: input.slot,
+                    value: &value,
+                }])
+                .unwrap();
+            assert!(
+                matches!(prepared.copied_output(0).unwrap().data(), ValueData::F32(value) if value.to_f32() == expected)
+            );
+            prepared.publish().unwrap();
+        }
+    }
+    let error = compiler
+        .compile_canonical_mixed_root(SourceRequest::new("broken.mec"), options)
+        .unwrap_err();
+    assert!(
+        error.kind_message().contains("dependency cycle"),
+        "{error:?}"
+    );
+    assert!(
+        compiler
+            .compile_canonical_mixed_root(SourceRequest::new("main.mec"), options)
+            .is_ok()
+    );
+}
+
+#[cfg(feature = "compute")]
+#[test]
 fn canonical_mixed_document_retains_batched_activation_values() {
     let source = r#"
 @compute := compute://worker/kernel{:write(input/x), :write(turn)}

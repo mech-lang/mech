@@ -161,6 +161,7 @@ pub(super) fn compile_mixed_document_with_catalog_and_resources(
     resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
     external_inputs: &BTreeSet<String>,
     retained_outputs: &BTreeSet<String>,
+    resolved_source_modules: &BTreeSet<String>,
 ) -> Result<CanonicalMixedSourcePrograms, SourceSemanticError> {
     let anchor = SourceSemanticAnchor::for_node(document.syntax());
     let sections = document
@@ -221,7 +222,7 @@ pub(super) fn compile_mixed_document_with_catalog_and_resources(
         resource_writes.clone(),
         &BTreeSet::new(),
         &BTreeSet::new(),
-        &BTreeSet::new(),
+        resolved_source_modules,
     )?;
 
     let region = &sections[region_index];
@@ -243,7 +244,7 @@ pub(super) fn compile_mixed_document_with_catalog_and_resources(
         BTreeMap::new(),
         external_inputs,
         retained_outputs,
-        &BTreeSet::new(),
+        resolved_source_modules,
     )?
     .with_compute_region(region_name.clone(), placement)?;
 
@@ -265,7 +266,7 @@ pub(super) fn compile_mixed_document_with_catalog_and_resources(
         BTreeMap::new(),
         &BTreeSet::new(),
         external_inputs,
-        &BTreeSet::new(),
+        resolved_source_modules,
     )?
     .retain_static_outputs(external_inputs)?;
 

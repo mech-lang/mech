@@ -127,6 +127,8 @@ pub struct MixedProgramCompilation {
     /// capability. These form the demand-retention contract across compatible
     /// compute-host generations; undeclared outputs remain GPU-resident.
     pub retained_outputs: BTreeSet<String>,
+    /// Exact transitive retained revisions shared by both compiled products.
+    pub source_dependencies: BTreeMap<String, u64>,
 }
 
 #[cfg(feature = "compute")]
@@ -490,6 +492,30 @@ impl ProgramCompiler {
     #[cfg(feature = "compute")]
     pub fn compile_mixed_tree(&mut self, tree: &Program) -> MResult<MixedProgramCompilation> {
         self.view().compile_mixed_tree(tree)
+    }
+
+    /// Compile both mixed products from one retained resolved graph.
+    #[cfg(feature = "compute")]
+    pub fn compile_canonical_mixed_root(
+        &mut self,
+        request: SourceRequest,
+        options: ModuleBuildOptions<'_>,
+    ) -> MResult<MixedProgramCompilation> {
+        request.validate()?;
+        let resolved = self.source_resolver.resolve(&request)?.ok_or_else(|| {
+            canonical_compilation_error(format!("missing canonical root {}", request.specifier))
+        })?;
+        self.compile_canonical_mixed_resolved_root(resolved, options)
+    }
+
+    #[cfg(feature = "compute")]
+    pub fn compile_canonical_mixed_resolved_root(
+        &mut self,
+        resolved: ResolvedSource,
+        options: ModuleBuildOptions<'_>,
+    ) -> MResult<MixedProgramCompilation> {
+        self.view()
+            .compile_canonical_mixed_resolved_root(resolved, options)
     }
 
     /// Resolves a rooted application once, then compiles both mixed-program
@@ -905,10 +931,7 @@ impl<'a> ProgramCompilerView<'a> {
         planning_dependency: bool,
         interactive: bool,
     ) -> MResult<mech_engine::CanonicalSourceProgram> {
-        use crate::resolver::{
-            CanonicalDocumentCompilation, CanonicalResolvedImport, SourceScope,
-            canonical_import_values,
-        };
+        use crate::resolver::{CanonicalDocumentCompilation, SourceScope, canonical_import_values};
         let uri = &resolved.canonical_uri;
         let document = resolved.source_document().ok_or_else(|| {
             canonical_compilation_error("canonical root has no retained document")
@@ -922,87 +945,7 @@ impl<'a> ProgramCompilerView<'a> {
         let index = document
             .index()
             .map_err(|error| MechError::new(error, None))?;
-        let mut imports = Vec::new();
-        for declaration in index.root.program_imports() {
-            if !import_may_resolve_source_dependency(&declaration) {
-                continue;
-            }
-            let request = source_request_for_import(&declaration, Some(uri));
-            let Some(dependency) = self.source_resolver.resolve(&request)? else {
-                if import_requires_source_dependency(&declaration) {
-                    return Err(canonical_compilation_error(format!(
-                        "missing canonical dependency {} from {uri}",
-                        request.specifier
-                    )));
-                }
-                continue;
-            };
-            let dependency = dependency.admit_canonical_document()?;
-            let dependency_document = dependency.source_document().ok_or_else(|| {
-                canonical_compilation_error("canonical dependency has no retained document")
-            })?;
-            let source_hash =
-                mech_core::hash_str(&dependency_document.source().to_contiguous_string());
-            if context
-                .source_dependencies
-                .insert(dependency.canonical_uri.clone(), source_hash)
-                .is_some_and(|previous| previous != source_hash)
-            {
-                return Err(canonical_compilation_error(format!(
-                    "canonical dependency {} changed during compilation",
-                    dependency.canonical_uri
-                )));
-            }
-            if !context.exports.contains_key(&dependency.canonical_uri) {
-                let program =
-                    self.compile_canonical_graph_document(&dependency, context, true, false)?;
-                let artifact = program.compile_artifact_with_external_contracts(
-                    &ResidentExternalContractResolver::new(self.resources),
-                )?;
-                let mut instance = activate_external(
-                    ReactiveInstanceId::new(0x4344_4550, 0),
-                    &artifact,
-                    &self.function_catalog,
-                    &ActivationFacts::default(),
-                    ResidentIntegrityMode::Checked,
-                )
-                .map_err(|error| {
-                    canonical_compilation_error(format!(
-                        "canonical dependency activation failed: {error:?}"
-                    ))
-                })?;
-                let prepared = instance.prepare_turn(&[]).map_err(|error| {
-                    canonical_compilation_error(format!(
-                        "canonical dependency execution failed: {error:?}"
-                    ))
-                })?;
-                let values = program
-                    .document_exports()
-                    .iter()
-                    .map(|export| {
-                        let value = crate::RuntimeValueSnapshot::from_value(
-                            prepared
-                                .copied_output(export.output as usize)
-                                .map_err(|error| {
-                                    canonical_compilation_error(format!(
-                                        "canonical dependency export failed: {error:?}"
-                                    ))
-                                })?,
-                        )?;
-                        Ok((export.name.clone(), value))
-                    })
-                    .collect::<MResult<BTreeMap<_, _>>>()?;
-                prepared.abort();
-                context
-                    .exports
-                    .insert(dependency.canonical_uri.clone(), values);
-            }
-            imports.push(CanonicalResolvedImport {
-                declaration,
-                exports: context.exports[&dependency.canonical_uri].clone(),
-                canonical_uri: dependency.canonical_uri,
-            });
-        }
+        let imports = self.canonical_graph_imports(&index.root, uri, context)?;
         let imported = canonical_import_values(&index.root, &SourceScope::Program, &imports)
             .map_err(|error| canonical_compilation_error(error.to_string()))?;
         let (mut schemas, reads, writes, planned_reads) =
@@ -1084,6 +1027,18 @@ impl<'a> ProgramCompilerView<'a> {
                 }
             }
         }
+        self.canonical_graph_module_identity(resolved, &imports, context)?;
+        context.active.pop();
+        Ok(program)
+    }
+
+    fn canonical_graph_module_identity(
+        &self,
+        resolved: &ResolvedSource,
+        imports: &[crate::resolver::CanonicalResolvedImport],
+        context: &mut CanonicalGraphCompilation<'_>,
+    ) -> MResult<()> {
+        let uri = &resolved.canonical_uri;
         if let Some(options) = context.options {
             let mut resolved = resolved.clone();
             resolved.capability_requirements.extend(
@@ -1126,8 +1081,98 @@ impl<'a> ProgramCompilerView<'a> {
                 .module_versions
                 .insert(uri.clone(), record.module_version);
         }
-        context.active.pop();
-        Ok(program)
+        Ok(())
+    }
+
+    fn canonical_graph_imports(
+        &self,
+        index: &SourceIndex,
+        uri: &str,
+        context: &mut CanonicalGraphCompilation<'_>,
+    ) -> MResult<Vec<crate::resolver::CanonicalResolvedImport>> {
+        use crate::resolver::CanonicalResolvedImport;
+        let mut imports = Vec::new();
+        for declaration in index.program_imports() {
+            if !import_may_resolve_source_dependency(&declaration) {
+                continue;
+            }
+            let request = source_request_for_import(&declaration, Some(uri));
+            let Some(dependency) = self.source_resolver.resolve(&request)? else {
+                if import_requires_source_dependency(&declaration) {
+                    return Err(canonical_compilation_error(format!(
+                        "missing canonical dependency {} from {uri}",
+                        request.specifier
+                    )));
+                }
+                continue;
+            };
+            let dependency = dependency.admit_canonical_document()?;
+            let dependency_document = dependency.source_document().ok_or_else(|| {
+                canonical_compilation_error("canonical dependency has no retained document")
+            })?;
+            let source_hash =
+                mech_core::hash_str(&dependency_document.source().to_contiguous_string());
+            if context
+                .source_dependencies
+                .insert(dependency.canonical_uri.clone(), source_hash)
+                .is_some_and(|previous| previous != source_hash)
+            {
+                return Err(canonical_compilation_error(format!(
+                    "canonical dependency {} changed during compilation",
+                    dependency.canonical_uri
+                )));
+            }
+            if !context.exports.contains_key(&dependency.canonical_uri) {
+                let program =
+                    self.compile_canonical_graph_document(&dependency, context, true, false)?;
+                let artifact = program.compile_artifact_with_external_contracts(
+                    &ResidentExternalContractResolver::new(self.resources),
+                )?;
+                let mut instance = activate_external(
+                    ReactiveInstanceId::new(0x4344_4550, 0),
+                    &artifact,
+                    &self.function_catalog,
+                    &ActivationFacts::default(),
+                    ResidentIntegrityMode::Checked,
+                )
+                .map_err(|error| {
+                    canonical_compilation_error(format!(
+                        "canonical dependency activation failed: {error:?}"
+                    ))
+                })?;
+                let prepared = instance.prepare_turn(&[]).map_err(|error| {
+                    canonical_compilation_error(format!(
+                        "canonical dependency execution failed: {error:?}"
+                    ))
+                })?;
+                let values = program
+                    .document_exports()
+                    .iter()
+                    .map(|export| {
+                        let value = crate::RuntimeValueSnapshot::from_value(
+                            prepared
+                                .copied_output(export.output as usize)
+                                .map_err(|error| {
+                                    canonical_compilation_error(format!(
+                                        "canonical dependency export failed: {error:?}"
+                                    ))
+                                })?,
+                        )?;
+                        Ok((export.name.clone(), value))
+                    })
+                    .collect::<MResult<BTreeMap<_, _>>>()?;
+                prepared.abort();
+                context
+                    .exports
+                    .insert(dependency.canonical_uri.clone(), values);
+            }
+            imports.push(CanonicalResolvedImport {
+                declaration,
+                exports: context.exports[&dependency.canonical_uri].clone(),
+                canonical_uri: dependency.canonical_uri,
+            });
+        }
+        Ok(imports)
     }
 
     fn canonical_document_resources(
@@ -1447,27 +1492,102 @@ impl<'a> ProgramCompilerView<'a> {
     }
 
     #[cfg(feature = "compute")]
+    fn compile_canonical_mixed_resolved_root(
+        &self,
+        resolved: ResolvedSource,
+        options: ModuleBuildOptions<'_>,
+    ) -> MResult<MixedProgramCompilation> {
+        let resolved = resolved.admit_canonical_document()?;
+        let document = resolved
+            .source_document()
+            .ok_or_else(|| canonical_compilation_error("mixed root has no retained document"))?;
+        let index = document
+            .index()
+            .map_err(|error| MechError::new(error, None))?;
+        let mut context = CanonicalGraphCompilation::new(Some(options));
+        context.active.push(resolved.canonical_uri.clone());
+        let imports =
+            self.canonical_graph_imports(&index.root, &resolved.canonical_uri, &mut context)?;
+        self.canonical_graph_module_identity(&resolved, &imports, &mut context)?;
+        let mut mixed = self.compile_mixed_document_with_imports(document, &imports)?;
+        mixed.source_dependencies = context.source_dependencies;
+        Ok(mixed)
+    }
+
+    #[cfg(feature = "compute")]
     fn compile_mixed_document(
         &self,
         document: &SourceDocument,
+    ) -> MResult<MixedProgramCompilation> {
+        self.compile_mixed_document_with_imports(document, &[])
+    }
+
+    #[cfg(feature = "compute")]
+    fn compile_mixed_document_with_imports(
+        &self,
+        document: &SourceDocument,
+        imports: &[crate::resolver::CanonicalResolvedImport],
     ) -> MResult<MixedProgramCompilation> {
         let index = document
             .index()
             .map_err(|error| MechError::new(error, None))?;
         let external_input_names = canonical_declared_compute_inputs(&index.root)?;
         let retained_outputs = canonical_declared_compute_outputs(&index.root)?;
-        let (input_schemas, resource_reads, resource_writes, planned_reads) =
+        let (mut input_schemas, resource_reads, resource_writes, planned_reads) =
             self.canonical_document_resources(&index.root, &document.document())?;
-        let programs = CanonicalSourceFrontend
-            .compile_mixed_document_with_catalog_and_resources(
+        let imported = crate::resolver::canonical_import_values(
+            &index.root,
+            &crate::resolver::SourceScope::Program,
+            imports,
+        )
+        .map_err(|error| canonical_compilation_error(error.to_string()))?;
+        for (name, value) in &imported {
+            input_schemas.insert(
+                name.clone(),
+                ValueCell::from_snapshot(value.to_value())?.closed_schema_body()?,
+            );
+        }
+        let modules = imports
+            .iter()
+            .filter_map(|import| {
+                import
+                    .declaration
+                    .module
+                    .clone()
+                    .or_else(|| module_namespace_for_import(&import.declaration))
+            })
+            .collect();
+        let mut programs = CanonicalSourceFrontend
+            .compile_mixed_document_with_planning_contract(
                 &document.document(),
                 Arc::clone(&self.function_catalog),
                 input_schemas,
                 resource_writes,
                 &external_input_names,
                 &retained_outputs,
+                &modules,
             )
             .map_err(|error| canonical_compilation_error(error.to_string()))?;
+
+        let bind_imports = |program: CanonicalSourceProgram| -> MResult<CanonicalSourceProgram> {
+            let values = program
+                .program()
+                .inputs
+                .iter()
+                .enumerate()
+                .filter_map(|(ordinal, input)| {
+                    imported
+                        .get(&input.name)
+                        .map(|value| (ordinal as u32, value.to_value()))
+                })
+                .collect::<Vec<_>>();
+            program
+                .bind_input_constants(&values)
+                .map_err(|error| canonical_compilation_error(error.to_string()))
+        };
+        programs.coordinator = bind_imports(programs.coordinator)?;
+        programs.compute = bind_imports(programs.compute)?;
+        programs.compute_initializers = bind_imports(programs.compute_initializers)?;
 
         let initial_inputs = if external_input_names.is_empty() {
             BTreeMap::new()
@@ -1535,6 +1655,7 @@ impl<'a> ProgramCompilerView<'a> {
             compute,
             activation_inputs,
             retained_outputs,
+            source_dependencies: BTreeMap::new(),
         })
     }
 
@@ -1562,6 +1683,7 @@ impl<'a> ProgramCompilerView<'a> {
             compute,
             activation_inputs,
             retained_outputs,
+            source_dependencies: BTreeMap::new(),
         })
     }
 
@@ -1601,6 +1723,7 @@ impl<'a> ProgramCompilerView<'a> {
             compute,
             activation_inputs,
             retained_outputs,
+            source_dependencies: BTreeMap::new(),
         })
     }
 

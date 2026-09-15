@@ -175,5 +175,23 @@ The canonical runtime regression set passes 57 tests. The option-taking variants
 use the existing ModuleBuilder for target, edition, feature, capability and
 transitive module identities in the same resolution pass. No module records are
 persisted into a runtime store. The reduced full_source/resident-routing-source
-profile also compiles. Ordered multi-root compilation and rooted mixed compilation
-remain open; these prepared entry points do not replace those responsibilities.
+profile also compiles. Ordered multi-root compilation remains open; these prepared entry points do not
+replace that responsibility.
+
+
+Rooted mixed compilation
+------------------------
+
+`compile_canonical_mixed_root` and `compile_canonical_mixed_resolved_root` now use
+the same dependency-resolution session and ModuleBuilder identity authority as
+ordinary roots. Resolved namespaces and detached exports enter the existing
+coordinator, compute and initialization projections. Both products retain the
+same transitive source hashes. No declaration tree or reconstructed source is
+used by these interfaces.
+
+`canonical_rooted_mixed_compilation_shares_transitive_imports_and_initializers`
+covers a two-edge import chain consumed by both coordinator and compute. It
+checks the scalar default (3), captured activation input (6), and two completed
+compute turns (9 and 13), plus cycle rejection and compiler reuse afterward.
+The canonical runtime regression set passes 58 tests. Full served mixed browser
+adoption and the final C product matrix remain separate open acceptance work.

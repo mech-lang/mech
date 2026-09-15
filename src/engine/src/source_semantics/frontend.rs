@@ -1074,6 +1074,28 @@ impl CanonicalSourceFrontend {
         external_inputs: &BTreeSet<String>,
         retained_outputs: &BTreeSet<String>,
     ) -> Result<CanonicalMixedSourcePrograms, SourceSemanticError> {
+        self.compile_mixed_document_with_planning_contract(
+            document,
+            catalog,
+            input_schemas,
+            resource_writes,
+            external_inputs,
+            retained_outputs,
+            &BTreeSet::new(),
+        )
+    }
+
+    /// Share resolved source namespaces across coordinator and compute projections.
+    pub fn compile_mixed_document_with_planning_contract(
+        &self,
+        document: &DocumentSyntax,
+        catalog: Arc<mech_core::FunctionCatalog>,
+        input_schemas: BTreeMap<String, SchemaBody>,
+        resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+        external_inputs: &BTreeSet<String>,
+        retained_outputs: &BTreeSet<String>,
+        resolved_source_modules: &BTreeSet<String>,
+    ) -> Result<CanonicalMixedSourcePrograms, SourceSemanticError> {
         reject_recovered_syntax(document)?;
         document_lowering::compile_mixed_document_with_catalog_and_resources(
             document,
@@ -1082,6 +1104,7 @@ impl CanonicalSourceFrontend {
             resource_writes,
             external_inputs,
             retained_outputs,
+            resolved_source_modules,
         )
     }
 
