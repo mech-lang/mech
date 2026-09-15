@@ -107,7 +107,7 @@ mod tests {
         let document = mech_runtime::SourceDocument::parse_resolved(
             "bundle:///title.mec",
             mech_syntax::document::Revision(0),
-            std::sync::Arc::<str>::from("A & B\n==============================================================================\n\nx := 1\n"),
+            std::sync::Arc::<str>::from("A & B\n==============================================================================\nauthor: Ada\nsection: Examples\n==============================================================================\nx := 1\n"),
             mech_syntax::document::ParseConfig::default(),
         ).unwrap();
         assert!(document.is_strictly_clean());
@@ -121,6 +121,8 @@ mod tests {
             assert_eq!(html.matches("<article").count(), 1, "{html}");
             assert!(html.contains("A &amp; B"), "{html}");
             assert!(!html.contains("mech-document-header"), "{html}");
+            assert!(html.contains("<dt>author</dt><dd>Ada</dd>"), "{html}");
+            assert!(html.contains("<dt>section</dt><dd>Examples</dd>"), "{html}");
         }
     }
 }

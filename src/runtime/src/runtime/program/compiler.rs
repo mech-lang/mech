@@ -907,7 +907,10 @@ impl<'a> ProgramCompilerView<'a> {
                 writes,
                 &BTreeSet::new(),
                 &BTreeSet::new(),
-                &imports.iter().filter_map(|import| import.declaration.module.clone()).collect(),
+                &imports.iter().filter_map(|import| {
+                    import.declaration.module.clone()
+                        .or_else(|| module_namespace_for_import(&import.declaration))
+                }).collect(),
             )
             .map_err(|error| canonical_compilation_error(error.to_string()))?;
         let compilation = CanonicalDocumentCompilation {

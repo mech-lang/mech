@@ -252,8 +252,12 @@ impl CanonicalDocumentRenderer {
         if document_frame {
             output.push_str("<article class='mech-document'>");
         }
-        if document_frame && let Some(title) = document.title() {
-            render_title_html(&title, document.scope_id(), &lookup, &mut output)?;
+        if let Some(title) = document.title() {
+            if document_frame {
+                render_title_html(&title, document.scope_id(), &lookup, &mut output)?;
+            } else {
+                render_title_front_matter_html(&title, document.scope_id(), &lookup, &mut output)?;
+            }
         }
         if let Some(body) = document.body() {
             for section in body.sections() {
@@ -632,6 +636,17 @@ fn render_title_html(
     output.push_str("<header class='mech-document-header'><h1 class='mech-document-title'>");
     output.push_str(&escape_html(title_text.trim()));
     output.push_str("</h1>");
+    render_title_front_matter_html(title, owner, lookup, output)?;
+    output.push_str("</header>");
+    Ok(())
+}
+
+fn render_title_front_matter_html(
+    title: &TitleSyntax,
+    owner: DocumentScopeId,
+    lookup: &ResultLookup<'_>,
+    output: &mut String,
+) -> Result<(), CanonicalDocumentRenderError> {
     if let Some(front_matter) = title.front_matter() {
         output.push_str("<dl class='mech-title-front-matter'>");
         let mut pending_key = None::<String>;
@@ -661,7 +676,6 @@ fn render_title_html(
         }
         output.push_str("</dl>");
     }
-    output.push_str("</header>");
     Ok(())
 }
 

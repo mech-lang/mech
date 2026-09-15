@@ -1003,6 +1003,8 @@ export default async function init() {}
         for source in [
             "+> math\nanswer := math/cos(0.0)\n",
             "+> math/cos\nanswer := cos(0.0)\n",
+            "+> ./math.mec\nanswer := math/cos(0.0)\n",
+            "+> ./math\nanswer := math/cos(0.0)\n",
         ] {
             let root = temp_root("source-module-no-catalog-fallback");
             let loaded = write_demo_project(&root);
