@@ -820,3 +820,33 @@ combined product evidence, preserving old CI logs before cancellation.
 
 **External blocker:** none for current product acceptance; accepted scope/type
 choices remain recorded for dependent work. Checkpoint—not complete.
+
+## Published stack checkpoint — R25 linked before C
+
+**Candidate:** `codex/syntax-s8c-cutover` /
+`6ade888fc5f8dc93cc6b3a496174f8fced7be7a0`, published on draft #830.
+Native stack #850 preserves all 27 PRs in their established order with
+R05 #847 → R25 #849 → C #830, targeting `integration/v0.4`. GitHub's append-only
+stack update rejected an insertion, so stack #848 was unlinked and the same PRs
+relinked in order. C's base and R25 ancestry are verified; neither PR was marked
+ready. All R01–R25 definitions now appear together in PR-STACK.md.
+
+**Completed:** 5 new + 18 existing combined mixed tests pass on this C tree;
+shipping compute WASM rebuilt successfully. The old C run's 31 paginated job
+records and 30 available logs were preserved before publication; it is now
+cancelled, not qualified. New exact-head workflow 35026816791 is queued.
+
+**Remaining:** R25 review; direct configured browser edit/rollback probe; C's
+other failing owners and the full accepted corrective backlog recorded above;
+final exact-head qualification, protected merge and post-merge verification.
+
+**Current action:** native server rebuild is running in exec session 42052,
+log `/private/tmp/mech-syntax-qualification/c-r25-server-build.log`. The WASM
+build is complete (its session 28716 exited 0). No second build should be started
+until the live server build is polled.
+
+**Next action:** poll session 42052, then execute the configured document probe
+with `--served-compute`; inspect R25 review notes and resolve them before another
+review request. Preserve the positive acceptance assertions and ownership.
+
+**External blocker:** none for the current batch. Checkpoint—not complete.
