@@ -1,0 +1,141 @@
+   Compiling mech-core v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/core)
+   Compiling mech-syntax v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/syntax)
+   Compiling mech-bytecode v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/bytecode)
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/engine)
+   Compiling mech-combinatorics v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/machines/combinatorics)
+   Compiling mech-math v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/machines/math)
+   Compiling mech-runtime v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/runtime)
+   Compiling mech-set v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/machines/set)
+   Compiling mech-string v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/machines/string)
+   Compiling mech-range v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/machines/range)
+   Compiling mech-stats v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/machines/stats)
+   Compiling mech-logic v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/machines/logic)
+   Compiling mech-matrix v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/machines/matrix)
+   Compiling mech-compare v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/machines/compare)
+   Compiling mech-native-live-host-fixture v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/tests/fixtures/native-live-host)
+   Compiling mech-terminal v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/hosts/terminal)
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/stdlib)
+    Finished `test` profile [unoptimized] target(s) in 2m 41s
+     Running tests/canonical_call_visibility.rs (target/debug/deps/canonical_call_visibility-eaa01cb7168e3b67)
+
+running 6 tests
+test configured_empty_catalog_does_not_recover_global_named_declarations ... ok
+test ordered_roots_do_not_share_callable_imports ... ok
+test imports_bind_only_the_requested_visible_names ... ok
+test visible_calls_and_operators_preserve_source_and_bytecode_results ... ok
+test internal_names_cannot_be_imported_or_aliased ... ok
+test configured_catalog_census_rejects_unbound_names_before_arguments ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.96s
+
+     Running tests/canonical_constant_binding.rs (target/debug/deps/canonical_constant_binding-5ebe1f3a43009fd5)
+
+running 45 tests
+test binding_errors_retain_the_input_anchor ... ok
+test already_nested_dynamic_binding_preserves_its_existing_depth ... ok
+test bound_nested_match_relocates_parameters_operations_and_yields ... ok
+test bound_comprehension_relocates_pattern_filter_operation_and_yield ... ok
+test binding_relocates_dynamic_descendants_in_existing_constants ... ok
+test binding_relocates_existing_state_initializer_and_output_constants ... ok
+test bound_guard_relocates_captures_and_keeps_remaining_input_live ... ok
+test exact_generic_enum_input_and_binding ... ok
+test exact_generic_atom ... ok
+test exact_generic_dynamic ... ok
+test bound_match_relocates_literal_patterns_and_arm_constants ... ok
+test exact_generic_map ... ok
+test exact_generic_matrix ... ok
+test exact_generic_option ... ok
+test concrete_binding_to_dynamic_wraps_exactly_once ... ok
+test exact_index_input_and_binding ... ok
+test exact_generic_table ... ok
+test exact_generic_record ... ok
+test exact_scalar_bool ... ok
+test exact_generic_tuple ... ok
+test exact_scalar_c32 ... ok
+test exact_scalar_i16 ... ok
+test exact_generic_set ... ok
+test exact_scalar_i128 ... ok
+test exact_scalar_c64 ... ok
+test exact_scalar_f32 ... ok
+test exact_id_input_and_binding ... ok
+test exact_scalar_f64 ... ok
+test exact_scalar_string ... ok
+test exact_scalar_u16 ... ok
+test exact_scalar_i8 ... ok
+test exact_scalar_i32 ... ok
+test exact_scalar_i64 ... ok
+test exact_scalar_r64 ... ok
+test exact_scalar_u128 ... ok
+test reject_incompatible_matrix_extent ... ok
+test reject_incompatible_native_scalar_schema ... ok
+test reject_incompatible_map_key_schema ... ok
+test exact_scalar_u64 ... ok
+test reject_incompatible_atom_nominal_identity ... ok
+test exact_scalar_u32 ... ok
+test exact_scalar_u8 ... ok
+test reject_incompatible_snapshot_scalar_schema ... ok
+test successive_bindings_relocate_state_nodes_outputs_constraints_and_source_map ... ok
+test simultaneous_bindings_are_order_independent ... ok
+
+test result: ok. 45 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.75s
+
+     Running tests/canonical_declaration_handoff.rs (target/debug/deps/canonical_declaration_handoff-cc64ee71989aa6f9)
+
+running 10 tests
+test incomplete_export_results_fail_at_the_retained_export_anchor ... ok
+test missing_dependency_exports_report_the_import_occurrence ... ok
+test every_declared_import_requires_a_positioned_resolution ... ok
+test context_alias_imports_do_not_require_source_dependency_edges ... ok
+test missing_namespace_exports_report_the_import_occurrence ... ok
+test source_wildcard_requires_a_positioned_resolution ... ok
+test compiler_module_imports_remain_optional_source_dependencies ... ok
+test resolved_canonical_export_is_a_usable_imported_binding ... ok
+test resolved_canonical_exports_can_be_sealed_into_artifact_constants ... ok
+test resolved_bindings_remain_local_to_root_named_and_mika_owners ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.19s
+
+     Running tests/canonical_document_render.rs (target/debug/deps/canonical_document_render-50b04ea361b0301d)
+
+running 38 tests
+test floats_preserve_left_and_right_direction ... ok
+test figure_grids_preserve_panel_labels_and_combined_caption ... ok
+test citation_numbers_and_backmatter_follow_first_reference_order ... ok
+test citations_are_numbered_and_deferred_to_link_safe_backmatter ... ok
+test image_url_extraction_starts_after_parentheses_in_the_caption ... ok
+test inert_fences_preserve_their_language_for_highlighting ... ok
+test browser_source_mounts_match_compiled_canonical_output_anchors ... ok
+test image_options_are_safely_whitelisted_into_presentation_attributes ... ok
+test finalized_streams_feed_execution_and_complete_document_rendering ... ok
+test ordered_lists_preserve_their_authored_start_and_item_values ... ok
+test metadata_only_documents_do_not_require_program_results ... ok
+test renderer_rejects_active_script_hyperlinks ... ok
+test renderer_preserves_title_subtitle_and_plain_document_structure ... ok
+test hidden_and_output_suppressed_fences_do_not_leak_the_program_result ... ok
+test renderer_rejects_active_script_image_sources ... ok
+test raw_hyperlinks_and_inline_code_use_semantic_html ... ok
+test renderer_rejects_results_relabelled_to_another_execution_scope ... ok
+test renderer_rejects_duplicate_results_for_one_presentation_slot ... ok
+test renderer_rejects_results_from_another_document_owner ... ok
+test renderer_rejects_same_document_results_relabelled_to_another_owner ... ok
+test retained_footnotes_preserve_every_paragraph ... ok
+test retained_images_render_with_safe_escaped_attributes_and_captions ... ok
+test renderer_rejects_results_from_an_older_document_revision ... ok
+test retained_inline_markup_uses_semantic_elements_without_delimiters ... ok
+test source_body_preserves_front_matter_without_duplicate_framing ... ok
+test retained_lists_use_semantic_html_without_source_markers ... ok
+test table_alignment_is_projected_to_header_and_body_cells ... ok
+test text_renderer_preserves_retained_blank_lines ... ok
+test title_front_matter_is_semantic_and_uses_completed_inline_results ... ok
+test visible_executable_fences_require_their_owner_result ... ok
+test visible_mika_root_programs_require_their_owner_result ... ok
+test shared_mixed_document_fixture_is_rendered_without_dropping_nodes ... ok
+test visible_root_programs_require_their_owner_result ... ok
+test browser_shim_regions_preserve_metadata_navigation_and_section_boundaries ... ok
+test retained_rich_document_nodes_use_semantic_html_containers ... ok
+test retained_document_renders_root_named_and_mika_results_in_place ... ok
+test served_particle_document_formats_its_annotated_compute_heading ... ok
+test browser_titles_preserve_lf_and_crlf_source ... ok
+
+test result: ok. 38 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.01s
+

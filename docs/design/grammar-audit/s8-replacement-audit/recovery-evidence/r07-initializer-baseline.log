@@ -1,0 +1,32 @@
+   Compiling mech-core v0.3.5 (/private/tmp/mech-syntax-s8r07-initializers/src/core)
+   Compiling mech-syntax v0.3.5 (/private/tmp/mech-syntax-s8r07-initializers/src/syntax)
+   Compiling mech-bytecode v0.3.5 (/private/tmp/mech-syntax-s8r07-initializers/src/bytecode)
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-syntax-s8r07-initializers/src/engine)
+    Finished `test` profile [unoptimized] target(s) in 36.48s
+     Running tests/canonical_document_state.rs (/private/tmp/mech-syntax-s8-extraction-target/debug/deps/canonical_document_state-21785e5e69543ea9)
+
+running 2 tests
+test closed_match_initializer_runs_once_before_state_turns ... FAILED
+test closed_comprehension_initializer_runs_once_before_state_turns ... FAILED
+
+failures:
+
+---- closed_match_initializer_runs_once_before_state_turns stdout ----
+
+thread 'closed_match_initializer_runs_once_before_state_turns' (28180446) panicked at src/engine/tests/canonical_document_state.rs:86:13:
+"x := (true ? | true => 1 | false => 2)\n~a := x\na += 1\na\n": document activation: InitializerUnavailableAtActivation { slot: CellSlotId(0), source: CellSlotId(1) }; nodes: [SourceSemanticNode { operation: "match", role: "match", detail: None, anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(6), end: TextSize(37) } } }, SourceSemanticNode { operation: "math/add", role: "state-update", detail: None, anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(47), end: TextSize(53) } } }, SourceSemanticNode { operation: "core/assign", role: "state-definition", detail: Some("a"), anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(39), end: TextSize(46) } } }]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- closed_comprehension_initializer_runs_once_before_state_turns stdout ----
+
+thread 'closed_comprehension_initializer_runs_once_before_state_turns' (28180445) panicked at src/engine/tests/canonical_document_state.rs:86:13:
+"samples := 1..=3\nx-row := [1.0 | sample <- samples]\ny-row := [2.0 | sample <- samples]\nx := x-row'\ny := y-row'\n~trail := [x y]\nnew-row := ([7.0 8.0])\nnext-trail := matrix/vertcat(trail[2..=3,:], new-row)\ntrail = next-trail\ntrail[3,2]\n": document activation: InitializerUnavailableAtActivation { slot: CellSlotId(0), source: CellSlotId(6) }; nodes: [SourceSemanticNode { operation: "range/inclusive", role: "range", detail: None, anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(11), end: TextSize(16) } } }, SourceSemanticNode { operation: "matrix/comprehension", role: "comprehension", detail: None, anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(26), end: TextSize(51) } } }, SourceSemanticNode { operation: "matrix/comprehension", role: "comprehension", detail: None, anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(61), end: TextSize(86) } } }, SourceSemanticNode { operation: "matrix/transpose", role: "postfix", detail: None, anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(92), end: TextSize(98) } } }, SourceSemanticNode { operation: "matrix/transpose", role: "postfix", detail: None, anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(104), end: TextSize(110) } } }, SourceSemanticNode { operation: "matrix/horzcat", role: "matrix-row", detail: None, anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(121), end: TextSize(126) } } }, SourceSemanticNode { operation: "matrix/horzcat", role: "matrix-row", detail: None, anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(139), end: TextSize(148) } } }, SourceSemanticNode { operation: "core/assign", role: "state-read", detail: None, anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(179), end: TextSize(184) } } }, SourceSemanticNode { operation: "range/inclusive", role: "range", detail: None, anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(185), end: TextSize(190) } } }, SourceSemanticNode { operation: "access/rows", role: "slice", detail: None, anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(184), end: TextSize(193) } } }, SourceSemanticNode { operation: "matrix/vertcat", role: "call", detail: Some("matrix/vertcat(,)"), anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(164), end: TextSize(203) } } }, SourceSemanticNode { operation: "access/scalar", role: "slice", detail: None, anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(228), end: TextSize(233) } } }, SourceSemanticNode { operation: "core/assign", role: "state-definition", detail: Some("trail"), anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(111), end: TextSize(126) } } }]
+
+
+failures:
+    closed_comprehension_initializer_runs_once_before_state_turns
+    closed_match_initializer_runs_once_before_state_turns
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 42 filtered out; finished in 0.21s
+
+error: test failed, to rerun pass `-p mech-engine --test canonical_document_state`

@@ -1,0 +1,18 @@
+   Compiling mech-core v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/core)
+   Compiling mech-syntax v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/syntax)
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/engine)
+   Compiling mech-combinatorics v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/machines/combinatorics)
+   Compiling mech-set v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/machines/set)
+   Compiling mech-math v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/machines/math)
+   Compiling mech-string v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/machines/string)
+   Compiling mech-logic v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/machines/logic)
+   Compiling mech-matrix v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/machines/matrix)
+   Compiling mech-range v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/machines/range)
+   Compiling mech-stats v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/machines/stats)
+   Compiling mech-compare v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/machines/compare)
+   Compiling mech-runtime v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/runtime)
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/stdlib)
+   Compiling full-source-runtime v0.0.0 (/private/tmp/mech-syntax-s8c-qualification/tests/fixtures/full-source-runtime)
+    Finished `dev` profile [unoptimized] target(s) in 2m 59s
+     Running `/private/tmp/mech-syntax-s8-cutover-source-fixture-target/debug/full-source-runtime`
+source product probe passed: 14 catalog cases and rooted source canary

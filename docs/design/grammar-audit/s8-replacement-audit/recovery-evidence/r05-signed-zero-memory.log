@@ -1,0 +1,28 @@
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-syntax-s8r05-updates/src/engine)
+    Finished `test` profile [unoptimized] target(s) in 24.20s
+     Running tests/r6_memory_runtime.rs (/private/tmp/mech-syntax-s8-extraction-target/debug/deps/r6_memory_runtime-6a70c35f81c4e3ec)
+
+running 20 tests
+test direct_and_resident_adapters_share_the_r5_realization_boundary ... ok
+test managed_index_conversion::i32_ports_are_managed ... ok
+test managed_index_conversion::i8_ports_are_managed ... ok
+test managed_index_conversion::f64_fractional_ports_are_managed ... ok
+test managed_index_conversion::i128_ports_are_managed ... ok
+test managed_index_conversion::index_ports_are_managed ... ok
+test managed_index_conversion::i64_ports_are_managed ... ok
+test managed_index_conversion::f32_fractional_ports_are_managed ... ok
+test managed_index_conversion::i16_ports_are_managed ... ok
+test repeated_activation_and_close_reclaims_all_instance_storage ... ok
+test managed_index_conversion::u8_ports_are_managed ... ok
+test managed_index_conversion::u64_ports_are_managed ... ok
+test managed_index_conversion::u32_ports_are_managed ... ok
+test managed_index_conversion::u16_ports_are_managed ... ok
+test managed_index_conversion::u128_ports_are_managed ... ok
+test resident_existing_value_budget_scope::configured_resident_budget_is_aggregate_and_preserves_failed_reactivation ... ok
+test ordinary_source_literals_enter_one_interpreter_memory_session ... ok
+test realization_preserves_per_call_work_and_output_budget_scopes ... ok
+test resident_existing_value_budget_scope::producing_an_oversized_result_still_fails_resident_activation ... ok
+test resident_existing_value_budget_scope::large_inputs_and_constants_execute_small_results_without_output_quotas ... ok
+
+test result: ok. 20 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s
+

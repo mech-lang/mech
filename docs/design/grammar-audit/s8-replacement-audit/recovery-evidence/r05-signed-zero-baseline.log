@@ -1,0 +1,24 @@
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-syntax-s8r05-updates/src/engine)
+    Finished `test` profile [unoptimized] target(s) in 0.91s
+     Running tests/canonical_document_state.rs (/private/tmp/mech-syntax-s8-extraction-target/debug/deps/canonical_document_state-a174116a5abd2548)
+
+running 1 test
+test selected_f64_matrix_updates_propagate_signed_zero_changes ... FAILED
+
+failures:
+
+---- selected_f64_matrix_updates_propagate_signed_zero_changes stdout ----
+
+thread 'selected_f64_matrix_updates_propagate_signed_zero_changes' (28194875) panicked at src/engine/tests/canonical_document_state.rs:1585:9:
+assertion `left == right` failed: kernel must report representation changes
+  left: false
+ right: true
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    selected_f64_matrix_updates_propagate_signed_zero_changes
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 42 filtered out; finished in 0.13s
+
+error: test failed, to rerun pass `-p mech-engine --test canonical_document_state`

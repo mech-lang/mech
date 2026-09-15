@@ -1,0 +1,104 @@
+   Compiling mech-syntax v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/syntax)
+   Compiling mech-combinatorics v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/machines/combinatorics)
+   Compiling mech-math v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/machines/math)
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/engine)
+   Compiling mech-runtime v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/runtime)
+   Compiling mech-console v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/hosts/console)
+   Compiling mech-scene v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/hosts/scene)
+   Compiling mech-timer v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/hosts/timer)
+   Compiling mech-browser v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/hosts/browser)
+   Compiling mech-time v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/hosts/time)
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/stdlib)
+   Compiling mech-wasm v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/wasm)
+    Finished `test` profile [unoptimized] target(s) in 1m 24s
+     Running unittests src/lib.rs (target/debug/deps/mech_wasm-8be784f4409e8fab)
+
+running 56 tests
+test canonical_document::tests::canonical_browser_rejects_exhausted_revision_without_replacing_source ... ok
+test canonical_document::tests::canonical_browser_source_preserves_exact_text_and_transactional_revisions ... ok
+test project::tests::broader_path_grant_authorizes_narrower_project_request ... ok
+test canonical_document::tests::canonical_browser_capture_keeps_hidden_disabled_named_and_mika_owners ... ok
+test project::tests::broader_path_request_is_rejected ... ok
+test canonical_document::tests::canonical_browser_repl_renderer_obeys_admission_contract ... ok
+test project::tests::crossed_operation_and_path_grants_are_rejected ... ok
+test project::tests::analog_clock_served_authority_is_accepted ... ok
+test project::tests::configured_multiple_roots_fail_closed_without_reading_unused_sources ... ok
+test project::tests::browser_dom_demo_authority_denial_fails_before_writes ... ok
+test project::tests::appended_document_fragments_continue_the_root_inline_output_namespace ... ok
+test project::tests::browser_document_profile_runs_nbody_module_imports ... ok
+test project::tests::detached_session_reset_reactivates_its_complete_source_baseline ... ok
+test project::tests::document_repl_formats_only_complete_mech_source_entries ... ok
+test project::tests::document_repl_clear_owns_the_complete_workspace_source ... ok
+test project::tests::encoded_document_controller_accepts_resident_state_machines ... FAILED
+test project::tests::encoded_document_controller_accepts_wildcard_imported_resident_atan2 ... ok
+test project::tests::encoded_document_controller_loads_residently_without_legacy_execution ... ok
+test project::tests::analog_clock_scene_advances_on_every_resident_time_packet ... ok
+test project::tests::fixed_program_capture_preserves_trailing_comment_output_order ... FAILED
+test project::tests::injected_ed25519_key_decodes ... ok
+test project::tests::injected_key_rejects_invalid_base64 ... ok
+test project::tests::injected_key_rejects_mixed_case_algorithm ... ok
+test project::tests::injected_key_rejects_wrong_length ... ok
+test project::tests::internal_repl_console_avoids_every_configured_host_namespace ... ok
+test project::tests::from_sources_rejects_missing_source ... ok
+test project::tests::extra_operation_is_rejected ... ok
+test project::tests::multiple_project_roots_fail_closed_without_legacy_execution ... ok
+test project::tests::project_sources_report_missing_module_dependencies ... ok
+test project::tests::generic_table_project_runs_without_legacy_execution ... ok
+test project::tests::multiple_module_roots_fail_closed_before_legacy_resolution ... ok
+test project::tests::required_paths_rejects_empty_paths ... ok
+test project::tests::required_paths_omits_directory_serve_paths_after_run_roots ... ok
+test project::tests::required_paths_rejects_missing_run ... ok
+test project::tests::required_paths_returns_configured_paths ... ok
+test project::tests::scalar_string_concatenation_uses_resident_execution ... ok
+test project::tests::document_console_queries_and_updates_the_same_resident_program ... ok
+test project::tests::encoded_document_controller_accepts_resident_matrix_scalar_access ... ok
+test project::tests::source_backed_document_rejects_a_stale_root_without_dual_authority ... ok
+test project::tests::source_backed_document_resolves_relative_imports_from_its_root_specifier ... ok
+test project::tests::split_grants_for_one_target_authorize_project_request ... ok
+test project::tests::source_backed_document_preserves_explicit_resolution_edges_across_reset ... ok
+test project::tests::unrelated_issued_host_does_not_require_compiled_provider ... ok
+test repl::tests::browser_docs_without_a_topic_returns_an_index_instead_of_usage_failure ... ok
+test project::tests::rejected_browser_dom_candidate_performs_zero_writes ... ok
+test repl::tests::cooperative_state_rejects_every_overlapping_mutation ... ok
+test repl::tests::immediate_document_step_obeys_the_cooperative_state_guard ... ok
+test repl::tests::pending_host_request_owns_mutation_and_capabilities_use_the_active_console ... ok
+test repl::tests::wasm_uses_the_shared_enter_and_control_enter_contract ... ok
+test project::tests::rejected_document_candidate_cannot_mutate_the_active_scene_registry ... ok
+test project::tests::timer_table_scene_runs_residently_and_publishes_its_tables ... ok
+test project::tests::document_program_output_identity_survives_console_overlays ... FAILED
+test project::tests::unchanged_browser_dom_demo_runs_source_and_bytecode_residently ... ok
+test repl::tests::browser_repl_is_transactional_and_routes_program_output_to_its_event_bus ... ok
+test project::tests::document_output_hashes_map_to_resident_output_ordinals ... ok
+test project::tests::selecting_a_large_document_value_is_runtime_local_until_ans_is_consumed ... ok
+
+failures:
+
+---- project::tests::encoded_document_controller_accepts_resident_state_machines stdout ----
+
+thread 'project::tests::encoded_document_controller_accepts_resident_state_machines' (28206871) panicked at src/wasm/src/project.rs:3418:45:
+called `Result::unwrap()` on an `Err` value: MechError { kind name: "CanonicalProgramCompilationError", kind message: "source-semantics/unsupported-document-unit: canonical document unit FsmSpecification has no engine semantic implementation", message: None, program_range: None, annotations: [], tokens: [], compiler_location: Some(CompilerSourceRange { file: "src/runtime/src/runtime/program/compiler.rs", line: 80 }), source: None }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- project::tests::fixed_program_capture_preserves_trailing_comment_output_order stdout ----
+
+thread 'project::tests::fixed_program_capture_preserves_trailing_comment_output_order' (28206900) panicked at src/wasm/src/project.rs:3944:9:
+assertion `left == right` failed: inline comment and fence both retain visible outputs
+  left: 1
+ right: 2
+
+---- project::tests::document_program_output_identity_survives_console_overlays stdout ----
+
+thread 'project::tests::document_program_output_identity_survives_console_overlays' (28206864) panicked at src/wasm/src/project.rs:3047:9:
+assertion `left == right` failed: a console result must not replace the fixed document output
+  left: "42"
+ right: "41"
+
+
+failures:
+    project::tests::document_program_output_identity_survives_console_overlays
+    project::tests::encoded_document_controller_accepts_resident_state_machines
+    project::tests::fixed_program_capture_preserves_trailing_comment_output_order
+
+test result: FAILED. 53 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.44s
+
+error: test failed, to rerun pass `-p mech-wasm --lib`

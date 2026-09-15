@@ -354,3 +354,92 @@ begin R07/G05 control-derived state initialization without a new planning round.
 **External blocker:** Worker quota is exhausted; root continues accepted work.
 No additional routine authority is required. Previously recorded capability
 choices remain open before their dependent work. Checkpoint—not complete.
+
+
+## Current checkpoint — R05 integrated, retired browser tests executable
+
+**Candidate:** `codex/syntax-s8c-cutover` /
+`8a94aa97e66406370383d4800d3dd0321b5693ec`, published on #830 and based on
+R05 #847 `f118f0b17a6313e54b97319e0d987dcf9853f8c6`. GitHub reports MERGEABLE.
+Native stack #848 contains S0–S8A, E1–E11, R01, R03, R04, R05, C. The prior
+checkpoint's statement that R05 is outside C is superseded. R05 is assembled
+for qualification; its latest review is pending, not accepted or sealed.
+
+**Completed:** C `83fdffd6f` integrated R05 and passed 6 visibility, 45 constant
+binding and 10 declaration-handoff regressions. R05's next review reproduced a
+false change report when a dense F64 selected update changes signed-zero bits.
+The correction compares physical dense output bits; a strict test inspects the
+actual bound kernel report and source/decoded reciprocal values across three
+turns for row, column and rectangle updates. R05 passes 43 document-state tests
+and 20 memory-runtime tests. Its first memory invocation accidentally selected
+a disabled test target (zero tests); that is excluded and the subsequent
+full_compiler invocation executes all 20. All six R05 review threads have replies
+and are resolved; focused rereview was requested on f118f0b17.
+
+C's new migrated tests replace deleted parser/tree construction with canonical
+SourceDocument and real admitted bundle fixtures. Initial/reset bundle activation
+remains exact-bytecode; stale source/resolution checks remain enabled. Project
+source loading uses the canonical interactive product so public root-symbol
+queries retain their outputs. Canonical title rendering now handles CRLF as
+well as LF; its full FizzBuzz regression passes. The WASM owner suite compiles
+and executes: 53 pass, 3 fail, no ignored tests. WASM32 browser_project tests
+also compile successfully. Fixture mistakes were reconciled against existing
+canonical contracts: named foo scope does not replace root output; inert and
+named fences are not root mounts; dependency failures come from canonical
+graph compilation; source and bytecode comparisons use the same interactive
+product. The remaining positives were not changed to rejections or disabled.
+
+At exact C 8a94aa97e, all 43 document-state and 20 memory-runtime tests pass,
+including the migrated resident literal/memory-release test. The exact-head combined runtime/renderer rerun passes 6 visibility, 45 constant
+binding, 10 declaration-handoff and 38 renderer tests: 162 passing tests across
+these six suites. The rebuilt, locked/offline deleted-parser product probe passes
+all 14 catalog cases and its rooted source canary at this same C head. The
+exact-head browser_project owner rerun confirms 53 passing and the same three
+failing tests; no ignored tests. Six fixed C review threads have evidence
+replies and are resolved. The source-replacement/compute thread remains open
+with a progress reply. No C rereview is requested over that incomplete work.
+
+**Remaining:** The three executed browser-owner failures are: (1) FSM
+specification lowering, assigned to existing G14/R18; (2) fixed original
+document output becomes console result 42 instead of root result 41 after
+append, assigned to G22's capture owner; (3) an evaluated expression inside a
+trailing comment has no canonical output (expected two visible outputs, actual
+one), requiring canonical comment/output ownership reconciliation under G22's
+consumer contract before implementation. All are retained as positive tests.
+The actual particle application still fails server-side compute-provider
+planning; no browser/backend execution result is claimed. R07/G05 `023c3b2b1bfedac5cdd2e0bf14415528506e4484` is published on
+`codex/syntax-s8r07-control-initializers`, based on current R05, with two
+strict baseline regressions demonstrating InitializerUnavailableAtActivation
+for closed match/comprehension state producers, with no production patch yet.
+All other accepted open gap-register items, target/semantic decisions, required
+reviews, exact-head full qualification and protected landing remain outstanding.
+
+**Current action:** Qualify this published batch while R05 rereviews; finish
+G22 document capture and configured mixed-browser handoff, and implement G05
+closed control initialization in its resident owner. Only R05, C and R07
+are changing responsibilities. R07 has no new PR yet.
+
+**Next action:** Resume R07 at `/private/tmp/mech-syntax-s8r07-initializers`:
+implement closed control-node classification and activation execution using the
+existing control-region and memory-budget authorities; retain the two strict
+state initializer tests and add live-input/effect non-replay negatives. In C,
+finish fixed original-document output capture and route browser mixed producers
+through the existing mixed compiler; rerun the real particle product after that
+coherent fix. Inspect R05's pending review before another request. No local
+validation process is left running from this checkpoint. Current C automatic
+qualification run is 35014211166; it was pending when checked, not passing.
+
+The archived E11 failure (35008027930/job104515257514) is the already-known
+canonical certification import-allowance violation: the frozen extraction still
+has the snapshot-construction regression in canonical_source_semantics. R03
+moved it to canonical_source_review, and current C has no such import in the
+certification-owned file. Do not count the old extraction's failure as a new
+C defect or weaken its authority gate. Earlier review-slice qualification still
+needs that owner correction propagated if required before its protected merge.
+
+**External blocker:** No additional routine permission is needed. Worker quota
+remains exhausted; root performs accepted local work. The previously recorded
+capability/semantic decisions remain open for their dependent obligations.
+Obsolete C83fd run 35011917078 was confirmed completed/cancelled after normal cancellation then force
+cancellation; all 29 job records and available logs were preserved first in `s8-ci-archive-signed-zero`; cancellation is not
+qualification. No duplicate manual full dispatch was created. Checkpoint—not complete.
