@@ -33,6 +33,7 @@ jobs:
           PR_LABELS: ${{ toJSON(github.event.pull_request.labels) }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
           PR_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
         run: >-
           python3 scripts/ci-impact.py
@@ -272,6 +273,7 @@ jobs:
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
           PR_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
         run: python3 -B scripts/run-owner-tests.py --owners "${{ matrix.owners }}"
 

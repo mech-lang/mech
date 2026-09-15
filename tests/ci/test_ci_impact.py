@@ -222,7 +222,7 @@ class RegisteredReviewTests(unittest.TestCase):
 
     def test_role_requires_exact_registered_number_branch_and_repository(self):
         from ci_review_slices import review_role
-        self.assertEqual(review_role(844, "codex/syntax-s8r04-dynamic-binding", "mech-lang/mech")[0], "review")
+        self.assertEqual(review_role(844, "codex/syntax-s8r04-dynamic-binding", "mech-lang/mech", base="codex/syntax-s8r03-bound-schemas")[0], "review")
         self.assertEqual(review_role(830, "codex/syntax-s8c-cutover", "mech-lang/mech")[0], "landing")
         for number, branch, repo in [
             (999, "codex/syntax-s8r04-dynamic-binding", "mech-lang/mech"),
@@ -238,7 +238,7 @@ class RegisteredReviewTests(unittest.TestCase):
         registry = json.loads(REGISTRY.read_text())
         self.assertNotIn(str(registry["landing"]["number"]), registry["slices"])
         for number, entry in registry["slices"].items():
-            role, selected = review_role(number, entry["branch"], registry["repository"])
+            role, selected = review_role(number, entry["branch"], registry["repository"], base=entry["base"])
             self.assertEqual(role, "review")
             for command in selected["checks"]:
                 self.assertEqual(command[0], "cargo")
@@ -246,11 +246,11 @@ class RegisteredReviewTests(unittest.TestCase):
                 self.assertIn("--locked", command)
         registry["slices"]["844"]["checks"] = []
         with self.assertRaises(ValueError):
-            review_role(844, "codex/syntax-s8r04-dynamic-binding", registry["repository"], registry)
+            review_role(844, "codex/syntax-s8r04-dynamic-binding", registry["repository"], registry, base=registry["slices"]["844"]["base"])
 
     def test_interactive_registration_is_reachable_from_numeric_pr_event(self):
         from ci_review_slices import review_role
-        role, entry = review_role(837, "codex/syntax-s8e7-interactive", "mech-lang/mech")
+        role, entry = review_role(837, "codex/syntax-s8e7-interactive", "mech-lang/mech", base="codex/syntax-s8e6-graph-planning")
         self.assertEqual(role, "review")
         self.assertTrue(any("interactive::tests::" in command for command in entry["checks"]))
 
@@ -264,6 +264,40 @@ class RegisteredReviewTests(unittest.TestCase):
         registry["slices"]["None"] = registry["slices"].pop("837")
         with self.assertRaises(ValueError):
             review_role(837, "codex/syntax-s8e7-interactive", "mech-lang/mech", registry)
+
+    def test_review_retargeting_cannot_keep_reduced_validation(self):
+        import json
+        from ci_review_slices import REGISTRY, review_role
+        registry = json.loads(REGISTRY.read_text())
+        for number, entry in registry["slices"].items():
+            self.assertEqual(review_role(number, entry["branch"], registry["repository"], base=entry["base"])[0], "review")
+            for target in ("integration/v0.4", "main", "unexpected/parent", ""):
+                with self.subTest(number=number, target=target):
+                    role, checks = review_role(number, entry["branch"], registry["repository"], base=target)
+                    self.assertEqual(role, "ordinary")
+                    self.assertIsNone(checks)
+                    result = CI_IMPACT.classify(["src/core/src/value.rs"], [], OWNERS, role)
+                    self.assertFalse(result["review_only"])
+                    self.assertTrue(result["standard_canaries_required"])
+                    self.assertTrue(result["browser_canary_required"])
+                    self.assertNotIn("s8-review-regressions", result["changed_owners"])
+                    self.assertTrue(CI_IMPACT.classify(["src/core/src/value.rs"], ["ci:full"], OWNERS, role)["full_validation_required"])
+        for target in ("integration/v0.4", registry["slices"]["844"]["branch"], "unexpected/parent"):
+            role, _ = review_role(830, registry["landing"]["branch"], registry["repository"], base=target)
+            self.assertEqual(role, "landing")
+            self.assertTrue(CI_IMPACT.classify([], [], OWNERS, role)["full_validation_required"])
+
+    def test_event_passes_base_to_both_role_consumers(self):
+        import os
+        from unittest.mock import patch
+        from ci_review_slices import environment_role
+        env = {"PR_NUMBER": "844", "PR_HEAD_REF": "codex/syntax-s8r04-dynamic-binding", "PR_HEAD_REPOSITORY": "mech-lang/mech", "PR_BASE_REF": "integration/v0.4"}
+        with patch.dict(os.environ, env, clear=True):
+            self.assertEqual(environment_role()[0], "ordinary")
+            os.environ["PR_BASE_REF"] = "codex/syntax-s8r03-bound-schemas"
+            self.assertEqual(environment_role()[0], "review")
+        workflow = (ROOT / ".github/workflows/ci.yml").read_text()
+        self.assertEqual(workflow.count("PR_BASE_REF: ${{ github.event.pull_request.base.ref }}"), 2)
 
     def test_review_gate_requires_focused_success_and_does_not_claim_full_success(self):
         workflow = (ROOT / ".github/workflows/ci.yml").read_text()

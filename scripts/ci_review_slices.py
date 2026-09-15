@@ -6,7 +6,7 @@ from pathlib import Path
 REGISTRY = Path(__file__).resolve().parents[1] / ".github/ci/s8-review-slices.json"
 
 
-def review_role(number="", branch="", repository="", registry=None):
+def review_role(number="", branch="", repository="", registry=None, *, base=""):
     registry = registry if registry is not None else json.loads(REGISTRY.read_text())
     if any(not key.isdecimal() or int(key) <= 0 for key in registry["slices"]):
         raise ValueError("registered review slice keys must be positive PR numbers")
@@ -16,7 +16,7 @@ def review_role(number="", branch="", repository="", registry=None):
     if str(number) == str(landing["number"]) and branch == landing["branch"]:
         return "landing", None
     entry = registry["slices"].get(str(number))
-    if entry is not None and branch == entry["branch"]:
+    if entry is not None and branch == entry["branch"] and base == entry["base"]:
         if not entry["checks"] or any(not command for command in entry["checks"]):
             raise ValueError("registered review slices require executable checks")
         return "review", entry
@@ -26,4 +26,5 @@ def review_role(number="", branch="", repository="", registry=None):
 def environment_role():
     return review_role(os.environ.get("PR_NUMBER", ""),
                        os.environ.get("PR_HEAD_REF", ""),
-                       os.environ.get("PR_HEAD_REPOSITORY", ""))
+                       os.environ.get("PR_HEAD_REPOSITORY", ""),
+                       base=os.environ.get("PR_BASE_REF", ""))
