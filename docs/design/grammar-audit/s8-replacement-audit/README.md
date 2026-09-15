@@ -1,59 +1,53 @@
-# S8 replacement audit — inspection checkpoint
+# S8 replacement audit — reconciled scope for review
 
-Implementation is frozen at S8B `662d29b79df8ab05a25bbadb941a689fd5bd5aae`.
-This branch contains audit tests, fixtures, and observations only. It is an
-in-progress inspection handoff, not the completed replacement-gap audit or a
-request to resume implementation. The uncommitted numeric implementation in the
-original S8B worktree is excluded.
+**Implementation remains frozen at S8B `662d29b79`.** The audit identifies remaining
+work and restores proposed review boundaries; it does not certify the replacement
+or authorize another implementation round. The extracted PR heads have not been
+created. The original numeric WIP remains excluded.
 
-## Reproduce
+Start with [SCOPE.md](SCOPE.md), then [PR-STACK.md](PR-STACK.md).
+
+The final probe census is **365 cases: 317 passing observations and 48 failures**.
+The initial checkpoint's 70 failures included 23 corrected fixture mistakes; one
+new targeted witness isolates recursion from pattern-function lowering. There are
+**24 tracked gap/decision groups**, not 48 independent defects. Six named
+qualification packages retain the explicit untested/blocked obligations.
+
+| Evidence | Files |
+| --- | --- |
+| Gap ownership and executable source witnesses | [gaps.tsv](gaps.tsv), [semantic-obligations.tsv](semantic-obligations.tsv), [WITNESSES.md](WITNESSES.md) |
+| Complete inventory membership and explicit coverage limits | [rule-crosswalk.tsv](rule-crosswalk.tsv), [frontend-apis.tsv](frontend-apis.tsv), [compiler-methods.tsv](compiler-methods.tsv), [consumer-contracts.tsv](consumer-contracts.tsv) |
+| Type and catalog coverage | [scalar-types.tsv](scalar-types.tsv), [schema-families.tsv](schema-families.tsv), [catalog-overloads.tsv](catalog-overloads.tsv), [catalog-signatures.tsv](catalog-signatures.tsv) |
+| Observed results | [observations.json](observations.json), [retirement-observations.json](retirement-observations.json) |
+| Existing B extraction ownership | [patch-ownership.tsv](patch-ownership.tsv), [PR-STACK.md](PR-STACK.md) |
+
+The crosswalk accounts for 80 Phase 2I rules, 131 S7 dispositions (separate from
+112 direct S7 syntax witnesses), 24 public frontend methods, 36 public compiler
+methods, all 27 frozen consumers, 17 scalar kinds, 20 schema variants, and 120
+catalog exports with 480 explicit overload/intrinsic rows. It also accounts for
+all 91 paths changed by accumulated B work.
+
+Run `python3 docs/design/grammar-audit/s8-replacement-audit/verify-inventory.py`
+to check inventory membership, uniqueness, failure ownership and evidence counts.
+This verifies accounting, not semantic completeness. No passing suite count closes
+an untested crosswalk cell. In particular, the 480 signature rows are enumerated
+qualification obligations, not 480 tested signatures.
+
+To record probes, run:
 
 ```sh
-CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 CARGO_INCREMENTAL=0 CARGO_BUILD_JOBS=2 \
-cargo +nightly-2026-03-03 test --locked -p mech-runtime \
-  --no-default-features --features full_compiler,full_source,resident-routing-source,compute \
-  --test s8_replacement_gap_audit -- --nocapture
+./docs/design/grammar-audit/s8-replacement-audit/run-probes.sh
 ```
 
-To make a particular semantic observation an executable failing witness:
+The default harness records failures without failing its aggregate test. To expose
+a failure as a failing regression, use `MECH_AUDIT_REQUIRE_PASS=1`; select a source
+case with `MECH_AUDIT_CASE`. See WITNESSES.md for the graph, transport, retirement,
+and certification reproductions and limitations. Cases without an independent
+expected result remain explicitly equivalence-only.
 
-```sh
-MECH_AUDIT_CASE=mixed-repeated MECH_AUDIT_REQUIRE_PASS=1 \
-CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 CARGO_INCREMENTAL=0 CARGO_BUILD_JOBS=2 \
-cargo +nightly-2026-03-03 test --locked -p mech-runtime \
-  --no-default-features --features full_compiler,full_source,resident-routing-source,compute \
-  --test s8_replacement_gap_audit semantic_replacement_witnesses -- --nocapture
-```
-
-## Evidence and interpretation
-
-- 364 semantic fixture observations; 294 pass and 70 report a failure stage.
-- Four observational test functions complete successfully. The default harness
-  intentionally records failures without failing the aggregate test. This is
-  **not** a green implementation result.
-- The harness also probes 18 compiler entry routes, an ordered transitive explicit
-  root graph, and the configured source export census (120 exports).
-- The ordered graph witness observes a stale second-turn value (`1`, expected `2`).
-- Semantic probes exercise source and decoded bytecode over two turns. Fixtures
-  with explicit expected outputs check those values; other fixtures only check
-  successful execution and equality between those two paths.
-- Raw semantic failures are **not** deduplicated gap counts. Fixture mistakes and
-  intentionally unsupported operation/type combinations still require
-  classification. In particular, matrix sum expected orientation, unsigned
-  subtraction domains, Bessel argument types, and underscore-containing export
-  spellings must be reconciled before interpreting those observations as defects.
-
-## Remaining audit deliverables
-
-Finish the closed inventories for the 80 Phase 2I semantic rules, 131 document
-rules, 17 scalar kinds, structural schema families, configured source exports,
-all ProgramCompiler entry points, and all 27 frozen production consumer contracts.
-Produce the deduplicated gap register with owners, executable witnesses and
-acceptance conditions, followed by concrete stacked PR scopes. No production
-implementation resumes during that work.
-
-The deleted-parser qualification candidate is separately identified by
-`e31d08260fac40bcf7982e854cc5d2623a606347`. Its runtime suite reports 713 passing
-and two failing tests; its engine library test build still fails on retired parser
-references. Its isolated browser project build passes, but that does not establish
-that the browser document transport has completed cutover.
+`checkpoint-observations.json` preserves the original 3d04a2e06 discovery record;
+`observations.json` contains the corrected serial run. The C evidence is pinned to
+`e31d08260fac40bcf7982e854cc5d2623a606347`, not the divergent C branch. Its runtime
+library has two failures, its selected consumer adapters pass 134 tests, its engine
+library test build fails on deleted parser references, and its real document
+transport remains blocked. A standalone WASM build passing does not override that.

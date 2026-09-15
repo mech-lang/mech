@@ -1,0 +1,170 @@
+[
+  {
+    "baseline": "662d29b79df8ab05a25bbadb941a689fd5bd5aae",
+    "toolchain": "nightly-2026-03-03",
+    "command-profile": "runtime full_compiler,full_source,resident-routing-source,compute; s8_replacement_gap_audit; --test-threads=1",
+    "interpretation": "observational; failures recorded separately",
+    "test-results": [
+      "ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 23.97s"
+    ],
+    "failures": [],
+    "original-local-log": "/private/tmp/mech-syntax-qualification/s8-audit-final-probes.log"
+  },
+  {
+    "baseline": "662d29b79df8ab05a25bbadb941a689fd5bd5aae",
+    "toolchain": "nightly-2026-03-03",
+    "command-profile": "engine full_compiler,full_source,resident-artifact; canonical integration targets",
+    "interpretation": "179 pass; zero-case source_profile invocation excluded",
+    "test-results": [
+      "ok. 27 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.22s",
+      "ok. 30 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.62s",
+      "ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.19s",
+      "ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s",
+      "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "ok. 46 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.22s",
+      "ok. 32 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.36s",
+      "ok. 21 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.64s"
+    ],
+    "failures": [],
+    "original-local-log": "/private/tmp/mech-syntax-qualification/s8-audit-semantic-suites.log"
+  },
+  {
+    "baseline": "662d29b79df8ab05a25bbadb941a689fd5bd5aae",
+    "toolchain": "nightly-2026-03-03",
+    "command-profile": "engine source; canonical_source_profile",
+    "interpretation": "1 test under correct disabled-operation gate",
+    "test-results": [
+      "ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s"
+    ],
+    "failures": [],
+    "original-local-log": "/private/tmp/mech-syntax-qualification/s8-audit-disabled-feature.log"
+  },
+  {
+    "baseline": "662d29b79df8ab05a25bbadb941a689fd5bd5aae",
+    "toolchain": "nightly-2026-03-03",
+    "command-profile": "engine full_compiler,full_source,resident-artifact; canonical_phase_2i_semantic_certification",
+    "interpretation": "G24: shape assumptions/fingerprints",
+    "test-results": [
+      "FAILED. 4 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s"
+    ],
+    "failures": [
+      "test semantic_evidence_distinguishes_non_wire_shape_values_and_slot_ownership ... FAILED",
+      "range-expression\t10497666760162539556\t508212831832043143",
+      "slice\t11172623640428412589\t18169682353678332435",
+      "test every_semantic_rule_meets_its_required_witness_outcome ... FAILED",
+      "error: test failed, to rerun pass `-p mech-engine --test canonical_phase_2i_semantic_certification`"
+    ],
+    "original-local-log": "/private/tmp/mech-syntax-qualification/s8-audit-phase2i.log"
+  },
+  {
+    "baseline": "662d29b79df8ab05a25bbadb941a689fd5bd5aae",
+    "toolchain": "nightly-2026-03-03",
+    "command-profile": "syntax full; canonical_phase_2i_certification + canonical_s7_document_certification",
+    "interpretation": "G24: snapshot-import enforcement; syntax inventory acceptance cases pass",
+    "test-results": [
+      "FAILED. 9 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.24s",
+      "ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s"
+    ],
+    "failures": [
+      "test certification_evidence_uses_only_canonical_authorities ... FAILED",
+      "error: test failed, to rerun pass `-p mech-syntax --test canonical_phase_2i_certification`",
+      "error: 1 target failed:"
+    ],
+    "original-local-log": "/private/tmp/mech-syntax-qualification/s8-audit-syntax-census.log"
+  },
+  {
+    "baseline": "e31d08260fac40bcf7982e854cc5d2623a606347",
+    "toolchain": "nightly-2026-03-03",
+    "command-profile": "runtime full_compiler,full_source,resident-routing-source,compute; six canonical consumer integration targets",
+    "interpretation": "134 pass; not real browser/CLI product coverage",
+    "test-results": [
+      "ok. 45 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.81s",
+      "ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s",
+      "ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.25s",
+      "ok. 34 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.47s",
+      "ok. 22 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.40s",
+      "ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s"
+    ],
+    "failures": [],
+    "original-local-log": "/private/tmp/mech-syntax-qualification/s8-audit-c-consumer-tests.log"
+  },
+  {
+    "baseline": "e31d08260fac40bcf7982e854cc5d2623a606347",
+    "toolchain": "nightly-2026-03-03",
+    "command-profile": "runtime full_compiler,full_source,resident-routing-source,compute; --lib",
+    "interpretation": "713 pass, 2 fail; G05/G19",
+    "test-results": [
+      "FAILED. 713 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 45.70s"
+    ],
+    "failures": [
+      "test runtime::program::tests::interactive_program_output_is_the_final_statement_without_a_fenced_output ... FAILED",
+      "test runtime::program::tests::resident_matrix_comprehensions_feed_mutable_vertical_concatenation ... FAILED",
+      "error: test failed, to rerun pass `-p mech-runtime --lib`"
+    ],
+    "original-local-log": "/private/tmp/mech-syntax-qualification/s8c-terminal-selection-runtime.log"
+  },
+  {
+    "baseline": "e31d08260fac40bcf7982e854cc5d2623a606347",
+    "toolchain": "nightly-2026-03-03",
+    "command-profile": "engine full_compiler,full_source,resident-artifact; --lib --no-run",
+    "interpretation": "44 compilation errors from retired parser references; G23",
+    "test-results": [],
+    "failures": [
+      "error[E0432]: unresolved import `mech_syntax::parser`",
+      "error[E0433]: cannot find `parser` in `mech_syntax`",
+      "error[E0433]: cannot find `parser` in `mech_syntax`",
+      "error[E0433]: cannot find `parser` in `mech_syntax`",
+      "error[E0433]: cannot find `parser` in `mech_syntax`",
+      "error[E0433]: cannot find `parser` in `mech_syntax`",
+      "error[E0433]: cannot find `parser` in `mech_syntax`",
+      "error[E0433]: cannot find `parser` in `mech_syntax`",
+      "error[E0433]: cannot find `parser` in `mech_syntax`",
+      "error[E0433]: cannot find `parser` in `mech_syntax`",
+      "error[E0433]: cannot find `parser` in `mech_syntax`",
+      "error[E0433]: cannot find `parser` in `mech_syntax`",
+      "error[E0433]: cannot find `parser` in `mech_syntax`",
+      "error[E0433]: cannot find `parser` in `mech_syntax`",
+      "error[E0433]: cannot find `parser` in `mech_syntax`",
+      "error[E0433]: cannot find `parser` in `mech_syntax`",
+      "error[E0433]: cannot find `parser` in `mech_syntax`",
+      "error[E0433]: cannot find `parser` in `mech_syntax`",
+      "error[E0433]: cannot find `parser` in `mech_syntax`",
+      "error[E0433]: cannot find `parser` in `mech_syntax`",
+      "error[E0433]: cannot find `parser` in `mech_syntax`",
+      "error[E0433]: cannot find `parser` in `mech_syntax`",
+      "error[E0433]: cannot find `parser` in `mech_syntax`",
+      "error[E0433]: cannot find `parser` in `mech_syntax`",
+      "error[E0433]: cannot find `parser` in `mech_syntax`",
+      "error[E0433]: cannot find `parser` in `mech_syntax`",
+      "error[E0433]: cannot find `parser` in `mech_syntax`",
+      "error[E0433]: cannot find `parser` in `mech_syntax`",
+      "error[E0433]: cannot find `parser` in `mech_syntax`",
+      "error[E0433]: cannot find `parser` in `mech_syntax`",
+      "error[E0433]: cannot find `parser` in `mech_syntax`",
+      "error[E0433]: cannot find `parser` in `mech_syntax`",
+      "error[E0433]: cannot find `parser` in `mech_syntax`",
+      "error[E0433]: cannot find `parser` in `mech_syntax`",
+      "error[E0433]: cannot find `parser` in `mech_syntax`",
+      "error[E0433]: cannot find `parser` in `mech_syntax`",
+      "error[E0433]: cannot find `parser` in `mech_syntax`",
+      "error[E0433]: cannot find `parser` in `mech_syntax`",
+      "error[E0433]: cannot find `parser` in `mech_syntax`",
+      "error[E0433]: cannot find `parser` in `mech_syntax`",
+      "error[E0433]: cannot find `parser` in `mech_syntax`",
+      "error[E0433]: cannot find `parser` in `mech_syntax`",
+      "error[E0433]: cannot find `parser` in `mech_syntax`",
+      "error[E0425]: cannot find function `parse` in crate `mech_syntax`",
+      "error: could not compile `mech-engine` (lib test) due to 44 previous errors"
+    ],
+    "original-local-log": "/private/tmp/mech-syntax-qualification/s8-audit-c-engine-unit-build.log"
+  },
+  {
+    "baseline": "e31d08260fac40bcf7982e854cc5d2623a606347",
+    "toolchain": "nightly-2026-03-03",
+    "command-profile": "check mech-wasm browser_project_core --target wasm32-unknown-unknown",
+    "interpretation": "isolated build passes; G22 still blocks actual document loader",
+    "test-results": [],
+    "failures": [],
+    "original-local-log": "/private/tmp/mech-syntax-qualification/s8-audit-c-wasm-build.log"
+  }
+]

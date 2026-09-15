@@ -107,9 +107,9 @@ fn probe(case: &Value) -> Result<Vec<Vec<String>>, (String, String)> {
 
 #[test]
 fn compiler_entry_point_witnesses() {
-    use mech_runtime::resolver::{InMemorySourceResolver, SourceRequest, SourceResolver};
-    use mech_runtime::ModuleBuildOptions;
     use mech_engine::ProgramArtifactCompilationProduct;
+    use mech_runtime::ModuleBuildOptions;
+    use mech_runtime::resolver::{InMemorySourceResolver, SourceRequest, SourceResolver};
     use std::collections::{BTreeMap, BTreeSet};
     let source = "answer := 42\nanswer\n";
     let doc = SourceDocument::parse_resolved(
@@ -341,8 +341,48 @@ fn source_catalog_census() {
     let mut names = std::collections::BTreeSet::new();
     for export in catalog.all_exports() {
         if names.insert(export.canonical_name.clone()) {
-            println!("AUDIT_CATALOG {}", json!({"name":export.canonical_name,"types":format!("{:?}",catalog.source_type_declaration(&export.canonical_name))}));
+            println!(
+                "AUDIT_CATALOG {}",
+                json!({"name":export.canonical_name,"types":format!("{:?}",catalog.source_type_declaration(&export.canonical_name))})
+            );
         }
     }
     assert!(!names.is_empty());
+}
+
+#[cfg(feature = "serde")]
+#[test]
+fn browser_document_payload_witness() {
+    let document = SourceDocument::parse_resolved(
+        "audit:browser",
+        Revision(0),
+        "answer := 42\n",
+        ParseConfig::default(),
+    )
+    .unwrap();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .build_compiler()
+        .unwrap();
+    let product = compiler.compile_document(&document).unwrap();
+    let bundle =
+        mech_runtime::CanonicalProgramBundle::from_product("audit:browser", &document, &product)
+            .unwrap();
+    let encoded = bundle.encode().unwrap();
+    assert!(mech_runtime::CanonicalProgramBundle::decode(&encoded, Some("answer := 42\n")).is_ok());
+    // Exact decoder and destination type used by the frozen C WasmDocument path.
+    // This is a transport frontier witness, not a browser execution claim.
+    let retiring_decoder: Result<mech_core::nodes::Program, _> =
+        mech_core::nodes::decode_and_decompress(&encoded);
+    println!(
+        "AUDIT_BROWSER {}",
+        json!({"stage":if retiring_decoder.is_ok() {"pass"} else {"transport"},
+        "detail":format!("{:?}",retiring_decoder.as_ref().err())})
+    );
+    if std::env::var_os("MECH_AUDIT_REQUIRE_PASS").is_some() {
+        assert!(
+            retiring_decoder.is_ok(),
+            "canonical producer payload cannot reach the frozen C document loader"
+        );
+    }
 }

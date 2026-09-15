@@ -1,0 +1,18 @@
+kind	witness	stage	related-gaps	open-obligation
+u8	scalar-u8	pass		O01/O03/O05: overload, cross-kind promotion, domain edges, aggregate and backend coverage; this row is not all operations for the type
+u16	scalar-u16	pass		O01/O03/O05: overload, cross-kind promotion, domain edges, aggregate and backend coverage; this row is not all operations for the type
+u32	scalar-u32	pass		O01/O03/O05: overload, cross-kind promotion, domain edges, aggregate and backend coverage; this row is not all operations for the type
+u64	scalar-u64	pass	G02	O01/O03/O05: overload, cross-kind promotion, domain edges, aggregate and backend coverage; this row is not all operations for the type
+u128	scalar-u128	pass	G02	O01/O03/O05: overload, cross-kind promotion, domain edges, aggregate and backend coverage; this row is not all operations for the type
+i8	scalar-i8	pass	G02	O01/O03/O05: overload, cross-kind promotion, domain edges, aggregate and backend coverage; this row is not all operations for the type
+i16	scalar-i16	pass	G02	O01/O03/O05: overload, cross-kind promotion, domain edges, aggregate and backend coverage; this row is not all operations for the type
+i32	scalar-i32	pass	G02;G06	O01/O03/O05: overload, cross-kind promotion, domain edges, aggregate and backend coverage; this row is not all operations for the type
+i64	scalar-i64	pass	G02	O01/O03/O05: overload, cross-kind promotion, domain edges, aggregate and backend coverage; this row is not all operations for the type
+i128	scalar-i128	pass	G02	O01/O03/O05: overload, cross-kind promotion, domain edges, aggregate and backend coverage; this row is not all operations for the type
+f32	scalar-f32	pass		O01/O03/O05: overload, cross-kind promotion, domain edges, aggregate and backend coverage; this row is not all operations for the type
+f64	scalar-f64	pass		O01/O03/O05: overload, cross-kind promotion, domain edges, aggregate and backend coverage; this row is not all operations for the type
+c64	scalar-c64	pass	G02	O01/O03/O05: overload, cross-kind promotion, domain edges, aggregate and backend coverage; this row is not all operations for the type
+r64	scalar-r64	pass	G02	O01/O03/O05: overload, cross-kind promotion, domain edges, aggregate and backend coverage; this row is not all operations for the type
+string	scalar-string	pass	G06	O01/O03/O05: overload, cross-kind promotion, domain edges, aggregate and backend coverage; this row is not all operations for the type
+bool	scalar-bool	pass		O01/O03/O05: overload, cross-kind promotion, domain edges, aggregate and backend coverage; this row is not all operations for the type
+c32	scalar-c32	activation	G01;G02	O01/O03/O05: overload, cross-kind promotion, domain edges, aggregate and backend coverage; this row is not all operations for the type

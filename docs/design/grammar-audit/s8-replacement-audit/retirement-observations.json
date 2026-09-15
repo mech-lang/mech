@@ -1,0 +1,74 @@
+[
+  {
+    "gap": "G21",
+    "path": "src/runtime/src/runtime/program/compiler.rs",
+    "line": 282,
+    "evidence": "pub fn compile_tree("
+  },
+  {
+    "gap": "G21",
+    "path": "src/runtime/src/runtime/program/compiler.rs",
+    "line": 1666,
+    "evidence": "plan_artifact_tree_with_services"
+  },
+  {
+    "gap": "G21",
+    "path": "src/runtime/src/runtime/program/compiler.rs",
+    "line": 1745,
+    "evidence": "plan_artifact_tree_with_services"
+  },
+  {
+    "gap": "G21",
+    "path": "src/runtime/src/interactive.rs",
+    "line": 244,
+    "evidence": "pub fn from_tree("
+  },
+  {
+    "gap": "G22",
+    "path": "src/wasm/src/project.rs",
+    "line": 1943,
+    "evidence": "fn decode_document_tree("
+  },
+  {
+    "gap": "G22",
+    "path": "src/wasm/src/project.rs",
+    "line": 435,
+    "evidence": "tree: mech_core::nodes::Program"
+  },
+  {
+    "gap": "G22",
+    "path": "src/wasm/src/project.rs",
+    "line": 644,
+    "evidence": "tree: mech_core::nodes::Program"
+  },
+  {
+    "gap": "G22",
+    "path": "src/wasm/src/project.rs",
+    "line": 721,
+    "evidence": "tree: mech_core::nodes::Program"
+  },
+  {
+    "gap": "G22",
+    "path": "src/wasm/src/project.rs",
+    "line": 894,
+    "evidence": "tree: mech_core::nodes::Program"
+  },
+  {
+    "gap": "G22",
+    "path": "src/wasm/src/project.rs",
+    "line": 1079,
+    "evidence": "tree: mech_core::nodes::Program"
+  },
+  {
+    "gap": "G22",
+    "path": "src/wasm/src/project.rs",
+    "line": 1166,
+    "evidence": "tree: mech_core::nodes::Program"
+  },
+  {
+    "gap": "G22",
+    "path": "src/wasm/src/project.rs",
+    "line": 589,
+    "evidence": "let _ = candidate_source;"
+  }
+]
