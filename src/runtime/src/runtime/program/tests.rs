@@ -5836,3 +5836,40 @@ fn canonical_static_projection_preserves_independent_integrity_constraints() {
         assert_eq!(result.is_ok(), valid, "limit {limit}: {result:?}");
     }
 }
+
+#[test]
+fn canonical_static_projection_drops_unrelated_unbound_inputs() {
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .unwrap();
+    for expression in ["42.0", "used<f64>", "used<f64> + 2.0"] {
+        let document = canonical_planning_test_document(&format!(
+            "other := unused<f64> + 1.0\nanswer := {expression}\n"
+        ));
+        let inputs = if expression == "42.0" {
+            BTreeMap::new()
+        } else {
+            BTreeMap::from([("used".to_owned(), RuntimeHostInputValue::F64(40.0))])
+        };
+        let result = compiler
+            .evaluate_static_document_symbols_with_inputs(&document, &inputs, &["answer"])
+            .unwrap();
+        let expected = if expression == "used<f64>" {
+            40.0
+        } else {
+            42.0
+        };
+        assert_eq!(
+            result,
+            BTreeMap::from([("answer".to_owned(), RuntimeHostInputValue::F64(expected))])
+        );
+    }
+    let document =
+        canonical_planning_test_document("answer := 42.0\nsafe! := checked<f64> > 0.0\n");
+    assert!(
+        compiler
+            .evaluate_static_document_symbols(&document, &["answer"])
+            .is_err()
+    );
+}

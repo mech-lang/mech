@@ -47,10 +47,14 @@ impl CanonicalSourceProgram {
                     .flat_map(|constraint| constraint.inputs.iter().cloned()),
             )
             .collect::<Vec<_>>();
+        let mut inputs = BTreeSet::new();
         let mut nodes = BTreeSet::new();
         let mut states = BTreeSet::new();
         while let Some(value) = pending.pop() {
             match value {
+                SourceValue::Input(input) => {
+                    inputs.insert(input as usize);
+                }
                 SourceValue::NodeOutput { node, .. } if nodes.insert(node as usize) => {
                     let node = &self.program.nodes[node as usize];
                     pending.extend(node.inputs.iter().cloned());
@@ -70,6 +74,11 @@ impl CanonicalSourceProgram {
                 _ => {}
             }
         }
+        let input_ids = inputs
+            .iter()
+            .enumerate()
+            .map(|(new, old)| (*old as u32, new as u32))
+            .collect::<BTreeMap<_, _>>();
         let node_ids = nodes
             .iter()
             .enumerate()
@@ -88,8 +97,11 @@ impl CanonicalSourceProgram {
         let remap = |value: &mut SourceValue| match value {
             SourceValue::NodeOutput { node, .. } => *node = node_ids[node],
             SourceValue::State(state) => *state = state_ids[state],
+            SourceValue::Input(input) => *input = input_ids[input],
             _ => {}
         };
+        self.program.inputs = retain(self.program.inputs, &inputs);
+        self.source_map.inputs = retain(self.source_map.inputs, &inputs);
         self.program.nodes = retain(self.program.nodes, &nodes);
         self.contracts = retain(self.contracts, &nodes);
         self.source_map.nodes = retain(self.source_map.nodes, &nodes);

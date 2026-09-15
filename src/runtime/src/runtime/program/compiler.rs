@@ -671,6 +671,11 @@ impl<'a> ProgramCompilerView<'a> {
                 &BTreeSet::new(),
             )
             .map_err(|error| canonical_compilation_error(error.to_string()))?;
+        if initialization {
+            program = program
+                .retain_static_outputs(published)
+                .map_err(|error| canonical_compilation_error(error.to_string()))?;
+        }
         let referenced = program.referenced_input_names();
         let mut constants = Vec::new();
         for (ordinal, input) in program.program().inputs.iter().enumerate() {
@@ -718,11 +723,6 @@ impl<'a> ProgramCompilerView<'a> {
                     .bind_resource_input(name, request.clone())
                     .map_err(|error| canonical_compilation_error(error.to_string()))?;
             }
-        }
-        if initialization {
-            program = program
-                .retain_static_outputs(published)
-                .map_err(|error| canonical_compilation_error(error.to_string()))?;
         }
         Ok(program)
     }
