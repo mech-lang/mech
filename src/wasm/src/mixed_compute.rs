@@ -13,7 +13,9 @@ use mech_compute::{
     ComputeKernel, ComputeOutputSelection, ComputeOutputSnapshot, ComputePlatform, ComputePortId,
     ComputeProgram, ComputeSession, ComputeValue, TensorLayout, WGPU_BACKEND,
 };
-use mech_core::{MResult, MechError, MechErrorKind, Program};
+#[cfg(test)]
+use mech_core::Program;
+use mech_core::{MResult, MechError, MechErrorKind};
 use mech_engine::ProgramArtifact;
 use mech_gpu::{
     ComputeHostFactory, ComputeHostStateSnapshotHandle, ComputeLowerer, CpuScalarBackendFactory,
@@ -536,6 +538,7 @@ pub(crate) fn prepare_compute_document_region(
     finish_prepared_compute_region(mixed, parsing, catalog_setup, artifact_started)
 }
 
+#[cfg(test)]
 pub(crate) fn prepare_compute_region(
     compiler: &mut mech_runtime::ProgramCompiler,
     tree: &Program,
