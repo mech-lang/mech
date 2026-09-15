@@ -5,7 +5,9 @@ planning baseline and exact-preserving extraction. It does not seal replacement
 implementation or accept any silent reduction in required behavior.
 
 The original S8B remains frozen at `662d29b79`. The eleven extraction PRs
-#831–#841 retain their original heads and exact final-tree preservation proof.
+#831–#841 retain their original frozen-head exact final-tree preservation proof.
+Their current heads now also inherit the shared CI coordination overlay; the
+original whole-tree proof is not claimed for that changed tree.
 The original audit observations remain evidence of that frozen baseline; they
 are not rewritten as results from a corrective head.
 
@@ -55,8 +57,8 @@ All 714 runtime library tests, 45 binding tests, six visibility tests and ten
 declaration-handoff tests pass. Thus all 31 original strict schema-audit cases
 pass across the R03/R04 corrections. Repository formatting and 23 CI contract
 tests also pass. This does not close the separate Index range prerequisite or
-other replacement obligations. Full CI is requested on the R04 stacked head;
-parent correction runs are canceled so that the current head gets runners.
+other replacement obligations. The earlier independent R04 full-CI requests were superseded by the combined C
+qualification policy described below; canceled work is not passing evidence.
 Exact-head [Full CI run 34993367803](https://github.com/mech-lang/mech/actions/runs/34993367803)
 is queued; the ordinary PR CI run is 34993111754. These pending workflows are
 not passing evidence. The reduced engine source build also passes at R04.
@@ -68,3 +70,65 @@ the six G12 constrained-type decisions. Their positive capability witnesses and
 owning review boundaries remain open. Missing semantic families remain required
 prerequisite work under their assigned owners. There is no new generic audit,
 blanket exclusion, or resumption of catch-all development on the original S8B PR.
+
+## Landing coordinator checkpoint — 2026-09-15, batch 1
+
+**Candidate:** `codex/syntax-s8c-cutover` /
+`873dad50cc439779df572f26d986553d8f276699`, published on #830. Local worktree:
+`/private/tmp/mech-syntax-s8c-qualification`. GitHub native stack #846 preserves
+S0–S8A, replaces frozen B's landing position with its existing E1–E11 review
+boundaries, then R01 #842, R03 #843, R04 #844 and C. Final target remains
+`integration/v0.4`. Frozen B #828 remains available as the original comparison.
+C now targets R04 and GitHub reports no merge conflicts.
+
+**Completed:** CI policy `164379213` is pushed through every E/R slice and C.
+Exact registered review identities run affected owners and explicit regressions;
+unknown paths retain conservative validation. C retains full qualification,
+normal PR gates, browser/application checks and an exact-head deleted-parser
+source product probe. All 45 Python CI tests pass. No duplicate manual full
+dispatch was started. Obsolete runs 34984227048, 34993111754 and 34993367803
+were canceled only after preserving completed logs; their final archives are
+retained under `/private/tmp/mech-syntax-qualification/s8-ci-archive-20260915`.
+Pagination captured all 127 jobs on the frozen B failed run. C's previous remote
+head is preserved at `archive/s8c-before-qualification-20260915`.
+
+R01/G03, R03/G25 and R04/G26 are assembled unchanged in C. Exact C execution:
+6 visibility + 45 constant-binding + 10 declaration-handoff tests pass; the real
+source-runtime fixture passes its 14 catalog cases and rooted source canary
+with `parser.rs` and `document/lower/legacy` physically absent. Runtime library:
+713 pass, 2 fail. This is combined evidence, not final qualification. The earlier
+local command that omitted the routing feature executed zero tests and is excluded
+from passing evidence. The feature-enabled run is retained in recovery-evidence.
+
+The B/E11 certification import violation was fixed once in R03 by moving the
+unchanged binding regression to canonical_source_review. Both the regression
+and the unchanged canonical-authority gate pass. Current R01/R03/R04 heads are
+`f8c8706b8`, `3563dc2fb`, `98d673856`; prior clean production reviews remain
+recorded, and fresh reviews were requested after confirming zero open threads.
+The old/new SHA mapping and combined logs are in recovery-evidence.
+
+**Remaining:** All accepted gaps other than the demonstrated G03/G25/G26
+corrections remain open for their assigned acceptance. Current C runtime failures:
+`interactive_program_output_is_the_final_statement_without_a_fenced_output`
+and `resident_matrix_comprehensions_feed_mutable_vertical_concatenation`.
+Inspect their actual failure causes before changing implementation or expectations.
+Deleted-parser engine test consumers, browser/application probes, certification,
+exact-head full qualification, required review and protected merge remain open.
+Canceled/skipped work and prior heads are not qualification of this candidate.
+
+**Current action:** Investigate the two actual C runtime failures against their
+accepted owners; prepare R05/G04's dependency-ready repeated-selection correction
+in `/private/tmp/mech-syntax-s8r05-updates` on R04. Only this new corrective
+branch is actively changing; existing corrections are under review.
+
+**Next action:** Extract the two runtime failure bodies from
+`recovery-evidence/c-batch1-runtime.log`; add and execute strict mixed/nested
+occurrence-order regressions in R05's existing canonical_document_state suite.
+Continue real C browser/application probes while the focused slice CI/reviews run.
+
+**External blocker:** None for the current batch; the user approved native-stack
+re-linking and it completed. The previously recorded G02/G17/G18 capability floor
+and six G12 semantic decisions still require explicit disposition before their
+dependent implementations. No capability has been dropped or converted into an
+accepted rejection. This checkpoint is not complete and does not authorize merge
+until exact-candidate qualification and review requirements are met.

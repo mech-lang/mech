@@ -1,0 +1,25 @@
+   Compiling getrandom v0.3.4
+   Compiling syn v2.0.119
+   Compiling rand_core v0.9.5
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling ppv-lite86 v0.2.21
+   Compiling rand_chacha v0.9.0
+   Compiling rand_xorshift v0.4.0
+   Compiling nalgebra-macros v0.3.0
+   Compiling rand v0.9.5
+   Compiling nalgebra v0.34.2
+   Compiling regex-syntax v0.8.11
+   Compiling unarray v0.1.4
+   Compiling proptest v1.11.0
+   Compiling mech-core v0.3.5 (/private/tmp/mech-syntax-s8r03-review-owner/src/core)
+   Compiling syn v3.0.3
+   Compiling mech-syntax v0.3.5 (/private/tmp/mech-syntax-s8r03-review-owner/src/syntax)
+    Finished `test` profile [unoptimized] target(s) in 15.40s
+     Running tests/canonical_phase_2i_certification.rs (/private/tmp/mech-syntax-s8-extraction-target/debug/deps/canonical_phase_2i_certification-50635b47e74a8734)
+
+running 1 test
+test certification_evidence_uses_only_canonical_authorities ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.08s
+

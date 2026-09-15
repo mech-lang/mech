@@ -1,0 +1,35 @@
+{
+  "candidate": "873dad50cc439779df572f26d986553d8f276699",
+  "evidence": [
+    {
+      "file": "ci-restack.json",
+      "sha256": "c4abcabd92f8d51e82e95c5f535337fec3d7e0df77d042f478a6b7ff21a56ef6",
+      "bytes": 4055
+    },
+    {
+      "file": "c-batch1-combined-enabled.log",
+      "sha256": "8700172657f3d4b5c9ea5825872cb6109f0f18e39d1bb9cfb54c347ff5b9969b",
+      "bytes": 5586
+    },
+    {
+      "file": "c-batch1-runtime.log",
+      "sha256": "6c29746893026ee35e2d5c78d597f732038e781ac862e991d3f5245115ad2306",
+      "bytes": 69442
+    },
+    {
+      "file": "c-batch1-source-product-exact.log",
+      "sha256": "15d145cb33c1a3fb51e20ef90bea1319ae9f569e2fadd0350cb463549a845666",
+      "bytes": 634
+    },
+    {
+      "file": "r03-relocated-binding.log",
+      "sha256": "69b0e9b1da9f0d58e84378dd1551246044b290bab8651b6140ab2ea5e4f997d5",
+      "bytes": 746
+    },
+    {
+      "file": "r03-certification-gate.log",
+      "sha256": "253e7e7f508eb81c27661ff675246b176cc601ae2d38a8235c86c12af6518b27",
+      "bytes": 1031
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+   Compiling mech-core v0.3.5 (/private/tmp/mech-syntax-s8r03-review-owner/src/core)
+   Compiling mech-syntax v0.3.5 (/private/tmp/mech-syntax-s8r03-review-owner/src/syntax)
+   Compiling mech-bytecode v0.3.5 (/private/tmp/mech-syntax-s8r03-review-owner/src/bytecode)
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-syntax-s8r03-review-owner/src/engine)
+    Finished `test` profile [unoptimized] target(s) in 33.94s
+     Running tests/canonical_source_review.rs (/private/tmp/mech-syntax-s8-extraction-target/debug/deps/canonical_source_review-22cf009abf5a258f)
+
+running 1 test
+test fixed_matrix_snapshots_bind_to_inferred_input_dimensions ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 46 filtered out; finished in 0.02s
+
