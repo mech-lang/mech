@@ -8,7 +8,7 @@ use std::time::Duration;
 use mech_core::{
     AccessMode, DeliveryMode, DimensionExpr, EffectContract, EffectDeliveryPolicy,
     ExternalInteraction, IdempotencyRequirement, InputPortLayout, InputPortPolicy, MResult,
-    OperationContractDeclaration, ParsedProgram, SchemaBody, Value, ValueCell, ValueData, hash_str,
+    OperationContractDeclaration, ParsedProgram, SchemaBody, Value, ValueCell, ValueData,
     snapshot::SequenceView,
 };
 use mech_engine::{
@@ -1713,27 +1713,34 @@ fn variable_definition_metadata_and_state_survive_resident_bytecode_admission() 
         .function_catalog(mech_stdlib::source_catalog())
         .build_compiler()
         .unwrap();
-    let product = compiler.compile_source(SOURCE).unwrap();
-    let parsed = ParsedProgram::from_bytes(product.bytecode()).unwrap();
-    let input_id = hash_str("input");
-    let state_id = hash_str("state");
-    assert!(parsed.symbols.contains_key(&input_id));
-    assert!(parsed.symbols.contains_key(&state_id));
-    assert_eq!(parsed.dictionary.get(&input_id).unwrap(), "input");
-    assert_eq!(parsed.dictionary.get(&state_id).unwrap(), "state");
-    assert!(!parsed.mutable_symbols.contains(&input_id));
-    assert!(parsed.mutable_symbols.contains(&state_id));
-    assert!(
-        product
-            .artifact()
-            .slots()
+    // Symbol inspection explicitly requests the interactive publication contract.
+    let ordinary = compiler.compile_source(SOURCE).unwrap();
+    let ordinary = ParsedProgram::from_bytes(ordinary.bytecode()).unwrap();
+    assert!(ordinary.symbols.is_empty());
+    let product = compiler
+        .compile_interactive_document(&canonical_planning_test_document(SOURCE))
+        .unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(product.bytecode()).unwrap();
+    for artifact in [product.artifact(), &decoded] {
+        let symbols = artifact
+            .outputs()
             .iter()
-            .any(|slot| slot.role == SlotRole::State)
-    );
+            .filter_map(|output| {
+                output.interactive_binding.as_ref().map(|binding| {
+                    (
+                        binding.lexical_name.as_str(),
+                        artifact.slots()[output.source.get() as usize].role,
+                    )
+                })
+            })
+            .collect::<BTreeMap<_, _>>();
+        assert_eq!(symbols.get("input"), Some(&SlotRole::Output));
+        assert_eq!(symbols.get("state"), Some(&SlotRole::State));
+    }
 
     let mut source_runtime = runtime();
     let source = source_runtime
-        .load_source_program(SOURCE, crate::ResidentDurabilityPolicy::Volatile)
+        .load_interactive_source_program(SOURCE, crate::ResidentDurabilityPolicy::Volatile)
         .unwrap();
     let mut bytecode_runtime = runtime();
     let bytecode = bytecode_runtime
@@ -1764,12 +1771,29 @@ second
         .function_catalog(mech_stdlib::source_catalog())
         .build_compiler()
         .unwrap();
-    let product = compiler.compile_source(SOURCE).unwrap();
-    let parsed = ParsedProgram::from_bytes(product.bytecode()).unwrap();
-
-    assert!(parsed.symbols.contains_key(&hash_str("first")));
-    assert!(parsed.symbols.contains_key(&hash_str("second")));
-    assert!(!parsed.symbols.contains_key(&hash_str("local")));
+    // Symbol inspection explicitly requests the interactive publication contract.
+    let ordinary = compiler.compile_source(SOURCE).unwrap();
+    let ordinary = ParsedProgram::from_bytes(ordinary.bytecode()).unwrap();
+    assert!(ordinary.symbols.is_empty());
+    let product = compiler
+        .compile_interactive_document(&canonical_planning_test_document(SOURCE))
+        .unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(product.bytecode()).unwrap();
+    for artifact in [product.artifact(), &decoded] {
+        let symbols = artifact
+            .outputs()
+            .iter()
+            .filter_map(|output| {
+                output
+                    .interactive_binding
+                    .as_ref()
+                    .map(|binding| binding.lexical_name.as_str())
+            })
+            .collect::<BTreeSet<_>>();
+        assert!(symbols.contains("first"));
+        assert!(symbols.contains("second"));
+        assert!(!symbols.contains("local"));
+    }
 }
 
 #[test]
@@ -1822,37 +1846,24 @@ fn compiled_conversion_executes_after_bytecode_round_trip() {
         .function_catalog(mech_stdlib::source_catalog())
         .build_compiler()
         .unwrap();
-    for source_text in [
+    for (case, source_text) in [
         "value := 3.9\nanswer := value<i32>\nanswer",
         "value := 3<i32>\nanswer := value<f64>\nanswer",
         "value := true\nanswer := value<string>\nanswer",
         "value := 42<u64>\nanswer := value<string>\nanswer",
         "value := [3.9 4.1]\nanswer := value<[i32]>\nanswer",
         "value<[i32]> := [3<i32> 4<i32>]\nanswer := value<[f64]>\nanswer",
-    ] {
+    ]
+    .into_iter()
+    .enumerate()
+    {
         let product = compiler
             .compile_source(source_text)
             .unwrap_or_else(|error| {
                 panic!("compiled conversion failed for {source_text}: {error:?}")
             });
-        assert!(
-            product.artifact().nodes().iter().any(|node| {
-                node.as_operation()
-                    .expect("ordinary fixture")
-                    .operation
-                    .module_path
-                    .as_ref()
-                    == ["convert"]
-                    && node
-                        .as_operation()
-                        .expect("ordinary fixture")
-                        .operation
-                        .operation_name
-                        == "kind"
-            }),
-            "conversion instruction was not retained for {source_text}: {:?}",
-            product.artifact().nodes(),
-        );
+        // Constant conversions may fold during canonical compilation. Check the
+        // exact published type and value, rather than requiring a runtime opcode.
 
         let mut source_runtime = runtime();
         let source = source_runtime
@@ -1869,6 +1880,25 @@ fn compiled_conversion_executes_after_bytecode_round_trip() {
             .unwrap_or_else(|error| {
                 panic!("bytecode conversion failed for {source_text}: {error:?}")
             });
+        let value = source.initial_value.value();
+        match case {
+            0 => assert!(matches!(value.data(), ValueData::I32(3))),
+            1 => assert!(matches!(value.data(), ValueData::F64(bits) if bits.to_f64() == 3.0)),
+            2 => {
+                assert!(matches!(value.data(), ValueData::String(text) if text.as_ref() == "true"))
+            }
+            3 => assert!(matches!(value.data(), ValueData::String(text) if text.as_ref() == "42")),
+            4 => {
+                assert_eq!(canonical_matrix_shape(value), (1, 2));
+                assert!(matches!(value.data(), ValueData::Matrix(matrix)
+                    if matches!(matrix.elements(), SequenceView::I32(values) if values == [3, 4])));
+            }
+            5 => {
+                assert_eq!(canonical_matrix_shape(value), (1, 2));
+                assert_eq!(canonical_f64_matrix(value), [3.0, 4.0]);
+            }
+            _ => unreachable!(),
+        }
         assert_eq!(
             source.initial_value, bytecode.initial_value,
             "source and bytecode conversions diverged for {source_text}",
@@ -2092,7 +2122,7 @@ values
     runtime.drain_resident_host_inputs(1).unwrap();
 
     assert_eq!(
-        canonical_f64_matrix(runtime.root_symbol_value("values").unwrap().value()),
+        canonical_f64_matrix(runtime.program_output_value().unwrap().unwrap().value()),
         [3.0, 3.0, 3.0],
         "operations inside the comprehension must execute on every accepted turn",
     );
@@ -2267,20 +2297,6 @@ selected
     let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
         panic!("dynamic scalar access must remain resident")
     };
-    assert!(execution.artifact.nodes().iter().any(|node| {
-        node.as_operation()
-            .expect("ordinary fixture")
-            .operation
-            .module_path
-            .as_ref()
-            == ["access"]
-            && node
-                .as_operation()
-                .expect("ordinary fixture")
-                .operation
-                .operation_name
-                == "index"
-    }));
     assert!(matches!(
         execution.coordinator.instance().output_borrow(0),
         Some(ResidentValueBorrow::F64 { values, .. }) if values == [20.0]
@@ -2307,6 +2323,27 @@ selected
         execution.coordinator.instance().output_borrow(0),
         Some(ResidentValueBorrow::F64 { values, .. }) if values == [30.0]
     ));
+    // Exercise both source and decoded graphs through changing selectors so a
+    // constant-folded access cannot satisfy this dynamic-consumer regression.
+    for runtime in [&mut runtime, &mut bytecode_runtime] {
+        for (index, expected) in [(1.0, 10.0), (3.0, 30.0), (2.0, 20.0)] {
+            runtime
+                .ingress()
+                .submit(crate::RuntimeHostInput::single(
+                    crate::RuntimeHostInputSource::new("test://clock/tick", "delta-seconds")
+                        .unwrap(),
+                    crate::RuntimeHostInputValue::F64(index),
+                ))
+                .unwrap();
+            runtime.drain_resident_host_inputs(1).unwrap();
+            let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program
+            else {
+                panic!("dynamic selector must retain the external resident route")
+            };
+            assert!(matches!(execution.coordinator.instance().output_borrow(0),
+                Some(ResidentValueBorrow::F64 { values, .. }) if values == [expected]));
+        }
+    }
 }
 
 #[cfg(feature = "compiler_default")]
@@ -3847,7 +3884,7 @@ state
         ));
     }
 
-    let state = runtime.root_symbol_value("state").unwrap();
+    let state = runtime.program_output_value().unwrap().unwrap();
     assert_eq!(canonical_f64(state.value()), 2.0);
 }
 
@@ -4283,18 +4320,9 @@ fn successful_resident_activation_never_falls_back_to_a_second_program() {
 fn product_nbody_state_slots(
     runtime: &crate::MechRuntime,
 ) -> (mech_core::CellSlotId, mech_core::CellSlotId) {
-    let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
-        panic!("n-body must remain on the resident-external route")
-    };
-    let positions = execution.artifact.outputs()[0].source;
-    let velocity = execution
-        .artifact
-        .slots()
-        .iter()
-        .find(|slot| slot.role == SlotRole::State && slot.slot != positions)
-        .expect("n-body velocity state slot")
-        .slot;
-    (positions, velocity)
+    // Published positions have their own buffer, separate from the recurrence.
+    let slots = nbody_state_slots(runtime, -0.38972469318558057);
+    (slots.positions, slots.velocities)
 }
 
 fn product_nbody_slot(runtime: &crate::MechRuntime, slot: mech_core::CellSlotId) -> Vec<f64> {
@@ -4580,6 +4608,10 @@ impl ScalarNbodyReference {
 }
 
 fn public_nbody_state_slots(runtime: &crate::MechRuntime) -> PublicNbodyStateSlots {
+    nbody_state_slots(runtime, -0.1407280797108344)
+}
+
+fn nbody_state_slots(runtime: &crate::MechRuntime, mercury_x: f64) -> PublicNbodyStateSlots {
     let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
         panic!("public N-body must remain on the resident-external route")
     };
@@ -4589,7 +4621,7 @@ fn public_nbody_state_slots(runtime: &crate::MechRuntime) -> PublicNbodyStateSlo
         .slots
         .iter()
         .filter(|slot| {
-            slot.storage == ResidentStorageClass::State
+            slot.role == SlotRole::State
                 && slot.region.kind == mech_core::ResidentValueKind::F64
                 && slot.region.shape.rows == 10
                 && slot.region.shape.columns == 3
@@ -4599,13 +4631,13 @@ fn public_nbody_state_slots(runtime: &crate::MechRuntime) -> PublicNbodyStateSlo
     assert_eq!(slots.len(), 2, "public N-body has exactly two state cells");
     let first = public_nbody_state_slot(runtime, slots[0]);
     let second = public_nbody_state_slot(runtime, slots[1]);
-    if (first[1] - (-0.1407280797108344)).abs() < 1.0e-12 {
+    if (first[1] - mercury_x).abs() < 1.0e-12 {
         PublicNbodyStateSlots {
             positions: slots[0],
             velocities: slots[1],
         }
     } else {
-        assert!((second[1] - (-0.1407280797108344)).abs() < 1.0e-12);
+        assert!((second[1] - mercury_x).abs() < 1.0e-12);
         PublicNbodyStateSlots {
             positions: slots[1],
             velocities: slots[0],

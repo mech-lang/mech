@@ -333,3 +333,22 @@ compiler's storage layout.
 
 This qualifies the frozen artifact product only. Full served mixed EKF/particles,
 the browser loader and the remaining C runtime/distribution failures stay open.
+
+
+Canonical publication consumer qualification
+--------------------------------------------
+
+C runtime regressions now inspect the canonical artifact's interactive bindings,
+including source/bytecode mutability and function-local isolation. Ordinary
+consumers query the final program output instead of demanding hidden symbols.
+Conversion tests assert exact published scalar/matrix types and values; dynamic
+selector tests exercise changing inputs on source and bytecode graphs. Neither
+test requires the retired compiler's instruction names. N-body inspection follows
+recurrence roles rather than treating the published position buffer as state.
+
+The complete C runtime library run executes 710 tests: 698 pass and 12 fail. The
+remaining failures cover provider planning/error classification, portable selector
+admission, ordered roots, formatted output ownership, pattern functions, collection
+shape/control/initializers, and both N-body application references. The N-body
+numerical, trajectory and display-bound assertions remain unchanged. These are
+open qualification failures, not ignored tests or a completed cutover seal.
