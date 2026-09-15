@@ -224,9 +224,12 @@ impl ReactiveInstance {
         if control.kind == crate::ComprehensionKind::Set {
             meter.charge_comparison_work(canonical_work).map_err(fail)?;
         }
-        if let ResidentValueRef::Snapshot([Some(current)]) =
-            self.workspace.scratch.read(control.write.region)
-        {
+        let target = if control.write.storage == ResidentStorageClass::Constant {
+            &self.activation
+        } else {
+            &self.workspace.scratch
+        };
+        if let ResidentValueRef::Snapshot([Some(current)]) = target.read(control.write.region) {
             let footprint =
                 budget::published_canonical_footprint(&mut meter, current, &self.plan.schemas)
                     .map_err(fail)?;
@@ -284,9 +287,12 @@ impl ReactiveInstance {
                 .with_canonicalization_budget(&canonical_budget),
         )
         .map_err(|_| fail(ResidentKernelError::InvalidOutput))?;
-        let ResidentValueMut::Snapshot([target]) =
-            self.workspace.scratch.write(control.write.region)
-        else {
+        let target = if control.write.storage == ResidentStorageClass::Constant {
+            &mut self.activation
+        } else {
+            &mut self.workspace.scratch
+        };
+        let ResidentValueMut::Snapshot([target]) = target.write(control.write.region) else {
             return Err(fail(ResidentKernelError::InvalidOutput));
         };
         let changed = target

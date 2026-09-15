@@ -437,7 +437,13 @@ struct ActivatedOnceNode {
     base_input: Option<usize>,
     storage: ResidentStorageClass,
     write: ResidentRegion,
-    kernel: BoundResidentKernel,
+    body: ActivatedOnceBody,
+}
+
+#[derive(Clone, Debug)]
+enum ActivatedOnceBody {
+    Kernel(BoundResidentKernel),
+    Control(ActivatedNodeIndex),
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -2016,7 +2022,7 @@ fn activate_internal(
     let facts = complete_activation_shape_facts(artifact, facts, &classification, &schedule)?;
     let layout = build_layout(artifact, &facts, &classification, &schedule.positions)?;
     let mut static_selectors = ArtifactStaticSelectorResolver::new(artifact);
-    let mut plan = build_plan(
+    let plan = build_plan(
         artifact,
         catalog,
         classification,
@@ -2055,58 +2061,8 @@ fn activate_internal(
             value,
         )?;
     }
-    execute_activation_graph(&plan, &mut activation, transient_budget.as_ref())?;
-    let mut state = StateArena::new(&plan.memory_plan, &plan.slots, &managed_memory)?;
-    for slot in plan
-        .slots
-        .iter()
-        .filter(|slot| slot.role == SlotRole::State)
-    {
-        let declaration = &artifact.slots()[slot.artifact_id.get() as usize];
-        match declaration.initializer {
-            Some(InitializerReference::Constant(constant)) => {
-                let value = artifact.constants().get(constant).ok_or(
-                    ResidentActivationError::MissingStateInitializer {
-                        slot: slot.artifact_id,
-                    },
-                )?;
-                state.initialize(slot.artifact_id, value)?;
-            }
-            Some(InitializerReference::Activation(source)) => {
-                let source = &plan.slots[source.get() as usize];
-                if source.storage != ResidentStorageClass::Constant {
-                    return Err(
-                        ResidentActivationError::InitializerUnavailableAtActivation {
-                            slot: slot.artifact_id,
-                            source: source.artifact_id,
-                        },
-                    );
-                }
-                state.initialize_from_arena(slot.artifact_id, &activation, source.region)?;
-            }
-            None => {
-                return Err(ResidentActivationError::MissingStateInitializer {
-                    slot: slot.artifact_id,
-                });
-            }
-        }
-    }
-    for materialization in plan.output_materializations.iter().copied() {
-        let declaration = &artifact.slots()[materialization.target.get() as usize];
-        if let Some(InitializerReference::Constant(constant)) = declaration.initializer {
-            let value = artifact
-                .constants()
-                .get(constant)
-                .ok_or(ResidentActivationError::InvalidSnapshotRepresentation)?;
-            state.initialize(materialization.target, value)?;
-        } else if let ResidentReadLocation::Constant(source) = materialization.source {
-            state.initialize_from_arena(materialization.target, &activation, source)?;
-        }
-    }
+    let state = StateArena::new(&plan.memory_plan, &plan.slots, &managed_memory)?;
     let workspace = TurnWorkspace::new(&plan, &managed_memory)?;
-    finalize_resident_backing_footprints(artifact, &mut plan, &activation, &state, &workspace)?;
-    ensure_resident_plan_admitted(&plan.memory_plan)?;
-    audit_resident_backings(artifact, &plan, &activation, &state, &workspace)?;
     let mut instance = ReactiveInstance {
         id,
         plan,
@@ -2120,6 +2076,93 @@ fn activate_internal(
         candidate_epoch: None,
         _managed_memory: managed_memory,
     };
+    for index in 0..instance.plan.activation_steps.len() {
+        let step = &instance.plan.activation_steps[index];
+        if let ActivatedOnceBody::Control(control) = &step.body {
+            let control = *control;
+            let node = step.artifact_node;
+            instance
+                .execute_activation_control(control)
+                .map_err(|_| ResidentActivationError::ActivationKernel { node })?;
+        } else {
+            execute_activation_kernel(
+                step,
+                &instance.plan,
+                &mut instance.activation,
+                instance.transient_budget.as_ref(),
+            )?;
+        }
+    }
+    for slot in instance
+        .plan
+        .slots
+        .iter()
+        .filter(|slot| slot.role == SlotRole::State)
+    {
+        let declaration = &artifact.slots()[slot.artifact_id.get() as usize];
+        match declaration.initializer {
+            Some(InitializerReference::Constant(constant)) => {
+                let value = artifact.constants().get(constant).ok_or(
+                    ResidentActivationError::MissingStateInitializer {
+                        slot: slot.artifact_id,
+                    },
+                )?;
+                instance.state.initialize(slot.artifact_id, value)?;
+            }
+            Some(InitializerReference::Activation(source)) => {
+                let source = &instance.plan.slots[source.get() as usize];
+                if source.storage != ResidentStorageClass::Constant {
+                    return Err(
+                        ResidentActivationError::InitializerUnavailableAtActivation {
+                            slot: slot.artifact_id,
+                            source: source.artifact_id,
+                        },
+                    );
+                }
+                instance.state.initialize_from_arena(
+                    slot.artifact_id,
+                    &instance.activation,
+                    source.region,
+                )?;
+            }
+            None => {
+                return Err(ResidentActivationError::MissingStateInitializer {
+                    slot: slot.artifact_id,
+                });
+            }
+        }
+    }
+    for materialization in instance.plan.output_materializations.iter().copied() {
+        let declaration = &artifact.slots()[materialization.target.get() as usize];
+        if let Some(InitializerReference::Constant(constant)) = declaration.initializer {
+            let value = artifact
+                .constants()
+                .get(constant)
+                .ok_or(ResidentActivationError::InvalidSnapshotRepresentation)?;
+            instance.state.initialize(materialization.target, value)?;
+        } else if let ResidentReadLocation::Constant(source) = materialization.source {
+            instance.state.initialize_from_arena(
+                materialization.target,
+                &instance.activation,
+                source,
+            )?;
+        }
+    }
+    finalize_resident_backing_footprints(
+        artifact,
+        &mut instance.plan,
+        &instance.activation,
+        &instance.state,
+        &instance.workspace,
+    )?;
+    ensure_resident_plan_admitted(&instance.plan.memory_plan)?;
+    audit_resident_backings(
+        artifact,
+        &instance.plan,
+        &instance.activation,
+        &instance.state,
+        &instance.workspace,
+    )?;
     instance.prepare_fixed_turn_plans()?;
     Ok(instance)
 }
@@ -2451,9 +2494,6 @@ fn classify_nodes(
     loop {
         let before = activation.len();
         for node in artifact.nodes() {
-            let Some(node) = node.as_operation() else {
-                continue;
-            };
             if matches!(
                 classes[node.node.get() as usize],
                 NodeClass::Observation | NodeClass::External
@@ -3966,11 +4006,36 @@ fn build_plan(
     let ActivationSchedule {
         nodes: scheduled_nodes,
         positions,
-        artifact_to_activated,
+        mut artifact_to_activated,
         mut topology,
     } = schedule;
     let mut effect_ordinal = 0_u32;
-    for node in artifact.nodes() {
+    let activation_control = |node: &&crate::NodeDeclaration| {
+        classes[node.node.get() as usize] == NodeClass::Activation && node.as_operation().is_none()
+    };
+    // Keep turn indexes stable; activation controls share the executor but are
+    // appended outside its turn topology and never scheduled by a turn.
+    for node in artifact
+        .nodes()
+        .iter()
+        .filter(|node| !activation_control(node))
+        .chain(artifact.nodes().iter().filter(activation_control))
+    {
+        if node.as_operation().is_none() {
+            let index = ActivatedNodeIndex(steps.len() as u32);
+            artifact_to_activated[node.node.get() as usize] = Some(index);
+            if classes[node.node.get() as usize] == NodeClass::Activation {
+                let output = &layout.slots[node_output_slot(artifact, node.node)?.get() as usize];
+                activation_steps.push(ActivatedOnceNode {
+                    artifact_node: node.node,
+                    sources: Box::new([]),
+                    base_input: None,
+                    storage: output.storage,
+                    write: output.region,
+                    body: ActivatedOnceBody::Control(index),
+                });
+            }
+        }
         if let crate::ExecutableNodeBody::Comprehension(control) = &node.body {
             let output_slot = node_output_slot(artifact, node.node)?;
             let output = &layout.slots[output_slot.get() as usize];
@@ -4116,7 +4181,7 @@ fn build_plan(
                 base_input: base,
                 storage: output.storage,
                 write: output.region,
-                kernel,
+                body: ActivatedOnceBody::Kernel(kernel),
             });
             continue;
         }
@@ -4631,165 +4696,168 @@ fn fold_hash_word(hash: u64, word: u64) -> u64 {
     (hash.rotate_left(17) ^ word).wrapping_mul(0xd6e8_feb8_6659_fd93)
 }
 
-fn execute_activation_graph(
+fn execute_activation_kernel(
+    step: &ActivatedOnceNode,
     plan: &ActivatedPlan,
     arena: &mut TypedResidentArena,
     transient_budget: Option<&std::rc::Rc<super::budget::payload::ResidentPayloadOwner>>,
 ) -> Result<(), ResidentActivationError> {
-    for step in &plan.activation_steps {
-        if step.storage != ResidentStorageClass::Constant {
-            return Err(ResidentActivationError::InvalidDependency {
-                node: step.artifact_node,
-            });
-        }
-        let call = plan.memory_plan.call_for_node(step.artifact_node).ok_or(
-            ResidentActivationError::ActivationKernel {
-                node: step.artifact_node,
-            },
-        )?;
-        let scope = arena
-            .prepare_payload_write(step.write)
-            .and_then(|scope| {
-                if scope.is_some() {
-                    Ok(scope)
-                } else {
-                    transient_budget
-                        .map(|owner| owner.begin(step.write))
-                        .transpose()
-                }
-            })
-            .map_err(|error| ResidentActivationError::MemoryRuntime { error })?;
-        if let Some(scope) = &scope {
-            let inputs = u64::try_from(step.sources.len())
-                .map_err(|_| ResidentActivationError::RegionSizeOverflow)?;
-            let borrowed = inputs
-                .checked_mul(core::mem::size_of::<ResidentValueRef<'_>>() as u64)
-                .ok_or(ResidentActivationError::RegionSizeOverflow)?;
-            let owned = inputs
-                .checked_mul(core::mem::size_of::<OwnedResidentValue>() as u64)
-                .ok_or(ResidentActivationError::RegionSizeOverflow)?;
-            scope
-                .admit_auxiliary(
-                    borrowed
-                        .checked_add(owned)
-                        .ok_or(ResidentActivationError::RegionSizeOverflow)?,
-                )
-                .map_err(|error| ResidentActivationError::MemoryRuntime { error })?;
-        }
-        let borrowed = step
-            .sources
-            .iter()
-            .map(|source| {
-                let region = match source {
-                    ArtifactSource::Constant(constant) => {
-                        plan.constant_regions[constant.get() as usize]
-                    }
-                    ArtifactSource::Slot(slot) => plan.slots[slot.get() as usize].region,
-                };
-                arena.read(region)
-            })
-            .collect::<Vec<_>>();
-        let facts = live::facts(
-            call,
-            step.artifact_node,
-            &borrowed,
-            arena.read(step.write),
-            &plan.schemas,
-        )
-        .map_err(|error| ResidentActivationError::ResidentMemoryPlanRejected { error })?;
-        let turn_plan = crate::memory_planner::plan_current_resident_turn(
-            &plan.memory_plan,
-            step.artifact_node,
-            &facts,
-        )
-        .map_err(|_| ResidentActivationError::ActivationKernel {
+    let ActivatedOnceBody::Kernel(kernel) = &step.body else {
+        unreachable!("control activation uses the shared resident dispatcher")
+    };
+    if step.storage != ResidentStorageClass::Constant {
+        return Err(ResidentActivationError::InvalidDependency {
             node: step.artifact_node,
-        })?;
-        if !turn_plan.budget_violations.is_empty() {
-            return Err(ResidentActivationError::ActivationKernel {
-                node: step.artifact_node,
-            });
-        }
-        if let Some(scope) = &scope {
-            // The activation ABI owns its input vectors. Their copies precede
-            // the kernel's own concrete admission, so reserve them explicitly.
-            let mut auxiliary = 0_u64;
-            if step.write.kind == ResidentValueKind::Snapshot
-                || borrowed
-                    .iter()
-                    .any(|input| input.kind() == ResidentValueKind::Snapshot)
-            {
-                auxiliary = plan
-                    .schemas
-                    .clone_allocation_bound_bytes()
-                    .and_then(|bytes| bytes.checked_mul(2))
-                    .ok_or(ResidentActivationError::RegionSizeOverflow)?;
-            }
-            for input in &borrowed {
-                let bytes = super::budget::payload::clone_bytes(*input)
-                    .map_err(|error| ResidentActivationError::MemoryRuntime { error })?;
-                auxiliary = auxiliary
-                    .checked_add(bytes)
-                    .ok_or(ResidentActivationError::RegionSizeOverflow)?;
-            }
-            scope
-                .admit_auxiliary(auxiliary)
-                .map_err(|error| ResidentActivationError::MemoryRuntime { error })?;
-            if let Some(base) = step.base_input {
-                scope
-                    .admit_copy(borrowed[base], 0)
-                    .map_err(|error| ResidentActivationError::MemoryRuntime { error })?;
-            }
-            scope.start();
-        }
-        let admission = scope.as_ref().map(|scope| scope.admission());
-        let result = super::budget::with_payload_admission(admission, || {
-            super::budget::with_resident_turn_plan(turn_plan, || {
-                let inputs = step
-                    .sources
-                    .iter()
-                    .map(|source| owned_activation_input(plan, arena, *source))
-                    .collect::<Result<Vec<_>, _>>()?;
-                if let Some(base_input) = step.base_input {
-                    let source = inputs.get(base_input).ok_or(
-                        ResidentActivationError::InvalidDependency {
-                            node: step.artifact_node,
-                        },
-                    )?;
-                    copy_owned_activation_value(source, arena.write(step.write)).map_err(|_| {
-                        ResidentActivationError::ActivationKernel {
-                            node: step.artifact_node,
-                        }
-                    })?;
-                }
-                step.kernel
-                    .execute(
-                        &OwnedActivationInputs {
-                            values: &inputs,
-                            omitted: step.base_input,
-                        },
-                        arena.write(step.write),
-                    )
-                    .map_err(|_| ResidentActivationError::ActivationKernel {
-                        node: step.artifact_node,
-                    })
-            })
         });
-        let admission_error = scope.as_ref().and_then(|scope| scope.last_error());
-        if result.is_err() || admission_error.is_some() {
-            arena
-                .abort_payload_write(step.write, scope)
-                .map_err(|error| ResidentActivationError::MemoryRuntime { error })?;
-        } else {
-            arena
-                .finish_payload_write(step.write, scope)
-                .map_err(|error| ResidentActivationError::MemoryRuntime { error })?;
-        }
-        if let Some(error) = admission_error {
-            return Err(ResidentActivationError::MemoryRuntime { error });
-        }
-        result?;
     }
+    let call = plan.memory_plan.call_for_node(step.artifact_node).ok_or(
+        ResidentActivationError::ActivationKernel {
+            node: step.artifact_node,
+        },
+    )?;
+    let scope = arena
+        .prepare_payload_write(step.write)
+        .and_then(|scope| {
+            if scope.is_some() {
+                Ok(scope)
+            } else {
+                transient_budget
+                    .map(|owner| owner.begin(step.write))
+                    .transpose()
+            }
+        })
+        .map_err(|error| ResidentActivationError::MemoryRuntime { error })?;
+    if let Some(scope) = &scope {
+        let inputs = u64::try_from(step.sources.len())
+            .map_err(|_| ResidentActivationError::RegionSizeOverflow)?;
+        let borrowed = inputs
+            .checked_mul(core::mem::size_of::<ResidentValueRef<'_>>() as u64)
+            .ok_or(ResidentActivationError::RegionSizeOverflow)?;
+        let owned = inputs
+            .checked_mul(core::mem::size_of::<OwnedResidentValue>() as u64)
+            .ok_or(ResidentActivationError::RegionSizeOverflow)?;
+        scope
+            .admit_auxiliary(
+                borrowed
+                    .checked_add(owned)
+                    .ok_or(ResidentActivationError::RegionSizeOverflow)?,
+            )
+            .map_err(|error| ResidentActivationError::MemoryRuntime { error })?;
+    }
+    let borrowed = step
+        .sources
+        .iter()
+        .map(|source| {
+            let region = match source {
+                ArtifactSource::Constant(constant) => {
+                    plan.constant_regions[constant.get() as usize]
+                }
+                ArtifactSource::Slot(slot) => plan.slots[slot.get() as usize].region,
+            };
+            arena.read(region)
+        })
+        .collect::<Vec<_>>();
+    let facts = live::facts(
+        call,
+        step.artifact_node,
+        &borrowed,
+        arena.read(step.write),
+        &plan.schemas,
+    )
+    .map_err(|error| ResidentActivationError::ResidentMemoryPlanRejected { error })?;
+    let turn_plan = crate::memory_planner::plan_current_resident_turn(
+        &plan.memory_plan,
+        step.artifact_node,
+        &facts,
+    )
+    .map_err(|_| ResidentActivationError::ActivationKernel {
+        node: step.artifact_node,
+    })?;
+    if !turn_plan.budget_violations.is_empty() {
+        return Err(ResidentActivationError::ActivationKernel {
+            node: step.artifact_node,
+        });
+    }
+    if let Some(scope) = &scope {
+        // The activation ABI owns its input vectors. Their copies precede
+        // the kernel's own concrete admission, so reserve them explicitly.
+        let mut auxiliary = 0_u64;
+        if step.write.kind == ResidentValueKind::Snapshot
+            || borrowed
+                .iter()
+                .any(|input| input.kind() == ResidentValueKind::Snapshot)
+        {
+            auxiliary = plan
+                .schemas
+                .clone_allocation_bound_bytes()
+                .and_then(|bytes| bytes.checked_mul(2))
+                .ok_or(ResidentActivationError::RegionSizeOverflow)?;
+        }
+        for input in &borrowed {
+            let bytes = super::budget::payload::clone_bytes(*input)
+                .map_err(|error| ResidentActivationError::MemoryRuntime { error })?;
+            auxiliary = auxiliary
+                .checked_add(bytes)
+                .ok_or(ResidentActivationError::RegionSizeOverflow)?;
+        }
+        scope
+            .admit_auxiliary(auxiliary)
+            .map_err(|error| ResidentActivationError::MemoryRuntime { error })?;
+        if let Some(base) = step.base_input {
+            scope
+                .admit_copy(borrowed[base], 0)
+                .map_err(|error| ResidentActivationError::MemoryRuntime { error })?;
+        }
+        scope.start();
+    }
+    let admission = scope.as_ref().map(|scope| scope.admission());
+    let result = super::budget::with_payload_admission(admission, || {
+        super::budget::with_resident_turn_plan(turn_plan, || {
+            let inputs = step
+                .sources
+                .iter()
+                .map(|source| owned_activation_input(plan, arena, *source))
+                .collect::<Result<Vec<_>, _>>()?;
+            if let Some(base_input) = step.base_input {
+                let source =
+                    inputs
+                        .get(base_input)
+                        .ok_or(ResidentActivationError::InvalidDependency {
+                            node: step.artifact_node,
+                        })?;
+                copy_owned_activation_value(source, arena.write(step.write)).map_err(|_| {
+                    ResidentActivationError::ActivationKernel {
+                        node: step.artifact_node,
+                    }
+                })?;
+            }
+            kernel
+                .execute(
+                    &OwnedActivationInputs {
+                        values: &inputs,
+                        omitted: step.base_input,
+                    },
+                    arena.write(step.write),
+                )
+                .map_err(|_| ResidentActivationError::ActivationKernel {
+                    node: step.artifact_node,
+                })
+        })
+    });
+    let admission_error = scope.as_ref().and_then(|scope| scope.last_error());
+    if result.is_err() || admission_error.is_some() {
+        arena
+            .abort_payload_write(step.write, scope)
+            .map_err(|error| ResidentActivationError::MemoryRuntime { error })?;
+    } else {
+        arena
+            .finish_payload_write(step.write, scope)
+            .map_err(|error| ResidentActivationError::MemoryRuntime { error })?;
+    }
+    if let Some(error) = admission_error {
+        return Err(ResidentActivationError::MemoryRuntime { error });
+    }
+    result?;
     Ok(())
 }
 

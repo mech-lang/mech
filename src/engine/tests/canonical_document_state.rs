@@ -1694,6 +1694,65 @@ fn closed_match_initializer_runs_once_before_state_turns() {
 }
 
 #[test]
+fn closed_comprehension_scalar_initializer_runs_once_before_state_turns() {
+    turns(
+        "samples := 1..=3\nvalues := [sample + 1 | sample <- samples]\n~a := values[1]\na += 1\na\n",
+        &[3.0, 4.0],
+    );
+}
+
+#[test]
+fn closed_set_comprehension_initializes_once_outside_the_turn_schedule() {
+    let source = "samples := 1..=3\nvalues := {sample + 1 | sample <- samples}\n~a := values\na\n";
+    let artifact = compiled(source).compile_artifact().unwrap();
+    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    for artifact in [
+        artifact,
+        mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap(),
+    ] {
+        let mut catalog = FunctionCatalogBuilder::new();
+        mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x59e, 0),
+            &artifact,
+            &catalog.build().unwrap(),
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        let control = artifact
+            .nodes()
+            .iter()
+            .find(|node| matches!(node.body, mech_engine::ExecutableNodeBody::Comprehension(_)))
+            .unwrap()
+            .node;
+        assert!(instance.plan.activation_nodes.contains(&control));
+        assert!(
+            instance
+                .plan
+                .topology
+                .linear_node_order
+                .iter()
+                .all(|index| instance.plan.steps[index.get() as usize].artifact_node() != control)
+        );
+        for _ in 0..2 {
+            instance.turn(&[]).unwrap();
+            let output = instance.copied_output(0).unwrap();
+            assert_eq!(
+                output.canonical_data_draft().unwrap(),
+                mech_core::ValueDataDraft::Set(
+                    [2.0, 3.0, 4.0]
+                        .into_iter()
+                        .map(|value| mech_core::ValueDataDraft::F64(
+                            mech_core::snapshot::F64Bits::from_f64(value)
+                        ))
+                        .collect()
+                )
+            );
+        }
+    }
+}
+
+#[test]
 fn closed_comprehension_initializer_runs_once_before_state_turns() {
     turns(
         "samples := 1..=3\nx-row := [1.0 | sample <- samples]\ny-row := [2.0 | sample <- samples]\nx := x-row'\ny := y-row'\n~trail := [x y]\nnew-row := ([7.0 8.0])\nnext-trail := matrix/vertcat(trail[2..=3,:], new-row)\ntrail = next-trail\ntrail[3,2]\n",
