@@ -6,11 +6,12 @@ impl SemanticBuilder {
     pub(super) fn register_document_imports(
         &mut self,
         units: &[DocumentUnit],
+        resolved_source_modules: &BTreeSet<String>,
     ) -> Result<(), SourceSemanticError> {
         for unit in units {
             match unit {
-                DocumentUnit::Import(import) => self.register_module_import(import)?,
-                DocumentUnit::Fence(_, _, units) => self.register_document_imports(units)?,
+                DocumentUnit::Import(import) => self.register_module_import(import, resolved_source_modules)?,
+                DocumentUnit::Fence(_, _, units) => self.register_document_imports(units, resolved_source_modules)?,
                 _ => {}
             }
         }
@@ -20,6 +21,7 @@ impl SemanticBuilder {
     fn register_module_import(
         &mut self,
         import: &ModuleImportSyntax,
+        resolved_source_modules: &BTreeSet<String>,
     ) -> Result<(), SourceSemanticError> {
         let syntax = import.syntax();
         let body = self.required(import.body(), syntax, "a module import body")?;
@@ -79,6 +81,9 @@ impl SemanticBuilder {
                 }
             }
         };
+        if resolved_source_modules.contains(&module) {
+            return Ok(());
+        }
         let Some(catalog) = self.function_catalog.as_ref() else {
             return Ok(());
         };

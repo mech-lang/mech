@@ -668,6 +668,7 @@ impl<'a> ProgramCompilerView<'a> {
                 context.writes.clone(),
                 external,
                 published,
+                &BTreeSet::new(),
             )
             .map_err(|error| canonical_compilation_error(error.to_string()))?;
         let referenced = program.referenced_input_names();
@@ -906,6 +907,7 @@ impl<'a> ProgramCompilerView<'a> {
                 writes,
                 &BTreeSet::new(),
                 &BTreeSet::new(),
+                &imports.iter().filter_map(|import| import.declaration.module.clone()).collect(),
             )
             .map_err(|error| canonical_compilation_error(error.to_string()))?;
         let compilation = CanonicalDocumentCompilation {

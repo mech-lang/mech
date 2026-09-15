@@ -221,7 +221,15 @@ impl CanonicalDocumentRenderer {
         &self,
         document: &DocumentSyntax,
     ) -> Result<String, CanonicalDocumentRenderError> {
-        self.render_html_mode(document, &[], RenderMode::Source)
+        self.render_html_mode(document, &[], RenderMode::Source, true)
+    }
+
+    /// Format section content for a host shim that owns the article and title.
+    pub fn format_html_body(
+        &self,
+        document: &DocumentSyntax,
+    ) -> Result<String, CanonicalDocumentRenderError> {
+        self.render_html_mode(document, &[], RenderMode::Source, false)
     }
 
     pub fn render_html(
@@ -229,7 +237,7 @@ impl CanonicalDocumentRenderer {
         document: &DocumentSyntax,
         results: &[CanonicalScopeResults],
     ) -> Result<String, CanonicalDocumentRenderError> {
-        self.render_html_mode(document, results, RenderMode::Completed)
+        self.render_html_mode(document, results, RenderMode::Completed, true)
     }
 
     fn render_html_mode(
@@ -237,10 +245,14 @@ impl CanonicalDocumentRenderer {
         document: &DocumentSyntax,
         results: &[CanonicalScopeResults],
         mode: RenderMode,
+        document_frame: bool,
     ) -> Result<String, CanonicalDocumentRenderError> {
         let lookup = ResultLookup::new(document, results, mode)?;
-        let mut output = String::from("<article class='mech-document'>");
-        if let Some(title) = document.title() {
+        let mut output = String::new();
+        if document_frame {
+            output.push_str("<article class='mech-document'>");
+        }
+        if document_frame && let Some(title) = document.title() {
             render_title_html(&title, document.scope_id(), &lookup, &mut output)?;
         }
         if let Some(body) = document.body() {
@@ -256,7 +268,9 @@ impl CanonicalDocumentRenderer {
             visible_root_program_range(document.syntax()),
         )?;
         append_citations_html(&lookup, &mut output)?;
-        output.push_str("</article>");
+        if document_frame {
+            output.push_str("</article>");
+        }
         Ok(output)
     }
 

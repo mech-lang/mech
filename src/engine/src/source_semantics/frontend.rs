@@ -833,6 +833,16 @@ impl CanonicalSourceFrontend {
         document_lowering::compile_document(document)
     }
 
+    /// Names assigned by executable root statements, using the document
+    /// compiler's scope selection. Local function states belong to the callee.
+    pub fn root_state_mutation_names(
+        &self,
+        document: &DocumentSyntax,
+    ) -> Result<BTreeSet<String>, SourceSemanticError> {
+        reject_recovered_syntax(document)?;
+        document_lowering::root_state_mutation_names(document)
+    }
+
     /// Compile through the exact function catalog that will activate the
     /// resulting artifact. This preserves module-only source declarations and
     /// their semantic contracts without building or interpreting a legacy AST.
@@ -905,6 +915,7 @@ impl CanonicalSourceFrontend {
         resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
         external_definitions: &BTreeSet<String>,
         published_bindings: &BTreeSet<String>,
+        resolved_source_modules: &BTreeSet<String>,
     ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
         reject_recovered_syntax(document)?;
         document_lowering::compile_document_with_options(
@@ -918,6 +929,7 @@ impl CanonicalSourceFrontend {
                 .iter()
                 .map(|name| crate::encode_interactive_symbol_output_name(name))
                 .collect(),
+            resolved_source_modules,
         )
     }
 
@@ -2261,6 +2273,7 @@ struct SemanticBuilder {
     external_definitions: BTreeSet<String>,
     local_functions: BTreeMap<String, SyntaxNode>,
     function_imports: BTreeMap<String, String>,
+    resolved_source_modules: BTreeSet<String>,
     active_functions: Vec<String>,
     patterns: Vec<SourceSemanticPattern>,
     resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
@@ -2287,6 +2300,7 @@ impl SemanticBuilder {
             external_definitions: BTreeSet::new(),
             local_functions: BTreeMap::new(),
             function_imports: BTreeMap::new(),
+            resolved_source_modules: BTreeSet::new(),
             active_functions: Vec::new(),
             patterns: Vec::new(),
             resource_writes: BTreeMap::new(),
@@ -3119,6 +3133,15 @@ impl SemanticBuilder {
                             inputs.push(self.expression(&value)?.0);
                         }
                     }
+                }
+                if self.resolved_source_modules.iter().any(|module| {
+                    function_name.strip_prefix(module).is_some_and(|suffix| suffix.starts_with('/'))
+                }) {
+                    return Err(SourceSemanticError {
+                        code: "source-semantics/source-module-value-not-callable",
+                        message: format!("{function_name} belongs to a resolved source module, not a catalog function"),
+                        anchor: SourceSemanticAnchor::for_node(function.syntax()),
+                    });
                 }
                 if self.local_functions.contains_key(&function_name) {
                     self.inline_document_function(&function_name, inputs, &names, value.syntax())?

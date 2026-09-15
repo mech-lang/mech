@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex};
 
 use mech_core::{GenericError, MResult, MechError};
 use mech_syntax::document::{
-    AstNode, DocumentStream, OpAssignSyntax, ParseConfig, Revision, SyntaxNode,
+    AstNode, DocumentStream, OpAssignSyntax, ParseConfig, Revision,
     VariableAssignSyntax, VariableDefineSyntax,
 };
 
@@ -376,7 +376,9 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         if !candidate_source.ends_with('\n') {
             candidate_source.push('\n');
         }
-        let changed_state_names = canonical_state_mutations(entry.document().syntax());
+        let changed_state_names = mech_engine::CanonicalSourceFrontend
+            .root_state_mutation_names(&entry.document())
+            .map_err(|error| interactive_error(error.to_string()))?;
         let candidate = if self.source.is_empty() {
             entry
         } else {
@@ -1155,26 +1157,6 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
     }
 }
 
-fn canonical_state_mutations(root: &SyntaxNode) -> std::collections::BTreeSet<String> {
-    let mut names = std::collections::BTreeSet::new();
-    let mut pending = vec![root.clone()];
-    while let Some(node) = pending.pop() {
-        let target = VariableAssignSyntax::cast(node.clone())
-            .and_then(|assignment| assignment.target())
-            .or_else(|| {
-                OpAssignSyntax::cast(node.clone()).and_then(|assignment| assignment.target())
-            });
-        if let Some(stem) = target.and_then(|target| target.stem()) {
-            if let Ok(name) = stem.syntax().text() {
-                names.insert(name);
-            }
-            continue;
-        }
-        pending.extend(node.children());
-    }
-    names
-}
-
 fn remove_canonical_definitions(
     document: &crate::SourceDocument,
     requested: &std::collections::BTreeSet<String>,
@@ -1648,6 +1630,32 @@ mod tests {
         assert_eq!(session.clear_variables(&["x".to_owned()]).unwrap(), ["x"]);
         assert_eq!(session.source(), "y := 9\n");
         assert!(session.clear_variables(&["x".to_owned()]).is_err());
+    }
+
+    #[test]
+    fn canonical_inactive_mutations_preserve_root_state() {
+        for entry in [
+            "```mech:worker\n~counter := 0\ncounter += 9\n```\n",
+            "```mech:disabled\ncounter = 99\n```\n",
+            "unused() = result<f64> := ~counter := 0.0; counter += 9.0; result := counter.\n",
+            "╭◉╮⸢~counter := 0\ncounter += 9\n⸥\n",
+        ] {
+            let initial = crate::SourceDocument::parse_resolved(
+                "repl://scope-mutations", Revision(0),
+                Arc::<str>::from("~counter := 0\ncounter += 1\n"), ParseConfig::default(),
+            ).unwrap();
+            let mut session = ResidentReplSession::from_document(
+                CanonicalRuntimeFactory { activations: std::rc::Rc::new(Cell::new(0)) }, initial,
+            ).unwrap();
+            session.step(2).unwrap();
+            let before = session.symbol("counter").unwrap().unwrap();
+            let mut stream = finished_stream(909, entry);
+            session.submit_finished_stream(&mut stream).unwrap();
+            assert_eq!(session.symbol("counter").unwrap().unwrap(), before, "{entry}");
+            let mut mutation = finished_stream(910, "counter += 1\ncounter\n");
+            session.submit_finished_stream(&mut mutation).unwrap();
+            assert_eq!(session.symbol("counter").unwrap().unwrap().format_canonical_inline(), "2");
+        }
     }
 
     #[test]

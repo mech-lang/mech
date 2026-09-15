@@ -39,6 +39,29 @@ struct DeferredInline {
     waiting: BTreeSet<String>,
 }
 
+pub(super) fn root_state_mutation_names(
+    document: &DocumentSyntax,
+) -> Result<BTreeSet<String>, SourceSemanticError> {
+    let mut units = Vec::new();
+    collect_document_units(document.syntax(), &mut units, &mut Vec::new())?;
+    let mut names = BTreeSet::new();
+    while let Some(unit) = units.pop() {
+        match unit {
+            DocumentUnit::Fence(_, _, children) => units.extend(children),
+            DocumentUnit::Statement(node) => {
+                let target = VariableAssignSyntax::cast(node.clone())
+                    .and_then(|assignment| assignment.target())
+                    .or_else(|| OpAssignSyntax::cast(node).and_then(|assignment| assignment.target()));
+                if let Some(stem) = target.and_then(|target| target.stem()) {
+                    names.insert(node_text(stem.syntax())?);
+                }
+            }
+            _ => {}
+        }
+    }
+    Ok(names)
+}
+
 pub(super) fn compile_document(
     document: &DocumentSyntax,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
@@ -48,6 +71,7 @@ pub(super) fn compile_document(
         BTreeMap::new(),
         false,
         BTreeMap::new(),
+        &BTreeSet::new(),
         &BTreeSet::new(),
         &BTreeSet::new(),
     )
@@ -65,6 +89,7 @@ pub(super) fn compile_document_with_catalog(
         BTreeMap::new(),
         &BTreeSet::new(),
         &BTreeSet::new(),
+        &BTreeSet::new(),
     )
 }
 
@@ -78,6 +103,7 @@ pub(super) fn compile_interactive_document_with_catalog(
         BTreeMap::new(),
         true,
         BTreeMap::new(),
+        &BTreeSet::new(),
         &BTreeSet::new(),
         &BTreeSet::new(),
     )
@@ -96,6 +122,7 @@ pub(super) fn compile_document_with_catalog_and_input_schemas(
         BTreeMap::new(),
         &BTreeSet::new(),
         &BTreeSet::new(),
+        &BTreeSet::new(),
     )
 }
 
@@ -111,6 +138,7 @@ pub(super) fn compile_document_with_catalog_and_resources(
         input_schemas,
         false,
         resource_writes,
+        &BTreeSet::new(),
         &BTreeSet::new(),
         &BTreeSet::new(),
     )
@@ -183,6 +211,7 @@ pub(super) fn compile_mixed_document_with_catalog_and_resources(
         resource_writes.clone(),
         &BTreeSet::new(),
         &BTreeSet::new(),
+        &BTreeSet::new(),
     )?;
 
     let region = &sections[region_index];
@@ -204,6 +233,7 @@ pub(super) fn compile_mixed_document_with_catalog_and_resources(
         BTreeMap::new(),
         external_inputs,
         retained_outputs,
+        &BTreeSet::new(),
     )?
     .with_compute_region(region_name.clone(), placement)?;
 
@@ -225,6 +255,7 @@ pub(super) fn compile_mixed_document_with_catalog_and_resources(
         BTreeMap::new(),
         &BTreeSet::new(),
         external_inputs,
+        &BTreeSet::new(),
     )?;
 
     Ok(CanonicalMixedSourcePrograms {
@@ -244,6 +275,7 @@ pub(super) fn compile_document_with_options(
     resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
     external_definitions: &BTreeSet<String>,
     published_bindings: &BTreeSet<String>,
+    resolved_source_modules: &BTreeSet<String>,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
     let anchor = SourceSemanticAnchor::for_node(document.syntax());
     let mut units = Vec::new();
@@ -260,6 +292,7 @@ pub(super) fn compile_document_with_options(
         resource_writes,
         external_definitions,
         published_bindings,
+        resolved_source_modules,
     )
 }
 
@@ -317,6 +350,7 @@ fn compile_named_scope(
         BTreeMap::new(),
         &BTreeSet::new(),
         &BTreeSet::new(),
+        &BTreeSet::new(),
     )
 }
 
@@ -345,6 +379,7 @@ pub(super) fn compile_mika_section(
         BTreeMap::new(),
         &BTreeSet::new(),
         &BTreeSet::new(),
+        &BTreeSet::new(),
     )
 }
 
@@ -359,6 +394,7 @@ fn compile_collected_document(
     resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
     external_definitions: &BTreeSet<String>,
     published_bindings: &BTreeSet<String>,
+    resolved_source_modules: &BTreeSet<String>,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
     let mut builder = match catalog {
         Some(catalog) if !input_schemas.is_empty() => {
@@ -369,8 +405,9 @@ fn compile_collected_document(
     };
     builder.resource_writes = resource_writes;
     builder.external_definitions = external_definitions.clone();
+    builder.resolved_source_modules = resolved_source_modules.clone();
     builder.register_document_functions(&units)?;
-    builder.register_document_imports(&units)?;
+    builder.register_document_imports(&units, resolved_source_modules)?;
     let mut bindings = BTreeSet::new();
     declare_document_inputs(&mut builder, &units, &mut bindings)?;
     declare_document_inline_inputs(&mut builder, &units, &bindings)?;

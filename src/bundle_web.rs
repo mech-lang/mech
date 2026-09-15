@@ -85,6 +85,11 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
             "bundle-web requires run.paths in the project config",
         ));
     }
+    if options.loaded_config.document.run.as_ref().unwrap().paths.len() != 1 {
+        return Err(validation_error(
+            "bundle-web requires exactly one run root; the browser project activates one root artifact",
+        ));
+    }
     let stylesheet_string = read_stylesheets(&options.stylesheet_paths)?;
     let shim_string = read_shim(&options.shim_path)?;
     validate_static_web_shim(&shim_string)?;
@@ -963,6 +968,68 @@ export default async function init() {}
             assert!(out.join("code/demo.mec").is_file());
             fs::remove_dir_all(root).unwrap();
         }
+    }
+
+    #[test]
+    fn canonical_bundle_prefers_resolved_source_modules_to_catalog_modules() {
+        for (import, value) in [
+            ("+> math/custom", "custom"),
+            ("+> math/*", "custom"),
+            ("+> math/{custom, cos}", "cos"),
+            ("+> selected := math/custom", "selected"),
+        ] {
+            let root = temp_root("canonical-source-precedence");
+            let loaded = write_demo_project(&root);
+            fs::write(root.join("demo.mec"), format!("{import}\nanswer := {value}\n")).unwrap();
+            fs::write(root.join("math.mec"), "custom := 42\ncos := 42\n<+ custom\n<+ cos\n").unwrap();
+            let out = root.join("out");
+            let mut options = options(&root, &out, loaded);
+            options.source_paths.push(root.join("math.mec"));
+            bundle_web_project(options).unwrap();
+            let bundle = CanonicalProgramBundle::decode(
+                &fs::read_to_string(out.join("code/demo.mec")).unwrap(), None,
+            ).unwrap();
+            let mut runtime = mech_runtime::RuntimeBuilder::new()
+                .function_catalog(mech_stdlib::source_catalog()).build().unwrap();
+            let durability = runtime.config().resident_durability;
+            let loaded = runtime.load_bytecode_program(&bundle.bytecode, durability).unwrap();
+            assert_eq!(loaded.initial_value.format_canonical_inline(), "42", "{import}");
+            fs::remove_dir_all(root).unwrap();
+        }
+    }
+
+    #[test]
+    fn canonical_source_module_errors_do_not_fall_back_to_catalog_functions() {
+        for source in [
+            "+> math\nanswer := math/cos(0.0)\n",
+            "+> math/cos\nanswer := cos(0.0)\n",
+        ] {
+            let root = temp_root("source-module-no-catalog-fallback");
+            let loaded = write_demo_project(&root);
+            fs::write(root.join("demo.mec"), source).unwrap();
+            fs::write(root.join("math.mec"), "custom := 42\n<+ custom\n").unwrap();
+            let out = root.join("out");
+            let mut options = options(&root, &out, loaded);
+            options.source_paths.push(root.join("math.mec"));
+            assert!(bundle_web_project(options).is_err(), "{source}");
+            fs::remove_dir_all(root).unwrap();
+        }
+    }
+
+    #[test]
+    fn bundle_web_rejects_multiple_run_roots_before_emitting_assets() {
+        let root = temp_root("multiple-run-roots");
+        let mut loaded = write_demo_project(&root);
+        fs::write(root.join("second.mec"), "answer := 2\n").unwrap();
+        loaded.document.run.as_mut().unwrap().paths.push("second.mec".into());
+        let out = root.join("out");
+        let mut options = options(&root, &out, loaded);
+        options.source_paths.push(root.join("second.mec"));
+        let error = bundle_web_project(options).unwrap_err().display_message();
+        assert!(error.contains("exactly one run root"), "{error}");
+        assert!(!out.join("style.css").exists());
+        assert!(!out.join("_mech/project-sources.json").exists());
+        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]

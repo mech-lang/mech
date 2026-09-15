@@ -10,7 +10,7 @@ pub(crate) fn render_canonical_html(
     shim: &str,
 ) -> MResult<String> {
     let content = CanonicalDocumentRenderer
-        .format_html(document)
+        .format_html_body(document)
         .map_err(|error| presentation_error(error.to_string()))?;
     let title = document
         .title()
@@ -96,4 +96,31 @@ fn presentation_error(message: impl Into<String>) -> MechError {
         None,
     )
     .with_compiler_loc()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn stock_shims_own_one_title_and_one_article() {
+        let document = mech_runtime::SourceDocument::parse_resolved(
+            "bundle:///title.mec",
+            mech_syntax::document::Revision(0),
+            std::sync::Arc::<str>::from("A & B\n==============================================================================\n\nx := 1\n"),
+            mech_syntax::document::ParseConfig::default(),
+        ).unwrap();
+        assert!(document.is_strictly_clean());
+        for shim in [
+            include_str!("../include/index.html"),
+            include_str!("../include/docs.html"),
+            include_str!("../include/blog.html"),
+        ] {
+            let html = render_canonical_html(&document.document(), "", shim).unwrap();
+            assert_eq!(html.matches("<h1").count(), 1, "{html}");
+            assert_eq!(html.matches("<article").count(), 1, "{html}");
+            assert!(html.contains("A &amp; B"), "{html}");
+            assert!(!html.contains("mech-document-header"), "{html}");
+        }
+    }
 }
