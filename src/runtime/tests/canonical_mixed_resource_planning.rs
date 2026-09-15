@@ -178,3 +178,77 @@ fn canonical_mixed_keeps_ordinary_read_planning_in_its_provider() {
         &mech_core::SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
     );
 }
+
+#[test]
+fn canonical_mixed_tuple_sample_paths_publish_their_producer() {
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .unwrap();
+    for path in ["result.0", "result.1.0", "packed.0", "packed.1.0"] {
+        let source = format!(
+            "@compute := compute://worker/kernel{{:write(turn), :read(sample/{path})}}\n@compute/turn <- 1\nanswer := @compute/sample/{path}\nanswer\n\ncalculation @compute\n-------------------\n~counter := 0f32\ncounter += 1f32\npacked := (counter, (counter + 1f32, counter + 2f32))\npacked\n"
+        );
+        let mixed = compiler.compile_mixed_source(&source).unwrap();
+        assert!(
+            mixed
+                .compute
+                .interface
+                .outputs
+                .iter()
+                .any(|port| port.name.as_ref() == path)
+        );
+        let bytes =
+            mech_engine::encode_program_artifact_bytecode_v1(&mixed.compute.artifact).unwrap();
+        let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
+        let decoded_interface = mech_compute::build_compute_region_interface(
+            &decoded,
+            decoded.compute_regions().first(),
+        )
+        .unwrap();
+        let names = |interface: &mech_compute::ComputeRegionInterface| {
+            interface
+                .outputs
+                .iter()
+                .map(|port| port.name.to_string())
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(names(&decoded_interface), names(&mixed.compute.interface));
+        let bytes =
+            mech_engine::encode_program_artifact_bytecode_v1(mixed.coordinator.artifact()).unwrap();
+        let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
+        assert_answer_schema(
+            &decoded,
+            &mech_core::SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+        );
+        assert_eq!(
+            mixed.retained_outputs,
+            std::collections::BTreeSet::from([path.to_owned()])
+        );
+        assert_answer_schema(
+            mixed.coordinator.artifact(),
+            &mech_core::SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+        );
+    }
+}
+
+#[test]
+fn canonical_mixed_retained_tuple_port_is_validated_even_without_a_read() {
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .unwrap();
+    for path in ["result.9", "result.1.9", "result.0.0", "result.01"] {
+        let source = format!(
+            "@compute := compute://worker/kernel{{:write(turn), :read(sample/{path})}}\n@compute/turn <- 1\n42\n\ncalculation @compute\n-------------------\n~counter := 0f32\ncounter += 1f32\n(counter, (counter + 1f32, counter + 2f32))\n"
+        );
+        let error = compiler
+            .compile_mixed_source(&source)
+            .err()
+            .expect("an invalid retained port must fail even without a coordinator read");
+        assert!(
+            format!("{error:?}").contains(&format!("unknown sampled compute output `{path}`")),
+            "{error:?}"
+        );
+    }
+}
