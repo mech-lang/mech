@@ -165,11 +165,15 @@ root symbols with the same configured resources and detached dependency exports.
 supplied retained root revision without resolving that root a second time.
 
 `canonical_resolved_and_rooted_interactive_compilation_preserve_revision_and_symbols`
-executes all four public interfaces: a previously resolved revision produces 42,
+executes ordinary and interactive rooted/resolved interfaces, both with and without
+module-build options: a previously resolved revision produces 42,
 while a later resolver revision produces 100. Both retain dependency identity;
 only interactive products publish the answer symbol. Resource requirements,
 missing dependencies, and compiler reuse after rejection are covered by
 `canonical_interactive_root_keeps_resource_authority_and_dependency_errors`.
-The canonical runtime regression set passes 57 tests. Module-build option parity,
-ordered multi-root compilation, and rooted mixed compilation remain open; these
-prepared entry points do not claim to replace those responsibilities yet.
+The canonical runtime regression set passes 57 tests. The option-taking variants
+use the existing ModuleBuilder for target, edition, feature, capability and
+transitive module identities in the same resolution pass. No module records are
+persisted into a runtime store. The reduced full_source/resident-routing-source
+profile also compiles. Ordered multi-root compilation and rooted mixed compilation
+remain open; these prepared entry points do not replace those responsibilities.

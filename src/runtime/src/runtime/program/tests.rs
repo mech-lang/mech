@@ -5929,6 +5929,13 @@ fn canonical_resolved_and_rooted_interactive_compilation_preserve_revision_and_s
         .source_resolver(resolver)
         .build_compiler()
         .unwrap();
+    let options = ModuleBuildOptions::new(
+        "qualified-compiler",
+        "v0.4",
+        "browser",
+        &["source"],
+        &["resource://contract"],
+    );
     let products = [
         (
             compiler
@@ -5939,7 +5946,7 @@ fn canonical_resolved_and_rooted_interactive_compilation_preserve_revision_and_s
         ),
         (
             compiler
-                .compile_canonical_interactive_resolved_root(resolved)
+                .compile_canonical_interactive_resolved_root(resolved.clone())
                 .unwrap(),
             42.0,
             true,
@@ -5954,6 +5961,37 @@ fn canonical_resolved_and_rooted_interactive_compilation_preserve_revision_and_s
         (
             compiler
                 .compile_canonical_interactive_root(SourceRequest::new("main.mec"))
+                .unwrap(),
+            100.0,
+            true,
+        ),
+        (
+            compiler
+                .compile_canonical_resolved_root_with_options(resolved.clone(), options)
+                .unwrap(),
+            42.0,
+            false,
+        ),
+        (
+            compiler
+                .compile_canonical_interactive_resolved_root_with_options(resolved, options)
+                .unwrap(),
+            42.0,
+            true,
+        ),
+        (
+            compiler
+                .compile_canonical_root_with_options(SourceRequest::new("main.mec"), options)
+                .unwrap(),
+            100.0,
+            false,
+        ),
+        (
+            compiler
+                .compile_canonical_interactive_root_with_options(
+                    SourceRequest::new("main.mec"),
+                    options,
+                )
                 .unwrap(),
             100.0,
             true,

@@ -189,7 +189,7 @@ impl ProgramCompiler {
         &mut self,
         request: SourceRequest,
     ) -> MResult<ProgramCompilationProduct> {
-        self.view().compile_canonical_root(request, false)
+        self.view().compile_canonical_root(request, false, None)
     }
 
     /// Compile the supplied retained revision without resolving the root again.
@@ -197,7 +197,8 @@ impl ProgramCompiler {
         &mut self,
         resolved: ResolvedSource,
     ) -> MResult<ProgramCompilationProduct> {
-        self.view().compile_canonical_resolved_root(resolved, false)
+        self.view()
+            .compile_canonical_resolved_root(resolved, false, None)
     }
 
     /// Resolve a canonical graph and publish its live interactive root symbols.
@@ -205,7 +206,7 @@ impl ProgramCompiler {
         &mut self,
         request: SourceRequest,
     ) -> MResult<ProgramCompilationProduct> {
-        self.view().compile_canonical_root(request, true)
+        self.view().compile_canonical_root(request, true, None)
     }
 
     /// Preserve an already resolved interactive revision and its import referrer.
@@ -213,7 +214,45 @@ impl ProgramCompiler {
         &mut self,
         resolved: ResolvedSource,
     ) -> MResult<ProgramCompilationProduct> {
-        self.view().compile_canonical_resolved_root(resolved, true)
+        self.view()
+            .compile_canonical_resolved_root(resolved, true, None)
+    }
+
+    /// Preserve the module builder's target, edition, feature and capability identity.
+    pub fn compile_canonical_root_with_options(
+        &mut self,
+        request: SourceRequest,
+        options: ModuleBuildOptions<'_>,
+    ) -> MResult<ProgramCompilationProduct> {
+        self.view()
+            .compile_canonical_root(request, false, Some(options))
+    }
+
+    pub fn compile_canonical_interactive_root_with_options(
+        &mut self,
+        request: SourceRequest,
+        options: ModuleBuildOptions<'_>,
+    ) -> MResult<ProgramCompilationProduct> {
+        self.view()
+            .compile_canonical_root(request, true, Some(options))
+    }
+
+    pub fn compile_canonical_resolved_root_with_options(
+        &mut self,
+        resolved: ResolvedSource,
+        options: ModuleBuildOptions<'_>,
+    ) -> MResult<ProgramCompilationProduct> {
+        self.view()
+            .compile_canonical_resolved_root(resolved, false, Some(options))
+    }
+
+    pub fn compile_canonical_interactive_resolved_root_with_options(
+        &mut self,
+        resolved: ResolvedSource,
+        options: ModuleBuildOptions<'_>,
+    ) -> MResult<ProgramCompilationProduct> {
+        self.view()
+            .compile_canonical_resolved_root(resolved, true, Some(options))
     }
 
     pub fn compile_interactive_document(
@@ -548,6 +587,28 @@ fn unsupported_compiler_import(value: &CompilerExportValue) -> MechError {
     )
 }
 
+/// One resolution/planning session. Module versions use the same ModuleBuilder
+/// authority as maintained rooted compilation and never enter a runtime store.
+struct CanonicalGraphCompilation<'a> {
+    options: Option<ModuleBuildOptions<'a>>,
+    active: Vec<String>,
+    exports: HashMap<String, BTreeMap<String, crate::RuntimeValueSnapshot>>,
+    source_dependencies: BTreeMap<String, u64>,
+    module_versions: HashMap<String, crate::ModuleVersionId>,
+}
+
+impl<'a> CanonicalGraphCompilation<'a> {
+    fn new(options: Option<ModuleBuildOptions<'a>>) -> Self {
+        Self {
+            options,
+            active: Vec::new(),
+            exports: HashMap::new(),
+            source_dependencies: BTreeMap::new(),
+            module_versions: HashMap::new(),
+        }
+    }
+}
+
 struct CanonicalDocumentPlanning {
     schemas: BTreeMap<String, mech_core::SchemaBody>,
     reads: BTreeMap<String, ExecutionResourceRequest>,
@@ -811,47 +872,36 @@ impl<'a> ProgramCompilerView<'a> {
         &self,
         request: SourceRequest,
         interactive: bool,
+        options: Option<ModuleBuildOptions<'_>>,
     ) -> MResult<ProgramCompilationProduct> {
         request.validate()?;
         let resolved = self.source_resolver.resolve(&request)?.ok_or_else(|| {
             canonical_compilation_error(format!("missing canonical root {}", request.specifier))
         })?;
-        self.compile_canonical_resolved_root(resolved, interactive)
+        self.compile_canonical_resolved_root(resolved, interactive, options)
     }
 
     fn compile_canonical_resolved_root(
         &self,
         resolved: ResolvedSource,
         interactive: bool,
+        options: Option<ModuleBuildOptions<'_>>,
     ) -> MResult<ProgramCompilationProduct> {
         let resolved = resolved.admit_canonical_document()?;
-        let document = resolved.source_document().ok_or_else(|| {
-            canonical_compilation_error("canonical root has no retained document")
-        })?;
-        let mut source_dependencies = BTreeMap::new();
-        let program = self.compile_canonical_graph_document(
-            document,
-            &resolved.canonical_uri,
-            &mut Vec::new(),
-            &mut HashMap::new(),
-            &mut source_dependencies,
-            false,
-            interactive,
-        )?;
+        let mut context = CanonicalGraphCompilation::new(options);
+        let program =
+            self.compile_canonical_graph_document(&resolved, &mut context, false, interactive)?;
         let artifact = program.compile_artifact_with_external_contracts(
             &ResidentExternalContractResolver::new(self.resources),
         )?;
         ProgramCompilationProduct::from_canonical_artifact(artifact)
-            .map(|product| product.with_source_dependencies(source_dependencies))
+            .map(|product| product.with_source_dependencies(context.source_dependencies))
     }
 
     fn compile_canonical_graph_document(
         &self,
-        document: &SourceDocument,
-        uri: &str,
-        active: &mut Vec<String>,
-        exports: &mut HashMap<String, BTreeMap<String, crate::RuntimeValueSnapshot>>,
-        source_dependencies: &mut BTreeMap<String, u64>,
+        resolved: &ResolvedSource,
+        context: &mut CanonicalGraphCompilation<'_>,
         planning_dependency: bool,
         interactive: bool,
     ) -> MResult<mech_engine::CanonicalSourceProgram> {
@@ -859,12 +909,16 @@ impl<'a> ProgramCompilerView<'a> {
             CanonicalDocumentCompilation, CanonicalResolvedImport, SourceScope,
             canonical_import_values,
         };
-        if active.iter().any(|entry| entry == uri) {
+        let uri = &resolved.canonical_uri;
+        let document = resolved.source_document().ok_or_else(|| {
+            canonical_compilation_error("canonical root has no retained document")
+        })?;
+        if context.active.iter().any(|entry| entry == uri) {
             return Err(canonical_compilation_error(format!(
                 "canonical source dependency cycle at {uri}"
             )));
         }
-        active.push(uri.to_owned());
+        context.active.push(uri.to_owned());
         let index = document
             .index()
             .map_err(|error| MechError::new(error, None))?;
@@ -889,7 +943,8 @@ impl<'a> ProgramCompilerView<'a> {
             })?;
             let source_hash =
                 mech_core::hash_str(&dependency_document.source().to_contiguous_string());
-            if source_dependencies
+            if context
+                .source_dependencies
                 .insert(dependency.canonical_uri.clone(), source_hash)
                 .is_some_and(|previous| previous != source_hash)
             {
@@ -898,16 +953,9 @@ impl<'a> ProgramCompilerView<'a> {
                     dependency.canonical_uri
                 )));
             }
-            if !exports.contains_key(&dependency.canonical_uri) {
-                let program = self.compile_canonical_graph_document(
-                    dependency_document,
-                    &dependency.canonical_uri,
-                    active,
-                    exports,
-                    source_dependencies,
-                    true,
-                    false,
-                )?;
+            if !context.exports.contains_key(&dependency.canonical_uri) {
+                let program =
+                    self.compile_canonical_graph_document(&dependency, context, true, false)?;
                 let artifact = program.compile_artifact_with_external_contracts(
                     &ResidentExternalContractResolver::new(self.resources),
                 )?;
@@ -945,11 +993,13 @@ impl<'a> ProgramCompilerView<'a> {
                     })
                     .collect::<MResult<BTreeMap<_, _>>>()?;
                 prepared.abort();
-                exports.insert(dependency.canonical_uri.clone(), values);
+                context
+                    .exports
+                    .insert(dependency.canonical_uri.clone(), values);
             }
             imports.push(CanonicalResolvedImport {
                 declaration,
-                exports: exports[&dependency.canonical_uri].clone(),
+                exports: context.exports[&dependency.canonical_uri].clone(),
                 canonical_uri: dependency.canonical_uri,
             });
         }
@@ -1034,7 +1084,49 @@ impl<'a> ProgramCompilerView<'a> {
                 }
             }
         }
-        active.pop();
+        if let Some(options) = context.options {
+            let mut resolved = resolved.clone();
+            resolved.capability_requirements.extend(
+                options
+                    .capability_requirements
+                    .iter()
+                    .map(|resource| CapabilityRequest::from_keys("compiler", "use", *resource)),
+            );
+            let dependency_versions = imports
+                .iter()
+                .map(|import| {
+                    context
+                        .module_versions
+                        .get(&import.canonical_uri)
+                        .copied()
+                        .ok_or_else(|| {
+                            canonical_compilation_error(format!(
+                                "missing canonical module identity for {}",
+                                import.canonical_uri
+                            ))
+                        })
+                })
+                .collect::<MResult<Vec<_>>>()?;
+            let feature_flags = options
+                .feature_flags
+                .iter()
+                .map(|flag| (*flag).to_owned())
+                .collect::<Vec<_>>();
+            let requirements = resolved.capability_requirements.clone();
+            let record = self.module_builder.clone().build_resolved_source(
+                resolved,
+                options.compiler_version,
+                options.language_edition,
+                options.target,
+                &feature_flags,
+                &dependency_versions,
+                &requirements,
+            )?;
+            context
+                .module_versions
+                .insert(uri.clone(), record.module_version);
+        }
+        context.active.pop();
         Ok(program)
     }
 
