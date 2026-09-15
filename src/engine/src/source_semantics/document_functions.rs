@@ -195,7 +195,7 @@ impl SemanticBuilder {
             }
             let mut bindings = self.bindings.keys().cloned().collect();
             declare_document_inputs(self, &units, &mut bindings)?;
-            compile_document_units(self, units, &bindings, &mut Vec::new())?;
+            compile_document_units(self, units, &bindings, &mut Vec::new(), false)?;
             let mut values = Vec::new();
             let mut output_names = BTreeSet::new();
             for (output, schema) in outputs {

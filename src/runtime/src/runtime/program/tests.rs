@@ -5901,3 +5901,139 @@ fn canonical_uncalled_functions_do_not_bind_resource_inputs() {
         }
     }
 }
+
+#[test]
+fn canonical_interactive_uses_configured_resource_planning() {
+    let document = canonical_planning_test_document(
+        "@clock := timer://clock/tick{:read(tick)}\nanswer := @clock/tick\n",
+    );
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .resource_provider(Box::new(ProductTimerProvider))
+        .build_compiler()
+        .unwrap();
+    for product in [
+        compiler.compile_document(&document).unwrap(),
+        compiler.compile_interactive_document(&document).unwrap(),
+    ] {
+        assert!(product.artifact().requirements().iter().any(|(_, requirement)| matches!(requirement,
+            mech_core::ApplicationRequirement::Resource(request) if request.base_uri == "timer://clock/tick")));
+    }
+    let interactive = compiler.compile_interactive_document(&document).unwrap();
+    assert!(interactive.artifact().outputs().iter().any(|output| {
+        mech_engine::decode_interactive_symbol_output_name(&output.name).as_deref()
+            == Some("answer")
+    }));
+    // Admission happens in a fresh candidate runtime; a denied candidate must
+    // leave the accepted interactive runtime and its state intact.
+    struct NoTimerGrantFactory;
+    impl crate::ResidentReplRuntimeFactory for NoTimerGrantFactory {
+        fn build(&self, _: crate::MechEventBuffer) -> MResult<crate::MechRuntime> {
+            let mut runtime = runtime();
+            runtime.register_resource_provider(Box::new(ProductTimerProvider))?;
+            Ok(runtime)
+        }
+        fn activate_document(
+            &self,
+            events: crate::MechEventBuffer,
+            document: &crate::SourceDocument,
+        ) -> MResult<(crate::MechRuntime, crate::RuntimeProgramLoadOutcome)> {
+            let mut runtime = self.build(events)?;
+            let mut compiler = RuntimeBuilder::new()
+                .function_catalog(mech_stdlib::source_native_plan_catalog())
+                .resource_provider(Box::new(ProductTimerProvider))
+                .build_compiler()?;
+            let product = compiler.compile_interactive_document(document)?;
+            let outcome = runtime.load_bytecode_program(
+                product.bytecode(),
+                crate::ResidentDurabilityPolicy::Volatile,
+            )?;
+            Ok((runtime, outcome))
+        }
+    }
+    let accepted = canonical_planning_test_document("~counter := 0\ncounter += 1\ncounter\n");
+    let mut session =
+        crate::ResidentReplSession::from_document(NoTimerGrantFactory, accepted).unwrap();
+    session.step(2).unwrap();
+    let source = session.source().to_owned();
+    let value = session.symbol("counter").unwrap();
+    let error = session.replace_document(document).unwrap_err();
+    assert!(
+        error.kind_message().starts_with("AuthorizationDenied:"),
+        "{error:?}"
+    );
+    assert_eq!(session.source(), source);
+    assert_eq!(session.symbol("counter").unwrap(), value);
+}
+
+#[test]
+fn canonical_interactive_resource_planning_does_not_execute_host_effects() {
+    let plans = Arc::new(AtomicUsize::new(0));
+    let reads = Arc::new(AtomicUsize::new(0));
+    let trace = Arc::new(Mutex::new(ProductSceneTrace::default()));
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .resource_provider(Box::new(PlanningObservationProvider {
+            plans: plans.clone(),
+            reads: reads.clone(),
+            value_bits: Arc::new(AtomicU64::new(0.25_f64.to_bits())),
+        }))
+        .resource_provider(Box::new(ProductSceneProvider {
+            trace: trace.clone(),
+            contract: ProductSceneContract::AtMostOnce,
+            prepare_delay: Duration::ZERO,
+        }))
+        .build_compiler()
+        .unwrap();
+    let source = "@clock := test://clock/tick{:read(delta-seconds)}\n@scene := scene://orbit/frame{:write(points)}\nanswer := @clock/delta-seconds\n@scene/points <- [answer; answer]\n";
+    let document = canonical_planning_test_document(source);
+    for product in [
+        compiler.compile_document(&document).unwrap(),
+        compiler.compile_interactive_document(&document).unwrap(),
+    ] {
+        let requests = product
+            .artifact()
+            .requirements()
+            .iter()
+            .filter_map(|(_, requirement)| match requirement {
+                mech_core::ApplicationRequirement::Resource(request) => Some(request),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        assert!(
+            requests
+                .iter()
+                .any(|request| request.base_uri == "test://clock/tick")
+        );
+        assert!(
+            requests
+                .iter()
+                .any(|request| request.base_uri == "scene://orbit/frame")
+        );
+    }
+    let product = compiler.compile_interactive_document(&document).unwrap();
+    let (mut denied, _, _, _) = configured_external_runtime();
+    denied
+        .register_resource_provider(Box::new(ProductSceneProvider {
+            trace: trace.clone(),
+            contract: ProductSceneContract::AtMostOnce,
+            prepare_delay: Duration::ZERO,
+        }))
+        .unwrap();
+    // Clock read is granted, scene writes are not. No effect may be prepared.
+    let error = denied
+        .load_bytecode_program(
+            product.bytecode(),
+            crate::ResidentDurabilityPolicy::Volatile,
+        )
+        .unwrap_err();
+    assert!(
+        error.kind_message().starts_with("AuthorizationDenied:"),
+        "{error:?}"
+    );
+    assert!(plans.load(Ordering::SeqCst) > 0);
+    assert_eq!(reads.load(Ordering::SeqCst), 0);
+    let trace = trace.lock().unwrap();
+    assert_eq!(trace.preparations, 0);
+    assert_eq!(trace.deliveries, 0);
+}

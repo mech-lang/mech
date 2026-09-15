@@ -598,22 +598,9 @@ impl<'a> ProgramCompilerView<'a> {
         &self,
         document: &SourceDocument,
     ) -> MResult<ProgramCompilationProduct> {
-        document
-            .index()
-            .map_err(|error| MechError::new(error, None))?;
-        let artifact = CanonicalSourceFrontend
-            .compile_interactive_document_with_catalog(
-                &document.document(),
-                Arc::clone(&self.function_catalog),
-            )
-            .map_err(|error| canonical_compilation_error(error.to_string()))?
-            .compile_artifact()
-            .map_err(|error| {
-                canonical_compilation_error(format!(
-                    "unable to compile canonical interactive ProgramArtifact: {error:?}"
-                ))
-            })?;
-        ProgramCompilationProduct::from_canonical_artifact(artifact)
+        ProgramCompilationProduct::from_canonical_artifact(
+            self.canonical_document_artifact_with_projection(document, true)?,
+        )
     }
 
     pub(crate) fn compile_document_artifact(
@@ -779,20 +766,33 @@ impl<'a> ProgramCompilerView<'a> {
         &self,
         document: &SourceDocument,
     ) -> MResult<mech_engine::ProgramArtifact> {
+        self.canonical_document_artifact_with_projection(document, false)
+    }
+
+    fn canonical_document_artifact_with_projection(
+        &self,
+        document: &SourceDocument,
+        interactive: bool,
+    ) -> MResult<mech_engine::ProgramArtifact> {
         let index = document
             .index()
             .map_err(|error| MechError::new(error, None))?;
         let (input_schemas, resource_reads, resource_writes, _) =
             self.canonical_document_resources(&index.root, &document.document())?;
-        let program = CanonicalSourceFrontend
-            .compile_document_with_catalog_and_resources(
-                &document.document(),
-                Arc::clone(&self.function_catalog),
-                input_schemas,
-                resource_reads,
-                resource_writes,
-            )
-            .map_err(|error| canonical_compilation_error(error.to_string()))?;
+        let compile = if interactive {
+            CanonicalSourceFrontend::compile_interactive_document_with_catalog_and_resources
+        } else {
+            CanonicalSourceFrontend::compile_document_with_catalog_and_resources
+        };
+        let program = compile(
+            &CanonicalSourceFrontend,
+            &document.document(),
+            Arc::clone(&self.function_catalog),
+            input_schemas,
+            resource_reads,
+            resource_writes,
+        )
+        .map_err(|error| canonical_compilation_error(error.to_string()))?;
         program
             .compile_artifact_with_external_contracts(&ResidentExternalContractResolver::new(
                 self.resources,

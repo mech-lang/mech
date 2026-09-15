@@ -368,29 +368,7 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         })?;
         let entry_source = entry.source().to_contiguous_string();
         self.emit_source_echo(&entry_source);
-        let mut candidate_source = self.source.clone();
-        if !candidate_source.is_empty() && !candidate_source.ends_with('\n') {
-            candidate_source.push('\n');
-        }
-        candidate_source.push_str(&entry_source);
-        if !candidate_source.ends_with('\n') {
-            candidate_source.push('\n');
-        }
-        let changed_state_names = mech_engine::CanonicalSourceFrontend
-            .root_state_mutation_names(&entry.document())
-            .map_err(|error| interactive_error(error.to_string()))?;
-        let candidate = if self.source.is_empty() {
-            entry
-        } else {
-            crate::SourceDocument::parse_resolved(
-                "runtime:interactive",
-                Revision(self.source_revision().saturating_add(1)),
-                Arc::<str>::from(candidate_source.as_str()),
-                ParseConfig::default(),
-            )
-            .map_err(|error| interactive_error(format!("invalid interactive source: {error:?}")))?
-        };
-        self.replace_document_preserving(candidate, &changed_state_names)
+        self.submit_prepared_entry(&entry_source, Some(entry), true)
     }
 
     /// Replace the accepted program with a finalized streamed document.
@@ -447,6 +425,25 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         entry: &str,
         emit_value_response: bool,
     ) -> MResult<RuntimeValueSnapshot> {
+        self.submit_prepared_entry(entry, None, emit_value_response)
+    }
+
+    /// One preparation and commit path for typed and finalized-stream entries.
+    /// Selection is consumed only by a successfully accepted candidate.
+    fn submit_prepared_entry(
+        &mut self,
+        entry: &str,
+        finalized: Option<crate::SourceDocument>,
+        emit_value_response: bool,
+    ) -> MResult<RuntimeValueSnapshot> {
+        if finalized
+            .as_ref()
+            .is_some_and(|document| !document.is_strictly_clean())
+        {
+            return Err(interactive_error(
+                "interactive canonical document contains syntax diagnostics",
+            ));
+        }
         let (entry, suppress_value) = executable_submission(entry);
         let mut appended_source = String::new();
         if let Some(selection) = &self.pending_selection {
@@ -463,13 +460,42 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
             candidate_source.push('\n');
         }
         candidate_source.push_str(&appended_source);
-        let overlay = mech_syntax::parser::parse(appended_source.trim())?;
-        let changed_state_names = resident_state_mutations(&overlay);
-        let value = if let Some(mut tree) = self.source_tree.clone() {
-            tree.body.sections.extend(overlay.body.sections);
-            self.replace_source_tree_preserving(candidate_source, tree, &changed_state_names)?
+        let value = if finalized.is_none() && self.source_document.is_none() {
+            let overlay = mech_syntax::parser::parse(appended_source.trim())?;
+            let changed_state_names = resident_state_mutations(&overlay);
+            if let Some(mut tree) = self.source_tree.clone() {
+                tree.body.sections.extend(overlay.body.sections);
+                self.replace_source_tree_preserving(candidate_source, tree, &changed_state_names)?
+            } else {
+                self.replace_source_preserving(candidate_source, &changed_state_names)?
+            }
         } else {
-            self.replace_source_preserving(candidate_source, &changed_state_names)?
+            let parse = |source: &str| {
+                crate::SourceDocument::parse_resolved(
+                    "runtime:interactive",
+                    Revision(self.source_revision().saturating_add(1)),
+                    Arc::<str>::from(source),
+                    ParseConfig::default(),
+                )
+                .map_err(|error| {
+                    interactive_error(format!("invalid interactive source: {error:?}"))
+                })
+            };
+            let overlay = match finalized {
+                Some(document) if document.source().to_contiguous_string() == appended_source => {
+                    document
+                }
+                _ => parse(&appended_source)?,
+            };
+            let changed_state_names = mech_engine::CanonicalSourceFrontend
+                .root_state_mutation_names(&overlay.document())
+                .map_err(|error| interactive_error(error.to_string()))?;
+            let candidate = if self.source.is_empty() {
+                overlay
+            } else {
+                parse(&candidate_source)?
+            };
+            self.replace_document_preserving(candidate, &changed_state_names)?
         };
         if emit_value_response && !self.quiet && !suppress_value && !value.is_empty() {
             let canonical = value.format_repl_inline(self.value_element_limit);
@@ -1804,6 +1830,67 @@ mod tests {
                 .unwrap()
                 .is_empty()
         );
+    }
+
+    #[test]
+    fn canonical_finished_stream_preserves_pending_selection() {
+        for (streamed, suppress) in [(false, false), (true, false), (false, true), (true, true)] {
+            let initial = crate::SourceDocument::parse_resolved(
+                "repl://selected-stream",
+                Revision(0),
+                Arc::<str>::from("selected := 40\n~counter := 0\ncounter += 1\n1\n"),
+                ParseConfig::default(),
+            )
+            .unwrap();
+            let mut session = ResidentReplSession::from_document(
+                CanonicalRuntimeFactory {
+                    activations: std::rc::Rc::new(Cell::new(0)),
+                },
+                initial,
+            )
+            .unwrap();
+            session.select_value("selected", session.symbol("selected").unwrap().unwrap());
+            let accepted = session.source().to_owned();
+            let counter = session.symbol("counter").unwrap().unwrap();
+            let submit = |session: &mut ResidentReplSession<CanonicalRuntimeFactory>,
+                          source: &str| {
+                if streamed {
+                    session.submit_finished_stream(&mut finished_stream(920, source))
+                } else {
+                    session.submit(source)
+                }
+            };
+            assert!(submit(&mut session, "missing-name + ans\n").is_err());
+            assert_eq!(session.source(), accepted);
+            assert_eq!(session.symbol("counter").unwrap().unwrap(), counter);
+            assert_eq!(
+                session
+                    .symbol("ans")
+                    .unwrap()
+                    .unwrap()
+                    .format_canonical_inline(),
+                "40"
+            );
+            session.drain_events().unwrap();
+            let source = if suppress { "ans + 2;\n" } else { "ans + 2\n" };
+            assert_eq!(
+                submit(&mut session, source)
+                    .unwrap()
+                    .format_canonical_inline(),
+                "42"
+            );
+            assert!(session.pending_selection.is_none());
+            assert!(session.source_document().is_some());
+            let events = session.drain_events().unwrap();
+            assert_eq!(events.iter().filter(|event| matches!(&event.event, MechEvent::Repl(ReplEvent::SourceEcho {source: echo}) if echo == source.trim_end())).count(), 1);
+            assert_eq!(events.iter().filter(|event| matches!(&event.event, MechEvent::Repl(ReplEvent::Response(response)) if response.kind == ReplResponseKind::ValueInspection)).count(), usize::from(!suppress));
+            assert_eq!(
+                submit(&mut session, "ans + 1\n")
+                    .unwrap()
+                    .format_canonical_inline(),
+                "43"
+            );
+        }
     }
 
     #[test]

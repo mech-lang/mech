@@ -928,12 +928,50 @@ impl CanonicalSourceFrontend {
         resource_reads: BTreeMap<String, mech_core::ExecutionResourceRequest>,
         resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
     ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+        self.compile_document_resource_projection(
+            document,
+            catalog,
+            input_schemas,
+            resource_reads,
+            resource_writes,
+            false,
+        )
+    }
+
+    pub fn compile_interactive_document_with_catalog_and_resources(
+        &self,
+        document: &DocumentSyntax,
+        catalog: Arc<mech_core::FunctionCatalog>,
+        input_schemas: BTreeMap<String, SchemaBody>,
+        resource_reads: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+        resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+        self.compile_document_resource_projection(
+            document,
+            catalog,
+            input_schemas,
+            resource_reads,
+            resource_writes,
+            true,
+        )
+    }
+
+    fn compile_document_resource_projection(
+        &self,
+        document: &DocumentSyntax,
+        catalog: Arc<mech_core::FunctionCatalog>,
+        input_schemas: BTreeMap<String, SchemaBody>,
+        resource_reads: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+        resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+        interactive: bool,
+    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
         reject_recovered_syntax(document)?;
         let mut program = document_lowering::compile_document_with_catalog_and_resources(
             document,
             catalog,
             input_schemas,
             resource_writes,
+            interactive,
         )?;
         for (name, request) in resource_reads {
             // Local function bodies contribute inputs only when inlined.

@@ -76,6 +76,17 @@ Qualification covers shared matrix initializers, subsequent turns, and the shipp
 particle initialization at 5, 257, 16384 and 1000000 particles. The early browser
 canary uses computed range/remainder/concatenation initializers.
 
+Interactive document compilation shares the ordinary compiler's configured
+resource schemas, bindings and external-contract resolver. Only output visibility
+differs. Planning reads snapshots and prepares no live reads or effects;
+authorization remains part of runtime admission. A denied interactive candidate
+leaves the accepted source and state intact.
+Typed and finalized-stream submissions share selection preparation, suppression,
+source echo and candidate commit. Finality is checked before preparation. The
+canonical interactive compiler binds synthetic ans to the preceding source value;
+it is neither a live port nor recurrence state. Failed submissions preserve the
+pending selection, and successful submissions consume it exactly once.
+
 Fixed-shape compute retains derived output publications separately from recurrence
 state in its backend-neutral storage plan. Each derived slot has one publication
 buffer even when several output names alias it. Publications begin zeroed, commit

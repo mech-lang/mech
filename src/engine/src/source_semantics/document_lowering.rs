@@ -140,12 +140,13 @@ pub(super) fn compile_document_with_catalog_and_resources(
     catalog: Arc<mech_core::FunctionCatalog>,
     input_schemas: BTreeMap<String, SchemaBody>,
     resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+    interactive: bool,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
     compile_document_with_options(
         document,
         Some(catalog),
         input_schemas,
-        false,
+        interactive,
         resource_writes,
         &BTreeSet::new(),
         &BTreeSet::new(),
@@ -419,10 +420,19 @@ fn compile_collected_document(
     builder.register_document_functions(&units)?;
     builder.register_document_imports(&units, resolved_source_modules)?;
     let mut bindings = BTreeSet::new();
+    if interactive {
+        bindings.insert("ans".to_owned());
+    }
     declare_document_inputs(&mut builder, &units, &mut bindings)?;
     declare_document_inline_inputs(&mut builder, &units, &bindings)?;
     let mut presentation = Vec::new();
-    let last = compile_document_units(&mut builder, units, &bindings, &mut presentation)?;
+    let last = compile_document_units(
+        &mut builder,
+        units,
+        &bindings,
+        &mut presentation,
+        interactive,
+    )?;
     let Some(last) = last else {
         return Err(SourceSemanticError {
             code: "source-semantics/empty-document",
@@ -525,6 +535,8 @@ fn compile_collected_document(
         let bindings = builder
             .bindings
             .iter()
+            // The runtime already exposes the final result as synthetic `ans`.
+            .filter(|(name, _)| name.as_str() != "ans")
             .map(|(name, binding)| (name.clone(), *binding))
             .collect::<Vec<_>>();
         for (name, binding) in bindings {
@@ -768,6 +780,7 @@ fn compile_document_units(
     units: Vec<DocumentUnit>,
     local_bindings: &BTreeSet<String>,
     presentation: &mut Vec<(SourceDocumentOutputKind, PendingValue, SyntaxNode)>,
+    interactive: bool,
 ) -> Result<Option<CompiledDocumentValue>, SourceSemanticError> {
     let mut deferred_inline = Vec::new();
     let mut last = compile_document_units_inner(
@@ -776,6 +789,7 @@ fn compile_document_units(
         local_bindings,
         presentation,
         &mut deferred_inline,
+        interactive,
     )?;
     refresh_deferred_inline(builder, &mut deferred_inline, presentation, &mut last)?;
     if let Some(deferred) = deferred_inline.first() {
@@ -793,6 +807,7 @@ fn compile_document_units_inner(
     local_bindings: &BTreeSet<String>,
     presentation: &mut Vec<(SourceDocumentOutputKind, PendingValue, SyntaxNode)>,
     deferred_inline: &mut Vec<DeferredInline>,
+    interactive: bool,
 ) -> Result<Option<CompiledDocumentValue>, SourceSemanticError> {
     let mut last = None;
     for unit in units {
@@ -886,6 +901,7 @@ fn compile_document_units_inner(
                     local_bindings,
                     presentation,
                     deferred_inline,
+                    interactive,
                 )? {
                     let value = builder.read_document_binding(
                         PendingBinding::Value(compiled.value),
@@ -909,6 +925,14 @@ fn compile_document_units_inner(
                 }
                 refresh_deferred_inline(builder, deferred_inline, presentation, &mut last)?;
             }
+        }
+        // `ans` is a source-level alias of the preceding interactive value,
+        // not a live input or additional recurrence cell. Selection literals
+        // use this same sequential rule as ordinary submitted expressions.
+        if interactive && let Some(value) = &last {
+            builder
+                .bindings
+                .insert("ans".to_owned(), PendingBinding::Value(value.value));
         }
     }
     Ok(last)
