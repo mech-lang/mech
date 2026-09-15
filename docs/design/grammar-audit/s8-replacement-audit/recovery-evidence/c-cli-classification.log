@@ -1,0 +1,24 @@
+   Compiling mech-runtime v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/runtime)
+   Compiling mech-timer v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/hosts/timer)
+   Compiling mech-terminal v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/hosts/terminal)
+   Compiling mech-console v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/hosts/console)
+   Compiling mech-time v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/hosts/time)
+   Compiling mech-scene v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/hosts/scene)
+   Compiling mech-build v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/build)
+   Compiling mech-browser v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/hosts/browser)
+   Compiling mech v0.3.6 (/private/tmp/mech-syntax-s8c-qualification)
+    Finished `test` profile [unoptimized] target(s) in 11.89s
+     Running unittests src/lib.rs (/private/tmp/mech-syntax-s8-extraction-target/debug/deps/mech-42d0891f2b529025)
+
+running 8 tests
+test cli::run::tests::classifies_declaration_only_context_as_inline_source ... ok
+test cli::run::tests::classifies_single_formula_with_slash_as_inline_source ... ok
+test cli::run::tests::classifies_single_fenced_context_import_with_slashes_as_inline_source ... ok
+test cli::run::tests::classifies_single_plain_inline_expression_as_inline_source ... ok
+test cli::run::tests::classifies_split_inline_context_read_with_slashes_as_inline_source ... ok
+test cli::run::tests::classifies_multiple_path_like_inputs_as_paths_even_if_joined_text_parses ... ok
+test cli::run::tests::classifies_single_inline_context_send_with_slashes_as_inline_source ... ok
+test cli::run::tests::classifies_split_inline_context_send_with_slashes_as_inline_source ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 384 filtered out; finished in 0.04s
+

@@ -1,0 +1,24 @@
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-syntax-s8r05-updates/src/engine)
+    Finished `test` profile [unoptimized] target(s) in 35.78s
+     Running tests/canonical_document_state.rs (/private/tmp/mech-syntax-s8-extraction-target/debug/deps/canonical_document_state-21785e5e69543ea9)
+
+running 1 test
+test promoted_boolean_masks_preserve_canonical_destination_coordinates ... FAILED
+
+failures:
+
+---- promoted_boolean_masks_preserve_canonical_destination_coordinates stdout ----
+
+thread 'promoted_boolean_masks_preserve_canonical_destination_coordinates' (28074213) panicked at src/engine/tests/canonical_document_state.rs:105:13:
+assertion `left == right` failed: "~a := [10<i32> 20<i32>;30<i32>40<i32>]\na[[false true;false false]] += 2.5\nselected := a[1,2]\nanswer := selected<f64>\nanswer\n"
+  left: 20.0
+ right: 22.0
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    promoted_boolean_masks_preserve_canonical_destination_coordinates
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 36 filtered out; finished in 0.25s
+
+error: test failed, to rerun pass `-p mech-engine --test canonical_document_state`

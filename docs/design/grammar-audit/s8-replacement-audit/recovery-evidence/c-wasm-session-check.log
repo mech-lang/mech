@@ -1,0 +1,9 @@
+    Checking mech-runtime v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/runtime)
+    Checking mech-console v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/hosts/console)
+    Checking mech-timer v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/hosts/timer)
+    Checking mech-browser v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/hosts/browser)
+    Checking mech-time v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/hosts/time)
+    Checking mech-gpu v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/hosts/gpu)
+    Checking mech-scene v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/hosts/scene)
+    Checking mech-wasm v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/wasm)
+    Finished `dev` profile [unoptimized] target(s) in 4.29s

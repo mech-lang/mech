@@ -1,0 +1,71 @@
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-syntax-s8r05-updates/src/engine)
+    Finished `test` profile [unoptimized] target(s) in 24.22s
+     Running tests/canonical_document_state.rs (/private/tmp/mech-syntax-s8-extraction-target/debug/deps/canonical_document_state-21785e5e69543ea9)
+
+running 37 tests
+test discarded_candidate_does_not_advance_document_state ... ok
+test comprehension_reads_the_source_order_state_candidate_after_writer_reordering ... ok
+test derived_snapshot_updates_release_budgeted_prior_outputs_on_abort_and_drop ... ok
+test assignment_errors_are_anchored_to_the_target_or_value ... ok
+test absent_named_scopes_never_fall_back_to_the_root_program ... ok
+test document_bindings_preserve_empty_errors_and_contextual_optional_state ... ok
+test each_assignment_operator_uses_maintained_arithmetic ... ok
+test configured_fences_execute_updates_when_their_result_is_hidden ... ok
+test document_display_and_child_scopes_do_not_execute_updates ... ok
+test derived_updates_compare_final_output_to_the_value_before_seeding ... ok
+test immutable_reads_retain_their_source_order_value ... ok
+test interactive_fixture_executes_and_retains_state_across_turns ... ok
+test finalized_streams_mika_bodies_execute_independently_of_parent_sibling_and_nested_state ... ok
+test finalized_streams_execute_configured_root_and_normalized_named_scopes ... ok
+test indexed_candidates_abort_without_mutating_published_state ... ok
+test finalized_streams_mika_named_fences_share_only_their_local_owner_and_keep_output_options ... ok
+test mika_bodies_execute_independently_of_parent_sibling_and_nested_state ... ok
+test mika_named_fences_share_only_their_local_owner_and_keep_output_options ... ok
+test nested_repeated_compound_selectors_accumulate_each_occurrence ... ok
+test ordered_retained_roots_link_live_exports_and_preserve_caller_output_order ... ok
+test nested_promoted_failure_preserves_state_and_valid_retry_accumulates ... ok
+test nested_selected_rational_power_keeps_its_integer_exponent_contract ... ok
+test promoted_repeated_compound_selectors_accumulate_each_occurrence ... ok
+test promoted_boolean_masks_preserve_canonical_destination_coordinates ... ok
+test repeated_compound_overflow_rejects_without_publishing_and_valid_retry_succeeds ... ok
+test named_document_scopes_execute_separately_and_share_repeated_fences ... ok
+test colonless_named_fences_execute_and_share_state_with_colon_spelling ... ok
+test selected_compound_assignment_preserves_arithmetic_before_destination_conversion ... ok
+test sequential_derived_updates_share_only_the_largest_rmw_backup_region ... ok
+test sequential_updates_read_the_preceding_candidate_and_keep_one_writer ... ok
+test whole_value_document_assignment_does_not_emit_a_discarded_selection ... ok
+test nested_compound_updates_keep_row_major_occurrence_order_and_promotions ... ok
+test indexed_document_updates_use_canonical_assignment_and_preserve_state_order ... ok
+test terminal_logical_updates_do_not_require_a_gather_population_at_activation ... ok
+test repeated_matrix_compound_selectors_accumulate_in_occurrence_order ... ok
+test promoted_repeated_updates_use_canonical_conversion_after_each_operation ... ok
+test repeated_compound_selections_preserve_exact_numeric_kinds ... ok
+
+test result: ok. 37 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.18s
+
+     Running tests/r6_memory_runtime.rs (/private/tmp/mech-syntax-s8-extraction-target/debug/deps/r6_memory_runtime-b1679dee7d7efbf8)
+
+running 20 tests
+test direct_and_resident_adapters_share_the_r5_realization_boundary ... ok
+test managed_index_conversion::index_ports_are_managed ... ok
+test managed_index_conversion::f32_fractional_ports_are_managed ... ok
+test managed_index_conversion::f64_fractional_ports_are_managed ... ok
+test managed_index_conversion::i16_ports_are_managed ... ok
+test managed_index_conversion::i128_ports_are_managed ... ok
+test managed_index_conversion::i8_ports_are_managed ... ok
+test managed_index_conversion::i32_ports_are_managed ... ok
+test managed_index_conversion::i64_ports_are_managed ... ok
+test repeated_activation_and_close_reclaims_all_instance_storage ... ok
+test managed_index_conversion::u16_ports_are_managed ... ok
+test managed_index_conversion::u64_ports_are_managed ... ok
+test managed_index_conversion::u128_ports_are_managed ... ok
+test managed_index_conversion::u32_ports_are_managed ... ok
+test managed_index_conversion::u8_ports_are_managed ... ok
+test resident_existing_value_budget_scope::configured_resident_budget_is_aggregate_and_preserves_failed_reactivation ... ok
+test ordinary_source_literals_enter_one_interpreter_memory_session ... ok
+test realization_preserves_per_call_work_and_output_budget_scopes ... ok
+test resident_existing_value_budget_scope::producing_an_oversized_result_still_fails_resident_activation ... ok
+test resident_existing_value_budget_scope::large_inputs_and_constants_execute_small_results_without_output_quotas ... ok
+
+test result: ok. 20 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s
+

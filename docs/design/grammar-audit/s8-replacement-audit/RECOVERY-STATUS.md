@@ -225,3 +225,46 @@ batch. Existing G19/G05 runtime failures remain positive and open.
 re-linking was explicitly approved and completed. Outstanding capability/semantic
 decisions remain as previously recorded, with independent accepted work continuing.
 Checkpoint—not complete; coordinator owns qualification and verified protected landing.
+
+
+## Publication checkpoint — requested review handoff
+
+**Candidate:** `codex/syntax-s8c-cutover` / `ef57626067ec9abd9ac89d252632651ee6af572e`
+on #830. It remains based on R04; R05 is not yet accepted or integrated.
+
+**Completed:** All current work is pushed in separate reviewable commits:
+C CLI source classification `8f0131426` (8 tests pass), renderer/shim correction
+`5ed789941` (36 renderer tests pass), explicitly WIP canonical WASM controller
+`7a724e6ad` (browser_compute_canary check passes with warnings denied), fixture
+lock/server failure logging `adc04495b`, CI fetch integration `ef5762606`.
+The CI fix is owned in E1 #831 at `a37c97dcc` (48 contract tests pass).
+R05 #847 is pushed at `a2a73653f`: its strict Boolean-mask coordinate witness
+reproduced 20 instead of 22; the fix passes all 37 state and 20 memory tests.
+The review thread received a reply and was resolved after publishing evidence.
+
+**Remaining:** R05's returned row/column broadcast note is relevant and open,
+with a response explaining its owner and next regression. C controller tests
+still refer to retired parser/tree transport and need canonical fixture migration;
+its positive decoded initialization, source replacement and browser probes are
+not yet validated. No C review thread is claimed resolved by partial WIP work.
+Actual served particle probe now exposes the startup cause: annotated compute
+heading rendering fails with canonical source range unavailable. That witness
+is being reduced in the canonical renderer owner (G22/C). Existing G05/G19
+runtime defects, all other accepted backlog obligations, required reviews,
+restacking the new CI overlay, stable exact-head qualification and protected
+merge remain open. Canceled/skipped work is not qualification.
+
+**Current action:** Root took over saved worker edits after their execution
+limits. Reproduce/fix the particle heading and R05 broadcast, then finish
+canonical browser controller regressions and reply/resolve C notes.
+
+**Next action:** Inspect `c-particle-heading-baseline.log`, fix the shared
+heading renderer, rerun the real served particle probe; implement the strict
+R05 broadcast witnesses in its existing canonical_document_state suite.
+Update current CI archives and cancel superseded heads, then restack accepted
+fixes and publish combined evidence. Do not request C rereview while notes remain.
+
+**External blocker:** Worker execution quota is exhausted; root can still
+perform local accepted work. No new user authority is needed. The previously
+recorded capability/semantic decisions still precede their dependent work.
+Checkpoint—not complete.

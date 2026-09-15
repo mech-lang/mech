@@ -1,0 +1,51 @@
+GPU particle server output (last 32 KiB):
+[Mech Server] Loading config… /private/tmp/mech-syntax-s8c-qualification/target/gpu-particles-ci-1c27ccsx/mech.mcfg
+[Mech Server] Loaded host config entries: 2
+[Mech Server] Default filesystem grant: /private/tmp/mech-syntax-s8c-qualification (:read,:list,:watch,:resolve,:import,:serve)
+[Mech Server] Project root: /private/tmp/mech-syntax-s8c-qualification/target/gpu-particles-ci-1c27ccsx
+[Mech Server] Loading resources…
+[Mech Server] Loading stylesheet…Using embedded resource
+[Mech Server] Using embedded default stylesheet
+[Mech Server] Loading HTML shim…[Mech Server] Loaded HTML shim: /private/tmp/mech-syntax-s8c-qualification/target/gpu-particles-ci-1c27ccsx/index.html
+[Mech Server] Loading WASM…[Mech Server] Loaded WASM: /private/tmp/mech-syntax-s8c-qualification/src/wasm/pkg/mech_wasm_bg.wasm
+[Mech Server] Loading JS…[Mech Server] Loaded JS: /private/tmp/mech-syntax-s8c-qualification/src/wasm/pkg/mech_wasm.js
+[Mech Server] Capability requested: host://serve fs:///private/tmp/mech-syntax-s8c-qualification/target/gpu-particles-ci-1c27ccsx recursive=true operations=:read,:serve,:watch
+[Mech Server] Capability delegated: host://serve fs:///private/tmp/mech-syntax-s8c-qualification/target/gpu-particles-ci-1c27ccsx recursive=true operations=:read,:serve,:watch
+[Mech Server] Capability requested: host://serve fs:///private/tmp/mech-syntax-s8c-qualification/target/gpu-particles-ci-1c27ccsx/index.html recursive=false operations=:read,:serve,:watch
+[Mech Server] Capability delegated: host://serve fs:///private/tmp/mech-syntax-s8c-qualification/target/gpu-particles-ci-1c27ccsx/index.html recursive=false operations=:read,:serve,:watch
+[Mech Server] Capability requested: host://serve fs:///private/tmp/mech-syntax-s8c-qualification/target/gpu-particles-ci-1c27ccsx/particles.css recursive=false operations=:read,:serve,:watch
+[Mech Server] Capability delegated: host://serve fs:///private/tmp/mech-syntax-s8c-qualification/target/gpu-particles-ci-1c27ccsx/particles.css recursive=false operations=:read,:serve,:watch
+[Mech Server] Capability requested: host://serve fs:///private/tmp/mech-syntax-s8c-qualification/target/gpu-particles-ci-1c27ccsx/particles.mec recursive=false operations=:import,:read,:resolve,:serve,:watch
+[Mech Server] Capability delegated: host://serve fs:///private/tmp/mech-syntax-s8c-qualification/target/gpu-particles-ci-1c27ccsx/particles.mec recursive=false operations=:import,:read,:resolve,:serve,:watch
+[Mech Server] Loading workspace…
+[Mech Server] Serve input plan:
+[Mech Server]   root: /private/tmp/mech-syntax-s8c-qualification/target/gpu-particles-ci-1c27ccsx
+[Mech Server]   targets: 1
+[Mech Server]   folders: 0
+[Mech Server]   static inputs: 3
+[Mech Server] Workspace root: /private/tmp/mech-syntax-s8c-qualification/target/gpu-particles-ci-1c27ccsx
+[Mech Server] Target `particles` -> `particles.mec`
+[Mech Server] Static input: `.`
+[Mech Server] Static input: `index.html`
+[Mech Server] Static input: `particles.css`
+[Mech Server] Loading static assets…
+[Mech Server] Static assets loaded in 2.319667ms.
+[Mech Server] Opening runtime workspace session…
+[Mech Server] Runtime workspace session opened in 1.091025791s.
+[Mech Server] Watching: /private/tmp/mech-syntax-s8c-qualification/target/gpu-particles-ci-1c27ccsx
+[Mech Server] Emitting initial workspace events…
+[Mech Server] Building served source registry views…
+Error: MechError { kind name: "GenericError", kind message: "Error: canonical document source range is unavailable", message: None, program_range: None, annotations: [], tokens: [], compiler_location: Some(CompilerSourceRange { file: "src/canonical_presentation.rs", line: 265 }), source: None }
+
+GPU particle smoke artifacts retained at /var/folders/m2/dzwv83md69n8qlq2nvg0tr8c0000gn/T/mech-gpu-smoke-jznau56v
+GPU particle smoke project retained at /private/tmp/mech-syntax-s8c-qualification/target/gpu-particles-ci-1c27ccsx
+Traceback (most recent call last):
+  File "/private/tmp/mech-syntax-s8c-qualification/scripts/smoke-gpu-particles-browser.py", line 237, in <module>
+    main()
+    ~~~~^^
+  File "/private/tmp/mech-syntax-s8c-qualification/scripts/smoke-gpu-particles-browser.py", line 130, in main
+    wait_for_http(page_url, server)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/mech-syntax-s8c-qualification/tests/browser/harness/chrome.py", line 79, in wait_for_http
+    raise BrowserFailure(f"server exited with status {process.returncode}")
+tests.browser.harness.chrome.BrowserFailure: server exited with status 1
