@@ -87,7 +87,11 @@ enum SubtitlePhase {
     Start,
     Name(bool),
     BeforeTitle,
-    Title(bool),
+    Title {
+        any: bool,
+        qualified: bool,
+        previous_was_horizontal: bool,
+    },
     TitleNewline,
     Dashes(bool),
     AfterDashes,
@@ -146,23 +150,53 @@ impl SubtitleProbe {
                         self.phase = SubtitlePhase::BeforeTitle;
                         None
                     } else {
-                        Some(false)
+                        self.phase = SubtitlePhase::Title {
+                            any,
+                            qualified: false,
+                            previous_was_horizontal: false,
+                        };
+                        None
                     }
                 }
                 SubtitlePhase::BeforeTitle => {
                     if let Some(character) = character.filter(|ch| is_horizontal_space(*ch)) {
                         self.relative += character.len_utf8() as u32;
                     } else {
-                        self.phase = SubtitlePhase::Title(false);
+                        self.phase = SubtitlePhase::Title {
+                            any: false,
+                            qualified: true,
+                            previous_was_horizontal: false,
+                        };
                     }
                     None
                 }
-                SubtitlePhase::Title(any) => {
+                SubtitlePhase::Title {
+                    any,
+                    qualified,
+                    previous_was_horizontal,
+                } => {
                     if let Some(character) = character.filter(|ch| !matches!(ch, '\r' | '\n')) {
+                        let next = view
+                            .at_relative(self.relative + character.len_utf8() as u32)
+                            .and_then(|next| next.peek_char());
+                        if character == '@'
+                            && previous_was_horizontal
+                            && next.is_none()
+                            && !final_input
+                        {
+                            return Progress::NeedInput;
+                        }
+                        let annotation = character == '@'
+                            && previous_was_horizontal
+                            && next.is_some_and(|next| next.is_alphabetic() || next == '_');
                         self.relative += character.len_utf8() as u32;
-                        self.phase = SubtitlePhase::Title(true);
+                        self.phase = SubtitlePhase::Title {
+                            any: true,
+                            qualified: qualified || annotation,
+                            previous_was_horizontal: is_horizontal_space(character),
+                        };
                         None
-                    } else if any {
+                    } else if any && qualified {
                         self.phase = SubtitlePhase::TitleNewline;
                         None
                     } else {
@@ -284,6 +318,9 @@ mod tests {
             (" ``", false, None),
             (" ~~x", false, None),
             ("A. title\r\n---\t\n", true, None),
+            ("calculation @compute\n---\n", true, None),
+            ("calculation @_compute\r\n---\n", true, None),
+            ("calculation @\n---\n", false, None),
             ("é1.\u{2009}💡\n-", true, None),
             ("1. title\r---", true, None),
             ("1. title\n--- \u{a0}", true, None),
@@ -293,6 +330,9 @@ mod tests {
             ("1. title\n", false, None),
             ("1. title\n--\u{301}", false, None),
             ("1. title\r\n---\r\nnext", true, None),
+            ("calculation @compute\n---\n", true, None),
+            ("calculation@compute\n---\n", false, None),
+            ("plain title\n---\n", false, None),
         ] {
             let expected = (subtitle, fence);
             let boundaries: Vec<_> = text
