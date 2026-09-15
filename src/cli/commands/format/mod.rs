@@ -1010,7 +1010,7 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
                 MechSourceCode::String(source) => {
                     let document = canonical_document(&source)?;
                     CanonicalDocumentRenderer
-                        .render_text(&document.document(), &[])
+                        .format_text(&document.document())
                         .map_err(|error| format_error(error.to_string()))?
                 }
                 MechSourceCode::Html(content) => content,

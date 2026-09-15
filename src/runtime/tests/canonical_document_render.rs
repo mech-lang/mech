@@ -817,3 +817,69 @@ fn source_body_preserves_front_matter_without_duplicate_framing() {
     assert!(!html.contains("<article"), "{html}");
     assert!(html.contains("answer"), "{html}");
 }
+
+#[test]
+fn browser_source_mounts_match_compiled_canonical_output_anchors() {
+    let document =
+        document("~answer := 41\n\nThe answer is {answer + 1}.\n\n~~~mech\nanswer + 2\n~~~\n");
+    let html = CanonicalDocumentRenderer
+        .format_browser_html(&document)
+        .unwrap();
+    let program = CanonicalSourceFrontend.compile_document(&document).unwrap();
+    for binding in program
+        .document_outputs()
+        .iter()
+        .filter(|binding| binding.visible)
+    {
+        let range = program.source_map().outputs[binding.output as usize].range;
+        let id = mech_runtime::canonical_document_output_id(binding.kind, range);
+        assert!(
+            html.contains(&format!("data-mech-output-address='{id}:0'")),
+            "{binding:?}: {html}"
+        );
+    }
+    assert!(html.contains("class='mech-inline-mech-code'"), "{html}");
+    assert!(html.contains("class='mech-block-output'"), "{html}");
+    assert!(
+        CanonicalDocumentRenderer
+            .render_html(&document, &[])
+            .is_err()
+    );
+}
+
+#[test]
+fn browser_shim_regions_preserve_metadata_navigation_and_section_boundaries() {
+    let document = document(include_str!("../../../tests/fixtures/shims/all-slots.mec"));
+    let slots = CanonicalDocumentRenderer
+        .format_browser_html_slots(&document)
+        .unwrap();
+    for (name, expected) in [
+        ("AUTHOR", "Ada Lovelace"),
+        ("DATE", "July 30, 2026"),
+        ("KICKER", "Announcement"),
+        ("SECTION", "Compatibility"),
+        ("SUMMARY", "Every supported shim slot must render."),
+        ("HERO", "hero.svg"),
+        ("NEXT", "next.html"),
+        ("PREVIOUS", "previous.html"),
+        ("ABSTRACT", "deliberately separate"),
+        ("INTRO", "unsectioned introduction"),
+        ("TOC", "href='#section-1'"),
+        ("TOC", "href='#section-1.1'"),
+        ("SECTION1", "own distinct content"),
+        ("SECTION2", "must not appear"),
+        ("FOOTNOTES", "Fixture footnote body"),
+        ("CITED", "Mech Programming Language"),
+    ] {
+        assert!(
+            slots.get(name).is_some_and(|html| html.contains(expected)),
+            "{name}: {slots:#?}"
+        );
+    }
+    assert!(!slots["SECTION1"].contains("must not appear"));
+    assert!(!slots["CONTENT"].contains("unsectioned introduction"));
+    assert!(!slots["INTRO"].contains("deliberately separate"));
+    assert_eq!(slots["CONTENT"], slots["CONTENTS"]);
+    assert!(slots["INTRO"].contains("{{TITLE}}"));
+    assert!(slots["INTRO"].contains("mech-inline-mech-code"));
+}

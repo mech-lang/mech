@@ -1,6 +1,6 @@
 //! Canonical document rendering from retained syntax and completed scope results.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 use mech_engine::{CanonicalSourceProgram, SourceDocumentOutputKind};
 use mech_syntax::document::{
@@ -232,6 +232,134 @@ impl CanonicalDocumentRenderer {
         self.render_html_mode(document, &[], RenderMode::Source, false)
     }
 
+    /// Format a live browser document before execution, preserving canonical output addresses.
+    pub fn format_browser_html(
+        &self,
+        document: &DocumentSyntax,
+    ) -> Result<String, CanonicalDocumentRenderError> {
+        self.render_html_mode(document, &[], RenderMode::Browser, true)
+    }
+
+    /// Render the documented host-shim regions from the same retained syntax and
+    /// inline/document rendering authority used by complete documents.
+    pub fn format_browser_html_slots(
+        &self,
+        document: &DocumentSyntax,
+    ) -> Result<BTreeMap<String, String>, CanonicalDocumentRenderError> {
+        let lookup = ResultLookup::new(document, &[], RenderMode::Browser)?;
+        let owner = document.scope_id();
+        let mut slots = BTreeMap::new();
+        if let Some(front) = document.title().and_then(|title| title.front_matter()) {
+            let mut key = None;
+            for child in front.syntax().children() {
+                if child.kind() == SyntaxKind::Identifier {
+                    key = Some(node_text(&child)?.to_uppercase());
+                } else if matches!(
+                    child.kind(),
+                    SyntaxKind::InlineParagraph | SyntaxKind::Img | SyntaxKind::Figures
+                ) {
+                    let name = key.take().ok_or_else(|| range_error(child.range()))?;
+                    let mut html = String::new();
+                    if child.kind() == SyntaxKind::InlineParagraph {
+                        render_inline_html(&child, owner, &lookup, &mut html)?;
+                    } else {
+                        render_document_node_html(&child, owner, &lookup, &mut html)?;
+                    }
+                    slots.insert(name, html);
+                }
+            }
+        }
+        let mut intro = String::new();
+        let mut abstract_html = String::new();
+        let mut footnotes = String::new();
+        let mut content = String::new();
+        let mut toc = String::new();
+        let mut numbered = 0usize;
+        if let Some(body) = document.body() {
+            for section in body.sections() {
+                let mut section_html = String::new();
+                for child in section.syntax().children() {
+                    let value = SectionElementSyntax::cast(child.clone())
+                        .and_then(|element| element.value())
+                        .unwrap_or(child);
+                    if value.kind() == SyntaxKind::UlSubtitle {
+                        if numbered > 0 {
+                            content.push_str(&section_html);
+                            slots
+                                .entry(format!("SECTION{numbered}"))
+                                .or_insert_with(String::new)
+                                .push_str(&section_html);
+                            section_html.clear();
+                        }
+                        numbered += 1;
+                    }
+                    if matches!(value.kind(), SyntaxKind::UlSubtitle | SyntaxKind::Subtitle) {
+                        let (number, _) = subtitle_coordinates(&value)?;
+                        let paragraph = value
+                            .children()
+                            .find(|child| child.kind() == SyntaxKind::ParagraphNewline)
+                            .ok_or_else(|| range_error(value.range()))?;
+                        toc.push_str("<li><a href='#section-");
+                        toc.push_str(&escape_attribute(&number));
+                        toc.push_str("'>");
+                        render_inline_children_html(
+                            &paragraph,
+                            owner,
+                            &lookup,
+                            &mut toc,
+                            &[SyntaxKind::Newline, SyntaxKind::CarriageReturn],
+                        )?;
+                        toc.push_str("</a></li>");
+                    }
+                    let target = match value.kind() {
+                        SyntaxKind::AbstractEl => &mut abstract_html,
+                        SyntaxKind::Footnote => &mut footnotes,
+                        _ if numbered == 0 => &mut intro,
+                        _ => &mut section_html,
+                    };
+                    render_document_node_html(&value, owner, &lookup, target)?;
+                }
+                if numbered > 0 {
+                    content.push_str(&section_html);
+                    slots
+                        .entry(format!("SECTION{numbered}"))
+                        .or_insert_with(String::new)
+                        .push_str(&section_html);
+                }
+            }
+        }
+        // The ordinary final result belongs after the document's source body.
+        let result_region = if numbered == 0 {
+            &mut intro
+        } else {
+            &mut content
+        };
+        append_program_html(
+            owner,
+            &CanonicalRenderScope::Root,
+            &lookup,
+            result_region,
+            visible_root_program_range(document.syntax()),
+        )?;
+        let mut cited = String::new();
+        append_citations_html(&lookup, &mut cited)?;
+        if !toc.is_empty() {
+            toc = format!(
+                "<nav class='mech-toc' aria-label='Table of contents'><ol>{toc}</ol></nav>"
+            );
+        }
+        slots.extend([
+            ("INTRO".to_owned(), intro),
+            ("ABSTRACT".to_owned(), abstract_html),
+            ("FOOTNOTES".to_owned(), footnotes),
+            ("CITED".to_owned(), cited),
+            ("TOC".to_owned(), toc),
+            ("CONTENTS".to_owned(), content.clone()),
+            ("CONTENT".to_owned(), content),
+        ]);
+        Ok(slots)
+    }
+
     pub fn render_html(
         &self,
         document: &DocumentSyntax,
@@ -400,6 +528,7 @@ struct ResultKey {
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum RenderMode {
     Source,
+    Browser,
     Completed,
 }
 
@@ -775,6 +904,28 @@ fn render_subtitle_html(
     lookup: &ResultLookup<'_>,
     output: &mut String,
 ) -> Result<(), CanonicalDocumentRenderError> {
+    let (section, level) = subtitle_coordinates(node)?;
+    let paragraph = node
+        .children()
+        .find(|child| child.kind() == SyntaxKind::ParagraphNewline)
+        .ok_or_else(|| range_error(node.range()))?;
+    output.push_str(&format!("<h{level} class='mech-subtitle' id='section-"));
+    output.push_str(&escape_attribute(&section));
+    output.push_str("'>");
+    render_inline_children_html(
+        &paragraph,
+        owner,
+        lookup,
+        output,
+        &[SyntaxKind::Newline, SyntaxKind::CarriageReturn],
+    )?;
+    output.push_str(&format!("</h{level}>"));
+    Ok(())
+}
+
+fn subtitle_coordinates(
+    node: &SyntaxNode,
+) -> Result<(String, usize), CanonicalDocumentRenderError> {
     let source = node_text(node)?;
     let first_line = source
         .lines()
@@ -797,22 +948,7 @@ fn render_subtitle_html(
         let depth = section.split('.').count();
         (section, if depth < 3 { 3 } else { depth + 1 }.min(6))
     };
-    let paragraph = node
-        .children()
-        .find(|child| child.kind() == SyntaxKind::ParagraphNewline)
-        .ok_or_else(|| range_error(node.range()))?;
-    output.push_str(&format!("<h{level} class='mech-subtitle' id='section-"));
-    output.push_str(&escape_attribute(section));
-    output.push_str("'>");
-    render_inline_children_html(
-        &paragraph,
-        owner,
-        lookup,
-        output,
-        &[SyntaxKind::Newline, SyntaxKind::CarriageReturn],
-    )?;
-    output.push_str(&format!("</h{level}>"));
-    Ok(())
+    Ok((section.to_owned(), level))
 }
 
 fn valid_section_number(value: &str) -> bool {
@@ -1422,6 +1558,16 @@ fn render_inline_html(
 ) -> Result<(), CanonicalDocumentRenderError> {
     match node.kind() {
         SyntaxKind::EvalInlineMechCode => {
+            if lookup.mode == RenderMode::Browser {
+                append_browser_mount(
+                    output,
+                    "span",
+                    "mech-inline-mech-code",
+                    SourceDocumentOutputKind::Inline,
+                    node.range(),
+                );
+                return Ok(());
+            }
             if lookup.mode == RenderMode::Source {
                 output.push_str("<code class='mech-inline'>");
                 output.push_str(&escape_html(&node_text(node)?));
@@ -2059,6 +2205,19 @@ fn render_fence_html(
     output.push_str(&escape_html(&fence_body(fence)?));
     output.push_str("</code></pre>");
     let scope = render_scope(&info.scope);
+    if lookup.mode == RenderMode::Browser
+        && presentation.show_output
+        && !info.hidden
+        && scope.is_some()
+    {
+        append_browser_mount(
+            output,
+            "figcaption",
+            "mech-block-output",
+            SourceDocumentOutputKind::Fence,
+            fence.syntax().range(),
+        );
+    }
     if lookup.mode == RenderMode::Completed
         && presentation.show_output
         && let Some(scope) = scope
@@ -2212,6 +2371,31 @@ fn visible_root_program_range(root: &SyntaxNode) -> Option<TextRange> {
     latest.and_then(|(range, visible)| visible.then_some(range))
 }
 
+/// Browser transport identity derived from the canonical output's retained anchor.
+/// Program results keep their document-boundary address across REPL appends.
+pub fn canonical_document_output_id(kind: SourceDocumentOutputKind, range: TextRange) -> u64 {
+    if kind == SourceDocumentOutputKind::Program {
+        return mech_engine::root_document_program_output_id();
+    }
+    mech_core::hash_str(&format!(
+        "mech/canonical-document-output/v1:{kind:?}:{}:{}",
+        range.start.0, range.end.0
+    ))
+}
+
+fn append_browser_mount(
+    output: &mut String,
+    tag: &str,
+    class: &str,
+    kind: SourceDocumentOutputKind,
+    range: TextRange,
+) {
+    let id = canonical_document_output_id(kind, range);
+    output.push_str(&format!(
+        "<{tag} class='{class}' id='{id}:0' data-mech-output-address='{id}:0'></{tag}>"
+    ));
+}
+
 fn append_program_html(
     owner: DocumentScopeId,
     scope: &CanonicalRenderScope,
@@ -2219,6 +2403,18 @@ fn append_program_html(
     output: &mut String,
     required: Option<TextRange>,
 ) -> Result<(), CanonicalDocumentRenderError> {
+    if lookup.mode == RenderMode::Browser {
+        if let Some(range) = required {
+            append_browser_mount(
+                output,
+                "output",
+                "mech-block-output mech-program-output",
+                SourceDocumentOutputKind::Program,
+                range,
+            );
+        }
+        return Ok(());
+    }
     if lookup.mode == RenderMode::Source {
         return Ok(());
     }

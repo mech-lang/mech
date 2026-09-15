@@ -10,7 +10,7 @@ pub(crate) struct HtmlShimExtraSlots {
 }
 
 impl HtmlShimExtraSlots {
-    #[cfg_attr(not(any(feature = "serve", feature = "formatter")), allow(dead_code))]
+    #[cfg(any(test, feature = "serve", feature = "formatter"))]
     pub(crate) fn insert(&mut self, name: impl Into<String>, value: impl Into<String>) {
         self.slots.insert(name.into(), value.into());
     }
@@ -76,9 +76,9 @@ impl From<&HtmlStyleSheets> for HtmlStyleSheets {
 #[derive(Clone, Debug)]
 pub(crate) struct HtmlShimRender {
     pub html: String,
-    #[cfg_attr(not(any(feature = "serve", feature = "formatter")), allow(dead_code))]
+    #[cfg(any(test, feature = "serve", feature = "formatter"))]
     pub consumed_slots: BTreeSet<String>,
-    #[cfg_attr(not(any(feature = "serve", feature = "formatter")), allow(dead_code))]
+    #[cfg(any(test, feature = "serve", feature = "formatter"))]
     pub unresolved_mech_slots: BTreeSet<String>,
 }
 
@@ -88,9 +88,45 @@ pub(crate) fn render_canonical_html(
     shim: String,
     extra_slots: &HtmlShimExtraSlots,
 ) -> MResult<HtmlShimRender> {
-    let content = CanonicalDocumentRenderer
-        .format_html_body(document)
+    let mut presentation = CanonicalDocumentRenderer
+        .format_browser_html_slots(document)
         .map_err(|error| presentation_error(error.to_string()))?;
+    // A custom shell may only expose CONTENT. Preserve unplaced regions there,
+    // while shipped shells own their dedicated metadata and intro regions.
+    let mut metadata = String::new();
+    for name in [
+        "AUTHOR", "DATE", "KICKER", "SECTION", "SUMMARY", "HERO", "NEXT", "PREVIOUS",
+    ] {
+        if !shim.contains(&format!("{{{{{name}}}}}")) {
+            if let Some(value) = presentation.get(name).filter(|value| !value.is_empty()) {
+                metadata.push_str(&format!(
+                    "<div class='mech-title-field'><dt>{}</dt><dd>{value}</dd></div>",
+                    name.to_lowercase()
+                ));
+            }
+        }
+    }
+    if !metadata.is_empty() {
+        let intro = presentation.entry("INTRO".to_owned()).or_default();
+        *intro = format!("<dl class='mech-title-front-matter'>{metadata}</dl>{intro}");
+    }
+    for (source, target) in [
+        ("ABSTRACT", "INTRO"),
+        ("INTRO", "CONTENT"),
+        ("FOOTNOTES", "CONTENT"),
+        ("CITED", "CONTENT"),
+    ] {
+        if !shim.contains(&format!("{{{{{source}}}}}")) {
+            let value = presentation.get(source).cloned().unwrap_or_default();
+            let destination = presentation.entry(target.to_owned()).or_default();
+            if source == "ABSTRACT" || source == "INTRO" {
+                *destination = format!("{value}{destination}");
+            } else {
+                destination.push_str(&value);
+            }
+        }
+    }
+    presentation.insert("CONTENTS".to_owned(), presentation["CONTENT"].clone());
     let title = document
         .title()
         .and_then(|title| title.syntax().text().ok())
@@ -123,14 +159,15 @@ pub(crate) fn render_canonical_html(
         ("TOC".to_owned(), String::new()),
         ("ABSTRACT".to_owned(), String::new()),
         ("INTRO".to_owned(), String::new()),
-        ("CONTENTS".to_owned(), content.clone()),
-        ("CONTENT".to_owned(), content),
+        ("CONTENTS".to_owned(), String::new()),
+        ("CONTENT".to_owned(), String::new()),
         ("CITED".to_owned(), String::new()),
         ("FOOTNOTES".to_owned(), String::new()),
         ("CODE".to_owned(), String::new()),
         ("REPL".to_owned(), repl.to_owned()),
         ("PRESENTATION".to_owned(), "document".to_owned()),
     ]);
+    slots.extend(presentation);
     slots.extend(extra_slots.slots.clone());
     Ok(render_html_shim(&shim, &slots))
 }
@@ -168,12 +205,14 @@ fn render_html_shim(shim: &str, slots: &BTreeMap<String, String>) -> HtmlShimRen
     html.push_str(&shim[cursor..]);
     HtmlShimRender {
         html,
+        #[cfg(any(test, feature = "serve", feature = "formatter"))]
         consumed_slots,
+        #[cfg(any(test, feature = "serve", feature = "formatter"))]
         unresolved_mech_slots,
     }
 }
 
-#[cfg_attr(not(any(feature = "serve", feature = "formatter")), allow(dead_code))]
+#[cfg(any(test, feature = "serve", feature = "formatter"))]
 pub(crate) fn validate_shipped_shim_render(
     shim_name: &str,
     render: &HtmlShimRender,
@@ -256,8 +295,8 @@ mod tests {
             assert_eq!(html.matches("<article").count(), 1, "{html}");
             assert!(html.contains("A &amp; B"), "{html}");
             assert!(!html.contains("mech-document-header"), "{html}");
-            assert!(html.contains("<dt>author</dt><dd>Ada</dd>"), "{html}");
-            assert!(html.contains("<dt>section</dt><dd>Examples</dd>"), "{html}");
+            assert!(html.contains("Ada"), "{html}");
+            assert!(html.contains("Examples"), "{html}");
         }
     }
 }
