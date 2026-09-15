@@ -1394,10 +1394,18 @@ mod tests {
 
     #[test]
     fn resident_state_mutations_include_compound_assignments() {
-        let tree = mech_syntax::parser::parse("answer += 1\nanswer").unwrap();
+        let document = crate::SourceDocument::parse_resolved(
+            "test:compound-assignment",
+            Revision(0),
+            "answer += 1\nanswer",
+            ParseConfig::default(),
+        )
+        .unwrap();
 
         assert_eq!(
-            resident_state_mutations(&tree),
+            mech_engine::CanonicalSourceFrontend
+                .root_state_mutation_names(&document.document())
+                .unwrap(),
             std::collections::BTreeSet::from(["answer".to_string()]),
         );
     }

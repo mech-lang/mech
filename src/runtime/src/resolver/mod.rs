@@ -420,14 +420,6 @@ impl ResolvedSource {
         self.clear_source_projections();
     }
 
-    /// Replace the typed compiler projection while retaining the source used
-    /// for module identity and presentation.
-    #[cfg(feature = "compute")]
-    pub(crate) fn replace_syntax_tree(&mut self, syntax_tree: Program) {
-        self.syntax_tree = Some(Arc::new(syntax_tree));
-        self.clear_source_projections();
-    }
-
     fn clear_source_projections(&mut self) {
         self.imports.clear();
         self.exports.clear();

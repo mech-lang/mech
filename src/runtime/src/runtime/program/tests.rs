@@ -1052,14 +1052,14 @@ fn activation_only_compilation_preserves_the_artifact_without_retaining_bytecode
 
 #[test]
 fn static_initialization_returns_detached_row_major_matrix_values() {
-    let tree = mech_syntax::parse("matrix := [1f32 2f32; 3f32 4f32]").unwrap();
+    let document = canonical_planning_test_document("matrix := [1f32 2f32; 3f32 4f32]");
     let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_native_plan_catalog())
         .build_compiler()
         .unwrap();
 
     let mut first = compiler
-        .evaluate_static_tree_symbols(&tree, &["matrix"])
+        .evaluate_static_document_symbols(&document, &["matrix"])
         .unwrap();
     assert_eq!(
         first.remove("matrix"),
@@ -1071,7 +1071,7 @@ fn static_initialization_returns_detached_row_major_matrix_values() {
     );
 
     let second = compiler
-        .evaluate_static_tree_symbols(&tree, &["matrix"])
+        .evaluate_static_document_symbols(&document, &["matrix"])
         .unwrap();
     assert_eq!(
         second["matrix"],
@@ -1085,9 +1085,9 @@ fn static_initialization_returns_detached_row_major_matrix_values() {
 
 #[test]
 fn planning_values_seed_explicit_live_inputs_while_literals_remain_constants() {
-    let tree =
-        mech_syntax::parse("supplied-port := supplied\nvalue := supplied-port + 2f32\nvalue")
-            .unwrap();
+    let document = canonical_planning_test_document(
+        "supplied-port := supplied\nvalue := supplied-port + 2f32\nvalue",
+    );
     let inputs = BTreeMap::from([("supplied".to_owned(), RuntimeHostInputValue::F32(40.0))]);
     let external = BTreeSet::from(["supplied-port".to_owned()]);
     let mut compiler = RuntimeBuilder::new()
@@ -1096,7 +1096,7 @@ fn planning_values_seed_explicit_live_inputs_while_literals_remain_constants() {
         .unwrap();
 
     let (product, initial_inputs) = compiler
-        .compile_tree_artifact_with_input_initializers(&tree, &inputs, &external)
+        .compile_document_artifact_with_input_initializers(&document, &inputs, &external)
         .unwrap();
 
     assert_eq!(
@@ -1104,7 +1104,7 @@ fn planning_values_seed_explicit_live_inputs_while_literals_remain_constants() {
             .artifact()
             .inputs()
             .iter()
-            .map(|input| input.name.as_str())
+            .map(|input| mech_engine::decode_source_input_name(&input.name).unwrap())
             .collect::<Vec<_>>(),
         ["supplied-port"]
     );
@@ -1128,9 +1128,9 @@ fn planning_values_seed_explicit_live_inputs_while_literals_remain_constants() {
 
 #[test]
 fn matrix_declaration_defaults_become_typed_live_inputs() {
-    let tree =
-        mech_syntax::parse("matrix := [1f32 2f32; 3f32 4f32]\nresult := matrix + 1f32\nresult")
-            .unwrap();
+    let document = canonical_planning_test_document(
+        "matrix := [1f32 2f32; 3f32 4f32]\nresult := matrix + 1f32\nresult",
+    );
     let external = BTreeSet::from(["matrix".to_owned()]);
     let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_native_plan_catalog())
@@ -1138,14 +1138,16 @@ fn matrix_declaration_defaults_become_typed_live_inputs() {
         .unwrap();
 
     let (product, initial_inputs) = compiler
-        .compile_tree_artifact_with_input_initializers(&tree, &BTreeMap::new(), &external)
+        .compile_document_artifact_with_input_initializers(&document, &BTreeMap::new(), &external)
         .unwrap();
 
     let input = product
         .artifact()
         .inputs()
         .iter()
-        .find(|input| input.name == "matrix")
+        .find(|input| {
+            mech_engine::decode_source_input_name(&input.name).as_deref() == Some("matrix")
+        })
         .expect("the matrix declaration must become an artifact input");
     assert_eq!(
         initial_inputs["matrix"],
@@ -1181,14 +1183,14 @@ result
 
 #[cfg(feature = "compute")]
 #[test]
-fn mixed_tree_compilation_owns_partitioning_and_typed_initializers() {
-    let tree = mech_syntax::parse(MIXED_COMPUTE_SOURCE).unwrap();
+fn mixed_document_compilation_owns_partitioning_and_typed_initializers() {
+    let document = canonical_planning_test_document(MIXED_COMPUTE_SOURCE);
     let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_native_plan_catalog())
         .build_compiler()
         .unwrap();
 
-    let mixed = compiler.compile_mixed_tree(&tree).unwrap();
+    let mixed = compiler.compile_mixed_document(&document).unwrap();
 
     assert!(mixed.coordinator.artifact().compute_regions().is_empty());
     assert_eq!(mixed.compute.declaration.name.as_ref(), "calculation");
@@ -1372,8 +1374,8 @@ result
 
 #[cfg(feature = "compute")]
 #[test]
-fn mixed_tree_retains_only_explicit_sample_read_capabilities() {
-    let tree = mech_syntax::parse(
+fn mixed_document_retains_only_explicit_sample_read_capabilities() {
+    let document = canonical_planning_test_document(
         r#"
 @compute := compute://worker/kernel{:read(sample/result), :write(input/x), :write(turn)}
 @compute/input/x <- 1f32
@@ -1386,14 +1388,13 @@ result := x + 2f32
 unused := x + 3f32
 (result, unused)
 "#,
-    )
-    .unwrap();
+    );
     let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_native_plan_catalog())
         .build_compiler()
         .unwrap();
 
-    let mixed = compiler.compile_mixed_tree(&tree).unwrap();
+    let mixed = compiler.compile_mixed_document(&document).unwrap();
 
     assert_eq!(
         mixed.retained_outputs,
@@ -1403,8 +1404,8 @@ unused := x + 3f32
 
 #[cfg(feature = "compute")]
 #[test]
-fn mixed_tree_coordinator_retains_interactive_root_symbols() {
-    let tree = mech_syntax::parse(
+fn mixed_document_coordinator_retains_interactive_root_symbols() {
+    let document = canonical_planning_test_document(
         r#"
 visible := 41
 @compute := compute://worker/kernel{:write(input/x), :write(turn)}
@@ -1417,14 +1418,13 @@ x := 1f32
 result := x + 1f32
 result
 "#,
-    )
-    .unwrap();
+    );
     let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_native_plan_catalog())
         .build_compiler()
         .unwrap();
 
-    let mixed = compiler.compile_mixed_tree(&tree).unwrap();
+    let mixed = compiler.compile_mixed_document(&document).unwrap();
     let names = mixed
         .coordinator
         .artifact()
@@ -1439,8 +1439,8 @@ result
 
 #[cfg(feature = "compute")]
 #[test]
-fn mixed_tree_retains_array_activation_as_outer_broadcast_extent() {
-    let tree = mech_syntax::parse(
+fn mixed_document_retains_array_activation_as_outer_broadcast_extent() {
+    let document = canonical_planning_test_document(
         r#"
 @compute := compute://worker/kernel{:write(input/x), :write(turn)}
 lanes := [1f32 2f32 3f32 4f32]
@@ -1453,14 +1453,13 @@ x := 0f32
 result := x + 1f32
 result
 "#,
-    )
-    .unwrap();
+    );
     let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_native_plan_catalog())
         .build_compiler()
         .unwrap();
 
-    let mixed = compiler.compile_mixed_tree(&tree).unwrap();
+    let mixed = compiler.compile_mixed_document(&document).unwrap();
 
     assert_eq!(
         mixed.activation_inputs["x"],
@@ -1480,8 +1479,8 @@ result
 
 #[cfg(feature = "compute")]
 #[test]
-fn mixed_tree_normalizes_matrix_initializers_to_canonical_row_major_layout() {
-    let tree = mech_syntax::parse(
+fn mixed_document_normalizes_matrix_initializers_to_canonical_row_major_layout() {
+    let document = canonical_planning_test_document(
         r#"
 @compute := compute://worker/kernel{:write(input/matrix), :write(turn)}
 @compute/input/matrix <- [0f32 0f32; 0f32 0f32]
@@ -1493,14 +1492,13 @@ matrix := [1f32 2f32; 3f32 4f32]
 result := matrix + 1f32
 result
 "#,
-    )
-    .unwrap();
+    );
     let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_native_plan_catalog())
         .build_compiler()
         .unwrap();
 
-    let mixed = compiler.compile_mixed_tree(&tree).unwrap();
+    let mixed = compiler.compile_mixed_document(&document).unwrap();
     let input = mixed.compute.interface.input_named("matrix").unwrap();
 
     assert_eq!(input.dimensions.as_ref(), [2, 2]);
@@ -1516,8 +1514,8 @@ result
 
 #[cfg(feature = "compute")]
 #[test]
-fn mixed_tree_rejects_coordinator_input_with_the_wrong_shape_without_a_provider() {
-    let tree = mech_syntax::parse(
+fn mixed_document_rejects_coordinator_input_with_the_wrong_shape_without_a_provider() {
+    let document = canonical_planning_test_document(
         r#"
 @compute := compute://worker/kernel{:write(input/matrix), :write(turn)}
 @compute/input/matrix <- [1f32; 2f32]
@@ -1529,14 +1527,13 @@ matrix := [1f32 2f32; 3f32 4f32]
 result := matrix + 1f32
 result
 "#,
-    )
-    .unwrap();
+    );
     let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_native_plan_catalog())
         .build_compiler()
         .unwrap();
 
-    let error = compiler.compile_mixed_tree(&tree).unwrap_err();
+    let error = compiler.compile_mixed_document(&document).unwrap_err();
     let rendered = format!("{error:?}");
     assert!(
         rendered.contains("compute boundary planning failed"),
@@ -1585,22 +1582,23 @@ result
         )
         .unwrap();
 
+    assert!(mixed.coordinator.artifact().outputs().iter().any(|output| {
+        output
+            .interactive_binding
+            .as_ref()
+            .is_some_and(|binding| binding.lexical_name == "coordinator-value")
+    }));
     assert!(
         mixed
             .coordinator
             .artifact()
             .outputs()
             .iter()
-            .any(|output| output.name == "coordinator-value")
-    );
-    assert!(
-        mixed
-            .coordinator
-            .artifact()
-            .outputs()
-            .iter()
-            .all(|output| output.name != "result"),
-        "the coordinator must execute its generated partition, not the cached full source tree",
+            .all(|output| output
+                .interactive_binding
+                .as_ref()
+                .is_none_or(|binding| binding.lexical_name != "result")),
+        "the coordinator must not expose bindings from the compute section",
     );
     assert!(
         mixed
@@ -1617,7 +1615,7 @@ result
             .outputs()
             .iter()
             .all(|output| output.name != "coordinator-value"),
-        "the compute artifact must execute its generated partition, not the cached full source tree",
+        "the compute artifact must not expose coordinator-only bindings",
     );
     let input = mixed.compute.interface.input_named("x").unwrap();
     assert_eq!(
@@ -1682,7 +1680,7 @@ result
 #[cfg(feature = "compute")]
 #[test]
 fn mixed_compilation_rejects_multiple_compute_regions_for_v04() {
-    let tree = mech_syntax::parse(
+    let document = canonical_planning_test_document(
         r#"
 first @compute
 -------------------------------------------------------------------------------
@@ -1692,14 +1690,13 @@ second @cpu
 -------------------------------------------------------------------------------
 b := 2f32 + 2f32
 "#,
-    )
-    .unwrap();
+    );
     let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_native_plan_catalog())
         .build_compiler()
         .unwrap();
 
-    let error = compiler.compile_mixed_tree(&tree).unwrap_err();
+    let error = compiler.compile_mixed_document(&document).unwrap_err();
 
     assert!(
         error
@@ -3012,11 +3009,11 @@ fn invalidated_admitted_grant_blocks_outbox_retry_before_preparation_or_delivery
 }
 
 #[test]
-fn parsed_tree_can_be_loaded_as_a_production_resident_program() {
-    let tree = mech_syntax::parser::parse(external_source().trim()).unwrap();
+fn retained_document_can_be_loaded_as_a_production_resident_program() {
+    let document = canonical_planning_test_document(external_source().trim());
     let (mut runtime, _, _, _) = configured_external_runtime();
     let outcome = runtime
-        .load_tree_program(&tree, crate::ResidentDurabilityPolicy::Volatile)
+        .load_document_program(&document, crate::ResidentDurabilityPolicy::Volatile)
         .unwrap();
 
     assert_eq!(outcome.route, RuntimeProgramRoute::ResidentExternal);
@@ -6155,6 +6152,63 @@ fn canonical_resolved_and_rooted_interactive_compilation_preserve_revision_and_s
                 expected
             );
         }
+    }
+}
+
+#[test]
+fn cutover_rooted_entrypoints_use_the_canonical_dependency_graph() {
+    let mut resolver = InMemorySourceResolver::new();
+    resolver
+        .insert_canonical_string("dep.mec", "value := 41.0\n<+ value\n")
+        .unwrap();
+    resolver
+        .insert_canonical_string(
+            "main.mec",
+            "+> ./dep.mec\nanswer := dep/value + 1.0\nanswer\n",
+        )
+        .unwrap();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .source_resolver(resolver)
+        .build_compiler()
+        .unwrap();
+    let options = ModuleBuildOptions::new("test", "v0.4", "native", &[], &[]);
+    for (product, interactive) in [
+        (
+            compiler
+                .compile_root(SourceRequest::new("main.mec"), options)
+                .unwrap(),
+            false,
+        ),
+        (
+            compiler
+                .compile_interactive_root(SourceRequest::new("main.mec"), options)
+                .unwrap(),
+            true,
+        ),
+    ] {
+        let mut accepted = runtime();
+        accepted
+            .load_bytecode_program(
+                product.bytecode(),
+                crate::ResidentDurabilityPolicy::Volatile,
+            )
+            .unwrap();
+        assert_eq!(
+            canonical_f64(
+                accepted
+                    .output_value(mech_core::OutputId::new(0))
+                    .unwrap()
+                    .unwrap()
+                    .value()
+            ),
+            42.0
+        );
+        assert_eq!(
+            accepted.root_symbol_output_id("answer").is_some(),
+            interactive
+        );
+        assert_eq!(product.source_dependencies().len(), 1);
     }
 }
 

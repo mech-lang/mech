@@ -943,13 +943,20 @@ mod tests {
         }
     }
 
+    fn source_index(source: &str) -> SourceIndex {
+        let document = crate::SourceDocument::parse_resolved(
+            "test:source-index",
+            mech_syntax::document::Revision(0),
+            source,
+            mech_syntax::document::ParseConfig::default(),
+        )
+        .unwrap();
+        SourceIndex::from_document(&document.document()).unwrap()
+    }
+
     #[test]
     fn source_index_treats_unqualified_fenced_mech_as_program_scope() {
-        let tree =
-            mech_syntax::parser::parse("```mech\n+> @env := cli/env\nhome := @env/HOME\n```\n")
-                .unwrap();
-
-        let index = SourceIndex::from_program(&tree);
+        let index = source_index("```mech\n+> @env := cli/env\nhome := @env/HOME\n```\n");
 
         assert_eq!(index.imports.len(), 1);
         assert_eq!(index.imports[0].occurrence.scope, SourceScope::Program);
@@ -958,12 +965,9 @@ mod tests {
 
     #[test]
     fn source_index_collects_title_front_matter_imports_in_program_scope() {
-        let tree = mech_syntax::parser::parse(
+        let index = source_index(
             "N-Body Simulation\n===============================================================================\nsection: Examples\n+> combinatorics\n+> stats\n===============================================================================\n",
-        )
-        .unwrap();
-
-        let index = SourceIndex::from_program(&tree);
+        );
 
         assert_eq!(index.program_imports().len(), 2);
         assert_eq!(index.program_imports()[0].specifier, "combinatorics");
@@ -1027,17 +1031,14 @@ mod tests {
 
     #[test]
     fn source_index_records_match_pattern_address_references() {
-        let tree = mech_syntax::parser::parse(
+        let index = source_index(
             r#"
 x := "secret"
 result := x?
   | @env/SECRET => "matched"
   | * => "missed".
 "#,
-        )
-        .unwrap();
-
-        let index = SourceIndex::from_program(&tree);
+        );
         assert!(
             index
                 .program_address_references()
@@ -1115,7 +1116,7 @@ result := x?
 
     #[test]
     fn source_index_records_fsm_arm_selector_address_references() {
-        let tree = mech_syntax::parser::parse(
+        let index = source_index(
             r#"
 #Pick(x<string>) => <string>
   ├ :PickState(x<string>)
@@ -1126,10 +1127,7 @@ result := x?
   :PickState("not-the-secret") -> :Done("missed")
   :Done(out) => out.
 "#,
-        )
-        .unwrap();
-
-        let index = SourceIndex::from_program(&tree);
+        );
         assert!(
             index
                 .program_address_references()
