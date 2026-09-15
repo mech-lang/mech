@@ -1311,3 +1311,11 @@ fn nested_selected_rational_power_keeps_its_integer_exponent_contract() {
         &[4.0, 16.0],
     );
 }
+
+#[test]
+fn promoted_boolean_masks_preserve_canonical_destination_coordinates() {
+    turns(
+        "~a := [10<i32> 20<i32>;30<i32>40<i32>]\na[[false true;false false]] += 2.5\nselected := a[1,2]\nanswer := selected<f64>\nanswer\n",
+        &[22.0, 24.0],
+    );
+}
