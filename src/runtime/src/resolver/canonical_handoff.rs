@@ -19,10 +19,10 @@ pub struct CanonicalDocumentCompilation {
 }
 
 #[derive(Clone)]
-pub struct CanonicalResolvedImport {
+pub struct CanonicalResolvedImport<T = RuntimeValueSnapshot> {
     pub declaration: SourceImportDeclaration,
     pub canonical_uri: String,
-    pub exports: BTreeMap<String, RuntimeValueSnapshot>,
+    pub exports: BTreeMap<String, T>,
 }
 
 #[derive(Clone)]
@@ -222,32 +222,16 @@ impl CanonicalDocumentCompilation {
         resolved: &[CanonicalResolvedImport],
     ) -> Result<Vec<CanonicalDocumentInputBinding>, CanonicalDocumentHandoffError> {
         let environment = canonical_import_values(&self.index, &self.scope, resolved)?;
-        // Diagnose a requested namespace member even if another export exists.
-        for dependency in resolved {
-            if matches!(
-                dependency.declaration.kind,
-                SourceImportKind::DependencyOnly | SourceImportKind::Namespace
-            ) && let Some(namespace) = module_namespace_for_import(&dependency.declaration)
-            {
-                let namespace_prefix = format!("{namespace}/");
-                let occurrence = self.import_occurrence(&dependency.declaration);
-                for export in self
-                    .program
-                    .program()
-                    .inputs
-                    .iter()
-                    .filter_map(|input| input.name.strip_prefix(&namespace_prefix))
-                {
-                    if !dependency.exports.contains_key(export) {
-                        return Err(CanonicalDocumentHandoffError::MissingExport {
-                            dependency: dependency.canonical_uri.clone(),
-                            export: export.to_owned(),
-                            occurrence: occurrence.clone(),
-                        });
-                    }
-                }
-            }
-        }
+        validate_canonical_import_uses(
+            &self.index,
+            &self.scope,
+            resolved,
+            self.program
+                .program()
+                .inputs
+                .iter()
+                .map(|input| input.name.as_str()),
+        )?;
 
         self.program
             .program()
@@ -267,19 +251,6 @@ impl CanonicalDocumentCompilation {
             })
             .collect()
     }
-
-    fn import_occurrence(
-        &self,
-        declaration: &SourceImportDeclaration,
-    ) -> Option<mech_core::SourceRange> {
-        self.index
-            .imports
-            .iter()
-            .find(|candidate| {
-                candidate.occurrence.scope == self.scope && &candidate.declaration == declaration
-            })
-            .and_then(|candidate| candidate.occurrence.range.clone())
-    }
 }
 
 fn named_scope(name: &str) -> SourceScope {
@@ -289,11 +260,11 @@ fn named_scope(name: &str) -> SourceScope {
     })
 }
 
-pub(crate) fn canonical_import_values(
+pub(crate) fn canonical_import_values<T: Clone>(
     index: &SourceIndex,
     scope: &SourceScope,
-    resolved: &[CanonicalResolvedImport],
-) -> Result<BTreeMap<String, RuntimeValueSnapshot>, CanonicalDocumentHandoffError> {
+    resolved: &[CanonicalResolvedImport<T>],
+) -> Result<BTreeMap<String, T>, CanonicalDocumentHandoffError> {
     let occurrence = |declaration: &SourceImportDeclaration| {
         index
             .imports
@@ -318,7 +289,7 @@ pub(crate) fn canonical_import_values(
             });
         }
     }
-    let mut environment = BTreeMap::<String, RuntimeValueSnapshot>::new();
+    let mut environment = BTreeMap::<String, T>::new();
     let mut ownership = HashMap::<String, String>::new();
     for dependency in resolved {
         if !declared.contains(&dependency.declaration)
@@ -329,9 +300,7 @@ pub(crate) fn canonical_import_values(
             });
         }
         let occurrence = occurrence(&dependency.declaration);
-        let mut insert = |binding: String,
-                          value: RuntimeValueSnapshot|
-         -> Result<(), CanonicalDocumentHandoffError> {
+        let mut insert = |binding: String, value: T| -> Result<(), CanonicalDocumentHandoffError> {
             if let Some(first) = ownership.insert(binding.clone(), dependency.canonical_uri.clone())
             {
                 return Err(CanonicalDocumentHandoffError::ImportConflict {
@@ -382,4 +351,44 @@ pub(crate) fn canonical_import_values(
     }
 
     Ok(environment)
+}
+
+/// Check namespace uses against the same declared export authority for both
+/// detached dependency values and linked root graph bindings.
+pub(crate) fn validate_canonical_import_uses<'a, T>(
+    index: &SourceIndex,
+    scope: &SourceScope,
+    resolved: &[CanonicalResolvedImport<T>],
+    input_names: impl IntoIterator<Item = &'a str>,
+) -> Result<(), CanonicalDocumentHandoffError> {
+    let input_names = input_names.into_iter().collect::<Vec<_>>();
+    for dependency in resolved {
+        if matches!(
+            dependency.declaration.kind,
+            SourceImportKind::DependencyOnly | SourceImportKind::Namespace
+        ) && let Some(namespace) = module_namespace_for_import(&dependency.declaration)
+        {
+            let prefix = format!("{namespace}/");
+            for export in input_names
+                .iter()
+                .filter_map(|name| name.strip_prefix(&prefix))
+            {
+                if !dependency.exports.contains_key(export) {
+                    return Err(CanonicalDocumentHandoffError::MissingExport {
+                        dependency: dependency.canonical_uri.clone(),
+                        export: export.to_owned(),
+                        occurrence: index
+                            .imports
+                            .iter()
+                            .find(|item| {
+                                &item.occurrence.scope == scope
+                                    && item.declaration == dependency.declaration
+                            })
+                            .and_then(|item| item.occurrence.range.clone()),
+                    });
+                }
+            }
+        }
+    }
+    Ok(())
 }

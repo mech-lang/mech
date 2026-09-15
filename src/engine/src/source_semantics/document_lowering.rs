@@ -1388,3 +1388,188 @@ impl SemanticBuilder {
         Ok((value, syntax.clone()))
     }
 }
+
+pub(super) fn compile_ordered_documents(
+    documents: &[CanonicalOrderedDocument],
+    catalog: Arc<mech_core::FunctionCatalog>,
+) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+    let first = documents.first().ok_or_else(|| {
+        internal(
+            SourceSemanticAnchor {
+                document: DocumentId(0),
+                revision: Revision(0),
+                range: TextRange::empty(mech_syntax::document::TextSize::ZERO),
+            },
+            "ordered compilation requires at least one retained root".to_owned(),
+        )
+    })?;
+    let anchor = SourceSemanticAnchor::for_node(first.document.syntax());
+    let mut builder = SemanticBuilder::with_function_catalog(anchor, catalog);
+    let mut exports_by_root = BTreeMap::<usize, BTreeMap<String, PendingBinding>>::new();
+    let mut constants = BTreeMap::new();
+    let mut results = BTreeMap::new();
+    let mut presentation = Vec::new();
+    for root in documents {
+        let anchor = SourceSemanticAnchor::for_node(root.document.syntax());
+        if results.contains_key(&root.identity) {
+            return Err(internal(
+                anchor,
+                "ordered root identity is repeated".to_owned(),
+            ));
+        }
+        builder.resource_writes = root.resource_writes.clone();
+        builder.resolved_source_modules = root.resolved_modules.clone();
+        builder.input_schema_overrides = root
+            .input_schemas
+            .iter()
+            .map(|(name, body)| {
+                (
+                    name.clone(),
+                    SchemaDraft {
+                        body: body.clone(),
+                        dimension_parameters: Box::new([]),
+                    },
+                )
+            })
+            .collect();
+        for (name, imported) in &root.imports {
+            let binding = match imported {
+                CanonicalOrderedImport::RootExport { root, name: export } => *exports_by_root
+                    .get(root)
+                    .and_then(|exports| exports.get(export))
+                    .ok_or_else(|| {
+                        internal(
+                            anchor,
+                            format!("linked root {root} has no preceding export {export}"),
+                        )
+                    })?,
+                CanonicalOrderedImport::Value(value) => {
+                    let schemas = value
+                        .schemas()
+                        .ok_or_else(|| internal(anchor, "import has no schema owner".to_owned()))?;
+                    let schema = schemas.get(value.schema()).ok_or_else(|| {
+                        internal(anchor, "import schema is unavailable".to_owned())
+                    })?;
+                    let input_name = format!("root:{}/import:{name}", root.identity);
+                    let ordinal = builder.inputs.len() as u32;
+                    builder.inputs.push(PendingInput {
+                        name: input_name.clone(),
+                        schema: SchemaDraft {
+                            body: schema
+                                .closed_body(value.shape())
+                                .map_err(|error| internal(anchor, format!("{error:?}")))?,
+                            dimension_parameters: Box::new([]),
+                        },
+                        anchor,
+                    });
+                    constants.insert(input_name, value.clone());
+                    PendingBinding::Value(PendingValue::Input(ordinal))
+                }
+            };
+            builder.bindings.insert(name.clone(), binding);
+        }
+        let mut units = Vec::new();
+        let mut exports = Vec::new();
+        collect_document_units(root.document.syntax(), &mut units, &mut exports)?;
+        builder.register_document_functions(&units)?;
+        builder.register_document_imports(&units, &root.resolved_modules)?;
+        let mut bindings = builder.bindings.keys().cloned().collect();
+        declare_document_inputs(&mut builder, &units, &mut bindings)?;
+        declare_document_inline_inputs(&mut builder, &units, &bindings)?;
+        let last =
+            compile_document_units(&mut builder, units, &bindings, &mut presentation, false)?
+                .ok_or_else(|| {
+                    internal(
+                        anchor,
+                        "ordered root has no executable source unit".to_owned(),
+                    )
+                })?;
+        // Keep the source binding's name where the last expression names it;
+        // otherwise each root has its own unambiguous result identity.
+        let text = node_text(&last.syntax)?;
+        let definition_name = VariableDefineSyntax::cast(last.syntax.clone())
+            .and_then(|definition| definition.variable())
+            .and_then(|variable| variable.stem())
+            .map(|stem| node_text(stem.syntax()))
+            .transpose()?;
+        let name = if let Some(name) = definition_name {
+            name
+        } else if builder.bindings.contains_key(text.trim()) {
+            text.trim().to_owned()
+        } else {
+            format!("root:{}:result", root.identity)
+        };
+        results.insert(root.identity, (name, last));
+        let mut root_exports = BTreeMap::new();
+        for export in exports {
+            let name = builder.required(export.name(), export.syntax(), "an exported name")?;
+            let name = node_text(name.syntax())?;
+            let binding = builder.bindings.get(&name).copied().ok_or_else(|| {
+                internal(
+                    anchor,
+                    format!("ordered root exports undefined binding {name}"),
+                )
+            })?;
+            if root_exports.insert(name.clone(), binding).is_some() {
+                return Err(internal(
+                    anchor,
+                    format!("ordered root exports {name} more than once"),
+                ));
+            }
+        }
+        exports_by_root.insert(root.identity, root_exports);
+        // Resource spellings are local to a document. Their graph input names
+        // carry the root identity before the next root declares its contexts.
+        for name in root.input_schemas.keys() {
+            if let Some(input) = builder.input_by_name.remove(name) {
+                builder.inputs[input as usize].name = format!("root:{}/{name}", root.identity);
+            }
+        }
+    }
+    // Constraints remain constraints; requested roots and visible document
+    // slots alone become ordinary outputs.
+    builder.outputs.clear();
+    let mut output_bindings = Vec::new();
+    for (_, (name, last)) in results {
+        output_bindings.push(SourceDocumentOutput {
+            output: builder.outputs.len() as u32,
+            kind: SourceDocumentOutputKind::Program,
+            visible: last.program_visible,
+        });
+        builder.publish(&name, None, last.value, &last.syntax);
+    }
+    for (kind, value, owner) in presentation {
+        let role = match kind {
+            SourceDocumentOutputKind::Inline => "inline",
+            SourceDocumentOutputKind::Fence => "fence",
+            SourceDocumentOutputKind::Program => unreachable!(),
+        };
+        let anchor = SourceSemanticAnchor::for_node(&owner);
+        let name = format!(
+            "document:{}:{role}:{}",
+            anchor.document.0,
+            owner.range().start.0
+        );
+        output_bindings.push(SourceDocumentOutput {
+            output: builder.outputs.len() as u32,
+            kind,
+            visible: true,
+        });
+        builder.publish(&name, None, value, &owner);
+    }
+    builder.order_document_state_writers();
+    let mut program = builder.finish()?;
+    program.document_outputs = output_bindings.into_boxed_slice();
+    let constants = program
+        .program
+        .inputs
+        .iter()
+        .enumerate()
+        .filter_map(|(ordinal, input)| {
+            constants
+                .get(&input.name)
+                .map(|value| (ordinal as u32, value.clone()))
+        })
+        .collect::<Vec<_>>();
+    program.bind_input_constants(&constants)
+}

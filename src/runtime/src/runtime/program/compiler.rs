@@ -203,6 +203,15 @@ impl ProgramCompiler {
             .compile_canonical_resolved_root(resolved, false, None)
     }
 
+    /// Compile explicit retained roots in one graph with caller-ordered results.
+    pub fn compile_canonical_roots(
+        &mut self,
+        requests: &[SourceRequest],
+        options: ModuleBuildOptions<'_>,
+    ) -> MResult<ProgramCompilationProduct> {
+        self.view().compile_canonical_roots(requests, options)
+    }
+
     /// Resolve a canonical graph and publish its live interactive root symbols.
     pub fn compile_canonical_interactive_root(
         &mut self,
@@ -972,6 +981,254 @@ impl<'a> ProgramCompilerView<'a> {
                     "unable to compile canonical ProgramArtifact: {error:?}"
                 ))
             })
+    }
+
+    pub(crate) fn compile_canonical_roots(
+        &self,
+        requests: &[SourceRequest],
+        options: ModuleBuildOptions<'_>,
+    ) -> MResult<ProgramCompilationProduct> {
+        use crate::resolver::{CanonicalResolvedImport, SourceScope, canonical_import_values};
+        use mech_engine::{CanonicalOrderedDocument, CanonicalOrderedImport};
+        if requests.is_empty() {
+            return Err(canonical_compilation_error(
+                "ordered compilation requires at least one root",
+            ));
+        }
+        let resolved = requests
+            .iter()
+            .map(|request| {
+                request.validate()?;
+                self.source_resolver
+                    .resolve(request)?
+                    .ok_or_else(|| {
+                        canonical_compilation_error(format!(
+                            "missing canonical root {}",
+                            request.specifier
+                        ))
+                    })?
+                    .admit_canonical_document()
+            })
+            .collect::<MResult<Vec<_>>>()?;
+        let mut identities = BTreeMap::new();
+        for (ordinal, root) in resolved.iter().enumerate() {
+            if identities
+                .insert(root.canonical_uri.clone(), ordinal)
+                .is_some()
+            {
+                return Err(canonical_compilation_error(format!(
+                    "duplicate ordered root {}",
+                    root.canonical_uri
+                )));
+            }
+        }
+        let indexes = resolved
+            .iter()
+            .map(|root| {
+                root.source_document()
+                    .ok_or_else(|| {
+                        canonical_compilation_error("ordered root has no retained document")
+                    })?
+                    .index()
+                    .map_err(|error| MechError::new(error, None))
+            })
+            .collect::<MResult<Vec<_>>>()?;
+        let mut root_imports = vec![Vec::new(); resolved.len()];
+        let mut detached_indexes = indexes
+            .iter()
+            .map(|index| index.root.clone())
+            .collect::<Vec<_>>();
+        for (ordinal, root) in resolved.iter().enumerate() {
+            for declaration in indexes[ordinal].root.program_imports() {
+                if !import_may_resolve_source_dependency(&declaration) {
+                    continue;
+                }
+                let request = source_request_for_import(&declaration, Some(&root.canonical_uri));
+                let Some(dependency) = self.source_resolver.resolve(&request)? else {
+                    continue;
+                };
+                if let Some(dependency) = identities.get(&dependency.canonical_uri).copied() {
+                    detached_indexes[ordinal]
+                        .imports
+                        .retain(|item| item.declaration != declaration);
+                    root_imports[ordinal].push((declaration, dependency));
+                }
+            }
+        }
+        fn visit(
+            root: usize,
+            imports: &[Vec<(SourceImportDeclaration, usize)>],
+            active: &mut BTreeSet<usize>,
+            done: &mut BTreeSet<usize>,
+            order: &mut Vec<usize>,
+        ) -> MResult<()> {
+            if done.contains(&root) {
+                return Ok(());
+            }
+            if !active.insert(root) {
+                return Err(canonical_compilation_error("ordered root dependency cycle"));
+            }
+            for (_, dependency) in &imports[root] {
+                visit(*dependency, imports, active, done, order)?;
+            }
+            active.remove(&root);
+            done.insert(root);
+            order.push(root);
+            Ok(())
+        }
+        let mut order = Vec::new();
+        let mut done = BTreeSet::new();
+        for ordinal in 0..resolved.len() {
+            visit(
+                ordinal,
+                &root_imports,
+                &mut BTreeSet::new(),
+                &mut done,
+                &mut order,
+            )?;
+        }
+        let mut context = CanonicalGraphCompilation::new(Some(options));
+        let mut documents = Vec::new();
+        let mut import_uses = Vec::new();
+        let mut reads = BTreeMap::new();
+        let mut values = BTreeMap::new();
+        for ordinal in order {
+            let root = &resolved[ordinal];
+            let document = root.source_document().expect("validated retained root");
+            let index = &indexes[ordinal].root;
+            let mut detached = self.canonical_graph_imports(
+                &detached_indexes[ordinal],
+                &root.canonical_uri,
+                &mut context,
+            )?;
+            let mut imports = detached
+                .iter()
+                .map(|import| CanonicalResolvedImport {
+                    declaration: import.declaration.clone(),
+                    canonical_uri: import.canonical_uri.clone(),
+                    exports: import
+                        .exports
+                        .iter()
+                        .map(|(name, value)| {
+                            (
+                                name.clone(),
+                                CanonicalOrderedImport::Value(value.to_value()),
+                            )
+                        })
+                        .collect(),
+                })
+                .collect::<Vec<_>>();
+            for (declaration, dependency) in &root_imports[ordinal] {
+                let target = &resolved[*dependency];
+                imports.push(CanonicalResolvedImport {
+                    declaration: declaration.clone(),
+                    canonical_uri: target.canonical_uri.clone(),
+                    exports: indexes[*dependency]
+                        .root
+                        .program_exports()
+                        .into_iter()
+                        .map(|export| {
+                            (
+                                export.name.clone(),
+                                CanonicalOrderedImport::RootExport {
+                                    root: *dependency,
+                                    name: export.name,
+                                },
+                            )
+                        })
+                        .collect(),
+                });
+                // Module identity depends on the resolved edge and target version,
+                // independently of whether its export is a snapshot or live graph value.
+                detached.push(CanonicalResolvedImport {
+                    declaration: declaration.clone(),
+                    canonical_uri: target.canonical_uri.clone(),
+                    exports: BTreeMap::new(),
+                });
+                context.source_dependencies.insert(
+                    target.canonical_uri.clone(),
+                    mech_core::hash_str(
+                        &target
+                            .source_document()
+                            .unwrap()
+                            .source()
+                            .to_contiguous_string(),
+                    ),
+                );
+            }
+            let modules = imports
+                .iter()
+                .filter_map(|import| {
+                    import
+                        .declaration
+                        .module
+                        .clone()
+                        .or_else(|| module_namespace_for_import(&import.declaration))
+                })
+                .collect();
+            import_uses.push((ordinal, imports.clone()));
+            let imports = canonical_import_values(index, &SourceScope::Program, &imports)
+                .map_err(|error| canonical_compilation_error(error.to_string()))?;
+            let (schemas, resource_reads, writes, planned) =
+                self.canonical_document_resources(index, &document.document())?;
+            for (name, request) in resource_reads {
+                reads.insert(format!("root:{ordinal}/{name}"), request);
+            }
+            for (name, value) in planned {
+                values.insert(format!("root:{ordinal}/{name}"), value);
+            }
+            documents.push(CanonicalOrderedDocument {
+                document: document.document(),
+                identity: ordinal,
+                input_schemas: schemas,
+                resource_writes: writes,
+                imports,
+                resolved_modules: modules,
+            });
+            self.canonical_graph_module_identity(root, &detached, &mut context)?;
+        }
+        let mut program = CanonicalSourceFrontend
+            .compile_ordered_documents_with_catalog(&documents, Arc::clone(&self.function_catalog))
+            .map_err(|error| canonical_compilation_error(error.to_string()))?;
+        for (ordinal, imports) in import_uses {
+            use mech_syntax::document::AstNode;
+            let document = resolved[ordinal].source_document().unwrap().document();
+            let owner = document.syntax().source();
+            let inputs = program
+                .program()
+                .inputs
+                .iter()
+                .zip(program.source_map().inputs.iter())
+                .filter(|(_, anchor)| {
+                    anchor.document == owner.document() && anchor.revision == owner.revision()
+                })
+                .map(|(input, _)| input.name.as_str());
+            crate::resolver::validate_canonical_import_uses(
+                &indexes[ordinal].root,
+                &SourceScope::Program,
+                &imports,
+                inputs,
+            )
+            .map_err(|error| canonical_compilation_error(error.to_string()))?;
+        }
+        self.validate_canonical_planning_candidate(&program, &values)?;
+        for (name, request) in reads {
+            if program
+                .program()
+                .inputs
+                .iter()
+                .any(|input| input.name == name)
+            {
+                program = program
+                    .bind_resource_input(&name, request)
+                    .map_err(|error| canonical_compilation_error(error.to_string()))?;
+            }
+        }
+        let artifact = program.compile_artifact_with_external_contracts(
+            &ResidentExternalContractResolver::new(self.resources),
+        )?;
+        ProgramCompilationProduct::from_canonical_artifact(artifact)
+            .map(|product| product.with_source_dependencies(context.source_dependencies))
     }
 
     fn compile_canonical_root(

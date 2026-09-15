@@ -99,6 +99,38 @@ pub struct CanonicalSourceProgram {
     compute_region: Option<(String, ComputePlacement)>,
 }
 
+/// One retained root in an explicitly ordered compilation. Imported roots refer
+/// to exported graph bindings, so their live dependencies remain in the artifact.
+pub struct CanonicalOrderedDocument {
+    pub document: DocumentSyntax,
+    pub identity: usize,
+    pub input_schemas: BTreeMap<String, SchemaBody>,
+    pub resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+    pub imports: BTreeMap<String, CanonicalOrderedImport>,
+    pub resolved_modules: BTreeSet<String>,
+}
+
+#[derive(Clone)]
+pub enum CanonicalOrderedImport {
+    Value(Value),
+    RootExport { root: usize, name: String },
+}
+
+impl CanonicalSourceFrontend {
+    /// Lower retained roots into one graph in dependency order and publish
+    /// their results in caller order. No root text is joined or reparsed.
+    pub fn compile_ordered_documents_with_catalog(
+        &self,
+        documents: &[CanonicalOrderedDocument],
+        catalog: Arc<mech_core::FunctionCatalog>,
+    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+        for root in documents {
+            reject_recovered_syntax(&root.document)?;
+        }
+        document_lowering::compile_ordered_documents(documents, catalog)
+    }
+}
+
 /// Canonical semantic partitions for one mixed coordinator/compute document.
 /// Every partition is derived from the same retained syntax snapshot; no text
 /// projection or second parser owns either executable graph.

@@ -1073,3 +1073,71 @@ fn selected_compound_assignment_preserves_arithmetic_before_destination_conversi
         );
     }
 }
+
+#[test]
+fn ordered_retained_roots_link_live_exports_and_preserve_caller_output_order() {
+    use mech_engine::{CanonicalOrderedDocument, CanonicalOrderedImport};
+    use std::collections::{BTreeMap, BTreeSet};
+    let root = |identity, source: &str| {
+        let parsed = parse_canonical_document(
+            TextSnapshot::new(DocumentId(0x590 + identity as u64), Revision(1), source).unwrap(),
+            ParseConfig::default(),
+        );
+        assert!(parsed.diagnostics.is_empty(), "{:?}", parsed.diagnostics);
+        CanonicalOrderedDocument {
+            identity,
+            document: DocumentSyntax::cast(parsed.syntax()).unwrap(),
+            input_schemas: BTreeMap::new(),
+            resource_writes: BTreeMap::new(),
+            imports: BTreeMap::new(),
+            resolved_modules: BTreeSet::new(),
+        }
+    };
+    let dependency = root(1, "~counter := 0\ncounter += 1\n<+ counter\ncounter\n");
+    let mut main = root(0, "answer := dep/counter + 1\nanswer\n");
+    main.imports.insert(
+        "dep/counter".to_owned(),
+        CanonicalOrderedImport::RootExport {
+            root: 1,
+            name: "counter".to_owned(),
+        },
+    );
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let program = CanonicalSourceFrontend
+        .compile_ordered_documents_with_catalog(
+            &[dependency, main],
+            std::sync::Arc::new(catalog.build().unwrap()),
+        )
+        .unwrap();
+    assert_eq!(
+        program
+            .program()
+            .outputs
+            .iter()
+            .map(|output| output.name.as_str())
+            .collect::<Vec<_>>(),
+        ["answer", "counter"]
+    );
+    assert_eq!(program.program().states.len(), 1);
+    assert!(
+        program
+            .source_map()
+            .nodes
+            .iter()
+            .any(|anchor| anchor.anchor.document == DocumentId(0x590))
+    );
+    assert!(
+        program
+            .source_map()
+            .nodes
+            .iter()
+            .any(|anchor| anchor.anchor.document == DocumentId(0x591))
+    );
+    compiled_turns(
+        program,
+        "ordered live roots",
+        &[2.0, 3.0, 4.0],
+        mech_engine::SourceDocumentOutputKind::Program,
+    );
+}
