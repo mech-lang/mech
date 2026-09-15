@@ -1,0 +1,8 @@
+   Compiling mech-syntax v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/syntax)
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/engine)
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/stdlib)
+   Compiling mech-runtime v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/runtime)
+   Compiling full-source-runtime v0.0.0 (/private/tmp/mech-syntax-s8c-qualification/tests/fixtures/full-source-runtime)
+    Finished `dev` profile [unoptimized] target(s) in 45.65s
+     Running `/private/tmp/mech-syntax-s8-cutover-source-fixture-target/debug/full-source-runtime`
+source product probe passed: 14 catalog cases and rooted source canary

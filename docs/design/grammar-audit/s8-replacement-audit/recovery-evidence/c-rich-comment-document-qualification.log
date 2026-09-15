@@ -1,0 +1,103 @@
+    Blocking waiting for file lock on artifact directory
+   Compiling mech-syntax v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/syntax)
+error[E0432]: unresolved imports `mech_syntax::document::lower_legacy_equation`, `mech_syntax::document::lower_legacy_footnote_reference`, `mech_syntax::document::lower_legacy_inline_code`, `mech_syntax::document::lower_legacy_inline_equation`, `mech_syntax::document::lower_legacy_paragraph_text`, `mech_syntax::document::lower_legacy_raw_hyperlink`, `mech_syntax::document::lower_legacy_reference`, `mech_syntax::document::lower_legacy_section_reference`, `mech_syntax::document::lower_legacy_thematic_break`
+  --> src/syntax/tests/canonical_mechdown_lowering_parity.rs:13:5
+   |
+13 |     lower_legacy_equation, lower_legacy_footnote_reference, lower_legacy_inline_code,
+   |     ^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^ no `lower_legacy_inline_code` in `document`
+   |     |                      |
+   |     |                      no `lower_legacy_footnote_reference` in `document`
+   |     no `lower_legacy_equation` in `document`
+14 |     lower_legacy_inline_equation, lower_legacy_paragraph_text, lower_legacy_raw_hyperlink,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^ no `lower_legacy_raw_hyperlink` in `document`
+   |     |                             |
+   |     |                             no `lower_legacy_paragraph_text` in `document`
+   |     no `lower_legacy_inline_equation` in `document`
+15 |     lower_legacy_reference, lower_legacy_section_reference, lower_legacy_thematic_break,
+   |     ^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `lower_legacy_thematic_break` in `document`
+   |     |                       |
+   |     |                       no `lower_legacy_section_reference` in `document`
+   |     no `lower_legacy_reference` in `document`
+
+error[E0433]: cannot find `graphemes` in `mech_syntax`
+  --> src/syntax/tests/canonical_mechdown_lowering_parity.rs:47:34
+   |
+47 |     let graphemes = mech_syntax::graphemes::init_tag(input);
+   |                                  ^^^^^^^^^ could not find `graphemes` in `mech_syntax`
+
+error[E0433]: cannot find `ParseString` in `mech_syntax`
+  --> src/syntax/tests/canonical_mechdown_lowering_parity.rs:48:50
+   |
+48 |     let (remaining, value) = parser(mech_syntax::ParseString::new(&graphemes)).unwrap();
+   |                                                  ^^^^^^^^^^^ could not find `ParseString` in `mech_syntax`
+
+error[E0425]: cannot find type `ParseString` in crate `mech_syntax`
+  --> src/syntax/tests/canonical_mechdown_lowering_parity.rs:44:22
+   |
+44 |         mech_syntax::ParseString<'source>,
+   |                      ^^^^^^^^^^^ not found in `mech_syntax`
+
+error[E0425]: cannot find type `ParseResult` in crate `mech_syntax`
+  --> src/syntax/tests/canonical_mechdown_lowering_parity.rs:45:23
+   |
+45 |     ) -> mech_syntax::ParseResult<'source, Output>,
+   |                       ^^^^^^^^^^^ not found in `mech_syntax`
+
+error[E0425]: cannot find value `inline_code` in crate `mech_syntax`
+  --> src/syntax/tests/canonical_mechdown_lowering_parity.rs:68:55
+   |
+68 |         let legacy = legacy_value(input, mech_syntax::inline_code);
+   |                                                       ^^^^^^^^^^^ not found in `mech_syntax`
+
+error[E0425]: cannot find value `inline_equation` in crate `mech_syntax`
+  --> src/syntax/tests/canonical_mechdown_lowering_parity.rs:79:55
+   |
+79 |         let legacy = legacy_value(input, mech_syntax::inline_equation);
+   |                                                       ^^^^^^^^^^^^^^^ not found in `mech_syntax`
+
+error[E0425]: cannot find value `raw_hyperlink` in crate `mech_syntax`
+  --> src/syntax/tests/canonical_mechdown_lowering_parity.rs:94:55
+   |
+94 |         let legacy = legacy_value(input, mech_syntax::raw_hyperlink);
+   |                                                       ^^^^^^^^^^^^^ not found in `mech_syntax`
+
+error[E0425]: cannot find value `footnote_reference` in crate `mech_syntax`
+   --> src/syntax/tests/canonical_mechdown_lowering_parity.rs:114:55
+    |
+114 |         let legacy = legacy_value(input, mech_syntax::footnote_reference);
+    |                                                       ^^^^^^^^^^^^^^^^^^ not found in `mech_syntax`
+
+error[E0425]: cannot find value `reference` in crate `mech_syntax`
+   --> src/syntax/tests/canonical_mechdown_lowering_parity.rs:121:55
+    |
+121 |         let legacy = legacy_value(input, mech_syntax::reference);
+    |                                                       ^^^^^^^^^ not found in `mech_syntax`
+
+error[E0425]: cannot find value `section_reference` in crate `mech_syntax`
+   --> src/syntax/tests/canonical_mechdown_lowering_parity.rs:133:55
+    |
+133 |         let legacy = legacy_value(input, mech_syntax::section_reference);
+    |                                                       ^^^^^^^^^^^^^^^^^ not found in `mech_syntax`
+
+error[E0425]: cannot find value `paragraph_text` in crate `mech_syntax`
+   --> src/syntax/tests/canonical_mechdown_lowering_parity.rs:149:55
+    |
+149 |         let legacy = legacy_value(input, mech_syntax::paragraph_text);
+    |                                                       ^^^^^^^^^^^^^^ not found in `mech_syntax`
+
+error[E0425]: cannot find value `thematic_break` in crate `mech_syntax`
+   --> src/syntax/tests/canonical_mechdown_lowering_parity.rs:160:55
+    |
+160 |         let legacy = legacy_value(input, mech_syntax::thematic_break);
+    |                                                       ^^^^^^^^^^^^^^ not found in `mech_syntax`
+
+error[E0425]: cannot find value `equation` in crate `mech_syntax`
+   --> src/syntax/tests/canonical_mechdown_lowering_parity.rs:171:55
+    |
+171 |         let legacy = legacy_value(input, mech_syntax::equation);
+    |                                                       ^^^^^^^^ not found in `mech_syntax`
+
+Some errors have detailed explanations: E0425, E0432, E0433.
+For more information about an error, try `rustc --explain E0425`.
+error: could not compile `mech-syntax` (test "canonical_mechdown_lowering_parity") due to 14 previous errors
+warning: build failed, waiting for other jobs to finish...

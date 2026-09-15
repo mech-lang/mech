@@ -1,0 +1,9 @@
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-syntax-s8r07-initializers/src/engine)
+    Finished `test` profile [unoptimized] target(s) in 23.75s
+     Running tests/canonical_document_state.rs (/private/tmp/mech-syntax-s8-extraction-target/debug/deps/canonical_document_state-ff4639d2904fbe80)
+
+running 1 test
+test closed_control_activation_reports_budget_exhaustion_and_releases_ownership ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 49 filtered out; finished in 0.56s
+

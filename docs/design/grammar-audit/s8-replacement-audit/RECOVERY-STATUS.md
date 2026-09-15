@@ -498,3 +498,143 @@ decisions and worker quota are unchanged. Obsolete run 35014211166 has all
 29 job records and completed logs preserved in s8-ci-archive-interactive-seam;
 normal cancellation left it queued, so force cancellation was requested.
 Canceled/skipped work is not qualification. Checkpoint—not complete.
+
+
+## Current checkpoint — rich comments restored as required behavior
+
+**Candidate:** `codex/syntax-s8c-cutover` / published
+`5a8efdf99a09ced4338c434da10174176a78a349` (#830), based on R05 #847
+`99595861195f745a59d88ad5b5b70cf34510fd09`. The C worktree has unpublished
+capture/comment changes; they are not qualification of the published candidate.
+
+**Completed:** R05's module-layout follow-up moved `numeric.rs` to
+`numeric/mod.rs` with identical contents and updated four architecture-test
+references. The unchanged module-layout guard, 60 mutation tests, and engine
+build pass. R05's review at 995958611 returned clean at 2026-09-15T20:11:03Z.
+Current C static distribution passes. C run 35017217645 is the automatic combined
+qualification run; no manual matrix was dispatched. Completed logs are being
+preserved under `s8-ci-archive-rich-comments/35017217645`.
+
+R07 is pushed at `94ca8e2b4` on `codex/syntax-s8r07-control-initializers`, based
+on current R05. It now executes closed match/set-comprehension initializers
+through the shared resident control dispatcher before state initialization and
+outside turn topology. Its full state suite at c88f8a9db's pre-restack equivalent
+reports 47 passing / 2 failing / 0 ignored. The closed match, closed set and four
+live/state-dependency negatives pass. Both matrix-derived initializer positives
+remain enabled: downstream transpose reports UnsupportedLayout; downstream scalar
+access reports InvalidShape. These expose the existing G18/R08 layout prerequisite
+in the combined G05 witnesses; R07 is partial and is not incorporated into C.
+A new memory-limit sweep reproduced lost MemoryRuntime errors inside activation
+controls. The 94ca8e2b4 correction and source/decoded ownership-release regression
+pass; the test records the earlier failure at budget 4608 in
+`r07-control-budget-baseline.log` and success in `r07-control-budget-fixed.log`.
+
+C's unpublished G22 capture correction retains the original prefix result in the
+canonical semantic graph, with a separate current interactive result. The existing
+console-overlay regression passes, and a new test passes three successive console
+submissions for both plain source and a root fence, preserving original result 41
+while console values advance through 42, 43, 99. The first overly restrictive test
+filter executed zero tests; only the corrected exact-name invocation is counted.
+
+The user explicitly confirmed comments are rich Markdown paragraphs, including
+inline `ans`, and asked us to consult the blog posts. The existing Phase 2B port
+note says rich semantics awaited paragraph-element completion; that deferral was
+never removed. Required contract references:
+- https://mech-lang.org/post/2025-11-12-mechdown/ (paragraph markup, links, reactive
+  inline expressions, inert double-braced code, comments using paragraph features)
+- https://mech-lang.org/post/2026-05-11-version-0.3/ (line-local inline ans and
+  selection/inspection integration)
+This is an implementation omission, not an accepted inert-comment capability.
+The canonical comment continuation now calls the shared paragraph-element owner;
+its specification/dependency reports are updated. Comment inline evaluations are
+published without replacing the preceding ordinary/fence result. The original
+trailing-comment output-order regression passes. The broader rendering regression
+is still running; rich rendering, named scopes, streaming, and generated-gate
+qualification must be completed before this batch is accepted.
+
+**Remaining:** C's actual CI failures include engine libtests still depending on
+the deleted parser, runtime G19/G05 prerequisites, WASM G14 and the two G22 cases
+being corrected, browser product failures, and native-plan failure whose current
+log must be inspected. All other accepted gap-register obligations remain open.
+Exact-head full qualification, required reviews, protected merge, and post-merge
+verification remain outstanding. R02/G02 has no PR: its 25 positive numeric
+capability witnesses remain open, not absorbed or excluded.
+
+**Current action:** Complete shared rich-comment rendering and line-local ans
+qualification in C while preserving R07's partial owner work.
+
+**Next action:** Poll runtime renderer regression session 54405 and CI archive
+session 56426; finish canonical rich-comment HTML/text rendering for root/named
+scopes, run comment scalar-cut/fuel tests and the affected browser/runtime suites,
+then publish the coherent C batch and reply to its remaining review thread.
+
+**External blocker:** None for rich comments; the user resolved the contract in
+favor of full paragraph semantics. Previously recorded unrelated capability/type
+choices remain open. No test was disabled and no cancellation is passing evidence.
+Checkpoint—not complete.
+
+
+## Current published checkpoint — C capture and rich comments qualified locally
+
+**Candidate:** `codex/syntax-s8c-cutover` /
+`c15f3e7835e40df62df3d8001463923ded6a9f74` (#830), based on R05
+`99595861195f745a59d88ad5b5b70cf34510fd09`. Worktree is clean. Automatic
+exact-head C run 35020590724 is queued; no manual full dispatch was started.
+The prior run 35017217645 has completed with failure, so there is no live obsolete
+run to cancel. Completed job metadata/logs were archived before publishing.
+
+**Completed:** C now preserves the original document result separately from the
+console result in the canonical graph. Both the original fixed-output regression
+and three successive overlays against plain/fenced source pass. Comment parsing
+uses the shared paragraph-element continuation. Rich comments preserve markup,
+links, inert inline code, evaluated expressions and line-local ans. Their inline
+values do not replace ordinary statement/fence results. HTML/text rendering uses
+the retained owner and execution scope, including named fences. The user explicitly
+confirmed this existing rich-paragraph contract; the earlier raw-token deferral
+has been removed, not treated as an accepted capability exclusion.
+
+Executed evidence for the published tree: 128 syntax library tests; 33 canonical
+incremental/root/scope/property/certification tests; 40 renderer tests; 22 static
+and generated grammar checks; and the rebuilt deleted-parser product probe with
+14 catalog cases plus rooted canary pass. The renderer regressions cover
+one-shot and character-streamed comments in plain/root-fence/named code and live
+ans updates across three turns through source and decoded bytecode. Browser owner
+suite: 56 pass / 1 fail / 0 ignored. Its two G22 failures are corrected; the
+remaining FSM-lowering positive still fails under G14/R18.
+
+R07 remains separately published at `94ca8e2b4`, with its closed-control execution
+and memory-error/release correction. Its two matrix-derived positives remain red;
+no R07 work was silently incorporated into C. R05's exact latest review is clean.
+C's open review thread received the published evidence reply:
+https://github.com/mech-lang/mech/pull/830#discussion_r4019975819
+It remains open for actual compute adoption; no premature rereview was requested.
+
+**Remaining:** Two selected Mechdown parser-parity integration targets cannot
+compile because they still import deleted parser/lowerer APIs:
+`canonical_mechdown_closed_rules` and `canonical_mechdown_lowering_parity`.
+Their blocked invocation and exact errors are retained in
+`recovery-evidence/c-rich-comment-document-qualification.log`. They remain G23
+retirement migrations, not disabled tests or successful qualification. The five
+independent canonical targets were separately executed (33 passing tests).
+Current C CI also demonstrates G23 engine libtest parser dependencies, G19/G05
+runtime prerequisites, G14 WASM FSM lowering, n-body server readiness timeout,
+and missing compute provider registration. The native generated CLI project fails
+`NativeRuntimeConfigUnsupported`: configured host instances/grants have no build
+plan resource requirements. That product handoff belongs to the existing native
+qualification owner (G23), not rich comments or numeric binding. All other accepted
+open obligations, required reviews, final exact-head qualification, protected
+merge and post-merge verification remain outstanding.
+
+**Current action:** Publish this coherent G22 batch and advance the existing
+product/retirement owners while its single combined CI runs.
+
+**Next action:** Rebuild shipping browser WASM from c15f3e783 and extend/run the
+existing canonical bundle browser probe for fixed output plus rich-comment/ans
+selection. Continue configured mixed-compute handoff in C; migrate the two recorded
+Mechdown parity targets to canonical payload/acceptance witnesses without reducing
+their fixture or rejection coverage. Poll run 35020590724 with paginated jobs and
+inspect actual failures. R07's matrix layout dependency remains assigned to G18.
+
+**External blocker:** None for this batch. Unrelated accepted type/capability
+decisions remain open. Prior greens, cancellations, and blocked test targets are
+not full qualification. Checkpoint—not complete.

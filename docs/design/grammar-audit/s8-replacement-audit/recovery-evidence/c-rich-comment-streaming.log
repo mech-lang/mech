@@ -1,0 +1,28 @@
+   Compiling getrandom v0.3.4
+   Compiling zerocopy v0.8.55
+   Compiling rand_core v0.9.5
+   Compiling proc-macro2 v1.0.107
+   Compiling syn v2.0.119
+   Compiling quote v1.0.47
+   Compiling ppv-lite86 v0.2.21
+   Compiling nalgebra-macros v0.3.0
+   Compiling nalgebra v0.34.2
+   Compiling rand_chacha v0.9.0
+   Compiling rand_xorshift v0.4.0
+   Compiling rand v0.9.5
+   Compiling regex-syntax v0.8.11
+   Compiling unarray v0.1.4
+   Compiling proptest v1.11.0
+   Compiling mech-core v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/core)
+   Compiling syn v3.0.3
+   Compiling mech-syntax v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/syntax)
+    Finished `test` profile [unoptimized] target(s) in 15.65s
+     Running unittests src/lib.rs (target/debug/deps/mech_syntax-48b016659398bc03)
+
+running 3 tests
+test document::parser::canonical::statements::tests::rich_comment_body_uses_paragraph_nodes_and_stops_at_newline ... ok
+test document::parser::canonical::statements::tests::growing_comment_text_and_leading_spacing_keep_linear_work ... ok
+test document::parser::canonical::statements::tests::comment_sigils_and_bodies_survive_every_scalar_cut_and_fuel_boundary ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 125 filtered out; finished in 5.08s
+

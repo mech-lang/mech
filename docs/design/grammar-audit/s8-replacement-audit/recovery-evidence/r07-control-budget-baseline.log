@@ -1,0 +1,22 @@
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-syntax-s8r07-initializers/src/engine)
+    Finished `test` profile [unoptimized] target(s) in 23.54s
+     Running tests/canonical_document_state.rs (/private/tmp/mech-syntax-s8-extraction-target/debug/deps/canonical_document_state-ff4639d2904fbe80)
+
+running 1 test
+test closed_control_activation_reports_budget_exhaustion_and_releases_ownership ... FAILED
+
+failures:
+
+---- closed_control_activation_reports_budget_exhaustion_and_releases_ownership stdout ----
+
+thread 'closed_control_activation_reports_budget_exhaustion_and_releases_ownership' (28262780) panicked at src/engine/tests/canonical_document_state.rs:1840:31:
+budget 4608: ActivationKernel { node: NodeId(1) }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    closed_control_activation_reports_budget_exhaustion_and_releases_ownership
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 49 filtered out; finished in 0.10s
+
+error: test failed, to rerun pass `-p mech-engine --test canonical_document_state`

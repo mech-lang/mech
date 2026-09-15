@@ -1,0 +1,18 @@
+   Compiling mech-syntax v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/syntax)
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/engine)
+   Compiling mech-runtime v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/runtime)
+   Compiling mech-timer v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/hosts/timer)
+   Compiling mech-console v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/hosts/console)
+   Compiling mech-browser v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/hosts/browser)
+   Compiling mech-time v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/hosts/time)
+   Compiling mech-scene v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/hosts/scene)
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/stdlib)
+   Compiling mech-wasm v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/wasm)
+    Finished `test` profile [unoptimized] target(s) in 22.41s
+     Running unittests src/lib.rs (target/debug/deps/mech_wasm-8be784f4409e8fab)
+
+running 1 test
+test project::tests::fixed_program_capture_preserves_trailing_comment_output_order ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 56 filtered out; finished in 0.87s
+

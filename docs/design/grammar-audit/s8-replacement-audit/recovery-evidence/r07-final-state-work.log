@@ -1,0 +1,76 @@
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-syntax-s8r07-initializers/src/engine)
+    Finished `test` profile [unoptimized] target(s) in 23.58s
+     Running tests/canonical_document_state.rs (/private/tmp/mech-syntax-s8-extraction-target/debug/deps/canonical_document_state-c21cc13e81654bdc)
+
+running 49 tests
+test comprehension_reads_the_source_order_state_candidate_after_writer_reordering ... ok
+test closed_set_comprehension_initializes_once_outside_the_turn_schedule ... ok
+test closed_match_initializer_runs_once_before_state_turns ... ok
+test closed_comprehension_scalar_initializer_runs_once_before_state_turns ... FAILED
+test assignment_errors_are_anchored_to_the_target_or_value ... ok
+test derived_snapshot_updates_release_budgeted_prior_outputs_on_abort_and_drop ... ok
+test absent_named_scopes_never_fall_back_to_the_root_program ... ok
+test control_initializer_rejects_live_input_dependencies ... ok
+test discarded_candidate_does_not_advance_document_state ... ok
+test closed_comprehension_initializer_runs_once_before_state_turns ... FAILED
+test control_initializer_rejects_state_dependencies ... ok
+test configured_fences_execute_updates_when_their_result_is_hidden ... ok
+test each_assignment_operator_uses_maintained_arithmetic ... ok
+test document_bindings_preserve_empty_errors_and_contextual_optional_state ... ok
+test document_display_and_child_scopes_do_not_execute_updates ... ok
+test finalized_streams_execute_configured_root_and_normalized_named_scopes ... ok
+test finalized_streams_mika_bodies_execute_independently_of_parent_sibling_and_nested_state ... ok
+test immutable_reads_retain_their_source_order_value ... ok
+test interactive_fixture_executes_and_retains_state_across_turns ... ok
+test derived_updates_compare_final_output_to_the_value_before_seeding ... ok
+test finalized_streams_mika_named_fences_share_only_their_local_owner_and_keep_output_options ... ok
+test indexed_candidates_abort_without_mutating_published_state ... ok
+test mika_bodies_execute_independently_of_parent_sibling_and_nested_state ... ok
+test mika_named_fences_share_only_their_local_owner_and_keep_output_options ... ok
+test ordered_retained_roots_link_live_exports_and_preserve_caller_output_order ... ok
+test nested_repeated_compound_selectors_accumulate_each_occurrence ... ok
+test nested_promoted_failure_preserves_state_and_valid_retry_accumulates ... ok
+test nested_selected_rational_power_keeps_its_integer_exponent_contract ... ok
+test promoted_boolean_masks_preserve_canonical_destination_coordinates ... ok
+test promoted_repeated_compound_selectors_accumulate_each_occurrence ... ok
+test colonless_named_fences_execute_and_share_state_with_colon_spelling ... ok
+test named_document_scopes_execute_separately_and_share_repeated_fences ... ok
+test promoted_broadcast_failure_preserves_the_complete_state_before_retry ... ok
+test repeated_compound_overflow_rejects_without_publishing_and_valid_retry_succeeds ... ok
+test review_nested_composite_matrix_field_update ... ok
+test selected_compound_assignment_preserves_arithmetic_before_destination_conversion ... ok
+test nested_compound_updates_keep_row_major_occurrence_order_and_promotions ... ok
+test selected_f64_matrix_updates_propagate_signed_zero_changes ... ok
+test sequential_updates_read_the_preceding_candidate_and_keep_one_writer ... ok
+test sequential_derived_updates_share_only_the_largest_rmw_backup_region ... ok
+test indexed_document_updates_use_canonical_assignment_and_preserve_state_order ... ok
+test whole_value_document_assignment_does_not_emit_a_discarded_selection ... ok
+test promoted_selected_updates_preserve_row_and_column_broadcasts ... ok
+test repeated_matrix_compound_selectors_accumulate_in_occurrence_order ... ok
+test promoted_repeated_updates_use_canonical_conversion_after_each_operation ... ok
+test turn_mask_broadcast_uses_live_population_and_preserves_complete_matrices ... ok
+test terminal_logical_updates_do_not_require_a_gather_population_at_activation ... ok
+test repeated_compound_selections_preserve_exact_numeric_kinds ... ok
+test review_asymmetric_rectangle_admission ... ok
+
+failures:
+
+---- closed_comprehension_scalar_initializer_runs_once_before_state_turns stdout ----
+
+thread 'closed_comprehension_scalar_initializer_runs_once_before_state_turns' (28257911) panicked at src/engine/tests/canonical_document_state.rs:86:13:
+"samples := 1..=3\nvalues := [sample + 1 | sample <- samples]\n~a := values[1]\na += 1\na\n": document activation: ActivationKernel { node: NodeId(2) }; nodes: [SourceSemanticNode { operation: "range/inclusive", role: "range", detail: None, anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(11), end: TextSize(16) } } }, SourceSemanticNode { operation: "matrix/comprehension", role: "comprehension", detail: None, anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(27), end: TextSize(59) } } }, SourceSemanticNode { operation: "access/scalar", role: "slice", detail: None, anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(72), end: TextSize(75) } } }, SourceSemanticNode { operation: "math/add", role: "state-update", detail: None, anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(76), end: TextSize(82) } } }, SourceSemanticNode { operation: "core/assign", role: "state-definition", detail: Some("a"), anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(60), end: TextSize(75) } } }]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- closed_comprehension_initializer_runs_once_before_state_turns stdout ----
+
+thread 'closed_comprehension_initializer_runs_once_before_state_turns' (28257910) panicked at src/engine/tests/canonical_document_state.rs:86:13:
+"samples := 1..=3\nx-row := [1.0 | sample <- samples]\ny-row := [2.0 | sample <- samples]\nx := x-row'\ny := y-row'\n~trail := [x y]\nnew-row := ([7.0 8.0])\nnext-trail := matrix/vertcat(trail[2..=3,:], new-row)\ntrail = next-trail\ntrail[3,2]\n": document activation: KernelBind { node: NodeId(3), error: UnsupportedLayout }; nodes: [SourceSemanticNode { operation: "range/inclusive", role: "range", detail: None, anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(11), end: TextSize(16) } } }, SourceSemanticNode { operation: "matrix/comprehension", role: "comprehension", detail: None, anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(26), end: TextSize(51) } } }, SourceSemanticNode { operation: "matrix/comprehension", role: "comprehension", detail: None, anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(61), end: TextSize(86) } } }, SourceSemanticNode { operation: "matrix/transpose", role: "postfix", detail: None, anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(92), end: TextSize(98) } } }, SourceSemanticNode { operation: "matrix/transpose", role: "postfix", detail: None, anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(104), end: TextSize(110) } } }, SourceSemanticNode { operation: "matrix/horzcat", role: "matrix-row", detail: None, anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(121), end: TextSize(126) } } }, SourceSemanticNode { operation: "matrix/horzcat", role: "matrix-row", detail: None, anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(139), end: TextSize(148) } } }, SourceSemanticNode { operation: "core/assign", role: "state-read", detail: None, anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(179), end: TextSize(184) } } }, SourceSemanticNode { operation: "range/inclusive", role: "range", detail: None, anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(185), end: TextSize(190) } } }, SourceSemanticNode { operation: "access/rows", role: "slice", detail: None, anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(184), end: TextSize(193) } } }, SourceSemanticNode { operation: "matrix/vertcat", role: "call", detail: Some("matrix/vertcat(,)"), anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(164), end: TextSize(203) } } }, SourceSemanticNode { operation: "access/scalar", role: "slice", detail: None, anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(228), end: TextSize(233) } } }, SourceSemanticNode { operation: "core/assign", role: "state-definition", detail: Some("trail"), anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(111), end: TextSize(126) } } }]
+
+
+failures:
+    closed_comprehension_initializer_runs_once_before_state_turns
+    closed_comprehension_scalar_initializer_runs_once_before_state_turns
+
+test result: FAILED. 47 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 33.44s
+
+error: test failed, to rerun pass `-p mech-engine --test canonical_document_state`

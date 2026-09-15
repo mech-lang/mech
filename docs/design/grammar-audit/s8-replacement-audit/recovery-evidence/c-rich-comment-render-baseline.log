@@ -1,0 +1,31 @@
+   Compiling mech-syntax v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/syntax)
+   Compiling mech-combinatorics v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/machines/combinatorics)
+   Compiling mech-math v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/machines/math)
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/engine)
+   Compiling mech-runtime v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/runtime)
+   Compiling mech-native-live-host-fixture v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/tests/fixtures/native-live-host)
+   Compiling mech-terminal v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/hosts/terminal)
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/stdlib)
+    Finished `test` profile [unoptimized] target(s) in 2m 16s
+     Running tests/canonical_document_render.rs (target/debug/deps/canonical_document_render-29254623e7ef30f2)
+
+running 1 test
+test rich_comments_render_markup_and_line_local_ans_in_each_scope ... FAILED
+
+failures:
+
+---- rich_comments_render_markup_and_line_local_ans_in_each_scope stdout ----
+
+thread 'rich_comments_render_markup_and_line_local_ans_in_each_scope' (28273023) panicked at src/runtime/tests/canonical_document_render.rs:945:9:
+<article class='mech-document'><section class='mech-section'><pre class='mech-code'><code>answer := 40 + 2 -- **Result** [docs](https://mech-lang.org) `literal` {{answer + 99}}: {ans}, {ans + 1}.
+answer + 2 // __Next__: {ans}, {ans + 10}.
+</code></pre></section><output class='mech-program-output'><span class='mech-value'>44</span></output></article>
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    rich_comments_render_markup_and_line_local_ans_in_each_scope
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 38 filtered out; finished in 0.11s
+
+error: test failed, to rerun pass `-p mech-runtime --test canonical_document_render`

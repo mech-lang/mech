@@ -1,0 +1,52 @@
+    Blocking waiting for file lock on artifact directory
+   Compiling mech-combinatorics v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/machines/combinatorics)
+   Compiling mech-math v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/machines/math)
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/stdlib)
+   Compiling mech-runtime v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/runtime)
+    Finished `test` profile [unoptimized] target(s) in 3m 13s
+     Running tests/canonical_document_render.rs (target/debug/deps/canonical_document_render-29254623e7ef30f2)
+
+running 40 tests
+test figure_grids_preserve_panel_labels_and_combined_caption ... ok
+test floats_preserve_left_and_right_direction ... ok
+test citations_are_numbered_and_deferred_to_link_safe_backmatter ... ok
+test citation_numbers_and_backmatter_follow_first_reference_order ... ok
+test image_url_extraction_starts_after_parentheses_in_the_caption ... ok
+test finalized_streams_feed_execution_and_complete_document_rendering ... ok
+test inert_fences_preserve_their_language_for_highlighting ... ok
+test hidden_and_output_suppressed_fences_do_not_leak_the_program_result ... ok
+test browser_source_mounts_match_compiled_canonical_output_anchors ... ok
+test image_options_are_safely_whitelisted_into_presentation_attributes ... ok
+test ordered_lists_preserve_their_authored_start_and_item_values ... ok
+test metadata_only_documents_do_not_require_program_results ... ok
+test renderer_rejects_active_script_image_sources ... ok
+test renderer_rejects_active_script_hyperlinks ... ok
+test renderer_preserves_title_subtitle_and_plain_document_structure ... ok
+test renderer_rejects_duplicate_results_for_one_presentation_slot ... ok
+test raw_hyperlinks_and_inline_code_use_semantic_html ... ok
+test inline_ans_in_comments_tracks_live_state_through_source_and_bytecode ... ok
+test renderer_rejects_results_relabelled_to_another_execution_scope ... ok
+test renderer_rejects_results_from_an_older_document_revision ... ok
+test retained_footnotes_preserve_every_paragraph ... ok
+test renderer_rejects_results_from_another_document_owner ... ok
+test renderer_rejects_same_document_results_relabelled_to_another_owner ... ok
+test retained_images_render_with_safe_escaped_attributes_and_captions ... ok
+test retained_inline_markup_uses_semantic_elements_without_delimiters ... ok
+test retained_lists_use_semantic_html_without_source_markers ... ok
+test source_body_preserves_front_matter_without_duplicate_framing ... ok
+test table_alignment_is_projected_to_header_and_body_cells ... ok
+test shared_mixed_document_fixture_is_rendered_without_dropping_nodes ... ok
+test text_renderer_preserves_retained_blank_lines ... ok
+test title_front_matter_is_semantic_and_uses_completed_inline_results ... ok
+test visible_executable_fences_require_their_owner_result ... ok
+test visible_mika_root_programs_require_their_owner_result ... ok
+test visible_root_programs_require_their_owner_result ... ok
+test browser_shim_regions_preserve_metadata_navigation_and_section_boundaries ... ok
+test retained_rich_document_nodes_use_semantic_html_containers ... ok
+test retained_document_renders_root_named_and_mika_results_in_place ... ok
+test served_particle_document_formats_its_annotated_compute_heading ... ok
+test rich_comments_render_markup_and_line_local_ans_in_each_scope ... ok
+test browser_titles_preserve_lf_and_crlf_source ... ok
+
+test result: ok. 40 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.98s
+
