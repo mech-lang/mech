@@ -82,7 +82,12 @@ fn compiled_turns(
             &catalog,
             &ActivationFacts::default(),
         )
-        .unwrap_or_else(|error| panic!("{source:?}: document activation: {error:?}"));
+        .unwrap_or_else(|error| {
+            panic!(
+                "{source:?}: document activation: {error:?}; nodes: {:?}",
+                compiled.source_map().nodes
+            )
+        });
         let output = compiled
             .document_outputs()
             .iter()
@@ -1207,4 +1212,102 @@ fn promoted_repeated_updates_use_canonical_conversion_after_each_operation() {
         );
         turns(&source, &[expected]);
     }
+}
+
+#[test]
+fn nested_compound_updates_keep_row_major_occurrence_order_and_promotions() {
+    for (source, expected) in [
+        (
+            "~a := [10 20; 30 40]\na[[1 1],:][:,1] += [1;3]\na[1,1]\n",
+            14.0,
+        ),
+        (
+            "~a := [10 20; 30 40]\na[[1 1],[2 2]][:,:] += [1 2;3 4]\na[1,2]\n",
+            30.0,
+        ),
+        (
+            "~a := [60 20; 30 40]\na[[1 1],:][:,1] /= [2;3]\na[1,1]\n",
+            10.0,
+        ),
+        (
+            "~a := [10 20; 30 40]\na[[1 1],:][:,1][:] += [1;3]\na[1,1]\n",
+            14.0,
+        ),
+        (
+            "~a := [10<i32> 20<i32>; 30<i32> 40<i32>]\na[[1 1],:][:,1] += 2.5\nselected := a[1,1]\nanswer := selected<f64>\nanswer\n",
+            14.0,
+        ),
+        (
+            "~a := [10<i32> 20<i32>; 30<i32> 40<i32>]\na[[1 1],[2 2]][:,:] += [1<i32> 2<i32>;3<i32> 4<i32>]\nselected := a[1,2]\nanswer := selected<f64>\nanswer\n",
+            30.0,
+        ),
+    ] {
+        turns(source, &[expected]);
+    }
+}
+
+#[test]
+fn nested_promoted_failure_preserves_state_and_valid_retry_accumulates() {
+    use mech_core::snapshot::{SnapshotValidationContext, ValueDataDraft, ValueDraft};
+    use mech_engine::resident::CapturedValueInput;
+    let source = "divisors := signal<[i16]:2,1>\n~a := [120<i8> 0<i8>;0<i8> 0<i8>]\na[[1 1],:][:,1] /= divisors\nselected := a[1,1]\nanswer := selected<f64>\nanswer\n";
+    let artifact = compiled(source).compile_artifact().unwrap();
+    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    for artifact in [
+        artifact,
+        mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap(),
+    ] {
+        let mut catalog = FunctionCatalogBuilder::new();
+        mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x595, 0),
+            &artifact,
+            &catalog.build().unwrap(),
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        let before = instance.published_state_hash();
+        for (values, succeeds) in [([2i16, 0], false), ([2i16, 3], true)] {
+            let value = ValueDraft {
+                schema: artifact.inputs()[0].schema,
+                shape_values: Box::new([]),
+                data: ValueDataDraft::Matrix(values.into_iter().map(ValueDataDraft::I16).collect()),
+            }
+            .finalize(&SnapshotValidationContext::new(artifact.schemas()))
+            .unwrap();
+            let input = CapturedValueInput {
+                slot: instance.plan.inputs[0].slot,
+                value: &value,
+            };
+            let result = instance
+                .prepare_turn_values(&[input])
+                .and_then(|prepared| prepared.publish());
+            if succeeds {
+                result.unwrap();
+                assert!(
+                    matches!(instance.copied_output(0).unwrap().data(), ValueData::F64(v) if v.to_f64() == 20.0)
+                );
+            } else {
+                assert!(
+                    matches!(
+                        result,
+                        Err(mech_engine::resident::ResidentExecutionError::Kernel {
+                            error: mech_core::ResidentKernelError::Arithmetic,
+                            ..
+                        })
+                    ),
+                    "{result:?}"
+                );
+                assert_eq!(instance.published_state_hash(), before);
+            }
+        }
+    }
+}
+
+#[test]
+fn nested_selected_rational_power_keeps_its_integer_exponent_contract() {
+    turns(
+        "~a := [2<r64> 3<r64>;4<r64> 5<r64>]\na[[1 1],:][1,1] ^= 2<i32>\nselected := a[1,1]\nanswer := selected<f64>\nanswer\n",
+        &[4.0, 16.0],
+    );
 }

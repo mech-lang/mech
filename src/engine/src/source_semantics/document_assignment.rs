@@ -51,9 +51,22 @@ impl SemanticBuilder {
                 anchor: SourceSemanticAnchor::for_node(item.syntax()),
             });
         }
-        // A fused addressed update is closed over the destination element
-        // kind. Mixed kinds must retain the maintained arithmetic conversions
-        // before assignment converts the result to the destination kind.
+        if items.len() > 1
+            && arithmetic.is_some()
+            && matches!(&schema.body, SchemaBody::Matrix { .. })
+        {
+            return self.document_nested_matrix_update(
+                base,
+                items,
+                replacement,
+                arithmetic.unwrap(),
+                statement,
+                value_syntax,
+            );
+        }
+        // Normalize mixed arithmetic with the maintained type scheme. The
+        // addressed kernel converts each result back to the destination kind
+        // before the next occurrence reads that destination again.
         let same_element = if arithmetic.is_some()
             && let SchemaBody::Matrix { element, .. } = &schema.body
         {
@@ -175,35 +188,6 @@ impl SemanticBuilder {
                         ),
                     ));
                 };
-                let left = self.schema_draft_of(inputs[0])?;
-                let right = self.schema_draft_of(inputs[1])?;
-                let element = |body: &SchemaBody| match body {
-                    SchemaBody::Matrix { element, .. } => element.as_ref().clone(),
-                    scalar => scalar.clone(),
-                };
-                if element(&left.body) != element(&right.body) {
-                    // Heterogeneous schemes (for example rational power with
-                    // an integer exponent) retain their existing typed route.
-                    // Their occurrence-aware kernel is still an R05 obligation.
-                    let replacement = self.document_selected_update(
-                        selected.expect("mixed arithmetic retains its selection"),
-                        remaining,
-                        replacement,
-                        Some(arithmetic),
-                        statement,
-                        value_syntax,
-                    )?;
-                    let mut inputs = vec![base, replacement];
-                    inputs.extend(selectors);
-                    return Ok(self.emit_with_schema_draft(
-                        operation,
-                        inputs,
-                        schema,
-                        statement,
-                        "state-update",
-                        None,
-                    ));
-                }
                 inputs[1]
             };
             let operation = format!("{operation}/{}", arithmetic.strip_prefix("math/").unwrap());
@@ -233,6 +217,103 @@ impl SemanticBuilder {
         let mut inputs = vec![base, replacement];
         inputs.extend(selectors);
         Ok(self.emit_with_schema_draft(operation, inputs, schema, statement, "state-update", None))
+    }
+
+    fn document_selection_order(
+        &mut self,
+        value: PendingValue,
+        syntax: &SyntaxNode,
+    ) -> Result<PendingValue, SourceSemanticError> {
+        let mut schema = self.schema_draft_of(value)?;
+        let SchemaBody::Matrix { dimensions, .. } = &mut schema.body else {
+            return Ok(value);
+        };
+        *dimensions = vec![
+            DimensionExpr::Multiply(dimensions.clone()),
+            DimensionExpr::Constant(1),
+        ]
+        .into_boxed_slice();
+        Ok(self.emit_with_schema_draft(
+            "core/assign/selection-order",
+            vec![value],
+            schema,
+            syntax,
+            "selection-addresses",
+            None,
+        ))
+    }
+
+    fn document_nested_matrix_update(
+        &mut self,
+        base: PendingValue,
+        items: &[SubscriptItemSyntax],
+        replacement: PendingValue,
+        arithmetic: &str,
+        statement: &SyntaxNode,
+        value_syntax: &SyntaxNode,
+    ) -> Result<PendingValue, SourceSemanticError> {
+        let schema = self.schema_draft_of(base)?;
+        let SchemaBody::Matrix { element, .. } = &schema.body else {
+            unreachable!()
+        };
+        let mut index_schema = schema.clone();
+        if let SchemaBody::Matrix { element, .. } = &mut index_schema.body {
+            *element = Box::new(SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64));
+        }
+        let mut indices = self.emit_with_schema_draft(
+            "core/assign/identity-indices",
+            vec![base],
+            index_schema,
+            statement,
+            "selection-addresses",
+            None,
+        );
+        for item in items {
+            indices = self.select(indices, item)?;
+        }
+        let mut selected_schema = self.schema_draft_of(indices)?;
+        match &mut selected_schema.body {
+            SchemaBody::Matrix {
+                element: selected, ..
+            } => *selected = element.clone(),
+            body => *body = *element.clone(),
+        }
+        let incoming = self.schema_draft_of(replacement)?;
+        let incoming_element = match &incoming.body {
+            SchemaBody::Matrix { element, .. } => element.as_ref(),
+            scalar => scalar,
+        };
+        let replacement = if incoming_element == element.as_ref() {
+            self.conform_assignment_value(replacement, selected_schema, value_syntax)?
+        } else {
+            let mut selected = base;
+            for item in items {
+                selected = self.select(selected, item)?;
+            }
+            let Some((inputs, _)) =
+                self.resolve_maintained_call(arithmetic, vec![selected, replacement], statement)?
+            else {
+                return Err(internal(
+                    SourceSemanticAnchor::for_node(statement),
+                    format!("assignment operation {arithmetic} has no maintained type declaration"),
+                ));
+            };
+            inputs[1]
+        };
+        let indices = self.document_selection_order(indices, statement)?;
+        let replacement = self.document_selection_order(replacement, value_syntax)?;
+        let operation = format!(
+            "core/assign/indexed-axis/{}",
+            arithmetic.strip_prefix("math/").unwrap()
+        );
+        Ok(self.emit_with_schema_draft(
+            &operation,
+            vec![base, replacement, indices],
+            schema,
+            statement,
+            "state-update",
+            None,
+        ))
     }
 
     fn conform_assignment_value(
