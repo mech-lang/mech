@@ -1,0 +1,2984 @@
+[
+  {
+    "id": "scalar-u8",
+    "source": "~a := 1<u8>\na += 1<u8>\na == 2<u8>\n",
+    "expected": [
+      "true",
+      "false"
+    ],
+    "group": "scalar"
+  },
+  {
+    "id": "numeric-u8-add",
+    "source": "a := 6<u8> + 2<u8>\na == 8<u8>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-u8-sub",
+    "source": "a := 6<u8> - 2<u8>\na == 4<u8>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-u8-mul",
+    "source": "a := 6<u8> * 2<u8>\na == 12<u8>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-u8-div",
+    "source": "a := 6<u8> / 2<u8>\na == 3<u8>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-u8-pow",
+    "source": "a := 2<u8> ^ 2<u8>\na == 4<u8>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "matrix-repeat-u8",
+    "source": "~a := [10<u8> 20<u8>; 30<u8> 40<u8>]\na[[1 1],:] += 2<u8>\na[1,1] == 14<u8>\n",
+    "expected": [
+      "true",
+      "false"
+    ],
+    "group": "selection"
+  },
+  {
+    "id": "scalar-u16",
+    "source": "~a := 1<u16>\na += 1<u16>\na == 2<u16>\n",
+    "expected": [
+      "true",
+      "false"
+    ],
+    "group": "scalar"
+  },
+  {
+    "id": "numeric-u16-add",
+    "source": "a := 6<u16> + 2<u16>\na == 8<u16>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-u16-sub",
+    "source": "a := 6<u16> - 2<u16>\na == 4<u16>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-u16-mul",
+    "source": "a := 6<u16> * 2<u16>\na == 12<u16>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-u16-div",
+    "source": "a := 6<u16> / 2<u16>\na == 3<u16>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-u16-pow",
+    "source": "a := 2<u16> ^ 2<u16>\na == 4<u16>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "matrix-repeat-u16",
+    "source": "~a := [10<u16> 20<u16>; 30<u16> 40<u16>]\na[[1 1],:] += 2<u16>\na[1,1] == 14<u16>\n",
+    "expected": [
+      "true",
+      "false"
+    ],
+    "group": "selection"
+  },
+  {
+    "id": "scalar-u32",
+    "source": "~a := 1<u32>\na += 1<u32>\na == 2<u32>\n",
+    "expected": [
+      "true",
+      "false"
+    ],
+    "group": "scalar"
+  },
+  {
+    "id": "numeric-u32-add",
+    "source": "a := 6<u32> + 2<u32>\na == 8<u32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-u32-sub",
+    "source": "a := 6<u32> - 2<u32>\na == 4<u32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-u32-mul",
+    "source": "a := 6<u32> * 2<u32>\na == 12<u32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-u32-div",
+    "source": "a := 6<u32> / 2<u32>\na == 3<u32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-u32-pow",
+    "source": "a := 2<u32> ^ 2<u32>\na == 4<u32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "matrix-repeat-u32",
+    "source": "~a := [10<u32> 20<u32>; 30<u32> 40<u32>]\na[[1 1],:] += 2<u32>\na[1,1] == 14<u32>\n",
+    "expected": [
+      "true",
+      "false"
+    ],
+    "group": "selection"
+  },
+  {
+    "id": "scalar-u64",
+    "source": "~a := 1<u64>\na += 1<u64>\na == 2<u64>\n",
+    "expected": [
+      "true",
+      "false"
+    ],
+    "group": "scalar"
+  },
+  {
+    "id": "numeric-u64-add",
+    "source": "a := 6<u64> + 2<u64>\na == 8<u64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-u64-sub",
+    "source": "a := 6<u64> - 2<u64>\na == 4<u64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-u64-mul",
+    "source": "a := 6<u64> * 2<u64>\na == 12<u64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-u64-div",
+    "source": "a := 6<u64> / 2<u64>\na == 3<u64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-u64-pow",
+    "source": "a := 2<u64> ^ 2<u64>\na == 4<u64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "matrix-repeat-u64",
+    "source": "~a := [10<u64> 20<u64>; 30<u64> 40<u64>]\na[[1 1],:] += 2<u64>\na[1,1] == 14<u64>\n",
+    "expected": [
+      "true",
+      "false"
+    ],
+    "group": "selection"
+  },
+  {
+    "id": "scalar-u128",
+    "source": "~a := 1<u128>\na += 1<u128>\na == 2<u128>\n",
+    "expected": [
+      "true",
+      "false"
+    ],
+    "group": "scalar"
+  },
+  {
+    "id": "numeric-u128-add",
+    "source": "a := 6<u128> + 2<u128>\na == 8<u128>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-u128-sub",
+    "source": "a := 6<u128> - 2<u128>\na == 4<u128>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-u128-mul",
+    "source": "a := 6<u128> * 2<u128>\na == 12<u128>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-u128-div",
+    "source": "a := 6<u128> / 2<u128>\na == 3<u128>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-u128-pow",
+    "source": "a := 2<u128> ^ 2<u128>\na == 4<u128>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "matrix-repeat-u128",
+    "source": "~a := [10<u128> 20<u128>; 30<u128> 40<u128>]\na[[1 1],:] += 2<u128>\na[1,1] == 14<u128>\n",
+    "expected": [
+      "true",
+      "false"
+    ],
+    "group": "selection"
+  },
+  {
+    "id": "scalar-i8",
+    "source": "~a := 1<i8>\na += 1<i8>\na == 2<i8>\n",
+    "expected": [
+      "true",
+      "false"
+    ],
+    "group": "scalar"
+  },
+  {
+    "id": "numeric-i8-add",
+    "source": "a := 6<i8> + 2<i8>\na == 8<i8>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-i8-sub",
+    "source": "a := 6<i8> - 2<i8>\na == 4<i8>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-i8-mul",
+    "source": "a := 6<i8> * 2<i8>\na == 12<i8>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-i8-div",
+    "source": "a := 6<i8> / 2<i8>\na == 3<i8>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-i8-pow",
+    "source": "a := 2<i8> ^ 2<i8>\na == 4<i8>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "matrix-repeat-i8",
+    "source": "~a := [10<i8> 20<i8>; 30<i8> 40<i8>]\na[[1 1],:] += 2<i8>\na[1,1] == 14<i8>\n",
+    "expected": [
+      "true",
+      "false"
+    ],
+    "group": "selection"
+  },
+  {
+    "id": "scalar-i16",
+    "source": "~a := 1<i16>\na += 1<i16>\na == 2<i16>\n",
+    "expected": [
+      "true",
+      "false"
+    ],
+    "group": "scalar"
+  },
+  {
+    "id": "numeric-i16-add",
+    "source": "a := 6<i16> + 2<i16>\na == 8<i16>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-i16-sub",
+    "source": "a := 6<i16> - 2<i16>\na == 4<i16>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-i16-mul",
+    "source": "a := 6<i16> * 2<i16>\na == 12<i16>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-i16-div",
+    "source": "a := 6<i16> / 2<i16>\na == 3<i16>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-i16-pow",
+    "source": "a := 2<i16> ^ 2<i16>\na == 4<i16>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "matrix-repeat-i16",
+    "source": "~a := [10<i16> 20<i16>; 30<i16> 40<i16>]\na[[1 1],:] += 2<i16>\na[1,1] == 14<i16>\n",
+    "expected": [
+      "true",
+      "false"
+    ],
+    "group": "selection"
+  },
+  {
+    "id": "scalar-i32",
+    "source": "~a := 1<i32>\na += 1<i32>\na == 2<i32>\n",
+    "expected": [
+      "true",
+      "false"
+    ],
+    "group": "scalar"
+  },
+  {
+    "id": "numeric-i32-add",
+    "source": "a := 6<i32> + 2<i32>\na == 8<i32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-i32-sub",
+    "source": "a := 6<i32> - 2<i32>\na == 4<i32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-i32-mul",
+    "source": "a := 6<i32> * 2<i32>\na == 12<i32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-i32-div",
+    "source": "a := 6<i32> / 2<i32>\na == 3<i32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-i32-pow",
+    "source": "a := 2<i32> ^ 2<i32>\na == 4<i32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "matrix-repeat-i32",
+    "source": "~a := [10<i32> 20<i32>; 30<i32> 40<i32>]\na[[1 1],:] += 2<i32>\na[1,1] == 14<i32>\n",
+    "expected": [
+      "true",
+      "false"
+    ],
+    "group": "selection"
+  },
+  {
+    "id": "scalar-i64",
+    "source": "~a := 1<i64>\na += 1<i64>\na == 2<i64>\n",
+    "expected": [
+      "true",
+      "false"
+    ],
+    "group": "scalar"
+  },
+  {
+    "id": "numeric-i64-add",
+    "source": "a := 6<i64> + 2<i64>\na == 8<i64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-i64-sub",
+    "source": "a := 6<i64> - 2<i64>\na == 4<i64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-i64-mul",
+    "source": "a := 6<i64> * 2<i64>\na == 12<i64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-i64-div",
+    "source": "a := 6<i64> / 2<i64>\na == 3<i64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-i64-pow",
+    "source": "a := 2<i64> ^ 2<i64>\na == 4<i64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "matrix-repeat-i64",
+    "source": "~a := [10<i64> 20<i64>; 30<i64> 40<i64>]\na[[1 1],:] += 2<i64>\na[1,1] == 14<i64>\n",
+    "expected": [
+      "true",
+      "false"
+    ],
+    "group": "selection"
+  },
+  {
+    "id": "scalar-i128",
+    "source": "~a := 1<i128>\na += 1<i128>\na == 2<i128>\n",
+    "expected": [
+      "true",
+      "false"
+    ],
+    "group": "scalar"
+  },
+  {
+    "id": "numeric-i128-add",
+    "source": "a := 6<i128> + 2<i128>\na == 8<i128>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-i128-sub",
+    "source": "a := 6<i128> - 2<i128>\na == 4<i128>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-i128-mul",
+    "source": "a := 6<i128> * 2<i128>\na == 12<i128>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-i128-div",
+    "source": "a := 6<i128> / 2<i128>\na == 3<i128>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-i128-pow",
+    "source": "a := 2<i128> ^ 2<i128>\na == 4<i128>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "matrix-repeat-i128",
+    "source": "~a := [10<i128> 20<i128>; 30<i128> 40<i128>]\na[[1 1],:] += 2<i128>\na[1,1] == 14<i128>\n",
+    "expected": [
+      "true",
+      "false"
+    ],
+    "group": "selection"
+  },
+  {
+    "id": "scalar-f32",
+    "source": "~a := 1<f32>\na += 1<f32>\na == 2<f32>\n",
+    "expected": [
+      "true",
+      "false"
+    ],
+    "group": "scalar"
+  },
+  {
+    "id": "numeric-f32-add",
+    "source": "a := 6<f32> + 2<f32>\na == 8<f32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-f32-sub",
+    "source": "a := 6<f32> - 2<f32>\na == 4<f32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-f32-mul",
+    "source": "a := 6<f32> * 2<f32>\na == 12<f32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-f32-div",
+    "source": "a := 6<f32> / 2<f32>\na == 3<f32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-f32-pow",
+    "source": "a := 2<f32> ^ 2<f32>\na == 4<f32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "matrix-repeat-f32",
+    "source": "~a := [10<f32> 20<f32>; 30<f32> 40<f32>]\na[[1 1],:] += 2<f32>\na[1,1] == 14<f32>\n",
+    "expected": [
+      "true",
+      "false"
+    ],
+    "group": "selection"
+  },
+  {
+    "id": "scalar-f64",
+    "source": "~a := 1<f64>\na += 1<f64>\na == 2<f64>\n",
+    "expected": [
+      "true",
+      "false"
+    ],
+    "group": "scalar"
+  },
+  {
+    "id": "numeric-f64-add",
+    "source": "a := 6<f64> + 2<f64>\na == 8<f64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-f64-sub",
+    "source": "a := 6<f64> - 2<f64>\na == 4<f64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-f64-mul",
+    "source": "a := 6<f64> * 2<f64>\na == 12<f64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-f64-div",
+    "source": "a := 6<f64> / 2<f64>\na == 3<f64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-f64-pow",
+    "source": "a := 2<f64> ^ 2<f64>\na == 4<f64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "matrix-repeat-f64",
+    "source": "~a := [10<f64> 20<f64>; 30<f64> 40<f64>]\na[[1 1],:] += 2<f64>\na[1,1] == 14<f64>\n",
+    "expected": [
+      "true",
+      "false"
+    ],
+    "group": "selection"
+  },
+  {
+    "id": "scalar-c32",
+    "source": "~a := 1<c32>\na += 1<c32>\na == 2<c32>\n",
+    "expected": [
+      "true",
+      "false"
+    ],
+    "group": "scalar"
+  },
+  {
+    "id": "numeric-c32-add",
+    "source": "a := 6<c32> + 2<c32>\na == 8<c32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-c32-sub",
+    "source": "a := 6<c32> - 2<c32>\na == 4<c32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-c32-mul",
+    "source": "a := 6<c32> * 2<c32>\na == 12<c32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-c32-div",
+    "source": "a := 6<c32> / 2<c32>\na == 3<c32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-c32-pow",
+    "source": "a := 2<c32> ^ 2<c32>\na == 4<c32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "matrix-repeat-c32",
+    "source": "~a := [10<c32> 20<c32>; 30<c32> 40<c32>]\na[[1 1],:] += 2<c32>\na[1,1] == 14<c32>\n",
+    "expected": [
+      "true",
+      "false"
+    ],
+    "group": "selection"
+  },
+  {
+    "id": "scalar-c64",
+    "source": "~a := 1<c64>\na += 1<c64>\na == 2<c64>\n",
+    "expected": [
+      "true",
+      "false"
+    ],
+    "group": "scalar"
+  },
+  {
+    "id": "numeric-c64-add",
+    "source": "a := 6<c64> + 2<c64>\na == 8<c64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-c64-sub",
+    "source": "a := 6<c64> - 2<c64>\na == 4<c64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-c64-mul",
+    "source": "a := 6<c64> * 2<c64>\na == 12<c64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-c64-div",
+    "source": "a := 6<c64> / 2<c64>\na == 3<c64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-c64-pow",
+    "source": "a := 2<c64> ^ 2<c64>\na == 4<c64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "matrix-repeat-c64",
+    "source": "~a := [10<c64> 20<c64>; 30<c64> 40<c64>]\na[[1 1],:] += 2<c64>\na[1,1] == 14<c64>\n",
+    "expected": [
+      "true",
+      "false"
+    ],
+    "group": "selection"
+  },
+  {
+    "id": "scalar-r64",
+    "source": "~a := 1<r64>\na += 1<r64>\na == 2<r64>\n",
+    "expected": [
+      "true",
+      "false"
+    ],
+    "group": "scalar"
+  },
+  {
+    "id": "numeric-r64-add",
+    "source": "a := 6<r64> + 2<r64>\na == 8<r64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-r64-sub",
+    "source": "a := 6<r64> - 2<r64>\na == 4<r64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-r64-mul",
+    "source": "a := 6<r64> * 2<r64>\na == 12<r64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-r64-div",
+    "source": "a := 6<r64> / 2<r64>\na == 3<r64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "numeric-r64-pow",
+    "source": "a := 2<r64> ^ 2<r64>\na == 4<r64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "matrix-repeat-r64",
+    "source": "~a := [10<r64> 20<r64>; 30<r64> 40<r64>]\na[[1 1],:] += 2<r64>\na[1,1] == 14<r64>\n",
+    "expected": [
+      "true",
+      "false"
+    ],
+    "group": "selection"
+  },
+  {
+    "id": "scalar-bool",
+    "source": "~a := false\na = !a\na\n",
+    "expected": [
+      "true",
+      "false"
+    ],
+    "group": "scalar"
+  },
+  {
+    "id": "scalar-string",
+    "source": "~n := 0\nn += 1\n~a := \"\"\na = n<string>\na == \"1\"\n",
+    "expected": [
+      "true",
+      "false"
+    ],
+    "group": "scalar"
+  },
+  {
+    "id": "mixed-repeated",
+    "source": "~a := [10<i32> 20<i32>; 30<i32> 40<i32>]\na[[1 1],:] += 2.5\na[1,1] == 14<i32>\n",
+    "expected": [
+      "true",
+      "false"
+    ],
+    "group": "semantic"
+  },
+  {
+    "id": "nested-repeated",
+    "source": "~a := [10 20; 30 40]\na[[1 1],:][:,1] += 2\na[1,1] == 14\n",
+    "expected": [
+      "true",
+      "false"
+    ],
+    "group": "semantic"
+  },
+  {
+    "id": "record-update",
+    "source": "~a := {x: 1, y: true}\na.x += 1\na.x == 2\n",
+    "expected": [
+      "true",
+      "false"
+    ],
+    "group": "semantic"
+  },
+  {
+    "id": "tuple-update",
+    "source": "~a := (1, true)\na.1 += 1\na.1 == 2\n",
+    "expected": [
+      "true",
+      "false"
+    ],
+    "group": "semantic"
+  },
+  {
+    "id": "map-update",
+    "source": "~a := {1: 1, 2: 2}\na{1} += 1\na{1} == 2\n",
+    "expected": [
+      "true",
+      "false"
+    ],
+    "group": "semantic"
+  },
+  {
+    "id": "table-update",
+    "source": "~a := (|x<f64> y<bool>|1 true|2 false|)\na.x[1] += 1\na.x[1] == 2\n",
+    "expected": [
+      "true",
+      "false"
+    ],
+    "group": "semantic"
+  },
+  {
+    "id": "option-update",
+    "source": "~a<u8?> := 1u8\na = _\na\n",
+    "expected": null,
+    "group": "semantic"
+  },
+  {
+    "id": "dynamic-payload",
+    "source": "x<*> := (1, true)\nx\n",
+    "expected": null,
+    "group": "semantic"
+  },
+  {
+    "id": "nominal-atom",
+    "source": ":ready\n",
+    "expected": null,
+    "group": "semantic"
+  },
+  {
+    "id": "reified-kind",
+    "source": "<u8>\n",
+    "expected": null,
+    "group": "semantic"
+  },
+  {
+    "id": "reified-inferred-matrix",
+    "source": "<[f64]>\n",
+    "expected": null,
+    "group": "semantic"
+  },
+  {
+    "id": "kind-alias",
+    "source": "<count> := <u8>\nx<count> := 1\nx\n",
+    "expected": null,
+    "group": "semantic"
+  },
+  {
+    "id": "enum-declaration",
+    "source": "<color> := Red | Green\nx := :Red\nx\n",
+    "expected": null,
+    "group": "semantic"
+  },
+  {
+    "id": "activation-scope",
+    "source": "~>1 + 2{}\n",
+    "expected": null,
+    "group": "semantic"
+  },
+  {
+    "id": "fsm-pipe",
+    "source": "x := #machine -> :next => :value\nx\n",
+    "expected": null,
+    "group": "semantic"
+  },
+  {
+    "id": "pattern-function",
+    "source": "f(n<f64>) => <f64>\n  ├ 0 => 1\n  └ n => n + 1.\nf(2)\n",
+    "expected": [
+      "3",
+      "3"
+    ],
+    "group": "semantic"
+  },
+  {
+    "id": "factorial",
+    "source": "factorial(n<f64>) => <f64>\n  ├ 0 => 1\n  └ n => n * factorial(n - 1).\n\nn := 5\nres := factorial(n)",
+    "expected": [
+      "120",
+      "120"
+    ],
+    "group": "semantic"
+  },
+  {
+    "id": "comprehension-initializer",
+    "source": "samples := 1..=3\nx-row := [1.0 | sample <- samples]\ny-row := [2.0 | sample <- samples]\nx := x-row'\ny := y-row'\n~trail := [x y]\nnew-row := ([7.0 8.0])\nnext-trail := matrix/vertcat(trail[2..=3,:], new-row)\ntrail = next-trail\ntrail[3,2]\n",
+    "expected": [
+      "8",
+      "8"
+    ],
+    "group": "semantic"
+  },
+  {
+    "id": "match-initializer",
+    "source": "x := (true ? | true => 1 | false => 2)\n~a := x\na += 1\na\n",
+    "expected": [
+      "2",
+      "3"
+    ],
+    "group": "semantic"
+  },
+  {
+    "id": "comprehension-i32",
+    "source": "xs := [1<i32> 2<i32>]\ny := [x + 1<i32> | x <- xs]\ny\n",
+    "expected": null,
+    "group": "semantic"
+  },
+  {
+    "id": "comprehension-string",
+    "source": "xs := [\"a\" \"b\"]\ny := [x | x <- xs]\ny\n",
+    "expected": null,
+    "group": "semantic"
+  },
+  {
+    "id": "comprehension-composite",
+    "source": "xs := [1 2]\ny := [(x, true) | x <- xs]\ny\n",
+    "expected": null,
+    "group": "semantic"
+  },
+  {
+    "id": "comprehension-nested",
+    "source": "xs := [1 2]\ny := [[x + z | z <- xs] | x <- xs]\ny\n",
+    "expected": null,
+    "group": "semantic"
+  },
+  {
+    "id": "comprehension-match",
+    "source": "xs := [1 2]\ny := [(x ? | 1 => 10 | * => 20) | x <- xs]\ny\n",
+    "expected": null,
+    "group": "semantic"
+  },
+  {
+    "id": "comprehension-computed-pattern",
+    "source": "y := [1 | 1 + 1 <- [2 3]]\ny\n",
+    "expected": null,
+    "group": "semantic"
+  },
+  {
+    "id": "match-tuple",
+    "source": "(1, 2) ? | (x, y) => x + y | * => 0\n",
+    "expected": [
+      "3",
+      "3"
+    ],
+    "group": "semantic"
+  },
+  {
+    "id": "match-dynamic-result",
+    "source": "[1 2] ? | x => x\n",
+    "expected": null,
+    "group": "semantic"
+  },
+  {
+    "id": "logical-read",
+    "source": "x := [1 2 3]\nmask := x > 1\nx[mask]\n",
+    "expected": null,
+    "group": "semantic"
+  },
+  {
+    "id": "logical-write",
+    "source": "~a := [1 2 3]\nmask := a > 1\na[mask] = 9\na[2]\n",
+    "expected": [
+      "9",
+      "9"
+    ],
+    "group": "semantic"
+  },
+  {
+    "id": "dynamic-concat",
+    "source": "xs := [1 2]\ny := [x | x <- xs]\n[y y]\n",
+    "expected": null,
+    "group": "semantic"
+  },
+  {
+    "id": "constrained-kind",
+    "source": "x<f64:1..=10> := 2\nx\n",
+    "expected": [
+      "2",
+      "2"
+    ],
+    "group": "semantic"
+  },
+  {
+    "id": "rational-integral-power",
+    "source": "a := (1/2) ^ 2<i32>\na == (1/4)\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "numeric"
+  },
+  {
+    "id": "matrix-u8-add",
+    "source": "a := [1<u8> 2<u8>; 3<u8> 4<u8>]\nb := a + 2<u8>\nb[2,2] == 6<u8>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-u8-sub",
+    "source": "a := [1<u8> 2<u8>; 3<u8> 4<u8>]\nb := a - 2<u8>\nb[2,2] == 2<u8>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-u8-mul",
+    "source": "a := [1<u8> 2<u8>; 3<u8> 4<u8>]\nb := a * 2<u8>\nb[2,2] == 8<u8>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-u8-div",
+    "source": "a := [1<u8> 2<u8>; 3<u8> 4<u8>]\nb := a / 2<u8>\nb[2,2] == 2<u8>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-u8-transpose",
+    "source": "a := [1<u8> 2<u8>; 3<u8> 4<u8>]\nb := a'\nb[1,2] == 3<u8>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-u8-sum",
+    "source": "a := [1<u8> 2<u8>; 3<u8> 4<u8>]\nb := stats/sum/row(a)\nb[2] == 7<u8>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-u8-matmul",
+    "source": "a := [1<u8> 2<u8>; 3<u8> 4<u8>]\nb := matrix/matmul(a,a)\nb[2,2] == 22<u8>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-u16-add",
+    "source": "a := [1<u16> 2<u16>; 3<u16> 4<u16>]\nb := a + 2<u16>\nb[2,2] == 6<u16>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-u16-sub",
+    "source": "a := [1<u16> 2<u16>; 3<u16> 4<u16>]\nb := a - 2<u16>\nb[2,2] == 2<u16>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-u16-mul",
+    "source": "a := [1<u16> 2<u16>; 3<u16> 4<u16>]\nb := a * 2<u16>\nb[2,2] == 8<u16>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-u16-div",
+    "source": "a := [1<u16> 2<u16>; 3<u16> 4<u16>]\nb := a / 2<u16>\nb[2,2] == 2<u16>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-u16-transpose",
+    "source": "a := [1<u16> 2<u16>; 3<u16> 4<u16>]\nb := a'\nb[1,2] == 3<u16>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-u16-sum",
+    "source": "a := [1<u16> 2<u16>; 3<u16> 4<u16>]\nb := stats/sum/row(a)\nb[2] == 7<u16>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-u16-matmul",
+    "source": "a := [1<u16> 2<u16>; 3<u16> 4<u16>]\nb := matrix/matmul(a,a)\nb[2,2] == 22<u16>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-u32-add",
+    "source": "a := [1<u32> 2<u32>; 3<u32> 4<u32>]\nb := a + 2<u32>\nb[2,2] == 6<u32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-u32-sub",
+    "source": "a := [1<u32> 2<u32>; 3<u32> 4<u32>]\nb := a - 2<u32>\nb[2,2] == 2<u32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-u32-mul",
+    "source": "a := [1<u32> 2<u32>; 3<u32> 4<u32>]\nb := a * 2<u32>\nb[2,2] == 8<u32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-u32-div",
+    "source": "a := [1<u32> 2<u32>; 3<u32> 4<u32>]\nb := a / 2<u32>\nb[2,2] == 2<u32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-u32-transpose",
+    "source": "a := [1<u32> 2<u32>; 3<u32> 4<u32>]\nb := a'\nb[1,2] == 3<u32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-u32-sum",
+    "source": "a := [1<u32> 2<u32>; 3<u32> 4<u32>]\nb := stats/sum/row(a)\nb[2] == 7<u32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-u32-matmul",
+    "source": "a := [1<u32> 2<u32>; 3<u32> 4<u32>]\nb := matrix/matmul(a,a)\nb[2,2] == 22<u32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-u64-add",
+    "source": "a := [1<u64> 2<u64>; 3<u64> 4<u64>]\nb := a + 2<u64>\nb[2,2] == 6<u64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-u64-sub",
+    "source": "a := [1<u64> 2<u64>; 3<u64> 4<u64>]\nb := a - 2<u64>\nb[2,2] == 2<u64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-u64-mul",
+    "source": "a := [1<u64> 2<u64>; 3<u64> 4<u64>]\nb := a * 2<u64>\nb[2,2] == 8<u64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-u64-div",
+    "source": "a := [1<u64> 2<u64>; 3<u64> 4<u64>]\nb := a / 2<u64>\nb[2,2] == 2<u64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-u64-transpose",
+    "source": "a := [1<u64> 2<u64>; 3<u64> 4<u64>]\nb := a'\nb[1,2] == 3<u64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-u64-sum",
+    "source": "a := [1<u64> 2<u64>; 3<u64> 4<u64>]\nb := stats/sum/row(a)\nb[2] == 7<u64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-u64-matmul",
+    "source": "a := [1<u64> 2<u64>; 3<u64> 4<u64>]\nb := matrix/matmul(a,a)\nb[2,2] == 22<u64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-u128-add",
+    "source": "a := [1<u128> 2<u128>; 3<u128> 4<u128>]\nb := a + 2<u128>\nb[2,2] == 6<u128>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-u128-sub",
+    "source": "a := [1<u128> 2<u128>; 3<u128> 4<u128>]\nb := a - 2<u128>\nb[2,2] == 2<u128>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-u128-mul",
+    "source": "a := [1<u128> 2<u128>; 3<u128> 4<u128>]\nb := a * 2<u128>\nb[2,2] == 8<u128>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-u128-div",
+    "source": "a := [1<u128> 2<u128>; 3<u128> 4<u128>]\nb := a / 2<u128>\nb[2,2] == 2<u128>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-u128-transpose",
+    "source": "a := [1<u128> 2<u128>; 3<u128> 4<u128>]\nb := a'\nb[1,2] == 3<u128>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-u128-sum",
+    "source": "a := [1<u128> 2<u128>; 3<u128> 4<u128>]\nb := stats/sum/row(a)\nb[2] == 7<u128>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-u128-matmul",
+    "source": "a := [1<u128> 2<u128>; 3<u128> 4<u128>]\nb := matrix/matmul(a,a)\nb[2,2] == 22<u128>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-i8-add",
+    "source": "a := [1<i8> 2<i8>; 3<i8> 4<i8>]\nb := a + 2<i8>\nb[2,2] == 6<i8>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-i8-sub",
+    "source": "a := [1<i8> 2<i8>; 3<i8> 4<i8>]\nb := a - 2<i8>\nb[2,2] == 2<i8>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-i8-mul",
+    "source": "a := [1<i8> 2<i8>; 3<i8> 4<i8>]\nb := a * 2<i8>\nb[2,2] == 8<i8>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-i8-div",
+    "source": "a := [1<i8> 2<i8>; 3<i8> 4<i8>]\nb := a / 2<i8>\nb[2,2] == 2<i8>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-i8-transpose",
+    "source": "a := [1<i8> 2<i8>; 3<i8> 4<i8>]\nb := a'\nb[1,2] == 3<i8>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-i8-sum",
+    "source": "a := [1<i8> 2<i8>; 3<i8> 4<i8>]\nb := stats/sum/row(a)\nb[2] == 7<i8>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-i8-matmul",
+    "source": "a := [1<i8> 2<i8>; 3<i8> 4<i8>]\nb := matrix/matmul(a,a)\nb[2,2] == 22<i8>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-i16-add",
+    "source": "a := [1<i16> 2<i16>; 3<i16> 4<i16>]\nb := a + 2<i16>\nb[2,2] == 6<i16>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-i16-sub",
+    "source": "a := [1<i16> 2<i16>; 3<i16> 4<i16>]\nb := a - 2<i16>\nb[2,2] == 2<i16>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-i16-mul",
+    "source": "a := [1<i16> 2<i16>; 3<i16> 4<i16>]\nb := a * 2<i16>\nb[2,2] == 8<i16>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-i16-div",
+    "source": "a := [1<i16> 2<i16>; 3<i16> 4<i16>]\nb := a / 2<i16>\nb[2,2] == 2<i16>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-i16-transpose",
+    "source": "a := [1<i16> 2<i16>; 3<i16> 4<i16>]\nb := a'\nb[1,2] == 3<i16>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-i16-sum",
+    "source": "a := [1<i16> 2<i16>; 3<i16> 4<i16>]\nb := stats/sum/row(a)\nb[2] == 7<i16>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-i16-matmul",
+    "source": "a := [1<i16> 2<i16>; 3<i16> 4<i16>]\nb := matrix/matmul(a,a)\nb[2,2] == 22<i16>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-i32-add",
+    "source": "a := [1<i32> 2<i32>; 3<i32> 4<i32>]\nb := a + 2<i32>\nb[2,2] == 6<i32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-i32-sub",
+    "source": "a := [1<i32> 2<i32>; 3<i32> 4<i32>]\nb := a - 2<i32>\nb[2,2] == 2<i32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-i32-mul",
+    "source": "a := [1<i32> 2<i32>; 3<i32> 4<i32>]\nb := a * 2<i32>\nb[2,2] == 8<i32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-i32-div",
+    "source": "a := [1<i32> 2<i32>; 3<i32> 4<i32>]\nb := a / 2<i32>\nb[2,2] == 2<i32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-i32-transpose",
+    "source": "a := [1<i32> 2<i32>; 3<i32> 4<i32>]\nb := a'\nb[1,2] == 3<i32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-i32-sum",
+    "source": "a := [1<i32> 2<i32>; 3<i32> 4<i32>]\nb := stats/sum/row(a)\nb[2] == 7<i32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-i32-matmul",
+    "source": "a := [1<i32> 2<i32>; 3<i32> 4<i32>]\nb := matrix/matmul(a,a)\nb[2,2] == 22<i32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-i64-add",
+    "source": "a := [1<i64> 2<i64>; 3<i64> 4<i64>]\nb := a + 2<i64>\nb[2,2] == 6<i64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-i64-sub",
+    "source": "a := [1<i64> 2<i64>; 3<i64> 4<i64>]\nb := a - 2<i64>\nb[2,2] == 2<i64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-i64-mul",
+    "source": "a := [1<i64> 2<i64>; 3<i64> 4<i64>]\nb := a * 2<i64>\nb[2,2] == 8<i64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-i64-div",
+    "source": "a := [1<i64> 2<i64>; 3<i64> 4<i64>]\nb := a / 2<i64>\nb[2,2] == 2<i64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-i64-transpose",
+    "source": "a := [1<i64> 2<i64>; 3<i64> 4<i64>]\nb := a'\nb[1,2] == 3<i64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-i64-sum",
+    "source": "a := [1<i64> 2<i64>; 3<i64> 4<i64>]\nb := stats/sum/row(a)\nb[2] == 7<i64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-i64-matmul",
+    "source": "a := [1<i64> 2<i64>; 3<i64> 4<i64>]\nb := matrix/matmul(a,a)\nb[2,2] == 22<i64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-i128-add",
+    "source": "a := [1<i128> 2<i128>; 3<i128> 4<i128>]\nb := a + 2<i128>\nb[2,2] == 6<i128>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-i128-sub",
+    "source": "a := [1<i128> 2<i128>; 3<i128> 4<i128>]\nb := a - 2<i128>\nb[2,2] == 2<i128>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-i128-mul",
+    "source": "a := [1<i128> 2<i128>; 3<i128> 4<i128>]\nb := a * 2<i128>\nb[2,2] == 8<i128>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-i128-div",
+    "source": "a := [1<i128> 2<i128>; 3<i128> 4<i128>]\nb := a / 2<i128>\nb[2,2] == 2<i128>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-i128-transpose",
+    "source": "a := [1<i128> 2<i128>; 3<i128> 4<i128>]\nb := a'\nb[1,2] == 3<i128>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-i128-sum",
+    "source": "a := [1<i128> 2<i128>; 3<i128> 4<i128>]\nb := stats/sum/row(a)\nb[2] == 7<i128>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-i128-matmul",
+    "source": "a := [1<i128> 2<i128>; 3<i128> 4<i128>]\nb := matrix/matmul(a,a)\nb[2,2] == 22<i128>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-f32-add",
+    "source": "a := [1<f32> 2<f32>; 3<f32> 4<f32>]\nb := a + 2<f32>\nb[2,2] == 6<f32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-f32-sub",
+    "source": "a := [1<f32> 2<f32>; 3<f32> 4<f32>]\nb := a - 2<f32>\nb[2,2] == 2<f32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-f32-mul",
+    "source": "a := [1<f32> 2<f32>; 3<f32> 4<f32>]\nb := a * 2<f32>\nb[2,2] == 8<f32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-f32-div",
+    "source": "a := [1<f32> 2<f32>; 3<f32> 4<f32>]\nb := a / 2<f32>\nb[2,2] == 2<f32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-f32-transpose",
+    "source": "a := [1<f32> 2<f32>; 3<f32> 4<f32>]\nb := a'\nb[1,2] == 3<f32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-f32-sum",
+    "source": "a := [1<f32> 2<f32>; 3<f32> 4<f32>]\nb := stats/sum/row(a)\nb[2] == 7<f32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-f32-matmul",
+    "source": "a := [1<f32> 2<f32>; 3<f32> 4<f32>]\nb := matrix/matmul(a,a)\nb[2,2] == 22<f32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-f64-add",
+    "source": "a := [1<f64> 2<f64>; 3<f64> 4<f64>]\nb := a + 2<f64>\nb[2,2] == 6<f64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-f64-sub",
+    "source": "a := [1<f64> 2<f64>; 3<f64> 4<f64>]\nb := a - 2<f64>\nb[2,2] == 2<f64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-f64-mul",
+    "source": "a := [1<f64> 2<f64>; 3<f64> 4<f64>]\nb := a * 2<f64>\nb[2,2] == 8<f64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-f64-div",
+    "source": "a := [1<f64> 2<f64>; 3<f64> 4<f64>]\nb := a / 2<f64>\nb[2,2] == 2<f64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-f64-transpose",
+    "source": "a := [1<f64> 2<f64>; 3<f64> 4<f64>]\nb := a'\nb[1,2] == 3<f64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-f64-sum",
+    "source": "a := [1<f64> 2<f64>; 3<f64> 4<f64>]\nb := stats/sum/row(a)\nb[2] == 7<f64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-f64-matmul",
+    "source": "a := [1<f64> 2<f64>; 3<f64> 4<f64>]\nb := matrix/matmul(a,a)\nb[2,2] == 22<f64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-c32-add",
+    "source": "a := [1<c32> 2<c32>; 3<c32> 4<c32>]\nb := a + 2<c32>\nb[2,2] == 6<c32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-c32-sub",
+    "source": "a := [1<c32> 2<c32>; 3<c32> 4<c32>]\nb := a - 2<c32>\nb[2,2] == 2<c32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-c32-mul",
+    "source": "a := [1<c32> 2<c32>; 3<c32> 4<c32>]\nb := a * 2<c32>\nb[2,2] == 8<c32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-c32-div",
+    "source": "a := [1<c32> 2<c32>; 3<c32> 4<c32>]\nb := a / 2<c32>\nb[2,2] == 2<c32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-c32-transpose",
+    "source": "a := [1<c32> 2<c32>; 3<c32> 4<c32>]\nb := a'\nb[1,2] == 3<c32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-c32-sum",
+    "source": "a := [1<c32> 2<c32>; 3<c32> 4<c32>]\nb := stats/sum/row(a)\nb[2] == 7<c32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-c32-matmul",
+    "source": "a := [1<c32> 2<c32>; 3<c32> 4<c32>]\nb := matrix/matmul(a,a)\nb[2,2] == 22<c32>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-c64-add",
+    "source": "a := [1<c64> 2<c64>; 3<c64> 4<c64>]\nb := a + 2<c64>\nb[2,2] == 6<c64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-c64-sub",
+    "source": "a := [1<c64> 2<c64>; 3<c64> 4<c64>]\nb := a - 2<c64>\nb[2,2] == 2<c64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-c64-mul",
+    "source": "a := [1<c64> 2<c64>; 3<c64> 4<c64>]\nb := a * 2<c64>\nb[2,2] == 8<c64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-c64-div",
+    "source": "a := [1<c64> 2<c64>; 3<c64> 4<c64>]\nb := a / 2<c64>\nb[2,2] == 2<c64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-c64-transpose",
+    "source": "a := [1<c64> 2<c64>; 3<c64> 4<c64>]\nb := a'\nb[1,2] == 3<c64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-c64-sum",
+    "source": "a := [1<c64> 2<c64>; 3<c64> 4<c64>]\nb := stats/sum/row(a)\nb[2] == 7<c64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-c64-matmul",
+    "source": "a := [1<c64> 2<c64>; 3<c64> 4<c64>]\nb := matrix/matmul(a,a)\nb[2,2] == 22<c64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-r64-add",
+    "source": "a := [1<r64> 2<r64>; 3<r64> 4<r64>]\nb := a + 2<r64>\nb[2,2] == 6<r64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-r64-sub",
+    "source": "a := [1<r64> 2<r64>; 3<r64> 4<r64>]\nb := a - 2<r64>\nb[2,2] == 2<r64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-r64-mul",
+    "source": "a := [1<r64> 2<r64>; 3<r64> 4<r64>]\nb := a * 2<r64>\nb[2,2] == 8<r64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-r64-div",
+    "source": "a := [1<r64> 2<r64>; 3<r64> 4<r64>]\nb := a / 2<r64>\nb[2,2] == 2<r64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-r64-transpose",
+    "source": "a := [1<r64> 2<r64>; 3<r64> 4<r64>]\nb := a'\nb[1,2] == 3<r64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-r64-sum",
+    "source": "a := [1<r64> 2<r64>; 3<r64> 4<r64>]\nb := stats/sum/row(a)\nb[2] == 7<r64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "matrix-r64-matmul",
+    "source": "a := [1<r64> 2<r64>; 3<r64> 4<r64>]\nb := matrix/matmul(a,a)\nb[2,2] == 22<r64>\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "group": "matrix"
+  },
+  {
+    "id": "catalog-combinatorics-n-choose-k",
+    "source": "answer := combinatorics/n-choose-k(4, 2)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "combinatorics/n-choose-k"
+  },
+  {
+    "id": "catalog-compare-eq",
+    "source": "answer := compare/eq(1.0, 2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "compare/eq"
+  },
+  {
+    "id": "catalog-compare-gt",
+    "source": "answer := compare/gt(1.0, 2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "compare/gt"
+  },
+  {
+    "id": "catalog-compare-gte",
+    "source": "answer := compare/gte(1.0, 2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "compare/gte"
+  },
+  {
+    "id": "catalog-compare-lt",
+    "source": "answer := compare/lt(1.0, 2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "compare/lt"
+  },
+  {
+    "id": "catalog-compare-lte",
+    "source": "answer := compare/lte(1.0, 2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "compare/lte"
+  },
+  {
+    "id": "catalog-compare-max",
+    "source": "answer := compare/max(1.0, 2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "compare/max"
+  },
+  {
+    "id": "catalog-compare-min",
+    "source": "answer := compare/min(1.0, 2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "compare/min"
+  },
+  {
+    "id": "catalog-compare-neq",
+    "source": "answer := compare/neq(1.0, 2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "compare/neq"
+  },
+  {
+    "id": "catalog-compare-seq",
+    "source": "answer := compare/seq(1.0, 2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "compare/seq"
+  },
+  {
+    "id": "catalog-compare-sneq",
+    "source": "answer := compare/sneq(1.0, 2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "compare/sneq"
+  },
+  {
+    "id": "catalog-logic-and",
+    "source": "answer := logic/and(true, false)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "logic/and"
+  },
+  {
+    "id": "catalog-logic-not",
+    "source": "answer := logic/not(true)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "logic/not"
+  },
+  {
+    "id": "catalog-logic-or",
+    "source": "answer := logic/or(true, false)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "logic/or"
+  },
+  {
+    "id": "catalog-logic-xor",
+    "source": "answer := logic/xor(true, false)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "logic/xor"
+  },
+  {
+    "id": "catalog-math-abs",
+    "source": "answer := math/abs(2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/abs"
+  },
+  {
+    "id": "catalog-math-acos",
+    "source": "answer := math/acos(0.5)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/acos"
+  },
+  {
+    "id": "catalog-math-acosh",
+    "source": "answer := math/acosh(2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/acosh"
+  },
+  {
+    "id": "catalog-math-acot",
+    "source": "answer := math/acot(2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/acot"
+  },
+  {
+    "id": "catalog-math-acsc",
+    "source": "answer := math/acsc(2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/acsc"
+  },
+  {
+    "id": "catalog-math-add",
+    "source": "answer := math/add(2.0, 1.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/add"
+  },
+  {
+    "id": "catalog-math-add-assign",
+    "source": "~a := [2 4; 6 8]\na += 2\na\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/add-assign"
+  },
+  {
+    "id": "catalog-math-add-assign-range",
+    "source": "~a := [2 4; 6 8]\na[1] += 2\na\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/add-assign/range"
+  },
+  {
+    "id": "catalog-math-add-assign-range-all",
+    "source": "~a := [2 4; 6 8]\na[1,:] += 2\na\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/add-assign/range-all"
+  },
+  {
+    "id": "catalog-math-asec",
+    "source": "answer := math/asec(2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/asec"
+  },
+  {
+    "id": "catalog-math-asin",
+    "source": "answer := math/asin(0.5)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/asin"
+  },
+  {
+    "id": "catalog-math-asinh",
+    "source": "answer := math/asinh(2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/asinh"
+  },
+  {
+    "id": "catalog-math-atan",
+    "source": "answer := math/atan(2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/atan"
+  },
+  {
+    "id": "catalog-math-atan2",
+    "source": "answer := math/atan2(2.0, 1.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/atan2"
+  },
+  {
+    "id": "catalog-math-atanh",
+    "source": "answer := math/atanh(0.5)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/atanh"
+  },
+  {
+    "id": "catalog-math-bessel-j0",
+    "source": "answer := math/bessel/j0(2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/bessel/j0"
+  },
+  {
+    "id": "catalog-math-bessel-j1",
+    "source": "answer := math/bessel/j1(2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/bessel/j1"
+  },
+  {
+    "id": "catalog-math-bessel-jn",
+    "source": "answer := math/bessel/jn(2<i32>, 1.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/bessel/jn"
+  },
+  {
+    "id": "catalog-math-bessel-y0",
+    "source": "answer := math/bessel/y0(2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/bessel/y0"
+  },
+  {
+    "id": "catalog-math-bessel-y1",
+    "source": "answer := math/bessel/y1(2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/bessel/y1"
+  },
+  {
+    "id": "catalog-math-bessel-yn",
+    "source": "answer := math/bessel/yn(2<i32>, 1.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/bessel/yn"
+  },
+  {
+    "id": "catalog-math-cbrt",
+    "source": "answer := math/cbrt(2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/cbrt"
+  },
+  {
+    "id": "catalog-math-ceil",
+    "source": "answer := math/ceil(2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/ceil"
+  },
+  {
+    "id": "catalog-math-copysign",
+    "source": "answer := math/copysign(2.0, 1.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/copysign"
+  },
+  {
+    "id": "catalog-math-cos",
+    "source": "answer := math/cos(2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/cos"
+  },
+  {
+    "id": "catalog-math-cosh",
+    "source": "answer := math/cosh(2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/cosh"
+  },
+  {
+    "id": "catalog-math-cot",
+    "source": "answer := math/cot(2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/cot"
+  },
+  {
+    "id": "catalog-math-csc",
+    "source": "answer := math/csc(2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/csc"
+  },
+  {
+    "id": "catalog-math-div",
+    "source": "answer := math/div(2.0, 1.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/div"
+  },
+  {
+    "id": "catalog-math-div-assign",
+    "source": "~a := [2 4; 6 8]\na /= 2\na\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/div-assign"
+  },
+  {
+    "id": "catalog-math-div-assign-range",
+    "source": "~a := [2 4; 6 8]\na[1] /= 2\na\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/div-assign/range"
+  },
+  {
+    "id": "catalog-math-div-assign-range-all",
+    "source": "~a := [2 4; 6 8]\na[1,:] /= 2\na\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/div-assign/range-all"
+  },
+  {
+    "id": "catalog-math-erf",
+    "source": "answer := math/erf(2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/erf"
+  },
+  {
+    "id": "catalog-math-erfc",
+    "source": "answer := math/erfc(2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/erfc"
+  },
+  {
+    "id": "catalog-math-fdim",
+    "source": "answer := math/fdim(2.0, 1.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/fdim"
+  },
+  {
+    "id": "catalog-math-floor",
+    "source": "answer := math/floor(2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/floor"
+  },
+  {
+    "id": "catalog-math-fmod",
+    "source": "answer := math/fmod(2.0, 1.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/fmod"
+  },
+  {
+    "id": "catalog-math-lgamma",
+    "source": "answer := math/lgamma(2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/lgamma"
+  },
+  {
+    "id": "catalog-math-log",
+    "source": "answer := math/log(2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/log"
+  },
+  {
+    "id": "catalog-math-log10",
+    "source": "answer := math/log10(2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/log10"
+  },
+  {
+    "id": "catalog-math-log1p",
+    "source": "answer := math/log1p(2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/log1p"
+  },
+  {
+    "id": "catalog-math-log2",
+    "source": "answer := math/log2(2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/log2"
+  },
+  {
+    "id": "catalog-math-mod",
+    "source": "answer := math/mod(2.0, 1.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/mod"
+  },
+  {
+    "id": "catalog-math-mul",
+    "source": "answer := math/mul(2.0, 1.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/mul"
+  },
+  {
+    "id": "catalog-math-mul-assign-range",
+    "source": "~a := [2 4; 6 8]\na[1] *= 2\na\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/mul-assign/range"
+  },
+  {
+    "id": "catalog-math-mul-assign-range-all",
+    "source": "~a := [2 4; 6 8]\na[1,:] *= 2\na\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/mul-assign/range-all"
+  },
+  {
+    "id": "catalog-math-neg",
+    "source": "answer := math/neg(2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/neg"
+  },
+  {
+    "id": "catalog-math-nextafter",
+    "source": "answer := math/nextafter(2.0, 1.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/nextafter"
+  },
+  {
+    "id": "catalog-math-pow",
+    "source": "answer := math/pow(2.0, 1.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/pow"
+  },
+  {
+    "id": "catalog-math-remainder",
+    "source": "answer := math/remainder(2.0, 1.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/remainder"
+  },
+  {
+    "id": "catalog-math-rint",
+    "source": "answer := math/rint(2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/rint"
+  },
+  {
+    "id": "catalog-math-round",
+    "source": "answer := math/round(2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/round"
+  },
+  {
+    "id": "catalog-math-roundeven",
+    "source": "answer := math/roundeven(2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/roundeven"
+  },
+  {
+    "id": "catalog-math-sec",
+    "source": "answer := math/sec(2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/sec"
+  },
+  {
+    "id": "catalog-math-sin",
+    "source": "answer := math/sin(2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/sin"
+  },
+  {
+    "id": "catalog-math-sinh",
+    "source": "answer := math/sinh(2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/sinh"
+  },
+  {
+    "id": "catalog-math-sqrt",
+    "source": "answer := math/sqrt(2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/sqrt"
+  },
+  {
+    "id": "catalog-math-sub",
+    "source": "answer := math/sub(2.0, 1.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/sub"
+  },
+  {
+    "id": "catalog-math-sub-assign",
+    "source": "~a := [2 4; 6 8]\na -= 2\na\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/sub-assign"
+  },
+  {
+    "id": "catalog-math-sub-assign-range",
+    "source": "~a := [2 4; 6 8]\na[1] -= 2\na\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/sub-assign/range"
+  },
+  {
+    "id": "catalog-math-sub-assign-range-all",
+    "source": "~a := [2 4; 6 8]\na[1,:] -= 2\na\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/sub-assign/range-all"
+  },
+  {
+    "id": "catalog-math-tan",
+    "source": "answer := math/tan(2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/tan"
+  },
+  {
+    "id": "catalog-math-tanh",
+    "source": "answer := math/tanh(2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/tanh"
+  },
+  {
+    "id": "catalog-math-tgamma",
+    "source": "answer := math/tgamma(2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/tgamma"
+  },
+  {
+    "id": "catalog-math-trunc",
+    "source": "answer := math/trunc(2.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "math/trunc"
+  },
+  {
+    "id": "catalog-matrix-comprehension",
+    "source": "answer := [x + 1 | x <- [1 2]]\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "matrix/comprehension"
+  },
+  {
+    "id": "catalog-matrix-dot",
+    "source": "answer := matrix/dot([1 2], [3 4])\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "matrix/dot"
+  },
+  {
+    "id": "catalog-matrix-horzcat",
+    "source": "answer := matrix/horzcat([1 2; 3 4], [1 2; 3 4])\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "matrix/horzcat"
+  },
+  {
+    "id": "catalog-matrix-matmul",
+    "source": "answer := matrix/matmul([1 2; 3 4], [1 2; 3 4])\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "matrix/matmul"
+  },
+  {
+    "id": "catalog-matrix-solve",
+    "source": "answer := matrix/solve([1 0; 0 1], [1; 2])\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "matrix/solve"
+  },
+  {
+    "id": "catalog-matrix-transpose",
+    "source": "answer := [1 2; 3 4]'\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "matrix/transpose"
+  },
+  {
+    "id": "catalog-matrix-vertcat",
+    "source": "answer := matrix/vertcat([1 2; 3 4], [1 2; 3 4])\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "matrix/vertcat"
+  },
+  {
+    "id": "catalog-range-exclusive",
+    "source": "answer := range/exclusive(1.0, 3.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "range/exclusive"
+  },
+  {
+    "id": "catalog-range-exclusive-increment",
+    "source": "answer := range/exclusive-increment(1.0, 1.0, 3.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "range/exclusive-increment"
+  },
+  {
+    "id": "catalog-range-inclusive",
+    "source": "answer := range/inclusive(1.0, 3.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "range/inclusive"
+  },
+  {
+    "id": "catalog-range-inclusive-increment",
+    "source": "answer := range/inclusive-increment(1.0, 1.0, 3.0)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "range/inclusive-increment"
+  },
+  {
+    "id": "catalog-set-cartesian-product",
+    "source": "answer := set/cartesian-product({1,2},{2,3})\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "set/cartesian-product"
+  },
+  {
+    "id": "catalog-set-comprehension",
+    "source": "answer := {x + 1 | x <- [1 2]}\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "set/comprehension"
+  },
+  {
+    "id": "catalog-set-define",
+    "source": "answer := {1,2}\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "set/define"
+  },
+  {
+    "id": "catalog-set-difference",
+    "source": "answer := set/difference({1,2},{2,3})\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "set/difference"
+  },
+  {
+    "id": "catalog-set-disjoint",
+    "source": "answer := set/disjoint({1,2},{2,3})\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "set/disjoint"
+  },
+  {
+    "id": "catalog-set-element-of",
+    "source": "answer := set/element-of(1, {1,2})\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "set/element-of"
+  },
+  {
+    "id": "catalog-set-equals",
+    "source": "answer := set/equals({1,2},{2,3})\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "set/equals"
+  },
+  {
+    "id": "catalog-set-insert",
+    "source": "answer := set/insert({1,2}, 3)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "set/insert"
+  },
+  {
+    "id": "catalog-set-intersection",
+    "source": "answer := set/intersection({1,2},{2,3})\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "set/intersection"
+  },
+  {
+    "id": "catalog-set-not-element-of",
+    "source": "answer := set/not-element-of(1, {1,2})\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "set/not-element-of"
+  },
+  {
+    "id": "catalog-set-not_equals",
+    "source": "answer := set/not_equals({1,2},{2,3})\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "set/not_equals"
+  },
+  {
+    "id": "catalog-set-powerset",
+    "source": "answer := set/powerset({1,2})\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "set/powerset"
+  },
+  {
+    "id": "catalog-set-proper-superset",
+    "source": "answer := set/proper-superset({1,2},{2,3})\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "set/proper-superset"
+  },
+  {
+    "id": "catalog-set-proper_subset",
+    "source": "answer := set/proper_subset({1,2},{2,3})\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "set/proper_subset"
+  },
+  {
+    "id": "catalog-set-remove",
+    "source": "answer := set/remove({1,2}, 3)\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "set/remove"
+  },
+  {
+    "id": "catalog-set-size",
+    "source": "answer := set/size({1,2})\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "set/size"
+  },
+  {
+    "id": "catalog-set-subset",
+    "source": "answer := set/subset({1,2},{2,3})\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "set/subset"
+  },
+  {
+    "id": "catalog-set-superset",
+    "source": "answer := set/superset({1,2},{2,3})\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "set/superset"
+  },
+  {
+    "id": "catalog-set-symmetric-difference",
+    "source": "answer := set/symmetric-difference({1,2},{2,3})\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "set/symmetric-difference"
+  },
+  {
+    "id": "catalog-set-union",
+    "source": "answer := set/union({1,2},{2,3})\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "set/union"
+  },
+  {
+    "id": "catalog-stats-sum-column",
+    "source": "answer := stats/sum/column([1 2; 3 4])\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "stats/sum/column"
+  },
+  {
+    "id": "catalog-stats-sum-row",
+    "source": "answer := stats/sum/row([1 2; 3 4])\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "stats/sum/row"
+  },
+  {
+    "id": "catalog-string-concat",
+    "source": "answer := string/concat(\"a\", \"b\")\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "string/concat"
+  },
+  {
+    "id": "catalog-table-full-outer-join",
+    "source": "answer := table/full-outer-join((|x<u8> y<u8>|1u8 2u8|), (|x<u8> z<u8>|1u8 3u8|))\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "table/full-outer-join"
+  },
+  {
+    "id": "catalog-table-join",
+    "source": "answer := table/join((|x<u8> y<u8>|1u8 2u8|), (|x<u8> z<u8>|1u8 3u8|))\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "table/join"
+  },
+  {
+    "id": "catalog-table-left-anti-join",
+    "source": "answer := table/left-anti-join((|x<u8> y<u8>|1u8 2u8|), (|x<u8> z<u8>|1u8 3u8|))\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "table/left-anti-join"
+  },
+  {
+    "id": "catalog-table-left-outer-join",
+    "source": "answer := table/left-outer-join((|x<u8> y<u8>|1u8 2u8|), (|x<u8> z<u8>|1u8 3u8|))\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "table/left-outer-join"
+  },
+  {
+    "id": "catalog-table-left-semi-join",
+    "source": "answer := table/left-semi-join((|x<u8> y<u8>|1u8 2u8|), (|x<u8> z<u8>|1u8 3u8|))\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "table/left-semi-join"
+  },
+  {
+    "id": "catalog-table-right-outer-join",
+    "source": "answer := table/right-outer-join((|x<u8> y<u8>|1u8 2u8|), (|x<u8> z<u8>|1u8 3u8|))\nanswer\n",
+    "expected": null,
+    "group": "catalog",
+    "operation": "table/right-outer-join"
+  }
+]
