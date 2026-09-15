@@ -2590,24 +2590,30 @@ fn interactive_root_loader_retains_document_symbols_and_reports_the_root_result(
 
 #[test]
 fn explicit_root_imported_by_an_earlier_root_still_joins_the_combined_artifact() {
-    let mut resolver = InMemorySourceResolver::new();
-    resolver
-        .insert_string(
-            "main.mec",
-            "+> ./dep.mec\nanswer := dep/value + 1\nanswer\n",
-        )
-        .unwrap();
-    resolver
-        .insert_string("dep.mec", "value := 41\n<+ value\nvalue\n")
-        .unwrap();
-    let mut compiler = RuntimeBuilder::new()
-        .function_catalog(mech_stdlib::source_catalog())
-        .source_resolver(resolver)
-        .build_compiler()
-        .unwrap();
+    for canonical in [false, true] {
+        let mut resolver = InMemorySourceResolver::new();
+        resolver
+            .insert_string(
+                "main.mec",
+                "+> ./dep.mec\nanswer := dep/value + 1\nanswer\n",
+            )
+            .unwrap();
+        resolver
+            .insert_string("dep.mec", "value := 41\n<+ value\nvalue\n")
+            .unwrap();
+        let mut compiler = RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_catalog())
+            .source_resolver(resolver)
+            .build_compiler()
+            .unwrap();
 
-    let product = compiler
-        .compile_roots(
+        let compile_roots = if canonical {
+            ProgramCompiler::compile_canonical_roots
+        } else {
+            ProgramCompiler::compile_roots
+        };
+        let product = compile_roots(
+            &mut compiler,
             &[
                 SourceRequest::new("main.mec"),
                 SourceRequest::new("dep.mec"),
@@ -2615,64 +2621,71 @@ fn explicit_root_imported_by_an_earlier_root_still_joins_the_combined_artifact()
             ModuleBuildOptions::new("test", "v0.4", "native", &[], &[]),
         )
         .unwrap();
-    let outputs = product
-        .artifact()
-        .outputs()
-        .iter()
-        .map(|output| output.name.as_str())
-        .collect::<Vec<_>>();
-
-    assert_eq!(
-        outputs,
-        ["answer", "value"],
-        "explicit roots must be published in caller order"
-    );
-    let decoded = decode_program_artifact_bytecode_v1(product.bytecode()).unwrap();
-    assert_eq!(
-        decoded
+        let outputs = product
+            .artifact()
             .outputs()
             .iter()
             .map(|output| output.name.as_str())
-            .collect::<Vec<_>>(),
-        outputs,
-        "bytecode v1 must retain every explicit root output"
-    );
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            outputs,
+            ["answer", "value"],
+            "explicit roots must be published in caller order"
+        );
+        let decoded = decode_program_artifact_bytecode_v1(product.bytecode()).unwrap();
+        assert_eq!(
+            decoded
+                .outputs()
+                .iter()
+                .map(|output| output.name.as_str())
+                .collect::<Vec<_>>(),
+            outputs,
+            "bytecode v1 must retain every explicit root output"
+        );
+    }
 }
 
 #[test]
 fn explicit_dependency_root_plans_provider_reads_exactly_once() {
-    let plans = Arc::new(AtomicUsize::new(0));
-    let mut resolver = InMemorySourceResolver::new();
-    resolver
-        .insert_string(
-            "main.mec",
-            "+> ./dep.mec\nanswer := dep/value + 1.0\nanswer\n",
-        )
-        .unwrap();
-    resolver
-        .insert_string(
-            "dep.mec",
-            r#"
+    for canonical in [false, true] {
+        let plans = Arc::new(AtomicUsize::new(0));
+        let mut resolver = InMemorySourceResolver::new();
+        resolver
+            .insert_string(
+                "main.mec",
+                "+> ./dep.mec\nanswer := dep/value + 1.0\nanswer\n",
+            )
+            .unwrap();
+        resolver
+            .insert_string(
+                "dep.mec",
+                r#"
 @clock := test://clock/tick{:read(delta-seconds)}
 value := @clock/delta-seconds
 <+ value
 value
 "#,
-        )
-        .unwrap();
-    let mut compiler = RuntimeBuilder::new()
-        .function_catalog(mech_stdlib::source_catalog())
-        .source_resolver(resolver)
-        .resource_provider(Box::new(PlanningObservationProvider {
-            plans: plans.clone(),
-            reads: Arc::new(AtomicUsize::new(0)),
-            value_bits: Arc::new(AtomicU64::new(41.0_f64.to_bits())),
-        }))
-        .build_compiler()
-        .unwrap();
+            )
+            .unwrap();
+        let mut compiler = RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_catalog())
+            .source_resolver(resolver)
+            .resource_provider(Box::new(PlanningObservationProvider {
+                plans: plans.clone(),
+                reads: Arc::new(AtomicUsize::new(0)),
+                value_bits: Arc::new(AtomicU64::new(41.0_f64.to_bits())),
+            }))
+            .build_compiler()
+            .unwrap();
 
-    let product = compiler
-        .compile_roots(
+        let compile_roots = if canonical {
+            ProgramCompiler::compile_canonical_roots
+        } else {
+            ProgramCompiler::compile_roots
+        };
+        let product = compile_roots(
+            &mut compiler,
             &[
                 SourceRequest::new("main.mec"),
                 SourceRequest::new("dep.mec"),
@@ -2681,14 +2694,15 @@ value
         )
         .unwrap();
 
-    assert_eq!(plans.load(Ordering::SeqCst), 1);
-    let outputs = product
-        .artifact()
-        .outputs()
-        .iter()
-        .map(|output| output.name.as_str())
-        .collect::<Vec<_>>();
-    assert_eq!(outputs, ["answer", "value"]);
+        assert_eq!(plans.load(Ordering::SeqCst), 1);
+        let outputs = product
+            .artifact()
+            .outputs()
+            .iter()
+            .map(|output| output.name.as_str())
+            .collect::<Vec<_>>();
+        assert_eq!(outputs, ["answer", "value"]);
+    }
 }
 
 #[test]
@@ -5865,6 +5879,284 @@ fn canonical_fizzbuzz_preserves_constraints_and_presentation_through_bytecode() 
         assert_eq!(
             actual,
             bytecode_loaded.initial_value.format_canonical_inline()
+        );
+    }
+}
+
+#[test]
+fn canonical_uncalled_functions_do_not_bind_resource_inputs() {
+    for (tail, observed) in [("answer := 42.0", false), ("answer := sample()", true)] {
+        let source = format!(
+            "@clock := timer://clock/tick{{:read(tick)}}\nsample() = result<f64> :=\n  result := (@clock/tick).\n\n{tail}\n"
+        );
+        let document = canonical_planning_test_document(&source);
+        let mut resolver = InMemorySourceResolver::new();
+        resolver.insert_string("main.mec", source).unwrap();
+        let mut compiler = RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_native_plan_catalog())
+            .resource_provider(Box::new(ProductTimerProvider))
+            .source_resolver(resolver)
+            .build_compiler()
+            .unwrap();
+        for product in [
+            compiler.compile_document(&document).unwrap(),
+            compiler
+                .compile_canonical_root(SourceRequest::new("main.mec"))
+                .unwrap(),
+        ] {
+            let has_resource = product.artifact().requirements().iter().any(|(_, requirement)| matches!(requirement,
+                mech_core::ApplicationRequirement::Resource(request) if request.base_uri == "timer://clock/tick"));
+            assert_eq!(has_resource, observed);
+        }
+    }
+}
+
+#[test]
+fn canonical_resolved_and_rooted_interactive_compilation_preserve_revision_and_symbols() {
+    let mut resolver = InMemorySourceResolver::new();
+    resolver
+        .insert_canonical_string("dep.mec", "value := 41.0\n<+ value\n")
+        .unwrap();
+    resolver
+        .insert_canonical_string(
+            "main.mec",
+            "+> ./dep.mec\nanswer := dep/value + 1.0\nanswer\n",
+        )
+        .unwrap();
+    let resolved = crate::SourceResolver::resolve(&resolver, &SourceRequest::new("main.mec"))
+        .unwrap()
+        .unwrap();
+    // Resolving the supplied root again would compile this newer revision.
+    resolver
+        .insert_canonical_string(
+            "main.mec",
+            "+> ./dep.mec\nanswer := dep/value + 59.0\nanswer\n",
+        )
+        .unwrap();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .source_resolver(resolver)
+        .build_compiler()
+        .unwrap();
+    let options = ModuleBuildOptions::new(
+        "qualified-compiler",
+        "v0.4",
+        "browser",
+        &["source"],
+        &["resource://contract"],
+    );
+    let products = [
+        (
+            compiler
+                .compile_canonical_resolved_root(resolved.clone())
+                .unwrap(),
+            42.0,
+            false,
+        ),
+        (
+            compiler
+                .compile_canonical_interactive_resolved_root(resolved.clone())
+                .unwrap(),
+            42.0,
+            true,
+        ),
+        (
+            compiler
+                .compile_canonical_root(SourceRequest::new("main.mec"))
+                .unwrap(),
+            100.0,
+            false,
+        ),
+        (
+            compiler
+                .compile_canonical_interactive_root(SourceRequest::new("main.mec"))
+                .unwrap(),
+            100.0,
+            true,
+        ),
+        (
+            compiler
+                .compile_canonical_resolved_root_with_options(resolved.clone(), options)
+                .unwrap(),
+            42.0,
+            false,
+        ),
+        (
+            compiler
+                .compile_canonical_interactive_resolved_root_with_options(resolved, options)
+                .unwrap(),
+            42.0,
+            true,
+        ),
+        (
+            compiler
+                .compile_canonical_root_with_options(SourceRequest::new("main.mec"), options)
+                .unwrap(),
+            100.0,
+            false,
+        ),
+        (
+            compiler
+                .compile_canonical_interactive_root_with_options(
+                    SourceRequest::new("main.mec"),
+                    options,
+                )
+                .unwrap(),
+            100.0,
+            true,
+        ),
+    ];
+    for (product, expected, interactive) in products {
+        assert_eq!(
+            product.source_dependencies(),
+            &BTreeMap::from([(
+                "memory:dep.mec".into(),
+                mech_core::hash_str("value := 41.0\n<+ value\n")
+            ),])
+        );
+        assert_eq!(
+            product.artifact().outputs().iter().any(|output| {
+                mech_engine::decode_interactive_symbol_output_name(&output.name).as_deref()
+                    == Some("answer")
+            }),
+            interactive
+        );
+        let mut accepted = runtime();
+        accepted
+            .load_bytecode_program(
+                product.bytecode(),
+                crate::ResidentDurabilityPolicy::Volatile,
+            )
+            .unwrap();
+        let result = accepted
+            .output_value(mech_core::OutputId::new(0))
+            .unwrap()
+            .unwrap();
+        assert_eq!(canonical_f64(result.value()), expected);
+        if interactive {
+            let id = accepted.root_symbol_output_id("answer").unwrap();
+            assert_eq!(
+                canonical_f64(accepted.output_value(id).unwrap().unwrap().value()),
+                expected
+            );
+        }
+    }
+}
+
+#[test]
+fn canonical_interactive_root_keeps_resource_authority_and_dependency_errors() {
+    let mut resolver = InMemorySourceResolver::new();
+    resolver
+        .insert_canonical_string(
+            "main.mec",
+            "@clock := timer://clock/tick{:read(tick)}\nanswer := @clock/tick\n",
+        )
+        .unwrap();
+    resolver
+        .insert_canonical_string("broken.mec", "+> ./absent.mec\nanswer := absent/value\n")
+        .unwrap();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .resource_provider(Box::new(ProductTimerProvider))
+        .source_resolver(resolver)
+        .build_compiler()
+        .unwrap();
+    let product = compiler
+        .compile_canonical_interactive_root(SourceRequest::new("main.mec"))
+        .unwrap();
+    assert!(product.artifact().requirements().iter().any(|(_, requirement)| matches!(requirement,
+        mech_core::ApplicationRequirement::Resource(request) if request.base_uri == "timer://clock/tick")));
+    assert!(product.artifact().outputs().iter().any(|output| {
+        mech_engine::decode_interactive_symbol_output_name(&output.name).as_deref()
+            == Some("answer")
+    }));
+    assert!(
+        compiler
+            .compile_canonical_interactive_root(SourceRequest::new("broken.mec"))
+            .unwrap_err()
+            .kind_message()
+            .contains("missing canonical dependency")
+    );
+    // A rejected source graph must not poison the reusable compiler.
+    assert!(
+        compiler
+            .compile_canonical_interactive_root(SourceRequest::new("main.mec"))
+            .is_ok()
+    );
+}
+
+#[test]
+fn canonical_ordered_roots_share_prior_definitions_and_reject_invalid_edges() {
+    let catalog = mech_stdlib::source_catalog();
+    let mut resolver = InMemorySourceResolver::new();
+    resolver.insert_string("first.mec", "seed := 41\n").unwrap();
+    resolver
+        .insert_string("second.mec", "answer := seed + 1\n")
+        .unwrap();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(Arc::clone(&catalog))
+        .source_resolver(resolver)
+        .build_compiler()
+        .unwrap();
+    let product = compiler
+        .compile_canonical_roots(
+            &[
+                SourceRequest::new("first.mec"),
+                SourceRequest::new("second.mec"),
+            ],
+            ModuleBuildOptions::new("test", "v0.4", "native", &[], &[]),
+        )
+        .unwrap();
+    assert_eq!(
+        product
+            .artifact()
+            .outputs()
+            .iter()
+            .map(|output| output.name.as_str())
+            .collect::<Vec<_>>(),
+        ["seed", "answer"]
+    );
+    let decoded = decode_program_artifact_bytecode_v1(product.bytecode()).unwrap();
+    for artifact in [product.artifact(), &decoded] {
+        let mut instance = mech_engine::resident::activate(
+            mech_core::ReactiveInstanceId::new(0x830, 0),
+            artifact,
+            &catalog,
+            &mech_engine::resident::ActivationFacts::default(),
+        )
+        .unwrap();
+        instance.turn(&[]).unwrap();
+        assert_eq!(canonical_f64(&instance.copied_output(0).unwrap()), 41.0);
+        assert_eq!(canonical_f64(&instance.copied_output(1).unwrap()), 42.0);
+    }
+    for (first, second) in [
+        (
+            "+> ./second.mec\na := second/missing\na\n",
+            "value := 1\n<+ value\nvalue\n",
+        ),
+        (
+            "+> ./second.mec\na := 1\n<+ a\na\n",
+            "+> ./first.mec\nb := 2\n<+ b\nb\n",
+        ),
+    ] {
+        let mut resolver = InMemorySourceResolver::new();
+        resolver.insert_string("first.mec", first).unwrap();
+        resolver.insert_string("second.mec", second).unwrap();
+        let mut compiler = RuntimeBuilder::new()
+            .function_catalog(Arc::clone(&catalog))
+            .source_resolver(resolver)
+            .build_compiler()
+            .unwrap();
+        assert!(
+            compiler
+                .compile_canonical_roots(
+                    &[
+                        SourceRequest::new("first.mec"),
+                        SourceRequest::new("second.mec")
+                    ],
+                    ModuleBuildOptions::new("test", "v0.4", "native", &[], &[]),
+                )
+                .is_err()
         );
     }
 }

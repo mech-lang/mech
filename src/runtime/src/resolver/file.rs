@@ -1246,15 +1246,14 @@ mod tests {
 
     #[cfg(feature = "source")]
     #[test]
-    fn canonical_file_resolution_never_falls_back_when_legacy_source_is_available() {
+    fn canonical_file_resolution_rejects_malformed_retained_source() {
         let root = temp_root("mech-runtime-canonical-file-admission-test");
         std::fs::create_dir_all(&root).unwrap();
-        let source = include_str!("../../../../examples/gpu-particles/particles.mec");
+        let source = "value := [\n";
         std::fs::write(root.join("index.mec"), source).unwrap();
         let resolver = FileSourceResolver::new(&root);
         let request = SourceRequest::new("index.mec");
 
-        assert!(resolver.resolve(&request).unwrap().is_some());
         assert!(resolver.resolve_canonical(&request).is_err());
         std::fs::remove_dir_all(root).unwrap();
     }
