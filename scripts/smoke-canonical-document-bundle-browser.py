@@ -29,9 +29,8 @@ def served_compute_fixture(work: Path) -> dict:
     project = work / "compute-project"
     project.mkdir()
     source = """@compute := compute://worker/kernel{:write(turn), :read(sample/result)}
-~tick := 0
-tick += 1
-@compute/turn <- tick
+@clock := timer://clock/tick{:read(tick)}
+@compute/turn <- @clock/tick
 answer := @compute/sample/result -- **Result** {ans}
 answer
 
@@ -41,7 +40,7 @@ calculation @compute
 counter += 1f32
 counter
 """
-    config = 'config := {runtime: {resident-durability: "volatile"} hosts: [{name: "worker" provider: "compute" settings: {region: "calculation" backend: "cpu"}}] run: {paths: ["document.mec"] grants: [{target: "worker/kernel" operations: ["read", "write"] paths: ["turn", "sample/result"]}]} serve: {paths: ["document.mec"]}}'
+    config = 'config := {runtime: {resident-durability: "volatile"} hosts: [{name: "clock" provider: "timer" settings: {frequency-hz: 1000 queue-policy: "latest"}} {name: "worker" provider: "compute" settings: {region: "calculation" backend: "cpu"}}] run: {paths: ["document.mec"] grants: [{target: "clock/tick" operations: ["read"] paths: ["tick"]} {target: "worker/kernel" operations: ["read", "write"] paths: ["turn", "sample/result"]}]} serve: {paths: ["document.mec"]}}'
     (project / "document.mec").write_text(source)
     (project / "mech.mcfg").write_text(config)
     binary = Path(os.environ.get("MECH_BIN", ROOT / "target/debug/mech"))
@@ -189,8 +188,20 @@ try {
     const mounts = [...markup.querySelectorAll('.mech-inline-mech-code')];
     assert(mounts.length === 1, 'configured compute document has one inline result');
     const outputId = BigInt(mounts[0].getAttribute('data-mech-output-address').split(':')[0]);
+    async function dispatchTimerTurn() {
+      const deadline = performance.now() + 5000;
+      let frame;
+      do {
+        await new Promise(resolve => setTimeout(resolve, 10));
+        frame = doc.frame(1);
+      } while (frame.processed === 0 && performance.now() < deadline);
+      assert(frame.processed === 1 && frame.pending === 1, 'timer dispatch queues one sample: ' + JSON.stringify(frame));
+    }
     doc.start();
-    doc.frame(1);
+    await dispatchTimerTurn();
+    assert(doc.renderedSymbol('answer')?.inlineHtml === '0', 'dispatch turn sees the initial sample');
+    const sampleFrame = doc.frame(1);
+    assert(sampleFrame.processed === 1, 'sample is published on the next host-input turn: ' + JSON.stringify(sampleFrame));
     const initial = doc.renderedSymbol('answer');
     assert(initial?.inlineHtml === '1', 'initial compute result: ' + JSON.stringify(initial));
     assert(doc.renderedOutput(outputId)?.inlineHtml === '1', 'initial inline compute result');
@@ -201,7 +212,8 @@ try {
     assert(doc.replSource() === changed, 'compute source accepted: ' + JSON.stringify(response));
     assert(doc.computeGeneration() !== originalGeneration, 'compute generation advances after edit');
     assert(doc.computeManifest().physicalRevision !== originalManifest.physicalRevision, 'edited compute body changes kernel');
-    doc.frame(1);
+    await dispatchTimerTurn();
+    assert(doc.frame(1).processed === 1, "edited sample publishes on its host-input turn");
     const edited = doc.renderedSymbol('answer');
     assert(edited?.inlineHtml === '3', 'edited compute result: ' + JSON.stringify(edited));
     assert(doc.renderedOutput(outputId)?.inlineHtml === '3', 'inline identity survives compute edit');
@@ -229,7 +241,7 @@ try {
 } catch (error) {
   window.outcome = {ok: false, error: String(error), stack: error?.stack};
 }
-'''.replace('FIXTURES', json.dumps(fixtures))
+'''.replace('FIXTURES', json.dumps(fixtures).replace('<', chr(92) + 'u003c'))
     (work / "index.html").write_text('<script type="module">' + script + '</script>')
 
     class Handler(http.server.SimpleHTTPRequestHandler):

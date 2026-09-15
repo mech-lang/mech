@@ -415,7 +415,7 @@ jobs:
         run: |
           cargo fetch --locked --manifest-path tests/fixtures/full-source-runtime/Cargo.toml
           cargo run --locked --offline --manifest-path tests/fixtures/full-source-runtime/Cargo.toml
-          python3 scripts/smoke-canonical-document-bundle-browser.py --fixtures "$MECH_BROWSER_BUNDLE_FIXTURES"
+          python3 scripts/smoke-canonical-document-bundle-browser.py --fixtures "$MECH_BROWSER_BUNDLE_FIXTURES" --served-compute
       - name: Verify report-only particle WebGPU execution
         run: >-
           MECH_BIN=target/debug/mech
