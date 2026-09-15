@@ -1,7 +1,10 @@
 #![cfg(all(feature = "source_default", feature = "resident-artifact"))]
 
-use mech_core::{FunctionCatalogBuilder, ReactiveInstanceId, ValueData};
-use mech_engine::resident::{ActivationFacts, activate};
+use mech_core::{
+    FunctionCatalogBuilder, ReactiveInstanceId, ResidentValueRef, SchemaBody, Value, ValueData,
+    snapshot::SequenceView,
+};
+use mech_engine::resident::{ActivationFacts, CapturedSignalInput, activate};
 use mech_engine::{CanonicalSourceFrontend, CanonicalSourceProgram, SourceNodeOutput};
 use mech_syntax::document::{
     AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
@@ -105,6 +108,282 @@ fn compiled_turns(
             assert_eq!(actual.to_f64(), *expected, "{source:?}");
         }
     }
+}
+
+fn matrix_shape(value: &Value) -> (usize, usize) {
+    let schemas = value
+        .schemas()
+        .expect("matrix output retains its schema table");
+    let SchemaBody::Matrix { dimensions, .. } = schemas
+        .entry(value.schema())
+        .expect("matrix output schema exists")
+        .schema()
+        .body()
+    else {
+        panic!("expected matrix output: {value:?}")
+    };
+    let [rows, columns] = dimensions.as_ref() else {
+        panic!("matrix output has two dimensions")
+    };
+    (
+        value.shape().resolve_dimension(rows).unwrap() as usize,
+        value.shape().resolve_dimension(columns).unwrap() as usize,
+    )
+}
+
+fn matrix_values(value: &Value) -> Vec<f64> {
+    let ValueData::Matrix(matrix) = value.data() else {
+        panic!("expected matrix output: {value:?}")
+    };
+    match matrix.elements() {
+        SequenceView::F64(values) => values.iter().map(|value| value.to_f64()).collect(),
+        SequenceView::Values(values) => values
+            .iter()
+            .map(|value| match value {
+                ValueData::F64(value) => value.to_f64(),
+                other => panic!("expected f64 matrix element: {other:?}"),
+            })
+            .collect(),
+        other => panic!("expected f64 matrix storage: {other:?}"),
+    }
+}
+
+fn bool_matrix_values(value: &Value) -> Vec<bool> {
+    let ValueData::Matrix(matrix) = value.data() else {
+        panic!("expected matrix output: {value:?}")
+    };
+    match matrix.elements() {
+        SequenceView::Bool(values) => values.to_vec(),
+        SequenceView::Values(values) => values
+            .iter()
+            .map(|value| match value {
+                ValueData::Bool(value) => *value,
+                other => panic!("expected bool matrix element: {other:?}"),
+            })
+            .collect(),
+        other => panic!("expected bool matrix storage: {other:?}"),
+    }
+}
+
+fn index_matrix_values(value: &Value) -> Vec<u64> {
+    let ValueData::Matrix(matrix) = value.data() else {
+        panic!("expected matrix output: {value:?}")
+    };
+    match matrix.elements() {
+        SequenceView::Index(values) => values.to_vec(),
+        SequenceView::Values(values) => values
+            .iter()
+            .map(|value| match value {
+                ValueData::Index(value) => *value,
+                other => panic!("expected index matrix element: {other:?}"),
+            })
+            .collect(),
+        other => panic!("expected index matrix storage: {other:?}"),
+    }
+}
+
+fn closed_matrix_turns(source: &str, assert_output: impl Fn(&Value)) {
+    let compiled = compiled(source);
+    assert!(compiled.program().inputs.is_empty(), "{source:?}");
+    let output = compiled
+        .document_outputs()
+        .iter()
+        .find(|binding| binding.kind == mech_engine::SourceDocumentOutputKind::Program)
+        .unwrap()
+        .output as usize;
+    let artifact = compiled.compile_artifact().unwrap();
+    let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
+    for artifact in [artifact, decoded] {
+        let mut catalog = FunctionCatalogBuilder::new();
+        mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+        let catalog = catalog.build().unwrap();
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x570, 0),
+            &artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap_or_else(|error| panic!("{source:?}: matrix activation: {error:?}"));
+        for _ in 0..2 {
+            instance
+                .turn(&[])
+                .unwrap_or_else(|error| panic!("{source:?}: matrix turn: {error:?}"));
+            assert_output(&instance.copied_output(output).unwrap());
+        }
+    }
+}
+
+fn variable_matrix_turns(source: &str, turns: &[(Option<[f64; 2]>, (usize, usize), &[f64])]) {
+    let compiled = compiled(source);
+    assert_eq!(
+        compiled.program().inputs.len(),
+        usize::from(turns.iter().any(|(input, _, _)| input.is_some())),
+        "{source:?}"
+    );
+    let output = compiled
+        .document_outputs()
+        .iter()
+        .find(|binding| binding.kind == mech_engine::SourceDocumentOutputKind::Program)
+        .unwrap()
+        .output as usize;
+    let artifact = compiled.compile_artifact().unwrap();
+    let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
+    for artifact in [artifact, decoded] {
+        let mut catalog = FunctionCatalogBuilder::new();
+        mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+        let catalog = catalog.build().unwrap();
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x570, 0),
+            &artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap_or_else(|error| panic!("{source:?}: matrix activation: {error:?}"));
+        for (input, expected_shape, expected_values) in turns {
+            let inputs = input
+                .as_ref()
+                .map(|input| {
+                    vec![CapturedSignalInput {
+                        slot: instance.plan.inputs[0].slot,
+                        value: ResidentValueRef::F64(input),
+                    }]
+                })
+                .unwrap_or_default();
+            instance
+                .turn(&inputs)
+                .unwrap_or_else(|error| panic!("{source:?}: matrix turn: {error:?}"));
+            let actual = instance.copied_output(output).unwrap();
+            assert_eq!(matrix_shape(&actual), *expected_shape, "{source:?}");
+            assert_eq!(matrix_values(&actual), *expected_values, "{source:?}");
+        }
+    }
+}
+
+fn variable_bool_matrix_turns(source: &str, turns: &[(Option<[f64; 2]>, (usize, usize), &[bool])]) {
+    let compiled = compiled(source);
+    assert_eq!(
+        compiled.program().inputs.len(),
+        usize::from(turns.iter().any(|(input, _, _)| input.is_some())),
+        "{source:?}"
+    );
+    let output = compiled
+        .document_outputs()
+        .iter()
+        .find(|binding| binding.kind == mech_engine::SourceDocumentOutputKind::Program)
+        .unwrap()
+        .output as usize;
+    let artifact = compiled.compile_artifact().unwrap();
+    let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
+    for artifact in [artifact, decoded] {
+        let mut catalog = FunctionCatalogBuilder::new();
+        mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+        let catalog = catalog.build().unwrap();
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x570, 0),
+            &artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap_or_else(|error| panic!("{source:?}: bool matrix activation: {error:?}"));
+        for (input, expected_shape, expected_values) in turns {
+            let inputs = input
+                .as_ref()
+                .map(|input| {
+                    vec![CapturedSignalInput {
+                        slot: instance.plan.inputs[0].slot,
+                        value: ResidentValueRef::F64(input),
+                    }]
+                })
+                .unwrap_or_default();
+            instance
+                .turn(&inputs)
+                .unwrap_or_else(|error| panic!("{source:?}: bool matrix turn: {error:?}"));
+            let actual = instance.copied_output(output).unwrap();
+            assert_eq!(matrix_shape(&actual), *expected_shape, "{source:?}");
+            assert_eq!(bool_matrix_values(&actual), *expected_values, "{source:?}");
+        }
+    }
+}
+
+#[test]
+fn closed_comprehension_concatenation_retains_exact_shape() {
+    variable_matrix_turns(
+        "xs := [1 2]\ny := [x | x <- xs]\n[y y]\n",
+        &[
+            (None, (1, 4), &[1.0, 2.0, 1.0, 2.0]),
+            (None, (1, 4), &[1.0, 2.0, 1.0, 2.0]),
+        ],
+    );
+}
+
+#[test]
+fn changing_comprehension_concatenation_publishes_each_shape() {
+    variable_matrix_turns(
+        "y := [x | x <- signal<[f64]:1,2>, x > 0]\n[y y]\n",
+        &[
+            (Some([1.0, 2.0]), (1, 4), &[1.0, 2.0, 1.0, 2.0]),
+            (Some([-1.0, 2.0]), (1, 2), &[2.0, 2.0]),
+            (Some([-1.0, -2.0]), (1, 0), &[]),
+        ],
+    );
+}
+
+#[test]
+fn changing_comprehension_transpose_publishes_each_shape() {
+    variable_matrix_turns(
+        "y := [x | x <- signal<[f64]:1,2>, x > 0]\ny'\n",
+        &[
+            (Some([1.0, 2.0]), (2, 1), &[1.0, 2.0]),
+            (Some([-1.0, 2.0]), (1, 1), &[2.0]),
+            (Some([-1.0, -2.0]), (0, 1), &[]),
+        ],
+    );
+}
+
+#[test]
+fn empty_comprehension_publishes_its_nullary_matrix() {
+    variable_matrix_turns(
+        "samples := 1..=3\nempty := [sample | sample <- samples, sample > 4]\nempty\n",
+        &[(None, (1, 0), &[]), (None, (1, 0), &[])],
+    );
+}
+
+#[test]
+fn changing_comprehension_concatenates_with_fixed_dense_operands() {
+    variable_matrix_turns(
+        "y := [x | x <- signal<[f64]:1,2>, x > 0]\n[y 3 [4 5]]\n",
+        &[
+            (Some([1.0, 2.0]), (1, 5), &[1.0, 2.0, 3.0, 4.0, 5.0]),
+            (Some([-1.0, 2.0]), (1, 4), &[2.0, 3.0, 4.0, 5.0]),
+            (Some([-1.0, -2.0]), (1, 3), &[3.0, 4.0, 5.0]),
+        ],
+    );
+}
+
+#[test]
+fn changing_boolean_comprehension_transpose_publishes_each_shape() {
+    variable_bool_matrix_turns(
+        "y := [x > 1 | x <- signal<[f64]:1,2>, x > 0]\ny'\n",
+        &[
+            (Some([1.0, 2.0]), (2, 1), &[false, true]),
+            (Some([-1.0, 2.0]), (1, 1), &[true]),
+            (Some([-1.0, -2.0]), (0, 1), &[]),
+        ],
+    );
+}
+
+#[test]
+fn index_comprehension_transpose_preserves_snapshot_elements() {
+    closed_matrix_turns(
+        "xs := [1<index> 2<index>]\ny := [x | x <- xs]\ny'\n",
+        |actual| {
+            assert_eq!(matrix_shape(actual), (2, 1));
+            assert_eq!(index_matrix_values(actual), [1, 2]);
+        },
+    );
 }
 
 #[test]
