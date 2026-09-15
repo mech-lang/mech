@@ -5290,6 +5290,23 @@ impl SemanticBuilder {
         selectors: Vec<Option<PendingValue>>,
         syntax: &SyntaxNode,
     ) -> Result<PendingSelection, SourceSemanticError> {
+        let (operation, selected, schema) =
+            self.prepare_selection_schema(self.schema_draft_of(source)?, selectors, syntax)?;
+        let mut inputs = vec![source];
+        inputs.extend(selected);
+        Ok(PendingSelection {
+            operation,
+            inputs,
+            schema,
+        })
+    }
+
+    fn prepare_selection_schema(
+        &mut self,
+        source: SchemaDraft,
+        selectors: Vec<Option<PendingValue>>,
+        syntax: &SyntaxNode,
+    ) -> Result<(Option<&'static str>, Vec<PendingValue>, SchemaDraft), SourceSemanticError> {
         if selectors.is_empty() || selectors.len() > 2 {
             return Err(SourceSemanticError {
                 code: "source-semantics/invalid-selection-arity",
@@ -5298,26 +5315,18 @@ impl SemanticBuilder {
             });
         }
         if selectors.len() == 2 && selectors.iter().all(Option::is_none) {
-            return Ok(PendingSelection {
-                operation: None,
-                inputs: vec![source],
-                schema: self.schema_draft_of(source)?,
-            });
+            return Ok((None, Vec::new(), source));
         }
         let mut parameters = Vec::new();
         let body = embed_schema_draft(
-            &self.schema_draft_of(source)?,
+            &source,
             &mut parameters,
             SourceSemanticAnchor::for_node(syntax),
         )?;
         if matches!(body, SchemaBody::String) && matches!(selectors.as_slice(), [None]) {
-            return Ok(PendingSelection {
-                operation: None,
-                inputs: vec![source],
-                schema: self.schema_draft_of(source)?,
-            });
+            return Ok((None, Vec::new(), source));
         }
-        let mut inputs = vec![source];
+        let mut inputs = Vec::new();
         let mut counts = Vec::new();
         let mut scalar = Vec::new();
         for selector in &selectors {
@@ -5445,14 +5454,14 @@ impl SemanticBuilder {
                 });
             }
         };
-        Ok(PendingSelection {
-            operation: Some(name),
+        Ok((
+            Some(name),
             inputs,
-            schema: SchemaDraft {
+            SchemaDraft {
                 body: output,
                 dimension_parameters: parameters.into_boxed_slice(),
             },
-        })
+        ))
     }
 
     fn constant_selection_ordinal(&self, value: PendingValue) -> Option<u64> {
