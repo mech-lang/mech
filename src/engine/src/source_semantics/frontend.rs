@@ -936,7 +936,15 @@ impl CanonicalSourceFrontend {
             resource_writes,
         )?;
         for (name, request) in resource_reads {
-            program = program.bind_resource_input(&name, request)?;
+            // Local function bodies contribute inputs only when inlined.
+            if program
+                .program
+                .inputs
+                .iter()
+                .any(|input| input.name == name)
+            {
+                program = program.bind_resource_input(&name, request)?;
+            }
         }
         Ok(program)
     }

@@ -5873,3 +5873,31 @@ fn canonical_static_projection_drops_unrelated_unbound_inputs() {
             .is_err()
     );
 }
+
+#[test]
+fn canonical_uncalled_functions_do_not_bind_resource_inputs() {
+    for (tail, observed) in [("answer := 42.0", false), ("answer := sample()", true)] {
+        let source = format!(
+            "@clock := timer://clock/tick{{:read(tick)}}\nsample() = result<f64> :=\n  result := (@clock/tick).\n\n{tail}\n"
+        );
+        let document = canonical_planning_test_document(&source);
+        let mut resolver = InMemorySourceResolver::new();
+        resolver.insert_string("main.mec", source).unwrap();
+        let mut compiler = RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_native_plan_catalog())
+            .resource_provider(Box::new(ProductTimerProvider))
+            .source_resolver(resolver)
+            .build_compiler()
+            .unwrap();
+        for product in [
+            compiler.compile_document(&document).unwrap(),
+            compiler
+                .compile_canonical_root(SourceRequest::new("main.mec"))
+                .unwrap(),
+        ] {
+            let has_resource = product.artifact().requirements().iter().any(|(_, requirement)| matches!(requirement,
+                mech_core::ApplicationRequirement::Resource(request) if request.base_uri == "timer://clock/tick"));
+            assert_eq!(has_resource, observed);
+        }
+    }
+}

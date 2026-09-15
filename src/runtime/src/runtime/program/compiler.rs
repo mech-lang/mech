@@ -958,9 +958,16 @@ impl<'a> ProgramCompilerView<'a> {
                 .map_err(|error| canonical_compilation_error(error.to_string()))?;
         } else {
             for (name, request) in reads {
-                program = program
-                    .bind_resource_input(&name, request)
-                    .map_err(|error| canonical_compilation_error(error.to_string()))?;
+                if program
+                    .program()
+                    .inputs
+                    .iter()
+                    .any(|input| input.name == name)
+                {
+                    program = program
+                        .bind_resource_input(&name, request)
+                        .map_err(|error| canonical_compilation_error(error.to_string()))?;
+                }
             }
         }
         active.pop();
