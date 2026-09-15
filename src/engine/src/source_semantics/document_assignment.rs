@@ -141,7 +141,6 @@ impl SemanticBuilder {
             }
         };
         if remaining.is_empty()
-            && same_element
             && let Some(arithmetic) = arithmetic
             && matches!(schema.body, SchemaBody::Matrix { .. })
             && matches!(
@@ -155,8 +154,58 @@ impl SemanticBuilder {
             // A gather followed by arithmetic and replacement loses repeated
             // selector occurrences. Carry the update into the addressed RMW
             // owner so each occurrence reads the current candidate value.
-            let replacement =
-                self.conform_assignment_value(replacement, selected_schema, value_syntax)?;
+            let replacement = if same_element {
+                self.conform_assignment_value(replacement, selected_schema, value_syntax)?
+            } else {
+                // Resolve promotion once, but perform the destination read and
+                // assignment conversion for every addressed occurrence.
+                let Some((inputs, _)) = self.resolve_maintained_call(
+                    arithmetic,
+                    vec![
+                        selected.expect("mixed arithmetic retains its selection"),
+                        replacement,
+                    ],
+                    statement,
+                )?
+                else {
+                    return Err(internal(
+                        SourceSemanticAnchor::for_node(statement),
+                        format!(
+                            "assignment operation {arithmetic} has no maintained type declaration"
+                        ),
+                    ));
+                };
+                let left = self.schema_draft_of(inputs[0])?;
+                let right = self.schema_draft_of(inputs[1])?;
+                let element = |body: &SchemaBody| match body {
+                    SchemaBody::Matrix { element, .. } => element.as_ref().clone(),
+                    scalar => scalar.clone(),
+                };
+                if element(&left.body) != element(&right.body) {
+                    // Heterogeneous schemes (for example rational power with
+                    // an integer exponent) retain their existing typed route.
+                    // Their occurrence-aware kernel is still an R05 obligation.
+                    let replacement = self.document_selected_update(
+                        selected.expect("mixed arithmetic retains its selection"),
+                        remaining,
+                        replacement,
+                        Some(arithmetic),
+                        statement,
+                        value_syntax,
+                    )?;
+                    let mut inputs = vec![base, replacement];
+                    inputs.extend(selectors);
+                    return Ok(self.emit_with_schema_draft(
+                        operation,
+                        inputs,
+                        schema,
+                        statement,
+                        "state-update",
+                        None,
+                    ));
+                }
+                inputs[1]
+            };
             let operation = format!("{operation}/{}", arithmetic.strip_prefix("math/").unwrap());
             let mut inputs = vec![base, replacement];
             inputs.extend(selectors);
