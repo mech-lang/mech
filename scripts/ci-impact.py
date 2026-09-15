@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable
 
 from ci_owners import DEFAULT_OWNER_CONFIG, load_owners, matching_owners
+from ci_review_slices import environment_role
 
 
 def changed_paths(base: str, head: str) -> list[str]:
@@ -52,6 +53,7 @@ def classify(
     paths: Iterable[str],
     labels: Iterable[str],
     owners: Dict[str, Dict[str, Any]],
+    role: str = "ordinary",
 ) -> Dict[str, Any]:
     paths = sorted({path.replace("\\", "/") for path in paths if path})
     labels = set(labels)
@@ -74,7 +76,15 @@ def classify(
         cross_cutting = cross_cutting or any(owner["cross_cutting"] for owner in matches)
         browser = browser or any(owner.get("browser", False) for owner in matches)
 
-    if docs_only:
+    review_only = role == "review" and not unmatched_paths
+    landing_candidate = role == "landing"
+    if landing_candidate:
+        docs_only = False
+        cross_cutting = True
+    if review_only:
+        runnable = {name for name in matched_names if owners[name]["command"] and not owners[name].get("docs", False)}
+        runnable.add("s8-review-regressions")
+    elif docs_only:
         runnable: set[str] = set()
     elif cross_cutting:
         runnable = {
@@ -90,7 +100,7 @@ def classify(
         }
 
     runnable_names = sorted(runnable)
-    code_changed = bool(paths) and not docs_only
+    code_changed = (bool(paths) and not docs_only) or landing_candidate
     return {
         "paths": paths,
         "matched_owners": sorted(matched_names),
@@ -98,13 +108,15 @@ def classify(
         "changed_owners": runnable_names,
         "owner_shards": make_shards(runnable_names),
         "docs_only": docs_only,
+        "review_only": review_only,
+        "landing_candidate": landing_candidate,
         "static_contracts_required": code_changed,
-        "standard_canaries_required": code_changed,
-        "windows_canary_required": code_changed,
-        "browser_canary_required": code_changed and (browser or cross_cutting),
-        "cross_cutting_standard_suite_required": code_changed and cross_cutting,
+        "standard_canaries_required": code_changed and not review_only,
+        "windows_canary_required": code_changed and not review_only,
+        "browser_canary_required": code_changed and (browser or cross_cutting) and not review_only,
+        "cross_cutting_standard_suite_required": code_changed and cross_cutting and not review_only,
         "full_validation_required": (
-            "ci:full" in labels or "architecture-contracts" in matched_names
+            not review_only and (landing_candidate or "ci:full" in labels or "architecture-contracts" in matched_names)
         ),
     }
 
@@ -122,6 +134,8 @@ def write_github_output(path: Path, result: Dict[str, Any]) -> None:
         "changed_owners",
         "owner_shards",
         "docs_only",
+        "review_only",
+        "landing_candidate",
         "static_contracts_required",
         "standard_canaries_required",
         "windows_canary_required",
@@ -153,7 +167,8 @@ def main() -> int:
         paths = changed_paths(args.base, args.head)
     else:
         paths = args.paths
-    result = classify(paths, normalize_labels(args.labels), load_owners(args.owners))
+    role, _ = environment_role()
+    result = classify(paths, normalize_labels(args.labels), load_owners(args.owners), role)
     github_output = args.github_output or (
         Path(os.environ["GITHUB_OUTPUT"]) if "GITHUB_OUTPUT" in os.environ else None
     )
