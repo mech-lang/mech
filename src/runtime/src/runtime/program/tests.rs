@@ -878,11 +878,13 @@ fn formatted_document_outputs_survive_source_and_bytecode_publication() {
         .map(|output| output.name.as_str())
         .collect::<Vec<_>>();
 
+    let fence_name = format!("document:fence:{}", source.find("```mech").unwrap());
     assert_eq!(
         source_outputs,
-        ["y"],
-        "integrity constraints are not ordinary published outputs"
+        ["result", fence_name.as_str()],
+        "the program result and visible fence publish; constraints do not"
     );
+    assert!(!product.artifact().constraints().is_empty());
     let mut source_runtime = runtime();
     let source_loaded = source_runtime
         .load_source_program(source, crate::ResidentDurabilityPolicy::Volatile)
@@ -899,7 +901,7 @@ fn formatted_document_outputs_survive_source_and_bytecode_publication() {
         interactive_runtime
             .output_name(program_output_id)
             .as_deref(),
-        Some("y"),
+        Some("result"),
         "the trailing integrity constraint must not replace the program output"
     );
     assert!(
@@ -984,8 +986,14 @@ fn formatted_document_outputs_survive_source_and_bytecode_publication() {
     rich_runtime
         .load_source_program(rich_source, crate::ResidentDurabilityPolicy::Volatile)
         .unwrap();
+    let inline_output = rich
+        .artifact()
+        .outputs()
+        .iter()
+        .position(|output| output.name.starts_with("document:inline:"))
+        .expect("the inline evaluation retains its presentation identity");
     let inline = rich_runtime
-        .output_value(mech_core::OutputId::new(0))
+        .output_value(mech_core::OutputId::new(inline_output as u32))
         .unwrap()
         .unwrap()
         .into_value();
@@ -2051,7 +2059,8 @@ empty
 
     for loaded in [source, bytecode] {
         assert_eq!(loaded.route, RuntimeProgramRoute::ResidentPure);
-        assert_eq!(canonical_matrix_shape(loaded.initial_value.value()), (0, 0));
+        // A matrix comprehension emits one row, including a zero-width row.
+        assert_eq!(canonical_matrix_shape(loaded.initial_value.value()), (1, 0));
         assert!(matches!(
             loaded.initial_value.value().data(),
             ValueData::Matrix(matrix)
@@ -2081,10 +2090,7 @@ values
         let failure = error.kind_as::<ResidentRouteFailure>().unwrap();
         assert!(
             failure.class == ResidentRouteFailureClass::SemanticUnsupported
-                && failure
-                    .reason
-                    .contains("ReactiveComprehensionStructureUnsupported")
-                && failure.reason.contains(qualifier),
+                && failure.reason.contains("UnsupportedControlLayout"),
             "live {qualifier} membership must fail explicitly instead of freezing its initial cardinality: {error:?}",
         );
     }
