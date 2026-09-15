@@ -6160,3 +6160,67 @@ fn canonical_ordered_roots_share_prior_definitions_and_reject_invalid_edges() {
         );
     }
 }
+
+#[test]
+fn canonical_interactive_uses_configured_resource_planning() {
+    let document = canonical_planning_test_document(
+        "@clock := timer://clock/tick{:read(tick)}\nanswer := @clock/tick\n",
+    );
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .resource_provider(Box::new(ProductTimerProvider))
+        .build_compiler()
+        .unwrap();
+    for product in [
+        compiler.compile_document(&document).unwrap(),
+        compiler.compile_interactive_document(&document).unwrap(),
+    ] {
+        assert!(product.artifact().requirements().iter().any(|(_, requirement)| matches!(requirement,
+            mech_core::ApplicationRequirement::Resource(request) if request.base_uri == "timer://clock/tick")));
+    }
+    let interactive = compiler.compile_interactive_document(&document).unwrap();
+    assert!(interactive.artifact().outputs().iter().any(|output| {
+        mech_engine::decode_interactive_symbol_output_name(&output.name).as_deref()
+            == Some("answer")
+    }));
+    // Admission happens in a fresh candidate runtime; a denied candidate must
+    // leave the accepted interactive runtime and its state intact.
+    struct NoTimerGrantFactory;
+    impl crate::ResidentReplRuntimeFactory for NoTimerGrantFactory {
+        fn build(&self, _: crate::MechEventBuffer) -> MResult<crate::MechRuntime> {
+            let mut runtime = runtime();
+            runtime.register_resource_provider(Box::new(ProductTimerProvider))?;
+            Ok(runtime)
+        }
+        fn activate_document(
+            &self,
+            events: crate::MechEventBuffer,
+            document: &crate::SourceDocument,
+        ) -> MResult<(crate::MechRuntime, crate::RuntimeProgramLoadOutcome)> {
+            let mut runtime = self.build(events)?;
+            let mut compiler = RuntimeBuilder::new()
+                .function_catalog(mech_stdlib::source_native_plan_catalog())
+                .resource_provider(Box::new(ProductTimerProvider))
+                .build_compiler()?;
+            let product = compiler.compile_interactive_document(document)?;
+            let outcome = runtime.load_bytecode_program(
+                product.bytecode(),
+                crate::ResidentDurabilityPolicy::Volatile,
+            )?;
+            Ok((runtime, outcome))
+        }
+    }
+    let accepted = canonical_planning_test_document("~counter := 0\ncounter += 1\ncounter\n");
+    let mut session =
+        crate::ResidentReplSession::from_document(NoTimerGrantFactory, accepted).unwrap();
+    session.step(2).unwrap();
+    let source = session.source().to_owned();
+    let value = session.symbol("counter").unwrap();
+    let error = session.replace_document(document).unwrap_err();
+    assert!(
+        error.kind_message().starts_with("AuthorizationDenied:"),
+        "{error:?}"
+    );
+    assert_eq!(session.source(), source);
+    assert_eq!(session.symbol("counter").unwrap(), value);
+}
