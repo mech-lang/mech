@@ -206,6 +206,13 @@ impl WasmProject {
             ))
         })?;
         let bundle = CanonicalProgramBundle::decode(encoded, Some(source)).map_err(to_js_error)?;
+        bundle
+            .validate_dependency_sources(|uri| {
+                uri.strip_prefix("bundle:///")
+                    .and_then(|specifier| source_map.get(specifier))
+                    .map(String::as_str)
+            })
+            .map_err(to_js_error)?;
         if bundle.canonical_uri != format!("bundle:///{root}") {
             return Err(JsValue::from_str(
                 "canonical bundle root identity is stale; regenerate the bundle",

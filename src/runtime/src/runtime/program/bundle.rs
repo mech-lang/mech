@@ -3,7 +3,7 @@ use mech_engine::{ProgramCompilationProduct, decode_program_artifact_bytecode_v1
 
 use crate::SourceDocument;
 
-pub const CANONICAL_PROGRAM_BUNDLE_VERSION: u32 = 1;
+pub const CANONICAL_PROGRAM_BUNDLE_VERSION: u32 = 2;
 
 /// Versioned browser handoff that keeps exact retained source and executable
 /// artifact identity in one admission unit. It is deliberately incompatible
@@ -17,6 +17,8 @@ pub struct CanonicalProgramBundle {
     pub source_revision: u64,
     pub source_hash: u64,
     pub source: String,
+    /// Resolved transitive dependency URI -> exact retained source hash.
+    pub source_dependencies: std::collections::BTreeMap<String, u64>,
     pub artifact_revision: [u8; 32],
     pub bytecode: Vec<u8>,
 }
@@ -36,6 +38,7 @@ impl CanonicalProgramBundle {
             source_revision: document.source().revision().0,
             source_hash: mech_core::hash_str(&source),
             source,
+            source_dependencies: product.source_dependencies().clone(),
             artifact_revision: artifact_revision.into_bytes(),
             bytecode: product.bytecode().to_vec(),
         };
@@ -58,6 +61,15 @@ impl CanonicalProgramBundle {
                 "canonical program bundle source identity is stale or invalid; regenerate the bundle",
             ));
         }
+        if self
+            .source_dependencies
+            .keys()
+            .any(|uri| uri.is_empty() || *uri == self.canonical_uri)
+        {
+            return Err(bundle_error(
+                "canonical bundle has an invalid dependency identity; regenerate the bundle",
+            ));
+        }
         if expected_source.is_some_and(|expected| expected != self.source) {
             return Err(bundle_error(
                 "canonical program bundle source and served source differ; regenerate the bundle",
@@ -74,6 +86,27 @@ impl CanonicalProgramBundle {
             ));
         }
         Ok(artifact.revision())
+    }
+
+    /// Reject a root artifact when any source snapshot used during compilation
+    /// differs from the dependency text supplied to its loader.
+    pub fn validate_dependency_sources<'a>(
+        &self,
+        mut source: impl FnMut(&str) -> Option<&'a str>,
+    ) -> MResult<()> {
+        for (uri, expected_hash) in &self.source_dependencies {
+            let text = source(uri).ok_or_else(|| {
+                bundle_error(format!(
+                    "canonical bundle dependency {uri} is missing; regenerate the bundle"
+                ))
+            })?;
+            if mech_core::hash_str(text) != *expected_hash {
+                return Err(bundle_error(format!(
+                    "canonical bundle dependency {uri} differs from the compiled source; regenerate the bundle"
+                )));
+            }
+        }
+        Ok(())
     }
 
     #[cfg(feature = "serde")]
@@ -133,6 +166,9 @@ mod tests {
             bundle
         );
         assert!(CanonicalProgramBundle::decode(&encoded, Some("answer := 0\n")).is_err());
+        let mut old_envelope = bundle.clone();
+        old_envelope.version = 1;
+        assert!(old_envelope.validate(Some(source)).is_err());
 
         let legacy = mech_syntax::parser::parse(source.trim())?;
         let legacy = mech_core::nodes::compress_and_encode(&legacy).unwrap();

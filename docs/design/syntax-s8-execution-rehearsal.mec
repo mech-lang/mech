@@ -88,7 +88,11 @@ Prepare retained source plus current accepted artifact publication and loader
 admission. Keep the existing bytecode/artifact format. Preserve source-resolution
 edges, source identity, HTML/output binding identities and browser target checks.
 
-CanonicalProgramBundle is the prepared source/artifact envelope. The native
+CanonicalProgramBundle is the prepared source/artifact envelope. Version 2 binds
+all resolved transitive dependency source hashes collected by the root compiler.
+The browser checks those identities against its supplied source map before loading
+bytecode; missing or changed dependencies and older envelopes require regeneration.
+The bytecode/artifact format is unchanged. The native
 producer/load witness executes a generated three-document import chain, including
 configured resource planning in dependencies. The documented browser DOM source
 bundles with four assignment effects. Bundle linking shares the file resolver's

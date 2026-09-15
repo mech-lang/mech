@@ -197,17 +197,20 @@ impl ProgramCompiler {
         let document = resolved.source_document().ok_or_else(|| {
             canonical_compilation_error("canonical root has no retained document")
         })?;
+        let mut source_dependencies = BTreeMap::new();
         let program = view.compile_canonical_graph_document(
             document,
             &resolved.canonical_uri,
             &mut Vec::new(),
             &mut HashMap::new(),
+            &mut source_dependencies,
             false,
         )?;
         let artifact = program.compile_artifact_with_external_contracts(
             &ResidentExternalContractResolver::new(view.resources),
         )?;
         ProgramCompilationProduct::from_canonical_artifact(artifact)
+            .map(|product| product.with_source_dependencies(source_dependencies))
     }
 
     pub fn compile_interactive_document(
@@ -807,6 +810,7 @@ impl<'a> ProgramCompilerView<'a> {
         uri: &str,
         active: &mut Vec<String>,
         exports: &mut HashMap<String, BTreeMap<String, crate::RuntimeValueSnapshot>>,
+        source_dependencies: &mut BTreeMap<String, u64>,
         planning_dependency: bool,
     ) -> MResult<mech_engine::CanonicalSourceProgram> {
         use crate::resolver::{
@@ -838,15 +842,27 @@ impl<'a> ProgramCompilerView<'a> {
                 continue;
             };
             let dependency = dependency.admit_canonical_document()?;
+            let dependency_document = dependency.source_document().ok_or_else(|| {
+                canonical_compilation_error("canonical dependency has no retained document")
+            })?;
+            let source_hash =
+                mech_core::hash_str(&dependency_document.source().to_contiguous_string());
+            if source_dependencies
+                .insert(dependency.canonical_uri.clone(), source_hash)
+                .is_some_and(|previous| previous != source_hash)
+            {
+                return Err(canonical_compilation_error(format!(
+                    "canonical dependency {} changed during compilation",
+                    dependency.canonical_uri
+                )));
+            }
             if !exports.contains_key(&dependency.canonical_uri) {
-                let dependency_document = dependency.source_document().ok_or_else(|| {
-                    canonical_compilation_error("canonical dependency has no retained document")
-                })?;
                 let program = self.compile_canonical_graph_document(
                     dependency_document,
                     &dependency.canonical_uri,
                     active,
                     exports,
+                    source_dependencies,
                     true,
                 )?;
                 let artifact = program.compile_artifact_with_external_contracts(

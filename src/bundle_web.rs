@@ -866,6 +866,42 @@ export default async function init() {}
             None,
         )
         .unwrap();
+        let mut served_sources = std::collections::BTreeMap::from([
+            (
+                "bundle:///dep.mec".to_owned(),
+                fs::read_to_string(out.join("source/dep.mec")).unwrap(),
+            ),
+            (
+                "bundle:///leaf.mec".to_owned(),
+                fs::read_to_string(out.join("source/leaf.mec")).unwrap(),
+            ),
+        ]);
+        assert_eq!(
+            bundle.source_dependencies,
+            served_sources
+                .iter()
+                .map(|(uri, text)| (uri.clone(), hash_str(text)))
+                .collect()
+        );
+        bundle
+            .validate_dependency_sources(|uri| served_sources.get(uri).map(String::as_str))
+            .unwrap();
+        let old_leaf = served_sources
+            .insert(
+                "bundle:///leaf.mec".to_owned(),
+                "value := 100\n<+ value\n".to_owned(),
+            )
+            .unwrap();
+        let error = bundle
+            .validate_dependency_sources(|uri| served_sources.get(uri).map(String::as_str))
+            .unwrap_err();
+        assert!(error.display_message().contains("leaf.mec"));
+        served_sources.insert("bundle:///leaf.mec".to_owned(), old_leaf);
+        served_sources.remove("bundle:///dep.mec");
+        let error = bundle
+            .validate_dependency_sources(|uri| served_sources.get(uri).map(String::as_str))
+            .unwrap_err();
+        assert!(error.display_message().contains("dep.mec"));
         let mut runtime = mech_runtime::RuntimeBuilder::new()
             .function_catalog(mech_stdlib::source_catalog())
             .build()
