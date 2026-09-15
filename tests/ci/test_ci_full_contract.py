@@ -65,6 +65,14 @@ def full_architecture_contracts() -> str:
 
 
 class FullWorkflowContractTests(unittest.TestCase):
+    def test_landing_source_fixture_is_fetched_before_offline_execution(self):
+        block = job_block(CI, "standard-linux")
+        fetch = "cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/full-source-runtime/Cargo.toml"
+        run = "cargo +nightly-2026-03-03 run --locked --offline --manifest-path tests/fixtures/full-source-runtime/Cargo.toml"
+        self.assertLess(block.index(fetch), block.index("Build and exercise"))
+        self.assertLess(block.index(fetch), block.index(run))
+        self.assertIn("if: needs.impact.outputs.landing_candidate == 'true'", block)
+
     def test_native_plan_starts_early_once_on_the_exact_head(self):
         early = job_block(CI, "early-native-plan")
         delegated = job_block(FULL, "native-plan")
