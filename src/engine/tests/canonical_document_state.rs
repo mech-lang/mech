@@ -1319,3 +1319,20 @@ fn promoted_boolean_masks_preserve_canonical_destination_coordinates() {
         &[22.0, 24.0],
     );
 }
+
+#[test]
+fn promoted_selected_updates_preserve_row_and_column_broadcasts() {
+    for (selection, rhs, expected) in [
+        ("a[[1 2],:]", "[1.5 2.5 3.5]", [33.0, 36.0]),
+        ("a[:,[1 2 3]]", "[1.5;2.5]", [31.0, 32.0]),
+        ("a[[1 1],:][:,[1 2 3]]", "[1.5 2.5 3.5]", [36.0, 42.0]),
+        ("a[[1 1],:][:,[1 2 3]]", "[1.5;2.5]", [33.0, 36.0]),
+        ("a[[1 1],:]", "[1<i64> 2<i64> 3<i64>]", [36.0, 42.0]),
+        ("a[[1 1],:][:,[1 2 3]]", "[1<i32>;2<i32>]", [33.0, 36.0]),
+    ] {
+        let source = format!(
+            "~a := [10<i32> 20<i32> 30<i32>;40<i32> 50<i32> 60<i32>]\n{selection} += {rhs}\nselected := a[1,3]\nanswer := selected<f64>\nanswer\n"
+        );
+        turns(&source, &expected);
+    }
+}

@@ -168,7 +168,12 @@ impl SemanticBuilder {
             // selector occurrences. Carry the update into the addressed RMW
             // owner so each occurrence reads the current candidate value.
             let replacement = if same_element {
-                self.conform_assignment_value(replacement, selected_schema, value_syntax)?
+                let replacement = self.document_assignment_broadcast(
+                    replacement,
+                    selected_schema.clone(),
+                    value_syntax,
+                )?;
+                self.conform_assignment_value(replacement, selected_schema.clone(), value_syntax)?
             } else {
                 // Resolve promotion once, but perform the destination read and
                 // assignment conversion for every addressed occurrence.
@@ -190,6 +195,8 @@ impl SemanticBuilder {
                 };
                 inputs[1]
             };
+            let replacement =
+                self.document_assignment_broadcast(replacement, selected_schema, value_syntax)?;
             let operation = format!("{operation}/{}", arithmetic.strip_prefix("math/").unwrap());
             let mut inputs = vec![base, replacement];
             inputs.extend(selectors);
@@ -284,7 +291,12 @@ impl SemanticBuilder {
             scalar => scalar,
         };
         let replacement = if incoming_element == element.as_ref() {
-            self.conform_assignment_value(replacement, selected_schema, value_syntax)?
+            let replacement = self.document_assignment_broadcast(
+                replacement,
+                selected_schema.clone(),
+                value_syntax,
+            )?;
+            self.conform_assignment_value(replacement, selected_schema.clone(), value_syntax)?
         } else {
             let mut selected = base;
             for item in items {
@@ -300,6 +312,8 @@ impl SemanticBuilder {
             };
             inputs[1]
         };
+        let replacement =
+            self.document_assignment_broadcast(replacement, selected_schema, value_syntax)?;
         let indices = self.document_selection_order(indices, statement)?;
         let replacement = self.document_selection_order(replacement, value_syntax)?;
         let operation = format!(
@@ -312,6 +326,43 @@ impl SemanticBuilder {
             schema,
             statement,
             "state-update",
+            None,
+        ))
+    }
+
+    fn document_assignment_broadcast(
+        &mut self,
+        value: PendingValue,
+        mut selected: SchemaDraft,
+        syntax: &SyntaxNode,
+    ) -> Result<PendingValue, SourceSemanticError> {
+        let incoming = self.schema_draft_of(value)?;
+        let SchemaBody::Matrix {
+            element,
+            dimensions,
+        } = &incoming.body
+        else {
+            return Ok(value);
+        };
+        let SchemaBody::Matrix {
+            element: target,
+            dimensions: target_dimensions,
+        } = &mut selected.body
+        else {
+            return Ok(value);
+        };
+        if dimensions == target_dimensions {
+            return Ok(value);
+        }
+        // Preserve the arithmetic operand kind and materialize its maintained
+        // broadcast before flattening nested selection addresses.
+        *target = element.clone();
+        Ok(self.emit_with_schema_draft(
+            "core/assign/broadcast",
+            vec![value],
+            selected,
+            syntax,
+            "assignment-broadcast",
             None,
         ))
     }

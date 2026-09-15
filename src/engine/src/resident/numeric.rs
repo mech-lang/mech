@@ -619,6 +619,12 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         "selection-order",
         selection_address::bind_selection_order,
     )?;
+    register_canonical_finalize(
+        builder,
+        &["core", "assign"],
+        "broadcast",
+        selection_address::bind_broadcast,
+    )?;
     compound_selection!("add", 0);
     compound_selection!("sub", 1);
     compound_selection!("mul", 2);
