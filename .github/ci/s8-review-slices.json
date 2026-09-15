@@ -18,6 +18,20 @@
           "mech-runtime",
           "--no-default-features",
           "--features",
+          "source",
+          "--test",
+          "config_profile"
+        ],
+        [
+          "cargo",
+          "+nightly-2026-03-03",
+          "test",
+          "--locked",
+          "--offline",
+          "-p",
+          "mech-runtime",
+          "--no-default-features",
+          "--features",
           "full_source",
           "--test",
           "canonical_config_profile",
@@ -130,7 +144,7 @@
         ]
       ]
     },
-    "None": {
+    "837": {
       "branch": "codex/syntax-s8e7-interactive",
       "checks": [
         [
@@ -318,6 +332,40 @@
           "full_compiler,full_source,resident-routing-source,compute",
           "--test",
           "canonical_constant_binding"
+        ],
+        [
+          "cargo",
+          "+nightly-2026-03-03",
+          "test",
+          "--locked",
+          "--offline",
+          "-p",
+          "mech-engine",
+          "--no-default-features",
+          "--features",
+          "full_compiler,full_source,resident-artifact",
+          "--test",
+          "canonical_source_review",
+          "fixed_matrix_snapshots_bind_to_inferred_input_dimensions",
+          "--",
+          "--exact"
+        ],
+        [
+          "cargo",
+          "+nightly-2026-03-03",
+          "test",
+          "--locked",
+          "--offline",
+          "-p",
+          "mech-syntax",
+          "--no-default-features",
+          "--features",
+          "full",
+          "--test",
+          "canonical_phase_2i_certification",
+          "certification_evidence_uses_only_canonical_authorities",
+          "--",
+          "--exact"
         ]
       ]
     },

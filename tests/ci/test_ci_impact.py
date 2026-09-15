@@ -248,6 +248,23 @@ class RegisteredReviewTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             review_role(844, "codex/syntax-s8r04-dynamic-binding", registry["repository"], registry)
 
+    def test_interactive_registration_is_reachable_from_numeric_pr_event(self):
+        from ci_review_slices import review_role
+        role, entry = review_role(837, "codex/syntax-s8e7-interactive", "mech-lang/mech")
+        self.assertEqual(role, "review")
+        self.assertTrue(any("interactive::tests::" in command for command in entry["checks"]))
+
+    def test_registry_rejects_nonnumeric_keys_and_preserves_minimal_config_check(self):
+        import json
+        from ci_review_slices import REGISTRY, review_role
+        registry = json.loads(REGISTRY.read_text())
+        checks = registry["slices"]["831"]["checks"]
+        self.assertTrue(any(command[command.index("--features") + 1] == "source"
+                            and "config_profile" in command for command in checks))
+        registry["slices"]["None"] = registry["slices"].pop("837")
+        with self.assertRaises(ValueError):
+            review_role(837, "codex/syntax-s8e7-interactive", "mech-lang/mech", registry)
+
     def test_review_gate_requires_focused_success_and_does_not_claim_full_success(self):
         workflow = (ROOT / ".github/workflows/ci.yml").read_text()
         review_gate = workflow.split('if test "$REVIEW_ONLY" = true')[1].split('elif test "$DOCS_ONLY"')[0]

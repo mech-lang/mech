@@ -8,6 +8,8 @@ REGISTRY = Path(__file__).resolve().parents[1] / ".github/ci/s8-review-slices.js
 
 def review_role(number="", branch="", repository="", registry=None):
     registry = registry if registry is not None else json.loads(REGISTRY.read_text())
+    if any(not key.isdecimal() or int(key) <= 0 for key in registry["slices"]):
+        raise ValueError("registered review slice keys must be positive PR numbers")
     if repository != registry["repository"]:
         return "ordinary", None
     landing = registry["landing"]
