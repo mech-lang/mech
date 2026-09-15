@@ -868,6 +868,21 @@ impl CanonicalSourceFrontend {
         )
     }
 
+    /// Read placement declarations through the same semantic authority that
+    /// partitions mixed documents. Hosts use this to choose the compilation route.
+    pub fn document_compute_regions(
+        &self,
+        document: &DocumentSyntax,
+    ) -> Result<Vec<(String, mech_core::ComputePlacement)>, SourceSemanticError> {
+        reject_recovered_syntax(document)?;
+        document_lowering::document_compute_regions(document).map(|regions| {
+            regions
+                .into_iter()
+                .map(|(_, name, placement)| (name, placement))
+                .collect()
+        })
+    }
+
     /// Partition one retained mixed document into coordinator, compute, and
     /// initializer semantic programs. All three projections share the same
     /// canonical source owner and source coordinates.

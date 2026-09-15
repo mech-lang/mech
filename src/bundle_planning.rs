@@ -27,6 +27,7 @@ pub(super) fn retained_sources(
         )
         .map_err(|error| super::validation_error(format!("invalid bundle source: {error:?}")))?;
         let source = ResolvedSource::new(&uri, &uri, mech_core::MechSourceCode::String(text))
+            .with_kind(mech_runtime::SourceKind::from_path(path))
             .with_source_document(document.clone())?
             .admit_canonical_document()?;
         resolver.insert_source(uri.clone(), source)?;

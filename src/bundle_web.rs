@@ -6,6 +6,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use mech_core::*;
+#[cfg(test)]
 use mech_runtime::CanonicalProgramBundle;
 
 use crate::canonical_presentation::{HtmlShimExtraSlots, HtmlStyleSheets, render_canonical_html};
@@ -173,11 +174,12 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
         write_bundle_file(&output_dir, "source", &relative, source_text.as_bytes())?;
 
         if root_paths.contains(&read_source_path) {
-            let product = compiler.compile_canonical_interactive_root(
-                mech_runtime::SourceRequest::new(&canonical_uri),
-            )?;
-            let encoded = CanonicalProgramBundle::from_product(canonical_uri, document, &product)?
-                .encode()?;
+            let encoded = crate::browser_planning::compile_browser_document_bundle(
+                &mut compiler,
+                &canonical_uri,
+                document,
+            )?
+            .encode()?;
             write_bundle_file(&output_dir, "code", &relative, encoded.as_bytes())?;
         }
 

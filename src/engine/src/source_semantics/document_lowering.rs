@@ -208,12 +208,7 @@ pub(super) fn prepare_mixed_document_with_catalog_and_resources(
         .body()
         .map(|body| body.sections())
         .unwrap_or_default();
-    let mut regions = Vec::new();
-    for (index, section) in sections.iter().enumerate() {
-        if let Some((name, placement)) = mixed_section_identity(section)? {
-            regions.push((index, name, placement));
-        }
-    }
+    let mut regions = document_compute_regions(document)?;
     if regions.len() != 1 {
         return Err(SourceSemanticError {
             code: "source-semantics/mixed-region-count",
@@ -638,6 +633,24 @@ fn compile_collected_document(
     program.document_outputs = output_bindings.into_boxed_slice();
     program.document_exports = document_exports.into_boxed_slice();
     Ok(program)
+}
+
+pub(super) fn document_compute_regions(
+    document: &DocumentSyntax,
+) -> Result<Vec<(usize, String, mech_core::ComputePlacement)>, SourceSemanticError> {
+    let mut regions = Vec::new();
+    for (index, section) in document
+        .body()
+        .map(|body| body.sections())
+        .unwrap_or_default()
+        .iter()
+        .enumerate()
+    {
+        if let Some((name, placement)) = mixed_section_identity(section)? {
+            regions.push((index, name, placement));
+        }
+    }
+    Ok(regions)
 }
 
 fn mixed_section_identity(

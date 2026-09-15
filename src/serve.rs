@@ -1,3 +1,5 @@
+#[cfg(test)]
+use mech_runtime::CanonicalProgramBundle;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::future::Future;
 use std::io::{Error, ErrorKind};
@@ -15,9 +17,9 @@ use ignore::WalkBuilder;
 use mech_browser::BrowserRuntimeInjectionConfig;
 use mech_core::{GenericError, MResult, MechError, MechErrorKind, MechSourceCode};
 use mech_runtime::{
-    CanonicalProgramBundle, DefaultIdGenerator, EventId, EventSink, FS_IMPORT, FS_LIST, FS_READ,
-    FS_RESOLVE, FS_SERVE, FS_WATCH, HostFilesystemAuthority, ModuleBuildOptions, RuntimeConfig,
-    RuntimeEvent, RuntimeWorkspaceFolder, RuntimeWorkspaceSnapshot, RuntimeWorkspaceTarget,
+    DefaultIdGenerator, EventId, EventSink, FS_IMPORT, FS_LIST, FS_READ, FS_RESOLVE, FS_SERVE,
+    FS_WATCH, HostFilesystemAuthority, ModuleBuildOptions, RuntimeConfig, RuntimeEvent,
+    RuntimeWorkspaceFolder, RuntimeWorkspaceSnapshot, RuntimeWorkspaceTarget,
     RuntimeWorkspaceWatchEvent, SERVE_HOST_SUBJECT, ServerWorkspaceSession, SourceDocument,
     SourceKind, SourceResolutionEntry, check_fs_capability, validate_source_resolution_entries,
 };
@@ -473,6 +475,7 @@ impl ServerSourceRegistry {
             resolver.insert_source(
                 &uri,
                 mech_runtime::ResolvedSource::new(&uri, &uri, MechSourceCode::String(text.clone()))
+                    .with_kind(SourceKind::from_path(&path))
                     .with_source_document(document.clone())?
                     .admit_canonical_document()?,
             )?;
@@ -610,10 +613,12 @@ impl ServerSourceRegistry {
                 },
             );
             if root_uris.contains(&source.canonical_uri) {
-                let product = compiler
-                    .compile_canonical_interactive_root(mech_runtime::SourceRequest::new(uri))?;
-                let code = CanonicalProgramBundle::from_product(uri.clone(), &document, &product)?
-                    .encode()?;
+                let code = crate::browser_planning::compile_browser_document_bundle(
+                    &mut compiler,
+                    uri,
+                    &document,
+                )?
+                .encode()?;
                 // A dependency change invalidates this response as well as
                 // the source manifest; the loader checks the same hashes.
                 let backing_paths = snapshot
