@@ -1110,6 +1110,12 @@ jobs:
           --no-default-features --features full_compiler,watcher,compute
           --lib canonical_
 
+      - name: Verify canonical replacement corrections
+        run: >-
+          cargo +nightly-2026-03-03 test --locked -p mech-runtime
+          --no-default-features --features full_compiler,full_source,resident-routing-source,compute
+          --test canonical_call_visibility
+
       - name: Verify canonical complete-document indexing work
         run: >-
           cargo +nightly-2026-03-03 test --locked -p mech-runtime
