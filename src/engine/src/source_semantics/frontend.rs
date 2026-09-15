@@ -165,6 +165,18 @@ pub struct CanonicalMixedSourcePrograms {
     pub compute_initializers: CanonicalSourceProgram,
 }
 
+pub use document_lowering::CanonicalCoordinatorPlan;
+
+/// Compute programs plus retained coordinator lowering, ready for interface planning.
+/// The runtime compiles the compute artifacts before completing `coordinator`.
+pub struct CanonicalMixedSourcePreparation {
+    pub region_name: String,
+    pub placement: ComputePlacement,
+    pub coordinator: CanonicalCoordinatorPlan,
+    pub compute: CanonicalSourceProgram,
+    pub compute_initializers: CanonicalSourceProgram,
+}
+
 /// A typed route from document presentation to an existing artifact output.
 /// Source anchors are held once in `SourceSemanticMap::outputs[output]`.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -878,8 +890,38 @@ impl CanonicalSourceFrontend {
         retained_outputs: &BTreeSet<String>,
         resolved_source_modules: &BTreeSet<String>,
     ) -> Result<CanonicalMixedSourcePrograms, SourceSemanticError> {
+        let prepared = self.prepare_mixed_document_with_planning_contract(
+            document,
+            catalog,
+            input_schemas,
+            resource_writes,
+            external_inputs,
+            retained_outputs,
+            resolved_source_modules,
+        )?;
+        Ok(CanonicalMixedSourcePrograms {
+            region_name: prepared.region_name,
+            placement: prepared.placement,
+            coordinator: prepared.coordinator.compile(BTreeMap::new())?,
+            compute: prepared.compute,
+            compute_initializers: prepared.compute_initializers,
+        })
+    }
+
+    /// Compile the compute partitions and retain coordinator units until the
+    /// caller can provide schemas for sampled outputs and compute telemetry.
+    pub fn prepare_mixed_document_with_planning_contract(
+        &self,
+        document: &DocumentSyntax,
+        catalog: Arc<mech_core::FunctionCatalog>,
+        input_schemas: BTreeMap<String, SchemaBody>,
+        resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+        external_inputs: &BTreeSet<String>,
+        retained_outputs: &BTreeSet<String>,
+        resolved_source_modules: &BTreeSet<String>,
+    ) -> Result<CanonicalMixedSourcePreparation, SourceSemanticError> {
         reject_recovered_syntax(document)?;
-        document_lowering::compile_mixed_document_with_catalog_and_resources(
+        document_lowering::prepare_mixed_document_with_catalog_and_resources(
             document,
             catalog,
             input_schemas,
