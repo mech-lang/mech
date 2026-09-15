@@ -39,6 +39,9 @@ enum ExpectedValue {
 }
 
 fn main() {
+    if let Some(path) = std::env::var_os("MECH_BROWSER_BUNDLE_FIXTURES") {
+        write_browser_bundle_fixtures(std::path::Path::new(&path));
+    }
     rooted_source_canary();
     let corpus: SourceCorpus =
         serde_json::from_str(SOURCE_CASES).expect("shared source corpus must be valid JSON");
@@ -193,4 +196,91 @@ fn rooted_source_canary() {
             .compile_root(mech_runtime::SourceRequest::new("main.mec"), options)
             .is_ok()
     );
+}
+
+fn write_browser_bundle_fixtures(directory: &std::path::Path) {
+    use mech_runtime::{
+        CanonicalProgramBundle, InMemorySourceResolver, ResolvedSource, SourceDocument,
+        SourceRequest,
+    };
+    use std::{collections::BTreeMap, sync::Arc};
+    std::fs::create_dir_all(directory).unwrap();
+    for (name, source, dependency) in [
+        ("plain", "~answer := 0\nanswer += 2\nanswer\n", None),
+        ("replacement", "~answer := 0\nanswer += 3\nanswer\n", None),
+        (
+            "imported",
+            "+> ./dep.mec\n~answer := 0\nanswer += dep/value\nanswer\n",
+            Some("value := 2\n<+ value\n"),
+        ),
+    ] {
+        let uri = "bundle:///document.mec";
+        let document = SourceDocument::parse_resolved(
+            uri,
+            mech_syntax::document::Revision(0),
+            Arc::<str>::from(source),
+            Default::default(),
+        )
+        .unwrap();
+        let mut resolver = InMemorySourceResolver::new();
+        resolver
+            .insert_source(
+                uri,
+                ResolvedSource::new(uri, uri, mech_core::MechSourceCode::String(source.into()))
+                    .with_source_document(document.clone())
+                    .unwrap()
+                    .admit_canonical_document()
+                    .unwrap(),
+            )
+            .unwrap();
+        let mut sources = BTreeMap::from([("document.mec", source)]);
+        if let Some(text) = dependency {
+            let dependency_uri = "bundle:///dep.mec";
+            let dependency_document = SourceDocument::parse_resolved(
+                dependency_uri,
+                mech_syntax::document::Revision(0),
+                Arc::<str>::from(text),
+                Default::default(),
+            )
+            .unwrap();
+            resolver
+                .insert_source(
+                    dependency_uri,
+                    ResolvedSource::new(
+                        dependency_uri,
+                        dependency_uri,
+                        mech_core::MechSourceCode::String(text.into()),
+                    )
+                    .with_source_document(dependency_document)
+                    .unwrap()
+                    .admit_canonical_document()
+                    .unwrap(),
+                )
+                .unwrap();
+            resolver
+                .insert_resolution(uri, "./dep.mec", dependency_uri)
+                .unwrap();
+            sources.insert("dep.mec", text);
+        }
+        let mut compiler = RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_catalog())
+            .source_resolver(resolver)
+            .build_compiler()
+            .unwrap();
+        let product = compiler
+            .compile_canonical_interactive_root(SourceRequest::new(uri))
+            .unwrap();
+        let bundle = CanonicalProgramBundle::from_product(uri, &document, &product).unwrap();
+        let revision = bundle
+            .artifact_revision
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>();
+        let value = serde_json::json!({"encoded": bundle.encode().unwrap(), "revision": revision, "sources": sources});
+        std::fs::write(
+            directory.join(format!("{name}.json")),
+            serde_json::to_vec(&value).unwrap(),
+        )
+        .unwrap();
+    }
 }

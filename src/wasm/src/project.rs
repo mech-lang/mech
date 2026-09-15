@@ -432,6 +432,9 @@ pub(crate) struct WasmDocumentBootstrap {
     source_map: HashMap<String, String>,
     resolutions: Vec<SourceResolutionEntry>,
     document: SourceDocument,
+    // The admitted producer artifact owns initial activation and reset. Source
+    // is retained for presentation and deliberately recompiles after an edit.
+    initial_bytecode: Arc<[u8]>,
     console_instance: String,
     lifecycle: DocumentRuntimeLifecycle,
     #[cfg(feature = "served_project_authority")]
@@ -638,6 +641,9 @@ pub(crate) fn activate_document_repl_runtime_document(
     document: SourceDocument,
 ) -> MResult<(MechRuntime, RuntimeProgramLoadOutcome)> {
     let source = document.source().to_contiguous_string();
+    let initial_product = document.source().document() == bootstrap.document.source().document()
+        && document.source().revision() == bootstrap.document.source().revision()
+        && source == bootstrap.document.source().to_contiguous_string();
     let mut candidate_bootstrap = bootstrap.clone();
     candidate_bootstrap.source_map.insert(
         candidate_bootstrap.root_specifier.clone(),
@@ -664,21 +670,29 @@ pub(crate) fn activate_document_repl_runtime_document(
     }
     let runtime = &mut candidate.runtime;
     let durability = runtime.config().resident_durability;
-    #[cfg(feature = "browser_compute")]
-    let activation = match candidate.coordinator.take() {
-        Some(coordinator) => runtime.load_compiled_program(coordinator, durability),
-        None => runtime.load_interactive_root_program(
-            SourceRequest::new(&bootstrap.source().root_specifier),
-            browser_module_options(),
-            durability,
-        ),
+    let activation = if initial_product {
+        runtime.load_bytecode_program(&bootstrap.initial_bytecode, durability)
+    } else {
+        #[cfg(feature = "browser_compute")]
+        {
+            match candidate.coordinator.take() {
+                Some(coordinator) => runtime.load_compiled_program(coordinator, durability),
+                None => runtime.load_interactive_root_program(
+                    SourceRequest::new(&bootstrap.source().root_specifier),
+                    browser_module_options(),
+                    durability,
+                ),
+            }
+        }
+        #[cfg(not(feature = "browser_compute"))]
+        {
+            runtime.load_interactive_root_program(
+                SourceRequest::new(&bootstrap.source().root_specifier),
+                browser_module_options(),
+                durability,
+            )
+        }
     };
-    #[cfg(not(feature = "browser_compute"))]
-    let activation = runtime.load_interactive_root_program(
-        SourceRequest::new(&bootstrap.source().root_specifier),
-        browser_module_options(),
-        durability,
-    );
     let outcome = match activation {
         Ok(outcome) => outcome,
         Err(error) => {
@@ -1103,6 +1117,7 @@ mod document {
                 source_map,
                 resolutions,
                 document,
+                initial_bytecode: bundle.bytecode.into(),
                 console_instance: "repl".to_owned(),
                 lifecycle: DocumentRuntimeLifecycle::default(),
                 #[cfg(feature = "served_project_authority")]
@@ -1200,6 +1215,7 @@ mod document {
                 source_map,
                 resolutions,
                 document: retained,
+                initial_bytecode: bundle.bytecode.into(),
                 console_instance: internal_repl_console_instance(&document.hosts),
                 lifecycle: DocumentRuntimeLifecycle::default(),
                 served: Some(ServedDocumentBootstrap {
@@ -1207,6 +1223,11 @@ mod document {
                     authority,
                 }),
             })
+        }
+
+        #[wasm_bindgen(js_name = runtimeInfo)]
+        pub fn runtime_info(&self) -> Result<JsValue, JsValue> {
+            runtime_info_value(&self.runtime()?.program_execution_info())
         }
 
         #[wasm_bindgen(js_name = renderedOutput)]
@@ -1309,6 +1330,7 @@ mod document {
                 &replacement_bootstrap.root_specifier,
                 &replacement_bootstrap.source_map,
             )?;
+            replacement_bootstrap.initial_bytecode = bundle.bytecode.into();
             let mut replacement = Self::from_bootstrap(replacement_bootstrap)?;
             // Request generations belong to the stable WasmDocument wrapper,
             // not to one replaceable runtime. Carry the clock forward before

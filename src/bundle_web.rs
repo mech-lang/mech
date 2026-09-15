@@ -173,8 +173,9 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
         write_bundle_file(&output_dir, "source", &relative, source_text.as_bytes())?;
 
         if root_paths.contains(&read_source_path) {
-            let product = compiler
-                .compile_canonical_root(mech_runtime::SourceRequest::new(&canonical_uri))?;
+            let product = compiler.compile_canonical_interactive_root(
+                mech_runtime::SourceRequest::new(&canonical_uri),
+            )?;
             let encoded = CanonicalProgramBundle::from_product(canonical_uri, document, &product)?
                 .encode()?;
             write_bundle_file(&output_dir, "code", &relative, encoded.as_bytes())?;

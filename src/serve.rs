@@ -610,8 +610,8 @@ impl ServerSourceRegistry {
                 },
             );
             if root_uris.contains(&source.canonical_uri) {
-                let product =
-                    compiler.compile_canonical_root(mech_runtime::SourceRequest::new(uri))?;
+                let product = compiler
+                    .compile_canonical_interactive_root(mech_runtime::SourceRequest::new(uri))?;
                 let code = CanonicalProgramBundle::from_product(uri.clone(), &document, &product)?
                     .encode()?;
                 // A dependency change invalidates this response as well as
