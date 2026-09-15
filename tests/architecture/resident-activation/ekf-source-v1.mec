@@ -1,3 +1,5 @@
++> ekf
+
 @trace := test-resource://ekf/frame{:read(sample)}
 frame := @trace/sample
 
