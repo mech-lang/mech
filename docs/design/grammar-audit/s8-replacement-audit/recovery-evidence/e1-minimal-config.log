@@ -1,0 +1,69 @@
+   Compiling serde_json v1.0.151
+   Compiling regex-automata v0.4.16
+   Compiling mech-core v0.3.5 (/private/tmp/mech-syntax-s8e1-config/src/core)
+   Compiling tinytemplate v1.2.1
+   Compiling regex v1.13.1
+   Compiling criterion v0.8.2
+   Compiling trybuild v1.0.118
+   Compiling mech-bytecode v0.3.5 (/private/tmp/mech-syntax-s8e1-config/src/bytecode)
+   Compiling mech-syntax v0.3.5 (/private/tmp/mech-syntax-s8e1-config/src/syntax)
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-syntax-s8e1-config/src/engine)
+   Compiling mech-combinatorics v0.3.5 (/private/tmp/mech-syntax-s8e1-config/machines/combinatorics)
+   Compiling mech-math v0.3.5 (/private/tmp/mech-syntax-s8e1-config/machines/math)
+   Compiling mech-runtime v0.3.5 (/private/tmp/mech-syntax-s8e1-config/src/runtime)
+   Compiling mech-set v0.3.5 (/private/tmp/mech-syntax-s8e1-config/machines/set)
+   Compiling mech-logic v0.3.5 (/private/tmp/mech-syntax-s8e1-config/machines/logic)
+   Compiling mech-stats v0.3.5 (/private/tmp/mech-syntax-s8e1-config/machines/stats)
+   Compiling mech-matrix v0.3.5 (/private/tmp/mech-syntax-s8e1-config/machines/matrix)
+   Compiling mech-compare v0.3.5 (/private/tmp/mech-syntax-s8e1-config/machines/compare)
+   Compiling mech-range v0.3.5 (/private/tmp/mech-syntax-s8e1-config/machines/range)
+   Compiling mech-string v0.3.5 (/private/tmp/mech-syntax-s8e1-config/machines/string)
+   Compiling mech-native-live-host-fixture v0.3.5 (/private/tmp/mech-syntax-s8e1-config/tests/fixtures/native-live-host)
+   Compiling mech-terminal v0.3.5 (/private/tmp/mech-syntax-s8e1-config/hosts/terminal)
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-syntax-s8e1-config/src/stdlib)
+    Finished `test` profile [unoptimized] target(s) in 3m 16s
+     Running tests/config_profile.rs (/private/tmp/mech-syntax-s8-extraction-target/debug/deps/config_profile-ff158841361f763b)
+
+running 39 tests
+test browser_host_crate_does_not_depend_on_robot_arm_host ... ok
+test config_integer_addition_overflow_is_rejected ... ok
+test config_profile_context_declaration_rejected ... ok
+test config_profile_assignment_rejected ... ok
+test config_integer_subtraction_overflow_is_rejected ... ok
+test config_profile_accepts_resident_durability ... ok
+test config_integer_negation_overflow_is_rejected ... ok
+test config_profile_import_rejected ... ok
+test config_integer_boundary_values_succeed ... ok
+test config_profile_direct_recursion_rejected ... ok
+test config_profile_markdown_code_block_faux_config_fence_is_ignored ... ok
+test config_profile_match_expression_rejected ... ok
+test config_profile_indirect_recursion_rejected ... ok
+test config_profile_missing_config_binding_rejected ... ok
+test config_profile_invalid_log_level_rejected ... ok
+test config_profile_duplicate_let_rejected ... ok
+test config_profile_mutable_binding_rejected ... ok
+test config_profile_op_assignment_rejected ... ok
+test config_profile_multi_arm_helper_rejected ... ok
+test config_profile_missing_helper_argument_rejected ... ok
+test config_profile_extra_helper_argument_rejected ... ok
+test config_profile_rejects_unknown_resident_durability ... ok
+test config_profile_named_call_argument_rejected ... ok
+test config_profile_range_expression_rejected ... ok
+test browser_host_manifest_config_parses_and_lowers ... ok
+test config_profile_state_machine_rejected ... ok
+test config_profile_pure_function_allowed ... ok
+test config_profile_slice_expression_rejected ... ok
+test config_profile_unknown_field_rejected ... ok
+test robot_arm_demos_are_host_owned_not_top_level_examples ... ok
+test config_profile_wrong_field_type_rejected ... ok
+test shipped_browser_bundle_example_source_begins_with_browser_host_import ... ok
+test config_profile_single_patterned_helper_rejected ... ok
+test config_profile_options_control_namespaces_and_limits ... ok
+test config_profile_rich_mechdown_config_parses_and_lowers ... ok
+test config_profile_valid_log_levels_accepted ... ok
+test config_profile_top_level_browser_is_rejected ... ok
+test config_profile_hosts_browser_settings_preserved ... ok
+test shipped_browser_bundle_example_configures_browser_host_and_grants ... ok
+
+test result: ok. 39 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.62s
+

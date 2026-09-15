@@ -132,3 +132,67 @@ and six G12 semantic decisions still require explicit disposition before their
 dependent implementations. No capability has been dropped or converted into an
 accepted rejection. This checkpoint is not complete and does not authorize merge
 until exact-candidate qualification and review requirements are met.
+
+## Current landing checkpoint — reviewed CI rollout
+
+**Candidate:** `codex/syntax-s8c-cutover` /
+`90defdf9ed0599316d7fb0d8f19e0d2ac36b35f9`, published to #830 on native stack
+#846, targeting R04 `c8edc05f0`; ultimate target `integration/v0.4`.
+
+**Completed:** The first batch remains integrated. CI review #831 found two
+policy defects: unreachable `None` registration for E7 and missing minimal
+configuration coverage. Both are corrected in `062bdddf1`, propagated through
+all slices, with 47 passing CI tests and 39 passing source-only configuration
+tests. The third note (standalone fixture lockfile) was already fixed in C; all
+three received replies and were resolved before the next review request. R03's
+focused CI explicitly runs its relocated regression and the unchanged authority
+guard. Every restacked production diff and review commit count was checked.
+
+At preceding C `109c55242`, the exact rerun passes 61 combined regressions and
+the real source product fixture (14 catalog cases plus rooted canary). The
+deleted-parser browser product builds successfully; actual Chrome CPU and WebGPU
+publication both produce the expected matrices across two turns. Two static
+project tests and the browser submission lifecycle probe also pass. Runtime
+remains 713 passing / 2 failing: factorial reaches G19/R16's missing pattern
+function body; mutable comprehension state reaches G05/R07's activation
+classification. The expectations remain positive and unchanged.
+
+C's standard/full distribution snapshots now account for removing nom@8 and
+nom-unicode. Only dependency counts and their surface hashes changed; selected
+hosts, operation features, runtime factory/specializer counts and semantic
+surface digests remain identical. Both distribution contract checks pass. This
+is a retirement expectation correction in C, not a capability exclusion.
+
+**Remaining:** The accepted open gap queue, R05 completion, C's two runtime
+failures, remaining browser/application and retired-test consumers, required
+reviews, final exact-head full qualification and protected merge. Current C's
+combined/source/browser reruns are still executing and must be recorded against
+90defdf9e when complete; earlier-head results are not its final qualification.
+The obsolete 109c55242 CI and earlier slice runs were archived before the
+reviewed rollout and cancellation requests; canceled work remains unqualified.
+
+**Current action:** R05/G04 is isolated on `codex/syntax-s8r05-selected-updates`
+in `/private/tmp/mech-syntax-s8r05-updates` (WIP commit 59a2cdb3e before a local
+implicit-promotion admission tightening). It is not incorporated into C or open
+as an additional PR. Two original strict witnesses reproduce 12 instead of 14.
+The promoted occurrence implementation uses core semantic conversion plans for
+each current destination value; its focused tests pass for the valid mixed
+integer promotions, multiplication/division/subtraction and fractional casts.
+A fixture initially pairing wide integers with f64 was corrected to valid
+integer promotions because the unchanged Number contract rejects that lossy
+common type; no established positive witness was changed.
+
+**Next action:** Finish the active C combined/source/browser rerun in
+`/private/tmp/mech-syntax-qualification/c-policy-final-*.log`, record exact counts,
+and inspect the CI review result. Then finish R05's nested occurrence address
+composition, heterogeneous numeric schemes, malformed/overflow/budget rollback
+and focused qualification before requesting review or incorporating it into C.
+Run the existing canonical_document_state suite with
+`cargo +nightly-2026-03-03 test --locked --offline -p mech-engine --no-default-features --features full_compiler,full_source,resident-artifact --test canonical_document_state`.
+The full R05 suite and C rerun currently share the build target; let the current
+Cargo owner finish rather than adding more concurrent builds on that target.
+
+**External blocker:** None for current accepted work. GitHub native-stack
+re-linking was explicitly approved and completed. Outstanding capability/semantic
+decisions remain as previously recorded, with independent accepted work continuing.
+Checkpoint—not complete; coordinator owns qualification and verified protected landing.

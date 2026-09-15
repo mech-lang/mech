@@ -1,0 +1,4 @@
+   Compiling full-source-runtime v0.0.0 (/private/tmp/mech-syntax-s8c-qualification/tests/fixtures/full-source-runtime)
+    Finished `dev` profile [unoptimized] target(s) in 11.38s
+     Running `/private/tmp/mech-syntax-s8-cutover-source-fixture-target/debug/full-source-runtime`
+source product probe passed: 14 catalog cases and rooted source canary

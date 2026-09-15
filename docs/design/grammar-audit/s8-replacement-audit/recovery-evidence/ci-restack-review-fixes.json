@@ -1,0 +1,137 @@
+[
+  {
+    "phase": "e1",
+    "worktree": "/private/tmp/mech-syntax-s8e1-config",
+    "branch": "codex/syntax-s8e1-config-syntax",
+    "old": "d6eefcb8acd4e41b35c23cc36e73224c6caa0ff9",
+    "new": "062bdddf1a890080d739281cced91d0f786d844f",
+    "remote_branch": "codex/syntax-s8e1-config-syntax",
+    "remote_old": "164379213deb8ec9ca9efe18ef5f1a5ce93b4e63"
+  },
+  {
+    "phase": "e2",
+    "worktree": "/private/tmp/mech-syntax-s8e2-syntax",
+    "branch": "codex/syntax-s8e2-syntax",
+    "old": "82097941cedb8160f995fac63947a49408f4a08c",
+    "new": "54d8ce4f39341797bd3954cf005d434ee15db4db",
+    "remote_branch": "codex/syntax-s8e2-syntax",
+    "remote_old": "82097941cedb8160f995fac63947a49408f4a08c"
+  },
+  {
+    "phase": "e3",
+    "worktree": "/private/tmp/mech-syntax-s8e3-values",
+    "branch": "codex/syntax-s8e3-resident-values",
+    "old": "9ff4ead8778a365d5fa88e819bef9dcad61abb73",
+    "new": "f25740b2d598379f059166d4f941a4c6a58d4c14",
+    "remote_branch": "codex/syntax-s8e3-resident-values",
+    "remote_old": "9ff4ead8778a365d5fa88e819bef9dcad61abb73"
+  },
+  {
+    "phase": "e4",
+    "worktree": "/private/tmp/mech-syntax-s8e4-frontend",
+    "branch": "codex/syntax-s8e4-semantic-frontend",
+    "old": "316a17c824425b18892cb0ce749c69ba01c82b7b",
+    "new": "5cf8ed7ebc1c382bea063b1675e58e6d5dbdc5ef",
+    "remote_branch": "codex/syntax-s8e4-semantic-frontend",
+    "remote_old": "316a17c824425b18892cb0ce749c69ba01c82b7b"
+  },
+  {
+    "phase": "e5",
+    "worktree": "/private/tmp/mech-syntax-s8e5-compiler",
+    "branch": "codex/syntax-s8e5-compiler-planning",
+    "old": "80f29ae36b4a3224f05058538e638b34b473f197",
+    "new": "7b4191cf50443ac9777c93d52e85d41063a24336",
+    "remote_branch": "codex/syntax-s8e5-compiler-planning",
+    "remote_old": "80f29ae36b4a3224f05058538e638b34b473f197"
+  },
+  {
+    "phase": "e6",
+    "worktree": "/private/tmp/mech-syntax-s8e6-graph",
+    "branch": "codex/syntax-s8e6-graph-planning",
+    "old": "a01e0efedfc7946846eb4ca76c116ad5ccd4c0cd",
+    "new": "0c3bb096430926b6f046d2d67bf8fc9b0b1e222d",
+    "remote_branch": "codex/syntax-s8e6-graph-planning",
+    "remote_old": "a01e0efedfc7946846eb4ca76c116ad5ccd4c0cd"
+  },
+  {
+    "phase": "e7",
+    "worktree": "/private/tmp/mech-syntax-s8e7-interactive",
+    "branch": "codex/syntax-s8e7-interactive",
+    "old": "e24b330fb9eb05f0e809b6b9045337575c090884",
+    "new": "26e807278db13d54190ca2c7666a86cb9260e970",
+    "remote_branch": "codex/syntax-s8e7-interactive",
+    "remote_old": "e24b330fb9eb05f0e809b6b9045337575c090884"
+  },
+  {
+    "phase": "e8",
+    "worktree": "/private/tmp/mech-syntax-s8e8-mixed",
+    "branch": "codex/syntax-s8e8-mixed-planning",
+    "old": "69ccdaf5133a4c05544785d39e5fb78989a497be",
+    "new": "2fce6f9e67361838ee39289ee09424606634cbc1",
+    "remote_branch": "codex/syntax-s8e8-mixed-planning",
+    "remote_old": "69ccdaf5133a4c05544785d39e5fb78989a497be"
+  },
+  {
+    "phase": "e9",
+    "worktree": "/private/tmp/mech-syntax-s8e9-compute",
+    "branch": "codex/syntax-s8e9-compute-execution",
+    "old": "8d311c95c6ce19c7fcb40d6b7ba18e91068a0114",
+    "new": "5778601260b4b93d844f9ecfed4bf5a1c6cb4e8f",
+    "remote_branch": "codex/syntax-s8e9-compute-execution",
+    "remote_old": "8d311c95c6ce19c7fcb40d6b7ba18e91068a0114"
+  },
+  {
+    "phase": "e10",
+    "worktree": "/private/tmp/mech-syntax-s8e10-web",
+    "branch": "codex/syntax-s8e10-web-handoff",
+    "old": "34144e5a52f87a8bf94300585b8b0b0a08413eba",
+    "new": "1b873e374a1aee036bcde5f18a911b9c60042bf9",
+    "remote_branch": "codex/syntax-s8e10-web-handoff",
+    "remote_old": "34144e5a52f87a8bf94300585b8b0b0a08413eba"
+  },
+  {
+    "phase": "e11",
+    "worktree": "/private/tmp/mech-syntax-s8e11-qualification",
+    "branch": "codex/syntax-s8e11-qualification",
+    "old": "52a4a5f59f70dbf225dfac85653e755e21d177d5",
+    "new": "6dc2036891817c09595e2bf83b66727384e35293",
+    "remote_branch": "codex/syntax-s8e11-qualification",
+    "remote_old": "52a4a5f59f70dbf225dfac85653e755e21d177d5"
+  },
+  {
+    "phase": "r01",
+    "worktree": "/private/tmp/mech-syntax-s8r01-visibility",
+    "branch": "codex/syntax-s8r01-call-visibility",
+    "old": "f8c8706b8eb448ba5ee1e01d5286920562ebea01",
+    "new": "1cd713e5fb6af5efd7a226ba74744d6c94467876",
+    "remote_branch": "codex/syntax-s8r01-call-visibility",
+    "remote_old": "f8c8706b8eb448ba5ee1e01d5286920562ebea01"
+  },
+  {
+    "phase": "r03",
+    "worktree": "/private/tmp/mech-syntax-s8r03-review-owner",
+    "branch": "codex/syntax-s8r03-bound-schemas",
+    "old": "3563dc2fb94a9ec7bdc7b56f11ed722112a8cfbf",
+    "new": "ea96bfa32c8951d4ee92fc7d7118a4b1d6efa0d5",
+    "remote_branch": "codex/syntax-s8r03-bound-schemas",
+    "remote_old": "3563dc2fb94a9ec7bdc7b56f11ed722112a8cfbf"
+  },
+  {
+    "phase": "r04",
+    "worktree": "/private/tmp/mech-syntax-s8r03-schemas",
+    "branch": "codex/syntax-s8r04-dynamic-binding",
+    "old": "98d673856cefa11ec42b3acc6ee500a231294524",
+    "new": "c8edc05f01b3524d3c885135068beb045d7a2662",
+    "remote_branch": "codex/syntax-s8r04-dynamic-binding",
+    "remote_old": "98d673856cefa11ec42b3acc6ee500a231294524"
+  },
+  {
+    "phase": "c",
+    "worktree": "/private/tmp/mech-syntax-s8c-qualification",
+    "branch": "codex/syntax-s8c-qualification",
+    "old": "12caba98fd5fd55544d2ad1b8ca4d00d35ef9e5e",
+    "new": "90defdf9ed0599316d7fb0d8f19e0d2ac36b35f9",
+    "remote_branch": "codex/syntax-s8c-cutover",
+    "remote_old": "109c552423815d19fa8e3352ff8ebdbbafd2d3f3"
+  }
+]

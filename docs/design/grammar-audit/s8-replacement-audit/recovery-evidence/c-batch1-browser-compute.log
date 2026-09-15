@@ -1,0 +1,1 @@
+CANONICAL_COMPUTE_PUBLICATION [{"backend": "cpu-scalar", "frames": [[11, 24, 12, 25, 13, 26], [21, 44, 22, 45, 23, 46]]}, {"backend": "wgpu", "frames": [[11, 24, 12, 25, 13, 26], [21, 44, 22, 45, 23, 46]]}]

@@ -1,0 +1,10 @@
+✔ static bootstrap fetches served prose and only the configured root artifact (2.759459ms)
+✔ static bootstrap rejects a configured root without its artifact (0.693667ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 66.288291

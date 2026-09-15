@@ -1,0 +1,33 @@
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-syntax-s8r05-updates/src/engine)
+    Finished `test` profile [unoptimized] target(s) in 0.95s
+     Running tests/canonical_document_state.rs (/private/tmp/mech-syntax-s8-extraction-target/debug/deps/canonical_document_state-21785e5e69543ea9)
+
+running 2 tests
+test nested_repeated_compound_selectors_accumulate_each_occurrence ... FAILED
+test promoted_repeated_compound_selectors_accumulate_each_occurrence ... FAILED
+
+failures:
+
+---- nested_repeated_compound_selectors_accumulate_each_occurrence stdout ----
+
+thread 'nested_repeated_compound_selectors_accumulate_each_occurrence' (28016533) panicked at src/engine/tests/canonical_document_state.rs:100:13:
+assertion `left == right` failed: "~a := [10 20; 30 40]\na[[1 1],:][:,1] += 2\na[1,1]\n"
+  left: 12.0
+ right: 14.0
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- promoted_repeated_compound_selectors_accumulate_each_occurrence stdout ----
+
+thread 'promoted_repeated_compound_selectors_accumulate_each_occurrence' (28016534) panicked at src/engine/tests/canonical_document_state.rs:100:13:
+assertion `left == right` failed: "~a := [10<i32> 20<i32>; 30<i32> 40<i32>]\na[[1 1],:] += 2.5\nselected := a[1,1]\nanswer := selected<f64>\nanswer\n"
+  left: 12.0
+ right: 14.0
+
+
+failures:
+    nested_repeated_compound_selectors_accumulate_each_occurrence
+    promoted_repeated_compound_selectors_accumulate_each_occurrence
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 30 filtered out; finished in 0.16s
+
+error: test failed, to rerun pass `-p mech-engine --test canonical_document_state`

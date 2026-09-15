@@ -1,0 +1,80 @@
+    Finished `test` profile [unoptimized] target(s) in 0.17s
+     Running tests/canonical_call_visibility.rs (/private/tmp/mech-syntax-s8-extraction-target/debug/deps/canonical_call_visibility-963b2e60952fd667)
+
+running 6 tests
+test configured_empty_catalog_does_not_recover_global_named_declarations ... ok
+test ordered_roots_do_not_share_callable_imports ... ok
+test imports_bind_only_the_requested_visible_names ... ok
+test visible_calls_and_operators_preserve_source_and_bytecode_results ... ok
+test internal_names_cannot_be_imported_or_aliased ... ok
+test configured_catalog_census_rejects_unbound_names_before_arguments ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.22s
+
+     Running tests/canonical_constant_binding.rs (/private/tmp/mech-syntax-s8-extraction-target/debug/deps/canonical_constant_binding-e8ecbafc6d5b48e7)
+
+running 45 tests
+test binding_errors_retain_the_input_anchor ... ok
+test already_nested_dynamic_binding_preserves_its_existing_depth ... ok
+test bound_nested_match_relocates_parameters_operations_and_yields ... ok
+test binding_relocates_existing_state_initializer_and_output_constants ... ok
+test binding_relocates_dynamic_descendants_in_existing_constants ... ok
+test bound_comprehension_relocates_pattern_filter_operation_and_yield ... ok
+test bound_guard_relocates_captures_and_keeps_remaining_input_live ... ok
+test exact_generic_enum_input_and_binding ... ok
+test exact_generic_atom ... ok
+test exact_generic_dynamic ... ok
+test exact_generic_matrix ... ok
+test exact_generic_map ... ok
+test exact_generic_option ... ok
+test bound_match_relocates_literal_patterns_and_arm_constants ... ok
+test concrete_binding_to_dynamic_wraps_exactly_once ... ok
+test exact_generic_record ... ok
+test exact_generic_table ... ok
+test exact_generic_tuple ... ok
+test exact_index_input_and_binding ... ok
+test exact_generic_set ... ok
+test exact_scalar_bool ... ok
+test exact_scalar_c32 ... ok
+test exact_id_input_and_binding ... ok
+test exact_scalar_c64 ... ok
+test exact_scalar_i128 ... ok
+test exact_scalar_f64 ... ok
+test exact_scalar_i16 ... ok
+test exact_scalar_i32 ... ok
+test exact_scalar_f32 ... ok
+test exact_scalar_i64 ... ok
+test exact_scalar_i8 ... ok
+test exact_scalar_r64 ... ok
+test exact_scalar_u128 ... ok
+test exact_scalar_u16 ... ok
+test exact_scalar_string ... ok
+test exact_scalar_u32 ... ok
+test exact_scalar_u64 ... ok
+test reject_incompatible_atom_nominal_identity ... ok
+test exact_scalar_u8 ... ok
+test reject_incompatible_matrix_extent ... ok
+test reject_incompatible_map_key_schema ... ok
+test reject_incompatible_native_scalar_schema ... ok
+test reject_incompatible_snapshot_scalar_schema ... ok
+test successive_bindings_relocate_state_nodes_outputs_constraints_and_source_map ... ok
+test simultaneous_bindings_are_order_independent ... ok
+
+test result: ok. 45 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.58s
+
+     Running tests/canonical_declaration_handoff.rs (/private/tmp/mech-syntax-s8-extraction-target/debug/deps/canonical_declaration_handoff-136c9541681b9c4e)
+
+running 10 tests
+test missing_dependency_exports_report_the_import_occurrence ... ok
+test missing_namespace_exports_report_the_import_occurrence ... ok
+test context_alias_imports_do_not_require_source_dependency_edges ... ok
+test incomplete_export_results_fail_at_the_retained_export_anchor ... ok
+test every_declared_import_requires_a_positioned_resolution ... ok
+test source_wildcard_requires_a_positioned_resolution ... ok
+test resolved_canonical_export_is_a_usable_imported_binding ... ok
+test compiler_module_imports_remain_optional_source_dependencies ... ok
+test resolved_canonical_exports_can_be_sealed_into_artifact_constants ... ok
+test resolved_bindings_remain_local_to_root_named_and_mika_owners ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.17s
+

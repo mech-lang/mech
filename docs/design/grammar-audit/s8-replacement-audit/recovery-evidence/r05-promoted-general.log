@@ -1,0 +1,10 @@
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-syntax-s8r05-updates/src/engine)
+    Finished `test` profile [unoptimized] target(s) in 0.90s
+     Running tests/canonical_document_state.rs (/private/tmp/mech-syntax-s8-extraction-target/debug/deps/canonical_document_state-21785e5e69543ea9)
+
+running 2 tests
+test promoted_repeated_compound_selectors_accumulate_each_occurrence ... ok
+test promoted_repeated_updates_use_canonical_conversion_after_each_operation ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 31 filtered out; finished in 2.12s
+
