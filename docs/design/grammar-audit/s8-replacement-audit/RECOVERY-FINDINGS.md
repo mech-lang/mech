@@ -3,7 +3,7 @@
 This supplement preserves the accepted `d25fbaad0` baseline and its original
 25 groups. It records new demonstrated causes before implementation, rather
 than silently widening an existing correction. Current declared scope is the
-baseline plus the following two findings: 27 groups and 25 review boundaries.
+baseline plus the following three findings: 28 groups and 26 review boundaries.
 These are ownership counts, not an effort estimate or a completeness guarantee.
 
 ## G27 — Index range resident prerequisite (proposed R24)
@@ -101,3 +101,50 @@ leaves even when their producer exists, and must not retain every sibling merely
 because one leaf was requested. Source/decoded interface identity remains required.
 This expands the explicit G28 sample-shape acceptance to the existing tuple-port
 contract exposed by the shipping EKF application; it does not alter that contract.
+
+
+## G29 — Canonical EKF artifact does not lower to the portable compute kernel (proposed R26)
+
+**Owner:** the canonical artifact-to-portable-fixed-shape lowering contract shared
+by E8 mixed planning and E9 compute execution. This is downstream of R25's
+interface/read planning and distinct from G02's finite resident numeric-kind
+capabilities. C/R23 retains the complete configured CPU/WebGPU product acceptance.
+No corrective PR exists yet, and this finding does not enlarge R25.
+
+At C tree `2590d7872fb12f0e66cab6be614e2a4172e7f9bf`, after R25's provider and
+tuple-port corrections, the shipping single-lane CPU EKF reaches portable kernel
+lowering and is rejected. Elementwise lowering reports 128 diagnostics; generic
+fixed-shape lowering reports 22. Demonstrated classes include canonical
+`matrix/matmul` operation IDs where the lowerer currently dispatches
+`matrix/multiply`, range/access selector nodes and non-f32 selector schemas,
+Bool integrity results rejected as ordinary storage, derived concat/broadcast
+sources that are not materialized, and the transactional integrity contract.
+These are one boundary mismatch exposed by one complete configured region, not
+128 independent defects. The earlier semantic-only test
+`canonical_mixed_shipped_ekf_region_compiles` stops before either portable
+lowerer and therefore did not qualify this handoff.
+
+Executable witness on the accumulated C tree:
+
+```sh
+MECH_BIN=target/debug/mech \
+MECH_EKF_COMPUTE_BACKEND=cpu-scalar \
+MECH_EKF_FILTER_COUNT=1 \
+MECH_EKF_RESULT_FILE=/private/tmp/mech-syntax-qualification/c-r25-tuple-ekf-cpu-single.json \
+bash scripts/smoke-served-resident-ekf-browser.sh
+```
+
+The exact failure is preserved in
+`recovery-evidence/c-r25-tuple-ekf-cpu-single.log`. It proves that R25 now hands
+the configured artifact to the backend; it is not passing EKF evidence.
+
+Finite acceptance is the checked-in `ekf-batch @compute` section through the
+same canonical mixed compiler and portable lowering API, with exact source and
+decoded-artifact operation/interface identity. All selection, transpose,
+concatenation, matrix product, 2x2 solve, comparison/logic, retained state and
+three integrity predicates must lower without a second operation-name map or
+source rewrite. A rejected predicate must roll back state and publication. The
+shipping one-lane CPU probe must pass first; then the existing full CPU scalar
+and WebGPU continuity/parity matrix in `.github/workflows/ci.yml` must pass on
+the same accumulated C head. Existing unsupported-target negatives remain
+errors and are not converted into accepted success.

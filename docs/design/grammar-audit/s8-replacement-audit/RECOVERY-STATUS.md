@@ -8,21 +8,22 @@ All active extraction/corrective PRs and C remain drafts. Ask for review by comm
 
 | Order | Owner and work | Current state / completion condition |
 | --- | --- | --- |
-| 1 | R25 + C/G22 compute/browser handoff | R25 #849 has a clean review and successful focused CI 35026440740 at `a4555e3e0`; tuple follow-up `425578fa7` is now pushed for review with 7 + 18 passing tests. Published C #830 `8542fa7f5` contains the preceding R25 head; local C `4ef7a01dd` incorporates the follow-up for product testing. The shipping configured document edit changes result 1→3, preserves inline selection identity, and rolls back malformed edits. The larger EKF source now fails at `unknown-published-binding: ... result.0`; the minimal tuple witness now reproduces and passes with the R25 follow-up; complete review and actual EKF rerun before closing this batch. Run real product acceptance and record all remaining failures. |
+| 1 | R25 + C/G22 compute/browser handoff | R25 #849 content `425578fa7` has a clean review and 7 + 18 passing tests. Stack restacking produced ancestry-only head `dff504ec2` with the identical tree; focused CI 35028724829 is running. C #830 head `45946479d` has the same tree as locally qualified `4ef7a01dd`. The shipping configured document edit passes all seven scenarios, changes result 1→3, preserves inline selection identity, and rolls back malformed edits. The EKF rerun gets past R25's provider and `result.0` failures and now stops at the distinct G29/R26 canonical-artifact/portable-kernel handoff. R25 closes when exact-head focused CI completes; C remains open. |
 | 2 | R08/G18 variable-cardinality layouts | Not started. Dependency for R07's still-red matrix positives. Preserve the existing positive concat/transpose and changing-cardinality obligations; do not substitute fixed-target rejection for acceptance. |
 | 3 | R07/G05 control initializers | Partial pushed branch `94ca8e2b4`, no PR, outside C. Closed-control/budget corrections pass; finish its matrix cases after R08 and review the bounded owner diff. |
 | 4 | R09–R20 semantic prerequisites | Corrective implementations remain pending; use the accepted dependency/acceptance cells to select the next ready owner after the initializer batch. No numbered item is implicitly complete. |
+| Product blocker | R26/G29 canonical EKF compute lowering | Newly demonstrated and explicitly owned before implementation. The single-lane shipping CPU witness fails at portable lowering after R25 succeeds. No corrective branch or PR exists. Preserve the full CPU/WebGPU oracle; do not fold this into R25 or count semantic-only compilation as acceptance. |
 | Across accepted batches | R21–R23 in C: authority retirement, browser adoption, distribution closure | Partially implemented, incomplete. Keep real deleted-parser and product probes running; fix failures in their owners. Hold one stable C head for final full qualification only after accepted obligations close. |
 | Outstanding decisions | R02/G02, R06/G17, R15/G12 | Recorded capability/contract decisions remain open. Positive obligations have not been excluded. These are not implicitly deferred beyond landing. |
-| Outstanding implementation | R24/G27 Index ranges | Strict failing witness exists; no production implementation or PR. Must close before final qualification. |
+| Outstanding implementation | R24/G27 Index ranges; R26/G29 canonical compute lowering | Strict failing witnesses exist; neither has a production implementation or PR. Both must close before final qualification. |
 
-**Active change lanes:** C, the bounded R25 follow-up if the new witness confirms
-its sampled-output responsibility, and the next dependency-ready R08 correction.
-R07 is idle until its prerequisite is ready. Never exceed three actively changing
+**Active change lanes:** C, exact-head R25 validation, and the next
+dependency-ready R08 correction. R26 is recorded but not yet changing; R07 is
+idle until its prerequisite is ready. Never exceed three actively changing
 corrective branches. Do not open PRs solely to instantiate every audit boundary.
 
-**Next concrete action:** finish the shipping WASM/server rebuild for local C
-`4ef7a01dd`, rerun the configured edit and EKF probes, and inspect R25 follow-up review.
+**Next concrete action:** finish exact-head R25 validation while beginning R08's
+strict variable-cardinality layout reproduction and owner diagnosis.
 The basic configured edit thread is answered and resolved with shipping evidence:
 https://github.com/mech-lang/mech/pull/830#discussion_r4020517517
 This is not closure of all browser/product obligations or the stack.
@@ -916,3 +917,51 @@ filter EKF product command from the prior checkpoint logs. Inspect the current
 R25/C reviews and respond before requesting any additional review.
 
 **External blocker:** none for this batch. Checkpoint—not complete.
+
+
+## Current checkpoint — R25 bounded; R08 begins
+
+**Candidate:** draft R25 #849 is
+`codex/syntax-s8r25-compute-read-planning` /
+`dff504ec2d7ddf2a9f8796d1714d6b5944ad294e`. Its tree
+`ae09e4c2eff9896f65d9230e683bb4459e7f9119` is identical to reviewed content
+head `425578fa7aef9d5395e43bb32889e8b49c330420`. Draft C #830 is
+`codex/syntax-s8c-cutover` /
+`45946479d98440bdc6aae3cf0b84e0170f0694ad`; its tree
+`2590d7872fb12f0e66cab6be614e2a4172e7f9bf` is identical to locally tested
+`4ef7a01dd108a89b8ae2e128ff41532a15bbd177`. The changed SHAs are ancestry-only
+stack merges. Native stack #850 still orders R05 -> R25 -> C.
+
+**Completed:** R25's tuple-port correction has a clean review at `425578fa7`, no
+review threads, 7 focused + 18 existing mixed tests passing, and the same exact
+tree at the current head. The rebuilt shipping configured document browser probe
+passes all seven scenarios, including compute result 1 -> 3, retained inline
+selection identity and malformed-edit rollback. The rebuilt shipping WASM and
+native server both completed successfully. The actual EKF probe now passes both
+R25 handoffs and reaches the next backend boundary. Its distinct fixed-shape
+lowering failure was recorded before implementation as G29/R26, with the exact
+log and finite acceptance in RECOVERY-FINDINGS.md. C and R25 cancelled-run logs
+from 35027739951 and 35028355759 are archived under
+`/private/tmp/mech-syntax-qualification/s8-ci-archive-restack`; cancellation is
+not success.
+
+**Remaining:** current exact-head focused R25 workflow 35028724829; current C
+workflow 35028724674; C review completion; R08/G18 and R07/G05; R02/R06-R24 and
+new R26 accepted obligations; full product checks; stable exact-head full
+qualification; protected merge; and post-merge verification. The EKF product is
+red at G29/R26, not R25. The earlier C run also preserves known R16, R18, R21/R23
+failures and does not qualify those owners.
+
+**Current action:** reproduce R08's two retained positive layout cells on a clean
+owner branch based on current R05/R25 ancestry, identify the shared resident
+layout cause, and add a strict owner regression before production correction.
+R25 and C workflows continue without duplicate manual full dispatches.
+
+**Next action:** implement the bounded R08 variable-cardinality layout correction,
+run its focused positives and neighboring fixed-layout regressions, request review
+only after all notes are resolved, then integrate the accepted result into C and
+resume R07's remaining initializer positives.
+
+**External blocker:** none for current R08 implementation. Recorded G02/G17/G18
+scope decisions remain open where their exact target floor is required; no
+positive obligation has been waived. Checkpoint—not complete.

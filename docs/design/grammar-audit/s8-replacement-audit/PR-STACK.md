@@ -42,8 +42,10 @@ Each intermediate head also retains its exact copied symbol/hunk manifest.
 ## Corrective stack after scope acceptance
 
 The earlier twelve combined scopes hid independently reviewable owners. The
-following table contains the original 23 boundaries and the two subsequently demonstrated corrections, R24 and R25. These keep the responsibilities separate. IDs refer to the
-stable deduplicated gap register; fixture repetitions never create extra PRs.
+following table contains the original 23 boundaries and the three subsequently
+demonstrated corrections, R24 through R26. These keep the responsibilities
+separate. IDs refer to the stable deduplicated gap register; fixture repetitions
+never create extra PRs.
 Existing implementations that already satisfy a cell remain in place.
 
 | Boundary | Gap | Owning layer and finite acceptance |
@@ -73,6 +75,7 @@ Existing implementations that already satisfy a cell remain in place.
 | R23 distribution closure | G23, G24 | Retarget deleted-parser tests/examples, reviewed certification assumption/hash updates, exact final feature matrix and all54 production consumer cells. |
 | R24 Index ranges | G27 | Resident range cardinality, physical binding and execution for Index endpoints; exclusive/inclusive modes, increments, constant endpoints, portable bounds/overflow, and preserved live-endpoint rejection. Strict source/decoded witness and diagnosis are in [RECOVERY-FINDINGS.md](RECOVERY-FINDINGS.md#g27--index-range-resident-prerequisite-proposed-r24). |
 | R25 compute read planning | G28 | Canonical mixed compiler stages compute/interface construction before coordinator sample/telemetry read planning. Scalar/nonsquare shapes and bytecode schemas, telemetry types, invalid paths, ordinary-provider ownership, and preserved imports/initializers; C separately proves configured browser source replacement. Details are in [RECOVERY-FINDINGS.md](RECOVERY-FINDINGS.md#g28--compute-output-schema-planning-precedes-its-interface-r25). |
+| R26 canonical compute lowering | G29 | Canonical artifact-to-portable-kernel lowering for the shipped fixed-shape EKF region. Reconcile canonical operation IDs and selector/index storage with the fixed-shape lowerer, preserve transactional integrity predicates and derived-value materialization, and pass the maintained CPU/WebGPU EKF oracle without source rewriting or parser restoration. Details are in [RECOVERY-FINDINGS.md](RECOVERY-FINDINGS.md#g29--canonical-ekf-artifact-does-not-lower-to-the-portable-compute-kernel-proposed-r26). |
 
 
 ## Qualification ownership across both stacks
