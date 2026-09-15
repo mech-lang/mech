@@ -1,6 +1,9 @@
 //! Promoted arithmetic retains occurrence-ordered destination reads and casts.
 use super::*;
-use mech_core::{ConversionPlan, ResolvedType, execute_conversion_draft, plan_explicit_cast};
+use mech_core::{
+    ConversionPlan, ResolvedType, execute_conversion_draft, plan_explicit_cast,
+    plan_implicit_conversion,
+};
 
 #[derive(Clone)]
 struct Plan {
@@ -68,7 +71,7 @@ pub(super) fn bind(
         .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
     let arithmetic_type = ResolvedType::from_schema_body(incoming, &[])
         .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
-    let promote = plan_explicit_cast(&target_type, &arithmetic_type)
+    let promote = plan_implicit_conversion(&target_type, &arithmetic_type)
         .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
     let assign = plan_explicit_cast(&arithmetic_type, &target_type)
         .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
