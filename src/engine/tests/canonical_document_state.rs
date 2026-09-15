@@ -1323,16 +1323,132 @@ fn promoted_boolean_masks_preserve_canonical_destination_coordinates() {
 #[test]
 fn promoted_selected_updates_preserve_row_and_column_broadcasts() {
     for (selection, rhs, expected) in [
-        ("a[[1 2],:]", "[1.5 2.5 3.5]", [33.0, 36.0]),
-        ("a[:,[1 2 3]]", "[1.5;2.5]", [31.0, 32.0]),
-        ("a[[1 1],:][:,[1 2 3]]", "[1.5 2.5 3.5]", [36.0, 42.0]),
-        ("a[[1 1],:][:,[1 2 3]]", "[1.5;2.5]", [33.0, 36.0]),
-        ("a[[1 1],:]", "[1<i64> 2<i64> 3<i64>]", [36.0, 42.0]),
-        ("a[[1 1],:][:,[1 2 3]]", "[1<i32>;2<i32>]", [33.0, 36.0]),
+        (
+            "a[[1 2],:]",
+            "[1.5 2.5 3.5]",
+            [[11, 22, 33, 41, 52, 63], [12, 24, 36, 42, 54, 66]],
+        ),
+        (
+            "a[:,[1 2 3]]",
+            "[1.5;2.5]",
+            [[11, 21, 31, 42, 52, 62], [12, 22, 32, 44, 54, 64]],
+        ),
+        (
+            "a[[1 1],:][:,[1 2 3]]",
+            "[1.5 2.5 3.5]",
+            [[12, 24, 36, 40, 50, 60], [14, 28, 42, 40, 50, 60]],
+        ),
+        (
+            "a[[1 1],:][:,[1 2 3]]",
+            "[1.5;2.5]",
+            [[13, 23, 33, 40, 50, 60], [16, 26, 36, 40, 50, 60]],
+        ),
+        (
+            "a[[1 1],:]",
+            "[1<i64> 2<i64> 3<i64>]",
+            [[12, 24, 36, 40, 50, 60], [14, 28, 42, 40, 50, 60]],
+        ),
+        (
+            "a[[1 1],:][:,[1 2 3]]",
+            "[1<i32>;2<i32>]",
+            [[13, 23, 33, 40, 50, 60], [16, 26, 36, 40, 50, 60]],
+        ),
     ] {
         let source = format!(
-            "~a := [10<i32> 20<i32> 30<i32>;40<i32> 50<i32> 60<i32>]\n{selection} += {rhs}\nselected := a[1,3]\nanswer := selected<f64>\nanswer\n"
+            "~a := [10<i32> 20<i32> 30<i32>;40<i32> 50<i32> 60<i32>]\n{selection} += {rhs}\na\n"
         );
-        turns(&source, &expected);
+        let artifact = compiled(&source).compile_artifact().unwrap();
+        let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+        for artifact in [
+            artifact,
+            mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap(),
+        ] {
+            let mut catalog = FunctionCatalogBuilder::new();
+            mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+            let mut instance = activate(
+                ReactiveInstanceId::new(0x599, 0),
+                &artifact,
+                &catalog.build().unwrap(),
+                &ActivationFacts::default(),
+            )
+            .unwrap();
+            for expected in expected {
+                instance.turn(&[]).unwrap();
+                let output = instance.copied_output(0).unwrap();
+                let ValueData::Matrix(matrix) = output.data() else {
+                    panic!("expected complete matrix: {output:?}")
+                };
+                let mech_core::snapshot::SequenceView::I32(values) = matrix.elements() else {
+                    panic!("expected i32 matrix: {output:?}")
+                };
+                assert_eq!(
+                    values, &expected,
+                    "complete source/decoded matrix for {source:?}"
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn promoted_broadcast_failure_preserves_the_complete_state_before_retry() {
+    use mech_core::snapshot::{SnapshotValidationContext, ValueDataDraft, ValueDraft};
+    use mech_engine::resident::CapturedValueInput;
+    let source = "divisors := signal<[i16]:1,3>\n~a := [120<i8> 120<i8> 120<i8>;60<i8> 60<i8> 60<i8>]\na[[1 1],:][:,[1 2 3]] /= divisors\na\n";
+    let artifact = compiled(source).compile_artifact().unwrap();
+    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    for artifact in [
+        artifact,
+        mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap(),
+    ] {
+        let mut catalog = FunctionCatalogBuilder::new();
+        mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x59a, 0),
+            &artifact,
+            &catalog.build().unwrap(),
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        let before = instance.published_state_hash();
+        for (values, succeeds) in [([2i16, 0, 3], false), ([2i16, 3, 4], true)] {
+            let value = ValueDraft {
+                schema: artifact.inputs()[0].schema,
+                shape_values: Box::new([]),
+                data: ValueDataDraft::Matrix(values.into_iter().map(ValueDataDraft::I16).collect()),
+            }
+            .finalize(&SnapshotValidationContext::new(artifact.schemas()))
+            .unwrap();
+            let input = CapturedValueInput {
+                slot: instance.plan.inputs[0].slot,
+                value: &value,
+            };
+            let result = instance
+                .prepare_turn_values(&[input])
+                .and_then(|prepared| prepared.publish());
+            if succeeds {
+                result.unwrap();
+                let output = instance.copied_output(0).unwrap();
+                let ValueData::Matrix(matrix) = output.data() else {
+                    panic!("expected complete matrix: {output:?}")
+                };
+                let mech_core::snapshot::SequenceView::I8(values) = matrix.elements() else {
+                    panic!("expected i8 matrix: {output:?}")
+                };
+                assert_eq!(values, &[30, 13, 7, 60, 60, 60]);
+            } else {
+                assert!(
+                    matches!(
+                        result,
+                        Err(mech_engine::resident::ResidentExecutionError::Kernel {
+                            error: mech_core::ResidentKernelError::Arithmetic,
+                            ..
+                        })
+                    ),
+                    "{result:?}"
+                );
+                assert_eq!(instance.published_state_hash(), before);
+            }
+        }
     }
 }
