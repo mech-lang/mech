@@ -1063,6 +1063,9 @@ jobs:
           rustup toolchain install nightly-2026-03-03 --profile minimal --component rustfmt
           rustup default nightly-2026-03-03
 
+      - name: Verify static project bootstrap
+        run: node --test scripts/tests/static-project.test.mjs
+
       - name: Check generated syntax inventories
         run: |
           python3 scripts/generate-canonical-rule-registry.py --check
@@ -1100,6 +1103,12 @@ jobs:
           --test canonical_declaration_handoff --test canonical_document_outputs
           --test canonical_document_render --test canonical_source_index
           --test source_document --test canonical_config_profile --test config_profile
+
+      - name: Verify canonical compiler execution contracts
+        run: >-
+          cargo +nightly-2026-03-03 test --locked -p mech-runtime
+          --no-default-features --features full_compiler,watcher,compute
+          --lib canonical_
 
       - name: Verify canonical complete-document indexing work
         run: >-

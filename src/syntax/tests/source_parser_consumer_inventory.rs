@@ -1966,6 +1966,18 @@ fn production_parser_callers_are_exactly_inventoried() {
         total += row.calls;
     }
     assert_eq!(total, EXPECTED_PRODUCTION_CALLS);
+    // Keep the 29-call census frozen while checking each explicitly routed
+    // consumer has zero remaining parser calls. Routing does not seal a consumer.
+    for id in cutover_contract::routed_parser_consumers() {
+        let row = consumers
+            .get(&id)
+            .expect("routed consumer must belong to the frozen census");
+        assert!(
+            expected
+                .remove(&(row.source_path.clone(), row.caller.clone()))
+                .is_some()
+        );
+    }
     let (discovered, prohibited_aliases) = discovered_production_calls();
     assert!(
         prohibited_aliases.is_empty(),

@@ -402,10 +402,12 @@ jobs:
           sudo install "/tmp/wasm-pack-$WASM_PACK_VERSION-x86_64-unknown-linux-musl/wasm-pack" /usr/local/bin/wasm-pack
       - name: Build mixed compute WASM and refresh the server
         run: |
+          node --test scripts/tests/static-project.test.mjs
           node scripts/test-browser-compute-lifecycle.mjs
           python3 scripts/build-wasm.py --profile browser-compute-canary
           grep -q '^export class WasmDocument' src/wasm/pkg/mech_wasm.js
           grep -q '^export class WasmMixedComputeProject' src/wasm/pkg/mech_wasm.js
+          python3 scripts/smoke-canonical-compute-browser.py --software-adapter
           cargo build --locked --bin mech --features compute_backends_native
       - name: Verify report-only particle WebGPU execution
         run: >-
