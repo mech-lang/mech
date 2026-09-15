@@ -188,5 +188,75 @@ class ImpactClassifierTests(unittest.TestCase):
         self.assertEqual(flattened, names)
 
 
+class RegisteredReviewTests(unittest.TestCase):
+    def test_registered_slice_keeps_affected_owners_static_checks_and_regressions(self):
+        result = CI_IMPACT.classify(["src/engine/src/source_semantics/frontend.rs"], ["ci:full"], OWNERS, "review")
+        self.assertEqual(result["changed_owners"], ["mech-engine", "s8-review-regressions"])
+        self.assertTrue(result["static_contracts_required"])
+        self.assertTrue(result["review_only"])
+        for field in ["standard_canaries_required", "windows_canary_required", "browser_canary_required", "cross_cutting_standard_suite_required", "full_validation_required"]:
+            self.assertFalse(result[field], field)
+
+    def test_review_ci_change_does_not_fan_out_to_all_product_owners(self):
+        result = CI_IMPACT.classify([".github/workflows/ci-full.yml"], [], OWNERS, "review")
+        self.assertEqual(result["changed_owners"], ["s8-review-regressions"])
+        self.assertFalse(result["full_validation_required"])
+        self.assertTrue(result["static_contracts_required"])
+
+    def test_unknown_review_paths_fail_closed_to_normal_qualification(self):
+        result = CI_IMPACT.classify(["unowned-area/file.rs"], ["ci:full"], OWNERS, "review")
+        self.assertFalse(result["review_only"])
+        self.assertTrue(result["standard_canaries_required"])
+        self.assertTrue(result["full_validation_required"])
+
+    def test_landing_always_retains_full_product_qualification(self):
+        for paths in [["src/runtime/src/input.rs"], ["docs/distributions.md"], []]:
+            result = CI_IMPACT.classify(paths, [], OWNERS, "landing")
+            self.assertTrue(result["landing_candidate"])
+            self.assertFalse(result["review_only"])
+            self.assertFalse(result["docs_only"])
+            for field in ["standard_canaries_required", "windows_canary_required", "browser_canary_required", "full_validation_required"]:
+                self.assertTrue(result[field], field)
+            self.assertIn("mech-engine", result["changed_owners"])
+            self.assertNotIn("s8-review-regressions", result["changed_owners"])
+
+    def test_role_requires_exact_registered_number_branch_and_repository(self):
+        from ci_review_slices import review_role
+        self.assertEqual(review_role(844, "codex/syntax-s8r04-dynamic-binding", "mech-lang/mech")[0], "review")
+        self.assertEqual(review_role(830, "codex/syntax-s8c-cutover", "mech-lang/mech")[0], "landing")
+        for number, branch, repo in [
+            (999, "codex/syntax-s8r04-dynamic-binding", "mech-lang/mech"),
+            (844, "codex/syntax-s8r04-copy", "mech-lang/mech"),
+            (844, "codex/syntax-s8r04-dynamic-binding", "someone/mech"),
+            (830, "codex/syntax-s8r04-dynamic-binding", "mech-lang/mech"),
+        ]:
+            self.assertEqual(review_role(number, branch, repo)[0], "ordinary")
+
+    def test_registry_has_one_landing_and_no_empty_review_checks(self):
+        import json
+        from ci_review_slices import REGISTRY, review_role
+        registry = json.loads(REGISTRY.read_text())
+        self.assertNotIn(str(registry["landing"]["number"]), registry["slices"])
+        for number, entry in registry["slices"].items():
+            role, selected = review_role(number, entry["branch"], registry["repository"])
+            self.assertEqual(role, "review")
+            for command in selected["checks"]:
+                self.assertEqual(command[0], "cargo")
+                self.assertIn(command[2], ["test", "check"])
+                self.assertIn("--locked", command)
+        registry["slices"]["844"]["checks"] = []
+        with self.assertRaises(ValueError):
+            review_role(844, "codex/syntax-s8r04-dynamic-binding", registry["repository"], registry)
+
+    def test_review_gate_requires_focused_success_and_does_not_claim_full_success(self):
+        workflow = (ROOT / ".github/workflows/ci.yml").read_text()
+        review_gate = workflow.split('if test "$REVIEW_ONLY" = true')[1].split('elif test "$DOCS_ONLY"')[0]
+        self.assertIn('test "$OWNER_RESULT" = success', review_gate)
+        self.assertIn('test "$LINUX_RESULT" = skipped', review_gate)
+        self.assertIn('test "$FULL_RESULT" = skipped', workflow)
+        self.assertIn("test ! -e src/syntax/src/parser.rs", workflow)
+        self.assertIn("tests/fixtures/full-source-runtime/Cargo.toml", workflow)
+
+
 if __name__ == "__main__":
     unittest.main()
