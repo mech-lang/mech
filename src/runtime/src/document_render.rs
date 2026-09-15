@@ -936,9 +936,16 @@ fn subtitle_coordinates(
         let section = first_line
             .split_once('.')
             .map(|(section, _)| section)
-            .filter(|section| valid_section_number(section))
-            .ok_or_else(|| range_error(node.range()))?;
-        (section, 2usize)
+            .filter(|section| valid_section_number(section));
+        // Underlined headings may be named/annotated without an authored
+        // section number. Use their retained anchor for a unique navigation
+        // address instead of rejecting otherwise valid document syntax.
+        return Ok((
+            section
+                .map(str::to_owned)
+                .unwrap_or_else(|| format!("at-{}", node.range().start.0)),
+            2,
+        ));
     } else {
         let (section, _) = first_line
             .strip_prefix('(')

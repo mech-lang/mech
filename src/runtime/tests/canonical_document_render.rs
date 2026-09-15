@@ -883,3 +883,14 @@ fn browser_shim_regions_preserve_metadata_navigation_and_section_boundaries() {
     assert!(slots["INTRO"].contains("{{TITLE}}"));
     assert!(slots["INTRO"].contains("mech-inline-mech-code"));
 }
+
+#[test]
+fn served_particle_document_formats_its_annotated_compute_heading() {
+    let source = include_str!("../../../examples/gpu-particles/particles.mec");
+    let document = document(source);
+    let slots = CanonicalDocumentRenderer
+        .format_browser_html_slots(&document)
+        .unwrap();
+    assert!(slots["TOC"].contains("particle-field"));
+    assert!(slots["CONTENT"].contains("particle-field"));
+}
