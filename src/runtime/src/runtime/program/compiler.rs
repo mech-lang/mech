@@ -43,13 +43,13 @@ use crate::{
     RuntimeResourceWriteCommand, RuntimeResourceWriteIntent, SourceContextBase, SourceDocument,
     SourceImportAlias, SourceImportDeclaration, SourceImportKind, SourceIndex, SourceRequest,
     SourceResolver, import_may_resolve_source_dependency, import_requires_source_dependency,
-    source_request_for_import,
+    module_namespace_for_import, source_request_for_import,
 };
 #[cfg(feature = "compute")]
 use crate::{
     ModuleVersionId, RuntimeModuleDependencyCycleError, RuntimeModuleDependencyMissingError,
     RuntimeModuleExportNotFound, RuntimeModuleImportConflict, SourceContextCapabilityScope,
-    SourceExportDeclaration, module_namespace_for_import,
+    SourceExportDeclaration,
 };
 
 use super::{ResidentRouteFailure, ResidentRouteFailureClass, route_failure, unsupported_route};
