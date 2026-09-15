@@ -147,9 +147,12 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
     let mut bundled_sources = Vec::with_capacity(options.source_paths.len());
     let (resolver, documents) =
         planning::retained_sources(&options.source_paths, &base_dir, &project_dir)?;
-    let mut compiler = planning::compiler_builder(&options.loaded_config.document, runtime_config)?
-        .source_resolver(resolver)
-        .build_compiler()?;
+    let mut compiler = crate::configured_browser_compiler_builder(
+        &options.loaded_config.document.hosts,
+        runtime_config,
+    )?
+    .source_resolver(resolver)
+    .build_compiler()?;
     for source_path in &options.source_paths {
         let logical_source_path = source_path;
         let read_source_path = source_path.canonicalize()?;
