@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify shipping WasmDocument admission, edits, reset, and dependency freshness."""
+"""Verify shipping document admission, rich prose, live values, selection, and edits."""
 
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ def main() -> None:
     work = Path(tempfile.mkdtemp(prefix="canonical-document-bundle-"))
     shutil.copytree(ROOT / "src/wasm/pkg", work / "pkg")
     fixtures = {name: json.loads((Path(args.fixtures) / f"{name}.json").read_text())
-                for name in ("plain", "imported", "replacement")}
+                for name in ("plain", "imported", "replacement", "capture", "capture-fenced", "rich", "rich-fenced")}
     script = r'''import init, {WasmDocument} from './pkg/mech_wasm.js';
 try {
   await init();
@@ -38,7 +38,7 @@ try {
   const revision = doc => doc.runtimeInfo().program_revision;
   const value = doc => doc.renderedSymbol('answer');
   const rows = [];
-  for (const [name, fixture] of Object.entries(fixtures).filter(([name]) => name !== 'replacement')) {
+  for (const [name, fixture] of Object.entries(fixtures).filter(([name]) => ['plain', 'imported'].includes(name))) {
     const doc = name === 'plain'
       ? WasmDocument.fromEncoded(fixture.encoded)
       : WasmDocument.fromEncodedWithSources(fixture.encoded, 'document.mec', fixture.sources);
@@ -69,6 +69,53 @@ try {
     assert(revision(doc) === replacement.revision, 'different reset bundle artifact identity');
     assert(value(doc)?.inlineHtml === '3', 'different reset bundle initial state');
     rows.push({name, initialRevision: fixture.revision, editedRevision: accepted.revision, initial, edited: accepted.output});
+    doc.free();
+  }
+  for (const name of ['capture', 'capture-fenced']) {
+    const doc = WasmDocument.fromEncoded(fixtures[name].encoded);
+    const original = doc.renderedProgramOutput();
+    assert(original?.inlineHtml === '41', 'initial program result: ' + name);
+    for (const source of ['answer + 1', 'answer + 2', '99']) {
+      const response = doc.replInvoke(source);
+      assert(doc.replSource().includes(source), 'console source accepted: ' + JSON.stringify(response));
+      const current = doc.renderedProgramOutput();
+      assert(current?.inlineHtml === '41', 'original program result survives console append: ' + name);
+      assert(current.selectionToken === original.selectionToken, 'program selection identity is stable');
+      const selection = doc.replSelectRetained(current.selectionToken, true);
+      assert(selection.rendered?.inlineHtml === '41', 'original program result remains selectable');
+    }
+    rows.push({name, programResult: doc.renderedProgramOutput()});
+    doc.free();
+  }
+  for (const name of ['rich', 'rich-fenced']) {
+    const doc = WasmDocument.fromEncoded(fixtures[name].encoded);
+    const container = document.createElement('article');
+    container.innerHTML = fixtures[name].html;
+    document.body.append(container);
+    assert(container.querySelector('.mech-comment strong')?.textContent === 'Count', 'rich comment markup');
+    assert(container.querySelector('.mech-comment a')?.getAttribute('href') === 'https://mech-lang.org', 'comment link');
+    assert(container.textContent.includes('A paragraph with'), 'first Markdown paragraph');
+    assert(container.textContent.includes('Another paragraph displays'), 'second Markdown paragraph');
+    assert(container.querySelector('em')?.textContent === 'emphasis', 'paragraph emphasis');
+    assert(container.querySelectorAll('a').length === 2, 'comment and paragraph links');
+    const mounts = [...container.querySelectorAll('.mech-inline-mech-code')];
+    assert(mounts.length === 3, 'only evaluated expressions mount; double braces and code stay inert');
+    const ids = mounts.map(mount => BigInt(mount.getAttribute('data-mech-output-address').split(':')[0]));
+    for (const count of [2, 4, 6]) {
+      const expected = [String(count), String(count + 1), String(count)];
+      ids.forEach((id, index) => {
+        const output = doc.renderedOutput(id);
+        assert(output?.inlineHtml === expected[index], 'live inline value: ' + name + ' ' + index);
+        mounts[index].innerHTML = output.inlineHtml;
+        const selected = doc.replSelectOutput(id, true);
+        assert(selected.rendered?.inlineHtml === expected[index], 'inline selection: ' + name + ' ' + index);
+        assert(selected.identity, 'inline selection has a retained identity');
+      });
+      assert(doc.renderedProgramOutput()?.inlineHtml === String(count), 'comments do not replace program result');
+      if (count !== 6) doc.step(1n);
+    }
+    rows.push({name, inlineValues: mounts.map(mount => mount.textContent), links: container.querySelectorAll('a').length});
+    container.remove();
     doc.free();
   }
   const imported = fixtures.imported;

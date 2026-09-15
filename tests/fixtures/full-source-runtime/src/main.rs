@@ -208,6 +208,22 @@ fn write_browser_bundle_fixtures(directory: &std::path::Path) {
     for (name, source, dependency) in [
         ("plain", "~answer := 0\nanswer += 2\nanswer\n", None),
         ("replacement", "~answer := 0\nanswer += 3\nanswer\n", None),
+        ("capture", "answer := 41\nanswer\n", None),
+        (
+            "capture-fenced",
+            "~~~mech\nanswer := 41\nanswer\n~~~\n",
+            None,
+        ),
+        (
+            "rich",
+            "~answer := 0\nanswer += 2 -- **Count** [docs](https://mech-lang.org) `literal` {{answer + 99}}: {ans}, {ans + 1}.\nanswer\n\nA paragraph with *emphasis* and [documentation](https://mech-lang.org).\n\nAnother paragraph displays {answer}.\n",
+            None,
+        ),
+        (
+            "rich-fenced",
+            "~~~mech\n~answer := 0\nanswer += 2 -- **Count** [docs](https://mech-lang.org) `literal` {{answer + 99}}: {ans}, {ans + 1}.\nanswer\n~~~\n\nA paragraph with *emphasis* and [documentation](https://mech-lang.org).\n\nAnother paragraph displays {answer}.\n",
+            None,
+        ),
         (
             "imported",
             "+> ./dep.mec\n~answer := 0\nanswer += dep/value\nanswer\n",
@@ -276,7 +292,10 @@ fn write_browser_bundle_fixtures(directory: &std::path::Path) {
             .iter()
             .map(|byte| format!("{byte:02x}"))
             .collect::<String>();
-        let value = serde_json::json!({"encoded": bundle.encode().unwrap(), "revision": revision, "sources": sources});
+        let html = mech_runtime::CanonicalDocumentRenderer
+            .format_browser_html(&document.document())
+            .unwrap();
+        let value = serde_json::json!({"encoded": bundle.encode().unwrap(), "revision": revision, "sources": sources, "html": html});
         std::fs::write(
             directory.join(format!("{name}.json")),
             serde_json::to_vec(&value).unwrap(),
