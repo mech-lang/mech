@@ -139,7 +139,9 @@ fn bundle_error(message: impl Into<String>) -> MechError {
 
 #[cfg(all(test, feature = "serde", feature = "compiler_default"))]
 mod tests {
-    use super::*;
+    use super::CanonicalProgramBundle;
+    use crate::SourceDocument;
+    use mech_core::MResult;
     use std::sync::Arc;
 
     use mech_syntax::document::{ParseConfig, Revision};
