@@ -42,7 +42,7 @@ Each intermediate head also retains its exact copied symbol/hunk manifest.
 ## Corrective stack after scope acceptance
 
 The earlier twelve combined scopes hid independently reviewable owners. The
-following 23 boundaries keep those responsibilities separate. IDs refer to the
+following table contains the original 23 boundaries and the two subsequently demonstrated corrections, R24 and R25. These keep the responsibilities separate. IDs refer to the
 stable deduplicated gap register; fixture repetitions never create extra PRs.
 Existing implementations that already satisfy a cell remain in place.
 
@@ -71,6 +71,9 @@ Existing implementations that already satisfy a cell remain in place.
 | R21 authority retirement | G21 | Replace remaining tree compiler/cache/interactive/module-index authorities after their responsibility-specific cells qualify. No parser shim. |
 | R22 browser adoption | G22 | Actual retained-document bootstrap, replacement/capture and REPL/documentation loading; served/bundled complete applications and negative stale/error cases. |
 | R23 distribution closure | G23, G24 | Retarget deleted-parser tests/examples, reviewed certification assumption/hash updates, exact final feature matrix and all54 production consumer cells. |
+| R24 Index ranges | G27 | Resident range cardinality, physical binding and execution for Index endpoints; exclusive/inclusive modes, increments, constant endpoints, portable bounds/overflow, and preserved live-endpoint rejection. Strict source/decoded witness and diagnosis are in [RECOVERY-FINDINGS.md](RECOVERY-FINDINGS.md#g27--index-range-resident-prerequisite-proposed-r24). |
+| R25 compute read planning | G28 | Canonical mixed compiler stages compute/interface construction before coordinator sample/telemetry read planning. Scalar/nonsquare shapes and bytecode schemas, telemetry types, invalid paths, ordinary-provider ownership, and preserved imports/initializers; C separately proves configured browser source replacement. Details are in [RECOVERY-FINDINGS.md](RECOVERY-FINDINGS.md#g28--compute-output-schema-planning-precedes-its-interface-r25). |
+
 
 ## Qualification ownership across both stacks
 
