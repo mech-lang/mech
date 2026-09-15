@@ -33,22 +33,8 @@ impl SemanticBuilder {
                     None,
                 );
             }
-            let mut expected = self.schema_draft_of(base)?;
-            // Maintained matrix assignment broadcasts scalar replacement values.
-            if !matches!(
-                self.schema_draft_of(replacement)?.body,
-                SchemaBody::Matrix { .. }
-            ) && let SchemaBody::Matrix { element, .. } = &expected.body
-            {
-                expected.body = *element.clone();
-            }
-            return self.conform_schema_draft(
-                replacement,
-                &expected,
-                value_syntax,
-                "source-semantics/incompatible-assignment-kind",
-                "assignment value does not satisfy the selected binding's schema",
-            );
+            let expected = self.schema_draft_of(base)?;
+            return self.conform_assignment_value(replacement, expected, value_syntax);
         };
         let schema = self.schema_draft_of(base)?;
         if !matches!(
@@ -65,14 +51,30 @@ impl SemanticBuilder {
                 anchor: SourceSemanticAnchor::for_node(item.syntax()),
             });
         }
-        let (selected, selectors, operation) = match item {
+        // A fused addressed update is closed over the destination element
+        // kind. Mixed kinds must retain the maintained arithmetic conversions
+        // before assignment converts the result to the destination kind.
+        let same_element = if arithmetic.is_some()
+            && let SchemaBody::Matrix { element, .. } = &schema.body
+        {
+            let replacement_schema = self.schema_draft_of(replacement)?;
+            let replacement_element = match &replacement_schema.body {
+                SchemaBody::Matrix { element, .. } => element.as_ref(),
+                scalar => scalar,
+            };
+            element.as_ref() == replacement_element
+        } else {
+            false
+        };
+        let read_selection = !remaining.is_empty() || (arithmetic.is_some() && !same_element);
+        let (selected, selected_schema, selectors, operation) = match item {
             SubscriptItemSyntax::Bracket(bracket) => {
                 let selectors = self.subscript_values(&bracket.values())?;
-                self.document_assignment_selection(base, selectors, item.syntax())?
+                self.document_assignment_selection(base, selectors, item.syntax(), read_selection)?
             }
             SubscriptItemSyntax::Brace(brace) => {
                 let selectors = self.subscript_values(&brace.values())?;
-                self.document_assignment_selection(base, selectors, item.syntax())?
+                self.document_assignment_selection(base, selectors, item.syntax(), read_selection)?
             }
             SubscriptItemSyntax::Dot(dot) => {
                 let field = self.required(dot.identifier(), dot.syntax(), "a selected field")?;
@@ -82,7 +84,12 @@ impl SemanticBuilder {
                     SchemaBody::Id,
                     ValueDataDraft::Id(mech_core::hash_str(&name)),
                 );
-                (selected, vec![selector], "core/assign/collection-entry")
+                (
+                    Some(selected),
+                    self.schema_draft_of(selected)?,
+                    vec![selector],
+                    "core/assign/collection-entry",
+                )
             }
             SubscriptItemSyntax::DotInteger(dot) => {
                 let integer = self.required(dot.integer(), dot.syntax(), "a selected ordinal")?;
@@ -91,7 +98,12 @@ impl SemanticBuilder {
                 let (schema, data) = decode_number(&text, None, suffix)
                     .ok_or_else(|| missing_kind_child(dot.syntax(), "a valid selected ordinal"))?;
                 let selector = self.constant(schema, data);
-                self.document_assignment_selection(base, vec![Some(selector)], item.syntax())?
+                self.document_assignment_selection(
+                    base,
+                    vec![Some(selector)],
+                    item.syntax(),
+                    read_selection,
+                )?
             }
             SubscriptItemSyntax::Swizzle(swizzle) => {
                 let selected = self.select(base, item)?;
@@ -128,17 +140,73 @@ impl SemanticBuilder {
                 return Ok(updated);
             }
         };
-        let replacement = self.document_selected_update(
-            selected,
-            remaining,
-            replacement,
-            arithmetic,
-            statement,
-            value_syntax,
-        )?;
+        if remaining.is_empty()
+            && same_element
+            && let Some(arithmetic) = arithmetic
+            && matches!(schema.body, SchemaBody::Matrix { .. })
+            && matches!(
+                operation,
+                "core/assign/indexed-axis"
+                    | "core/assign/indexed-rows"
+                    | "core/assign/indexed-columns"
+                    | "core/assign/indexed-rectangle"
+            )
+        {
+            // A gather followed by arithmetic and replacement loses repeated
+            // selector occurrences. Carry the update into the addressed RMW
+            // owner so each occurrence reads the current candidate value.
+            let replacement =
+                self.conform_assignment_value(replacement, selected_schema, value_syntax)?;
+            let operation = format!("{operation}/{}", arithmetic.strip_prefix("math/").unwrap());
+            let mut inputs = vec![base, replacement];
+            inputs.extend(selectors);
+            return Ok(self.emit_with_schema_draft(
+                &operation,
+                inputs,
+                schema,
+                statement,
+                "state-update",
+                None,
+            ));
+        }
+        let replacement = if remaining.is_empty() && arithmetic.is_none() {
+            self.conform_assignment_value(replacement, selected_schema, value_syntax)?
+        } else {
+            self.document_selected_update(
+                selected.expect("nested and arithmetic assignments retain the selected read"),
+                remaining,
+                replacement,
+                arithmetic,
+                statement,
+                value_syntax,
+            )?
+        };
         let mut inputs = vec![base, replacement];
         inputs.extend(selectors);
         Ok(self.emit_with_schema_draft(operation, inputs, schema, statement, "state-update", None))
+    }
+
+    fn conform_assignment_value(
+        &mut self,
+        replacement: PendingValue,
+        mut expected: SchemaDraft,
+        syntax: &SyntaxNode,
+    ) -> Result<PendingValue, SourceSemanticError> {
+        // Maintained matrix assignment broadcasts scalar replacement values.
+        if !matches!(
+            self.schema_draft_of(replacement)?.body,
+            SchemaBody::Matrix { .. }
+        ) && let SchemaBody::Matrix { element, .. } = &expected.body
+        {
+            expected.body = *element.clone();
+        }
+        self.conform_schema_draft(
+            replacement,
+            &expected,
+            syntax,
+            "source-semantics/incompatible-assignment-kind",
+            "assignment value does not satisfy the selected binding's schema",
+        )
     }
 
     fn document_assignment_selection(
@@ -146,16 +214,31 @@ impl SemanticBuilder {
         base: PendingValue,
         selectors: Vec<Option<PendingValue>>,
         syntax: &SyntaxNode,
-    ) -> Result<(PendingValue, Vec<PendingValue>, &'static str), SourceSemanticError> {
-        // Whole-value writes retain the base geometry even though the read
-        // spelling matrix[:] exposes a flattened selection view. Do not emit
-        // that read: its result is discarded by the whole-value assignment,
-        // but every emitted node would still be retained and executed.
-        let selected = if matches!(selectors.as_slice(), [None] | [None, None]) {
-            base
+        read: bool,
+    ) -> Result<
+        (
+            Option<PendingValue>,
+            SchemaDraft,
+            Vec<PendingValue>,
+            &'static str,
+        ),
+        SourceSemanticError,
+    > {
+        // Validate once through the read-selection authority, but emit a read
+        // only when nested or mixed-kind arithmetic actually consumes it.
+        // Whole-value writes preserve the destination geometry.
+        let selection = if matches!(selectors.as_slice(), [None] | [None, None]) {
+            PendingSelection {
+                operation: None,
+                inputs: vec![base],
+                schema: self.schema_draft_of(base)?,
+            }
         } else {
-            self.select_values(base, selectors.clone(), syntax)?
+            self.prepare_selection(base, selectors.clone(), syntax)?
         };
+        let selected_schema = selection.schema.clone();
+        let selected =
+            (read || selection.operation.is_none()).then(|| self.emit_selection(selection, syntax));
         let operation = match selectors.as_slice() {
             [None] | [None, None] => "core/assign/whole-value",
             [Some(_), None] => "core/assign/indexed-rows",
@@ -170,6 +253,7 @@ impl SemanticBuilder {
         };
         Ok((
             selected,
+            selected_schema,
             selectors.into_iter().flatten().collect(),
             operation,
         ))

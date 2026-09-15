@@ -421,7 +421,7 @@ impl ProgramArtifact {
         self.slot_shape_hints.get(&slot)
     }
 
-    #[cfg(feature = "semantic-compiler")]
+    #[cfg(any(feature = "semantic-compiler", feature = "source"))]
     pub(crate) fn with_slot_shape_hints(
         mut self,
         hints: BTreeMap<CellSlotId, ShapeInstance>,
@@ -444,7 +444,7 @@ impl ProgramArtifact {
         Ok(self)
     }
 
-    #[cfg(feature = "semantic-compiler")]
+    #[cfg(any(feature = "semantic-compiler", feature = "source"))]
     pub(crate) fn with_compute_regions(
         self,
         compute_regions: Box<[ComputeRegionDeclaration]>,
