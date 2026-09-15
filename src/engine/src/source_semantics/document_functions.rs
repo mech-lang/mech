@@ -61,6 +61,21 @@ impl SemanticBuilder {
         Ok(())
     }
 
+    pub(in super::super) fn require_function_local_binding(
+        &self,
+        name: &str,
+        syntax: &SyntaxNode,
+    ) -> Result<(), SourceSemanticError> {
+        if let Some(function) = self.active_functions.last() {
+            return Err(SourceSemanticError {
+                code: "source-semantics/unbound-function-input",
+                message: format!("function {function} references undeclared local {name}"),
+                anchor: SourceSemanticAnchor::for_node(syntax),
+            });
+        }
+        Ok(())
+    }
+
     pub(in super::super) fn inline_document_function(
         &mut self,
         name: &str,
@@ -144,7 +159,7 @@ impl SemanticBuilder {
             .filter(|child| child.kind() == SyntaxKind::FunctionArg)
             .map(|node| function_parameter(&node))
             .collect::<Result<Vec<_>, _>>()?;
-        let mut local_bindings = self.bindings.clone();
+        let mut local_bindings = BTreeMap::new();
         let mut parameter_names = BTreeSet::new();
         for ((parameter, schema), input) in parameters.iter().zip(selected) {
             if !parameter_names.insert(parameter.clone()) {

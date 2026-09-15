@@ -5474,3 +5474,29 @@ fn canonical_static_symbol_result_does_not_alias_the_implicit_result() {
         supplied
     );
 }
+
+#[test]
+fn canonical_functions_do_not_capture_caller_symbols_or_existing_inputs() {
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .unwrap();
+    for prelude in ["hidden := 42f32", "before := hidden<f32>"] {
+        let document = canonical_planning_test_document(&format!(
+            "{prelude}\nwrong(value<f32>) = result<f32> :=\n  result := hidden.\n\nanswer := wrong(1f32)\n",
+        ));
+        let error = compiler
+            .compile_document(&document)
+            .unwrap_err()
+            .display_message();
+        assert!(error.contains("undeclared local hidden"), "{error}");
+    }
+    let document = canonical_planning_test_document(
+        "hidden := [42f32]\nwrong(value<f32>) = result<f32> :=\n  result := hidden[1].\n\nanswer := wrong(1f32)\n",
+    );
+    let error = compiler
+        .compile_document(&document)
+        .unwrap_err()
+        .display_message();
+    assert!(error.contains("undeclared local hidden"), "{error}");
+}

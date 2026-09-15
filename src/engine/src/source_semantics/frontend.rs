@@ -3557,6 +3557,7 @@ impl SemanticBuilder {
                 )
             });
         }
+        self.require_function_local_binding(&name, variable.syntax())?;
         let schema = annotation.unwrap_or_else(dynamic_schema_draft);
         let declared = self
             .input_schema_overrides
@@ -5575,6 +5576,7 @@ impl SemanticBuilder {
         if let Some(value) = self.bindings.get(&name).copied() {
             return self.read_document_binding(value, node);
         }
+        self.require_function_local_binding(&name, node)?;
         if let Some(index) = self.input_by_name.get(&name) {
             return Ok(PendingValue::Input(*index));
         }
