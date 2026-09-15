@@ -9,22 +9,24 @@ All active extraction/corrective PRs and C remain drafts. Ask for review by comm
 | Order | Owner and work | Current state / completion condition |
 | --- | --- | --- |
 | 1 | R25 + C/G22 compute/browser handoff | R25 #849 content `425578fa7` has a clean review and 7 + 18 passing tests. The current stack head is `6dcd269c9`; its R25 diff still contains the reviewed correction and additionally inherits the lower-stack filesystem-import fix. Focused CI 35030743606 has passed both owners, review regressions, browser canary, architecture, distribution and three mutation shards; its final status is still queued. C #830 current head is `7968e6341` with full qualification run 35030747629 queued. The shipping configured document edit passes all seven scenarios, changes result 1→3, preserves inline selection identity, and rolls back malformed edits. The EKF rerun gets past R25's provider and `result.0` failures and now stops at the distinct G29/R26 canonical-artifact/portable-kernel handoff. R25 closes when exact-head focused CI completes; C remains open. |
-| 2 | R08/G18 variable-cardinality layouts | Draft [#854](https://github.com/mech-lang/mech/pull/854) is published at exact head `c9f6ba167` and is native stack #855 position 17 between R25 and C. The first review's three findings are fixed, answered and resolved: nullary snapshot construction, Boolean snapshot transpose, and mixed fixed dense plus variable snapshot concatenands. Seven focused source/decoded comprehension tests, all 49 canonical document-state tests, the direct nullary binder/executor test, and both neighboring runtime product tests pass. A new review is pending; no unresolved thread remains. |
-| 3 | R07/G05 control initializers | Branch `codex/syntax-s8r07-initializers` is rebased onto R08 with published head `d5faef9ff`; the worktree retains an unfinished matrix-state follow-up. Closed-control/budget corrections pass. Resume only after processing any returning R08 review findings. |
-| 4 | R09–R20 semantic prerequisites | Corrective implementations remain pending; use the accepted dependency/acceptance cells to select the next ready owner after the initializer batch. No numbered item is implicitly complete. |
+| 2 | R08/G18 variable-cardinality layouts | Draft [#854](https://github.com/mech-lang/mech/pull/854) is published at exact head `f4dc9bbe`. All four review findings are fixed, answered and resolved. The latest correction admits Index and String snapshot transpose and has direct plus source/decoded regressions. All 50 canonical document-state tests pass. Fresh review and focused exact-head CI are pending. |
+| 3 | R07/G05 control initializers | Draft [#856](https://github.com/mech-lang/mech/pull/856) is published at exact head `718b4854d`, based on R08. Closed comprehension and match initializers execute once through the shared resident dispatcher; live/state dependencies remain rejected, dynamic result shape remains snapshot-backed, and budget failure preserves publication. All 56 canonical document-state tests and the affected owner tests pass. Review and focused exact-head CI are pending. |
+| 4 | R09/G06 retained comprehension storage | Branch `codex/syntax-s8r09-comprehension-storage` is based on exact R07 and is actively changing. Strict source/decoded `i32`, String and tuple witnesses are being implemented through one schema-directed retained item path. No PR exists yet. |
+| 5 | R10–R20 semantic prerequisites | Corrective implementations remain pending; use the accepted dependency/acceptance cells after R09. No numbered item is implicitly complete. |
 | Product blocker | R26/G29 canonical EKF compute lowering | Newly demonstrated and explicitly owned before implementation. The single-lane shipping CPU witness fails at portable lowering after R25 succeeds. No corrective branch or PR exists. Preserve the full CPU/WebGPU oracle; do not fold this into R25 or count semantic-only compilation as acceptance. |
 | Across accepted batches | R21–R23 in C: authority retirement, browser adoption, distribution closure | Partially implemented, incomplete. Keep real deleted-parser and product probes running; fix failures in their owners. Hold one stable C head for final full qualification only after accepted obligations close. |
 | Outstanding decisions | R02/G02, R06/G17, R15/G12 | Recorded capability/contract decisions remain open. Positive obligations have not been excluded. These are not implicitly deferred beyond landing. |
 | Outstanding implementation | R24/G27 Index ranges; R26/G29 canonical compute lowering | Strict failing witnesses exist; neither has a production implementation or PR. Both must close before final qualification. |
 
-**Active change lanes:** C, R08 review/validation, and the now dependency-ready
-R07 correction. R25 is validation-only; R26 is recorded but not yet changing.
+**Active change lanes:** C, R08/R07 review and validation, and R09 implementation.
+R25 is validation-only; R26 is recorded but not yet changing.
 Never exceed three actively changing
 corrective branches. Do not open PRs solely to instantiate every audit boundary.
 
-**Next concrete action:** inspect the new #854 review and focused stack checks;
-respond and resolve any findings before another review request. If it is clean,
-resume R07's remaining matrix initializer cases on its existing rebased branch.
+**Next concrete action:** implement R09/G06's strict retained comprehension
+storage witnesses while R08 and R07 review and focused checks run. Any returning
+R08/R07 finding takes priority and must be answered and resolved before another
+review request.
 R08 exact-head evidence is in `recovery-evidence/r08-exact-head-focused.log`.
 The full engine library run passed 451 tests and reproduced its sole failing
 indexed-assignment assertion unchanged at the R25 base; the base witness is in
@@ -1009,5 +1011,46 @@ qualification is requested for the slice.
 **Next action:** resolve any new #854 findings before another review request. If
 the review is clean, resume `/private/tmp/mech-syntax-s8r07-initializers` from its
 existing rebased state and finish the two remaining matrix initializer witnesses.
+
+**External blocker:** none. Checkpoint—not complete.
+
+
+## Current checkpoint — R08/R07 integrated; R09 begins
+
+**Candidate:** accumulated draft C #830 is `codex/syntax-s8c-cutover` /
+`8ec616a49a3661cd9456bac7200cf6433803eb57`, directly based on R07 draft
+#856 at `718b4854d8ec55488f7566779d3aa5848f906c2d`, which is based on R08
+draft #854 at `f4dc9bbeceefaa5f2e5732b2006f855c663861e3`. Native stack #857
+targets `integration/v0.4`; every PR remains a draft.
+
+**Completed:** R08's fourth review finding is fixed at the owning snapshot
+transpose binder, answered and resolved. Direct Index/String and source/decoded
+Index regressions pass, as do all 50 canonical document-state tests. R07 is a
+clean five-commit corrective series: closed controls execute once at activation,
+activation controls stay outside turn topology, live dependencies remain
+rejected, dynamic shapes remain snapshot-backed, and resource failures leave
+publication unchanged. Its focused initializer tests pass 5/5, all 56 canonical
+document-state tests pass, and the affected snapshot-access and hold-state owner
+tests pass 8/8 and 1/1. Both exact heads are mergeable and have no unresolved
+threads; fresh reviews and focused CI are pending.
+
+The accumulated candidate contains both corrections. Its exact deleted-parser
+source product probe passed all 14 catalog cases and the rooted source canary.
+This is batch product evidence, not final qualification.
+
+**Remaining:** R08 and R07 review and focused CI completion; R09/G06 and the
+accepted R10–R24 implementation queue; R02/G02, R06/G17 and R15/G12 decisions;
+R26/G29; remaining product/retirement acceptance; stable exact-C full
+qualification; protected merge; and post-merge verification.
+
+**Current action:** implement R09/G06 on
+`codex/syntax-s8r09-comprehension-storage`, based on exact R07. The first strict
+source/decoded witnesses cover retained `i32`, String and tuple binding/yield
+storage over two turns and preserve the declared element schema.
+
+**Next action:** finish the shared schema-directed retained item path, run the
+focused and neighboring comprehension suites, publish one draft R09 PR, obtain
+review, and integrate the accepted head into C. Interrupt that work for any
+actionable R08/R07 review finding.
 
 **External blocker:** none. Checkpoint—not complete.
