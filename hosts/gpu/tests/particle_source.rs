@@ -1173,6 +1173,12 @@ fn canonical_compute_inputs_and_assignments_keep_source_names() {
         assert_eq!(elementwise.interface().inputs[0].name.as_ref(), name);
         let kernel = mech_gpu::ElementwiseKernel::from_compute_program(&elementwise).unwrap();
         assert_eq!(kernel.run_cpu(&inputs).unwrap()["result"], vec![2.0]);
+        for kernel in [
+            ComputeLowerer.compile(&mixed.compute.artifact).unwrap(),
+            ComputeLowerer.compile_cpu(&mixed.compute.artifact).unwrap(),
+        ] {
+            assert_eq!(kernel.run_cpu(&inputs).unwrap()["result"], vec![2.0]);
+        }
     }
 }
 

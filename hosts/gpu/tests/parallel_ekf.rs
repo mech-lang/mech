@@ -1213,11 +1213,6 @@ fn source_driven_broadcast_matches_the_native_gpu() {
 #[test]
 fn checked_gpu_rejects_candidate_and_keeps_published_estimate() {
     let (program, mut inputs) = source_program(32);
-    inputs
-        .get_mut("bearing")
-        .unwrap()
-        .iter_mut()
-        .for_each(|value| *value = f32::NAN);
     let mut gpu = match program.prepare_resident(&inputs) {
         Ok(gpu) => gpu,
         Err(BatchedExecutionError::Native(message))
@@ -1228,7 +1223,20 @@ fn checked_gpu_rejects_candidate_and_keeps_published_estimate() {
         }
         Err(error) => panic!("native GPU preparation failed: {error}"),
     };
+    let mut cpu = program.prepare_cpu(&inputs).unwrap();
+    cpu.dispatch_turns(2).unwrap();
+    gpu.dispatch_turns(2).unwrap();
     let (_, before) = gpu.read_published_state().unwrap();
+    for (slot, values) in cpu.state() {
+        assert_close(values, &before[slot], 1.0e-4);
+    }
+    assert_eq!(gpu.fault_count(), 0);
+    inputs
+        .get_mut("bearing")
+        .unwrap()
+        .iter_mut()
+        .for_each(|value| *value = f32::NAN);
+    gpu.update_inputs(&program, &inputs).unwrap();
     assert!(matches!(
         gpu.dispatch_turns(1).unwrap_err(),
         BatchedExecutionError::Integrity(_)
@@ -1236,7 +1244,7 @@ fn checked_gpu_rejects_candidate_and_keeps_published_estimate() {
     let (_, after) = gpu.read_published_state().unwrap();
     assert_eq!(after, before);
     assert_eq!(gpu.fault_count(), 1);
-    assert_eq!(gpu.last_fault().unwrap().attempted_turn, 1);
+    assert_eq!(gpu.last_fault().unwrap().attempted_turn, 3);
     assert_eq!(
         gpu.last_fault().unwrap().constraint_name.as_ref(),
         "finite-candidate!"

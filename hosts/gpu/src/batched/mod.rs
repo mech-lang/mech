@@ -4515,14 +4515,19 @@ mod native {
                     .map_err(BatchedExecutionError::Native)?;
                 let submission = self.queue.submit(Some(encoder.finish()));
                 unsubmitted.record_submitted(submission);
-                crate::settle_submissions(
+                // The submission owns the host transfer interval until the
+                // mapped integrity result has been copied. Settle even when
+                // readback fails so accepted GPU work cannot strand its hold.
+                let readback_result = self.read_integrity_fault();
+                let completion_result = crate::settle_submissions(
                     &self.device,
                     &mut self.submission_tracker,
                     &self.managed_memory,
                 )
-                .map_err(|error| BatchedExecutionError::Native(error.to_string()))?;
+                .map_err(|error| BatchedExecutionError::Native(error.to_string()));
+                let words = readback_result?;
+                completion_result?;
                 self.record_completed_writes(&uploaded_objects, [group == 0, group == 1])?;
-                let words = self.read_integrity_fault()?;
                 if words[0] != 0 {
                     let packed = words[1];
                     let code = packed & 0xff;

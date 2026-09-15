@@ -1089,16 +1089,18 @@ impl<'a> Compiler<'a> {
             let Some(elements) = self.slot_elements.get(&input.slot).copied() else {
                 continue;
             };
+            let name = mech_engine::decode_source_input_name(&input.name)
+                .unwrap_or_else(|| input.name.clone());
             let binding = self.bindings.len() as u32;
             self.bindings.push(GpuBinding {
                 binding,
-                name: input.name.clone(),
+                name: name.clone(),
                 access: GpuBindingAccess::Read,
                 elements,
                 kind: GpuBindingKind::Input(input.slot),
             });
             self.input_slots
-                .insert(input.slot, (input.name.clone(), elements, binding));
+                .insert(input.slot, (name, elements, binding));
         }
         let state_slots = self.state_slots.keys().copied().collect::<Vec<_>>();
         for slot in state_slots {
