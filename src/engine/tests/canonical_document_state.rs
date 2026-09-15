@@ -1452,3 +1452,118 @@ fn promoted_broadcast_failure_preserves_the_complete_state_before_retry() {
         }
     }
 }
+
+#[test]
+fn review_nested_composite_matrix_field_update() {
+    turns(
+        "~a := [{value: 1} {value: 4}]\na[1].value += 1\na[1].value + a[2].value\n",
+        &[6.0, 7.0],
+    );
+}
+
+fn matrix_turns(source: &str, expected: &[Vec<f64>]) {
+    let artifact = compiled(source).compile_artifact().unwrap();
+    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    for artifact in [
+        artifact,
+        mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap(),
+    ] {
+        let mut catalog = FunctionCatalogBuilder::new();
+        mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x59b, 0),
+            &artifact,
+            &catalog.build().unwrap(),
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        for expected in expected {
+            instance.turn(&[]).unwrap();
+            let output = instance.copied_output(0).unwrap();
+            let ValueData::Matrix(matrix) = output.data() else {
+                panic!("{output:?}")
+            };
+            let actual: Vec<f64> = match matrix.elements() {
+                mech_core::snapshot::SequenceView::I32(values) => {
+                    values.iter().map(|v| f64::from(*v)).collect()
+                }
+                mech_core::snapshot::SequenceView::F64(values) => {
+                    values.iter().map(|v| v.to_f64()).collect()
+                }
+                _ => panic!("{output:?}"),
+            };
+            assert_eq!(
+                &actual, expected,
+                "complete source/decoded output for {source:?}"
+            );
+        }
+    }
+}
+
+#[test]
+fn turn_mask_broadcast_uses_live_population_and_preserves_complete_matrices() {
+    for kind in ["i32", "f64"] {
+        for (selection, rhs, thresholds, increments) in [
+            (
+                "a[mask,:]",
+                "[1.5 2.5 3.5]",
+                "[1;2]",
+                [1.5, 2.5, 3.5, 1.5, 2.5, 3.5],
+            ),
+            (
+                "a[:,mask]",
+                "[1.5;2.5]",
+                "[1 2 2]",
+                [1.5, 1.5, 1.5, 2.5, 2.5, 2.5],
+            ),
+            (
+                "a[mask,[1 2 3]]",
+                "[1.5 2.5 3.5]",
+                "[1;2]",
+                [1.5, 2.5, 3.5, 1.5, 2.5, 3.5],
+            ),
+        ] {
+            let source = format!(
+                "~a := [10<{kind}> 20<{kind}> 30<{kind}>;40<{kind}> 50<{kind}> 60<{kind}>]\n~n := -1\nn += 1\nmask := {thresholds} <= n\n{selection} += {rhs}\na\n"
+            );
+            let initial = vec![10.0, 20.0, 30.0, 40.0, 50.0, 60.0];
+            let mut next = initial.clone();
+            let mut expected = vec![initial];
+            for population in 1..=2 {
+                for index in 0..6 {
+                    let selected = if selection == "a[:,mask]" {
+                        index % 3 == 0 || population == 2
+                    } else {
+                        index < 3 || population == 2
+                    };
+                    if selected {
+                        next[index] += if kind == "i32" {
+                            f64::trunc(increments[index])
+                        } else {
+                            increments[index]
+                        };
+                    }
+                }
+                expected.push(next.clone());
+            }
+            matrix_turns(&source, &expected);
+        }
+    }
+}
+
+#[test]
+fn review_asymmetric_rectangle_admission() {
+    let row = std::iter::repeat_n("10<i32>", 1000)
+        .collect::<Vec<_>>()
+        .join(" ");
+    let columns = (1..=1000)
+        .map(|n| n.to_string())
+        .collect::<Vec<_>>()
+        .join(" ");
+    turns(
+        &format!(
+            "~a := [{row}]\na[[1],[{columns}]] += 2.5\nselected := a[1,1000]\nanswer := selected<f64>\nanswer\n"
+        ),
+        &[12.0, 14.0],
+    );
+}
