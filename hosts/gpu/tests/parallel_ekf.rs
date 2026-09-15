@@ -1213,11 +1213,6 @@ fn source_driven_broadcast_matches_the_native_gpu() {
 #[test]
 fn checked_gpu_rejects_candidate_and_keeps_published_estimate() {
     let (program, mut inputs) = source_program(32);
-    inputs
-        .get_mut("bearing")
-        .unwrap()
-        .iter_mut()
-        .for_each(|value| *value = f32::NAN);
     let mut gpu = match program.prepare_resident(&inputs) {
         Ok(gpu) => gpu,
         Err(BatchedExecutionError::Native(message))
@@ -1228,7 +1223,20 @@ fn checked_gpu_rejects_candidate_and_keeps_published_estimate() {
         }
         Err(error) => panic!("native GPU preparation failed: {error}"),
     };
+    let mut cpu = program.prepare_cpu(&inputs).unwrap();
+    cpu.dispatch_turns(2).unwrap();
+    gpu.dispatch_turns(2).unwrap();
     let (_, before) = gpu.read_published_state().unwrap();
+    for (slot, values) in cpu.state() {
+        assert_close(values, &before[slot], 1.0e-4);
+    }
+    assert_eq!(gpu.fault_count(), 0);
+    inputs
+        .get_mut("bearing")
+        .unwrap()
+        .iter_mut()
+        .for_each(|value| *value = f32::NAN);
+    gpu.update_inputs(&program, &inputs).unwrap();
     assert!(matches!(
         gpu.dispatch_turns(1).unwrap_err(),
         BatchedExecutionError::Integrity(_)
@@ -1236,7 +1244,7 @@ fn checked_gpu_rejects_candidate_and_keeps_published_estimate() {
     let (_, after) = gpu.read_published_state().unwrap();
     assert_eq!(after, before);
     assert_eq!(gpu.fault_count(), 1);
-    assert_eq!(gpu.last_fault().unwrap().attempted_turn, 1);
+    assert_eq!(gpu.last_fault().unwrap().attempted_turn, 3);
     assert_eq!(
         gpu.last_fault().unwrap().constraint_name.as_ref(),
         "finite-candidate!"
@@ -1254,4 +1262,225 @@ fn assert_close(expected: &[f32], actual: &[f32], tolerance: f32) {
         max_error <= tolerance,
         "maximum absolute error {max_error} exceeds {tolerance}:\nexpected {expected:?}\nactual   {actual:?}"
     );
+}
+
+#[test]
+fn canonical_derived_publications_commit_without_becoming_recurrence_state() {
+    for (body, expected_factors, publication_count) in [
+        ("total = total + signal\n(total, total)", [3.0, 3.0], 1),
+        (
+            "copy := signal * 2f32\ntotal = total + signal\n(copy, total)",
+            [2.0, 3.0],
+            2,
+        ),
+    ] {
+        let body = body.replace("\n(", "\nbounded! := total < 100f32\n(");
+        let source = format!(
+            "@worker := compute://worker/kernel{{:write(input/signal), :write(turn)}}\n@worker/input/signal <- 1f32\n@worker/turn <- 1\n\ncalculation @compute\n-------------------------------------------------------------------------------\nsignal := 1f32\n~total := 0f32\n{body}\n"
+        );
+        let document = mech_runtime::SourceDocument::parse_resolved(
+            "test://canonical-publications",
+            mech_syntax::document::Revision(0),
+            Arc::<str>::from(source),
+            mech_syntax::document::ParseConfig::default(),
+        )
+        .unwrap();
+        let mixed = RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_native_plan_catalog())
+            .build_compiler()
+            .unwrap()
+            .compile_mixed_document(&document)
+            .unwrap();
+        let inputs = BTreeMap::from([("signal".to_owned(), vec![1.0, 2.0, 3.0, 4.0, 5.0])]);
+        let kernel = ComputeLowerer
+            .compile_broadcast(&mixed.compute.artifact, &inputs)
+            .unwrap();
+        let program = kernel.compute_program();
+        let storage = program.fixed_shape_storage().unwrap();
+        assert_eq!(storage.states.len(), 1);
+        assert_eq!(storage.publications.len(), publication_count);
+        assert_eq!(program.interface().states.len(), 1);
+        assert_eq!(program.interface().outputs.len(), 2);
+        let mut direct = kernel.prepare_cpu(&inputs).unwrap();
+        direct.dispatch_turns(3).unwrap();
+        for (output, factor) in program.interface().outputs.iter().zip(expected_factors) {
+            assert_eq!(
+                direct.state()[&output.slot],
+                (1..=5).map(|x| x as f32 * factor).collect::<Vec<_>>()
+            );
+        }
+        let before = direct.state().clone();
+        direct
+            .update_inputs(&BTreeMap::from([(
+                "signal".to_owned(),
+                vec![1.0, 2.0, 3.0, 4.0, 1000.0],
+            )]))
+            .unwrap();
+        assert!(matches!(
+            direct.dispatch_turns(1),
+            Err(BatchedExecutionError::Integrity(_))
+        ));
+        assert_eq!(direct.last_fault().unwrap().instance, 4);
+        assert_eq!(direct.state(), &before);
+        // Registry initializers are one source value, broadcast across lanes.
+        let initializers =
+            compute_initializers(&kernel, &BTreeMap::from([("signal".to_owned(), vec![2.0])]));
+        let registry = native_compute_backend_registry();
+        let mut backends = vec!["cpu-scalar", "cpu-simd", "wgpu"];
+        if cfg!(feature = "jit") {
+            backends.push("cpu-jit");
+        }
+        for backend in backends {
+            let factory = match registry.resolve(
+                &BackendRequest::parse(backend).unwrap(),
+                ComputePlatform::Native,
+                ComputePlacement::Compute,
+                program,
+            ) {
+                Ok(factory) => factory,
+                Err(error) if backend == "wgpu" && error.to_string().contains("adapter") => {
+                    continue;
+                }
+                Err(error) => panic!("{backend}: {error}"),
+            };
+            let executable = factory.compile(program).unwrap();
+            let mut session = executable.create_session(&initializers).unwrap();
+            let initial = session.read_outputs(&ComputeOutputSelection::All).unwrap();
+            for values in flattened_outputs(&initial).values() {
+                assert_eq!(values, &[0.0; 5]);
+            }
+            session
+                .dispatch(&ComputeDispatchRequest::new(NonZeroU32::new(3).unwrap()))
+                .unwrap();
+            let actual =
+                flattened_outputs(&session.read_outputs(&ComputeOutputSelection::All).unwrap());
+            for (output, factor) in program.interface().outputs.iter().zip(expected_factors) {
+                assert_eq!(
+                    actual[&output.id],
+                    vec![2.0 * factor; 5],
+                    "{backend}: {}",
+                    output.name
+                );
+            }
+            session
+                .update_inputs(&[ComputeInputUpdate {
+                    port: program.interface().inputs[0].id,
+                    value: ComputeValue::ScalarF32(1000.0),
+                }])
+                .unwrap();
+            let rejected = session
+                .dispatch(&ComputeDispatchRequest::new(NonZeroU32::new(1).unwrap()))
+                .unwrap();
+            assert_eq!(
+                rejected.disposition,
+                ComputeDispatchDisposition::Rejected,
+                "{backend}"
+            );
+            assert_eq!(
+                flattened_outputs(&session.read_outputs(&ComputeOutputSelection::All).unwrap()),
+                actual,
+                "{backend}"
+            );
+        }
+    }
+}
+
+#[test]
+fn canonical_matrix_broadcast_uses_each_input_axis() {
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .unwrap();
+    for (rows, columns, column, reverse) in [
+        (2, 3, true, false),
+        (3, 2, false, false),
+        (2, 3, false, true),
+        (3, 2, true, true),
+        (1, 4, true, false),
+        (4, 1, false, true),
+    ] {
+        let matrix = (0..rows)
+            .map(|row| {
+                (0..columns)
+                    .map(|col| format!("{}f32", row * columns + col + 1))
+                    .collect::<Vec<_>>()
+                    .join(" ")
+            })
+            .collect::<Vec<_>>()
+            .join("; ");
+        let count = if column { rows } else { columns };
+        let offset_values = (1..=count).map(|i| i as f32 * 10.0).collect::<Vec<_>>();
+        let offset = offset_values
+            .iter()
+            .map(|x| format!("{x}f32"))
+            .collect::<Vec<_>>()
+            .join(if column { "; " } else { " " });
+        let expression = if reverse {
+            "offset - matrix"
+        } else {
+            "matrix - offset"
+        };
+        let source = format!(
+            "@worker := compute://worker/kernel{{:write(input/offset), :write(turn)}}\n@worker/input/offset <- [{offset}]\n@worker/turn <- 1\n\ncalculation @compute\n-------------------------------------------------------------------------------\noffset := [{offset}]\n~matrix := [{matrix}]\nmatrix = {expression}\nmatrix\n"
+        );
+        let document = mech_runtime::SourceDocument::parse_resolved(
+            "test://canonical-broadcast",
+            mech_syntax::document::Revision(0),
+            Arc::<str>::from(source),
+            mech_syntax::document::ParseConfig::default(),
+        )
+        .unwrap();
+        let mixed = compiler.compile_mixed_document(&document).unwrap();
+        let inputs = BTreeMap::from([("offset".to_owned(), offset_values)]);
+        let kernel = ComputeLowerer
+            .compile_broadcast(&mixed.compute.artifact, &inputs)
+            .unwrap();
+        let expected = (0..rows * columns)
+            .map(|index| {
+                let offset = if column {
+                    index / columns + 1
+                } else {
+                    index % columns + 1
+                } as f32
+                    * 10.0;
+                if reverse {
+                    offset - (index + 1) as f32
+                } else {
+                    (index + 1) as f32 - offset
+                }
+            })
+            .collect::<Vec<_>>();
+        let registry = native_compute_backend_registry();
+        let initializers = compute_initializers(&kernel, &inputs);
+        for backend in ["cpu-scalar", "cpu-simd", "wgpu"] {
+            let program = kernel.compute_program();
+            let factory = match registry.resolve(
+                &BackendRequest::parse(backend).unwrap(),
+                ComputePlatform::Native,
+                ComputePlacement::Compute,
+                program,
+            ) {
+                Ok(factory) => factory,
+                Err(error) if backend == "wgpu" && error.to_string().contains("adapter") => {
+                    continue;
+                }
+                Err(error) => panic!("{backend}: {error}"),
+            };
+            let mut session = factory
+                .compile(program)
+                .unwrap()
+                .create_session(&initializers)
+                .unwrap();
+            session
+                .dispatch(&ComputeDispatchRequest::new(NonZeroU32::new(1).unwrap()))
+                .unwrap();
+            let actual =
+                flattened_outputs(&session.read_outputs(&ComputeOutputSelection::All).unwrap());
+            assert_eq!(
+                actual[&program.interface().outputs[0].id],
+                expected,
+                "{rows}x{columns} column={column} reverse={reverse} backend={backend}"
+            );
+        }
+    }
 }

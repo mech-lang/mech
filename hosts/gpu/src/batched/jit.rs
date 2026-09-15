@@ -165,6 +165,7 @@ impl NativeKernel {
             .symbol("mech_jit_cosf", mech_jit_cosf as *const u8)
             .symbol("mech_jit_sqrtf", mech_jit_sqrtf as *const u8)
             .symbol("mech_jit_ceilf", mech_jit_ceilf as *const u8)
+            .symbol("mech_jit_fmodf", mech_jit_fmodf as *const u8)
             .symbol("mech_jit_atan2f", mech_jit_atan2f as *const u8);
         let mut module = JITModule::new(jit_builder);
 
@@ -192,6 +193,9 @@ impl NativeKernel {
             .map_err(native_error)?;
         let ceil_id = module
             .declare_function("mech_jit_ceilf", Linkage::Import, &unary_signature)
+            .map_err(native_error)?;
+        let fmod_id = module
+            .declare_function("mech_jit_fmodf", Linkage::Import, &binary_signature)
             .map_err(native_error)?;
         let atan2_id = module
             .declare_function("mech_jit_atan2f", Linkage::Import, &binary_signature)
@@ -284,6 +288,7 @@ impl NativeKernel {
                 sqrt: sqrt_ref,
                 ceil: ceil_ref,
                 atan2: atan2_ref,
+                fmod: module.declare_func_in_func(fmod_id, builder.func),
             };
             let mut registers = vec![None; program.fixed_ir().register_count];
             for (index, input) in program.inputs.iter().enumerate() {
@@ -299,7 +304,12 @@ impl NativeKernel {
                     )));
                 }
             }
-            for (index, state) in program.states.iter().enumerate() {
+            for (index, state) in program
+                .states
+                .iter()
+                .enumerate()
+                .filter(|(_, state)| state.recurrence)
+            {
                 let offset = program.register_offsets[&state.slot];
                 for component in 0..state.shape.elements() {
                     registers[offset + component] = Some(NativeRegister::F32(load_component(
@@ -401,6 +411,7 @@ struct MathFunctions {
     sqrt: cranelift_codegen::ir::FuncRef,
     ceil: cranelift_codegen::ir::FuncRef,
     atan2: cranelift_codegen::ir::FuncRef,
+    fmod: cranelift_codegen::ir::FuncRef,
 }
 
 #[derive(Clone, Copy)]
@@ -476,6 +487,7 @@ fn lower_computation(
                     BinaryOperation::Subtract => builder.ins().fsub(values[0], values[1]),
                     BinaryOperation::Multiply => builder.ins().fmul(values[0], values[1]),
                     BinaryOperation::Divide => builder.ins().fdiv(values[0], values[1]),
+                    BinaryOperation::Remainder => call_math(builder, functions.fmod, &values),
                 },
                 ElementwiseOperation::Unary(operation) => match operation {
                     UnaryOperation::Sin => call_math(builder, functions.sin, &values),
@@ -708,4 +720,8 @@ extern "C" fn mech_jit_ceilf(value: f32) -> f32 {
 
 extern "C" fn mech_jit_atan2f(y: f32, x: f32) -> f32 {
     y.atan2(x)
+}
+
+extern "C" fn mech_jit_fmodf(left: f32, right: f32) -> f32 {
+    left % right
 }

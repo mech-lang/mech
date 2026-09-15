@@ -374,8 +374,20 @@ class Device {
       if (errors.length) {
         throw new Error(errors.map((message) => message.message).join("\n"));
       }
+      // The physical plan owns every binding, including the read side of
+      // publication buffers that the shader never loads. Automatic reflection
+      // can omit those bindings and invalidate the planned ping-pong groups.
+      const bindings = device.createBindGroupLayout({
+        entries: manifest.bindings.map(binding => ({
+          binding: binding.binding,
+          visibility: GPUShaderStage.COMPUTE,
+          buffer: {
+            type: binding.access === "read" ? "read-only-storage" : "storage",
+          },
+        })),
+      });
       const descriptor = {
-        layout: "auto",
+        layout: device.createPipelineLayout({ bindGroupLayouts: [bindings] }),
         compute: { module, entryPoint: "main" },
       };
       const pipeline = typeof device.createComputePipelineAsync === "function"
