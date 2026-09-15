@@ -9,6 +9,7 @@ use mech_core::{
 struct Plan {
     mode: u8,
     arithmetic: SemanticArithmetic,
+    rational_power: bool,
     rows: usize,
     columns: usize,
     source_len: usize,
@@ -64,13 +65,24 @@ pub(super) fn bind(
         }
         scalar => (scalar, 1),
     };
-    if !snapshot_arithmetic_element_supported(arithmetic, incoming) {
+    let rational_power = cfg!(feature = "r64")
+        && arithmetic == SemanticArithmetic::Power
+        && destination.as_ref() == &SchemaBody::Rational64
+        && incoming == &SchemaBody::SignedInteger(mech_core::IntegerWidth::W32);
+    if !rational_power && !snapshot_arithmetic_element_supported(arithmetic, incoming) {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
     let target_type = ResolvedType::from_schema_body(destination, &[])
         .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
-    let arithmetic_type = ResolvedType::from_schema_body(incoming, &[])
-        .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
+    let arithmetic_type = ResolvedType::from_schema_body(
+        if rational_power {
+            destination.as_ref()
+        } else {
+            incoming
+        },
+        &[],
+    )
+    .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
     let promote = plan_implicit_conversion(&target_type, &arithmetic_type)
         .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
     let assign = plan_explicit_cast(&arithmetic_type, &target_type)
@@ -97,6 +109,7 @@ pub(super) fn bind(
         .with_retained_state(Arc::new(Plan {
             mode,
             arithmetic,
+            rational_power,
             rows,
             columns,
             source_len,
@@ -156,7 +169,7 @@ fn execute(
         .and_then(|n| n.checked_mul(4))
         .ok_or(ResidentKernelError::InvalidShape)?;
     super::super::budget::PreparedKernel::new((), super::super::budget::resident_cost! {
-        compute_work: super::super::budget::checked_u64(elements.checked_mul(8).ok_or(ResidentKernelError::InvalidShape)?)?,
+        compute_work: super::super::budget::checked_u64(elements.checked_mul(if plan.rational_power { 128 } else { 8 }).ok_or(ResidentKernelError::InvalidShape)?)?,
         comparison_work: super::super::budget::checked_u64(count)?,
         temporary_bytes: super::super::budget::checked_u64(bytes)?,
         cloned_bytes: super::super::budget::checked_u64(bytes)?,
@@ -215,7 +228,11 @@ fn execute(
         let left = execute_conversion_draft(next[destination].clone(), &plan.promote.step)
             .map_err(|_| ResidentKernelError::Arithmetic)?;
         let right = source[if source.len() == 1 { 0 } else { ordinal }].clone();
-        let value = numeric_arithmetic(plan.arithmetic, left, right)?;
+        let value = if plan.rational_power {
+            numeric_rational_power(left, right)?
+        } else {
+            numeric_arithmetic(plan.arithmetic, left, right)?
+        };
         next[destination] = execute_conversion_draft(value, &plan.assign.step)
             .map_err(|_| ResidentKernelError::Arithmetic)?;
     }

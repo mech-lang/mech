@@ -1,4 +1,5 @@
 mod promoted_assignment;
+mod selection_address;
 
 #[cfg(test)]
 use mech_core::PORTABLE_SELECTOR_INDEX_MAX as PORTABLE_INDEX_MAX;
@@ -606,6 +607,18 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
             }
         };
     }
+    register_canonical_finalize(
+        builder,
+        &["core", "assign"],
+        "identity-indices",
+        selection_address::bind_identity_indices,
+    )?;
+    register_canonical_finalize(
+        builder,
+        &["core", "assign"],
+        "selection-order",
+        selection_address::bind_selection_order,
+    )?;
     compound_selection!("add", 0);
     compound_selection!("sub", 1);
     compound_selection!("mul", 2);
