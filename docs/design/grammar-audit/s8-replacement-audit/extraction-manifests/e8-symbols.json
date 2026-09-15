@@ -1,0 +1,49 @@
+{
+  "base": "634f45620984f6437185de4ae05c770c4b84d7da",
+  "frozen": "662d29b79df8ab05a25bbadb941a689fd5bd5aae",
+  "copied": [
+    {
+      "path": "src/runtime/src/runtime/program/compiler.rs",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 153828,
+      "sha256": "73be5d9be5d5d9d0c37ca66aba36b67963c1751ee6bff8a07dd5d7e8b5bfa58b",
+      "at_byte": 0,
+      "remove_bytes": 142313,
+      "remove_sha256": "75fba1b287a5e03b82bc48e35f62fc9038fce86762c786f1dfc225b972c3347e"
+    },
+    {
+      "path": "src/compute/src/port.rs",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 30976,
+      "sha256": "6572896f21ca24813e5e4f9fb68d2346fd8e3674f1d5c730eee7f35f99db5bd6",
+      "at_byte": 0,
+      "remove_bytes": 30860,
+      "remove_sha256": "a36a4395f0fbd364e5aa9a8ff49483bf50d816ade95f6acaeaa1acec4ba76a8b"
+    },
+    {
+      "path": "src/runtime/src/runtime/program/tests.rs",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 230236,
+      "sha256": "b18c18e206c03251913bef362d8527bd503cc06a94edc618d508d47a1d9ca0e9",
+      "at_byte": 0,
+      "remove_bytes": 219740,
+      "remove_sha256": "719727725a33a85c6805c7e363c7c474b15e048e8cec9600358990efe03ecd7b"
+    }
+  ],
+  "unchanged_existing_test_functions": 134,
+  "added_program_test_names": [
+    "canonical_mixed_document_owns_partitioning_and_typed_initializers",
+    "canonical_rooted_mixed_compilation_shares_transitive_imports_and_initializers",
+    "canonical_mixed_document_retains_batched_activation_values",
+    "canonical_mixed_source_inlines_user_function_graphs",
+    "canonical_mixed_source_retains_tuple_destructured_results",
+    "canonical_mixed_shipped_ekf_region_compiles",
+    "canonical_mixed_shipped_particle_region_initializes"
+  ]
+}

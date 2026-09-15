@@ -1,0 +1,892 @@
+{
+  "extraction-base": "b573284cb4587d4fb0085cc69a80a036830f1b76",
+  "frozen-production-reference": "662d29b79df8ab05a25bbadb941a689fd5bd5aae",
+  "ledger": "patch-ownership.tsv",
+  "ledger-sha256": "191aafdcf84ccee2138e6c081e778df1ae21be94eb73052096e30757faa9aa34",
+  "baseline-changed-path-count": 91,
+  "extracted-through": "E11",
+  "extracted-head": "75ae76bf7d5a28781c7c6f20ce2484ca8d6a80a4",
+  "at-extracted-head-status-counts": {
+    "equals-frozen": 91
+  },
+  "remaining-path-count": 0,
+  "remaining-path-counts-by-owner": {},
+  "execution-environment": {
+    "CARGO_BUILD_JOBS": "2",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0",
+    "toolchain": "nightly-2026-03-03",
+    "network": "offline; locked dependency graph"
+  },
+  "proof-limits": [
+    "Source identities are fixed full git object IDs, with branch names supplied for navigation.",
+    "Named test targets and checks are credited only after their logged completion; running logs do not imply aggregate success.",
+    "A Cargo check is a build check and executes no tests.",
+    "Passing extraction tests are not replacement-gap closure; the implementation freeze remains active.",
+    "E9 records a native/JIT backend build check and two targeted execution tests. E10 records one bundle regression, 34 document-rendering tests, and 61 bundle-web unit tests. These are the named subsets, not full backend/browser qualification. E11 Cargo validation is unrun; no milestone seal is claimed.",
+    "The final whole-tree reproduction check passes at E11; no source-path exclusion was used. This proves extraction provenance, not missing semantic capabilities.",
+    "Four E9/E10 log records retain completed target/test results but not the original shell invocation. Their command fields are explicitly marked reproduction commands; they were not rerun. Zero-test targets are recorded separately and excluded from passing test totals."
+  ],
+  "final-tree-acceptance-command": "git diff --exit-code 662d29b79df8ab05a25bbadb941a689fd5bd5aae 75ae76bf7d5a28781c7c6f20ce2484ca8d6a80a4",
+  "final-tree-acceptance-status": "passed-exact-tree-equality",
+  "frozen-tree-oid": "fdc18343936a6123e2370275eb63d817b262746c",
+  "extracted-tree-oid": "fdc18343936a6123e2370275eb63d817b262746c",
+  "slices": [
+    {
+      "slice": "E1",
+      "responsibility": "configuration",
+      "branch": "codex/syntax-s8e1-config-syntax",
+      "head": "8be3118e10e701e8700cb0472c7057eabbb3cb1e",
+      "base": "b573284cb4587d4fb0085cc69a80a036830f1b76",
+      "worktree": "/private/tmp/mech-syntax-s8e1-config",
+      "pull-request": 831,
+      "status": "extracted-checks-completed",
+      "changed-path-count": 9,
+      "changed-paths": [
+        ".github/workflows/ci-full.yml",
+        "docs/design/grammar-audit/s8-consumer-readiness.tsv",
+        "docs/design/syntax-s8-execution-rehearsal.mec",
+        "src/runtime/Cargo.toml",
+        "src/runtime/src/config/profile/canonical.rs",
+        "src/runtime/src/config/profile/error.rs",
+        "src/runtime/src/config/profile/mod.rs",
+        "src/runtime/tests/canonical_config_profile.rs",
+        "src/syntax/tests/fixtures/grammar/corpus.tsv"
+      ],
+      "whole-files-equal-frozen-after-slice": [
+        "src/runtime/Cargo.toml",
+        "src/runtime/src/config/profile/canonical.rs",
+        "src/runtime/src/config/profile/error.rs",
+        "src/runtime/src/config/profile/mod.rs",
+        "src/runtime/tests/canonical_config_profile.rs",
+        "src/syntax/tests/fixtures/grammar/corpus.tsv"
+      ],
+      "validation": [
+        {
+          "log": "s8e1-config-extraction.log",
+          "log-sha256": "6d5f7a715087384251690dc6e27005d5c713be9685621ea76b68a2af724df473",
+          "head": "8be3118e10e701e8700cb0472c7057eabbb3cb1e",
+          "command": "cargo +nightly-2026-03-03 test --locked --offline -p mech-runtime --no-default-features --features full_source --test canonical_config_profile --test config_profile",
+          "command-provenance": "coordinating agent supplied exact invocation; log records targets and results",
+          "kind": "cargo-test",
+          "status": "completed-pass",
+          "completed-targets": [
+            {
+              "target": "canonical_config_profile",
+              "status": "ok",
+              "passed": 45,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered-out": 0
+            },
+            {
+              "target": "config_profile",
+              "status": "ok",
+              "passed": 39,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered-out": 0
+            }
+          ],
+          "nonzero-completed-test-count": 84
+        }
+      ]
+    },
+    {
+      "slice": "E2",
+      "responsibility": "syntax",
+      "branch": "codex/syntax-s8e2-syntax",
+      "head": "89403ba4ba15fa5b002950fc53cccf440b36241d",
+      "base": "8be3118e10e701e8700cb0472c7057eabbb3cb1e",
+      "worktree": "/private/tmp/mech-syntax-s8e2-syntax",
+      "pull-request": 832,
+      "status": "extracted-checks-completed",
+      "changed-path-count": 14,
+      "changed-paths": [
+        "docs/design/grammar-audit/canonical-dependencies.tsv",
+        "docs/design/grammar-audit/s7-document-certification.tsv",
+        "docs/design/specification.mec",
+        "scripts/generate-canonical-document-grammar.py",
+        "src/syntax/src/document/ast/document.rs",
+        "src/syntax/src/document/parser/canonical/document/continuation.rs",
+        "src/syntax/src/document/parser/canonical/document_grammar.rs",
+        "src/syntax/src/document/parser/canonical/recursive_core/precedence/continuation/mod.rs",
+        "src/syntax/src/document/parser/canonical/recursive_core/precedence/continuation/table_row.rs",
+        "src/syntax/src/document/parser/context_probe.rs",
+        "src/syntax/src/document/parser/mechdown.rs",
+        "src/syntax/tests/canonical_document_root.rs",
+        "src/syntax/tests/canonical_phase_2i_review_regressions.rs",
+        "src/syntax/tests/document_streaming_equivalence.rs"
+      ],
+      "whole-files-equal-frozen-after-slice": [
+        "docs/design/grammar-audit/canonical-dependencies.tsv",
+        "docs/design/grammar-audit/s7-document-certification.tsv",
+        "docs/design/specification.mec",
+        "scripts/generate-canonical-document-grammar.py",
+        "src/syntax/src/document/ast/document.rs",
+        "src/syntax/src/document/parser/canonical/document/continuation.rs",
+        "src/syntax/src/document/parser/canonical/document_grammar.rs",
+        "src/syntax/src/document/parser/canonical/recursive_core/precedence/continuation/mod.rs",
+        "src/syntax/src/document/parser/canonical/recursive_core/precedence/continuation/table_row.rs",
+        "src/syntax/src/document/parser/context_probe.rs",
+        "src/syntax/src/document/parser/mechdown.rs",
+        "src/syntax/tests/canonical_document_root.rs",
+        "src/syntax/tests/canonical_phase_2i_review_regressions.rs",
+        "src/syntax/tests/document_streaming_equivalence.rs"
+      ],
+      "validation": [
+        {
+          "log": "s8e2-syntax-extraction.log",
+          "log-sha256": "88dae4d0677e72c44af29fc75dedd1886c88403201417a6ef3f39cb6de344b88",
+          "head": "89403ba4ba15fa5b002950fc53cccf440b36241d",
+          "command": "cargo +nightly-2026-03-03 test --locked --offline -p mech-syntax --no-default-features --features full --test canonical_document_root --test canonical_phase_2i_review_regressions --test canonical_s7_document_certification --test document_streaming_equivalence",
+          "command-provenance": "coordinating agent supplied exact invocation; log records targets and results",
+          "kind": "cargo-test",
+          "status": "completed-pass",
+          "completed-targets": [
+            {
+              "target": "canonical_document_root",
+              "status": "ok",
+              "passed": 19,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered-out": 0
+            },
+            {
+              "target": "canonical_phase_2i_review_regressions",
+              "status": "ok",
+              "passed": 22,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered-out": 0
+            },
+            {
+              "target": "canonical_s7_document_certification",
+              "status": "ok",
+              "passed": 4,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered-out": 0
+            },
+            {
+              "target": "document_streaming_equivalence",
+              "status": "ok",
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered-out": 0
+            }
+          ],
+          "nonzero-completed-test-count": 46
+        }
+      ]
+    },
+    {
+      "slice": "E3",
+      "responsibility": "resident primitives",
+      "branch": "codex/syntax-s8e3-resident-values",
+      "head": "73220886420c57fa6fc770553c58e7d471ac2256",
+      "base": "89403ba4ba15fa5b002950fc53cccf440b36241d",
+      "worktree": "/private/tmp/mech-syntax-s8e3-values",
+      "pull-request": 833,
+      "status": "extracted-checks-completed",
+      "changed-path-count": 4,
+      "changed-paths": [
+        "src/core/src/operation_contract/maintained.rs",
+        "src/engine/src/resident/general/execution.rs",
+        "src/engine/src/resident/general/mod.rs",
+        "src/engine/src/resident/numeric.rs"
+      ],
+      "whole-files-equal-frozen-after-slice": [
+        "src/core/src/operation_contract/maintained.rs",
+        "src/engine/src/resident/general/mod.rs",
+        "src/engine/src/resident/numeric.rs"
+      ],
+      "validation": [
+        {
+          "log": "s8e3-values-extraction.log",
+          "log-sha256": "5565a5995772f6cdfbae20a2778b0380c7920abfcb4a962f374261f093d790c0",
+          "head": "73220886420c57fa6fc770553c58e7d471ac2256",
+          "command": "cargo +nightly-2026-03-03 check --locked --offline -p mech-engine --no-default-features --features full_compiler,full_source,resident-artifact",
+          "command-provenance": "coordinating agent supplied exact invocation; log records targets and results",
+          "kind": "cargo-check",
+          "status": "completed-pass",
+          "completed-targets": [],
+          "tests-executed": false
+        }
+      ]
+    },
+    {
+      "slice": "E4",
+      "responsibility": "semantic frontend",
+      "branch": "codex/syntax-s8e4-semantic-frontend",
+      "head": "7d0db6edecba11f89899995bbc63b6d6c0c1d9ce",
+      "base": "73220886420c57fa6fc770553c58e7d471ac2256",
+      "worktree": "/private/tmp/mech-syntax-s8e4-frontend",
+      "pull-request": 834,
+      "status": "extracted-checks-completed",
+      "changed-path-count": 18,
+      "changed-paths": [
+        "src/core/src/function/catalog.rs",
+        "src/core/src/schema/table.rs",
+        "src/engine/Cargo.toml",
+        "src/engine/src/artifact/model.rs",
+        "src/engine/src/efficacy/ekf/closure.rs",
+        "src/engine/src/function/external/resource_read.rs",
+        "src/engine/src/program/compiler_planning.rs",
+        "src/engine/src/source_semantics/comprehension.rs",
+        "src/engine/src/source_semantics/document_assignment.rs",
+        "src/engine/src/source_semantics/document_functions.rs",
+        "src/engine/src/source_semantics/document_imports.rs",
+        "src/engine/src/source_semantics/document_lowering.rs",
+        "src/engine/src/source_semantics/frontend.rs",
+        "src/engine/src/source_semantics/output_projection.rs",
+        "src/engine/tests/canonical_document_state.rs",
+        "src/engine/tests/canonical_source_review.rs",
+        "src/engine/tests/canonical_source_semantics.rs",
+        "src/engine/tests/resident_ekf_artifact_closure.rs"
+      ],
+      "whole-files-equal-frozen-after-slice": [
+        "src/core/src/function/catalog.rs",
+        "src/core/src/schema/table.rs",
+        "src/engine/Cargo.toml",
+        "src/engine/src/artifact/model.rs",
+        "src/engine/src/efficacy/ekf/closure.rs",
+        "src/engine/src/function/external/resource_read.rs",
+        "src/engine/src/program/compiler_planning.rs",
+        "src/engine/src/source_semantics/comprehension.rs",
+        "src/engine/src/source_semantics/document_assignment.rs",
+        "src/engine/src/source_semantics/document_functions.rs",
+        "src/engine/src/source_semantics/document_imports.rs",
+        "src/engine/src/source_semantics/document_lowering.rs",
+        "src/engine/src/source_semantics/frontend.rs",
+        "src/engine/src/source_semantics/output_projection.rs",
+        "src/engine/tests/canonical_document_state.rs",
+        "src/engine/tests/canonical_source_review.rs",
+        "src/engine/tests/canonical_source_semantics.rs",
+        "src/engine/tests/resident_ekf_artifact_closure.rs"
+      ],
+      "validation": [
+        {
+          "log": "s8e4-frontend-extraction.log",
+          "log-sha256": "b24e9eefa35c1e009f712211e544769fe65b3e744194854cdf149bb639fc2878",
+          "head": "7d0db6edecba11f89899995bbc63b6d6c0c1d9ce",
+          "command": "cargo +nightly-2026-03-03 test --locked --offline -p mech-engine --no-default-features --features full_compiler,full_source,resident-artifact --test canonical_boolean_match --test canonical_document_state --test canonical_source_collections --test canonical_source_completion --test canonical_source_review --test canonical_source_semantics --test canonical_source_structures",
+          "command-provenance": "coordinating agent supplied exact invocation; log records targets and results",
+          "kind": "cargo-test",
+          "status": "completed-pass",
+          "completed-targets": [
+            {
+              "target": "canonical_boolean_match",
+              "status": "ok",
+              "passed": 27,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered-out": 0
+            },
+            {
+              "target": "canonical_document_state",
+              "status": "ok",
+              "passed": 30,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered-out": 0
+            },
+            {
+              "target": "canonical_source_collections",
+              "status": "ok",
+              "passed": 10,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered-out": 0
+            },
+            {
+              "target": "canonical_source_completion",
+              "status": "ok",
+              "passed": 13,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered-out": 0
+            },
+            {
+              "target": "canonical_source_review",
+              "status": "ok",
+              "passed": 46,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered-out": 0
+            },
+            {
+              "target": "canonical_source_semantics",
+              "status": "ok",
+              "passed": 32,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered-out": 0
+            },
+            {
+              "target": "canonical_source_structures",
+              "status": "ok",
+              "passed": 21,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered-out": 0
+            }
+          ],
+          "nonzero-completed-test-count": 179
+        }
+      ]
+    },
+    {
+      "slice": "E5",
+      "responsibility": "ordinary compiler",
+      "branch": "codex/syntax-s8e5-compiler-planning",
+      "head": "0c8a95794d230a5099c32cc6dac8207745f22e0f",
+      "base": "7d0db6edecba11f89899995bbc63b6d6c0c1d9ce",
+      "worktree": "/private/tmp/mech-syntax-s8e5-compiler",
+      "pull-request": 835,
+      "status": "extracted-checks-completed",
+      "changed-path-count": 5,
+      "changed-paths": [
+        "src/runtime/src/runtime/program/compiler.rs",
+        "src/runtime/src/runtime/program/loading.rs",
+        "src/runtime/src/runtime/program/query.rs",
+        "src/runtime/src/runtime/program/tests.rs",
+        "src/runtime/src/runtime/program/value.rs"
+      ],
+      "whole-files-equal-frozen-after-slice": [
+        "src/runtime/src/runtime/program/loading.rs",
+        "src/runtime/src/runtime/program/value.rs"
+      ],
+      "validation": [
+        {
+          "log": "s8e5-compiler-extraction.log",
+          "log-sha256": "d78f24ace98367d9744a483d2a6c4de6edb6e9642aa95e556ecae9e0aa8e7b4f",
+          "head": "0c8a95794d230a5099c32cc6dac8207745f22e0f",
+          "command": "cargo +nightly-2026-03-03 test --locked --offline -p mech-runtime --no-default-features --features full_compiler,full_source,resident-routing-source,compute --lib runtime::program::tests::canonical_",
+          "command-provenance": "coordinating agent supplied exact invocation; log records targets and results",
+          "kind": "cargo-test",
+          "status": "completed-pass",
+          "completed-targets": [
+            {
+              "target": "lib",
+              "status": "ok",
+              "passed": 21,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered-out": 669
+            }
+          ],
+          "nonzero-completed-test-count": 21
+        },
+        {
+          "log": "s8e5-compiler-no-compute.log",
+          "log-sha256": "6b03b03f3ab74144904186bb0a0c5e1fbc74278f7ee1c6327a68d641f1bb64c1",
+          "head": "0c8a95794d230a5099c32cc6dac8207745f22e0f",
+          "command": "cargo +nightly-2026-03-03 check --locked --offline -p mech-runtime --no-default-features --features full_compiler,full_source,resident-routing-source",
+          "command-provenance": "coordinating agent supplied exact invocation; log records targets and results",
+          "kind": "cargo-check",
+          "status": "completed-pass",
+          "completed-targets": [],
+          "tests-executed": false
+        }
+      ],
+      "provenance-check": {
+        "command": "python3 docs/design/grammar-audit/s8-replacement-audit/extraction-manifests/verify-e5.py /private/tmp/mech-syntax-s8e5-compiler",
+        "status": "completed-pass",
+        "head": "0c8a95794d230a5099c32cc6dac8207745f22e0f",
+        "manifest": "docs/design/grammar-audit/s8-replacement-audit/extraction-manifests/e5-symbols.json",
+        "manifest-sha256": "c95a0332960926c79ed6fa10d5a8bc081209e6f0a014fde5dcf9261b12f71a8b",
+        "checker-sha256": "efc7911b6658a8d411206ed23da15d31d7e8a621c623973a2f0ccb3beb4d2526",
+        "output": "Verified 34 exact frozen blocks; existing compiler code and tests unchanged.",
+        "frozen-span-count": 34
+      }
+    },
+    {
+      "slice": "E6",
+      "responsibility": "graph compiler",
+      "branch": "codex/syntax-s8e6-graph-planning",
+      "head": "ef30e7e8196c9a6f941363b5397780e0f7d09529",
+      "base": "0c8a95794d230a5099c32cc6dac8207745f22e0f",
+      "worktree": "/private/tmp/mech-syntax-s8e6-graph",
+      "pull-request": null,
+      "status": "extracted-checks-completed",
+      "changed-path-count": 7,
+      "changed-paths": [
+        "src/runtime/src/resolver/canonical_handoff.rs",
+        "src/runtime/src/resolver/file.rs",
+        "src/runtime/src/runtime/module/tests/source_document_transfer.rs",
+        "src/runtime/src/runtime/program/compiler.rs",
+        "src/runtime/src/runtime/program/query_tests/source.rs",
+        "src/runtime/src/runtime/program/tests.rs",
+        "src/runtime/tests/canonical_declaration_handoff.rs"
+      ],
+      "whole-files-equal-frozen-after-slice": [
+        "src/runtime/src/resolver/canonical_handoff.rs",
+        "src/runtime/src/runtime/module/tests/source_document_transfer.rs",
+        "src/runtime/src/runtime/program/query_tests/source.rs",
+        "src/runtime/tests/canonical_declaration_handoff.rs"
+      ],
+      "validation": [
+        {
+          "log": "s8e6-graph-extraction.log",
+          "log-sha256": "55d9d20926f4abdcf16e3591bf15005bba38d6c88c016ade288476a88efe9097",
+          "head": "ef30e7e8196c9a6f941363b5397780e0f7d09529",
+          "command": "cargo +nightly-2026-03-03 test --locked --offline -p mech-runtime --no-default-features --features full_compiler,full_source,resident-routing-source,compute --lib --test canonical_declaration_handoff",
+          "command-provenance": "coordinating agent supplied exact invocation; log records targets and results",
+          "kind": "cargo-test",
+          "status": "completed-pass",
+          "completed-targets": [
+            {
+              "target": "lib",
+              "status": "ok",
+              "passed": 695,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered-out": 0
+            },
+            {
+              "target": "canonical_declaration_handoff",
+              "status": "ok",
+              "passed": 10,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered-out": 0
+            }
+          ],
+          "nonzero-completed-test-count": 705
+        }
+      ],
+      "provenance-check": {
+        "command": "python3 docs/design/grammar-audit/s8-replacement-audit/extraction-manifests/verify-e6.py /private/tmp/mech-syntax-s8e6-graph",
+        "status": "completed-pass",
+        "head": "ef30e7e8196c9a6f941363b5397780e0f7d09529",
+        "manifest": "docs/design/grammar-audit/s8-replacement-audit/extraction-manifests/e6-symbols.json",
+        "manifest-sha256": "92d32fc47ab8ac3051823c254129487870a42ce1e03683965bcba7c7cb326883",
+        "checker-sha256": "481153fa7f1230d315eb2cd8ca87ec4ea4f07fda25dd27e4a79ee27de4d7c567",
+        "output": "Verified 14 frozen spans across 7 files; no other tracked deltas.",
+        "frozen-span-count": 14
+      }
+    },
+    {
+      "slice": "E7",
+      "responsibility": "interactive lifecycle",
+      "branch": "codex/syntax-s8e7-interactive",
+      "head": "634f45620984f6437185de4ae05c770c4b84d7da",
+      "base": "ef30e7e8196c9a6f941363b5397780e0f7d09529",
+      "worktree": "/private/tmp/mech-syntax-s8e7-interactive",
+      "pull-request": null,
+      "status": "extracted-checks-completed",
+      "changed-path-count": 4,
+      "changed-paths": [
+        "src/engine/src/resident/general/execution.rs",
+        "src/runtime/src/interactive.rs",
+        "src/runtime/src/runtime/program/query.rs",
+        "src/runtime/src/runtime/program/tests.rs"
+      ],
+      "whole-files-equal-frozen-after-slice": [
+        "src/engine/src/resident/general/execution.rs",
+        "src/runtime/src/interactive.rs",
+        "src/runtime/src/runtime/program/query.rs"
+      ],
+      "validation": [
+        {
+          "log": "s8e7-interactive-extraction.log",
+          "log-sha256": "b0d38f0d182f331a204cabd2727963ab9b00b5cd8c46d938f9ca2f39352f92f3",
+          "head": "634f45620984f6437185de4ae05c770c4b84d7da",
+          "command": "cargo +nightly-2026-03-03 test --locked --offline -p mech-runtime --no-default-features --features full_compiler,full_source,resident-routing-source,compute --lib interactive::tests::",
+          "command-provenance": "coordinating agent supplied exact invocation; log records targets and results",
+          "kind": "cargo-test",
+          "status": "completed-pass",
+          "completed-targets": [
+            {
+              "target": "lib",
+              "status": "ok",
+              "passed": 19,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered-out": 676
+            }
+          ],
+          "nonzero-completed-test-count": 19
+        }
+      ],
+      "provenance-check": {
+        "command": "python3 docs/design/grammar-audit/s8-replacement-audit/extraction-manifests/verify-e7.py /private/tmp/mech-syntax-s8e7-interactive",
+        "status": "completed-pass",
+        "head": "634f45620984f6437185de4ae05c770c4b84d7da",
+        "manifest": "docs/design/grammar-audit/s8-replacement-audit/extraction-manifests/e7-symbols.json",
+        "manifest-sha256": "dd192238d49953dbc9fee4d174fafc713a35bcb2ec7a2bc70c8ad697c00db544",
+        "checker-sha256": "547b64f3eacc912a95f61087a7c9fa978a15c36bcf61f5ce5254a4645056a0ed",
+        "output": "Verified 4 frozen spans across 4 files; no other tracked deltas.",
+        "frozen-span-count": 4
+      }
+    },
+    {
+      "slice": "E8",
+      "responsibility": "mixed compiler",
+      "branch": "codex/syntax-s8e8-mixed-planning",
+      "head": "2a091a128c1961f673c11b9a7106ba83ff18300b",
+      "base": "634f45620984f6437185de4ae05c770c4b84d7da",
+      "worktree": "/private/tmp/mech-syntax-s8e8-mixed",
+      "pull-request": 838,
+      "status": "extracted-checks-completed",
+      "changed-path-count": 3,
+      "changed-paths": [
+        "src/compute/src/port.rs",
+        "src/runtime/src/runtime/program/compiler.rs",
+        "src/runtime/src/runtime/program/tests.rs"
+      ],
+      "whole-files-equal-frozen-after-slice": [
+        "src/compute/src/port.rs",
+        "src/runtime/src/runtime/program/compiler.rs",
+        "src/runtime/src/runtime/program/tests.rs"
+      ],
+      "validation": [
+        {
+          "log": "s8e8-mixed-extraction.log",
+          "log-sha256": "0ff5403396bf7af7a0d93f482361a22dc47a13462cdcc2af63a152a78b2e996b",
+          "head": "2a091a128c1961f673c11b9a7106ba83ff18300b",
+          "command": "cargo +nightly-2026-03-03 test --locked --offline -p mech-runtime --no-default-features --features full_compiler,full_source,resident-routing-source,compute --lib",
+          "command-provenance": "coordinating agent supplied exact invocation; log records targets and results",
+          "kind": "cargo-test",
+          "status": "completed-pass",
+          "completed-targets": [
+            {
+              "target": "lib",
+              "status": "ok",
+              "passed": 713,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered-out": 0
+            }
+          ],
+          "nonzero-completed-test-count": 713
+        }
+      ],
+      "provenance-check": {
+        "command": "python3 docs/design/grammar-audit/s8-replacement-audit/extraction-manifests/verify-e8.py /private/tmp/mech-syntax-s8e8-mixed",
+        "status": "completed-pass",
+        "head": "2a091a128c1961f673c11b9a7106ba83ff18300b",
+        "manifest": "docs/design/grammar-audit/s8-replacement-audit/extraction-manifests/e8-symbols.json",
+        "manifest-sha256": "0073e9bf1fbb5aa8260ab71619c1ccc48c4fc4e191c740c50b9b04887d0f16d1",
+        "checker-sha256": "091f0553f66e29e357b7b1b45ba0e4650dc0a195e8d8646cb7012e24b0ce5440",
+        "output": "Verified 3 frozen spans across 3 files; no other tracked deltas.\nVerified 134 unchanged test/helper bodies and exactly seven mixed tests.",
+        "frozen-span-count": 3
+      }
+    },
+    {
+      "slice": "E9",
+      "responsibility": "compute execution",
+      "branch": "codex/syntax-s8e9-compute-execution",
+      "head": "199b42d5d96d221645235c46f044c3d8ddb7532b",
+      "base": "2a091a128c1961f673c11b9a7106ba83ff18300b",
+      "worktree": "/private/tmp/mech-syntax-s8e9-compute",
+      "pull-request": 839,
+      "status": "extracted-checks-completed",
+      "changed-path-count": 12,
+      "changed-paths": [
+        "hosts/gpu/src/batched/jit.rs",
+        "hosts/gpu/src/batched/mod.rs",
+        "hosts/gpu/src/lib.rs",
+        "hosts/gpu/src/memory.rs",
+        "hosts/gpu/tests/parallel_ekf.rs",
+        "hosts/gpu/tests/particle_source.rs",
+        "include/browser-compute.js",
+        "src/compute/src/activation.rs",
+        "src/compute/src/fixed_shape.rs",
+        "src/compute/src/ir.rs",
+        "src/compute/src/lib.rs",
+        "src/compute/src/shape.rs"
+      ],
+      "whole-files-equal-frozen-after-slice": [
+        "hosts/gpu/src/batched/jit.rs",
+        "hosts/gpu/src/batched/mod.rs",
+        "hosts/gpu/src/lib.rs",
+        "hosts/gpu/src/memory.rs",
+        "hosts/gpu/tests/parallel_ekf.rs",
+        "hosts/gpu/tests/particle_source.rs",
+        "include/browser-compute.js",
+        "src/compute/src/activation.rs",
+        "src/compute/src/fixed_shape.rs",
+        "src/compute/src/ir.rs",
+        "src/compute/src/lib.rs",
+        "src/compute/src/shape.rs"
+      ],
+      "validation": [
+        {
+          "log": "s8e9-backend-extraction.log",
+          "log-sha256": "023c4b74730f3effffd266cfbb1c1d476de29c6f4e7f76ff024afb0da2d1ea31",
+          "head": "199b42d5d96d221645235c46f044c3d8ddb7532b",
+          "command": "cargo +nightly-2026-03-03 check --locked --offline -p mech-gpu --features native,jit",
+          "command-provenance": "coordinating agent supplied exact invocation; log records targets and results",
+          "command-role": "as-run",
+          "kind": "cargo-check",
+          "status": "completed-pass",
+          "completed-targets": [],
+          "tests-executed": false
+        },
+        {
+          "log": "s8e9-activation-extraction.log",
+          "log-sha256": "541a137e1124b5ea235ff369526bd1f6cd49e87cfa9588c17ba94fc190eab065",
+          "head": "199b42d5d96d221645235c46f044c3d8ddb7532b",
+          "command": "cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu --features native,jit --test particle_source canonical_activation_initializers_are_shared_and_run_only_once -- --exact",
+          "command-provenance": "reproduction command derived from completed target/test log; original shell invocation not retained",
+          "command-role": "reproduction",
+          "kind": "cargo-test",
+          "status": "completed-pass",
+          "completed-targets": [
+            {
+              "target": "particle_source",
+              "status": "ok",
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered-out": 29
+            }
+          ],
+          "command-proof-limit": "The completed result is from the named log. This reproduction command was not rerun and is not claimed to preserve the lost original shell invocation.",
+          "nonzero-completed-test-count": 1
+        },
+        {
+          "log": "s8e9-publications-extraction.log",
+          "log-sha256": "21490d02b248c2f2e7bd0a0bc47ce93244cb823ff5fe54d53a98a84783ec262c",
+          "head": "199b42d5d96d221645235c46f044c3d8ddb7532b",
+          "command": "cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu --features native,jit --test parallel_ekf canonical_derived_publications_commit_without_becoming_recurrence_state -- --exact",
+          "command-provenance": "reproduction command derived from completed target/test log; original shell invocation not retained",
+          "command-role": "reproduction",
+          "kind": "cargo-test",
+          "status": "completed-pass",
+          "completed-targets": [
+            {
+              "target": "parallel_ekf",
+              "status": "ok",
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered-out": 21
+            }
+          ],
+          "command-proof-limit": "The completed result is from the named log. This reproduction command was not rerun and is not claimed to preserve the lost original shell invocation.",
+          "nonzero-completed-test-count": 1
+        }
+      ],
+      "provenance-check": {
+        "command": "python3 docs/design/grammar-audit/s8-replacement-audit/extraction-manifests/verify-e9.py /private/tmp/mech-syntax-s8e9-compute",
+        "status": "completed-pass",
+        "head": "199b42d5d96d221645235c46f044c3d8ddb7532b",
+        "manifest": "docs/design/grammar-audit/s8-replacement-audit/extraction-manifests/e9-symbols.json",
+        "manifest-sha256": "1d94733e9ccf639d81b8b8ccdeb075ad00b5dd669570034cb5a62c49b50cb364",
+        "checker-sha256": "2e09bfcbc234f3e72cbdc10875f77319e24c0321dfbd7cae79cea98d935aa3e3",
+        "output": "Verified 12 frozen spans across 12 files; no other tracked deltas.",
+        "frozen-span-count": 12
+      }
+    },
+    {
+      "slice": "E10",
+      "responsibility": "web handoff",
+      "branch": "codex/syntax-s8e10-web-handoff",
+      "head": "68eeb8828dd9398ff86777a53f0aec157963f9db",
+      "base": "199b42d5d96d221645235c46f044c3d8ddb7532b",
+      "worktree": "/private/tmp/mech-syntax-s8e10-web",
+      "pull-request": 840,
+      "status": "extracted-checks-completed",
+      "changed-path-count": 19,
+      "changed-paths": [
+        "Cargo.toml",
+        "include/static-project.js",
+        "scripts/smoke-bundle-web.sh",
+        "scripts/smoke-canonical-compute-browser.py",
+        "scripts/tests/static-project.test.mjs",
+        "src/browser_planning.rs",
+        "src/build/tests/standard_host_source_planning.rs",
+        "src/bundle_planning.rs",
+        "src/bundle_presentation.rs",
+        "src/bundle_web.rs",
+        "src/cli/compute.rs",
+        "src/lib.rs",
+        "src/runtime/src/document_render.rs",
+        "src/runtime/src/resolver/file.rs",
+        "src/runtime/src/runtime/program/bundle.rs",
+        "src/runtime/src/runtime/program/mod.rs",
+        "src/runtime/tests/canonical_document_render.rs",
+        "src/wasm/src/mixed_compute.rs",
+        "src/wasm/src/project.rs"
+      ],
+      "whole-files-equal-frozen-after-slice": [
+        "Cargo.toml",
+        "include/static-project.js",
+        "scripts/smoke-bundle-web.sh",
+        "scripts/smoke-canonical-compute-browser.py",
+        "scripts/tests/static-project.test.mjs",
+        "src/browser_planning.rs",
+        "src/build/tests/standard_host_source_planning.rs",
+        "src/bundle_planning.rs",
+        "src/bundle_presentation.rs",
+        "src/bundle_web.rs",
+        "src/cli/compute.rs",
+        "src/lib.rs",
+        "src/runtime/src/document_render.rs",
+        "src/runtime/src/resolver/file.rs",
+        "src/runtime/src/runtime/program/bundle.rs",
+        "src/runtime/src/runtime/program/mod.rs",
+        "src/runtime/tests/canonical_document_render.rs",
+        "src/wasm/src/mixed_compute.rs",
+        "src/wasm/src/project.rs"
+      ],
+      "validation": [
+        {
+          "log": "s8e10-bundle-extraction.log",
+          "log-sha256": "ee127f0d8ea3eed404b1fa16d6837ddf2a1a5137cc58d151728b6f1818187e75",
+          "head": "68eeb8828dd9398ff86777a53f0aec157963f9db",
+          "command": "cargo +nightly-2026-03-03 test --locked --offline -p mech-runtime --no-default-features --features full_compiler,full_source,resident-routing-source,compute --lib runtime::program::bundle::tests::canonical_bundle_rejects_stale_source_and_retired_tree_payload -- --exact",
+          "command-provenance": "reproduction command derived from completed target/test log; original shell invocation not retained",
+          "command-role": "reproduction",
+          "kind": "cargo-test",
+          "status": "completed-pass",
+          "completed-targets": [
+            {
+              "target": "lib",
+              "status": "ok",
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered-out": 713
+            }
+          ],
+          "command-proof-limit": "The completed result is from the named log. This reproduction command was not rerun and is not claimed to preserve the lost original shell invocation.",
+          "nonzero-completed-test-count": 1,
+          "excluded-zero-test-targets": [
+            {
+              "target": "canonical_document_render",
+              "status": "ok",
+              "passed": 0,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered-out": 34,
+              "reason": "all tests filtered out; excluded from completed passing test evidence"
+            }
+          ]
+        },
+        {
+          "log": "s8e10-render-extraction.log",
+          "log-sha256": "b325cfc6060690c6b801f065431bc95dee66969f506dfcd1a40950e0eba6dc6a",
+          "head": "68eeb8828dd9398ff86777a53f0aec157963f9db",
+          "command": "cargo +nightly-2026-03-03 test --locked --offline -p mech-runtime --no-default-features --features full_compiler,full_source,resident-routing-source,compute --test canonical_document_render",
+          "command-provenance": "reproduction command derived from completed target/test log; original shell invocation not retained",
+          "command-role": "reproduction",
+          "kind": "cargo-test",
+          "status": "completed-pass",
+          "completed-targets": [
+            {
+              "target": "canonical_document_render",
+              "status": "ok",
+              "passed": 34,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered-out": 0
+            }
+          ],
+          "command-proof-limit": "The completed result is from the named log. This reproduction command was not rerun and is not claimed to preserve the lost original shell invocation.",
+          "nonzero-completed-test-count": 34
+        },
+        {
+          "log": "s8e10-web-extraction.log",
+          "log-sha256": "319feaf3a314085c455f6ff21682165da8f962b631429445e7446c7b3a3fd4f4",
+          "head": "68eeb8828dd9398ff86777a53f0aec157963f9db",
+          "command": "cargo +nightly-2026-03-03 test --locked --offline -p mech --no-default-features --features serve,bundle_web,formatter --lib bundle_web::",
+          "command-provenance": "coordinating agent supplied exact invocation; log records targets and results",
+          "command-role": "as-run",
+          "kind": "cargo-test",
+          "status": "completed-pass",
+          "completed-targets": [
+            {
+              "target": "lib",
+              "status": "ok",
+              "passed": 61,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered-out": 212
+            }
+          ],
+          "nonzero-completed-test-count": 61
+        }
+      ],
+      "provenance-check": {
+        "command": "python3 docs/design/grammar-audit/s8-replacement-audit/extraction-manifests/verify-e10.py /private/tmp/mech-syntax-s8e10-web",
+        "status": "completed-pass",
+        "head": "68eeb8828dd9398ff86777a53f0aec157963f9db",
+        "manifest": "docs/design/grammar-audit/s8-replacement-audit/extraction-manifests/e10-symbols.json",
+        "manifest-sha256": "f233c0cca4d9b06c42d5bba508235284046d3d1b51c63ea0d73cc4d954a76587",
+        "checker-sha256": "5bbec846c74ced1465983e010ab2a768a3808ae73d79edb25bdebca047815a45",
+        "output": "Verified 19 frozen spans across 19 files; no other tracked deltas.",
+        "frozen-span-count": 19
+      }
+    },
+    {
+      "slice": "E11",
+      "responsibility": "qualification",
+      "branch": "codex/syntax-s8e11-qualification",
+      "head": "75ae76bf7d5a28781c7c6f20ce2484ca8d6a80a4",
+      "base": "68eeb8828dd9398ff86777a53f0aec157963f9db",
+      "worktree": "/private/tmp/mech-syntax-s8e11-qualification",
+      "pull-request": 841,
+      "status": "extracted-cargo-unrun",
+      "changed-path-count": 7,
+      "changed-paths": [
+        ".github/workflows/ci-full.yml",
+        ".github/workflows/ci.yml",
+        "docs/design/grammar-audit/s8-consumer-readiness.tsv",
+        "docs/design/grammar-audit/s8-removal-manifest.tsv",
+        "docs/design/syntax-s8-execution-rehearsal.mec",
+        "src/syntax/tests/source_parser_consumer_inventory.rs",
+        "src/syntax/tests/support/cutover_contract.rs"
+      ],
+      "whole-files-equal-frozen-after-slice": [
+        ".github/workflows/ci-full.yml",
+        ".github/workflows/ci.yml",
+        "docs/design/grammar-audit/s8-consumer-readiness.tsv",
+        "docs/design/grammar-audit/s8-removal-manifest.tsv",
+        "docs/design/syntax-s8-execution-rehearsal.mec",
+        "src/syntax/tests/source_parser_consumer_inventory.rs",
+        "src/syntax/tests/support/cutover_contract.rs"
+      ],
+      "validation": [],
+      "provenance-check": {
+        "command": "python3 docs/design/grammar-audit/s8-replacement-audit/extraction-manifests/verify-e11.py /private/tmp/mech-syntax-s8e11-qualification",
+        "status": "completed-pass",
+        "head": "75ae76bf7d5a28781c7c6f20ce2484ca8d6a80a4",
+        "manifest": "docs/design/grammar-audit/s8-replacement-audit/extraction-manifests/e11-symbols.json",
+        "manifest-sha256": "db233c2666c0896ba269018ae27d45ab761fedcabe92964ca7889a2e36c5c60f",
+        "checker-sha256": "7fb49985395c705d34d7bb9ca5f5898d3106e5a702ceb9a448649dbb117377af",
+        "output": "Verified 7 frozen spans across 7 files; no other tracked deltas.\nExact clean HEAD tree equals frozen B: fdc18343936a6123e2370275eb63d817b262746c",
+        "frozen-span-count": 7
+      }
+    }
+  ]
+}

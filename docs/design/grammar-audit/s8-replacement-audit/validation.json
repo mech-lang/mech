@@ -2,8 +2,87 @@
   {
     "baseline": "662d29b79df8ab05a25bbadb941a689fd5bd5aae",
     "toolchain": "nightly-2026-03-03",
+    "command-profile": "CARGO_NET_OFFLINE=true CARGO_TARGET_DIR=/private/tmp/mech-syntax-s7/target ./docs/design/grammar-audit/s8-replacement-audit/run-probes.sh",
+    "interpretation": "Final observational census:375 source records;317 execute,329 current-oracle matches including27 exact target rejections;46 unmatched. No positive target capability is closed. Six aggregate tests record gaps without failing.",
+    "test-results": [
+      "ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 25.55s"
+    ],
+    "failures": [],
+    "original-local-log": "/private/tmp/mech-syntax-qualification/s8-audit-published-contracts.log",
+    "log-sha256": "060acb2c9000aa5a2ca267b3298d55a78b94a9c10fae4232f7b54276845b7cbf",
+    "execution-identity-verified": true,
+    "audit-harness-sha256": "adccf100bdbdd163be41ea71a0fd6a6b23abf6422828ddbe934e8abe165b3252"
+  },
+  {
+    "baseline": "662d29b79df8ab05a25bbadb941a689fd5bd5aae",
+    "toolchain": "nightly-2026-03-03",
+    "command-profile": "MECH_AUDIT_CASE=numeric-c32-add MECH_AUDIT_REQUIRE_PASS=1 CARGO_NET_OFFLINE=true CARGO_TARGET_DIR=/private/tmp/mech-syntax-s7/target ./docs/design/grammar-audit/s8-replacement-audit/run-probes.sh semantic_replacement_witnesses",
+    "interpretation": "Strict current-target oracle passes for numeric-c32-add; both source and decoded artifacts reject with the exact expected activation error.",
+    "test-results": [
+      "ok. 1 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 4.57s"
+    ],
+    "failures": [],
+    "original-local-log": "/private/tmp/mech-syntax-qualification/s8-audit-current-target-contract.log",
+    "log-sha256": "6c93d95e26b4c7265010dbdfd19e7dc5dacc6013c9f2bf7c46f4d3500ad1d9ab",
+    "execution-identity-verified": true,
+    "audit-harness-sha256": "adccf100bdbdd163be41ea71a0fd6a6b23abf6422828ddbe934e8abe165b3252"
+  },
+  {
+    "baseline": "662d29b79df8ab05a25bbadb941a689fd5bd5aae",
+    "toolchain": "nightly-2026-03-03",
+    "command-profile": "MECH_AUDIT_CASE=numeric-c32-add MECH_AUDIT_REQUIRE_PASS=1 MECH_AUDIT_REQUIRE_CAPABILITY=1 CARGO_NET_OFFLINE=true CARGO_TARGET_DIR=/private/tmp/mech-syntax-s7/target ./docs/design/grammar-audit/s8-replacement-audit/run-probes.sh semantic_replacement_witnesses",
+    "interpretation": "Strict positive capability oracle fails for the same numeric-c32-add fixture, expected exit101. Correct current rejection does not satisfy the retained milestone capability.",
+    "test-results": [
+      "FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 5 filtered out; finished in 4.63s"
+    ],
+    "failures": [
+      "error: test failed, to rerun pass `-p mech-runtime --test s8_replacement_gap_audit`"
+    ],
+    "original-local-log": "/private/tmp/mech-syntax-qualification/s8-audit-positive-target-capability.log",
+    "log-sha256": "74706c3562df5db486da841495d802d2c4b2d52a6ec467079eb26836c8229db4",
+    "execution-identity-verified": true,
+    "audit-harness-sha256": "adccf100bdbdd163be41ea71a0fd6a6b23abf6422828ddbe934e8abe165b3252"
+  },
+  {
+    "baseline": "662d29b79df8ab05a25bbadb941a689fd5bd5aae",
+    "toolchain": "nightly-2026-03-03",
     "command-profile": "runtime full_compiler,full_source,resident-routing-source,compute; s8_replacement_gap_audit; --test-threads=1",
-    "interpretation": "observational; failures recorded separately",
+    "interpretation": "Historical run superseded by s8-audit-published-contracts.log. 375 source records plus18 basic routes,12 paired visibility observations, graph and transport; observationalaggregate does not fail on gaps",
+    "test-results": [
+      "ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 25.76s"
+    ],
+    "failures": [],
+    "original-local-log": "/private/tmp/mech-syntax-qualification/s8-audit-reconciled-contract-probes.log"
+  },
+  {
+    "baseline": "662d29b79df8ab05a25bbadb941a689fd5bd5aae",
+    "toolchain": "nightly-2026-03-03",
+    "command-profile": "same source audit profile; MECH_AUDIT_CASE=constrained-kind; semantic_replacement_witnesses",
+    "interpretation": "Historical run superseded by s8-audit-published-contracts.log. Corrected proven expression syntax reaches unsupported-kind-constraint lowering; one selected source record replaces prior index failure",
+    "test-results": [
+      "ok. 1 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 4.77s"
+    ],
+    "failures": [],
+    "original-local-log": "/private/tmp/mech-syntax-qualification/s8-audit-constraint-contract.log"
+  },
+  {
+    "baseline": "662d29b79df8ab05a25bbadb941a689fd5bd5aae",
+    "toolchain": "nightly-2026-03-03",
+    "command-profile": "runtime same configured source/compute profile; s8_replacement_schema_audit; --test-threads=1",
+    "interpretation": "Strict31tests:7pass24fail;26source-live and26bytecode-live passes;25bound-source passes;G25has23bytecode-order manifestations andG26oneDynamic-identity manifestation",
+    "test-results": [
+      "FAILED. 7 passed; 24 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.47s"
+    ],
+    "failures": [
+      "error: test failed, to rerun pass `-p mech-runtime --test s8_replacement_schema_audit`"
+    ],
+    "original-local-log": "/private/tmp/mech-syntax-qualification/s8-audit-schema-final.log"
+  },
+  {
+    "baseline": "662d29b79df8ab05a25bbadb941a689fd5bd5aae",
+    "toolchain": "nightly-2026-03-03",
+    "command-profile": "runtime full_compiler,full_source,resident-routing-source,compute; s8_replacement_gap_audit; --test-threads=1",
+    "interpretation": "Historical365-case source record, superseded by imported/visibility reconciliation and valid control witnesses. Observational aggregate status is not readiness.",
     "test-results": [
       "ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 23.97s"
     ],

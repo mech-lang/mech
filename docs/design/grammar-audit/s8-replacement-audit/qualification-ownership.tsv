@@ -1,0 +1,342 @@
+acceptance-cell	source-ledger	source-ids	primary-review-boundary	supporting-review-boundaries	owning-responsibility	related-gaps
+compiler:P01	compiler-acceptance-cells.tsv	P01	E5		runtime source admission: raw source adapters preserve complete retained text and reject malformed candidates	""
+compiler:P02	compiler-acceptance-cells.tsv	P02	E5	R16;R18	runtime artifact products: ordinary and interactive products preserve whole-document output/constraint identity	G19;G14
+compiler:P03	compiler-acceptance-cells.tsv	P03	E5		runtime artifact sidecars: canonical native parts do not manufacture retired instruction sidecars	""
+compiler:P04	compiler-acceptance-cells.tsv	P04	E5		runtime output projection: terminal host send retains preceding implicit result	""
+compiler:P05	compiler-acceptance-cells.tsv	P05	E5		runtime planning inputs: supplied constants and selected live declarations have distinct ownership	""
+compiler:P06	compiler-acceptance-cells.tsv	P06	E5		runtime provider planning: provider matrix snapshots close the inferred input shape	""
+compiler:P07	compiler-acceptance-cells.tsv	P07	E5		runtime resource scope: inactive document owners do not demand provider contracts	""
+compiler:P08	compiler-acceptance-cells.tsv	P08	E5		runtime effects and grants: planning never performs live reads or prepares/delivers host effects	""
+compiler:P09	compiler-acceptance-cells.tsv	P09	E5		runtime default projection: defaults do not leave unselected resource reads live	""
+compiler:P10	compiler-acceptance-cells.tsv	P10	E5		runtime static projection: static selection detaches only requested values	""
+compiler:P11	compiler-acceptance-cells.tsv	P11	E5		runtime static projection: projection preserves independent integrity constraints	""
+compiler:P12	compiler-acceptance-cells.tsv	P12	E5		runtime static projection: projection prunes unused inputs while retaining constrained inputs	""
+compiler:P13	compiler-acceptance-cells.tsv	P13	E6		runtime rooted graph: resolved revisions and interactive publication survive all eight rooted canonical wrappers	""
+compiler:P14	compiler-acceptance-cells.tsv	P14	E6		runtime module identity: ModuleBuildOptions fields reach module-build identity and validation	""
+compiler:P15	compiler-acceptance-cells.tsv	P15	E6		runtime graph errors: missing dependency does not poison reusable interactive compiler	""
+compiler:P16	compiler-acceptance-cells.tsv	P16	R20		runtime ordered graph: ordered roots share prior definitions and publish caller order	G16
+compiler:P17	compiler-acceptance-cells.tsv	P17	E6		engine ordered documents: explicit root exports retain live state and independent source maps	""
+compiler:P18	compiler-acceptance-cells.tsv	P18	R20		runtime ordered graph: transitive path to an explicit root shares live dependency instance	G16
+compiler:P19	compiler-acceptance-cells.tsv	P19	E6		runtime ordered provider ownership: direct explicit dependency plans its provider once	""
+compiler:P20	compiler-acceptance-cells.tsv	P20	R20		runtime ordered provider ownership: transitive explicit dependency plans once and contributes one live read per turn	G16
+compiler:P21	compiler-acceptance-cells.tsv	P21	E6		runtime ordered lexical resources: cross-root local function keeps its defining resource context	""
+compiler:P22	compiler-acceptance-cells.tsv	P22	E6		runtime ordered transactional planning: later-root rejection leaves no host effect and reusable compiler usable	""
+compiler:P23	compiler-acceptance-cells.tsv	P23	E8		runtime mixed partitioning: one retained document owns coordinator, compute interface and typed initializer	""
+compiler:P24	compiler-acceptance-cells.tsv	P24	E8		runtime mixed dependency graph: rooted and resolved mixed products share transitive imports	""
+compiler:P25	compiler-acceptance-cells.tsv	P25	E8		runtime mixed initializer shape: batched compute initializers retain outer extent and canonical values	""
+compiler:P26	compiler-acceptance-cells.tsv	P26	E8		runtime mixed effect preflight: wrong coordinator payload shape rejects before provider execution	""
+compiler:P27	compiler-acceptance-cells.tsv	P27	R21		runtime retirement: tree compiler APIs cease to be an independent production authority	G21
+compiler:P28	compiler-acceptance-cells.tsv	P28	E6		runtime existing-runtime compiler view: shipping rooted loader uses configured runtime contracts and same decoded revision	""
+compiler:P29	compiler-acceptance-cells.tsv	P29	E5		runtime detached host values: finite supplied/default/static host-value acceptance	""
+compiler:P30	compiler-acceptance-cells.tsv	P30	E5		runtime planning conflicts: supplied input cannot shadow configured resource read	""
+compiler:P31	compiler-acceptance-cells.tsv	P31	E6		runtime graph admission: shipping request wrapper preserves missing-root error classification	""
+compiler:P32	compiler-acceptance-cells.tsv	P32	E7		runtime interactive loader: existing-runtime interactive rooted projection keeps all root symbols	""
+compiler:P33	compiler-acceptance-cells.tsv	P33	E7	R22	runtime interactive candidate lifecycle: denied replacement preserves accepted live state	G22
+compiler:F01	compiler-acceptance-cells.tsv	F01	E4		engine expression frontend: expression lowering preserves typed graph and retained anchors	""
+compiler:F02	compiler-acceptance-cells.tsv	F02	E4		engine definition frontend: definition annotations and mutable state preserve canonical type	""
+compiler:F03	compiler-acceptance-cells.tsv	F03	E4		engine admission: recovered syntax cannot produce partial semantics	""
+compiler:F04	compiler-acceptance-cells.tsv	F04	E4		engine document collection: root statements compile in source order	""
+compiler:F05	compiler-acceptance-cells.tsv	F05	E4		engine named document owners: named scopes are isolated and repeated fences share their owner	""
+compiler:F06	compiler-acceptance-cells.tsv	F06	E4		engine named document owners: absent named owner never falls back to root	""
+compiler:F07	compiler-acceptance-cells.tsv	F07	E4		engine Mika ownership: Mika body state is local to exact retained section	""
+compiler:F08	compiler-acceptance-cells.tsv	F08	E4		engine named Mika ownership: named fences within Mika share only that Mika owner	""
+compiler:F09	compiler-acceptance-cells.tsv	F09	E7		engine statement inspection: root statement nodes support transactional source removal	""
+compiler:F10	compiler-acceptance-cells.tsv	F10	E7		engine mutation inspection: root mutation census excludes inactive owners	""
+compiler:F11	compiler-acceptance-cells.tsv	F11	E4		engine source input transport: input transport names are reversible and collision-free	""
+compiler:F12	compiler-acceptance-cells.tsv	F12	E4		engine source input transport: out-of-range input ordinal returns no transport name	""
+compiler:F13	compiler-acceptance-cells.tsv	F13	R03		engine constant binding: fixed imported snapshot specializes inferred matrix dimensions	""
+compiler:F14	compiler-acceptance-cells.tsv	F14	R03		engine constant binding: resolved dependency export seals into canonical constant	""
+compiler:F15	compiler-acceptance-cells.tsv	F15	R03		engine constant binding: binding errors and input renumbering preserve all reference owners	""
+compiler:F16	compiler-acceptance-cells.tsv	F16	E4		engine referenced input census: only executable references count across four source reference owners	""
+compiler:F17	compiler-acceptance-cells.tsv	F17	E5		engine resource binding: replacing a middle input with resource read rewires every reference	""
+compiler:F18	compiler-acceptance-cells.tsv	F18	E5		engine artifact contracts: external contract resolver owns requirement-bearing operation contracts	""
+compiler:F19	compiler-acceptance-cells.tsv	F19	E5		engine schema override admission: supplied schema narrows only named inputs	""
+compiler:F20	compiler-acceptance-cells.tsv	F20	E5		engine static semantic projection: static projection retains state dependencies and anchors	""
+schema:Q01	schema-acceptance-cells.tsv	Q01	R03		artifact constant codec identity	""
+schema:Q02	schema-acceptance-cells.tsv	Q02	R04		dynamic optional payload construction and live publication	""
+schema:Q03	schema-acceptance-cells.tsv	Q03	R04		foreign dynamic payload rebinding through table join	""
+schema:Q04	schema-acceptance-cells.tsv	Q04	E4		composite constructors preserve child identity and order	""
+schema:Q05	schema-acceptance-cells.tsv	Q05	E3		duplicate live key rejection is atomic	""
+schema:Q06	schema-acceptance-cells.tsv	Q06	E4		annotations preserve nested live matrix schemas	""
+schema:Q07	schema-acceptance-cells.tsv	Q07	E4		zero-field tuple materialization	""
+schema:Q08	schema-acceptance-cells.tsv	Q08	E4		contextual absence and nested optional materialization	""
+schema:Q09	schema-acceptance-cells.tsv	Q09	R06		fixed-population logical-read shape contract	G17
+schema:Q10	schema-acceptance-cells.tsv	Q10	E4		literal-mask selection order with changed live values	""
+schema:Q11	schema-acceptance-cells.tsv	Q11	E3		set union cardinality and changed input publication	""
+schema:Q12	schema-acceptance-cells.tsv	Q12	E3		table join is executed and tracks matched payload rows	""
+schema:Q13	schema-acceptance-cells.tsv	Q13	E3		variable-cardinality table child propagates current row extent	""
+schema:Q14	schema-acceptance-cells.tsv	Q14	E4		whole string selection preserves changed Unicode and empty input	""
+schema:Q15	schema-acceptance-cells.tsv	Q15	E3		composite memory rejection preserves accepted value	""
+schema:Q16	schema-acceptance-cells.tsv	Q16	E3	R02	exact c32 literal storage and c64 live arithmetic publication	G02
+schema:Q17	schema-acceptance-cells.tsv	Q17	E4		large exact literals survive codec and execution	""
+schema:Q18	schema-acceptance-cells.tsv	Q18	E4		signed minimum magnitude admission preserves width	""
+schema:Q19	schema-acceptance-cells.tsv	Q19	E4		Id source annotation denotes canonical Id schema	""
+schema:Q20	schema-acceptance-cells.tsv	Q20	E4		Index annotations survive source range construction	""
+schema:Q21	schema-acceptance-cells.tsv	Q21	E4		nominal atom annotation acceptance/rejection	""
+schema:Q22	schema-acceptance-cells.tsv	Q22	E3		map keyability applies equally to empty and populated values	""
+schema:Q23	schema-acceptance-cells.tsv	Q23	E3		typed empty sets use same keyability rule as populated sets	""
+schema:Q24	schema-acceptance-cells.tsv	Q24	E4		typed empty map materializes without unresolved entry kind	""
+schema:Q25	schema-acceptance-cells.tsv	Q25	R09		composite generator destructuring into primitive bindings already executes	G06
+schema:Q26	schema-acceptance-cells.tsv	Q26	R10		scalar match can publish compound output	G09
+schema:Q27	schema-acceptance-cells.tsv	Q27	R13		source enum declarations and nominal variant construction	G11
+schema:Q28	schema-acceptance-cells.tsv	Q28	R14		sized and scalar reified source kinds versus dimensionless constructor	G13
+schema:Q29	schema-acceptance-cells.tsv	Q29	E4		dynamic-to-concrete conversion remains a positioned rejection	""
+schema:Q30	schema-acceptance-cells.tsv	Q30	R03		typed Id input, generic constant binding and publication	""
+schema:Q31	schema-acceptance-cells.tsv	Q31	R03		typed Index input, generic binding and range endpoints	""
+schema:Q32	schema-acceptance-cells.tsv	Q32	R03	R13	generic enum snapshot artifact publication independent of source declaration	G11
+schema:Q33	schema-acceptance-cells.tsv	Q33	R14		reified output exact identity	G13
+schema:QT-u8	schema-acceptance-cells.tsv	QT-u8	R03		exact scalar typed-input/constant/publication identity	G25
+schema:QT-u16	schema-acceptance-cells.tsv	QT-u16	R03		exact scalar typed-input/constant/publication identity	G25
+schema:QT-u32	schema-acceptance-cells.tsv	QT-u32	R03		exact scalar typed-input/constant/publication identity	G25
+schema:QT-u64	schema-acceptance-cells.tsv	QT-u64	R03		exact scalar typed-input/constant/publication identity	G25
+schema:QT-u128	schema-acceptance-cells.tsv	QT-u128	R03		exact scalar typed-input/constant/publication identity	G25
+schema:QT-i8	schema-acceptance-cells.tsv	QT-i8	R03		exact scalar typed-input/constant/publication identity	G25
+schema:QT-i16	schema-acceptance-cells.tsv	QT-i16	R03		exact scalar typed-input/constant/publication identity	G25
+schema:QT-i32	schema-acceptance-cells.tsv	QT-i32	R03		exact scalar typed-input/constant/publication identity	G25
+schema:QT-i64	schema-acceptance-cells.tsv	QT-i64	R03		exact scalar typed-input/constant/publication identity	G25
+schema:QT-i128	schema-acceptance-cells.tsv	QT-i128	R03		exact scalar typed-input/constant/publication identity	G25
+schema:QT-f32	schema-acceptance-cells.tsv	QT-f32	R03		exact scalar typed-input/constant/publication identity	G25
+schema:QT-f64	schema-acceptance-cells.tsv	QT-f64	R03		exact scalar typed-input/constant/publication identity	G25
+schema:QT-c32	schema-acceptance-cells.tsv	QT-c32	R03		exact scalar typed-input/constant/publication identity	G25
+schema:QT-c64	schema-acceptance-cells.tsv	QT-c64	R03		exact scalar typed-input/constant/publication identity	G25
+schema:QT-r64	schema-acceptance-cells.tsv	QT-r64	R03		exact scalar typed-input/constant/publication identity	G25
+schema:QT-bool	schema-acceptance-cells.tsv	QT-bool	R03		exact scalar typed-input/constant/publication identity	""
+schema:QT-string	schema-acceptance-cells.tsv	QT-string	R03		exact scalar typed-input/constant/publication identity	""
+schema:QG-Dynamic	schema-acceptance-cells.tsv	QG-Dynamic	R04		generic canonical snapshot input binding and exact publication	G26
+schema:QG-Atom	schema-acceptance-cells.tsv	QG-Atom	R03		generic canonical snapshot input binding and exact publication	G25
+schema:QG-Option	schema-acceptance-cells.tsv	QG-Option	R03		generic canonical snapshot input binding and exact publication	G25
+schema:QG-Tuple	schema-acceptance-cells.tsv	QG-Tuple	R03		generic canonical snapshot input binding and exact publication	G25
+schema:QG-Record	schema-acceptance-cells.tsv	QG-Record	R03		generic canonical snapshot input binding and exact publication	G25
+schema:QG-Matrix	schema-acceptance-cells.tsv	QG-Matrix	R03		generic canonical snapshot input binding and exact publication	G25
+schema:QG-Table	schema-acceptance-cells.tsv	QG-Table	R03		generic canonical snapshot input binding and exact publication	G25
+schema:QG-Set	schema-acceptance-cells.tsv	QG-Set	R03		generic canonical snapshot input binding and exact publication	G25
+schema:QG-Map	schema-acceptance-cells.tsv	QG-Map	R03		generic canonical snapshot input binding and exact publication	G25
+schema:QN-scalar-schema	schema-acceptance-cells.tsv	QN-scalar-schema	R03		reject wrong scalar schema in Snapshot-backed lane at documented semantic boundaries	""
+schema:QN-native-scalar-schema	schema-acceptance-cells.tsv	QN-native-scalar-schema	R03		reject wrong scalar schema in native Bool lane at documented semantic boundaries	""
+schema:QN-atom-identity	schema-acceptance-cells.tsv	QN-atom-identity	R03		reject nominal atom identity at documented semantic boundaries	""
+schema:QN-matrix-extent	schema-acceptance-cells.tsv	QN-matrix-extent	R03		reject closed matrix extent at documented semantic boundaries	""
+schema:QN-map-key	schema-acceptance-cells.tsv	QN-map-key	R03		reject map key schema at documented semantic boundaries	""
+rule:R01	rule-acceptance-cells.tsv	R01	R23		canonical syntax certification: 80 direct Phase 2I parse/typed-access/recovery contracts	""
+rule:R02	rule-acceptance-cells.tsv	R02	E2		canonical syntax certification: 112 direct S7 document-root/dependency syntax contracts and exact 131 disposition inventory	""
+rule:R03	rule-acceptance-cells.tsv	R03	R21		runtime typed REPL request parser: 17 historical grammar rows are retired document entries; current command registry owns requests	""
+rule:R04	rule-acceptance-cells.tsv	R04	R23		canonical semantic certification: review shape-sensitive evidence before refreshing fingerprints	G24
+rule:R05	rule-acceptance-cells.tsv	R05	E4		canonical expression lowering: precedence and parentheses across executable formula layers	""
+rule:R06	rule-acceptance-cells.tsv	R06	E4		canonical literal and named-call admission: positive execution for families whose grammar certification used an expected user error	""
+rule:R07	rule-acceptance-cells.tsv	R07	R09		resident comprehension baseline and lexical binding: working matrix/set generator, filter, primitive destructuring and repeated-binding filtering	""
+rule:R08	rule-acceptance-cells.tsv	R08	R09		resident control retained value storage: G06 exact kind and compound comprehension payloads	G06
+rule:R09	rule-acceptance-cells.tsv	R09	R11		canonical nested control graph and collection shape ownership: G07 nested comprehension and match inside comprehension	G07
+rule:R10	rule-acceptance-cells.tsv	R10	R12		canonical computed-pattern evaluation: G08 expression pattern with captures and ordered filtering	G08
+rule:R11	rule-acceptance-cells.tsv	R11	R10		canonical ordinary match lowering: G09 structural match patterns alongside working scalar/compound-result match	G09
+rule:R12	rule-acceptance-cells.tsv	R12	R13		canonical semantic declaration environment: G10 kind aliases including use sites and declaration errors	G10
+rule:R13	rule-acceptance-cells.tsv	R13	R15		canonical constrained annotation admission and language prerequisite: G12 represented range constraints cannot be silently erased	G12
+rule:R14	rule-acceptance-cells.tsv	R14	R05		canonical selected assignment and resident atomic publication: G04 occurrence-ordered promoted/nested updates and rollback	G04
+rule:R15	rule-acceptance-cells.tsv	R15	R08		resident downstream collection shape/layout capability; milestone scope review: G18 finite unimplemented concat/transpose consumer capability; current target rejection remains separate from completion	G18
+rule:R16	rule-acceptance-cells.tsv	R16	R16		canonical tuple destructuring: typed local function outputs and destructuring admission	""
+rule:R17	rule-acceptance-cells.tsv	R17	R16		canonical document function environment: working statement-bodied typed/named calls and resource scope	""
+rule:R18	rule-acceptance-cells.tsv	R18	E10		canonical document scope and completed-result publication: source order, inline/fence output binding and result identity	""
+rule:R19	rule-acceptance-cells.tsv	R19	E10		canonical retained document renderer: plain document, title/subtitle, paragraphs and blank-line preservation	""
+rule:R20	rule-acceptance-cells.tsv	R20	E10		canonical retained document renderer with executable inline values: title front matter is presentation metadata with completed expressions	""
+rule:R21	rule-acceptance-cells.tsv	R21	E10		canonical retained document inline renderer: semantic inline markup and code/link escaping	""
+rule:R22	rule-acceptance-cells.tsv	R22	E10		canonical retained document block renderer: abstract, quote, prompt and six typed callouts	""
+rule:R23	rule-acceptance-cells.tsv	R23	E10		canonical retained document list renderer: ordered, unordered, nested and checklist structure	""
+rule:R24	rule-acceptance-cells.tsv	R24	E10		canonical retained document table renderer: Mechdown table header/body alignment; independent of executable Table value schemas	""
+rule:R25	rule-acceptance-cells.tsv	R25	E10		canonical retained document figure/image renderer: figures, options and safe image attributes	""
+rule:R26	rule-acceptance-cells.tsv	R26	E10		canonical retained document references renderer: citation order, safe backmatter and complete footnotes	""
+rule:R27	rule-acceptance-cells.tsv	R27	E10		canonical retained document float renderer: float direction and child ownership	""
+rule:R28	rule-acceptance-cells.tsv	R28	E2		canonical Mika registry, document scopes and renderer: Mika faces have registered token roles; local execution owners stay isolated	""
+rule:R29	rule-acceptance-cells.tsv	R29	E10		canonical retained document fence renderer and scope collector: executable, inert, hidden and output-suppressed fences	""
+rule:R30	rule-acceptance-cells.tsv	R30	E5		canonical document semantic collector: root statements, resource sends, invariants and metadata ownership	""
+rule:R31	rule-acceptance-cells.tsv	R31	R03		canonical composite lowering and selection: constructors, ordered fields and exact live projection	""
+rule:R32	rule-acceptance-cells.tsv	R32	E10		canonical retained inline highlight renderer: highlight variant missing from the existing mixed/inline semantic assertions	""
+control:FSM01	control-acceptance-cells.tsv	FSM01	R18		A declared machine binds positional and named inputs; rejects duplicate/missing inputs, unknown machine/state, incompatible payload/output kinds and duplicate declarations at retained anchors.	G14
+control:FSM02	control-acceptance-cells.tsv	FSM02	R18		State and guarded transitions select the intended branch; declaration payloads survive transitions; TrafficLight(6)=0 and Fibonacci(10)=55.	G14
+control:FSM03	control-acceptance-cells.tsv	FSM03	R18		Statement/block transitions use ordinary state-candidate ordering; outputs publish only a completed successful transition.	G14
+control:FSM04	control-acceptance-cells.tsv	FSM04	R18		One yield resumes without any external input; creating turn cannot also resume it.	G14
+control:FSM05	control-acceptance-cells.tsv	FSM05	R18		Two yields cross two distinct later turns; no extra same-turn fixed-point resume.	G14
+control:FSM06	control-acceptance-cells.tsv	FSM06	R18		Failed and discarded new yields publish neither state nor output nor durable wakeup.	G14
+control:FSM07	control-acceptance-cells.tsv	FSM07	R18		A failed/discarded resumed turn preserves the earlier committed continuation; retry advances it exactly once.	G14
+control:FSM08	control-acceptance-cells.tsv	FSM08	R18		Reset and replacement reject queued stale generations.	G14
+control:FSM09	control-acceptance-cells.tsv	FSM09	R18		Earlier lexical binding differs from changed external input read after resume; managed composite captures remain valid.	G14
+control:FSM10	control-acceptance-cells.tsv	FSM10	R18		No output means no default value; yielding preserves the last committed output until an output transition succeeds.	G14
+control:FSM11	control-acceptance-cells.tsv	FSM11	R18		Duplicate wakeups coalesce; each instance resumes at most once per turn.	G14
+control:FSM12	control-acceptance-cells.tsv	FSM12	R18		A repeated async chain exhausts a bounded drain while another runnable instance progresses, leaving pending work for a later drain.	G14
+control:FSM13	control-acceptance-cells.tsv	FSM13	R18		Malformed typed machine/control references and excessive work/storage fail admission or the candidate without partial publication.	G14
+control:ACT01	control-acceptance-cells.tsv	ACT01	R19		Load/activation does not run the scope body or advance its registers.	G15
+control:ACT02	control-acceptance-cells.tsv	ACT02	R19		A trigger causes one body evaluation; sampled external changes alone cause none; the next trigger observes the latest external value.	G15
+control:ACT03	control-acceptance-cells.tsv	ACT03	R19		Body-local dependent expressions see current local results, without retriggering the scope after commit.	G15
+control:ACT04	control-acceptance-cells.tsv	ACT04	R19		Two register writes commit atomically; body failure/discard preserves published registers and permits retry.	G15
+control:ACT05	control-acceptance-cells.tsv	ACT05	R19		First matching successful guard wins; unselected bodies do not execute failing operations.	G15
+control:ACT06	control-acceptance-cells.tsv	ACT06	R19		Tuple/tagged/array/rest/repeated/computed patterns bind correct values; no bindings leak across arms or overwrite the outer binding.	G15
+control:ACT07	control-acceptance-cells.tsv	ACT07	R19		Pattern expressions and called-function results sample only on trigger, using the current capture.	G15
+control:ACT08	control-acceptance-cells.tsv	ACT08	R19		Nonexhaustive arms, early wildcard, incompatible repeated binding, impure guard, invalid trigger and own-trigger write reject before partial installation.	G15
+control:ACT09	control-acceptance-cells.tsv	ACT09	R19		Context sends and excluded nested definitions remain positioned rejections before effects or registration.	G15
+control:ACT10	control-acceptance-cells.tsv	ACT10	R19		Repeated triggers do not grow executable topology or retained capture storage; reset/replacement releases or invalidates the old owner.	G15
+control:FUN01	control-acceptance-cells.tsv	FUN01	R16		Nonrecursive scalar pattern body, ordered overlapping arms and omitted-pattern wildcard body return the independently expected result.	G19
+control:FUN02	control-acceptance-cells.tsv	FUN02	R16		Positional and reordered named calls bind identical typed arguments; duplicate/missing/unknown names and incompatible argument/output kinds reject at the call/definition anchor.	G19
+control:FUN03	control-acceptance-cells.tsv	FUN03	R16		Tuple/array/tag patterns and lexical bindings use the shared canonical pattern owner without caller/arm binding leakage.	G19
+control:FUN04	control-acceptance-cells.tsv	FUN04	R16		Nested calls in a formula return the correct value; uncalled functions neither bind inputs nor plan providers.	G19
+control:FUN05	control-acceptance-cells.tsv	FUN05	R16		Any single-value function lifts elementwise over homogeneous matrices and sets under specification.mec:1089. Preserve matrix shape/order; set outputs deduplicate by canonical key relation; scalar output kind may differ from input where the result collection type is valid. Empty input and element failure publish no partial result.	G19
+control:FUN06	control-acceptance-cells.tsv	FUN06	R16		A matching partial numeric function succeeds; a nonmatching call has no invented output; enum exhaustiveness is checked against declared variants.	G19
+control:FUN07	control-acceptance-cells.tsv	FUN07	R17		A self-recursive base case and non-tail factorial(5)=120 run with source/bytecode agreement on subsequent turns.	G20
+control:FUN08	control-acceptance-cells.tsv	FUN08	R17		Branching recursion fib(10)=55 and tail-recursive countdown terminate without graph expansion; local frames do not alias.	G20
+control:FUN09	control-acceptance-cells.tsv	FUN09	R17		Excessive/nonterminating recursion exhausts one bounded work/frame budget without host-stack overflow or partial state/output publication; valid retry succeeds.	G20
+control:FUN10	control-acceptance-cells.tsv	FUN10	R17		Recursive typed aggregate arguments/results obey managed storage accounting, bytecode validation and drop/abort cleanup; recursion invoked within shared control uses the same work budget.	G20
+consumer:bundle-web.project.positive	consumer-acceptance-cells.tsv	bundle-web.project.positive	R22		bundle_web_project -> emitted CanonicalProgramBundle -> production browser loader	G22
+consumer:bundle-web.project.negative	consumer-acceptance-cells.tsv	bundle-web.project.negative	R22		bundle_web_project producer and actual WasmDocument loader	G22
+consumer:cli.compute-inline.positive	consumer-acceptance-cells.tsv	cli.compute-inline.positive	E10		compile_inline_compute_application with normal CLI RunExecutionPlan and native runtime	""
+consumer:cli.compute-inline.negative	consumer-acceptance-cells.tsv	cli.compute-inline.negative	E10		compile_inline_compute_application and shipping CLI runtime	""
+consumer:cli.format.positive	consumer-acceptance-cells.tsv	cli.format.positive	E10		mech format -> cli::commands::format::run	""
+consumer:cli.format.negative	consumer-acceptance-cells.tsv	cli.format.negative	E10		mech format -> cli::commands::format::run	""
+consumer:cli.run-classification.positive	consumer-acceptance-cells.tsv	cli.run-classification.positive	E10		mech run -> parses_as_executable_run_source	""
+consumer:cli.run-classification.negative	consumer-acceptance-cells.tsv	cli.run-classification.negative	E10		parses_as_executable_run_source through the shipping command classifier	""
+consumer:engine.frozen-ekf.positive	consumer-acceptance-cells.tsv	engine.frozen-ekf.positive	E4		compile_frozen_ekf_product through canonical semantic frontend	""
+consumer:engine.frozen-ekf.negative	consumer-acceptance-cells.tsv	engine.frozen-ekf.negative	R23		compile_frozen_ekf_product semantic admission before activation	G23
+consumer:runtime.config-profile.positive	consumer-acceptance-cells.tsv	runtime.config-profile.positive	E1		parse_config_document -> canonical restricted config evaluator	""
+consumer:runtime.config-profile.negative	consumer-acceptance-cells.tsv	runtime.config-profile.negative	E1		parse_config_document -> canonical restricted config evaluator	""
+consumer:runtime.interactive-clear.positive	consumer-acceptance-cells.tsv	runtime.interactive-clear.positive	R21		ResidentReplSession::clear_variables	G21
+consumer:runtime.interactive-clear.negative	consumer-acceptance-cells.tsv	runtime.interactive-clear.negative	R21		ResidentReplSession::clear_variables	G21
+consumer:runtime.interactive-replace.positive	consumer-acceptance-cells.tsv	runtime.interactive-replace.positive	R21		ResidentReplSession::replace_document / replace_source_preserving	G21
+consumer:runtime.interactive-replace.negative	consumer-acceptance-cells.tsv	runtime.interactive-replace.negative	R21		ResidentReplSession candidate activation and commit	G21
+consumer:runtime.interactive-reset.positive	consumer-acceptance-cells.tsv	runtime.interactive-reset.positive	R21		ResidentReplSession::reset	G21
+consumer:runtime.interactive-reset.negative	consumer-acceptance-cells.tsv	runtime.interactive-reset.negative	R21		ResidentReplSession finished-stream/reset lifecycle	G21
+consumer:runtime.interactive-submit.positive	consumer-acceptance-cells.tsv	runtime.interactive-submit.positive	R21		ResidentReplSession::submit / submit_finished_stream	G21
+consumer:runtime.interactive-submit.negative	consumer-acceptance-cells.tsv	runtime.interactive-submit.negative	R21		ResidentReplSession::submit_without_source_echo via shared submit_prepared_entry	G21
+consumer:runtime.module-index.positive	consumer-acceptance-cells.tsv	runtime.module-index.positive	R21		source_index_for_module_record_source via module build/materialize context imports	G21
+consumer:runtime.module-index.negative	consumer-acceptance-cells.tsv	runtime.module-index.negative	R21		source_index_for_module_record_source -> SourceIndex for module record	G21
+consumer:runtime.program-artifact.positive	consumer-acceptance-cells.tsv	runtime.program-artifact.positive	R21		compile_document_artifact_with_inputs / with_input_initializers / static projection	G21
+consumer:runtime.program-artifact.negative	consumer-acceptance-cells.tsv	runtime.program-artifact.negative	R21		evaluate_static_document_symbols_with_inputs and artifact projection	G21
+consumer:runtime.program-compile.positive	consumer-acceptance-cells.tsv	runtime.program-compile.positive	R20	R21	ProgramCompiler::compile_root -> canonical graph/source entry	G16;G21
+consumer:runtime.program-compile.negative	consumer-acceptance-cells.tsv	runtime.program-compile.negative	R21		ProgramCompiler rooted source graph plus shared canonical compiler	G21
+consumer:runtime.program-declaration-tree.positive	consumer-acceptance-cells.tsv	runtime.program-declaration-tree.positive	R21		compile_mixed_document / compile_canonical_mixed_root / resolved variant	G21
+consumer:runtime.program-declaration-tree.negative	consumer-acceptance-cells.tsv	runtime.program-declaration-tree.negative	R21		canonical mixed declaration partition and dependency graph	G21
+consumer:runtime.program-executable-tree.positive	consumer-acceptance-cells.tsv	runtime.program-executable-tree.positive	R21		compile_document / compile_canonical_source executable unit collector	G21
+consumer:runtime.program-executable-tree.negative	consumer-acceptance-cells.tsv	runtime.program-executable-tree.negative	R21		compile_document / compile_canonical_source executable unit collector	G21
+consumer:runtime.program-interactive.positive	consumer-acceptance-cells.tsv	runtime.program-interactive.positive	R21		compile_interactive_document / canonical rooted interactive variants	G21
+consumer:runtime.program-interactive.negative	consumer-acceptance-cells.tsv	runtime.program-interactive.negative	R21		canonical interactive root and accepted-candidate lifecycle	G21
+consumer:runtime.program-source-tree.positive	consumer-acceptance-cells.tsv	runtime.program-source-tree.positive	R21		SourceDocument handoff through module/store/workspace into compiler	G21
+consumer:runtime.program-source-tree.negative	consumer-acceptance-cells.tsv	runtime.program-source-tree.negative	R21		SourceDocument module/store/compiler source history	G21
+consumer:runtime.resolver-file.positive	consumer-acceptance-cells.tsv	runtime.resolver-file.positive	R21		SourceResolver for FileSourceResolver::resolve	""
+consumer:runtime.resolver-file.negative	consumer-acceptance-cells.tsv	runtime.resolver-file.negative	R21		SourceResolver for FileSourceResolver::resolve	""
+consumer:runtime.resolver-memory-insert.positive	consumer-acceptance-cells.tsv	runtime.resolver-memory-insert.positive	R21		InMemorySourceResolver::insert_string	""
+consumer:runtime.resolver-memory-insert.negative	consumer-acceptance-cells.tsv	runtime.resolver-memory-insert.negative	R21		InMemorySourceResolver::insert_string	""
+consumer:runtime.resolver-memory-with.positive	consumer-acceptance-cells.tsv	runtime.resolver-memory-with.positive	R21		InMemorySourceResolver::with_string	""
+consumer:runtime.resolver-memory-with.negative	consumer-acceptance-cells.tsv	runtime.resolver-memory-with.negative	R21		InMemorySourceResolver::with_string	""
+consumer:serve.workspace-render.positive	consumer-acceptance-cells.tsv	serve.workspace-render.positive	R22		ServerSourceRegistry::sync_workspace_snapshot -> HTTP routes -> document controller	G22
+consumer:serve.workspace-render.negative	consumer-acceptance-cells.tsv	serve.workspace-render.negative	R22		ServerSourceRegistry::sync_workspace_snapshot and actual HTTP/controller publication	G22
+consumer:wasm.document-capture.positive	consumer-acceptance-cells.tsv	wasm.document-capture.positive	R22		WasmDocument.fromEncodedWithBundle -> renderedOutput/renderedDocumentValue/document capture	G22
+consumer:wasm.document-capture.negative	consumer-acceptance-cells.tsv	wasm.document-capture.negative	R22		WasmDocument document-output capture after source replacement	G22
+consumer:wasm.initial-repl-source.positive	consumer-acceptance-cells.tsv	wasm.initial-repl-source.positive	R22		WasmDocumentBootstrap::initial_repl_source reached through WasmDocument.replSource	G22
+consumer:wasm.initial-repl-source.negative	consumer-acceptance-cells.tsv	wasm.initial-repl-source.negative	R22		WasmDocument constructor plus initial source acceptance	G22
+consumer:wasm.interactive-tree.positive	consumer-acceptance-cells.tsv	wasm.interactive-tree.positive	R22		WasmDocument.replReplaceSource/replInvoke -> bootstrap candidate compiler	G22
+consumer:wasm.interactive-tree.negative	consumer-acceptance-cells.tsv	wasm.interactive-tree.negative	R22		WasmDocument.replReplaceSource/replInvoke accepted-candidate lifecycle	G22
+consumer:wasm.mixed-compute-source.positive	consumer-acceptance-cells.tsv	wasm.mixed-compute-source.positive	E10		WasmMixedComputeProject.fromSource -> configured browser compute bridge	""
+consumer:wasm.mixed-compute-source.negative	consumer-acceptance-cells.tsv	wasm.mixed-compute-source.negative	E10		WasmMixedComputeProject.fromSource and completeComputeCommand	""
+consumer:wasm.repl-format.positive	consumer-acceptance-cells.tsv	wasm.repl-format.positive	R22		WasmDocument.replFormatSource	G22
+consumer:wasm.repl-format.negative	consumer-acceptance-cells.tsv	wasm.repl-format.negative	R22		WasmDocument.replFormatSource	G22
+consumer:wasm.repl-load-documentation.positive	consumer-acceptance-cells.tsv	wasm.repl-load-documentation.positive	R22		WasmDocument.replLoadDocumentation	G22
+consumer:wasm.repl-load-documentation.negative	consumer-acceptance-cells.tsv	wasm.repl-load-documentation.negative	R22		WasmDocument.replLoadDocumentation	G22
+catalog:C01	catalog-acceptance-cells.tsv	math/add#0;math/add#1;math/add#2;math/add#3;math/add#4;math/add#5;math/add#6;math/add#7;math/add#8;math/add#9;math/div#0;math/div#1;math/div#2;math/div#3;math/div#4;math/div#5;math/div#6;math/div#7;math/div#8;math/div#9;math/mul#0;math/mul#1;math/mul#2;math/mul#3;math/mul#4;math/mul#5;math/mul#6;math/mul#7;math/mul#8;math/mul#9;math/sub#0;math/sub#1;math/sub#2;math/sub#3;math/sub#4;math/sub#5;math/sub#6;math/sub#7;math/sub#8;math/sub#9	E3	E4;E9;R01	Candidate identity, exact kind/layout domain, source oracle and boundary cells for math/add;math/div;math/mul;math/sub	""
+catalog:C02	catalog-acceptance-cells.tsv	math/pow#0;math/pow#1;math/pow#2;math/pow#3;math/pow#4;math/pow#5;math/pow#6;math/pow#7;math/pow#8;math/pow#9;math/pow#10	R02	E4;E9;R01	Candidate identity, exact kind/layout domain, source oracle and boundary cells for math/pow	""
+catalog:C03	catalog-acceptance-cells.tsv	math/mod#0;math/mod#1;math/mod#2;math/mod#3;math/mod#4;math/mod#5;math/mod#6;math/mod#7;math/mod#8;math/mod#9;math/mod#10;math/mod#11;math/mod#12;math/mod#13;math/mod#14;math/mod#15;math/mod#16;math/mod#17;math/mod#18;math/mod#19	E3	E4;E9;R01	Candidate identity, exact kind/layout domain, source oracle and boundary cells for math/mod	""
+catalog:C04	catalog-acceptance-cells.tsv	math/neg#0;math/neg#1	E3	E4;E9;R01	Candidate identity, exact kind/layout domain, source oracle and boundary cells for math/neg	""
+catalog:C05	catalog-acceptance-cells.tsv	math/abs#0;math/abs#1;math/abs#2;math/abs#3	E3	E4;E9;R01	Candidate identity, exact kind/layout domain, source oracle and boundary cells for math/abs	""
+catalog:C06	catalog-acceptance-cells.tsv	math/acos#0;math/acos#1;math/acosh#0;math/acosh#1;math/acot#0;math/acot#1;math/acsc#0;math/acsc#1;math/asec#0;math/asec#1;math/asin#0;math/asin#1;math/asinh#0;math/asinh#1;math/atan#0;math/atan#1;math/atanh#0;math/atanh#1;math/bessel/j0#0;math/bessel/j0#1;math/bessel/j1#0;math/bessel/j1#1;math/bessel/y0#0;math/bessel/y0#1;math/bessel/y1#0;math/bessel/y1#1;math/cbrt#0;math/cbrt#1;math/ceil#0;math/ceil#1;math/cos#0;math/cos#1;math/cosh#0;math/cosh#1;math/cot#0;math/cot#1;math/csc#0;math/csc#1;math/erf#0;math/erf#1;math/erfc#0;math/erfc#1;math/floor#0;math/floor#1;math/lgamma#0;math/lgamma#1;math/log#0;math/log#1;math/log10#0;math/log10#1;math/log1p#0;math/log1p#1;math/log2#0;math/log2#1;math/rint#0;math/rint#1;math/round#0;math/round#1;math/roundeven#0;math/roundeven#1;math/sec#0;math/sec#1;math/sin#0;math/sin#1;math/sinh#0;math/sinh#1;math/sqrt#0;math/sqrt#1;math/tan#0;math/tan#1;math/tanh#0;math/tanh#1;math/tgamma#0;math/tgamma#1;math/trunc#0;math/trunc#1	E3	E4;E9;R01	Candidate identity, exact kind/layout domain, source oracle and boundary cells for math/acos;math/acosh;math/acot;math/acsc;math/asec;math/asin;math/asinh;math/atan;math/atanh;math/bessel/j0;math/bessel/j1;math/bessel/y0;math/bessel/y1;math/cbrt;math/ceil;math/cos;math/cosh;math/cot;math/csc;math/erf;math/erfc;math/floor;math/lgamma;math/log;math/log10;math/log1p;math/log2;math/rint;math/round;math/roundeven;math/sec;math/sin;math/sinh;math/sqrt;math/tan;math/tanh;math/tgamma;math/trunc	""
+catalog:C07	catalog-acceptance-cells.tsv	math/atan2#0;math/atan2#1;math/atan2#2;math/atan2#3;math/atan2#4;math/atan2#5;math/atan2#6;math/atan2#7;math/atan2#8;math/atan2#9;math/bessel/jn#0;math/bessel/jn#1;math/bessel/jn#2;math/bessel/jn#3;math/bessel/jn#4;math/bessel/jn#5;math/bessel/jn#6;math/bessel/jn#7;math/bessel/jn#8;math/bessel/jn#9;math/bessel/yn#0;math/bessel/yn#1;math/bessel/yn#2;math/bessel/yn#3;math/bessel/yn#4;math/bessel/yn#5;math/bessel/yn#6;math/bessel/yn#7;math/bessel/yn#8;math/bessel/yn#9;math/copysign#0;math/copysign#1;math/copysign#2;math/copysign#3;math/copysign#4;math/copysign#5;math/copysign#6;math/copysign#7;math/copysign#8;math/copysign#9;math/fdim#0;math/fdim#1;math/fdim#2;math/fdim#3;math/fdim#4;math/fdim#5;math/fdim#6;math/fdim#7;math/fdim#8;math/fdim#9;math/fmod#0;math/fmod#1;math/fmod#2;math/fmod#3;math/fmod#4;math/fmod#5;math/fmod#6;math/fmod#7;math/fmod#8;math/fmod#9;math/nextafter#0;math/nextafter#1;math/nextafter#2;math/nextafter#3;math/nextafter#4;math/nextafter#5;math/nextafter#6;math/nextafter#7;math/nextafter#8;math/nextafter#9;math/remainder#0;math/remainder#1;math/remainder#2;math/remainder#3;math/remainder#4;math/remainder#5;math/remainder#6;math/remainder#7;math/remainder#8;math/remainder#9	R02	E4;E9;R01	Candidate identity, exact kind/layout domain, source oracle and boundary cells for math/atan2;math/bessel/jn;math/bessel/yn;math/copysign;math/fdim;math/fmod;math/nextafter;math/remainder	""
+catalog:C08	catalog-acceptance-cells.tsv	logic/and#0;logic/and#1;logic/and#2;logic/and#3;logic/and#4;logic/and#5;logic/and#6;logic/and#7;logic/and#8;logic/and#9;logic/or#0;logic/or#1;logic/or#2;logic/or#3;logic/or#4;logic/or#5;logic/or#6;logic/or#7;logic/or#8;logic/or#9;logic/xor#0;logic/xor#1;logic/xor#2;logic/xor#3;logic/xor#4;logic/xor#5;logic/xor#6;logic/xor#7;logic/xor#8;logic/xor#9	E3	E4;E9;R01	Candidate identity, exact kind/layout domain, source oracle and boundary cells for logic/and;logic/or;logic/xor	""
+catalog:C09	catalog-acceptance-cells.tsv	logic/not#0;logic/not#1	E3	E4;E9;R01	Candidate identity, exact kind/layout domain, source oracle and boundary cells for logic/not	""
+catalog:C10	catalog-acceptance-cells.tsv	compare/eq#0;compare/eq#1;compare/eq#2;compare/eq#3;compare/eq#4;compare/eq#5;compare/eq#6;compare/eq#7;compare/eq#8;compare/eq#9;compare/eq#10;compare/eq#11;compare/eq#12;compare/eq#13;compare/eq#14;compare/eq#15;compare/eq#16;compare/eq#17;compare/eq#18;compare/eq#19;compare/eq#20;compare/eq#21;compare/eq#22;compare/eq#23;compare/eq#24;compare/eq#25;compare/eq#26;compare/eq#27;compare/eq#28;compare/eq#29;compare/eq#30;compare/eq#31;compare/neq#0;compare/neq#1;compare/neq#2;compare/neq#3;compare/neq#4;compare/neq#5;compare/neq#6;compare/neq#7;compare/neq#8;compare/neq#9;compare/neq#10;compare/neq#11;compare/neq#12;compare/neq#13;compare/neq#14;compare/neq#15;compare/neq#16;compare/neq#17;compare/neq#18;compare/neq#19;compare/neq#20;compare/neq#21;compare/neq#22;compare/neq#23;compare/neq#24;compare/neq#25;compare/neq#26;compare/neq#27;compare/neq#28;compare/neq#29;compare/neq#30;compare/neq#31	E3	E4;E9;R01	Candidate identity, exact kind/layout domain, source oracle and boundary cells for compare/eq;compare/neq	""
+catalog:C11	catalog-acceptance-cells.tsv	compare/seq#0;compare/seq#1;compare/sneq#0;compare/sneq#1	E3	E4;E9;R01	Candidate identity, exact kind/layout domain, source oracle and boundary cells for compare/seq;compare/sneq	""
+catalog:C12	catalog-acceptance-cells.tsv	compare/gt#0;compare/gt#1;compare/gt#2;compare/gt#3;compare/gt#4;compare/gt#5;compare/gt#6;compare/gt#7;compare/gt#8;compare/gt#9;compare/gt#10;compare/gt#11;compare/gte#0;compare/gte#1;compare/gte#2;compare/gte#3;compare/gte#4;compare/gte#5;compare/gte#6;compare/gte#7;compare/gte#8;compare/gte#9;compare/gte#10;compare/gte#11;compare/lt#0;compare/lt#1;compare/lt#2;compare/lt#3;compare/lt#4;compare/lt#5;compare/lt#6;compare/lt#7;compare/lt#8;compare/lt#9;compare/lt#10;compare/lt#11;compare/lte#0;compare/lte#1;compare/lte#2;compare/lte#3;compare/lte#4;compare/lte#5;compare/lte#6;compare/lte#7;compare/lte#8;compare/lte#9;compare/lte#10;compare/lte#11	E3	E4;E9;R01	Candidate identity, exact kind/layout domain, source oracle and boundary cells for compare/gt;compare/gte;compare/lt;compare/lte	""
+catalog:C13	catalog-acceptance-cells.tsv	compare/max#0;compare/max#1;compare/max#2;compare/max#3;compare/max#4;compare/max#5;compare/max#6;compare/max#7;compare/max#8;compare/max#9;compare/min#0;compare/min#1;compare/min#2;compare/min#3;compare/min#4;compare/min#5;compare/min#6;compare/min#7;compare/min#8;compare/min#9	E3	E4;E9;R01	Candidate identity, exact kind/layout domain, source oracle and boundary cells for compare/max;compare/min	""
+catalog:C14	catalog-acceptance-cells.tsv	math/add-assign#0;math/add-assign#1;math/add-assign#2;math/add-assign/range#0;math/add-assign/range#1;math/add-assign/range#2;math/add-assign/range-all#0;math/add-assign/range-all#1;math/add-assign/range-all#2;math/div-assign#0;math/div-assign#1;math/div-assign#2;math/div-assign/range#0;math/div-assign/range#1;math/div-assign/range#2;math/div-assign/range-all#0;math/div-assign/range-all#1;math/div-assign/range-all#2;math/mul-assign/range#0;math/mul-assign/range#1;math/mul-assign/range#2;math/mul-assign/range-all#0;math/mul-assign/range-all#1;math/mul-assign/range-all#2;math/sub-assign#0;math/sub-assign#1;math/sub-assign#2;math/sub-assign/range#0;math/sub-assign/range#1;math/sub-assign/range#2;math/sub-assign/range-all#0;math/sub-assign/range-all#1;math/sub-assign/range-all#2	R05	E4;E9;R01	Candidate identity, exact kind/layout domain, source oracle and boundary cells for math/add-assign;math/add-assign/range;math/add-assign/range-all;math/div-assign;math/div-assign/range;math/div-assign/range-all;math/mul-assign/range;math/mul-assign/range-all;math/sub-assign;math/sub-assign/range;math/sub-assign/range-all	""
+catalog:C15	catalog-acceptance-cells.tsv	range/exclusive#0;range/exclusive-increment#0;range/inclusive#0;range/inclusive-increment#0	E4	E9;R01	Candidate identity, exact kind/layout domain, source oracle and boundary cells for range/exclusive;range/exclusive-increment;range/inclusive;range/inclusive-increment	""
+catalog:C16	catalog-acceptance-cells.tsv	matrix/matmul#0;matrix/matmul#1	R02	E4;E9;R01	Candidate identity, exact kind/layout domain, source oracle and boundary cells for matrix/matmul	""
+catalog:C17	catalog-acceptance-cells.tsv	matrix/dot#0;matrix/dot#1	E3	E4;E9;R01	Candidate identity, exact kind/layout domain, source oracle and boundary cells for matrix/dot	""
+catalog:C18	catalog-acceptance-cells.tsv	matrix/solve#0;matrix/solve#1	E3	E4;E9;R01	Candidate identity, exact kind/layout domain, source oracle and boundary cells for matrix/solve	""
+catalog:C19	catalog-acceptance-cells.tsv	matrix/horzcat#syntax-directed;matrix/vertcat#syntax-directed	R08	E4;E9;R01	Candidate identity, exact kind/layout domain, source oracle and boundary cells for matrix/horzcat;matrix/vertcat	""
+catalog:C20	catalog-acceptance-cells.tsv	matrix/transpose#0	R08	E4;E9;R01	Candidate identity, exact kind/layout domain, source oracle and boundary cells for matrix/transpose	""
+catalog:C21	catalog-acceptance-cells.tsv	matrix/comprehension#0	R09	E4;E9;R01	Candidate identity, exact kind/layout domain, source oracle and boundary cells for matrix/comprehension	""
+catalog:C22	catalog-acceptance-cells.tsv	set/comprehension#0;set/comprehension#1	R09	E4;E9;R01	Candidate identity, exact kind/layout domain, source oracle and boundary cells for set/comprehension	""
+catalog:C23	catalog-acceptance-cells.tsv	set/define#syntax-directed	E3	E4;E9;R01	Candidate identity, exact kind/layout domain, source oracle and boundary cells for set/define	""
+catalog:C24	catalog-acceptance-cells.tsv	set/element-of#0;set/not-element-of#0	E3	E4;E9;R01	Candidate identity, exact kind/layout domain, source oracle and boundary cells for set/element-of;set/not-element-of	""
+catalog:C25	catalog-acceptance-cells.tsv	set/insert#0;set/remove#0	E3	E4;E9;R01	Candidate identity, exact kind/layout domain, source oracle and boundary cells for set/insert;set/remove	""
+catalog:C26	catalog-acceptance-cells.tsv	set/difference#0;set/intersection#0;set/symmetric-difference#0;set/union#0	E3	E4;E9;R01	Candidate identity, exact kind/layout domain, source oracle and boundary cells for set/difference;set/intersection;set/symmetric-difference;set/union	""
+catalog:C27	catalog-acceptance-cells.tsv	set/disjoint#0;set/equals#0;set/not_equals#0;set/proper-superset#0;set/proper_subset#0;set/subset#0;set/superset#0	E3	E4;E9;R01	Candidate identity, exact kind/layout domain, source oracle and boundary cells for set/disjoint;set/equals;set/not_equals;set/proper-superset;set/proper_subset;set/subset;set/superset	""
+catalog:C28	catalog-acceptance-cells.tsv	set/cartesian-product#0	E3	E4;E9;R01	Candidate identity, exact kind/layout domain, source oracle and boundary cells for set/cartesian-product	""
+catalog:C29	catalog-acceptance-cells.tsv	set/powerset#0	E3	E4;E9;R01	Candidate identity, exact kind/layout domain, source oracle and boundary cells for set/powerset	""
+catalog:C30	catalog-acceptance-cells.tsv	set/size#0	E3	E4;E9;R01	Candidate identity, exact kind/layout domain, source oracle and boundary cells for set/size	""
+catalog:C31	catalog-acceptance-cells.tsv	stats/sum/column#0;stats/sum/row#0	E3	E4;E9;R01	Candidate identity, exact kind/layout domain, source oracle and boundary cells for stats/sum/column;stats/sum/row	""
+catalog:C32	catalog-acceptance-cells.tsv	string/concat#0	E3	E4;E9;R01	Candidate identity, exact kind/layout domain, source oracle and boundary cells for string/concat	""
+catalog:C33	catalog-acceptance-cells.tsv	table/full-outer-join#syntax-directed;table/join#syntax-directed;table/left-anti-join#syntax-directed;table/left-outer-join#syntax-directed;table/left-semi-join#syntax-directed;table/right-outer-join#syntax-directed	E3	E4;E9;R01	Candidate identity, exact kind/layout domain, source oracle and boundary cells for table/full-outer-join;table/join;table/left-anti-join;table/left-outer-join;table/left-semi-join;table/right-outer-join	""
+catalog:C34	catalog-acceptance-cells.tsv	combinatorics/n-choose-k#0;combinatorics/n-choose-k#1	E3	E4;E9;R01	Candidate identity, exact kind/layout domain, source oracle and boundary cells for combinatorics/n-choose-k	""
+target:TR-numeric-u64-pow	target-rejection-cells.tsv	TR-numeric-u64-pow	R02		Power target implementation: machines/math/src/ops/pow.rs plus engine resident numeric power binding: pure semantic artifact admission; separate physical target rejection and positive capability	G02
+target:TR-numeric-u128-pow	target-rejection-cells.tsv	TR-numeric-u128-pow	R02		Power target implementation: machines/math/src/ops/pow.rs plus engine resident numeric power binding: pure semantic artifact admission; separate physical target rejection and positive capability	G02
+target:TR-numeric-i8-pow	target-rejection-cells.tsv	TR-numeric-i8-pow	R02		Power target implementation: machines/math/src/ops/pow.rs plus engine resident numeric power binding: pure semantic artifact admission; separate physical target rejection and positive capability	G02
+target:TR-numeric-i16-pow	target-rejection-cells.tsv	TR-numeric-i16-pow	R02		Power target implementation: machines/math/src/ops/pow.rs plus engine resident numeric power binding: pure semantic artifact admission; separate physical target rejection and positive capability	G02
+target:TR-numeric-i32-pow	target-rejection-cells.tsv	TR-numeric-i32-pow	R02		Power target implementation: machines/math/src/ops/pow.rs plus engine resident numeric power binding: pure semantic artifact admission; separate physical target rejection and positive capability	G02
+target:TR-numeric-i64-pow	target-rejection-cells.tsv	TR-numeric-i64-pow	R02		Power target implementation: machines/math/src/ops/pow.rs plus engine resident numeric power binding: pure semantic artifact admission; separate physical target rejection and positive capability	G02
+target:TR-numeric-i128-pow	target-rejection-cells.tsv	TR-numeric-i128-pow	R02		Power target implementation: machines/math/src/ops/pow.rs plus engine resident numeric power binding: pure semantic artifact admission; separate physical target rejection and positive capability	G02
+target:TR-scalar-c32	target-rejection-cells.tsv	TR-scalar-c32	R02		C32 arithmetic/reduction/selected-update target implementation: engine resident numeric binding and math/stats typed kernels: pure semantic artifact admission; separate physical target rejection and positive capability	G02
+target:TR-numeric-c32-add	target-rejection-cells.tsv	TR-numeric-c32-add	R02		C32 arithmetic/reduction/selected-update target implementation: engine resident numeric binding and math/stats typed kernels: pure semantic artifact admission; separate physical target rejection and positive capability	G02
+target:TR-numeric-c32-sub	target-rejection-cells.tsv	TR-numeric-c32-sub	R02		C32 arithmetic/reduction/selected-update target implementation: engine resident numeric binding and math/stats typed kernels: pure semantic artifact admission; separate physical target rejection and positive capability	G02
+target:TR-numeric-c32-mul	target-rejection-cells.tsv	TR-numeric-c32-mul	R02		C32 arithmetic/reduction/selected-update target implementation: engine resident numeric binding and math/stats typed kernels: pure semantic artifact admission; separate physical target rejection and positive capability	G02
+target:TR-numeric-c32-div	target-rejection-cells.tsv	TR-numeric-c32-div	R02		C32 arithmetic/reduction/selected-update target implementation: engine resident numeric binding and math/stats typed kernels: pure semantic artifact admission; separate physical target rejection and positive capability	G02
+target:TR-numeric-c32-pow	target-rejection-cells.tsv	TR-numeric-c32-pow	R02		Power target implementation: machines/math/src/ops/pow.rs plus engine resident numeric power binding: pure semantic artifact admission; separate physical target rejection and positive capability	G02
+target:TR-matrix-repeat-c32	target-rejection-cells.tsv	TR-matrix-repeat-c32	R02		C32 arithmetic/reduction/selected-update target implementation: engine resident numeric binding and math/stats typed kernels: pure semantic artifact admission; separate physical target rejection and positive capability	G02
+target:TR-numeric-c64-pow	target-rejection-cells.tsv	TR-numeric-c64-pow	R02		Power target implementation: machines/math/src/ops/pow.rs plus engine resident numeric power binding: pure semantic artifact admission; separate physical target rejection and positive capability	G02
+target:TR-numeric-r64-pow	target-rejection-cells.tsv	TR-numeric-r64-pow	R02		Power target implementation: machines/math/src/ops/pow.rs plus engine resident numeric power binding: pure semantic artifact admission; separate physical target rejection and positive capability	G02
+target:TR-matrix-c32-add	target-rejection-cells.tsv	TR-matrix-c32-add	R02		C32 arithmetic/reduction/selected-update target implementation: engine resident numeric binding and math/stats typed kernels: pure semantic artifact admission; separate physical target rejection and positive capability	G02
+target:TR-matrix-c32-sub	target-rejection-cells.tsv	TR-matrix-c32-sub	R02		C32 arithmetic/reduction/selected-update target implementation: engine resident numeric binding and math/stats typed kernels: pure semantic artifact admission; separate physical target rejection and positive capability	G02
+target:TR-matrix-c32-mul	target-rejection-cells.tsv	TR-matrix-c32-mul	R02		C32 arithmetic/reduction/selected-update target implementation: engine resident numeric binding and math/stats typed kernels: pure semantic artifact admission; separate physical target rejection and positive capability	G02
+target:TR-matrix-c32-div	target-rejection-cells.tsv	TR-matrix-c32-div	R02		C32 arithmetic/reduction/selected-update target implementation: engine resident numeric binding and math/stats typed kernels: pure semantic artifact admission; separate physical target rejection and positive capability	G02
+target:TR-matrix-c32-sum	target-rejection-cells.tsv	TR-matrix-c32-sum	R02		C32 arithmetic/reduction/selected-update target implementation: engine resident numeric binding and math/stats typed kernels: pure semantic artifact admission; separate physical target rejection and positive capability	G02
+target:TR-matrix-c32-matmul	target-rejection-cells.tsv	TR-matrix-c32-matmul	R02		Matrix-product target implementation: machines/matrix/src/matmul.rs plus engine resident numeric matrix-product binding: pure semantic artifact admission; separate physical target rejection and positive capability	G02
+target:TR-matrix-c64-matmul	target-rejection-cells.tsv	TR-matrix-c64-matmul	R02		Matrix-product target implementation: machines/matrix/src/matmul.rs plus engine resident numeric matrix-product binding: pure semantic artifact admission; separate physical target rejection and positive capability	G02
+target:TR-matrix-r64-matmul	target-rejection-cells.tsv	TR-matrix-r64-matmul	R02		Matrix-product target implementation: machines/matrix/src/matmul.rs plus engine resident numeric matrix-product binding: pure semantic artifact admission; separate physical target rejection and positive capability	G02
+target:TR-catalog-f32-binary-broadcast	target-rejection-cells.tsv	TR-catalog-f32-binary-broadcast	R02		Floating binary broadcast target binding: math/copysign catalog/kernel and engine resident numeric layout adapter: pure semantic artifact admission; separate physical target rejection and positive capability	G02
+target:TR-control-numeric-u8-pow	target-rejection-cells.tsv	TR-control-numeric-u8-pow	R02		canonical semantic frontend plus configured resident execution: finite supported pure-operation control	G02
+target:TR-control-numeric-u32-pow	target-rejection-cells.tsv	TR-control-numeric-u32-pow	R02		canonical semantic frontend plus configured resident execution: finite supported pure-operation control	G02
+target:TR-control-numeric-f64-pow	target-rejection-cells.tsv	TR-control-numeric-f64-pow	R02		canonical semantic frontend plus configured resident execution: finite supported pure-operation control	G02
+target:TR-control-rational-integral-power	target-rejection-cells.tsv	TR-control-rational-integral-power	R02		canonical semantic frontend plus configured resident execution: finite supported pure-operation control	G02
+target:TR-control-numeric-c64-add	target-rejection-cells.tsv	TR-control-numeric-c64-add	R02		canonical semantic frontend plus configured resident execution: finite supported pure-operation control	G02
+target:TR-control-matrix-f32-matmul	target-rejection-cells.tsv	TR-control-matrix-f32-matmul	R02		canonical semantic frontend plus configured resident execution: finite supported pure-operation control	G02
+target:TR-control-matrix-f64-matmul	target-rejection-cells.tsv	TR-control-matrix-f64-matmul	R02		canonical semantic frontend plus configured resident execution: finite supported pure-operation control	G02
+target:TR-control-matrix-c32-transpose	target-rejection-cells.tsv	TR-control-matrix-c32-transpose	R02		canonical semantic frontend plus configured resident execution: finite supported pure-operation control	G02
+target:TR-control-c32-transport	target-rejection-cells.tsv	TR-control-c32-transport	R02		canonical Value schema admission and resident publication: exact live C32 storage/publication independently of arithmetic	G02
+target:TR-effect-preflight-control	target-rejection-cells.tsv	TR-effect-preflight-control	R02		ProgramCompiler resource preflight and RuntimeResourceProvider planning hook: existing effect-free planning contract across five compiler routes	G02
+target:TR-effect-unsupported	target-rejection-cells.tsv	TR-effect-unsupported	R02		runtime ProgramCompiler temporary execution where required; resident physical binding otherwise: effectful compiler temporary activation	G02
+target:TR-planning-value-unsupported	target-rejection-cells.tsv	TR-planning-value-unsupported	R02		runtime ProgramCompiler temporary execution where required; resident physical binding otherwise: closed supplied planning-value admission	G02
+target:TR-static-unsupported	target-rejection-cells.tsv	TR-static-unsupported	R02		runtime ProgramCompiler temporary execution where required; resident physical binding otherwise: static initializer execution admission	G02
+target:TR-open-input-unsupported	target-rejection-cells.tsv	TR-open-input-unsupported	R02		runtime ProgramCompiler temporary execution where required; resident physical binding otherwise: pure open-input artifact and physical target separation	G02
+target:TR-mask-empty-facts	target-rejection-cells.tsv	TR-mask-empty-facts	R06		resident shape derivation and supplied ActivationFacts contract: computed-mask activation with no selected-output shape fact	G17
+target:TR-mask-explicit-population	target-rejection-cells.tsv	TR-mask-explicit-population	R06		resident activation facts and selection execution: same computed mask with supplied exact selected-output population	G17
+target:TR-mask-fixed-population-control	target-rejection-cells.tsv	TR-mask-fixed-population-control	R06		resident selection layout and per-turn validation: existing fixed-population mask execution and atomic extent rejection	G17
+target:TR-mask-production-loader	target-rejection-cells.tsv	TR-mask-production-loader	R06		runtime resident target preflight/shape-fact handoff: production loader reports current unresolved physical shape without installing a program	G17
+target:TR-downstream-dynamic-concat	target-rejection-cells.tsv	TR-downstream-dynamic-concat	R08		resident downstream collection layout: numeric.rs bind_matrix_constructor/bind_transpose and per-turn execution; comprehension producer publication is separate: closed comprehension output consumed by concatenation: current safe rejection and retained positive capability	G18
+target:TR-downstream-changing-concat	target-rejection-cells.tsv	TR-downstream-changing-concat	R08		resident downstream collection layout: numeric.rs bind_matrix_constructor/bind_transpose and per-turn execution; comprehension producer publication is separate: concatenation consumes changing comprehension cardinality across three turns	G18
+target:TR-downstream-changing-transpose	target-rejection-cells.tsv	TR-downstream-changing-transpose	R08		resident downstream collection layout: numeric.rs bind_matrix_constructor/bind_transpose and per-turn execution; comprehension producer publication is separate: transpose consumes changing comprehension cardinality across three turns	G18
+gap:G02	gaps.tsv	G02	R02		Configured numeric/layout capability scope and physical target owners	G02
+gap:G03	gaps.tsv	G03	R01		Canonical named-call environment and catalog exposure	G03
+gap:G04	gaps.tsv	G04	R05		Canonical selected-assignment lowering	G04
+gap:G05	gaps.tsv	G05	R07		Resident activation dependency classification	G05
+gap:G06	gaps.tsv	G06	R09		Resident comprehension retained value storage/binding	G06
+gap:G07	gaps.tsv	G07	R11		Canonical control-block composition	G07
+gap:G08	gaps.tsv	G08	R12		Canonical computed-pattern evaluation	G08
+gap:G09	gaps.tsv	G09	R10		Canonical match-pattern lowering	G09
+gap:G10	gaps.tsv	G10	R13		Canonical semantic declaration environment: kind definitions	G10
+gap:G11	gaps.tsv	G11	R13		Canonical semantic declaration environment: enums	G11
+gap:G12	gaps.tsv	G12	R15		Canonical constrained-type contract prerequisite	G12
+gap:G13	gaps.tsv	G13	R14		Canonical dimensionless reified-kind lowering	G13
+gap:G14	gaps.tsv	G14	R18		Canonical FSM declaration and resident continuation owner	G14
+gap:G15	gaps.tsv	G15	R19		Canonical activation-scope lowering and runtime lifecycle	G15
+gap:G16	gaps.tsv	G16	R20		ProgramCompiler ordered dependency graph ownership	G16
+gap:G17	gaps.tsv	G17	R06		Computed logical-mask shape capability and activation-fact responsibility	G17
+gap:G18	gaps.tsv	G18	R08		Resident downstream comprehension layout capability	G18
+gap:G19	gaps.tsv	G19	R16		Canonical pattern-function body lowering and collection lifting	G19
+gap:G20	gaps.tsv	G20	R17		Canonical bounded recursive call execution	G20
+gap:G21	gaps.tsv	G21	R21		C retirement: compiler, interactive and module-index tree authority	G21
+gap:G22	gaps.tsv	G22	R22		C browser document transport and lifecycle	G22
+gap:G23	gaps.tsv	G23	R23		C build/test retirement closure	G23
+gap:G24	gaps.tsv	G24	R23		Semantic certification maintenance	G24
+gap:G25	gaps.tsv	G25	R03		Canonical constant binding and artifact schema canonicalization	G25
+gap:G26	gaps.tsv	G26	R04		Canonical Dynamic constant binding identity	G26

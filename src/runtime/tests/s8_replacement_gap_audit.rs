@@ -1,15 +1,41 @@
 #![cfg(all(feature = "full_source", feature = "resident-routing-source"))]
 //! Observational audit of frozen replacement contracts. No production implementation.
-//! MECH_AUDIT_CASE selects one witness. MECH_AUDIT_REQUIRE_PASS=1 makes any
-//! observed implementation failure fail the test; an observational run is not a seal.
+//! MECH_AUDIT_CASE selects one witness. MECH_AUDIT_REQUIRE_PASS=1 makes a
+//! mismatch with the selected oracle fail the test. MECH_AUDIT_REQUIRE_CAPABILITY=1
+//! selects the positive milestone oracle instead of current target rejection.
+//! A matching rejection does not prove capability; an observational run is not a seal.
 use mech_core::ReactiveInstanceId;
 use mech_engine::resident::{ActivationFacts, activate};
 use mech_runtime::{RuntimeBuilder, RuntimeValueSnapshot, SourceDocument};
 use mech_syntax::document::{ParseConfig, Revision};
 use serde_json::{Value, json};
 
+fn audit_input_identity() {
+    // Execution-time identity of the compiled audit inputs, independent of the
+    // later recorder's filesystem. FNV-1a-64 is a deterministic stale-input
+    // check; the recorder also records SHA-256 identities of the matched bytes.
+    fn fingerprint(bytes: &[u8]) -> String {
+        let mut hash = 0xcbf29ce484222325u64;
+        for byte in bytes {
+            hash ^= u64::from(*byte);
+            hash = hash.wrapping_mul(0x100000001b3);
+        }
+        format!("{hash:016x}")
+    }
+    let harness = include_bytes!("s8_replacement_gap_audit.rs");
+    let fixture =
+        include_bytes!("../../../tests/fixtures/s8-replacement-audit/semantic-cases.json");
+    println!(
+        "AUDIT_IDENTITY {}",
+        json!({"version":1,"algorithm":"fnv1a64",
+            "harness_bytes":harness.len(),"harness_fingerprint":fingerprint(harness),
+            "fixture_bytes":fixture.len(),"fixture_fingerprint":fingerprint(fixture)})
+    );
+}
+
 #[test]
 fn semantic_replacement_witnesses() {
+    audit_input_identity();
     let cases: Vec<Value> = serde_json::from_str(include_str!(
         "../../../tests/fixtures/s8-replacement-audit/semantic-cases.json"
     ))
@@ -29,8 +55,26 @@ fn semantic_replacement_witnesses() {
             Ok(Err((stage, message))) => (stage, json!(message)),
             Err(_) => ("panic".to_owned(), json!("unwound during probe")),
         };
-        println!("AUDIT {}", json!({"id":id,"stage":stage,"detail":detail}));
-        if stage != "pass" {
+        let require_capability = std::env::var_os("MECH_AUDIT_REQUIRE_CAPABILITY").is_some()
+            && case["milestone_capability_group"].is_string();
+        let expected_stage = if require_capability {
+            "pass"
+        } else {
+            case["expected_rejection_stage"].as_str().unwrap_or("pass")
+        };
+        let contract_pass = stage == expected_stage
+            && (require_capability
+                || case["expected_rejection_detail"]
+                    .as_str()
+                    .is_none_or(|expected| detail.as_str() == Some(expected)));
+        println!(
+            "AUDIT {}",
+            json!({"id":id,"stage":stage,"detail":detail,
+            "expected_stage":expected_stage,"contract_status":if contract_pass {"pass"} else {"fail"},
+            "milestone_capability_group":case["milestone_capability_group"],
+            "positive_capability_executed":case["milestone_capability_group"].is_string() && stage == "pass"})
+        );
+        if !contract_pass {
             failures.push(id.to_owned());
         }
     }
@@ -68,14 +112,34 @@ fn probe(case: &Value) -> Result<Vec<Vec<String>>, (String, String)> {
     let decoded = mech_engine::decode_program_artifact_bytecode_v1(product.bytecode())
         .map_err(|e| error("bytecode", format!("{e:?}")))?;
     let mut results = Vec::new();
+    let expect_target_rejection = case["expected_rejection_stage"].as_str() == Some("activation")
+        && std::env::var_os("MECH_AUDIT_REQUIRE_CAPABILITY").is_none();
+    let mut rejected_artifacts = Vec::new();
     for artifact in [product.artifact(), &decoded] {
-        let mut instance = activate(
+        let activation = activate(
             ReactiveInstanceId::new(0x58a, 0),
             artifact,
             &catalog,
             &ActivationFacts::default(),
-        )
-        .map_err(|e| error("activation", format!("{e:?}")))?;
+        );
+        let mut instance = match activation {
+            Err(e) if expect_target_rejection => {
+                let detail = format!("{e:?}");
+                if Some(detail.as_str()) != case["expected_rejection_detail"].as_str() {
+                    return Err(error("wrong-target-rejection", detail));
+                }
+                rejected_artifacts.push(detail);
+                continue;
+            }
+            Err(e) => return Err(error("activation", format!("{e:?}"))),
+            Ok(_) if expect_target_rejection => {
+                return Err(error(
+                    "unexpected-target-admission",
+                    "expected current target rejection".into(),
+                ));
+            }
+            Ok(instance) => instance,
+        };
         let mut values = Vec::new();
         for turn in 0..2 {
             instance
@@ -87,7 +151,10 @@ fn probe(case: &Value) -> Result<Vec<Vec<String>>, (String, String)> {
             let value = RuntimeValueSnapshot::from_value(value)
                 .map_err(|e| error("snapshot", format!("{e:?}")))?
                 .format_canonical_inline();
-            if let Some(expected) = case["expected"].as_array() {
+            if let Some(expected) = case["positive_milestone_expected"]
+                .as_array()
+                .or_else(|| case["expected"].as_array())
+            {
                 if value != expected[turn].as_str().unwrap() {
                     return Err(error(
                         "wrong-value",
@@ -99,6 +166,14 @@ fn probe(case: &Value) -> Result<Vec<Vec<String>>, (String, String)> {
         }
         results.push(values);
     }
+    if expect_target_rejection {
+        assert_eq!(
+            rejected_artifacts.len(),
+            2,
+            "both artifact representations must reject"
+        );
+        return Err(error("activation", rejected_artifacts.remove(0)));
+    }
     if results[0] != results[1] {
         return Err(error("bytecode-value", "source and bytecode differ".into()));
     }
@@ -107,6 +182,7 @@ fn probe(case: &Value) -> Result<Vec<Vec<String>>, (String, String)> {
 
 #[test]
 fn compiler_entry_point_witnesses() {
+    audit_input_identity();
     use mech_engine::ProgramArtifactCompilationProduct;
     use mech_runtime::ModuleBuildOptions;
     use mech_runtime::resolver::{InMemorySourceResolver, SourceRequest, SourceResolver};
@@ -276,6 +352,7 @@ fn compiler_entry_point_witnesses() {
 
 #[test]
 fn ordered_transitive_explicit_root_witness() {
+    audit_input_identity();
     use mech_runtime::ModuleBuildOptions;
     use mech_runtime::resolver::{InMemorySourceResolver, SourceRequest};
     let mut resolver = InMemorySourceResolver::new();
@@ -337,6 +414,7 @@ fn ordered_transitive_explicit_root_witness() {
 
 #[test]
 fn source_catalog_census() {
+    audit_input_identity();
     let catalog = mech_stdlib::source_catalog();
     let mut names = std::collections::BTreeSet::new();
     for export in catalog.all_exports() {
@@ -353,6 +431,7 @@ fn source_catalog_census() {
 #[cfg(feature = "serde")]
 #[test]
 fn browser_document_payload_witness() {
+    audit_input_identity();
     let document = SourceDocument::parse_resolved(
         "audit:browser",
         Revision(0),
@@ -383,6 +462,68 @@ fn browser_document_payload_witness() {
         assert!(
             retiring_decoder.is_ok(),
             "canonical producer payload cannot reach the frozen C document loader"
+        );
+    }
+}
+
+#[test]
+fn source_visibility_witnesses() {
+    audit_input_identity();
+    let cases = [
+        (
+            "internal-call",
+            "answer := compare/max(1,2)\nanswer\n",
+            false,
+        ),
+        (
+            "module-without-import",
+            "answer := math/cos(0f32)\nanswer\n",
+            false,
+        ),
+        (
+            "module-import",
+            "+> math\nanswer := math/cos(0f32)\nanswer\n",
+            true,
+        ),
+        (
+            "aliased-import",
+            "+> wave := math/cos\nanswer := wave(0f32)\nanswer\n",
+            true,
+        ),
+        ("prelude-call", "answer := compare/eq(1,1)\nanswer\n", true),
+        ("intrinsic", "answer := 1 > 0\nanswer\n", true),
+    ];
+    let mut failures = Vec::new();
+    for (id, source, expected_admission) in cases {
+        for route in ["frozen-shipping", "canonical"] {
+            let mut compiler = RuntimeBuilder::new()
+                .function_catalog(mech_stdlib::source_catalog())
+                .build_compiler()
+                .unwrap();
+            let result = if route == "canonical" {
+                compiler.compile_canonical_source(source)
+            } else {
+                // A frozen-contract audit only. This is not a production fallback.
+                compiler.compile_source(source)
+            };
+            let admitted = result.is_ok();
+            let matches_contract = admitted == expected_admission;
+            println!(
+                "AUDIT_VISIBILITY {}",
+                json!({"id":id,"route":route,
+                "expected_admission":expected_admission,"admitted":admitted,
+                "stage":if matches_contract {"pass"} else {"visibility"},
+                "detail":result.err().map(|e|format!("{e:?}"))})
+            );
+            if !matches_contract {
+                failures.push(format!("{id}/{route}"));
+            }
+        }
+    }
+    if std::env::var_os("MECH_AUDIT_REQUIRE_PASS").is_some() {
+        assert!(
+            failures.is_empty(),
+            "visibility contract violations: {failures:?}"
         );
     }
 }

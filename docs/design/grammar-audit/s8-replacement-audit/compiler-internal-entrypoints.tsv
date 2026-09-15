@@ -1,0 +1,4 @@
+method	qualified-owner	frozen-source	production-caller	C-route	acceptance-cells
+compile_interactive_source	ProgramCompilerView	src/runtime/src/runtime/program/compiler.rs:679	src/runtime/src/runtime/program/loading.rs	B shipping loader route parser->tree; removed at C; loader now retained document->compile_interactive_document	P01;P02;P08;P33
+compile_resolved_root	ProgramCompilerView	src/runtime/src/runtime/program/compiler.rs:2261	src/runtime/src/runtime/program/loading.rs	C compile_resolved_root_with_projection -> compile_canonical_resolved_root(resolved,false,Some(options)); existing runtime loader retains configured compiler view	P13;P14;P28
+compile_interactive_resolved_root	ProgramCompilerView	src/runtime/src/runtime/program/compiler.rs:2285	src/runtime/src/runtime/program/loading.rs	C same canonical resolved implementation interactive=true; existing runtime interactive loader	P13;P14;P32;P33

@@ -1,0 +1,595 @@
+{
+  "production-baseline": "662d29b79df8ab05a25bbadb941a689fd5bd5aae",
+  "audit-head-at-execution": "06a2158829cadf5305036cd05de1fce185621cce",
+  "audit-working-tree-test": "src/runtime/tests/s8_replacement_schema_audit.rs",
+  "audit-working-tree-test-sha256": "a194792538b5b0e853f4c9782b2d536c07f3ac69247554b5de9703a051e4f7c1",
+  "audit-head-note": "Audit-only test changes were uncommitted at execution; the source hash identifies the executed witness. Production is the frozen baseline, not a newly fixed implementation.",
+  "evidence-log": {
+    "name": "s8-audit-schema-final.log",
+    "sha256": "7972907bc23f7588fbed90af2e27dc58db8c2b23a22939419d6afb62ff899429"
+  },
+  "supporting-earlier-log": {
+    "name": "s8-audit-schema-qualified-boundaries.log",
+    "sha256": "bfbb8a4152bba6f0f485f559c12c51fffd3688f6d716c20064602c0adb653d69",
+    "proof": "Earlier ordering decoded the Dynamic bound artifact before its direct wrong-identity assertion. Final ordering records direct bound publication before attempting decode."
+  },
+  "reproduction-command": "CARGO_TARGET_DIR=/private/tmp/mech-syntax-s7/target CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 CARGO_INCREMENTAL=0 CARGO_BUILD_JOBS=2 cargo +nightly-2026-03-03 test --locked --offline -p mech-runtime --no-default-features --features full_compiler,full_source,resident-routing-source,compute --test s8_replacement_schema_audit -- --test-threads=1 --nocapture",
+  "strict-result": {
+    "status": "FAILED",
+    "passed": 7,
+    "failed": 24,
+    "ignored": 0,
+    "measured": 0,
+    "filtered-out": 0,
+    "elapsed-test-seconds": 6.47
+  },
+  "publication-phase-passes": {
+    "source-live-pass": 26,
+    "bytecode-live-pass": 26,
+    "bound-source-pass": 25,
+    "bound-bytecode-pass": 2
+  },
+  "deduplicated-defects": {
+    "G25": {
+      "manifestations": 23,
+      "owner": "canonical dependency-value binding and artifact schema remapping"
+    },
+    "G26": {
+      "manifestations": 1,
+      "owner": "canonical Dynamic dependency-value identity"
+    }
+  },
+  "proof-limits": [
+    "26 positive cases are exact live canonical Value identity witnesses, not all language operations or overloads.",
+    "Five rejection cases test actual schema-aware boundaries, not raw physical CapturedSignalInput validation.",
+    "No new RuntimeHostInputValue forms or return guarantees are inferred.",
+    "Compiler F15 multi-input ordinal/reference remapping remains untested; P29 host-value census remains untested.",
+    "The original wrong physical-capture/placeholder expectations are harness errors, not additional implementation defects."
+  ],
+  "cases": [
+    {
+      "cell-id": "QT-u8",
+      "test": "exact_scalar_u8",
+      "expected-result": "Copied output keeps exact u8 schema width and ValueData tag/value on2turns; constantbound copy has0inputs and same exactvalue.",
+      "completed-publication-phases": [
+        "source-live-pass",
+        "bytecode-live-pass",
+        "bound-source-pass"
+      ],
+      "strict-test-result": "fail",
+      "failed-stage": "bound-bytecode decoding",
+      "observed-error": "NonCanonicalSchemaId { expected: 0, found: 1 }",
+      "not-reached": [
+        "bound-bytecode execution"
+      ],
+      "gap": "G25",
+      "publication-turns-per-completed-phase": 2
+    },
+    {
+      "cell-id": "QT-u16",
+      "test": "exact_scalar_u16",
+      "expected-result": "Copied output keeps exact u16 schema width and ValueData tag/value on2turns; constantbound copy has0inputs and same exactvalue.",
+      "completed-publication-phases": [
+        "source-live-pass",
+        "bytecode-live-pass",
+        "bound-source-pass"
+      ],
+      "strict-test-result": "fail",
+      "failed-stage": "bound-bytecode decoding",
+      "observed-error": "NonCanonicalSchemaId { expected: 0, found: 1 }",
+      "not-reached": [
+        "bound-bytecode execution"
+      ],
+      "gap": "G25",
+      "publication-turns-per-completed-phase": 2
+    },
+    {
+      "cell-id": "QT-u32",
+      "test": "exact_scalar_u32",
+      "expected-result": "Copied output keeps exact u32 schema width and ValueData tag/value on2turns; constantbound copy has0inputs and same exactvalue.",
+      "completed-publication-phases": [
+        "source-live-pass",
+        "bytecode-live-pass",
+        "bound-source-pass"
+      ],
+      "strict-test-result": "fail",
+      "failed-stage": "bound-bytecode decoding",
+      "observed-error": "NonCanonicalSchemaId { expected: 0, found: 1 }",
+      "not-reached": [
+        "bound-bytecode execution"
+      ],
+      "gap": "G25",
+      "publication-turns-per-completed-phase": 2
+    },
+    {
+      "cell-id": "QT-u64",
+      "test": "exact_scalar_u64",
+      "expected-result": "Copied output keeps exact u64 schema width and ValueData tag/value on2turns; constantbound copy has0inputs and same exactvalue.",
+      "completed-publication-phases": [
+        "source-live-pass",
+        "bytecode-live-pass",
+        "bound-source-pass"
+      ],
+      "strict-test-result": "fail",
+      "failed-stage": "bound-bytecode decoding",
+      "observed-error": "NonCanonicalSchemaId { expected: 0, found: 1 }",
+      "not-reached": [
+        "bound-bytecode execution"
+      ],
+      "gap": "G25",
+      "publication-turns-per-completed-phase": 2
+    },
+    {
+      "cell-id": "QT-u128",
+      "test": "exact_scalar_u128",
+      "expected-result": "Copied output keeps exact u128 schema width and ValueData tag/value on2turns; constantbound copy has0inputs and same exactvalue.",
+      "completed-publication-phases": [
+        "source-live-pass",
+        "bytecode-live-pass",
+        "bound-source-pass"
+      ],
+      "strict-test-result": "fail",
+      "failed-stage": "bound-bytecode decoding",
+      "observed-error": "NonCanonicalSchemaId { expected: 0, found: 1 }",
+      "not-reached": [
+        "bound-bytecode execution"
+      ],
+      "gap": "G25",
+      "publication-turns-per-completed-phase": 2
+    },
+    {
+      "cell-id": "QT-i8",
+      "test": "exact_scalar_i8",
+      "expected-result": "Copied output keeps exact i8 schema width and ValueData tag/value on2turns; constantbound copy has0inputs and same exactvalue.",
+      "completed-publication-phases": [
+        "source-live-pass",
+        "bytecode-live-pass",
+        "bound-source-pass"
+      ],
+      "strict-test-result": "fail",
+      "failed-stage": "bound-bytecode decoding",
+      "observed-error": "NonCanonicalSchemaId { expected: 0, found: 1 }",
+      "not-reached": [
+        "bound-bytecode execution"
+      ],
+      "gap": "G25",
+      "publication-turns-per-completed-phase": 2
+    },
+    {
+      "cell-id": "QT-i16",
+      "test": "exact_scalar_i16",
+      "expected-result": "Copied output keeps exact i16 schema width and ValueData tag/value on2turns; constantbound copy has0inputs and same exactvalue.",
+      "completed-publication-phases": [
+        "source-live-pass",
+        "bytecode-live-pass",
+        "bound-source-pass"
+      ],
+      "strict-test-result": "fail",
+      "failed-stage": "bound-bytecode decoding",
+      "observed-error": "NonCanonicalSchemaId { expected: 0, found: 1 }",
+      "not-reached": [
+        "bound-bytecode execution"
+      ],
+      "gap": "G25",
+      "publication-turns-per-completed-phase": 2
+    },
+    {
+      "cell-id": "QT-i32",
+      "test": "exact_scalar_i32",
+      "expected-result": "Copied output keeps exact i32 schema width and ValueData tag/value on2turns; constantbound copy has0inputs and same exactvalue.",
+      "completed-publication-phases": [
+        "source-live-pass",
+        "bytecode-live-pass",
+        "bound-source-pass"
+      ],
+      "strict-test-result": "fail",
+      "failed-stage": "bound-bytecode decoding",
+      "observed-error": "NonCanonicalSchemaId { expected: 0, found: 1 }",
+      "not-reached": [
+        "bound-bytecode execution"
+      ],
+      "gap": "G25",
+      "publication-turns-per-completed-phase": 2
+    },
+    {
+      "cell-id": "QT-i64",
+      "test": "exact_scalar_i64",
+      "expected-result": "Copied output keeps exact i64 schema width and ValueData tag/value on2turns; constantbound copy has0inputs and same exactvalue.",
+      "completed-publication-phases": [
+        "source-live-pass",
+        "bytecode-live-pass",
+        "bound-source-pass"
+      ],
+      "strict-test-result": "fail",
+      "failed-stage": "bound-bytecode decoding",
+      "observed-error": "NonCanonicalSchemaId { expected: 0, found: 1 }",
+      "not-reached": [
+        "bound-bytecode execution"
+      ],
+      "gap": "G25",
+      "publication-turns-per-completed-phase": 2
+    },
+    {
+      "cell-id": "QT-i128",
+      "test": "exact_scalar_i128",
+      "expected-result": "Copied output keeps exact i128 schema width and ValueData tag/value on2turns; constantbound copy has0inputs and same exactvalue.",
+      "completed-publication-phases": [
+        "source-live-pass",
+        "bytecode-live-pass",
+        "bound-source-pass"
+      ],
+      "strict-test-result": "fail",
+      "failed-stage": "bound-bytecode decoding",
+      "observed-error": "NonCanonicalSchemaId { expected: 0, found: 1 }",
+      "not-reached": [
+        "bound-bytecode execution"
+      ],
+      "gap": "G25",
+      "publication-turns-per-completed-phase": 2
+    },
+    {
+      "cell-id": "QT-f32",
+      "test": "exact_scalar_f32",
+      "expected-result": "Copied output keeps exact f32 schema width and ValueData tag/value on2turns; constantbound copy has0inputs and same exactvalue.",
+      "completed-publication-phases": [
+        "source-live-pass",
+        "bytecode-live-pass",
+        "bound-source-pass"
+      ],
+      "strict-test-result": "fail",
+      "failed-stage": "bound-bytecode decoding",
+      "observed-error": "NonCanonicalSchemaId { expected: 0, found: 1 }",
+      "not-reached": [
+        "bound-bytecode execution"
+      ],
+      "gap": "G25",
+      "publication-turns-per-completed-phase": 2
+    },
+    {
+      "cell-id": "QT-f64",
+      "test": "exact_scalar_f64",
+      "expected-result": "Copied output keeps exact f64 schema width and ValueData tag/value on2turns; constantbound copy has0inputs and same exactvalue.",
+      "completed-publication-phases": [
+        "source-live-pass",
+        "bytecode-live-pass",
+        "bound-source-pass"
+      ],
+      "strict-test-result": "fail",
+      "failed-stage": "bound-bytecode decoding",
+      "observed-error": "NonCanonicalSchemaId { expected: 0, found: 1 }",
+      "not-reached": [
+        "bound-bytecode execution"
+      ],
+      "gap": "G25",
+      "publication-turns-per-completed-phase": 2
+    },
+    {
+      "cell-id": "QT-c32",
+      "test": "exact_scalar_c32",
+      "expected-result": "Copied output keeps exact c32 schema width and ValueData tag/value on2turns; constantbound copy has0inputs and same exactvalue.",
+      "completed-publication-phases": [
+        "source-live-pass",
+        "bytecode-live-pass",
+        "bound-source-pass"
+      ],
+      "strict-test-result": "fail",
+      "failed-stage": "bound-bytecode decoding",
+      "observed-error": "NonCanonicalSchemaId { expected: 0, found: 1 }",
+      "not-reached": [
+        "bound-bytecode execution"
+      ],
+      "gap": "G25",
+      "publication-turns-per-completed-phase": 2
+    },
+    {
+      "cell-id": "QT-c64",
+      "test": "exact_scalar_c64",
+      "expected-result": "Copied output keeps exact c64 schema width and ValueData tag/value on2turns; constantbound copy has0inputs and same exactvalue.",
+      "completed-publication-phases": [
+        "source-live-pass",
+        "bytecode-live-pass",
+        "bound-source-pass"
+      ],
+      "strict-test-result": "fail",
+      "failed-stage": "bound-bytecode decoding",
+      "observed-error": "NonCanonicalSchemaId { expected: 0, found: 1 }",
+      "not-reached": [
+        "bound-bytecode execution"
+      ],
+      "gap": "G25",
+      "publication-turns-per-completed-phase": 2
+    },
+    {
+      "cell-id": "QT-r64",
+      "test": "exact_scalar_r64",
+      "expected-result": "Copied output keeps exact r64 schema width and ValueData tag/value on2turns; constantbound copy has0inputs and same exactvalue.",
+      "completed-publication-phases": [
+        "source-live-pass",
+        "bytecode-live-pass",
+        "bound-source-pass"
+      ],
+      "strict-test-result": "fail",
+      "failed-stage": "bound-bytecode decoding",
+      "observed-error": "NonCanonicalSchemaId { expected: 0, found: 1 }",
+      "not-reached": [
+        "bound-bytecode execution"
+      ],
+      "gap": "G25",
+      "publication-turns-per-completed-phase": 2
+    },
+    {
+      "cell-id": "QT-bool",
+      "test": "exact_scalar_bool",
+      "expected-result": "Copied output keeps exact bool schema width and ValueData tag/value on2turns; constantbound copy has0inputs and same exactvalue.",
+      "completed-publication-phases": [
+        "source-live-pass",
+        "bytecode-live-pass",
+        "bound-source-pass",
+        "bound-bytecode-pass"
+      ],
+      "strict-test-result": "pass",
+      "gap": null,
+      "publication-turns-per-completed-phase": 2
+    },
+    {
+      "cell-id": "QT-string",
+      "test": "exact_scalar_string",
+      "expected-result": "Copied output keeps exact string schema width and ValueData tag/value on2turns; constantbound copy has0inputs and same exactvalue.",
+      "completed-publication-phases": [
+        "source-live-pass",
+        "bytecode-live-pass",
+        "bound-source-pass",
+        "bound-bytecode-pass"
+      ],
+      "strict-test-result": "pass",
+      "gap": null,
+      "publication-turns-per-completed-phase": 2
+    },
+    {
+      "cell-id": "QG-Dynamic",
+      "test": "exact_generic_dynamic",
+      "expected-result": "Direct/decoded artifact publishes both exact schema/data values; bound copy has0inputs and exact first value; rebind across separately built equivalent SchemaTables preserves semantic key.",
+      "completed-publication-phases": [
+        "source-live-pass",
+        "bytecode-live-pass"
+      ],
+      "strict-test-result": "fail",
+      "failed-stage": "bound-source turn0 exact canonical value identity",
+      "observed-error": "value hash mismatch from added Dynamic wrapper",
+      "not-reached": [
+        "bound-bytecode decoding and execution in final reordered run"
+      ],
+      "gap": "G26",
+      "publication-turns-per-completed-phase": 2
+    },
+    {
+      "cell-id": "QG-Atom",
+      "test": "exact_generic_atom",
+      "expected-result": "Direct/decoded artifact publishes both exact schema/data values; bound copy has0inputs and exact first value; rebind across separately built equivalent SchemaTables preserves semantic key.",
+      "completed-publication-phases": [
+        "source-live-pass",
+        "bytecode-live-pass",
+        "bound-source-pass"
+      ],
+      "strict-test-result": "fail",
+      "failed-stage": "bound-bytecode decoding",
+      "observed-error": "NonCanonicalSchemaId { expected: 0, found: 1 }",
+      "not-reached": [
+        "bound-bytecode execution"
+      ],
+      "gap": "G25",
+      "publication-turns-per-completed-phase": 2
+    },
+    {
+      "cell-id": "QG-Option",
+      "test": "exact_generic_option",
+      "expected-result": "Direct/decoded artifact publishes both exact schema/data values; bound copy has0inputs and exact first value; rebind across separately built equivalent SchemaTables preserves semantic key.",
+      "completed-publication-phases": [
+        "source-live-pass",
+        "bytecode-live-pass",
+        "bound-source-pass"
+      ],
+      "strict-test-result": "fail",
+      "failed-stage": "bound-bytecode decoding",
+      "observed-error": "NonCanonicalSchemaId { expected: 0, found: 1 }",
+      "not-reached": [
+        "bound-bytecode execution"
+      ],
+      "gap": "G25",
+      "publication-turns-per-completed-phase": 2
+    },
+    {
+      "cell-id": "QG-Tuple",
+      "test": "exact_generic_tuple",
+      "expected-result": "Direct/decoded artifact publishes both exact schema/data values; bound copy has0inputs and exact first value; rebind across separately built equivalent SchemaTables preserves semantic key.",
+      "completed-publication-phases": [
+        "source-live-pass",
+        "bytecode-live-pass",
+        "bound-source-pass"
+      ],
+      "strict-test-result": "fail",
+      "failed-stage": "bound-bytecode decoding",
+      "observed-error": "NonCanonicalSchemaId { expected: 0, found: 1 }",
+      "not-reached": [
+        "bound-bytecode execution"
+      ],
+      "gap": "G25",
+      "publication-turns-per-completed-phase": 2
+    },
+    {
+      "cell-id": "QG-Record",
+      "test": "exact_generic_record",
+      "expected-result": "Direct/decoded artifact publishes both exact schema/data values; bound copy has0inputs and exact first value; rebind across separately built equivalent SchemaTables preserves semantic key.",
+      "completed-publication-phases": [
+        "source-live-pass",
+        "bytecode-live-pass",
+        "bound-source-pass"
+      ],
+      "strict-test-result": "fail",
+      "failed-stage": "bound-bytecode decoding",
+      "observed-error": "NonCanonicalSchemaId { expected: 0, found: 1 }",
+      "not-reached": [
+        "bound-bytecode execution"
+      ],
+      "gap": "G25",
+      "publication-turns-per-completed-phase": 2
+    },
+    {
+      "cell-id": "QG-Matrix",
+      "test": "exact_generic_matrix",
+      "expected-result": "Direct/decoded artifact publishes both exact schema/data values; bound copy has0inputs and exact first value; rebind across separately built equivalent SchemaTables preserves semantic key.",
+      "completed-publication-phases": [
+        "source-live-pass",
+        "bytecode-live-pass",
+        "bound-source-pass"
+      ],
+      "strict-test-result": "fail",
+      "failed-stage": "bound-bytecode decoding",
+      "observed-error": "NonCanonicalSchemaId { expected: 0, found: 1 }",
+      "not-reached": [
+        "bound-bytecode execution"
+      ],
+      "gap": "G25",
+      "publication-turns-per-completed-phase": 2
+    },
+    {
+      "cell-id": "QG-Table",
+      "test": "exact_generic_table",
+      "expected-result": "Direct/decoded artifact publishes both exact schema/data values; bound copy has0inputs and exact first value; rebind across separately built equivalent SchemaTables preserves semantic key.",
+      "completed-publication-phases": [
+        "source-live-pass",
+        "bytecode-live-pass",
+        "bound-source-pass"
+      ],
+      "strict-test-result": "fail",
+      "failed-stage": "bound-bytecode decoding",
+      "observed-error": "NonCanonicalSchemaId { expected: 0, found: 1 }",
+      "not-reached": [
+        "bound-bytecode execution"
+      ],
+      "gap": "G25",
+      "publication-turns-per-completed-phase": 2
+    },
+    {
+      "cell-id": "QG-Set",
+      "test": "exact_generic_set",
+      "expected-result": "Direct/decoded artifact publishes both exact schema/data values; bound copy has0inputs and exact first value; rebind across separately built equivalent SchemaTables preserves semantic key. Set draft canonicalization sorts reversed distinct keys and rejects duplicate keys (snapshot/relations.rs insert_set_key).",
+      "completed-publication-phases": [
+        "source-live-pass",
+        "bytecode-live-pass",
+        "bound-source-pass"
+      ],
+      "strict-test-result": "fail",
+      "failed-stage": "bound-bytecode decoding",
+      "observed-error": "NonCanonicalSchemaId { expected: 0, found: 1 }",
+      "not-reached": [
+        "bound-bytecode execution"
+      ],
+      "gap": "G25",
+      "publication-turns-per-completed-phase": 2
+    },
+    {
+      "cell-id": "QG-Map",
+      "test": "exact_generic_map",
+      "expected-result": "Direct/decoded artifact publishes both exact schema/data values; bound copy has0inputs and exact first value; rebind across separately built equivalent SchemaTables preserves semantic key.",
+      "completed-publication-phases": [
+        "source-live-pass",
+        "bytecode-live-pass",
+        "bound-source-pass"
+      ],
+      "strict-test-result": "fail",
+      "failed-stage": "bound-bytecode decoding",
+      "observed-error": "NonCanonicalSchemaId { expected: 0, found: 1 }",
+      "not-reached": [
+        "bound-bytecode execution"
+      ],
+      "gap": "G25",
+      "publication-turns-per-completed-phase": 2
+    },
+    {
+      "cell-id": "QN-scalar-schema",
+      "test": "reject_incompatible_snapshot_scalar_schema",
+      "expected-result": "Value::rebind rejects incompatible schema; prepare_turn_values rejects and preserves prior output plus epoch; CanonicalSourceProgram.bind_input_constants rejects.",
+      "completed-publication-phases": [],
+      "strict-test-result": "pass",
+      "checked-boundaries": [
+        "Value::rebind",
+        "ReactiveInstance::prepare_turn_values",
+        "CanonicalSourceProgram::bind_input_constants"
+      ],
+      "rejected-value-preserves": [
+        "prior exact output",
+        "published epoch"
+      ],
+      "gap": null
+    },
+    {
+      "cell-id": "QN-native-scalar-schema",
+      "test": "reject_incompatible_native_scalar_schema",
+      "expected-result": "Value::rebind rejects incompatible schema; prepare_turn_values rejects and preserves prior output plus epoch; CanonicalSourceProgram.bind_input_constants rejects.",
+      "completed-publication-phases": [],
+      "strict-test-result": "pass",
+      "checked-boundaries": [
+        "Value::rebind",
+        "ReactiveInstance::prepare_turn_values",
+        "CanonicalSourceProgram::bind_input_constants"
+      ],
+      "rejected-value-preserves": [
+        "prior exact output",
+        "published epoch"
+      ],
+      "gap": null
+    },
+    {
+      "cell-id": "QN-atom-identity",
+      "test": "reject_incompatible_atom_nominal_identity",
+      "expected-result": "Value::rebind rejects incompatible schema; prepare_turn_values rejects and preserves prior output plus epoch; CanonicalSourceProgram.bind_input_constants rejects.",
+      "completed-publication-phases": [],
+      "strict-test-result": "pass",
+      "checked-boundaries": [
+        "Value::rebind",
+        "ReactiveInstance::prepare_turn_values",
+        "CanonicalSourceProgram::bind_input_constants"
+      ],
+      "rejected-value-preserves": [
+        "prior exact output",
+        "published epoch"
+      ],
+      "gap": null
+    },
+    {
+      "cell-id": "QN-matrix-extent",
+      "test": "reject_incompatible_matrix_extent",
+      "expected-result": "Value::rebind rejects incompatible schema; prepare_turn_values rejects and preserves prior output plus epoch; CanonicalSourceProgram.bind_input_constants rejects.",
+      "completed-publication-phases": [],
+      "strict-test-result": "pass",
+      "checked-boundaries": [
+        "Value::rebind",
+        "ReactiveInstance::prepare_turn_values",
+        "CanonicalSourceProgram::bind_input_constants"
+      ],
+      "rejected-value-preserves": [
+        "prior exact output",
+        "published epoch"
+      ],
+      "gap": null
+    },
+    {
+      "cell-id": "QN-map-key",
+      "test": "reject_incompatible_map_key_schema",
+      "expected-result": "Value::rebind rejects incompatible schema; prepare_turn_values rejects and preserves prior output plus epoch; CanonicalSourceProgram.bind_input_constants rejects.",
+      "completed-publication-phases": [],
+      "strict-test-result": "pass",
+      "checked-boundaries": [
+        "Value::rebind",
+        "ReactiveInstance::prepare_turn_values",
+        "CanonicalSourceProgram::bind_input_constants"
+      ],
+      "rejected-value-preserves": [
+        "prior exact output",
+        "published epoch"
+      ],
+      "gap": null
+    }
+  ]
+}

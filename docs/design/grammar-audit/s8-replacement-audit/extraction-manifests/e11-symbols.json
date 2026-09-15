@@ -1,0 +1,98 @@
+{
+  "base": "68eeb8828dd9398ff86777a53f0aec157963f9db",
+  "frozen": "662d29b79df8ab05a25bbadb941a689fd5bd5aae",
+  "frozen_tree": "fdc18343936a6123e2370275eb63d817b262746c",
+  "copied": [
+    {
+      "path": ".github/workflows/ci-full.yml",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 67038,
+      "sha256": "d4e474ab1d0dcdb795e1623e4b81b448e2bbec57cfb6e3602710bb0ae9c4ad3e",
+      "at_byte": 0,
+      "remove_bytes": 66685,
+      "remove_sha256": "bc25bcdfb3dbd8230c83aaeb65c36561e40ef0c7dad07bd4240711bf3d98da8c",
+      "new_file": false,
+      "mode": "100644"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 26039,
+      "sha256": "2be7dff55a575b82354574a5ff8d4a4d498d1cb5a9ed5756513e700a8b428e17",
+      "at_byte": 0,
+      "remove_bytes": 25899,
+      "remove_sha256": "e42932e75ce36caca9549931d5792d03ab7ba387e558d121782196a4c75bf811",
+      "new_file": false,
+      "mode": "100644"
+    },
+    {
+      "path": "docs/design/grammar-audit/s8-consumer-readiness.tsv",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 42544,
+      "sha256": "e8ac36f83797d7cc8588ac7f5a02ee93612cb5d5ebea42f27d20eab8249165d1",
+      "at_byte": 0,
+      "remove_bytes": 36570,
+      "remove_sha256": "fbcb360c0b0140127957ebfe272e4f3b416ed979d57a684eb57056d9e1630275",
+      "new_file": false,
+      "mode": "100644"
+    },
+    {
+      "path": "docs/design/grammar-audit/s8-removal-manifest.tsv",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 61527,
+      "sha256": "d45f8d403efc8c1cb02587ba9a08bf348d77419d725832f8637bce9b2782c2b4",
+      "at_byte": 0,
+      "remove_bytes": 60980,
+      "remove_sha256": "82b7fe0a77243d4208b62f2574d6f97cd9f7af257bf2e9d6c427d9e65ab42ce9",
+      "new_file": false,
+      "mode": "100644"
+    },
+    {
+      "path": "docs/design/syntax-s8-execution-rehearsal.mec",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 19749,
+      "sha256": "0451ecaee6af1944b6b2fc60eb4ddf956b0410da7fe120a2be429daa4d68ebe7",
+      "at_byte": 0,
+      "remove_bytes": 4807,
+      "remove_sha256": "4afc8ba024d0682297a8df02d76d5f3e22d0aae50f5cce78566372e52cd2e9d9",
+      "new_file": false,
+      "mode": "100644"
+    },
+    {
+      "path": "src/syntax/tests/source_parser_consumer_inventory.rs",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 129131,
+      "sha256": "81048ad6c5c32f660f650eb0674e8d0b474392e2da36906b31f6cb16eb19bc14",
+      "at_byte": 0,
+      "remove_bytes": 128635,
+      "remove_sha256": "0ae9884d40ef76cdd2c14c425ad8f492f97bb7d75ec469e848b6836c0d7c983c",
+      "new_file": false,
+      "mode": "100644"
+    },
+    {
+      "path": "src/syntax/tests/support/cutover_contract.rs",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 18667,
+      "sha256": "67f7c29fa2dd281ce5fa46637cdb02badcf3b9cb2eb87fcb067c53388f9bf7b3",
+      "at_byte": 0,
+      "remove_bytes": 17321,
+      "remove_sha256": "b75c4aea5ae7fe66e58a626d3410fc7ebcfed7bf2a74b6a81d90abee26a4b1d8",
+      "new_file": false,
+      "mode": "100644"
+    }
+  ]
+}

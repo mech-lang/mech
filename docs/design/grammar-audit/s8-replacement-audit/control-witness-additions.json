@@ -1,0 +1,132 @@
+[
+  {
+    "id": "activation-stable-no-trigger",
+    "group": "control-contract",
+    "source": "tick := 0\n~x := 0\n~> tick { x = x + 1 }\nx\n",
+    "expected": [
+      "0",
+      "0"
+    ],
+    "owner": "G15",
+    "acceptance_cells": [
+      "ACT01",
+      "ACT02"
+    ],
+    "contract": "Stable trigger is valid; absent trigger changes do not execute scope body or advance x."
+  },
+  {
+    "id": "activation-pattern-no-trigger",
+    "group": "control-contract",
+    "source": "event := (3, 4)\n~selected := 0\n~> event\n  | (x, y) => { selected = x * 10 + y }\n  | * => { selected = -1 }\nselected\n",
+    "expected": [
+      "0",
+      "0"
+    ],
+    "owner": "G15",
+    "acceptance_cells": [
+      "ACT01",
+      "ACT05",
+      "ACT06"
+    ],
+    "contract": "Patterned scope body remains inactive until event trigger; eventual triggered value is 34."
+  },
+  {
+    "id": "fsm-declared-increment",
+    "group": "control-contract",
+    "source": "#Increment(value<f64>) => <f64>\n  | :start(value<f64>)\n  | :done(result<f64>).\n#Increment(value) -> :start(value)\n  :start(current) -> :done(current + 1)\n  :done(result) => result.\nresult := #Increment(41)\nresult\n",
+    "expected": [
+      "42",
+      "42"
+    ],
+    "owner": "G14",
+    "acceptance_cells": [
+      "FSM01",
+      "FSM02"
+    ],
+    "contract": "Declared typed machine transitions start(41) to done(42), then emits 42; no undeclared invocation."
+  },
+  {
+    "id": "fsm-declared-named-input",
+    "group": "control-contract",
+    "source": "#Increment(value<f64>) => <f64>\n  | :start(value<f64>)\n  | :done(result<f64>).\n#Increment(value) -> :start(value)\n  :start(current) -> :done(current + 1)\n  :done(result) => result.\nresult := #Increment(value: 41)\nresult\n",
+    "expected": [
+      "42",
+      "42"
+    ],
+    "owner": "G14",
+    "acceptance_cells": [
+      "FSM01"
+    ],
+    "contract": "Named invocation binds the declared input identically to positional invocation."
+  },
+  {
+    "id": "function-pattern-broadcast-matrix",
+    "group": "control-contract",
+    "source": "twice(n<f64>) => <f64>\n  | n => n * 2.\nb := twice([1 2 3; 4 5 6])\nb[1,1] == 2 && b[1,3] == 6 && b[2,1] == 8 && b[2,3] == 12\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "owner": "G19",
+    "acceptance_cells": [
+      "FUN05"
+    ],
+    "contract": "One scalar input and same-kind scalar output broadcast over a non-square matrix without changing order."
+  },
+  {
+    "id": "function-pattern-partial-match",
+    "group": "control-contract",
+    "source": "only-zero(n<f64>) => <f64>\n  | 0 => 42.\nonly-zero(0)\n",
+    "expected": [
+      "42",
+      "42"
+    ],
+    "owner": "G19",
+    "acceptance_cells": [
+      "FUN06"
+    ],
+    "contract": "Partial numeric function call with a matching branch succeeds; blanket exhaustive scalar-match admission must not reject it."
+  },
+  {
+    "id": "function-pattern-first-match",
+    "group": "control-contract",
+    "source": "first(n<f64>) => <f64>\n  | n => 42\n  | * => 99.\nfirst(7)\n",
+    "expected": [
+      "42",
+      "42"
+    ],
+    "owner": "G19",
+    "acceptance_cells": [
+      "FUN01"
+    ],
+    "contract": "First matching function branch wins even when a later branch also matches."
+  },
+  {
+    "id": "function-branching-recursion",
+    "group": "control-contract",
+    "source": "fib(n<f64>) => <f64>\n  | 0 => 0\n  | 1 => 1\n  | n => fib(n - 1) + fib(n - 2).\nfib(10)\n",
+    "expected": [
+      "55",
+      "55"
+    ],
+    "owner": "G20",
+    "acceptance_cells": [
+      "FUN08"
+    ],
+    "contract": "Existing reference Fibonacci branching recursion has independent expected result 55."
+  },
+  {
+    "id": "function-tail-recursion",
+    "group": "control-contract",
+    "source": "count(n<f64>, acc<f64>) => <f64>\n  | (0, acc) => acc\n  | (n, acc) => count(n - 1, acc + 1).\ncount(20, 0)\n",
+    "expected": [
+      "20",
+      "20"
+    ],
+    "owner": "G20",
+    "acceptance_cells": [
+      "FUN08"
+    ],
+    "contract": "Tail recursion must run beyond existing eight-level syntax control nesting without unbounded graph expansion."
+  }
+]

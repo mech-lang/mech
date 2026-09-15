@@ -1,0 +1,168 @@
+{
+  "base": "2a091a128c1961f673c11b9a7106ba83ff18300b",
+  "frozen": "662d29b79df8ab05a25bbadb941a689fd5bd5aae",
+  "copied": [
+    {
+      "path": "src/compute/src/activation.rs",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 14765,
+      "sha256": "06d6cfc9665458ccde90f5ef2381cc281b36f8c5d830990305ca7053c391322b",
+      "at_byte": 0,
+      "remove_bytes": 0,
+      "remove_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "new_file": true
+    },
+    {
+      "path": "src/compute/src/ir.rs",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 15518,
+      "sha256": "92422f2a6bd37b774fb540146fbb95a6fc2ab393a5988f5c40505d0f703baaf1",
+      "at_byte": 0,
+      "remove_bytes": 13786,
+      "remove_sha256": "3b905228dccb2ecba1a426f76c10c698ae7c64e0ebc123070c43ae80c067e24e",
+      "new_file": false
+    },
+    {
+      "path": "src/compute/src/shape.rs",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 17204,
+      "sha256": "4e4641938b2efef5ea5a526fa76a921659fc6fca907f7500316eefbe72916c39",
+      "at_byte": 0,
+      "remove_bytes": 15793,
+      "remove_sha256": "5a3fe57aa9e09a146b583cf9e0709aab315f8b514a9aa6501c12b3029e7a285c",
+      "new_file": false
+    },
+    {
+      "path": "src/compute/src/lib.rs",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 437,
+      "sha256": "001cd457feae61fd1c35fbb889086fa9cbf5c424d90951b1d09279092b30a1c4",
+      "at_byte": 0,
+      "remove_bytes": 398,
+      "remove_sha256": "fd2e83e06f008c2f219afe7611a7f11b31bcdb557dcef33cd073950db160febc",
+      "new_file": false
+    },
+    {
+      "path": "src/compute/src/fixed_shape.rs",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 10542,
+      "sha256": "0167ed8c545a38693619306e7a2ce260dd91dabbaa0b2ebc18b75abffe3a0171",
+      "at_byte": 0,
+      "remove_bytes": 10168,
+      "remove_sha256": "0b33f42411a532b9fa551c82b7c90e592a4a52ea73476616d9fcb46a9791c9f0",
+      "new_file": false
+    },
+    {
+      "path": "hosts/gpu/src/lib.rs",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 79082,
+      "sha256": "d15c4dc20ae7261ba07abb63655cddb8dc27b0600560c817b4ede56370df1bab",
+      "at_byte": 0,
+      "remove_bytes": 83088,
+      "remove_sha256": "64ae592d1dc94269637a5d6ccd3119562e983ccd459d75d11b8316be5d1bb976",
+      "new_file": false
+    },
+    {
+      "path": "hosts/gpu/src/batched/mod.rs",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 194561,
+      "sha256": "91edb6232673916a082377d9d47da7eb765dac9800ad3a9ca5fabbaeecde3c18",
+      "at_byte": 0,
+      "remove_bytes": 190883,
+      "remove_sha256": "933a6b603931bd558421303d113e8bbc8bbc413ce832161b80ffed99793aa3a2",
+      "new_file": false
+    },
+    {
+      "path": "hosts/gpu/src/batched/jit.rs",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 28498,
+      "sha256": "bd08d2f9577096065af1bf8bfad8692239b4e954968a4704fd1b612da832ef82",
+      "at_byte": 0,
+      "remove_bytes": 27871,
+      "remove_sha256": "c4e127468643ebfeea6ae4af59e35d0933cc0b959fe4b6e207c665226b5f67e7",
+      "new_file": false
+    },
+    {
+      "path": "hosts/gpu/src/memory.rs",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 56716,
+      "sha256": "6bba65eaa4911c26514f1ad2073fda39b78bd7cf5e47dcea0035717a4c730dbb",
+      "at_byte": 0,
+      "remove_bytes": 54432,
+      "remove_sha256": "3895991db7b2a4aeecf03c15feded0ad4a58425d7dc95d087a7f0cbae93d3a12",
+      "new_file": false
+    },
+    {
+      "path": "hosts/gpu/tests/particle_source.rs",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 52411,
+      "sha256": "2d9c57e0ea2ed0099e07d3958b29ab9c8dbc784b61756d2aa1d7743b03a288b9",
+      "at_byte": 0,
+      "remove_bytes": 42037,
+      "remove_sha256": "ebbec2b24e88e06927f58767a88417d7cc67492e79b07568f0291537c6b7f21d",
+      "new_file": false
+    },
+    {
+      "path": "hosts/gpu/tests/parallel_ekf.rs",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 55208,
+      "sha256": "bebcdffc797cd28c88f8b19941d340a084f42e6c034dadd2ff2dfa2ccfba9c74",
+      "at_byte": 0,
+      "remove_bytes": 45620,
+      "remove_sha256": "a751baecac755a8f34d155b21abd38e5e9622ec240ca0447968bcf38a18b06ce",
+      "new_file": false
+    },
+    {
+      "path": "include/browser-compute.js",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 38709,
+      "sha256": "6db9113602eb6702bf032cea6b8a1ad5125060cb5c08c11b8215725cab3318c5",
+      "at_byte": 0,
+      "remove_bytes": 38099,
+      "remove_sha256": "5d867e3d73085f7285e01a38c07635745a5aa57eee1fec78217247fc6576ef10",
+      "new_file": false
+    }
+  ],
+  "new_tests": {
+    "hosts/gpu/src/memory.rs": [
+      "readback_staging_reuses_the_submission_transfer_scope"
+    ],
+    "hosts/gpu/tests/particle_source.rs": [
+      "canonical_compute_inputs_and_assignments_keep_source_names",
+      "canonical_elementwise_matrices_preserve_initializer_and_constant_order",
+      "canonical_shipped_particle_region_reaches_compute_lowering",
+      "canonical_activation_initializers_are_shared_and_run_only_once",
+      "canonical_particle_activation_scales_with_array_extent",
+      "canonical_activation_rejects_dependencies_on_recurrence_state"
+    ],
+    "hosts/gpu/tests/parallel_ekf.rs": [
+      "canonical_derived_publications_commit_without_becoming_recurrence_state",
+      "canonical_matrix_broadcast_uses_each_input_axis"
+    ]
+  },
+  "deferred_owned_tests": []
+}

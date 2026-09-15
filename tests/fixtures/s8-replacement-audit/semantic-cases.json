@@ -240,7 +240,19 @@
       "true",
       "true"
     ],
-    "group": "numeric"
+    "group": "numeric",
+    "expected_rejection_stage": "activation",
+    "contract_owner": "G02",
+    "owner": "G02",
+    "contract": "Current target rejection and positive milestone capability are separate acceptance axes. No accepted scope exclusion is established by this observation.",
+    "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+    "positive_milestone_expected": [
+      "true",
+      "true"
+    ],
+    "milestone_capability_group": "CAP-POWER",
+    "milestone_capability_status": "unimplemented; scope acceptance pending",
+    "scope_exclusion_accepted": false
   },
   {
     "id": "matrix-repeat-u64",
@@ -303,7 +315,19 @@
       "true",
       "true"
     ],
-    "group": "numeric"
+    "group": "numeric",
+    "expected_rejection_stage": "activation",
+    "contract_owner": "G02",
+    "owner": "G02",
+    "contract": "Current target rejection and positive milestone capability are separate acceptance axes. No accepted scope exclusion is established by this observation.",
+    "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+    "positive_milestone_expected": [
+      "true",
+      "true"
+    ],
+    "milestone_capability_group": "CAP-POWER",
+    "milestone_capability_status": "unimplemented; scope acceptance pending",
+    "scope_exclusion_accepted": false
   },
   {
     "id": "matrix-repeat-u128",
@@ -366,7 +390,19 @@
       "true",
       "true"
     ],
-    "group": "numeric"
+    "group": "numeric",
+    "expected_rejection_stage": "activation",
+    "contract_owner": "G02",
+    "owner": "G02",
+    "contract": "Current target rejection and positive milestone capability are separate acceptance axes. No accepted scope exclusion is established by this observation.",
+    "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+    "positive_milestone_expected": [
+      "true",
+      "true"
+    ],
+    "milestone_capability_group": "CAP-POWER",
+    "milestone_capability_status": "unimplemented; scope acceptance pending",
+    "scope_exclusion_accepted": false
   },
   {
     "id": "matrix-repeat-i8",
@@ -429,7 +465,19 @@
       "true",
       "true"
     ],
-    "group": "numeric"
+    "group": "numeric",
+    "expected_rejection_stage": "activation",
+    "contract_owner": "G02",
+    "owner": "G02",
+    "contract": "Current target rejection and positive milestone capability are separate acceptance axes. No accepted scope exclusion is established by this observation.",
+    "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+    "positive_milestone_expected": [
+      "true",
+      "true"
+    ],
+    "milestone_capability_group": "CAP-POWER",
+    "milestone_capability_status": "unimplemented; scope acceptance pending",
+    "scope_exclusion_accepted": false
   },
   {
     "id": "matrix-repeat-i16",
@@ -492,7 +540,19 @@
       "true",
       "true"
     ],
-    "group": "numeric"
+    "group": "numeric",
+    "expected_rejection_stage": "activation",
+    "contract_owner": "G02",
+    "owner": "G02",
+    "contract": "Current target rejection and positive milestone capability are separate acceptance axes. No accepted scope exclusion is established by this observation.",
+    "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+    "positive_milestone_expected": [
+      "true",
+      "true"
+    ],
+    "milestone_capability_group": "CAP-POWER",
+    "milestone_capability_status": "unimplemented; scope acceptance pending",
+    "scope_exclusion_accepted": false
   },
   {
     "id": "matrix-repeat-i32",
@@ -555,7 +615,19 @@
       "true",
       "true"
     ],
-    "group": "numeric"
+    "group": "numeric",
+    "expected_rejection_stage": "activation",
+    "contract_owner": "G02",
+    "owner": "G02",
+    "contract": "Current target rejection and positive milestone capability are separate acceptance axes. No accepted scope exclusion is established by this observation.",
+    "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+    "positive_milestone_expected": [
+      "true",
+      "true"
+    ],
+    "milestone_capability_group": "CAP-POWER",
+    "milestone_capability_status": "unimplemented; scope acceptance pending",
+    "scope_exclusion_accepted": false
   },
   {
     "id": "matrix-repeat-i64",
@@ -618,7 +690,19 @@
       "true",
       "true"
     ],
-    "group": "numeric"
+    "group": "numeric",
+    "expected_rejection_stage": "activation",
+    "contract_owner": "G02",
+    "owner": "G02",
+    "contract": "Current target rejection and positive milestone capability are separate acceptance axes. No accepted scope exclusion is established by this observation.",
+    "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+    "positive_milestone_expected": [
+      "true",
+      "true"
+    ],
+    "milestone_capability_group": "CAP-POWER",
+    "milestone_capability_status": "unimplemented; scope acceptance pending",
+    "scope_exclusion_accepted": false
   },
   {
     "id": "matrix-repeat-i128",
@@ -762,7 +846,19 @@
       "true",
       "false"
     ],
-    "group": "scalar"
+    "group": "scalar",
+    "expected_rejection_stage": "activation",
+    "contract_owner": "G02",
+    "owner": "G02",
+    "contract": "Current target rejection and positive milestone capability are separate acceptance axes. No accepted scope exclusion is established by this observation.",
+    "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+    "positive_milestone_expected": [
+      "true",
+      "false"
+    ],
+    "milestone_capability_group": "CAP-C32",
+    "milestone_capability_status": "unimplemented; scope acceptance pending",
+    "scope_exclusion_accepted": false
   },
   {
     "id": "numeric-c32-add",
@@ -771,7 +867,19 @@
       "true",
       "true"
     ],
-    "group": "numeric"
+    "group": "numeric",
+    "expected_rejection_stage": "activation",
+    "contract_owner": "G02",
+    "owner": "G02",
+    "contract": "Current target rejection and positive milestone capability are separate acceptance axes. No accepted scope exclusion is established by this observation.",
+    "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+    "positive_milestone_expected": [
+      "true",
+      "true"
+    ],
+    "milestone_capability_group": "CAP-C32",
+    "milestone_capability_status": "unimplemented; scope acceptance pending",
+    "scope_exclusion_accepted": false
   },
   {
     "id": "numeric-c32-sub",
@@ -780,7 +888,19 @@
       "true",
       "true"
     ],
-    "group": "numeric"
+    "group": "numeric",
+    "expected_rejection_stage": "activation",
+    "contract_owner": "G02",
+    "owner": "G02",
+    "contract": "Current target rejection and positive milestone capability are separate acceptance axes. No accepted scope exclusion is established by this observation.",
+    "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+    "positive_milestone_expected": [
+      "true",
+      "true"
+    ],
+    "milestone_capability_group": "CAP-C32",
+    "milestone_capability_status": "unimplemented; scope acceptance pending",
+    "scope_exclusion_accepted": false
   },
   {
     "id": "numeric-c32-mul",
@@ -789,7 +909,19 @@
       "true",
       "true"
     ],
-    "group": "numeric"
+    "group": "numeric",
+    "expected_rejection_stage": "activation",
+    "contract_owner": "G02",
+    "owner": "G02",
+    "contract": "Current target rejection and positive milestone capability are separate acceptance axes. No accepted scope exclusion is established by this observation.",
+    "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedContract }",
+    "positive_milestone_expected": [
+      "true",
+      "true"
+    ],
+    "milestone_capability_group": "CAP-C32",
+    "milestone_capability_status": "unimplemented; scope acceptance pending",
+    "scope_exclusion_accepted": false
   },
   {
     "id": "numeric-c32-div",
@@ -798,7 +930,19 @@
       "true",
       "true"
     ],
-    "group": "numeric"
+    "group": "numeric",
+    "expected_rejection_stage": "activation",
+    "contract_owner": "G02",
+    "owner": "G02",
+    "contract": "Current target rejection and positive milestone capability are separate acceptance axes. No accepted scope exclusion is established by this observation.",
+    "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+    "positive_milestone_expected": [
+      "true",
+      "true"
+    ],
+    "milestone_capability_group": "CAP-C32",
+    "milestone_capability_status": "unimplemented; scope acceptance pending",
+    "scope_exclusion_accepted": false
   },
   {
     "id": "numeric-c32-pow",
@@ -807,7 +951,19 @@
       "true",
       "true"
     ],
-    "group": "numeric"
+    "group": "numeric",
+    "expected_rejection_stage": "activation",
+    "contract_owner": "G02",
+    "owner": "G02",
+    "contract": "Current target rejection and positive milestone capability are separate acceptance axes. No accepted scope exclusion is established by this observation.",
+    "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+    "positive_milestone_expected": [
+      "true",
+      "true"
+    ],
+    "milestone_capability_group": "CAP-POWER",
+    "milestone_capability_status": "unimplemented; scope acceptance pending",
+    "scope_exclusion_accepted": false
   },
   {
     "id": "matrix-repeat-c32",
@@ -816,7 +972,19 @@
       "true",
       "false"
     ],
-    "group": "selection"
+    "group": "selection",
+    "expected_rejection_stage": "activation",
+    "contract_owner": "G02",
+    "owner": "G02",
+    "contract": "Current target rejection and positive milestone capability are separate acceptance axes. No accepted scope exclusion is established by this observation.",
+    "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+    "positive_milestone_expected": [
+      "true",
+      "false"
+    ],
+    "milestone_capability_group": "CAP-C32",
+    "milestone_capability_status": "unimplemented; scope acceptance pending",
+    "scope_exclusion_accepted": false
   },
   {
     "id": "scalar-c64",
@@ -870,7 +1038,19 @@
       "true",
       "true"
     ],
-    "group": "numeric"
+    "group": "numeric",
+    "expected_rejection_stage": "activation",
+    "contract_owner": "G02",
+    "owner": "G02",
+    "contract": "Current target rejection and positive milestone capability are separate acceptance axes. No accepted scope exclusion is established by this observation.",
+    "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+    "positive_milestone_expected": [
+      "true",
+      "true"
+    ],
+    "milestone_capability_group": "CAP-POWER",
+    "milestone_capability_status": "unimplemented; scope acceptance pending",
+    "scope_exclusion_accepted": false
   },
   {
     "id": "matrix-repeat-c64",
@@ -933,7 +1113,19 @@
       "true",
       "true"
     ],
-    "group": "numeric"
+    "group": "numeric",
+    "expected_rejection_stage": "activation",
+    "contract_owner": "G02",
+    "owner": "G02",
+    "contract": "Current target rejection and positive milestone capability are separate acceptance axes. No accepted scope exclusion is established by this observation.",
+    "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+    "positive_milestone_expected": [
+      "true",
+      "true"
+    ],
+    "milestone_capability_group": "CAP-POWER",
+    "milestone_capability_status": "unimplemented; scope acceptance pending",
+    "scope_exclusion_accepted": false
   },
   {
     "id": "matrix-repeat-r64",
@@ -1062,17 +1254,21 @@
     "id": "activation-scope",
     "source": "~>1 + 2{}\n",
     "expected": null,
-    "group": "semantic"
+    "group": "semantic",
+    "audit_disposition": "invalid-original-positive",
+    "audit_note": "Preserved discovery sample only; valid declared/stable-trigger witnesses now isolate the missing implementation. Negative contract remains blocked until that owner is implemented."
   },
   {
     "id": "fsm-pipe",
     "source": "x := #machine -> :next => :value\nx\n",
     "expected": null,
-    "group": "semantic"
+    "group": "semantic",
+    "audit_disposition": "invalid-original-positive",
+    "audit_note": "Preserved discovery sample only; valid declared/stable-trigger witnesses now isolate the missing implementation. Negative contract remains blocked until that owner is implemented."
   },
   {
     "id": "pattern-function",
-    "source": "f(n<f64>) => <f64>\n  \u251c 0 => 1\n  \u2514 n => n + 1.\nf(2)\n",
+    "source": "f(n<f64>) => <f64>\n  ├ 0 => 1\n  └ n => n + 1.\nf(2)\n",
     "expected": [
       "3",
       "3"
@@ -1081,7 +1277,7 @@
   },
   {
     "id": "factorial",
-    "source": "factorial(n<f64>) => <f64>\n  \u251c 0 => 1\n  \u2514 n => n * factorial(n - 1).\n\nn := 5\nres := factorial(n)",
+    "source": "factorial(n<f64>) => <f64>\n  ├ 0 => 1\n  └ n => n * factorial(n - 1).\n\nn := 5\nres := factorial(n)",
     "expected": [
       "120",
       "120"
@@ -1161,7 +1357,22 @@
     "id": "logical-read",
     "source": "x := [1 2 3]\nmask := x > 1\nx[mask]\n",
     "expected": null,
-    "group": "semantic"
+    "group": "semantic",
+    "expected_rejection_stage": "activation",
+    "expected_rejection_detail": "UnresolvedShape { slot: CellSlotId(1) }",
+    "positive_milestone_expected": [
+      "[2 3]",
+      "[2 3]"
+    ],
+    "positive_milestone_shape": [
+      1,
+      2
+    ],
+    "milestone_capability_group": "CAP-MASK",
+    "milestone_capability_status": "unimplemented; scope acceptance pending",
+    "scope_exclusion_accepted": false,
+    "contract": "Current target rejection and positive milestone capability are separate acceptance axes. No accepted scope exclusion is established by this observation.",
+    "contract_owner": "G17"
   },
   {
     "id": "logical-write",
@@ -1176,16 +1387,32 @@
     "id": "dynamic-concat",
     "source": "xs := [1 2]\ny := [x | x <- xs]\n[y y]\n",
     "expected": null,
-    "group": "semantic"
+    "group": "semantic",
+    "expected_rejection_stage": "activation",
+    "expected_rejection_detail": "KernelBind { node: NodeId(1), error: UnsupportedLayout }",
+    "positive_milestone_expected": [
+      "[1 2 1 2]",
+      "[1 2 1 2]"
+    ],
+    "positive_milestone_shape": [
+      1,
+      4
+    ],
+    "milestone_capability_group": "CAP-DOWNSTREAM",
+    "milestone_capability_status": "unimplemented; scope acceptance pending",
+    "scope_exclusion_accepted": false,
+    "contract": "Current target rejection and positive milestone capability are separate acceptance axes. No accepted scope exclusion is established by this observation.",
+    "contract_owner": "G18"
   },
   {
     "id": "constrained-kind",
-    "source": "x<f64:1..=10> := 2\nx\n",
+    "source": "x := 2<u8:1..10?>\nx\n",
     "expected": [
       "2",
       "2"
     ],
-    "group": "semantic"
+    "group": "semantic",
+    "audit_note": "Proven constrained optional expression form; original bare constrained definition failed indexing, so it did not witness the semantic rejection."
   },
   {
     "id": "rational-integral-power",
@@ -1959,7 +2186,19 @@
       "true",
       "true"
     ],
-    "group": "matrix"
+    "group": "matrix",
+    "expected_rejection_stage": "activation",
+    "contract_owner": "G02",
+    "owner": "G02",
+    "contract": "Current target rejection and positive milestone capability are separate acceptance axes. No accepted scope exclusion is established by this observation.",
+    "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+    "positive_milestone_expected": [
+      "true",
+      "true"
+    ],
+    "milestone_capability_group": "CAP-C32",
+    "milestone_capability_status": "unimplemented; scope acceptance pending",
+    "scope_exclusion_accepted": false
   },
   {
     "id": "matrix-c32-sub",
@@ -1968,7 +2207,19 @@
       "true",
       "true"
     ],
-    "group": "matrix"
+    "group": "matrix",
+    "expected_rejection_stage": "activation",
+    "contract_owner": "G02",
+    "owner": "G02",
+    "contract": "Current target rejection and positive milestone capability are separate acceptance axes. No accepted scope exclusion is established by this observation.",
+    "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+    "positive_milestone_expected": [
+      "true",
+      "true"
+    ],
+    "milestone_capability_group": "CAP-C32",
+    "milestone_capability_status": "unimplemented; scope acceptance pending",
+    "scope_exclusion_accepted": false
   },
   {
     "id": "matrix-c32-mul",
@@ -1977,7 +2228,19 @@
       "true",
       "true"
     ],
-    "group": "matrix"
+    "group": "matrix",
+    "expected_rejection_stage": "activation",
+    "contract_owner": "G02",
+    "owner": "G02",
+    "contract": "Current target rejection and positive milestone capability are separate acceptance axes. No accepted scope exclusion is established by this observation.",
+    "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+    "positive_milestone_expected": [
+      "true",
+      "true"
+    ],
+    "milestone_capability_group": "CAP-C32",
+    "milestone_capability_status": "unimplemented; scope acceptance pending",
+    "scope_exclusion_accepted": false
   },
   {
     "id": "matrix-c32-div",
@@ -1986,7 +2249,19 @@
       "true",
       "true"
     ],
-    "group": "matrix"
+    "group": "matrix",
+    "expected_rejection_stage": "activation",
+    "contract_owner": "G02",
+    "owner": "G02",
+    "contract": "Current target rejection and positive milestone capability are separate acceptance axes. No accepted scope exclusion is established by this observation.",
+    "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+    "positive_milestone_expected": [
+      "true",
+      "true"
+    ],
+    "milestone_capability_group": "CAP-C32",
+    "milestone_capability_status": "unimplemented; scope acceptance pending",
+    "scope_exclusion_accepted": false
   },
   {
     "id": "matrix-c32-transpose",
@@ -2004,7 +2279,19 @@
       "true",
       "true"
     ],
-    "group": "matrix"
+    "group": "matrix",
+    "expected_rejection_stage": "activation",
+    "contract_owner": "G02",
+    "owner": "G02",
+    "contract": "Current target rejection and positive milestone capability are separate acceptance axes. No accepted scope exclusion is established by this observation.",
+    "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+    "positive_milestone_expected": [
+      "true",
+      "true"
+    ],
+    "milestone_capability_group": "CAP-C32",
+    "milestone_capability_status": "unimplemented; scope acceptance pending",
+    "scope_exclusion_accepted": false
   },
   {
     "id": "matrix-c32-matmul",
@@ -2013,7 +2300,19 @@
       "true",
       "true"
     ],
-    "group": "matrix"
+    "group": "matrix",
+    "expected_rejection_stage": "activation",
+    "contract_owner": "G02",
+    "owner": "G02",
+    "contract": "Current target rejection and positive milestone capability are separate acceptance axes. No accepted scope exclusion is established by this observation.",
+    "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+    "positive_milestone_expected": [
+      "true",
+      "true"
+    ],
+    "milestone_capability_group": "CAP-MATMUL",
+    "milestone_capability_status": "unimplemented; scope acceptance pending",
+    "scope_exclusion_accepted": false
   },
   {
     "id": "matrix-c64-add",
@@ -2076,7 +2375,19 @@
       "true",
       "true"
     ],
-    "group": "matrix"
+    "group": "matrix",
+    "expected_rejection_stage": "activation",
+    "contract_owner": "G02",
+    "owner": "G02",
+    "contract": "Current target rejection and positive milestone capability are separate acceptance axes. No accepted scope exclusion is established by this observation.",
+    "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+    "positive_milestone_expected": [
+      "true",
+      "true"
+    ],
+    "milestone_capability_group": "CAP-MATMUL",
+    "milestone_capability_status": "unimplemented; scope acceptance pending",
+    "scope_exclusion_accepted": false
   },
   {
     "id": "matrix-r64-add",
@@ -2139,11 +2450,23 @@
       "true",
       "true"
     ],
-    "group": "matrix"
+    "group": "matrix",
+    "expected_rejection_stage": "activation",
+    "contract_owner": "G02",
+    "owner": "G02",
+    "contract": "Current target rejection and positive milestone capability are separate acceptance axes. No accepted scope exclusion is established by this observation.",
+    "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+    "positive_milestone_expected": [
+      "true",
+      "true"
+    ],
+    "milestone_capability_group": "CAP-MATMUL",
+    "milestone_capability_status": "unimplemented; scope acceptance pending",
+    "scope_exclusion_accepted": false
   },
   {
     "id": "catalog-combinatorics-n-choose-k",
-    "source": "answer := combinatorics/n-choose-k(4, 2)\nanswer\n",
+    "source": "+> combinatorics\nanswer := combinatorics/n-choose-k(4, 2)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "combinatorics/n-choose-k"
@@ -2188,14 +2511,18 @@
     "source": "answer := compare/max(1.0, 2.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
-    "operation": "compare/max"
+    "operation": "compare/max",
+    "expected_rejection_stage": "lowering",
+    "contract_owner": "G03"
   },
   {
     "id": "catalog-compare-min",
     "source": "answer := compare/min(1.0, 2.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
-    "operation": "compare/min"
+    "operation": "compare/min",
+    "expected_rejection_stage": "lowering",
+    "contract_owner": "G03"
   },
   {
     "id": "catalog-compare-neq",
@@ -2209,14 +2536,18 @@
     "source": "answer := compare/seq(1.0, 2.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
-    "operation": "compare/seq"
+    "operation": "compare/seq",
+    "expected_rejection_stage": "lowering",
+    "contract_owner": "G03"
   },
   {
     "id": "catalog-compare-sneq",
     "source": "answer := compare/sneq(1.0, 2.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
-    "operation": "compare/sneq"
+    "operation": "compare/sneq",
+    "expected_rejection_stage": "lowering",
+    "contract_owner": "G03"
   },
   {
     "id": "catalog-logic-and",
@@ -2248,35 +2579,35 @@
   },
   {
     "id": "catalog-math-abs",
-    "source": "answer := math/abs(2.0)\nanswer\n",
+    "source": "+> math\nanswer := math/abs(2.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/abs"
   },
   {
     "id": "catalog-math-acos",
-    "source": "answer := math/acos(0.5)\nanswer\n",
+    "source": "+> math\nanswer := math/acos(0.5)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/acos"
   },
   {
     "id": "catalog-math-acosh",
-    "source": "answer := math/acosh(2.0)\nanswer\n",
+    "source": "+> math\nanswer := math/acosh(2.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/acosh"
   },
   {
     "id": "catalog-math-acot",
-    "source": "answer := math/acot(2.0)\nanswer\n",
+    "source": "+> math\nanswer := math/acot(2.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/acot"
   },
   {
     "id": "catalog-math-acsc",
-    "source": "answer := math/acsc(2.0)\nanswer\n",
+    "source": "+> math\nanswer := math/acsc(2.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/acsc"
@@ -2311,133 +2642,133 @@
   },
   {
     "id": "catalog-math-asec",
-    "source": "answer := math/asec(2.0)\nanswer\n",
+    "source": "+> math\nanswer := math/asec(2.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/asec"
   },
   {
     "id": "catalog-math-asin",
-    "source": "answer := math/asin(0.5)\nanswer\n",
+    "source": "+> math\nanswer := math/asin(0.5)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/asin"
   },
   {
     "id": "catalog-math-asinh",
-    "source": "answer := math/asinh(2.0)\nanswer\n",
+    "source": "+> math\nanswer := math/asinh(2.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/asinh"
   },
   {
     "id": "catalog-math-atan",
-    "source": "answer := math/atan(2.0)\nanswer\n",
+    "source": "+> math\nanswer := math/atan(2.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/atan"
   },
   {
     "id": "catalog-math-atan2",
-    "source": "answer := math/atan2(2.0, 1.0)\nanswer\n",
+    "source": "+> math\nanswer := math/atan2(2.0, 1.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/atan2"
   },
   {
     "id": "catalog-math-atanh",
-    "source": "answer := math/atanh(0.5)\nanswer\n",
+    "source": "+> math\nanswer := math/atanh(0.5)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/atanh"
   },
   {
     "id": "catalog-math-bessel-j0",
-    "source": "answer := math/bessel/j0(2.0)\nanswer\n",
+    "source": "+> math\nanswer := math/bessel/j0(2.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/bessel/j0"
   },
   {
     "id": "catalog-math-bessel-j1",
-    "source": "answer := math/bessel/j1(2.0)\nanswer\n",
+    "source": "+> math\nanswer := math/bessel/j1(2.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/bessel/j1"
   },
   {
     "id": "catalog-math-bessel-jn",
-    "source": "answer := math/bessel/jn(2.0, 1.0)\nanswer\n",
+    "source": "+> math\nanswer := math/bessel/jn(2.0, 1.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/bessel/jn"
   },
   {
     "id": "catalog-math-bessel-y0",
-    "source": "answer := math/bessel/y0(2.0)\nanswer\n",
+    "source": "+> math\nanswer := math/bessel/y0(2.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/bessel/y0"
   },
   {
     "id": "catalog-math-bessel-y1",
-    "source": "answer := math/bessel/y1(2.0)\nanswer\n",
+    "source": "+> math\nanswer := math/bessel/y1(2.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/bessel/y1"
   },
   {
     "id": "catalog-math-bessel-yn",
-    "source": "answer := math/bessel/yn(2.0, 1.0)\nanswer\n",
+    "source": "+> math\nanswer := math/bessel/yn(2.0, 1.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/bessel/yn"
   },
   {
     "id": "catalog-math-cbrt",
-    "source": "answer := math/cbrt(2.0)\nanswer\n",
+    "source": "+> math\nanswer := math/cbrt(2.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/cbrt"
   },
   {
     "id": "catalog-math-ceil",
-    "source": "answer := math/ceil(2.0)\nanswer\n",
+    "source": "+> math\nanswer := math/ceil(2.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/ceil"
   },
   {
     "id": "catalog-math-copysign",
-    "source": "answer := math/copysign(2.0, 1.0)\nanswer\n",
+    "source": "+> math\nanswer := math/copysign(2.0, 1.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/copysign"
   },
   {
     "id": "catalog-math-cos",
-    "source": "answer := math/cos(2.0)\nanswer\n",
+    "source": "+> math\nanswer := math/cos(2.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/cos"
   },
   {
     "id": "catalog-math-cosh",
-    "source": "answer := math/cosh(2.0)\nanswer\n",
+    "source": "+> math\nanswer := math/cosh(2.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/cosh"
   },
   {
     "id": "catalog-math-cot",
-    "source": "answer := math/cot(2.0)\nanswer\n",
+    "source": "+> math\nanswer := math/cot(2.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/cot"
   },
   {
     "id": "catalog-math-csc",
-    "source": "answer := math/csc(2.0)\nanswer\n",
+    "source": "+> math\nanswer := math/csc(2.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/csc"
@@ -2472,70 +2803,70 @@
   },
   {
     "id": "catalog-math-erf",
-    "source": "answer := math/erf(2.0)\nanswer\n",
+    "source": "+> math\nanswer := math/erf(2.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/erf"
   },
   {
     "id": "catalog-math-erfc",
-    "source": "answer := math/erfc(2.0)\nanswer\n",
+    "source": "+> math\nanswer := math/erfc(2.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/erfc"
   },
   {
     "id": "catalog-math-fdim",
-    "source": "answer := math/fdim(2.0, 1.0)\nanswer\n",
+    "source": "+> math\nanswer := math/fdim(2.0, 1.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/fdim"
   },
   {
     "id": "catalog-math-floor",
-    "source": "answer := math/floor(2.0)\nanswer\n",
+    "source": "+> math\nanswer := math/floor(2.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/floor"
   },
   {
     "id": "catalog-math-fmod",
-    "source": "answer := math/fmod(2.0, 1.0)\nanswer\n",
+    "source": "+> math\nanswer := math/fmod(2.0, 1.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/fmod"
   },
   {
     "id": "catalog-math-lgamma",
-    "source": "answer := math/lgamma(2.0)\nanswer\n",
+    "source": "+> math\nanswer := math/lgamma(2.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/lgamma"
   },
   {
     "id": "catalog-math-log",
-    "source": "answer := math/log(2.0)\nanswer\n",
+    "source": "+> math\nanswer := math/log(2.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/log"
   },
   {
     "id": "catalog-math-log10",
-    "source": "answer := math/log10(2.0)\nanswer\n",
+    "source": "+> math\nanswer := math/log10(2.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/log10"
   },
   {
     "id": "catalog-math-log1p",
-    "source": "answer := math/log1p(2.0)\nanswer\n",
+    "source": "+> math\nanswer := math/log1p(2.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/log1p"
   },
   {
     "id": "catalog-math-log2",
-    "source": "answer := math/log2(2.0)\nanswer\n",
+    "source": "+> math\nanswer := math/log2(2.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/log2"
@@ -2577,7 +2908,7 @@
   },
   {
     "id": "catalog-math-nextafter",
-    "source": "answer := math/nextafter(2.0, 1.0)\nanswer\n",
+    "source": "+> math\nanswer := math/nextafter(2.0, 1.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/nextafter"
@@ -2591,56 +2922,56 @@
   },
   {
     "id": "catalog-math-remainder",
-    "source": "answer := math/remainder(2.0, 1.0)\nanswer\n",
+    "source": "+> math\nanswer := math/remainder(2.0, 1.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/remainder"
   },
   {
     "id": "catalog-math-rint",
-    "source": "answer := math/rint(2.0)\nanswer\n",
+    "source": "+> math\nanswer := math/rint(2.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/rint"
   },
   {
     "id": "catalog-math-round",
-    "source": "answer := math/round(2.0)\nanswer\n",
+    "source": "+> math\nanswer := math/round(2.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/round"
   },
   {
     "id": "catalog-math-roundeven",
-    "source": "answer := math/roundeven(2.0)\nanswer\n",
+    "source": "+> math\nanswer := math/roundeven(2.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/roundeven"
   },
   {
     "id": "catalog-math-sec",
-    "source": "answer := math/sec(2.0)\nanswer\n",
+    "source": "+> math\nanswer := math/sec(2.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/sec"
   },
   {
     "id": "catalog-math-sin",
-    "source": "answer := math/sin(2.0)\nanswer\n",
+    "source": "+> math\nanswer := math/sin(2.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/sin"
   },
   {
     "id": "catalog-math-sinh",
-    "source": "answer := math/sinh(2.0)\nanswer\n",
+    "source": "+> math\nanswer := math/sinh(2.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/sinh"
   },
   {
     "id": "catalog-math-sqrt",
-    "source": "answer := math/sqrt(2.0)\nanswer\n",
+    "source": "+> math\nanswer := math/sqrt(2.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/sqrt"
@@ -2675,28 +3006,28 @@
   },
   {
     "id": "catalog-math-tan",
-    "source": "answer := math/tan(2.0)\nanswer\n",
+    "source": "+> math\nanswer := math/tan(2.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/tan"
   },
   {
     "id": "catalog-math-tanh",
-    "source": "answer := math/tanh(2.0)\nanswer\n",
+    "source": "+> math\nanswer := math/tanh(2.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/tanh"
   },
   {
     "id": "catalog-math-tgamma",
-    "source": "answer := math/tgamma(2.0)\nanswer\n",
+    "source": "+> math\nanswer := math/tgamma(2.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/tgamma"
   },
   {
     "id": "catalog-math-trunc",
-    "source": "answer := math/trunc(2.0)\nanswer\n",
+    "source": "+> math\nanswer := math/trunc(2.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "math/trunc"
@@ -2762,7 +3093,9 @@
     "source": "answer := range/exclusive-increment(1.0, 1.0, 3.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
-    "operation": "range/exclusive-increment"
+    "operation": "range/exclusive-increment",
+    "expected_rejection_stage": "lowering",
+    "contract_owner": "G03"
   },
   {
     "id": "catalog-range-inclusive",
@@ -2776,14 +3109,18 @@
     "source": "answer := range/inclusive-increment(1.0, 1.0, 3.0)\nanswer\n",
     "expected": null,
     "group": "catalog",
-    "operation": "range/inclusive-increment"
+    "operation": "range/inclusive-increment",
+    "expected_rejection_stage": "lowering",
+    "contract_owner": "G03"
   },
   {
     "id": "catalog-set-cartesian-product",
     "source": "answer := set/cartesian-product({1,2},{2,3})\nanswer\n",
     "expected": null,
     "group": "catalog",
-    "operation": "set/cartesian-product"
+    "operation": "set/cartesian-product",
+    "expected_rejection_stage": "lowering",
+    "contract_owner": "G03"
   },
   {
     "id": "catalog-set-comprehension",
@@ -2818,7 +3155,9 @@
     "source": "answer := set/element-of(1, {1,2})\nanswer\n",
     "expected": null,
     "group": "catalog",
-    "operation": "set/element-of"
+    "operation": "set/element-of",
+    "expected_rejection_stage": "lowering",
+    "contract_owner": "G03"
   },
   {
     "id": "catalog-set-equals",
@@ -2846,11 +3185,13 @@
     "source": "answer := set/not-element-of(1, {1,2})\nanswer\n",
     "expected": null,
     "group": "catalog",
-    "operation": "set/not-element-of"
+    "operation": "set/not-element-of",
+    "expected_rejection_stage": "lowering",
+    "contract_owner": "G03"
   },
   {
     "id": "catalog-set-not_equals",
-    "source": "answer := {1,2} \u2260 {2,3}\nanswer\n",
+    "source": "answer := {1,2} ≠ {2,3}\nanswer\n",
     "expected": [
       "true",
       "true"
@@ -2870,11 +3211,13 @@
     "source": "answer := set/proper-superset({1,2},{2,3})\nanswer\n",
     "expected": null,
     "group": "catalog",
-    "operation": "set/proper-superset"
+    "operation": "set/proper-superset",
+    "expected_rejection_stage": "lowering",
+    "contract_owner": "G03"
   },
   {
     "id": "catalog-set-proper_subset",
-    "source": "answer := {1} \u2282 {1,2}\nanswer\n",
+    "source": "answer := {1} ⊂ {1,2}\nanswer\n",
     "expected": [
       "true",
       "true"
@@ -2915,7 +3258,9 @@
     "source": "answer := set/symmetric-difference({1,2},{2,3})\nanswer\n",
     "expected": null,
     "group": "catalog",
-    "operation": "set/symmetric-difference"
+    "operation": "set/symmetric-difference",
+    "expected_rejection_stage": "lowering",
+    "contract_owner": "G03"
   },
   {
     "id": "catalog-set-union",
@@ -2926,21 +3271,21 @@
   },
   {
     "id": "catalog-stats-sum-column",
-    "source": "answer := stats/sum/column([1 2; 3 4])\nanswer\n",
+    "source": "+> stats\nanswer := stats/sum/column([1 2; 3 4])\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "stats/sum/column"
   },
   {
     "id": "catalog-stats-sum-row",
-    "source": "answer := stats/sum/row([1 2; 3 4])\nanswer\n",
+    "source": "+> stats\nanswer := stats/sum/row([1 2; 3 4])\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "stats/sum/row"
   },
   {
     "id": "catalog-string-concat",
-    "source": "answer := string/concat(\"a\", \"b\")\nanswer\n",
+    "source": "+> string\nanswer := string/concat(\"a\", \"b\")\nanswer\n",
     "expected": null,
     "group": "catalog",
     "operation": "string/concat"
@@ -2950,42 +3295,54 @@
     "source": "answer := table/full-outer-join((|x<u8> y<u8>|1u8 2u8|), (|x<u8> z<u8>|1u8 3u8|))\nanswer\n",
     "expected": null,
     "group": "catalog",
-    "operation": "table/full-outer-join"
+    "operation": "table/full-outer-join",
+    "expected_rejection_stage": "lowering",
+    "contract_owner": "G03"
   },
   {
     "id": "catalog-table-join",
     "source": "answer := table/join((|x<u8> y<u8>|1u8 2u8|), (|x<u8> z<u8>|1u8 3u8|))\nanswer\n",
     "expected": null,
     "group": "catalog",
-    "operation": "table/join"
+    "operation": "table/join",
+    "expected_rejection_stage": "lowering",
+    "contract_owner": "G03"
   },
   {
     "id": "catalog-table-left-anti-join",
     "source": "answer := table/left-anti-join((|x<u8> y<u8>|1u8 2u8|), (|x<u8> z<u8>|1u8 3u8|))\nanswer\n",
     "expected": null,
     "group": "catalog",
-    "operation": "table/left-anti-join"
+    "operation": "table/left-anti-join",
+    "expected_rejection_stage": "lowering",
+    "contract_owner": "G03"
   },
   {
     "id": "catalog-table-left-outer-join",
     "source": "answer := table/left-outer-join((|x<u8> y<u8>|1u8 2u8|), (|x<u8> z<u8>|1u8 3u8|))\nanswer\n",
     "expected": null,
     "group": "catalog",
-    "operation": "table/left-outer-join"
+    "operation": "table/left-outer-join",
+    "expected_rejection_stage": "lowering",
+    "contract_owner": "G03"
   },
   {
     "id": "catalog-table-left-semi-join",
     "source": "answer := table/left-semi-join((|x<u8> y<u8>|1u8 2u8|), (|x<u8> z<u8>|1u8 3u8|))\nanswer\n",
     "expected": null,
     "group": "catalog",
-    "operation": "table/left-semi-join"
+    "operation": "table/left-semi-join",
+    "expected_rejection_stage": "lowering",
+    "contract_owner": "G03"
   },
   {
     "id": "catalog-table-right-outer-join",
     "source": "answer := table/right-outer-join((|x<u8> y<u8>|1u8 2u8|), (|x<u8> z<u8>|1u8 3u8|))\nanswer\n",
     "expected": null,
     "group": "catalog",
-    "operation": "table/right-outer-join"
+    "operation": "table/right-outer-join",
+    "expected_rejection_stage": "lowering",
+    "contract_owner": "G03"
   },
   {
     "id": "statement-recursion",
@@ -2995,5 +3352,156 @@
       "120",
       "120"
     ]
+  },
+  {
+    "id": "activation-stable-no-trigger",
+    "group": "control-contract",
+    "source": "tick := 0\n~x := 0\n~> tick { x = x + 1 }\nx\n",
+    "expected": [
+      "0",
+      "0"
+    ],
+    "owner": "G15",
+    "acceptance_cells": [
+      "ACT01",
+      "ACT02"
+    ],
+    "contract": "Stable trigger is valid; absent trigger changes do not execute scope body or advance x."
+  },
+  {
+    "id": "activation-pattern-no-trigger",
+    "group": "control-contract",
+    "source": "event := (3, 4)\n~selected := 0\n~> event\n  | (x, y) => { selected = x * 10 + y }\n  | * => { selected = -1 }\nselected\n",
+    "expected": [
+      "0",
+      "0"
+    ],
+    "owner": "G15",
+    "acceptance_cells": [
+      "ACT01",
+      "ACT05",
+      "ACT06"
+    ],
+    "contract": "Patterned scope body remains inactive until event trigger; eventual triggered value is 34."
+  },
+  {
+    "id": "fsm-declared-increment",
+    "group": "control-contract",
+    "source": "#Increment(value<f64>) => <f64>\n  | :start(value<f64>)\n  | :done(result<f64>).\n#Increment(value) -> :start(value)\n  :start(current) -> :done(current + 1)\n  :done(result) => result.\nresult := #Increment(41)\nresult\n",
+    "expected": [
+      "42",
+      "42"
+    ],
+    "owner": "G14",
+    "acceptance_cells": [
+      "FSM01",
+      "FSM02"
+    ],
+    "contract": "Declared typed machine transitions start(41) to done(42), then emits 42; no undeclared invocation."
+  },
+  {
+    "id": "fsm-declared-named-input",
+    "group": "control-contract",
+    "source": "#Increment(value<f64>) => <f64>\n  | :start(value<f64>)\n  | :done(result<f64>).\n#Increment(value) -> :start(value)\n  :start(current) -> :done(current + 1)\n  :done(result) => result.\nresult := #Increment(value: 41)\nresult\n",
+    "expected": [
+      "42",
+      "42"
+    ],
+    "owner": "G14",
+    "acceptance_cells": [
+      "FSM01"
+    ],
+    "contract": "Named invocation binds the declared input identically to positional invocation."
+  },
+  {
+    "id": "function-pattern-broadcast-matrix",
+    "group": "control-contract",
+    "source": "twice(n<f64>) => <f64>\n  | n => n * 2.\nb := twice([1 2 3; 4 5 6])\nb[1,1] == 2 && b[1,3] == 6 && b[2,1] == 8 && b[2,3] == 12\n",
+    "expected": [
+      "true",
+      "true"
+    ],
+    "owner": "G19",
+    "acceptance_cells": [
+      "FUN05"
+    ],
+    "contract": "One scalar input and same-kind scalar output broadcast over a non-square matrix without changing order."
+  },
+  {
+    "id": "function-pattern-partial-match",
+    "group": "control-contract",
+    "source": "only-zero(n<f64>) => <f64>\n  | 0 => 42.\nonly-zero(0)\n",
+    "expected": [
+      "42",
+      "42"
+    ],
+    "owner": "G19",
+    "acceptance_cells": [
+      "FUN06"
+    ],
+    "contract": "Partial numeric function call with a matching branch succeeds; blanket exhaustive scalar-match admission must not reject it."
+  },
+  {
+    "id": "function-pattern-first-match",
+    "group": "control-contract",
+    "source": "first(n<f64>) => <f64>\n  | n => 42\n  | * => 99.\nfirst(7)\n",
+    "expected": [
+      "42",
+      "42"
+    ],
+    "owner": "G19",
+    "acceptance_cells": [
+      "FUN01"
+    ],
+    "contract": "First matching function branch wins even when a later branch also matches."
+  },
+  {
+    "id": "function-branching-recursion",
+    "group": "control-contract",
+    "source": "fib(n<f64>) => <f64>\n  | 0 => 0\n  | 1 => 1\n  | n => fib(n - 1) + fib(n - 2).\nfib(10)\n",
+    "expected": [
+      "55",
+      "55"
+    ],
+    "owner": "G20",
+    "acceptance_cells": [
+      "FUN08"
+    ],
+    "contract": "Existing reference Fibonacci branching recursion has independent expected result 55."
+  },
+  {
+    "id": "function-tail-recursion",
+    "group": "control-contract",
+    "source": "count(n<f64>, acc<f64>) => <f64>\n  | (0, acc) => acc\n  | (n, acc) => count(n - 1, acc + 1).\ncount(20, 0)\n",
+    "expected": [
+      "20",
+      "20"
+    ],
+    "owner": "G20",
+    "acceptance_cells": [
+      "FUN08"
+    ],
+    "contract": "Tail recursion must run beyond existing eight-level syntax control nesting without unbounded graph expansion."
+  },
+  {
+    "id": "catalog-f32-binary-broadcast",
+    "group": "catalog-boundary",
+    "source": "+> math\na := [1f32 2f32;3f32 4f32]\nb := math/copysign(a,-1f32)\nb\n",
+    "expected": [
+      "[-1 -2; -3 -4]",
+      "[-1 -2; -3 -4]"
+    ],
+    "owner": "G02",
+    "contract": "Current target rejection and positive milestone capability are separate acceptance axes. No accepted scope exclusion is established by this observation.",
+    "expected_rejection_stage": "activation",
+    "contract_owner": "G02",
+    "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+    "positive_milestone_expected": [
+      "[-1 -2; -3 -4]",
+      "[-1 -2; -3 -4]"
+    ],
+    "milestone_capability_group": "CAP-F32-BINARY",
+    "milestone_capability_status": "unimplemented; scope acceptance pending",
+    "scope_exclusion_accepted": false
   }
 ]

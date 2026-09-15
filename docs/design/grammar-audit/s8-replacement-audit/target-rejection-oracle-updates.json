@@ -1,0 +1,338 @@
+{
+  "contract": "G02, G17 and G18 current configured-target rejection, separate from positive milestone capability",
+  "scope-rule": "Apply rejection oracle alongside, never instead of, the preserved positive capability witness. No accepted milestone exclusion is established.",
+  "fixtures": [
+    {
+      "id": "numeric-u64-pow",
+      "expected_rejection_stage": "activation",
+      "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+      "positive_milestone_expected": [
+        "true",
+        "true"
+      ],
+      "milestone_capability_group": "CAP-POWER",
+      "milestone_capability_status": "unimplemented; scope acceptance pending",
+      "scope_exclusion_accepted": false
+    },
+    {
+      "id": "numeric-u128-pow",
+      "expected_rejection_stage": "activation",
+      "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+      "positive_milestone_expected": [
+        "true",
+        "true"
+      ],
+      "milestone_capability_group": "CAP-POWER",
+      "milestone_capability_status": "unimplemented; scope acceptance pending",
+      "scope_exclusion_accepted": false
+    },
+    {
+      "id": "numeric-i8-pow",
+      "expected_rejection_stage": "activation",
+      "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+      "positive_milestone_expected": [
+        "true",
+        "true"
+      ],
+      "milestone_capability_group": "CAP-POWER",
+      "milestone_capability_status": "unimplemented; scope acceptance pending",
+      "scope_exclusion_accepted": false
+    },
+    {
+      "id": "numeric-i16-pow",
+      "expected_rejection_stage": "activation",
+      "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+      "positive_milestone_expected": [
+        "true",
+        "true"
+      ],
+      "milestone_capability_group": "CAP-POWER",
+      "milestone_capability_status": "unimplemented; scope acceptance pending",
+      "scope_exclusion_accepted": false
+    },
+    {
+      "id": "numeric-i32-pow",
+      "expected_rejection_stage": "activation",
+      "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+      "positive_milestone_expected": [
+        "true",
+        "true"
+      ],
+      "milestone_capability_group": "CAP-POWER",
+      "milestone_capability_status": "unimplemented; scope acceptance pending",
+      "scope_exclusion_accepted": false
+    },
+    {
+      "id": "numeric-i64-pow",
+      "expected_rejection_stage": "activation",
+      "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+      "positive_milestone_expected": [
+        "true",
+        "true"
+      ],
+      "milestone_capability_group": "CAP-POWER",
+      "milestone_capability_status": "unimplemented; scope acceptance pending",
+      "scope_exclusion_accepted": false
+    },
+    {
+      "id": "numeric-i128-pow",
+      "expected_rejection_stage": "activation",
+      "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+      "positive_milestone_expected": [
+        "true",
+        "true"
+      ],
+      "milestone_capability_group": "CAP-POWER",
+      "milestone_capability_status": "unimplemented; scope acceptance pending",
+      "scope_exclusion_accepted": false
+    },
+    {
+      "id": "scalar-c32",
+      "expected_rejection_stage": "activation",
+      "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+      "positive_milestone_expected": [
+        "true",
+        "false"
+      ],
+      "milestone_capability_group": "CAP-C32",
+      "milestone_capability_status": "unimplemented; scope acceptance pending",
+      "scope_exclusion_accepted": false
+    },
+    {
+      "id": "numeric-c32-add",
+      "expected_rejection_stage": "activation",
+      "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+      "positive_milestone_expected": [
+        "true",
+        "true"
+      ],
+      "milestone_capability_group": "CAP-C32",
+      "milestone_capability_status": "unimplemented; scope acceptance pending",
+      "scope_exclusion_accepted": false
+    },
+    {
+      "id": "numeric-c32-sub",
+      "expected_rejection_stage": "activation",
+      "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+      "positive_milestone_expected": [
+        "true",
+        "true"
+      ],
+      "milestone_capability_group": "CAP-C32",
+      "milestone_capability_status": "unimplemented; scope acceptance pending",
+      "scope_exclusion_accepted": false
+    },
+    {
+      "id": "numeric-c32-mul",
+      "expected_rejection_stage": "activation",
+      "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedContract }",
+      "positive_milestone_expected": [
+        "true",
+        "true"
+      ],
+      "milestone_capability_group": "CAP-C32",
+      "milestone_capability_status": "unimplemented; scope acceptance pending",
+      "scope_exclusion_accepted": false
+    },
+    {
+      "id": "numeric-c32-div",
+      "expected_rejection_stage": "activation",
+      "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+      "positive_milestone_expected": [
+        "true",
+        "true"
+      ],
+      "milestone_capability_group": "CAP-C32",
+      "milestone_capability_status": "unimplemented; scope acceptance pending",
+      "scope_exclusion_accepted": false
+    },
+    {
+      "id": "numeric-c32-pow",
+      "expected_rejection_stage": "activation",
+      "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+      "positive_milestone_expected": [
+        "true",
+        "true"
+      ],
+      "milestone_capability_group": "CAP-POWER",
+      "milestone_capability_status": "unimplemented; scope acceptance pending",
+      "scope_exclusion_accepted": false
+    },
+    {
+      "id": "matrix-repeat-c32",
+      "expected_rejection_stage": "activation",
+      "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+      "positive_milestone_expected": [
+        "true",
+        "false"
+      ],
+      "milestone_capability_group": "CAP-C32",
+      "milestone_capability_status": "unimplemented; scope acceptance pending",
+      "scope_exclusion_accepted": false
+    },
+    {
+      "id": "numeric-c64-pow",
+      "expected_rejection_stage": "activation",
+      "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+      "positive_milestone_expected": [
+        "true",
+        "true"
+      ],
+      "milestone_capability_group": "CAP-POWER",
+      "milestone_capability_status": "unimplemented; scope acceptance pending",
+      "scope_exclusion_accepted": false
+    },
+    {
+      "id": "numeric-r64-pow",
+      "expected_rejection_stage": "activation",
+      "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+      "positive_milestone_expected": [
+        "true",
+        "true"
+      ],
+      "milestone_capability_group": "CAP-POWER",
+      "milestone_capability_status": "unimplemented; scope acceptance pending",
+      "scope_exclusion_accepted": false
+    },
+    {
+      "id": "matrix-c32-add",
+      "expected_rejection_stage": "activation",
+      "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+      "positive_milestone_expected": [
+        "true",
+        "true"
+      ],
+      "milestone_capability_group": "CAP-C32",
+      "milestone_capability_status": "unimplemented; scope acceptance pending",
+      "scope_exclusion_accepted": false
+    },
+    {
+      "id": "matrix-c32-sub",
+      "expected_rejection_stage": "activation",
+      "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+      "positive_milestone_expected": [
+        "true",
+        "true"
+      ],
+      "milestone_capability_group": "CAP-C32",
+      "milestone_capability_status": "unimplemented; scope acceptance pending",
+      "scope_exclusion_accepted": false
+    },
+    {
+      "id": "matrix-c32-mul",
+      "expected_rejection_stage": "activation",
+      "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+      "positive_milestone_expected": [
+        "true",
+        "true"
+      ],
+      "milestone_capability_group": "CAP-C32",
+      "milestone_capability_status": "unimplemented; scope acceptance pending",
+      "scope_exclusion_accepted": false
+    },
+    {
+      "id": "matrix-c32-div",
+      "expected_rejection_stage": "activation",
+      "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+      "positive_milestone_expected": [
+        "true",
+        "true"
+      ],
+      "milestone_capability_group": "CAP-C32",
+      "milestone_capability_status": "unimplemented; scope acceptance pending",
+      "scope_exclusion_accepted": false
+    },
+    {
+      "id": "matrix-c32-sum",
+      "expected_rejection_stage": "activation",
+      "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+      "positive_milestone_expected": [
+        "true",
+        "true"
+      ],
+      "milestone_capability_group": "CAP-C32",
+      "milestone_capability_status": "unimplemented; scope acceptance pending",
+      "scope_exclusion_accepted": false
+    },
+    {
+      "id": "matrix-c32-matmul",
+      "expected_rejection_stage": "activation",
+      "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+      "positive_milestone_expected": [
+        "true",
+        "true"
+      ],
+      "milestone_capability_group": "CAP-MATMUL",
+      "milestone_capability_status": "unimplemented; scope acceptance pending",
+      "scope_exclusion_accepted": false
+    },
+    {
+      "id": "matrix-c64-matmul",
+      "expected_rejection_stage": "activation",
+      "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+      "positive_milestone_expected": [
+        "true",
+        "true"
+      ],
+      "milestone_capability_group": "CAP-MATMUL",
+      "milestone_capability_status": "unimplemented; scope acceptance pending",
+      "scope_exclusion_accepted": false
+    },
+    {
+      "id": "matrix-r64-matmul",
+      "expected_rejection_stage": "activation",
+      "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+      "positive_milestone_expected": [
+        "true",
+        "true"
+      ],
+      "milestone_capability_group": "CAP-MATMUL",
+      "milestone_capability_status": "unimplemented; scope acceptance pending",
+      "scope_exclusion_accepted": false
+    },
+    {
+      "id": "catalog-f32-binary-broadcast",
+      "expected_rejection_stage": "activation",
+      "expected_rejection_detail": "KernelBind { node: NodeId(0), error: UnsupportedLayout }",
+      "positive_milestone_expected": [
+        "[-1 -2; -3 -4]",
+        "[-1 -2; -3 -4]"
+      ],
+      "milestone_capability_group": "CAP-F32-BINARY",
+      "milestone_capability_status": "unimplemented; scope acceptance pending",
+      "scope_exclusion_accepted": false
+    },
+    {
+      "id": "logical-read",
+      "expected_rejection_stage": "activation",
+      "expected_rejection_detail": "UnresolvedShape { slot: CellSlotId(1) }",
+      "positive_milestone_expected": [
+        "[2 3]",
+        "[2 3]"
+      ],
+      "positive_milestone_shape": [
+        1,
+        2
+      ],
+      "milestone_capability_group": "CAP-MASK",
+      "milestone_capability_status": "unimplemented; scope acceptance pending",
+      "scope_exclusion_accepted": false
+    },
+    {
+      "id": "dynamic-concat",
+      "expected_rejection_stage": "activation",
+      "expected_rejection_detail": "KernelBind { node: NodeId(1), error: UnsupportedLayout }",
+      "positive_milestone_expected": [
+        "[1 2 1 2]",
+        "[1 2 1 2]"
+      ],
+      "positive_milestone_shape": [
+        1,
+        4
+      ],
+      "milestone_capability_group": "CAP-DOWNSTREAM",
+      "milestone_capability_status": "unimplemented; scope acceptance pending",
+      "scope_exclusion_accepted": false
+    }
+  ]
+}

@@ -1,66 +1,96 @@
-# Restoring review boundaries without changing implementation
+# Review boundaries for existing work and corrective prerequisites
 
-Implementation remains frozen. This is an extraction and corrective PR specification,
-not a claim that the proposed intermediate heads already build. The frozen B reference
-must remain available. Do not turn the audit tests into a fix-by-fix implementation queue.
+Production implementation remains frozen at `662d29b79`. The first stack moves
+existing code into review boundaries; it adds no semantic fixes. The second is
+a finite corrective acceptance plan and is not authorized implementation yet.
+The original B branch/PR #828 remains the immutable comparison reference.
 
-## First stack: extract the implementation already accumulated in B
+## Existing B extraction stack
 
-Extract from S8A `b573284cb` to B `662d29b79`. The patch ownership ledger accounts for
-all 91 changed paths. Shared files require responsibility-specific hunk extraction;
-assigning the entire 1,802-line compiler delta to one PR would defeat the split.
+The original proposed eight slices were revised after inspecting actual function
+and feature dependencies. The resulting eleven boundaries are below. Large shared
+files are extracted by complete existing function/hunk ownership, not copied into
+one catch-all compiler PR. Exact dependency closure is in EXTRACTION-DEPENDENCIES.md.
 
-| PR / proposed branch | Review boundary | Required evidence before requesting implementation approval |
+| Slice | Branch / head / PR | Existing code ownership | Recorded validation or required check |
+| --- | --- | --- | --- |
+| E1 configuration | `codex/syntax-s8e1-config-syntax` / `8be3118e1` / [#831](https://github.com/mech-lang/mech/pull/831) | Restricted canonical configuration preparation, positioned diagnostics, its tests and feature gate; nine files. | 45 canonical + 39 public configuration tests pass. |
+| E2 syntax | `codex/syntax-s8e2-syntax` / `89403ba4b` / [#832](https://github.com/mech-lang/mech/pull/832) | Existing canonical document/table/streaming corrections; 14 files. Retirement enforcement remains E11. | 46 tests pass across document roots, review regressions, S7 certification and streaming partitions. |
+| E3 resident primitives | `codex/syntax-s8e3-resident-values` / `732208864` / [#833](https://github.com/mech-lang/mech/pull/833) | Addressed numeric contracts, resident arithmetic, population shape construction and exact scalar tokens; four files. | Engine full source/compiler resident-artifact check passes. Semantic emitters land in E4. |
+| E4 semantic frontend | `codex/syntax-s8e4-semantic-frontend` / `7d0db6ede` / [#834](https://github.com/mech-lang/mech/pull/834) | Canonical documents/functions/imports/assignments/projections, type/shape and artifact helpers, prepared EKF caller; 18 files. Projection refresh API remains E7. | All 179 tests in seven canonical engine integration targets pass. |
+| E5 ordinary compiler | `codex/syntax-s8e5-compiler-planning` / `0c8a95794` / [#835](https://github.com/mech-lang/mech/pull/835) | Document/artifact/input/default/static APIs, resource planning/preflight and output identity; complete ordinary methods plus their existing tests. | 21 existing canonical compiler tests pass; compute-disabled build check passes. |
+| E6 graph compiler | `codex/syntax-s8e6-graph-planning` / `ef30e7e81` / [#836](https://github.com/mech-lang/mech/pull/836) | Rooted/resolved/ordered methods, canonical import handoff, graph tests and complete five-route provider test. | 695 runtime library and 10 declaration-handoff tests pass. G16 remains an explicit known audit failure. |
+| E7 interactive lifecycle | `codex/syntax-s8e7-interactive` / `634f45620` / [#837](https://github.com/mech-lang/mech/pull/837) | Retained candidate submit/replace/reset/clear, projection refresh API and its runtime query caller together. | 19 interactive lifecycle tests pass. |
+| E8 mixed compiler | `codex/syntax-s8e8-mixed-planning` / `2a091a128` / [#838](https://github.com/mech-lang/mech/pull/838) | Mixed document/rooted APIs, source dependency metadata in every constructor, activation input capture and canonical compute port decoding. | 713 runtime library tests pass; exact manifest preserves 134 existing helper/test bodies and extracts seven mixed tests. |
+| E9 compute execution | `codex/syntax-s8e9-compute-execution` / `199b42d5d` / [#839](https://github.com/mech-lang/mech/pull/839) | ComputeActivationValues, remainder IR, fixed-shape publication storage and exhaustive GPU/SIMD/JIT consumers, retained readback and owned backend tests. | Native/JIT GPU crate check passes; activation and publication rollback regressions each pass. GPU adapter execution and browser JS are not certified. |
+| E10 web handoff | `codex/syntax-s8e10-web-handoff` / `68eeb8828` / [#840](https://github.com/mech-lang/mech/pull/840) | Bundle identity/dependencies, browser/server planning and presentation, CLI/WASM mixed adapters, public source path helper and JS/smoke tests. | 61 bundle-web, 34 document-render and one runtime bundle test pass. JavaScript unrun locally; G22 still blocks actual browser document-loader closure. |
+| E11 qualification | `codex/syntax-s8e11-qualification` / `75ae76bf7` / [#841](https://github.com/mech-lang/mech/pull/841) | Remaining CI, manifest, retirement enforcement and documentation changes from frozen B. | Seven-file extraction manifest and complete tree equality to frozen B pass. Existing G24 certification findings remain open. |
+
+All eleven slices are published draft PRs (#831–#841), each targeting its preceding
+branch. Exact heads, extracted spans and completed checks are recorded in
+extraction-results.json. No row is a seal claim. Redundant lower extraction CI is
+canceled so E11 can use runners; local intermediate validation remains recorded.
+
+The final extraction passes `git diff --exit-code 662d29b79 75ae76bf7`: the complete
+E11 tree exactly reproduces frozen B across all 91 changed paths.
+Audit-only files live on the separate audit branch and therefore require no
+production-path exclusion. If a compile fails, move the missing existing
+prerequisite into its owning slice; do not change implementation or weaken tests.
+Each intermediate head also retains its exact copied symbol/hunk manifest.
+
+## Corrective stack after scope acceptance
+
+The earlier twelve combined scopes hid independently reviewable owners. The
+following 23 boundaries keep those responsibilities separate. IDs refer to the
+stable deduplicated gap register; fixture repetitions never create extra PRs.
+Existing implementations that already satisfy a cell remain in place.
+
+| Boundary | Gap | Owning layer and finite acceptance |
 | --- | --- | --- |
-| E1 `codex/syntax-s8e1-config-syntax` | Restricted canonical configuration evaluator; numeric/literal and typed document syntax corrections supporting that evaluator. Preserve precise source errors and raw input. | Canonical config profiles, malformed/unknown field diagnostics, canonical rule certification. No general evaluator added to configuration. |
-| E2 `codex/syntax-s8e2-values` → E1 | Existing canonical type/shape/value improvements, exact scalar change detection, resident arithmetic/selection primitives, output projection and artifact helpers. | Source/bytecode value, shape, composite memory and selected-assignment tests. Existing deficiencies G01/G02/G04/G05/G17/G18 remain labeled failing, not silently fixed during extraction. |
-| E3 `codex/syntax-s8e3-document-semantics` → E2 | Existing document execution, local statement-bodied functions, declaration imports, document output identity and assignment lowering. | Retained document/state/scope/invariant tests and explicit function-binding tests. Missing function patterns/recursion, nominal declarations and control families remain upstream prerequisites. |
-| E4 `codex/syntax-s8e4-compiler-planning` → E3 | ProgramCompiler ordinary/document/artifact/input/default/static APIs and shared resource planning. | Nonempty planning values, live defaults, grants, preflight failure, effect-free compilation, detached static results and projection. The 42-only dispatch probe is supplemental. |
-| E5 `codex/syntax-s8e5-graph-interactive` → E4 | Resolved/rooted/ordered graph compilation plus accepted-candidate interactive lifecycle. | Root revision/options, import/export scope, source replacement/reset/clear, failed candidate preservation, provider ownership. G16 remains an explicit failing contract. |
-| E6 `codex/syntax-s8e6-mixed-compute` → E5 | Mixed partitioning, activation initializer IR, backend output/readback and retained compute values, complete-source native/browser compute helpers. | Actual configured particle/EKF applications plus CPU/SIMD/JIT/GPU activation, publication and rejection. Region-only tests cannot seal this PR. |
-| E7 `codex/syntax-s8e7-web-handoff` → E6 | Canonical bundle identity, transitive dependency stamps, configured offline compilation and prepared server/browser presentation. | Producer envelope/identity tests; exact remaining C browser transport blockers explicitly listed. No AST adapter. |
-| E8 `codex/syntax-s8e8-qualification` → E7 | Existing CI wiring, ledger and generated-fixture reconciliation that crosses the above boundaries. | Union-of-patches check against frozen B, every intermediate build/profile needed for review, exact final-head results, and no test silently executing zero cases. |
+| R01 named visibility | G03 | Canonical named-call environment. Internal negatives, imported/unimported ModuleOnly, aliases and Prelude positives across the closed 120-name census. Preserve operator IDs independently. |
+| R02 numeric target capability | G02 | Settle the explicit target capability floor for CAP-C32, CAP-POWER, CAP-MATMUL and CAP-F32-BINARY. Preserve 25 positive witnesses and correct current-target rejection tests separately. Any accepted kernel work belongs to these physical owners; pure artifact compilation is not incorrectly forced to execute/preflight. No automatic scope exclusion. |
+| R03 bound schema identity | G25 | Canonical constant binding/artifact schema remapping. Independently owned scalar/structural Value inputs retain canonical IDs and exact source/bytecode values; all referenced schemas and dynamic descendants are remapped consistently. |
+| R04 Dynamic binding identity | G26 | Canonical constant binder. Already-Dynamic values retain one wrapper and exact identity; bare payloads wrap once. Test changed payload schemas and bytecode independently of G25. |
+| R05 selected updates | G04 | Canonical addressed RMW. Mixed and nested repeated occurrences, noncommutative updates, promotions and atomic failure. |
+| R06 logical activation facts | G17 | Reconcile actual loader/input-fact responsibilities for closed/computed masks, then implement only the accepted shape capability. Keep no-fact rejection and same-population positive behavior separate; changing population retains its explicit exclusion. |
+| R07 control initializers | G05 | Resident activation dependency classification. Closed match/comprehension producers initialize once; live-only dependencies and effects do not replay. |
+| R08 variable-cardinality consumers | G18 | Retain finite downstream concat/transpose 1x4 and changing-cardinality positive witnesses for target scope acceptance; implement the accepted layout capability under its resident owner. Correct current fixed-target rejection is not a seal. |
+| R09 comprehension storage | G06 | Resident retained binding/capture/yield values across the closed scalar/structural cells. Preserve working primitive destructuring. |
+| R10 structural match patterns | G09 | Canonical structural scrutinee, tuple/array/tag bindings, guards and match exhaustiveness. Preserve already-working compound arm outputs. |
+| R11 composed control | G07 | Canonical nested match/comprehension block and shape ownership. No source rewriting by special case. |
+| R12 computed patterns | G08 | Canonical lexical pattern evaluation blocks, captures, ordered filtering and rejected partial matches. |
+| R13 nominal declarations | G10, G11 | Canonical type/declaration environment for aliases and enums, nominal identity, imported uses, duplicate/cycle errors and payload patterns. |
+| R14 reified matrix kinds | G13 | Canonical dimensionless kind lowering into the existing declared dimension environment; exact closed-kind/bytecode identity and bounds. |
+| R15 constrained-type contract | G12 | Review the six explicit decisions in CONTRACT-DECISIONS-TYPES.md before any constrained-type implementation. Acceptance pairs cover boundaries/domains/enforcement sites; silent erasure is excluded. |
+| R16 pattern functions | G19 | Canonical callable pattern bodies, ordered first match, partial-match runtime failure, lexical formulas and homogeneous matrix/set lifting. Depends on control/value owners above. |
+| R17 recursive calls | G20 | Bounded canonical runtime call/continuation storage; FUN07–FUN10 base/branch/tail/capture/limit/rollback cells. Recursion is already required, not a new language decision. |
+| R18 FSM continuation | G14 | FSM01–FSM13 specified declarations, transition/capture/persistence, async timing/fairness and rollback. This is a semantic prerequisite outside compiler adapters. |
+| R19 activation scopes | G15 | ACT01–ACT10 stable/pattern triggers, activation edge ownership, captures and rollback. Preserve the frozen v0.4 exclusion of context sends inside scopes. |
+| R20 ordered graph identity | G16 | ProgramCompiler shared transitive explicit roots, caller output order, once-only provider planning and later-root failure rollback. |
+| R21 authority retirement | G21 | Replace remaining tree compiler/cache/interactive/module-index authorities after their responsibility-specific cells qualify. No parser shim. |
+| R22 browser adoption | G22 | Actual retained-document bootstrap, replacement/capture and REPL/documentation loading; served/bundled complete applications and negative stale/error cases. |
+| R23 distribution closure | G23, G24 | Retarget deleted-parser tests/examples, reviewed certification assumption/hash updates, exact final feature matrix and all54 production consumer cells. |
 
-The proposed branch names are reserved scope labels, not claims that remote PRs exist.
-Creating the branches/draft PRs and moving #828 to an umbrella/reference role is the
-next repository-only action after the extraction layout is reviewed. No semantic fixes
-are prerequisites to that extraction. If an intermediate build requires another hunk,
-move that prerequisite hunk into its owning earlier PR; do not add a shim or change
-behavior. Record moves in the ownership ledger.
+## Qualification ownership across both stacks
 
-Extraction completion is executable: compare the final extracted tree to frozen B
-(excluding audit-only files), and run each PR's stated dependency/profile checks.
-An arbitrary chronological cut through the current commits is insufficient because
-those commits interleave syntax, semantics, compiler, backend and browser changes.
+[The ownership crosswalk](qualification-ownership.tsv) assigns every compiler,
+schema, rule, control, consumer, catalog, target and gap acceptance cell to one
+primary boundary above. Its 341 relations include all 480 catalog candidates in
+34 groups and all 18 compiler/schema constructions that still lack exact tests.
+[Qualification ownership](QUALIFICATION-OWNERSHIP.md) explains supporting owners
+and the explicit links for all 115 O03 observations. Missing tests belong to their
+responsibility's E/R boundary; R23 integrates the final matrix. The linked ledgers
+remain the authority for evidence and expected behavior. Run
+`python3 docs/design/grammar-audit/s8-replacement-audit/verify-qualification-ownership.py`
+to check complete membership and links without executing behavioral tests.
 
-## Second stack: explicit corrective prerequisites
+These are review boundaries, not an estimate that each takes one small patch.
+Nominal declarations, constrained types, recursive execution and FSM continuation include substantial prerequisite work. The concrete coverage
+ledgers attach finite positive, rejection and blocked obligations; they are not
+waived by observational harness totals. New demonstrated root causes must amend
+the register and owning boundary before implementation can resume. The current
+freeze remains active while the audit and extraction receive review.
 
-These are new corrective PR scopes, each targeting the preceding prerequisite after
-extraction. They may be authored independently, but a single dependency order keeps
-qualification unambiguous. This table is an acceptance plan, not authorization to
-implement its undecided language contracts.
-
-| PR | Gap IDs | Closed scope and acceptance boundary |
-| --- | --- | --- |
-| R1 numeric contracts | G01, G02, G03 | c32 basic resident support; source/target signature admission; catalog exposure and missing min/max binding decision. Enumerate the supported signatures before editing kernels. All 17 scalar kinds remain in the matrix. |
-| R2 selected updates and dynamic reads | G04, G17 | Occurrence-ordered RMW through mixed and nested selections; logical-read population/shape ownership. Validate noncommutative updates, repeats, masks, changing shapes, overflow and abort preservation. |
-| R3 activation and variable-cardinality consumers | G05, G18 | Static control-backed initializer scheduling and runtime downstream collection layout. No general control-language expansion. Source/bytecode activation, two turns, empty result and state rollback. |
-| R4 structural control values | G06, G09 | Closed scalar/composite control bindings/yields and structural match patterns. Include named rest/destructuring, guard bindings and codec/publication identity. |
-| R5 composed and computed control | G07, G08 | Nested match/comprehension composition and executable computed patterns. Shared block/capture/shape ownership; lexical scope and partial-match rejection. |
-| R6 nominal declarations | G10, G11 | Canonical alias/enum environment and nominal identity. Declarations, uses, imports, duplicate/cycle errors and variant patterns. |
-| R7 constrained/reified types | G12, G13 | First write the constrained-schema and unsized reified-kind contract. Then implement or explicitly reject only what that reviewed contract excludes. No opportunistic special case. |
-| R8 callable function semantics | G19, G20 | Pattern bodies plus a reviewed bounded recursion execution model. Depends on R4/R5. Factorial is a canary, not the entire acceptance surface. |
-| R9 FSM/activation semantics | G14, G15 | A separately reviewed continuation/effect lifecycle design followed by declaration, transition, guard, async/fairness, activation and persistence implementation. Depends on the same control/value owners. This substantial prerequisite does not belong inside compiler adapter work. |
-| R10 ordered graph correctness | G16 | Shared identity through transitive paths to explicit roots, caller output order, once-only provider planning, and later-root rejection rollback. |
-| R11 real browser cutover | G22 | Replace actual document bootstrap/loader/REPL paths, then run complete bundle/served/browser positive and negative contracts, including stale dependency text. |
-| R12 retirement and certification | G21, G23, G24 | Delete old tree compiler/cache authority; retarget the enumerated test/example/dependency manifest; repair certification assumptions; run final exact-head matrix and all 27 contracts. |
-
-These 12 scopes are not an estimate of 12 equally small fixes. R7/R8/R9 require
-acceptance/design decisions; R4/R5 span real semantic families. Until those decisions
-and the extraction layout are reviewed, the scope is **not accepted as bounded enough
-to resume implementation**. The six qualification packages O01–O06 remain explicit
-work attached to these PRs; they cannot be waived by passing the observational harness.
-
-Review order stays: implement an accepted scope, validate its required witnesses,
-reply to every relevant note, resolve addressed threads, then request another review.
-CI may run asynchronously, but no claimed seal may refer to a different head.
+After scope acceptance the operating procedure remains: implement the bounded
+slice, validate, reply to all relevant notes and resolve addressed threads, then
+request another review. CI may run asynchronously; a seal requires its exact head.

@@ -1,0 +1,170 @@
+{
+  "base": "0c8a95794d230a5099c32cc6dac8207745f22e0f",
+  "frozen": "662d29b79df8ab05a25bbadb941a689fd5bd5aae",
+  "copied": [
+    {
+      "path": "src/runtime/src/runtime/program/compiler.rs",
+      "symbol": "ProgramCompiler canonical root/resolved/ordered/interactive/options APIs",
+      "frozen_start_byte": 7087,
+      "frozen_line": 189,
+      "bytes": 2853,
+      "sha256": "36d62239a1d30a8867ea9de5c5f5d40a93516607a79080469b201fe089fd13d0",
+      "at_byte": 6957,
+      "remove_bytes": 0,
+      "remove_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "src/runtime/src/runtime/program/compiler.rs",
+      "symbol": "CanonicalGraphCompilation and constructor",
+      "frozen_start_byte": 22628,
+      "frozen_line": 625,
+      "bytes": 781,
+      "sha256": "58a06a0ef1f3fd3ab55e128fbd99f2a5b84a34a81c22b16e1c3ea6834d1e3ff8",
+      "at_byte": 21141,
+      "remove_bytes": 0,
+      "remove_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "src/runtime/src/runtime/program/compiler.rs",
+      "symbol": "ProgramCompilerView canonical roots/root/resolved/graph/import/identity closure",
+      "frozen_start_byte": 36020,
+      "frozen_line": 986,
+      "bytes": 22230,
+      "sha256": "7d331f60d4ab6ab0d080deb89de5f933498dd22a36bbf3e6a29690387ba1ca17",
+      "at_byte": 34533,
+      "remove_bytes": 0,
+      "remove_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "src/runtime/src/resolver/canonical_handoff.rs",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 14549,
+      "sha256": "b9a58d1c9f288ac00cdcc3b2d84c6301dc4758b7a3cf91ccc3e8c39c46ce01aa",
+      "at_byte": 0,
+      "remove_bytes": 13617,
+      "remove_sha256": "c6ce1c22d4686782a0bf25a099115bc0c8ce9b4b76d280e3e06a55d2a1ee0151"
+    },
+    {
+      "path": "src/runtime/src/runtime/program/query_tests/source.rs",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 12539,
+      "sha256": "269713c14091b1fced1aa5bb6086eb616fe626152902b6aadb32eaa38993056b",
+      "at_byte": 0,
+      "remove_bytes": 8898,
+      "remove_sha256": "6fd0fec9a267a81937ceee17a54c9d55b03f258aed9d970b071395fc63df82ea"
+    },
+    {
+      "path": "src/runtime/tests/canonical_declaration_handoff.rs",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 15560,
+      "sha256": "d47ca2d829fb0e5ede078c3056c14ed129d4a0be8297e0e55fe815a4a1dcefc4",
+      "at_byte": 0,
+      "remove_bytes": 13095,
+      "remove_sha256": "3bbe204fc3861cec9e34ed63e0d0aca0f4357f303f73258d9e04a9ae41ba5299"
+    },
+    {
+      "path": "src/runtime/src/runtime/module/tests/source_document_transfer.rs",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 15582,
+      "sha256": "1e3dbbd34264911b0fd66c4a8a7060c7d4cd99490860fca0ade13609f71cc3c0",
+      "at_byte": 0,
+      "remove_bytes": 15502,
+      "remove_sha256": "fcbe3ad210c308e7b4b8ebde64d41226fc47e922a2510c4aa8bad829192f1a6a"
+    },
+    {
+      "path": "src/runtime/src/resolver/file.rs",
+      "symbol": "malformed retained-source fixture only",
+      "frozen_start_byte": 42146,
+      "frozen_line": 1248,
+      "bytes": 527,
+      "sha256": "877ce0f9318fe4536df6b71d7442491b1f23535316a740416a59ca06a8fec3a7",
+      "at_byte": 42047,
+      "remove_bytes": 656,
+      "remove_sha256": "01d67c7d14824671acd7d1cf3a7d58865104cda715f5321dd4665a24c8bf6eb9"
+    },
+    {
+      "path": "src/runtime/src/runtime/program/tests.rs",
+      "symbol": "explicit_root_imported_by_an_earlier_root_still_joins_the_combined_artifact",
+      "frozen_start_byte": 91552,
+      "frozen_line": 2758,
+      "bytes": 1830,
+      "sha256": "08d82876ea3a4358faca65c17855dc389e4973bb04970427fc142ad229450b5d",
+      "at_byte": 85664,
+      "remove_bytes": 1463,
+      "remove_sha256": "38476ebebf9d245604ef77f0c57c9bc6e314ff45ffbcfadfff5707500a15bd8e"
+    },
+    {
+      "path": "src/runtime/src/runtime/program/tests.rs",
+      "symbol": "explicit_dependency_root_plans_provider_reads_exactly_once",
+      "frozen_start_byte": 93391,
+      "frozen_line": 2816,
+      "bytes": 1823,
+      "sha256": "409c630452c16cc12dab87c53d17a968479b96e83d530acd3056f995fcc9bb9b",
+      "at_byte": 87503,
+      "remove_bytes": 1472,
+      "remove_sha256": "61f524346870ab1314dd4d1bd2e7c3affcef7077bebf89c392e46604e8862563"
+    },
+    {
+      "path": "src/runtime/src/runtime/program/tests.rs",
+      "symbol": "canonical_uncalled_functions_do_not_bind_resource_inputs",
+      "frozen_start_byte": 211713,
+      "frozen_line": 6000,
+      "bytes": 1304,
+      "sha256": "d4883fe34b1f959ce76674455bbbb982420b36c776d5f38b51fd7c94410fa945",
+      "at_byte": 207150,
+      "remove_bytes": 0,
+      "remove_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "src/runtime/src/runtime/program/tests.rs",
+      "symbol": "canonical_resolved_and_rooted_interactive_compilation_preserve_revision_and_symbols",
+      "frozen_start_byte": 213017,
+      "frozen_line": 6028,
+      "bytes": 4004,
+      "sha256": "e180cfd50d5e50e0794016f82fb29093db9542fa0d42dd7f1c10ff2a51981eb7",
+      "at_byte": 208454,
+      "remove_bytes": 0,
+      "remove_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "src/runtime/src/runtime/program/tests.rs",
+      "symbol": "canonical_interactive_root_keeps_resource_authority_and_dependency_errors",
+      "frozen_start_byte": 217021,
+      "frozen_line": 6160,
+      "bytes": 1655,
+      "sha256": "cde763b5d7b29a7d720b7df2d165aad391e5ebe29cea7809bb18bfc74c28c0b6",
+      "at_byte": 212458,
+      "remove_bytes": 0,
+      "remove_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "src/runtime/src/runtime/program/tests.rs",
+      "symbol": "canonical_ordered_roots_share_prior_definitions_and_reject_invalid_edges",
+      "frozen_start_byte": 225723,
+      "frozen_line": 6368,
+      "bytes": 2661,
+      "sha256": "12b328e152f7202231026011b7435e306f8af2f415934a91f58abfc29bcbeb46",
+      "at_byte": 214113,
+      "remove_bytes": 0,
+      "remove_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "added_program_test_names": [
+    "canonical_uncalled_functions_do_not_bind_resource_inputs",
+    "canonical_resolved_and_rooted_interactive_compilation_preserve_revision_and_symbols",
+    "canonical_interactive_root_keeps_resource_authority_and_dependency_errors",
+    "canonical_ordered_roots_share_prior_definitions_and_reject_invalid_edges"
+  ],
+  "replaced_program_test_names": [
+    "explicit_root_imported_by_an_earlier_root_still_joins_the_combined_artifact",
+    "explicit_dependency_root_plans_provider_reads_exactly_once"
+  ]
+}

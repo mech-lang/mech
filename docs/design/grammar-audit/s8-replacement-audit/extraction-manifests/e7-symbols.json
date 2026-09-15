@@ -1,0 +1,50 @@
+{
+  "base": "ef30e7e8196c9a6f941363b5397780e0f7d09529",
+  "frozen": "662d29b79df8ab05a25bbadb941a689fd5bd5aae",
+  "copied": [
+    {
+      "path": "src/runtime/src/interactive.rs",
+      "symbol": "complete frozen lifecycle implementation and owned tests",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 94078,
+      "sha256": "557ff641c980c5a6f85bc95c3b2c670eca696cae9c028414dfbc2ce480b3c10b",
+      "at_byte": 0,
+      "remove_bytes": 63164,
+      "remove_sha256": "654c24fbca12e17b48d9161a9778181d32bea3703992ce42c42f35b6c1abb0ea"
+    },
+    {
+      "path": "src/engine/src/resident/general/execution.rs",
+      "symbol": "complete frozen file: three deferred refresh_output_projections hunks",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 138458,
+      "sha256": "5a5da0c5ae58b987ebac0883da48c63dd63649bfde144d58d5517ed3cf104b0b",
+      "at_byte": 0,
+      "remove_bytes": 134629,
+      "remove_sha256": "686e92f1b849bc492257409fe5b5cefd0dea5c1c725e096cced43432da541017"
+    },
+    {
+      "path": "src/runtime/src/runtime/program/query.rs",
+      "symbol": "complete frozen file: matching candidate_artifact refresh caller",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 33695,
+      "sha256": "31ab9689dde082a4e0873800bd92d70943178a5f935bed5b1fce37cab00eadf2",
+      "at_byte": 0,
+      "remove_bytes": 33674,
+      "remove_sha256": "5e56b9df601f6ce28946f5254ba9d4e397c3f2f64143dc4af4bdbdcac012c93e"
+    },
+    {
+      "path": "src/runtime/src/runtime/program/tests.rs",
+      "symbol": "canonical_interactive_uses_configured_resource_planning",
+      "frozen_start_byte": 218676,
+      "frozen_line": 6202,
+      "bytes": 2966,
+      "sha256": "5efaf3274ff6437cf543a62dd8ce4ff187f5c0ea05b63ab1f3f73cec23d87e3b",
+      "at_byte": 216774,
+      "remove_bytes": 0,
+      "remove_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}

@@ -1,0 +1,289 @@
+{
+  "base": "199b42d5d96d221645235c46f044c3d8ddb7532b",
+  "frozen": "662d29b79df8ab05a25bbadb941a689fd5bd5aae",
+  "copied": [
+    {
+      "path": "Cargo.toml",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 23508,
+      "sha256": "48744d3e73ce6d351c40845a8abc322092a0e7e088ac89907d690c5030f7d078",
+      "at_byte": 0,
+      "remove_bytes": 23336,
+      "remove_sha256": "a4a2a2bfe2807d273699e94d5125fc487d38d46bcfe5a1283e543d1522bc6902",
+      "new_file": false,
+      "mode": "100644"
+    },
+    {
+      "path": "include/static-project.js",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 4234,
+      "sha256": "8ac469cb6c2ddb6ac11959661f83f3019cde508a1dd465ab33de46b89da9424d",
+      "at_byte": 0,
+      "remove_bytes": 3752,
+      "remove_sha256": "a74cd139828fa07396e819b65984e8fdfc9f0a860d6ec397e3b357ef79afdf40",
+      "new_file": false,
+      "mode": "100644"
+    },
+    {
+      "path": "scripts/smoke-bundle-web.sh",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 5752,
+      "sha256": "9ca49142e72efb4c9ebb26e846b45a2e68d772d69500f8dee43bbab7a5043663",
+      "at_byte": 0,
+      "remove_bytes": 5623,
+      "remove_sha256": "ff055d929bbe6ff64adb459f4c4ca02ef728a7f83ac2495b3628952bcaabbc84",
+      "new_file": false,
+      "mode": "100755"
+    },
+    {
+      "path": "scripts/smoke-canonical-compute-browser.py",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 6037,
+      "sha256": "192043cc4ddd287f444b1100467753ad213b14aafd97334dc6f7e0b8a5d9847f",
+      "at_byte": 0,
+      "remove_bytes": 0,
+      "remove_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "new_file": true,
+      "mode": "100644"
+    },
+    {
+      "path": "scripts/tests/static-project.test.mjs",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 2778,
+      "sha256": "05af67f26de55fd3025122a9543f013534a3783c70db99e11c65c432d9451b02",
+      "at_byte": 0,
+      "remove_bytes": 0,
+      "remove_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "new_file": true,
+      "mode": "100644"
+    },
+    {
+      "path": "src/browser_planning.rs",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 3818,
+      "sha256": "c3c759a17364580aabbfb0d41a7af7b8dcf8442bcebb398c0d48ddc3b89c16ee",
+      "at_byte": 0,
+      "remove_bytes": 0,
+      "remove_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "new_file": true,
+      "mode": "100644"
+    },
+    {
+      "path": "src/build/tests/standard_host_source_planning.rs",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 15232,
+      "sha256": "9d2a5808f02fa74d1e01ab941157b619bd0a7bab570f7f52a5168a2e734053df",
+      "at_byte": 0,
+      "remove_bytes": 13178,
+      "remove_sha256": "6ff83a0dedb70f03f96988fd87af73b7248e36a6fe1ceab5de4a949d58dc814a",
+      "new_file": false,
+      "mode": "100644"
+    },
+    {
+      "path": "src/bundle_planning.rs",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 2833,
+      "sha256": "5f10f0e2e024534dca07d486e4257eb54dc78dace9316627a03132af032578a6",
+      "at_byte": 0,
+      "remove_bytes": 0,
+      "remove_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "new_file": true,
+      "mode": "100644"
+    },
+    {
+      "path": "src/bundle_presentation.rs",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 4958,
+      "sha256": "a522e68aec10d04ac42189859ab5ca7bdfebb84724228505ddc1014b2dcff03c",
+      "at_byte": 0,
+      "remove_bytes": 0,
+      "remove_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "new_file": true,
+      "mode": "100644"
+    },
+    {
+      "path": "src/bundle_web.rs",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 72780,
+      "sha256": "76286eeb94d98fb4604221e0370b6de46172e35a081608da1168967cfefa7fce",
+      "at_byte": 0,
+      "remove_bytes": 57230,
+      "remove_sha256": "e76b1de86d9c0504f9de040e71c014e25b7088761a7ffd0c9fac9a6a288eceb6",
+      "new_file": false,
+      "mode": "100644"
+    },
+    {
+      "path": "src/cli/compute.rs",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 6683,
+      "sha256": "8af4ef6b74c2c00f1702c3c4ce9acfd50d202e16fdb2016a326e6540b5f538b0",
+      "at_byte": 0,
+      "remove_bytes": 6731,
+      "remove_sha256": "c541802ef41a8348da2bc29cdc6bb7bc1082bc20788c189961e681dec3627b38",
+      "new_file": false,
+      "mode": "100644"
+    },
+    {
+      "path": "src/lib.rs",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 5781,
+      "sha256": "923693a76e6d90bb3de3955e373e55277e38b17869d21b3600ef0c5a43e0863c",
+      "at_byte": 0,
+      "remove_bytes": 5576,
+      "remove_sha256": "91d99ea0d56d94a4ebf65457a05648a53749038d39d7ddf3480da89adf752487",
+      "new_file": false,
+      "mode": "100644"
+    },
+    {
+      "path": "src/runtime/src/document_render.rs",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 81895,
+      "sha256": "02cd1721de97c9a9d4199870464351058c7b0462579c39c1c85fd35f6a854d48",
+      "at_byte": 0,
+      "remove_bytes": 81005,
+      "remove_sha256": "d154c767e2810a0ab33f843b4bd6a01565898c3c45039b6f8bb211773e109048",
+      "new_file": false,
+      "mode": "100644"
+    },
+    {
+      "path": "src/runtime/src/resolver/file.rs",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 62629,
+      "sha256": "ef50b445177c4691f0940401a9a38eb08a81550dd57606a64695bb6b9a4b6642",
+      "at_byte": 0,
+      "remove_bytes": 62530,
+      "remove_sha256": "4de6780aa7b6af88149f34eae72ac7c53e048d7024314d77bd8ed2e5c750476b",
+      "new_file": false,
+      "mode": "100644"
+    },
+    {
+      "path": "src/runtime/src/runtime/program/bundle.rs",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 7041,
+      "sha256": "a5be8dd40fbf58e01f0907e900f2961dfa0085ab74a04e80eabfe9c363708fcc",
+      "at_byte": 0,
+      "remove_bytes": 0,
+      "remove_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "new_file": true,
+      "mode": "100644"
+    },
+    {
+      "path": "src/runtime/src/runtime/program/mod.rs",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 2783,
+      "sha256": "7cbf3eb03ec7202f8fe86702947d9ed79f2caae2f28d31bfed10eb219c873f57",
+      "at_byte": 0,
+      "remove_bytes": 2559,
+      "remove_sha256": "1f1930a598ad3fc7aa43dd5b9cda0ca38c3a27b6d17260a763cc215171d3fa4f",
+      "new_file": false,
+      "mode": "100644"
+    },
+    {
+      "path": "src/runtime/tests/canonical_document_render.rs",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 30518,
+      "sha256": "59cf85e06104150096069b2c32fb16116a0f06ebb899bcb6da8db2ded9a6f739",
+      "at_byte": 0,
+      "remove_bytes": 29996,
+      "remove_sha256": "ac9954dbb9ca8c46337ed390c5c814e74f87d2d549c0497fe6555788fe34db99",
+      "new_file": false,
+      "mode": "100644"
+    },
+    {
+      "path": "src/wasm/src/mixed_compute.rs",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 101553,
+      "sha256": "cfd7c849d72863179048cf1250391ed411f25eb2fb51639fe356726eb46a11c1",
+      "at_byte": 0,
+      "remove_bytes": 99429,
+      "remove_sha256": "1d56cf9aecde7acccd268ae8b0bb0bbb10be4fdb699711a2fad77d2af8692d22",
+      "new_file": false,
+      "mode": "100644"
+    },
+    {
+      "path": "src/wasm/src/project.rs",
+      "symbol": "complete frozen file",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 222280,
+      "sha256": "db178719f127b0c5851e6ecc9d419d6cd5530f225b718f19dff0caa647fd9ff4",
+      "at_byte": 0,
+      "remove_bytes": 219545,
+      "remove_sha256": "4dbef70ff89485d5d7e17dfccd4c1b32816eacd33ee15740e7197cb157c0c5a6",
+      "new_file": false,
+      "mode": "100644"
+    }
+  ],
+  "new_tests": {
+    "src/build/tests/standard_host_source_planning.rs": [
+      "every_standard_provider_plans_canonical_source_to_bytecode",
+      "canonical_context_alias_preserves_the_resolved_resource_owner"
+    ],
+    "src/bundle_presentation.rs": [
+      "stock_shims_own_one_title_and_one_article"
+    ],
+    "src/bundle_web.rs": [
+      "canonical_bundle_root_executes_with_transitive_source_exports",
+      "canonical_bundle_dependencies_use_configured_resource_planning_values",
+      "canonical_bundle_admits_documented_browser_assignments",
+      "canonical_bundle_uses_file_resolver_import_candidates",
+      "canonical_bundle_prefers_resolved_source_modules_to_catalog_modules",
+      "canonical_source_module_errors_do_not_fall_back_to_catalog_functions",
+      "bundle_web_rejects_multiple_run_roots_before_emitting_assets",
+      "canonical_bundle_serves_prose_without_requiring_an_artifact",
+      "canonical_bundle_rejects_missing_and_cyclic_dependencies",
+      "canonical_bundle_compiler_installs_configured_timer_contracts"
+    ],
+    "src/runtime/src/runtime/program/bundle.rs": [
+      "canonical_bundle_rejects_stale_source_and_retired_tree_payload"
+    ],
+    "src/runtime/tests/canonical_document_render.rs": [
+      "source_body_preserves_front_matter_without_duplicate_framing"
+    ]
+  },
+  "remaining_e11_paths": [
+    ".github/workflows/ci-full.yml",
+    ".github/workflows/ci.yml",
+    "docs/design/grammar-audit/s8-consumer-readiness.tsv",
+    "docs/design/grammar-audit/s8-removal-manifest.tsv",
+    "docs/design/syntax-s8-execution-rehearsal.mec",
+    "src/syntax/tests/source_parser_consumer_inventory.rs",
+    "src/syntax/tests/support/cutover_contract.rs"
+  ]
+}

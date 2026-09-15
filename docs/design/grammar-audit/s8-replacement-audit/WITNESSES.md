@@ -1,15 +1,27 @@
 # Executable witnesses and evidence boundaries
 
 Run the audit from its frozen-B-based branch. `run-probes.sh` defaults to a recording
-run. `MECH_AUDIT_REQUIRE_PASS=1` turns observed failures into failing tests. For
-contract-decision rows, that switch is a reproducer of missing successful behavior,
-not authorization to implement a currently unsupported operation. After the target
-contract decision, negative acceptance must assert the precise planning error and
-that no host effect occurred; an activation failure is not sufficient.
+run. `MECH_AUDIT_REQUIRE_PASS=1` turns a mismatch with the selected oracle into a
+failing test. Current target rejection fixtures retain a second, positive milestone
+oracle: select it with `MECH_AUDIT_REQUIRE_CAPABILITY=1`. A correct current rejection
+does not satisfy that positive obligation or authorize a scope exclusion.
+Visibility negatives require a planning error. Target capability negatives instead
+check the exact activation rejection for both source and decoded artifacts;
+pure artifact compilation is not required to activate a target. Production loader
+acceptance separately checks rejection before installation or host effects.
 
 ```sh
 # All source/bytecode probes and method/graph/catalog/transport observations.
 ./docs/design/grammar-audit/s8-replacement-audit/run-probes.sh
+
+# G02: current target rejection is correct (passes at the frozen baseline).
+MECH_AUDIT_CASE=numeric-c32-add MECH_AUDIT_REQUIRE_PASS=1 \
+  ./docs/design/grammar-audit/s8-replacement-audit/run-probes.sh semantic_replacement_witnesses
+
+# The same case still lacks its positive capability (fails at the frozen baseline).
+MECH_AUDIT_CASE=numeric-c32-add MECH_AUDIT_REQUIRE_PASS=1 \
+  MECH_AUDIT_REQUIRE_CAPABILITY=1 \
+  ./docs/design/grammar-audit/s8-replacement-audit/run-probes.sh semantic_replacement_witnesses
 
 # G04: confirmed repeated-selection wrong result.
 MECH_AUDIT_CASE=mixed-repeated MECH_AUDIT_REQUIRE_PASS=1 \
@@ -33,6 +45,11 @@ python3 docs/design/grammar-audit/s8-replacement-audit/verify-inventory.py
 
 Every semantic case has its specific executable command in
 `semantic-obligations.tsv`. No selector is allowed to execute zero cases.
+The wrapper accepts only the six exact audit test names, rejecting a misspelled
+filter before Cargo. Each test emits the identity of its compiled fixture and
+harness bytes; the recorder refuses logs whose execution identity differs from
+the current inputs. It also requires the complete source/route/catalog/visibility
+record census before replacing stored observations.
 Use the recorded `expected-json` and the underlying fixture source to inspect the
 oracle. `source-bytecode-equivalence-only` is explicitly an open O03 obligation.
 
@@ -75,3 +92,46 @@ The actual product/backend qualification commands remain those in the frozen
 consumer readiness rows and maintained CI workflow. A command or fixture name in
 that inventory is a required obligation until an exact-head result is recorded;
 this audit does not mark unexecuted commands passing.
+
+## Exact value and binding boundary witnesses
+
+The schema suite is strict and enters through `CapturedValueInput` and
+`prepare_turn_values`, where schema admission is defined. Raw
+`CapturedSignalInput` is already typed/physical and is not a public arbitrary
+snapshot validator. Empty Dynamic storage is representable; its presence is not
+an error oracle. See SCHEMA-BOUNDARY-RECONCILIATION.md for the discarded harness
+mistakes and the independent expected values used by the corrected tests.
+
+```sh
+# 31 strict tests:26 positive scalar/structural binding cases plus 5 validation negatives.
+CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 CARGO_INCREMENTAL=0 \
+  cargo +nightly-2026-03-03 test --locked -p mech-runtime --no-default-features \
+  --features full_compiler,full_source,resident-routing-source,compute \
+  --test s8_replacement_schema_audit -- --nocapture --test-threads=1
+
+# G25: minimal foreign-schema constant binding bytecode failure.
+CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 CARGO_INCREMENTAL=0 \
+  cargo +nightly-2026-03-03 test --locked -p mech-runtime --no-default-features \
+  --features full_compiler,full_source,resident-routing-source,compute \
+  --test s8_replacement_schema_audit exact_scalar_u8 -- --exact --nocapture
+
+# G26: already-Dynamic identity changes during constant binding.
+CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 CARGO_INCREMENTAL=0 \
+  cargo +nightly-2026-03-03 test --locked -p mech-runtime --no-default-features \
+  --features full_compiler,full_source,resident-routing-source,compute \
+  --test s8_replacement_schema_audit exact_generic_dynamic -- --exact --nocapture
+
+# G03: same configured catalog, explicit negative/positive visibility pairs.
+MECH_AUDIT_REQUIRE_PASS=1 \
+  ./docs/design/grammar-audit/s8-replacement-audit/run-probes.sh source_visibility_witnesses
+```
+
+The final schema record credits 26 live source and 26 live bytecode phases,
+25 constant-bound source phases and two constant-bound bytecode phases. All five
+separate validation negatives pass. G25 has 23 manifestations; G26 has one.
+These are two shared binding defects, not 24 new type families to implement.
+
+`record-observations.py COMPLETE_LOG [TARGETED_RERUN_LOG ...]` merges serial
+source audit records by exact record/case/route identity, validates the full
+fixture census and records fixture/harness/log hashes. A targeted rerun cannot erase
+another case. Original checkpoint evidence remains separate.

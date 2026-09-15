@@ -1,0 +1,316 @@
+{
+  "base": "7d0db6edecba11f89899995bbc63b6d6c0c1d9ce",
+  "frozen": "662d29b79df8ab05a25bbadb941a689fd5bd5aae",
+  "copied": [
+    {
+      "path": "src/runtime/src/runtime/program/compiler.rs",
+      "symbol": "imports, CanonicalProgramCompilationError, retained_compiler_document",
+      "sha256": "a9c1d743345b56a8efeb6a51cfcd6395a866d6befc25a3da41dbaccc6f2d90c7",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 3682
+    },
+    {
+      "path": "src/runtime/src/runtime/program/compiler.rs",
+      "symbol": "ProgramCompiler::compile_document",
+      "sha256": "d0f03fe07cb11b950657b9cd7146b42358d3af918ed1c3f309bf64bb36bd198d",
+      "frozen_start_byte": 6904,
+      "frozen_line": 182,
+      "bytes": 183
+    },
+    {
+      "path": "src/runtime/src/runtime/program/compiler.rs",
+      "symbol": "ProgramCompiler interactive_document/canonical_source",
+      "sha256": "800396b1f59713dc8f81f6e5f786d1ae4546494c32f15b559932907deb2ea486",
+      "frozen_start_byte": 9940,
+      "frozen_line": 269,
+      "bytes": 637
+    },
+    {
+      "path": "src/runtime/src/runtime/program/compiler.rs",
+      "symbol": "ProgramCompiler document artifact/input/initializer/static APIs",
+      "sha256": "e281f172763a35d9f2ca7b23f09e79188f68428310e81615d663461626f9e73b",
+      "frozen_start_byte": 11449,
+      "frozen_line": 310,
+      "bytes": 2938
+    },
+    {
+      "path": "src/runtime/src/runtime/program/compiler.rs",
+      "symbol": "CanonicalDocumentPlanning",
+      "sha256": "6fe5d8cb412ce1fdcce5f06d6d36193932f29ea8f62584bcf7145f403a3a5eb5",
+      "frozen_start_byte": 23409,
+      "frozen_line": 647,
+      "bytes": 240
+    },
+    {
+      "path": "src/runtime/src/runtime/program/compiler.rs",
+      "symbol": "ProgramCompilerView ordinary projection/planning/validation methods",
+      "sha256": "896707f2948f2474f52c946d8bbbe97c531eae135a4a04c29a91553daef666cc",
+      "frozen_start_byte": 24799,
+      "frozen_line": 688,
+      "bytes": 11221
+    },
+    {
+      "path": "src/runtime/src/runtime/program/compiler.rs",
+      "symbol": "canonical_document_resources",
+      "sha256": "cb49666302e45a685941f78d9d6ce2b9423dd04c55d9769f34ec1bba4b486352",
+      "frozen_start_byte": 58250,
+      "frozen_line": 1516,
+      "bytes": 7811
+    },
+    {
+      "path": "src/runtime/src/runtime/program/compiler.rs",
+      "symbol": "preflight_canonical_effect_payloads/execute_named_canonical_outputs",
+      "sha256": "96a9de64ec0a28daaffc51c26db7b86da0cfdbb59fb4c753eba6827e9db39587",
+      "frozen_start_byte": 107635,
+      "frozen_line": 2742,
+      "bytes": 3090
+    },
+    {
+      "path": "src/runtime/src/runtime/program/compiler.rs",
+      "symbol": "resolve_canonical_context_bindings/canonical_resource_send_operations",
+      "sha256": "e9f0b219ce789dbef8e84c0d68462fdc54b278d74dfe27414182543ad87e7690",
+      "frozen_start_byte": 128503,
+      "frozen_line": 3349,
+      "bytes": 3264
+    },
+    {
+      "path": "src/runtime/src/runtime/program/value.rs",
+      "symbol": "complete frozen file",
+      "sha256": "8bdc7f3c9e2080721b12d5cd62bfb2651826f5781bdd361aa53d4572736a50b2",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 3110
+    },
+    {
+      "path": "src/runtime/src/runtime/program/loading.rs",
+      "symbol": "complete frozen file",
+      "sha256": "f4f4daf3874e0a95b9774c17fb0250f3e93ba64aa44de1e1e8eafd6c172ff92b",
+      "frozen_start_byte": 0,
+      "frozen_line": 1,
+      "bytes": 30249
+    },
+    {
+      "path": "src/runtime/src/runtime/program/query.rs",
+      "symbol": "MechRuntime::program_output_id",
+      "sha256": "c4e53d02b77e5ace54fe86f34c71a532a2963f541664125404d62affa941ad22",
+      "frozen_start_byte": 5043,
+      "frozen_line": 131,
+      "bytes": 492
+    },
+    {
+      "path": "src/runtime/src/runtime/program/tests.rs",
+      "symbol": "canonical_resource_planning_excludes_inactive_document_owners",
+      "sha256": "6a32d6b84a8fd47e3c3b9681ddcbc5e9b1d7302e32e76daa39c3f8e3a98e0ca4",
+      "frozen_start_byte": 184381,
+      "frozen_line": 5303,
+      "bytes": 967
+    },
+    {
+      "path": "src/runtime/src/runtime/program/tests.rs",
+      "symbol": "canonical_native_sidecars_cover_every_encoded_instruction",
+      "sha256": "f58e456233b444c77239c98c9bdd72a0eb6f7dadc87356821a785f2599c34a46",
+      "frozen_start_byte": 185349,
+      "frozen_line": 5331,
+      "bytes": 747
+    },
+    {
+      "path": "src/runtime/src/runtime/program/tests.rs",
+      "symbol": "canonical_trailing_resource_send_preserves_implicit_result",
+      "sha256": "2e5dcc6dcaa650eaf595a257b7b4ba5bef39a6524beb54a10fb68c778bb355c4",
+      "frozen_start_byte": 186097,
+      "frozen_line": 5349,
+      "bytes": 1302
+    },
+    {
+      "path": "src/runtime/src/runtime/program/tests.rs",
+      "symbol": "canonical_planning_test_document",
+      "sha256": "ad531a4de2283f4e9d6e2dfa09270763e2d4290b2b7e20aa36b989047dcfb75b",
+      "frozen_start_byte": 187400,
+      "frozen_line": 5382,
+      "bytes": 292
+    },
+    {
+      "path": "src/runtime/src/runtime/program/tests.rs",
+      "symbol": "canonical_planning_values_remain_constants_and_live_defaults_are_detached",
+      "sha256": "10caeeb0637ef46d4b8f229339268d38a7f60d86b9adf9616559ade455ba4dc1",
+      "frozen_start_byte": 187693,
+      "frozen_line": 5392,
+      "bytes": 2760
+    },
+    {
+      "path": "src/runtime/src/runtime/program/tests.rs",
+      "symbol": "canonical_static_symbols_filter_and_detach_matrix_values",
+      "sha256": "319c2230ee28c4571a2106b8353e966122b00d03b11a9aa7b2f6509223875f8c",
+      "frozen_start_byte": 190454,
+      "frozen_line": 5466,
+      "bytes": 1831
+    },
+    {
+      "path": "src/runtime/src/runtime/program/tests.rs",
+      "symbol": "canonical_document_functions_inline_typed_named_calls_without_leaking_bindings",
+      "sha256": "bbf406996b2192b8387affd906770164111818d5056d2abd3998770d4bd29312",
+      "frozen_start_byte": 192286,
+      "frozen_line": 5520,
+      "bytes": 1765
+    },
+    {
+      "path": "src/runtime/src/runtime/program/tests.rs",
+      "symbol": "canonical_static_symbol_result_does_not_alias_the_implicit_result",
+      "sha256": "710e317cf2f867e119e67a4f548879c017291b2501b00d2891f8fe38664305c7",
+      "frozen_start_byte": 195060,
+      "frozen_line": 5580,
+      "bytes": 814
+    },
+    {
+      "path": "src/runtime/src/runtime/program/tests.rs",
+      "symbol": "canonical_functions_do_not_capture_caller_symbols_or_existing_inputs",
+      "sha256": "96097f2cbb217384d467179826f1d5d0b817f6b5c05de18d6e50e32593b724da",
+      "frozen_start_byte": 195875,
+      "frozen_line": 5602,
+      "bytes": 1058
+    },
+    {
+      "path": "src/runtime/src/runtime/program/tests.rs",
+      "symbol": "canonical_functions_admit_configured_resource_inputs_on_first_use",
+      "sha256": "aa2e2b7af5eb579a5e87bc11676d039fd08e7a9ccf309db92746036a7570d993",
+      "frozen_start_byte": 196934,
+      "frozen_line": 5628,
+      "bytes": 979
+    },
+    {
+      "path": "src/runtime/src/runtime/program/tests.rs",
+      "symbol": "canonical_resource_defaults_do_not_create_unselected_live_observations",
+      "sha256": "5547432bfafb233b0fa694b4bb028ffe67a32af7f5bcd5b625d48146f0b45227",
+      "frozen_start_byte": 197914,
+      "frozen_line": 5649,
+      "bytes": 1222
+    },
+    {
+      "path": "src/runtime/src/runtime/program/tests.rs",
+      "symbol": "canonical_tuple_destructure_consumes_local_function_outputs",
+      "sha256": "e037f3b0bb82f4d8761738f83ee9af505a46c8b170ead05557810c2fd67cdcae",
+      "frozen_start_byte": 199137,
+      "frozen_line": 5675,
+      "bytes": 1013
+    },
+    {
+      "path": "src/runtime/src/runtime/program/tests.rs",
+      "symbol": "canonical_document_function_imports_use_catalog_exports",
+      "sha256": "ea829f54bd0db84350cc227124da5ea6c05388ca106e1286d82e69199876ed59",
+      "frozen_start_byte": 202462,
+      "frozen_line": 5759,
+      "bytes": 1135
+    },
+    {
+      "path": "src/runtime/src/runtime/program/tests.rs",
+      "symbol": "canonical_constant_range_shapes_follow_the_declared_cardinality",
+      "sha256": "f2b5bffd2813de7766fb2db5ef761a8c56be695ea6f4a6567c79925af8d802e8",
+      "frozen_start_byte": 203598,
+      "frozen_line": 5794,
+      "bytes": 829
+    },
+    {
+      "path": "src/runtime/src/runtime/program/tests.rs",
+      "symbol": "canonical_dimensionless_matrix_annotations_preserve_inferred_shapes",
+      "sha256": "58c313cb38a7a73de01fe66ef22ec05f001ff388c303d68b0cfe2f47ebc71380",
+      "frozen_start_byte": 204428,
+      "frozen_line": 5815,
+      "bytes": 2892
+    },
+    {
+      "path": "src/runtime/src/runtime/program/tests.rs",
+      "symbol": "canonical_resource_planning_closes_provider_matrix_shapes",
+      "sha256": "5e31404aeede6d5287dbf3edb1fe18b8f3f52b5db2a19a25f1cce4ad99a80a47",
+      "frozen_start_byte": 207321,
+      "frozen_line": 5893,
+      "bytes": 1190
+    },
+    {
+      "path": "src/runtime/src/runtime/program/tests.rs",
+      "symbol": "canonical_static_projection_preserves_independent_integrity_constraints",
+      "sha256": "7d5e1fd89b0b8b5c2ab7c5ec3ff5605287ff184457c61011fc3fac212f515d35",
+      "frozen_start_byte": 209801,
+      "frozen_line": 5949,
+      "bytes": 633
+    },
+    {
+      "path": "src/runtime/src/runtime/program/tests.rs",
+      "symbol": "canonical_static_projection_drops_unrelated_unbound_inputs",
+      "sha256": "7917b77adbe3e6e57e9b73864e063222768a5435ef32f32e9f980c3719e4c05c",
+      "frozen_start_byte": 210435,
+      "frozen_line": 5964,
+      "bytes": 1278
+    },
+    {
+      "path": "src/runtime/src/runtime/program/tests.rs",
+      "symbol": "canonical_interactive_resource_planning_does_not_execute_host_effects",
+      "sha256": "6d9589c64e5b30f96a53165a89e0f256376b314276c931e4668587b9290baa60",
+      "frozen_start_byte": 221643,
+      "frozen_line": 6267,
+      "bytes": 2807
+    },
+    {
+      "path": "src/runtime/src/runtime/program/tests.rs",
+      "symbol": "canonical_planned_selectors_enforce_portable_index_width_before_activation",
+      "sha256": "69e874df33c210569483896e1ffc76d0d99f0844f8046842a3fa2afcbe557cfb",
+      "frozen_start_byte": 224451,
+      "frozen_line": 6339,
+      "bytes": 726
+    },
+    {
+      "path": "src/runtime/src/runtime/program/tests.rs",
+      "symbol": "canonical_missing_provider_keeps_the_public_route_failure_class",
+      "sha256": "1d52bc0f41a1bc5cae0f24896a8bf56046759df9a2ab051d3192cf4e9c2d8155",
+      "frozen_start_byte": 225178,
+      "frozen_line": 6354,
+      "bytes": 545
+    },
+    {
+      "path": "src/runtime/src/runtime/program/tests.rs",
+      "symbol": "canonical_fizzbuzz_preserves_constraints_and_presentation_through_bytecode",
+      "sha256": "0f07cab6ddc76e9d9a9e434ac8058a566ef47cff985504c5b6c393132caaec7d",
+      "frozen_start_byte": 228385,
+      "frozen_line": 6445,
+      "bytes": 1851
+    }
+  ],
+  "copied_test_names": [
+    "canonical_resource_planning_excludes_inactive_document_owners",
+    "canonical_native_sidecars_cover_every_encoded_instruction",
+    "canonical_trailing_resource_send_preserves_implicit_result",
+    "canonical_planning_test_document",
+    "canonical_planning_values_remain_constants_and_live_defaults_are_detached",
+    "canonical_static_symbols_filter_and_detach_matrix_values",
+    "canonical_document_functions_inline_typed_named_calls_without_leaking_bindings",
+    "canonical_static_symbol_result_does_not_alias_the_implicit_result",
+    "canonical_functions_do_not_capture_caller_symbols_or_existing_inputs",
+    "canonical_functions_admit_configured_resource_inputs_on_first_use",
+    "canonical_resource_defaults_do_not_create_unselected_live_observations",
+    "canonical_tuple_destructure_consumes_local_function_outputs",
+    "canonical_document_function_imports_use_catalog_exports",
+    "canonical_constant_range_shapes_follow_the_declared_cardinality",
+    "canonical_dimensionless_matrix_annotations_preserve_inferred_shapes",
+    "canonical_resource_planning_closes_provider_matrix_shapes",
+    "canonical_static_projection_preserves_independent_integrity_constraints",
+    "canonical_static_projection_drops_unrelated_unbound_inputs",
+    "canonical_interactive_resource_planning_does_not_execute_host_effects",
+    "canonical_planned_selectors_enforce_portable_index_width_before_activation",
+    "canonical_missing_provider_keeps_the_public_route_failure_class",
+    "canonical_fizzbuzz_preserves_constraints_and_presentation_through_bytecode"
+  ],
+  "deferred_test_names": [
+    "canonical_mixed_document_owns_partitioning_and_typed_initializers",
+    "canonical_rooted_mixed_compilation_shares_transitive_imports_and_initializers",
+    "canonical_mixed_document_retains_batched_activation_values",
+    "canonical_mixed_source_inlines_user_function_graphs",
+    "canonical_mixed_source_retains_tuple_destructured_results",
+    "canonical_mixed_shipped_ekf_region_compiles",
+    "canonical_mixed_shipped_particle_region_initializes",
+    "canonical_uncalled_functions_do_not_bind_resource_inputs",
+    "canonical_resolved_and_rooted_interactive_compilation_preserve_revision_and_symbols",
+    "canonical_interactive_root_keeps_resource_authority_and_dependency_errors",
+    "canonical_interactive_uses_configured_resource_planning",
+    "canonical_ordered_roots_share_prior_definitions_and_reject_invalid_edges"
+  ]
+}

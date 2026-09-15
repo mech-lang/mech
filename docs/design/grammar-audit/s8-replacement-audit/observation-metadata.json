@@ -1,0 +1,44 @@
+{
+  "production-baseline": "662d29b79df8ab05a25bbadb941a689fd5bd5aae",
+  "fixture-sha256": "ec9473ea28db22c1a38d849fe4fa5304d8b186ded870a51135602d14e1700679",
+  "harness-sha256": "adccf100bdbdd163be41ea71a0fd6a6b23abf6422828ddbe934e8abe165b3252",
+  "execution-input-identity": {
+    "version": 1,
+    "algorithm": "fnv1a64",
+    "harness_bytes": 20869,
+    "harness_fingerprint": "8511b0214797a184",
+    "fixture_bytes": 90123,
+    "fixture_fingerprint": "cca168bbd9186b0a"
+  },
+  "evidence-logs": [
+    {
+      "name": "s8-audit-published-contracts.log",
+      "sha256": "060acb2c9000aa5a2ca267b3298d55a78b94a9c10fae4232f7b54276845b7cbf"
+    }
+  ],
+  "records": {
+    "AUDIT_BROWSER": 1,
+    "AUDIT_ROUTE": 18,
+    "AUDIT_GRAPH": 1,
+    "AUDIT": 375,
+    "AUDIT_CATALOG": 120,
+    "AUDIT_VISIBILITY": 12
+  },
+  "semantic-stages": {
+    "pass": 317,
+    "activation": 35,
+    "wrong-value": 2,
+    "lowering": 21
+  },
+  "semantic-contract-comparisons": {
+    "pass": 329,
+    "fail": 46
+  },
+  "current-target-rejection-matches": 27,
+  "positive-target-capabilities-executed": 0,
+  "invalid-original-positive-fixtures": [
+    "activation-scope",
+    "fsm-pipe"
+  ],
+  "interpretation": "Stage pass is execution, not contract certification. Negative calls can wrongly execute successfully. Invalid original positives remain historical observations, not positive semantic witnesses. Missing expected output values prove equivalence only."
+}

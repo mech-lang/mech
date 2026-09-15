@@ -21,11 +21,15 @@ report authorizes deleting a language family or silently narrowing its contract.
 - Audit-only tests, fixtures, records, and documents are on this branch. Numeric
   implementation WIP in the original B worktree is excluded.
 
-The initial 364-case run had 294 pass observations and 70 failures. Correcting
-23 probe mistakes yields 317 pass observations and 47 failures. These totals
-count fixture observations, not capabilities or root causes. The additional statement-body recursion witness brings the final census to 365
-probes: 317 pass observations and 48 failures. All are in observations.json. A result with no explicit
-expected value proves admission/execution and source/bytecode agreement only.
+The initial 364-case record is preserved as a discovery checkpoint. The current
+375-case run distinguishes execution observations from contract outcomes. There
+are 317 successful execution observations; 15 of those are wrongly admitted
+Internal named calls. The contract comparison therefore reports 302 execution matches plus 27 verified current-target rejections, with 46 other unmatched observations before reconciliation of the two invalid original control positives. The 27 rejection matches leave their positive capability obligations open. These are neither capability counts nor independent defect counts.
+The 51 ModuleOnly named samples now have imports, and all 17 Internal named
+samples require planning rejection. The separate 12-observation visibility test
+contains two confirmed canonical admission violations. Every row records its
+oracle strength; a value without an independent expectation remains equivalence-only.
+The exact-schema suite contains 26 positive identity/binding cases and five separate validation-boundary negatives. All 26 live source/bytecode paths pass; 23 constant-bound bytecode paths fail under G25 and Dynamic constant identity fails under G26. Bool/String and all five actual validation-boundary negatives pass. These results are separate from the source census.
 
 The existing canonical engine integration targets executed 179 passing tests.
 The disabled-operation profile separately executed its one test under `source`
@@ -50,49 +54,53 @@ based on the responsible branch/owner in frozen source:
 
 | ID | Owner and bounded responsibility | Demonstrated witness / acceptance |
 | --- | --- | --- |
-| G01 | Engine resident numeric binding: c32 basic arithmetic and reduction | `scalar-c32`, `numeric-c32-{add,sub,mul,div}`, `matrix-c32-{add,sub,mul,div,sum}`, `matrix-repeat-c32`. Basic advertised complex32 operations must execute and preserve type/value through bytecode and subsequent turns. Power/matmul admission is G02. |
-| G02 | Core source operation schemes and target capability admission | Same-kind powers for u64/u128, signed integers, c32/c64/r64, and complex/rational matrix products currently lower then fail kernel binding. Reconcile supported signatures with resident factories; unsupported target combinations must reject during planning, before host effects. Do not invent new numeric powers to make probes green. Rational-to-i32 power already passes. |
-| G03 | Catalog exposure / ordinary resident operation binding | `catalog-compare-max`, `catalog-compare-min` lower and fail with MissingResidentFactory. Both exports are Internal. Explicitly decide whether ordinary source calls must reject Internal exports or whether these operations require a resident factory; apply the chosen exposure rule consistently, not just to these spellings. |
+| G02 | Configured numeric/layout capability scope and physical target owners | Four finite unimplemented capability families remain: c32 basic/reduction/updates (11 source manifestations), powers (10), complex/rational matmul (3), and f32 special-binary broadcast (1). Pure compile_document may correctly produce an artifact whose configured target rejects at activation; production loading already preflights before installation/effects. These observations do not prove a compiler preflight bug. They also do not prove an accepted milestone exclusion: positive capability witnesses stay open pending explicit scope acceptance. See the 46 target cells for current rejection and milestone coverage as separate axes. |
+| G03 | Canonical named-call environment and catalog exposure | The existing FunctionEnvironment contract is definitive: Internal exports are syntax-only, ModuleOnly names require imports, Prelude names are visible. The dedicated paired shipping/canonical visibility test confirms canonical wrong admission for Internal compare/max and unimported math/cos, with successful imported, aliased, Prelude and operator controls. All 17 direct Internal catalog samples are negative obligations; adding resident factories would not fix the violated contract. |
 | G04 | Canonical selected-assignment lowering | `mixed-repeated`, `nested-repeated`. Fused addressed RMW is conditional on same element kind and no remaining selectors; fallback gathers old values then replaces, losing occurrence-ordered accumulation. Preserve the same occurrence contract through promotion and nested paths, including overflow rollback. |
 | G05 | Resident activation dependency classification | `match-initializer`, `comprehension-initializer`. Control producers remain turn-only even when all dependencies are available at activation. Classify their dependencies and initialize state once without replaying effects or allowing live-only initializers. |
-| G06 | Resident comprehension value storage/binding | `comprehension-i32`, `comprehension-string`, `comprehension-composite`. The resident control layout admits only its primitive subset despite richer artifact schemas. Qualify bindings, captures, and yields for the closed scalar/structural census, including destructuring and rest bindings. |
+| G06 | Resident comprehension retained value storage/binding | i32, String and composite comprehension bindings/yields fail in the resident control storage owner. Existing primitive tuple/array destructuring and compound match-result publication already pass and are preserved. Qualify exact schema/value identity for retained bindings, captures and yields using the closed schema cells; do not reimplement working destructuring. |
 | G07 | Canonical control-block composition | `comprehension-match`, `comprehension-nested`. Collection bodies accept only ordinary operations and require closed element shapes. Lower nested control into the shared control representation; specify and test shape ownership for nested collections. No special-case source rewrites. |
 | G08 | Canonical computed-pattern evaluation | `comprehension-computed-pattern`. Lower an explicit pattern evaluation block with lexical captures and ordered filtering; do not turn arbitrary expressions into literal-only comparisons. |
 | G09 | Canonical match-pattern lowering | `match-tuple`. Match lowering accepts scalar literal, wildcard and bind forms, rejecting structural patterns. Qualify tuple/array/tagged patterns, binding scopes, guards, non-match behavior and exhaustiveness. |
 | G10 | Canonical semantic declaration environment: kind definitions | `kind-alias`. Collector rejects KindDefine. Resolve aliases through the canonical type environment, including uses in functions and aggregates; diagnose duplicate/cyclic/invalid declarations at retained anchors. |
 | G11 | Canonical semantic declaration environment: enums | `enum-declaration`. Collector rejects EnumDefine. Construct nominal enum identity, payload schemas, variant values and pattern use through the same type authority. |
-| G12 | Canonical constrained-type semantics | `constrained-kind`. Scalar constraints explicitly reject because there is no constrained schema representation. This is a prerequisite design/implementation decision, not a compiler adapter fix. Define validation and artifact identity before implementation. |
-| G13 | Canonical reified kind construction | `reified-inferred-matrix`. A reified matrix kind without dimensions rejects while ordinary dimensionless matrix annotations can infer dimensions from a value. Decide whether unsized reified kinds are valid independently of a value; encode the answer in positive or positioned negative tests. Do not conflate this with the already-supported annotated value case. |
-| G14 | Canonical FSM declarations and resident continuation owner | `fsm-pipe` reaches an artifact and fails activation; document FSM declarations are explicitly rejected by the collector. Required acceptance is the specification's FSM state/transition/guard/async semantics, persistence, resource effects and fairness. The old completion ledger's “intentionally unavailable” is not product completion. |
-| G15 | Canonical activation-scope semantics | `activation-scope`. Collector rejects ActivationScope. Define activation-arm evaluation/ownership and connect it to the same control/effect owner; syntax recognition alone is insufficient. |
+| G12 | Canonical constrained-type contract prerequisite | The grammar admits scalar range constraints; earlier code discarded them and the canonical frontend explicitly rejects represented constrained annotations. Six named design decisions in CONTRACT-DECISIONS-TYPES.md cover meaning, domains, evaluation, identity/transport, enforcement and type relations. This is the remaining unresolved language-contract prerequisite, not permission to erase constraints or claim permanent rejection completes the family. |
+| G13 | Canonical dimensionless reified-kind lowering | The specification already permits dimensionless matrix kinds, and ReifiedKind already carries declared dimension parameters. Lower the two independent axes through that representation; assert bounds/lifetime, closed kind structure, exact identity and bytecode. No external matrix value or new wire authority is required. |
+| G14 | Canonical FSM declaration and resident continuation owner | Declared increment and named-input FSM witnesses pass syntax/index and hit the explicit FsmSpecification lowering rejection. FSM01-FSM13 name the required declaration, transition, capture, persistence, async timing, fairness, limits and rollback contracts already specified by the language. The older undeclared fsm-pipe sample is not a positive machine-execution witness. |
+| G15 | Canonical activation-scope lowering and runtime lifecycle | Valid stable-trigger and patterned-trigger witnesses hit the explicit ActivationScope lowering rejection. ACT01-ACT10 preserve the existing activation edge, arm, capture, ownership and rollback contracts. The original expression-trigger sample is an invalid positive expectation. Context sends inside activation scopes remain excluded by the frozen v0.4 gate contract; do not add them to this scope. |
 | G16 | ProgramCompiler ordered dependency graph ownership | `ordered_transitive_explicit_root_witness`. Only direct edges to explicit roots become shared live bindings; a transitive path is detached into constant exports. Two explicit roots must share the same dependency instance through intermediates, preserve caller output order, and plan each provider once. Required output is `1`, then `2`, not `1`, then `1`. |
-| G17 | Resident shape planning for computed logical reads | `logical-read`. The selected population is not available as an activation shape fact. Support the maintained dynamic-read contract through changing masks and abort/commit, or identify a pre-existing fixed-population input requirement explicitly; never substitute an unused-write fix. |
-| G18 | Resident downstream layout for variable-cardinality collection results | `dynamic-concat`. Direct comprehension output works; a downstream concatenation cannot bind its runtime layout. Qualify concat, transpose and nested publication against current cardinality, including empty and changed results. G07 owns constructing nested control; this item owns its consumer layout. |
-| G19 | Canonical function body lowering | `pattern-function`, `factorial`. Only FunctionDefineStatements is found by the inliner. Lower match-bodied functions using canonical pattern/control semantics, with typed argument/output binding and exact source anchors. |
-| G20 | Canonical recursive function execution | Statement-body recursion witness isolates the inliner's active-function rejection from G19. Recursion cannot be completed by unbounded inlining. Define its bounded execution/continuation contract and test base case, recursion, limits and rollback. |
-| G21 | C retirement: compiler/tree/cache authority | Frozen C still exposes tree compiler methods that invoke `plan_artifact_tree_with_services`; interactive `from_tree` and old Program storage survive. Remove these authorities after their responsibility-specific replacements qualify. Mechanical parser deletion alone does not close this item. |
+| G17 | Computed logical-mask shape capability and activation-fact responsibility | The direct logical-read witness supplies no ActivationFacts and receives UnresolvedShape; existing Q09 explicitly requires a population fact and preserves a fixed-population contract. Pure ProgramCompiler is not required by the inspected API contract to infer arbitrary masks. Closed/computed mask admission remains a finite shape-capability/production-boundary obligation for scope review, not a demonstrated compiler defect or a silently accepted exclusion. Changing mask population remains explicitly outside the current fixed-population contract. |
+| G18 | Resident downstream comprehension layout capability | Direct comprehension publication exists, while concat/transpose bind fixed dimensions. Current rejection of an unresolved downstream shape is permitted and does not demonstrate missing preflight. The S8 coverage plans do not establish an accepted exclusion of this composed capability; retain the 1x4 and changed-cardinality positive value/shape witnesses with the resident layout owner for scope review. Correct current rejection does not complete this work. |
+| G19 | Canonical pattern-function body lowering and collection lifting | Pattern-bodied calls reject before execution; valid broadcast, ordered first-match and partial-match probes isolate this owner. FUN01-FUN06 retain typed binding, lexical formulas, homogeneous matrix/set lifting and ordered branch behavior. Functions permit a partial branch set and report no matching output at runtime; do not import ordinary match exhaustiveness unchanged. Recursion probes that hit this rejection are blocked here, not independent G20 evidence. |
+| G20 | Canonical bounded recursive call execution | The statement-recursion witness isolates active-function rejection from pattern-body lowering. Recursion and collection lifting are already required by the specification; implementation needs bounded call/continuation storage, not unbounded inlining. FUN07-FUN10 enumerate base/branch/tail behavior, limits, value capture and rollback; pattern-bodied cases also depend on G19. |
+| G21 | C retirement: compiler, interactive and module-index tree authority | Frozen C still exposes tree compiler methods calling plan_artifact_tree_with_services, interactive from_tree/Program storage, and module-index preference for an optional Program tree. Replace each responsibility after its named compiler/consumer cells qualify. Parser deletion alone cannot close those competing authorities. |
 | G22 | C browser document transport and lifecycle | `browser_document_payload_witness` exercises the exact old decoder/type against the canonical producer payload. `interactive_tree` in frozen C ignores candidate source. Migrate document bootstrap, capture, replacement and documentation execution to retained documents and canonical artifacts. Prove real browser loading, changed source, hidden/local outputs, failed replacement and stale transitive dependency rejection. |
 | G23 | C build/test retirement closure | Engine `--lib --no-run` fails on deleted parser references. Retarget the finite manifest of tests/examples and remove obsolete source features/dependencies; execute each distribution with nonzero test counts. This is not an invitation to retain a parser shim. |
-| G24 | Semantic certification maintenance | `every_semantic_rule_meets_its_required_witness_outcome` and `semantic_evidence_distinguishes_non_wire_shape_values_and_slot_ownership` fail after constant-shape improvements. Rebuild shape-sensitive witnesses that still exercise non-wire shape ownership; update fingerprints only after reviewing actual artifact differences. Also review the failed canonical snapshot-import allowance in syntax certification; preserve the canonical-authority enforcement. |
+| G24 | Semantic certification maintenance | `every_semantic_rule_meets_its_required_witness_outcome` and `semantic_evidence_distinguishes_non_wire_shape_values_and_slot_ownership` fail after constant-shape improvements. Rebuild shape-sensitive witnesses that still exercise non-wire shape ownership; update fingerprints only after reviewing actual artifact differences. Also review certification_evidence_uses_only_canonical_authorities snapshot-import allowance; keep enforcement. |
+| G25 | Canonical constant binding and artifact schema canonicalization | Binding a detached Value imports a schema table with preserved IDs; canonical artifact emission retains that noncanonical order, and its bytecode decoder rejects NonCanonicalSchemaId. 23 exact scalar/structural cases share this cause. Direct live source/bytecode publication succeeds. Recanonicalize schema identity and all references at the owning artifact boundary; verify exact bound-source/bytecode value identity and independently owned schema tables. |
+| G26 | Canonical Dynamic constant binding identity | bind_input_constants unconditionally wraps a supplied Value for a Dynamic target, even when that Value is already Dynamic. The bound source artifact changes its exact value hash by adding a second wrapper; live source and decoded publication preserve the correct single wrapper. Preserve already-Dynamic identity while wrapping a bare payload once; test both forms and changed payload schemas. This is independent of G25 schema-order decoding. |
 
-G03, G12, G13, G14, G15 and G20 contain explicit contract/architecture decisions.
-They are named prerequisites with acceptance criteria, not permission to invent
-semantics during an S8B fix. Their outcome may be a documented supported-target
-rejection only where the language/target contract actually permits that outcome.
+G12 contains six unresolved constrained-type design decisions. G02/G17/G18 also retain explicit target-capability scope acceptance: correct current rejection cannot close their positive milestone obligations. G03/G13 and
+FSM/activation/function requirements are already constrained by repository
+contracts, as reconciled in CONTRACT-DECISIONS-TYPES.md and
+CONTRACT-DECISIONS-CONTROL.md. Their missing execution/storage designs are bounded
+implementation prerequisites; they are not invitations to silently narrow the
+language or turn all missing kernels into new language work.
 
 ## Corrected probes and expected rejections
 
 - Matrix `stats/sum/row([1 2;3 4])` returns `[4 6]`, not `[3;7]`.
   The latter is the column operation. Fourteen false wrong-value observations
-  disappear; c32 reduction still fails binding (G01).
+  disappear; c32 reduction still fails late binding (the same G02 target-admission boundary).
 - Subtracting 2 from a matrix containing unsigned 1 correctly fails checked
   arithmetic. Five probes now subtract 1 to exercise a valid success domain.
 - Bessel jn/yn source schemes use floating inputs. Two probes now use `2.0`.
-- Two Internal set export names contain underscores and are not direct lexical
+- Two Prelude set export names contain underscores and are not direct lexical
   function spellings. Their maintained operator spellings (`≠`, `⊂`) execute.
-- Same-kind rational power is not the maintained rational/integer exponent
-  contract. `rational-integral-pow` exercises that valid contract successfully.
-  The overbroad source admission remains G02; a missing new power is not inferred.
+- The current target implements scalar r64/i32 power; `rational-integral-pow`
+  exercises it successfully. Same-kind rational power remains an unimplemented
+  CAP-POWER capability with its positive witness retained. Semantic admission,
+  current target rejection and milestone scope are separate questions.
 - Dynamic-to-concrete casting, materialized Empty, negative/out-of-range extents,
   heterogeneous invalid comparisons, non-keyable set/map keys, and unbound
   names/unknown calls remain deliberate positioned rejections under their
@@ -100,57 +108,25 @@ rejection only where the language/target contract actually permits that outcome.
   rules. A rejection caused by a missing family above is not reclassified as a
   user error merely because it is cleanly reported.
 
-## Coverage accounting and explicit open obligations
+## Finite acceptance accounting
 
-The inventory crosswalk is the acceptance surface. Each row distinguishes
-inventory membership, tested examples, and coverage still owed. In particular:
+The six qualification packages retain concrete cells. An unrun cell is named
+acceptance work, never an implementation pass or an extra root cause.
 
-1. **O01 — catalog overload qualification.** The 120 exports expand to 480 explicitly identified overload/intrinsic rows
-   in `catalog-signatures.tsv`. Each export has a
-   concrete source/operator witness and its declared type schemes. The floating
-   happy-path sample is not overload coverage. For each row, enumerate the
-   admissible overload/layout cells from its scheme and target factories; test
-   both admitted and rejected cells. Do not multiply cases into independent
-   defect tickets. Each failure belongs to its demonstrated owner above or a
-   separately reviewed new root cause.
-2. **O02 — compiler-specific context qualification.** The 36 public compilation
-   entry methods are mapped individually. The 18 simple route probes establish
-   only basic dispatch. Existing named tests cover nonempty inputs, live defaults,
-   static projections, host planning, resolved revision identity and mixed
-   partitioning. Ordered transitive live roots are failing G16. Nonempty context
-   coverage must be repeated through each distinct underlying responsibility;
-   aliases can share evidence only after their delegation is checked. Cross-root
-   function resource context, transitive explicit-root provider counts, and
-   rollback after a later-root error are explicit untested cells.
-3. **O03 — independent output oracles.** Every fixture without `expected` is
-   marked as equivalence-only in the crosswalk. Add mathematical/reference output
-   and second-turn state expectations for those fixtures before counting them as
-   behavior certification. Numeric domain edge tests must use the type contract,
-   not the output from either implementation as their oracle.
-4. **O04 — production consumer qualification.** All 27 rows retain their frozen
-   positive/negative contracts. The table records actual C route adoption and
-   blockers. Prepared native adapter tests do not qualify browser execution.
-   Full configured particle and EKF applications must run through CLI, served and
-   browser boundaries on the eventual deleted-code candidate; extracted regions
-   and kernel benchmarks are insufficient. G22 currently blocks browser document
-   routes, G23 blocks the full distribution test build.
-5. **O05 — backend/feature matrix.** Repeat affected source-to-artifact activation,
-   two-turn publication and rejection/rollback under CPU, SIMD, JIT, native GPU
-   and browser WebGPU profiles, plus reduced/no-source/bytecode consumers. Record
-   exact head, command, target and nonzero count. Historical runs on other heads
-   remain historical evidence. The precise maintained feature matrix is the
-   existing `.github/workflows/ci-full.yml`, not a newly invented all-features
-   Cartesian product.
-6. **O06 — rule and schema semantic closure.** The 80-rule semantic inventory and
-   131 S7 disposition rows are accounted for separately from 112 S7 syntax
-   witnesses. Syntax/structural membership is not execution. The 17 builtin scalar
-   kinds and every SchemaBody variant retain named positive, rejection or blocked
-   obligations. G06/G09/G10/G11/G12/G14/G15/G19/G20 block the corresponding semantic
-   families. The shape-sensitive certification repairs are G24.
+| Package | Exact worklist and evidence boundary |
+| --- | --- |
+| O01 catalog | 480 candidate rows / 120 names / 34 shared families in catalog-acceptance-cells.tsv. Each row has its exact candidate layout, kind domain, target domain, source exposure/recipe, boundary cells and independent oracle. Candidate-specific resolution must identify the actual candidate; an export sample cannot certify competing overloads. |
+| O02 compiler/frontend | compiler-acceptance-cells.tsv: 53 responsibility cells covering 36 public compiler methods, 18 CanonicalSourceFrontend methods, six CanonicalSourceProgram methods and three internal compiler entrances. Existing named tests, observed failures and 14 precise untested obligations are separate. Nonempty input, transitive provider, context ownership, options identity and later-root rollback cells are explicit. |
+| O03 output identity/oracles | semantic-obligations.tsv labels every explicit two-turn value, negative planning contract and equivalence-only sample. schema-acceptance-cells.tsv adds 17 exact scalar identity and nine structural generic-Value probes plus existing codec/live evidence. RuntimeHostInputValue has 20 admitted input forms but only four returned/default forms; P29 specifies an unrun census of that actual asymmetry instead of assuming all schemas use this adapter. |
+| O04 production consumers | consumer-acceptance-cells.tsv: 54 positive/negative cells across the frozen 27 contracts, actual production boundary, executable recipe, expected policy, exact-head evidence and blocker. 24 recorded passes, five partial, nine untested and 16 blocked are distinct from 134 passing prepared-adapter tests. Complete configured applications and actual browser publication remain required. |
+| O05 configured backends | The maintained workflow matrix is .github/workflows/ci-full.yml, not an invented all-features Cartesian product. Each affected acceptance cell must retain its CPU/SIMD/JIT/native GPU/browser WebGPU and reduced/no-source/bytecode execution or explicit configured rejection at the final head. Extraction checks are recorded separately and cannot substitute for final distribution qualification. |
+| O06 grammar/control/schema | rule-crosswalk.tsv and rule-acceptance-links.tsv account for 80 Phase2I rules plus 131 S7 dispositions, separately from 112 S7 syntax witnesses. control-acceptance-cells.tsv names 33 FSM/activation/function/recursion cells. schema-acceptance-cells.tsv names 64 cells covering every SchemaBody variant. Structural membership, artifact codec and live exact value publication remain distinct proofs. |
 
-These are six finite qualification work packages with enumerated inventory rows;
-they are not six more runtime defects. No suite total is used to hide an untested
-cell. The crosswalk deliberately retains those cells until evidence closes them.
+The ledgers make the remaining test responsibilities enumerable without claiming
+an exhaustive Cartesian product of infinite source programs. Recursive owners
+retain their existing resource/property tests. A new observed root cause must
+amend this register and its owning corrective boundary before production work;
+it must not silently expand S8B.
 
 ## Review boundaries: extract accumulated work before more implementation
 
