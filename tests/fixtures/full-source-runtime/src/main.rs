@@ -80,6 +80,10 @@ fn main() {
             .into_value();
         assert_expected(case, actual);
     }
+    println!(
+        "source product probe passed: {} catalog cases and rooted source canary",
+        names.len()
+    );
 }
 
 fn assert_expected(case: &SourceCase, actual: Value) {
