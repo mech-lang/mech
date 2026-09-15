@@ -1,0 +1,41 @@
+   Compiling mech-core v0.3.5 (/private/tmp/mech-syntax-s8r25-compute-read-planning/src/core)
+   Compiling nom v8.0.0
+   Compiling nom-unicode v0.4.0
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-syntax-s8r25-compute-read-planning/src/stdlib)
+   Compiling mech-syntax v0.3.5 (/private/tmp/mech-syntax-s8r25-compute-read-planning/src/syntax)
+   Compiling mech-bytecode v0.3.5 (/private/tmp/mech-syntax-s8r25-compute-read-planning/src/bytecode)
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-syntax-s8r25-compute-read-planning/src/engine)
+   Compiling mech-set v0.3.5 (/private/tmp/mech-syntax-s8r25-compute-read-planning/machines/set)
+   Compiling mech-math v0.3.5 (/private/tmp/mech-syntax-s8r25-compute-read-planning/machines/math)
+   Compiling mech-compute v0.3.5 (/private/tmp/mech-syntax-s8r25-compute-read-planning/src/compute)
+   Compiling mech-runtime v0.3.5 (/private/tmp/mech-syntax-s8r25-compute-read-planning/src/runtime)
+   Compiling mech-combinatorics v0.3.5 (/private/tmp/mech-syntax-s8r25-compute-read-planning/machines/combinatorics)
+   Compiling mech-matrix v0.3.5 (/private/tmp/mech-syntax-s8r25-compute-read-planning/machines/matrix)
+   Compiling mech-stats v0.3.5 (/private/tmp/mech-syntax-s8r25-compute-read-planning/machines/stats)
+   Compiling mech-compare v0.3.5 (/private/tmp/mech-syntax-s8r25-compute-read-planning/machines/compare)
+   Compiling mech-range v0.3.5 (/private/tmp/mech-syntax-s8r25-compute-read-planning/machines/range)
+   Compiling mech-logic v0.3.5 (/private/tmp/mech-syntax-s8r25-compute-read-planning/machines/logic)
+   Compiling mech-string v0.3.5 (/private/tmp/mech-syntax-s8r25-compute-read-planning/machines/string)
+   Compiling mech-native-live-host-fixture v0.3.5 (/private/tmp/mech-syntax-s8r25-compute-read-planning/tests/fixtures/native-live-host)
+   Compiling mech-terminal v0.3.5 (/private/tmp/mech-syntax-s8r25-compute-read-planning/hosts/terminal)
+    Finished `test` profile [unoptimized] target(s) in 2m 38s
+     Running tests/canonical_mixed_resource_planning.rs (/private/tmp/mech-syntax-s8c-qualification/target/debug/deps/canonical_mixed_resource_planning-b7a1d887f29fb4c9)
+
+running 1 test
+test canonical_mixed_sample_read_is_planned_without_a_compute_provider ... FAILED
+
+failures:
+
+---- canonical_mixed_sample_read_is_planned_without_a_compute_provider stdout ----
+
+thread 'canonical_mixed_sample_read_is_planned_without_a_compute_provider' (28400996) panicked at src/runtime/tests/canonical_mixed_resource_planning.rs:13:55:
+called `Result::unwrap()` on an `Err` value: MechError { kind name: "ResidentRouteFailure", kind message: "ProviderUnavailable: resident source planning failed: MechError { kind name: \"RuntimeResourceProviderNotFound\", kind message: \"no runtime resource provider registered for scheme `compute` while reading `compute://worker/kernel`\", message: None, program_range: None, annotations: [], tokens: [], compiler_location: None, source: None }", message: None, program_range: None, annotations: [], tokens: [], compiler_location: None, source: None }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    canonical_mixed_sample_read_is_planned_without_a_compute_provider
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.16s
+
+error: test failed, to rerun pass `-p mech-runtime --test canonical_mixed_resource_planning`

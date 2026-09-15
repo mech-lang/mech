@@ -1,0 +1,14 @@
+Configured compute fixture artifacts: /private/tmp/mech-syntax-s8c-qualification/target/canonical-document-bundle-4sla5yx2
+Traceback (most recent call last):
+  File "/private/tmp/mech-syntax-s8c-qualification/scripts/smoke-canonical-document-bundle-browser.py", line 277, in <module>
+    main()
+    ~~~~^^
+  File "/private/tmp/mech-syntax-s8c-qualification/scripts/smoke-canonical-document-bundle-browser.py", line 91, in main
+    fixtures["served-compute"] = served_compute_fixture(work)
+                                 ~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "/private/tmp/mech-syntax-s8c-qualification/scripts/smoke-canonical-document-bundle-browser.py", line 57, in served_compute_fixture
+    wait_for_http(base + "/code/document.mec", server, timeout=120)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/mech-syntax-s8c-qualification/tests/browser/harness/chrome.py", line 79, in wait_for_http
+    raise BrowserFailure(f"server exited with status {process.returncode}")
+tests.browser.harness.chrome.BrowserFailure: server exited with status 1

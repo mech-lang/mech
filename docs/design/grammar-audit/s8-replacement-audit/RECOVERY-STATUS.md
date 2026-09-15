@@ -756,3 +756,20 @@ in `hosts/browser/src/pointer.rs`. Inspect paginated failed jobs from workflow
 
 **External blocker:** None for this batch. Previously recorded unrelated
 type/capability decisions remain open. Checkpoint—not complete.
+
+
+## Active checkpoint — configured document sample read reproducer
+
+**Candidate:** unchanged published C `4c901a1eaf8282cb807039513ce01ab0b3dd83b1`.
+**Completed:** rich Markdown shipping results and served particle evidence above
+remain recorded. A direct configured WasmDocument edit probe now reproduces G28
+at server compilation, before browser execution. Its failure and finite ownership
+are recorded in RECOVERY-FINDINGS.md before production implementation.
+**Remaining:** G28 prerequisite, C/G22 edit thread, all other accepted open gaps,
+required reviews and final exact-head qualification/merge.
+**Current action:** R25 canonical mixed resource planning correction on R05;
+C holds only the browser acceptance probe. R07 remains separate and idle.
+**Next action:** Run the strict canonical_mixed_resource_planning reproducer, then
+stage compute interface construction before coordinator read planning. Integrate
+subject to required review and rerun the actual configured document probe.
+**External blocker:** none for this correction. Checkpoint—not complete.

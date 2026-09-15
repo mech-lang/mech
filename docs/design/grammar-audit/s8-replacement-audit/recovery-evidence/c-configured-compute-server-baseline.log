@@ -1,0 +1,32 @@
+[Mech Server] Loading config… /private/tmp/mech-syntax-s8c-qualification/target/canonical-document-bundle-4sla5yx2/compute-project/mech.mcfg
+[Mech Server] Loaded host config entries: 1
+[Mech Server] Default filesystem grant: /private/tmp/mech-syntax-s8c-qualification (:read,:list,:watch,:resolve,:import,:serve)
+[Mech Server] Project root: /private/tmp/mech-syntax-s8c-qualification/target/canonical-document-bundle-4sla5yx2/compute-project
+[Mech Server] Loading resources…
+[Mech Server] Loading stylesheet…Using embedded resource
+[Mech Server] Using embedded default stylesheet
+[Mech Server] Loading HTML shim…Using embedded resource
+[Mech Server] Using embedded default HTML shim
+[Mech Server] Loading WASM…[Mech Server] Loaded WASM: /private/tmp/mech-syntax-s8c-qualification/src/wasm/pkg/mech_wasm_bg.wasm
+[Mech Server] Loading JS…[Mech Server] Loaded JS: /private/tmp/mech-syntax-s8c-qualification/src/wasm/pkg/mech_wasm.js
+[Mech Server] Capability requested: host://serve fs:///private/tmp/mech-syntax-s8c-qualification/target/canonical-document-bundle-4sla5yx2/compute-project recursive=true operations=:read,:serve,:watch
+[Mech Server] Capability delegated: host://serve fs:///private/tmp/mech-syntax-s8c-qualification/target/canonical-document-bundle-4sla5yx2/compute-project recursive=true operations=:read,:serve,:watch
+[Mech Server] Capability requested: host://serve fs:///private/tmp/mech-syntax-s8c-qualification/target/canonical-document-bundle-4sla5yx2/compute-project/document.mec recursive=false operations=:import,:read,:resolve,:serve,:watch
+[Mech Server] Capability delegated: host://serve fs:///private/tmp/mech-syntax-s8c-qualification/target/canonical-document-bundle-4sla5yx2/compute-project/document.mec recursive=false operations=:import,:read,:resolve,:serve,:watch
+[Mech Server] Loading workspace…
+[Mech Server] Serve input plan:
+[Mech Server]   root: /private/tmp/mech-syntax-s8c-qualification/target/canonical-document-bundle-4sla5yx2/compute-project
+[Mech Server]   targets: 1
+[Mech Server]   folders: 0
+[Mech Server]   static inputs: 1
+[Mech Server] Workspace root: /private/tmp/mech-syntax-s8c-qualification/target/canonical-document-bundle-4sla5yx2/compute-project
+[Mech Server] Target `document` -> `document.mec`
+[Mech Server] Static input: `.`
+[Mech Server] Loading static assets…
+[Mech Server] Static assets loaded in 1.5625ms.
+[Mech Server] Opening runtime workspace session…
+[Mech Server] Runtime workspace session opened in 293.716458ms.
+[Mech Server] Watching: /private/tmp/mech-syntax-s8c-qualification/target/canonical-document-bundle-4sla5yx2/compute-project
+[Mech Server] Emitting initial workspace events…
+[Mech Server] Building served source registry views…
+Error: MechError { kind name: "ResidentRouteFailure", kind message: "ProviderUnavailable: resident source planning failed: MechError { kind name: \"RuntimeResourceProviderNotFound\", kind message: \"no runtime resource provider registered for scheme `compute` while reading `compute://worker/kernel`\", message: None, program_range: None, annotations: [], tokens: [], compiler_location: None, source: None }", message: None, program_range: None, annotations: [], tokens: [], compiler_location: None, source: None }
