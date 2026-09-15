@@ -5687,3 +5687,81 @@ fn canonical_constant_range_shapes_follow_the_declared_cardinality() {
         );
     }
 }
+
+#[test]
+fn canonical_dimensionless_matrix_annotations_preserve_inferred_shapes() {
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .unwrap();
+    for (values, expected) in [
+        ("[1.0 2.0; 3.0 4.0]", 5.0),
+        ("[1.0 2.0 3.0 4.0]", 5.0),
+        ("[1.0; 2.0; 3.0; 7.0]", 8.0),
+        ("[1f32 2f32 3f32 4f32]", 5.0),
+    ] {
+        for source in [
+            format!(
+                "values<[f64]> := {values}\nshifted := values + 1.0\nresult := shifted[4]\nresult\n"
+            ),
+            format!(
+                "last(values<[f64]>) = result<f64> := result := values[4] + 1.0.\n\nresult := last({values})\n"
+            ),
+        ] {
+            let document = canonical_planning_test_document(&source);
+            assert_eq!(
+                compiler
+                    .evaluate_static_document_symbols(&document, &["result"])
+                    .unwrap(),
+                BTreeMap::from([("result".to_owned(), RuntimeHostInputValue::F64(expected))]),
+                "{source}"
+            );
+        }
+    }
+    let document = canonical_planning_test_document(
+        "pair<([f64],[f64])> := ([1.0 2.0], [3.0;4.0;5.0])\n(left, right) := pair\nresult := left[2] + right[3]\n",
+    );
+    assert_eq!(
+        compiler
+            .evaluate_static_document_symbols(&document, &["result"])
+            .unwrap(),
+        BTreeMap::from([("result".to_owned(), RuntimeHostInputValue::F64(7.0))])
+    );
+    let document =
+        canonical_planning_test_document("matrix := values<[f64]>\nresult := matrix[4]\n");
+    for (rows, columns) in [(1, 4), (2, 2), (4, 1)] {
+        let supplied = BTreeMap::from([(
+            "values".to_owned(),
+            RuntimeHostInputValue::F64Matrix {
+                rows,
+                columns,
+                values: vec![1.0, 2.0, 3.0, 8.0],
+            },
+        )]);
+        assert_eq!(
+            compiler
+                .evaluate_static_document_symbols_with_inputs(&document, &supplied, &["result"])
+                .unwrap(),
+            BTreeMap::from([("result".to_owned(), RuntimeHostInputValue::F64(8.0))])
+        );
+    }
+    for input in [
+        RuntimeHostInputValue::F64(8.0),
+        RuntimeHostInputValue::F32Matrix {
+            rows: 2,
+            columns: 2,
+            values: vec![1.0, 2.0, 3.0, 8.0],
+        },
+    ] {
+        let supplied = BTreeMap::from([("values".to_owned(), input)]);
+        let error = compiler
+            .evaluate_static_document_symbols_with_inputs(&document, &supplied, &["result"])
+            .unwrap_err();
+        let error = format!("{error:?}");
+        assert!(
+            error.contains("source-semantics/incompatible-annotation-shape")
+                || error.contains("source-semantics/conflicting-input-kind"),
+            "{error}"
+        );
+    }
+}

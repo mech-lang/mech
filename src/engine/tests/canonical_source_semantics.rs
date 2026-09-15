@@ -1046,17 +1046,17 @@ fn canonical_numeric_kinds_annotations_strings_and_state_are_preserved() {
         constrained_optional.code,
         "source-semantics/unsupported-kind-constraint"
     );
-    for source in ["matrix<[u64]>"] {
-        assert_eq!(
-            CanonicalSourceFrontend
-                .compile_expression(&expression(source))
-                .err()
-                .expect("unsupported composite annotations must be diagnosed")
-                .code,
-            "source-semantics/unsupported-kind-annotation",
-            "{source:?}",
-        );
-    }
+    let matrix = CanonicalSourceFrontend
+        .compile_expression(&expression("matrix<[u64]>"))
+        .expect("dimensionless matrix annotations retain independent extents");
+    let schema = matrix.schemas().get(matrix.program().inputs[0].schema).unwrap();
+    let SchemaBody::Matrix { element, dimensions } = schema.body() else {
+        panic!("matrix annotation must retain its matrix schema");
+    };
+    assert_eq!(element.as_ref(), &SchemaBody::UnsignedInteger(IntegerWidth::W64));
+    assert_eq!(dimensions.len(), 2);
+    assert_ne!(dimensions[0], dimensions[1]);
+    assert_eq!(schema.dimension_parameters().len(), 2);
 
     let promoted = CanonicalSourceFrontend
         .compile_expression(&expression("1u8 + 2u16"))

@@ -364,8 +364,22 @@ impl CanonicalSourceProgram {
                         anchor: anchor(input),
                     })?
                 } else {
+                    // A closed planning schema owns no dimension parameters,
+                    // even when the supplied snapshot uses a parameterized
+                    // representation of the same concrete shape.
+                    let shape = if target.dimension_parameters().is_empty() {
+                        target.instantiate_shape(Box::new([])).map_err(|error| {
+                            SourceSemanticError {
+                                code: "source-semantics/import-value-schema-mismatch",
+                                message: format!("unable to instantiate input shape: {error:?}"),
+                                anchor: anchor(input),
+                            }
+                        })?
+                    } else {
+                        value.shape().clone()
+                    };
                     value
-                        .rebind(declaration.schema, value.shape(), &self.schemas)
+                        .rebind(declaration.schema, &shape, &self.schemas)
                         .map_err(|error| SourceSemanticError {
                             code: "source-semantics/import-value-schema-mismatch",
                             message: format!(
@@ -3665,6 +3679,13 @@ impl SemanticBuilder {
             .or_else(|| self.input_declarations.get(&name))
             .cloned()
             .unwrap_or_else(|| schema.clone());
+        let schema = if !schema.dimension_parameters.is_empty()
+            && !is_dynamic_schema_draft(&declared)
+        {
+            specialize_annotation_dimensions(&declared, &schema, variable.syntax())?
+        } else {
+            schema
+        };
         if !is_dynamic_schema_draft(&schema)
             && !is_dynamic_schema_draft(&declared)
             && schema != declared
@@ -5898,6 +5919,15 @@ impl SemanticBuilder {
             return Err(unresolved_empty(anchor));
         }
         let actual = self.schema_draft_of(value)?;
+        let specialized;
+        let expected = if !expected.dimension_parameters.is_empty()
+            && !matches!(actual.body, SchemaBody::Dynamic)
+        {
+            specialized = specialize_annotation_dimensions(&actual, expected, syntax)?;
+            &specialized
+        } else {
+            expected
+        };
         if is_dynamic_schema_draft(expected)
             || actual == *expected
             || schema_annotation_accepts(&actual.body, &expected.body)
@@ -6762,23 +6792,35 @@ fn builtin_schema_for_annotation_body(body: &SchemaBody) -> Option<BuiltinSchema
 fn annotation_schema_draft(
     annotation: &KindAnnotationSyntax,
 ) -> Result<SchemaDraft, SourceSemanticError> {
+    let mut dimensions = DimensionEnvironmentBuilder::new();
+    let body = annotation_schema_body(annotation, &mut dimensions)?;
+    Ok(SchemaDraft {
+        body,
+        dimension_parameters: dimensions.into_declarations(),
+    })
+}
+
+fn annotation_schema_body(
+    annotation: &KindAnnotationSyntax,
+    dimensions: &mut DimensionEnvironmentBuilder,
+) -> Result<SchemaBody, SourceSemanticError> {
     let kind = annotation
         .kind()
         .ok_or_else(|| missing_kind_child(annotation.syntax(), "kind annotation"))?;
     let inner = kind
         .kind()
         .ok_or_else(|| missing_kind_child(kind.syntax(), "optional kind"))?;
-    let mut body = kind_schema_body(&inner)?;
+    let mut body = kind_schema_body(&inner, dimensions)?;
     if kind.question_mark().is_some() {
         body = SchemaBody::Option(Box::new(body));
     }
-    Ok(SchemaDraft {
-        dimension_parameters: Box::new([]),
-        body,
-    })
+    Ok(body)
 }
 
-fn kind_schema_body(kind: &KindSyntax) -> Result<SchemaBody, SourceSemanticError> {
+fn kind_schema_body(
+    kind: &KindSyntax,
+    dimensions: &mut DimensionEnvironmentBuilder,
+) -> Result<SchemaBody, SourceSemanticError> {
     let value = kind
         .value()
         .ok_or_else(|| missing_kind_child(kind.syntax(), "kind"))?;
@@ -6838,10 +6880,12 @@ fn kind_schema_body(kind: &KindSyntax) -> Result<SchemaBody, SourceSemanticError
             key: Box::new(kind_schema_body(
                 &map.key()
                     .ok_or_else(|| missing_kind_child(map.syntax(), "map key kind"))?,
+                dimensions,
             )?),
             value: Box::new(kind_schema_body(
                 &map.value()
                     .ok_or_else(|| missing_kind_child(map.syntax(), "map value kind"))?,
+                dimensions,
             )?),
             cardinality: CardinalitySpec::Dynamic { upper_bound: None },
         },
@@ -6849,6 +6893,7 @@ fn kind_schema_body(kind: &KindSyntax) -> Result<SchemaBody, SourceSemanticError
             element: Box::new(kind_schema_body(
                 &set.element()
                     .ok_or_else(|| missing_kind_child(set.syntax(), "set element kind"))?,
+                dimensions,
             )?),
             cardinality: kind_extent(set.literal_constraint().as_ref())?,
         },
@@ -6859,35 +6904,39 @@ fn kind_schema_body(kind: &KindSyntax) -> Result<SchemaBody, SourceSemanticError
             let element_kind = element
                 .kind()
                 .ok_or_else(|| missing_kind_child(element.syntax(), "matrix element kind"))?;
-            let mut element = kind_schema_body(&element_kind)?;
+            let mut element = kind_schema_body(&element_kind, dimensions)?;
             if matrix
                 .element()
                 .is_some_and(|element| element.question_mark().is_some())
             {
                 element = SchemaBody::Option(Box::new(element));
             }
-            let dimensions = matrix
+            let mut extents = matrix
                 .dimensions()
                 .iter()
                 .map(kind_dimension)
                 .collect::<Result<Vec<_>, _>>()?;
-            if dimensions.is_empty() {
-                return Err(SourceSemanticError {
-                    code: "source-semantics/unsupported-kind-annotation",
-                    message: "matrix kind annotations require explicit dimensions".to_owned(),
-                    anchor,
-                });
+            if extents.is_empty() {
+                // Mech matrix values have row and column extents. An omitted
+                // shape quantifies each independently; supplied values bind
+                // them through the shared type constraint environment.
+                for _ in 0..2 {
+                    extents.push(DimensionExpr::Parameter(dimensions.declare(
+                        DimensionParameterOrigin::Inferred, DimensionLifetime::Turn,
+                        DimensionExpr::Constant(0), None,
+                    ).map_err(|error| internal(anchor, format!("{error:?}")))?));
+                }
             }
             SchemaBody::Matrix {
                 element: Box::new(element),
-                dimensions: dimensions.into_boxed_slice(),
+                dimensions: extents.into_boxed_slice(),
             }
         }
         KindValueSyntax::Tuple(tuple) => SchemaBody::Tuple(
             tuple
                 .items()
                 .iter()
-                .map(kind_schema_body)
+                .map(|kind| kind_schema_body(kind, dimensions))
                 .collect::<Result<Vec<_>, _>>()?
                 .into_boxed_slice(),
         ),
@@ -6904,7 +6953,7 @@ fn kind_schema_body(kind: &KindSyntax) -> Result<SchemaBody, SourceSemanticError
                     .map(|(name, kind)| {
                         Ok(SchemaField {
                             name: node_text(name.syntax())?,
-                            schema: annotation_schema_draft(kind)?.body,
+                            schema: annotation_schema_body(kind, dimensions)?,
                         })
                     })
                     .collect::<Result<Vec<_>, SourceSemanticError>>()?
@@ -6924,7 +6973,7 @@ fn kind_schema_body(kind: &KindSyntax) -> Result<SchemaBody, SourceSemanticError
                     .map(|(name, kind)| {
                         Ok(SchemaField {
                             name: node_text(name.syntax())?,
-                            schema: annotation_schema_draft(kind)?.body,
+                            schema: annotation_schema_body(kind, dimensions)?,
                         })
                     })
                     .collect::<Result<Vec<_>, SourceSemanticError>>()?
@@ -7005,6 +7054,93 @@ fn kind_dimension(literal: &LiteralSyntax) -> Result<DimensionExpr, SourceSemant
             message: "kind extent exceeds the canonical u64 dimension range".to_owned(),
             anchor: SourceSemanticAnchor::for_node(literal.syntax()),
         })
+}
+
+fn specialize_annotation_dimensions(
+    actual: &SchemaDraft,
+    expected: &SchemaDraft,
+    syntax: &SyntaxNode,
+) -> Result<SchemaDraft, SourceSemanticError> {
+    fn shape(kind: &KindExpr) -> KindExpr {
+        match kind {
+            KindExpr::Matrix {
+                element,
+                dimensions,
+            } => KindExpr::Matrix {
+                element: Box::new(shape(element)),
+                dimensions: dimensions.clone(),
+            },
+            KindExpr::Option(inner) => KindExpr::Option(Box::new(shape(inner))),
+            KindExpr::Tuple(items) => KindExpr::Tuple(items.iter().map(shape).collect()),
+            KindExpr::Record(fields) => KindExpr::Record(
+                fields
+                    .iter()
+                    .map(|field| KindField {
+                        name: field.name.clone(),
+                        kind: shape(&field.kind),
+                    })
+                    .collect(),
+            ),
+            KindExpr::Table { columns, rows } => KindExpr::Table {
+                columns: columns
+                    .iter()
+                    .map(|field| KindField {
+                        name: field.name.clone(),
+                        kind: shape(&field.kind),
+                    })
+                    .collect(),
+                rows: rows.clone(),
+            },
+            KindExpr::Map {
+                key,
+                value,
+                cardinality,
+            } => KindExpr::Map {
+                key: Box::new(shape(key)),
+                value: Box::new(shape(value)),
+                cardinality: cardinality.clone(),
+            },
+            KindExpr::Set {
+                element,
+                cardinality,
+            } => KindExpr::Set {
+                element: Box::new(shape(element)),
+                cardinality: cardinality.clone(),
+            },
+            _ => KindExpr::Wildcard,
+        }
+    }
+    let anchor = SourceSemanticAnchor::for_node(syntax);
+    let error = |message: String| SourceSemanticError {
+        code: "source-semantics/incompatible-annotation-shape",
+        message,
+        anchor,
+    };
+    let mut actual = actual.clone();
+    if matches!(expected.body, SchemaBody::Option(_))
+        && !matches!(actual.body, SchemaBody::Option(_))
+    {
+        actual.body = SchemaBody::Option(Box::new(actual.body));
+    }
+    let actual = ResolvedType::from_schema_body(&actual.body, &actual.dimension_parameters)
+        .map_err(|failure| error(failure.to_string()))?;
+    let expected = ResolvedType::from_schema_body(&expected.body, &expected.dimension_parameters)
+        .map_err(|failure| error(failure.to_string()))?;
+    let scheme = mech_core::KindScheme::new(
+        Box::new([]),
+        expected.dimension_parameters().to_vec().into_boxed_slice(),
+        InputKindScheme::Fixed(vec![shape(expected.kind())].into_boxed_slice()),
+        vec![expected.kind().clone()].into_boxed_slice(),
+        Box::new([]),
+    )
+    .map_err(|failure| error(format!("{failure:?}")))?;
+    let resolved = mech_core::TypeConstraintEnvironment::new(TypeConstraintOrigin::new(
+        "source annotation shape".to_owned(),
+        None,
+    ))
+    .solve_scheme(&scheme, &[actual], None)
+    .map_err(|failure| error(failure.to_string()))?;
+    schema_draft_from_resolved(&resolved.outputs[0], anchor)
 }
 
 fn schema_annotation_accepts(actual: &SchemaBody, expected: &SchemaBody) -> bool {
