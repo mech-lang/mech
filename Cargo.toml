@@ -147,7 +147,11 @@ run = [
 project = ["mech-runtime", "mech-runtime/source"]
 cli_host = ["mech-runtime", "dep:mech-terminal", "mech-terminal/provider"]
 web_host = ["mech-runtime", "mech-browser", "mech-browser/serde", "mech-browser/provider", "dep:mech-time", "dep:mech-timer", "dep:mech-console", "dep:mech-scene"]
-bundle_web_core = ["project", "web_host", "formatter_core", "serde", "mech-runtime"]
+bundle_web_core = [
+      "project", "web_host", "formatter_core", "serde",
+      "mech-engine/compiler", "mech-syntax/program", "mech-stdlib/standard_compiler",
+      "mech-runtime", "mech-runtime/compiler", "mech-runtime/resident-routing-source",
+      ]
 bundle_web = ["cli_core", "bundle_web_core"]
 # `mech serve` owns the same retained source-to-resident compilation boundary as
 # `mech run`, plus browser hosts and workspace watching.  Keep the compiler and
