@@ -1259,7 +1259,9 @@ fn infer_broadcast_instances(
         .iter()
         .filter(|input| required_slots.contains(&input.slot))
     {
-        let Some(values) = inputs.get(&input.name) else {
+        let source_name = mech_engine::decode_source_input_name(&input.name)
+            .unwrap_or_else(|| input.name.clone());
+        let Some(values) = inputs.get(&source_name) else {
             diagnostics.push(GpuDiagnostic {
                 code: GpuDiagnosticCode::ShapeMismatch,
                 node: None,
@@ -1754,7 +1756,9 @@ impl<'a> BatchCompiler<'a> {
             if required_slots.contains(&input.slot)
                 && let Some(shape) = self.shapes.get(&input.slot).copied()
             {
-                self.inputs.push((input.slot, input.name.clone(), shape));
+                let name = mech_engine::decode_source_input_name(&input.name)
+                    .unwrap_or_else(|| input.name.clone());
+                self.inputs.push((input.slot, name, shape));
             }
         }
     }
@@ -1856,7 +1860,9 @@ impl<'a> BatchCompiler<'a> {
                 self.lower_compare(output, &inputs, comparison)
             } else if let Some(logic) = logic_operation(&operation) {
                 self.lower_logic(output, &inputs, logic)
-            } else if let Some(elementwise) = scalar_operation(&operation) {
+            } else if let Some(mech_compute::ElementwiseLowering::Apply(elementwise)) =
+                mech_compute::elementwise_lowering(&node.operation)
+            {
                 self.lower_elementwise(output, &inputs, elementwise)
             } else {
                 Err(format!(
@@ -2920,23 +2926,6 @@ impl<'a> BatchCompiler<'a> {
             operation,
             detail: detail.into(),
         });
-    }
-}
-
-fn scalar_operation(name: &str) -> Option<ElementwiseOperation> {
-    use super::{BinaryOperation, UnaryOperation};
-
-    match name {
-        "math/add" => Some(ElementwiseOperation::Binary(BinaryOperation::Add)),
-        "math/sub" => Some(ElementwiseOperation::Binary(BinaryOperation::Subtract)),
-        "math/mul" => Some(ElementwiseOperation::Binary(BinaryOperation::Multiply)),
-        "math/div" => Some(ElementwiseOperation::Binary(BinaryOperation::Divide)),
-        "math/sin" => Some(ElementwiseOperation::Unary(UnaryOperation::Sin)),
-        "math/cos" => Some(ElementwiseOperation::Unary(UnaryOperation::Cos)),
-        "math/sqrt" => Some(ElementwiseOperation::Unary(UnaryOperation::Sqrt)),
-        "math/ceil" => Some(ElementwiseOperation::Unary(UnaryOperation::Ceil)),
-        "math/atan2" => Some(ElementwiseOperation::Atan2),
-        _ => None,
     }
 }
 

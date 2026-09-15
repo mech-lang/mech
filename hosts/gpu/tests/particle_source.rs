@@ -573,9 +573,15 @@ fn particle_program_is_lowered_from_mech_to_fused_wgsl() {
     );
     let outputs = program.run_cpu(&inputs).expect("CPU backend must run");
 
-    let expected_velocities = [-0.045, -0.0225, 0.045, 0.0225, -0.09, -0.18, 0.09, 0.18];
+    // Host inputs, artifact snapshots and elementwise outputs share row-major
+    // order. Each component advances by v = -position * 0.5 * 0.1 * 0.9.
+    assert_eq!(
+        program.prepare_cpu(&inputs).unwrap().outputs().unwrap()["result.0"],
+        inputs["positions"]
+    );
+    let expected_velocities = [-0.045, 0.045, -0.09, 0.09, -0.0225, 0.0225, -0.18, 0.18];
     let expected_positions = [
-        0.9955, 0.49775, -0.9955, -0.49775, 1.991, 3.982, -1.991, -3.982,
+        0.9955, -0.9955, 1.991, -1.991, 0.49775, -0.49775, 3.982, -3.982,
     ];
     assert_close(&outputs["result.1"], &expected_velocities);
     assert_close(&outputs["result.0"], &expected_positions);
@@ -1145,4 +1151,41 @@ fn maximum_absolute_error(actual: &[f32], expected: &[f32]) -> f32 {
         .zip(expected)
         .map(|(actual, expected)| (actual - expected).abs())
         .fold(0.0, f32::max)
+}
+
+#[test]
+fn canonical_compute_inputs_and_assignments_keep_source_names() {
+    for name in ["signal", "mech-source-input-78"] {
+        let source = format!(
+            "@worker := compute://worker/kernel{{:write(input/{name}), :write(turn)}}\n@worker/input/{name} <- 2f32\n@worker/turn <- 1\n\ncalculation @compute\n-------------------------------------------------------------------------------\n{name} := 1f32\n~total := 0f32\ncopy := {name}\ntotal = total + copy\ntotal\n",
+        );
+        let document = mech_runtime::SourceDocument::parse_resolved(
+            "test://canonical-ports",
+            mech_syntax::document::Revision(0),
+            std::sync::Arc::<str>::from(source),
+            mech_syntax::document::ParseConfig::default(),
+        )
+        .unwrap();
+        let mixed = compiler().compile_mixed_document(&document).unwrap();
+        let inputs = BTreeMap::from([(name.to_owned(), vec![2.0])]);
+        let elementwise =
+            mech_gpu::lower_elementwise_compute_program(&mixed.compute.artifact).unwrap();
+        assert_eq!(elementwise.interface().inputs[0].name.as_ref(), name);
+        let kernel = mech_gpu::ElementwiseKernel::from_compute_program(&elementwise).unwrap();
+        assert_eq!(kernel.run_cpu(&inputs).unwrap()["result"], vec![2.0]);
+    }
+}
+
+#[test]
+fn canonical_elementwise_matrices_preserve_initializer_and_constant_order() {
+    let document = mech_runtime::SourceDocument::parse_resolved(
+        "test://canonical-matrix-order", mech_syntax::document::Revision(0),
+        std::sync::Arc::<str>::from("@worker := compute://worker/kernel{:write(turn)}\n@worker/turn <- 1\n\ncalculation @compute\n-------------------------------------------------------------------------------\n~matrix := [1f32 2f32 3f32; 4f32 5f32 6f32]\nmatrix = matrix + [10f32 20f32 30f32; 40f32 50f32 60f32]\nmatrix\n"),
+        mech_syntax::document::ParseConfig::default(),
+    ).unwrap();
+    let mixed = compiler().compile_mixed_document(&document).unwrap();
+    let program = mech_gpu::lower_elementwise_compute_program(&mixed.compute.artifact).unwrap();
+    let kernel = mech_gpu::ElementwiseKernel::from_compute_program(&program).unwrap();
+    let result = kernel.run_cpu(&BTreeMap::new()).unwrap();
+    assert_eq!(result["result"], vec![11.0, 22.0, 33.0, 44.0, 55.0, 66.0]);
 }

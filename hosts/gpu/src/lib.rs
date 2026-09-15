@@ -1200,9 +1200,16 @@ impl<'a> Compiler<'a> {
                 continue;
             };
             let host_proven_concatenation = matches!(lowering, ElementwiseLowering::Concatenate(_));
-            if !host_proven_concatenation
-                && !self.admit_contract(node.node, &operation_name, node.contract)
-            {
+            let admitted = if matches!(
+                lowering,
+                ElementwiseLowering::Apply(ElementwiseOperation::Identity)
+            ) {
+                self.admit_assignment_contract(node.node, &operation_name, node.contract)
+            } else {
+                host_proven_concatenation
+                    || self.admit_contract(node.node, &operation_name, node.contract)
+            };
+            if !admitted {
                 continue;
             }
             let inputs = node
@@ -1366,7 +1373,7 @@ impl<'a> Compiler<'a> {
             );
             return;
         }
-        if !self.admit_state_contract(node.node, operation_name, node.contract) {
+        if !self.admit_assignment_contract(node.node, operation_name, node.contract) {
             return;
         }
         let inputs = node
@@ -1574,7 +1581,7 @@ impl<'a> Compiler<'a> {
         true
     }
 
-    fn admit_state_contract(
+    fn admit_assignment_contract(
         &mut self,
         node: NodeId,
         operation: &str,
@@ -1645,15 +1652,9 @@ impl<'a> Compiler<'a> {
                         .iter()
                         .map(|value| value.to_f32())
                         .collect::<Vec<_>>();
-                    let dimensions = self.slot_dimensions(slot.slot);
-                    mech_compute::column_major_to_row_major(&dimensions, &values).map_err(
-                        |error| {
-                            (
-                                GpuDiagnosticCode::ShapeMismatch,
-                                format!("initializer matrix layout is invalid: {error}"),
-                            )
-                        },
-                    )?
+                    // Artifact snapshots and elementwise storage both use
+                    // canonical row-major matrix order.
+                    values
                 }
                 _ => {
                     return Err((
@@ -1811,51 +1812,47 @@ impl<'a> Compiler<'a> {
                         self.constants.insert(constant, vec![value.to_f32()]);
                         Some(1)
                     }
-                    ValueData::Matrix(matrix) => match matrix.elements() {
-                        SequenceView::F32(values) => {
-                            let values = values
-                                .iter()
-                                .map(|value| value.to_f32())
-                                .collect::<Vec<_>>();
-                            let Some(dimensions) =
-                                self.source_dimensions(ArtifactSource::Constant(constant))
-                            else {
+                    ValueData::Matrix(matrix) => {
+                        match matrix.elements() {
+                            SequenceView::F32(values) => {
+                                let values = values
+                                    .iter()
+                                    .map(|value| value.to_f32())
+                                    .collect::<Vec<_>>();
+                                let Some(dimensions) =
+                                    self.source_dimensions(ArtifactSource::Constant(constant))
+                                else {
+                                    self.reject(
+                                        GpuDiagnosticCode::DynamicShapeUnsupported,
+                                        Some(node),
+                                        Some(operation.to_owned()),
+                                        "constant matrix dimensions are not resolved",
+                                    );
+                                    return None;
+                                };
+                                if dimensions
+                                    .iter()
+                                    .try_fold(1_u64, |count, extent| count.checked_mul(*extent))
+                                    != Some(values.len() as u64)
+                                {
+                                    self.reject(GpuDiagnosticCode::ShapeMismatch, Some(node), Some(operation.to_owned()), "constant matrix extent does not match its canonical elements");
+                                    return None;
+                                }
+                                let elements = values.len() as u64;
+                                self.constants.insert(constant, values);
+                                Some(elements)
+                            }
+                            _ => {
                                 self.reject(
-                                    GpuDiagnosticCode::DynamicShapeUnsupported,
+                                    GpuDiagnosticCode::ConstantUnsupported,
                                     Some(node),
                                     Some(operation.to_owned()),
-                                    "constant matrix dimensions are not resolved",
+                                    "only scalar and matrix f32 constants can be embedded",
                                 );
-                                return None;
-                            };
-                            let values =
-                                match mech_compute::column_major_to_row_major(&dimensions, &values)
-                                {
-                                    Ok(values) => values,
-                                    Err(error) => {
-                                        self.reject(
-                                            GpuDiagnosticCode::ShapeMismatch,
-                                            Some(node),
-                                            Some(operation.to_owned()),
-                                            format!("constant matrix layout is invalid: {error}"),
-                                        );
-                                        return None;
-                                    }
-                                };
-                            let elements = values.len() as u64;
-                            self.constants.insert(constant, values);
-                            Some(elements)
+                                None
+                            }
                         }
-                        _ => {
-                            self.reject(
-                                GpuDiagnosticCode::ConstantUnsupported,
-                                Some(node),
-                                Some(operation.to_owned()),
-                                "only scalar and matrix f32 constants can be embedded",
-                            );
-                            None
-                        }
-                    },
+                    }
                     _ => {
                         self.reject(
                             GpuDiagnosticCode::ConstantUnsupported,

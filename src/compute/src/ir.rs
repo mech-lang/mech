@@ -215,6 +215,7 @@ pub fn display_operation(operation: &OperationReference) -> String {
 
 pub fn elementwise_lowering(operation: &OperationReference) -> Option<ElementwiseLowering> {
     match display_operation(operation).as_str() {
+        "core/assign" => Some(ElementwiseLowering::Apply(ElementwiseOperation::Identity)),
         "math/add" => Some(ElementwiseLowering::Apply(ElementwiseOperation::Binary(
             BinaryOperation::Add,
         ))),
