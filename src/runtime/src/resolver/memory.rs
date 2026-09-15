@@ -773,7 +773,7 @@ rows := |id<string> x<f64>|
                 .to_contiguous_string(),
             source
         );
-        assert!(resolved.syntax_tree.is_some());
+        assert!(resolved.syntax_tree.is_none());
     }
 
     #[cfg(feature = "source")]

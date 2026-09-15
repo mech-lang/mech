@@ -295,3 +295,22 @@ following dependency refresh. The full native server regression suite passes
 90 tests in the cutover candidate. This qualifies the ordinary server connection;
 full served mixed EKF/particles and the canonical browser document transport
 remain open acceptance work.
+
+Rooted cutover qualification
+----------------------------
+
+The candidate based on B `f64f54ce8` routes ordinary, interactive and mixed
+rooted compilation through the prepared retained-document graph. The redundant
+tree dependency compiler is removed. Runtime declaration and execution tests
+now enter canonical indexing and document compilation with the parser deleted.
+The source-only fixture executes imported roots through the public ordinary and
+interactive interfaces, including dependency failure and compiler reuse.
+
+The complete runtime library profile (`full_compiler,resident-routing-source,compute`)
+executes 706 tests: 682 pass and 24 fail. Both maintained mixed-root import and
+user-function regressions pass, together with the supplied-input/default tests.
+This candidate is not sealed. The remaining failures identify interactive state
+and result identity, ordered roots, output/metadata adoption, and application
+execution obligations. Full browser document transport, served mixed applications
+and the final distribution matrix also remain open. Backend-only qualification
+must not be substituted for those product results.
