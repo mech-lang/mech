@@ -47,8 +47,8 @@ prerequisite, recorded before implementation in
 on the audit branch. This finding does not reopen G25's schema-order mechanism.
 
 R04 / G26 is implemented at `19abda12c` on
-[PR #844](https://github.com/mech-lang/mech/pull/844), stacked on R03. Review
-is requested. It preserves already-Dynamic
+[PR #844](https://github.com/mech-lang/mech/pull/844), stacked on R03. The
+review at `19abda12c` returned with no major issues. It preserves already-Dynamic
 identity and wraps concrete payloads once. Three regressions exercise changed
 payload schemas, concrete wrapping and preservation of existing nested depth.
 All 714 runtime library tests, 45 binding tests, six visibility tests and ten
@@ -57,6 +57,9 @@ pass across the R03/R04 corrections. Repository formatting and 23 CI contract
 tests also pass. This does not close the separate Index range prerequisite or
 other replacement obligations. Full CI is requested on the R04 stacked head;
 parent correction runs are canceled so that the current head gets runners.
+Exact-head [Full CI run 34993367803](https://github.com/mech-lang/mech/actions/runs/34993367803)
+is queued; the ordinary PR CI run is 34993111754. These pending workflows are
+not passing evidence. The reduced engine source build also passes at R04.
 
 ## Scope decisions still required
 

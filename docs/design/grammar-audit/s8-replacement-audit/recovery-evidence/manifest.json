@@ -45,6 +45,10 @@
     {
       "file": "s8r04-ci-contract.txt",
       "sha256": "3d5c0aa43d89fcab4440efca85c3444c048bdf4fe66ad1c72ec69c174adcb115"
+    },
+    {
+      "file": "s8r04-reduced-source.txt",
+      "sha256": "40c794b0cfa415d3fb34418e892af9a8ef5b86bd9bd4225d5a99dcfe96577450"
     }
   ],
   "r04_head": "19abda12c"
