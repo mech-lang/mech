@@ -1,0 +1,39 @@
+R08 review-correction exact head
+branch: codex/syntax-s8r08-variable-layouts
+commit: c9f6ba16746f265af943acb6a94d70a03a06a3d1
+
+$ cargo +nightly-2026-03-03 test --locked --offline -p mech-engine --no-default-features --features full_source,resident-artifact --test canonical_document_state comprehension_ -- --nocapture
+result: 7 passed; 0 failed; 42 filtered out
+
+$ cargo +nightly-2026-03-03 test --locked --offline -p mech-engine --no-default-features --features full_source,resident-artifact --test canonical_document_state -- --nocapture
+result: 49 passed; 0 failed
+
+$ cargo +nightly-2026-03-03 test --locked --offline -p mech-engine --no-default-features --features full_source,resident-artifact --lib nullary_snapshot_matrix_constructor_publishes_the_declared_empty_shape -- --nocapture
+result: 1 passed; 0 failed; 452 filtered out
+
+$ cargo +nightly-2026-03-03 test --locked --offline -p mech-runtime --no-default-features --features resident_external_test_support --lib empty_matrix_comprehension_activates_through_source_and_bytecode -- --nocapture
+result: 1 passed; 0 failed; 697 filtered out
+
+$ cargo +nightly-2026-03-03 test --locked --offline -p mech-runtime --no-default-features --features resident_external_test_support --lib resident_matrix_comprehensions_feed_mutable_vertical_concatenation -- --nocapture
+result: 1 passed; 0 failed; 697 filtered out
+
+$ cargo +nightly-2026-03-03 test --locked --offline -p mech-engine --no-default-features --features full_source,resident-artifact --lib resident::numeric::tests -- --nocapture
+result: 86 passed; 1 failed; 366 filtered out
+failure: resident::numeric::tests::indexed_assignment_capability_supports_maps_but_rejects_nested_matrix_members
+classification: reproduced unchanged at R25 base; see r08-baseline-indexed-assignment.log
+
+$ cargo +nightly-2026-03-03 fmt --all -- --check
+result: passed
+
+$ git diff --check
+result: passed
+
+Review threads fixed, replied, and resolved:
+- PRRT_kwDOCJ6M-c6iuWyJ: nullary snapshot matrix construction
+- PRRT_kwDOCJ6M-c6iuWyM: Boolean snapshot-backed transpose
+- PRRT_kwDOCJ6M-c6iuWyP: fixed dense operands beside variable snapshot concatenands
+
+Native stack verification:
+- stack #855, size 18, base integration/v0.4
+- R08 #854 position 17, base codex/syntax-s8r25-compute-read-planning
+- C #830 position 18, base codex/syntax-s8r08-variable-layouts

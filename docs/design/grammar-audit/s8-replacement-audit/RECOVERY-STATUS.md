@@ -9,8 +9,8 @@ All active extraction/corrective PRs and C remain drafts. Ask for review by comm
 | Order | Owner and work | Current state / completion condition |
 | --- | --- | --- |
 | 1 | R25 + C/G22 compute/browser handoff | R25 #849 content `425578fa7` has a clean review and 7 + 18 passing tests. The current stack head is `6dcd269c9`; its R25 diff still contains the reviewed correction and additionally inherits the lower-stack filesystem-import fix. Focused CI 35030743606 has passed both owners, review regressions, browser canary, architecture, distribution and three mutation shards; its final status is still queued. C #830 current head is `7968e6341` with full qualification run 35030747629 queued. The shipping configured document edit passes all seven scenarios, changes result 1→3, preserves inline selection identity, and rolls back malformed edits. The EKF rerun gets past R25's provider and `result.0` failures and now stops at the distinct G29/R26 canonical-artifact/portable-kernel handoff. R25 closes when exact-head focused CI completes; C remains open. |
-| 2 | R08/G18 variable-cardinality layouts | Implemented in draft [#854](https://github.com/mech-lang/mech/pull/854) at exact head `87eaefc37`, stacked on current R25. Three strict source/decoded witnesses cover closed concat plus live concat/transpose over cardinalities 2→1→0. The owner fix stops treating lower-bound shapes as activation facts, selects snapshot storage for unresolved produced matrices, derives dimensions each turn, and publishes the resolved shape through canonical budgeted finalization. Focused tests pass; review and exact-head CI are pending. |
-| 3 | R07/G05 control initializers | Partial pushed branch `94ca8e2b4`, no PR, outside C. Closed-control/budget corrections pass; finish its matrix cases after R08 and review the bounded owner diff. |
+| 2 | R08/G18 variable-cardinality layouts | Draft [#854](https://github.com/mech-lang/mech/pull/854) is published at exact head `c9f6ba167` and is native stack #855 position 17 between R25 and C. The first review's three findings are fixed, answered and resolved: nullary snapshot construction, Boolean snapshot transpose, and mixed fixed dense plus variable snapshot concatenands. Seven focused source/decoded comprehension tests, all 49 canonical document-state tests, the direct nullary binder/executor test, and both neighboring runtime product tests pass. A new review is pending; no unresolved thread remains. |
+| 3 | R07/G05 control initializers | Branch `codex/syntax-s8r07-initializers` is rebased onto R08 with published head `d5faef9ff`; the worktree retains an unfinished matrix-state follow-up. Closed-control/budget corrections pass. Resume only after processing any returning R08 review findings. |
 | 4 | R09–R20 semantic prerequisites | Corrective implementations remain pending; use the accepted dependency/acceptance cells to select the next ready owner after the initializer batch. No numbered item is implicitly complete. |
 | Product blocker | R26/G29 canonical EKF compute lowering | Newly demonstrated and explicitly owned before implementation. The single-lane shipping CPU witness fails at portable lowering after R25 succeeds. No corrective branch or PR exists. Preserve the full CPU/WebGPU oracle; do not fold this into R25 or count semantic-only compilation as acceptance. |
 | Across accepted batches | R21–R23 in C: authority retirement, browser adoption, distribution closure | Partially implemented, incomplete. Keep real deleted-parser and product probes running; fix failures in their owners. Hold one stable C head for final full qualification only after accepted obligations close. |
@@ -22,8 +22,9 @@ R07 correction. R25 is validation-only; R26 is recorded but not yet changing.
 Never exceed three actively changing
 corrective branches. Do not open PRs solely to instantiate every audit boundary.
 
-**Next concrete action:** respond to and resolve any #854 review findings while
-restacking R07 onto R08 and completing its remaining matrix initializer cases.
+**Next concrete action:** inspect the new #854 review and focused stack checks;
+respond and resolve any findings before another review request. If it is clean,
+resume R07's remaining matrix initializer cases on its existing rebased branch.
 R08 exact-head evidence is in `recovery-evidence/r08-exact-head-focused.log`.
 The full engine library run passed 451 tests and reproduced its sole failing
 indexed-assignment assertion unchanged at the R25 base; the base witness is in
@@ -970,3 +971,43 @@ resume R07's remaining initializer positives.
 **External blocker:** none for current R08 implementation. Recorded G02/G17/G18
 scope decisions remain open where their exact target floor is required; no
 positive obligation has been waived. Checkpoint—not complete.
+
+
+## Current checkpoint — R08 review corrections integrated and natively stacked
+
+**Candidate:** R08 draft #854 is
+`codex/syntax-s8r08-variable-layouts` / `c9f6ba16746f265af943acb6a94d70a03a06a3d1`.
+Accumulated C draft #830 is `codex/syntax-s8c-cutover` /
+`6947bec97aa57df292a760697b28adc7dfacc148`. GitHub native stack #855 targets
+`integration/v0.4` and orders R25 #849 -> R08 #854 -> C #830 at positions
+16–18. C now directly targets the R08 branch. Every PR remains a draft.
+
+**Completed:** all three R08 review findings at the prior head were implemented
+in their owning resident layer, answered with exact witnesses, and resolved.
+The retained constructor plan accepts zero inputs and compatible fixed dense
+Bool/Index/F64/String operands alongside variable snapshots, converts physical
+column-major inputs to canonical row-major order, and completes admission before
+allocating owned drafts. Boolean snapshot transpose uses the existing
+element-agnostic executor. Seven focused source/decoded comprehension tests pass;
+all 49 `canonical_document_state` tests pass; the direct nullary binder/executor
+test passes; runtime empty-comprehension and mutable vertical-concatenation product
+tests pass. Numeric owner tests pass 86/87; the sole indexed-assignment assertion
+is the already-recorded failure reproduced unchanged at the R25 base and is not
+counted as R08 success. The new review was requested only after the unresolved
+thread count reached zero. Evidence is recorded in
+`recovery-evidence/r08-review-corrections.log`.
+
+**Remaining:** new R08 review and focused exact-head CI; R07's existing matrix
+initializer follow-up; all later accepted implementation and decision cells;
+C product closure; one stable exact-C full qualification; protected merge and
+post-merge verification.
+
+**Current action:** inspect the returning #854 review and current stack checks.
+The corrected R08 head is already merged into C and published; no duplicate full
+qualification is requested for the slice.
+
+**Next action:** resolve any new #854 findings before another review request. If
+the review is clean, resume `/private/tmp/mech-syntax-s8r07-initializers` from its
+existing rebased state and finish the two remaining matrix initializer witnesses.
+
+**External blocker:** none. Checkpoint—not complete.
