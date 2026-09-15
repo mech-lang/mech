@@ -202,7 +202,22 @@ fn execute(
         .map(|(i, layout)| selector_value(schemas, layout, input(inputs, i + 1)?))
         .collect::<Result<Vec<_>, _>>()?;
     let positions = if plan.mode == 0 {
-        access_indices(&selectors[0], count)?
+        // Dense logical masks carry physical column-major positions. Read
+        // those before selector_value normalizes matrix data to row-major.
+        // Numeric selectors retain their authored occurrence order.
+        let selector = input(inputs, 1)?;
+        let physical = if matches!(selector, ResidentValueRef::Bool(_)) {
+            let selected = ValidatedPositions::new(selector, count)?;
+            let mut positions = Vec::with_capacity(selected.len());
+            selected.try_for_each(|_, position| {
+                positions.push(position);
+                Ok(())
+            })?;
+            positions
+        } else {
+            access_indices(&selectors[0], count)?
+        };
+        physical
             .into_iter()
             .map(|p| (p % plan.rows) * plan.columns + p / plan.rows)
             .collect::<Vec<_>>()
