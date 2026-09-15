@@ -1,0 +1,13 @@
+   Compiling mech-runtime v0.3.5 (/private/tmp/mech-syntax-s8r25-compute-read-planning/src/runtime)
+    Finished `test` profile [unoptimized] target(s) in 5.27s
+     Running tests/canonical_mixed_resource_planning.rs (/private/tmp/mech-syntax-s8c-qualification/target/debug/deps/canonical_mixed_resource_planning-b7a1d887f29fb4c9)
+
+running 5 tests
+test canonical_mixed_sample_read_is_planned_without_a_compute_provider ... ok
+test canonical_mixed_keeps_ordinary_read_planning_in_its_provider ... ok
+test canonical_mixed_unknown_compute_reads_reject_at_the_interface ... ok
+test canonical_mixed_sample_shapes_survive_bytecode ... ok
+test canonical_mixed_telemetry_uses_its_declared_types ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.33s
+

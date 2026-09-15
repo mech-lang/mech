@@ -773,3 +773,50 @@ C holds only the browser acceptance probe. R07 remains separate and idle.
 stage compute interface construction before coordinator read planning. Integrate
 subject to required review and rerun the actual configured document probe.
 **External blocker:** none for this correction. Checkpoint—not complete.
+
+
+## Current checkpoint — R25 draft review; C integrated locally
+
+**Candidate:** published C remains `4c901a1eaf8282cb807039513ce01ab0b3dd83b1`;
+local `codex/syntax-s8c-qualification` is `6ade888fc5f8dc93cc6b3a496174f8fced7be7a0`,
+restacked on R25 `a4555e3e027b4a4a20404c858088ec9a56ac81dd`. R25 is draft #849.
+The local C rebase resolved the retained-result-boundary argument at the staged
+coordinator call; no parser or alternate lowering authority was restored.
+
+**Completed:** R25's strict baseline reproduces missing compute read planning.
+The correction passes 5 focused resource planning tests (including nonsquare
+matrix and scalar schema/bytecode identity, telemetry types, invalid paths and
+ordinary provider ownership), 18 existing mixed tests, 50 CI tests, formatting,
+compiler quarantine and warning policy. The restacked deleted-parser C separately
+passes the same 5 + 18 tests. Exact R25 review was requested by comment:
+https://github.com/mech-lang/mech/pull/849#issuecomment-5688422721
+No open threads existed at the request. The PR is draft; keep all active S8
+extraction/corrective PRs and C drafts while reviewing/testing. Do not use ready
+status to trigger reviews. No readiness or merge claim is made.
+
+**Remaining:** R06 has no corrective branch; R07 is partial at `94ca8e2b4`, with
+matrix positives blocked by R08/G18. R08–R20 have no published corrective branches
+or PRs. R21–R23 responsibilities are being implemented/qualified in C and remain
+incomplete. R24/G27 has a strict failing witness but no implementation. R02's
+positive capability obligations also remain open. R25 is a new demonstrated
+prerequisite, not evidence that lower-numbered boundaries were completed.
+Required C browser-edit acceptance, review, stable full qualification, protected
+merge and post-merge verification remain open.
+
+**Current action:** rebuild shipping compute WASM for the local C candidate,
+then rebuild the native server sequentially and run the configured WasmDocument
+source-edit/rollback probe. R25 review is running. R07 is idle and separate.
+The published C workflow 35024471044 is still live; actual completed failures
+are preserved in `/private/tmp/mech-syntax-qualification/s8-ci-archive-current/35024471044`:
+engine retired-parser test imports; runtime 697 pass / 2 fail (G19, G05/G18);
+WASM 56 pass / 1 fail (G14). These are unqualified failures, not cancelled passes.
+
+**Next action:** finish build log `c-r25-shipping-wasm-build.log`, build `mech`
+with compute_backends_native, run `smoke-canonical-document-bundle-browser.py
+--fixtures /private/tmp/mech-syntax-qualification/browser-bundle-fixtures
+--served-compute`, inspect actual results and address the owning cause. Review
+R25 notes when they return before any further review request. Publish C after
+combined product evidence, preserving old CI logs before cancellation.
+
+**External blocker:** none for current product acceptance; accepted scope/type
+choices remain recorded for dependent work. Checkpoint—not complete.
