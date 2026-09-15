@@ -36,8 +36,8 @@ tests and 103 engine tests pass; the reduced source build, compiler quarantine
 and R3 architecture checks pass. The runtime library run passed 713 tests and
 hit one filesystem-watch timeout in the sandbox. The same already-built test
 passed outside the sandbox; the sandbox retry failure is retained as evidence.
-Recorded outputs are in recovery-evidence/. Review is requested; this is not a
-whole-replacement seal.
+Recorded outputs are in recovery-evidence/. The review at `d0eab6087` returned
+with no major issues; this is not a whole-replacement seal.
 
 R03 executes the previously untested F15 binding/error/remap witnesses, Q30 Id,
 Q32 generic Enum, and Q31 Index identity and zero-index validation. Q31's range
@@ -55,7 +55,8 @@ All 714 runtime library tests, 45 binding tests, six visibility tests and ten
 declaration-handoff tests pass. Thus all 31 original strict schema-audit cases
 pass across the R03/R04 corrections. Repository formatting and 23 CI contract
 tests also pass. This does not close the separate Index range prerequisite or
-other replacement obligations.
+other replacement obligations. Full CI is requested on the R04 stacked head;
+parent correction runs are canceled so that the current head gets runners.
 
 ## Scope decisions still required
 
