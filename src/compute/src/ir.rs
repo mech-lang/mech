@@ -13,6 +13,7 @@ pub enum BinaryOperation {
     Subtract,
     Multiply,
     Divide,
+    Remainder,
 }
 
 impl BinaryOperation {
@@ -22,6 +23,7 @@ impl BinaryOperation {
             Self::Subtract => left - right,
             Self::Multiply => left * right,
             Self::Divide => left / right,
+            Self::Remainder => left % right,
         }
     }
 }
@@ -125,6 +127,44 @@ pub enum ElementwiseInstruction {
 }
 
 impl ElementwiseInstruction {
+    /// Executes one admitted instruction using the caller's source layout.
+    /// Activation and recurring CPU execution share this numeric interpreter.
+    pub fn evaluate_into<E>(
+        &self,
+        values: &mut Vec<f32>,
+        mut read: impl FnMut(ArtifactSource, usize, usize) -> Result<f32, E>,
+    ) -> Result<(), E> {
+        match self {
+            Self::Apply {
+                operation,
+                inputs,
+                elements,
+                ..
+            } => {
+                for index in 0..*elements as usize {
+                    let mut arguments = [0.0; 2];
+                    for (ordinal, source) in inputs.iter().enumerate() {
+                        arguments[ordinal] = read(*source, index, *elements as usize)?;
+                    }
+                    values.push(operation.apply(&arguments[..inputs.len()]));
+                }
+            }
+            Self::Concatenate { .. } => {
+                for index in 0..self.elements() {
+                    let (source, local_index, source_elements) = self
+                        .concat_source_at(index)
+                        .expect("admitted concatenation covers every output element");
+                    values.push(read(
+                        source,
+                        local_index as usize,
+                        source_elements as usize,
+                    )?);
+                }
+            }
+        }
+        Ok(())
+    }
+
     pub const fn output(&self) -> CellSlotId {
         match self {
             Self::Apply { output, .. } | Self::Concatenate { output, .. } => *output,
@@ -215,6 +255,7 @@ pub fn display_operation(operation: &OperationReference) -> String {
 
 pub fn elementwise_lowering(operation: &OperationReference) -> Option<ElementwiseLowering> {
     match display_operation(operation).as_str() {
+        "core/assign" => Some(ElementwiseLowering::Apply(ElementwiseOperation::Identity)),
         "math/add" => Some(ElementwiseLowering::Apply(ElementwiseOperation::Binary(
             BinaryOperation::Add,
         ))),
@@ -226,6 +267,9 @@ pub fn elementwise_lowering(operation: &OperationReference) -> Option<Elementwis
         ))),
         "math/div" => Some(ElementwiseLowering::Apply(ElementwiseOperation::Binary(
             BinaryOperation::Divide,
+        ))),
+        "math/mod" => Some(ElementwiseLowering::Apply(ElementwiseOperation::Binary(
+            BinaryOperation::Remainder,
         ))),
         "math/sin" => Some(ElementwiseLowering::Apply(ElementwiseOperation::Unary(
             UnaryOperation::Sin,
