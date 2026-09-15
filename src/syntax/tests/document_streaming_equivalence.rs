@@ -35,6 +35,7 @@ fn finalized_streams_match_one_shot_at_every_scalar_cut() {
     for text in [
         "",
         "hello world\n",
+        "(5.1.1) Predictor\n\nx := (1 + 2)\n(1) + 2\n",
         "identity(value<f32>) = result<f32> :=\n  result := value.\n\nanswer := identity(42f32)\n",
         "field(value<{x<f32>}>) = result<f32> :=\n  result := value.x.\n\nanswer := field({x: 42f32})\n",
         "x := [1,2]\ny := x + 3\n",

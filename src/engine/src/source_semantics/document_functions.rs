@@ -66,6 +66,9 @@ impl SemanticBuilder {
         name: &str,
         syntax: &SyntaxNode,
     ) -> Result<(), SourceSemanticError> {
+        if name.starts_with('@') && self.input_schema_overrides.contains_key(name) {
+            return Ok(());
+        }
         if let Some(function) = self.active_functions.last() {
             return Err(SourceSemanticError {
                 code: "source-semantics/unbound-function-input",
@@ -180,7 +183,6 @@ impl SemanticBuilder {
         let caller_bindings = std::mem::replace(&mut self.bindings, local_bindings);
         let caller_definitions = std::mem::replace(&mut self.scope_definitions, parameter_names);
         let caller_external = std::mem::take(&mut self.external_definitions);
-        let input_count = self.inputs.len();
         self.active_functions.push(name.to_owned());
         let result = (|| {
             let mut units = Vec::new();
@@ -194,12 +196,6 @@ impl SemanticBuilder {
             let mut bindings = self.bindings.keys().cloned().collect();
             declare_document_inputs(self, &units, &mut bindings)?;
             compile_document_units(self, units, &bindings, &mut Vec::new())?;
-            if self.inputs.len() != input_count {
-                return Err(error(
-                    "source-semantics/unbound-function-input",
-                    format!("function {name} references an undeclared input"),
-                ));
-            }
             let mut values = Vec::new();
             let mut output_names = BTreeSet::new();
             for (output, schema) in outputs {

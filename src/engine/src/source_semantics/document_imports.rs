@@ -1,0 +1,117 @@
+//! Resolve typed module declarations against the configured function catalog.
+use super::*;
+use mech_syntax::document::{CanonicalModuleImportBodySyntax, ModuleImportSyntax};
+
+impl SemanticBuilder {
+    pub(super) fn register_document_imports(
+        &mut self,
+        units: &[DocumentUnit],
+    ) -> Result<(), SourceSemanticError> {
+        for unit in units {
+            match unit {
+                DocumentUnit::Import(import) => self.register_module_import(import)?,
+                DocumentUnit::Fence(_, _, units) => self.register_document_imports(units)?,
+                _ => {}
+            }
+        }
+        Ok(())
+    }
+
+    fn register_module_import(
+        &mut self,
+        import: &ModuleImportSyntax,
+    ) -> Result<(), SourceSemanticError> {
+        let syntax = import.syntax();
+        let body = self.required(import.body(), syntax, "a module import body")?;
+        let (module, items) = match body {
+            CanonicalModuleImportBodySyntax::Module(body) => {
+                let module = self.required(body.module(), syntax, "a module name")?;
+                (node_text(module.syntax())?, Vec::new())
+            }
+            CanonicalModuleImportBodySyntax::AliasedItem(body) => {
+                let alias = self.required(body.alias(), syntax, "a module item alias")?;
+                if alias.context().is_some() {
+                    return Ok(());
+                }
+                let alias = self.required(
+                    alias.value().and_then(|alias| alias.path()),
+                    syntax,
+                    "a value alias",
+                )?;
+                let module = self.required(body.module(), syntax, "a module name")?;
+                let item = self.required(body.item(), syntax, "a module item")?;
+                (
+                    node_text(module.syntax())?,
+                    vec![(node_text(item.syntax())?, Some(node_text(alias.syntax())?))],
+                )
+            }
+            CanonicalModuleImportBodySyntax::Suffix(body) => {
+                let module = node_text(
+                    self.required(body.module(), syntax, "a module name")?
+                        .syntax(),
+                )?;
+                if body.is_glob() {
+                    let items = self
+                        .function_catalog
+                        .as_ref()
+                        .map(|catalog| {
+                            catalog
+                                .module_exports(&module)
+                                .filter_map(|export| {
+                                    export.item.as_ref().map(|item| (item.clone(), None))
+                                })
+                                .collect()
+                        })
+                        .unwrap_or_default();
+                    (module, items)
+                } else if let Some(group) = body.group() {
+                    let items = group
+                        .items()
+                        .map(|item| {
+                            let path = self.required(item.path(), syntax, "a module item")?;
+                            Ok((node_text(path.syntax())?, None))
+                        })
+                        .collect::<Result<_, SourceSemanticError>>()?;
+                    (module, items)
+                } else {
+                    let item = self.required(body.item(), syntax, "a module item")?;
+                    (module, vec![(node_text(item.syntax())?, None)])
+                }
+            }
+        };
+        let Some(catalog) = self.function_catalog.as_ref() else {
+            return Ok(());
+        };
+        // Source-module value exports are bound by the resolver. Only catalog
+        // modules contribute function names at this boundary.
+        if !catalog.has_module(&module) {
+            return Ok(());
+        }
+        for (item, alias) in items {
+            let export =
+                catalog
+                    .module_export(&module, &item)
+                    .ok_or_else(|| SourceSemanticError {
+                        code: "source-semantics/unknown-function-import",
+                        message: format!("module {module} has no function {item}"),
+                        anchor: SourceSemanticAnchor::for_node(syntax),
+                    })?;
+            let name = alias.unwrap_or(item);
+            if self
+                .function_imports
+                .get(&name)
+                .is_some_and(|prior| prior != &export.canonical_name)
+                || self.local_functions.contains_key(&name)
+            {
+                return Err(SourceSemanticError {
+                    code: "source-semantics/conflicting-function-import",
+                    message: format!("function import {name} conflicts with another declaration"),
+                    anchor: SourceSemanticAnchor::for_node(syntax),
+                });
+            }
+            self.function_imports
+                .insert(name, export.canonical_name.clone());
+        }
+        Ok(())
+    }
+}

@@ -3496,7 +3496,8 @@ citation := left-bracket, +alphanumeric, right-bracket, colon,
 float-sigil := float-left
              | float-right ;
 float := float-sigil, space-tab0, section-element ;
-not-mech-code := micro-mika
+not-mech-code := (>subtitle, ¬(expression, code-terminal), subtitle)
+               | micro-mika
                | mini-mika
                | mechdown-list
                | footnote

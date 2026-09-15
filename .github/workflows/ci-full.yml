@@ -1063,6 +1063,9 @@ jobs:
           rustup toolchain install nightly-2026-03-03 --profile minimal --component rustfmt
           rustup default nightly-2026-03-03
 
+      - name: Verify static project bootstrap
+        run: node --test scripts/tests/static-project.test.mjs
+
       - name: Check generated syntax inventories
         run: |
           python3 scripts/generate-canonical-rule-registry.py --check

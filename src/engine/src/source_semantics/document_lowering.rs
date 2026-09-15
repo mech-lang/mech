@@ -14,8 +14,11 @@ mod document_assignment;
 
 #[path = "document_functions.rs"]
 mod document_functions;
+#[path = "document_imports.rs"]
+mod document_imports;
 
 enum DocumentUnit {
+    Import(mech_syntax::document::ModuleImportSyntax),
     Function(SyntaxNode),
     Statement(SyntaxNode),
     ResourceSend(mech_syntax::document::ContextSendSyntax),
@@ -146,6 +149,13 @@ pub(super) fn compile_mixed_document_with_catalog_and_resources(
 
     let mut coordinator_units = Vec::new();
     let mut coordinator_exports = Vec::new();
+    if let Some(title) = document.title() {
+        collect_document_units(
+            title.syntax(),
+            &mut coordinator_units,
+            &mut coordinator_exports,
+        )?;
+    }
     for (index, section) in sections.iter().enumerate() {
         if index != region_index {
             collect_document_units(
@@ -155,6 +165,13 @@ pub(super) fn compile_mixed_document_with_catalog_and_resources(
             )?;
         }
     }
+    let root_imports = coordinator_units
+        .iter()
+        .filter_map(|unit| match unit {
+            DocumentUnit::Import(import) => Some(import.clone()),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
     let coordinator = compile_collected_document(
         document.scope_id(),
         anchor,
@@ -169,7 +186,11 @@ pub(super) fn compile_mixed_document_with_catalog_and_resources(
     )?;
 
     let region = &sections[region_index];
-    let mut compute_units = Vec::new();
+    let mut compute_units = root_imports
+        .iter()
+        .cloned()
+        .map(DocumentUnit::Import)
+        .collect();
     let mut compute_exports = Vec::new();
     collect_document_units(region.syntax(), &mut compute_units, &mut compute_exports)?;
     let compute = compile_collected_document(
@@ -186,7 +207,7 @@ pub(super) fn compile_mixed_document_with_catalog_and_resources(
     )?
     .with_compute_region(region_name.clone(), placement)?;
 
-    let mut initializer_units = Vec::new();
+    let mut initializer_units = root_imports.into_iter().map(DocumentUnit::Import).collect();
     let mut initializer_exports = Vec::new();
     collect_document_units(
         region.syntax(),
@@ -349,6 +370,7 @@ fn compile_collected_document(
     builder.resource_writes = resource_writes;
     builder.external_definitions = external_definitions.clone();
     builder.register_document_functions(&units)?;
+    builder.register_document_imports(&units)?;
     let mut bindings = BTreeSet::new();
     declare_document_inputs(&mut builder, &units, &mut bindings)?;
     declare_document_inline_inputs(&mut builder, &units, &bindings)?;
@@ -595,6 +617,7 @@ fn collect_document_units(
     if matches!(
         node.kind(),
         SyntaxKind::VariableDefine
+            | SyntaxKind::TupleDestructure
             | SyntaxKind::Expression
             | SyntaxKind::OpAssign
             | SyntaxKind::VariableAssign
@@ -606,11 +629,15 @@ fn collect_document_units(
         exports.push(export);
         return Ok(());
     }
+    if let Some(import) = mech_syntax::document::ModuleImportSyntax::cast(node.clone()) {
+        output.push(DocumentUnit::Import(import));
+        return Ok(());
+    }
     // Resolver-owned declarations participate through the canonical source
     // index and runtime handoff; they do not emit engine operations themselves.
     if matches!(
         node.kind(),
-        SyntaxKind::ContextDeclaration | SyntaxKind::ImportDeclaration | SyntaxKind::ModuleImport
+        SyntaxKind::ContextDeclaration | SyntaxKind::ImportDeclaration
     ) {
         return Ok(());
     }
@@ -626,7 +653,6 @@ fn collect_document_units(
             | SyntaxKind::FsmPipe
             | SyntaxKind::FsmSpecification
             | SyntaxKind::KindDefine
-            | SyntaxKind::TupleDestructure
     ) {
         return Err(SourceSemanticError {
             code: "source-semantics/unsupported-document-unit",
@@ -650,7 +676,7 @@ fn declare_document_inputs(
 ) -> Result<(), SourceSemanticError> {
     for unit in units {
         match unit {
-            DocumentUnit::Function(_) => {}
+            DocumentUnit::Function(_) | DocumentUnit::Import(_) => {}
             DocumentUnit::Statement(unit) => {
                 builder.declare_unit_input_annotations(unit, bindings)?
             }
@@ -676,7 +702,7 @@ fn declare_document_inline_inputs(
 ) -> Result<(), SourceSemanticError> {
     for unit in units {
         match unit {
-            DocumentUnit::Statement(_) | DocumentUnit::Function(_) => {}
+            DocumentUnit::Statement(_) | DocumentUnit::Function(_) | DocumentUnit::Import(_) => {}
             DocumentUnit::ResourceSend(_) => {}
             DocumentUnit::Invariant(_) => {}
             DocumentUnit::Inline(inline) => {
@@ -724,7 +750,7 @@ fn compile_document_units_inner(
     let mut last = None;
     for unit in units {
         match unit {
-            DocumentUnit::Function(_) => {}
+            DocumentUnit::Function(_) | DocumentUnit::Import(_) => {}
             DocumentUnit::Statement(unit) => {
                 let result = match unit.kind() {
                     SyntaxKind::VariableDefine => {
@@ -733,6 +759,7 @@ fn compile_document_units_inner(
                     SyntaxKind::Expression => {
                         builder.expression(&ExpressionSyntax::cast(unit).unwrap())?
                     }
+                    SyntaxKind::TupleDestructure => builder.document_tuple_destructure(&unit)?,
                     SyntaxKind::OpAssign | SyntaxKind::VariableAssign => {
                         builder.document_assignment(&unit)?
                     }
@@ -1219,4 +1246,70 @@ fn fence_presentation(
         message: "fence presentation settings require complete typed option values".to_owned(),
         anchor: SourceSemanticAnchor::for_node(fence.syntax()),
     })
+}
+
+impl SemanticBuilder {
+    fn document_tuple_destructure(
+        &mut self,
+        syntax: &SyntaxNode,
+    ) -> Result<(PendingValue, SyntaxNode), SourceSemanticError> {
+        let destructure =
+            mech_syntax::document::TupleDestructureSyntax::cast(syntax.clone()).unwrap();
+        let expression = self.required(destructure.value(), syntax, "a destructuring value")?;
+        let value = self.expression(&expression)?.0;
+        let schema = self.schema_draft_of(value)?;
+        let SchemaBody::Tuple(items) = &schema.body else {
+            return Err(SourceSemanticError {
+                code: "source-semantics/destructure-requires-tuple",
+                message: "tuple destructuring requires a tuple value".to_owned(),
+                anchor: SourceSemanticAnchor::for_node(expression.syntax()),
+            });
+        };
+        let names = destructure.names();
+        if names.len() > items.len() {
+            return Err(SourceSemanticError {
+                code: "source-semantics/destructure-arity",
+                message: "tuple destructuring has more names than tuple elements".to_owned(),
+                anchor: SourceSemanticAnchor::for_node(syntax),
+            });
+        }
+        let mut declared = BTreeSet::new();
+        for name in &names {
+            let text = node_text(name.syntax())?;
+            if self.scope_definitions.contains(&text) || !declared.insert(text.clone()) {
+                return Err(SourceSemanticError {
+                    code: "source-semantics/variable-already-defined",
+                    message: format!("variable {text} is already defined"),
+                    anchor: SourceSemanticAnchor::for_node(name.syntax()),
+                });
+            }
+        }
+        for (ordinal, name) in names.iter().enumerate() {
+            let text = node_text(name.syntax())?;
+            let selector = self.constant_exact(
+                SchemaBody::Index,
+                ValueDataDraft::Index((ordinal + 1) as u64),
+            );
+            let mut selected = self.select_values(value, vec![Some(selector)], name.syntax())?;
+            if self.external_definitions.contains(&text) {
+                let schema = self.schema_draft_of(selected)?;
+                let index = u32::try_from(self.inputs.len()).map_err(|_| {
+                    internal(
+                        SourceSemanticAnchor::for_node(syntax),
+                        "input identity exhausted".to_owned(),
+                    )
+                })?;
+                self.input_by_name.insert(text.clone(), index);
+                self.inputs.push(PendingInput {
+                    name: text.clone(),
+                    schema,
+                    anchor: SourceSemanticAnchor::for_node(name.syntax()),
+                });
+                selected = PendingValue::Input(index);
+            }
+            self.scope_definitions.insert(text.clone());
+            self.bindings.insert(text, PendingBinding::Value(selected));
+        }
+        Ok((value, syntax.clone()))
+    }
 }

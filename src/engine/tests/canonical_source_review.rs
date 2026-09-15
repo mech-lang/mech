@@ -561,7 +561,7 @@ fn recursive_conformance_retains_dimensions_and_independent_nested_parameters() 
         matches!(output(&matrix), SchemaBody::Matrix { dimensions, .. } if dimensions.as_ref() == [mech_core::DimensionExpr::Constant(1),mech_core::DimensionExpr::Constant(2)])
     );
     let tuple = CanonicalSourceFrontend
-        .compile_definition(&definition("x<(*,*)> := ((1..3),(2..4))"))
+        .compile_definition(&definition("x<(*,*)> := ((1..end-a<f64>),(2..end-b<f64>))"))
         .unwrap();
     let schema = tuple
         .schemas()

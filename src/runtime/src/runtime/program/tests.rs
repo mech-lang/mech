@@ -5500,3 +5500,190 @@ fn canonical_functions_do_not_capture_caller_symbols_or_existing_inputs() {
         .display_message();
     assert!(error.contains("undeclared local hidden"), "{error}");
 }
+
+#[test]
+fn canonical_functions_admit_configured_resource_inputs_on_first_use() {
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .resource_provider(Box::new(ProductTimerProvider))
+        .build_compiler()
+        .unwrap();
+    let document = canonical_planning_test_document(
+        "@clock := timer://clock/tick{:read(tick)}\nsample() = result<f64> :=\n  result := (@clock/tick).\n\nanswer := sample()\n",
+    );
+    let product = compiler.compile_document(&document).unwrap();
+    assert!(product.artifact().requirements().iter().any(|(_, requirement)| matches!(requirement,
+        mech_core::ApplicationRequirement::Resource(request) if request.base_uri == "timer://clock/tick")));
+    assert_eq!(
+        compiler
+            .evaluate_static_document_symbols(&document, &["answer"])
+            .unwrap(),
+        BTreeMap::from([("answer".to_owned(), RuntimeHostInputValue::F64(0.0))])
+    );
+}
+
+#[test]
+fn canonical_resource_defaults_do_not_create_unselected_live_observations() {
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .resource_provider(Box::new(ProductTimerProvider))
+        .build_compiler()
+        .unwrap();
+    for tail in ["answer := port + 1.0", "answer := port + @clock/tick"] {
+        let document = canonical_planning_test_document(&format!(
+            "@clock := timer://clock/tick{{:read(tick)}}\nport := @clock/tick + 2.0\n{tail}\n",
+        ));
+        let (product, defaults) = compiler
+            .compile_document_artifact_with_input_initializers(
+                &document,
+                &BTreeMap::new(),
+                &BTreeSet::from(["port".to_owned()]),
+            )
+            .unwrap();
+        assert_eq!(defaults["port"], RuntimeHostInputValue::F64(2.0));
+        assert_eq!(product.artifact().inputs().len(), 1);
+        let has_clock = product.artifact().requirements().iter().any(|(_, requirement)| matches!(requirement,
+            mech_core::ApplicationRequirement::Resource(request) if request.base_uri == "timer://clock/tick"));
+        assert_eq!(has_clock, tail.contains('@'));
+    }
+}
+
+#[test]
+fn canonical_tuple_destructure_consumes_local_function_outputs() {
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .unwrap();
+    let document = canonical_planning_test_document(
+        "pair(value<f32>) = (left<f32>, right<f32>) :=\n  left := value; right := value + 2f32.\n\n(a, b) := pair(20f32)\nanswer := a + b\n",
+    );
+    assert_eq!(
+        compiler
+            .evaluate_static_document_symbols(&document, &["answer"])
+            .unwrap(),
+        BTreeMap::from([("answer".to_owned(), RuntimeHostInputValue::F32(42.0))])
+    );
+    for source in [
+        "(a, b) := 1f32\n",
+        "(a, b, c) := (1f32, 2f32)\n",
+        "(a, a) := (1f32, 2f32)\n",
+        "a := 1f32\n(a, b) := (2f32, 3f32)\n",
+    ] {
+        assert!(
+            compiler
+                .compile_document(&canonical_planning_test_document(source))
+                .is_err(),
+            "{source}"
+        );
+    }
+}
+
+#[cfg(feature = "compute")]
+#[test]
+fn canonical_mixed_source_retains_tuple_destructured_results() {
+    let source = "@compute := compute://worker/kernel{:write(input/x), :write(turn)}\n@compute/input/x <- 2f32\n@compute/turn <- 1\n\ncalculation @compute\n-------------------------------------------------------------------------------\npair(value<f32>) = (left<f32>, right<f32>) :=\n  left := value; right := value + 2f32.\n\nx := 20f32\n(a, b) := pair(x)\nresult := a + b\nresult\n";
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .unwrap();
+    let mixed = compiler.compile_mixed_source(source).unwrap();
+    assert!(mixed.compute.interface.input_named("x").is_some());
+    assert!(
+        mixed
+            .compute
+            .artifact
+            .nodes()
+            .iter()
+            .all(|node| node.as_operation().is_some())
+    );
+}
+
+#[cfg(feature = "compute")]
+#[test]
+fn canonical_mixed_shipped_ekf_region_compiles() {
+    let shipped = include_str!("../../../../../examples/ekf/localization.mec");
+    let start = shipped.find("5. ekf-batch @compute\n").unwrap();
+    let end = shipped.find("6. Live Tracking Field\n").unwrap();
+    let source = format!(
+        "+> math/*\n@filters := compute://filters/kernel{{:write(input/control), :write(input/camera), :write(input/measurement), :write(turn)}}\n\
+         @filters/input/control <- [0.05<f32>; 1f32; 0f32]\n\
+         @filters/input/camera <- [1f32; 1f32]\n\
+         @filters/input/measurement <- [1f32; 0f32; 0f32]\n\
+         @filters/turn <- 1\n\n{}",
+        &shipped[start..end]
+    );
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .unwrap();
+    let document = canonical_planning_test_document(&source);
+    assert!(
+        document.is_strictly_clean(),
+        "{:#?}",
+        document.snapshot().diagnostics
+    );
+    let mixed = compiler.compile_mixed_document(&document).unwrap();
+    for input in ["control", "camera", "measurement"] {
+        assert!(
+            mixed.compute.interface.input_named(input).is_some(),
+            "{input}"
+        );
+    }
+    assert!(!mixed.compute.artifact.nodes().is_empty());
+}
+
+#[test]
+fn canonical_document_function_imports_use_catalog_exports() {
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .unwrap();
+    for (import, call) in [
+        ("+> math/*", "cos"),
+        ("+> math/cos", "cos"),
+        ("+> math/{sin, cos}", "cos"),
+        ("+> wave := math/cos", "wave"),
+    ] {
+        let document =
+            canonical_planning_test_document(&format!("{import}\nanswer := {call}(0f32)\n"));
+        assert_eq!(
+            compiler
+                .evaluate_static_document_symbols(&document, &["answer"])
+                .unwrap(),
+            BTreeMap::from([("answer".to_owned(), RuntimeHostInputValue::F32(1.0))]),
+            "{import}"
+        );
+    }
+    for source in [
+        "+> wave := math/cos\n+> wave := math/sin\nanswer := wave(0f32)\n",
+        "+> math/missing-function\nanswer := 1f32\n",
+    ] {
+        assert!(
+            compiler
+                .compile_document(&canonical_planning_test_document(source))
+                .is_err(),
+            "{source}"
+        );
+    }
+}
+
+#[test]
+fn canonical_constant_range_shapes_follow_the_declared_cardinality() {
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .unwrap();
+    for (range, count, last) in [("2..=3", 2, 3.0), ("1..2..=8", 4, 7.0), ("1..8", 7, 7.0)] {
+        let source = format!(
+            "last(values<[f64]:1,{count}>) = result<f64> :=\n  result := values[{count}].\n\nanswer := last({range})\n"
+        );
+        let document = canonical_planning_test_document(&source);
+        assert_eq!(
+            compiler
+                .evaluate_static_document_symbols(&document, &["answer"])
+                .unwrap(),
+            BTreeMap::from([("answer".to_owned(), RuntimeHostInputValue::F64(last))]),
+            "{range}"
+        );
+    }
+}

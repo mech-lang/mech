@@ -1201,6 +1201,14 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
     DocumentRule {
         rule: rules::NOT_MECH_CODE,
         expression: GrammarExpression::Choice(&[
+            GrammarExpression::Sequence(&[
+                GrammarExpression::Peek(&GrammarExpression::Rule(rules::SUBTITLE)),
+                GrammarExpression::Not(&GrammarExpression::Sequence(&[
+                    GrammarExpression::Rule(rules::EXPRESSION),
+                    GrammarExpression::Rule(rules::CODE_TERMINAL),
+                ])),
+                GrammarExpression::Rule(rules::SUBTITLE),
+            ]),
             GrammarExpression::Rule(rules::MICRO_MIKA),
             GrammarExpression::Rule(rules::MINI_MIKA),
             GrammarExpression::Rule(rules::MECHDOWN_LIST),

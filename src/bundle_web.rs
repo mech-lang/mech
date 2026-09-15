@@ -1,5 +1,7 @@
 #[path = "bundle_planning.rs"]
 mod planning;
+#[path = "bundle_presentation.rs"]
+mod presentation;
 
 use std::collections::BTreeSet;
 use std::fs;
@@ -7,8 +9,6 @@ use std::path::{Path, PathBuf};
 
 use mech_core::*;
 use mech_runtime::CanonicalProgramBundle;
-use mech_syntax::formatter::{Formatter, HtmlShimExtraSlots};
-use mech_syntax::parser;
 
 use crate::fs_paths::validate_safe_relative_path;
 use crate::{HostAuthorityInjection, LoadedMechConfig, resolve_config_path};
@@ -45,6 +45,7 @@ struct BundledSource {
     canonical_path: PathBuf,
     specifier: String,
     url: String,
+    artifact_url: Option<String>,
 }
 
 pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult> {
@@ -119,6 +120,16 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
         crate::inject_host_authority_injection_script(&shim_string, &injection)?;
     fs::write(&index_html, &root_shim_with_config)?;
 
+    let root_paths = options
+        .loaded_config
+        .document
+        .run
+        .as_ref()
+        .unwrap()
+        .paths
+        .iter()
+        .map(|path| resolve_config_path(&base_dir, path).canonicalize())
+        .collect::<std::io::Result<BTreeSet<_>>>()?;
     let mut bundled_sources = Vec::with_capacity(options.source_paths.len());
     let (resolver, documents) =
         planning::retained_sources(&options.source_paths, &base_dir, &project_dir)?;
@@ -133,35 +144,35 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
         let canonical_uri = format!("bundle:///{specifier}");
         let document = &documents[&canonical_uri];
         let source_text = document.source().to_contiguous_string();
-        let tree = parser::parse(&source_text)?;
         let url = format!("source/{}", percent_encode_url_path(&specifier));
         bundled_sources.push(BundledSource {
             canonical_path: read_source_path.clone(),
             specifier: specifier.clone(),
             url,
+            artifact_url: root_paths
+                .contains(&read_source_path)
+                .then(|| format!("code/{}", percent_encode_url_path(&specifier))),
         });
 
         write_bundle_file(&output_dir, "source", &relative, source_text.as_bytes())?;
 
-        let product =
-            compiler.compile_canonical_root(mech_runtime::SourceRequest::new(&canonical_uri))?;
-        let encoded =
-            CanonicalProgramBundle::from_product(canonical_uri, document, &product)?.encode()?;
-        write_bundle_file(&output_dir, "code", &relative, encoded.as_bytes())?;
+        if root_paths.contains(&read_source_path) {
+            let product = compiler
+                .compile_canonical_root(mech_runtime::SourceRequest::new(&canonical_uri))?;
+            let encoded = CanonicalProgramBundle::from_product(canonical_uri, document, &product)?
+                .encode()?;
+            write_bundle_file(&output_dir, "code", &relative, encoded.as_bytes())?;
+        }
 
         let html_relative = relative.with_extension("html");
         let depth = html_relative.components().count();
         let rebased_shim = rebase_bundle_shim_for_depth(&shim_string, depth);
         let source_shim = crate::inject_host_authority_injection_script(&rebased_shim, &injection)?;
-        let mut formatter = Formatter::new();
-        let html = formatter
-            .format_html_with_slots(
-                &tree,
-                stylesheet_string.clone(),
-                source_shim,
-                &HtmlShimExtraSlots::default(),
-            )
-            .html;
+        let html = presentation::render_canonical_html(
+            &document.document(),
+            &stylesheet_string,
+            &source_shim,
+        )?;
         write_bundle_file(&output_dir, "html", &html_relative, html.as_bytes())?;
     }
     let mut roots = Vec::with_capacity(
@@ -190,11 +201,14 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
     let source_entries = bundled_sources
         .iter()
         .map(|source| {
-            serde_json::json!({
+            let mut entry = serde_json::json!({
               "specifier": source.specifier,
               "url": source.url,
-              "artifactUrl": format!("code/{}", percent_encode_url_path(&source.specifier)),
-            })
+            });
+            if let Some(url) = &source.artifact_url {
+                entry["artifactUrl"] = serde_json::json!(url);
+            }
+            entry
         })
         .collect::<Vec<_>>();
     let manifest = serde_json::to_vec(&serde_json::json!({
@@ -923,6 +937,62 @@ export default async function init() {}
             })
             .count();
         assert_eq!(assignments, 4);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn canonical_bundle_uses_file_resolver_import_candidates() {
+        for (specifier, dependency) in [
+            ("./filters", "filters/index.mec"),
+            ("./filters.v1", "filters.v1.mec"),
+        ] {
+            let root = temp_root("canonical-file-candidates");
+            let loaded = write_demo_project(&root);
+            fs::write(
+                root.join("demo.mec"),
+                format!("+> {specifier}\nanswer := 42\n"),
+            )
+            .unwrap();
+            let dependency = root.join(dependency);
+            fs::create_dir_all(dependency.parent().unwrap()).unwrap();
+            fs::write(&dependency, "value := 1\n<+ value\n").unwrap();
+            let out = root.join("out");
+            let mut options = options(&root, &out, loaded);
+            options.source_paths.push(dependency);
+            bundle_web_project(options).unwrap();
+            assert!(out.join("code/demo.mec").is_file());
+            fs::remove_dir_all(root).unwrap();
+        }
+    }
+
+    #[test]
+    fn canonical_bundle_serves_prose_without_requiring_an_artifact() {
+        let root = temp_root("canonical-presentation-only");
+        let loaded = write_demo_project(&root);
+        fs::write(
+            root.join("notes.mec"),
+            "These are presentation-only notes.\n",
+        )
+        .unwrap();
+        let out = root.join("out");
+        let mut options = options(&root, &out, loaded);
+        options.source_paths.push(root.join("notes.mec"));
+        bundle_web_project(options).unwrap();
+        assert!(out.join("code/demo.mec").is_file());
+        assert!(!out.join("code/notes.mec").exists());
+        assert!(out.join("source/notes.mec").is_file());
+        assert!(out.join("html/notes.html").is_file());
+        let manifest: serde_json::Value = serde_json::from_str(
+            &fs::read_to_string(out.join("_mech/project-sources.json")).unwrap(),
+        )
+        .unwrap();
+        let notes = manifest["sources"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|source| source["specifier"] == "notes.mec")
+            .unwrap();
+        assert!(notes.get("artifactUrl").is_none());
         fs::remove_dir_all(root).unwrap();
     }
 

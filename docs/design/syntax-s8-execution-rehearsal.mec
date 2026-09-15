@@ -44,6 +44,15 @@ Missing lowering/resolution semantics block the owning S4/S7A prerequisite.
 
 Initializers and planning values are not automatically live input ports. The
 external_input_names distinction is an acceptance assertion, not optional cleanup.
+Resource-derived defaults are detached from the live graph; configured resource
+reads remain live only where executable bindings still use them. Local functions
+can introduce a configured resource read on first use while ordinary caller
+bindings remain outside their local scope. Canonical tuple destructuring binds
+local function outputs through the maintained tuple-selection operations.
+Constant ranges use the shared cardinality authority for fixed shape inference;
+runtime-bound ranges retain independent dimension parameters. Typed module
+imports bind catalog exports for wildcard, item, group and alias forms, and mixed
+compute regions inherit root imports without sharing local variable bindings.
 Resolved host capabilities and module catalog ownership stay in the current
 ProgramCompiler boundary. Production witnesses must enter those methods.
 
@@ -59,7 +68,12 @@ edges, source identity, HTML/output binding identities and browser target checks
 CanonicalProgramBundle is the prepared source/artifact envelope. The native
 producer/load witness executes a generated three-document import chain, including
 configured resource planning in dependencies. The documented browser DOM source
-bundles with four assignment effects. Browser distribution acceptance remains
+bundles with four assignment effects. Bundle linking shares the file resolver's
+exact/appended-extension/directory-index candidates. HTML formats the admitted
+canonical syntax directly. Only configured run roots receive executable artifacts;
+served prose and dependency documents retain source and HTML without requiring
+independent activation. The real static bootstrap validates each root artifact
+and accepts non-root sources without artifact URLs. Browser distribution acceptance remains
 open until the complete matrix executes after C removes the retiring code.
 Old AST payloads must reject with a regeneration instruction. No format-tree
 reconstruction or old decoder fallback. Native/WASM version/target admission

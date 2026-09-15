@@ -670,10 +670,13 @@ impl<'a> ProgramCompilerView<'a> {
                 published,
             )
             .map_err(|error| canonical_compilation_error(error.to_string()))?;
+        let referenced = program.referenced_input_names();
         let mut constants = Vec::new();
         for (ordinal, input) in program.program().inputs.iter().enumerate() {
             if !initialization
-                && (external.contains(&input.name) || context.reads.contains_key(&input.name))
+                && (external.contains(&input.name)
+                    || (context.reads.contains_key(&input.name)
+                        && referenced.contains(&input.name)))
             {
                 continue;
             }
@@ -702,6 +705,14 @@ impl<'a> ProgramCompilerView<'a> {
                 }
             }
             for (name, request) in &context.reads {
+                if !program
+                    .program()
+                    .inputs
+                    .iter()
+                    .any(|input| input.name == *name)
+                {
+                    continue;
+                }
                 program = program
                     .bind_resource_input(name, request.clone())
                     .map_err(|error| canonical_compilation_error(error.to_string()))?;

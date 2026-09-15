@@ -119,7 +119,7 @@ enum Frame<'g> {
     Choice(Choice<'g>),
     BestChoice(Choice<'g>, Option<(usize, u32)>),
     Optional(ParserCheckpoint, GrammarState),
-    Lookahead(ParserCheckpoint, GrammarState, bool),
+    Lookahead(ParserCheckpoint, GrammarState, bool, bool),
     Repetition(Repetition<'g>),
     FirstSeparated(&'g GrammarExpression, &'g GrammarExpression),
     Separator(Separated<'g>),
@@ -1362,10 +1362,11 @@ impl<'g> Continuation<'g> {
                         self.result = Attempt::Matched;
                     }
                 }
-                Frame::Lookahead(checkpoint, initial, negate) => {
+                Frame::Lookahead(checkpoint, initial, negate, previous) => {
+                    parser.replace_consuming_recovery(previous);
                     parser.rewind(checkpoint);
                     self.state = initial;
-                    self.result = if self.result.accepted() != negate {
+                    self.result = if (self.result == Attempt::Matched) != negate {
                         Attempt::Matched
                     } else {
                         Attempt::NoMatch
@@ -1516,10 +1517,14 @@ impl<'g> Continuation<'g> {
                 self.push(Frame::Expression(item));
             }
             GrammarExpression::Peek(item) | GrammarExpression::Not(item) => {
+                // Predicates select an owner from clean syntax. Recovery inside
+                // a rejected probe must not consume source or its recovery budget.
+                let previous = parser.replace_consuming_recovery(false);
                 self.push(Frame::Lookahead(
                     parser.checkpoint(),
                     self.state,
                     matches!(expression, GrammarExpression::Not(_)),
+                    previous,
                 ));
                 self.push(Frame::Expression(item));
             }

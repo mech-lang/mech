@@ -177,6 +177,36 @@ impl CanonicalSourceProgram {
         &self.program
     }
 
+    /// Input names referenced by executable semantic bindings, excluding
+    /// declarations retained solely while inferring a detached initializer.
+    pub fn referenced_input_names(&self) -> BTreeSet<String> {
+        let mut referenced = BTreeSet::new();
+        let mut retain = |value: &SourceValue| {
+            if let SourceValue::Input(ordinal) = value {
+                referenced.insert(self.program.inputs[*ordinal as usize].name.clone());
+            }
+        };
+        for state in &self.program.states {
+            if let Some(value) = &state.initializer {
+                retain(value);
+            }
+        }
+        for node in &self.program.nodes {
+            for value in &node.inputs {
+                retain(value);
+            }
+        }
+        for output in &self.program.outputs {
+            retain(&output.source);
+        }
+        for constraint in &self.program.constraints {
+            for value in &constraint.inputs {
+                retain(value);
+            }
+        }
+        referenced
+    }
+
     pub const fn schemas(&self) -> &SchemaTable {
         &self.schemas
     }
@@ -2230,6 +2260,7 @@ struct SemanticBuilder {
     scope_definitions: BTreeSet<String>,
     external_definitions: BTreeSet<String>,
     local_functions: BTreeMap<String, SyntaxNode>,
+    function_imports: BTreeMap<String, String>,
     active_functions: Vec<String>,
     patterns: Vec<SourceSemanticPattern>,
     resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
@@ -2255,6 +2286,7 @@ impl SemanticBuilder {
             scope_definitions: BTreeSet::new(),
             external_definitions: BTreeSet::new(),
             local_functions: BTreeMap::new(),
+            function_imports: BTreeMap::new(),
             active_functions: Vec::new(),
             patterns: Vec::new(),
             resource_writes: BTreeMap::new(),
@@ -2453,6 +2485,16 @@ impl SemanticBuilder {
                 )?;
                 let stem = self.required(variable.stem(), variable.syntax(), "a variable stem")?;
                 bindings.insert(node_text(stem.syntax())?);
+            }
+            SyntaxKind::TupleDestructure => {
+                let destructure =
+                    mech_syntax::document::TupleDestructureSyntax::cast(unit.clone()).unwrap();
+                let expression =
+                    self.required(destructure.value(), unit, "a destructuring value")?;
+                self.declare_input_annotations(expression.syntax(), bindings)?;
+                for name in destructure.names() {
+                    bindings.insert(node_text(name.syntax())?);
+                }
             }
             SyntaxKind::Expression | SyntaxKind::OpAssign | SyntaxKind::VariableAssign => {
                 self.declare_input_annotations(unit, bindings)?;
@@ -3081,6 +3123,11 @@ impl SemanticBuilder {
                 if self.local_functions.contains_key(&function_name) {
                     self.inline_document_function(&function_name, inputs, &names, value.syntax())?
                 } else {
+                    let function_name = self
+                        .function_imports
+                        .get(&function_name)
+                        .cloned()
+                        .unwrap_or(function_name);
                     let declaration =
                         self.source_type_declaration(&function_name).map_err(|_| {
                             SourceSemanticError {
@@ -3497,6 +3544,27 @@ impl SemanticBuilder {
                 "range endpoints do not share a compatible kind",
             )?;
         }
+        let constant_extent = values
+            .iter()
+            .map(|value| self.constant_value(*value))
+            .collect::<Option<Vec<_>>>()
+            .map(|values| {
+                let data = values
+                    .iter()
+                    .map(|value| value.data().clone())
+                    .collect::<Vec<_>>();
+                mech_core::canonical_value_range_size(
+                    &data,
+                    terminal == CanonicalOperator::RangeInclusive,
+                    data.len() == 3,
+                )
+            })
+            .transpose()
+            .map_err(|error| SourceSemanticError {
+                code: "source-semantics/invalid-range",
+                message: format!("constant range cardinality is invalid: {error:?}"),
+                anchor: SourceSemanticAnchor::for_node(range.syntax()),
+            })?;
         let extent = DimensionParameterId::new(0);
         let range_endpoint = resolved_schema_type(element_schema, range.syntax())?
             .is_some_and(|kind| kind.satisfies(BuiltinKindPredicate::RangeEndpoint));
@@ -3511,18 +3579,27 @@ impl SemanticBuilder {
             name,
             values,
             SchemaDraft {
-                dimension_parameters: vec![DimensionParameterDeclaration {
-                    id: extent,
-                    origin: DimensionParameterOrigin::Inferred,
-                    lifetime: DimensionLifetime::Turn,
-                    lower_bound: DimensionExpr::Constant(0),
-                    upper_bound: None,
-                }]
-                .into_boxed_slice(),
+                dimension_parameters: if constant_extent.is_some() {
+                    Box::new([])
+                } else {
+                    vec![DimensionParameterDeclaration {
+                        id: extent,
+                        origin: DimensionParameterOrigin::Inferred,
+                        lifetime: DimensionLifetime::Turn,
+                        lower_bound: DimensionExpr::Constant(0),
+                        upper_bound: None,
+                    }]
+                    .into_boxed_slice()
+                },
                 body: SchemaBody::Matrix {
                     element: Box::new(schema_body(element_schema)),
-                    dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Parameter(extent)]
-                        .into_boxed_slice(),
+                    dimensions: vec![
+                        DimensionExpr::Constant(1),
+                        constant_extent.map_or(DimensionExpr::Parameter(extent), |extent| {
+                            DimensionExpr::Constant(extent as u64)
+                        }),
+                    ]
+                    .into_boxed_slice(),
                 },
             },
             range.syntax(),
@@ -3648,6 +3725,10 @@ impl SemanticBuilder {
             .annotation()
             .map(|annotation| annotation_schema_draft(&annotation))
             .transpose()?;
+        let initializer_nodes = self.nodes.len();
+        let initializer_states = self.states.len();
+        let initializer_constraints = self.constraints.len();
+        let initializer_outputs = self.outputs.len();
         let mut value = self
             .expression_with_expected(&expression, expected.as_ref().map(ExpectedSchema::Value))?
             .0;
@@ -3701,6 +3782,13 @@ impl SemanticBuilder {
             PendingValue::State(state)
         } else if self.external_definitions.contains(&name) {
             let schema = self.schema_draft_of(value)?;
+            // This projection retains the declared live port. Its default is
+            // evaluated by the initialization projection, so initializer-only
+            // operations and states must not become resident dependencies.
+            self.nodes.truncate(initializer_nodes);
+            self.states.truncate(initializer_states);
+            self.constraints.truncate(initializer_constraints);
+            self.outputs.truncate(initializer_outputs);
             let index = u32::try_from(self.inputs.len()).map_err(|_| SourceSemanticError {
                 code: "source-semantics/input-identity-exhausted",
                 message: "canonical input count exceeds SourceProgram identity space".to_owned(),
@@ -5320,6 +5408,10 @@ impl SemanticBuilder {
     }
 
     fn constant_selection_ordinal(&self, value: PendingValue) -> Option<u64> {
+        mech_core::canonical_positional_ordinal(self.constant_value(value)?.data()).ok()
+    }
+
+    fn constant_value(&self, value: PendingValue) -> Option<Value> {
         let PendingValue::Constant(index) = value else {
             return None;
         };
@@ -5337,7 +5429,7 @@ impl SemanticBuilder {
         }
         .finalize(&SnapshotValidationContext::new(&schemas))
         .ok()?;
-        mech_core::canonical_positional_ordinal(value.data()).ok()
+        Some(value)
     }
 
     fn subscript_value(

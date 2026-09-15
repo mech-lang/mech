@@ -708,10 +708,15 @@ fn calls_ranges_subscripts_and_patterns_keep_their_canonical_roles() {
     };
     assert!(matches!(element.as_ref(), SchemaBody::FloatingPoint(_)));
     assert_eq!(dimensions[0], mech_core::DimensionExpr::Constant(1));
-    assert!(matches!(
-        dimensions[1],
-        mech_core::DimensionExpr::Parameter(_)
-    ));
+    assert_eq!(dimensions[1], mech_core::DimensionExpr::Constant(5));
+    let dynamic = CanonicalSourceFrontend
+        .compile_expression(&expression("start..=3"))
+        .unwrap();
+    let schema = dynamic
+        .schemas()
+        .get(dynamic.program().outputs[0].schema)
+        .unwrap();
+    assert!(!schema.dimension_parameters().is_empty());
     range
         .compile_artifact()
         .expect("typed range must be a canonical artifact input");
@@ -1572,10 +1577,7 @@ fn reviewed_source_kind_edges_match_operation_and_literal_contracts() {
     else {
         panic!("transposed range did not retain a matrix schema")
     };
-    assert!(matches!(
-        dimensions[0],
-        mech_core::DimensionExpr::Parameter(_)
-    ));
+    assert_eq!(dimensions[0], mech_core::DimensionExpr::Constant(2));
     assert_eq!(dimensions[1], mech_core::DimensionExpr::Constant(1));
     transposed_range
         .compile_artifact()
@@ -1938,7 +1940,7 @@ fn exact_table_columns_and_c32_are_first_class_source_schemas() {
 
     let parameterized_table = CanonicalSourceFrontend
         .compile_expression(&expression(
-            "╭──────────╮\n│ values   │\n├──────────┤\n│ (1..3)   │\n╰──────────╯",
+            "╭──────────╮\n│ values   │\n├──────────┤\n│ (a..3)   │\n╰──────────╯",
         ))
         .unwrap();
     let table_schema = parameterized_table
@@ -2022,7 +2024,7 @@ fn exact_table_columns_and_c32_are_first_class_source_schemas() {
 #[test]
 fn compound_and_maintained_operations_retain_exact_source_schemas() {
     let tuple = CanonicalSourceFrontend
-        .compile_expression(&expression("(1u8, (1..3))"))
+        .compile_expression(&expression("(1u8, (a..3))"))
         .unwrap();
     let tuple_schema = tuple
         .schemas()
@@ -2037,7 +2039,7 @@ fn compound_and_maintained_operations_retain_exact_source_schemas() {
     assert!(!tuple_schema.dimension_parameters().is_empty());
 
     let record = CanonicalSourceFrontend
-        .compile_expression(&expression("{values: (1..3), ready: true}"))
+        .compile_expression(&expression("{values: (a..3), ready: true}"))
         .unwrap();
     let record_schema = record
         .schemas()
@@ -2052,7 +2054,7 @@ fn compound_and_maintained_operations_retain_exact_source_schemas() {
     assert!(!record_schema.dimension_parameters().is_empty());
 
     let map = CanonicalSourceFrontend
-        .compile_expression(&expression("{1u8: (1..3), 2u8: (2..4)}"))
+        .compile_expression(&expression("{1u8: (a..3), 2u8: (b..4)}"))
         .unwrap();
     let map_schema = map.schemas().get(map.program().outputs[0].schema).unwrap();
     assert!(matches!(

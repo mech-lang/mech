@@ -56,12 +56,17 @@ async function readProjectSourceManifest(moduleUrl) {
       source =>
         typeof source?.specifier !== "string" ||
         typeof source?.url !== "string" ||
-        typeof source?.artifactUrl !== "string",
+        (source.artifactUrl !== undefined && typeof source.artifactUrl !== "string"),
     )
   ) {
     throw new Error("invalid project source manifest");
   }
 
+  for (const root of manifest.roots) {
+    if (!manifest.sources.some(source => source.specifier === root && typeof source.artifactUrl === "string")) {
+      throw new Error(`static bundle root artifact is missing: ${root}`);
+    }
+  }
   return manifest;
 }
 
@@ -81,7 +86,9 @@ async function main() {
 
   for (const source of manifest.sources) {
     sources[source.specifier] = await fetchText(source.url);
-    artifacts[source.specifier] = await fetchText(source.artifactUrl);
+    if (source.artifactUrl !== undefined) {
+      artifacts[source.specifier] = await fetchText(source.artifactUrl);
+    }
   }
 
   if (!Object.prototype.hasOwnProperty.call(window, "__MECH_HOST_CONFIG")) {

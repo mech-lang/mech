@@ -505,3 +505,16 @@ fn function_terminators_do_not_force_a_trailing_slice() {
         assert_eq!(count(&snapshot.syntax(), SyntaxKind::FunctionDefine), 1);
     }
 }
+
+#[test]
+fn nested_numbered_subtitles_keep_document_ownership_before_expression_recovery() {
+    let text = "(5.1.1) Predictor\n\nx := (1 + 2)\n\n(5.3.2) Validation\n\nx + 1\n(1) + 2\n";
+    let parsed = parse_canonical_document(source(text), ParseConfig::default());
+    assert!(parsed.diagnostics.is_empty(), "{:#?}", parsed.diagnostics);
+    assert_eq!(count(&parsed.syntax(), SyntaxKind::Subtitle), 2);
+    assert_eq!(count(&parsed.syntax(), SyntaxKind::VariableDefine), 1);
+    assert_eq!(
+        reconstruct_source(&parsed.root, &parsed.source).unwrap(),
+        text
+    );
+}
