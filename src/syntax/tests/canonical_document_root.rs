@@ -493,3 +493,15 @@ fn comment_arbitration_does_not_spend_the_recovery_budget() {
     assert_eq!(count(&parsed.syntax(), SyntaxKind::Comment), 0);
     assert_eq!(parsed.stats.recovery_bytes, 0);
 }
+
+#[test]
+fn function_terminators_do_not_force_a_trailing_slice() {
+    for text in [
+        "identity(value<f32>) = result<f32> :=\n  result := value.\n",
+        "identity(value<f32>) = result<f32> :=\n  result := value.",
+    ] {
+        let snapshot = parse_canonical_document(source(text), ParseConfig::default());
+        assert!(snapshot.is_strictly_clean(), "{:?}", snapshot.diagnostics);
+        assert_eq!(count(&snapshot.syntax(), SyntaxKind::FunctionDefine), 1);
+    }
+}

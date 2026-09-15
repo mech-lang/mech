@@ -6,8 +6,8 @@ Parent: S8A 5e2d43ce5be254fbdf99d094c0115054effd0422.
 The linked s8-consumer-readiness.tsv remains the consumer tracker; this record
 records B's public-interface decisions. Canonical configuration, document and
 interactive compilation, mixed compute partitioning, retained import binding,
-and bundle provider planning now have implementation witnesses. The remaining
-method migrations and the deleted-code product matrix below still gate acceptance.
+and bundle provider planning now have implementation witnesses. Document input/initializer/static-symbol methods are now implemented. The complete
+configured product matrix and deleted-code qualification below still gate acceptance.
 A removal row marked routed has switched its caller to canonical input and must
 have zero old parser calls. It remains open for deletion qualification and cannot
 satisfy a demonstrated consumer's dependency gate.
@@ -17,7 +17,7 @@ satisfy a demonstrated consumer's dependency gate.
 
 Replace the Program input in ProgramCompiler and ProgramCompilerView with the
 retained SourceDocument / its selected typed document owner. Preserve each
-existing method's output and host boundary. Planned replacements:
+existing method's output and host boundary. Prepared interfaces (shipping tree-route removal remains C-owned):
 
 compile_tree -> compile_document -> ProgramCompilationProduct.
 compile_interactive_tree -> compile_interactive_document -> observable product.
@@ -26,9 +26,13 @@ compile_tree_artifact_with_inputs -> compile_document_artifact_with_inputs:
   retain detached planning values and the explicit set of live input names.
 compile_tree_artifact_with_input_initializers -> corresponding document method:
   capture declaration-time values in the same short-lived planning pass; do not
-  run a second evaluator or leak compiler cells into resident state.
+  run a second evaluator or leak compiler cells into resident state. Canonical
+  initialization and live projections share one retained document and one resource
+  planning context; only the initialization projection is temporarily activated.
 evaluate_static_tree_symbols[_with_inputs] -> document variants:
   preserve requested-symbol filtering and detached RuntimeHostInputValue outputs.
+  Requested symbols have distinct output identities, including a variable named
+  result, and canonical matrix snapshots retain logical row-major order.
 compile_mixed_tree -> compile_mixed_document:
   canonical typed declaration/executable partitions retain module resolution,
   compute regions, coordinator artifacts and advertised target requirements.
@@ -52,8 +56,11 @@ Prepare retained source plus current accepted artifact publication and loader
 admission. Keep the existing bytecode/artifact format. Preserve source-resolution
 edges, source identity, HTML/output binding identities and browser target checks.
 
-The exact envelope/cache discriminator remains B-owned and unapproved. Prove a
-real generated bundle loads and executes before marking either endpoint complete.
+CanonicalProgramBundle is the prepared source/artifact envelope. The native
+producer/load witness executes a generated three-document import chain, including
+configured resource planning in dependencies. The documented browser DOM source
+bundles with four assignment effects. Browser distribution acceptance remains
+open until the complete matrix executes after C removes the retiring code.
 Old AST payloads must reject with a regeneration instruction. No format-tree
 reconstruction or old decoder fallback. Native/WASM version/target admission
 continues through existing artifact validation.

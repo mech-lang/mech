@@ -851,6 +851,82 @@ export default async function init() {}
     }
 
     #[test]
+    fn canonical_bundle_dependencies_use_configured_resource_planning_values() {
+        let root = temp_root("canonical-import-resource");
+        let mut loaded = write_demo_project(&root);
+        loaded
+            .document
+            .hosts
+            .push(mech_runtime::HostInstanceConfig {
+                name: "clock".to_owned(),
+                provider: "timer".to_owned(),
+                settings: mech_runtime::ConfigValue::Map(std::collections::BTreeMap::new()),
+            });
+        fs::write(root.join("demo.mec"), "+> ./dep.mec\nanswer := dep/value\n").unwrap();
+        fs::write(
+            root.join("dep.mec"),
+            "@clock := timer://clock/tick{:read(tick)}\nvalue := @clock/tick\n<+ value\n",
+        )
+        .unwrap();
+        let out = root.join("out");
+        let mut options = options(&root, &out, loaded);
+        options.source_paths.push(root.join("dep.mec"));
+        bundle_web_project(options).unwrap();
+        let bundle = CanonicalProgramBundle::decode(
+            &fs::read_to_string(out.join("code/demo.mec")).unwrap(),
+            None,
+        )
+        .unwrap();
+        let mut runtime = mech_runtime::RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_catalog())
+            .build()
+            .unwrap();
+        let durability = runtime.config().resident_durability;
+        runtime
+            .load_bytecode_program(&bundle.bytecode, durability)
+            .unwrap();
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn canonical_bundle_admits_documented_browser_assignments() {
+        let root = temp_root("canonical-browser-assignments");
+        write_demo_project(&root);
+        fs::write(
+            root.join("demo.mec"),
+            include_str!("../examples/browser-dom-demo/demo.mec"),
+        )
+        .unwrap();
+        fs::write(
+            root.join("demo.mcfg"),
+            include_str!("../examples/browser-dom-demo/demo.mcfg"),
+        )
+        .unwrap();
+        let loaded =
+            crate::load_mech_config_path(root.join("demo.mcfg"), Some(root.clone())).unwrap();
+        let out = root.join("out");
+        bundle_web_project(options(&root, &out, loaded)).unwrap();
+        let bundle = CanonicalProgramBundle::decode(
+            &fs::read_to_string(out.join("code/demo.mec")).unwrap(),
+            None,
+        )
+        .unwrap();
+        let artifact = mech_engine::decode_program_artifact_bytecode_v1(&bundle.bytecode).unwrap();
+        let assignments = artifact
+            .requirements()
+            .iter()
+            .filter(|(_, requirement)| {
+                matches!(
+                    requirement, mech_core::ApplicationRequirement::Resource(request)
+                        if request.intent == mech_core::ResourceIntent::Assign
+                )
+            })
+            .count();
+        assert_eq!(assignments, 4);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn canonical_bundle_rejects_missing_and_cyclic_dependencies() {
         for cyclic in [false, true] {
             let root = temp_root("canonical-invalid-imports");

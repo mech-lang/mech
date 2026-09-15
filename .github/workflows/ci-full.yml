@@ -1101,6 +1101,12 @@ jobs:
           --test canonical_document_render --test canonical_source_index
           --test source_document --test canonical_config_profile --test config_profile
 
+      - name: Verify canonical compiler execution contracts
+        run: >-
+          cargo +nightly-2026-03-03 test --locked -p mech-runtime
+          --no-default-features --features full_compiler,watcher,compute
+          --lib canonical_
+
       - name: Verify canonical complete-document indexing work
         run: >-
           cargo +nightly-2026-03-03 test --locked -p mech-runtime

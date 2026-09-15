@@ -864,6 +864,33 @@ impl CanonicalSourceFrontend {
         Ok(program)
     }
 
+    /// Lower a retained document for the compiler's explicit input and output
+    /// contract. Only selected definitions become live inputs; publication is
+    /// restricted to requested names and the ordinary document outputs.
+    pub fn compile_document_with_planning_contract(
+        &self,
+        document: &DocumentSyntax,
+        catalog: Arc<mech_core::FunctionCatalog>,
+        input_schemas: BTreeMap<String, SchemaBody>,
+        resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+        external_definitions: &BTreeSet<String>,
+        published_bindings: &BTreeSet<String>,
+    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+        reject_recovered_syntax(document)?;
+        document_lowering::compile_document_with_options(
+            document,
+            Some(catalog),
+            input_schemas,
+            false,
+            resource_writes,
+            external_definitions,
+            &published_bindings
+                .iter()
+                .map(|name| crate::encode_interactive_symbol_output_name(name))
+                .collect(),
+        )
+    }
+
     /// Partition one retained mixed document into coordinator, compute, and
     /// initializer semantic programs. All three projections share the same
     /// canonical source owner and source coordinates.
@@ -2202,6 +2229,8 @@ struct SemanticBuilder {
     bindings: BTreeMap<String, PendingBinding>,
     scope_definitions: BTreeSet<String>,
     external_definitions: BTreeSet<String>,
+    local_functions: BTreeMap<String, SyntaxNode>,
+    active_functions: Vec<String>,
     patterns: Vec<SourceSemanticPattern>,
     resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
 }
@@ -2225,6 +2254,8 @@ impl SemanticBuilder {
             bindings: BTreeMap::new(),
             scope_definitions: BTreeSet::new(),
             external_definitions: BTreeSet::new(),
+            local_functions: BTreeMap::new(),
+            active_functions: Vec::new(),
             patterns: Vec::new(),
             resource_writes: BTreeMap::new(),
         }
@@ -3013,15 +3044,6 @@ impl SemanticBuilder {
                 let function =
                     self.required(value.function(), value.syntax(), "a function name")?;
                 let function_name = node_text(function.syntax())?;
-                let declaration = self.source_type_declaration(&function_name).map_err(|_| {
-                    SourceSemanticError {
-                        code: "source-semantics/unknown-function",
-                        message: format!(
-                            "function {function_name} has no declared source semantics"
-                        ),
-                        anchor: SourceSemanticAnchor::for_node(function.syntax()),
-                    }
-                })?;
                 let arguments = self.required(
                     value.arguments(),
                     value.syntax(),
@@ -3056,75 +3078,92 @@ impl SemanticBuilder {
                         }
                     }
                 }
-                if names.iter().any(|name| !name.is_empty()) {
-                    let parameters = declaration.parameter_names.as_ref().ok_or_else(|| {
-                        SourceSemanticError {
-                            code: "source-semantics/named-arguments-unavailable",
-                            message: format!(
-                                "function {function_name} does not declare parameter names"
-                            ),
-                            anchor: SourceSemanticAnchor::for_node(value.syntax()),
-                        }
-                    })?;
-                    let mut bound = vec![None; parameters.len()];
-                    for (name, input) in names.iter().zip(inputs) {
-                        let ordinal = if name.is_empty() {
-                            bound.iter().position(Option::is_none).ok_or_else(|| {
-                                SourceSemanticError {
-                                    code: "source-semantics/too-many-call-arguments",
-                                    message: format!(
-                                        "function {function_name} has no unbound parameter"
-                                    ),
-                                    anchor: SourceSemanticAnchor::for_node(value.syntax()),
-                                }
-                            })?
-                        } else {
-                            parameters
-                                .iter()
-                                .position(|parameter| parameter == name)
-                                .ok_or_else(|| SourceSemanticError {
-                                    code: "source-semantics/unknown-call-argument",
-                                    message: format!(
-                                        "function {function_name} has no parameter named {name}"
-                                    ),
-                                    anchor: SourceSemanticAnchor::for_node(value.syntax()),
-                                })?
-                        };
-                        if bound[ordinal].replace(input).is_some() {
-                            return Err(SourceSemanticError {
-                                code: "source-semantics/duplicate-call-argument",
+                if self.local_functions.contains_key(&function_name) {
+                    self.inline_document_function(&function_name, inputs, &names, value.syntax())?
+                } else {
+                    let declaration =
+                        self.source_type_declaration(&function_name).map_err(|_| {
+                            SourceSemanticError {
+                                code: "source-semantics/unknown-function",
                                 message: format!(
-                                    "parameter {} is bound more than once",
-                                    parameters[ordinal]
+                                    "function {function_name} has no declared source semantics"
+                                ),
+                                anchor: SourceSemanticAnchor::for_node(function.syntax()),
+                            }
+                        })?;
+                    if names.iter().any(|name| !name.is_empty()) {
+                        let parameters = declaration.parameter_names.as_ref().ok_or_else(|| {
+                            SourceSemanticError {
+                                code: "source-semantics/named-arguments-unavailable",
+                                message: format!(
+                                    "function {function_name} does not declare parameter names"
                                 ),
                                 anchor: SourceSemanticAnchor::for_node(value.syntax()),
-                            });
-                        }
-                    }
-                    inputs = bound
-                        .into_iter()
-                        .collect::<Option<Vec<_>>>()
-                        .ok_or_else(|| SourceSemanticError {
-                            code: "source-semantics/missing-call-argument",
-                            message: format!("function {function_name} has an unbound parameter"),
-                            anchor: SourceSemanticAnchor::for_node(value.syntax()),
+                            }
                         })?;
+                        let mut bound = vec![None; parameters.len()];
+                        for (name, input) in names.iter().zip(inputs) {
+                            let ordinal = if name.is_empty() {
+                                bound.iter().position(Option::is_none).ok_or_else(|| {
+                                    SourceSemanticError {
+                                        code: "source-semantics/too-many-call-arguments",
+                                        message: format!(
+                                            "function {function_name} has no unbound parameter"
+                                        ),
+                                        anchor: SourceSemanticAnchor::for_node(value.syntax()),
+                                    }
+                                })?
+                            } else {
+                                parameters
+                                    .iter()
+                                    .position(|parameter| parameter == name)
+                                    .ok_or_else(|| SourceSemanticError {
+                                        code: "source-semantics/unknown-call-argument",
+                                        message: format!(
+                                            "function {function_name} has no parameter named {name}"
+                                        ),
+                                        anchor: SourceSemanticAnchor::for_node(value.syntax()),
+                                    })?
+                            };
+                            if bound[ordinal].replace(input).is_some() {
+                                return Err(SourceSemanticError {
+                                    code: "source-semantics/duplicate-call-argument",
+                                    message: format!(
+                                        "parameter {} is bound more than once",
+                                        parameters[ordinal]
+                                    ),
+                                    anchor: SourceSemanticAnchor::for_node(value.syntax()),
+                                });
+                            }
+                        }
+                        inputs =
+                            bound
+                                .into_iter()
+                                .collect::<Option<Vec<_>>>()
+                                .ok_or_else(|| SourceSemanticError {
+                                    code: "source-semantics/missing-call-argument",
+                                    message: format!(
+                                        "function {function_name} has an unbound parameter"
+                                    ),
+                                    anchor: SourceSemanticAnchor::for_node(value.syntax()),
+                                })?;
+                    }
+                    let detail = Some(format!("{function_name}({})", names.join(",")));
+                    let (inputs, output) = self.resolve_declared_call(
+                        &function_name,
+                        inputs,
+                        value.syntax(),
+                        declaration,
+                    )?;
+                    self.emit_with_schema_draft(
+                        &function_name,
+                        inputs,
+                        output,
+                        value.syntax(),
+                        "call",
+                        detail,
+                    )
                 }
-                let detail = Some(format!("{function_name}({})", names.join(",")));
-                let (inputs, output) = self.resolve_declared_call(
-                    &function_name,
-                    inputs,
-                    value.syntax(),
-                    declaration,
-                )?;
-                self.emit_with_schema_draft(
-                    &function_name,
-                    inputs,
-                    output,
-                    value.syntax(),
-                    "call",
-                    detail,
-                )
             }
             FactorValueSyntax::MatrixComprehension(value) => self.matrix_comprehension(&value)?,
             FactorValueSyntax::Slice(value) => self.slice(&value)?,
@@ -4186,10 +4225,9 @@ impl SemanticBuilder {
                 let row_count = values.len() as u64;
                 let column_count = first.len() as u64;
                 let mut data = Vec::with_capacity(values.len() * first.len());
-                for column in 0..first.len() {
-                    for row in &values {
-                        let PendingValue::Constant(index) =
-                            row[column].expect("constant matrix entry")
+                for row in &values {
+                    for value in row {
+                        let PendingValue::Constant(index) = value.expect("constant matrix entry")
                         else {
                             unreachable!("constant matrix checked above")
                         };
@@ -5955,24 +5993,34 @@ impl SemanticBuilder {
             node_text(context.syntax())?,
             node_text(address.syntax())?
         );
+        let expression =
+            self.required(send.expression(), send.syntax(), "a resource-send value")?;
+        self.emit_resource_write(&target_name, &expression, send.syntax(), "resource/send")
+    }
+
+    fn emit_resource_write(
+        &mut self,
+        target_name: &str,
+        expression: &ExpressionSyntax,
+        syntax: &SyntaxNode,
+        operation: &str,
+    ) -> Result<PendingValue, SourceSemanticError> {
         let request = self
             .resource_writes
-            .get(&target_name)
+            .get(target_name)
             .cloned()
             .ok_or_else(|| SourceSemanticError {
                 code: "source-semantics/unbound-resource-send",
                 message: format!(
                     "canonical resource send {target_name} has no resolved context binding"
                 ),
-                anchor: SourceSemanticAnchor::for_node(target.syntax()),
+                anchor: SourceSemanticAnchor::for_node(syntax),
             })?;
-        let expression =
-            self.required(send.expression(), send.syntax(), "a resource-send value")?;
-        let (value, _) = self.expression(&expression)?;
+        let (value, _) = self.expression(expression)?;
         value.resolved()?;
         self.nodes.push(PendingNode {
             body: PendingNodeBody::Operation {
-                operation: operation_reference("resource/send"),
+                operation: operation_reference(operation),
                 contract: Some(crate::function::external::RESOURCE_EFFECT_CONTRACT.clone()),
                 requirement: Some(mech_core::ApplicationRequirement::Resource(request)),
             },
@@ -5985,10 +6033,10 @@ impl SemanticBuilder {
             exposes_output: false,
             state: None,
             semantic: SourceSemanticNode {
-                operation: "resource/send".to_owned(),
+                operation: operation.to_owned(),
                 role: "resource",
-                detail: Some(target_name),
-                anchor: SourceSemanticAnchor::for_node(send.syntax()),
+                detail: Some(target_name.to_owned()),
+                anchor: SourceSemanticAnchor::for_node(syntax),
             },
         });
         Ok(self.constant_exact(

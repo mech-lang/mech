@@ -12,7 +12,11 @@ use super::*;
 #[path = "document_assignment.rs"]
 mod document_assignment;
 
+#[path = "document_functions.rs"]
+mod document_functions;
+
 enum DocumentUnit {
+    Function(SyntaxNode),
     Statement(SyntaxNode),
     ResourceSend(mech_syntax::document::ContextSendSyntax),
     Invariant(InvariantDefineSyntax),
@@ -211,7 +215,7 @@ pub(super) fn compile_mixed_document_with_catalog_and_resources(
     })
 }
 
-fn compile_document_with_options(
+pub(super) fn compile_document_with_options(
     document: &DocumentSyntax,
     catalog: Option<Arc<mech_core::FunctionCatalog>>,
     input_schemas: BTreeMap<String, SchemaBody>,
@@ -344,6 +348,7 @@ fn compile_collected_document(
     };
     builder.resource_writes = resource_writes;
     builder.external_definitions = external_definitions.clone();
+    builder.register_document_functions(&units)?;
     let mut bindings = BTreeSet::new();
     declare_document_inputs(&mut builder, &units, &mut bindings)?;
     declare_document_inline_inputs(&mut builder, &units, &bindings)?;
@@ -397,21 +402,38 @@ fn compile_collected_document(
         builder.publish(&name, None, value, name_node.syntax());
         document_exports.push(SourceDocumentExport { output, name });
     }
-    for name in published_bindings {
-        if builder.outputs.iter().any(|output| output.name == *name) {
+    for output_name in published_bindings {
+        if builder
+            .outputs
+            .iter()
+            .any(|output| output.name == *output_name)
+        {
             continue;
         }
-        let binding = builder
-            .bindings
-            .get(name)
-            .copied()
-            .ok_or_else(|| SourceSemanticError {
+        let decoded = crate::decode_interactive_symbol_output_name(output_name);
+        let name = decoded.as_ref().unwrap_or(output_name);
+        let value = if let Some(binding) = builder.bindings.get(name).copied() {
+            builder.read_document_binding(binding, &last.syntax)?
+        } else if let Some(input) = builder.input_by_name.get(name) {
+            PendingValue::Input(*input)
+        } else if let Some(schema) = builder.input_schema_overrides.get(name).cloned() {
+            let ordinal = u32::try_from(builder.inputs.len())
+                .map_err(|_| internal(anchor, "input identity exhausted".to_owned()))?;
+            builder.inputs.push(PendingInput {
+                name: name.clone(),
+                schema,
+                anchor,
+            });
+            builder.input_by_name.insert(name.clone(), ordinal);
+            PendingValue::Input(ordinal)
+        } else {
+            return Err(SourceSemanticError {
                 code: "source-semantics/unknown-published-binding",
                 message: format!("document does not define requested output {name}"),
                 anchor,
-            })?;
-        let value = builder.read_document_binding(binding, &last.syntax)?;
-        builder.publish(name, None, value, &last.syntax);
+            });
+        };
+        builder.publish(output_name, None, value, &last.syntax);
     }
     presentation.sort_by_key(|(_, _, owner)| owner.range().start);
     for (kind, value, owner) in presentation {
@@ -535,6 +557,10 @@ fn collect_document_units(
     ) {
         return Ok(());
     }
+    if node.kind() == SyntaxKind::FunctionDefine {
+        output.push(DocumentUnit::Function(node.clone()));
+        return Ok(());
+    }
     if let Some(send) = mech_syntax::document::ContextSendSyntax::cast(node.clone()) {
         output.push(DocumentUnit::ResourceSend(send));
         return Ok(());
@@ -599,7 +625,6 @@ fn collect_document_units(
             // must not be traversed as unrelated child expressions.
             | SyntaxKind::FsmPipe
             | SyntaxKind::FsmSpecification
-            | SyntaxKind::FunctionDefine
             | SyntaxKind::KindDefine
             | SyntaxKind::TupleDestructure
     ) {
@@ -625,6 +650,7 @@ fn declare_document_inputs(
 ) -> Result<(), SourceSemanticError> {
     for unit in units {
         match unit {
+            DocumentUnit::Function(_) => {}
             DocumentUnit::Statement(unit) => {
                 builder.declare_unit_input_annotations(unit, bindings)?
             }
@@ -650,7 +676,7 @@ fn declare_document_inline_inputs(
 ) -> Result<(), SourceSemanticError> {
     for unit in units {
         match unit {
-            DocumentUnit::Statement(_) => {}
+            DocumentUnit::Statement(_) | DocumentUnit::Function(_) => {}
             DocumentUnit::ResourceSend(_) => {}
             DocumentUnit::Invariant(_) => {}
             DocumentUnit::Inline(inline) => {
@@ -698,6 +724,7 @@ fn compile_document_units_inner(
     let mut last = None;
     for unit in units {
         match unit {
+            DocumentUnit::Function(_) => {}
             DocumentUnit::Statement(unit) => {
                 let result = match unit.kind() {
                     SyntaxKind::VariableDefine => {
@@ -1100,6 +1127,24 @@ impl SemanticBuilder {
             }
             _ => unreachable!("the document collector selects assignment statements"),
         };
+        if let Some(SliceStemSyntax::Context(path)) = target.stem() {
+            if operation.is_some() || target.subscripts().is_some() {
+                return Err(SourceSemanticError {
+                    code: "source-semantics/unsupported-resource-assignment",
+                    message: "resource assignment requires a direct addressed target".to_owned(),
+                    anchor: SourceSemanticAnchor::for_node(syntax),
+                });
+            }
+            let context = self.required(path.context(), path.syntax(), "a resource context")?;
+            let address = self.required(path.address(), path.syntax(), "a resource path")?;
+            let key = format!(
+                "=@{}/{}",
+                node_text(context.syntax())?,
+                node_text(address.syntax())?
+            );
+            let value = self.emit_resource_write(&key, &expression, syntax, "resource/assign")?;
+            return Ok((value, syntax.clone()));
+        }
         let state = self.assignment_state(&target)?;
         let expected = self.schema_draft_of(PendingValue::State(state))?;
         let mut value = self.expression(&expression)?.0;
