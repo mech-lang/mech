@@ -1,8 +1,11 @@
 # S8 replacement audit — reconciled contracts and review boundaries
 
-**Production implementation remains frozen at S8B `662d29b79`.** This branch adds
-audit evidence and splits existing work for review. The parked numeric WIP is
-excluded. No new lowering, runtime or compatibility implementation is included.
+**The audit baseline is frozen at S8B `662d29b79`.** This branch contains audit
+evidence and review boundaries; the parked numeric WIP remains excluded. The
+planning baseline is accepted and confirmed corrective work has resumed on
+separate PRs, tracked in [RECOVERY-STATUS.md](RECOVERY-STATUS.md). Original
+observations continue to describe the frozen baseline. New corrective-qualification
+findings are tracked separately in [RECOVERY-FINDINGS.md](RECOVERY-FINDINGS.md).
 
 The checkpoint review is answered in [REVIEW-RESPONSE.md](REVIEW-RESPONSE.md).
 Start with [SCOPE.md](SCOPE.md) and [PR-STACK.md](PR-STACK.md). The register now

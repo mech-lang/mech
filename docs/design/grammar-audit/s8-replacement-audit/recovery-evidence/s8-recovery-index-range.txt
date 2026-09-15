@@ -1,0 +1,22 @@
+   Compiling mech-runtime v0.3.5 (/private/tmp/mech-syntax-s8r03-schemas/src/runtime)
+    Finished `test` profile [unoptimized] target(s) in 5.12s
+     Running tests/s8_recovery_index_range.rs (/private/tmp/mech-syntax-s8-extraction-target/debug/deps/s8_recovery_index_range-af7423c169034ba1)
+
+running 1 test
+test bound_index_range_has_exact_source_and_bytecode_values ... FAILED
+
+failures:
+
+---- bound_index_range_has_exact_source_and_bytecode_values stdout ----
+
+thread 'bound_index_range_has_exact_source_and_bytecode_values' (27970233) panicked at src/runtime/tests/s8_recovery_index_range.rs:43:6:
+called `Result::unwrap()` on an `Err` value: InvalidDependency { node: NodeId(0) }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    bound_index_range_has_exact_source_and_bytecode_values
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.83s
+
+error: test failed, to rerun pass `-p mech-runtime --test s8_recovery_index_range`

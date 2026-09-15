@@ -1,0 +1,50 @@
+   Compiling mech-runtime v0.3.5 (/private/tmp/mech-syntax-s8r03-schemas/src/runtime)
+    Finished `test` profile [unoptimized] target(s) in 5.28s
+     Running tests/canonical_constant_binding.rs (/private/tmp/mech-syntax-s8-extraction-target/debug/deps/canonical_constant_binding-4bbae0df7cb154b1)
+
+running 42 tests
+test binding_errors_retain_the_input_anchor ... ok
+test binding_relocates_dynamic_descendants_in_existing_constants ... ok
+test bound_nested_match_relocates_parameters_operations_and_yields ... ok
+test bound_comprehension_relocates_pattern_filter_operation_and_yield ... ok
+test binding_relocates_existing_state_initializer_and_output_constants ... ok
+test bound_guard_relocates_captures_and_keeps_remaining_input_live ... ok
+test exact_generic_enum_input_and_binding ... ok
+test exact_generic_map ... ok
+test exact_generic_atom ... ok
+test bound_match_relocates_literal_patterns_and_arm_constants ... ok
+test exact_generic_matrix ... ok
+test exact_generic_record ... ok
+test exact_generic_option ... ok
+test exact_generic_set ... ok
+test exact_generic_tuple ... ok
+test exact_index_input_and_binding ... ok
+test exact_scalar_c64 ... ok
+test exact_generic_table ... ok
+test exact_scalar_bool ... ok
+test exact_scalar_f32 ... ok
+test exact_scalar_c32 ... ok
+test exact_id_input_and_binding ... ok
+test exact_scalar_f64 ... ok
+test exact_scalar_i128 ... ok
+test exact_scalar_i16 ... ok
+test exact_scalar_i32 ... ok
+test exact_scalar_i64 ... ok
+test exact_scalar_string ... ok
+test exact_scalar_i8 ... ok
+test exact_scalar_r64 ... ok
+test exact_scalar_u128 ... ok
+test exact_scalar_u16 ... ok
+test exact_scalar_u64 ... ok
+test exact_scalar_u32 ... ok
+test exact_scalar_u8 ... ok
+test reject_incompatible_map_key_schema ... ok
+test reject_incompatible_atom_nominal_identity ... ok
+test reject_incompatible_matrix_extent ... ok
+test reject_incompatible_native_scalar_schema ... ok
+test reject_incompatible_snapshot_scalar_schema ... ok
+test successive_bindings_relocate_state_nodes_outputs_constraints_and_source_map ... ok
+test simultaneous_bindings_are_order_independent ... ok
+
+test result: ok. 42 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.16s
+

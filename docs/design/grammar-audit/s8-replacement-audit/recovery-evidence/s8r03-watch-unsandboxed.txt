@@ -1,0 +1,6 @@
+
+running 1 test
+test service::workspace_session::tests::server_workspace_session_notifies_when_a_watch_event_is_queued ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 713 filtered out; finished in 0.07s
+

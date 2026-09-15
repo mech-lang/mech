@@ -1,0 +1,21 @@
+    Finished `test` profile [unoptimized] target(s) in 0.12s
+     Running unittests src/lib.rs (/private/tmp/mech-syntax-s8-extraction-target/debug/deps/mech_runtime-05a7f0f991f8f30f)
+
+running 1 test
+test service::workspace_session::tests::server_workspace_session_notifies_when_a_watch_event_is_queued ... FAILED
+
+failures:
+
+---- service::workspace_session::tests::server_workspace_session_notifies_when_a_watch_event_is_queued stdout ----
+
+thread 'service::workspace_session::tests::server_workspace_session_notifies_when_a_watch_event_is_queued' (27970826) panicked at src/runtime/src/service/workspace_session.rs:550:9:
+filesystem event did not wake the workspace session
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    service::workspace_session::tests::server_workspace_session_notifies_when_a_watch_event_is_queued
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 713 filtered out; finished in 5.15s
+
+error: test failed, to rerun pass `-p mech-runtime --lib`

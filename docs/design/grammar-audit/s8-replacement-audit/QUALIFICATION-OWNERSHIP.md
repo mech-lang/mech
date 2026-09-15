@@ -74,5 +74,5 @@ python3 docs/design/grammar-audit/s8-replacement-audit/verify-rule-acceptance-li
 
 The ownership verifier checks exact coverage, primary/supporting boundary IDs,
 candidate membership and O03 links. It neither runs behavioral tests nor bounds
-the number of new root causes future execution could reveal. The production
-implementation freeze remains in force pending review of the reconciled scope.
+the number of new root causes future execution could reveal. The original comparison remains frozen. Accepted continuation and new
+qualification findings are recorded in RECOVERY-STATUS.md and RECOVERY-FINDINGS.md.

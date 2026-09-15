@@ -1,0 +1,51 @@
+{
+  "r03_head": "d0eab6087",
+  "note": "The broad runtime log predates final fixture reconciliation: use schema-final for final R03 test results. It retains both initial fixture failures and the sandbox watch failure. The strict Index range witness was copied temporarily into the R03 checkout and is intentionally failing; it is committed on the audit branch only. The reduced-source and 103-engine checks passed on the final production implementation.",
+  "logs": [
+    {
+      "file": "s8r03-schema-final.txt",
+      "sha256": "e0096dac539e0f21a81bb985baa49a5d6e7bc332efcd2ad65eba432db4650159"
+    },
+    {
+      "file": "s8r03-engine-validation.txt",
+      "sha256": "1a5bb258e34f82a16d54a6aaeaa573d38b9465dce543384b5e7991867ca9182b"
+    },
+    {
+      "file": "s8r03-runtime-validation.txt",
+      "sha256": "0bdfbba00e0960971a8319d6f9d897c4f6e7407366950311d27369e7e28cf55c"
+    },
+    {
+      "file": "s8r03-watch-retry.txt",
+      "sha256": "e814df2106f037675ecb2322fb072816f330bc769f08acdead5ba41885028657"
+    },
+    {
+      "file": "s8r03-watch-unsandboxed.txt",
+      "sha256": "9d44640eeafec4925a3710c78ecf57c5e352ede846bc9c00f764207369cc3b36"
+    },
+    {
+      "file": "s8r03-reduced-source.txt",
+      "sha256": "57b2ea6ca4144e31ceb74b10adc8493067e5f59768872100231c637bead9c0bc"
+    },
+    {
+      "file": "s8-recovery-index-range.txt",
+      "sha256": "4ced294e9d3fb2559dfacfb4a9ee97b80d87b213e3e9302879ff067f5abb234c"
+    },
+    {
+      "file": "s8r04-binding-validation.txt",
+      "sha256": "716b7bf9af3ac29adaec942fc9b0ec23746d44fe132b4d840e5bb455c57b5baa"
+    },
+    {
+      "file": "s8r04-runtime-validation.txt",
+      "sha256": "6a8fe1f9ecb6dc4729f4f9504c18bfcee75498b51f75ee20828bab3609d59643"
+    },
+    {
+      "file": "s8r04-format.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "s8r04-ci-contract.txt",
+      "sha256": "3d5c0aa43d89fcab4440efca85c3444c048bdf4fe66ad1c72ec69c174adcb115"
+    }
+  ],
+  "r04_head": "19abda12c"
+}

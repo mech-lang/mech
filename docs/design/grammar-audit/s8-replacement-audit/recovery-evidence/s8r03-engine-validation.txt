@@ -1,0 +1,126 @@
+   Compiling mech-core v0.3.5 (/private/tmp/mech-syntax-s8r03-schemas/src/core)
+   Compiling mech-syntax v0.3.5 (/private/tmp/mech-syntax-s8r03-schemas/src/syntax)
+   Compiling mech-bytecode v0.3.5 (/private/tmp/mech-syntax-s8r03-schemas/src/bytecode)
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-syntax-s8r03-schemas/src/engine)
+    Finished `test` profile [unoptimized] target(s) in 34.49s
+     Running tests/canonical_boolean_match.rs (/private/tmp/mech-syntax-s8-extraction-target/debug/deps/canonical_boolean_match-a61c9c480c968a5b)
+
+running 27 tests
+test compound_match_keeps_failing_siblings_lazy_and_publication_atomic ... ok
+test exact_scalar_pattern_schemas_are_artifact_semantics ... ok
+test lazy_execution::exact_backing_budget_admits_both_arms_and_one_below_rejects ... ok
+test canonical_match_blocks_roundtrip_and_execute_captures_binding_and_guards ... ok
+test compound_match_results_reuse_managed_construction_across_branch_switches ... ok
+test captured_source_identity_and_guard_changes_change_revision ... ok
+test local_operations_have_capability_witnesses_and_report_the_enclosing_owner ... ok
+test match_integrity_failure_preserves_state_and_published_epoch ... ok
+test nested_control_admission_checks_descendant_scopes_and_counts ... ok
+test closed_match_values_use_existing_matrix_record_string_and_snapshot_layouts ... ok
+test lazy_execution::inactive_failure_guard_laziness_selected_failure_and_abort_preserve_state ... ok
+test every_local_operation_requires_its_exact_ordinary_contract ... ok
+test resident_typed_match_switches_true_false_true_without_eager_blocks ... ok
+test nested_capability_witnesses_preserve_constant_and_local_selector_provenance ... ok
+test portable_scalar_match_target_capability_is_separate_from_artifact_validity ... ok
+test nested_match_failure_is_lazy_and_cannot_publish_a_partial_outer_value ... ok
+test numeric_match_roundtrips_and_uses_literal_binding_guard_and_wildcard_on_each_turn ... ok
+test typed_match_codec_admits_exact_bounds_and_rejects_unknown_tags ... ok
+test unfinished_control_forms_are_explicit_source_errors ... ok
+test typed_match_roundtrip_and_revision_own_all_branch_semantics ... ok
+test nested_control_depth_is_bounded_before_artifact_mapping_and_wire_allocation ... ok
+test source_only_match_has_typed_capture_and_binding_authority ... ok
+test scalar_layouts_and_guard_operations_match_fresh_instances ... ok
+test wildcard_matches_do_not_impose_a_scalar_type_on_unused_scrutinees ... ok
+test nested_matches_compose_captures_guards_and_compound_results ... ok
+test typed_match_rejects_invalid_scope_coverage_schema_and_writer ... ok
+test long_blocks_keep_local_slots_outside_the_artifact_schedule ... ok
+
+test result: ok. 27 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.22s
+
+     Running tests/canonical_document_state.rs (/private/tmp/mech-syntax-s8-extraction-target/debug/deps/canonical_document_state-21785e5e69543ea9)
+
+running 30 tests
+test discarded_candidate_does_not_advance_document_state ... ok
+test comprehension_reads_the_source_order_state_candidate_after_writer_reordering ... ok
+test derived_snapshot_updates_release_budgeted_prior_outputs_on_abort_and_drop ... ok
+test assignment_errors_are_anchored_to_the_target_or_value ... ok
+test absent_named_scopes_never_fall_back_to_the_root_program ... ok
+test document_bindings_preserve_empty_errors_and_contextual_optional_state ... ok
+test each_assignment_operator_uses_maintained_arithmetic ... ok
+test configured_fences_execute_updates_when_their_result_is_hidden ... ok
+test document_display_and_child_scopes_do_not_execute_updates ... ok
+test immutable_reads_retain_their_source_order_value ... ok
+test derived_updates_compare_final_output_to_the_value_before_seeding ... ok
+test interactive_fixture_executes_and_retains_state_across_turns ... ok
+test finalized_streams_execute_configured_root_and_normalized_named_scopes ... ok
+test finalized_streams_mika_bodies_execute_independently_of_parent_sibling_and_nested_state ... ok
+test indexed_candidates_abort_without_mutating_published_state ... ok
+test finalized_streams_mika_named_fences_share_only_their_local_owner_and_keep_output_options ... ok
+test mika_bodies_execute_independently_of_parent_sibling_and_nested_state ... ok
+test ordered_retained_roots_link_live_exports_and_preserve_caller_output_order ... ok
+test mika_named_fences_share_only_their_local_owner_and_keep_output_options ... ok
+test repeated_compound_overflow_rejects_without_publishing_and_valid_retry_succeeds ... ok
+test selected_compound_assignment_preserves_arithmetic_before_destination_conversion ... ok
+test sequential_derived_updates_share_only_the_largest_rmw_backup_region ... ok
+test sequential_updates_read_the_preceding_candidate_and_keep_one_writer ... ok
+test whole_value_document_assignment_does_not_emit_a_discarded_selection ... ok
+test named_document_scopes_execute_separately_and_share_repeated_fences ... ok
+test colonless_named_fences_execute_and_share_state_with_colon_spelling ... ok
+test indexed_document_updates_use_canonical_assignment_and_preserve_state_order ... ok
+test terminal_logical_updates_do_not_require_a_gather_population_at_activation ... ok
+test repeated_matrix_compound_selectors_accumulate_in_occurrence_order ... ok
+test repeated_compound_selections_preserve_exact_numeric_kinds ... ok
+
+test result: ok. 30 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.63s
+
+     Running tests/canonical_source_review.rs (/private/tmp/mech-syntax-s8-extraction-target/debug/deps/canonical_source_review-e9cee2218bcd4aff)
+
+running 46 tests
+test contextual_empty_resolves_only_to_exact_optional_constants ... ok
+test c32_invalid_kind_combinations_remain_source_semantic_errors ... ok
+test document_subset_never_silently_discards_an_unsupported_semantic_unit ... ok
+test inferred_range_input_preserves_resident_completion_boundary_and_dynamic_cannot_escape ... ok
+test input_interfaces_transport_source_identity_without_resolving_contexts ... ok
+test c32_arithmetic_has_portable_source_schemas_and_maintained_contracts ... ok
+test contextual_composite_empty_rejects_incompatible_values_at_their_source ... ok
+test latest_review_id_annotations_use_the_canonical_id_schema ... ok
+test nested_numeric_suffixes_require_a_known_kind ... ok
+test corrected_contracts_activate_and_compute_resident_values ... ok
+test c32_arithmetic_availability_is_a_resident_target_capability ... ok
+test latest_review_hexadecimal_suffix_digits_and_large_rational_reductions_compile ... ok
+test dynamic_range_peers_are_resolved_in_every_endpoint_position ... ok
+test bindings_inherit_actual_structural_projections_and_keep_local_scope ... ok
+test one_axis_select_all_has_a_declared_linear_gather_contract_in_every_profile ... ok
+test resident_supports_c32_literal_storage_and_c64_arithmetic_execution ... ok
+test review_annotated_empty_map_roundtrips_and_executes ... ok
+test recursive_conformance_retains_dimensions_and_independent_nested_parameters ... ok
+test contextual_all_empty_matrix_blocks_receive_element_expectations ... ok
+test named_arguments_reject_unknown_duplicate_missing_and_undeclared_bindings ... ok
+test review_complex_separators_distinguish_hex_digits_from_decimal_exponents ... ok
+test optional_cells_keep_runtime_dependencies_and_absence ... ok
+test review_atom_annotations_keep_exact_nominal_identity ... ok
+test review_annotated_empty_sets_execute_and_share_keyability_admission ... ok
+test review_duplicate_definitions_fail_at_the_second_name ... ok
+test review_live_optional_matrix_blocks_preserve_rectangular_order ... ok
+test resolved_optional_absence_executes_without_empty_operation_nodes ... ok
+test review_numeric_peer_inference_uses_the_maintained_math_family ... ok
+test review_empty_maps_enforce_the_same_keyability_as_populated_maps ... ok
+test review_ordered_extrema_infer_their_peer_at_the_artifact_boundary ... ok
+test review_simple_string_escapes_preserve_canonical_values ... ok
+test recursive_definition_annotations_and_typed_dimensions_are_checked ... ok
+test review_signed_minima_decode_before_positive_magnitude_admission ... ok
+test select_all_preserves_foreign_dynamic_payloads_after_artifact_roundtrip ... ok
+test review_stats_and_combinatorics_contracts_roundtrip_and_execute ... ok
+test review_maintained_calls_infer_peers_after_argument_binding_and_execute ... ok
+test review_all_set_relations_infer_either_peer_and_execute ... ok
+test whole_string_select_all_preserves_changed_unicode_and_empty_values ... ok
+test shared_math_contracts_reach_resident_results ... ok
+test review_scalar_booleans_are_not_logical_masks ... ok
+test review_optional_matrix_blocks_and_compound_sets_execute ... ok
+test whole_string_select_all_preserves_its_source_schema ... ok
+test unresolved_empty_and_unknown_functions_are_source_diagnostics ... ok
+test selected_operation_contracts_travel_with_conversions_and_exact_schemas ... ok
+test shared_contracts_preserve_variadic_construction_and_matrix_geometry_in_every_producer_profile ... ok
+test review_remaining_set_calls_have_provider_independent_contracts ... ok
+
+test result: ok. 46 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.23s
+

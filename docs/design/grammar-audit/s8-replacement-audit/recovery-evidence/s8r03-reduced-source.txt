@@ -1,0 +1,4 @@
+    Checking mech-core v0.3.5 (/private/tmp/mech-syntax-s8r03-schemas/src/core)
+    Checking mech-syntax v0.3.5 (/private/tmp/mech-syntax-s8r03-schemas/src/syntax)
+    Checking mech-engine v0.3.5 (/private/tmp/mech-syntax-s8r03-schemas/src/engine)
+    Finished `dev` profile [unoptimized] target(s) in 6.31s

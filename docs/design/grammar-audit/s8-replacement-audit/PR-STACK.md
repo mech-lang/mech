@@ -1,8 +1,9 @@
 # Review boundaries for existing work and corrective prerequisites
 
-Production implementation remains frozen at `662d29b79`. The first stack moves
-existing code into review boundaries; it adds no semantic fixes. The second is
-a finite corrective acceptance plan and is not authorized implementation yet.
+The original production comparison remains frozen at `662d29b79`. The first stack
+moves existing code into review boundaries; it adds no semantic fixes. The
+corrective plan is now accepted as a recovery baseline; current implementation
+and still-required scope decisions are tracked in [RECOVERY-STATUS.md](RECOVERY-STATUS.md).
 The original B branch/PR #828 remains the immutable comparison reference.
 
 ## Existing B extraction stack
@@ -88,8 +89,8 @@ These are review boundaries, not an estimate that each takes one small patch.
 Nominal declarations, constrained types, recursive execution and FSM continuation include substantial prerequisite work. The concrete coverage
 ledgers attach finite positive, rejection and blocked obligations; they are not
 waived by observational harness totals. New demonstrated root causes must amend
-the register and owning boundary before implementation can resume. The current
-freeze remains active while the audit and extraction receive review.
+the register and owning boundary before implementation can resume. The original B comparison remains frozen.
+Scope-dependent work still requires its explicit decisions; confirmed corrections proceed in separate PRs.
 
 After scope acceptance the operating procedure remains: implement the bounded
 slice, validate, reply to all relevant notes and resolve addressed threads, then
