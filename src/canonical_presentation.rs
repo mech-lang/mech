@@ -244,7 +244,14 @@ mod tests {
             include_str!("../include/docs.html"),
             include_str!("../include/blog.html"),
         ] {
-            let html = render_canonical_html(&document.document(), "".into(), shim.to_owned(), &HtmlShimExtraSlots::default()).unwrap().html;
+            let html = render_canonical_html(
+                &document.document(),
+                "".into(),
+                shim.to_owned(),
+                &HtmlShimExtraSlots::default(),
+            )
+            .unwrap()
+            .html;
             assert_eq!(html.matches("<h1").count(), 1, "{html}");
             assert_eq!(html.matches("<article").count(), 1, "{html}");
             assert!(html.contains("A &amp; B"), "{html}");
