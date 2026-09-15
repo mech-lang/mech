@@ -925,7 +925,7 @@ fn composite_pack(
         })?;
     let changed = match target.as_ref() {
         Some(previous) => !previous
-            .language_eq(&plan.schemas, &next, &plan.schemas)
+            .snapshot_eq(&plan.schemas, &next, &plan.schemas)
             .map_err(|_| ResidentKernelError::InvalidOutput)?,
         None => true,
     };
@@ -988,7 +988,7 @@ mod tests {
     }
 
     #[test]
-    fn latest_review_composite_change_reports_follow_canonical_language_equality() {
+    fn composite_change_reports_preserve_exact_snapshot_representation() {
         let f64_body = SchemaBody::FloatingPoint(mech_core::FloatWidth::W64);
         let field = mech_core::SchemaField {
             name: "a".to_owned(),
@@ -1058,9 +1058,9 @@ mod tests {
                 (7.0, true),
                 (7.0, false),
                 (0.0, true),
-                (-0.0, false),
+                (-0.0, true),
                 (f64::NAN, true),
-                (f64::NAN, true),
+                (f64::NAN, false),
             ] {
                 let value = [value];
                 let key = [1.0];
