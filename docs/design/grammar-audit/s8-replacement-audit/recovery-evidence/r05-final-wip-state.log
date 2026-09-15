@@ -1,0 +1,57 @@
+    Blocking waiting for file lock on artifact directory
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-syntax-s8r05-updates/src/engine)
+    Finished `test` profile [unoptimized] target(s) in 2m 35s
+     Running tests/canonical_document_state.rs (/private/tmp/mech-syntax-s8-extraction-target/debug/deps/canonical_document_state-21785e5e69543ea9)
+
+running 33 tests
+test discarded_candidate_does_not_advance_document_state ... ok
+test comprehension_reads_the_source_order_state_candidate_after_writer_reordering ... ok
+test derived_snapshot_updates_release_budgeted_prior_outputs_on_abort_and_drop ... ok
+test document_bindings_preserve_empty_errors_and_contextual_optional_state ... ok
+test each_assignment_operator_uses_maintained_arithmetic ... ok
+test assignment_errors_are_anchored_to_the_target_or_value ... ok
+test document_display_and_child_scopes_do_not_execute_updates ... ok
+test configured_fences_execute_updates_when_their_result_is_hidden ... ok
+test absent_named_scopes_never_fall_back_to_the_root_program ... ok
+test immutable_reads_retain_their_source_order_value ... ok
+test interactive_fixture_executes_and_retains_state_across_turns ... ok
+test finalized_streams_mika_bodies_execute_independently_of_parent_sibling_and_nested_state ... ok
+test indexed_candidates_abort_without_mutating_published_state ... ok
+test finalized_streams_execute_configured_root_and_normalized_named_scopes ... ok
+test mika_bodies_execute_independently_of_parent_sibling_and_nested_state ... ok
+test ordered_retained_roots_link_live_exports_and_preserve_caller_output_order ... ok
+test mika_named_fences_share_only_their_local_owner_and_keep_output_options ... ok
+test nested_repeated_compound_selectors_accumulate_each_occurrence ... FAILED
+test finalized_streams_mika_named_fences_share_only_their_local_owner_and_keep_output_options ... ok
+test derived_updates_compare_final_output_to_the_value_before_seeding ... ok
+test promoted_repeated_compound_selectors_accumulate_each_occurrence ... ok
+test repeated_compound_overflow_rejects_without_publishing_and_valid_retry_succeeds ... ok
+test selected_compound_assignment_preserves_arithmetic_before_destination_conversion ... ok
+test sequential_derived_updates_share_only_the_largest_rmw_backup_region ... ok
+test sequential_updates_read_the_preceding_candidate_and_keep_one_writer ... ok
+test whole_value_document_assignment_does_not_emit_a_discarded_selection ... ok
+test named_document_scopes_execute_separately_and_share_repeated_fences ... ok
+test colonless_named_fences_execute_and_share_state_with_colon_spelling ... ok
+test terminal_logical_updates_do_not_require_a_gather_population_at_activation ... ok
+test indexed_document_updates_use_canonical_assignment_and_preserve_state_order ... ok
+test repeated_matrix_compound_selectors_accumulate_in_occurrence_order ... ok
+test promoted_repeated_updates_use_canonical_conversion_after_each_operation ... ok
+test repeated_compound_selections_preserve_exact_numeric_kinds ... ok
+
+failures:
+
+---- nested_repeated_compound_selectors_accumulate_each_occurrence stdout ----
+
+thread 'nested_repeated_compound_selectors_accumulate_each_occurrence' (28043234) panicked at src/engine/tests/canonical_document_state.rs:100:13:
+assertion `left == right` failed: "~a := [10 20; 30 40]\na[[1 1],:][:,1] += 2\na[1,1]\n"
+  left: 12.0
+ right: 14.0
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    nested_repeated_compound_selectors_accumulate_each_occurrence
+
+test result: FAILED. 32 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.25s
+
+error: test failed, to rerun pass `-p mech-engine --test canonical_document_state`

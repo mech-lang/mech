@@ -165,16 +165,24 @@ is a retirement expectation correction in C, not a capability exclusion.
 
 **Remaining:** The accepted open gap queue, R05 completion, C's two runtime
 failures, remaining browser/application and retired-test consumers, required
-reviews, final exact-head full qualification and protected merge. Current C's
-combined/source/browser reruns are still executing and must be recorded against
-90defdf9e when complete; earlier-head results are not its final qualification.
+reviews, final exact-head full qualification and protected merge. At exact C 90defdf9e,
+the combined suites execute 6 + 45 + 10 passing tests, the locked source fixture
+reports 14 catalog cases plus rooted checks, and actual Chrome CPU/WebGPU
+publication passes two turns for both backends. Runtime executes 713 passing /
+2 failing tests with the same G19 and G05 failures. All 47 CI contract tests pass.
+These focused results are not final full qualification. The single current PR CI
+run is 34999106483; obsolete run 34997626903 is canceled. The latest-head standard/
+full distribution rerun remains in progress (the refreshed contracts passed
+before the CI-only restack).
 The obsolete 109c55242 CI and earlier slice runs were archived before the
 reviewed rollout and cancellation requests; canceled work remains unqualified.
 
 **Current action:** R05/G04 is isolated on `codex/syntax-s8r05-selected-updates`
-in `/private/tmp/mech-syntax-s8r05-updates` (WIP commit 59a2cdb3e before a local
-implicit-promotion admission tightening). It is not incorporated into C or open
-as an additional PR. Two original strict witnesses reproduce 12 instead of 14.
+in `/private/tmp/mech-syntax-s8r05-updates` at published WIP commit 06eb812b3. It is not incorporated into C or open
+as an additional PR. The new binder requires the core lossless implicit promotion
+plan, then uses the core explicit assignment conversion for each occurrence.
+The full canonical_document_state run now has 32 passing / 1 failing test;
+the failing nested-selection witness remains strict and committed. Two original strict witnesses reproduce 12 instead of 14.
 The promoted occurrence implementation uses core semantic conversion plans for
 each current destination value; its focused tests pass for the valid mixed
 integer promotions, multiplication/division/subtraction and fractional casts.
@@ -182,15 +190,18 @@ A fixture initially pairing wide integers with f64 was corrected to valid
 integer promotions because the unchanged Number contract rejects that lossy
 common type; no established positive witness was changed.
 
-**Next action:** Finish the active C combined/source/browser rerun in
-`/private/tmp/mech-syntax-qualification/c-policy-final-*.log`, record exact counts,
-and inspect the CI review result. Then finish R05's nested occurrence address
+**Next action:** Collect the current distribution rerun in
+`/private/tmp/mech-syntax-qualification/c-policy-final-distributions.log` and
+inspect the CI review result. Then finish R05's nested occurrence address
 composition, heterogeneous numeric schemes, malformed/overflow/budget rollback
 and focused qualification before requesting review or incorporating it into C.
 Run the existing canonical_document_state suite with
 `cargo +nightly-2026-03-03 test --locked --offline -p mech-engine --no-default-features --features full_compiler,full_source,resident-artifact --test canonical_document_state`.
-The full R05 suite and C rerun currently share the build target; let the current
-Cargo owner finish rather than adding more concurrent builds on that target.
+The runtime and R05 test runs have completed. Use one Cargo owner at a time
+for `/private/tmp/mech-syntax-s8-extraction-target`; the distribution script uses
+the C worktree's separate target. C integration review was requested only after
+confirming no unresolved C threads. R01/R03/R04 review responses for the first
+restack were clean; final exact-candidate required review remains outstanding.
 
 **External blocker:** None for current accepted work. GitHub native-stack
 re-linking was explicitly approved and completed. Outstanding capability/semantic

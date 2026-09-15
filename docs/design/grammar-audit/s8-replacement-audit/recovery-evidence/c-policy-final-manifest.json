@@ -1,0 +1,29 @@
+{
+  "candidate": "90defdf9ed0599316d7fb0d8f19e0d2ac36b35f9",
+  "evidence": [
+    {
+      "file": "c-policy-final-combined.log",
+      "sha256": "3be6db7a63d851200fd32f5a2fdd48e02ee34254bd06e78b7235f054cc403a32"
+    },
+    {
+      "file": "c-policy-final-source.log",
+      "sha256": "231693b6fd183db9373eadff7de329cc22a7ac1c945f9cf1ee39fa7005e46772"
+    },
+    {
+      "file": "c-policy-final-browser.log",
+      "sha256": "74686b5daf7ba608db1776a2aa136378ce2db1945ab6493f00f07da828a34292"
+    },
+    {
+      "file": "c-policy-final-runtime.log",
+      "sha256": "6a8cff2bc35df013da11bcb4c11384cc4698241e7e3c55dce57fcf880dbf9a37"
+    },
+    {
+      "file": "c-policy-final-ci-tests.log",
+      "sha256": "11afd3d61afe7761b9b03be4d80fe93c9fbfbfd680a7a2b7c6079382cf5d68d2"
+    },
+    {
+      "file": "r05-final-wip-state.log",
+      "sha256": "e1141f9b0de8f0c0fac5875d50289b36d45c59815c557239d3bbacd085feac37"
+    }
+  ]
+}
