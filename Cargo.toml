@@ -109,6 +109,7 @@ full-hosts = [
       "mech-build?/full-hosts",
       ]
 compute_backends_native = [
+      "mech-browser", "mech-browser/pointer",
       "dep:mech-compute", "dep:mech-gpu", "mech-gpu/native", "mech-gpu/jit",
       "mech-runtime/compute",
       "mech-runtime/f32", "mech-runtime/f64", "mech-runtime/string", "mech-runtime/matrixd",
