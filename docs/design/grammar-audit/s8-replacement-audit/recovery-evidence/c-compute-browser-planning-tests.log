@@ -1,0 +1,16 @@
+    Blocking waiting for file lock on artifact directory
+   Compiling mech-combinatorics v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/machines/combinatorics)
+   Compiling mech-set v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/machines/set)
+   Compiling mech-math v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/machines/math)
+   Compiling mech v0.3.6 (/private/tmp/mech-syntax-s8c-qualification)
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/stdlib)
+    Finished `test` profile [unoptimized] target(s) in 1m 32s
+     Running unittests src/lib.rs (target/debug/deps/mech-1c62535afc6bb22f)
+
+running 3 tests
+test browser_planning::tests::particle_browser_authority_retains_pointer_and_compute_hosts ... ok
+test browser_planning::tests::invalid_compute_configuration_is_rejected_before_browser_compilation ... ok
+test browser_planning::tests::configured_mixed_browser_bundle_retains_pointer_contracts_and_dependencies ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 393 filtered out; finished in 0.54s
+

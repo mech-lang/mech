@@ -1,0 +1,12 @@
+    Blocking waiting for file lock on artifact directory
+   Compiling mech-runtime v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/runtime)
+   Compiling mech-browser v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/hosts/browser)
+    Finished `test` profile [unoptimized] target(s) in 6.86s
+     Running unittests src/lib.rs (target/debug/deps/mech_browser-531fcddb73a97379)
+
+running 2 tests
+test pointer::tests::live_and_planning_factories_share_settings_validation ... ok
+test pointer::tests::planning_uses_the_live_pointer_schema_without_an_input_driver ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 53 filtered out; finished in 0.00s
+

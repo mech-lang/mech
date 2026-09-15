@@ -1,0 +1,1672 @@
+﻿2026-09-15T20:35:56.9176932Z Current runner version: '2.337.0'
+2026-09-15T20:35:56.9194915Z ##[group]Runner Image Provisioner
+2026-09-15T20:35:56.9195610Z Hosted Compute Agent
+2026-09-15T20:35:56.9196402Z Version: 20260828.587
+2026-09-15T20:35:56.9196941Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-09-15T20:35:56.9197549Z Build Date: 2026-08-28T16:44:25Z
+2026-09-15T20:35:56.9198132Z Worker ID: {0cbe46a4-83f6-4257-8004-0a23a647d055}
+2026-09-15T20:35:56.9198700Z Azure Region: westus3
+2026-09-15T20:35:56.9199175Z ##[endgroup]
+2026-09-15T20:35:56.9200267Z ##[group]Operating System
+2026-09-15T20:35:56.9200804Z Ubuntu
+2026-09-15T20:35:56.9201253Z 24.04.5
+2026-09-15T20:35:56.9201671Z LTS
+2026-09-15T20:35:56.9202104Z ##[endgroup]
+2026-09-15T20:35:56.9202548Z ##[group]Runner Image
+2026-09-15T20:35:56.9203016Z Image: ubuntu-24.04
+2026-09-15T20:35:56.9203519Z Version: 20260907.300.1
+2026-09-15T20:35:56.9204526Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260907.300/images/ubuntu/Ubuntu2404-Readme.md
+2026-09-15T20:35:56.9205872Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260907.300
+2026-09-15T20:35:56.9206888Z ##[endgroup]
+2026-09-15T20:35:56.9209410Z ##[group]GITHUB_TOKEN Permissions
+2026-09-15T20:35:56.9211234Z Actions: write
+2026-09-15T20:35:56.9211721Z ArtifactMetadata: write
+2026-09-15T20:35:56.9212210Z Attestations: write
+2026-09-15T20:35:56.9212710Z Checks: write
+2026-09-15T20:35:56.9213158Z CodeQuality: write
+2026-09-15T20:35:56.9213609Z Contents: write
+2026-09-15T20:35:56.9214087Z CopilotRequests: write
+2026-09-15T20:35:56.9214554Z Deployments: write
+2026-09-15T20:35:56.9215068Z Discussions: write
+2026-09-15T20:35:56.9215510Z Drives: write
+2026-09-15T20:35:56.9215927Z Issues: write
+2026-09-15T20:35:56.9216644Z Metadata: read
+2026-09-15T20:35:56.9217149Z Models: read
+2026-09-15T20:35:56.9217612Z Packages: write
+2026-09-15T20:35:56.9218064Z Pages: write
+2026-09-15T20:35:56.9218502Z PullRequests: write
+2026-09-15T20:35:56.9219002Z RepositoryProjects: write
+2026-09-15T20:35:56.9219552Z SecurityEvents: write
+2026-09-15T20:35:56.9220012Z Statuses: write
+2026-09-15T20:35:56.9220476Z VulnerabilityAlerts: read
+2026-09-15T20:35:56.9220954Z ##[endgroup]
+2026-09-15T20:35:56.9222709Z Secret source: Actions
+2026-09-15T20:35:56.9223479Z Cache mode: write
+2026-09-15T20:35:56.9224049Z Prepare workflow directory
+2026-09-15T20:35:56.9519306Z Prepare all required actions
+2026-09-15T20:35:56.9562249Z Getting action download info
+2026-09-15T20:35:57.2719188Z Download action repository 'actions/checkout@v7.0.1' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+2026-09-15T20:35:57.4462933Z Complete job name: Owner 9 (mech-runtime)
+2026-09-15T20:35:57.5009013Z ##[group]Run actions/checkout@v7.0.1
+2026-09-15T20:35:57.5009698Z with:
+2026-09-15T20:35:57.5010174Z   repository: mech-lang/mech
+2026-09-15T20:35:57.5013617Z   token: ***
+2026-09-15T20:35:57.5014050Z   ssh-strict: true
+2026-09-15T20:35:57.5014489Z   ssh-user: git
+2026-09-15T20:35:57.5014921Z   persist-credentials: true
+2026-09-15T20:35:57.5015425Z   clean: true
+2026-09-15T20:35:57.5015876Z   sparse-checkout-cone-mode: true
+2026-09-15T20:35:57.5016517Z   fetch-depth: 1
+2026-09-15T20:35:57.5016969Z   fetch-tags: false
+2026-09-15T20:35:57.5017395Z   show-progress: true
+2026-09-15T20:35:57.5017825Z   lfs: false
+2026-09-15T20:35:57.5018295Z   submodules: false
+2026-09-15T20:35:57.5018716Z   set-safe-directory: true
+2026-09-15T20:35:57.5019233Z   allow-unsafe-pr-checkout: false
+2026-09-15T20:35:57.5019837Z env:
+2026-09-15T20:35:57.5020243Z   CARGO_TERM_COLOR: always
+2026-09-15T20:35:57.5020731Z   CARGO_INCREMENTAL: 0
+2026-09-15T20:35:57.5021179Z   CARGO_PROFILE_TEST_DEBUG: 0
+2026-09-15T20:35:57.5021734Z ##[endgroup]
+2026-09-15T20:35:57.5890345Z Syncing repository: mech-lang/mech
+2026-09-15T20:35:57.5892585Z ##[group]Getting Git version info
+2026-09-15T20:35:57.5893542Z Working directory is '/home/runner/work/mech/mech'
+2026-09-15T20:35:57.5894876Z [command]/usr/bin/git version
+2026-09-15T20:35:57.6693226Z git version 2.55.0
+2026-09-15T20:35:57.6708898Z ##[endgroup]
+2026-09-15T20:35:57.6717893Z Temporarily overriding HOME='/home/runner/work/_temp/dfd4c81d-6e95-4a34-aa3a-efe2e7c0a7ef' before making global git config changes
+2026-09-15T20:35:57.6719419Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-15T20:35:57.6722206Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/mech/mech
+2026-09-15T20:35:57.6761491Z Deleting the contents of '/home/runner/work/mech/mech'
+2026-09-15T20:35:57.6764343Z ##[group]Determining repository object format
+2026-09-15T20:35:57.6765509Z ##[endgroup]
+2026-09-15T20:35:57.6766577Z ##[group]Initializing the repository
+2026-09-15T20:35:57.6768886Z [command]/usr/bin/git init /home/runner/work/mech/mech
+2026-09-15T20:35:57.7462701Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-15T20:35:57.7463621Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-15T20:35:57.7464522Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-15T20:35:57.7465212Z hint: call:
+2026-09-15T20:35:57.7465589Z hint:
+2026-09-15T20:35:57.7466437Z hint: 	git config --global init.defaultBranch <name>
+2026-09-15T20:35:57.7467034Z hint:
+2026-09-15T20:35:57.7467670Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-15T20:35:57.7468496Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-15T20:35:57.7469136Z hint:
+2026-09-15T20:35:57.7469599Z hint: 	git branch -m <name>
+2026-09-15T20:35:57.7470071Z hint:
+2026-09-15T20:35:57.7470857Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-15T20:35:57.7471924Z Initialized empty Git repository in /home/runner/work/mech/mech/.git/
+2026-09-15T20:35:57.7473954Z [command]/usr/bin/git remote add origin https://github.com/mech-lang/mech
+2026-09-15T20:35:57.7509332Z ##[endgroup]
+2026-09-15T20:35:57.7510300Z ##[group]Disabling automatic garbage collection
+2026-09-15T20:35:57.7512170Z [command]/usr/bin/git config --local gc.auto 0
+2026-09-15T20:35:57.7536536Z ##[endgroup]
+2026-09-15T20:35:57.7537472Z ##[group]Setting up auth
+2026-09-15T20:35:57.7538196Z Removing SSH command configuration
+2026-09-15T20:35:57.7540868Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-15T20:35:57.7565004Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-15T20:35:57.7841984Z Removing HTTP extra header
+2026-09-15T20:35:57.7846532Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-15T20:35:57.7871089Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-15T20:35:57.8023537Z Removing includeIf entries pointing to credentials config files
+2026-09-15T20:35:57.8027404Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-15T20:35:57.8050935Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-15T20:35:57.8205222Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-c2296199-c634-4b87-ad27-cf237e5e5bc5.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-15T20:35:57.8232945Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/mech/mech/.git.path /home/runner/work/_temp/git-credentials-c2296199-c634-4b87-ad27-cf237e5e5bc5.config
+2026-09-15T20:35:57.8254818Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/mech/mech/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-c2296199-c634-4b87-ad27-cf237e5e5bc5.config
+2026-09-15T20:35:57.8282203Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-c2296199-c634-4b87-ad27-cf237e5e5bc5.config
+2026-09-15T20:35:57.8305656Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-c2296199-c634-4b87-ad27-cf237e5e5bc5.config
+2026-09-15T20:35:57.8326563Z ##[endgroup]
+2026-09-15T20:35:57.8327494Z ##[group]Fetching the repository
+2026-09-15T20:35:57.8331450Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +71fbfcaa990e829b0a3a0b5f56c297b7d10326aa:refs/remotes/pull/830/merge
+2026-09-15T20:35:59.3985072Z From https://github.com/mech-lang/mech
+2026-09-15T20:35:59.3987505Z  * [new ref]         71fbfcaa990e829b0a3a0b5f56c297b7d10326aa -> pull/830/merge
+2026-09-15T20:35:59.3991986Z ##[endgroup]
+2026-09-15T20:35:59.3993841Z ##[group]Determining the checkout info
+2026-09-15T20:35:59.3995856Z ##[endgroup]
+2026-09-15T20:35:59.3997263Z [command]/usr/bin/git sparse-checkout disable
+2026-09-15T20:35:59.4040563Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-09-15T20:35:59.4064273Z ##[group]Checking out the ref
+2026-09-15T20:35:59.4066669Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/830/merge
+2026-09-15T20:35:59.5971290Z Note: switching to 'refs/remotes/pull/830/merge'.
+2026-09-15T20:35:59.5972431Z 
+2026-09-15T20:35:59.5973177Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-09-15T20:35:59.5975246Z changes and commit them, and you can discard any commits you make in this
+2026-09-15T20:35:59.5977307Z state without impacting any branches by switching back to a branch.
+2026-09-15T20:35:59.5978789Z 
+2026-09-15T20:35:59.5979663Z If you want to create a new branch to retain commits you create, you may
+2026-09-15T20:35:59.5981520Z do so (now or later) by using -c with the switch command. Example:
+2026-09-15T20:35:59.5982635Z 
+2026-09-15T20:35:59.5983067Z   git switch -c <new-branch-name>
+2026-09-15T20:35:59.5983932Z 
+2026-09-15T20:35:59.5984664Z Or undo this operation with:
+2026-09-15T20:35:59.5985470Z 
+2026-09-15T20:35:59.5986088Z   git switch -
+2026-09-15T20:35:59.5986742Z 
+2026-09-15T20:35:59.5987630Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-09-15T20:35:59.5989211Z 
+2026-09-15T20:35:59.5990610Z HEAD is now at 71fbfca Merge c15f3e7835e40df62df3d8001463923ded6a9f74 into 354abfa676d3b755e6b4bc11a1207944a4e9885b
+2026-09-15T20:35:59.5995371Z ##[endgroup]
+2026-09-15T20:35:59.6859189Z [command]/usr/bin/git log -1 --format=%H
+2026-09-15T20:35:59.6879835Z 71fbfcaa990e829b0a3a0b5f56c297b7d10326aa
+2026-09-15T20:35:59.7052733Z ##[group]Run rustup toolchain install nightly-2026-03-03 --profile minimal
+2026-09-15T20:35:59.7053467Z [36;1mrustup toolchain install nightly-2026-03-03 --profile minimal[0m
+2026-09-15T20:35:59.7084214Z shell: /usr/bin/bash -e {0}
+2026-09-15T20:35:59.7084660Z env:
+2026-09-15T20:35:59.7085126Z   CARGO_TERM_COLOR: always
+2026-09-15T20:35:59.7085565Z   CARGO_INCREMENTAL: 0
+2026-09-15T20:35:59.7085950Z   CARGO_PROFILE_TEST_DEBUG: 0
+2026-09-15T20:35:59.7086497Z ##[endgroup]
+2026-09-15T20:35:59.8808126Z info: syncing channel updates for nightly-2026-03-03-x86_64-unknown-linux-gnu
+2026-09-15T20:36:00.0054468Z info: latest update on 2026-03-03 for version 1.96.0-nightly (ec818fda3 2026-03-02)
+2026-09-15T20:36:00.0055294Z info: downloading 3 components
+2026-09-15T20:36:07.2452734Z 
+2026-09-15T20:36:07.2520686Z   nightly-2026-03-03-x86_64-unknown-linux-gnu installed - rustc 1.96.0-nightly (ec818fda3 2026-03-02)
+2026-09-15T20:36:07.2521255Z 
+2026-09-15T20:36:07.2613241Z ##[group]Run cargo +nightly-2026-03-03 fetch --locked
+2026-09-15T20:36:07.2613678Z [36;1mcargo +nightly-2026-03-03 fetch --locked[0m
+2026-09-15T20:36:07.2637218Z shell: /usr/bin/bash -e {0}
+2026-09-15T20:36:07.2637557Z env:
+2026-09-15T20:36:07.2637821Z   CARGO_TERM_COLOR: always
+2026-09-15T20:36:07.2638129Z   CARGO_INCREMENTAL: 0
+2026-09-15T20:36:07.2638410Z   CARGO_PROFILE_TEST_DEBUG: 0
+2026-09-15T20:36:07.2638878Z ##[endgroup]
+2026-09-15T20:36:07.2999118Z [1m[92m    Updating[0m crates.io index
+2026-09-15T20:36:08.1917741Z [1m[92m Downloading[0m crates ...
+2026-09-15T20:36:08.2514541Z [1m[92m  Downloaded[0m winres v0.1.12
+2026-09-15T20:36:08.2555457Z [1m[92m  Downloaded[0m serde_derive v1.0.229
+2026-09-15T20:36:08.2608080Z [1m[92m  Downloaded[0m try-lock v0.2.5
+2026-09-15T20:36:08.2629876Z [1m[92m  Downloaded[0m fnv v1.0.7
+2026-09-15T20:36:08.2655606Z [1m[92m  Downloaded[0m serde_core v1.0.229
+2026-09-15T20:36:08.2688365Z [1m[92m  Downloaded[0m scoped-tls v1.0.1
+2026-09-15T20:36:08.2713053Z [1m[92m  Downloaded[0m windows-result v0.4.1
+2026-09-15T20:36:08.2739153Z [1m[92m  Downloaded[0m iana-time-zone-haiku v0.1.2
+2026-09-15T20:36:08.2763372Z [1m[92m  Downloaded[0m data-encoding v2.11.0
+2026-09-15T20:36:08.2787378Z [1m[92m  Downloaded[0m signal-hook-registry v1.4.8
+2026-09-15T20:36:08.2813693Z [1m[92m  Downloaded[0m scopeguard v1.2.0
+2026-09-15T20:36:08.2838394Z [1m[92m  Downloaded[0m sha2 v0.10.9
+2026-09-15T20:36:08.2870171Z [1m[92m  Downloaded[0m spin v0.9.9
+2026-09-15T20:36:08.2901828Z [1m[92m  Downloaded[0m fastrand v2.5.0
+2026-09-15T20:36:08.2928907Z [1m[92m  Downloaded[0m shlex v2.0.1
+2026-09-15T20:36:08.2954448Z [1m[92m  Downloaded[0m equivalent v1.0.2
+2026-09-15T20:36:08.2979668Z [1m[92m  Downloaded[0m windows-implement v0.60.2
+2026-09-15T20:36:08.3005158Z [1m[92m  Downloaded[0m wasm-bindgen-futures v0.4.76
+2026-09-15T20:36:08.3027501Z [1m[92m  Downloaded[0m filetime_creation v0.2.0
+2026-09-15T20:36:08.3047387Z [1m[92m  Downloaded[0m num-conv v0.2.2
+2026-09-15T20:36:08.3071969Z [1m[92m  Downloaded[0m untrusted v0.9.0
+2026-09-15T20:36:08.3096169Z [1m[92m  Downloaded[0m windows-strings v0.5.1
+2026-09-15T20:36:08.3121246Z [1m[92m  Downloaded[0m sync_wrapper v1.0.2
+2026-09-15T20:36:08.3144423Z [1m[92m  Downloaded[0m dunce v1.0.5
+2026-09-15T20:36:08.3168017Z [1m[92m  Downloaded[0m http-body v1.1.0
+2026-09-15T20:36:08.3191851Z [1m[92m  Downloaded[0m bit-vec v0.7.0
+2026-09-15T20:36:08.3216926Z [1m[92m  Downloaded[0m rustc_version v0.4.1
+2026-09-15T20:36:08.3247410Z [1m[92m  Downloaded[0m lru-slab v0.1.2
+2026-09-15T20:36:08.3275651Z [1m[92m  Downloaded[0m fs_extra v1.3.0
+2026-09-15T20:36:08.3314947Z [1m[92m  Downloaded[0m cfg_aliases v0.2.2
+2026-09-15T20:36:08.3345660Z [1m[92m  Downloaded[0m cpufeatures v0.3.0
+2026-09-15T20:36:08.3381017Z [1m[92m  Downloaded[0m winapi-util v0.1.11
+2026-09-15T20:36:08.3414502Z [1m[92m  Downloaded[0m hyper-rustls v0.27.9
+2026-09-15T20:36:08.3446753Z [1m[92m  Downloaded[0m system-configuration-sys v0.6.0
+2026-09-15T20:36:08.3478159Z [1m[92m  Downloaded[0m walkdir v2.5.0
+2026-09-15T20:36:08.3514043Z [1m[92m  Downloaded[0m windows-registry v0.6.1
+2026-09-15T20:36:08.3546800Z [1m[92m  Downloaded[0m kqueue-sys v1.1.2
+2026-09-15T20:36:08.3576717Z [1m[92m  Downloaded[0m approx v0.5.1
+2026-09-15T20:36:08.3610665Z [1m[92m  Downloaded[0m fsevent-sys v4.1.0
+2026-09-15T20:36:08.3636953Z [1m[92m  Downloaded[0m rawpointer v0.2.1
+2026-09-15T20:36:08.3661506Z [1m[92m  Downloaded[0m http-body-util v0.1.4
+2026-09-15T20:36:08.3688574Z [1m[92m  Downloaded[0m nalgebra-macros v0.3.0
+2026-09-15T20:36:08.3714505Z [1m[92m  Downloaded[0m testing_table v0.3.0
+2026-09-15T20:36:08.3736775Z [1m[92m  Downloaded[0m target-triple v1.0.1
+2026-09-15T20:36:08.3762637Z [1m[92m  Downloaded[0m block-buffer v0.12.1
+2026-09-15T20:36:08.3784158Z [1m[92m  Downloaded[0m base64 v0.21.7
+2026-09-15T20:36:08.3821584Z [1m[92m  Downloaded[0m strsim v0.11.1
+2026-09-15T20:36:08.3846479Z [1m[92m  Downloaded[0m clap_lex v1.1.0
+2026-09-15T20:36:08.3872008Z [1m[92m  Downloaded[0m foldhash v0.2.0
+2026-09-15T20:36:08.3896637Z [1m[92m  Downloaded[0m cast v0.3.0
+2026-09-15T20:36:08.3921062Z [1m[92m  Downloaded[0m unty v0.0.4
+2026-09-15T20:36:08.3952015Z [1m[92m  Downloaded[0m anstyle-query v1.1.5
+2026-09-15T20:36:08.3980447Z [1m[92m  Downloaded[0m rand_xorshift v0.4.0
+2026-09-15T20:36:08.4055622Z [1m[92m  Downloaded[0m arrayref v0.3.9
+2026-09-15T20:36:08.4130651Z [1m[92m  Downloaded[0m core-graphics-types v0.1.3
+2026-09-15T20:36:08.4211897Z [1m[92m  Downloaded[0m gpu-descriptor-types v0.2.0
+2026-09-15T20:36:08.4266287Z [1m[92m  Downloaded[0m cranelift-bitset v0.131.3
+2026-09-15T20:36:08.4320521Z [1m[92m  Downloaded[0m cargo-platform v0.3.3
+2026-09-15T20:36:08.4364464Z [1m[92m  Downloaded[0m ctrlc v3.5.2
+2026-09-15T20:36:08.4416708Z [1m[92m  Downloaded[0m wasm-bindgen-test-shared v0.2.126
+2026-09-15T20:36:08.4444039Z [1m[92m  Downloaded[0m gloo-utils v0.2.0
+2026-09-15T20:36:08.4477008Z [1m[92m  Downloaded[0m minicov v0.3.8
+2026-09-15T20:36:08.4520568Z [1m[92m  Downloaded[0m csv-core v0.1.13
+2026-09-15T20:36:08.4549832Z [1m[92m  Downloaded[0m wasm-bindgen-test v0.3.76
+2026-09-15T20:36:08.4587609Z [1m[92m  Downloaded[0m crossbeam-channel v0.5.16
+2026-09-15T20:36:08.4630383Z [1m[92m  Downloaded[0m syn v1.0.109
+2026-09-15T20:36:08.4698717Z [1m[92m  Downloaded[0m derive_more-impl v2.1.1
+2026-09-15T20:36:08.4745176Z [1m[92m  Downloaded[0m portable-atomic v1.14.0
+2026-09-15T20:36:08.4804281Z [1m[92m  Downloaded[0m unicode-width v0.1.14
+2026-09-15T20:36:08.4863693Z [1m[92m  Downloaded[0m crossterm v0.29.0
+2026-09-15T20:36:08.4913261Z [1m[92m  Downloaded[0m glam v0.27.0
+2026-09-15T20:36:08.5020714Z [1m[92m  Downloaded[0m bstr v1.13.0
+2026-09-15T20:36:08.5096580Z [1m[92m  Downloaded[0m gimli v0.33.0
+2026-09-15T20:36:08.5162899Z [1m[92m  Downloaded[0m nalgebra v0.34.2
+2026-09-15T20:36:08.5295440Z [1m[92m  Downloaded[0m fiat-crypto v0.2.9
+2026-09-15T20:36:08.5369052Z [1m[92m  Downloaded[0m objc2 v0.6.4
+2026-09-15T20:36:08.5443769Z [1m[92m  Downloaded[0m nix v0.31.3
+2026-09-15T20:36:08.5523502Z [1m[92m  Downloaded[0m glam v0.29.3
+2026-09-15T20:36:08.5646202Z [1m[92m  Downloaded[0m sevenz-rust v0.6.1
+2026-09-15T20:36:08.5699266Z [1m[92m  Downloaded[0m ash v0.37.3+1.3.251
+2026-09-15T20:36:08.5795774Z [1m[92m  Downloaded[0m regex-automata v0.4.16
+2026-09-15T20:36:08.5898259Z [1m[92m  Downloaded[0m naga v0.20.0
+2026-09-15T20:36:08.5997258Z [1m[92m  Downloaded[0m tempfile v3.27.0
+2026-09-15T20:36:08.6021099Z [1m[92m  Downloaded[0m web-sys v0.3.103
+2026-09-15T20:36:08.6515931Z [1m[92m  Downloaded[0m windows_i686_gnullvm v0.52.6
+2026-09-15T20:36:08.6587581Z [1m[92m  Downloaded[0m khronos_api v3.1.0
+2026-09-15T20:36:08.6704080Z [1m[92m  Downloaded[0m libc v0.2.189
+2026-09-15T20:36:08.6915406Z [1m[92m  Downloaded[0m regex-syntax v0.8.11
+2026-09-15T20:36:08.6972172Z [1m[92m  Downloaded[0m tokio v1.53.1
+2026-09-15T20:36:08.7200018Z [1m[92m  Downloaded[0m brotli v8.0.4
+2026-09-15T20:36:08.7309616Z [1m[92m  Downloaded[0m windows_aarch64_msvc v0.53.1
+2026-09-15T20:36:08.7408827Z [1m[92m  Downloaded[0m glam v0.30.10
+2026-09-15T20:36:08.7557484Z [1m[92m  Downloaded[0m windows_i686_msvc v0.53.1
+2026-09-15T20:36:08.7663735Z [1m[92m  Downloaded[0m glam v0.31.1
+2026-09-15T20:36:08.7830645Z [1m[92m  Downloaded[0m glam v0.32.1
+2026-09-15T20:36:08.7985100Z [1m[92m  Downloaded[0m windows_i686_msvc v0.52.6
+2026-09-15T20:36:08.8093716Z [1m[92m  Downloaded[0m windows_i686_gnullvm v0.53.1
+2026-09-15T20:36:08.8196412Z [1m[92m  Downloaded[0m windows_x86_64_gnu v0.53.1
+2026-09-15T20:36:08.8330518Z [1m[92m  Downloaded[0m windows_i686_gnu v0.52.6
+2026-09-15T20:36:08.8477871Z [1m[92m  Downloaded[0m windows_aarch64_gnullvm v0.53.1
+2026-09-15T20:36:08.8574207Z [1m[92m  Downloaded[0m windows_i686_gnu v0.53.1
+2026-09-15T20:36:08.8721587Z [1m[92m  Downloaded[0m windows_x86_64_gnullvm v0.53.1
+2026-09-15T20:36:08.8814899Z [1m[92m  Downloaded[0m windows_aarch64_msvc v0.52.6
+2026-09-15T20:36:08.8910270Z [1m[92m  Downloaded[0m windows_x86_64_msvc v0.53.1
+2026-09-15T20:36:08.9005097Z [1m[92m  Downloaded[0m windows_x86_64_gnu v0.52.6
+2026-09-15T20:36:08.9145446Z [1m[92m  Downloaded[0m windows_x86_64_msvc v0.52.6
+2026-09-15T20:36:08.9240940Z [1m[92m  Downloaded[0m glam v0.28.0
+2026-09-15T20:36:08.9349719Z [1m[92m  Downloaded[0m rustix v1.1.4
+2026-09-15T20:36:08.9474820Z [1m[92m  Downloaded[0m windows_x86_64_gnullvm v0.52.6
+2026-09-15T20:36:08.9535411Z [1m[92m  Downloaded[0m csv v1.4.0
+2026-09-15T20:36:08.9673130Z [1m[92m  Downloaded[0m glam v0.25.0
+2026-09-15T20:36:08.9768104Z [1m[92m  Downloaded[0m rustls v0.23.42
+2026-09-15T20:36:08.9839347Z [1m[92m  Downloaded[0m cranelift-codegen v0.131.3
+2026-09-15T20:36:08.9999175Z [1m[92m  Downloaded[0m winapi v0.3.9
+2026-09-15T20:36:09.0215262Z [1m[92m  Downloaded[0m wgpu-core v0.21.1
+2026-09-15T20:36:09.0260286Z [1m[92m  Downloaded[0m windows_aarch64_gnullvm v0.52.6
+2026-09-15T20:36:09.0319336Z [1m[92m  Downloaded[0m derive_more v2.1.1
+2026-09-15T20:36:09.0378388Z [1m[92m  Downloaded[0m winnow v0.7.15
+2026-09-15T20:36:09.0431362Z [1m[92m  Downloaded[0m ndk-sys v0.5.0+25.2.9519653
+2026-09-15T20:36:09.0482919Z [1m[92m  Downloaded[0m glam v0.24.2
+2026-09-15T20:36:09.0572043Z [1m[92m  Downloaded[0m wgpu-hal v0.21.1
+2026-09-15T20:36:09.0625155Z [1m[92m  Downloaded[0m encoding_rs v0.8.35
+2026-09-15T20:36:09.0773081Z [1m[92m  Downloaded[0m curve25519-dalek v4.1.3
+2026-09-15T20:36:09.0825605Z [1m[92m  Downloaded[0m signal-hook v0.3.18
+2026-09-15T20:36:09.0845180Z [1m[92m  Downloaded[0m time v0.3.54
+2026-09-15T20:36:09.0920620Z [1m[92m  Downloaded[0m ring v0.17.14
+2026-09-15T20:36:09.1162359Z [1m[92m  Downloaded[0m tracing v0.1.44
+2026-09-15T20:36:09.1258108Z [1m[92m  Downloaded[0m block2 v0.6.2
+2026-09-15T20:36:09.1270802Z [1m[92m  Downloaded[0m objc2-encode v4.1.0
+2026-09-15T20:36:09.1280804Z [1m[92m  Downloaded[0m regalloc2 v0.15.2
+2026-09-15T20:36:09.1313113Z [1m[92m  Downloaded[0m glow v0.13.1
+2026-09-15T20:36:09.1345004Z [1m[92m  Downloaded[0m convert_case v0.10.0
+2026-09-15T20:36:09.1357234Z [1m[92m  Downloaded[0m signal-hook-mio v0.2.5
+2026-09-15T20:36:09.1367449Z [1m[92m  Downloaded[0m cranelift-codegen-meta v0.131.3
+2026-09-15T20:36:09.1391548Z [1m[92m  Downloaded[0m hashbrown v0.15.5
+2026-09-15T20:36:09.1422824Z [1m[92m  Downloaded[0m quinn-proto v0.11.16
+2026-09-15T20:36:09.1465893Z [1m[92m  Downloaded[0m simd_cesu8 v1.2.0
+2026-09-15T20:36:09.1496985Z [1m[92m  Downloaded[0m gloo-net v0.6.0
+2026-09-15T20:36:09.1509132Z [1m[92m  Downloaded[0m serde-wasm-bindgen v0.6.5
+2026-09-15T20:36:09.1522996Z [1m[92m  Downloaded[0m async-trait v0.1.91
+2026-09-15T20:36:09.1545112Z [1m[92m  Downloaded[0m nu-ansi-term v0.50.3
+2026-09-15T20:36:09.1561161Z [1m[92m  Downloaded[0m wasm-bindgen-test-macro v0.3.76
+2026-09-15T20:36:09.1567689Z [1m[92m  Downloaded[0m crossterm_winapi v0.9.1
+2026-09-15T20:36:09.1583120Z [1m[92m  Downloaded[0m dispatch2 v0.3.1
+2026-09-15T20:36:09.1601288Z [1m[92m  Downloaded[0m encode_unicode v1.0.0
+2026-09-15T20:36:09.1618981Z [1m[92m  Downloaded[0m vte v0.15.0
+2026-09-15T20:36:09.1635769Z [1m[92m  Downloaded[0m indicatif v0.18.6
+2026-09-15T20:36:09.1658262Z [1m[92m  Downloaded[0m toml_edit v0.23.10+spec-1.0.0
+2026-09-15T20:36:09.1681969Z [1m[92m  Downloaded[0m wgpu v0.20.1
+2026-09-15T20:36:09.1738659Z [1m[92m  Downloaded[0m blake3 v1.8.5
+2026-09-15T20:36:09.1785851Z [1m[92m  Downloaded[0m itertools v0.14.0
+2026-09-15T20:36:09.1833896Z [1m[92m  Downloaded[0m unicode-width v0.2.2
+2026-09-15T20:36:09.1877414Z [1m[92m  Downloaded[0m glam v0.22.0
+2026-09-15T20:36:09.1948122Z [1m[92m  Downloaded[0m glam v0.23.0
+2026-09-15T20:36:09.2020743Z [1m[92m  Downloaded[0m aws-lc-rs v1.17.3
+2026-09-15T20:36:09.2078299Z [1m[92m  Downloaded[0m chrono v0.4.45
+2026-09-15T20:36:09.2121814Z [1m[92m  Downloaded[0m include_dir_macros v0.7.4
+2026-09-15T20:36:09.2127145Z [1m[92m  Downloaded[0m console v0.16.4
+2026-09-15T20:36:09.2142682Z [1m[92m  Downloaded[0m camino v1.2.5
+2026-09-15T20:36:09.2157824Z [1m[92m  Downloaded[0m cranelift-frontend v0.131.3
+2026-09-15T20:36:09.2172955Z [1m[92m  Downloaded[0m anyhow v1.0.104
+2026-09-15T20:36:09.2200241Z [1m[92m  Downloaded[0m cranelift-bforest v0.131.3
+2026-09-15T20:36:09.2211308Z [1m[92m  Downloaded[0m cranelift-assembler-x64-meta v0.131.3
+2026-09-15T20:36:09.2233392Z [1m[92m  Downloaded[0m cranelift-isle v0.131.3
+2026-09-15T20:36:09.2270124Z [1m[92m  Downloaded[0m unicode-normalization v0.1.25
+2026-09-15T20:36:09.2296653Z [1m[92m  Downloaded[0m proptest v1.11.0
+2026-09-15T20:36:09.2348406Z [1m[92m  Downloaded[0m itertools v0.13.0
+2026-09-15T20:36:09.2387071Z [1m[92m  Downloaded[0m rayon v1.12.0
+2026-09-15T20:36:09.2438907Z [1m[92m  Downloaded[0m glam v0.18.0
+2026-09-15T20:36:09.2487585Z [1m[92m  Downloaded[0m glam v0.21.3
+2026-09-15T20:36:09.2557674Z [1m[92m  Downloaded[0m include_dir v0.7.4
+2026-09-15T20:36:09.2564977Z [1m[92m  Downloaded[0m unit-prefix v0.5.2
+2026-09-15T20:36:09.2573607Z [1m[92m  Downloaded[0m vt100 v0.16.2
+2026-09-15T20:36:09.2586933Z [1m[92m  Downloaded[0m cargo_metadata v0.23.1
+2026-09-15T20:36:09.2600786Z [1m[92m  Downloaded[0m toml_datetime v0.7.5+spec-1.1.0
+2026-09-15T20:36:09.2610333Z [1m[92m  Downloaded[0m cranelift-native v0.131.3
+2026-09-15T20:36:09.2617819Z [1m[92m  Downloaded[0m windows-sys v0.61.2
+2026-09-15T20:36:09.3008994Z [1m[92m  Downloaded[0m mach2 v0.4.3
+2026-09-15T20:36:09.3026818Z [1m[92m  Downloaded[0m region v3.0.2
+2026-09-15T20:36:09.3041074Z [1m[92m  Downloaded[0m wasmtime-internal-jit-icache-coherence v44.0.3
+2026-09-15T20:36:09.3047509Z [1m[92m  Downloaded[0m windows-sys v0.60.2
+2026-09-15T20:36:09.3436579Z [1m[92m  Downloaded[0m cranelift-jit v0.131.3
+2026-09-15T20:36:09.3446855Z [1m[92m  Downloaded[0m cranelift-assembler-x64 v0.131.3
+2026-09-15T20:36:09.3460353Z [1m[92m  Downloaded[0m cranelift-srcgen v0.131.3
+2026-09-15T20:36:09.3466071Z [1m[92m  Downloaded[0m windows-sys v0.52.0
+2026-09-15T20:36:09.3870305Z [1m[92m  Downloaded[0m cranelift-codegen-shared v0.131.3
+2026-09-15T20:36:09.3875012Z [1m[92m  Downloaded[0m wasmtime-internal-core v44.0.3
+2026-09-15T20:36:09.3892562Z [1m[92m  Downloaded[0m litrs v1.0.0
+2026-09-15T20:36:09.3909732Z [1m[92m  Downloaded[0m tabled v0.20.0
+2026-09-15T20:36:09.3999710Z [1m[92m  Downloaded[0m glam v0.16.0
+2026-09-15T20:36:09.4043211Z [1m[92m  Downloaded[0m glam v0.17.3
+2026-09-15T20:36:09.4086234Z [1m[92m  Downloaded[0m glam v0.19.0
+2026-09-15T20:36:09.4135521Z [1m[92m  Downloaded[0m brotli-decompressor v5.0.3
+2026-09-15T20:36:09.4172299Z [1m[92m  Downloaded[0m hashbrown v0.17.1
+2026-09-15T20:36:09.4204985Z [1m[92m  Downloaded[0m hyper v0.14.32
+2026-09-15T20:36:09.4248522Z [1m[92m  Downloaded[0m zerocopy v0.8.55
+2026-09-15T20:36:09.4347001Z [1m[92m  Downloaded[0m heck v0.5.0
+2026-09-15T20:36:09.4354638Z [1m[92m  Downloaded[0m cranelift-entity v0.131.3
+2026-09-15T20:36:09.4366943Z [1m[92m  Downloaded[0m target-lexicon v0.13.5
+2026-09-15T20:36:09.4376872Z [1m[92m  Downloaded[0m arbitrary v1.4.2
+2026-09-15T20:36:09.4400897Z [1m[92m  Downloaded[0m cranelift-module v0.131.3
+2026-09-15T20:36:09.4408907Z [1m[92m  Downloaded[0m pollster v0.3.0
+2026-09-15T20:36:09.4417927Z [1m[92m  Downloaded[0m static_assertions v1.1.0
+2026-09-15T20:36:09.4427190Z [1m[92m  Downloaded[0m winapi-i686-pc-windows-gnu v0.4.0
+2026-09-15T20:36:09.5148601Z [1m[92m  Downloaded[0m winapi-x86_64-pc-windows-gnu v0.4.0
+2026-09-15T20:36:09.5868636Z [1m[92m  Downloaded[0m libloading v0.7.4
+2026-09-15T20:36:09.5880722Z [1m[92m  Downloaded[0m slotmap v1.1.1
+2026-09-15T20:36:09.5896806Z [1m[92m  Downloaded[0m linux-raw-sys v0.12.1
+2026-09-15T20:36:09.6297672Z [1m[92m  Downloaded[0m xml-rs v0.8.29
+2026-09-15T20:36:09.6314130Z [1m[92m  Downloaded[0m widestring v1.2.1
+2026-09-15T20:36:09.6335127Z [1m[92m  Downloaded[0m ed25519-dalek v2.2.0
+2026-09-15T20:36:09.6355177Z [1m[92m  Downloaded[0m clap_builder v4.6.2
+2026-09-15T20:36:09.6390897Z [1m[92m  Downloaded[0m metal v0.28.0
+2026-09-15T20:36:09.6551642Z [1m[92m  Downloaded[0m aho-corasick v1.1.4
+2026-09-15T20:36:09.6582954Z [1m[92m  Downloaded[0m regex v1.13.1
+2026-09-15T20:36:09.6613643Z [1m[92m  Downloaded[0m winnow v1.0.4
+2026-09-15T20:36:09.6662701Z [1m[92m  Downloaded[0m glam v0.20.5
+2026-09-15T20:36:09.6711689Z [1m[92m  Downloaded[0m tower-http v0.6.11
+2026-09-15T20:36:09.6758384Z [1m[92m  Downloaded[0m h2 v0.3.27
+2026-09-15T20:36:09.6792645Z [1m[92m  Downloaded[0m syn v2.0.119
+2026-09-15T20:36:09.6852010Z [1m[92m  Downloaded[0m cranelift-control v0.131.3
+2026-09-15T20:36:09.6857742Z [1m[92m  Downloaded[0m document-features v0.2.12
+2026-09-15T20:36:09.6864491Z [1m[92m  Downloaded[0m cfg_aliases v0.1.1
+2026-09-15T20:36:09.6869080Z [1m[92m  Downloaded[0m d3d12 v0.20.0
+2026-09-15T20:36:09.6879164Z [1m[92m  Downloaded[0m gl_generator v0.14.0
+2026-09-15T20:36:09.6889412Z [1m[92m  Downloaded[0m glutin_wgl_sys v0.5.0
+2026-09-15T20:36:09.6894086Z [1m[92m  Downloaded[0m gpu-alloc-types v0.3.1
+2026-09-15T20:36:09.6898324Z [1m[92m  Downloaded[0m gpu-alloc v0.6.2
+2026-09-15T20:36:09.6907495Z [1m[92m  Downloaded[0m presser v0.3.1
+2026-09-15T20:36:09.6917424Z [1m[92m  Downloaded[0m windows-core v0.52.0
+2026-09-15T20:36:09.6936557Z [1m[92m  Downloaded[0m gpu-allocator v0.25.0
+2026-09-15T20:36:09.6951865Z [1m[92m  Downloaded[0m foldhash v0.1.5
+2026-09-15T20:36:09.6959941Z [1m[92m  Downloaded[0m com_macros_support v0.6.0
+2026-09-15T20:36:09.6969955Z [1m[92m  Downloaded[0m com v0.6.0
+2026-09-15T20:36:09.6985418Z [1m[92m  Downloaded[0m khronos-egl v6.0.0
+2026-09-15T20:36:09.6996647Z [1m[92m  Downloaded[0m codespan-reporting v0.11.1
+2026-09-15T20:36:09.7030524Z [1m[92m  Downloaded[0m wgpu-types v0.20.0
+2026-09-15T20:36:09.7042450Z [1m[92m  Downloaded[0m unicode-segmentation v1.13.3
+2026-09-15T20:36:09.7063146Z [1m[92m  Downloaded[0m criterion v0.8.2
+2026-09-15T20:36:09.7099807Z [1m[92m  Downloaded[0m hashbrown v0.16.1
+2026-09-15T20:36:09.7132233Z [1m[92m  Downloaded[0m glam v0.15.2
+2026-09-15T20:36:09.7176850Z [1m[92m  Downloaded[0m wasip2 v1.0.4+wasi-0.2.12
+2026-09-15T20:36:09.7204116Z [1m[92m  Downloaded[0m h2 v0.4.15
+2026-09-15T20:36:09.7239844Z [1m[92m  Downloaded[0m hyper v1.11.0
+2026-09-15T20:36:09.7278327Z [1m[92m  Downloaded[0m jni v0.22.4
+2026-09-15T20:36:09.7317584Z [1m[92m  Downloaded[0m webpki-root-certs v1.0.9
+2026-09-15T20:36:09.7337036Z [1m[92m  Downloaded[0m reqwest v0.13.4
+2026-09-15T20:36:09.7370499Z [1m[92m  Downloaded[0m libm v0.2.16
+2026-09-15T20:36:09.7423017Z [1m[92m  Downloaded[0m gpu-descriptor v0.3.2
+2026-09-15T20:36:09.7428327Z [1m[92m  Downloaded[0m com_macros v0.6.0
+2026-09-15T20:36:09.7431919Z [1m[92m  Downloaded[0m hassle-rs v0.11.0
+2026-09-15T20:36:09.7441402Z [1m[92m  Downloaded[0m block v0.1.6
+2026-09-15T20:36:09.7447053Z [1m[92m  Downloaded[0m bitflags v1.3.2
+2026-09-15T20:36:09.7464001Z [1m[92m  Downloaded[0m foreign-types v0.5.0
+2026-09-15T20:36:09.7469799Z [1m[92m  Downloaded[0m bit-vec v0.6.3
+2026-09-15T20:36:09.7478500Z [1m[92m  Downloaded[0m bit-set v0.5.3
+2026-09-15T20:36:09.7484425Z [1m[92m  Downloaded[0m hexf-parse v0.2.1
+2026-09-15T20:36:09.7489289Z [1m[92m  Downloaded[0m spirv v0.3.0+sdk-1.3.268.0
+2026-09-15T20:36:09.7496875Z [1m[92m  Downloaded[0m objc v0.2.7
+2026-09-15T20:36:09.7507892Z [1m[92m  Downloaded[0m rustc-hash v1.1.0
+2026-09-15T20:36:09.7513436Z [1m[92m  Downloaded[0m const-oid v0.9.6
+2026-09-15T20:36:09.7541186Z [1m[92m  Downloaded[0m der v0.7.10
+2026-09-15T20:36:09.7568355Z [1m[92m  Downloaded[0m ignore v0.4.31
+2026-09-15T20:36:09.7583546Z [1m[92m  Downloaded[0m colored v3.1.1
+2026-09-15T20:36:09.7597666Z [1m[92m  Downloaded[0m bincode v2.0.1
+2026-09-15T20:36:09.7624024Z [1m[92m  Downloaded[0m half v2.7.1
+2026-09-15T20:36:09.7641419Z [1m[92m  Downloaded[0m clap v4.6.4
+2026-09-15T20:36:09.7684006Z [1m[92m  Downloaded[0m rayon-core v1.13.0
+2026-09-15T20:36:09.7703439Z [1m[92m  Downloaded[0m glam v0.14.0
+2026-09-15T20:36:09.7740855Z [1m[92m  Downloaded[0m num-bigint v0.4.8
+2026-09-15T20:36:09.7767824Z [1m[92m  Downloaded[0m minimal-lexical v0.2.1
+2026-09-15T20:36:09.7791470Z [1m[92m  Downloaded[0m nom v7.1.3
+2026-09-15T20:36:09.7822117Z [1m[92m  Downloaded[0m rand v0.10.2
+2026-09-15T20:36:09.7844094Z [1m[92m  Downloaded[0m combine v4.6.7
+2026-09-15T20:36:09.7874386Z [1m[92m  Downloaded[0m futures-util v0.3.33
+2026-09-15T20:36:09.7933142Z [1m[92m  Downloaded[0m icu_properties_data v2.2.0
+2026-09-15T20:36:09.7984850Z [1m[92m  Downloaded[0m foreign-types-macros v0.2.4
+2026-09-15T20:36:09.7990209Z [1m[92m  Downloaded[0m foreign-types-shared v0.3.1
+2026-09-15T20:36:09.7994223Z [1m[92m  Downloaded[0m unicode-xid v0.2.6
+2026-09-15T20:36:09.8001711Z [1m[92m  Downloaded[0m jni-sys v0.3.1
+2026-09-15T20:36:09.8009074Z [1m[92m  Downloaded[0m malloc_buf v0.0.6
+2026-09-15T20:36:09.8011818Z [1m[92m  Downloaded[0m profiling v1.0.18
+2026-09-15T20:36:09.8035696Z [1m[92m  Downloaded[0m range-alloc v0.1.5
+2026-09-15T20:36:09.8042204Z [1m[92m  Downloaded[0m raw-window-handle v0.6.2
+2026-09-15T20:36:09.8051691Z [1m[92m  Downloaded[0m renderdoc-sys v1.1.0
+2026-09-15T20:36:09.8057201Z [1m[92m  Downloaded[0m arrayvec v0.7.8
+2026-09-15T20:36:09.8068374Z [1m[92m  Downloaded[0m constant_time_eq v0.4.2
+2026-09-15T20:36:09.8078710Z [1m[92m  Downloaded[0m base64ct v1.8.3
+2026-09-15T20:36:09.8093052Z [1m[92m  Downloaded[0m spki v0.7.3
+2026-09-15T20:36:09.8102768Z [1m[92m  Downloaded[0m pkcs8 v0.10.2
+2026-09-15T20:36:09.8118262Z [1m[92m  Downloaded[0m ed25519 v2.2.3
+2026-09-15T20:36:09.8128803Z [1m[92m  Downloaded[0m globset v0.4.19
+2026-09-15T20:36:09.8138164Z [1m[92m  Downloaded[0m virtue v0.0.18
+2026-09-15T20:36:09.8150515Z [1m[92m  Downloaded[0m anes v0.1.6
+2026-09-15T20:36:09.8163473Z [1m[92m  Downloaded[0m ciborium v0.2.2
+2026-09-15T20:36:09.8176157Z [1m[92m  Downloaded[0m criterion-plot v0.8.2
+2026-09-15T20:36:09.8185847Z [1m[92m  Downloaded[0m papergrid v0.17.0
+2026-09-15T20:36:09.8214045Z [1m[92m  Downloaded[0m toml v1.1.3+spec-1.1.0
+2026-09-15T20:36:09.8234856Z [1m[92m  Downloaded[0m uuid v1.24.0
+2026-09-15T20:36:09.8253040Z [1m[92m  Downloaded[0m wide v0.7.33
+2026-09-15T20:36:09.8280668Z [1m[92m  Downloaded[0m rand v0.9.5
+2026-09-15T20:36:09.8302449Z [1m[92m  Downloaded[0m hyper-util v0.1.20
+2026-09-15T20:36:09.8334952Z [1m[92m  Downloaded[0m tower v0.5.3
+2026-09-15T20:36:09.8379558Z [1m[92m  Downloaded[0m idna v1.1.0
+2026-09-15T20:36:09.8404715Z [1m[92m  Downloaded[0m url v2.5.8
+2026-09-15T20:36:09.8421685Z [1m[92m  Downloaded[0m mio v1.2.2
+2026-09-15T20:36:09.8452952Z [1m[92m  Downloaded[0m curve25519-dalek-derive v0.1.1
+2026-09-15T20:36:09.8459088Z [1m[92m  Downloaded[0m signature v2.2.0
+2026-09-15T20:36:09.8466780Z [1m[92m  Downloaded[0m grapheme_macro v2.0.0
+2026-09-15T20:36:09.8470741Z [1m[92m  Downloaded[0m grapheme v1.3.0
+2026-09-15T20:36:09.8480371Z [1m[92m  Downloaded[0m libloading v0.8.9
+2026-09-15T20:36:09.8493526Z [1m[92m  Downloaded[0m bincode_derive v2.0.1
+2026-09-15T20:36:09.8499088Z [1m[92m  Downloaded[0m anstream v1.0.0
+2026-09-15T20:36:09.8510711Z [1m[92m  Downloaded[0m crossbeam-epoch v0.9.20
+2026-09-15T20:36:09.8523981Z [1m[92m  Downloaded[0m crossbeam-utils v0.8.22
+2026-09-15T20:36:09.8538712Z [1m[92m  Downloaded[0m sha2 v0.11.0
+2026-09-15T20:36:09.8816748Z [1m[92m  Downloaded[0m safe_arch v0.7.4
+2026-09-15T20:36:09.9529818Z [1m[92m  Downloaded[0m simba v0.9.1
+2026-09-15T20:36:09.9546871Z [1m[92m  Downloaded[0m quinn v0.11.11
+2026-09-15T20:36:09.9567073Z [1m[92m  Downloaded[0m zerovec v0.11.6
+2026-09-15T20:36:09.9598385Z [1m[92m  Downloaded[0m unarray v0.1.4
+2026-09-15T20:36:09.9605087Z [1m[92m  Downloaded[0m ciborium-io v0.2.2
+2026-09-15T20:36:09.9609586Z [1m[92m  Downloaded[0m crunchy v0.2.4
+2026-09-15T20:36:09.9613753Z [1m[92m  Downloaded[0m anstyle-parse v1.0.0
+2026-09-15T20:36:09.9622909Z [1m[92m  Downloaded[0m once_cell_polyfill v1.70.2
+2026-09-15T20:36:09.9628902Z [1m[92m  Downloaded[0m colorchoice v1.0.5
+2026-09-15T20:36:09.9635908Z [1m[92m  Downloaded[0m embedded-io v0.7.1
+2026-09-15T20:36:09.9643559Z [1m[92m  Downloaded[0m trybuild v1.0.118
+2026-09-15T20:36:09.9669082Z [1m[92m  Downloaded[0m wit-bindgen v0.57.1
+2026-09-15T20:36:09.9688212Z [1m[92m  Downloaded[0m indexmap v2.14.0
+2026-09-15T20:36:09.9713725Z [1m[92m  Downloaded[0m serde_json v1.0.151
+2026-09-15T20:36:09.9752514Z [1m[92m  Downloaded[0m zerocopy-derive v0.8.55
+2026-09-15T20:36:09.9797041Z [1m[92m  Downloaded[0m js-sys v0.3.103
+2026-09-15T20:36:09.9816232Z [1m[92m  Downloaded[0m bumpalo v3.20.3
+2026-09-15T20:36:09.9834569Z [1m[92m  Downloaded[0m anstyle-wincon v3.0.11
+2026-09-15T20:36:09.9842807Z [1m[92m  Downloaded[0m is_terminal_polyfill v1.70.2
+2026-09-15T20:36:09.9848662Z [1m[92m  Downloaded[0m utf8parse v0.2.2
+2026-09-15T20:36:09.9854596Z [1m[92m  Downloaded[0m either v1.16.0
+2026-09-15T20:36:09.9863277Z [1m[92m  Downloaded[0m crossbeam-deque v0.8.7
+2026-09-15T20:36:09.9871941Z [1m[92m  Downloaded[0m hybrid-array v0.4.14
+2026-09-15T20:36:09.9883558Z [1m[92m  Downloaded[0m matrixmultiply v0.3.11
+2026-09-15T20:36:09.9899357Z [1m[92m  Downloaded[0m bytemuck v1.25.2
+2026-09-15T20:36:09.9917362Z [1m[92m  Downloaded[0m security-framework v3.7.0
+2026-09-15T20:36:09.9939181Z [1m[92m  Downloaded[0m rustls-webpki v0.103.13
+2026-09-15T20:36:09.9959404Z [1m[92m  Downloaded[0m cc v1.3.0
+2026-09-15T20:36:09.9977637Z [1m[92m  Downloaded[0m rand v0.8.7
+2026-09-15T20:36:09.9996720Z [1m[92m  Downloaded[0m alloca v0.4.0
+2026-09-15T20:36:10.0002554Z [1m[92m  Downloaded[0m ciborium-ll v0.2.2
+2026-09-15T20:36:10.0009186Z [1m[92m  Downloaded[0m anstyle v1.0.14
+2026-09-15T20:36:10.0018460Z [1m[92m  Downloaded[0m oorandom v11.1.5
+2026-09-15T20:36:10.0024767Z [1m[92m  Downloaded[0m seahash v4.1.0
+2026-09-15T20:36:10.0033575Z [1m[92m  Downloaded[0m toml_parser v1.1.2+spec-1.1.0
+2026-09-15T20:36:10.0048997Z [1m[92m  Downloaded[0m toml_writer v1.1.2+spec-1.1.0
+2026-09-15T20:36:10.0057184Z [1m[92m  Downloaded[0m page_size v0.6.0
+2026-09-15T20:36:10.0062850Z [1m[92m  Downloaded[0m tinytemplate v1.2.1
+2026-09-15T20:36:10.0072457Z [1m[92m  Downloaded[0m bytecount v0.6.9
+2026-09-15T20:36:10.0083692Z [1m[92m  Downloaded[0m glob v0.3.4
+2026-09-15T20:36:10.0092696Z [1m[92m  Downloaded[0m termcolor v1.4.1
+2026-09-15T20:36:10.0099589Z [1m[92m  Downloaded[0m r-efi v5.3.0
+2026-09-15T20:36:10.0122877Z [1m[92m  Downloaded[0m base64 v0.22.1
+2026-09-15T20:36:10.0144091Z [1m[92m  Downloaded[0m typenum v1.20.1
+2026-09-15T20:36:10.0165242Z [1m[92m  Downloaded[0m tokio-util v0.7.19
+2026-09-15T20:36:10.0204631Z [1m[92m  Downloaded[0m rlibc v1.0.0
+2026-09-15T20:36:10.0209357Z [1m[92m  Downloaded[0m digest v0.11.3
+2026-09-15T20:36:10.0224468Z [1m[92m  Downloaded[0m tinyvec v1.12.0
+2026-09-15T20:36:10.0240635Z [1m[92m  Downloaded[0m bytes v1.12.1
+2026-09-15T20:36:10.0259562Z [1m[92m  Downloaded[0m fxhash v0.2.1
+2026-09-15T20:36:10.0263870Z [1m[92m  Downloaded[0m toml_datetime v1.1.1+spec-1.1.0
+2026-09-15T20:36:10.0271825Z [1m[92m  Downloaded[0m notify v8.2.0
+2026-09-15T20:36:10.0285096Z [1m[92m  Downloaded[0m getrandom v0.3.4
+2026-09-15T20:36:10.0302991Z [1m[92m  Downloaded[0m miniz_oxide v0.8.9
+2026-09-15T20:36:10.0317675Z [1m[92m  Downloaded[0m icu_properties v2.2.0
+2026-09-15T20:36:10.0332540Z [1m[92m  Downloaded[0m wasm-bindgen-macro-support v0.2.126
+2026-09-15T20:36:10.0347390Z [1m[92m  Downloaded[0m warp v0.3.7
+2026-09-15T20:36:10.0385568Z [1m[92m  Downloaded[0m crypto-common v0.2.2
+2026-09-15T20:36:10.0392573Z [1m[92m  Downloaded[0m num-integer v0.1.46
+2026-09-15T20:36:10.0401535Z [1m[92m  Downloaded[0m paste v1.0.15
+2026-09-15T20:36:10.0417861Z [1m[92m  Downloaded[0m jni-macros v0.22.4
+2026-09-15T20:36:10.0429843Z [1m[92m  Downloaded[0m headers v0.3.9
+2026-09-15T20:36:10.0455459Z [1m[92m  Downloaded[0m icu_normalizer v2.2.0
+2026-09-15T20:36:10.0476421Z [1m[92m  Downloaded[0m serde_spanned v1.1.1
+2026-09-15T20:36:10.0483882Z [1m[92m  Downloaded[0m num-complex v0.4.6
+2026-09-15T20:36:10.0494188Z [1m[92m  Downloaded[0m zerotrie v0.2.4
+2026-09-15T20:36:10.0516850Z [1m[92m  Downloaded[0m num-rational v0.4.2
+2026-09-15T20:36:10.0525037Z [1m[92m  Downloaded[0m kqueue v1.2.0
+2026-09-15T20:36:10.0538891Z [1m[92m  Downloaded[0m notify-types v2.1.0
+2026-09-15T20:36:10.0554735Z [1m[92m  Downloaded[0m wasm-bindgen v0.2.126
+2026-09-15T20:36:10.0570288Z [1m[92m  Downloaded[0m inotify v0.11.4
+2026-09-15T20:36:10.0580780Z [1m[92m  Downloaded[0m rand_chacha v0.9.0
+2026-09-15T20:36:10.0587983Z [1m[92m  Downloaded[0m rand_core v0.9.5
+2026-09-15T20:36:10.0595369Z [1m[92m  Downloaded[0m chacha20 v0.10.1
+2026-09-15T20:36:10.0609647Z [1m[92m  Downloaded[0m quinn-udp v0.5.15
+2026-09-15T20:36:10.0619825Z [1m[92m  Downloaded[0m simdutf8 v0.1.5
+2026-09-15T20:36:10.0634660Z [1m[92m  Downloaded[0m memchr v2.8.3
+2026-09-15T20:36:10.0663412Z [1m[92m  Downloaded[0m icu_collections v2.2.0
+2026-09-15T20:36:10.0693318Z [1m[92m  Downloaded[0m ipnet v2.12.0
+2026-09-15T20:36:10.0703193Z [1m[92m  Downloaded[0m system-configuration v0.7.0
+2026-09-15T20:36:10.0711053Z [1m[92m  Downloaded[0m schannel v0.1.29
+2026-09-15T20:36:10.0721221Z [1m[92m  Downloaded[0m rustls-platform-verifier v0.7.0
+2026-09-15T20:36:10.0741938Z [1m[92m  Downloaded[0m nt-time v0.8.1
+2026-09-15T20:36:10.0755934Z [1m[92m  Downloaded[0m r-efi v6.0.0
+2026-09-15T20:36:10.0779269Z [1m[92m  Downloaded[0m crc32fast v1.5.0
+2026-09-15T20:36:10.0789923Z [1m[92m  Downloaded[0m allocator-api2 v0.2.21
+2026-09-15T20:36:10.0804281Z [1m[92m  Downloaded[0m http v0.2.12
+2026-09-15T20:36:10.0823909Z [1m[92m  Downloaded[0m inotify-sys v0.1.8
+2026-09-15T20:36:10.0830726Z [1m[92m  Downloaded[0m windows-targets v0.53.5
+2026-09-15T20:36:10.0836044Z [1m[92m  Downloaded[0m http v1.4.2
+2026-09-15T20:36:10.0860603Z [1m[92m  Downloaded[0m icu_normalizer_data v2.2.0
+2026-09-15T20:36:10.0873837Z [1m[92m  Downloaded[0m litemap v0.8.2
+2026-09-15T20:36:10.0887226Z [1m[92m  Downloaded[0m icu_locale_core v2.2.0
+2026-09-15T20:36:10.0920445Z [1m[92m  Downloaded[0m atomic-waker v1.1.2
+2026-09-15T20:36:10.0926865Z [1m[92m  Downloaded[0m semver v1.0.28
+2026-09-15T20:36:10.0938766Z [1m[92m  Downloaded[0m rustls-native-certs v0.8.4
+2026-09-15T20:36:10.0946408Z [1m[92m  Downloaded[0m flate2 v1.1.9
+2026-09-15T20:36:10.0972447Z [1m[92m  Downloaded[0m async-compression v0.4.42
+2026-09-15T20:36:10.1007326Z [1m[92m  Downloaded[0m icu_provider v2.2.0
+2026-09-15T20:36:10.1022153Z [1m[92m  Downloaded[0m thiserror-impl v2.0.19
+2026-09-15T20:36:10.1030151Z [1m[92m  Downloaded[0m num-traits v0.2.19
+2026-09-15T20:36:10.1045089Z [1m[92m  Downloaded[0m getrandom v0.4.3
+2026-09-15T20:36:10.1064253Z [1m[92m  Downloaded[0m tokio-rustls v0.26.4
+2026-09-15T20:36:10.1075126Z [1m[92m  Downloaded[0m crc-catalog v2.5.0
+2026-09-15T20:36:10.1083418Z [1m[92m  Downloaded[0m bitflags v2.13.1
+2026-09-15T20:36:10.1105175Z [1m[92m  Downloaded[0m rustls-pki-types v1.15.1
+2026-09-15T20:36:10.1119498Z [1m[92m  Downloaded[0m core-foundation-sys v0.8.7
+2026-09-15T20:36:10.1133592Z [1m[92m  Downloaded[0m windows-core v0.62.2
+2026-09-15T20:36:10.1147845Z [1m[92m  Downloaded[0m core-foundation v0.9.4
+2026-09-15T20:36:10.1158827Z [1m[92m  Downloaded[0m jni-sys v0.4.1
+2026-09-15T20:36:10.1164740Z [1m[92m  Downloaded[0m thiserror v2.0.19
+2026-09-15T20:36:10.1193578Z [1m[92m  Downloaded[0m socket2 v0.5.10
+2026-09-15T20:36:10.1205606Z [1m[92m  Downloaded[0m mime_guess v2.0.5
+2026-09-15T20:36:10.1214956Z [1m[92m  Downloaded[0m multer v2.1.0
+2026-09-15T20:36:10.1229189Z [1m[92m  Downloaded[0m cmake v0.1.58
+2026-09-15T20:36:10.1236505Z [1m[92m  Downloaded[0m getrandom v0.2.17
+2026-09-15T20:36:10.1252025Z [1m[92m  Downloaded[0m displaydoc v0.2.6
+2026-09-15T20:36:10.1263423Z [1m[92m  Downloaded[0m yoke v0.8.3
+2026-09-15T20:36:10.1274182Z [1m[92m  Downloaded[0m security-framework-sys v2.17.0
+2026-09-15T20:36:10.1286245Z [1m[92m  Downloaded[0m zeroize v1.9.0
+2026-09-15T20:36:10.1294859Z [1m[92m  Downloaded[0m iana-time-zone v0.1.65
+2026-09-15T20:36:10.1308784Z [1m[92m  Downloaded[0m futures-channel v0.3.33
+2026-09-15T20:36:10.1320079Z [1m[92m  Downloaded[0m pin-project-internal v1.1.13
+2026-09-15T20:36:10.1329205Z [1m[92m  Downloaded[0m openssl-probe v0.2.1
+2026-09-15T20:36:10.1336830Z [1m[92m  Downloaded[0m core-foundation v0.10.1
+2026-09-15T20:36:10.1347798Z [1m[92m  Downloaded[0m pkg-config v0.3.33
+2026-09-15T20:36:10.1356260Z [1m[92m  Downloaded[0m jobserver v0.1.35
+2026-09-15T20:36:10.1366509Z [1m[92m  Downloaded[0m deranged v0.5.8
+2026-09-15T20:36:10.1376275Z [1m[92m  Downloaded[0m rand_core v0.10.1
+2026-09-15T20:36:10.1386172Z [1m[92m  Downloaded[0m rustversion v1.0.23
+2026-09-15T20:36:10.1399053Z [1m[92m  Downloaded[0m web-time v1.1.0
+2026-09-15T20:36:10.1409285Z [1m[92m  Downloaded[0m lzma-rust v0.1.7
+2026-09-15T20:36:10.1423951Z [1m[92m  Downloaded[0m compression-codecs v0.4.38
+2026-09-15T20:36:10.1441430Z [1m[92m  Downloaded[0m potential_utf v0.1.5
+2026-09-15T20:36:10.1447979Z [1m[92m  Downloaded[0m rand_pcg v0.10.2
+2026-09-15T20:36:10.1455627Z [1m[92m  Downloaded[0m tinyvec_macros v0.1.1
+2026-09-15T20:36:10.1459923Z [1m[92m  Downloaded[0m rustc-hash v2.1.3
+2026-09-15T20:36:10.1466793Z [1m[92m  Downloaded[0m jni-sys-macros v0.4.1
+2026-09-15T20:36:10.1470644Z [1m[92m  Downloaded[0m rustls-platform-verifier-android v0.1.1
+2026-09-15T20:36:10.1475821Z [1m[92m  Downloaded[0m tinystr v0.8.3
+2026-09-15T20:36:10.1487893Z [1m[92m  Downloaded[0m tungstenite v0.21.0
+2026-09-15T20:36:10.1506173Z [1m[92m  Downloaded[0m same-file v1.0.6
+2026-09-15T20:36:10.1513395Z [1m[92m  Downloaded[0m subtle v2.6.1
+2026-09-15T20:36:10.1520190Z [1m[92m  Downloaded[0m autocfg v1.5.1
+2026-09-15T20:36:10.1529436Z [1m[92m  Downloaded[0m filetime v0.2.29
+2026-09-15T20:36:10.1538388Z [1m[92m  Downloaded[0m simd-adler32 v0.3.10
+2026-09-15T20:36:10.1548720Z [1m[92m  Downloaded[0m headers-core v0.2.0
+2026-09-15T20:36:10.1552622Z [1m[92m  Downloaded[0m ppv-lite86 v0.2.21
+2026-09-15T20:36:10.1559984Z [1m[92m  Downloaded[0m slab v0.4.12
+2026-09-15T20:36:10.1568123Z [1m[92m  Downloaded[0m generic-array v0.14.7
+2026-09-15T20:36:10.1575379Z [1m[92m  Downloaded[0m utf8_iter v1.0.4
+2026-09-15T20:36:10.1580730Z [1m[92m  Downloaded[0m tokio-tungstenite v0.21.0
+2026-09-15T20:36:10.1592296Z [1m[92m  Downloaded[0m tower-layer v0.3.3
+2026-09-15T20:36:10.1597401Z [1m[92m  Downloaded[0m find-msvc-tools v0.1.9
+2026-09-15T20:36:10.1607616Z [1m[92m  Downloaded[0m compression-core v0.4.32
+2026-09-15T20:36:10.1613199Z [1m[92m  Downloaded[0m want v0.3.1
+2026-09-15T20:36:10.1618174Z [1m[92m  Downloaded[0m futures-task v0.3.33
+2026-09-15T20:36:10.1624459Z [1m[92m  Downloaded[0m thiserror v1.0.69
+2026-09-15T20:36:10.1649525Z [1m[92m  Downloaded[0m crc v3.4.0
+2026-09-15T20:36:10.1657669Z [1m[92m  Downloaded[0m windows-targets v0.52.6
+2026-09-15T20:36:10.1662743Z [1m[92m  Downloaded[0m cfg-if v1.0.4
+2026-09-15T20:36:10.1669614Z [1m[92m  Downloaded[0m tracing-core v0.1.36
+2026-09-15T20:36:10.1686754Z [1m[92m  Downloaded[0m bit-set v0.6.0
+2026-09-15T20:36:10.1693354Z [1m[92m  Downloaded[0m android_system_properties v0.1.5
+2026-09-15T20:36:10.1698635Z [1m[92m  Downloaded[0m windows-interface v0.59.3
+2026-09-15T20:36:10.1704024Z [1m[92m  Downloaded[0m alloc-stdlib v0.2.4
+2026-09-15T20:36:10.1710182Z [1m[92m  Downloaded[0m http-body v0.4.6
+2026-09-15T20:36:10.1719438Z [1m[92m  Downloaded[0m futures-io v0.3.33
+2026-09-15T20:36:10.1724436Z [1m[92m  Downloaded[0m ryu v1.0.23
+2026-09-15T20:36:10.1741107Z [1m[92m  Downloaded[0m zerovec-derive v0.11.3
+2026-09-15T20:36:10.1750056Z [1m[92m  Downloaded[0m lock_api v0.4.14
+2026-09-15T20:36:10.1759291Z [1m[92m  Downloaded[0m pin-project v1.1.13
+2026-09-15T20:36:10.1812924Z [1m[92m  Downloaded[0m cpufeatures v0.2.17
+2026-09-15T20:36:10.1820379Z [1m[92m  Downloaded[0m crypto-common v0.1.7
+2026-09-15T20:36:10.1826195Z [1m[92m  Downloaded[0m thiserror-impl v1.0.69
+2026-09-15T20:36:10.1834041Z [1m[92m  Downloaded[0m futures-core v0.3.33
+2026-09-15T20:36:10.1842066Z [1m[92m  Downloaded[0m tracing-attributes v0.1.31
+2026-09-15T20:36:10.1855849Z [1m[92m  Downloaded[0m mime v0.3.17
+2026-09-15T20:36:10.1862931Z [1m[92m  Downloaded[0m digest v0.10.7
+2026-09-15T20:36:10.1873032Z [1m[92m  Downloaded[0m form_urlencoded v1.2.2
+2026-09-15T20:36:10.1877807Z [1m[92m  Downloaded[0m writeable v0.6.3
+2026-09-15T20:36:10.1888182Z [1m[92m  Downloaded[0m powerfmt v0.2.0
+2026-09-15T20:36:10.1896083Z [1m[92m  Downloaded[0m rand_chacha v0.3.1
+2026-09-15T20:36:10.1902454Z [1m[92m  Downloaded[0m version_check v0.9.5
+2026-09-15T20:36:10.1911250Z [1m[92m  Downloaded[0m synstructure v0.13.2
+2026-09-15T20:36:10.1917509Z [1m[92m  Downloaded[0m utf-8 v0.7.6
+2026-09-15T20:36:10.1923467Z [1m[92m  Downloaded[0m rand_core v0.6.4
+2026-09-15T20:36:10.1931241Z [1m[92m  Downloaded[0m sha1 v0.10.7
+2026-09-15T20:36:10.1939253Z [1m[92m  Downloaded[0m parking_lot v0.12.5
+2026-09-15T20:36:10.1954022Z [1m[92m  Downloaded[0m httpdate v1.0.3
+2026-09-15T20:36:10.1960263Z [1m[92m  Downloaded[0m stable_deref_trait v1.2.1
+2026-09-15T20:36:10.1965202Z [1m[92m  Downloaded[0m zerofrom-derive v0.1.7
+2026-09-15T20:36:10.1971581Z [1m[92m  Downloaded[0m wasi v0.11.1+wasi-snapshot-preview1
+2026-09-15T20:36:10.1980747Z [1m[92m  Downloaded[0m time-core v0.1.9
+2026-09-15T20:36:10.1987292Z [1m[92m  Downloaded[0m time-macros v0.2.32
+2026-09-15T20:36:10.2000339Z [1m[92m  Downloaded[0m alloc-no-stdlib v2.0.4
+2026-09-15T20:36:10.2008920Z [1m[92m  Downloaded[0m block-buffer v0.10.4
+2026-09-15T20:36:10.2016049Z [1m[92m  Downloaded[0m yoke-derive v0.8.2
+2026-09-15T20:36:10.2023042Z [1m[92m  Downloaded[0m wasm-bindgen-macro v0.2.126
+2026-09-15T20:36:10.2028790Z [1m[92m  Downloaded[0m wasm-bindgen-shared v0.2.126
+2026-09-15T20:36:10.2035099Z [1m[92m  Downloaded[0m idna_adapter v1.2.2
+2026-09-15T20:36:10.2040808Z [1m[92m  Downloaded[0m parking_lot_core v0.9.12
+2026-09-15T20:36:10.2052567Z [1m[92m  Downloaded[0m once_cell v1.21.4
+2026-09-15T20:36:10.2065946Z [1m[92m  Downloaded[0m httparse v1.10.1
+2026-09-15T20:36:10.2080088Z [1m[92m  Downloaded[0m zerofrom v0.1.8
+2026-09-15T20:36:10.2085821Z [1m[92m  Downloaded[0m percent-encoding v2.3.2
+2026-09-15T20:36:10.2091436Z [1m[92m  Downloaded[0m futures-sink v0.3.33
+2026-09-15T20:36:10.2096834Z [1m[92m  Downloaded[0m byteorder v1.5.0
+2026-09-15T20:36:10.2105842Z [1m[92m  Downloaded[0m tower-service v0.3.3
+2026-09-15T20:36:10.2111814Z [1m[92m  Downloaded[0m pin-project-lite v0.2.17
+2026-09-15T20:36:10.2138209Z [1m[92m  Downloaded[0m smallvec v1.15.2
+2026-09-15T20:36:10.2147352Z [1m[92m  Downloaded[0m errno v0.3.14
+2026-09-15T20:36:10.2155512Z [1m[92m  Downloaded[0m windows-link v0.2.1
+2026-09-15T20:36:10.2160064Z [1m[92m  Downloaded[0m log v0.4.33
+2026-09-15T20:36:10.2175247Z [1m[92m  Downloaded[0m serde v1.0.229
+2026-09-15T20:36:10.2194483Z [1m[92m  Downloaded[0m adler2 v2.0.1
+2026-09-15T20:36:10.2201725Z [1m[92m  Downloaded[0m unicase v2.9.0
+2026-09-15T20:36:10.2209164Z [1m[92m  Downloaded[0m zmij v1.0.23
+2026-09-15T20:36:10.2220307Z [1m[92m  Downloaded[0m itoa v1.0.18
+2026-09-15T20:36:10.2227958Z [1m[92m  Downloaded[0m socket2 v0.6.5
+2026-09-15T20:36:10.2240054Z [1m[92m  Downloaded[0m tokio-macros v2.7.1
+2026-09-15T20:36:10.2246170Z [1m[92m  Downloaded[0m redox_syscall v0.5.18
+2026-09-15T20:36:10.2258492Z [1m[92m  Downloaded[0m proc-macro2 v1.0.107
+2026-09-15T20:36:10.2274485Z [1m[92m  Downloaded[0m quote v1.0.47
+2026-09-15T20:36:10.2288387Z [1m[92m  Downloaded[0m syn v3.0.3
+2026-09-15T20:36:10.2349547Z [1m[92m  Downloaded[0m unicode-ident v1.0.24
+2026-09-15T20:36:10.2364606Z [1m[92m  Downloaded[0m toml v0.5.11
+2026-09-15T20:36:10.2377349Z [1m[92m  Downloaded[0m serde_urlencoded v0.7.1
+2026-09-15T20:36:10.2399107Z [1m[92m  Downloaded[0m aws-lc-sys v0.43.0
+2026-09-15T20:36:10.3995332Z [1m[92m  Downloaded[0m windows v0.52.0
+2026-09-15T20:36:11.2705933Z ##[group]Run python3 -B scripts/run-owner-tests.py --owners "mech-runtime"
+2026-09-15T20:36:11.2706917Z [36;1mpython3 -B scripts/run-owner-tests.py --owners "mech-runtime"[0m
+2026-09-15T20:36:11.2727900Z shell: /usr/bin/bash -e {0}
+2026-09-15T20:36:11.2728243Z env:
+2026-09-15T20:36:11.2728520Z   CARGO_TERM_COLOR: always
+2026-09-15T20:36:11.2728791Z   CARGO_INCREMENTAL: 0
+2026-09-15T20:36:11.2729089Z   CARGO_PROFILE_TEST_DEBUG: 0
+2026-09-15T20:36:11.2729364Z   PR_NUMBER: 830
+2026-09-15T20:36:11.2729635Z   PR_HEAD_REF: codex/syntax-s8c-cutover
+2026-09-15T20:36:11.2730050Z   PR_BASE_REF: codex/syntax-s8r05-selected-updates
+2026-09-15T20:36:11.2730416Z   PR_HEAD_REPOSITORY: mech-lang/mech
+2026-09-15T20:36:11.2730734Z ##[endgroup]
+2026-09-15T20:36:11.3447258Z ##[group]mech-runtime: cargo test --locked --offline -p mech-runtime --lib --no-default-features --features full_compiler,resident-routing-source
+2026-09-15T20:36:15.5906931Z [1m[92m   Compiling[0m proc-macro2 v1.0.107
+2026-09-15T20:36:15.5907890Z [1m[92m   Compiling[0m quote v1.0.47
+2026-09-15T20:36:15.5912259Z [1m[92m   Compiling[0m unicode-ident v1.0.24
+2026-09-15T20:36:15.5913350Z [1m[92m   Compiling[0m autocfg v1.5.1
+2026-09-15T20:36:19.0969300Z [1m[92m   Compiling[0m serde_core v1.0.229
+2026-09-15T20:36:19.1805581Z [1m[92m   Compiling[0m libm v0.2.16
+2026-09-15T20:36:22.3710659Z [1m[92m   Compiling[0m typenum v1.20.1
+2026-09-15T20:36:22.3949096Z [1m[92m   Compiling[0m num-traits v0.2.19
+2026-09-15T20:36:22.4453353Z [1m[92m   Compiling[0m memchr v2.8.3
+2026-09-15T20:36:22.9977062Z [1m[92m   Compiling[0m cfg-if v1.0.4
+2026-09-15T20:36:23.0989838Z [1m[92m   Compiling[0m serde v1.0.229
+2026-09-15T20:36:23.3160041Z [1m[92m   Compiling[0m syn v2.0.119
+2026-09-15T20:36:23.4991534Z [1m[92m   Compiling[0m syn v3.0.3
+2026-09-15T20:36:24.4858301Z [1m[92m   Compiling[0m zmij v1.0.23
+2026-09-15T20:36:24.9448842Z [1m[92m   Compiling[0m serde_json v1.0.151
+2026-09-15T20:36:25.1057724Z [1m[92m   Compiling[0m hybrid-array v0.4.14
+2026-09-15T20:36:25.1447386Z [1m[92m   Compiling[0m serde_derive v1.0.229
+2026-09-15T20:36:25.3317603Z [1m[92m   Compiling[0m paste v1.0.15
+2026-09-15T20:36:25.4447661Z [1m[92m   Compiling[0m bytemuck v1.25.2
+2026-09-15T20:36:25.5374109Z [1m[92m   Compiling[0m itoa v1.0.18
+2026-09-15T20:36:25.6260857Z [1m[92m   Compiling[0m safe_arch v0.7.4
+2026-09-15T20:36:26.1727607Z [1m[92m   Compiling[0m num-integer v0.1.46
+2026-09-15T20:36:26.4625591Z [1m[92m   Compiling[0m matrixmultiply v0.3.11
+2026-09-15T20:36:26.5197387Z [1m[92m   Compiling[0m alloc-no-stdlib v2.0.4
+2026-09-15T20:36:26.5697590Z [1m[92m   Compiling[0m num-bigint v0.4.8
+2026-09-15T20:36:26.5877183Z [1m[92m   Compiling[0m alloc-stdlib v0.2.4
+2026-09-15T20:36:26.9073549Z [1m[92m   Compiling[0m wide v0.7.33
+2026-09-15T20:36:27.1268494Z [1m[92m   Compiling[0m block-buffer v0.12.1
+2026-09-15T20:36:27.2177803Z [1m[92m   Compiling[0m crypto-common v0.2.2
+2026-09-15T20:36:27.6967649Z [1m[92m   Compiling[0m approx v0.5.1
+2026-09-15T20:36:27.7337526Z [1m[92m   Compiling[0m num-complex v0.4.6
+2026-09-15T20:36:27.7643283Z [1m[92m   Compiling[0m bytecount v0.6.9
+2026-09-15T20:36:27.8218697Z [1m[92m   Compiling[0m rawpointer v0.2.1
+2026-09-15T20:36:27.8567118Z [1m[92m   Compiling[0m fnv v1.0.7
+2026-09-15T20:36:27.8927191Z [1m[92m   Compiling[0m cpufeatures v0.3.0
+2026-09-15T20:36:27.9157105Z [1m[92m   Compiling[0m virtue v0.0.18
+2026-09-15T20:36:27.9917386Z [1m[92m   Compiling[0m crc32fast v1.5.0
+2026-09-15T20:36:28.0460694Z [1m[92m   Compiling[0m unicode-width v0.2.2
+2026-09-15T20:36:28.0577420Z [1m[92m   Compiling[0m simba v0.9.1
+2026-09-15T20:36:28.1819436Z [1m[92m   Compiling[0m papergrid v0.17.0
+2026-09-15T20:36:28.3142501Z [1m[92m   Compiling[0m bincode_derive v2.0.1
+2026-09-15T20:36:28.6597584Z [1m[92m   Compiling[0m digest v0.11.3
+2026-09-15T20:36:28.8177711Z [1m[92m   Compiling[0m num-rational v0.4.2
+2026-09-15T20:36:29.0868531Z [1m[92m   Compiling[0m nalgebra-macros v0.3.0
+2026-09-15T20:36:29.2757356Z [1m[92m   Compiling[0m brotli-decompressor v5.0.3
+2026-09-15T20:36:29.3907854Z [1m[92m   Compiling[0m synstructure v0.13.2
+2026-09-15T20:36:29.4017596Z [1m[92m   Compiling[0m equivalent v1.0.2
+2026-09-15T20:36:29.4287490Z [1m[92m   Compiling[0m unty v0.0.4
+2026-09-15T20:36:29.4554150Z [1m[92m   Compiling[0m hashbrown v0.17.1
+2026-09-15T20:36:29.8067561Z [1m[92m   Compiling[0m bincode v2.0.1
+2026-09-15T20:36:29.8817518Z [1m[92m   Compiling[0m indexmap v2.14.0
+2026-09-15T20:36:30.0037929Z [1m[92m   Compiling[0m brotli v8.0.4
+2026-09-15T20:36:30.4514526Z [1m[92m   Compiling[0m tabled v0.20.0
+2026-09-15T20:36:30.5846332Z [1m[92m   Compiling[0m sha2 v0.11.0
+2026-09-15T20:36:31.0416179Z [1m[92m   Compiling[0m nalgebra v0.34.2
+2026-09-15T20:36:31.3248245Z [1m[92m   Compiling[0m seahash v4.1.0
+2026-09-15T20:36:31.3989284Z [1m[92m   Compiling[0m byteorder v1.5.0
+2026-09-15T20:36:31.5467535Z [1m[92m   Compiling[0m base64 v0.22.1
+2026-09-15T20:36:31.7609447Z [1m[92m   Compiling[0m zerofrom-derive v0.1.7
+2026-09-15T20:36:32.2918307Z [1m[92m   Compiling[0m yoke-derive v0.8.2
+2026-09-15T20:36:32.6138933Z [1m[92m   Compiling[0m zerofrom v0.1.8
+2026-09-15T20:36:32.6617525Z [1m[92m   Compiling[0m stable_deref_trait v1.2.1
+2026-09-15T20:36:32.6747396Z [1m[92m   Compiling[0m zerovec-derive v0.11.3
+2026-09-15T20:36:32.6938893Z [1m[92m   Compiling[0m libc v0.2.189
+2026-09-15T20:36:32.8993997Z [1m[92m   Compiling[0m displaydoc v0.2.6
+2026-09-15T20:36:33.0312284Z [1m[92m   Compiling[0m yoke v0.8.3
+2026-09-15T20:36:33.1517653Z [1m[92m   Compiling[0m version_check v0.9.5
+2026-09-15T20:36:33.3607631Z [1m[92m   Compiling[0m generic-array v0.14.7
+2026-09-15T20:36:33.4367785Z [1m[92m   Compiling[0m find-msvc-tools v0.1.9
+2026-09-15T20:36:33.4829482Z [1m[92m   Compiling[0m zerovec v0.11.6
+2026-09-15T20:36:33.5894472Z [1m[92m   Compiling[0m shlex v2.0.1
+2026-09-15T20:36:33.6937510Z [1m[92m   Compiling[0m cc v1.3.0
+2026-09-15T20:36:34.3517770Z [1m[92m   Compiling[0m tinystr v0.8.3
+2026-09-15T20:36:34.4287795Z [1m[92m   Compiling[0m writeable v0.6.3
+2026-09-15T20:36:34.4617558Z [1m[92m   Compiling[0m icu_properties_data v2.2.0
+2026-09-15T20:36:34.5241147Z [1m[92m   Compiling[0m litemap v0.8.2
+2026-09-15T20:36:34.5457045Z [1m[92m   Compiling[0m potential_utf v0.1.5
+2026-09-15T20:36:34.6127566Z [1m[92m   Compiling[0m zerotrie v0.2.4
+2026-09-15T20:36:34.6447135Z [1m[92m   Compiling[0m icu_locale_core v2.2.0
+2026-09-15T20:36:34.8009195Z [1m[92m   Compiling[0m aho-corasick v1.1.4
+2026-09-15T20:36:34.8167331Z [1m[92m   Compiling[0m crossbeam-utils v0.8.22
+2026-09-15T20:36:34.9347269Z [1m[92m   Compiling[0m unicode-segmentation v1.13.3
+2026-09-15T20:36:35.2077896Z [1m[92m   Compiling[0m tinyvec_macros v0.1.1
+2026-09-15T20:36:35.2351729Z [1m[92m   Compiling[0m regex-syntax v0.8.11
+2026-09-15T20:36:35.5157894Z [1m[92m   Compiling[0m utf8_iter v1.0.4
+2026-09-15T20:36:35.5857537Z [1m[92m   Compiling[0m icu_collections v2.2.0
+2026-09-15T20:36:35.7077710Z [1m[92m   Compiling[0m mech-core v0.3.5 (/home/runner/work/mech/mech/src/core)
+2026-09-15T20:36:35.9247771Z [1m[92m   Compiling[0m icu_provider v2.2.0
+2026-09-15T20:36:36.0967711Z [1m[92m   Compiling[0m regex-automata v0.4.16
+2026-09-15T20:36:36.3157578Z [1m[92m   Compiling[0m tinyvec v1.12.0
+2026-09-15T20:36:36.6667701Z [1m[92m   Compiling[0m block-buffer v0.10.4
+2026-09-15T20:36:36.7000047Z [1m[92m   Compiling[0m crypto-common v0.1.7
+2026-09-15T20:36:36.7310140Z [1m[92m   Compiling[0m log v0.4.33
+2026-09-15T20:36:36.7510199Z [1m[92m   Compiling[0m crossbeam-epoch v0.9.20
+2026-09-15T20:36:36.8311380Z [1m[92m   Compiling[0m inotify-sys v0.1.8
+2026-09-15T20:36:36.8527532Z [1m[92m   Compiling[0m same-file v1.0.6
+2026-09-15T20:36:36.9171530Z [1m[92m   Compiling[0m walkdir v2.5.0
+2026-09-15T20:36:36.9487440Z [1m[92m   Compiling[0m digest v0.10.7
+2026-09-15T20:36:37.0621341Z [1m[92m   Compiling[0m icu_properties v2.2.0
+2026-09-15T20:36:37.4347754Z [1m[92m   Compiling[0m unicode-normalization v0.1.25
+2026-09-15T20:36:37.7408008Z [1m[92m   Compiling[0m grapheme_macro v2.0.0
+2026-09-15T20:36:37.8797591Z [1m[92m   Compiling[0m bitflags v2.13.1
+2026-09-15T20:36:38.0147644Z [1m[92m   Compiling[0m getrandom v0.4.3
+2026-09-15T20:36:38.0373744Z [1m[92m   Compiling[0m colored v3.1.1
+2026-09-15T20:36:38.1047398Z [1m[92m   Compiling[0m cpufeatures v0.2.17
+2026-09-15T20:36:38.1303254Z [1m[92m   Compiling[0m crossbeam-deque v0.8.7
+2026-09-15T20:36:38.2159771Z [1m[92m   Compiling[0m zerocopy v0.8.55
+2026-09-15T20:36:38.2617576Z [1m[92m   Compiling[0m smallvec v1.15.2
+2026-09-15T20:36:38.3949019Z [1m[92m   Compiling[0m either v1.16.0
+2026-09-15T20:36:38.4157436Z [1m[92m   Compiling[0m grapheme v1.3.0
+2026-09-15T20:36:38.5487334Z [1m[92m   Compiling[0m sha2 v0.10.9
+2026-09-15T20:36:38.7019338Z [1m[92m   Compiling[0m blake3 v1.8.5
+2026-09-15T20:36:38.7953323Z [1m[92m   Compiling[0m zerocopy-derive v0.8.55
+2026-09-15T20:36:38.8447403Z [1m[92m   Compiling[0m bstr v1.13.0
+2026-09-15T20:36:39.2216541Z [1m[92m   Compiling[0m globset v0.4.19
+2026-09-15T20:36:39.7574098Z [1m[92m   Compiling[0m inotify v0.11.4
+2026-09-15T20:36:40.0627680Z [1m[92m   Compiling[0m notify-types v2.1.0
+2026-09-15T20:36:40.1517482Z [1m[92m   Compiling[0m mio v1.2.2
+2026-09-15T20:36:40.2498033Z [1m[92m   Compiling[0m arrayvec v0.7.8
+2026-09-15T20:36:40.3359006Z [1m[92m   Compiling[0m constant_time_eq v0.4.2
+2026-09-15T20:36:40.3737217Z [1m[92m   Compiling[0m arrayref v0.3.9
+2026-09-15T20:36:40.3978867Z [1m[92m   Compiling[0m notify v8.2.0
+2026-09-15T20:36:40.7618011Z [1m[92m   Compiling[0m uuid v1.24.0
+2026-09-15T20:36:41.0649742Z [1m[92m   Compiling[0m ignore v0.4.31
+2026-09-15T20:36:41.0867153Z [1m[92m   Compiling[0m alloca v0.4.0
+2026-09-15T20:36:41.1787436Z [1m[92m   Compiling[0m clap_lex v1.1.0
+2026-09-15T20:36:41.2927423Z [1m[92m   Compiling[0m target-triple v1.0.1
+2026-09-15T20:36:41.3937356Z [1m[92m   Compiling[0m winnow v1.0.4
+2026-09-15T20:36:41.6297448Z [1m[92m   Compiling[0m anstyle v1.0.14
+2026-09-15T20:36:41.7597568Z [1m[92m   Compiling[0m ciborium-io v0.2.2
+2026-09-15T20:36:41.7927400Z [1m[92m   Compiling[0m clap_builder v4.6.2
+2026-09-15T20:36:42.1293018Z [1m[92m   Compiling[0m toml_parser v1.1.2+spec-1.1.0
+2026-09-15T20:36:42.6910119Z [1m[92m   Compiling[0m half v2.7.1
+2026-09-15T20:36:42.8455887Z [1m[92m   Compiling[0m itertools v0.13.0
+2026-09-15T20:36:42.8763688Z [1m[92m   Compiling[0m ciborium-ll v0.2.2
+2026-09-15T20:36:42.9947533Z [1m[92m   Compiling[0m itertools v0.14.0
+2026-09-15T20:36:43.9578274Z [1m[92m   Compiling[0m toml_datetime v1.1.1+spec-1.1.0
+2026-09-15T20:36:44.0427633Z [1m[92m   Compiling[0m serde_spanned v1.1.1
+2026-09-15T20:36:44.0982772Z [1m[92m   Compiling[0m toml_writer v1.1.2+spec-1.1.0
+2026-09-15T20:36:44.1095409Z [1m[92m   Compiling[0m cast v0.3.0
+2026-09-15T20:36:44.1407197Z [1m[92m   Compiling[0m mech-stdlib v0.3.5 (/home/runner/work/mech/mech/src/stdlib)
+2026-09-15T20:36:44.1947176Z [1m[92m   Compiling[0m criterion-plot v0.8.2
+2026-09-15T20:36:44.2111986Z [1m[92m   Compiling[0m clap v4.6.4
+2026-09-15T20:36:44.2265529Z [1m[92m   Compiling[0m toml v1.1.3+spec-1.1.0
+2026-09-15T20:36:44.2374053Z [1m[92m   Compiling[0m ciborium v0.2.2
+2026-09-15T20:36:44.5668348Z [1m[92m   Compiling[0m regex v1.13.1
+2026-09-15T20:36:44.6818079Z [1m[92m   Compiling[0m page_size v0.6.0
+2026-09-15T20:36:44.7207654Z [1m[92m   Compiling[0m tinytemplate v1.2.1
+2026-09-15T20:36:44.8977234Z [1m[92m   Compiling[0m termcolor v1.4.1
+2026-09-15T20:36:45.0137581Z [1m[92m   Compiling[0m oorandom v11.1.5
+2026-09-15T20:36:45.0601321Z [1m[92m   Compiling[0m glob v0.3.4
+2026-09-15T20:36:45.0926968Z [1m[92m   Compiling[0m anes v0.1.6
+2026-09-15T20:36:45.2157324Z [1m[92m   Compiling[0m criterion v0.8.2
+2026-09-15T20:36:45.2880338Z [1m[92m   Compiling[0m trybuild v1.0.118
+2026-09-15T20:36:48.4856296Z [1m[92m   Compiling[0m mech-syntax v0.3.5 (/home/runner/work/mech/mech/src/syntax)
+2026-09-15T20:36:48.4857303Z [1m[92m   Compiling[0m mech-bytecode v0.3.5 (/home/runner/work/mech/mech/src/bytecode)
+2026-09-15T20:36:48.4858856Z [1m[92m   Compiling[0m mech-matrix v0.3.5 (/home/runner/work/mech/mech/machines/matrix)
+2026-09-15T20:36:48.5229805Z [1m[92m   Compiling[0m mech-logic v0.3.5 (/home/runner/work/mech/mech/machines/logic)
+2026-09-15T20:36:51.0473925Z [1m[92m   Compiling[0m mech-stats v0.3.5 (/home/runner/work/mech/mech/machines/stats)
+2026-09-15T20:36:54.1347933Z [1m[92m   Compiling[0m mech-engine v0.3.5 (/home/runner/work/mech/mech/src/engine)
+2026-09-15T20:36:54.8128229Z [1m[92m   Compiling[0m mech-compare v0.3.5 (/home/runner/work/mech/mech/machines/compare)
+2026-09-15T20:36:55.1638414Z [1m[92m   Compiling[0m mech-string v0.3.5 (/home/runner/work/mech/mech/machines/string)
+2026-09-15T20:36:56.3959922Z [1m[92m   Compiling[0m mech-range v0.3.5 (/home/runner/work/mech/mech/machines/range)
+2026-09-15T20:36:59.2058006Z [1m[92m   Compiling[0m mech-combinatorics v0.3.5 (/home/runner/work/mech/mech/machines/combinatorics)
+2026-09-15T20:37:00.2066264Z [1m[92m   Compiling[0m mech-math v0.3.5 (/home/runner/work/mech/mech/machines/math)
+2026-09-15T20:37:00.9668551Z [1m[92m   Compiling[0m mech-set v0.3.5 (/home/runner/work/mech/mech/machines/set)
+2026-09-15T20:37:37.2237820Z [1m[92m   Compiling[0m mech-runtime v0.3.5 (/home/runner/work/mech/mech/src/runtime)
+2026-09-15T20:37:52.0328352Z [1m[92m   Compiling[0m mech-native-live-host-fixture v0.3.5 (/home/runner/work/mech/mech/tests/fixtures/native-live-host)
+2026-09-15T20:37:52.3858943Z [1m[92m   Compiling[0m mech-terminal v0.3.5 (/home/runner/work/mech/mech/hosts/terminal)
+2026-09-15T20:40:54.2767339Z [1m[92m    Finished[0m `test` profile [unoptimized] target(s) in 4m 41s
+2026-09-15T20:40:54.4046579Z [1m[92m     Running[0m unittests src/lib.rs (target/debug/deps/mech_runtime-0f6a7c2d0aac68e1)
+2026-09-15T20:40:54.4165694Z 
+2026-09-15T20:40:54.4166464Z running 699 tests
+2026-09-15T20:40:54.4178999Z test actor::tests::actor_turn_builds_from_actor_and_message ... ok
+2026-09-15T20:40:54.4180022Z test actor::tests::actor_turn_rejects_mismatched_message_actor ... ok
+2026-09-15T20:40:54.4180763Z test capability::grant::tests::exact_and_wildcard_scopes_use_canonical_full_resources ... ok
+2026-09-15T20:40:54.4181514Z test capability::grant::tests::prefix_scope_checks_path_boundaries ... ok
+2026-09-15T20:40:54.4182232Z test capability::filesystem::tests::delegation_outside_default_grant_fails ... ok
+2026-09-15T20:40:54.4182944Z test capability::filesystem::tests::recursive_delegation_allows_nested_read ... ok
+2026-09-15T20:40:54.4183744Z test capability::grant::tests::resource_key_rejects_parent_segments ... ok
+2026-09-15T20:40:54.4184464Z test capability::grant::tests::resource_path_capability_aliases_preserve_exact_path_scope ... ok
+2026-09-15T20:40:54.4185307Z test capability::grant::tests::resource_path_capability_does_not_infer_same_scheme_aliases ... ok
+2026-09-15T20:40:54.4186209Z test capability::tests::attenuation_cannot_increase_limits ... ok
+2026-09-15T20:40:54.4186835Z test capability::tests::attenuation_cannot_relax_local_only ... ok
+2026-09-15T20:40:54.4187486Z test capability::tests::basic_capability_grant_and_check ... ok
+2026-09-15T20:40:54.4188152Z test capability::tests::basic_capability_resource_prefix_allows_nested_resource ... ok
+2026-09-15T20:40:54.4188966Z test capability::tests::basic_capability_denies_wrong_operation ... ok
+2026-09-15T20:40:54.4189635Z test capability::tests::committed_and_pending_capability_uses_are_combined ... ok
+2026-09-15T20:40:54.4190385Z test capability::tests::basic_kernel_enforces_authority_allowlists ... ok
+2026-09-15T20:40:54.4190853Z test capability::tests::constrained_capability_denies_missing_metrics ... ok
+2026-09-15T20:40:54.4191329Z test capability::tests::custom_kernel_fails_closed_for_authority_allowlists ... ok
+2026-09-15T20:40:54.4192059Z test capability::tests::delegable_source_can_be_delegated ... ok
+2026-09-15T20:40:54.4192482Z test capability::tests::delegation_requires_delegable_source ... ok
+2026-09-15T20:40:54.4192946Z test capability::tests::max_uses_is_enforced_by_default_kernel ... ok
+2026-09-15T20:40:54.4193516Z test capability::tests::parent_revocation_revokes_descendant_by_default ... ok
+2026-09-15T20:40:54.4194020Z test capability::tests::pending_transactional_uses_enforce_live_capability_limit ... ok
+2026-09-15T20:40:54.4194589Z test capability::tests::pending_use_preview_keeps_exclusions_and_shared_forwarding ... ok
+2026-09-15T20:40:54.4195033Z test capability::tests::revocation_blocks_use ... ok
+2026-09-15T20:40:54.4195427Z test capability::tests::rollback_grant_bypasses_non_revocable_policy ... ok
+2026-09-15T20:40:54.4195881Z test capability::tests::rollback_grant_is_idempotent ... ok
+2026-09-15T20:40:54.4196947Z test capability::tests::rollback_grant_removes_descendants_and_graph_indexes ... ok
+2026-09-15T20:40:54.4197630Z test capability::tests::token_payload_is_deterministic ... ok
+2026-09-15T20:40:54.4198386Z test capability::tests::unsupported_kernel_fails_closed_for_pending_uses ... ok
+2026-09-15T20:40:54.4227098Z test capability::tests::rollback_grant_clears_use_accounting ... ok
+2026-09-15T20:40:54.4256657Z test capability::grant::tests::resource_path_capability_authorizes_declared_base_aliases ... ok
+2026-09-15T20:40:54.4286696Z test capability::tests::attenuation_can_reduce_operations ... ok
+2026-09-15T20:40:54.5047227Z test config::profile::lower::tests::run_cli_is_rejected ... ok
+2026-09-15T20:40:54.5066607Z test config::profile::lower::tests::actor_build_bootstrap_lowers_exact_fields ... ok
+2026-09-15T20:40:54.5106901Z test config::profile::lower::tests::actor_build_bootstrap_accepts_empty_payload_and_null_state ... ok
+2026-09-15T20:40:54.5753891Z test config::profile::lower::tests::run_executor_configuration_is_rejected ... ok
+2026-09-15T20:40:54.6207339Z test config::profile::lower::tests::run_grants_empty_paths_allowed_when_explicit_empty_list_is_rejected_or_allowed_per_policy ... ok
+2026-09-15T20:40:54.6527324Z test config::profile::lower::tests::run_grants_env_path_lowers ... ok
+2026-09-15T20:40:54.7016833Z test config::profile::lower::tests::run_paths_parse_and_lower ... ok
+2026-09-15T20:40:54.7222684Z test config::profile::lower::tests::runtime_accepts_direct_resident_durability ... ok
+2026-09-15T20:40:54.7246912Z test config::profile::lower::tests::run_grants_stdout_line_lowers ... ok
+2026-09-15T20:40:54.7760168Z test config::profile::lower::tests::unknown_run_field_fails ... ok
+2026-09-15T20:40:54.7767460Z test config::tests::default_config_is_valid ... ok
+2026-09-15T20:40:54.7800515Z test config::tests::missing_step_limit_uses_existing_fallback ... ok
+2026-09-15T20:40:54.7814887Z test config::tests::step_limit_must_fit_the_target_architecture ... ok
+2026-09-15T20:40:54.7827817Z test config::tests::trusted_limits_are_unbounded ... ok
+2026-09-15T20:40:54.7842522Z test config::tests::zero_limit_is_invalid ... ok
+2026-09-15T20:40:54.7843413Z test context::tests::access_set_deduplicates_reads_and_writes ... ok
+2026-09-15T20:40:54.7844262Z test context::tests::allowlist_authority_tracks_provisional_capabilities ... ok
+2026-09-15T20:40:54.7845101Z test context::tests::budget_charges_until_limit ... ok
+2026-09-15T20:40:54.7845869Z test context::tests::context_builder_defaults_to_runtime_subject ... ok
+2026-09-15T20:40:54.7863932Z test context::tests::context_builder_prefers_actor_subject ... ok
+2026-09-15T20:40:54.7865876Z test context::tests::context_builder_prefers_task_subject_when_no_actor ... ok
+2026-09-15T20:40:54.7866930Z test context::tests::context_drains_events ... ok
+2026-09-15T20:40:54.7867740Z test context::tests::next_turn_reset_preserves_identity_and_limits_but_clears_turn_state ... ok
+2026-09-15T20:40:54.7868722Z test context::tests::next_turn_reset_rejects_an_open_transaction ... ok
+2026-09-15T20:40:54.7869622Z test context_events::tests::active_mark_bounds_hidden_tail_without_losing_rollback_prefix ... ok
+2026-09-15T20:40:54.7870923Z test context_events::tests::compaction_counts_only_the_moved_visible_suffix ... ok
+2026-09-15T20:40:54.7871874Z test context_events::tests::context_event_append_then_restore ... ok
+2026-09-15T20:40:54.7878156Z test context_events::tests::context_event_clear_resets_visibility ... ok
+2026-09-15T20:40:54.7879247Z test context_events::tests::context_event_clone_contains_only_visible_events_and_has_a_distinct_owner ... ok
+2026-09-15T20:40:54.7880289Z test context_events::tests::context_event_drain_transfers_visible_events_and_clears_storage ... ok
+2026-09-15T20:40:54.7881203Z test context_events::tests::context_event_empty_mark_and_restore ... ok
+2026-09-15T20:40:54.7882090Z test context_events::tests::context_event_retention_then_restore_reveals_hidden_prefix ... ok
+2026-09-15T20:40:54.7883045Z test context_events::tests::context_event_zero_retention_hides_everything ... ok
+2026-09-15T20:40:54.7884003Z test context_events::tests::hidden_prefix_equal_to_visible_suffix_compacts ... ok
+2026-09-15T20:40:54.7884968Z test context_events::tests::hidden_prefix_smaller_than_visible_suffix_does_not_compact ... ok
+2026-09-15T20:40:54.7916802Z test context_events::tests::mark_from_another_context_is_rejected ... ok
+2026-09-15T20:40:54.7927451Z test context_events::tests::newest_mark_protects_operation_baseline_while_later_events_compact ... ok
+2026-09-15T20:40:54.7950851Z test context_events::tests::scope_completion_invalidates_marks_without_changing_owner ... ok
+2026-09-15T20:40:54.7952051Z test context_events::tests::zero_retention_compacts_to_zero_physical_entries ... ok
+2026-09-15T20:40:54.7952922Z test effect::tests::prepared_effect_reports_public_protocol_and_metadata ... ok
+2026-09-15T20:40:54.7953819Z test host::actor::tests::planning_state_enforces_exact_actor_arities_and_put_type ... ok
+2026-09-15T20:40:54.7954688Z test host::actor::tests::planning_state_tracks_put_before_get_and_id ... ok
+2026-09-15T20:40:54.7955567Z test host::interface::operation::tests::validates_spellable_operation_names ... ok
+2026-09-15T20:40:54.7956796Z test host::tests::default_host_capability_request_uses_context_subject ... ok
+2026-09-15T20:40:54.7957644Z test host::tests::deterministic_function_planning_never_invokes_host_behavior ... ok
+2026-09-15T20:40:54.7958515Z test host::tests::deterministic_function_plans_and_invokes_snapshots ... ok
+2026-09-15T20:40:54.7959263Z test host::tests::host_call_validates_name ... ok
+2026-09-15T20:40:54.7959937Z test host::tests::registry_registers_and_lists_functions ... ok
+2026-09-15T20:40:54.7960670Z test host::tests::registry_rejects_duplicate_functions ... ok
+2026-09-15T20:40:54.7961376Z test id::tests::content_hash_is_deterministic ... ok
+2026-09-15T20:40:54.7962016Z test id::tests::dependency_order_is_normalized ... ok
+2026-09-15T20:40:54.7962663Z test id::tests::display_is_32_hex_chars ... ok
+2026-09-15T20:40:54.7963262Z test id::tests::module_id_is_deterministic ... ok
+2026-09-15T20:40:54.7963952Z test id::tests::module_version_id_includes_module_identity ... ok
+2026-09-15T20:40:54.7964657Z test id::tests::module_version_id_is_deterministic ... ok
+2026-09-15T20:40:54.7965428Z test id::tests::module_version_inputs_remain_identity_significant ... ok
+2026-09-15T20:40:54.7966322Z test id::tests::parse_hex_accepts_prefix ... ok
+2026-09-15T20:40:54.7966992Z test id::tests::sequential_generator_is_predictable ... ok
+2026-09-15T20:40:54.7967782Z test input::tests::cloned_ingress_preserves_fifo_and_enforces_capacity ... ok
+2026-09-15T20:40:54.7968677Z test input::tests::closed_ingress_rejects_new_submissions_but_preserves_queued_packets ... ok
+2026-09-15T20:40:54.7969578Z test input::tests::detached_indexes_are_one_based ... ok
+2026-09-15T20:40:54.7970404Z test config::profile::lower::tests::unknown_serve_presentation_fails ... ok
+2026-09-15T20:40:54.7971211Z test input::tests::empty_packets_and_duplicate_sources_are_rejected ... ok
+2026-09-15T20:40:54.7972030Z test input::tests::explicit_unit_is_the_canonical_empty_tuple ... ok
+2026-09-15T20:40:54.7972856Z test input::tests::host_input_transport_is_send_sync ... ok
+2026-09-15T20:40:54.7973994Z test input::tests::latest_submission_replaces_same_sources_without_reordering_unrelated_packets ... ok
+2026-09-15T20:40:54.7985068Z test input::tests::source_constructor_canonicalizes_base_and_path ... ok
+2026-09-15T20:40:54.7986362Z test input::tests::source_constructor_rejects_invalid_resource_uris ... ok
+2026-09-15T20:40:54.7987366Z test input::tests::nonsquare_numeric_matrices_round_trip_in_row_major_order ... ok
+2026-09-15T20:40:54.8087461Z test config::profile::lower::tests::serve_presentation_parses_and_defaults_to_document ... ok
+2026-09-15T20:40:54.8993353Z test config::profile::lower::tests::actor_build_bootstrap_rejects_missing_empty_mistyped_and_unknown_fields ... ok
+2026-09-15T20:40:59.3627379Z test interactive::tests::accepted_source_never_migrates_an_output_across_a_changed_definition ... ok
+2026-09-15T20:40:59.6129247Z test interactive::tests::accepted_source_never_migrates_a_projection_across_distinct_state_identity ... ok
+2026-09-15T20:40:59.6937253Z test interactive::tests::accepted_source_preserves_compatible_live_resident_state ... ok
+2026-09-15T20:40:59.9433702Z test interactive::tests::accepted_source_resets_a_same_named_state_when_its_schema_changes ... ok
+2026-09-15T20:40:59.9757119Z test interactive::tests::accepted_source_recomputes_only_projections_of_mutated_state ... ok
+2026-09-15T20:41:00.0017225Z test interactive::tests::accepted_source_recomputes_state_explicitly_mutated_by_the_submission ... ok
+2026-09-15T20:41:00.1205727Z test interactive::tests::canonical_clear_removes_definitions_assignments_and_op_assignments ... ok
+2026-09-15T20:41:00.1987330Z test interactive::tests::accepted_source_preserves_the_published_projection_of_live_state ... ok
+2026-09-15T20:41:00.5799046Z test interactive::tests::accepted_source_returns_the_projection_refreshed_from_migrated_state ... ok
+2026-09-15T20:41:00.7317350Z test interactive::tests::canonical_clear_preserves_same_line_statements_and_tuple_ownership ... ok
+2026-09-15T20:41:00.7497170Z test interactive::tests::canonical_interactive_lifecycle_executes_only_final_streams ... ok
+2026-09-15T20:41:00.7987676Z test interactive::tests::canonical_interactive_result_identity_is_independent_of_fence_publication ... ok
+2026-09-15T20:41:01.0347449Z test interactive::tests::canonical_interactive_rewired_projection_uses_the_migrated_epoch ... ok
+2026-09-15T20:41:01.3682355Z test interactive::tests::canonical_interactive_turns_and_replacement_preserve_live_state ... ok
+2026-09-15T20:41:01.4317080Z test interactive::tests::canonical_invariants_keep_queryable_sigil_names ... ok
+2026-09-15T20:41:01.4466826Z test interactive::tests::diagnostic_ownership_is_assigned_at_the_producer_boundary ... ok
+2026-09-15T20:41:01.4487234Z test interactive::tests::every_host_is_guarded_by_the_shared_synchronous_step_limit ... ok
+2026-09-15T20:41:01.6297274Z test interactive::tests::every_symbol_exposed_by_whos_including_ans_is_clearable ... ok
+2026-09-15T20:41:01.6402071Z test interactive::tests::canonical_interactive_matrix_projection_and_failed_candidate_preserve_state ... ok
+2026-09-15T20:41:01.6766892Z test interactive::tests::program_event_barrier_orders_publish_before_clear ... ok
+2026-09-15T20:41:01.6946751Z test interactive::tests::missing_symbol_is_absent_even_when_an_unrelated_runtime_is_active ... ok
+2026-09-15T20:41:01.7336833Z test interactive::tests::resident_state_mutations_include_compound_assignments ... ok
+2026-09-15T20:41:01.7347122Z test interactive::tests::retained_selection_tokens_can_refresh_without_changing_public_identity ... ok
+2026-09-15T20:41:01.7376541Z test interactive::tests::retained_selection_tokens_preserve_snapshot_and_ans_identity ... ok
+2026-09-15T20:41:01.7456734Z test interactive::tests::replacement_commits_after_retired_runtime_shutdown_has_begun ... ok
+2026-09-15T20:41:01.7457843Z test interactive::tests::submission_terminal_ignores_comments_strings_and_resource_uris ... ok
+2026-09-15T20:41:01.7516754Z test ledger::tests::cloned_queue_producers_race_for_one_preparation_lease ... ok
+2026-09-15T20:41:01.7547375Z test ledger::tests::dropping_prepared_record_releases_lease_and_bound_capacity ... ok
+2026-09-15T20:41:01.7559345Z test interactive::tests::standalone_reset_commits_a_clean_candidate_after_retirement_warning ... ok
+2026-09-15T20:41:01.7606572Z test ledger::tests::generation_and_sequence_exhaustion_are_checked ... ok
+2026-09-15T20:41:01.7636506Z test ledger::tests::internal_wrong_destination_assertion_preserves_origin_capacity ... ok
+2026-09-15T20:41:01.7637464Z test ledger::tests::invalid_owned_turn_record_is_rejected_during_preparation ... ok
+2026-09-15T20:41:01.7666869Z test ledger::tests::multiple_unused_permits_are_allowed_but_only_one_append_may_be_prepared ... ok
+2026-09-15T20:41:01.7667950Z test ledger::tests::older_and_duplicate_sequences_are_rejected_after_drain_but_newer_appends ... ok
+2026-09-15T20:41:01.7696630Z test ledger::tests::oversized_pool_segments_are_dropped_instead_of_retained ... ok
+2026-09-15T20:41:01.7726515Z test ledger::tests::pool_fill_never_grows_a_segment_implicitly ... ok
+2026-09-15T20:41:01.7727337Z test ledger::tests::pool_replaces_an_available_segment_when_bytes_are_exhausted_first ... ok
+2026-09-15T20:41:01.7728223Z test ledger::tests::pool_replaces_the_largest_undersized_available_segment ... ok
+2026-09-15T20:41:01.7729008Z test ledger::tests::prepare_binds_actual_bytes_and_returns_overestimate ... ok
+2026-09-15T20:41:01.7729813Z test ledger::tests::pool_segments_are_exclusive_bounded_and_reused ... ok
+2026-09-15T20:41:01.7730610Z test ledger::tests::prepared_queue_append_survives_health_change_and_poison_recovery ... ok
+2026-09-15T20:41:01.7731448Z test ledger::tests::reservation_assigns_a_sequence_and_drop_returns_capacity ... ok
+2026-09-15T20:41:01.7732259Z test ledger::tests::retained_ledger_is_fifo_exact_and_never_silently_evicts ... ok
+2026-09-15T20:41:01.7733042Z test ledger::tests::underestimated_and_wrong_ledger_permits_release_capacity ... ok
+2026-09-15T20:41:01.7733825Z test ledger::tests::wrong_ledger_preparation_is_rejected_before_append ... ok
+2026-09-15T20:41:01.7734640Z test module::builder::tests::identical_builds_for_one_uri_reuse_version_identity ... ok
+2026-09-15T20:41:01.7735590Z test module::builder::tests::identical_source_at_distinct_uris_has_distinct_version_identity ... ok
+2026-09-15T20:41:01.7757056Z test module::builder::tests::rejects_non_executable_source_kind ... ok
+2026-09-15T20:41:01.7786670Z test module::builder::tests::rejects_non_executable_source_representation ... ok
+2026-09-15T20:41:01.7796527Z test outbox::tests::batch_is_sorted_by_turn_then_ordinal_and_transferred_once ... ok
+2026-09-15T20:41:01.7826461Z test outbox::tests::delivery_does_not_erase_the_effect_ordering_watermark ... ok
+2026-09-15T20:41:01.7846645Z test outbox::tests::dropped_batch_releases_preparation_lease_for_retry ... ok
+2026-09-15T20:41:01.7876613Z test outbox::tests::dropping_prepared_batch_releases_capacity_and_owned_payloads ... ok
+2026-09-15T20:41:01.7886529Z test outbox::tests::duplicate_effect_id_is_rejected_before_publication ... ok
+2026-09-15T20:41:01.7916406Z test outbox::tests::effect_payload_outlives_its_builder_storage ... ok
+2026-09-15T20:41:01.7936580Z test outbox::tests::later_batch_cannot_break_retained_effect_order ... ok
+2026-09-15T20:41:01.7946554Z test outbox::tests::overlapping_batch_preparation_is_rejected_before_publication ... ok
+2026-09-15T20:41:01.7976505Z test protocol::tests::added_output_fields_have_compatible_plain_defaults ... ok
+2026-09-15T20:41:01.7996647Z test protocol::tests::anonymous_stream_fragments_receive_stable_portable_display_ids ... ok
+2026-09-15T20:41:01.8026463Z test protocol::tests::artifact_histories_preserve_creation_order_not_identifier_order ... ok
+2026-09-15T20:41:01.8036508Z test protocol::tests::display_updates_replace_one_stable_artifact ... ok
+2026-09-15T20:41:01.8066470Z test protocol::tests::event_envelope_serializes_with_an_explicit_channel_and_version ... ok
+2026-09-15T20:41:01.8086646Z test protocol::tests::generated_display_ids_skip_named_and_retired_handles ... ok
+2026-09-15T20:41:01.8096871Z test protocol::tests::heterogeneous_appends_retain_every_fragment_in_order ... ok
+2026-09-15T20:41:01.8126416Z test ledger::tests::queued_record_crosses_threads_and_drain_returns_capacity ... ok
+2026-09-15T20:41:01.8156521Z test protocol::tests::pending_scene_updates_are_coalesced_without_erasing_lifecycle_boundaries ... ok
+2026-09-15T20:41:01.8166665Z test protocol::tests::repl_keyboard_contract_reserves_control_enter_for_multiline_input ... ok
+2026-09-15T20:41:01.8206655Z test protocol::tests::table_row_presentation_hints_round_trip_without_changing_cells ... ok
+2026-09-15T20:41:01.8226461Z test repl_command::tests::parser_preserves_literal_windows_and_unc_separators ... ok
+2026-09-15T20:41:01.8227231Z test repl_command::tests::registry_ids_are_unique_and_parser_covers_every_command ... ok
+2026-09-15T20:41:01.8228122Z test repl_command::tests::request_parser_is_the_single_source_and_command_boundary ... ok
+2026-09-15T20:41:01.8228977Z test repl_dispatch::tests::output_focus_carries_the_retained_stream_and_content ... ok
+2026-09-15T20:41:01.8229930Z test repl_command::tests::typed_requests_round_trip_across_the_serialized_embedding_boundary ... ok
+2026-09-15T20:41:01.8230798Z test repl_dispatch::tests::symbol_tables_align_opaque_selection_tokens_with_rows ... ok
+2026-09-15T20:41:01.8231696Z test repl_dispatch::tests::restricted_hosts_mark_unavailable_commands_from_the_shared_registry ... ok
+2026-09-15T20:41:01.8534036Z test resolver::ast::tests::canonical_index_preserves_program_and_named_scope_declarations ... ok
+2026-09-15T20:41:01.8566913Z test resolver::ast::tests::configured_wildcards_expand_only_to_concrete_source_declared_paths ... ok
+2026-09-15T20:41:01.9376863Z test resolver::ast::tests::context_extraction_does_not_break_import_export_extraction ... ok
+2026-09-15T20:41:01.9396883Z test interactive::tests::canonical_inactive_mutations_preserve_root_state ... ok
+2026-09-15T20:41:02.0236871Z test resolver::ast::tests::file_resolver_uses_index_without_behavior_change ... ok
+2026-09-15T20:41:02.0296614Z test resolver::ast::tests::resolved_source_extracts_derived_context ... ok
+2026-09-15T20:41:02.0376463Z test resolver::ast::tests::resolved_source_extracts_resource_context ... ok
+2026-09-15T20:41:02.0686884Z test resolver::ast::tests::source_index_collects_program_address_reference ... ok
+2026-09-15T20:41:02.0777036Z test resolver::ast::tests::resolved_source_extracts_wildcard_context_scope ... ok
+2026-09-15T20:41:02.1056782Z test resolver::ast::tests::source_index_collects_fenced_address_reference ... ok
+2026-09-15T20:41:02.1176886Z test resolver::ast::tests::source_index_collects_program_declarations ... ok
+2026-09-15T20:41:02.1236650Z test resolver::ast::tests::source_index_does_not_collect_string_address_text ... ok
+2026-09-15T20:41:02.1526847Z test resolver::document::tests::equality_compares_descendant_node_and_token_ids_even_when_root_matches ... ok
+2026-09-15T20:41:02.1554114Z test resolver::file::capability_tests::denies_include_outside_grant ... ok
+2026-09-15T20:41:02.1866729Z test resolver::file::capability_tests::denies_source_outside_grant ... ok
+2026-09-15T20:41:02.2136971Z test resolver::file::capability_tests::imported_source_requires_import_capability_for_each_include ... ok
+2026-09-15T20:41:02.2588396Z test resolver::ast::tests::source_index_keeps_different_fenced_interpreter_namespaces_separate ... ok
+2026-09-15T20:41:02.2769753Z test resolver::file::tests::canonical_file_resolution_rejects_malformed_retained_source ... ok
+2026-09-15T20:41:02.3006964Z test resolver::ast::tests::source_index_unions_repeated_fenced_interpreter_namespaces ... ok
+2026-09-15T20:41:02.3596750Z test resolver::file::tests::file_resolver_reads_non_utf8_source_path ... ok
+2026-09-15T20:41:02.3626983Z test resolver::file::tests::canonical_file_replacement_advances_revision_and_rejection_preserves_history ... ok
+2026-09-15T20:41:02.3666747Z test resolver::file::tests::file_uri_helpers_round_trip_supported_local_path ... ok
+2026-09-15T20:41:02.3906202Z test resolver::file::tests::file_uri_referrer_resolves_relative_import_from_parent ... ok
+2026-09-15T20:41:02.3927359Z test resolver::file::tests::filesystem_source_request_round_trips_non_utf8_path_bytes ... ok
+2026-09-15T20:41:02.3969026Z test resolver::file::tests::other_uri_schemes_are_ignored_by_file_resolver ... ok
+2026-09-15T20:41:02.3996649Z test resolver::file::tests::rejects_fs_uri_parent_traversal_before_filesystem_probe ... ok
+2026-09-15T20:41:02.4026502Z test resolver::file::tests::rejects_nonlocal_file_uri_authority_on_non_windows ... ok
+2026-09-15T20:41:02.4156583Z test resolver::file::tests::file_resolver_resolves_mec_file ... ok
+2026-09-15T20:41:02.4496778Z test interactive::tests::canonical_finished_stream_preserves_pending_selection ... ok
+2026-09-15T20:41:02.4694926Z test resolver::file::tests::resolves_file_uri_absolute_path ... ok
+2026-09-15T20:41:02.4707727Z test resolver::file::tests::resolves_absolute_file_directory_index_extensionless_and_missing ... ok
+2026-09-15T20:41:02.4946738Z test resolver::file::tests::resolves_file_uri_localhost_path ... ok
+2026-09-15T20:41:02.4979822Z test resolver::file::tests::resolves_fs_uri_beneath_configured_root ... ok
+2026-09-15T20:41:02.5076597Z test resolver::file::tests::resolves_fs_uri_with_empty_authority_beneath_configured_root ... ok
+2026-09-15T20:41:02.5327206Z test resolver::file::tests::resolves_math_sin_to_math_sin_mec ... ok
+2026-09-15T20:41:02.5386562Z test resolver::file::tests::resolves_math_to_math_index_mec_when_no_math_mec ... ok
+2026-09-15T20:41:02.5506516Z test resolver::file::tests::resolves_math_to_math_mec ... ok
+2026-09-15T20:41:02.5576207Z test resolver::file::tests::cloned_file_resolvers_assign_distinct_revisions_to_concurrent_candidates ... ok
+2026-09-15T20:41:02.5577422Z test resolver::file::tests::source_kind_classifies_mech_files ... ok
+2026-09-15T20:41:02.5672020Z test resolver::file::tests::resolves_percent_encoded_file_uri_path ... ok
+2026-09-15T20:41:02.5827296Z test resolver::file::tests::resolves_percent_encoded_fs_uri_path ... ok
+2026-09-15T20:41:02.5887442Z test resolver::imports::tests::classifies_mec_wildcard_imports ... ok
+2026-09-15T20:41:02.5905088Z test resolver::imports::tests::compiler_module_wildcard_does_not_require_source_dependency ... ok
+2026-09-15T20:41:02.5916598Z test resolver::file::tests::resolves_relative_import_from_referrer_parent ... ok
+2026-09-15T20:41:02.5946680Z test resolver::imports::tests::context_import_does_not_require_source_dependency_even_if_dependency_like ... ok
+2026-09-15T20:41:02.5976632Z test resolver::imports::tests::context_import_may_not_resolve_source_dependency ... ok
+2026-09-15T20:41:02.6006532Z test resolver::imports::tests::namespace_for_namespace_import ... ok
+2026-09-15T20:41:02.6007501Z test resolver::imports::tests::namespace_for_parent_relative_file_import ... ok
+2026-09-15T20:41:02.6036605Z test resolver::imports::tests::namespace_for_relative_file_import ... ok
+2026-09-15T20:41:02.6047349Z test resolver::imports::tests::namespace_for_single_import ... ok
+2026-09-15T20:41:02.6076656Z test resolver::imports::tests::namespace_for_wildcard_import ... ok
+2026-09-15T20:41:02.6097107Z test resolver::imports::tests::namespace_import_does_not_require_source_dependency ... ok
+2026-09-15T20:41:02.6126600Z test resolver::imports::tests::namespace_import_may_resolve_source_dependency ... ok
+2026-09-15T20:41:02.6144984Z test resolver::imports::tests::parent_relative_file_import_requires_source_dependency ... ok
+2026-09-15T20:41:02.6146170Z test resolver::imports::tests::relative_file_import_requires_source_dependency ... ok
+2026-09-15T20:41:02.6147128Z test resolver::imports::tests::single_item_import_does_not_require_source_dependency ... ok
+2026-09-15T20:41:02.6148133Z test resolver::imports::tests::single_item_import_may_resolve_source_dependency ... ok
+2026-09-15T20:41:02.6148979Z test resolver::imports::tests::source_wildcard_requires_source_dependency ... ok
+2026-09-15T20:41:02.6186679Z test resolver::imports::tests::all_imports_create_dependency_edges ... ok
+2026-09-15T20:41:02.6276819Z test resolver::imports::tests::exports_are_extracted ... ok
+2026-09-15T20:41:02.6306886Z test resolver::imports::tests::uri_import_requires_source_dependency ... ok
+2026-09-15T20:41:02.6336623Z test resolver::imports::tests::wildcard_import_may_resolve_source_dependency ... ok
+2026-09-15T20:41:02.6434939Z test resolver::imports::tests::stdlib_single_imports_are_not_source_imports ... ok
+2026-09-15T20:41:02.6517091Z test resolver::index::canonical::tests::nested_owner_declarations_are_not_published_but_reads_are_indexed ... ok
+2026-09-15T20:41:02.6556786Z test resolver::index::canonical::tests::variable_definitions_traverse_only_their_values ... ok
+2026-09-15T20:41:02.6576646Z test resolver::imports::tests::classifies_dependency_only_imports ... ok
+2026-09-15T20:41:02.6606591Z test resolver::index::tests::source_index_records_activation_body_and_arm_address_references ... ok
+2026-09-15T20:41:02.6726583Z test resolver::imports::tests::stdlib_wildcard_imports_are_not_source_imports ... ok
+2026-09-15T20:41:02.6746712Z test resolver::index::tests::source_index_records_fsm_pipe_start_arg_address_references ... ok
+2026-09-15T20:41:02.6776604Z test resolver::index::tests::source_index_records_function_body_address_references ... ok
+2026-09-15T20:41:02.6816572Z test resolver::index::tests::source_index_records_function_pattern_address_references ... ok
+2026-09-15T20:41:02.6866734Z test resolver::index::tests::source_index_records_invariant_address_references ... ok
+2026-09-15T20:41:02.7056910Z test resolver::index::canonical::tests::complete_document_indexes_all_mika_owners_with_one_coordinate_projection ... ok
+2026-09-15T20:41:02.7656982Z test resolver::index::tests::source_index_treats_unqualified_fenced_mech_as_program_scope ... ok
+2026-09-15T20:41:02.7703427Z test resolver::index::tests::source_index_records_fsm_arm_selector_address_references ... ok
+2026-09-15T20:41:02.7926881Z test resolver::memory::tests::aliases_apply_to_normalized_memory_relative_imports ... ok
+2026-09-15T20:41:02.7996786Z test resolver::memory::tests::ascii_relative_import_behavior_is_unchanged ... ok
+2026-09-15T20:41:02.8093034Z test resolver::memory::tests::builder_preserves_invalid_source_for_canonical_parse_diagnostics ... ok
+2026-09-15T20:41:02.8204592Z test resolver::index::tests::source_index_records_match_pattern_address_references ... ok
+2026-09-15T20:41:02.8306753Z test resolver::index::tests::source_index_collects_title_front_matter_imports_in_program_scope ... ok
+2026-09-15T20:41:02.8327278Z test resolver::memory::tests::canonical_builder_retains_malformed_source_without_publishing_facts ... ok
+2026-09-15T20:41:02.8669316Z test resolver::memory::tests::canonical_insertion_fails_closed_before_replacing_the_accepted_revision ... ok
+2026-09-15T20:41:02.9156535Z test resolver::memory::tests::canonical_insertion_hands_off_root_dependencies_and_preserves_local_owners ... ok
+2026-09-15T20:41:02.9345003Z test resolver::memory::tests::in_memory_resolution_edge_precedes_global_exact_source ... ok
+2026-09-15T20:41:02.9727914Z test resolver::memory::tests::in_memory_resolution_edge_rejects_conflicting_target ... ok
+2026-09-15T20:41:02.9895285Z test resolver::memory::tests::in_memory_resolution_edge_resolves_exact_request ... ok
+2026-09-15T20:41:02.9999866Z test resolver::memory::tests::in_memory_resolution_edge_reuses_target_canonical_uri ... ok
+2026-09-15T20:41:03.0196679Z test resolver::memory::tests::in_memory_resolution_edge_uses_referrer_canonical_identity ... ok
+2026-09-15T20:41:03.0216538Z test resolver::memory::tests::insert_source_validates_resolved_source ... ok
+2026-09-15T20:41:03.0256716Z test resolver::memory::tests::in_memory_resolution_edge_rejects_dangling_source ... ok
+2026-09-15T20:41:03.0796631Z test resolver::memory::tests::len_and_is_empty_work ... ok
+2026-09-15T20:41:03.1329844Z test resolver::memory::tests::incoming_memory_documents_reserve_uri_history_and_reject_identity_aliases ... ok
+2026-09-15T20:41:03.1376940Z test resolver::memory::tests::insert_string_retains_a_document_without_requiring_canonical_indexing ... ok
+2026-09-15T20:41:03.1407068Z test resolver::memory::tests::malformed_replacement_is_transactional_and_preserves_the_prior_revision ... ok
+2026-09-15T20:41:03.1633633Z test resolver::memory::tests::remove_deletes_source ... ok
+2026-09-15T20:41:03.1647206Z test resolver::memory::tests::ordinary_memory_relative_resolution_remains_available ... ok
+2026-09-15T20:41:03.1852206Z test resolver::memory::tests::memory_relative_imports_do_not_escape_or_rebase_other_requests ... ok
+2026-09-15T20:41:03.1857429Z test resolver::memory::tests::returns_none_for_missing_source ... ok
+2026-09-15T20:41:03.1965091Z test resolver::memory::tests::cloned_resolvers_allocate_concurrent_revisions_atomically ... ok
+2026-09-15T20:41:03.2126810Z test resolver::memory::tests::resolves_inserted_string ... ok
+2026-09-15T20:41:03.2406612Z test resolver::memory::tests::supports_aliases ... ok
+2026-09-15T20:41:03.2666674Z test resolver::memory::tests::supports_builder_style_insert ... ok
+2026-09-15T20:41:03.2696520Z test resolver::memory::tests::try_with_source_reports_invalid_resolved_source ... ok
+2026-09-15T20:41:03.2697465Z test resolver::memory::tests::with_source_preserves_non_panicking_compatibility_behavior ... ok
+2026-09-15T20:41:03.2719124Z test resolver::tests::resolved_source_default_kind_is_not_executable ... ok
+2026-09-15T20:41:03.2786430Z test resolver::tests::resolved_source_detects_executable_mech_source ... ok
+2026-09-15T20:41:03.2806588Z test resolver::tests::resolved_source_validates_identity_fields ... ok
+2026-09-15T20:41:03.2816644Z test resolver::tests::source_request_from_str ... ok
+2026-09-15T20:41:03.2836409Z test resolver::tests::source_request_validates_nonempty_specifier ... ok
+2026-09-15T20:41:03.2865360Z test resource::tests::administrative_docs_write_executes_immediately ... ok
+2026-09-15T20:41:03.2896694Z test resource::tests::default_plan_read_is_structured_and_never_calls_read ... ok
+2026-09-15T20:41:03.2897718Z test resource::tests::docs_write_is_discarded_by_explicit_abort ... ok
+2026-09-15T20:41:03.2898611Z test resource::tests::docs_write_is_invisible_until_explicit_commit ... ok
+2026-09-15T20:41:03.2899555Z test resource::tests::provider_equivalence_groups_are_normalized_and_captured ... ok
+2026-09-15T20:41:03.2900475Z test resource::tests::provider_equivalence_rejects_duplicate_group_membership ... ok
+2026-09-15T20:41:03.2901373Z test resource::tests::provider_equivalence_rejects_unadvertised_base ... ok
+2026-09-15T20:41:03.2902247Z test resource::tests::provider_panics_are_converted_before_external_effects_exist ... ok
+2026-09-15T20:41:03.2903162Z test resource::tests::store_failure_compensates_docs_overwrite_and_creation ... ok
+2026-09-15T20:41:03.2904176Z test resource_contract::tests::provider_contracts_declare_observation_effect_and_transaction_boundaries ... ok
+2026-09-15T20:41:03.2905206Z test runtime::actor::tests::limits::mailbox_limit_survives_fresh_contexts ... ok
+2026-09-15T20:41:03.2906071Z test runtime::actor::tests::limits::max_actors_is_enforced ... ok
+2026-09-15T20:41:03.2906992Z test runtime::actor::tests::limits::transactional_mailbox_limit_uses_effective_length ... ok
+2026-09-15T20:41:03.2908070Z test runtime::actor::tests::transactional_mailbox::abort_leaves_durable_messages_and_discards_staged_enqueues ... ok
+2026-09-15T20:41:03.2909152Z test runtime::actor::tests::transactional_mailbox::commit_removes_acknowledged_durable_messages_once ... ok
+2026-09-15T20:41:03.2910284Z test runtime::actor::tests::transactional_mailbox::duplicate_durable_message_ids_are_consumed_by_occurrence ... ok
+2026-09-15T20:41:03.2911443Z test runtime::actor::tests::transactional_mailbox::duplicate_durable_message_ids_mixed_with_other_ids_preserve_fifo ... ok
+2026-09-15T20:41:03.2912694Z test runtime::actor::tests::transactional_mailbox::durable_staged_id_collision_commit_keeps_unpopped_staged_message ... ok
+2026-09-15T20:41:03.2913897Z test runtime::actor::tests::transactional_mailbox::transactional_mailbox_returns_durable_before_staged_enqueue ... ok
+2026-09-15T20:41:03.2915020Z test runtime::actor::tests::transactional_mailbox::transactional_peek_then_pop_returns_same_effective_head ... ok
+2026-09-15T20:41:03.2916645Z test runtime::actor::tests::transactional_mailbox::transactional_pop_preserves_provenance_when_durable_and_staged_ids_collide ... ok
+2026-09-15T20:41:03.2926935Z test runtime::actor::tests::transactional_mailbox::transactional_pops_return_distinct_durable_messages_in_fifo_order ... ok
+2026-09-15T20:41:03.2946744Z test runtime::actor::tests::transactional_mailbox::transactional_pops_three_durable_messages_without_repetition ... ok
+2026-09-15T20:41:03.2947851Z test runtime::actor::tests::transactional_mailbox::transactional_staged_enqueues_fifo_after_durable_exhausted_then_none ... ok
+2026-09-15T20:41:03.2948885Z test runtime::builder::tests::bare_runtime_uses_an_empty_catalog ... ok
+2026-09-15T20:41:03.2949779Z test runtime::builder::tests::custom_function_catalog_reaches_runtime ... ok
+2026-09-15T20:41:03.2950597Z test runtime::cost_probe::tests::counters_are_thread_local_and_resettable ... ok
+2026-09-15T20:41:03.2951388Z test runtime::cost_probe::tests::counters_do_not_cross_threads ... ok
+2026-09-15T20:41:03.2952434Z test runtime::effect_journal::tests::after_commit::after_commit_delivery_failure_keeps_committed_runtime_healthy ... ok
+2026-09-15T20:41:03.2953570Z test runtime::effect_journal::tests::after_commit::after_commit_delivery_panic_continues_and_keeps_runtime_healthy ... ok
+2026-09-15T20:41:03.2954736Z test runtime::effect_journal::tests::after_commit::committed_effect_audit_failure_still_delivers_after_commit ... ok
+2026-09-15T20:41:03.2955867Z test runtime::effect_journal::tests::cleanup_failures::compensatable_cleanup_panic_poisons_after_store_failure ... ok
+2026-09-15T20:41:03.2957013Z test runtime::effect_journal::tests::cleanup_failures::compensation_audit_failure_is_nonfatal ... ok
+2026-09-15T20:41:03.2958039Z test runtime::effect_journal::tests::cleanup_failures::explicit_abort_audit_failure_is_reported_and_poisons ... ok
+2026-09-15T20:41:03.2958925Z test resolver::memory::tests::resolves_memory_relative_imports ... ok
+2026-09-15T20:41:03.2959902Z test runtime::effect_journal::tests::cleanup_failures::prepare_failure_audit_failure_is_nonfatal ... ok
+2026-09-15T20:41:03.2960978Z test runtime::effect_journal::tests::cleanup_failures::prepared_effect_abort_failure_poisons_runtime ... ok
+2026-09-15T20:41:03.2962169Z test runtime::effect_journal::tests::cleanup_failures::transactional_abort_panic_continues_cleanup_and_poisons_afterward ... ok
+2026-09-15T20:41:03.2963404Z test runtime::effect_journal::tests::compensatable::apply_failure_compensates_and_aborts_in_reverse_phase_order ... ok
+2026-09-15T20:41:03.2964616Z test runtime::effect_journal::tests::compensatable::compensatable_apply_panic_is_retryable_after_successful_cleanup ... ok
+2026-09-15T20:41:03.2965818Z test runtime::effect_journal::tests::compensatable::compensation_failure_poisons_runtime_with_complete_diagnostic ... ok
+2026-09-15T20:41:03.2967117Z test runtime::effect_journal::tests::compensatable::store_failure_compensates_effect_and_keeps_transaction_active ... ok
+2026-09-15T20:41:03.2968382Z test runtime::effect_journal::tests::savepoints::failed_savepoint_cleanup_preserves_effect_for_outer_abort_retry ... ok
+2026-09-15T20:41:03.2969518Z test runtime::effect_journal::tests::savepoints::journal_rollback_does_not_reuse_effect_sequences ... ok
+2026-09-15T20:41:03.2970571Z test runtime::effect_journal::tests::savepoints::outer_abort_discards_effects_in_reverse_order ... ok
+2026-09-15T20:41:03.2979176Z test runtime::effect_journal::tests::savepoints::rolled_back_effect_cost_is_not_refunded ... ok
+2026-09-15T20:41:03.2996956Z test runtime::effect_journal::tests::savepoints::savepoint_rollback_discards_effect_and_staging_event ... ok
+2026-09-15T20:41:03.3016754Z test runtime::effect_journal::tests::staging::broken_effect_identity_poisons_before_external_work ... ok
+2026-09-15T20:41:03.3027797Z test runtime::effect_journal::tests::staging::exact_resident_effect_staging_accepts_sparse_ordinals_and_cleans_rejections ... ok
+2026-09-15T20:41:03.3038277Z test runtime::effect_journal::tests::staging::mutation_is_rejected_while_an_effect_phase_is_active ... ok
+2026-09-15T20:41:03.3055226Z test runtime::effect_journal::tests::cleanup_failures::poisoned_runtime_owned_mutation_is_fail_closed ... ok
+2026-09-15T20:41:03.3100861Z test runtime::effect_journal::tests::staging::transaction_history_persists_effect_metadata_without_payload ... ok
+2026-09-15T20:41:03.3136990Z test resolver::memory::tests::successful_replacement_advances_the_retained_revision ... ok
+2026-09-15T20:41:03.3138261Z test runtime::effect_journal::tests::transactional::prepare_failure_aborts_prepared_participants_and_stays_retryable ... ok
+2026-09-15T20:41:03.3166933Z test runtime::effect_journal::tests::transactional::provider_commit_failure_after_store_commit_is_indeterminate ... ok
+2026-09-15T20:41:03.3196849Z test runtime::effect_journal::tests::transactional::every_prepared_participant_receives_commit_and_all_failures_are_reported ... ok
+2026-09-15T20:41:03.3198191Z test runtime::effect_journal::tests::transactional::transactional_commit_panic_notifies_remaining_participants_and_poisons ... ok
+2026-09-15T20:41:03.3226973Z test runtime::host::transaction_tests::authorization::custom_capability_without_preview_contract_fails_closed ... ok
+2026-09-15T20:41:03.3256898Z test runtime::effect_journal::tests::transactional::transactional_prepare_panic_aborts_prior_participants_and_resets_phase ... ok
+2026-09-15T20:41:03.3316910Z test runtime::effect_journal::tests::staging::source_resolver_replacement_is_rejected_while_an_effect_phase_is_active ... ok
+2026-09-15T20:41:03.3556888Z test runtime::host::transaction_tests::authorization::pure_host_call_consumes_single_use_capability ... ok
+2026-09-15T20:41:03.3586994Z test runtime::host::transaction_tests::effects::staged_host_call_returns_value_before_effect_delivery ... ok
+2026-09-15T20:41:03.3646884Z test runtime::host::transaction_tests::events::failed_host_audit_survives_full_context_retention ... ok
+2026-09-15T20:41:03.3706883Z test runtime::host::transaction_tests::events::host_session_events_use_shared_monotonic_sequence ... ok
+2026-09-15T20:41:03.3796949Z test runtime::host::transaction_tests::authorization::runtime_managed_host_call_consumes_single_use_capability ... ok
+2026-09-15T20:41:03.3856863Z test runtime::host::transaction_tests::rollback::runtime_managed_host_error_stays_contained_and_cleans_transaction_state ... ok
+2026-09-15T20:41:03.3886799Z test runtime::host::transaction_tests::rollback::runtime_managed_host_panic_is_an_ordinary_rollback_failure ... ok
+2026-09-15T20:41:03.3916745Z test runtime::host::transaction_tests::rollback::staged_host_prepare_panic_stages_no_effect ... ok
+2026-09-15T20:41:03.3917760Z test runtime::input_tests::queue::attach_failure_closes_ingress_and_rolls_back_in_reverse_order ... ok
+2026-09-15T20:41:03.3976835Z test runtime::host::transaction_tests::authorization::staged_host_call_consumes_single_use_capability ... ok
+2026-09-15T20:41:03.4006856Z test runtime::input_tests::queue::compiler_never_attaches_starts_or_stops_input_drivers ... ok
+2026-09-15T20:41:03.4008033Z test runtime::host::transaction_tests::rollback::pure_host_panic_is_contained_without_poisoning_runtime ... ok
+2026-09-15T20:41:03.5467361Z test resolver::memory::tests::revision_history_survives_deletion_and_diverging_clones ... ok
+2026-09-15T20:41:03.5468815Z test runtime::input_tests::queue::queued_input_without_resident_owner_fails_without_dequeue ... ok
+2026-09-15T20:41:03.5557354Z test runtime::input_tests::queue::build_attaches_and_starts_driven_input_drivers ... ok
+2026-09-15T20:41:03.5607020Z test runtime::input_tests::queue::input_driver_panic_is_converted_and_started_drivers_are_stopped ... ok
+2026-09-15T20:41:03.5876839Z test runtime::input_tests::queue::drop_stops_live_input_drivers ... ok
+2026-09-15T20:41:03.5877855Z test runtime::input_tests::snapshot_boundaries::canonical_host_input_snapshot_is_detached_and_schema_aware ... ok
+2026-09-15T20:41:03.5906813Z test runtime::input_tests::snapshot_boundaries::canonical_matrix_host_input_preserves_logical_order ... ok
+2026-09-15T20:41:03.5937031Z test runtime::input_tests::snapshot_boundaries::canonical_unit_is_the_only_empty_runtime_snapshot ... ok
+2026-09-15T20:41:03.6587164Z test runtime::input_tests::queue::shutdown_closes_ingress_before_stopping_drivers ... ok
+2026-09-15T20:41:03.7457116Z test runtime::input_tests::queue::start_failure_stops_only_drivers_started_by_the_call ... ok
+2026-09-15T20:41:03.7906787Z test runtime::input_tests::queue::stop_input_drivers_attempts_every_driver ... ok
+2026-09-15T20:41:03.8277219Z test runtime::module::tests::provisional_visibility::equal_publication_from_two_transactions_is_idempotent ... ok
+2026-09-15T20:41:03.8618195Z test runtime::module::tests::provisional_visibility::committed_equal_version_emits_no_second_compile_event ... ok
+2026-09-15T20:41:03.8619514Z test runtime::module::tests::provisional_visibility::explicit_transaction_owns_provisional_graph_visibility ... ok
+2026-09-15T20:41:03.9827477Z test runtime::module::tests::source_document_transfer::direct_source_build_retains_one_canonical_revision_through_the_store ... ok
+2026-09-15T20:41:03.9857169Z test runtime::module::tests::source_document_transfer::invalid_canonical_authority_remains_rejected_after_module_transfer ... ok
+2026-09-15T20:41:04.0257285Z test runtime::module::tests::provisional_visibility::failed_later_build_preserves_earlier_provisional_graph ... ok
+2026-09-15T20:41:04.0827171Z test runtime::module::tests::source_document_transfer::resolved_document_owner_must_match_the_canonical_uri ... ok
+2026-09-15T20:41:04.1640160Z test runtime::module::tests::source_document_transfer::duplicate_incoming_source_revision_is_rejected_before_admission ... ok
+2026-09-15T20:41:04.2797552Z test runtime::module::tests::source_document_transfer::injected_store_history_controls_revisions_even_when_latest_is_inactive ... ok
+2026-09-15T20:41:04.3637383Z test runtime::module::tests::source_document_transfer::successful_and_rejected_runtime_replacements_preserve_revision_history ... ok
+2026-09-15T20:41:04.3666865Z test runtime::program::artifact_tests::malformed_bytecode_fails_closed_without_installing_a_route ... ok
+2026-09-15T20:41:04.4698267Z test runtime::module::tests::source_document_transfer::resolved_source_admission_seeds_runtime_replacement_revision ... ok
+2026-09-15T20:41:04.4709666Z test runtime::program::external::provider::tests::resident_retry_policy_and_idempotency_claims_are_coherent ... ok
+2026-09-15T20:41:04.5017335Z test runtime::program::bundle::tests::canonical_bundle_rejects_stale_source_and_retired_tree_payload ... ok
+2026-09-15T20:41:04.6043942Z test runtime::module::tests::source_document_transfer::repeated_and_reverted_source_preserve_distinct_stored_revisions ... ok
+2026-09-15T20:41:04.8287807Z test runtime::module::tests::source_document_transfer::transaction_revisions_commit_together_and_abort_without_consuming_history ... ok
+2026-09-15T20:41:06.2467432Z test runtime::program::external::tests::at_most_once_protocol_mismatch_is_preparation_and_aborts_the_handle ... ok
+2026-09-15T20:41:06.4947822Z test runtime::program::external::tests::at_most_once_preparation_failure_remains_pending_until_delivery_can_begin ... ok
+2026-09-15T20:41:06.5217513Z test runtime::program::external::tests::capacity_is_reserved_before_observation_capture ... ok
+2026-09-15T20:41:08.0176733Z test runtime::program::external::tests::compensatable_apply_failure_rejects_without_publication ... ok
+2026-09-15T20:41:08.1758295Z test runtime::program::external::tests::effect_payload_is_captured_before_a_later_state_mutation ... ok
+2026-09-15T20:41:08.6512942Z test runtime::program::external::tests::default_authority_denies_before_any_provider_read ... ok
+2026-09-15T20:41:08.8797307Z test runtime::program::external::tests::accepted_replay_receipt_mismatch_does_not_consume_replay_identity ... ok
+2026-09-15T20:41:09.9117588Z test runtime::program::external::tests::coordinator_rejects_an_artifact_other_than_the_instance_artifact ... ok
+2026-09-15T20:41:10.0517583Z test runtime::program::external::tests::failed_compensation_is_never_invoked_twice_by_cleanup ... ok
+2026-09-15T20:41:10.1888666Z test runtime::program::external::tests::failed_preflight_does_not_consume_turn_identity ... ok
+2026-09-15T20:41:11.1795258Z test runtime::program::external::tests::idempotency_keys_are_namespaced_by_reactive_instance ... ok
+2026-09-15T20:41:11.4247318Z test runtime::program::external::tests::idempotent_delivery_failure_retains_identity_and_key_for_retry ... ok
+2026-09-15T20:41:11.6607410Z test runtime::program::external::tests::idempotent_retry_requires_provider_deduplication_support ... ok
+2026-09-15T20:41:12.0727388Z test runtime::program::external::tests::later_provider_preparation_failure_aborts_every_earlier_effect ... ok
+2026-09-15T20:41:12.8982034Z test runtime::program::external::tests::mixed_effect_cleanup_compensates_before_transactional_abort ... ok
+2026-09-15T20:41:13.1588836Z test runtime::program::external::tests::ordinary_source_and_bytecode_freeze_equivalent_external_artifacts ... ok
+2026-09-15T20:41:13.2147330Z test runtime::program::external::tests::observation_failure_is_rejected_without_publication_or_delivery ... ok
+2026-09-15T20:41:13.8453153Z test runtime::program::external::tests::one_receipt_slot_accepts_one_mutually_exclusive_outcome ... ok
+2026-09-15T20:41:15.4824015Z test runtime::program::external::tests::ordinary_delivery_policies_have_executable_failure_lifecycles ... ok
+2026-09-15T20:41:15.5747491Z test runtime::program::external::tests::receipt_counts_only_effects_materialized_for_the_current_turn ... ok
+2026-09-15T20:41:16.0457487Z test runtime::program::external::tests::provider_matrix_shape_and_row_major_order_are_preserved ... ok
+2026-09-15T20:41:16.9727872Z test runtime::program::external::tests::rejected_receipt_bounds_provider_failure_text ... ok
+2026-09-15T20:41:17.4617549Z test runtime::program::external::tests::provider_prepare_failure_and_wrong_protocol_reject_before_publication ... ok
+2026-09-15T20:41:17.7117565Z test runtime::program::external::tests::replay_preserves_a_recorded_full_input_rejection_before_later_acceptance ... ok
+2026-09-15T20:41:18.4147665Z test runtime::program::external::tests::retained_protocol_mismatch_cleanup_failure_poisons_the_coordinator ... ok
+2026-09-15T20:41:18.9916766Z test runtime::program::external::tests::retained_records_can_be_released_in_fifo_order_and_capacity_reused ... ok
+2026-09-15T20:41:19.4161304Z test runtime::program::external::tests::retained_turn_batches_allow_distinct_nodes_to_share_a_requirement ... ok
+2026-09-15T20:41:19.6205939Z test runtime::program::external::tests::replay_reconstructs_and_rejects_forged_batch_identity ... ok
+2026-09-15T20:41:20.4319254Z test runtime::program::external::tests::safe_engine_api_cannot_publish_an_external_candidate ... ok
+2026-09-15T20:41:20.9337728Z test runtime::program::external::tests::shared_observations_capture_one_authoritative_provider_snapshot ... ok
+2026-09-15T20:41:21.8707422Z test runtime::program::external::tests::volatile_commit_indeterminate_retains_undelivered_ordinary_effects ... ok
+2026-09-15T20:41:22.2307571Z test runtime::program::external::tests::retained_turn_captures_publishes_receipts_delivers_and_replays ... ok
+2026-09-15T20:41:22.6457606Z test runtime::program::query::control_comparison::tests::collection_reuse_resolves_owning_tables_and_rejects_changed_control ... ok
+2026-09-15T20:41:22.9527725Z test runtime::program::query::control_comparison::tests::control_reuse_resolves_cross_artifact_tables_and_rejects_changed_semantics ... ok
+2026-09-15T20:41:23.1497564Z test runtime::program::external::tests::transactional_prepare_failure_rejects_and_commit_failure_is_published_indeterminate ... ok
+2026-09-15T20:41:23.1697557Z test runtime::program::query::control_comparison::tests::literal_pattern_reuse_resolves_the_owning_constant_arena ... ok
+2026-09-15T20:41:23.3167299Z test runtime::program::external::tests::volatile_turns_release_all_retained_history ... ok
+2026-09-15T20:41:23.4127304Z test runtime::program::query_tests::source::plan_source_live_read_only_plans_without_binding_or_driver_effects ... ok
+2026-09-15T20:41:23.4877863Z test runtime::program::query::control_comparison::tests::nested_control_reuse_resolves_inner_tables_and_detects_inner_changes ... ok
+2026-09-15T20:41:23.4976871Z test runtime::program::query_tests::source::provider_transaction_contract_reaches_the_source_program_artifact ... ok
+2026-09-15T20:41:23.8057459Z test runtime::program::external::tests::volatile_retryable_effects_survive_failed_delivery ... ok
+2026-09-15T20:41:24.5660111Z test runtime::program::query_tests::source::canonical_ordinary_and_interactive_compilation_preflight_payloads_without_live_effects ... ok
+2026-09-15T20:41:25.7879034Z test runtime::program::tests::active_runtime_transaction_blocks_program_load_without_freezing_transaction_control ... ok
+2026-09-15T20:41:28.2877697Z test runtime::program::tests::activation_only_compilation_preserves_the_artifact_without_retaining_bytecode ... ok
+2026-09-15T20:41:28.4647641Z test runtime::program::tests::canonical_document_function_imports_use_catalog_exports ... ok
+2026-09-15T20:41:28.5397313Z test runtime::program::tests::canonical_constant_range_shapes_follow_the_declared_cardinality ... ok
+2026-09-15T20:41:28.6177397Z test runtime::program::tests::canonical_functions_admit_configured_resource_inputs_on_first_use ... ok
+2026-09-15T20:41:28.9177954Z test runtime::program::tests::canonical_functions_do_not_capture_caller_symbols_or_existing_inputs ... ok
+2026-09-15T20:41:28.9517539Z test runtime::program::tests::canonical_document_functions_inline_typed_named_calls_without_leaking_bindings ... ok
+2026-09-15T20:41:29.0347371Z test runtime::program::tests::canonical_interactive_resource_planning_does_not_execute_host_effects ... ok
+2026-09-15T20:41:29.0427325Z test runtime::program::tests::canonical_interactive_root_keeps_resource_authority_and_dependency_errors ... ok
+2026-09-15T20:41:29.1050356Z test runtime::program::tests::canonical_missing_provider_keeps_the_public_route_failure_class ... ok
+2026-09-15T20:41:29.1527297Z test runtime::program::tests::canonical_native_sidecars_cover_every_encoded_instruction ... ok
+2026-09-15T20:41:29.1637484Z test runtime::program::tests::canonical_interactive_uses_configured_resource_planning ... ok
+2026-09-15T20:41:29.4151915Z test runtime::program::tests::canonical_ordered_roots_share_prior_definitions_and_reject_invalid_edges ... ok
+2026-09-15T20:41:29.4576612Z test runtime::program::tests::canonical_planned_selectors_enforce_portable_index_width_before_activation ... ok
+2026-09-15T20:41:29.4937280Z test runtime::program::tests::canonical_planning_values_remain_constants_and_live_defaults_are_detached ... ok
+2026-09-15T20:41:29.6517414Z test runtime::program::tests::canonical_resolved_and_rooted_interactive_compilation_preserve_revision_and_symbols ... ok
+2026-09-15T20:41:29.6694642Z test runtime::program::tests::canonical_resource_defaults_do_not_create_unselected_live_observations ... ok
+2026-09-15T20:41:29.7867657Z test runtime::program::tests::canonical_dimensionless_matrix_annotations_preserve_inferred_shapes ... ok
+2026-09-15T20:41:29.8087276Z test runtime::program::tests::canonical_resource_planning_closes_provider_matrix_shapes ... ok
+2026-09-15T20:41:30.0151200Z test runtime::program::tests::canonical_static_projection_preserves_independent_integrity_constraints ... ok
+2026-09-15T20:41:30.0447220Z test runtime::program::tests::canonical_static_projection_drops_unrelated_unbound_inputs ... ok
+2026-09-15T20:41:30.0468543Z test runtime::program::tests::canonical_fizzbuzz_preserves_constraints_and_presentation_through_bytecode ... ok
+2026-09-15T20:41:30.0577090Z test runtime::program::tests::canonical_resource_planning_excludes_inactive_document_owners ... ok
+2026-09-15T20:41:30.0726933Z test runtime::program::tests::canonical_static_symbol_result_does_not_alias_the_implicit_result ... ok
+2026-09-15T20:41:30.1377012Z test runtime::program::tests::canonical_trailing_resource_send_preserves_implicit_result ... ok
+2026-09-15T20:41:30.2587132Z test runtime::program::tests::canonical_static_symbols_filter_and_detach_matrix_values ... ok
+2026-09-15T20:41:30.3712050Z test runtime::program::tests::canonical_uncalled_functions_do_not_bind_resource_inputs ... ok
+2026-09-15T20:41:30.4249612Z test runtime::program::tests::canonical_tuple_destructure_consumes_local_function_outputs ... ok
+2026-09-15T20:41:30.4758080Z test runtime::program::tests::compatible_replacement_expands_one_snapshot_to_new_duplicate_consumers ... ok
+2026-09-15T20:41:30.4806866Z test runtime::program::tests::computed_scalar_output_is_materialized_during_activation ... ok
+2026-09-15T20:41:30.5537800Z test runtime::program::tests::compatible_replacement_migrates_the_accepted_host_snapshot ... ok
+2026-09-15T20:41:30.5757604Z test runtime::program::tests::cutover_rooted_entrypoints_use_the_canonical_dependency_graph ... ok
+2026-09-15T20:41:30.6307447Z test runtime::program::tests::duplicate_observations_share_one_authoritative_host_update ... ok
+2026-09-15T20:41:30.7307273Z test runtime::program::tests::dynamic_matrix_selector_recomputes_resident_scalar_access ... ok
+2026-09-15T20:41:30.8237345Z test runtime::program::tests::effect_only_resident_program_executes_once_during_activation ... ok
+2026-09-15T20:41:30.9367426Z test runtime::program::tests::dynamic_matrix_selectors_reject_values_outside_the_portable_width ... ok
+2026-09-15T20:41:30.9387272Z test runtime::program::tests::empty_runtime_step_fails_without_an_execution_fallback ... ok
+2026-09-15T20:41:31.0997478Z test runtime::program::tests::empty_matrix_comprehension_activates_through_source_and_bytecode ... ok
+2026-09-15T20:41:31.1807597Z test runtime::program::tests::compiled_conversion_executes_after_bytecode_round_trip ... ok
+2026-09-15T20:41:31.3427496Z test runtime::program::tests::explicit_dependency_root_plans_provider_reads_exactly_once ... ok
+2026-09-15T20:41:31.3816943Z test runtime::program::tests::explicit_root_imported_by_an_earlier_root_still_joins_the_combined_artifact ... ok
+2026-09-15T20:41:31.4857567Z test runtime::program::tests::external_source_plans_without_a_live_provider_read_and_freezes_environment ... ok
+2026-09-15T20:41:31.5559695Z test runtime::program::tests::external_activation_requires_exactly_one_input_driver ... ok
+2026-09-15T20:41:31.5927435Z test runtime::program::tests::finite_use_capability_cannot_authorize_a_resident_session ... ok
+2026-09-15T20:41:31.7467685Z test runtime::program::tests::independent_observations_seed_then_retain_the_accepted_host_snapshot ... ok
+2026-09-15T20:41:32.5697466Z test runtime::program::tests::dynamic_matrix_selectors_preserve_every_supported_scalar_kind ... ok
+2026-09-15T20:41:32.7987666Z test runtime::program::tests::integrity_constraints_match_across_source_and_bytecode_resident_admission ... ok
+2026-09-15T20:41:32.9069752Z test runtime::program::tests::interactive_program_output_is_the_final_statement_without_a_fenced_output ... FAILED
+2026-09-15T20:41:32.9797587Z test runtime::program::tests::interactive_root_loader_retains_document_symbols_and_reports_the_root_result ... ok
+2026-09-15T20:41:33.9027612Z test runtime::program::tests::initial_external_export_rejection_precedes_effect_and_epoch_publication ... ok
+2026-09-15T20:41:33.9327566Z test runtime::program::tests::every_root_loader_rejects_unimplemented_durability_with_the_route_classification ... ok
+2026-09-15T20:41:34.0597790Z test runtime::program::tests::literal_bool_and_matrix_outputs_are_published ... ok
+2026-09-15T20:41:34.1027297Z test runtime::program::tests::literal_scalar_output_is_published_without_fake_state ... ok
+2026-09-15T20:41:34.3647518Z test runtime::program::tests::live_comprehension_membership_is_rejected_before_resident_activation ... ok
+2026-09-15T20:41:34.5147290Z test runtime::program::tests::matrix_comprehension_scope_preserves_the_enclosing_live_plan ... ok
+2026-09-15T20:41:34.6397230Z test runtime::program::tests::matrix_declaration_defaults_become_typed_live_inputs ... ok
+2026-09-15T20:41:34.7097376Z test runtime::program::tests::missing_provider_and_malformed_bytecode_fail_closed ... ok
+2026-09-15T20:41:34.8177188Z test runtime::program::tests::nonmatching_host_packets_do_not_execute_a_resident_turn ... ok
+2026-09-15T20:41:35.2354217Z test runtime::program::tests::ordinary_output_names_are_never_inferred_as_interactive_symbols ... ok
+2026-09-15T20:41:35.3130598Z test runtime::program::tests::planning_values_seed_explicit_live_inputs_while_literals_remain_constants ... ok
+2026-09-15T20:41:36.6957414Z test runtime::program::tests::invalidated_admitted_grant_blocks_next_drain_before_dequeue_or_publication ... ok
+2026-09-15T20:41:37.6517510Z test runtime::program::tests::invalidated_admitted_grant_blocks_outbox_retry_before_preparation_or_delivery ... ok
+2026-09-15T20:41:37.6887352Z test runtime::program::tests::production_scalar_string_source_loads_residently_without_fallback ... ok
+2026-09-15T20:41:38.3087446Z test runtime::program::tests::formatted_document_outputs_survive_source_and_bytecode_publication ... ok
+2026-09-15T20:41:38.3877170Z test runtime::program::tests::production_tuple_access_loads_through_resident_route ... ok
+2026-09-15T20:41:38.4967355Z test runtime::program::tests::public_host_drain_exposes_the_clean_resident_turn ... ok
+2026-09-15T20:41:39.1378194Z test runtime::program::tests::product_nbody_denied_grant_missing_provider_and_contract_mismatch_never_fallback ... ok
+2026-09-15T20:41:41.0297711Z test runtime::program::tests::production_source_and_bytecode_load_residently_without_engine_selection ... ok
+2026-09-15T20:41:41.1432603Z test runtime::program::tests::queued_resident_packet_prevents_unload_until_it_is_drained ... ok
+2026-09-15T20:41:41.4147198Z test runtime::program::tests::repeated_user_function_locals_do_not_enter_the_root_symbol_namespace ... ok
+2026-09-15T20:41:41.4186729Z test runtime::program::tests::resident_canonical_import_allocation_failure_preserves_publication_and_retries ... ok
+2026-09-15T20:41:41.5247152Z test runtime::program::tests::resident_host_packet_groups_preserve_activation_boundaries ... ok
+2026-09-15T20:41:41.6357571Z test runtime::program::tests::resident_host_packets_coalesce_and_capture_the_latest_packet_value ... ok
+2026-09-15T20:41:41.6506903Z test runtime::program::tests::resident_loaders_enforce_source_limits_before_planning_or_decoding ... ok
+2026-09-15T20:41:42.2977956Z test runtime::program::tests::resident_matrix_comprehensions_feed_mutable_vertical_concatenation ... FAILED
+2026-09-15T20:41:42.4707946Z test runtime::program::tests::pure_source_and_bytecode_choose_resident_with_equivalent_identity_and_output ... ok
+2026-09-15T20:41:42.5687628Z test runtime::program::tests::resident_observation_profile_covers_scalars_and_dense_matrices ... ok
+2026-09-15T20:41:42.6327462Z test runtime::program::tests::resident_recurrence_advances_when_a_same_turn_parent_is_unchanged ... ok
+2026-09-15T20:41:42.7097738Z test runtime::program::tests::resident_root_plans_the_resolved_source_import_closure_before_route_selection ... ok
+2026-09-15T20:41:42.7877663Z test runtime::program::tests::resident_string_and_canonical_exports_retain_their_memory_charge_after_unload ... ok
+2026-09-15T20:41:42.7907409Z test runtime::program::tests::resident_string_growth_rejection_preserves_publication_and_recovers_on_same_consumer ... ok
+2026-09-15T20:41:43.2107036Z test runtime::program::tests::resident_source_and_bytecode_enforce_configured_aggregate_memory_limits ... ok
+2026-09-15T20:41:46.9357872Z test runtime::program::tests::resident_turn_duration_rejects_before_scene_publication_and_surfaces_publicly ... ok
+2026-09-15T20:41:47.4977764Z test runtime::program::tests::retained_admission_failure_leaves_the_ordered_packet_available_for_retry ... ok
+2026-09-15T20:41:47.6047455Z test runtime::program::tests::retained_document_can_be_loaded_as_a_production_resident_program ... ok
+2026-09-15T20:41:48.2406274Z test runtime::program::tests::retained_evidence_drain_releases_capacity_for_long_running_sessions ... ok
+2026-09-15T20:41:48.3027565Z test runtime::program::tests::snapshot_backed_output_is_absent_until_its_first_external_publication ... ok
+2026-09-15T20:41:48.3957731Z test runtime::program::tests::static_initialization_returns_detached_row_major_matrix_values ... ok
+2026-09-15T20:41:52.1977248Z test runtime::program::tests::successful_resident_activation_never_falls_back_to_a_second_program ... ok
+2026-09-15T20:41:52.3247418Z test runtime::program::tests::turn_derived_output_is_published_from_resident_scratch ... ok
+2026-09-15T20:41:52.4827862Z test runtime::program::tests::variable_definition_metadata_and_state_survive_resident_bytecode_admission ... ok
+2026-09-15T20:41:52.4872974Z test runtime::schedule::panic_tests::extension_panics::scheduler_panic_is_converted_without_poisoning ... ok
+2026-09-15T20:41:52.4888188Z test runtime::task::tests::limits::max_tasks_is_enforced ... ok
+2026-09-15T20:41:52.4917712Z test runtime::test_support::effects::effect_probes_record_typed_lifecycle_phases ... ok
+2026-09-15T20:41:52.4947264Z test runtime::transaction::capabilities::tests::grants::capability_grant_event_failure_removes_non_revocable_live_authority ... ok
+2026-09-15T20:41:52.4969202Z test runtime::transaction::capabilities::tests::grants::capability_grant_failed_transactional_event_staging_is_compensated ... ok
+2026-09-15T20:41:52.4996858Z test runtime::transaction::capabilities::tests::grants::capability_grant_incomplete_rollback_is_reported_and_continues ... ok
+2026-09-15T20:41:52.5007392Z test runtime::transaction::capabilities::tests::grants::capability_grant_kernel_failure_rolls_back_store ... ok
+2026-09-15T20:41:52.5026761Z test runtime::transaction::capabilities::tests::grants::capability_grant_store_failure_never_grants_kernel_authority ... ok
+2026-09-15T20:41:52.5056639Z test runtime::transaction::capabilities::tests::grants::capability_grant_success_updates_every_component_once ... ok
+2026-09-15T20:41:52.5086621Z test runtime::transaction::capabilities::tests::grants::configuration_grants_use_the_runtime_store_and_kernel ... ok
+2026-09-15T20:41:52.5107082Z test runtime::transaction::capabilities::tests::grants::provisional_capability_grant_is_visible_only_to_its_transaction ... ok
+2026-09-15T20:41:52.5116690Z test runtime::transaction::capabilities::tests::grants::provisional_capability_selection_follows_stable_grant_order ... ok
+2026-09-15T20:41:52.5146629Z test runtime::transaction::capabilities::tests::overlays::capability_overlay_commits_kernel_and_store_together ... ok
+2026-09-15T20:41:52.5176657Z test runtime::transaction::capabilities::tests::overlays::failed_capability_rebuild_restores_previous_valid_overlay ... ok
+2026-09-15T20:41:52.5187190Z test runtime::transaction::capabilities::tests::overlays::failed_retained_operation_truncates_capability_overlay ... ok
+2026-09-15T20:41:52.5197102Z test runtime::transaction::capabilities::tests::revocations::live_use_revoke_and_later_provisional_regrant_are_ordered ... ok
+2026-09-15T20:41:52.5227072Z test runtime::transaction::capabilities::tests::revocations::provisional_grant_then_revoke_cancels_commit_work ... ok
+2026-09-15T20:41:52.5257143Z test runtime::transaction::capabilities::tests::revocations::provisional_grant_use_revoke_cancels_all_authority_work ... ok
+2026-09-15T20:41:52.5266767Z test runtime::transaction::capabilities::tests::revocations::provisional_revocation_does_not_leak_to_other_transactions ... ok
+2026-09-15T20:41:52.5287045Z test runtime::transaction::capabilities::tests::revocations::regrant_after_cancellation_commits_latest_capability ... ok
+2026-09-15T20:41:52.5316960Z test runtime::transaction::capabilities::tests::rollback::capability_apply_panic_rolls_back_before_store_commit ... ok
+2026-09-15T20:41:52.5347110Z test runtime::transaction::capabilities::tests::rollback::capability_check_panic_is_converted_without_poisoning ... ok
+2026-09-15T20:41:52.5376989Z test runtime::transaction::capabilities::tests::rollback::capability_checkpoint_restore_failure_poisons_runtime ... ok
+2026-09-15T20:41:52.5404319Z test runtime::transaction::capabilities::tests::rollback::capability_preview_panic_is_an_ordinary_transaction_failure ... ok
+2026-09-15T20:41:52.5416868Z test runtime::transaction::capabilities::tests::rollback::capability_restore_panic_poisons_after_store_failure ... ok
+2026-09-15T20:41:52.5437355Z test runtime::transaction::capabilities::tests::rollback::store_commit_failure_restores_capability_kernel_checkpoint ... ok
+2026-09-15T20:41:52.5467079Z test runtime::transaction::capabilities::tests::usage::capability_use_journal_preserves_live_usage_order ... ok
+2026-09-15T20:41:52.5497015Z test runtime::transaction::capabilities::tests::usage::capability_use_journal_savepoints_restore_only_later_uses ... ok
+2026-09-15T20:41:52.5526968Z test runtime::transaction::capabilities::tests::usage::provisional_capability_enforces_use_limit ... ok
+2026-09-15T20:41:52.5557060Z test runtime::transaction::capabilities::tests::usage::provisional_capability_usage_is_committed_to_live_kernel ... ok
+2026-09-15T20:41:52.5586977Z test runtime::transaction::capabilities::tests::usage::provisional_revocation_does_not_consume_live_use_limit ... ok
+2026-09-15T20:41:52.5617037Z test runtime::transaction::capabilities::tests::usage::store_failure_restores_provisional_usage_delta ... ok
+2026-09-15T20:41:52.5646970Z test runtime::transaction::modules::tests::rollback::atomic_operation_rollback_removes_later_module_work ... ok
+2026-09-15T20:41:52.5676936Z test runtime::transaction::modules::tests::rollback::rollback_retains_prefix_and_removes_suffix ... ok
+2026-09-15T20:41:52.5706926Z test runtime::transaction::modules::tests::staging::conflicting_module_identity_fails_without_mutation ... ok
+2026-09-15T20:41:52.5727063Z test runtime::transaction::modules::tests::staging::conflicting_version_identity_fails_without_mutation ... ok
+2026-09-15T20:41:52.5776847Z test runtime::transaction::modules::tests::staging::module_staging_ignores_description_differences ... ok
+2026-09-15T20:41:52.5787018Z test runtime::transaction::tests::store::abort::effect_aborted_publication_failure_is_reported ... ok
+2026-09-15T20:41:52.5816976Z test runtime::transaction::tests::store::abort::effect_marker_failure_does_not_skip_transaction_aborted_marker ... ok
+2026-09-15T20:41:52.5846981Z test runtime::transaction::tests::store::abort::explicit_abort_reports_transaction_aborted_publication_failure ... ok
+2026-09-15T20:41:52.5876885Z test runtime::transaction::tests::store::abort::failed_abort_marker_is_absent_from_context_and_store ... ok
+2026-09-15T20:41:52.5906949Z test runtime::transaction::tests::store::abort::failed_abort_marker_poisons_runtime_after_cleanup ... ok
+2026-09-15T20:41:52.5936875Z test runtime::transaction::tests::store::abort::multiple_abort_publication_failures_are_aggregated ... ok
+2026-09-15T20:41:52.5966850Z test runtime::transaction::tests::store::abort::transaction_abort_discards_staged_events ... ok
+2026-09-15T20:41:52.5997083Z test runtime::transaction::tests::store::begin::active_transaction_must_continue_with_original_context ... ok
+2026-09-15T20:41:52.6026903Z test runtime::transaction::tests::store::commit::module_journal_validation_precedes_effect_preparation ... ok
+2026-09-15T20:41:52.6057013Z test runtime::transaction::tests::store::context_identity::active_transaction_context_clone_is_rejected_before_transaction_consumption ... ok
+2026-09-15T20:41:52.6106910Z test runtime::transaction::tests::store::context_identity::foreign_context_rejected_before_host_and_capability_boundaries ... ok
+2026-09-15T20:41:52.6117333Z test runtime::transaction::tests::store::context_identity::historical_transaction_record_context_is_valid_without_active_transaction ... ok
+2026-09-15T20:41:52.6147077Z test runtime::transaction::tests::store::context_identity::nonexistent_transaction_context_does_not_fall_through_to_durable_writes ... ok
+2026-09-15T20:41:52.6177092Z test runtime::transaction::tests::store::context_identity::rejects_foreign_runtime_context_before_object_write_and_events ... ok
+2026-09-15T20:41:52.6206934Z test runtime::transaction::tests::store::context_identity::stale_aborted_transaction_context_is_rejected_not_durable ... ok
+2026-09-15T20:41:52.6236956Z test runtime::transaction::tests::store::context_identity::transaction_context_identity_includes_task_actor_message_and_state ... ok
+2026-09-15T20:41:52.6256820Z test runtime::transaction::tests::store::context_identity::transaction_subject_mismatch_cannot_stage_commit_or_abort_owner_can_finish ... ok
+2026-09-15T20:41:52.6267236Z test runtime::transaction::tests::store::event_publication::active_transaction_bounds_hidden_event_history ... ok
+2026-09-15T20:41:52.6296944Z test runtime::transaction::tests::store::event_publication::context_event_retention_is_bounded ... ok
+2026-09-15T20:41:52.6327035Z test runtime::transaction::tests::store::event_publication::context_event_retention_steady_state_is_amortized_and_snapshot_free ... ok
+2026-09-15T20:41:52.6356944Z test runtime::transaction::tests::store::event_publication::outer_commit_bounds_hidden_context_event_history ... ok
+2026-09-15T20:41:52.6386949Z test runtime::transaction::tests::store::event_publication::transaction_commit_persists_staged_events_once ... ok
+2026-09-15T20:41:52.6416970Z test runtime::transaction::tests::store::indeterminate::store_commit_panic_is_indeterminate_and_cleans_transaction_scope ... ok
+2026-09-15T20:41:52.6446975Z test runtime::transaction::tests::store::projection::accepted_projection_matches_current_standalone_lifecycle_order ... ok
+2026-09-15T20:41:52.6477015Z test runtime::transaction::tests::store::projection::rejected_projection_matches_current_standalone_lifecycle_order ... ok
+2026-09-15T20:41:52.6506874Z test runtime::transaction::tests::store::store_failure::store_read_panic_is_converted_and_runtime_recovers ... ok
+2026-09-15T20:41:52.6536981Z test runtime::transaction::tests::store::store_failure::transaction_commit_failure_is_atomic ... ok
+2026-09-15T20:41:52.6566924Z test runtime::transaction::tests::store::store_failure::transaction_commit_failure_keeps_transaction_active ... ok
+2026-09-15T20:41:52.6596788Z test scheduler::tests::collect_tick_respects_limit_and_records_events ... ok
+2026-09-15T20:41:52.6626815Z test scheduler::tests::collect_tick_with_unbounded_policy_collects_all ... ok
+2026-09-15T20:41:52.6656711Z test scheduler::tests::drain_events_clears_pending_events ... ok
+2026-09-15T20:41:52.6686839Z test scheduler::tests::queued_work_returns_fifo_order ... ok
+2026-09-15T20:41:52.6716742Z test scheduler::tests::scheduled_work_labels_are_stable ... ok
+2026-09-15T20:41:52.6736469Z test scheduler::tests::scheduler_can_disable_deduplication ... ok
+2026-09-15T20:41:52.6746786Z test scheduler::tests::scheduler_deduplicates_work ... ok
+2026-09-15T20:41:52.6776737Z test scheduler::tests::scheduler_enqueues_and_pops_actor ... ok
+2026-09-15T20:41:52.6806891Z test scheduler::tests::scheduler_enqueues_and_pops_task ... ok
+2026-09-15T20:41:52.6836780Z test scheduler::tests::scheduler_policy_rejects_zero_turn_limit ... ok
+2026-09-15T20:41:52.6866799Z test scheduler::tests::scheduler_records_completed_work_and_event ... ok
+2026-09-15T20:41:52.6896817Z test scheduler::tests::scheduler_records_failed_work_and_event ... ok
+2026-09-15T20:41:52.6926807Z test scheduler::tests::scheduler_records_queue_and_start_events ... ok
+2026-09-15T20:41:52.6956871Z test scheduler::tests::scheduler_rejects_zero_actor_id ... ok
+2026-09-15T20:41:52.6986748Z test scheduler::tests::scheduler_rejects_zero_task_id ... ok
+2026-09-15T20:41:52.7016741Z test scheduler::tests::scheduler_requeues_after_pop ... ok
+2026-09-15T20:41:55.7297030Z test service::workspace_session::tests::server_workspace_session_accepts_an_explicit_function_catalog ... ok
+2026-09-15T20:41:55.7317557Z test service::workspace_session::tests::server_workspace_session_emit_initial_events_reports_diagnostics ... ok
+2026-09-15T20:41:55.8387650Z test service::workspace_session::tests::server_workspace_session_emit_initial_events_reports_sources ... ok
+2026-09-15T20:41:56.0497670Z test service::workspace_session::tests::server_workspace_session_emits_refresh_events_for_changed_file ... ok
+2026-09-15T20:41:56.2646890Z test service::workspace_session::tests::server_workspace_session_notifies_when_a_watch_event_is_queued ... ok
+2026-09-15T20:41:56.3733082Z test service::workspace_session::tests::server_workspace_session_open_loads_snapshot ... ok
+2026-09-15T20:41:56.3769906Z test service::workspace_session::tests::server_workspace_session_open_preserves_initial_diagnostics ... ok
+2026-09-15T20:41:56.4898082Z test service::workspace_session::tests::server_workspace_session_poll_and_emit_without_events_emits_nothing ... ok
+2026-09-15T20:41:56.5397599Z test runtime::program::tests::product_nbody_source_and_bytecode_match_reference_for_4096_accepted_turns ... ok
+2026-09-15T20:41:56.5405942Z test snapshot::tests::runtime_value_snapshot_clone_shares_only_immutable_data ... ok
+2026-09-15T20:41:56.5413143Z test snapshot::tests::runtime_value_snapshot_empty_is_canonical_unit ... ok
+2026-09-15T20:41:56.5417426Z test snapshot::tests::runtime_value_snapshot_formats_option_without_legacy_materialization ... ok
+2026-09-15T20:41:56.5427447Z test snapshot::tests::runtime_value_snapshot_formats_static_matrix_orientation_from_its_schema ... ok
+2026-09-15T20:41:56.5433569Z test snapshot::tests::runtime_value_snapshot_retains_scalar_schema_and_payload ... ok
+2026-09-15T20:41:56.5438379Z test store::prepared_commit_tests::event_validation_simulates_per_append_retention ... ok
+2026-09-15T20:41:56.5450974Z test store::prepared_commit_tests::preparation_failure_matrix_preserves_exact_semantic_state ... ok
+2026-09-15T20:41:56.5468026Z test store::prepared_commit_tests::prepared_apply_consumes_plan_and_returns_transaction_id_directly ... ok
+2026-09-15T20:41:56.5473534Z test store::prepared_commit_tests::prepared_complete_batch_updates_every_supported_family ... ok
+2026-09-15T20:41:56.5481734Z test store::prepared_commit_tests::semantic_snapshot_detects_no_change_after_failed_runtime_commit ... ok
+2026-09-15T20:41:56.5487522Z test store::tests::active_module_version_round_trip ... ok
+2026-09-15T20:41:56.5490900Z test store::tests::actor_message_ack_removes_specific_message ... ok
+2026-09-15T20:41:56.5493975Z test store::tests::actor_message_queue ... ok
+2026-09-15T20:41:56.5497439Z test store::tests::capability_grant_rollback_is_idempotent ... ok
+2026-09-15T20:41:56.5527455Z test store::tests::capability_grant_rollback_removes_non_revocable_capability ... ok
+2026-09-15T20:41:56.5547328Z test store::tests::capability_round_trip_and_revoke ... ok
+2026-09-15T20:41:56.5550645Z test store::tests::context_import_without_import_edge_validates ... ok
+2026-09-15T20:41:56.5556936Z test store::tests::event_order_is_preserved_with_limit ... ok
+2026-09-15T20:41:56.5561557Z test store::tests::identical_runtime_module_publication_is_idempotent ... ok
+2026-09-15T20:41:56.5565103Z test store::tests::in_memory_event_retention_keeps_newest_events ... ok
+2026-09-15T20:41:56.5577800Z test store::tests::in_memory_store_batch_failure_does_not_mutate_store ... ok
+2026-09-15T20:41:56.5581224Z test store::tests::module_round_trip ... ok
+2026-09-15T20:41:56.5584629Z test store::tests::module_version_requires_existing_module ... ok
+2026-09-15T20:41:56.5597147Z test store::tests::object_round_trip ... ok
+2026-09-15T20:41:56.5607645Z test store::tests::runtime_commit_missing_dependency_is_atomic ... ok
+2026-09-15T20:41:56.5637543Z test store::tests::runtime_commit_missing_module_owner_is_atomic ... ok
+2026-09-15T20:41:56.5668218Z test store::tests::runtime_commit_publishes_module_and_version_together ... ok
+2026-09-15T20:41:56.5672526Z test store::tests::runtime_cost_probe_store_clone_count_sums_logical_records_and_indexes ... ok
+2026-09-15T20:41:56.5677345Z test store::tests::runtime_module_conflict_leaves_other_categories_unchanged ... ok
+2026-09-15T20:41:56.6031215Z test service::workspace_session::tests::server_workspace_session_poll_without_events_is_empty ... ok
+2026-09-15T20:41:56.6346986Z test store::tests::stored_source_document_must_match_exact_textual_source ... ok
+2026-09-15T20:41:56.6366670Z test store::tests::task_round_trip ... ok
+2026-09-15T20:41:56.6396460Z test store::tests::transaction_round_trip ... ok
+2026-09-15T20:41:56.6426508Z test transaction::tests::abort_clears_staged_events ... ok
+2026-09-15T20:41:56.6446670Z test transaction::tests::abort_discards_staged_writes ... ok
+2026-09-15T20:41:56.6476528Z test transaction::tests::runtime_cost_probe_savepoint_item_count_sums_staged_collections ... ok
+2026-09-15T20:41:56.6516743Z test transaction::tests::stage_event_records_full_event_and_id ... ok
+2026-09-15T20:41:56.6546485Z test transaction::tests::staged_mailbox_count_helpers_return_results ... ok
+2026-09-15T20:41:56.6566448Z test transaction::tests::staged_update_replaces_staged_put ... ok
+2026-09-15T20:41:56.6567161Z test transaction::tests::transaction_commits_to_record ... ok
+2026-09-15T20:41:56.6567950Z test transaction::tests::transaction_records_read_write_and_event_sets ... ok
+2026-09-15T20:41:56.6568648Z test transaction::tests::transaction_stages_object_puts ... ok
+2026-09-15T20:41:56.6569300Z test turn_record::tests::checked_sequence_allocation_never_wraps ... ok
+2026-09-15T20:41:56.6570116Z test turn_record::tests::turn_records::failure_accounting_includes_retained_string_capacity ... ok
+2026-09-15T20:41:56.6571000Z test turn_record::tests::turn_records::header_rejects_zero_transaction_and_staged_failure ... ok
+2026-09-15T20:41:56.6571871Z test turn_record::tests::turn_records::header_status_and_input_range_are_validated ... ok
+2026-09-15T20:41:56.6596695Z test turn_record::tests::turn_records::owned_record_outlives_builder_and_workspace_reuse ... ok
+2026-09-15T20:41:56.6626501Z test turn_record::tests::turn_records::staged_projection_has_no_final_lifecycle_event ... ok
+2026-09-15T20:41:56.6627467Z test workspace::discovery::tests::discover_workspace_files_finds_recursive_mec_files ... ok
+2026-09-15T20:41:56.6666613Z test workspace::discovery::tests::discover_workspace_files_honors_non_recursive_folder ... ok
+2026-09-15T20:41:56.6696599Z test workspace::discovery::tests::discover_workspace_files_rejects_outside_folder ... ok
+2026-09-15T20:41:56.6726564Z test workspace::discovery::tests::discovery_denial_returns_diagnostic_without_files ... ok
+2026-09-15T20:41:56.6896960Z test store::tests::stored_document_owner_and_revision_cannot_be_aliased ... ok
+2026-09-15T20:41:56.6916973Z test workspace::tests::file_uri_path_converts_unix_file_uri ... ok
+2026-09-15T20:41:56.6934298Z test workspace::tests::file_uri_path_decodes_escaped_unix_file_uri ... ok
+2026-09-15T20:41:56.6937360Z test workspace::tests::file_uri_path_rejects_non_file_uri ... ok
+2026-09-15T20:41:56.6938201Z test workspace::tests::workspace_target_specifier_canonicalizes_absolute_local_path ... ok
+2026-09-15T20:41:56.6939124Z test workspace::tests::workspace_target_specifier_passes_through_uri ... ok
+2026-09-15T20:41:56.6940223Z test workspace::watch::tests::aliased_directory_paths_share_one_watch_key ... ok
+2026-09-15T20:41:56.6941271Z test workspace::watch::tests::external_symlink_target_parent_watch_not_preserved_after_retarget ... ok
+2026-09-15T20:41:56.6945479Z test workspace::watch::tests::external_symlink_target_parent_watch_survives_missing_target ... ok
+2026-09-15T20:41:56.6959847Z test workspace::watch::tests::file_scoped_watch_grant_authorizes_parent_runtime_watch ... ok
+2026-09-15T20:41:56.6969523Z test workspace::watch::tests::file_target_watch_filters_sibling_events ... ok
+2026-09-15T20:41:56.6974807Z test workspace::watch::tests::filtered_file_watch_still_rejects_parent_directory_event ... ok
+2026-09-15T20:41:56.6990078Z test workspace::watch::tests::missing_watch_path_normalizes_through_existing_symlink_ancestor ... ok
+2026-09-15T20:41:56.6991226Z test workspace::load::tests::workspace_snapshot_preserves_the_exact_accepted_source_revision ... ok
+2026-09-15T20:41:56.6995102Z test workspace::watch::tests::nonrecursive_directory_watch_allows_directory_and_direct_children_only ... ok
+2026-09-15T20:41:56.6996291Z test workspace::watch::tests::nonrecursive_watch_accepts_missing_child_through_aliased_parent ... ok
+2026-09-15T20:41:56.6997428Z test workspace::watch::tests::recursive_directory_watch_still_allows_descendants ... ok
+2026-09-15T20:41:56.6998544Z test workspace::watch::tests::regular_missing_file_watch_without_existing_authorization_uses_missing_path ... ok
+2026-09-15T20:41:56.7007329Z test workspace::watch::tests::recursive_watch_accepts_missing_descendant_through_aliased_parent ... ok
+2026-09-15T20:41:56.7008639Z test workspace::watch::tests::retargeted_symlink_watch_uses_new_authorization_and_filters ... ok
+2026-09-15T20:41:56.7011341Z test workspace::watch::tests::shared_parent_watch_keys_collapse_multiple_file_filters ... ok
+2026-09-15T20:41:56.7012490Z test workspace::watch::tests::symlink_file_watch_preserves_authorized_path_after_link_delete ... ok
+2026-09-15T20:41:56.7016548Z test workspace::watch::tests::symlink_target_outside_link_dir_watches_link_and_target_parents ... ok
+2026-09-15T20:41:56.7017667Z test workspace::watch::tests::symlink_target_same_parent_uses_single_watch_with_both_filters ... ok
+2026-09-15T20:41:56.7020088Z test workspace::watch::tests::target_watch_falls_back_to_existing_parent_when_target_is_deleted ... ok
+2026-09-15T20:41:56.7021373Z test workspace::watch::tests::target_watch_filter_accepts_symlink_link_and_canonical_paths_but_rejects_siblings ... ok
+2026-09-15T20:41:56.7022448Z test workspace::watch::tests::target_watch_ignores_non_local_specifiers ... ok
+2026-09-15T20:41:56.7023406Z test workspace::watch::tests::watch_events_from_notify_event_ignores_other_directory_events ... ok
+2026-09-15T20:41:56.7024330Z test workspace::watch::tests::watch_event_kind_maps_create_modify_remove ... ok
+2026-09-15T20:41:56.7025282Z test workspace::watch::tests::watch_events_from_notify_event_keeps_create_directory_events ... ok
+2026-09-15T20:41:56.7026423Z test workspace::watch::tests::watch_events_from_notify_event_keeps_existing_directory_paths ... ok
+2026-09-15T20:41:56.7027495Z test workspace::watch::tests::watch_events_from_notify_event_keeps_modify_file_events ... ok
+2026-09-15T20:41:56.7028367Z test workspace::watch::tests::watch_events_include_non_mec_paths ... ok
+2026-09-15T20:41:56.7029256Z test workspace::watch::tests::watch_events_from_notify_event_maps_multiple_mec_paths ... ok
+2026-09-15T20:41:56.7030453Z test workspace::watch::tests::watcher_rejects_path_without_watch_capability ... ok
+2026-09-15T20:41:56.7582147Z test runtime::program::tests::resident_string_outputs_obey_one_aggregate_runtime_memory_limit ... ok
+2026-09-15T20:42:27.8575666Z test runtime::program::tests::public_nbody_viewer_integrates_mutual_gravity_residently ... ok
+2026-09-15T20:42:27.8576536Z 
+2026-09-15T20:42:27.8576640Z failures:
+2026-09-15T20:42:27.8577057Z 
+2026-09-15T20:42:27.8577486Z ---- runtime::program::tests::interactive_program_output_is_the_final_statement_without_a_fenced_output stdout ----
+2026-09-15T20:42:27.8577993Z 
+2026-09-15T20:42:27.8578543Z thread 'runtime::program::tests::interactive_program_output_is_the_final_statement_without_a_fenced_output' (5290) panicked at src/runtime/src/runtime/program/tests.rs:1009:10:
+2026-09-15T20:42:27.8580148Z called `Result::unwrap()` on an `Err` value: MechError { kind name: "CanonicalProgramCompilationError", kind message: "source-semantics/unsupported-function-body: canonical function inlining requires a statement body", message: None, program_range: None, annotations: [], tokens: [], compiler_location: Some(CompilerSourceRange { file: "src/runtime/src/runtime/program/compiler.rs", line: 80 }), source: None }
+2026-09-15T20:42:27.8581286Z 
+2026-09-15T20:42:27.8581592Z ---- runtime::program::tests::resident_matrix_comprehensions_feed_mutable_vertical_concatenation stdout ----
+2026-09-15T20:42:27.8581943Z 
+2026-09-15T20:42:27.8582432Z thread 'runtime::program::tests::resident_matrix_comprehensions_feed_mutable_vertical_concatenation' (5318) panicked at src/runtime/src/runtime/program/tests.rs:2015:10:
+2026-09-15T20:42:27.8583894Z called `Result::unwrap()` on an `Err` value: MechError { kind name: "ResidentRouteFailure", kind message: "SemanticUnsupported: OperationUnavailableForTarget(ResidentCpu) at None (None): InitializerUnavailableAtActivation { slot: CellSlotId(0), source: CellSlotId(6) }", message: None, program_range: None, annotations: [], tokens: [], compiler_location: None, source: None }
+2026-09-15T20:42:27.8584899Z 
+2026-09-15T20:42:27.8584902Z 
+2026-09-15T20:42:27.8584996Z failures:
+2026-09-15T20:42:27.8585423Z     runtime::program::tests::interactive_program_output_is_the_final_statement_without_a_fenced_output
+2026-09-15T20:42:27.8586649Z     runtime::program::tests::resident_matrix_comprehensions_feed_mutable_vertical_concatenation
+2026-09-15T20:42:27.8586954Z 
+2026-09-15T20:42:27.8587327Z test result: FAILED. 697 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 93.44s
+2026-09-15T20:42:27.8587670Z 
+2026-09-15T20:42:27.8622177Z [1m[91merror[0m: test failed, to rerun pass `-p mech-runtime --lib`
+2026-09-15T20:42:27.8662241Z ##[endgroup]
+2026-09-15T20:42:28.0164427Z Traceback (most recent call last):
+2026-09-15T20:42:28.0165396Z   File "/home/runner/work/mech/mech/scripts/run-owner-tests.py", line 54, in <module>
+2026-09-15T20:42:28.0166240Z     raise SystemExit(main())
+2026-09-15T20:42:28.0166653Z                      ^^^^^^
+2026-09-15T20:42:28.0167065Z   File "/home/runner/work/mech/mech/scripts/run-owner-tests.py", line 47, in main
+2026-09-15T20:42:28.0167723Z     subprocess.run(command, cwd=REPOSITORY_ROOT, check=True)
+2026-09-15T20:42:28.0168385Z   File "/usr/lib/python3.12/subprocess.py", line 571, in run
+2026-09-15T20:42:28.0171095Z     raise CalledProcessError(retcode, process.args,
+2026-09-15T20:42:28.0173109Z subprocess.CalledProcessError: Command '['cargo', 'test', '--locked', '--offline', '-p', 'mech-runtime', '--lib', '--no-default-features', '--features', 'full_compiler,resident-routing-source']' returned non-zero exit status 101.
+2026-09-15T20:42:28.0343700Z ##[error]Process completed with exit code 1.
+2026-09-15T20:42:28.0586535Z Post job cleanup.
+2026-09-15T20:42:28.2924971Z [command]/usr/bin/git version
+2026-09-15T20:42:28.2965764Z git version 2.55.0
+2026-09-15T20:42:28.2996497Z Temporarily overriding HOME='/home/runner/work/_temp/6ea2d256-dab2-4603-988f-bd3ae0984a8b' before making global git config changes
+2026-09-15T20:42:28.2997475Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-15T20:42:28.3002006Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/mech/mech
+2026-09-15T20:42:28.3029695Z Removing SSH command configuration
+2026-09-15T20:42:28.3035028Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-15T20:42:28.3068418Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-15T20:42:28.3309158Z Removing HTTP extra header
+2026-09-15T20:42:28.3313729Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-15T20:42:28.3341769Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-15T20:42:28.3535086Z Removing includeIf entries pointing to credentials config files
+2026-09-15T20:42:28.3541138Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-15T20:42:28.3567999Z includeif.gitdir:/home/runner/work/mech/mech/.git.path
+2026-09-15T20:42:28.3569053Z includeif.gitdir:/home/runner/work/mech/mech/.git/worktrees/*.path
+2026-09-15T20:42:28.3569814Z includeif.gitdir:/github/workspace/.git.path
+2026-09-15T20:42:28.3570448Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-09-15T20:42:28.3580670Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/mech/mech/.git.path
+2026-09-15T20:42:28.3599366Z /home/runner/work/_temp/git-credentials-c2296199-c634-4b87-ad27-cf237e5e5bc5.config
+2026-09-15T20:42:28.3608773Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/mech/mech/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-c2296199\-c634\-4b87\-ad27\-cf237e5e5bc5\.config
+2026-09-15T20:42:28.3639959Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/mech/mech/.git/worktrees/*.path
+2026-09-15T20:42:28.3664520Z /home/runner/work/_temp/git-credentials-c2296199-c634-4b87-ad27-cf237e5e5bc5.config
+2026-09-15T20:42:28.3671778Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/mech/mech/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-c2296199\-c634\-4b87\-ad27\-cf237e5e5bc5\.config
+2026-09-15T20:42:28.3699153Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-09-15T20:42:28.3719104Z /github/runner_temp/git-credentials-c2296199-c634-4b87-ad27-cf237e5e5bc5.config
+2026-09-15T20:42:28.3725842Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-c2296199\-c634\-4b87\-ad27\-cf237e5e5bc5\.config
+2026-09-15T20:42:28.3751655Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-09-15T20:42:28.3775518Z /github/runner_temp/git-credentials-c2296199-c634-4b87-ad27-cf237e5e5bc5.config
+2026-09-15T20:42:28.3784769Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-c2296199\-c634\-4b87\-ad27\-cf237e5e5bc5\.config
+2026-09-15T20:42:28.3808329Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-15T20:42:28.4020909Z Removing credentials config '/home/runner/work/_temp/git-credentials-c2296199-c634-4b87-ad27-cf237e5e5bc5.config'
+2026-09-15T20:42:28.4185893Z Cleaning up orphan processes

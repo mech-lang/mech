@@ -638,3 +638,121 @@ inspect actual failures. R07's matrix layout dependency remains assigned to G18.
 **External blocker:** None for this batch. Unrelated accepted type/capability
 decisions remain open. Prior greens, cancellations, and blocked test targets are
 not full qualification. Checkpoint—not complete.
+
+
+## Current checkpoint — shipping rich Markdown verified; compute handoff in progress
+
+**Candidate:** `codex/syntax-s8c-cutover` /
+`8370ced411a8ff3597315344d6fbaeb748be605e` (#830), based on R05
+`99595861195f745a59d88ad5b5b70cf34510fd09`. Single automatic exact-head CI
+35022454727 was queued after publication. No manual matrix dispatch.
+
+**Completed:** Published `ffe308dd6` adds the actual shipping Chrome regression
+for six scenarios: original admission/edit/reset for plain and imported bundles,
+fixed document result across three console submissions for plain and fenced
+documents, and rich comments plus separate Markdown paragraphs in plain/fenced
+documents. Links, emphasis, inert code, three live inline values across three
+turns and retained selection pass. The browser used the rebuilt shipping WASM
+from c15f3e783; the two following commits change tests only. The source fixture
+producer still passes 14 catalog cases plus the rooted source canary.
+
+Published `8370ced41` migrates the two blocked Mechdown parity targets to canonical
+contracts: all 53 acceptance/prefix fixtures and all payload/malformed fixtures
+remain. No retiring parser, alternate AST or compatibility layer is restored.
+`canonical_mechdown_lowering_parity` is replaced by `canonical_mechdown_payloads`.
+Seven full-feature canonical document targets pass 48 tests, zero failures or
+ignored tests. An earlier invocation without Mika failed the unconditional Mika
+scope fixture; the supported full-feature rerun is recorded separately, not
+counted as an implementation failure or a passing reduced-feature result.
+Review evidence reply: https://github.com/mech-lang/mech/pull/830#discussion_r4020122546
+
+Prior C run 35020590724 was archived (31 paginated jobs; 30 completed logs available)
+before its obsolete remaining work was cancelled. Archive:
+`/private/tmp/mech-syntax-qualification/s8-ci-archive-rich-browser/35020590724`.
+Actual owner results: runtime 697 pass / 2 fail (G19 and G05/G18); WASM 56 pass /
+1 fail (G14). Engine test-retirement, native-plan configuration, browser readiness
+and compute-provider planning failures remain. Cancellation is not qualification.
+
+**Remaining:** All accepted open gaps and required reviews/qualification/merge
+remain as previously registered. R07 remains separate at 94ca8e2b4. C's compute
+thread remains open; no fresh review was requested.
+
+**Current action:** C worktree now contains an uncommitted G22 browser-planning
+correction. The pointer provider/ingress implementation is being moved unchanged
+from WASM into the browser host owner so native planning and live WASM use one
+contract. Static and served compilation share a canonical mixed-root bundle
+helper; compute host settings are validated before deferring materialization to
+the compiled region. Pointer injection is registered rather than dropped. Shared
+placement discovery delegates to the existing semantic section authority. This
+is not yet validated or published and is not passing evidence.
+
+**Next action:** Finish local sessions 59895 (configured mixed browser tests),
+51400 (shared pointer provider tests), 10837 (WASM compute compile check). Fix
+actual errors, run served/static product regressions and the real particle probe,
+and publish only the coherent owner correction with actual results. Confirm
+ordinary documents still use the ordinary canonical route. Keep C review open
+until configured compute adoption is demonstrated.
+
+**External blocker:** None for this batch. Previously recorded unrelated
+capability decisions remain outstanding. Checkpoint—not complete.
+
+
+## Current published checkpoint — served compute product passes
+
+**Candidate:** `codex/syntax-s8c-cutover` /
+`4c901a1eaf8282cb807039513ce01ab0b3dd83b1` (#830), based on unchanged R05
+`99595861195f745a59d88ad5b5b70cf34510fd09`. Worktree is clean. The single
+automatic exact-head workflow is 35024471044 (in progress at this checkpoint).
+No manual full dispatch. Prior workflow 35022454727 was cancelled only after
+archiving its 31 paginated jobs and 29 then-available completed logs under
+`/private/tmp/mech-syntax-qualification/s8-ci-archive-compute-planning/35022454727`.
+Unfinished/cancelled jobs are not passing qualification.
+
+**Completed:** Published two reviewable correction commits: `94e39e77d` moves
+pointer ingress/provider contracts from WASM to the browser-host owner and keeps
+pointer hosts/grants in browser authority injection; `4c901a1ea` gives static and
+served browser products one canonical mixed-root compilation handoff. Compute
+settings are validated before materializing the compiled region. Shared region
+discovery uses the existing semantic section authority. Retained resolver records
+now preserve executable source kind as well as exact bytes and dependency hashes.
+
+The real served particle product now passes in Chrome/WebGPU with 16,384 particles,
+advancing frames and pointer -> Mech CPU transaction -> compute inputs. The actual
+shipping compute WASM also passes the CPU/WebGPU numeric oracle for both turns.
+The six rich-document/capture/selection Chrome scenarios pass on this rebuilt
+compute profile. The rebuilt deleted-parser source product passes 14 catalog
+cases plus the rooted canary. Owner results: 3 browser-planning tests, 2 pointer
+contract tests, 60 static-bundle tests, and 90 server tests (89 in the first run;
+the sole localhost-listener sandbox denial passed as a one-test escalated rerun).
+All 22 static/generated checks pass, including the 52 CI/routing guard unit tests.
+No production test was skipped or changed to rejection. The first native server
+build raced the generated WASM directory replacement and failed at include_bytes;
+the completed shipping WASM was then built first and the server rebuilt successfully.
+Those transient invocation/build failures are not counted as passing evidence.
+
+**Remaining:** C's open thread PRRT_kwDOCJ6M-c6ioDtu still needs the direct
+configured WasmDocument compute source-replacement acceptance check. The standalone
+particle presentation is not a substitute for that path. Its source handoff uses
+the candidate canonical document already, but source changes/retained output
+identity must be exercised through the actual configured document controller.
+No fresh C review has been requested while this remains open. Engine libtest
+retirement (G23), runtime pattern-function G19, matrix initializer G05/G18, FSM G14,
+native-plan configuration, browser standard readiness, all other accepted gaps,
+required reviews, stable exact-head full qualification, protected merge and
+post-merge verification remain. R07 stays separate at 94ca8e2b4 and is not in C.
+
+**Current action:** Finish the direct configured-document compute edit acceptance
+check while the new C workflow runs. The published batch above is a checkpoint,
+not S8 completion or closure of every G22 obligation.
+
+**Next action:** Inspect `src/wasm/src/project.rs` configured constructors and
+`build_document_repl_runtime_for_document`; extend the existing browser bundle
+probe/fixture path with a configured compute document, submit a changed compute
+body through the document controller, and assert changed execution/output identities
+plus failed-edit rollback. Use the existing canonical mixed-root APIs for any
+required dependency handoff correction. Keep pointer/live-driver contract ownership
+in `hosts/browser/src/pointer.rs`. Inspect paginated failed jobs from workflow
+35024471044 as they finish; group failures by the already assigned owner.
+
+**External blocker:** None for this batch. Previously recorded unrelated
+type/capability decisions remain open. Checkpoint—not complete.

@@ -1,0 +1,27 @@
+info: component rust-std for target wasm32-unknown-unknown is up to date
+[INFO]: 🎯  Checking for the Wasm target...
+[INFO]: 🌀  Compiling to Wasm...
+   Compiling mech-core v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/core)
+   Compiling mech-syntax v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/syntax)
+   Compiling mech-bytecode v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/bytecode)
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/engine)
+   Compiling mech-compute v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/compute)
+   Compiling mech-runtime v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/runtime)
+   Compiling mech-math v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/machines/math)
+   Compiling mech-matrix v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/machines/matrix)
+   Compiling mech-compare v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/machines/compare)
+   Compiling mech-logic v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/machines/logic)
+   Compiling mech-string v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/machines/string)
+   Compiling mech-range v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/machines/range)
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/stdlib)
+   Compiling mech-scene v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/hosts/scene)
+   Compiling mech-browser v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/hosts/browser)
+   Compiling mech-console v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/hosts/console)
+   Compiling mech-timer v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/hosts/timer)
+   Compiling mech-time v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/hosts/time)
+   Compiling mech-gpu v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/hosts/gpu)
+   Compiling mech-wasm v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/wasm)
+    Finished `release` profile [optimized] target(s) in 3m 08s
+[INFO]: ⬇️  Installing wasm-bindgen...
+[INFO]: ✨   Done in 3m 10s
+[INFO]: 📦   Your wasm pkg is ready to publish at src/wasm/pkg.

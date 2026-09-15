@@ -1,0 +1,92 @@
+   Compiling mech-syntax v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/syntax)
+    Finished `test` profile [unoptimized] target(s) in 3.70s
+     Running tests/canonical_document_incremental.rs (target/debug/deps/canonical_document_incremental-c5ccd9861986c909)
+
+running 6 tests
+test no_op_and_invalid_edits_preserve_the_canonical_snapshot ... ok
+test batch_edits_retain_distinct_duplicate_nodes_and_shift_diagnostic_anchors ... ok
+test identical_statements_in_distinct_scopes_never_share_or_steal_identities ... ok
+test nested_delimiters_unicode_and_open_fences_recover_to_clean_each_revision ... ok
+test fence_scope_edits_use_canonical_roles_and_keep_unaffected_green_identity ... ok
+test resource_limited_sessions_match_one_bounded_canonical_parse_after_every_edit ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.45s
+
+     Running tests/canonical_document_root.rs (target/debug/deps/canonical_document_root-6ab9bc413f06c202)
+
+running 19 tests
+test committed_statement_recovery_is_not_replaced_by_a_short_expression ... ok
+test consecutive_underlined_subtitles_start_distinct_sections ... ok
+test comment_selection_preserves_whitespace_and_committed_expression_recovery ... ok
+test canonical_document_is_the_supported_document_root ... ok
+test annotated_underlined_subtitles_do_not_require_source_ordinals ... ok
+test comment_selection_preserves_complete_recursive_negation ... ok
+test document_resource_limits_remain_hard_and_lossless ... ok
+test mika_glyph_roles_are_determined_by_position ... ok
+test mismatched_fence_is_lossless_and_diagnostic ... ok
+test committed_negation_must_reach_a_terminal_before_displacing_a_comment ... ok
+test function_terminators_do_not_force_a_trailing_slice ... ok
+test distinctive_document_openers_recover_required_closers ... ok
+test nested_numbered_subtitles_keep_document_ownership_before_expression_recovery ... ok
+test piece_backed_documents_match_contiguous_documents ... ok
+test typed_document_exposes_title_front_matter_sections_and_fences ... ok
+test recursive_recovery_retains_owned_children_and_later_document_units ... ok
+test canonical_document_root_owns_the_whole_source_fixture_corpus ... ok
+test repeated_document_units_remain_measured_linear ... ok
+test comment_arbitration_does_not_spend_the_recovery_budget ... ok
+
+test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 23.42s
+
+     Running tests/canonical_document_scopes.rs (target/debug/deps/canonical_document_scopes-a1fce90bbf9144a6)
+
+running 1 test
+test mika_scope_owners_preserve_nesting_and_equal_sibling_bodies_stay_distinct ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+
+     Running tests/canonical_mechdown_closed_rules.rs (target/debug/deps/canonical_mechdown_closed_rules-24c5fa02cd763fe9)
+
+running 7 tests
+test inline_code_rejects_fence_openers_and_invalid_references_stay_noncommitting ... ok
+test comment_and_blank_line_have_their_declared_typed_views ... ok
+test line_rules_require_a_physical_newline_and_never_materialize_one ... ok
+test malformed_committed_forms_have_structured_source_fragment_recovery ... ok
+test comments_preserve_paragraph_content_and_leave_the_newline_unconsumed ... ok
+test paragraph_text_rechecks_every_negative_lookahead ... ok
+test all_13_closed_rules_preserve_declared_acceptance_and_physical_prefixes ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/canonical_mechdown_payloads.rs (target/debug/deps/canonical_mechdown_payloads-e53e036ad9b056fe)
+
+running 8 tests
+test thematic_breaks_preserve_each_physical_newline ... ok
+test equations_preserve_their_complete_math_payload ... ok
+test missing_syntax_is_diagnostic_and_never_a_clean_typed_payload ... ok
+test inline_code_preserves_inert_payload_and_delimiters ... ok
+test inline_equations_preserve_math_payload ... ok
+test reference_payloads_preserve_spelling_and_unicode ... ok
+test raw_hyperlinks_preserve_the_complete_url ... ok
+test paragraph_text_preserves_physical_unicode_and_escapes ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/canonical_mechdown_properties.rs (target/debug/deps/canonical_mechdown_properties-32025b134e50f643)
+
+running 3 tests
+test line_fragments_never_accept_an_eof_substitute_for_a_newline ... ok
+test every_direct_closed_fragment_is_total_lossless_and_bounded ... ok
+test direct_comments_keep_generated_content_raw_and_stop_before_a_newline ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.22s
+
+     Running tests/canonical_s7_document_certification.rs (target/debug/deps/canonical_s7_document_certification-b040f89eb45c6252)
+
+running 4 tests
+test only_the_three_specified_rules_use_best_choice ... ok
+test mika_expression_inner_accepts_only_registered_triples ... ok
+test s7_dispositions_cover_the_exact_remaining_inventory ... ok
+test every_s7_rule_has_a_clean_specification_derived_source ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
+

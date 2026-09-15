@@ -1,0 +1,6 @@
+   Compiling mech-combinatorics v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/machines/combinatorics)
+   Compiling mech-set v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/machines/set)
+   Compiling mech-math v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/machines/math)
+   Compiling mech v0.3.6 (/private/tmp/mech-syntax-s8c-qualification)
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/stdlib)
+    Finished `dev` profile [unoptimized] target(s) in 55.32s

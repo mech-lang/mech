@@ -1,0 +1,191 @@
+[
+  {
+    "command": [
+      "cargo",
+      "+nightly-2026-03-03",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "exit": 0,
+    "log": "/private/tmp/mech-syntax-qualification/c-compute-planning-static/00.log"
+  },
+  {
+    "command": [
+      "python3",
+      "-B",
+      "-m",
+      "unittest",
+      "tests.ci.test_ci_impact",
+      "tests.ci.test_ci_full_contract",
+      "scripts.tests.test_check_production_resident_routing"
+    ],
+    "exit": 0,
+    "log": "/private/tmp/mech-syntax-qualification/c-compute-planning-static/01.log"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check-production-resident-routing.py"
+    ],
+    "exit": 0,
+    "log": "/private/tmp/mech-syntax-qualification/c-compute-planning-static/02.log"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check-warning-policy.py"
+    ],
+    "exit": 0,
+    "log": "/private/tmp/mech-syntax-qualification/c-compute-planning-static/03.log"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check-interactive-architecture.py"
+    ],
+    "exit": 0,
+    "log": "/private/tmp/mech-syntax-qualification/c-compute-planning-static/04.log"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check-compiler-planning-quarantine.py"
+    ],
+    "exit": 0,
+    "log": "/private/tmp/mech-syntax-qualification/c-compute-planning-static/05.log"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check-runtime-factory-safety.py"
+    ],
+    "exit": 0,
+    "log": "/private/tmp/mech-syntax-qualification/c-compute-planning-static/06.log"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check-value-execution-boundary.py"
+    ],
+    "exit": 0,
+    "log": "/private/tmp/mech-syntax-qualification/c-compute-planning-static/07.log"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check-value-system-contract.py"
+    ],
+    "exit": 0,
+    "log": "/private/tmp/mech-syntax-qualification/c-compute-planning-static/08.log"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check-no-retired-value-system.py"
+    ],
+    "exit": 0,
+    "log": "/private/tmp/mech-syntax-qualification/c-compute-planning-static/09.log"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check-r1-compatibility-closure.py"
+    ],
+    "exit": 0,
+    "log": "/private/tmp/mech-syntax-qualification/c-compute-planning-static/10.log"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check-r2-type-memory-boundary.py"
+    ],
+    "exit": 0,
+    "log": "/private/tmp/mech-syntax-qualification/c-compute-planning-static/11.log"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check-r3-type-system.py"
+    ],
+    "exit": 0,
+    "log": "/private/tmp/mech-syntax-qualification/c-compute-planning-static/12.log"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check-r4-type-cutover.py"
+    ],
+    "exit": 0,
+    "log": "/private/tmp/mech-syntax-qualification/c-compute-planning-static/13.log"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check-r5-memory-planner.py"
+    ],
+    "exit": 0,
+    "log": "/private/tmp/mech-syntax-qualification/c-compute-planning-static/14.log"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check-r6-memory-runtime.py"
+    ],
+    "exit": 0,
+    "log": "/private/tmp/mech-syntax-qualification/c-compute-planning-static/15.log"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check-bytecode-v1-format.py"
+    ],
+    "exit": 0,
+    "log": "/private/tmp/mech-syntax-qualification/c-compute-planning-static/16.log"
+  },
+  {
+    "command": [
+      "bash",
+      "scripts/check-unsafe-boundaries.sh"
+    ],
+    "exit": 0,
+    "log": "/private/tmp/mech-syntax-qualification/c-compute-planning-static/17.log"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/generate-canonical-dependencies.py",
+      "--check"
+    ],
+    "exit": 0,
+    "log": "/private/tmp/mech-syntax-qualification/c-compute-planning-static/18.log"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/generate-canonical-document-grammar.py",
+      "--check"
+    ],
+    "exit": 0,
+    "log": "/private/tmp/mech-syntax-qualification/c-compute-planning-static/19.log"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/generate-canonical-port-registry.py",
+      "--check"
+    ],
+    "exit": 0,
+    "log": "/private/tmp/mech-syntax-qualification/c-compute-planning-static/20.log"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/generate-canonical-scc-report.py",
+      "--check"
+    ],
+    "exit": 0,
+    "log": "/private/tmp/mech-syntax-qualification/c-compute-planning-static/21.log"
+  }
+]

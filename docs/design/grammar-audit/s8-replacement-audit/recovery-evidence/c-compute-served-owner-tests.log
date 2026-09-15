@@ -1,0 +1,112 @@
+   Compiling mech v0.3.6 (/private/tmp/mech-syntax-s8c-qualification)
+    Finished `test` profile [unoptimized] target(s) in 5.59s
+     Running unittests src/lib.rs (target/debug/deps/mech-1c62535afc6bb22f)
+
+running 90 tests
+test cli::commands::serve::tests::selected_compute_backend_is_injected_into_project_javascript ... ok
+test cli::commands::serve::tests::serve_command_uses_the_stable_compute_selector_policy ... ok
+test cli::commands::serve::tests::compressed_or_invalid_wasm_is_rejected ... ok
+test cli::commands::serve::tests::local_wasm_package_works_without_embedded_assets ... ok
+test cli::commands::serve::tests::missing_project_js_does_not_block_standalone_browser_assets ... ok
+test cli::commands::serve::tests::missing_local_and_embedded_wasm_fails ... ok
+test cli::commands::serve::tests::configured_compute_host_accepts_mixed_browser_profile ... ok
+test cli::commands::serve::tests::configured_compute_host_rejects_generic_browser_profile_before_serving ... ok
+test serve::tests::configured_serve_plan_preserves_declared_target_and_folder_order ... ok
+test serve::tests::content_type_for_path_maps_common_assets ... ok
+test serve::tests::config_shim_at_root_prefers_custom_shim_over_listing ... ok
+test serve::tests::configured_output_presentation_reaches_generated_documents ... ok
+test serve::tests::custom_inline_and_external_shims_remain_authoritative ... ok
+test serve::tests::display_fs_resource_is_normalized ... ok
+test serve::tests::configured_project_user_index_wins_without_hiding_source_routes ... ok
+test serve::tests::empty_workspace_poll_does_not_clone_the_served_registry ... ok
+test serve::tests::default_shim_owns_standalone_document_execution ... ok
+test serve::tests::configured_served_root_uses_snapshot_dependencies_and_planning_hosts ... ok
+test serve::tests::configured_project_refresh_updates_formatted_source_and_manifest ... ok
+test serve::tests::configured_project_composes_formatted_and_browser_routes ... ok
+test serve::tests::generated_source_html_tracks_shim_and_stylesheet_paths ... ok
+test serve::tests::immediately_completed_server_exits_without_timeout ... ok
+test serve::tests::invalid_server_address_returns_error ... ok
+test serve::tests::configured_project_without_user_index_uses_generated_source_root ... ok
+test serve::tests::normalize_url_path_rejects_traversal ... ok
+test serve::tests::percent_encode_url_path_encodes_reserved_and_utf8_bytes ... ok
+test serve::tests::permanently_pending_server_is_cut_off_by_timeout ... ok
+test serve::tests::directory_index_mec_becomes_root ... ok
+test serve::tests::emoji_source_supports_html_and_extensionless_aliases ... ok
+test serve::tests::explicit_mcfg_serve_input_is_skipped ... ok
+test serve::tests::explicit_directory_without_config_is_recursive_workspace ... ok
+test serve::tests::explicit_single_source_uses_workspace_formatter ... ok
+test serve::tests::generated_mech_html_uses_injected_host_config_shim ... ok
+test serve::tests::plan_serve_inputs_accepts_explicit_mecb_target ... ok
+test serve::tests::multiple_source_directory_builds_listing ... ok
+test serve::tests::plan_serve_inputs_keeps_mecb_out_of_static_paths ... ok
+test serve::tests::planned_directory_delegation_is_deduplicated ... ok
+test serve::tests::poll_workspace_error_preserves_last_known_good_registry ... ok
+test serve::tests::plan_serve_inputs_mech_and_static_file_share_parent_root ... ok
+test serve::tests::plan_serve_inputs_no_inputs_discovers_current_dir ... ok
+test serve::tests::plan_serve_inputs_mixed_inputs_use_common_root_without_root_discovery ... ok
+test serve::tests::plan_serve_inputs_prefers_first_renderable_source_after_bytecode ... ok
+test serve::tests::plan_serve_inputs_single_directory_uses_directory_as_root ... ok
+test serve::tests::plan_serve_inputs_single_file_uses_parent_as_root ... ok
+test serve::tests::registry_reload_static_path_ignores_mech_source ... ok
+test serve::tests::registry_reload_static_path_removes_deleted_asset ... ok
+test serve::tests::registry_reload_static_path_removes_encoded_asset_key ... ok
+test serve::tests::registry_reload_static_path_removes_literal_url_path_character_key ... ok
+test serve::tests::registry_reload_static_path_updates_encoded_asset_key ... ok
+test serve::tests::registry_reload_static_path_updates_existing_asset ... ok
+test serve::tests::registry_reload_static_path_updates_literal_url_path_character_key ... ok
+test serve::tests::registry_distinguishes_source_text_and_encoded_compiled_code_routes ... ok
+test serve::tests::registry_index_prefers_user_index_over_generated_source ... ok
+test serve::tests::registry_html_path_falls_back_to_mec_html ... ok
+test serve::tests::registry_index_prefers_generated_source_over_bundled_index ... ok
+test serve::tests::registry_exact_html_asset_wins_over_mec_fallback ... ok
+test serve::tests::registry_code_root_alias_requires_effective_index_source ... ok
+test serve::tests::registry_static_assets_use_encoded_transport_keys ... ok
+test serve::tests::registry_static_wasm_br_sets_brotli_encoding ... ok
+test serve::tests::renderable_source_predicate_excludes_mecb ... ok
+test serve::tests::registry_serves_raw_source_under_source_prefix ... ok
+test serve::tests::registry_root_serves_single_source_when_only_one_exists ... ok
+test serve::tests::serve_until_shutdown_rejects_uninitialized_server ... ok
+test serve::tests::restricted_authority_blocks_workspace_escape ... ok
+test serve::tests::project_manifest_uses_raw_source_routes ... ok
+test serve::tests::registry_serves_mec_as_generated_html ... ok
+test serve::tests::server_event_retention_is_bounded ... ok
+test serve::tests::server_asset_requires_all_backing_paths ... ok
+test serve::tests::registry_removes_stale_workspace_sources_on_resync ... ok
+test serve::tests::server_init_accepts_authorized_local_resource ... ok
+test serve::tests::server_init_does_not_mutate_html_shim_with_host_config ... ok
+test serve::tests::server_init_requires_fs_serve_for_local_resource ... ok
+test serve::tests::serve_until_shutdown_exits_when_shutdown_signal_changes ... FAILED
+test serve::tests::server_shutdown_request_is_idempotent ... ok
+test serve::tests::registry_root_serves_listing_for_multiple_sources_without_index ... ok
+test serve::tests::registry_root_serves_index_mec_when_present ... ok
+test serve::tests::server_index_route_prefers_first_explicit_workspace_target ... ok
+test serve::tests::served_document_formats_resolver_expanded_nested_includes ... ok
+test serve::tests::server_load_workspace_preserves_missing_mech_target_diagnostic ... ok
+test serve::tests::static_directory_serve_path_skips_mcfg_assets ... ok
+test serve::tests::sync_static_assets_from_watch_events_reloads_static_asset ... ok
+test serve::tests::user_backed_asset_requires_serve_capability ... ok
+test serve::tests::wasm_project_export_is_declared ... ok
+test serve::tests::served_document_manifest_records_extension_and_index_resolution_edges ... ok
+test serve::tests::server_mixed_workspace_directory_loads_static_assets_relative_to_directory ... ok
+test serve::tests::static_custom_shim_does_not_receive_browser_bootstrap ... ok
+test serve::tests::server_workspace_discovery_does_not_serve_mcfg_files ... ok
+test serve::tests::standalone_document_manifest_includes_relative_import_dependencies ... ok
+test serve::tests::server_workspace_with_explicit_target_does_not_load_unrelated_mec ... ok
+test serve::tests::single_source_supports_html_and_extensionless_aliases ... ok
+
+failures:
+
+---- serve::tests::serve_until_shutdown_exits_when_shutdown_signal_changes stdout ----
+[test] Server Awaiting connections at 127.0.0.1:0
+
+thread 'serve::tests::serve_until_shutdown_exits_when_shutdown_signal_changes' (28351452) panicked at /Users/cim310/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/warp-0.3.7/src/server.rs:291:27:
+error binding to 127.0.0.1:0: error creating server listener: Operation not permitted (os error 1)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    serve::tests::serve_until_shutdown_exits_when_shutdown_signal_changes
+
+test result: FAILED. 89 passed; 1 failed; 0 ignored; 0 measured; 306 filtered out; finished in 3.11s
+
+error: test failed, to rerun pass `-p mech --lib`

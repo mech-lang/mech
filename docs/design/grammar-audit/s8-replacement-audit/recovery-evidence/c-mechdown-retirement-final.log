@@ -1,0 +1,29 @@
+   Compiling mech-syntax v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/syntax)
+    Finished `test` profile [unoptimized] target(s) in 0.31s
+     Running tests/canonical_mechdown_closed_rules.rs (target/debug/deps/canonical_mechdown_closed_rules-e2f97271bd036412)
+
+running 7 tests
+test comment_and_blank_line_have_their_declared_typed_views ... ok
+test inline_code_rejects_fence_openers_and_invalid_references_stay_noncommitting ... ok
+test line_rules_require_a_physical_newline_and_never_materialize_one ... ok
+test malformed_committed_forms_have_structured_source_fragment_recovery ... ok
+test comments_preserve_paragraph_content_and_leave_the_newline_unconsumed ... ok
+test paragraph_text_rechecks_every_negative_lookahead ... ok
+test all_13_closed_rules_preserve_declared_acceptance_and_physical_prefixes ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/canonical_mechdown_payloads.rs (target/debug/deps/canonical_mechdown_payloads-58f45824749d3acc)
+
+running 8 tests
+test missing_syntax_is_diagnostic_and_never_a_clean_typed_payload ... ok
+test thematic_breaks_preserve_each_physical_newline ... ok
+test reference_payloads_preserve_spelling_and_unicode ... ok
+test inline_equations_preserve_math_payload ... ok
+test inline_code_preserves_inert_payload_and_delimiters ... ok
+test equations_preserve_their_complete_math_payload ... ok
+test raw_hyperlinks_preserve_the_complete_url ... ok
+test paragraph_text_preserves_physical_unicode_and_escapes ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+

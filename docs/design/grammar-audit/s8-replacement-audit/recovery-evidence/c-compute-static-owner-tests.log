@@ -1,0 +1,73 @@
+    Blocking waiting for file lock on artifact directory
+   Compiling mech-combinatorics v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/machines/combinatorics)
+   Compiling mech-set v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/machines/set)
+   Compiling mech-math v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/machines/math)
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/stdlib)
+   Compiling mech v0.3.6 (/private/tmp/mech-syntax-s8c-qualification)
+    Finished `test` profile [unoptimized] target(s) in 2m 00s
+     Running unittests src/lib.rs (target/debug/deps/mech-1c62535afc6bb22f)
+
+running 60 tests
+test bundle_web::tests::bundle_web_copies_config_as_mech_mcfg ... ok
+test bundle_web::tests::bundle_web_copies_static_symlink_using_logical_output_path ... ok
+test bundle_web::tests::bundle_web_output_inside_project_does_not_copy_itself ... ok
+test bundle_web::tests::bundle_web_copies_static_assets ... ok
+test bundle_web::tests::bundle_web_injects_browser_host_config ... ok
+test bundle_web::tests::bundle_web_code_payload_decodes ... ok
+test bundle_web::tests::bundle_web_injection_preserves_browser_alias_and_run_grants ... ok
+test bundle_web::tests::bundle_web_does_not_reject_ordinary_external_urls ... ok
+test bundle_web::tests::bundle_web_rejects_multiple_run_roots_before_emitting_assets ... ok
+test bundle_web::tests::bundle_web_rejects_root_relative_code_url ... ok
+test bundle_web::tests::bundle_web_rejects_output_equal_config_base_dir ... ok
+test bundle_web::tests::bundle_web_rejects_output_equal_project_root ... ok
+test bundle_web::tests::bundle_web_rejects_root_relative_pkg_url ... ok
+test bundle_web::tests::bundle_web_rejects_root_relative_pkg_url_with_fragment ... ok
+test bundle_web::tests::bundle_web_rejects_root_relative_pkg_url_with_query ... ok
+test bundle_web::tests::bundle_web_rejects_source_document_controller_shims ... ok
+test bundle_web::tests::bundle_web_requires_run_paths ... ok
+test bundle_web::tests::bundle_web_requires_source_paths ... ok
+test bundle_web::tests::bundle_web_rejects_static_file_symlink_target_outside_project ... ok
+test bundle_web::tests::bundle_web_preserves_static_file_symlink_output_identity ... ok
+test bundle_web::tests::bundle_web_skips_static_symlinked_directories ... ok
+test bundle_web::tests::bundle_web_skips_non_static_symlinks_to_outside_project ... ok
+test bundle_web::tests::bundle_web_rebases_source_shim_before_injecting_host_config ... ok
+test bundle_web::tests::bundle_web_rewrites_external_run_paths_to_bundle_local_roots ... ok
+test bundle_web::tests::bundle_web_writes_source_code_and_html ... ok
+test bundle_web::tests::bundle_web_static_project_bootstrap_uses_served_bundle ... ok
+test bundle_web::tests::bundle_web_uses_symlink_path_as_source_route_identity ... ok
+test bundle_web::tests::canonical_bundle_compiler_installs_configured_timer_contracts ... ok
+test bundle_web::tests::canonical_bundle_serves_prose_without_requiring_an_artifact ... ok
+test bundle_web::tests::source_page_shim_adds_project_base_to_custom_bootstrap ... ok
+test bundle_web::tests::source_page_shim_rebases_double_quoted_project_base ... ok
+test bundle_web::tests::source_page_shim_rebases_relative_bundle_assets_by_depth ... ok
+test bundle_web::tests::source_page_shim_rebases_single_quoted_project_base ... ok
+test bundle_web::tests::static_project_bootstrap_appends_for_nonmatching_script ... ok
+test bundle_web::tests::static_project_bootstrap_recognizes_quoted_and_cache_busted_urls ... ok
+test bundle_web::tests::canonical_bundle_dependencies_use_configured_resource_planning_values ... ok
+test bundle_web::tests::wasm_package_validator_accepts_static_served_project_wrapper ... ok
+test bundle_web::tests::wasm_package_validator_rejects_missing_javascript ... ok
+test bundle_web::tests::wasm_package_validator_rejects_missing_served_bundle_export ... ok
+test bundle_web::tests::wasm_package_validator_rejects_missing_wasm ... ok
+test bundle_web::tests::wasm_package_validator_rejects_missing_wasm_project_export ... ok
+test bundle_web::tests::canonical_bundle_root_executes_with_transitive_source_exports ... ok
+test bundle_web::tests::wasm_package_incompatibility_leaves_output_untouched ... ok
+test bundle_web::tests::canonical_bundle_rejects_missing_and_cyclic_dependencies ... ok
+test cli::bundle_web::tests::bundle_web_with_config_outside_project_normalizes_directory_serve_path ... ok
+test bundle_web::tests::canonical_bundle_uses_file_resolver_import_candidates ... ok
+test cli::bundle_web::tests::bundle_web_with_config_outside_project_normalizes_file_serve_path ... ok
+test cli::bundle_web::tests::source_collection_dedupes_file_symlinks_by_canonical_target ... ok
+test cli::bundle_web::tests::source_collection_errors_for_missing_serve_path ... ok
+test cli::bundle_web::tests::source_collection_errors_for_missing_serve_path_after_existing_directory ... ok
+test cli::bundle_web::tests::source_collection_includes_file_symlinks_but_skips_directory_symlinks_and_broken_links ... ok
+test cli::bundle_web::tests::source_collection_normalizes_directory_children_with_parent_components ... ok
+test cli::bundle_web::tests::source_collection_normalizes_file_path_with_parent_components ... ok
+test bundle_web::tests::canonical_bundle_admits_documented_browser_assignments ... ok
+test cli::bundle_web::tests::cli_shim_stylesheet_and_wasm_override_config_paths ... ok
+test cli::bundle_web::tests::missing_project_config_errors ... ok
+test cli::bundle_web::tests::explicit_config_wins_over_discovered_project_config ... ok
+test cli::bundle_web::tests::no_config_errors ... ok
+test bundle_web::tests::canonical_bundle_prefers_resolved_source_modules_to_catalog_modules ... ok
+test bundle_web::tests::canonical_source_module_errors_do_not_fall_back_to_catalog_functions ... ok
+
+test result: ok. 60 passed; 0 failed; 0 ignored; 0 measured; 336 filtered out; finished in 2.51s
+

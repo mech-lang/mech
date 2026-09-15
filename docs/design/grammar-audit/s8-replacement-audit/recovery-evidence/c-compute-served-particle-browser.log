@@ -1,0 +1,13 @@
+[mech-gpu-smoke-phase] wasm-initialization-started
+[mech-gpu-smoke-phase] wasm-initialization-finished
+[mech-gpu-smoke-phase] project-preparation-started
+[mech-gpu-smoke-phase] source-compilation-started
+[mech-gpu-smoke-phase] source-compilation-finished
+[mech-gpu-smoke-phase] project-preparation-finished
+[mech-gpu-smoke-phase] project-started
+Compute particle browser smoke passed
+browser: /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
+backend: wgpu
+particles: 16,384
+compute frames: advanced
+pointer -> Mech CPU transaction -> compute inputs: verified
