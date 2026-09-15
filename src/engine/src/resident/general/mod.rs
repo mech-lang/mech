@@ -3227,8 +3227,7 @@ fn complete_activation_shape_facts(
             .entry(declaration.schema)
             .ok_or(ResidentActivationError::InvalidNodeOutput { node: node.node })?
             .schema();
-        let shape = schema
-            .instantiate_shape(vec![count as u64].into_boxed_slice())
+        let shape = matrix_shape_for_extents(schema, &[1, count as u64])
             .map_err(|_| ResidentActivationError::UnresolvedShape { slot: output })?;
         facts.slot_shapes.insert(output, shape);
     }
