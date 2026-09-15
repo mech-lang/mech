@@ -70,7 +70,19 @@ pub fn maintained_operation_contract(
     } else {
         ChangeDetectionPolicy::ExactScalar
     };
-    let assignment = match name {
+    // Compound selected writes have the same addressed RMW contract as a
+    // replacement; their numeric operation is retained in the semantic identity.
+    let assignment_name = match name.rsplit_once('/') {
+        Some((
+            base @ ("core/assign/indexed-axis"
+            | "core/assign/indexed-rows"
+            | "core/assign/indexed-columns"
+            | "core/assign/indexed-rectangle"),
+            "add" | "sub" | "mul" | "div" | "pow",
+        )) => base,
+        _ => name,
+    };
+    let assignment = match assignment_name {
         "core/assign/whole-value" => Some((2, RegionPolicy::WholeValue)),
         "core/assign/indexed-axis" | "core/assign/indexed-rows" => {
             Some((3, RegionPolicy::IndexedAxis { axis: 0 }))
