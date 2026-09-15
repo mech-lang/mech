@@ -8,8 +8,8 @@ All active extraction/corrective PRs and C remain drafts. Ask for review by comm
 
 | Order | Owner and work | Current state / completion condition |
 | --- | --- | --- |
-| 1 | R25 + C/G22 compute/browser handoff | R25 #849 content `425578fa7` has a clean review and 7 + 18 passing tests. Stack restacking produced ancestry-only head `dff504ec2` with the identical tree; focused CI 35028724829 is running. C #830 head `45946479d` has the same tree as locally qualified `4ef7a01dd`. The shipping configured document edit passes all seven scenarios, changes result 1→3, preserves inline selection identity, and rolls back malformed edits. The EKF rerun gets past R25's provider and `result.0` failures and now stops at the distinct G29/R26 canonical-artifact/portable-kernel handoff. R25 closes when exact-head focused CI completes; C remains open. |
-| 2 | R08/G18 variable-cardinality layouts | Not started. Dependency for R07's still-red matrix positives. Preserve the existing positive concat/transpose and changing-cardinality obligations; do not substitute fixed-target rejection for acceptance. |
+| 1 | R25 + C/G22 compute/browser handoff | R25 #849 content `425578fa7` has a clean review and 7 + 18 passing tests. The current stack head is `6dcd269c9`; its R25 diff still contains the reviewed correction and additionally inherits the lower-stack filesystem-import fix. Focused CI 35030743606 has passed both owners, review regressions, browser canary, architecture, distribution and three mutation shards; its final status is still queued. C #830 current head is `7968e6341` with full qualification run 35030747629 queued. The shipping configured document edit passes all seven scenarios, changes result 1→3, preserves inline selection identity, and rolls back malformed edits. The EKF rerun gets past R25's provider and `result.0` failures and now stops at the distinct G29/R26 canonical-artifact/portable-kernel handoff. R25 closes when exact-head focused CI completes; C remains open. |
+| 2 | R08/G18 variable-cardinality layouts | Implemented in draft [#854](https://github.com/mech-lang/mech/pull/854) at exact head `87eaefc37`, stacked on current R25. Three strict source/decoded witnesses cover closed concat plus live concat/transpose over cardinalities 2→1→0. The owner fix stops treating lower-bound shapes as activation facts, selects snapshot storage for unresolved produced matrices, derives dimensions each turn, and publishes the resolved shape through canonical budgeted finalization. Focused tests pass; review and exact-head CI are pending. |
 | 3 | R07/G05 control initializers | Partial pushed branch `94ca8e2b4`, no PR, outside C. Closed-control/budget corrections pass; finish its matrix cases after R08 and review the bounded owner diff. |
 | 4 | R09–R20 semantic prerequisites | Corrective implementations remain pending; use the accepted dependency/acceptance cells to select the next ready owner after the initializer batch. No numbered item is implicitly complete. |
 | Product blocker | R26/G29 canonical EKF compute lowering | Newly demonstrated and explicitly owned before implementation. The single-lane shipping CPU witness fails at portable lowering after R25 succeeds. No corrective branch or PR exists. Preserve the full CPU/WebGPU oracle; do not fold this into R25 or count semantic-only compilation as acceptance. |
@@ -17,13 +17,18 @@ All active extraction/corrective PRs and C remain drafts. Ask for review by comm
 | Outstanding decisions | R02/G02, R06/G17, R15/G12 | Recorded capability/contract decisions remain open. Positive obligations have not been excluded. These are not implicitly deferred beyond landing. |
 | Outstanding implementation | R24/G27 Index ranges; R26/G29 canonical compute lowering | Strict failing witnesses exist; neither has a production implementation or PR. Both must close before final qualification. |
 
-**Active change lanes:** C, exact-head R25 validation, and the next
-dependency-ready R08 correction. R26 is recorded but not yet changing; R07 is
-idle until its prerequisite is ready. Never exceed three actively changing
+**Active change lanes:** C, R08 review/validation, and the now dependency-ready
+R07 correction. R25 is validation-only; R26 is recorded but not yet changing.
+Never exceed three actively changing
 corrective branches. Do not open PRs solely to instantiate every audit boundary.
 
-**Next concrete action:** finish exact-head R25 validation while beginning R08's
-strict variable-cardinality layout reproduction and owner diagnosis.
+**Next concrete action:** respond to and resolve any #854 review findings while
+restacking R07 onto R08 and completing its remaining matrix initializer cases.
+R08 exact-head evidence is in `recovery-evidence/r08-exact-head-focused.log`.
+The full engine library run passed 451 tests and reproduced its sole failing
+indexed-assignment assertion unchanged at the R25 base; the base witness is in
+`recovery-evidence/r08-baseline-indexed-assignment.log` and is not counted as
+R08 success.
 The basic configured edit thread is answered and resolved with shipping evidence:
 https://github.com/mech-lang/mech/pull/830#discussion_r4020517517
 This is not closure of all browser/product obligations or the stack.

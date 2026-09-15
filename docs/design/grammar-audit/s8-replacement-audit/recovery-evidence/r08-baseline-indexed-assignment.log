@@ -1,0 +1,25 @@
+    Finished `test` profile [unoptimized] target(s) in 0.11s
+     Running unittests src/lib.rs (/private/tmp/mech-syntax-s8r08-baseline-target2/debug/deps/mech_engine-cd8aba9cbc91a51e)
+
+running 1 test
+
+thread 'resident::numeric::tests::indexed_assignment_capability_supports_maps_but_rejects_nested_matrix_members' (28489327) panicked at src/engine/src/resident/numeric/mod.rs:15239:9:
+assertion failed: matches!(bind_indexed_assign(&ResidentKernelBindRequest
+    {
+        contract: &matrix_contract, schemas: &schemas, inputs:
+        &[port(tuple_matrix, ResidentValueKind::Snapshot),
+        port(tuple, ResidentValueKind::Snapshot),
+        port(index, ResidentValueKind::Index),], output:
+        port(tuple_matrix, ResidentValueKind::Snapshot),
+    }), Err(ResidentKernelBindError::UnsupportedLayout))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test resident::numeric::tests::indexed_assignment_capability_supports_maps_but_rejects_nested_matrix_members ... FAILED
+
+failures:
+
+failures:
+    resident::numeric::tests::indexed_assignment_capability_supports_maps_but_rejects_nested_matrix_members
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 451 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p mech-engine --lib`

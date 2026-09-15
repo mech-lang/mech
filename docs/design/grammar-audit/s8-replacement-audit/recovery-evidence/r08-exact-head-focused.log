@@ -1,0 +1,22 @@
+$ cargo +nightly-2026-03-03 test --locked --offline -p mech-engine --no-default-features --features full_source,resident-artifact --test canonical_document_state comprehension_ -- --nocapture
+    Finished `test` profile [unoptimized] target(s) in 0.11s
+     Running tests/canonical_document_state.rs (target/debug/deps/canonical_document_state-09bfc0ef4df0e888)
+
+running 4 tests
+test comprehension_reads_the_source_order_state_candidate_after_writer_reordering ... ok
+test closed_comprehension_concatenation_retains_exact_shape ... ok
+test changing_comprehension_transpose_publishes_each_shape ... ok
+test changing_comprehension_concatenation_publishes_each_shape ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 42 filtered out; finished in 0.07s
+
+$ cargo +nightly-2026-03-03 test --locked --offline -p mech-runtime --no-default-features --features resident_external_test_support --lib resident_matrix_comprehensions_feed_mutable_vertical_concatenation -- --nocapture
+    Finished `test` profile [unoptimized] target(s) in 0.13s
+     Running unittests src/lib.rs (target/debug/deps/mech_runtime-25d5ac03e96cbb16)
+
+running 1 test
+test runtime::program::tests::resident_matrix_comprehensions_feed_mutable_vertical_concatenation ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 697 filtered out; finished in 4.84s
+
+$ cargo +nightly-2026-03-03 fmt --all -- --check
