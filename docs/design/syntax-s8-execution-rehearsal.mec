@@ -64,6 +64,18 @@ compute regions inherit root imports without sharing local variable bindings.
 Resolved host capabilities and module catalog ownership stay in the current
 ProgramCompiler boundary. Production witnesses must enter those methods.
 
+Compute state initialization walks only the canonical artifact's activation
+dependency graph and memoizes shared values once per compilation. Both compute
+lowerers consume the same row-major initializer snapshots; the fixed-shape target
+converts them to its column-major storage layout. Arithmetic uses the shared
+compute operation mapping and range construction uses core's canonical visitor.
+Activation admits declared pure signal operations with independent whole-value
+writes. Live inputs, recurrence state, cycles and unresolved extents reject before
+session creation. No recurrence turn runs to obtain declaration-time values.
+Qualification covers shared matrix initializers, subsequent turns, and the shipped
+particle initialization at 5, 257, 16384 and 1000000 particles. The early browser
+canary uses computed range/remainder/concatenation initializers.
+
 Fixed-shape compute retains derived output publications separately from recurrence
 state in its backend-neutral storage plan. Each derived slot has one publication
 buffer even when several output names alias it. Publications begin zeroed, commit

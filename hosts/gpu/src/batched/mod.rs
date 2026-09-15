@@ -173,6 +173,11 @@ fn evaluate_scalar_computation_simd(computation: &ScalarComputation, registers: 
                     BinaryOperation::Subtract => values[0] - values[1],
                     BinaryOperation::Multiply => values[0] * values[1],
                     BinaryOperation::Divide => values[0] / values[1],
+                    BinaryOperation::Remainder => {
+                        let left = values[0].to_array();
+                        let right = values[1].to_array();
+                        f32x4::from(core::array::from_fn(|lane| left[lane] % right[lane]))
+                    }
                 },
                 ElementwiseOperation::Unary(operation) => match operation {
                     UnaryOperation::Sin => values[0].sin(),
@@ -1399,6 +1404,7 @@ struct PendingState {
 }
 
 struct BatchCompiler<'a> {
+    activation: mech_compute::ComputeActivationValues<'a>,
     artifact: &'a ProgramArtifact,
     instances: u32,
     resolved_dimensions: BTreeMap<CellSlotId, Box<[u64]>>,
@@ -1492,6 +1498,7 @@ impl<'a> BatchCompiler<'a> {
     fn new(artifact: &'a ProgramArtifact, instances: u32) -> Self {
         Self {
             artifact,
+            activation: mech_compute::ComputeActivationValues::new(artifact),
             instances,
             resolved_dimensions: resolve_compute_slot_dimensions(artifact),
             shapes: BTreeMap::new(),
@@ -1776,7 +1783,7 @@ impl<'a> BatchCompiler<'a> {
             self.register_offsets.insert(slot.slot, self.register_count);
             self.register_count += shape.elements();
             if slot.role == SlotRole::State {
-                match constant_values(self.artifact, slot.initializer, shape) {
+                match initializer_values(&mut self.activation, slot.initializer, shape) {
                     Ok(initializer) => {
                         self.states.insert(
                             slot.slot,
@@ -3204,23 +3211,26 @@ fn artifact_constant_values(
     }
 }
 
-fn constant_values(
-    artifact: &ProgramArtifact,
+fn initializer_values(
+    activation: &mut mech_compute::ComputeActivationValues<'_>,
     initializer: Option<mech_engine::InitializerReference>,
     shape: FixedShape,
 ) -> Result<Vec<f32>, String> {
-    let Some(mech_engine::InitializerReference::Constant(constant)) = initializer else {
-        return Err("batch state requires a constant initializer".to_owned());
-    };
-    let values = artifact_constant_values(artifact, constant)?;
-    if values.len() != shape.elements() {
+    let row_major = activation.initializer(initializer)?;
+    if row_major.len() != shape.elements() {
         return Err(format!(
             "state initializer has {} elements, expected {}",
-            values.len(),
+            row_major.len(),
             shape.elements()
         ));
     }
-    Ok(values)
+    let mut column_major = vec![0.0; row_major.len()];
+    for row in 0..shape.rows {
+        for column in 0..shape.columns {
+            column_major[shape.index(row, column)] = row_major[row * shape.columns + column];
+        }
+    }
+    Ok(column_major)
 }
 
 fn generate_wgsl(

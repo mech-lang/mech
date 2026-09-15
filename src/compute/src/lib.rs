@@ -1,6 +1,7 @@
 //! Backend-neutral planning and intermediate representations for resident
 //! Mech compute regions.
 
+mod activation;
 mod diagnostic;
 mod fixed_shape;
 mod ir;
@@ -11,6 +12,7 @@ mod program;
 mod registry;
 mod shape;
 
+pub use activation::*;
 pub use diagnostic::*;
 pub use fixed_shape::*;
 pub use ir::*;

@@ -39,7 +39,8 @@ def main() -> None:
 particle-field @compute
 -------------------------------------------------------------------------------
 force-point := [0f32; 0f32]
-~matrix := [1f32 2f32 3f32; 4f32 5f32 6f32]
+row := math/mod(1f32..=3f32, 4f32)
+~matrix := [row; row + 3f32]
 matrix = matrix + force-point
 matrix'
 '''
