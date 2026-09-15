@@ -3064,7 +3064,7 @@ pattern-tuple := left-parenthesis, whitespace0,
 
 comment-sigil := "--"
                | "//" ;
-comment := *space-tab, comment-sigil, *(¬new-line, any-token) ;
+comment := *space-tab, comment-sigil, *(¬new-line, paragraph-element) ;
 op-assign-operator := add-assign-operator
                     | sub-assign-operator
                     | mul-assign-operator

@@ -460,16 +460,7 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
             candidate_source.push('\n');
         }
         candidate_source.push_str(&appended_source);
-        let value = if finalized.is_none() && self.source_document.is_none() {
-            let overlay = mech_syntax::parser::parse(appended_source.trim())?;
-            let changed_state_names = resident_state_mutations(&overlay);
-            if let Some(mut tree) = self.source_tree.clone() {
-                tree.body.sections.extend(overlay.body.sections);
-                self.replace_source_tree_preserving(candidate_source, tree, &changed_state_names)?
-            } else {
-                self.replace_source_preserving(candidate_source, &changed_state_names)?
-            }
-        } else {
+        let value = {
             let parse = |source: &str| {
                 crate::SourceDocument::parse_resolved(
                     "runtime:interactive",
@@ -577,15 +568,14 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         candidate_source: String,
         changed_state_names: &std::collections::BTreeSet<String>,
     ) -> MResult<RuntimeValueSnapshot> {
-        if self.source_tree.is_some() {
-            let tree = mech_syntax::parser::parse(candidate_source.trim())?;
-            return self.replace_source_tree_preserving(
-                candidate_source,
-                tree,
-                changed_state_names,
-            );
-        }
-        self.replace_source_candidate(candidate_source, None, None, Some(changed_state_names))
+        let document = crate::SourceDocument::parse_resolved(
+            "runtime:interactive",
+            Revision(self.source_revision().saturating_add(1)),
+            Arc::<str>::from(candidate_source),
+            ParseConfig::default(),
+        )
+        .map_err(|error| interactive_error(format!("invalid interactive source: {error:?}")))?;
+        self.replace_document_preserving(document, changed_state_names)
     }
 
     fn replace_source_tree(
@@ -724,25 +714,14 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
     /// unchanged. With no names, the complete resident workspace is removed.
     pub fn clear_variables(&mut self, names: &[String]) -> MResult<Vec<String>> {
         if names.is_empty() {
-            if self.source_document.is_some() {
-                let document = crate::SourceDocument::parse_resolved(
-                    "runtime:interactive",
-                    Revision(self.source_revision().saturating_add(1)),
-                    Arc::<str>::from(""),
-                    ParseConfig::default(),
-                )
-                .map_err(|error| interactive_error(format!("invalid empty source: {error:?}")))?;
-                self.replace_document(document)?;
-            } else if self.source_tree.is_some() {
-                self.replace_source_candidate(
-                    String::new(),
-                    Some(mech_syntax::parser::parse("")?),
-                    None,
-                    None,
-                )?;
-            } else {
-                self.replace_source_candidate(String::new(), None, None, None)?;
-            }
+            let document = crate::SourceDocument::parse_resolved(
+                "runtime:interactive",
+                Revision(self.source_revision().saturating_add(1)),
+                Arc::<str>::from(""),
+                ParseConfig::default(),
+            )
+            .map_err(|error| interactive_error(format!("invalid empty source: {error:?}")))?;
+            self.replace_document(document)?;
             return Ok(Vec::new());
         }
 
@@ -776,64 +755,29 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
             self.cleared_synthetic_symbols.insert("ans".to_string());
             return Ok(vec!["ans".to_string()]);
         }
-        if let Some(document) = self.source_document.clone() {
-            let (candidate_source, mut removed) =
-                remove_canonical_definitions(&document, &requested)?;
-            let missing = requested.difference(&removed).cloned().collect::<Vec<_>>();
-            if !missing.is_empty() {
-                return Err(missing_variable_error(&missing));
-            }
-            let candidate = crate::SourceDocument::parse_resolved(
+        let document = match self.source_document.clone() {
+            Some(document) => document,
+            None => crate::SourceDocument::parse_resolved(
                 "runtime:interactive",
-                Revision(self.source_revision().saturating_add(1)),
-                Arc::<str>::from(candidate_source),
+                Revision(self.source_revision()),
+                Arc::<str>::from(self.source.as_str()),
                 ParseConfig::default(),
             )
-            .map_err(|error| interactive_error(format!("invalid cleared source: {error:?}")))?;
-            self.replace_document(candidate)?;
-            if clear_ans {
-                self.cleared_synthetic_symbols.insert("ans".to_string());
-                removed.insert("ans".to_string());
-            }
-            return Ok(removed.into_iter().collect());
-        }
-        let mut tree = match &self.source_tree {
-            Some(tree) => tree.clone(),
-            None => mech_syntax::parser::parse(self.source.trim())?,
+            .map_err(|error| interactive_error(format!("invalid interactive source: {error:?}")))?,
         };
-        let mut removed = std::collections::BTreeSet::new();
-        for section in &mut tree.body.sections {
-            for element in &mut section.elements {
-                match element {
-                    mech_core::nodes::SectionElement::MechCode(code) => {
-                        remove_resident_definitions(code, &requested, &mut removed)?;
-                    }
-                    mech_core::nodes::SectionElement::FencedMechCode(fenced) => {
-                        remove_resident_definitions(&mut fenced.code, &requested, &mut removed)?;
-                    }
-                    _ => {}
-                }
-            }
-        }
+        let (candidate_source, mut removed) = remove_canonical_definitions(&document, &requested)?;
         let missing = requested.difference(&removed).cloned().collect::<Vec<_>>();
         if !missing.is_empty() {
-            return Err(interactive_error(format!(
-                "resident variable{} {} not found",
-                if missing.len() == 1 { "" } else { "s" },
-                missing
-                    .iter()
-                    .map(|name| format!("`{name}`"))
-                    .collect::<Vec<_>>()
-                    .join(", "),
-            )));
+            return Err(missing_variable_error(&missing));
         }
-
-        let candidate_source = mech_syntax::formatter::Formatter::new().format(&tree);
-        if self.source_tree.is_some() {
-            self.replace_source_tree(candidate_source, tree)?;
-        } else {
-            self.replace_source(candidate_source)?;
-        }
+        let candidate = crate::SourceDocument::parse_resolved(
+            "runtime:interactive",
+            Revision(self.source_revision().saturating_add(1)),
+            Arc::<str>::from(candidate_source),
+            ParseConfig::default(),
+        )
+        .map_err(|error| interactive_error(format!("invalid cleared source: {error:?}")))?;
+        self.replace_document(candidate)?;
         if clear_ans {
             self.cleared_synthetic_symbols.insert("ans".to_string());
             removed.insert("ans".to_string());
@@ -859,16 +803,7 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
             }
             return Ok(());
         }
-        if self.source_tree.is_some() {
-            self.replace_source_candidate(
-                String::new(),
-                Some(mech_syntax::parser::parse("")?),
-                None,
-                None,
-            )?;
-        } else {
-            self.replace_source_candidate(String::new(), None, None, None)?;
-        }
+        self.replace_source(String::new())?;
         Ok(())
     }
 
@@ -1301,119 +1236,8 @@ fn missing_variable_error(missing: &[String]) -> MechError {
     ))
 }
 
-fn remove_resident_definitions(
-    code: &mut Vec<(
-        mech_core::nodes::MechCode,
-        Option<mech_core::nodes::Comment>,
-    )>,
-    requested: &std::collections::BTreeSet<String>,
-    removed: &mut std::collections::BTreeSet<String>,
-) -> MResult<()> {
-    let mut retained = Vec::with_capacity(code.len());
-    for entry in code.drain(..) {
-        let (node, _) = &entry;
-        let mech_core::nodes::MechCode::Statement(statement) = node else {
-            retained.push(entry);
-            continue;
-        };
-        let targets = match statement {
-            mech_core::nodes::Statement::VariableDefine(definition) => {
-                vec![definition.var.name.to_string()]
-            }
-            mech_core::nodes::Statement::VariableAssign(assignment) => {
-                vec![assignment.target.name.to_string()]
-            }
-            mech_core::nodes::Statement::OpAssign(assignment) => {
-                vec![assignment.target.name.to_string()]
-            }
-            mech_core::nodes::Statement::TupleDestructure(destructure) => destructure
-                .vars
-                .iter()
-                .map(|variable| variable.to_string())
-                .collect(),
-            _ => {
-                retained.push(entry);
-                continue;
-            }
-        };
-        let matched = targets
-            .iter()
-            .filter(|target| requested.contains(*target))
-            .cloned()
-            .collect::<Vec<_>>();
-        if matched.is_empty() {
-            retained.push(entry);
-            continue;
-        }
-        if targets.len() > 1 && matched.len() != targets.len() {
-            return Err(interactive_error(format!(
-                "cannot clear {} independently because {} are defined by the same tuple destructure; clear all of them together",
-                matched
-                    .iter()
-                    .map(|name| format!("`{name}`"))
-                    .collect::<Vec<_>>()
-                    .join(", "),
-                targets
-                    .iter()
-                    .map(|name| format!("`{name}`"))
-                    .collect::<Vec<_>>()
-                    .join(", "),
-            )));
-        }
-        removed.extend(matched);
-    }
-    *code = retained;
-    Ok(())
-}
-
-fn resident_state_mutations(
-    tree: &mech_core::nodes::Program,
-) -> std::collections::BTreeSet<String> {
-    use mech_core::nodes::{MechCode, SectionElement, Statement};
-
-    let mut names = std::collections::BTreeSet::new();
-    let mut collect = |code: &[(MechCode, Option<mech_core::nodes::Comment>)]| {
-        for (node, _) in code {
-            let MechCode::Statement(statement) = node else {
-                continue;
-            };
-            match statement {
-                Statement::VariableDefine(definition) if definition.mutable => {
-                    names.insert(definition.var.name.to_string());
-                }
-                Statement::VariableAssign(assignment) => {
-                    names.insert(assignment.target.name.to_string());
-                }
-                Statement::OpAssign(assignment) => {
-                    names.insert(assignment.target.name.to_string());
-                }
-                Statement::TupleDestructure(destructure) => {
-                    names.extend(
-                        destructure
-                            .vars
-                            .iter()
-                            .map(|variable| variable.name.to_string()),
-                    );
-                }
-                _ => {}
-            }
-        }
-    };
-
-    for section in &tree.body.sections {
-        for element in &section.elements {
-            match element {
-                SectionElement::MechCode(code) => collect(code),
-                SectionElement::FencedMechCode(fenced) => collect(&fenced.code),
-                _ => {}
-            }
-        }
-    }
-    names
-}
-
 fn executable_submission(source: &str) -> (String, bool) {
-    let Some(terminal) = mech_syntax::submission_terminal(source) else {
+    let Some(terminal) = mech_syntax::document::submission_terminal(source) else {
         return (source.to_string(), false);
     };
     if !terminal.suppresses_value {
@@ -1425,7 +1249,8 @@ fn executable_submission(source: &str) -> (String, bool) {
 }
 
 fn submission_suppresses_value(source: &str) -> bool {
-    mech_syntax::submission_terminal(source).is_some_and(|terminal| terminal.suppresses_value)
+    mech_syntax::document::submission_terminal(source)
+        .is_some_and(|terminal| terminal.suppresses_value)
 }
 
 #[derive(Debug, Default)]
@@ -1569,10 +1394,18 @@ mod tests {
 
     #[test]
     fn resident_state_mutations_include_compound_assignments() {
-        let tree = mech_syntax::parser::parse("answer += 1\nanswer").unwrap();
+        let document = crate::SourceDocument::parse_resolved(
+            "test:compound-assignment",
+            Revision(0),
+            "answer += 1\nanswer",
+            ParseConfig::default(),
+        )
+        .unwrap();
 
         assert_eq!(
-            resident_state_mutations(&tree),
+            mech_engine::CanonicalSourceFrontend
+                .root_state_mutation_names(&document.document())
+                .unwrap(),
             std::collections::BTreeSet::from(["answer".to_string()]),
         );
     }

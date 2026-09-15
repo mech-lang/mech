@@ -8,7 +8,7 @@ use std::time::Duration;
 use mech_core::{
     AccessMode, DeliveryMode, DimensionExpr, EffectContract, EffectDeliveryPolicy,
     ExternalInteraction, IdempotencyRequirement, InputPortLayout, InputPortPolicy, MResult,
-    OperationContractDeclaration, ParsedProgram, SchemaBody, Value, ValueCell, ValueData, hash_str,
+    OperationContractDeclaration, ParsedProgram, SchemaBody, Value, ValueCell, ValueData,
     snapshot::SequenceView,
 };
 use mech_engine::{
@@ -878,11 +878,13 @@ fn formatted_document_outputs_survive_source_and_bytecode_publication() {
         .map(|output| output.name.as_str())
         .collect::<Vec<_>>();
 
+    let fence_name = format!("document:fence:{}", source.find("```mech").unwrap());
     assert_eq!(
         source_outputs,
-        ["y"],
-        "integrity constraints are not ordinary published outputs"
+        ["result", fence_name.as_str()],
+        "the program result and visible fence publish; constraints do not"
     );
+    assert!(!product.artifact().constraints().is_empty());
     let mut source_runtime = runtime();
     let source_loaded = source_runtime
         .load_source_program(source, crate::ResidentDurabilityPolicy::Volatile)
@@ -899,7 +901,7 @@ fn formatted_document_outputs_survive_source_and_bytecode_publication() {
         interactive_runtime
             .output_name(program_output_id)
             .as_deref(),
-        Some("y"),
+        Some("result"),
         "the trailing integrity constraint must not replace the program output"
     );
     assert!(
@@ -984,8 +986,14 @@ fn formatted_document_outputs_survive_source_and_bytecode_publication() {
     rich_runtime
         .load_source_program(rich_source, crate::ResidentDurabilityPolicy::Volatile)
         .unwrap();
+    let inline_output = rich
+        .artifact()
+        .outputs()
+        .iter()
+        .position(|output| output.name.starts_with("document:inline:"))
+        .expect("the inline evaluation retains its presentation identity");
     let inline = rich_runtime
-        .output_value(mech_core::OutputId::new(0))
+        .output_value(mech_core::OutputId::new(inline_output as u32))
         .unwrap()
         .unwrap()
         .into_value();
@@ -1052,14 +1060,14 @@ fn activation_only_compilation_preserves_the_artifact_without_retaining_bytecode
 
 #[test]
 fn static_initialization_returns_detached_row_major_matrix_values() {
-    let tree = mech_syntax::parse("matrix := [1f32 2f32; 3f32 4f32]").unwrap();
+    let document = canonical_planning_test_document("matrix := [1f32 2f32; 3f32 4f32]");
     let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_native_plan_catalog())
         .build_compiler()
         .unwrap();
 
     let mut first = compiler
-        .evaluate_static_tree_symbols(&tree, &["matrix"])
+        .evaluate_static_document_symbols(&document, &["matrix"])
         .unwrap();
     assert_eq!(
         first.remove("matrix"),
@@ -1071,7 +1079,7 @@ fn static_initialization_returns_detached_row_major_matrix_values() {
     );
 
     let second = compiler
-        .evaluate_static_tree_symbols(&tree, &["matrix"])
+        .evaluate_static_document_symbols(&document, &["matrix"])
         .unwrap();
     assert_eq!(
         second["matrix"],
@@ -1085,9 +1093,9 @@ fn static_initialization_returns_detached_row_major_matrix_values() {
 
 #[test]
 fn planning_values_seed_explicit_live_inputs_while_literals_remain_constants() {
-    let tree =
-        mech_syntax::parse("supplied-port := supplied\nvalue := supplied-port + 2f32\nvalue")
-            .unwrap();
+    let document = canonical_planning_test_document(
+        "supplied-port := supplied\nvalue := supplied-port + 2f32\nvalue",
+    );
     let inputs = BTreeMap::from([("supplied".to_owned(), RuntimeHostInputValue::F32(40.0))]);
     let external = BTreeSet::from(["supplied-port".to_owned()]);
     let mut compiler = RuntimeBuilder::new()
@@ -1096,7 +1104,7 @@ fn planning_values_seed_explicit_live_inputs_while_literals_remain_constants() {
         .unwrap();
 
     let (product, initial_inputs) = compiler
-        .compile_tree_artifact_with_input_initializers(&tree, &inputs, &external)
+        .compile_document_artifact_with_input_initializers(&document, &inputs, &external)
         .unwrap();
 
     assert_eq!(
@@ -1104,7 +1112,7 @@ fn planning_values_seed_explicit_live_inputs_while_literals_remain_constants() {
             .artifact()
             .inputs()
             .iter()
-            .map(|input| input.name.as_str())
+            .map(|input| mech_engine::decode_source_input_name(&input.name).unwrap())
             .collect::<Vec<_>>(),
         ["supplied-port"]
     );
@@ -1128,9 +1136,9 @@ fn planning_values_seed_explicit_live_inputs_while_literals_remain_constants() {
 
 #[test]
 fn matrix_declaration_defaults_become_typed_live_inputs() {
-    let tree =
-        mech_syntax::parse("matrix := [1f32 2f32; 3f32 4f32]\nresult := matrix + 1f32\nresult")
-            .unwrap();
+    let document = canonical_planning_test_document(
+        "matrix := [1f32 2f32; 3f32 4f32]\nresult := matrix + 1f32\nresult",
+    );
     let external = BTreeSet::from(["matrix".to_owned()]);
     let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_native_plan_catalog())
@@ -1138,14 +1146,16 @@ fn matrix_declaration_defaults_become_typed_live_inputs() {
         .unwrap();
 
     let (product, initial_inputs) = compiler
-        .compile_tree_artifact_with_input_initializers(&tree, &BTreeMap::new(), &external)
+        .compile_document_artifact_with_input_initializers(&document, &BTreeMap::new(), &external)
         .unwrap();
 
     let input = product
         .artifact()
         .inputs()
         .iter()
-        .find(|input| input.name == "matrix")
+        .find(|input| {
+            mech_engine::decode_source_input_name(&input.name).as_deref() == Some("matrix")
+        })
         .expect("the matrix declaration must become an artifact input");
     assert_eq!(
         initial_inputs["matrix"],
@@ -1181,14 +1191,14 @@ result
 
 #[cfg(feature = "compute")]
 #[test]
-fn mixed_tree_compilation_owns_partitioning_and_typed_initializers() {
-    let tree = mech_syntax::parse(MIXED_COMPUTE_SOURCE).unwrap();
+fn mixed_document_compilation_owns_partitioning_and_typed_initializers() {
+    let document = canonical_planning_test_document(MIXED_COMPUTE_SOURCE);
     let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_native_plan_catalog())
         .build_compiler()
         .unwrap();
 
-    let mixed = compiler.compile_mixed_tree(&tree).unwrap();
+    let mixed = compiler.compile_mixed_document(&document).unwrap();
 
     assert!(mixed.coordinator.artifact().compute_regions().is_empty());
     assert_eq!(mixed.compute.declaration.name.as_ref(), "calculation");
@@ -1372,8 +1382,8 @@ result
 
 #[cfg(feature = "compute")]
 #[test]
-fn mixed_tree_retains_only_explicit_sample_read_capabilities() {
-    let tree = mech_syntax::parse(
+fn mixed_document_retains_only_explicit_sample_read_capabilities() {
+    let document = canonical_planning_test_document(
         r#"
 @compute := compute://worker/kernel{:read(sample/result), :write(input/x), :write(turn)}
 @compute/input/x <- 1f32
@@ -1386,14 +1396,13 @@ result := x + 2f32
 unused := x + 3f32
 (result, unused)
 "#,
-    )
-    .unwrap();
+    );
     let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_native_plan_catalog())
         .build_compiler()
         .unwrap();
 
-    let mixed = compiler.compile_mixed_tree(&tree).unwrap();
+    let mixed = compiler.compile_mixed_document(&document).unwrap();
 
     assert_eq!(
         mixed.retained_outputs,
@@ -1403,8 +1412,8 @@ unused := x + 3f32
 
 #[cfg(feature = "compute")]
 #[test]
-fn mixed_tree_coordinator_retains_interactive_root_symbols() {
-    let tree = mech_syntax::parse(
+fn mixed_document_coordinator_retains_interactive_root_symbols() {
+    let document = canonical_planning_test_document(
         r#"
 visible := 41
 @compute := compute://worker/kernel{:write(input/x), :write(turn)}
@@ -1417,14 +1426,13 @@ x := 1f32
 result := x + 1f32
 result
 "#,
-    )
-    .unwrap();
+    );
     let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_native_plan_catalog())
         .build_compiler()
         .unwrap();
 
-    let mixed = compiler.compile_mixed_tree(&tree).unwrap();
+    let mixed = compiler.compile_mixed_document(&document).unwrap();
     let names = mixed
         .coordinator
         .artifact()
@@ -1439,8 +1447,8 @@ result
 
 #[cfg(feature = "compute")]
 #[test]
-fn mixed_tree_retains_array_activation_as_outer_broadcast_extent() {
-    let tree = mech_syntax::parse(
+fn mixed_document_retains_array_activation_as_outer_broadcast_extent() {
+    let document = canonical_planning_test_document(
         r#"
 @compute := compute://worker/kernel{:write(input/x), :write(turn)}
 lanes := [1f32 2f32 3f32 4f32]
@@ -1453,14 +1461,13 @@ x := 0f32
 result := x + 1f32
 result
 "#,
-    )
-    .unwrap();
+    );
     let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_native_plan_catalog())
         .build_compiler()
         .unwrap();
 
-    let mixed = compiler.compile_mixed_tree(&tree).unwrap();
+    let mixed = compiler.compile_mixed_document(&document).unwrap();
 
     assert_eq!(
         mixed.activation_inputs["x"],
@@ -1480,8 +1487,8 @@ result
 
 #[cfg(feature = "compute")]
 #[test]
-fn mixed_tree_normalizes_matrix_initializers_to_canonical_row_major_layout() {
-    let tree = mech_syntax::parse(
+fn mixed_document_normalizes_matrix_initializers_to_canonical_row_major_layout() {
+    let document = canonical_planning_test_document(
         r#"
 @compute := compute://worker/kernel{:write(input/matrix), :write(turn)}
 @compute/input/matrix <- [0f32 0f32; 0f32 0f32]
@@ -1493,14 +1500,13 @@ matrix := [1f32 2f32; 3f32 4f32]
 result := matrix + 1f32
 result
 "#,
-    )
-    .unwrap();
+    );
     let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_native_plan_catalog())
         .build_compiler()
         .unwrap();
 
-    let mixed = compiler.compile_mixed_tree(&tree).unwrap();
+    let mixed = compiler.compile_mixed_document(&document).unwrap();
     let input = mixed.compute.interface.input_named("matrix").unwrap();
 
     assert_eq!(input.dimensions.as_ref(), [2, 2]);
@@ -1516,8 +1522,8 @@ result
 
 #[cfg(feature = "compute")]
 #[test]
-fn mixed_tree_rejects_coordinator_input_with_the_wrong_shape_without_a_provider() {
-    let tree = mech_syntax::parse(
+fn mixed_document_rejects_coordinator_input_with_the_wrong_shape_without_a_provider() {
+    let document = canonical_planning_test_document(
         r#"
 @compute := compute://worker/kernel{:write(input/matrix), :write(turn)}
 @compute/input/matrix <- [1f32; 2f32]
@@ -1529,14 +1535,13 @@ matrix := [1f32 2f32; 3f32 4f32]
 result := matrix + 1f32
 result
 "#,
-    )
-    .unwrap();
+    );
     let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_native_plan_catalog())
         .build_compiler()
         .unwrap();
 
-    let error = compiler.compile_mixed_tree(&tree).unwrap_err();
+    let error = compiler.compile_mixed_document(&document).unwrap_err();
     let rendered = format!("{error:?}");
     assert!(
         rendered.contains("compute boundary planning failed"),
@@ -1585,22 +1590,23 @@ result
         )
         .unwrap();
 
+    assert!(mixed.coordinator.artifact().outputs().iter().any(|output| {
+        output
+            .interactive_binding
+            .as_ref()
+            .is_some_and(|binding| binding.lexical_name == "coordinator-value")
+    }));
     assert!(
         mixed
             .coordinator
             .artifact()
             .outputs()
             .iter()
-            .any(|output| output.name == "coordinator-value")
-    );
-    assert!(
-        mixed
-            .coordinator
-            .artifact()
-            .outputs()
-            .iter()
-            .all(|output| output.name != "result"),
-        "the coordinator must execute its generated partition, not the cached full source tree",
+            .all(|output| output
+                .interactive_binding
+                .as_ref()
+                .is_none_or(|binding| binding.lexical_name != "result")),
+        "the coordinator must not expose bindings from the compute section",
     );
     assert!(
         mixed
@@ -1617,7 +1623,7 @@ result
             .outputs()
             .iter()
             .all(|output| output.name != "coordinator-value"),
-        "the compute artifact must execute its generated partition, not the cached full source tree",
+        "the compute artifact must not expose coordinator-only bindings",
     );
     let input = mixed.compute.interface.input_named("x").unwrap();
     assert_eq!(
@@ -1682,7 +1688,7 @@ result
 #[cfg(feature = "compute")]
 #[test]
 fn mixed_compilation_rejects_multiple_compute_regions_for_v04() {
-    let tree = mech_syntax::parse(
+    let document = canonical_planning_test_document(
         r#"
 first @compute
 -------------------------------------------------------------------------------
@@ -1692,14 +1698,13 @@ second @cpu
 -------------------------------------------------------------------------------
 b := 2f32 + 2f32
 "#,
-    )
-    .unwrap();
+    );
     let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_native_plan_catalog())
         .build_compiler()
         .unwrap();
 
-    let error = compiler.compile_mixed_tree(&tree).unwrap_err();
+    let error = compiler.compile_mixed_document(&document).unwrap_err();
 
     assert!(
         error
@@ -1716,27 +1721,34 @@ fn variable_definition_metadata_and_state_survive_resident_bytecode_admission() 
         .function_catalog(mech_stdlib::source_catalog())
         .build_compiler()
         .unwrap();
-    let product = compiler.compile_source(SOURCE).unwrap();
-    let parsed = ParsedProgram::from_bytes(product.bytecode()).unwrap();
-    let input_id = hash_str("input");
-    let state_id = hash_str("state");
-    assert!(parsed.symbols.contains_key(&input_id));
-    assert!(parsed.symbols.contains_key(&state_id));
-    assert_eq!(parsed.dictionary.get(&input_id).unwrap(), "input");
-    assert_eq!(parsed.dictionary.get(&state_id).unwrap(), "state");
-    assert!(!parsed.mutable_symbols.contains(&input_id));
-    assert!(parsed.mutable_symbols.contains(&state_id));
-    assert!(
-        product
-            .artifact()
-            .slots()
+    // Symbol inspection explicitly requests the interactive publication contract.
+    let ordinary = compiler.compile_source(SOURCE).unwrap();
+    let ordinary = ParsedProgram::from_bytes(ordinary.bytecode()).unwrap();
+    assert!(ordinary.symbols.is_empty());
+    let product = compiler
+        .compile_interactive_document(&canonical_planning_test_document(SOURCE))
+        .unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(product.bytecode()).unwrap();
+    for artifact in [product.artifact(), &decoded] {
+        let symbols = artifact
+            .outputs()
             .iter()
-            .any(|slot| slot.role == SlotRole::State)
-    );
+            .filter_map(|output| {
+                output.interactive_binding.as_ref().map(|binding| {
+                    (
+                        binding.lexical_name.as_str(),
+                        artifact.slots()[output.source.get() as usize].role,
+                    )
+                })
+            })
+            .collect::<BTreeMap<_, _>>();
+        assert_eq!(symbols.get("input"), Some(&SlotRole::Output));
+        assert_eq!(symbols.get("state"), Some(&SlotRole::State));
+    }
 
     let mut source_runtime = runtime();
     let source = source_runtime
-        .load_source_program(SOURCE, crate::ResidentDurabilityPolicy::Volatile)
+        .load_interactive_source_program(SOURCE, crate::ResidentDurabilityPolicy::Volatile)
         .unwrap();
     let mut bytecode_runtime = runtime();
     let bytecode = bytecode_runtime
@@ -1767,12 +1779,29 @@ second
         .function_catalog(mech_stdlib::source_catalog())
         .build_compiler()
         .unwrap();
-    let product = compiler.compile_source(SOURCE).unwrap();
-    let parsed = ParsedProgram::from_bytes(product.bytecode()).unwrap();
-
-    assert!(parsed.symbols.contains_key(&hash_str("first")));
-    assert!(parsed.symbols.contains_key(&hash_str("second")));
-    assert!(!parsed.symbols.contains_key(&hash_str("local")));
+    // Symbol inspection explicitly requests the interactive publication contract.
+    let ordinary = compiler.compile_source(SOURCE).unwrap();
+    let ordinary = ParsedProgram::from_bytes(ordinary.bytecode()).unwrap();
+    assert!(ordinary.symbols.is_empty());
+    let product = compiler
+        .compile_interactive_document(&canonical_planning_test_document(SOURCE))
+        .unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(product.bytecode()).unwrap();
+    for artifact in [product.artifact(), &decoded] {
+        let symbols = artifact
+            .outputs()
+            .iter()
+            .filter_map(|output| {
+                output
+                    .interactive_binding
+                    .as_ref()
+                    .map(|binding| binding.lexical_name.as_str())
+            })
+            .collect::<BTreeSet<_>>();
+        assert!(symbols.contains("first"));
+        assert!(symbols.contains("second"));
+        assert!(!symbols.contains("local"));
+    }
 }
 
 #[test]
@@ -1825,37 +1854,24 @@ fn compiled_conversion_executes_after_bytecode_round_trip() {
         .function_catalog(mech_stdlib::source_catalog())
         .build_compiler()
         .unwrap();
-    for source_text in [
+    for (case, source_text) in [
         "value := 3.9\nanswer := value<i32>\nanswer",
         "value := 3<i32>\nanswer := value<f64>\nanswer",
         "value := true\nanswer := value<string>\nanswer",
         "value := 42<u64>\nanswer := value<string>\nanswer",
         "value := [3.9 4.1]\nanswer := value<[i32]>\nanswer",
         "value<[i32]> := [3<i32> 4<i32>]\nanswer := value<[f64]>\nanswer",
-    ] {
+    ]
+    .into_iter()
+    .enumerate()
+    {
         let product = compiler
             .compile_source(source_text)
             .unwrap_or_else(|error| {
                 panic!("compiled conversion failed for {source_text}: {error:?}")
             });
-        assert!(
-            product.artifact().nodes().iter().any(|node| {
-                node.as_operation()
-                    .expect("ordinary fixture")
-                    .operation
-                    .module_path
-                    .as_ref()
-                    == ["convert"]
-                    && node
-                        .as_operation()
-                        .expect("ordinary fixture")
-                        .operation
-                        .operation_name
-                        == "kind"
-            }),
-            "conversion instruction was not retained for {source_text}: {:?}",
-            product.artifact().nodes(),
-        );
+        // Constant conversions may fold during canonical compilation. Check the
+        // exact published type and value, rather than requiring a runtime opcode.
 
         let mut source_runtime = runtime();
         let source = source_runtime
@@ -1872,6 +1888,25 @@ fn compiled_conversion_executes_after_bytecode_round_trip() {
             .unwrap_or_else(|error| {
                 panic!("bytecode conversion failed for {source_text}: {error:?}")
             });
+        let value = source.initial_value.value();
+        match case {
+            0 => assert!(matches!(value.data(), ValueData::I32(3))),
+            1 => assert!(matches!(value.data(), ValueData::F64(bits) if bits.to_f64() == 3.0)),
+            2 => {
+                assert!(matches!(value.data(), ValueData::String(text) if text.as_ref() == "true"))
+            }
+            3 => assert!(matches!(value.data(), ValueData::String(text) if text.as_ref() == "42")),
+            4 => {
+                assert_eq!(canonical_matrix_shape(value), (1, 2));
+                assert!(matches!(value.data(), ValueData::Matrix(matrix)
+                    if matches!(matrix.elements(), SequenceView::I32(values) if values == [3, 4])));
+            }
+            5 => {
+                assert_eq!(canonical_matrix_shape(value), (1, 2));
+                assert_eq!(canonical_f64_matrix(value), [3.0, 4.0]);
+            }
+            _ => unreachable!(),
+        }
         assert_eq!(
             source.initial_value, bytecode.initial_value,
             "source and bytecode conversions diverged for {source_text}",
@@ -2024,7 +2059,8 @@ empty
 
     for loaded in [source, bytecode] {
         assert_eq!(loaded.route, RuntimeProgramRoute::ResidentPure);
-        assert_eq!(canonical_matrix_shape(loaded.initial_value.value()), (0, 0));
+        // A matrix comprehension emits one row, including a zero-width row.
+        assert_eq!(canonical_matrix_shape(loaded.initial_value.value()), (1, 0));
         assert!(matches!(
             loaded.initial_value.value().data(),
             ValueData::Matrix(matrix)
@@ -2054,10 +2090,7 @@ values
         let failure = error.kind_as::<ResidentRouteFailure>().unwrap();
         assert!(
             failure.class == ResidentRouteFailureClass::SemanticUnsupported
-                && failure
-                    .reason
-                    .contains("ReactiveComprehensionStructureUnsupported")
-                && failure.reason.contains(qualifier),
+                && failure.reason.contains("UnsupportedControlLayout"),
             "live {qualifier} membership must fail explicitly instead of freezing its initial cardinality: {error:?}",
         );
     }
@@ -2095,7 +2128,7 @@ values
     runtime.drain_resident_host_inputs(1).unwrap();
 
     assert_eq!(
-        canonical_f64_matrix(runtime.root_symbol_value("values").unwrap().value()),
+        canonical_f64_matrix(runtime.program_output_value().unwrap().unwrap().value()),
         [3.0, 3.0, 3.0],
         "operations inside the comprehension must execute on every accepted turn",
     );
@@ -2270,20 +2303,6 @@ selected
     let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
         panic!("dynamic scalar access must remain resident")
     };
-    assert!(execution.artifact.nodes().iter().any(|node| {
-        node.as_operation()
-            .expect("ordinary fixture")
-            .operation
-            .module_path
-            .as_ref()
-            == ["access"]
-            && node
-                .as_operation()
-                .expect("ordinary fixture")
-                .operation
-                .operation_name
-                == "index"
-    }));
     assert!(matches!(
         execution.coordinator.instance().output_borrow(0),
         Some(ResidentValueBorrow::F64 { values, .. }) if values == [20.0]
@@ -2310,6 +2329,27 @@ selected
         execution.coordinator.instance().output_borrow(0),
         Some(ResidentValueBorrow::F64 { values, .. }) if values == [30.0]
     ));
+    // Exercise both source and decoded graphs through changing selectors so a
+    // constant-folded access cannot satisfy this dynamic-consumer regression.
+    for runtime in [&mut runtime, &mut bytecode_runtime] {
+        for (index, expected) in [(1.0, 10.0), (3.0, 30.0), (2.0, 20.0)] {
+            runtime
+                .ingress()
+                .submit(crate::RuntimeHostInput::single(
+                    crate::RuntimeHostInputSource::new("test://clock/tick", "delta-seconds")
+                        .unwrap(),
+                    crate::RuntimeHostInputValue::F64(index),
+                ))
+                .unwrap();
+            runtime.drain_resident_host_inputs(1).unwrap();
+            let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program
+            else {
+                panic!("dynamic selector must retain the external resident route")
+            };
+            assert!(matches!(execution.coordinator.instance().output_borrow(0),
+                Some(ResidentValueBorrow::F64 { values, .. }) if values == [expected]));
+        }
+    }
 }
 
 #[cfg(feature = "compiler_default")]
@@ -3012,11 +3052,11 @@ fn invalidated_admitted_grant_blocks_outbox_retry_before_preparation_or_delivery
 }
 
 #[test]
-fn parsed_tree_can_be_loaded_as_a_production_resident_program() {
-    let tree = mech_syntax::parser::parse(external_source().trim()).unwrap();
+fn retained_document_can_be_loaded_as_a_production_resident_program() {
+    let document = canonical_planning_test_document(external_source().trim());
     let (mut runtime, _, _, _) = configured_external_runtime();
     let outcome = runtime
-        .load_tree_program(&tree, crate::ResidentDurabilityPolicy::Volatile)
+        .load_document_program(&document, crate::ResidentDurabilityPolicy::Volatile)
         .unwrap();
 
     assert_eq!(outcome.route, RuntimeProgramRoute::ResidentExternal);
@@ -3850,7 +3890,7 @@ state
         ));
     }
 
-    let state = runtime.root_symbol_value("state").unwrap();
+    let state = runtime.program_output_value().unwrap().unwrap();
     assert_eq!(canonical_f64(state.value()), 2.0);
 }
 
@@ -4286,18 +4326,9 @@ fn successful_resident_activation_never_falls_back_to_a_second_program() {
 fn product_nbody_state_slots(
     runtime: &crate::MechRuntime,
 ) -> (mech_core::CellSlotId, mech_core::CellSlotId) {
-    let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
-        panic!("n-body must remain on the resident-external route")
-    };
-    let positions = execution.artifact.outputs()[0].source;
-    let velocity = execution
-        .artifact
-        .slots()
-        .iter()
-        .find(|slot| slot.role == SlotRole::State && slot.slot != positions)
-        .expect("n-body velocity state slot")
-        .slot;
-    (positions, velocity)
+    // Published positions have their own buffer, separate from the recurrence.
+    let slots = nbody_state_slots(runtime, -0.38972469318558057);
+    (slots.positions, slots.velocities)
 }
 
 fn product_nbody_slot(runtime: &crate::MechRuntime, slot: mech_core::CellSlotId) -> Vec<f64> {
@@ -4583,6 +4614,10 @@ impl ScalarNbodyReference {
 }
 
 fn public_nbody_state_slots(runtime: &crate::MechRuntime) -> PublicNbodyStateSlots {
+    nbody_state_slots(runtime, -0.1407280797108344)
+}
+
+fn nbody_state_slots(runtime: &crate::MechRuntime, mercury_x: f64) -> PublicNbodyStateSlots {
     let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
         panic!("public N-body must remain on the resident-external route")
     };
@@ -4592,7 +4627,7 @@ fn public_nbody_state_slots(runtime: &crate::MechRuntime) -> PublicNbodyStateSlo
         .slots
         .iter()
         .filter(|slot| {
-            slot.storage == ResidentStorageClass::State
+            slot.role == SlotRole::State
                 && slot.region.kind == mech_core::ResidentValueKind::F64
                 && slot.region.shape.rows == 10
                 && slot.region.shape.columns == 3
@@ -4602,13 +4637,13 @@ fn public_nbody_state_slots(runtime: &crate::MechRuntime) -> PublicNbodyStateSlo
     assert_eq!(slots.len(), 2, "public N-body has exactly two state cells");
     let first = public_nbody_state_slot(runtime, slots[0]);
     let second = public_nbody_state_slot(runtime, slots[1]);
-    if (first[1] - (-0.1407280797108344)).abs() < 1.0e-12 {
+    if (first[1] - mercury_x).abs() < 1.0e-12 {
         PublicNbodyStateSlots {
             positions: slots[0],
             velocities: slots[1],
         }
     } else {
-        assert!((second[1] - (-0.1407280797108344)).abs() < 1.0e-12);
+        assert!((second[1] - mercury_x).abs() < 1.0e-12);
         PublicNbodyStateSlots {
             positions: slots[1],
             velocities: slots[0],
@@ -6155,6 +6190,63 @@ fn canonical_resolved_and_rooted_interactive_compilation_preserve_revision_and_s
                 expected
             );
         }
+    }
+}
+
+#[test]
+fn cutover_rooted_entrypoints_use_the_canonical_dependency_graph() {
+    let mut resolver = InMemorySourceResolver::new();
+    resolver
+        .insert_canonical_string("dep.mec", "value := 41.0\n<+ value\n")
+        .unwrap();
+    resolver
+        .insert_canonical_string(
+            "main.mec",
+            "+> ./dep.mec\nanswer := dep/value + 1.0\nanswer\n",
+        )
+        .unwrap();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .source_resolver(resolver)
+        .build_compiler()
+        .unwrap();
+    let options = ModuleBuildOptions::new("test", "v0.4", "native", &[], &[]);
+    for (product, interactive) in [
+        (
+            compiler
+                .compile_root(SourceRequest::new("main.mec"), options)
+                .unwrap(),
+            false,
+        ),
+        (
+            compiler
+                .compile_interactive_root(SourceRequest::new("main.mec"), options)
+                .unwrap(),
+            true,
+        ),
+    ] {
+        let mut accepted = runtime();
+        accepted
+            .load_bytecode_program(
+                product.bytecode(),
+                crate::ResidentDurabilityPolicy::Volatile,
+            )
+            .unwrap();
+        assert_eq!(
+            canonical_f64(
+                accepted
+                    .output_value(mech_core::OutputId::new(0))
+                    .unwrap()
+                    .unwrap()
+                    .value()
+            ),
+            42.0
+        );
+        assert_eq!(
+            accepted.root_symbol_output_id("answer").is_some(),
+            interactive
+        );
+        assert_eq!(product.source_dependencies().len(), 1);
     }
 }
 

@@ -7,7 +7,7 @@
 //! escape this module.
 
 use std::{
-    collections::{BTreeMap, BTreeSet, HashMap, HashSet},
+    collections::{BTreeMap, BTreeSet, HashMap},
     sync::Arc,
 };
 
@@ -18,7 +18,7 @@ use mech_compute::{
 };
 use mech_core::{
     ApplicationRequirement, ExecutionHostFunctionRequest, ExecutionResourceRequest, MResult,
-    MechError, MechErrorKind, MechExecutionServices, MechSourceCode, ModuleManifestCatalog,
+    MechError, MechErrorKind, MechExecutionServices, ModuleManifestCatalog,
     OperationContractDeclaration, ReactiveInstanceId, ResourceIntent, Value, ValueCell,
 };
 #[cfg(feature = "compute")]
@@ -38,15 +38,13 @@ use mech_engine::{
 #[cfg(feature = "compute")]
 use crate::SourceContextCapabilityScope;
 use crate::{
-    CapabilityRequest, HostInterfaceCatalog, ModuleBuildOptions, ModuleBuilder, ModuleVersionId,
+    CapabilityRequest, HostInterfaceCatalog, ModuleBuildOptions, ModuleBuilder,
     ResidentExternalContractResolver, ResolvedSource, RuntimeCapabilityOperation,
-    RuntimeHostInputValue, RuntimeInvalidOperationError, RuntimeModuleDependencyCycleError,
-    RuntimeModuleDependencyMissingError, RuntimeModuleExportNotFound, RuntimeModuleImportConflict,
-    RuntimeResourceKey, RuntimeResourceProviderNotFound, RuntimeResourceReadRequest,
-    RuntimeResourceRegistry, RuntimeResourceWriteCommand, RuntimeResourceWriteIntent,
-    SourceContextBase, SourceDocument, SourceExportDeclaration, SourceImportAlias,
-    SourceImportDeclaration, SourceImportKind, SourceIndex, SourceRequest, SourceResolver,
-    import_may_resolve_source_dependency, import_requires_source_dependency,
+    RuntimeHostInputValue, RuntimeInvalidOperationError, RuntimeResourceKey,
+    RuntimeResourceProviderNotFound, RuntimeResourceReadRequest, RuntimeResourceRegistry,
+    RuntimeResourceWriteCommand, RuntimeResourceWriteIntent, SourceContextBase, SourceDocument,
+    SourceImportAlias, SourceImportDeclaration, SourceImportKind, SourceIndex, SourceRequest,
+    SourceResolver, import_may_resolve_source_dependency, import_requires_source_dependency,
     module_namespace_for_import, source_request_for_import,
 };
 
@@ -82,7 +80,7 @@ fn canonical_compilation_error(reason: impl Into<String>) -> MechError {
     .with_compiler_loc()
 }
 
-fn retained_compiler_document(source: &str) -> MResult<SourceDocument> {
+pub(super) fn retained_compiler_document(source: &str) -> MResult<SourceDocument> {
     SourceDocument::parse_resolved(
         "runtime:program-compiler",
         mech_syntax::document::Revision(0),
@@ -303,8 +301,8 @@ impl ProgramCompiler {
         &mut self,
         source: &str,
     ) -> MResult<ProgramArtifactCompilationProduct> {
-        let tree = mech_syntax::parser::parse(source.trim())?;
-        self.compile_tree_artifact(&tree)
+        let document = retained_compiler_document(source)?;
+        self.compile_document_artifact(&document)
     }
 
     pub fn compile_document_artifact(
@@ -535,7 +533,7 @@ impl ProgramCompiler {
         request: SourceRequest,
         options: ModuleBuildOptions<'_>,
     ) -> MResult<MixedProgramCompilation> {
-        self.view().compile_mixed_root(request, options)
+        self.compile_canonical_mixed_root(request, options)
     }
 
     fn view(&self) -> ProgramCompilerView<'_> {
@@ -561,34 +559,7 @@ pub(crate) struct ProgramCompilerView<'a> {
     host_interfaces: &'a HostInterfaceCatalog,
     module_manifests: &'a ModuleManifestCatalog,
     program_config: CompilerPlanningConfig,
-}
-
-#[derive(Clone)]
-struct CompilerModule {
-    source: ResolvedSource,
-    import_edges: Vec<(SourceImportDeclaration, String)>,
-    module_version: ModuleVersionId,
-}
-
-#[derive(Clone)]
-struct CompilerModuleInstance {
-    exports: HashMap<String, CompilerExportValue>,
-    document_outputs: Vec<Option<ValueCell>>,
-    result: Option<ValueCell>,
-    result_name: Option<String>,
-}
-
-#[derive(Clone)]
-struct CompilerExportValue {
-    module: String,
-    export: String,
-    value: Value,
-}
-
-impl CompilerExportValue {
-    fn fresh_cell(&self) -> MResult<ValueCell> {
-        ValueCell::from_snapshot(self.value.clone()).map_err(|_| unsupported_compiler_import(self))
-    }
+    retained_result_boundary: Option<mech_syntax::document::TextSize>,
 }
 
 #[derive(Clone, Debug)]
@@ -609,17 +580,6 @@ impl MechErrorKind for CompilerImportValueUnsupported {
             self.export, self.module, self.kind,
         )
     }
-}
-
-fn unsupported_compiler_import(value: &CompilerExportValue) -> MechError {
-    MechError::new(
-        CompilerImportValueUnsupported {
-            module: value.module.clone(),
-            export: value.export.clone(),
-            kind: value.value.data().kind().to_string(),
-        },
-        None,
-    )
 }
 
 /// One resolution/planning session. Module versions use the same ModuleBuilder
@@ -669,20 +629,21 @@ impl<'a> ProgramCompilerView<'a> {
             host_interfaces,
             module_manifests,
             program_config,
+            retained_result_boundary: None,
         }
     }
 
-    pub(crate) fn compile_source(&self, source: &str) -> MResult<ProgramCompilationProduct> {
-        let tree = mech_syntax::parser::parse(source.trim())?;
-        self.compile_tree(&tree)
+    pub(crate) fn with_retained_result_boundary(
+        mut self,
+        boundary: Option<mech_syntax::document::TextSize>,
+    ) -> Self {
+        self.retained_result_boundary = boundary;
+        self
     }
 
-    pub(crate) fn compile_interactive_source(
-        &self,
-        source: &str,
-    ) -> MResult<ProgramCompilationProduct> {
-        let tree = mech_syntax::parser::parse(source.trim())?;
-        self.compile_tree_with_projection(&tree, RootOutputProjection::ObservableResultsAndSymbols)
+    pub(crate) fn compile_source(&self, source: &str) -> MResult<ProgramCompilationProduct> {
+        let document = retained_compiler_document(source)?;
+        self.compile_document(&document)
     }
 
     pub(crate) fn compile_document(
@@ -1293,30 +1254,42 @@ impl<'a> ProgramCompilerView<'a> {
                 ValueCell::from_snapshot(value.to_value())?.closed_schema_body()?,
             );
         }
-        let compile = if interactive {
-            CanonicalSourceFrontend::compile_interactive_document_with_planning_contract
+        let resolved_modules = imports
+            .iter()
+            .filter_map(|import| {
+                import
+                    .declaration
+                    .module
+                    .clone()
+                    .or_else(|| module_namespace_for_import(&import.declaration))
+            })
+            .collect();
+        let program = if interactive && let Some(boundary) = self.retained_result_boundary {
+            CanonicalSourceFrontend.compile_interactive_document_with_retained_result(
+                &document.document(),
+                Arc::clone(&self.function_catalog),
+                schemas,
+                writes,
+                &resolved_modules,
+                boundary,
+            )
         } else {
-            CanonicalSourceFrontend::compile_document_with_planning_contract
-        };
-        let program = compile(
-            &CanonicalSourceFrontend,
-            &document.document(),
-            Arc::clone(&self.function_catalog),
-            schemas,
-            writes,
-            &BTreeSet::new(),
-            &BTreeSet::new(),
-            &imports
-                .iter()
-                .filter_map(|import| {
-                    import
-                        .declaration
-                        .module
-                        .clone()
-                        .or_else(|| module_namespace_for_import(&import.declaration))
-                })
-                .collect(),
-        )
+            let compile = if interactive {
+                CanonicalSourceFrontend::compile_interactive_document_with_planning_contract
+            } else {
+                CanonicalSourceFrontend::compile_document_with_planning_contract
+            };
+            compile(
+                &CanonicalSourceFrontend,
+                &document.document(),
+                Arc::clone(&self.function_catalog),
+                schemas,
+                writes,
+                &BTreeSet::new(),
+                &BTreeSet::new(),
+                &resolved_modules,
+            )
+        }
         .map_err(|error| canonical_compilation_error(error.to_string()))?;
         let compilation = CanonicalDocumentCompilation {
             index: index.root.clone(),
@@ -2061,129 +2034,6 @@ impl<'a> ProgramCompilerView<'a> {
         })
     }
 
-    #[cfg(feature = "compute")]
-    fn compile_mixed_root(
-        &self,
-        request: SourceRequest,
-        options: ModuleBuildOptions<'_>,
-    ) -> MResult<MixedProgramCompilation> {
-        request.validate()?;
-        let mut modules = HashMap::new();
-        let mut stack = Vec::new();
-        let root = self.resolve_module(request, options, &mut modules, &mut stack)?;
-        let tree = declaration_tree(&modules[&root].source.source)?;
-        let partition = partition_mixed_program(&tree)?;
-        let external_input_names = source_declared_compute_inputs(&tree)?;
-        let retained_outputs = source_declared_compute_outputs(&tree)?;
-        let (compute, initial_inputs, _) = self.compile_resolved_tree_artifact(
-            &root,
-            &modules,
-            partition.compute,
-            &external_input_names,
-            None,
-            false,
-        )?;
-        let compute = assemble_compute_region(compute, initial_inputs, &partition.name)?;
-        let (coordinator, _, activation_inputs) = self.compile_resolved_tree_artifact(
-            &root,
-            &modules,
-            partition.coordinator,
-            &BTreeSet::new(),
-            Some(&compute.interface),
-            true,
-        )?;
-        Ok(MixedProgramCompilation {
-            coordinator,
-            compute,
-            activation_inputs,
-            retained_outputs,
-            source_dependencies: BTreeMap::new(),
-        })
-    }
-
-    #[cfg(feature = "compute")]
-    fn compile_resolved_tree_artifact(
-        &self,
-        root: &str,
-        resolved_modules: &HashMap<String, CompilerModule>,
-        tree: Program,
-        external_input_names: &BTreeSet<String>,
-        compute_interface: Option<&ComputeRegionInterface>,
-        retain_root_symbols: bool,
-    ) -> MResult<(
-        ProgramArtifactCompilationProduct,
-        BTreeMap<String, RuntimeHostInputValue>,
-        BTreeMap<String, ComputeValue>,
-    )> {
-        let mut modules = resolved_modules.clone();
-        replace_root_tree(
-            modules
-                .get_mut(root)
-                .expect("resolved root is retained by the compiler session"),
-            tree,
-        )?;
-
-        let mut instances = HashMap::new();
-        let mut active = Vec::new();
-        let mut root_program = Some(self.new_program());
-        let mut activation_inputs = BTreeMap::new();
-        self.execute_module(
-            root,
-            &modules,
-            &mut instances,
-            &mut active,
-            Some(&mut root_program),
-            compute_interface,
-            &mut activation_inputs,
-        )?;
-        let program = root_program
-            .as_mut()
-            .expect("root compiler program is retained until finalization");
-        publish_module_outputs(
-            program,
-            instances
-                .get(root)
-                .expect("the requested root was executed"),
-        )?;
-        if retain_root_symbols {
-            program.publish_compiler_root_symbols();
-        }
-        let input_names = external_input_names
-            .iter()
-            .map(String::as_str)
-            .collect::<Vec<_>>();
-        let initial_inputs = program
-            .compiler_root_symbol_cells(&input_names)?
-            .into_iter()
-            .map(|(name, cell)| {
-                RuntimeHostInputValue::from_numeric_value(&cell.snapshot()?)
-                    .map(|value| (name, value))
-            })
-            .collect::<MResult<BTreeMap<_, _>>>()?;
-        let operations = modules
-            .values()
-            .flat_map(|module| compiled_resource_send_operations(&module.source.contexts))
-            .collect::<Vec<_>>();
-        let resolver = CompilerExternalContractResolver {
-            providers: ResidentExternalContractResolver::new(self.resources),
-            compute: compute_interface.is_some(),
-        };
-        let product = root_program
-            .expect("root compiler program is retained until finalization")
-            .compile_program_artifact_product_with_resource_send_operations(
-                &resolver,
-                &operations,
-                external_input_names,
-            )
-            .map_err(|error| {
-                route_failure(
-                    ResidentRouteFailureClass::InvalidArtifact,
-                    format!("resident ProgramArtifact finalization failed: {error:?}"),
-                )
-            })?;
-        Ok((product, initial_inputs, activation_inputs))
-    }
-
     fn evaluate_static_tree_symbols(
         &self,
         tree: &mech_core::Program,
@@ -2352,44 +2202,13 @@ impl<'a> ProgramCompilerView<'a> {
         options: ModuleBuildOptions<'_>,
         output_projection: RootOutputProjection,
     ) -> MResult<ProgramCompilationProduct> {
-        let mut modules = HashMap::new();
-        let mut stack = Vec::new();
-        let root = self.resolve_resolved_module(resolved, options, &mut modules, &mut stack)?;
-        let mut instances = HashMap::new();
-        let mut active = Vec::new();
-        let mut root_program = Some(self.new_program());
-        #[cfg(feature = "compute")]
-        let mut compute_activation_inputs = BTreeMap::new();
-        self.execute_module(
-            &root,
-            &modules,
-            &mut instances,
-            &mut active,
-            Some(&mut root_program),
-            None,
-            #[cfg(feature = "compute")]
-            &mut compute_activation_inputs,
-        )?;
-        let program = root_program
-            .as_mut()
-            .expect("root compiler program is retained until finalization");
-        let instance = instances
-            .get(&root)
-            .expect("the requested root was executed");
-        publish_module_outputs(program, instance)?;
-        if matches!(
-            output_projection,
-            RootOutputProjection::ObservableResultsAndSymbols
-        ) {
-            program.publish_compiler_root_symbols();
-        }
-        let operations = modules
-            .values()
-            .flat_map(|module| compiled_resource_send_operations(&module.source.contexts))
-            .collect::<Vec<_>>();
-        self.finalize(
-            root_program.expect("root compiler program is retained until finalization"),
-            &operations,
+        self.compile_canonical_resolved_root(
+            resolved,
+            matches!(
+                output_projection,
+                RootOutputProjection::ObservableResultsAndSymbols
+            ),
+            Some(options),
         )
     }
 
@@ -2398,56 +2217,7 @@ impl<'a> ProgramCompilerView<'a> {
         requests: &[SourceRequest],
         options: ModuleBuildOptions<'_>,
     ) -> MResult<ProgramCompilationProduct> {
-        if requests.is_empty() {
-            return Err(route_failure(
-                ResidentRouteFailureClass::SemanticUnsupported,
-                "resident source compilation requires at least one root",
-            ));
-        }
-        let mut modules = HashMap::new();
-        let mut stack = Vec::new();
-        let mut roots = Vec::with_capacity(requests.len());
-        for request in requests {
-            request.validate()?;
-            roots.push(self.resolve_module(request.clone(), options, &mut modules, &mut stack)?);
-        }
-        let plan_order = explicit_root_plan_order(&roots, &modules);
-        let mut instances = HashMap::new();
-        let mut active = Vec::new();
-        let mut root_program = Some(self.new_program());
-        #[cfg(feature = "compute")]
-        let mut compute_activation_inputs = BTreeMap::new();
-        for root in plan_order {
-            self.execute_module(
-                &root,
-                &modules,
-                &mut instances,
-                &mut active,
-                Some(&mut root_program),
-                None,
-                #[cfg(feature = "compute")]
-                &mut compute_activation_inputs,
-            )?;
-        }
-        let program = root_program
-            .as_mut()
-            .expect("root compiler program is retained until finalization");
-        for root in &roots {
-            publish_module_outputs(
-                program,
-                instances
-                    .get(root)
-                    .expect("every requested root was executed"),
-            )?;
-        }
-        let operations = modules
-            .values()
-            .flat_map(|module| compiled_resource_send_operations(&module.source.contexts))
-            .collect::<Vec<_>>();
-        self.finalize(
-            root_program.expect("root compiler program is retained until finalization"),
-            &operations,
-        )
+        self.compile_canonical_roots(requests, options)
     }
 
     fn new_program(&self) -> CompilerPlanningProgram {
@@ -2471,303 +2241,6 @@ impl<'a> ProgramCompilerView<'a> {
                 format!("resident ProgramArtifact finalization failed: {error:?}"),
             )
         })
-    }
-
-    fn resolve_module(
-        &self,
-        request: SourceRequest,
-        options: ModuleBuildOptions<'_>,
-        modules: &mut HashMap<String, CompilerModule>,
-        stack: &mut Vec<String>,
-    ) -> MResult<String> {
-        let resolved = self.source_resolver.resolve(&request)?.ok_or_else(|| {
-            route_failure(
-                ResidentRouteFailureClass::InvalidArtifact,
-                format!(
-                    "root or imported source `{}` was not found",
-                    request.specifier
-                ),
-            )
-        })?;
-        self.resolve_resolved_module(resolved, options, modules, stack)
-    }
-
-    fn resolve_resolved_module(
-        &self,
-        mut resolved: ResolvedSource,
-        options: ModuleBuildOptions<'_>,
-        modules: &mut HashMap<String, CompilerModule>,
-        stack: &mut Vec<String>,
-    ) -> MResult<String> {
-        index_source(&mut resolved)?;
-        resolved.capability_requirements.extend(
-            options
-                .capability_requirements
-                .iter()
-                .map(|resource| CapabilityRequest::from_keys("compiler", "use", *resource)),
-        );
-        let canonical_uri = resolved.canonical_uri.clone();
-        if modules.contains_key(&canonical_uri) {
-            return Ok(canonical_uri);
-        }
-        if stack.contains(&canonical_uri) {
-            let mut cycle = stack.clone();
-            cycle.push(canonical_uri);
-            return Err(mech_core::MechError::new(
-                RuntimeModuleDependencyCycleError { cycle },
-                None,
-            ));
-        }
-        stack.push(canonical_uri.clone());
-
-        let mut import_edges = Vec::new();
-        for import in resolved.imports.clone() {
-            if !import_may_resolve_source_dependency(&import) {
-                continue;
-            }
-            let dependency_request =
-                source_request_for_import(&import, Some(&resolved.canonical_uri));
-            match self.source_resolver.resolve(&dependency_request)? {
-                Some(dependency_source) => {
-                    let dependency =
-                        self.resolve_resolved_module(dependency_source, options, modules, stack)?;
-                    import_edges.push((import, dependency));
-                }
-                None if import_requires_source_dependency(&import) => {
-                    return Err(mech_core::MechError::new(
-                        RuntimeModuleDependencyMissingError {
-                            module: resolved.canonical_uri.clone(),
-                            specifier: dependency_request.specifier,
-                            referrer: dependency_request.referrer,
-                        },
-                        None,
-                    ));
-                }
-                None => {}
-            }
-        }
-
-        // Keep ModuleBuilder in the compiler boundary as the validation and
-        // deterministic module-identity authority, without persisting records
-        // into the runtime store. Dependency identities remain part of the
-        // root identity even though the records themselves are ephemeral.
-        let dependency_versions = import_edges
-            .iter()
-            .map(|(_, dependency)| {
-                modules
-                    .get(dependency)
-                    .expect("resolved dependency is retained by the compiler session")
-                    .module_version
-            })
-            .collect::<Vec<_>>();
-        let feature_flags = options
-            .feature_flags
-            .iter()
-            .map(|flag| (*flag).to_owned())
-            .collect::<Vec<_>>();
-        let mut builder = self.module_builder.clone();
-        let mut record = builder.build_resolved_source(
-            resolved.clone(),
-            options.compiler_version,
-            options.language_edition,
-            options.target,
-            &feature_flags,
-            &dependency_versions,
-            &resolved.capability_requirements,
-        )?;
-        self.materialize_manifest_context_imports(&mut record)?;
-        let module_version = record.module_version;
-        resolved.contexts = record.contexts;
-        resolved.scopes = record.scopes;
-
-        stack.pop();
-        modules.insert(
-            canonical_uri.clone(),
-            CompilerModule {
-                source: resolved,
-                import_edges,
-                module_version,
-            },
-        );
-        Ok(canonical_uri)
-    }
-
-    fn materialize_manifest_context_imports(
-        &self,
-        record: &mut crate::RuntimeModuleRecord,
-    ) -> MResult<()> {
-        for scope in &mut record.scopes {
-            let context_imports = scope
-                .imports
-                .iter()
-                .filter_map(|import| match &import.alias {
-                    Some(SourceImportAlias::Context(alias)) => Some((import, alias.clone())),
-                    _ => None,
-                })
-                .collect::<Vec<_>>();
-
-            for (import, alias) in context_imports {
-                if scope.contexts.iter().any(|context| context.name == alias) {
-                    return Err(mech_core::MechError::new(
-                        RuntimeInvalidOperationError {
-                            operation: "compile_root",
-                            reason: format!(
-                                "context import duplicates an existing context binding `{alias}`"
-                            ),
-                        },
-                        None,
-                    ));
-                }
-                let module = import
-                    .module
-                    .as_deref()
-                    .ok_or_else(|| invalid_context_import(&import.specifier, "module"))?;
-                let item = import
-                    .item
-                    .as_deref()
-                    .ok_or_else(|| invalid_context_import(&import.specifier, "item"))?;
-                let target = format!("{module}/{item}");
-                let (base_uri, operations) =
-                    if let Some(export) = self.host_interfaces.resolve_optional(&target)? {
-                        (export.base_uri.clone(), export.operations.clone())
-                    } else {
-                        let export = self.module_manifests.context_export(module, item)?;
-                        (export.base_uri.clone(), export.operations.clone())
-                    };
-                let declaration = crate::SourceContextDeclaration {
-                    name: alias,
-                    base: crate::SourceContextBase::ResourceUri(base_uri),
-                    capabilities: operations
-                        .iter()
-                        .map(|operation| crate::SourceContextCapability {
-                            operation: operation.clone(),
-                            scope: crate::SourceContextCapabilityScope::Wildcard,
-                        })
-                        .collect(),
-                };
-                scope.contexts.push(declaration.clone());
-                record.contexts.push(declaration);
-            }
-        }
-        Ok(())
-    }
-
-    fn execute_module(
-        &self,
-        canonical_uri: &str,
-        modules: &HashMap<String, CompilerModule>,
-        instances: &mut HashMap<String, CompilerModuleInstance>,
-        active: &mut Vec<String>,
-        root_program: Option<&mut Option<CompilerPlanningProgram>>,
-        compute_interface: Option<&ComputeRegionInterface>,
-        #[cfg(feature = "compute")] compute_activation_inputs: &mut BTreeMap<String, ComputeValue>,
-    ) -> MResult<()> {
-        if instances.contains_key(canonical_uri) {
-            return Ok(());
-        }
-        if active.iter().any(|uri| uri == canonical_uri) {
-            let mut cycle = active.clone();
-            cycle.push(canonical_uri.to_owned());
-            return Err(mech_core::MechError::new(
-                RuntimeModuleDependencyCycleError { cycle },
-                None,
-            ));
-        }
-        active.push(canonical_uri.to_owned());
-        let module = modules.get(canonical_uri).ok_or_else(|| {
-            route_failure(
-                ResidentRouteFailureClass::InternalFailure,
-                format!("compiler module `{canonical_uri}` was not retained"),
-            )
-        })?;
-        for (_, dependency) in &module.import_edges {
-            self.execute_module(
-                dependency,
-                modules,
-                instances,
-                active,
-                None,
-                compute_interface,
-                #[cfg(feature = "compute")]
-                compute_activation_inputs,
-            )?;
-        }
-
-        let mut owned_program;
-        let program = if let Some(slot) = root_program {
-            slot.as_mut().expect("root program is present")
-        } else {
-            owned_program = self.new_program();
-            &mut owned_program
-        };
-        install_function_imports(program, &module.source.imports, &module.import_edges)?;
-        install_context_imports(program, &module.source.imports, &module.source.contexts)?;
-        let environment = build_import_environment(module, instances)?;
-        install_environment(program, &environment)?;
-        let tree = executable_resolved_tree(&module.source)?;
-        let resource_send_operations = compiled_resource_send_operations(&module.source.contexts);
-        let mut services = CompilerPlanningServices {
-            providers: self.resources,
-            resource_send_operations: &resource_send_operations,
-            planned_reads: BTreeMap::new(),
-            #[cfg(feature = "compute")]
-            compute_interface,
-            #[cfg(feature = "compute")]
-            compute_activation_inputs: BTreeMap::new(),
-        };
-        let result = program
-            .plan_artifact_tree_with_services(&tree, &mut services)
-            .map_err(classify_source_planning)?;
-        #[cfg(feature = "compute")]
-        compute_activation_inputs.append(&mut services.compute_activation_inputs);
-        let document_output_ids = root_document_output_ids(&tree);
-        let document_outputs = program.compiler_document_output_cells(&document_output_ids)?;
-        let result_name = result
-            .as_ref()
-            .and_then(|result| program.compiler_root_symbol_name_for_cell(result));
-
-        let mut exports = HashMap::new();
-        for export in source_exports(&module.source) {
-            let name = export.name.clone();
-            let value = program.compiler_root_symbol_cell(&name).map_err(|_| {
-                mech_core::MechError::new(
-                    RuntimeModuleExportNotFound {
-                        dependency: canonical_uri.to_owned(),
-                        export: name.clone(),
-                    },
-                    None,
-                )
-            })?;
-            let snapshot = value.snapshot().map_err(|_| {
-                MechError::new(
-                    CompilerImportValueUnsupported {
-                        module: canonical_uri.to_owned(),
-                        export: name.clone(),
-                        kind: format!("{:?}", value.representation()),
-                    },
-                    None,
-                )
-            })?;
-            exports.insert(
-                name.clone(),
-                CompilerExportValue {
-                    module: canonical_uri.to_owned(),
-                    export: name,
-                    value: snapshot,
-                },
-            );
-        }
-        instances.insert(
-            canonical_uri.to_owned(),
-            CompilerModuleInstance {
-                exports,
-                document_outputs,
-                result,
-                result_name,
-            },
-        );
-        active.pop();
-        Ok(())
     }
 }
 
@@ -3130,24 +2603,6 @@ fn source_declared_compute_outputs(tree: &Program) -> MResult<BTreeSet<String>> 
 }
 
 #[cfg(feature = "compute")]
-fn replace_root_tree(module: &mut CompilerModule, tree: Program) -> MResult<()> {
-    let inherited_contexts = module.source.contexts.clone();
-    module.source.replace_syntax_tree(tree);
-    index_source(&mut module.source)?;
-    for context in inherited_contexts {
-        if !module
-            .source
-            .contexts
-            .iter()
-            .any(|candidate| candidate.name == context.name)
-        {
-            module.source.contexts.push(context);
-        }
-    }
-    Ok(())
-}
-
-#[cfg(feature = "compute")]
 fn assemble_compute_region(
     compute: ProgramArtifactCompilationProduct,
     initial_inputs: BTreeMap<String, RuntimeHostInputValue>,
@@ -3287,43 +2742,6 @@ fn narrow_compute_input_f64(port: &str, value: f64) -> MResult<f32> {
     })
 }
 
-/// Preserve caller order for independent roots while promoting any requested
-/// dependency ahead of its consumer. That lets an explicit dependency execute
-/// exactly once in the shared program. Caller-visible outputs are published
-/// separately after planning so this topological order cannot reorder them.
-fn explicit_root_plan_order(
-    roots: &[String],
-    modules: &HashMap<String, CompilerModule>,
-) -> Vec<String> {
-    fn visit(
-        root: &str,
-        requested: &HashSet<&str>,
-        modules: &HashMap<String, CompilerModule>,
-        visited: &mut HashSet<String>,
-        ordered: &mut Vec<String>,
-    ) {
-        if !visited.insert(root.to_owned()) {
-            return;
-        }
-        if let Some(module) = modules.get(root) {
-            for (_, dependency) in &module.import_edges {
-                if requested.contains(dependency.as_str()) {
-                    visit(dependency, requested, modules, visited, ordered);
-                }
-            }
-        }
-        ordered.push(root.to_owned());
-    }
-
-    let requested = roots.iter().map(String::as_str).collect::<HashSet<_>>();
-    let mut visited = HashSet::new();
-    let mut ordered = Vec::with_capacity(requested.len());
-    for root in roots {
-        visit(root, &requested, modules, &mut visited, &mut ordered);
-    }
-    ordered
-}
-
 fn publish_document_and_root_outputs(
     program: &mut CompilerPlanningProgram,
     document_output_ids: &[u64],
@@ -3334,22 +2752,6 @@ fn publish_document_and_root_outputs(
     }
     if let Some(root) = root {
         program.publish_compiler_root_output(root.clone());
-    }
-    Ok(())
-}
-
-fn publish_module_outputs(
-    program: &mut CompilerPlanningProgram,
-    instance: &CompilerModuleInstance,
-) -> MResult<()> {
-    for output in &instance.document_outputs {
-        program.publish_compiler_document_output(output.clone());
-    }
-    if let Some(result) = &instance.result {
-        if let Some(name) = &instance.result_name {
-            program.install_compiler_symbol(name, result.clone())?;
-        }
-        program.publish_compiler_root_output(result.clone());
     }
     Ok(())
 }
@@ -3535,94 +2937,6 @@ fn invalid_context_import(specifier: &str, missing: &'static str) -> mech_core::
     )
 }
 
-fn index_source(resolved: &mut ResolvedSource) -> MResult<()> {
-    if !resolved.scopes.is_empty() {
-        return Ok(());
-    }
-    let parsed;
-    let tree = match resolved.syntax_tree.as_deref() {
-        Some(tree) => tree,
-        None => {
-            parsed = source_tree(&resolved.source)?;
-            let Some(tree) = parsed.as_ref() else {
-                return Ok(());
-            };
-            tree
-        }
-    };
-    let index = SourceIndex::from_program(tree);
-    index.validate_address_targets()?;
-    resolved.imports = index.all_imports();
-    resolved.exports = index.all_exports();
-    resolved.contexts = index.all_contexts();
-    resolved.address_references = index.all_address_references();
-    resolved.scopes = index.module_scopes();
-    Ok(())
-}
-
-fn executable_resolved_tree(source: &ResolvedSource) -> MResult<mech_core::Program> {
-    match source.syntax_tree.as_deref() {
-        Some(tree) => sanitize_tree(tree.clone()),
-        None => executable_tree(&source.source),
-    }
-}
-
-fn source_tree(source: &MechSourceCode) -> MResult<Option<mech_core::Program>> {
-    match source {
-        MechSourceCode::String(source) => Ok(Some(mech_syntax::parser::parse(source.trim())?)),
-        MechSourceCode::Program(_) => Ok(None),
-        MechSourceCode::ByteCode(_) | MechSourceCode::Html(_) => Ok(None),
-        MechSourceCode::Image(_, _) => Err(unsupported_route(
-            "image source cannot be compiled as a resident program",
-        )),
-    }
-}
-
-#[cfg(feature = "compute")]
-fn declaration_tree(source: &MechSourceCode) -> MResult<Program> {
-    match source {
-        MechSourceCode::String(source) => mech_syntax::parser::parse(source.trim()),
-        MechSourceCode::Program(sources) => {
-            let mut sections = Vec::new();
-            for source in sources {
-                sections.extend(declaration_tree(source)?.body.sections);
-            }
-            Ok(Program {
-                title: None,
-                body: Body { sections },
-            })
-        }
-        MechSourceCode::ByteCode(_) | MechSourceCode::Html(_) => Err(unsupported_route(
-            "root bytecode and HTML cannot be partitioned as a mixed source program",
-        )),
-        MechSourceCode::Image(_, _) => Err(unsupported_route(
-            "image source cannot be partitioned as a mixed source program",
-        )),
-    }
-}
-
-fn executable_tree(source: &MechSourceCode) -> MResult<mech_core::Program> {
-    match source {
-        MechSourceCode::String(source) => sanitize_tree(mech_syntax::parser::parse(source.trim())?),
-        MechSourceCode::Program(sources) => {
-            let mut sections = Vec::new();
-            for source in sources {
-                sections.extend(executable_tree(source)?.body.sections);
-            }
-            Ok(mech_core::Program {
-                title: None,
-                body: mech_core::Body { sections },
-            })
-        }
-        MechSourceCode::ByteCode(_) | MechSourceCode::Html(_) => Err(unsupported_route(
-            "root bytecode and HTML are handled outside the source compiler session",
-        )),
-        MechSourceCode::Image(_, _) => Err(unsupported_route(
-            "image source cannot be compiled as a resident program",
-        )),
-    }
-}
-
 fn sanitize_tree(mut tree: mech_core::Program) -> MResult<mech_core::Program> {
     if let Some(title) = &mut tree.title {
         title.imports.clear();
@@ -3645,15 +2959,6 @@ fn sanitize_tree(mut tree: mech_core::Program) -> MResult<mech_core::Program> {
         }
     }
     Ok(tree)
-}
-
-fn source_exports(source: &ResolvedSource) -> Vec<SourceExportDeclaration> {
-    source
-        .scopes
-        .iter()
-        .find(|scope| matches!(scope.scope, crate::SourceScope::Program))
-        .map(|scope| scope.exports.clone())
-        .unwrap_or_else(|| source.exports.clone())
 }
 
 fn install_function_imports(
@@ -3691,104 +2996,6 @@ fn install_function_imports(
                 ));
             }
         }
-    }
-    Ok(())
-}
-
-fn build_import_environment(
-    module: &CompilerModule,
-    instances: &HashMap<String, CompilerModuleInstance>,
-) -> MResult<HashMap<String, CompilerExportValue>> {
-    let mut environment = HashMap::new();
-    let mut ownership = HashMap::<String, String>::new();
-    for (import, dependency) in &module.import_edges {
-        let instance = instances.get(dependency).ok_or_else(|| {
-            route_failure(
-                ResidentRouteFailureClass::InternalFailure,
-                format!("dependency `{dependency}` was not compiled"),
-            )
-        })?;
-        match &import.kind {
-            SourceImportKind::DependencyOnly | SourceImportKind::Namespace => {
-                let Some(namespace) = module_namespace_for_import(import) else {
-                    continue;
-                };
-                for (name, value) in &instance.exports {
-                    insert_import(
-                        &mut environment,
-                        &mut ownership,
-                        format!("{namespace}/{name}"),
-                        value.clone(),
-                        &import.specifier,
-                    )?;
-                }
-            }
-            SourceImportKind::Single { name } => {
-                let value = instance.exports.get(name).ok_or_else(|| {
-                    mech_core::MechError::new(
-                        RuntimeModuleExportNotFound {
-                            dependency: dependency.clone(),
-                            export: name.clone(),
-                        },
-                        None,
-                    )
-                })?;
-                let binding = match &import.alias {
-                    Some(SourceImportAlias::Value(alias)) => alias.clone(),
-                    Some(SourceImportAlias::Context(_)) => continue,
-                    None => name.clone(),
-                };
-                insert_import(
-                    &mut environment,
-                    &mut ownership,
-                    binding,
-                    value.clone(),
-                    &import.specifier,
-                )?;
-            }
-            SourceImportKind::Wildcard => {
-                for (name, value) in &instance.exports {
-                    insert_import(
-                        &mut environment,
-                        &mut ownership,
-                        name.clone(),
-                        value.clone(),
-                        &import.specifier,
-                    )?;
-                }
-            }
-        }
-    }
-    Ok(environment)
-}
-
-fn insert_import(
-    environment: &mut HashMap<String, CompilerExportValue>,
-    ownership: &mut HashMap<String, String>,
-    binding: String,
-    value: CompilerExportValue,
-    source: &str,
-) -> MResult<()> {
-    if let Some(first) = ownership.insert(binding.clone(), source.to_owned()) {
-        return Err(mech_core::MechError::new(
-            RuntimeModuleImportConflict {
-                binding,
-                first_import: first,
-                second_import: source.to_owned(),
-            },
-            None,
-        ));
-    }
-    environment.insert(binding, value);
-    Ok(())
-}
-
-fn install_environment(
-    program: &mut CompilerPlanningProgram,
-    environment: &HashMap<String, CompilerExportValue>,
-) -> MResult<()> {
-    for (name, value) in environment {
-        program.install_compiler_symbol(name, value.fresh_cell()?)?;
     }
     Ok(())
 }

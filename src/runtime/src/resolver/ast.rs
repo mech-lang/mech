@@ -1,47 +1,23 @@
 use std::collections::BTreeSet;
 
-use mech_core::{MResult, Program};
+use mech_core::MResult;
 
-use super::{
-    SourceContextBase, SourceContextCapabilityScope, SourceContextDeclaration,
-    SourceExportDeclaration, SourceImportDeclaration, SourceIndex, SourceRequest,
-    import_requires_source_dependency, source_request_for_import,
-};
+use super::{SourceContextBase, SourceContextCapabilityScope, SourceIndex};
 use crate::{RunResourceGrantConfig, run_resource_grant_path_allows};
-
-pub fn imports_from_program(tree: &Program) -> Vec<SourceImportDeclaration> {
-    SourceIndex::from_program(tree).all_imports()
-}
-
-pub fn exports_from_program(tree: &Program) -> Vec<SourceExportDeclaration> {
-    SourceIndex::from_program(tree).all_exports()
-}
-
-pub fn dependencies_from_program(tree: &Program, referrer: Option<&str>) -> Vec<SourceRequest> {
-    SourceIndex::from_program(tree)
-        .all_imports()
-        .iter()
-        .filter(|import| import_requires_source_dependency(import))
-        .map(|import| source_request_for_import(import, referrer))
-        .collect()
-}
-
-pub fn contexts_from_program(tree: &Program) -> Vec<SourceContextDeclaration> {
-    SourceIndex::from_program(tree).all_contexts()
-}
 
 /// Resolves the concrete source-declared paths that a configured run grant
 /// authorizes for one resource operation. Source declarations define the
 /// interface; configuration grants authorize that interface and never create
 /// new paths.
-pub fn granted_resource_paths_from_program(
-    tree: &Program,
+pub fn granted_resource_paths_from_index(
+    index: &SourceIndex,
     base_uri: &str,
     grant_target: &str,
     operation: &str,
     grants: &[RunResourceGrantConfig],
 ) -> MResult<BTreeSet<String>> {
-    let declared = contexts_from_program(tree)
+    let declared = index
+        .all_contexts()
         .into_iter()
         .filter(|context| context.base == SourceContextBase::ResourceUri(base_uri.to_owned()))
         .flat_map(|context| context.capabilities)
@@ -84,16 +60,23 @@ mod tests {
         SourceRequest, SourceResolver, SourceScope,
     };
 
-    fn parse_program(source: &str) -> Program {
-        mech_syntax::parser::parse(source).unwrap()
+    fn source_index(source: &str) -> SourceIndex {
+        let document = crate::SourceDocument::parse_resolved(
+            "test:source-index",
+            mech_syntax::document::Revision(0),
+            source,
+            mech_syntax::document::ParseConfig::default(),
+        )
+        .unwrap();
+        SourceIndex::from_document(&document.document()).unwrap()
     }
 
     #[test]
     fn resolved_source_extracts_resource_context() {
-        let tree = parse_program(
+        let index = source_index(
             "@main := db://main{:read(users/*), :write(users/name)}\nx := @main/users/name\n",
         );
-        let contexts = contexts_from_program(&tree);
+        let contexts = index.all_contexts();
         assert_eq!(contexts.len(), 1);
         assert_eq!(contexts[0].name, "main");
         assert_eq!(
@@ -115,10 +98,10 @@ mod tests {
 
     #[test]
     fn resolved_source_extracts_derived_context() {
-        let tree = parse_program(
+        let index = source_index(
             "@main := db://main{:read(users/*), :write(users/name)}\n@users := @main{:read(users/*)}\n",
         );
-        let contexts = contexts_from_program(&tree);
+        let contexts = index.all_contexts();
         assert_eq!(contexts.len(), 2);
         assert_eq!(
             contexts[0].base,
@@ -133,8 +116,8 @@ mod tests {
 
     #[test]
     fn resolved_source_extracts_wildcard_context_scope() {
-        let tree = parse_program("@main := db://main{:write(*)}\n");
-        let contexts = contexts_from_program(&tree);
+        let index = source_index("@main := db://main{:write(*)}\n");
+        let contexts = index.all_contexts();
         assert_eq!(contexts[0].capabilities[0].operation, "write");
         assert_eq!(
             contexts[0].capabilities[0].scope,
@@ -144,7 +127,7 @@ mod tests {
 
     #[test]
     fn configured_wildcards_expand_only_to_concrete_source_declared_paths() {
-        let tree = parse_program(
+        let index = source_index(
             "@compute := compute://particles/kernel{:write(input/x), :write(input/y), :write(turn)}\n",
         );
         for configured_path in ["*", "input/*"] {
@@ -153,8 +136,8 @@ mod tests {
                 operations: vec!["write".to_owned()],
                 paths: vec![configured_path.to_owned()],
             }];
-            let paths = granted_resource_paths_from_program(
-                &tree,
+            let paths = granted_resource_paths_from_index(
+                &index,
                 "compute://particles/kernel",
                 "particles/kernel",
                 "write",
@@ -176,16 +159,15 @@ mod tests {
 
     #[test]
     fn context_extraction_does_not_break_import_export_extraction() {
-        let tree = parse_program("@main := db://main{:read(users/*)}\n+> ./math.mec\n<+ tau\n");
-        assert_eq!(contexts_from_program(&tree).len(), 1);
-        assert_eq!(imports_from_program(&tree).len(), 1);
-        assert_eq!(exports_from_program(&tree).len(), 1);
+        let index = source_index("@main := db://main{:read(users/*)}\n+> ./math.mec\n<+ tau\n");
+        assert_eq!(index.all_contexts().len(), 1);
+        assert_eq!(index.all_imports().len(), 1);
+        assert_eq!(index.all_exports().len(), 1);
     }
 
     #[test]
     fn source_index_collects_program_declarations() {
-        let tree = parse_program("@main := db://main{:read(users/*)}\n+> ./math.mec\n<+ tau\n");
-        let index = SourceIndex::from_program(&tree);
+        let index = source_index("@main := db://main{:read(users/*)}\n+> ./math.mec\n<+ tau\n");
         assert_eq!(index.contexts.len(), 1);
         assert_eq!(index.imports.len(), 1);
         assert_eq!(index.exports.len(), 1);
@@ -207,21 +189,48 @@ mod tests {
     }
 
     #[test]
-    fn legacy_helpers_match_source_index_all_views() {
-        let tree = parse_program(
+    fn canonical_index_preserves_program_and_named_scope_declarations() {
+        let index = source_index(
             "@doc := db://doc{:read(*)}\n+> ./doc.mec\n\n~~~mech:foo\n@foo-db := db://foo{:read(*)}\n+> ./foo.mec\n<+ foo-result\n~~~\n",
         );
-        let index = SourceIndex::from_program(&tree);
-        assert_eq!(imports_from_program(&tree), index.all_imports());
-        assert_eq!(exports_from_program(&tree), index.all_exports());
-        assert_eq!(contexts_from_program(&tree), index.all_contexts());
-        assert_eq!(index.all_address_references().len(), 0);
+        assert_eq!(
+            index
+                .program_imports()
+                .iter()
+                .map(|item| item.specifier.as_str())
+                .collect::<Vec<_>>(),
+            ["./doc.mec"]
+        );
+        assert_eq!(
+            index
+                .all_imports()
+                .iter()
+                .map(|item| item.specifier.as_str())
+                .collect::<Vec<_>>(),
+            ["./doc.mec", "./foo.mec"]
+        );
+        assert_eq!(
+            index
+                .all_exports()
+                .iter()
+                .map(|item| item.name.as_str())
+                .collect::<Vec<_>>(),
+            ["foo-result"]
+        );
+        assert_eq!(
+            index
+                .all_contexts()
+                .iter()
+                .map(|item| item.name.as_str())
+                .collect::<Vec<_>>(),
+            ["doc", "foo-db"]
+        );
+        assert!(index.all_address_references().is_empty());
     }
 
     #[test]
     fn source_index_collects_program_address_reference() {
-        let tree = parse_program("result := @foo/ok\n");
-        let index = SourceIndex::from_program(&tree);
+        let index = source_index("result := @foo/ok\n");
         let refs = index.program_address_references();
         assert_eq!(refs.len(), 1);
         assert_eq!(refs[0].name, "ok");
@@ -230,8 +239,7 @@ mod tests {
 
     #[test]
     fn source_index_collects_fenced_address_reference() {
-        let tree = parse_program("~~~mech:foo\nresult := @bar/ok\n~~~\n");
-        let index = SourceIndex::from_program(&tree);
+        let index = source_index("~~~mech:foo\nresult := @bar/ok\n~~~\n");
         assert_eq!(index.program_address_references().len(), 0);
         let foo_scope = index
             .module_scopes()
@@ -248,8 +256,7 @@ mod tests {
 
     #[test]
     fn source_index_does_not_collect_string_address_text() {
-        let tree = parse_program("text := \"@foo\"\n");
-        let index = SourceIndex::from_program(&tree);
+        let index = source_index("text := \"@foo\"\n");
         assert_eq!(index.all_address_references().len(), 0);
     }
 
@@ -259,8 +266,7 @@ mod tests {
         std::fs::create_dir_all(&tmp).unwrap();
         let path = tmp.join("main.mec");
         std::fs::write(&path, "@doc := db://doc{:read(*)}\n+> ./doc.mec\n\n~~~mech:foo\n@foo-db := db://foo{:read(*)}\n+> ./foo.mec\n<+ foo-result\n~~~\n").unwrap();
-        let tree = parse_program(&std::fs::read_to_string(&path).unwrap());
-        let index = SourceIndex::from_program(&tree);
+        let index = source_index(&std::fs::read_to_string(&path).unwrap());
         let resolver = FileSourceResolver::new(&tmp);
         let resolved = resolver
             .resolve(&SourceRequest::new("main.mec"))
@@ -273,10 +279,9 @@ mod tests {
     }
     #[test]
     fn source_index_unions_repeated_fenced_interpreter_namespaces() {
-        let tree = parse_program(
+        let index = source_index(
             "~~~mech:bayes\nprior := 0.01\n~~~\n\n~~~mech:bayes\nposterior := prior\n~~~\n",
         );
-        let index = SourceIndex::from_program(&tree);
         assert!(index.validate_address_targets().is_ok());
         assert_eq!(index.address_target_interpreters.len(), 1);
         assert_eq!(index.address_target_interpreters[0].namespace_str, "bayes");
@@ -285,8 +290,7 @@ mod tests {
 
     #[test]
     fn source_index_keeps_different_fenced_interpreter_namespaces_separate() {
-        let tree = parse_program("~~~mech:foo\nx := 1\n~~~\n\n~~~mech:bar\nx := 2\n~~~\n");
-        let index = SourceIndex::from_program(&tree);
+        let index = source_index("~~~mech:foo\nx := 1\n~~~\n\n~~~mech:bar\nx := 2\n~~~\n");
         assert!(index.validate_address_targets().is_ok());
         let namespaces = index
             .interpreter_scopes()

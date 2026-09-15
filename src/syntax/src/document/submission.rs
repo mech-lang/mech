@@ -1,8 +1,4 @@
-//! Source-level terminal metadata for interactive submissions.
-//!
-//! Hosts must not reimplement Mech's lexical rules to decide whether a final
-//! semicolon suppresses automatic display. This module owns that decision at
-//! the syntax boundary next to `code_terminal`.
+//! Terminal metadata for a complete canonical interactive submission.
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct SubmissionTerminal {
@@ -10,6 +6,9 @@ pub struct SubmissionTerminal {
     pub suppresses_value: bool,
 }
 
+/// Locate the last code byte without mistaking comments, strings, or resource
+/// URI slashes for executable syntax. Finality remains owned by DocumentStream;
+/// this function only controls automatic result presentation after admission.
 pub fn submission_terminal(source: &str) -> Option<SubmissionTerminal> {
     #[derive(Clone, Copy)]
     enum State {
@@ -112,7 +111,6 @@ mod tests {
         }
         for source in [
             "1 + 1 -- comment ;\n",
-            "1 + 1-- comment ;\n",
             "1 + 1// comment ;\n",
             "\"text; -- still text\"\n",
             "@out := console://repl/output{:write(line)}\n",

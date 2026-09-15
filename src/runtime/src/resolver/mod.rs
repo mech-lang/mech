@@ -370,6 +370,15 @@ impl ResolvedSource {
         Ok(self)
     }
 
+    /// Admit one exact canonical revision and publish only the resolver facts
+    /// owned by its root module scope. Mika-local scopes remain independently
+    /// owned by the retained document and never leak into module resolution.
+    #[cfg(feature = "source")]
+    pub fn with_indexed_source_document(self, document: SourceDocument) -> MResult<Self> {
+        self.with_source_document(document)?
+            .admit_canonical_document()
+    }
+
     /// Parse and retain this record's exact textual source under its canonical
     /// URI. This is the normal adoption point for product paths that construct
     /// `ResolvedSource` directly rather than through a resolver.
@@ -408,14 +417,6 @@ impl ResolvedSource {
         }
         self.syntax_tree = None;
         self.source = source;
-        self.clear_source_projections();
-    }
-
-    /// Replace the typed compiler projection while retaining the source used
-    /// for module identity and presentation.
-    #[cfg(feature = "compute")]
-    pub(crate) fn replace_syntax_tree(&mut self, syntax_tree: Program) {
-        self.syntax_tree = Some(Arc::new(syntax_tree));
         self.clear_source_projections();
     }
 

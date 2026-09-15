@@ -24,6 +24,7 @@ enum DocumentUnit {
     ResourceSend(mech_syntax::document::ContextSendSyntax),
     Invariant(InvariantDefineSyntax),
     Inline(EvalInlineMechCodeSyntax),
+    Comment(EvalInlineMechCodeSyntax),
     Fence(CodeBlockSyntax, CodeFencePresentation, Vec<DocumentUnit>),
 }
 
@@ -37,6 +38,7 @@ struct DeferredInline {
     inline: EvalInlineMechCodeSyntax,
     captured: BTreeMap<String, PendingValue>,
     waiting: BTreeSet<String>,
+    comment: bool,
 }
 
 pub(super) fn root_statement_nodes(
@@ -187,6 +189,7 @@ impl CanonicalCoordinatorPlan {
             &BTreeSet::new(),
             &BTreeSet::new(),
             &self.resolved_source_modules,
+            None,
         )
     }
 }
@@ -205,12 +208,7 @@ pub(super) fn prepare_mixed_document_with_catalog_and_resources(
         .body()
         .map(|body| body.sections())
         .unwrap_or_default();
-    let mut regions = Vec::new();
-    for (index, section) in sections.iter().enumerate() {
-        if let Some((name, placement)) = mixed_section_identity(section)? {
-            regions.push((index, name, placement));
-        }
-    }
+    let mut regions = document_compute_regions(document)?;
     if regions.len() != 1 {
         return Err(SourceSemanticError {
             code: "source-semantics/mixed-region-count",
@@ -279,6 +277,7 @@ pub(super) fn prepare_mixed_document_with_catalog_and_resources(
         external_inputs,
         retained_outputs,
         resolved_source_modules,
+        None,
     )?
     .with_compute_region(region_name.clone(), placement)?;
 
@@ -301,6 +300,7 @@ pub(super) fn prepare_mixed_document_with_catalog_and_resources(
         &BTreeSet::new(),
         external_inputs,
         resolved_source_modules,
+        None,
     )?
     .retain_static_outputs(external_inputs)?;
 
@@ -323,6 +323,30 @@ pub(super) fn compile_document_with_options(
     published_bindings: &BTreeSet<String>,
     resolved_source_modules: &BTreeSet<String>,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+    compile_document_with_capture_options(
+        document,
+        catalog,
+        input_schemas,
+        interactive,
+        resource_writes,
+        external_definitions,
+        published_bindings,
+        resolved_source_modules,
+        None,
+    )
+}
+
+pub(super) fn compile_document_with_capture_options(
+    document: &DocumentSyntax,
+    catalog: Option<Arc<mech_core::FunctionCatalog>>,
+    input_schemas: BTreeMap<String, SchemaBody>,
+    interactive: bool,
+    resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+    external_definitions: &BTreeSet<String>,
+    published_bindings: &BTreeSet<String>,
+    resolved_source_modules: &BTreeSet<String>,
+    retained_result_boundary: Option<mech_syntax::document::TextSize>,
+) -> Result<CanonicalSourceProgram, SourceSemanticError> {
     let anchor = SourceSemanticAnchor::for_node(document.syntax());
     let mut units = Vec::new();
     let mut exports = Vec::new();
@@ -339,6 +363,7 @@ pub(super) fn compile_document_with_options(
         external_definitions,
         published_bindings,
         resolved_source_modules,
+        retained_result_boundary,
     )
 }
 
@@ -397,6 +422,7 @@ fn compile_named_scope(
         &BTreeSet::new(),
         &BTreeSet::new(),
         &BTreeSet::new(),
+        None,
     )
 }
 
@@ -426,6 +452,7 @@ pub(super) fn compile_mika_section(
         &BTreeSet::new(),
         &BTreeSet::new(),
         &BTreeSet::new(),
+        None,
     )
 }
 
@@ -441,6 +468,7 @@ fn compile_collected_document(
     external_definitions: &BTreeSet<String>,
     published_bindings: &BTreeSet<String>,
     resolved_source_modules: &BTreeSet<String>,
+    retained_result_boundary: Option<mech_syntax::document::TextSize>,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
     let mut builder = match catalog {
         Some(catalog) if !input_schemas.is_empty() => {
@@ -453,15 +481,14 @@ fn compile_collected_document(
         Some(catalog) => SemanticBuilder::with_function_catalog(anchor, catalog)?,
         None => SemanticBuilder::new(anchor),
     };
+    builder.retained_result_boundary = retained_result_boundary;
     builder.resource_writes = resource_writes;
     builder.external_definitions = external_definitions.clone();
     builder.resolved_source_modules = resolved_source_modules.clone();
     builder.register_document_functions(&units)?;
     builder.register_document_imports(&units, resolved_source_modules)?;
     let mut bindings = BTreeSet::new();
-    if interactive {
-        bindings.insert("ans".to_owned());
-    }
+    bindings.insert("ans".to_owned());
     declare_document_inputs(&mut builder, &units, &mut bindings)?;
     declare_document_inline_inputs(&mut builder, &units, &bindings)?;
     let mut presentation = Vec::new();
@@ -481,12 +508,21 @@ fn compile_collected_document(
     };
     // Constraint query outputs are separate from the implicit document result.
     let constraint_outputs = std::mem::take(&mut builder.outputs);
+    if let Some((value, syntax)) = builder.retained_result.take() {
+        builder.publish("document:captured-result", None, value, &syntax);
+    } else if retained_result_boundary.is_some() {
+        return Err(internal(
+            anchor,
+            "retained document boundary has no result".to_owned(),
+        ));
+    }
+    let result_output = builder.outputs.len() as u32;
     builder.publish("result", None, last.value, &last.syntax);
     if interactive {
         builder.outputs.extend(constraint_outputs);
     }
     let mut output_bindings = vec![SourceDocumentOutput {
-        output: 0,
+        output: result_output,
         kind: SourceDocumentOutputKind::Program,
         visible: last.program_visible,
     }];
@@ -599,6 +635,24 @@ fn compile_collected_document(
     Ok(program)
 }
 
+pub(super) fn document_compute_regions(
+    document: &DocumentSyntax,
+) -> Result<Vec<(usize, String, mech_core::ComputePlacement)>, SourceSemanticError> {
+    let mut regions = Vec::new();
+    for (index, section) in document
+        .body()
+        .map(|body| body.sections())
+        .unwrap_or_default()
+        .iter()
+        .enumerate()
+    {
+        if let Some((name, placement)) = mixed_section_identity(section)? {
+            regions.push((index, name, placement));
+        }
+    }
+    Ok(regions)
+}
+
 fn mixed_section_identity(
     section: &mech_syntax::document::SectionSyntax,
 ) -> Result<Option<(String, mech_core::ComputePlacement)>, SourceSemanticError> {
@@ -690,6 +744,17 @@ fn collect_document_units(
     }
     if let Some(invariant) = InvariantDefineSyntax::cast(node.clone()) {
         output.push(DocumentUnit::Invariant(invariant));
+        return Ok(());
+    }
+    if node.kind() == SyntaxKind::Comment {
+        let mut rich = Vec::new();
+        for child in node.children() {
+            collect_document_units(&child, &mut rich, exports)?;
+        }
+        output.extend(rich.into_iter().map(|unit| match unit {
+            DocumentUnit::Inline(inline) => DocumentUnit::Comment(inline),
+            other => other,
+        }));
         return Ok(());
     }
     if let Some(expression) = EvalInlineMechCodeSyntax::cast(node.clone()) {
@@ -789,7 +854,7 @@ fn declare_document_inputs(
             DocumentUnit::Invariant(invariant) => {
                 builder.declare_input_annotations(invariant.syntax(), bindings)?
             }
-            DocumentUnit::Inline(_) => {}
+            DocumentUnit::Inline(_) | DocumentUnit::Comment(_) => {}
             DocumentUnit::Fence(_, _, units) => declare_document_inputs(builder, units, bindings)?,
         }
     }
@@ -806,7 +871,7 @@ fn declare_document_inline_inputs(
             DocumentUnit::Statement(_) | DocumentUnit::Function(_) | DocumentUnit::Import(_) => {}
             DocumentUnit::ResourceSend(_) => {}
             DocumentUnit::Invariant(_) => {}
-            DocumentUnit::Inline(inline) => {
+            DocumentUnit::Inline(inline) | DocumentUnit::Comment(inline) => {
                 builder.declare_input_annotations(inline.syntax(), bindings)?
             }
             DocumentUnit::Fence(_, _, units) => {
@@ -834,6 +899,7 @@ fn compile_document_units(
         interactive,
     )?;
     refresh_deferred_inline(builder, &mut deferred_inline, presentation, &mut last)?;
+    retain_document_boundary_result(builder, last.as_ref());
     if let Some(deferred) = deferred_inline.first() {
         return Err(internal(
             SourceSemanticAnchor::for_node(deferred.inline.syntax()),
@@ -926,8 +992,15 @@ fn compile_document_units_inner(
                 builder.constraints.push(PendingConstraint { name, value });
                 refresh_deferred_inline(builder, deferred_inline, presentation, &mut last)?;
             }
+            DocumentUnit::Comment(inline) => {
+                if let Some(deferred) = defer_inline(builder, &inline, local_bindings, true)? {
+                    deferred_inline.push(deferred);
+                } else {
+                    compile_inline(builder, inline, presentation)?;
+                }
+            }
             DocumentUnit::Inline(inline) => {
-                if let Some(deferred) = defer_inline(builder, &inline, local_bindings)? {
+                if let Some(deferred) = defer_inline(builder, &inline, local_bindings, false)? {
                     deferred_inline.push(deferred);
                 } else {
                     retain_later_document_value(
@@ -968,10 +1041,11 @@ fn compile_document_units_inner(
                 refresh_deferred_inline(builder, deferred_inline, presentation, &mut last)?;
             }
         }
+        retain_document_boundary_result(builder, last.as_ref());
         // `ans` is a source-level alias of the preceding interactive value,
         // not a live input or additional recurrence cell. Selection literals
         // use this same sequential rule as ordinary submitted expressions.
-        if interactive && let Some(value) = &last {
+        if let Some(value) = &last {
             builder
                 .bindings
                 .insert("ans".to_owned(), PendingBinding::Value(value.value));
@@ -984,6 +1058,7 @@ fn defer_inline(
     builder: &mut SemanticBuilder,
     inline: &EvalInlineMechCodeSyntax,
     local_bindings: &BTreeSet<String>,
+    comment: bool,
 ) -> Result<Option<DeferredInline>, SourceSemanticError> {
     let references = inline_local_references(builder, inline, local_bindings)?;
     let waiting = references
@@ -1009,6 +1084,7 @@ fn defer_inline(
         inline: inline.clone(),
         captured,
         waiting,
+        comment,
     }))
 }
 
@@ -1043,10 +1119,11 @@ fn refresh_deferred_inline(
             .position(|deferred| deferred.waiting.is_empty());
         let Some(ready) = ready else { break };
         let deferred = deferred.remove(ready);
-        retain_later_document_value(
-            last,
-            compile_deferred_inline(builder, deferred, presentation)?,
-        );
+        let comment = deferred.comment;
+        let compiled = compile_deferred_inline(builder, deferred, presentation)?;
+        if !comment {
+            retain_later_document_value(last, compiled);
+        }
     }
     Ok(())
 }
@@ -1077,6 +1154,23 @@ fn compile_deferred_inline(
         builder.bindings.insert(name, binding);
     }
     compiled
+}
+
+fn retain_document_boundary_result(
+    builder: &mut SemanticBuilder,
+    value: Option<&CompiledDocumentValue>,
+) {
+    let (Some(boundary), Some(value)) = (builder.retained_result_boundary, value) else {
+        return;
+    };
+    if value.syntax.range().end <= boundary
+        && builder
+            .retained_result
+            .as_ref()
+            .is_none_or(|(_, syntax)| syntax.range().start <= value.syntax.range().start)
+    {
+        builder.retained_result = Some((value.value, value.syntax.clone()));
+    }
 }
 
 fn retain_later_document_value(

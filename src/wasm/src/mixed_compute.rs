@@ -13,18 +13,15 @@ use mech_compute::{
     ComputeKernel, ComputeOutputSelection, ComputeOutputSnapshot, ComputePlatform, ComputePortId,
     ComputeProgram, ComputeSession, ComputeValue, TensorLayout, WGPU_BACKEND,
 };
-use mech_core::{MResult, MechError, MechErrorKind, Program};
+use mech_core::{MResult, MechError, MechErrorKind};
 use mech_engine::ProgramArtifact;
 use mech_gpu::{
     ComputeHostFactory, ComputeHostStateSnapshotHandle, ComputeLowerer, CpuScalarBackendFactory,
     ElementwiseKernel, FixedShapeKernel, GpuKernelPlanSource, lower_elementwise_compute_program,
 };
 use mech_runtime::{
-    ConfigProfileOptions, ConfigValue, HostContextManifest, HostManifestConfig, MechConfigDocument,
-    MechRuntime, RuntimeBuilder, RuntimeHostFactory, RuntimeHostInput, RuntimeHostInputDriver,
-    RuntimeHostInputSource, RuntimeHostInputUpdate, RuntimeHostInputValue, RuntimeHostInstallation,
-    RuntimeIngress, RuntimeResourceProvider, RuntimeResourceReadRequest, SourceDocument,
-    materialize_host_manifest, parse_config_document,
+    ConfigProfileOptions, MechConfigDocument, MechRuntime, RuntimeBuilder, SourceDocument,
+    parse_config_document,
 };
 use mech_syntax::document::{ParseConfig, Revision};
 use wasm_bindgen::prelude::*;
@@ -32,7 +29,7 @@ use web_time::Instant;
 
 use crate::gpu::{CompileTimings, gpu_program_manifest};
 
-const POINTER_PATHS: [&str; 4] = ["pulse", "position", "pressed", "delta-seconds"];
+use mech_browser::{PointerHostFactory, PointerInputHandle};
 
 #[wasm_bindgen]
 pub struct WasmMixedComputeProject {
@@ -470,34 +467,6 @@ impl PreparedGpuKernel {
     }
 }
 
-#[cfg(test)]
-fn compile_named_compute_region(
-    document: &MechConfigDocument,
-    tree: &Program,
-    parsing: f64,
-    pointer: PointerInputHandle,
-) -> MResult<PreparedComputeRegion> {
-    let compiler_started = Instant::now();
-    let mut builder = RuntimeBuilder::new()
-        .function_catalog(mech_stdlib::source_native_plan_catalog())
-        .host_factory(Box::new(PointerHostFactory::new(pointer)))?;
-    for host in document
-        .hosts
-        .iter()
-        .filter(|host| host.provider != "compute")
-    {
-        builder = builder.host_instance(host.clone());
-    }
-    if let Some(run) = &document.run {
-        for grant in &run.grants {
-            builder = builder.run_resource_grant(grant.clone());
-        }
-    }
-    let mut compiler = builder.build_compiler()?;
-    let catalog_setup = milliseconds(compiler_started);
-    prepare_compute_region(&mut compiler, tree, parsing, catalog_setup)
-}
-
 fn compile_named_compute_document_region(
     document: &MechConfigDocument,
     source: &SourceDocument,
@@ -533,17 +502,6 @@ pub(crate) fn prepare_compute_document_region(
 ) -> MResult<PreparedComputeRegion> {
     let artifact_started = Instant::now();
     let mixed = compiler.compile_mixed_document(document)?;
-    finish_prepared_compute_region(mixed, parsing, catalog_setup, artifact_started)
-}
-
-pub(crate) fn prepare_compute_region(
-    compiler: &mut mech_runtime::ProgramCompiler,
-    tree: &Program,
-    parsing: f64,
-    catalog_setup: f64,
-) -> MResult<PreparedComputeRegion> {
-    let artifact_started = Instant::now();
-    let mixed = compiler.compile_mixed_tree(tree)?;
     finish_prepared_compute_region(mixed, parsing, catalog_setup, artifact_started)
 }
 
@@ -655,222 +613,6 @@ pub(crate) fn initializer_values(
             Ok((port.name.to_string(), value_elements(&value)))
         })
         .collect()
-}
-
-#[derive(Clone, Debug)]
-struct PointerInputHandle {
-    base_uri: Arc<str>,
-    state: Arc<Mutex<PointerDriverState>>,
-}
-
-#[derive(Debug, Default)]
-struct PointerDriverState {
-    ingress: Option<RuntimeIngress>,
-    pulse: u64,
-    live: bool,
-}
-
-impl PointerInputHandle {
-    fn new(instance: impl AsRef<str>) -> Self {
-        Self {
-            base_uri: format!("pointer://{}/frame", instance.as_ref()).into(),
-            state: Arc::new(Mutex::new(PointerDriverState::default())),
-        }
-    }
-
-    fn submit(&self, x: f64, y: f64, pressed: bool, delta_seconds: f64) -> MResult<()> {
-        let mut state = self
-            .state
-            .lock()
-            .map_err(|_| mixed_error("pointer input state lock is poisoned"))?;
-        if !state.live {
-            return Err(mixed_error("pointer input host is not running"));
-        }
-        state.pulse = state.pulse.saturating_add(1);
-        let pulse = state.pulse;
-        let ingress = state
-            .ingress
-            .clone()
-            .ok_or_else(|| mixed_error("pointer input host is not attached"))?;
-        drop(state);
-        ingress.submit(RuntimeHostInput::new(vec![
-            pointer_update(
-                &self.base_uri,
-                "pulse",
-                RuntimeHostInputValue::F64(pulse as f64),
-            )?,
-            pointer_update(
-                &self.base_uri,
-                "position",
-                RuntimeHostInputValue::F32Matrix {
-                    rows: 2,
-                    columns: 1,
-                    values: vec![x as f32, y as f32],
-                },
-            )?,
-            pointer_update(
-                &self.base_uri,
-                "pressed",
-                RuntimeHostInputValue::F32(f32::from(pressed)),
-            )?,
-            pointer_update(
-                &self.base_uri,
-                "delta-seconds",
-                RuntimeHostInputValue::F32(delta_seconds as f32),
-            )?,
-        ])?)
-    }
-}
-
-fn pointer_update(
-    base_uri: &str,
-    path: &str,
-    value: RuntimeHostInputValue,
-) -> MResult<RuntimeHostInputUpdate> {
-    Ok(RuntimeHostInputUpdate {
-        source: RuntimeHostInputSource::new(base_uri, path)?,
-        value,
-    })
-}
-
-#[derive(Debug)]
-struct PointerHostFactory {
-    handle: PointerInputHandle,
-    manifest: HostManifestConfig,
-}
-
-impl PointerHostFactory {
-    fn new(handle: PointerInputHandle) -> Self {
-        Self {
-            handle,
-            manifest: HostManifestConfig {
-                provider: "pointer".to_owned(),
-                contexts: vec![HostContextManifest {
-                    name: "frame".to_owned(),
-                    base_uri_template: "pointer://{instance}/frame".to_owned(),
-                    operations: vec!["read".to_owned()],
-                }],
-            },
-        }
-    }
-}
-
-impl RuntimeHostFactory for PointerHostFactory {
-    fn provider_name(&self) -> &str {
-        "pointer"
-    }
-    fn manifest(&self) -> &HostManifestConfig {
-        &self.manifest
-    }
-    fn validate_settings(&self, _instance_name: &str, settings: &ConfigValue) -> MResult<()> {
-        match settings {
-            ConfigValue::Map(map) if map.is_empty() => Ok(()),
-            _ => Err(mixed_error("pointer host settings must be an empty map")),
-        }
-    }
-    fn instantiate(
-        &self,
-        instance_name: &str,
-        settings: &ConfigValue,
-    ) -> MResult<RuntimeHostInstallation> {
-        self.validate_settings(instance_name, settings)?;
-        Ok(RuntimeHostInstallation {
-            interface: materialize_host_manifest(instance_name, &self.manifest)?,
-            resource_providers: vec![Box::new(PointerResourceProvider {
-                instance: instance_name.to_owned(),
-            })],
-            input_drivers: vec![Box::new(PointerInputDriver {
-                instance: instance_name.to_owned(),
-                state: self.handle.state.clone(),
-            })],
-        })
-    }
-}
-
-#[derive(Debug)]
-struct PointerResourceProvider {
-    instance: String,
-}
-
-impl PointerResourceProvider {
-    fn base(&self) -> String {
-        format!("pointer://{}/frame", self.instance)
-    }
-    fn value(&self, request: RuntimeResourceReadRequest) -> MResult<mech_core::Value> {
-        if request.base_uri != self.base() || !POINTER_PATHS.contains(&request.path.as_str()) {
-            return Err(mixed_error(format!(
-                "unknown pointer input `{}/{}`",
-                request.base_uri, request.path
-            )));
-        }
-        if request.path == "position" {
-            RuntimeHostInputValue::F32Matrix {
-                rows: 2,
-                columns: 1,
-                values: vec![0.0, 0.0],
-            }
-            .into_value()
-        } else if request.path == "pulse" {
-            RuntimeHostInputValue::F64(0.0).into_value()
-        } else {
-            RuntimeHostInputValue::F32(0.0).into_value()
-        }
-    }
-}
-
-impl RuntimeResourceProvider for PointerResourceProvider {
-    fn scheme(&self) -> &str {
-        "pointer"
-    }
-    fn base_uris(&self) -> Vec<String> {
-        vec![self.base()]
-    }
-    fn semantic_read_contract(&self) -> Option<&'static mech_core::OperationContractDeclaration> {
-        Some(mech_runtime::resource_observation_contract())
-    }
-    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<mech_core::Value> {
-        self.value(request)
-    }
-    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<mech_core::Value> {
-        self.value(request)
-    }
-}
-
-#[derive(Debug)]
-struct PointerInputDriver {
-    instance: String,
-    state: Arc<Mutex<PointerDriverState>>,
-}
-
-impl RuntimeHostInputDriver for PointerInputDriver {
-    fn drives(&self, source: &RuntimeHostInputSource) -> bool {
-        source.base_uri() == format!("pointer://{}/frame", self.instance)
-            && POINTER_PATHS.contains(&source.path())
-    }
-    fn attach(&mut self, ingress: RuntimeIngress) -> MResult<()> {
-        self.state
-            .lock()
-            .map_err(|_| mixed_error("pointer input state lock is poisoned"))?
-            .ingress = Some(ingress);
-        Ok(())
-    }
-    fn start(&mut self) -> MResult<()> {
-        self.state
-            .lock()
-            .map_err(|_| mixed_error("pointer input state lock is poisoned"))?
-            .live = true;
-        Ok(())
-    }
-    fn stop(&mut self) -> MResult<()> {
-        self.state
-            .lock()
-            .map_err(|_| mixed_error("pointer input state lock is poisoned"))?
-            .live = false;
-        Ok(())
-    }
-    fn is_live(&self) -> bool {
-        self.state.lock().map(|state| state.live).unwrap_or(false)
-    }
 }
 
 #[derive(Clone)]
@@ -2281,10 +2023,17 @@ state
     fn compile_fixture(config: &str, source: &str) -> (MechConfigDocument, PreparedComputeRegion) {
         let document =
             parse_config_document("test.mcfg", config, ConfigProfileOptions::default()).unwrap();
-        let tree = mech_syntax::parse(source).unwrap();
+        let tree = SourceDocument::parse_resolved(
+            "bundle:///document.mec",
+            Revision(0),
+            source,
+            ParseConfig::default(),
+        )
+        .unwrap();
         let pointer_index = configured_host_index(&document, "pointer").unwrap();
         let pointer = PointerInputHandle::new(document.hosts[pointer_index].name.as_str());
-        let prepared = compile_named_compute_region(&document, &tree, 0.0, pointer).unwrap();
+        let prepared =
+            compile_named_compute_document_region(&document, &tree, 0.0, pointer).unwrap();
         (document, prepared)
     }
 
@@ -2368,8 +2117,15 @@ state
         );
         let pointer_index = configured_host_index(&document, "pointer").unwrap();
         let pointer = PointerInputHandle::new(document.hosts[pointer_index].name.as_str());
-        let tree = mech_syntax::parse(SERVED_SOURCE).unwrap();
-        let prepared = compile_named_compute_region(&document, &tree, 0.0, pointer).unwrap();
+        let tree = SourceDocument::parse_resolved(
+            "bundle:///document.mec",
+            Revision(0),
+            SERVED_SOURCE,
+            ParseConfig::default(),
+        )
+        .unwrap();
+        let prepared =
+            compile_named_compute_document_region(&document, &tree, 0.0, pointer).unwrap();
         let inputs = initializer_values(&prepared.program, &prepared.initializers).unwrap();
 
         assert_eq!(prepared.region, "particle-field");
