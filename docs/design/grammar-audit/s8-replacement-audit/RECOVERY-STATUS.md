@@ -1,5 +1,33 @@
 # Recovery continuation after audit acceptance
 
+## Live execution queue — 2026-09-15
+
+R identifiers are ownership boundaries, not completed milestones. This queue is
+the current execution order; the checkpoints below preserve historical evidence.
+All active extraction/corrective PRs and C remain drafts. Ask for review by comment.
+
+| Order | Owner and work | Current state / completion condition |
+| --- | --- | --- |
+| 1 | R25 + C/G22 compute/browser handoff | R25 #849 `a4555e3e027b4a4a20404c858088ec9a56ac81dd` has clean implementation review and successful focused CI 35026440740. C #830 `8542fa7f5` includes it. The shipping configured document edit changes result 1→3, preserves inline selection identity, and rolls back malformed edits. The larger EKF source now fails at `unknown-published-binding: ... result.0`; first record a minimal tuple-output witness and its compiler owner, then correct and review that shared handoff. Run real product acceptance and record all remaining failures. |
+| 2 | R08/G18 variable-cardinality layouts | Not started. Dependency for R07's still-red matrix positives. Preserve the existing positive concat/transpose and changing-cardinality obligations; do not substitute fixed-target rejection for acceptance. |
+| 3 | R07/G05 control initializers | Partial pushed branch `94ca8e2b4`, no PR, outside C. Closed-control/budget corrections pass; finish its matrix cases after R08 and review the bounded owner diff. |
+| 4 | R09–R20 semantic prerequisites | Corrective implementations remain pending; use the accepted dependency/acceptance cells to select the next ready owner after the initializer batch. No numbered item is implicitly complete. |
+| Across accepted batches | R21–R23 in C: authority retirement, browser adoption, distribution closure | Partially implemented, incomplete. Keep real deleted-parser and product probes running; fix failures in their owners. Hold one stable C head for final full qualification only after accepted obligations close. |
+| Outstanding decisions | R02/G02, R06/G17, R15/G12 | Recorded capability/contract decisions remain open. Positive obligations have not been excluded. These are not implicitly deferred beyond landing. |
+| Outstanding implementation | R24/G27 Index ranges | Strict failing witness exists; no production implementation or PR. Must close before final qualification. |
+
+**Active change lanes:** C, the bounded R25 follow-up if the new witness confirms
+its sampled-output responsibility, and the next dependency-ready R08 correction.
+R07 is idle until its prerequisite is ready. Never exceed three actively changing
+corrective branches. Do not open PRs solely to instantiate every audit boundary.
+
+**Next concrete action:** reduce the EKF `sample/result.0` failure in the owning
+mixed-compiler regression suite and record the cause before changing production.
+The basic configured edit thread is answered and resolved with shipping evidence:
+https://github.com/mech-lang/mech/pull/830#discussion_r4020517517
+This is not closure of all browser/product obligations or the stack.
+
+
 The review of `d25fbaad01f69c077cb26d4cb0aeadcb4dd1b117` accepts the reconciled
 planning baseline and exact-preserving extraction. It does not seal replacement
 implementation or accept any silent reduction in required behavior.

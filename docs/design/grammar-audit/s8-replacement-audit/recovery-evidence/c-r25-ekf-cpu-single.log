@@ -1,0 +1,39 @@
+Resident EKF server did not generate its document
+[Mech Server] Loading config… /private/tmp/mech-syntax-s8c-qualification/target/served-resident-ekf.zbfgwC/mech.mcfg
+[Mech Server] Loaded host config entries: 3
+[Mech Server] Default filesystem grant: /private/tmp/mech-syntax-s8c-qualification (:read,:list,:watch,:resolve,:import,:serve)
+[Mech Server] Project root: /private/tmp/mech-syntax-s8c-qualification/target/served-resident-ekf.zbfgwC
+[Mech Server] Loading resources…
+[Mech Server] Loading stylesheet…Using embedded resource
+[Mech Server] Using embedded default stylesheet
+[Mech Server] Loading HTML shim…Using embedded resource
+[Mech Server] Using embedded default HTML shim
+[Mech Server] Loading WASM…Using embedded resource
+Using embedded resource
+[Mech Server] WASM not found: /mech_wasm_bg.wasm; using embedded default
+[Mech Server] Using embedded default WASM
+[Mech Server] Loading JS…[Mech Server] JS not found: /mech_wasm.js; using embedded default
+[Mech Server] Using embedded default JS
+[Mech Server] Capability requested: host://serve fs:///private/tmp/mech-syntax-s8c-qualification/target/served-resident-ekf.zbfgwC recursive=true operations=:import,:list,:read,:resolve,:serve,:watch
+[Mech Server] Capability delegated: host://serve fs:///private/tmp/mech-syntax-s8c-qualification/target/served-resident-ekf.zbfgwC recursive=true operations=:import,:list,:read,:resolve,:serve,:watch
+[Mech Server] Capability requested: host://serve fs:///private/tmp/mech-syntax-s8c-qualification/target/served-resident-ekf.zbfgwC/localization.mec recursive=false operations=:import,:read,:resolve,:serve,:watch
+[Mech Server] Capability delegated: host://serve fs:///private/tmp/mech-syntax-s8c-qualification/target/served-resident-ekf.zbfgwC/localization.mec recursive=false operations=:import,:read,:resolve,:serve,:watch
+[Mech Server] Loading workspace…
+[Mech Server] Serve input plan:
+[Mech Server]   root: /private/tmp/mech-syntax-s8c-qualification/target/served-resident-ekf.zbfgwC
+[Mech Server]   targets: 1
+[Mech Server]   folders: 1
+[Mech Server]   static inputs: 1
+[Mech Server] Workspace root: /private/tmp/mech-syntax-s8c-qualification/target/served-resident-ekf.zbfgwC
+[Mech Server] Target `localization` -> `localization.mec`
+[Mech Server] Folder `.` recursive=true
+[Mech Server] Static input: `.`
+[Mech Server] Loading static assets…
+[Mech Server] Static assets loaded in 1.860959ms.
+[Mech Server] Opening runtime workspace session…
+[Mech Server] Runtime workspace session opened in 51.7469505s.
+[Mech Server] Watching: /private/tmp/mech-syntax-s8c-qualification/target/served-resident-ekf.zbfgwC
+[Mech Server] Watching: /private/tmp/mech-syntax-s8c-qualification/target/served-resident-ekf.zbfgwC
+[Mech Server] Emitting initial workspace events…
+[Mech Server] Building served source registry views…
+Error: MechError { kind name: "CanonicalProgramCompilationError", kind message: "source-semantics/unknown-published-binding: document does not define requested output result.0", message: None, program_range: None, annotations: [], tokens: [], compiler_location: Some(CompilerSourceRange { file: "src/runtime/src/runtime/program/compiler.rs", line: 80 }), source: None }
