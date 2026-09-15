@@ -378,6 +378,17 @@ fn recovered_framed_header_keeps_data_row_and_each_vertical_delimiter() {
     }
 }
 
+#[test]
+fn framed_table_accepts_indented_rows_after_every_newline() {
+    let source = "|id<string> x<f64>|\n  | \"row-a\" 1 |\n  | \"row-b\" 2 |";
+    for rule in [rules::TABLE, rules::EXPRESSION] {
+        let parsed = parse(rule, source);
+        assert!(parsed.is_strictly_clean(), "{:#?}", parsed.diagnostics);
+        let table = only(&parsed.syntax(), SyntaxKind::RegularTable);
+        assert_eq!(nodes(&table, SyntaxKind::TableRow).len(), 2);
+    }
+}
+
 // 3996399727
 #[test]
 fn delimited_mapping_key_selects_clean_map_after_record_prefix() {
