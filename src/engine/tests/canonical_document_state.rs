@@ -1684,3 +1684,19 @@ fn selected_f64_matrix_updates_propagate_signed_zero_changes() {
         }
     }
 }
+
+#[test]
+fn closed_match_initializer_runs_once_before_state_turns() {
+    turns(
+        "x := (true ? | true => 1 | false => 2)\n~a := x\na += 1\na\n",
+        &[2.0, 3.0],
+    );
+}
+
+#[test]
+fn closed_comprehension_initializer_runs_once_before_state_turns() {
+    turns(
+        "samples := 1..=3\nx-row := [1.0 | sample <- samples]\ny-row := [2.0 | sample <- samples]\nx := x-row'\ny := y-row'\n~trail := [x y]\nnew-row := ([7.0 8.0])\nnext-trail := matrix/vertcat(trail[2..=3,:], new-row)\ntrail = next-trail\ntrail[3,2]\n",
+        &[8.0, 8.0],
+    );
+}
